@@ -37,6 +37,7 @@ interface Props {
     amount?: string
   }
   onPrefillApplied?: () => void
+  hideSettings?: boolean
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -49,7 +50,8 @@ export const WidgetDeposit: FC<Props> = ({
   stakingSource,
   handleDepositSuccess: onDepositSuccess,
   prefill,
-  onPrefillApplied
+  onPrefillApplied,
+  hideSettings: _hideSettings
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -350,7 +352,7 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   if (isLoadingVaultData) {
     return (
-      <div className="p-6 flex items-center justify-center h-[317px]">
+      <div className="flex items-center justify-center h-[317px]">
         <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
       </div>
     )
@@ -361,101 +363,95 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   return (
     <div className="flex flex-col border border-border rounded-lg relative h-full">
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 p-4 gap-6">
         {/* Amount Section */}
-        <div className="p-6">
-          <InputTokenAmount
-            input={depositInput}
-            title="Amount"
-            placeholder="0.00"
-            balance={inputToken?.balance.raw}
-            decimals={inputToken?.decimals}
-            symbol={inputToken?.symbol}
-            disabled={isFetchingMaxQuote}
-            isMaxButtonLoading={isFetchingMaxQuote}
-            onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
-            errorMessage={depositError || undefined}
-            showTokenSelector
-            inputTokenUsdPrice={inputTokenPrice}
-            outputTokenUsdPrice={outputTokenPrice}
-            tokenAddress={inputToken?.address}
-            tokenChainId={inputToken?.chainID}
-            onTokenSelectorClick={() => setShowTokenSelector(true)}
-          />
-        </div>
+        <InputTokenAmount
+          input={depositInput}
+          title="Amount"
+          placeholder="0.00"
+          balance={inputToken?.balance.raw}
+          decimals={inputToken?.decimals}
+          symbol={inputToken?.symbol}
+          disabled={isFetchingMaxQuote}
+          isMaxButtonLoading={isFetchingMaxQuote}
+          onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
+          errorMessage={depositError || undefined}
+          showTokenSelector
+          inputTokenUsdPrice={inputTokenPrice}
+          outputTokenUsdPrice={outputTokenPrice}
+          tokenAddress={inputToken?.address}
+          tokenChainId={inputToken?.chainID}
+          onTokenSelectorClick={() => setShowTokenSelector(true)}
+        />
 
-        <div className="mt-auto">
-          {/* Details Section */}
-          <DepositDetails
-            depositAmountBn={depositAmount.bn}
-            inputTokenSymbol={inputToken?.symbol}
-            inputTokenDecimals={inputToken?.decimals ?? 18}
-            routeType={routeType}
-            isSwap={selectedToken !== assetAddress}
-            isLoadingQuote={activeFlow.periphery.isLoadingRoute}
-            expectedOutInAsset={expectedOutInAsset}
-            assetTokenSymbol={assetToken?.symbol}
-            assetTokenDecimals={assetToken?.decimals ?? 18}
-            expectedVaultShares={activeFlow.periphery.expectedOut}
-            vaultDecimals={vaultDecimals}
-            sharesDisplayDecimals={sharesDecimals}
-            pricePerShare={pricePerShare || 0n}
-            assetUsdPrice={assetTokenPrice}
-            willReceiveStakedShares={willReceiveStakedShares}
-            onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
-            onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
-            estimatedAnnualReturn={estimatedAnnualReturn}
-            onShowAnnualReturnModal={() => setShowAnnualReturnModal(true)}
-            allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
-            allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
-            allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
-            approvalSpenderName={!isNativeToken ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined}
-            onAllowanceClick={
-              !isNativeToken && activeFlow.periphery.allowance > 0n
-                ? () => setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
-                : undefined
+        {/* Details Section */}
+        <DepositDetails
+          depositAmountBn={depositAmount.bn}
+          inputTokenSymbol={inputToken?.symbol}
+          inputTokenDecimals={inputToken?.decimals ?? 18}
+          routeType={routeType}
+          isSwap={selectedToken !== assetAddress}
+          isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+          expectedOutInAsset={expectedOutInAsset}
+          assetTokenSymbol={assetToken?.symbol}
+          assetTokenDecimals={assetToken?.decimals ?? 18}
+          expectedVaultShares={activeFlow.periphery.expectedOut}
+          vaultDecimals={vaultDecimals}
+          sharesDisplayDecimals={sharesDecimals}
+          pricePerShare={pricePerShare || 0n}
+          assetUsdPrice={assetTokenPrice}
+          willReceiveStakedShares={willReceiveStakedShares}
+          onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
+          onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
+          estimatedAnnualReturn={estimatedAnnualReturn}
+          onShowAnnualReturnModal={() => setShowAnnualReturnModal(true)}
+          allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
+          allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
+          allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
+          approvalSpenderName={!isNativeToken ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined}
+          onAllowanceClick={
+            !isNativeToken && activeFlow.periphery.allowance > 0n
+              ? () => setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
+              : undefined
+          }
+          onShowApprovalOverlay={!isNativeToken ? () => setShowApprovalOverlay(true) : undefined}
+        />
+
+        {/* Action Button */}
+        {!account ? (
+          <Button
+            onClick={openLoginModal}
+            variant="filled"
+            className="w-full"
+            classNameOverride="yearn--button--nextgen w-full"
+          >
+            Connect Wallet
+          </Button>
+        ) : (
+          <Button
+            onClick={() => setShowTransactionOverlay(true)}
+            variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
+            isBusy={activeFlow.periphery.isLoadingRoute}
+            disabled={
+              !!depositError ||
+              depositAmount.bn === 0n ||
+              activeFlow.periphery.isLoadingRoute ||
+              depositAmount.isDebouncing ||
+              (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
+              (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled)
             }
-            onShowApprovalOverlay={!isNativeToken ? () => setShowApprovalOverlay(true) : undefined}
-          />
-
-          {/* Action Button */}
-          <div className="px-6 pt-6 pb-6">
-            {!account ? (
-              <Button
-                onClick={openLoginModal}
-                variant="filled"
-                className="w-full"
-                classNameOverride="yearn--button--nextgen w-full"
-              >
-                Connect Wallet
-              </Button>
-            ) : (
-              <Button
-                onClick={() => setShowTransactionOverlay(true)}
-                variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-                isBusy={activeFlow.periphery.isLoadingRoute}
-                disabled={
-                  !!depositError ||
-                  depositAmount.bn === 0n ||
-                  activeFlow.periphery.isLoadingRoute ||
-                  depositAmount.isDebouncing ||
-                  (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
-                  (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled)
-                }
-                className="w-full"
-                classNameOverride="yearn--button--nextgen w-full"
-              >
-                {activeFlow.periphery.isLoadingRoute
-                  ? 'Fetching quote'
-                  : !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
-                    ? `Approve & ${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'}`
-                    : routeType === 'DIRECT_STAKE'
-                      ? 'Stake'
-                      : 'Deposit'}
-              </Button>
-            )}
-          </div>
-        </div>
+            className="w-full"
+            classNameOverride="yearn--button--nextgen w-full"
+          >
+            {activeFlow.periphery.isLoadingRoute
+              ? 'Fetching quote'
+              : !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
+                ? `Approve & ${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'}`
+                : routeType === 'DIRECT_STAKE'
+                  ? 'Stake'
+                  : 'Deposit'}
+          </Button>
+        )}
       </div>
 
       {/* Transaction Overlay */}

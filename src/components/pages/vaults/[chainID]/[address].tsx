@@ -1,13 +1,17 @@
+import { useScrollDirection } from '@hooks/useScrollDirection'
 import { useScrollSpy } from '@hooks/useScrollSpy'
 import { useThemePreference } from '@hooks/useThemePreference'
-import { UserBalanceGrid, VaultMetricsGrid } from '@pages/vaults/components/detail/QuickStatsGrid'
+import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
+import { MobileKeyMetrics } from '@pages/vaults/components/detail/QuickStatsGrid'
 import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
 import { VaultChartsSection } from '@pages/vaults/components/detail/VaultChartsSection'
 import { VaultDetailsHeader } from '@pages/vaults/components/detail/VaultDetailsHeader'
 import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSection'
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
+import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
+import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards, WidgetRewardsPanel } from '@pages/vaults/components/widget/rewards'
 import { SettingsPanel } from '@pages/vaults/components/widget/SettingsPanel'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
@@ -55,6 +59,7 @@ function Index(): ReactElement | null {
   const mobileDetailsSectionId = useId()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
+  const scrollDirection = useScrollDirection({ threshold: 10, topThreshold: 50 })
 
   const { address, isActive } = useWeb3()
   const params = useParams()
@@ -71,10 +76,16 @@ function Index(): ReactElement | null {
   const [overrideVault, setOverrideVault] = useState<TYDaemonVault | undefined>(undefined)
   const [hasFetchedOverride, setHasFetchedOverride] = useState(false)
   const [lastVaultKey, setLastVaultKey] = useState(vaultKey)
-  const [isMobileDetailsExpanded, setIsMobileDetailsExpanded] = useState(false)
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
+  const [mobileDrawerAction, setMobileDrawerAction] = useState<
+    typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw
+  >(WidgetActionType.Deposit)
+  const mobileWidgetRef = useRef<TWidgetRef>(null)
   const detailsRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement | null>(null)
   const sectionSelectorRef = useRef<HTMLDivElement>(null)
+  const widgetRef = useRef<TWidgetRef>(null)
+  const widgetContainerRef = useRef<HTMLDivElement>(null)
   const chartsRef = useRef<HTMLDivElement>(null)
   const aboutRef = useRef<HTMLDivElement>(null)
   const riskRef = useRef<HTMLDivElement>(null)
@@ -542,21 +553,22 @@ function Index(): ReactElement | null {
     window.scrollTo({ top: targetTop, behavior: 'smooth' })
   }
 
-  const toggleMobileDetails = (): void => {
-    setIsMobileDetailsExpanded((prev) => {
-      const newState = !prev
-      // Scroll to details when expanding
-      if (newState && detailsRef.current) {
-        setTimeout(() => {
-          detailsRef.current?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest'
-          })
-        }, 100)
-      }
-      return newState
-    })
+  const handleFloatingButtonClick = (
+    action: typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw
+  ): void => {
+    setMobileDrawerAction(action)
+    setIsMobileDrawerOpen(true)
   }
+
+  const handleMobileDrawerClose = (): void => {
+    setIsMobileDrawerOpen(false)
+  }
+
+  useEffect(() => {
+    if (isMobileDrawerOpen && mobileWidgetRef.current) {
+      mobileWidgetRef.current.setMode(mobileDrawerAction)
+    }
+  }, [isMobileDrawerOpen, mobileDrawerAction])
 
   if (isLoadingVault || !params.address || !isInit || !yDaemonBaseUri) {
     return (
@@ -584,7 +596,11 @@ function Index(): ReactElement | null {
   const headerStickyTop = 'var(--header-height)'
 
   return (
-    <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
+    <div
+      className={
+        'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-[calc(7rem+env(safe-area-inset-bottom,0px))] sm:pb-8'
+      }
+    >
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         <header
           className={cl(
@@ -646,125 +662,28 @@ function Index(): ReactElement | null {
 
         {/* Mobile Layout */}
         <div className="md:hidden space-y-4">
-          {/* Vault metrics always at the top */}
-          <VaultMetricsGrid currentVault={currentVault} />
+          {/* Key metrics above chart */}
+          <MobileKeyMetrics currentVault={currentVault} />
 
-          {/* User balance grid */}
-          <UserBalanceGrid currentVault={currentVault} />
-
-          {/* Widget */}
-          <div className="space-y-4">
-            {isWidgetRewardsOpen ? (
-              <WidgetRewardsPanel
-                isActive={isWidgetRewardsOpen}
-                stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
-                stakingSource={currentVault.staking.source}
-                rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
-                  address: r.address,
-                  symbol: r.symbol,
-                  decimals: r.decimals,
-                  price: r.price,
-                  isFinished: r.isFinished
-                }))}
+          {/* Chart section */}
+          {Number.isInteger(chainId) && (
+            <div className="border border-border rounded-lg bg-surface overflow-hidden">
+              <VaultChartsSection
                 chainId={chainId}
-                onClose={closeWidgetRewards}
-                onClaimSuccess={handleRewardsClaimSuccess}
-              />
-            ) : (
-              <Widget
                 vaultAddress={currentVault.address}
-                currentVault={currentVault}
-                gaugeAddress={currentVault.staking.address}
-                actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
-                chainId={chainId}
+                chartHeightPx={180}
+                chartHeightMdPx={230}
               />
-            )}
-            <WidgetRewards
-              stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
-              stakingSource={currentVault.staking.source}
-              rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
-                address: r.address,
-                symbol: r.symbol,
-                decimals: r.decimals,
-                price: r.price,
-                isFinished: r.isFinished
-              }))}
-              chainId={chainId}
-              isPanelOpen={isWidgetRewardsOpen}
-              onOpenRewards={openWidgetRewards}
-            />
-          </div>
+            </div>
+          )}
 
-          {/* Expandable details toggle button */}
-          <button
-            type="button"
-            onClick={toggleMobileDetails}
-            aria-label={isMobileDetailsExpanded ? 'Hide vault details' : 'Show vault details'}
-            aria-controls={mobileDetailsSectionId}
-            aria-expanded={isMobileDetailsExpanded}
-            className={cl(
-              'w-full bg-surface-secondary border border-border rounded-lg',
-              'py-4 px-6 flex items-center justify-between',
-              'transition-all duration-200',
-              'hover:bg-surface-secondary active:scale-[0.99]'
-            )}
-          >
-            <span className="text-base font-semibold text-text-primary">
-              {isMobileDetailsExpanded ? 'Hide Details' : 'View More Details'}
-            </span>
-            <IconChevron direction={isMobileDetailsExpanded ? 'up' : 'down'} className="size-5 text-text-secondary" />
-          </button>
-
-          {/* Expandable details section */}
-          {isMobileDetailsExpanded && (
-            <section
-              id={mobileDetailsSectionId}
-              ref={detailsRef}
-              aria-label="Vault performance and details"
-              className="space-y-4 pb-8"
-            >
-              {renderableSections.map((section) => {
-                const isCollapsible =
-                  section.key === 'about' ||
-                  section.key === 'risk' ||
-                  section.key === 'strategies' ||
-                  section.key === 'info'
-
-                if (isCollapsible) {
-                  const typedKey = section.key as SectionKey
-                  const isOpen = openSections[typedKey]
-
-                  return (
-                    <div
-                      key={section.key}
-                      ref={section.ref}
-                      data-scroll-spy-key={section.key}
-                      className={'border border-border rounded-lg bg-surface'}
-                    >
-                      <button
-                        type={'button'}
-                        className={
-                          'flex w-full items-center justify-between gap-3 px-4 py-4 min-h-[52px] active:bg-surface-secondary transition-colors'
-                        }
-                        onClick={(): void =>
-                          setOpenSections((previous) => ({
-                            ...previous,
-                            [typedKey]: !previous[typedKey]
-                          }))
-                        }
-                      >
-                        <span className={'text-base font-semibold text-text-primary'}>
-                          {collapsibleTitles[typedKey]}
-                        </span>
-                        <IconChevron
-                          className={'size-5 text-text-secondary transition-transform duration-200'}
-                          direction={isOpen ? 'up' : 'down'}
-                        />
-                      </button>
-                      {isOpen ? <div>{section.content}</div> : null}
-                    </div>
-                  )
-                }
+          {/* Details sections - collapsible on mobile */}
+          <section id={mobileDetailsSectionId} ref={detailsRef} aria-label="Vault details" className="space-y-4 pb-8">
+            {renderableSections
+              .filter((section) => section.key !== 'charts')
+              .map((section) => {
+                const typedKey = section.key as Exclude<SectionKey, 'charts'>
+                const isOpen = openSections[typedKey]
 
                 return (
                   <div
@@ -773,18 +692,35 @@ function Index(): ReactElement | null {
                     data-scroll-spy-key={section.key}
                     className={'border border-border rounded-lg bg-surface'}
                   >
-                    {section.content}
+                    <button
+                      type={'button'}
+                      className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
+                      onClick={(): void =>
+                        setOpenSections((previous) => ({
+                          ...previous,
+                          [typedKey]: !previous[typedKey]
+                        }))
+                      }
+                    >
+                      <span className={'text-base font-semibold text-text-primary'}>{collapsibleTitles[typedKey]}</span>
+                      <IconChevron
+                        className={'size-4 text-text-secondary transition-transform duration-200'}
+                        direction={isOpen ? 'up' : 'down'}
+                      />
+                    </button>
+                    {isOpen ? <div>{section.content}</div> : null}
                   </div>
                 )
               })}
-            </section>
-          )}
+          </section>
         </div>
 
         {/* Main Content Grid - Responsive layout */}
         <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div
+            ref={widgetContainerRef}
             className={cl(
+              'hidden md:block',
               'order-1 md:order-2',
               'md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-4',
               'flex flex-col',
@@ -798,6 +734,7 @@ function Index(): ReactElement | null {
                 aria-hidden={!isWidgetPanelActive}
               >
                 <Widget
+                  ref={widgetRef}
                   vaultAddress={currentVault.address}
                   currentVault={currentVault}
                   gaugeAddress={currentVault.staking.address}
@@ -910,6 +847,56 @@ function Index(): ReactElement | null {
           </div>
         </section>
       </div>
+
+      {/* Mobile Floating Action Buttons - visible only on viewports ≤640px, hidden when drawer is open */}
+      {!isMobileDrawerOpen && (
+        <div
+          className={cl(
+            'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 sm:hidden',
+            'backdrop-blur-md',
+            'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]',
+            'transition-transform duration-250 ease-in-out',
+            scrollDirection === 'down' ? 'translate-y-full' : 'translate-y-0'
+          )}
+        >
+          <div className="flex gap-3 max-w-[1232px] mx-auto">
+            <button
+              type="button"
+              onClick={() => handleFloatingButtonClick(WidgetActionType.Deposit)}
+              className="yearn--button--nextgen flex-1"
+              data-variant="filled"
+            >
+              Deposit
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFloatingButtonClick(WidgetActionType.Withdraw)}
+              className="yearn--button flex-1"
+              data-variant="light"
+            >
+              Withdraw
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Bottom Drawer with Widget */}
+      <BottomDrawer
+        isOpen={isMobileDrawerOpen}
+        onClose={handleMobileDrawerClose}
+        title={`${mobileDrawerAction === WidgetActionType.Deposit ? 'Deposit' : 'Withdraw'} ${currentVault.name}`}
+        headerActions={<MobileDrawerSettingsButton />}
+      >
+        <Widget
+          ref={mobileWidgetRef}
+          vaultAddress={currentVault.address}
+          currentVault={currentVault}
+          gaugeAddress={currentVault.staking.address}
+          actions={widgetActions}
+          chainId={chainId}
+          hideTabSelector
+        />
+      </BottomDrawer>
     </div>
   )
 }

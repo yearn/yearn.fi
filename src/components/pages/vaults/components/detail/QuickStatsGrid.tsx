@@ -1,4 +1,3 @@
-import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -21,6 +20,20 @@ function StatCard({ label, value, subValue }: StatCardProps): ReactElement {
       <p className={'text-[10px] min-[375px]:text-xs text-text-secondary mb-0.5 min-[375px]:mb-1 truncate'}>{label}</p>
       <p className={'text-xs min-[375px]:text-sm md:text-base font-semibold text-text-primary truncate'}>{value}</p>
       {subValue && <p className={'text-[10px] min-[375px]:text-xs text-text-secondary mt-0.5 truncate'}>{subValue}</p>}
+    </div>
+  )
+}
+
+interface CompactStatBoxProps {
+  label: string
+  value: string
+}
+
+function CompactStatBox({ label, value }: CompactStatBoxProps): ReactElement {
+  return (
+    <div className="flex-1 min-w-0 rounded-lg bg-surface-secondary border border-border px-2 py-1.5 min-[375px]:px-3 min-[375px]:py-2">
+      <p className="text-[10px] min-[375px]:text-xs text-text-secondary truncate">{label}</p>
+      <p className="text-xs min-[375px]:text-sm font-semibold text-text-primary truncate">{value}</p>
     </div>
   )
 }
@@ -60,18 +73,13 @@ export function VaultMetricsGrid({ currentVault }: VaultMetricsGridProps): React
     apyData.mode === 'katana' && apyData.katanaEstApr !== undefined
       ? apyData.katanaEstApr
       : currentVault.apr.forwardAPR.netAPR
-  const historicalAPY =
-    currentVault.chainID === KATANA_CHAIN_ID && apyData.katanaThirtyDayApr !== undefined
-      ? apyData.katanaThirtyDayApr
-      : currentVault.apr.netAPR || currentVault.apr.points?.weekAgo || 0
 
   return (
     <div className="md:hidden">
-      {/* Top row: TVL, Forward APY, Historical APY */}
-      <div className="grid grid-cols-3 gap-1.5 min-[375px]:gap-2">
+      {/* Top row: TVL, Forward APY */}
+      <div className="grid grid-cols-2 gap-1.5 min-[375px]:gap-2">
         <StatCard label="TVL" value={formatUSD(currentVault.tvl.tvl)} />
         <StatCard label="Fwd. APY" value={formatPercent(forwardAPY)} />
-        <StatCard label="Hist. APY" value={formatPercent(historicalAPY)} />
       </div>
     </div>
   )
@@ -143,6 +151,38 @@ export function UserBalanceGrid({ currentVault }: UserBalanceGridProps): ReactEl
           <span className="min-[375px]:hidden">Connect Wallet</span>
         </button>
       )}
+    </div>
+  )
+}
+
+// Compact key metrics row for mobile - positioned above chart
+interface MobileKeyMetricsProps {
+  currentVault: TYDaemonVault
+}
+
+export function MobileKeyMetrics({ currentVault }: MobileKeyMetricsProps): ReactElement {
+  const { address, isActive } = useWeb3()
+  const { getToken } = useWallet()
+  const apyData = useVaultApyData(currentVault)
+
+  const forwardAPY =
+    apyData.mode === 'katana' && apyData.katanaEstApr !== undefined
+      ? apyData.katanaEstApr
+      : currentVault.apr.forwardAPR.netAPR
+
+  const vaultToken = getToken({
+    address: currentVault.address,
+    chainID: currentVault.chainID
+  })
+
+  const hasVaultBalance = isActive && address && vaultToken?.balance && vaultToken.balance.raw > 0n
+  const depositValue = hasVaultBalance && vaultToken.value ? formatUSD(vaultToken.value) : '$0.00'
+
+  return (
+    <div className="md:hidden flex gap-1.5 min-[375px]:gap-2">
+      <CompactStatBox label="Deposited" value={depositValue} />
+      <CompactStatBox label="TVL" value={formatUSD(currentVault.tvl.tvl)} />
+      <CompactStatBox label="Fwd. APY" value={formatPercent(forwardAPY)} />
     </div>
   )
 }

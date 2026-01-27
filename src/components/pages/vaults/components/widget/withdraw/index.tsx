@@ -5,7 +5,7 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import type { TNormalizedBN } from '@shared/types'
-import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import { formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
@@ -21,7 +21,7 @@ import { useWithdrawNotifications } from './useWithdrawNotifications'
 import { WithdrawDetails } from './WithdrawDetails'
 import { WithdrawDetailsOverlay } from './WithdrawDetailsOverlay'
 
-export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
+export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean }> = ({
   vaultAddress,
   assetAddress,
   stakingAddress,
@@ -376,7 +376,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   // ============================================================================
   if (isLoadingVaultData) {
     return (
-      <div className="p-6 flex items-center justify-center h-[317px]">
+      <div className="flex items-center justify-center h-[317px]">
         <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
       </div>
     )
@@ -387,119 +387,113 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps> = ({
   // ============================================================================
   return (
     <div className="flex flex-col relative border border-border rounded-lg h-full">
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 p-4 gap-6">
         {/* Withdraw From Selector */}
         {hasBothBalances && <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />}
 
         {/* Amount Section */}
-        <div className={cl('p-6')}>
-          <div className="flex flex-col gap-4">
-            <InputTokenAmount
-              input={withdrawInput}
-              title="Amount"
-              placeholder="0.00"
-              balance={totalBalanceInUnderlying.raw}
-              decimals={assetToken?.decimals ?? 18}
-              symbol={assetToken?.symbol || 'tokens'}
-              disabled={!!hasBothBalances && !withdrawalSource}
-              errorMessage={withdrawError || undefined}
-              inputTokenUsdPrice={assetTokenPrice}
-              outputTokenUsdPrice={outputTokenPrice}
-              tokenAddress={assetToken?.address}
-              tokenChainId={assetToken?.chainID}
-              showTokenSelector={withdrawToken === assetAddress}
-              onTokenSelectorClick={() => setShowTokenSelector(true)}
-              onInputChange={(value: bigint) => {
-                if (value === totalBalanceInUnderlying.raw) {
-                  const exactAmount = formatUnits(totalBalanceInUnderlying.raw, assetToken?.decimals ?? 18)
-                  withdrawInput[2](exactAmount)
-                }
-              }}
-              zapToken={zapToken}
-              onRemoveZap={() => {
-                setSelectedToken(assetAddress)
-                setSelectedChainId(chainId)
-              }}
-              zapNotificationText={
-                isUnstake
-                  ? 'This transaction will unstake'
-                  : withdrawToken !== assetAddress
-                    ? '⚡ This transaction will use Enso to Zap to:'
-                    : undefined
+        <div className="flex flex-col gap-4">
+          <InputTokenAmount
+            input={withdrawInput}
+            title="Amount"
+            placeholder="0.00"
+            balance={totalBalanceInUnderlying.raw}
+            decimals={assetToken?.decimals ?? 18}
+            symbol={assetToken?.symbol || 'tokens'}
+            disabled={!!hasBothBalances && !withdrawalSource}
+            errorMessage={withdrawError || undefined}
+            inputTokenUsdPrice={assetTokenPrice}
+            outputTokenUsdPrice={outputTokenPrice}
+            tokenAddress={assetToken?.address}
+            tokenChainId={assetToken?.chainID}
+            showTokenSelector={withdrawToken === assetAddress}
+            onTokenSelectorClick={() => setShowTokenSelector(true)}
+            onInputChange={(value: bigint) => {
+              if (value === totalBalanceInUnderlying.raw) {
+                const exactAmount = formatUnits(totalBalanceInUnderlying.raw, assetToken?.decimals ?? 18)
+                withdrawInput[2](exactAmount)
               }
-            />
-          </div>
-        </div>
-
-        <div className="mt-auto">
-          {/* Details Section */}
-          <WithdrawDetails
-            actionLabel={actionLabel}
-            requiredShares={requiredShares}
-            sharesDecimals={sharesDecimals}
-            isLoadingQuote={activeFlow.periphery.isLoadingRoute}
-            expectedOut={activeFlow.periphery.expectedOut}
-            outputDecimals={outputToken?.decimals ?? 18}
-            outputSymbol={outputToken?.symbol}
-            showSwapRow={withdrawToken !== assetAddress && !isUnstake}
-            withdrawAmountSimple={withdrawAmount.formValue}
-            assetSymbol={assetToken?.symbol}
-            routeType={routeType}
-            onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
-            allowance={showApprove ? activeFlow.periphery.allowance : undefined}
-            allowanceTokenDecimals={showApprove ? (vault?.decimals ?? 18) : undefined}
-            allowanceTokenSymbol={showApprove ? vault?.symbol : undefined}
-            onAllowanceClick={
-              showApprove && activeFlow.periphery.allowance > 0n && pricePerShare > 0n
-                ? () => {
-                    // Convert vault shares allowance to underlying asset amount
-                    const underlyingAmount =
-                      (activeFlow.periphery.allowance * pricePerShare) / 10n ** BigInt(vault?.decimals ?? 18)
-                    setWithdrawInput(formatUnits(underlyingAmount, assetToken?.decimals ?? 18))
-                  }
-                : undefined
+            }}
+            zapToken={zapToken}
+            onRemoveZap={() => {
+              setSelectedToken(assetAddress)
+              setSelectedChainId(chainId)
+            }}
+            zapNotificationText={
+              isUnstake
+                ? 'This transaction will unstake'
+                : withdrawToken !== assetAddress
+                  ? '⚡ This transaction will use Enso to Zap to:'
+                  : undefined
             }
           />
-
-          {/* Action Button */}
-          <div className="px-6 pt-6 pb-6">
-            {!account ? (
-              <Button
-                onClick={openLoginModal}
-                variant="filled"
-                className="w-full"
-                classNameOverride="yearn--button--nextgen w-full"
-              >
-                Connect Wallet
-              </Button>
-            ) : (
-              <Button
-                onClick={() => setShowTransactionOverlay(true)}
-                variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-                isBusy={activeFlow.periphery.isLoadingRoute}
-                disabled={
-                  !!withdrawError ||
-                  withdrawAmount.bn === 0n ||
-                  activeFlow.periphery.isLoadingRoute ||
-                  withdrawAmount.isDebouncing ||
-                  (showApprove &&
-                    !activeFlow.periphery.isAllowanceSufficient &&
-                    !activeFlow.periphery.prepareApproveEnabled) ||
-                  ((!showApprove || activeFlow.periphery.isAllowanceSufficient) &&
-                    !activeFlow.periphery.prepareWithdrawEnabled)
-                }
-                className="w-full"
-                classNameOverride="yearn--button--nextgen w-full"
-              >
-                {activeFlow.periphery.isLoadingRoute
-                  ? 'Fetching quote'
-                  : showApprove && !activeFlow.periphery.isAllowanceSufficient
-                    ? `Approve & ${transactionName}`
-                    : transactionName}
-              </Button>
-            )}
-          </div>
         </div>
+
+        {/* Details Section */}
+        <WithdrawDetails
+          actionLabel={actionLabel}
+          requiredShares={requiredShares}
+          sharesDecimals={sharesDecimals}
+          isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+          expectedOut={activeFlow.periphery.expectedOut}
+          outputDecimals={outputToken?.decimals ?? 18}
+          outputSymbol={outputToken?.symbol}
+          showSwapRow={withdrawToken !== assetAddress && !isUnstake}
+          withdrawAmountSimple={withdrawAmount.formValue}
+          assetSymbol={assetToken?.symbol}
+          routeType={routeType}
+          onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
+          allowance={showApprove ? activeFlow.periphery.allowance : undefined}
+          allowanceTokenDecimals={showApprove ? (vault?.decimals ?? 18) : undefined}
+          allowanceTokenSymbol={showApprove ? vault?.symbol : undefined}
+          onAllowanceClick={
+            showApprove && activeFlow.periphery.allowance > 0n && pricePerShare > 0n
+              ? () => {
+                  // Convert vault shares allowance to underlying asset amount
+                  const underlyingAmount =
+                    (activeFlow.periphery.allowance * pricePerShare) / 10n ** BigInt(vault?.decimals ?? 18)
+                  setWithdrawInput(formatUnits(underlyingAmount, assetToken?.decimals ?? 18))
+                }
+              : undefined
+          }
+        />
+
+        {/* Action Button */}
+        {!account ? (
+          <Button
+            onClick={openLoginModal}
+            variant="filled"
+            className="w-full"
+            classNameOverride="yearn--button--nextgen w-full"
+          >
+            Connect Wallet
+          </Button>
+        ) : (
+          <Button
+            onClick={() => setShowTransactionOverlay(true)}
+            variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
+            isBusy={activeFlow.periphery.isLoadingRoute}
+            disabled={
+              !!withdrawError ||
+              withdrawAmount.bn === 0n ||
+              activeFlow.periphery.isLoadingRoute ||
+              withdrawAmount.isDebouncing ||
+              (showApprove &&
+                !activeFlow.periphery.isAllowanceSufficient &&
+                !activeFlow.periphery.prepareApproveEnabled) ||
+              ((!showApprove || activeFlow.periphery.isAllowanceSufficient) &&
+                !activeFlow.periphery.prepareWithdrawEnabled)
+            }
+            className="w-full"
+            classNameOverride="yearn--button--nextgen w-full"
+          >
+            {activeFlow.periphery.isLoadingRoute
+              ? 'Fetching quote'
+              : showApprove && !activeFlow.periphery.isAllowanceSufficient
+                ? `Approve & ${transactionName}`
+                : transactionName}
+          </Button>
+        )}
       </div>
 
       {/* Transaction Overlay */}
