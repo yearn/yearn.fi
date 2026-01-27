@@ -302,6 +302,7 @@ function Index(): ReactElement | null {
   const isWidgetPanelActive = !isWidgetWalletOpen
 
   const openWidgetRewards = (): void => {
+    updateCollapsedWidgetHeight()
     setIsWidgetRewardsOpen(true)
     setIsWidgetSettingsOpen(false)
   }
@@ -314,15 +315,22 @@ function Index(): ReactElement | null {
     if (isWidgetRewardsOpen) {
       return
     }
-    const rewardsElement = widgetRewardsRef.current
-    if (!rewardsElement) {
+    const container = widgetContainerRef.current
+    if (!container || container.offsetParent === null) {
       return
     }
-    const nextHeight = rewardsElement.offsetTop + rewardsElement.offsetHeight
+    const stackElement = widgetStackRef.current
+    if (!stackElement) {
+      return
+    }
+    const nextHeight = stackElement.getBoundingClientRect().height
     setCollapsedWidgetHeight((prev) => (prev && Math.abs(prev - nextHeight) < 1 ? prev : nextHeight))
   }, [isWidgetRewardsOpen])
 
   const toggleWidgetCollapse = (): void => {
+    if (!isWidgetRewardsOpen) {
+      updateCollapsedWidgetHeight()
+    }
     setIsWidgetRewardsOpen((prev) => !prev)
     setIsWidgetSettingsOpen(false)
   }
@@ -364,11 +372,8 @@ function Index(): ReactElement | null {
       return
     }
     const observer = new ResizeObserver(() => updateCollapsedWidgetHeight())
-    if (widgetPrimaryRef.current) {
-      observer.observe(widgetPrimaryRef.current)
-    }
-    if (widgetRewardsRef.current) {
-      observer.observe(widgetRewardsRef.current)
+    if (widgetStackRef.current) {
+      observer.observe(widgetStackRef.current)
     }
     return () => observer.disconnect()
   }, [updateCollapsedWidgetHeight])
