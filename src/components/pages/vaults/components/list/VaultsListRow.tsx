@@ -1,7 +1,14 @@
 import Link from '@components/Link'
+import { APYDetailsModal } from '@pages/vaults/components/table/APYDetailsModal'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
+import {
+  YvUsdApyDetailsContent,
+  YvUsdApyTooltipContent,
+  YvUsdTvlTooltipContent
+} from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
   getCategoryDescription,
@@ -12,8 +19,11 @@ import {
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
+import { isYvUsdVault, YVUSD_LOCK_BONUS_APY, YVUSD_LOCK_TVL_MULTIPLIER } from '@pages/vaults/utils/yvUsd'
 import { useMediaQuery } from '@react-hookz/web'
+import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { Tooltip } from '@shared/components/Tooltip'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -22,7 +32,7 @@ import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { cl, formatAmount, formatTvlDisplay, toAddress, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
-import type { ReactElement } from 'react'
+import type { MouseEvent, ReactElement } from 'react'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
@@ -101,6 +111,7 @@ export function VaultsListRow({
   const [isExpanded, setIsExpanded] = useState(false)
   const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('strategies')
   const [interactiveHoverCount, setInteractiveHoverCount] = useState(0)
+  const [isYvUsdModalOpen, setIsYvUsdModalOpen] = useState(false)
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
@@ -131,6 +142,42 @@ export function VaultsListRow({
   const isHoveringInteractive = interactiveHoverCount > 0
   const handleInteractiveHoverChange = (isHovering: boolean): void => {
     setInteractiveHoverCount((count) => Math.max(0, count + (isHovering ? 1 : -1)))
+  }
+  const isYvUsd = isYvUsdVault(currentVault)
+  const { metrics: yvUsdMetrics } = useYvUsdVaults()
+  const resolvedYvUsdMetrics = useMemo(() => {
+    if (!isYvUsd) return null
+    const unlockedApy =
+      yvUsdMetrics?.unlocked.apy ?? (currentVault.apr?.forwardAPR?.netAPR || currentVault.apr?.netAPR || 0)
+    const unlockedTvl = yvUsdMetrics?.unlocked.tvl ?? currentVault.tvl?.tvl ?? 0
+    const lockedTvl = yvUsdMetrics?.locked.tvl ?? unlockedTvl * YVUSD_LOCK_TVL_MULTIPLIER
+    return {
+      unlockedApy,
+      lockedApy: yvUsdMetrics?.locked.apy ?? unlockedApy + YVUSD_LOCK_BONUS_APY,
+      unlockedTvl,
+      lockedTvl,
+      combinedTvl: currentVault.tvl?.tvl ?? unlockedTvl + lockedTvl
+    }
+  }, [currentVault.apr, currentVault.tvl, isYvUsd, yvUsdMetrics])
+
+  const yvUsdApyTooltip = resolvedYvUsdMetrics ? (
+    <YvUsdApyTooltipContent
+      lockedValue={resolvedYvUsdMetrics.lockedApy}
+      unlockedValue={resolvedYvUsdMetrics.unlockedApy}
+    />
+  ) : undefined
+
+  const yvUsdTvlTooltip = resolvedYvUsdMetrics ? (
+    <YvUsdTvlTooltipContent
+      lockedValue={resolvedYvUsdMetrics.lockedTvl}
+      unlockedValue={resolvedYvUsdMetrics.unlockedTvl}
+    />
+  ) : undefined
+
+  const handleYvUsdApyClick = (event: MouseEvent<HTMLButtonElement>): void => {
+    event.stopPropagation()
+    event.preventDefault()
+    setIsYvUsdModalOpen(true)
   }
 
   const isHiddenVault = Boolean(flags?.isHidden)
@@ -460,15 +507,44 @@ export function VaultsListRow({
             <div className={'grid w-full grid-cols-2 gap-2 text-sm text-text-secondary'}>
               <div className={'flex items-baseline justify-center gap-2 whitespace-nowrap'}>
                 <span className={'text-text-primary/60'}>{'Est. APY:'}</span>
-                <VaultForwardAPY
-                  currentVault={currentVault}
-                  className={'flex-row items-center text-left'}
-                  valueClassName={'text-lg font-semibold'}
-                  showSubline={false}
-                  displayVariant={apyDisplayVariant}
-                  showBoostDetails={showBoostDetails}
-                  onInteractiveHoverChange={handleInteractiveHoverChange}
-                />
+                {resolvedYvUsdMetrics ? (
+                  <Tooltip
+                    className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
+                    openDelayMs={150}
+                    tooltip={yvUsdApyTooltip ?? ''}
+                    align={'center'}
+                    zIndex={90}
+                  >
+                    <button
+                      type={'button'}
+                      onClick={handleYvUsdApyClick}
+                      onMouseEnter={() => handleInteractiveHoverChange(true)}
+                      onMouseLeave={() => handleInteractiveHoverChange(false)}
+                      className={'inline-flex items-center gap-1 text-left'}
+                      aria-label={'View yvUSD APY details'}
+                    >
+                      <span className={'text-[10px] uppercase tracking-wide text-text-secondary'}>{'Up to'}</span>
+                      <span className={'text-lg font-semibold text-text-primary font-number'}>
+                        <RenderAmount
+                          value={resolvedYvUsdMetrics.lockedApy}
+                          symbol={'percent'}
+                          decimals={6}
+                          options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
+                        />
+                      </span>
+                    </button>
+                  </Tooltip>
+                ) : (
+                  <VaultForwardAPY
+                    currentVault={currentVault}
+                    className={'flex-row items-center text-left'}
+                    valueClassName={'text-lg font-semibold'}
+                    showSubline={false}
+                    displayVariant={apyDisplayVariant}
+                    showBoostDetails={showBoostDetails}
+                    onInteractiveHoverChange={handleInteractiveHoverChange}
+                  />
+                )}
               </div>
               <div className={'flex items-baseline justify-center gap-2 whitespace-nowrap'}>
                 <span className={'text-text-primary/60'}>
@@ -478,6 +554,26 @@ export function VaultsListRow({
                   <span className={'text-lg font-semibold text-text-primary font-number'}>
                     {showHoldingsValue ? formatTvlDisplay(holdingsValue) : '—'}
                   </span>
+                ) : resolvedYvUsdMetrics ? (
+                  <Tooltip
+                    className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
+                    openDelayMs={150}
+                    toggleOnClick={false}
+                    tooltip={yvUsdTvlTooltip ?? ''}
+                  >
+                    <span className={'text-lg font-semibold text-text-primary font-number'}>
+                      <RenderAmount
+                        value={resolvedYvUsdMetrics.combinedTvl}
+                        symbol={'USD'}
+                        decimals={0}
+                        options={{
+                          shouldCompactValue: true,
+                          maximumFractionDigits: 2,
+                          minimumFractionDigits: 0
+                        }}
+                      />
+                    </span>
+                  </Tooltip>
                 ) : (
                   <VaultTVL
                     currentVault={currentVault}
@@ -494,20 +590,81 @@ export function VaultsListRow({
           className={cl(rightColumnSpan, 'z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:items-center', rightGridColumns)}
         >
           <div className={cl('yearn--table-data-section-item', apyColumnSpan)} datatype={'number'}>
-            <VaultForwardAPY
-              currentVault={currentVault}
-              showSubline={false}
-              showSublineTooltip
-              displayVariant={apyDisplayVariant}
-              showBoostDetails={showBoostDetails}
-              onInteractiveHoverChange={handleInteractiveHoverChange}
-            />
+            {resolvedYvUsdMetrics ? (
+              <div
+                className={'flex justify-end text-right'}
+                onMouseEnter={() => handleInteractiveHoverChange(true)}
+                onMouseLeave={() => handleInteractiveHoverChange(false)}
+              >
+                <Tooltip
+                  className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
+                  openDelayMs={150}
+                  tooltip={yvUsdApyTooltip ?? ''}
+                  align={'center'}
+                  zIndex={90}
+                >
+                  <button
+                    type={'button'}
+                    onClick={handleYvUsdApyClick}
+                    className={'inline-flex items-center gap-1 text-right'}
+                    aria-label={'View yvUSD APY details'}
+                  >
+                    <span className={'text-[10px] uppercase tracking-wide text-text-secondary'}>{'Up to'}</span>
+                    <span className={'yearn--table-data-section-item-value text-text-primary'}>
+                      <RenderAmount
+                        value={resolvedYvUsdMetrics.lockedApy}
+                        symbol={'percent'}
+                        decimals={6}
+                        options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
+                      />
+                    </span>
+                  </button>
+                </Tooltip>
+              </div>
+            ) : (
+              <VaultForwardAPY
+                currentVault={currentVault}
+                showSubline={false}
+                showSublineTooltip
+                displayVariant={apyDisplayVariant}
+                showBoostDetails={showBoostDetails}
+                onInteractiveHoverChange={handleInteractiveHoverChange}
+              />
+            )}
           </div>
           {/* TVL */}
           <div className={cl('yearn--table-data-section-item', tvlColumnSpan)} datatype={'number'}>
-            <div className={'flex justify-end text-right'}>
-              <VaultTVL currentVault={currentVault} showNativeTooltip tooltipClassName={'md:justify-end'} />
-            </div>
+            {resolvedYvUsdMetrics ? (
+              <div
+                className={'flex justify-end text-right'}
+                onMouseEnter={() => handleInteractiveHoverChange(true)}
+                onMouseLeave={() => handleInteractiveHoverChange(false)}
+              >
+                <Tooltip
+                  className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
+                  openDelayMs={150}
+                  toggleOnClick={false}
+                  tooltip={yvUsdTvlTooltip ?? ''}
+                >
+                  <p className={'yearn--table-data-section-item-value'}>
+                    <RenderAmount
+                      value={resolvedYvUsdMetrics.combinedTvl}
+                      symbol={'USD'}
+                      decimals={0}
+                      options={{
+                        shouldCompactValue: true,
+                        maximumFractionDigits: 2,
+                        minimumFractionDigits: 0
+                      }}
+                    />
+                  </p>
+                </Tooltip>
+              </div>
+            ) : (
+              <div className={'flex justify-end text-right'}>
+                <VaultTVL currentVault={currentVault} showNativeTooltip tooltipClassName={'md:justify-end'} />
+              </div>
+            )}
           </div>
           {!showHoldingsColumn ? <div className={'col-span-1'} /> : null}
           {showHoldingsColumn ? (
@@ -530,6 +687,14 @@ export function VaultsListRow({
             isHidden={isHiddenVault}
           />
         </Suspense>
+      ) : null}
+      {isYvUsd && resolvedYvUsdMetrics ? (
+        <APYDetailsModal isOpen={isYvUsdModalOpen} onClose={() => setIsYvUsdModalOpen(false)} title={'yvUSD APY'}>
+          <YvUsdApyDetailsContent
+            lockedValue={resolvedYvUsdMetrics.lockedApy}
+            unlockedValue={resolvedYvUsdMetrics.unlockedApy}
+          />
+        </APYDetailsModal>
       ) : null}
     </div>
   )

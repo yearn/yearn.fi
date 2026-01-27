@@ -9,14 +9,17 @@ import { VaultDetailsHeader } from '@pages/vaults/components/detail/VaultDetails
 import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSection'
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
+import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
 import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards, WidgetRewardsPanel } from '@pages/vaults/components/widget/rewards'
 import { SettingsPanel } from '@pages/vaults/components/widget/SettingsPanel'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
 import { fetchYBoldVault } from '@pages/vaults/utils/handleYBold'
+import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -68,6 +71,8 @@ function Index(): ReactElement | null {
   const { yDaemonBaseUri } = useYDaemonBaseURI({
     chainID: chainId
   })
+  const { listVault: yvUsdVault, isLoading: isLoadingYvUsd } = useYvUsdVaults()
+  const isYvUsd = isYvUsdAddress(params.address)
 
   // Use vault address as key to reset state
   const vaultKey = `${params.chainID}-${params.address}`
@@ -176,12 +181,12 @@ function Index(): ReactElement | null {
 
   // Create a stable endpoint that includes the vault key to force SWR to refetch
   const endpoint = useMemo(() => {
-    if (!params.address || !yDaemonBaseUri) return null
+    if (isYvUsd || !params.address || !yDaemonBaseUri) return null
     return `${yDaemonBaseUri}/vaults/${toAddress(params.address as string)}?${new URLSearchParams({
       strategiesDetails: 'withDetails',
       strategiesCondition: 'inQueue'
     })}`
-  }, [params.address, yDaemonBaseUri])
+  }, [isYvUsd, params.address, yDaemonBaseUri])
 
   const {
     data: vault,
@@ -208,12 +213,14 @@ function Index(): ReactElement | null {
   // TODO: remove this workaround when possible
   // <WORKAROUND>
   const currentVault = useMemo(() => {
+    if (isYvUsd) return yvUsdVault
     if (overrideVault) return overrideVault
     if (_currentVault) return _currentVault
     return undefined
-  }, [overrideVault, _currentVault])
+  }, [isYvUsd, yvUsdVault, overrideVault, _currentVault])
 
   useEffect(() => {
+    if (isYvUsd) return
     if (!hasFetchedOverride && _currentVault && _currentVault.address) {
       setHasFetchedOverride(true)
       fetchYBoldVault(yDaemonBaseUri, _currentVault).then((_vault) => {
@@ -222,15 +229,16 @@ function Index(): ReactElement | null {
         }
       })
     }
-  }, [yDaemonBaseUri, _currentVault, hasFetchedOverride])
+  }, [isYvUsd, yDaemonBaseUri, _currentVault, hasFetchedOverride])
   // </WORKAROUND>
 
   useEffect((): void => {
+    if (isYvUsd) return
     if (vault && (!_currentVault || vault.address !== _currentVault.address)) {
       setCurrentVault(vault)
       setIsInit(true)
     }
-  }, [vault, _currentVault])
+  }, [isYvUsd, vault, _currentVault])
 
   useEffect((): void => {
     if (address && isActive) {
@@ -364,7 +372,10 @@ function Index(): ReactElement | null {
         key: 'charts' as const,
         shouldRender: Number.isInteger(chainId),
         ref: sectionRefs.charts,
-        content: (
+
+        content: isYvUsd ? (
+          <YvUsdChartsSection chartHeightPx={180} chartHeightMdPx={230} />
+        ) : (
           <VaultChartsSection
             chainId={chainId}
             vaultAddress={currentVault.address}
@@ -398,7 +409,7 @@ function Index(): ReactElement | null {
         content: <VaultInfoSection currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
       }
     ]
-  }, [chainId, currentVault, sectionRefs, yDaemonBaseUri])
+  }, [chainId, currentVault, isYvUsd, sectionRefs, yDaemonBaseUri])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const sectionTabs = renderableSections.map((section) => ({
@@ -570,7 +581,10 @@ function Index(): ReactElement | null {
     }
   }, [isMobileDrawerOpen, mobileDrawerAction])
 
-  if (isLoadingVault || !params.address || !isInit || !yDaemonBaseUri) {
+  const isPageLoading = isYvUsd ? isLoadingYvUsd : isLoadingVault
+  const isPageInit = isYvUsd ? Boolean(yvUsdVault) : isInit
+
+  if (isPageLoading || !params.address || !isPageInit || !yDaemonBaseUri) {
     return (
       <div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
         <div className={'mt-[20%] flex h-10 items-center justify-center'}>
