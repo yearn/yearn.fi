@@ -1,4 +1,3 @@
-import { NotificationsCurtain } from '@pages/vaults/components/notifications/NotificationsCurtain'
 import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import type { TNotification, TNotificationStatus, TNotificationsContext } from '@shared/types/notifications'
 import type React from 'react'
@@ -6,7 +5,6 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import { useIndexedDBStore } from 'use-indexeddb'
 
 const defaultProps: TNotificationsContext = {
-  shouldOpenCurtain: false,
   cachedEntries: [],
   notificationStatus: null,
   isLoading: true,
@@ -14,8 +12,7 @@ const defaultProps: TNotificationsContext = {
   setNotificationStatus: (): void => undefined,
   deleteByID: async (): Promise<void> => undefined,
   updateEntry: async (): Promise<void> => undefined,
-  addNotification: async (): Promise<number> => 0,
-  setShouldOpenCurtain: (): void => undefined
+  addNotification: async (): Promise<number> => 0
 }
 
 const NotificationsContext = createContext<TNotificationsContext>(defaultProps)
@@ -30,7 +27,6 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
    *************************************************************************/
   const [notificationStatus, setNotificationStatus] = useState<TNotificationStatus | null>(null)
 
-  const [shouldOpenCurtain, setShouldOpenCurtain] = useState(false)
   const { add, getAll, update, deleteByID, getByID } = useIndexedDBStore<TNotification>('notifications')
 
   /************************************************************************************************
@@ -42,7 +38,7 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
    * of the notification list when needed (e.g., after adding or updating a notification).
    ************************************************************************************************/
   useAsyncTrigger(async (): Promise<void> => {
-    entryNonce
+    void entryNonce
     setIsLoading(true)
     setError(null)
     try {
@@ -131,7 +127,6 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
    *************************************************************************/
   const contextValue = useMemo(
     (): TNotificationsContext => ({
-      shouldOpenCurtain,
       cachedEntries,
       isLoading,
       error,
@@ -139,27 +134,12 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
       updateEntry,
       addNotification,
       notificationStatus,
-      setNotificationStatus,
-      setShouldOpenCurtain
+      setNotificationStatus
     }),
-    [
-      shouldOpenCurtain,
-      cachedEntries,
-      isLoading,
-      error,
-      deleteByIDWithErrorHandling,
-      updateEntry,
-      addNotification,
-      notificationStatus
-    ]
+    [cachedEntries, isLoading, error, deleteByIDWithErrorHandling, updateEntry, addNotification, notificationStatus]
   )
 
-  return (
-    <NotificationsContext.Provider value={contextValue}>
-      {children}
-      <NotificationsCurtain variant={'v3'} setShouldOpenCurtain={setShouldOpenCurtain} isOpen={shouldOpenCurtain} />
-    </NotificationsContext.Provider>
-  )
+  return <NotificationsContext.Provider value={contextValue}>{children}</NotificationsContext.Provider>
 }
 
 export const useNotifications = (): TNotificationsContext => {

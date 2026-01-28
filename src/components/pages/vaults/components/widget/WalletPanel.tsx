@@ -15,6 +15,7 @@ import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 
 type WalletPanelProps = {
   isActive: boolean
@@ -52,7 +53,8 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   onSelectZapToken
 }) => {
   const { address, isActive: isWalletActive, openLoginModal } = useWeb3()
-  const { cachedEntries, setShouldOpenCurtain } = useNotifications()
+  const { cachedEntries } = useNotifications()
+  const navigate = useNavigate()
   const { balances } = useWallet()
   const { getPrice } = useYearn()
   const [activeTab, setActiveTab] = useState<WalletTabKey>('balances')
@@ -157,7 +159,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
       return hasRelatedAddress && chainMatches
     })
 
-    return filtered.slice().reverse().slice(0, 3)
+    return filtered.toReversed().slice(0, 3)
   }, [address, cachedEntries, relatedAddresses, chainId])
 
   const zapTokens = useMemo(() => {
@@ -188,13 +190,13 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   return (
     <div
       className={cl(
-        'bg-app rounded-b-lg overflow-hidden relative w-full min-w-0 flex-1',
+        'bg-app rounded-b-lg overflow-hidden relative w-full min-w-0 flex-1 min-h-0 max-h-full',
         isPanelActive ? 'flex flex-col' : 'hidden'
       )}
       aria-hidden={!isPanelActive}
     >
       <div className="bg-surface border border-border rounded-lg flex flex-col flex-1 min-h-0">
-        <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
+        <div className="flex items-center justify-between gap-3 px-6 py-3">
           <h3 className="text-base font-semibold text-text-primary">Wallet</h3>
           <div className="flex items-center justify-end ml-auto">
             <div className="flex items-center gap-0.5 md:gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
@@ -217,7 +219,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
             </div>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 p-6 pt-3" data-scroll-priority>
+        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 max-h-full p-6 pt-3" data-scroll-priority>
           <div className="space-y-6">
             {!isWalletActive || !address ? (
               <div className="flex flex-col items-center justify-center gap-3 text-center py-8">
@@ -249,16 +251,12 @@ export const WalletPanel: FC<WalletPanelProps> = ({
                         </div>
                         <div className="flex items-center justify-between gap-4">
                           <span className="text-text-secondary ">
-                            {showTotalShares
-                              ? 'Deposited shares'
-                              : hasStakedShares
-                                ? 'Staked shares'
-                                : 'Deposited shares'}
+                            {hasStakedShares && !showTotalShares ? 'Staked shares' : 'Deposited shares'}
                           </span>
                           <span className="text-text-primary text-base font-semibold">
-                            {showTotalShares || !hasStakedShares ? vaultBalanceLabel : stakingBalanceLabel}
+                            {hasStakedShares && !showTotalShares ? stakingBalanceLabel : vaultBalanceLabel}
                             <span className="ml-1 text-xs text-text-secondary font-medium">
-                              ({formatUSD(showTotalShares || !hasStakedShares ? vaultSharesUsd : stakedSharesUsd)})
+                              ({formatUSD(hasStakedShares && !showTotalShares ? stakedSharesUsd : vaultSharesUsd)})
                             </span>
                           </span>
                         </div>
@@ -350,7 +348,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
                       <h4 className="text-sm font-semibold text-text-primary">Recent transactions</h4>
                       <button
                         type="button"
-                        onClick={() => setShouldOpenCurtain(true)}
+                        onClick={() => navigate('/portfolio?tab=activity')}
                         className="rounded-md border border-border bg-surface-secondary px-2.5 py-1 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
                       >
                         All activity

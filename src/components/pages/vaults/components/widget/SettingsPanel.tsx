@@ -1,12 +1,15 @@
 import { useYearn } from '@shared/contexts/useYearn'
+import { IconCross } from '@shared/icons/IconCross'
 import { cl } from '@shared/utils'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 
 type SettingsPanelProps = {
   isActive: boolean
+  onClose?: () => void
+  variant?: 'panel' | 'overlay'
 }
 
-export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive }) => {
+export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive, onClose, variant = 'panel' }) => {
   const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const [localSlippage, setLocalSlippage] = useState(zapSlippage)
   const slippageId = useId()
@@ -32,17 +35,39 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive }) => {
     wasActiveRef.current = isActive
   }, [commitChanges, isActive])
 
+  if (!isActive) {
+    return null
+  }
+
+  const panelClass =
+    variant === 'overlay'
+      ? 'bg-surface flex flex-col flex-1 min-h-0'
+      : 'bg-surface border border-border rounded-lg flex flex-col flex-1 min-h-0'
+
   return (
     <div
       className={cl(
-        'bg-app rounded-b-lg overflow-hidden relative w-full min-w-0 flex-1',
-        isActive ? 'flex flex-col' : 'hidden'
+        variant === 'overlay'
+          ? 'absolute inset-0 z-20 bg-surface border border-border rounded-lg overflow-hidden flex flex-col'
+          : 'bg-app rounded-b-lg overflow-hidden relative w-full min-w-0 flex-1 flex flex-col'
       )}
-      aria-hidden={!isActive}
     >
-      <div className="bg-surface border border-border rounded-lg flex flex-col flex-1 min-h-0">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h3 className="text-base font-semibold text-text-primary">Transaction Settings</h3>
+      <div className={panelClass}>
+        <div className="flex items-start justify-between gap-4 px-6 py-4 border-b border-border">
+          <div className="flex flex-col gap-1">
+            <h3 className="text-base font-semibold text-text-primary">Transaction Settings</h3>
+            <p className="text-xs text-text-secondary">Applies site-wide across all vaults.</p>
+          </div>
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close settings"
+              className="flex size-7 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
+            >
+              <IconCross className="size-3.5" />
+            </button>
+          ) : null}
         </div>
         <div className="flex-1 overflow-y-auto min-h-0 p-6 pt-3">
           <div className="space-y-4">
@@ -104,7 +129,7 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive }) => {
               <div className="flex items-center justify-between pt-2 border-t border-border">
                 <div className="space-y-0.5">
                   <label htmlFor={maximizeYieldId} className="text-sm text-text-primary">
-                    Maximize Yield
+                    Stake Automatically
                   </label>
                   <p className="text-xs text-text-secondary">Automatically stake to maximize APY.</p>
                   <p className="text-xs text-text-secondary">No assets will be locked.</p>

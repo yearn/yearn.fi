@@ -13,6 +13,9 @@ interface Props {
   mode?: ActionType
   onModeChange?: (mode: ActionType) => void
   showTabs?: boolean
+  onOpenSettings?: () => void
+  isSettingsOpen?: boolean
+  hideSettings?: boolean
 }
 
 export function YvUsdWidget({
@@ -21,7 +24,10 @@ export function YvUsdWidget({
   handleSuccess,
   mode: controlledMode,
   onModeChange,
-  showTabs = true
+  showTabs = true,
+  onOpenSettings,
+  isSettingsOpen,
+  hideSettings
 }: Props): ReactElement {
   const [internalMode, setInternalMode] = useState<ActionType>(ActionType.Deposit)
   const mode = controlledMode ?? internalMode
@@ -31,7 +37,14 @@ export function YvUsdWidget({
     switch (mode) {
       case ActionType.Deposit:
         return (
-          <YvUsdDeposit chainId={chainId} assetAddress={currentVault.token.address} onDepositSuccess={handleSuccess} />
+          <YvUsdDeposit
+            chainId={chainId}
+            assetAddress={currentVault.token.address}
+            onDepositSuccess={handleSuccess}
+            onOpenSettings={onOpenSettings}
+            isSettingsOpen={isSettingsOpen}
+            hideSettings={hideSettings}
+          />
         )
       case ActionType.Withdraw:
         return (
@@ -39,12 +52,15 @@ export function YvUsdWidget({
             chainId={chainId}
             assetAddress={currentVault.token.address}
             onWithdrawSuccess={handleSuccess}
+            onOpenSettings={onOpenSettings}
+            isSettingsOpen={isSettingsOpen}
+            hideSettings={hideSettings}
           />
         )
       default:
         return null
     }
-  }, [mode, chainId, currentVault.token.address, handleSuccess])
+  }, [mode, chainId, currentVault.token.address, handleSuccess, onOpenSettings, isSettingsOpen, hideSettings])
 
   return (
     <div className="flex flex-col gap-0 w-full h-full">

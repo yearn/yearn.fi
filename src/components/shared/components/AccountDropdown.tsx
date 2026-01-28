@@ -27,7 +27,7 @@ type TView = 'account' | 'settings'
 function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void; onClose: () => void }): ReactElement {
   const { address, ens, clusters, onDesactivate } = useWeb3()
   const { cumulatedValueInV2Vaults, cumulatedValueInV3Vaults, isLoading: isWalletLoading } = useWallet()
-  const { cachedEntries, setShouldOpenCurtain } = useNotifications()
+  const { cachedEntries } = useNotifications()
   const navigate = useNavigate()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
@@ -56,9 +56,9 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
   }, [onDesactivate, onClose])
 
   const handleViewAllActivity = useCallback(() => {
-    setShouldOpenCurtain(true)
+    navigate('/portfolio?tab=activity')
     onClose()
-  }, [setShouldOpenCurtain, onClose])
+  }, [navigate, onClose])
 
   function formatDate(timestamp?: number): string {
     if (!timestamp) return ''
@@ -169,7 +169,7 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
                 : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
             )}
           >
-            {'View all activity'}
+            {'More transactions'}
             <IconArrowRight className={'size-4'} />
           </button>
         )}

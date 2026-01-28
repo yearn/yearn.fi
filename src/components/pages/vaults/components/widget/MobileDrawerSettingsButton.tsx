@@ -36,8 +36,9 @@ export const MobileDrawerSettingsButton: FC = () => {
     >
       <PopoverContent className="w-full">
         <div className="space-y-4">
-          <div>
-            <h4 className="font-medium mb-3 text-text-primary">Transaction Settings</h4>
+          <div className="space-y-1">
+            <h4 className="font-medium text-text-primary">Transaction Settings</h4>
+            <p className="text-xs text-text-secondary">Applies site-wide across all vaults.</p>
           </div>
 
           <div className="space-y-3">
@@ -97,7 +98,7 @@ export const MobileDrawerSettingsButton: FC = () => {
             <div className="flex items-center justify-between pt-2 border-t border-border">
               <div className="space-y-0.5">
                 <label htmlFor="maximize-yield" className="text-sm text-text-primary">
-                  Maximize Yield
+                  Stake Automatically
                 </label>
                 <p className="text-xs text-text-secondary">Automatically stake to maximize APY.</p>
                 <p className="text-xs text-text-secondary">No assets will be locked.</p>

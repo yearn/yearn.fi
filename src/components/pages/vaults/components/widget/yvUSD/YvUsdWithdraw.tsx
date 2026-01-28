@@ -18,9 +18,19 @@ type Props = {
   chainId: number
   assetAddress: `0x${string}`
   onWithdrawSuccess?: () => void
+  onOpenSettings?: () => void
+  isSettingsOpen?: boolean
+  hideSettings?: boolean
 }
 
-export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Props): ReactElement {
+export function YvUsdWithdraw({
+  chainId,
+  assetAddress,
+  onWithdrawSuccess,
+  onOpenSettings,
+  isSettingsOpen,
+  hideSettings
+}: Props): ReactElement {
   const { address: account } = useAccount()
   const { unlockedVault, lockedVault, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
@@ -130,6 +140,9 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
         chainId={chainId}
         vaultSymbol={activeVariant === 'locked' ? 'yvUSD (Locked)' : 'yvUSD (Unlocked)'}
         handleWithdrawSuccess={onWithdrawSuccess}
+        onOpenSettings={onOpenSettings}
+        isSettingsOpen={isSettingsOpen}
+        hideSettings={hideSettings}
         hideContainerBorder
       />
     </div>

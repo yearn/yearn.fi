@@ -12,9 +12,19 @@ type Props = {
   chainId: number
   assetAddress: `0x${string}`
   onDepositSuccess?: () => void
+  onOpenSettings?: () => void
+  isSettingsOpen?: boolean
+  hideSettings?: boolean
 }
 
-export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props): ReactElement {
+export function YvUsdDeposit({
+  chainId,
+  assetAddress,
+  onDepositSuccess,
+  onOpenSettings,
+  isSettingsOpen,
+  hideSettings
+}: Props): ReactElement {
   const { unlockedVault, lockedVault, metrics, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
 
@@ -85,6 +95,9 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
         vaultAPR={variant === 'locked' ? lockedApr : unlockedApr}
         vaultSymbol={variant === 'locked' ? 'yvUSD (Locked)' : variant === 'unlocked' ? 'yvUSD (Unlocked)' : 'yvUSD'}
         handleDepositSuccess={onDepositSuccess}
+        onOpenSettings={onOpenSettings}
+        isSettingsOpen={isSettingsOpen}
+        hideSettings={hideSettings}
         hideDetails={!variant}
         hideActionButton={!variant}
         hideContainerBorder

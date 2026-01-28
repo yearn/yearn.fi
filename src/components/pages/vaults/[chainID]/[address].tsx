@@ -1,6 +1,4 @@
-import { useScrollDirection } from '@hooks/useScrollDirection'
 import { useScrollSpy } from '@hooks/useScrollSpy'
-import { useThemePreference } from '@hooks/useThemePreference'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { MobileKeyMetrics } from '@pages/vaults/components/detail/QuickStatsGrid'
 import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
@@ -13,8 +11,7 @@ import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsS
 import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
-import { WidgetRewards, WidgetRewardsPanel } from '@pages/vaults/components/widget/rewards'
-import { SettingsPanel } from '@pages/vaults/components/widget/SettingsPanel'
+import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
@@ -61,9 +58,6 @@ function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
   const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
-  const themePreference = useThemePreference()
-  const isDarkTheme = themePreference !== 'light'
-  const scrollDirection = useScrollDirection({ threshold: 10, topThreshold: 50 })
 
   const { address, isActive } = useWeb3()
   const params = useParams()
@@ -92,6 +86,9 @@ function Index(): ReactElement | null {
   const sectionSelectorRef = useRef<HTMLDivElement>(null)
   const widgetRef = useRef<TWidgetRef>(null)
   const widgetContainerRef = useRef<HTMLDivElement>(null)
+  const widgetStackRef = useRef<HTMLDivElement>(null)
+  const widgetPrimaryRef = useRef<HTMLDivElement>(null)
+  const widgetRewardsRef = useRef<HTMLDivElement>(null)
   const chartsRef = useRef<HTMLDivElement>(null)
   const aboutRef = useRef<HTMLDivElement>(null)
   const riskRef = useRef<HTMLDivElement>(null)
@@ -204,20 +201,13 @@ function Index(): ReactElement | null {
     }
   })
 
-  // Force refetch when endpoint changes
   useEffect(() => {
-    if (endpoint) {
-      mutate()
-    }
+    if (endpoint) mutate()
   }, [endpoint, mutate])
 
-  // TODO: remove this workaround when possible
-  // <WORKAROUND>
   const currentVault = useMemo(() => {
     if (isYvUsd) return yvUsdVault
-    if (overrideVault) return overrideVault
-    if (_currentVault) return _currentVault
-    return undefined
+    return overrideVault ?? _currentVault
   }, [isYvUsd, yvUsdVault, overrideVault, _currentVault])
 
   useEffect(() => {
@@ -285,6 +275,7 @@ function Index(): ReactElement | null {
   const [isWidgetSettingsOpen, setIsWidgetSettingsOpen] = useState(false)
   const [isWidgetWalletOpen, setIsWidgetWalletOpen] = useState(false)
   const [isWidgetRewardsOpen, setIsWidgetRewardsOpen] = useState(false)
+  const [collapsedWidgetHeight, setCollapsedWidgetHeight] = useState<number | null>(null)
   const [depositPrefill, setDepositPrefill] = useState<{
     address: `0x${string}`
     chainId: number
@@ -306,15 +297,10 @@ function Index(): ReactElement | null {
     })
   }
 
-  const toggleWidgetWallet = (): void => {
-    setIsWidgetWalletOpen((prev) => {
-      const next = !prev
-      if (next) {
-        setIsWidgetSettingsOpen(false)
-        setIsWidgetRewardsOpen(false)
-      }
-      return next
-    })
+  const openWidgetWallet = (): void => {
+    setIsWidgetWalletOpen(true)
+    setIsWidgetSettingsOpen(false)
+    setIsWidgetRewardsOpen(false)
   }
 
   const closeWidgetOverlays = (): void => {
@@ -323,16 +309,40 @@ function Index(): ReactElement | null {
     setIsWidgetRewardsOpen(false)
   }
 
-  const isWidgetPanelActive = !isWidgetSettingsOpen && !isWidgetWalletOpen && !isWidgetRewardsOpen
+  const isWidgetPanelActive = !isWidgetWalletOpen
 
   const openWidgetRewards = (): void => {
+    updateCollapsedWidgetHeight()
     setIsWidgetRewardsOpen(true)
     setIsWidgetSettingsOpen(false)
-    setIsWidgetWalletOpen(false)
   }
 
   const closeWidgetRewards = (): void => {
     setIsWidgetRewardsOpen(false)
+  }
+
+  const updateCollapsedWidgetHeight = useCallback(() => {
+    if (isWidgetRewardsOpen) {
+      return
+    }
+    const container = widgetContainerRef.current
+    if (!container || container.offsetParent === null) {
+      return
+    }
+    const stackElement = widgetStackRef.current
+    if (!stackElement) {
+      return
+    }
+    const nextHeight = stackElement.getBoundingClientRect().height
+    setCollapsedWidgetHeight((prev) => (prev && Math.abs(prev - nextHeight) < 1 ? prev : nextHeight))
+  }, [isWidgetRewardsOpen])
+
+  const toggleWidgetCollapse = (): void => {
+    if (!isWidgetRewardsOpen) {
+      updateCollapsedWidgetHeight()
+    }
+    setIsWidgetRewardsOpen((prev) => !prev)
+    setIsWidgetSettingsOpen(false)
   }
 
   const handleZapTokenSelect = useCallback(
@@ -362,6 +372,21 @@ function Index(): ReactElement | null {
       { address: currentVault.token.address, chainID: currentVault.chainID }
     ])
   }, [currentVault, mutate, onRefresh])
+
+  useEffect(() => {
+    updateCollapsedWidgetHeight()
+  }, [updateCollapsedWidgetHeight])
+
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') {
+      return
+    }
+    const observer = new ResizeObserver(() => updateCollapsedWidgetHeight())
+    if (widgetStackRef.current) {
+      observer.observe(widgetStackRef.current)
+    }
+    return () => observer.disconnect()
+  }, [updateCollapsedWidgetHeight])
 
   const sections = useMemo(() => {
     if (!currentVault || !yDaemonBaseUri) {
@@ -565,16 +590,13 @@ function Index(): ReactElement | null {
     window.scrollTo({ top: targetTop, behavior: 'smooth' })
   }
 
-  const handleFloatingButtonClick = (
-    action: typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw
-  ): void => {
-    setMobileDrawerAction(action)
-    setIsMobileDrawerOpen(true)
-  }
-
-  const handleMobileDrawerClose = (): void => {
-    setIsMobileDrawerOpen(false)
-  }
+  const handleFloatingButtonClick = useCallback(
+    (action: typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw): void => {
+      setMobileDrawerAction(action)
+      setIsMobileDrawerOpen(true)
+    },
+    []
+  )
 
   useEffect(() => {
     if (isYvUsd) return
@@ -607,9 +629,14 @@ function Index(): ReactElement | null {
   }
 
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
-  // Calculate sticky positions for the collapsible header (desktop only)
-  // On mobile, natural scroll behavior is used
   const headerStickyTop = 'var(--header-height)'
+  const widgetModeLabel =
+    widgetMode === WidgetActionType.Deposit
+      ? 'Deposit'
+      : widgetMode === WidgetActionType.Withdraw
+        ? 'Withdraw'
+        : 'Migrate'
+  const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
   const yvUsdLogoSrc = `${import.meta.env.BASE_URL}yvUSD.png`
   const tokenLogoSrc = isYvUsd
     ? yvUsdLogoSrc
@@ -642,28 +669,20 @@ function Index(): ReactElement | null {
             widgetActions={widgetActions}
             widgetMode={widgetMode}
             onWidgetModeChange={setWidgetMode}
-            isWidgetSettingsOpen={isWidgetSettingsOpen}
-            onWidgetSettingsOpen={toggleWidgetSettings}
             isWidgetWalletOpen={isWidgetWalletOpen}
-            onWidgetWalletOpen={toggleWidgetWallet}
+            onWidgetWalletOpen={openWidgetWallet}
             onWidgetCloseOverlays={closeWidgetOverlays}
             onCompressionChange={setIsHeaderCompressed}
           />
         </header>
 
-        {/* Mobile: Compact Header */}
         <div className="md:hidden mt-4 mb-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
               <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={40} height={40} />
             </div>
             <div className="flex-1 min-w-0">
-              <h1
-                className={cl(
-                  'text-lg font-black leading-tight truncate-safe',
-                  isDarkTheme ? 'text-text-primary' : 'text-text-secondary'
-                )}
-              >
+              <h1 className={'text-lg font-black leading-tight truncate-safe text-text-primary'}>
                 {getVaultName(currentVault)} yVault
               </h1>
               <p className="text-mobile-label text-text-secondary">
@@ -673,12 +692,9 @@ function Index(): ReactElement | null {
           </div>
         </div>
 
-        {/* Mobile Layout */}
         <div className="md:hidden space-y-4">
-          {/* Key metrics above chart */}
           <MobileKeyMetrics currentVault={currentVault} />
 
-          {/* Chart section */}
           {Number.isInteger(chainId) && (
             <div className="border border-border rounded-lg bg-surface overflow-hidden">
               <VaultChartsSection
@@ -690,7 +706,6 @@ function Index(): ReactElement | null {
             </div>
           )}
 
-          {/* Details sections - collapsible on mobile */}
           <section id={mobileDetailsSectionId} ref={detailsRef} aria-label="Vault details" className="space-y-4 pb-8">
             {renderableSections
               .filter((section) => section.key !== 'charts')
@@ -728,92 +743,102 @@ function Index(): ReactElement | null {
           </section>
         </div>
 
-        {/* Main Content Grid - Responsive layout */}
         <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div
             ref={widgetContainerRef}
             className={cl(
               'hidden md:block',
               'order-1 md:order-2',
-              'md:col-span-7 md:col-start-14 md:sticky md:h-fit pt-4',
-              'flex flex-col',
+              'md:col-span-7 md:col-start-14 md:sticky md:h-[calc(100vh-var(--vault-header-initial-offset))] pt-4',
+              'flex flex-col overflow-hidden',
               'max-h-[calc(100vh-var(--vault-header-initial-offset))]'
             )}
             style={{ top: 'var(--vault-header-height, var(--header-height))' }}
           >
-            <div className="flex flex-col flex-1 min-h-0">
-              <div
-                className={cl('flex flex-col flex-1 min-h-0', isWidgetPanelActive ? 'flex' : 'hidden')}
-                aria-hidden={!isWidgetPanelActive}
-              >
-                {isYvUsd ? (
-                  <YvUsdWidget
-                    currentVault={currentVault}
-                    chainId={chainId}
-                    mode={widgetMode}
-                    onModeChange={setWidgetMode}
-                    showTabs={false}
-                  />
+            <div
+              ref={widgetStackRef}
+              className={cl(
+                'relative grid w-full min-w-0 flex-1 min-h-0 max-h-[calc(100vh-16px-var(--vault-header-initial-offset))] overflow-hidden',
+                isWidgetRewardsOpen ? 'grid-rows-[auto_minmax(0,1fr)]' : 'grid-rows-[minmax(0,1fr)_auto]'
+              )}
+              style={isWidgetRewardsOpen && collapsedWidgetHeight ? { height: collapsedWidgetHeight } : undefined}
+            >
+              <div ref={widgetPrimaryRef} className="flex w-full min-w-0 flex-col min-h-0">
+                {isWidgetRewardsOpen ? (
+                  <button
+                    type="button"
+                    onClick={toggleWidgetCollapse}
+                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface px-6 py-4"
+                  >
+                    <span className="text-base font-semibold text-text-primary">{collapsedWidgetTitle}</span>
+                    <IconChevron className="size-4 text-text-secondary transition-transform" direction={'down'} />
+                  </button>
                 ) : (
-                  <Widget
-                    ref={widgetRef}
-                    vaultAddress={currentVault.address}
-                    currentVault={currentVault}
-                    gaugeAddress={currentVault.staking.address}
-                    actions={widgetActions}
-                    chainId={chainId}
-                    mode={widgetMode}
-                    onModeChange={setWidgetMode}
-                    showTabs={false}
-                    depositPrefill={depositPrefill}
-                    onDepositPrefillConsumed={() => setDepositPrefill(null)}
-                  />
+                  <div
+                    className={cl('flex flex-col min-h-0', isWidgetPanelActive ? 'flex' : 'hidden')}
+                    aria-hidden={!isWidgetPanelActive}
+                  >
+                    {isYvUsd ? (
+                      <YvUsdWidget
+                        currentVault={currentVault}
+                        chainId={chainId}
+                        mode={widgetMode}
+                        onModeChange={setWidgetMode}
+                        showTabs={false}
+                        onOpenSettings={toggleWidgetSettings}
+                        isSettingsOpen={isWidgetSettingsOpen}
+                      />
+                    ) : (
+                      <Widget
+                        ref={widgetRef}
+                        vaultAddress={currentVault.address}
+                        currentVault={currentVault}
+                        gaugeAddress={currentVault.staking.address}
+                        actions={widgetActions}
+                        chainId={chainId}
+                        mode={widgetMode}
+                        onModeChange={setWidgetMode}
+                        showTabs={false}
+                        onOpenSettings={toggleWidgetSettings}
+                        isSettingsOpen={isWidgetSettingsOpen}
+                        depositPrefill={depositPrefill}
+                        onDepositPrefillConsumed={() => setDepositPrefill(null)}
+                      />
+                    )}
+                  </div>
                 )}
+                <WalletPanel
+                  isActive={isWidgetWalletOpen && !isWidgetRewardsOpen}
+                  currentVault={currentVault}
+                  vaultAddress={toAddress(currentVault.address)}
+                  stakingAddress={
+                    isZeroAddress(currentVault.staking.address) ? undefined : toAddress(currentVault.staking.address)
+                  }
+                  chainId={chainId}
+                  onSelectZapToken={handleZapTokenSelect}
+                />
               </div>
-              <SettingsPanel isActive={isWidgetSettingsOpen} />
-              <WalletPanel
-                isActive={isWidgetWalletOpen}
-                currentVault={currentVault}
-                vaultAddress={toAddress(currentVault.address)}
-                stakingAddress={
-                  isZeroAddress(currentVault.staking.address) ? undefined : toAddress(currentVault.staking.address)
-                }
-                chainId={chainId}
-                onSelectZapToken={handleZapTokenSelect}
-              />
-              <WidgetRewardsPanel
-                isActive={isWidgetRewardsOpen}
-                stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
-                stakingSource={currentVault.staking.source}
-                rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
-                  address: r.address,
-                  symbol: r.symbol,
-                  decimals: r.decimals,
-                  price: r.price,
-                  isFinished: r.isFinished
-                }))}
-                chainId={chainId}
-                onClose={closeWidgetRewards}
-                onClaimSuccess={handleRewardsClaimSuccess}
-              />
-              <WidgetRewards
-                stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
-                stakingSource={currentVault.staking.source}
-                rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
-                  address: r.address,
-                  symbol: r.symbol,
-                  decimals: r.decimals,
-                  price: r.price,
-                  isFinished: r.isFinished
-                }))}
-                chainId={chainId}
-                isPanelOpen={isWidgetRewardsOpen}
-                onOpenRewards={openWidgetRewards}
-              />
+              <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
+                <WidgetRewards
+                  stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
+                  stakingSource={currentVault.staking.source}
+                  rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
+                    address: r.address,
+                    symbol: r.symbol,
+                    decimals: r.decimals,
+                    price: r.price,
+                    isFinished: r.isFinished
+                  }))}
+                  chainId={chainId}
+                  isPanelOpen={isWidgetRewardsOpen}
+                  onOpenRewards={openWidgetRewards}
+                  onCloseRewards={closeWidgetRewards}
+                  onClaimSuccess={handleRewardsClaimSuccess}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Desktop sections - Hidden on mobile */}
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
             {renderableSections.map((section) => {
               const isCollapsible =
@@ -835,7 +860,7 @@ function Index(): ReactElement | null {
                   >
                     <button
                       type={'button'}
-                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4'}
+                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
                       onClick={(): void =>
                         setOpenSections((previous) => ({
                           ...previous,
@@ -877,9 +902,7 @@ function Index(): ReactElement | null {
           className={cl(
             'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 sm:hidden',
             'backdrop-blur-md',
-            'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]',
-            'transition-transform duration-250 ease-in-out',
-            scrollDirection === 'down' ? 'translate-y-full' : 'translate-y-0'
+            'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]'
           )}
         >
           <div className="flex gap-3 max-w-[1232px] mx-auto">
@@ -903,12 +926,11 @@ function Index(): ReactElement | null {
         </div>
       )}
 
-      {/* Mobile Bottom Drawer with Widget */}
       <BottomDrawer
         isOpen={isMobileDrawerOpen}
-        onClose={handleMobileDrawerClose}
-        title={`${mobileDrawerAction === WidgetActionType.Deposit ? 'Deposit' : 'Withdraw'} ${currentVault.name}`}
-        headerActions={isYvUsd ? undefined : <MobileDrawerSettingsButton />}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        title={currentVault.name}
+        headerActions={<MobileDrawerSettingsButton />}
       >
         {isYvUsd ? (
           <YvUsdWidget currentVault={currentVault} chainId={chainId} mode={mobileDrawerAction} showTabs={false} />
@@ -921,6 +943,9 @@ function Index(): ReactElement | null {
             actions={widgetActions}
             chainId={chainId}
             hideTabSelector
+            onOpenSettings={toggleWidgetSettings}
+            isSettingsOpen={isWidgetSettingsOpen}
+            disableBorderRadius
           />
         )}
       </BottomDrawer>

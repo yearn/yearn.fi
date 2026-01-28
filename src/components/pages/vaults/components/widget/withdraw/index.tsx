@@ -4,12 +4,14 @@ import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { IconSettings } from '@shared/icons/IconSettings'
 import type { TNormalizedBN } from '@shared/types'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
+import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { getPriorityTokens } from './constants'
@@ -21,23 +23,26 @@ import { useWithdrawNotifications } from './useWithdrawNotifications'
 import { WithdrawDetails } from './WithdrawDetails'
 import { WithdrawDetailsOverlay } from './WithdrawDetailsOverlay'
 
-export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; hideContainerBorder?: boolean }> = ({
+export const WidgetWithdraw: FC<
+  WithdrawWidgetProps & { hideSettings?: boolean; hideContainerBorder?: boolean; disableBorderRadius?: boolean }
+> = ({
   vaultAddress,
   assetAddress,
   stakingAddress,
   chainId,
   vaultSymbol,
   handleWithdrawSuccess: onWithdrawSuccess,
-  hideContainerBorder = false
+  onOpenSettings,
+  isSettingsOpen,
+  hideSettings,
+  hideContainerBorder = false,
+  disableBorderRadius = false
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, getPrice } = useYearn()
 
-  // ============================================================================
-  // UI State
-  // ============================================================================
   const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
   const [showWithdrawDetailsModal, setShowWithdrawDetailsModal] = useState(false)
@@ -45,9 +50,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
 
-  // ============================================================================
-  // Token Data (shared with VaultDetailsHeader via TanStack Query cache)
-  // ============================================================================
   const {
     assetToken,
     vaultToken: vault,
@@ -76,9 +78,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
     return getToken({ address: withdrawToken, chainID: destinationChainId })
   }, [getToken, withdrawToken, destinationChainId, chainId, assetAddress, assetToken])
 
-  // ============================================================================
-  // Withdrawal Source Logic
-  // ============================================================================
   const hasVaultBalance = (vault?.balance.raw ?? 0n) > 0n
   const hasStakingBalance = (stakingToken?.balance.raw ?? 0n) > 0n
   const hasBothBalances = hasVaultBalance && hasStakingBalance
@@ -109,26 +108,18 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
 
   const isUnstake = withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(vaultAddress)
 
-  // Determine the correct decimals for the shares being withdrawn (for display)
   const sharesDecimals =
     withdrawalSource === 'staking' ? (stakingToken?.decimals ?? vault?.decimals ?? 18) : (vault?.decimals ?? 18)
-  // For pricePerShare calculations, always use vault decimals since PPS is in vault terms
   const vaultDecimals = vault?.decimals ?? 18
 
-  // ============================================================================
-  // Balance Conversions
-  // ============================================================================
   const totalBalanceInUnderlying: TNormalizedBN = useMemo(() => {
     if (pricePerShare === 0n || totalVaultBalance.raw === 0n || !assetToken) {
       return zeroNormalizedBN
     }
-    // Use vault decimals for pricePerShare calculation (PPS is always in vault terms)
     const underlyingAmount = (totalVaultBalance.raw * pricePerShare) / 10n ** BigInt(vaultDecimals)
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
   }, [totalVaultBalance.raw, pricePerShare, vaultDecimals, assetToken])
-  // ============================================================================
-  // Input Handling
-  // ============================================================================
+
   const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
 
@@ -153,9 +144,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
     return 0n
   }, [withdrawAmount.bn, isMaxWithdraw, totalVaultBalance.raw, pricePerShare, vaultDecimals])
 
-  // ============================================================================
-  // Withdraw Flow (routing, actions, periphery)
-  // ============================================================================
   const { routeType, activeFlow } = useWithdrawFlow({
     withdrawToken,
     assetAddress,
@@ -181,9 +169,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
     isDebouncing: withdrawAmount.isDebouncing
   })
 
-  // ============================================================================
-  // Notifications
-  // ============================================================================
   const isCrossChain = destinationChainId !== chainId
   const { approveNotificationParams, withdrawNotificationParams } = useWithdrawNotifications({
     vault,
@@ -204,9 +189,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
     withdrawalSource: withdrawalSource || 'vault'
   })
 
-  // ============================================================================
-  // Error Handling
-  // ============================================================================
   const withdrawError = useWithdrawError({
     amount: withdrawAmount.bn,
     debouncedAmount: withdrawAmount.debouncedBn,
@@ -221,9 +203,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
     withdrawalSource
   })
 
-  // ============================================================================
-  // Computed Values
-  // ============================================================================
   const actionLabel = isUnstake
     ? 'You will unstake'
     : withdrawalSource === 'staking'
@@ -287,9 +266,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
     chainId
   ])
 
-  // ============================================================================
-  // Transaction Step Configuration
-  // ============================================================================
   const formattedWithdrawAmount = formatTAmount({ value: withdrawAmount.bn, decimals: assetToken?.decimals ?? 18 })
   const needsApproval = showApprove && !activeFlow.periphery.isAllowanceSufficient
 
@@ -344,9 +320,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
     isCrossChain
   ])
 
-  // ============================================================================
-  // Handlers
-  // ============================================================================
   const handleWithdrawSuccess = useCallback(() => {
     setWithdrawInput('')
     const tokensToRefresh = [
@@ -372,9 +345,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
     onWithdrawSuccess
   ])
 
-  // ============================================================================
-  // Loading State
-  // ============================================================================
   if (isLoadingVaultData) {
     return (
       <div className="flex items-center justify-center h-[317px]">
@@ -386,9 +356,19 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
   // ============================================================================
   // Render
   // ============================================================================
+  const isSettingsVisible = !!account && !!isSettingsOpen && !hideSettings
+
   return (
-    <div className={cl('flex flex-col relative h-full', hideContainerBorder ? '' : 'border border-border rounded-lg')}>
-      <div className="flex flex-col flex-1 p-4 gap-6">
+    <div
+      className={cl('flex flex-col relative h-full', {
+        'border border-border': !hideContainerBorder,
+        'rounded-lg': !disableBorderRadius
+      })}
+    >
+      <div className="flex items-center justify-between gap-3 px-6 pt-4 ">
+        <h3 className="text-base font-semibold text-text-primary">Withdraw</h3>
+      </div>
+      <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         {/* Withdraw From Selector */}
         {hasBothBalances && <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />}
 
@@ -460,42 +440,67 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
         />
 
         {/* Action Button */}
-        {!account ? (
-          <Button
-            onClick={openLoginModal}
-            variant="filled"
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            Connect Wallet
-          </Button>
-        ) : (
-          <Button
-            onClick={() => setShowTransactionOverlay(true)}
-            variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-            isBusy={activeFlow.periphery.isLoadingRoute}
-            disabled={
-              !!withdrawError ||
-              withdrawAmount.bn === 0n ||
-              activeFlow.periphery.isLoadingRoute ||
-              withdrawAmount.isDebouncing ||
-              (showApprove &&
-                !activeFlow.periphery.isAllowanceSufficient &&
-                !activeFlow.periphery.prepareApproveEnabled) ||
-              ((!showApprove || activeFlow.periphery.isAllowanceSufficient) &&
-                !activeFlow.periphery.prepareWithdrawEnabled)
-            }
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            {activeFlow.periphery.isLoadingRoute
-              ? 'Fetching quote'
-              : showApprove && !activeFlow.periphery.isAllowanceSufficient
-                ? `Approve & ${transactionName}`
-                : transactionName}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            {!account ? (
+              <Button
+                onClick={openLoginModal}
+                variant="filled"
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                Connect Wallet
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setShowTransactionOverlay(true)}
+                variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
+                isBusy={activeFlow.periphery.isLoadingRoute}
+                disabled={
+                  !!withdrawError ||
+                  withdrawAmount.bn === 0n ||
+                  activeFlow.periphery.isLoadingRoute ||
+                  withdrawAmount.isDebouncing ||
+                  (showApprove &&
+                    !activeFlow.periphery.isAllowanceSufficient &&
+                    !activeFlow.periphery.prepareApproveEnabled) ||
+                  ((!showApprove || activeFlow.periphery.isAllowanceSufficient) &&
+                    !activeFlow.periphery.prepareWithdrawEnabled)
+                }
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                {activeFlow.periphery.isLoadingRoute
+                  ? 'Fetching quote'
+                  : showApprove && !activeFlow.periphery.isAllowanceSufficient
+                    ? `Approve & ${transactionName}`
+                    : transactionName}
+              </Button>
+            )}
+          </div>
+          {account && onOpenSettings && !hideSettings ? (
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              aria-label="Open transaction settings"
+              aria-pressed={isSettingsOpen}
+              className={cl(
+                'flex items-center justify-center rounded-md border border-transparent px-3 py-2 text-text-secondary transition-all duration-200',
+                'min-h-11',
+                isSettingsOpen
+                  ? 'bg-surface text-text-primary !border-border'
+                  : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
+              )}
+            >
+              <IconSettings className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
       </div>
+
+      {onOpenSettings ? (
+        <SettingsPanel isActive={isSettingsVisible} onClose={onOpenSettings} variant="overlay" />
+      ) : null}
 
       {/* Transaction Overlay */}
       <TransactionOverlay

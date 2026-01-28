@@ -38,8 +38,7 @@ function CompactStatBox({ label, value }: CompactStatBoxProps): ReactElement {
   )
 }
 
-// Format USD values
-const formatUSD = (value: number): string => {
+function formatUSD(value: number): string {
   if (value >= 1_000_000_000) {
     return `$${(value / 1_000_000_000).toFixed(2)}B`
   }
@@ -52,13 +51,11 @@ const formatUSD = (value: number): string => {
   return `$${value.toFixed(2)}`
 }
 
-// Format APR/APY
-const formatPercent = (value: number): string => {
+function formatPercent(value: number): string {
   return `${(value * 100).toFixed(2)}%`
 }
 
-// Format balances
-const formatBalance = (balance: number, symbol: string): string => {
+function formatBalance(balance: number, symbol: string): string {
   return `${formatAmount(balance, 0, 6)} ${symbol}`
 }
 
@@ -67,7 +64,6 @@ interface VaultMetricsGridProps {
 }
 
 export function VaultMetricsGrid({ currentVault }: VaultMetricsGridProps): ReactElement {
-  // Get APY data
   const apyData = useVaultApyData(currentVault)
   const forwardAPY =
     apyData.mode === 'katana' && apyData.katanaEstApr !== undefined
@@ -94,7 +90,6 @@ export function UserBalanceGrid({ currentVault }: UserBalanceGridProps): ReactEl
   const { getToken } = useWallet()
   const { connectors, connect } = useConnect()
 
-  // Get user balance
   const vaultToken = getToken({
     address: currentVault.address,
     chainID: currentVault.chainID
@@ -117,7 +112,6 @@ export function UserBalanceGrid({ currentVault }: UserBalanceGridProps): ReactEl
 
   return (
     <div className="md:hidden">
-      {/* Bottom row: User balances or Connect button */}
       {isActive && address ? (
         <div className="grid grid-cols-2 gap-1.5 min-[375px]:gap-2">
           <StatCard
@@ -155,12 +149,49 @@ export function UserBalanceGrid({ currentVault }: UserBalanceGridProps): ReactEl
   )
 }
 
-// Compact key metrics row for mobile - positioned above chart
-interface MobileKeyMetricsProps {
-  currentVault: TYDaemonVault
+const MOBILE_SECTIONS = [
+  { id: 'about', label: 'About' },
+  { id: 'risk', label: 'Risk' },
+  { id: 'strategies', label: 'Strategies' },
+  { id: 'info', label: 'Info' }
+] as const
+
+function SectionNavButton({ sectionId, label }: { sectionId: string; label: string }): ReactElement {
+  const handleClick = (): void => {
+    const element = document.querySelector(`[data-scroll-spy-key="${sectionId}"]`)
+    if (element) {
+      const headerHeight = parseInt(
+        getComputedStyle(document.documentElement).getPropertyValue('--header-height') || '64',
+        10
+      )
+      const offset = headerHeight + 16
+      const top = element.getBoundingClientRect().top + window.scrollY - offset
+      window.scrollTo({ top, behavior: 'smooth' })
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className={cl(
+        'w-full rounded-full px-2 py-1.5 text-xs font-medium text-center',
+        'bg-surface-secondary border border-border text-text-secondary',
+        'active:scale-95 transition-all',
+        'hover:text-text-primary hover:border-border-hover'
+      )}
+    >
+      {label}
+    </button>
+  )
 }
 
-export function MobileKeyMetrics({ currentVault }: MobileKeyMetricsProps): ReactElement {
+interface MobileKeyMetricsProps {
+  currentVault: TYDaemonVault
+  showSectionNav?: boolean
+}
+
+export function MobileKeyMetrics({ currentVault, showSectionNav = true }: MobileKeyMetricsProps): ReactElement {
   const { address, isActive } = useWeb3()
   const { getToken } = useWallet()
   const apyData = useVaultApyData(currentVault)
@@ -179,15 +210,23 @@ export function MobileKeyMetrics({ currentVault }: MobileKeyMetricsProps): React
   const depositValue = hasVaultBalance && vaultToken.value ? formatUSD(vaultToken.value) : '$0.00'
 
   return (
-    <div className="md:hidden flex gap-1.5 min-[375px]:gap-2">
-      <CompactStatBox label="Deposited" value={depositValue} />
-      <CompactStatBox label="TVL" value={formatUSD(currentVault.tvl.tvl)} />
-      <CompactStatBox label="Fwd. APY" value={formatPercent(forwardAPY)} />
+    <div className="md:hidden space-y-2">
+      <div className="grid grid-cols-3 gap-1.5 min-[375px]:gap-2">
+        <CompactStatBox label="Deposited" value={depositValue} />
+        <CompactStatBox label="TVL" value={formatUSD(currentVault.tvl.tvl)} />
+        <CompactStatBox label="Fwd. APY" value={formatPercent(forwardAPY)} />
+      </div>
+      {showSectionNav ? (
+        <div className="grid grid-cols-4 gap-2">
+          {MOBILE_SECTIONS.map((section) => (
+            <SectionNavButton key={section.id} sectionId={section.id} label={section.label} />
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }
 
-// Legacy export for backwards compatibility
 interface QuickStatsGridProps {
   currentVault: TYDaemonVault
 }

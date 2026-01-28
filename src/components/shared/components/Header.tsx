@@ -190,10 +190,13 @@ function AppHeader(): ReactElement {
                   >
                     {isDarkTheme ? <IconSun className={'size-5'} /> : <IconMoon className={'size-5'} />}
                   </button>
-                  <WalletSelector
-                    onAccountClick={() => setIsAccountSidebarOpen(!isAccountSidebarOpen)}
-                    notificationStatus={notificationStatus}
-                  />
+                  <div className={'relative'}>
+                    <WalletSelector
+                      onAccountClick={() => setIsAccountSidebarOpen(!isAccountSidebarOpen)}
+                      notificationStatus={notificationStatus}
+                    />
+                    <AccountDropdown isOpen={isAccountSidebarOpen} onClose={() => setIsAccountSidebarOpen(false)} />
+                  </div>
                 </div>
                 <button
                   className={cl(
@@ -205,7 +208,6 @@ function AppHeader(): ReactElement {
                 >
                   <IconBurgerPlain className={'size-6'} />
                 </button>
-                <AccountDropdown isOpen={isAccountSidebarOpen} onClose={() => setIsAccountSidebarOpen(false)} />
               </>
             )}
           </div>

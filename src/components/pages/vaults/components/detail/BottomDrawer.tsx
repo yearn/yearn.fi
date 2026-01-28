@@ -15,7 +15,7 @@ type TBottomDrawerProps = {
 export function BottomDrawer({ isOpen, onClose, children, title, headerActions }: TBottomDrawerProps): ReactElement {
   return (
     <Transition show={isOpen} as={Fragment}>
-      <Dialog as={'div'} className={'relative z-100'} onClose={() => {}}>
+      <Dialog as={'div'} className={'relative z-100'} onClose={onClose}>
         <TransitionChild
           as={Fragment}
           enter={'duration-300 ease-out'}
@@ -62,7 +62,7 @@ export function BottomDrawer({ isOpen, onClose, children, title, headerActions }
                   </div>
                 </div>
                 <div className={'flex-1 overflow-y-auto overflow-x-hidden relative'}>
-                  <div className={'bg-surface-secondary p-4 h-full pb-[calc(2rem+env(safe-area-inset-bottom,0px))]'}>
+                  <div className={'bg-surface-secondary h-full pb-[calc(2rem+env(safe-area-inset-bottom,0px))]'}>
                     {children}
                   </div>
                 </div>

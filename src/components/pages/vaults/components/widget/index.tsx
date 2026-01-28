@@ -1,6 +1,4 @@
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
-import { IconSettings } from '@shared/icons/IconSettings'
-import { IconWallet } from '@shared/icons/IconWallet'
 import type { TAddress } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -19,6 +17,8 @@ interface Props {
   mode?: ActionType
   onModeChange?: (mode: ActionType) => void
   showTabs?: boolean
+  onOpenSettings?: () => void
+  isSettingsOpen?: boolean
   depositPrefill?: {
     address: TAddress
     chainId: number
@@ -26,6 +26,7 @@ interface Props {
   } | null
   onDepositPrefillConsumed?: () => void
   hideTabSelector?: boolean
+  disableBorderRadius?: boolean
 }
 
 export type TWidgetRef = {
@@ -55,9 +56,12 @@ export const Widget = forwardRef<TWidgetRef, Props>(
       mode,
       onModeChange,
       showTabs = true,
+      onOpenSettings,
+      isSettingsOpen,
       depositPrefill,
       onDepositPrefillConsumed,
-      hideTabSelector
+      hideTabSelector,
+      disableBorderRadius
     },
     ref
   ) => {
@@ -95,7 +99,10 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               handleDepositSuccess={handleSuccess}
               prefill={depositPrefill ?? undefined}
               onPrefillApplied={onDepositPrefillConsumed}
+              onOpenSettings={onOpenSettings}
+              isSettingsOpen={isSettingsOpen}
               hideSettings={hideTabSelector}
+              disableBorderRadius={disableBorderRadius}
             />
           )
         case ActionType.Withdraw:
@@ -107,7 +114,10 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               chainId={chainId}
               vaultSymbol={currentVault?.symbol || ''}
               handleWithdrawSuccess={handleSuccess}
+              onOpenSettings={onOpenSettings}
+              isSettingsOpen={isSettingsOpen}
               hideSettings={hideTabSelector}
+              disableBorderRadius={disableBorderRadius}
             />
           )
         case ActionType.Migrate:
@@ -135,7 +145,10 @@ export const Widget = forwardRef<TWidgetRef, Props>(
       handleSuccess,
       depositPrefill,
       onDepositPrefillConsumed,
-      hideTabSelector
+      onOpenSettings,
+      isSettingsOpen,
+      hideTabSelector,
+      disableBorderRadius
     ])
 
     // Mobile mode: simple layout without tabs
@@ -149,8 +162,19 @@ export const Widget = forwardRef<TWidgetRef, Props>(
 
     return (
       <div className="flex flex-col gap-0 w-full h-full flex-1">
-        <div className="bg-app rounded-b-lg overflow-hidden relative w-full min-w-0 flex flex-col flex-1">
-          {showTabs ? <WidgetTabs actions={actions} activeAction={currentMode} onActionChange={setMode} /> : null}
+        <div
+          className={cl('bg-app overflow-hidden relative w-full min-w-0 flex flex-col flex-1', {
+            'rounded-b-lg': !disableBorderRadius
+          })}
+        >
+          {showTabs ? (
+            <WidgetTabs
+              actions={actions}
+              activeAction={currentMode}
+              onActionChange={setMode}
+              disableBorderRadius={disableBorderRadius}
+            />
+          ) : null}
           <div className="bg-surface flex-1 flex flex-col [&>div]:flex-1 [&>div]:h-full">{SelectedComponent}</div>
         </div>
       </div>
@@ -163,28 +187,31 @@ export const WidgetTabs: FC<{
   activeAction: ActionType
   onActionChange: (action: ActionType) => void
   className?: string
-  onOpenSettings?: () => void
-  isSettingsOpen?: boolean
   onOpenWallet?: () => void
   isWalletOpen?: boolean
   onCloseOverlays?: () => void
+  disableBorderRadius?: boolean
 }> = ({
   actions,
   activeAction,
   onActionChange,
   className,
-  onOpenSettings,
-  isSettingsOpen,
   onOpenWallet,
   isWalletOpen,
-  onCloseOverlays
+  onCloseOverlays,
+  disableBorderRadius
 }) => {
+  const isWalletTabActive = !!isWalletOpen
   return (
-    <div className={cl('bg-surface-secondary border border-border rounded-b-lg gap-2 flex min-h-9 p-1', className)}>
+    <div
+      className={cl('bg-surface-secondary border border-border gap-2 flex min-h-9 p-1', className, {
+        'rounded-b-lg': !disableBorderRadius
+      })}
+    >
       {actions.map((action) => (
         <TabButton
           key={action}
-          isActive={activeAction === action}
+          isActive={!isWalletTabActive && activeAction === action}
           onClick={() => {
             onCloseOverlays?.()
             onActionChange(action)
@@ -193,39 +220,16 @@ export const WidgetTabs: FC<{
           {getActionLabel(action)}
         </TabButton>
       ))}
-      {onOpenSettings ? (
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          aria-label="Open widget settings"
-          aria-pressed={isSettingsOpen}
-          className={cl(
-            'flex items-center justify-center rounded-md border border-transparent px-2.5 py-2 text-text-secondary transition-all duration-200',
-            'min-h-9',
-            isSettingsOpen
-              ? 'bg-surface text-text-primary !border-border'
-              : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
-          )}
-        >
-          <IconSettings className="h-4 w-4" />
-        </button>
-      ) : null}
       {onOpenWallet ? (
-        <button
-          type="button"
-          onClick={onOpenWallet}
-          aria-label="Open wallet details"
-          aria-pressed={isWalletOpen}
-          className={cl(
-            'flex items-center justify-center rounded-md border border-transparent px-2.5 py-2 text-text-secondary transition-all duration-200',
-            'min-h-9',
-            isWalletOpen
-              ? 'bg-surface text-text-primary !border-border'
-              : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
-          )}
+        <TabButton
+          isActive={isWalletTabActive}
+          onClick={() => {
+            onCloseOverlays?.()
+            onOpenWallet()
+          }}
         >
-          <IconWallet className="h-4 w-4" />
-        </button>
+          {'My Info'}
+        </TabButton>
       ) : null}
     </div>
   )

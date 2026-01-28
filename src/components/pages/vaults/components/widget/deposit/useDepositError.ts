@@ -39,7 +39,7 @@ export const useDepositError = ({
     if (amount > balance) return 'Insufficient balance'
 
     if (selectedToken === vaultAddress && !isAutoStakingEnabled) {
-      return "Please toggle 'Maximize Yield' switch in settings to stake"
+      return "Please toggle 'Stake Automatically' switch in settings to stake"
     }
 
     // Route-dependent validation - wait for debounce and route fetch
