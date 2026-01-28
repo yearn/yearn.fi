@@ -9,7 +9,6 @@ import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { VaultsListRowSkeleton } from '@pages/vaults/components/list/VaultsListRowSkeleton'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import { toggleInArray } from '@pages/vaults/utils/constants'
-import { getVaultTypeLabel } from '@pages/vaults/utils/vaultTypeCopy'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
@@ -72,9 +71,8 @@ function VaultsListSection({
 }
 
 export default function Index(): ReactElement {
-  const { refs, header, filtersBar, list } = useVaultsPageModel()
+  const { refs, filtersBar, list } = useVaultsPageModel()
   const { varsRef, filtersRef } = refs
-  const { vaultType } = header
   const { search, filters, chains, shouldStackFilters, activeVaultType, onChangeVaultType } = filtersBar
   const {
     listHeadProps,
@@ -414,8 +412,7 @@ export default function Index(): ReactElement {
                 className={'mb-3 mt-2'}
                 items={[
                   { label: 'Home', href: '/' },
-                  { label: 'Vaults', href: '/vaults' },
-                  { label: getVaultTypeLabel(vaultType), isCurrent: true }
+                  { label: 'Vaults', href: '/vaults', isCurrent: true }
                 ]}
               />
               {/* turn back on when ready for primetime */}

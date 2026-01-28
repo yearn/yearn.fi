@@ -6,7 +6,7 @@ export const TOOLTIP_DELAY_MS = 400
 export const ALL_CHAINS_DESCRIPTION = 'Shows vaults across all supported chains.'
 
 const CHAIN_DESCRIPTIONS: Record<number, string> = {
-  1: 'Ethereum mainnet is the heart of the Ethereum ecosystem. It usually has the highest liquidity and security, but transaction fees can be higher.',
+  1: 'Ethereum mainnet is the heart of the Ethereum ecosystem. Good liquidity and security, but transaction fees can be higher.',
   10: 'Optimism is the coordination layer of the "SuperChain". It is an optimistic rollup on Ethereum with lower fees and fast confirmations.',
   137: 'Polygon is a PoS sidechain to Ethereum with low fees and fast blocks.',
   42161: 'Arbitrum is an optimistic rollup on Ethereum with low fees and high throughput.',
