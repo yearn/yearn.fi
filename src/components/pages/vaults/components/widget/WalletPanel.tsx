@@ -190,13 +190,13 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   return (
     <div
       className={cl(
-        'bg-app rounded-b-lg overflow-hidden relative w-full min-w-0 flex-1',
+        'bg-app rounded-b-lg overflow-hidden relative w-full min-w-0 flex-1 min-h-0 max-h-full',
         isPanelActive ? 'flex flex-col' : 'hidden'
       )}
       aria-hidden={!isPanelActive}
     >
       <div className="bg-surface border border-border rounded-lg flex flex-col flex-1 min-h-0">
-        <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
+        <div className="flex items-center justify-between gap-3 px-6 py-3">
           <h3 className="text-base font-semibold text-text-primary">Wallet</h3>
           <div className="flex items-center justify-end ml-auto">
             <div className="flex items-center gap-0.5 md:gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
@@ -219,7 +219,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
             </div>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 p-6 pt-3" data-scroll-priority>
+        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 max-h-full p-6 pt-3" data-scroll-priority>
           <div className="space-y-6">
             {!isWalletActive || !address ? (
               <div className="flex flex-col items-center justify-center gap-3 text-center py-8">

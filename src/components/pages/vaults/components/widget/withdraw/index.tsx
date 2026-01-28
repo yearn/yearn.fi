@@ -4,12 +4,14 @@ import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { IconSettings } from '@shared/icons/IconSettings'
 import type { TNormalizedBN } from '@shared/types'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
+import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { getPriorityTokens } from './constants'
@@ -28,6 +30,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
   chainId,
   vaultSymbol,
   handleWithdrawSuccess: onWithdrawSuccess,
+  onOpenSettings,
+  isSettingsOpen,
   disableBorderRadius
 }) => {
   const { address: account } = useAccount()
@@ -345,9 +349,17 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
     )
   }
 
+  // ============================================================================
+  // Render
+  // ============================================================================
+  const isSettingsVisible = !!account && !!isSettingsOpen
+
   return (
     <div className={cl('flex flex-col relative border border-border h-full', { 'rounded-lg': !disableBorderRadius })}>
-      <div className="flex flex-col flex-1 p-4 gap-6">
+      <div className="flex items-center justify-between gap-3 px-6 pt-4 ">
+        <h3 className="text-base font-semibold text-text-primary">Withdraw</h3>
+      </div>
+      <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         {/* Withdraw From Selector */}
         {hasBothBalances && <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />}
 
@@ -419,42 +431,67 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
         />
 
         {/* Action Button */}
-        {!account ? (
-          <Button
-            onClick={openLoginModal}
-            variant="filled"
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            Connect Wallet
-          </Button>
-        ) : (
-          <Button
-            onClick={() => setShowTransactionOverlay(true)}
-            variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-            isBusy={activeFlow.periphery.isLoadingRoute}
-            disabled={
-              !!withdrawError ||
-              withdrawAmount.bn === 0n ||
-              activeFlow.periphery.isLoadingRoute ||
-              withdrawAmount.isDebouncing ||
-              (showApprove &&
-                !activeFlow.periphery.isAllowanceSufficient &&
-                !activeFlow.periphery.prepareApproveEnabled) ||
-              ((!showApprove || activeFlow.periphery.isAllowanceSufficient) &&
-                !activeFlow.periphery.prepareWithdrawEnabled)
-            }
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            {activeFlow.periphery.isLoadingRoute
-              ? 'Fetching quote'
-              : showApprove && !activeFlow.periphery.isAllowanceSufficient
-                ? `Approve & ${transactionName}`
-                : transactionName}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            {!account ? (
+              <Button
+                onClick={openLoginModal}
+                variant="filled"
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                Connect Wallet
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setShowTransactionOverlay(true)}
+                variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
+                isBusy={activeFlow.periphery.isLoadingRoute}
+                disabled={
+                  !!withdrawError ||
+                  withdrawAmount.bn === 0n ||
+                  activeFlow.periphery.isLoadingRoute ||
+                  withdrawAmount.isDebouncing ||
+                  (showApprove &&
+                    !activeFlow.periphery.isAllowanceSufficient &&
+                    !activeFlow.periphery.prepareApproveEnabled) ||
+                  ((!showApprove || activeFlow.periphery.isAllowanceSufficient) &&
+                    !activeFlow.periphery.prepareWithdrawEnabled)
+                }
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                {activeFlow.periphery.isLoadingRoute
+                  ? 'Fetching quote'
+                  : showApprove && !activeFlow.periphery.isAllowanceSufficient
+                    ? `Approve & ${transactionName}`
+                    : transactionName}
+              </Button>
+            )}
+          </div>
+          {account && onOpenSettings ? (
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              aria-label="Open transaction settings"
+              aria-pressed={isSettingsOpen}
+              className={cl(
+                'flex items-center justify-center rounded-md border border-transparent px-3 py-2 text-text-secondary transition-all duration-200',
+                'min-h-11',
+                isSettingsOpen
+                  ? 'bg-surface text-text-primary !border-border'
+                  : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
+              )}
+            >
+              <IconSettings className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
       </div>
+
+      {onOpenSettings ? (
+        <SettingsPanel isActive={isSettingsVisible} onClose={onOpenSettings} variant="overlay" />
+      ) : null}
 
       {/* Transaction Overlay */}
       <TransactionOverlay

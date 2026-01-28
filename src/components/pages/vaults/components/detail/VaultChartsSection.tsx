@@ -73,7 +73,7 @@ export function VaultChartsSection({
   const showApyDisclaimer = shouldRenderSelectors && activeTab === 'historical-apy' && chainId === KATANA_CHAIN_ID
 
   return (
-    <div className={'space-y-3 md:space-y-4 pt-3 rounded-lg'}>
+    <div className={'space-y-3 md:space-y-4 pt-4 rounded-lg'}>
       {shouldRenderSelectors ? (
         <div className={'flex flex-col gap-2 md:gap-3 px-3 md:px-4 md:flex-row md:items-start md:justify-between'}>
           <div className={'flex flex-col'}>
