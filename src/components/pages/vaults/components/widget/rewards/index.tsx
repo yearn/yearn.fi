@@ -190,7 +190,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
                     stakingSource={stakingSource ?? ''}
                     chainId={chainId}
                     onStartClaim={handleStartClaim}
-                    isLast={!hasMerkleRewards && index === stakingRewards.length - 1}
+                    isFirst={index === 0}
                   />
                 ))}
                 {merkleRewards.map((groupedReward, index) => (
@@ -200,7 +200,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
                     userAddress={userAddress!}
                     chainId={chainId}
                     onStartClaim={handleStartClaim}
-                    isLast={index === merkleRewards.length - 1}
+                    isFirst={index === 0 && !hasStakingRewards}
                   />
                 ))}
               </div>

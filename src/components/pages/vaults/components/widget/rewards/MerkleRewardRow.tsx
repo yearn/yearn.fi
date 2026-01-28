@@ -3,7 +3,7 @@ import { toNormalizedValue } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useCallback, useMemo } from 'react'
 import type { UseSimulateContractReturnType } from 'wagmi'
-import { useChainId, useSwitchChain, useWriteContract } from 'wagmi'
+import { useChainId, useWriteContract } from 'wagmi'
 import type { TransactionStep } from '../shared/TransactionOverlay'
 import { RewardRow } from './RewardRow'
 import type { TGroupedMerkleReward } from './types'
@@ -13,13 +13,27 @@ type TMerkleRewardRowProps = {
   userAddress: `0x${string}`
   chainId: number
   onStartClaim: (step: TransactionStep) => void
-  isLast?: boolean
+  isFirst?: boolean
+  sourceName?: string
+  sourceTokenAddress?: `0x${string}`
+  isAllChainsView?: boolean
+  onSwitchChain?: () => void
 }
 
 export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
-  const { groupedReward, userAddress, chainId, onStartClaim, isLast } = props
+  const {
+    groupedReward,
+    userAddress,
+    chainId,
+    onStartClaim,
+    isFirst,
+    sourceName,
+    sourceTokenAddress,
+    isAllChainsView,
+    onSwitchChain
+  } = props
+
   const currentChainId = useChainId()
-  const { switchChainAsync } = useSwitchChain()
   const { isPending } = useWriteContract()
 
   const { prepare } = useClaimMerkleRewards({
@@ -45,22 +59,15 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
     }
   }, [prepare, formattedAmount, groupedReward.token.symbol])
 
-  const handleClaim = useCallback(async () => {
-    if (currentChainId !== chainId) {
-      try {
-        await switchChainAsync({ chainId })
-      } catch {
-        return
-      }
-    }
-    if (step) {
-      onStartClaim(step)
-    }
-  }, [currentChainId, chainId, switchChainAsync, step, onStartClaim])
+  const handleClaim = useCallback(() => {
+    if (!step) return
+    onStartClaim(step)
+  }, [step, onStartClaim])
 
   return (
     <RewardRow
       chainId={chainId}
+      currentChainId={currentChainId}
       tokenAddress={groupedReward.token.address}
       symbol={groupedReward.token.symbol}
       amount={normalizedAmount.toString()}
@@ -68,7 +75,11 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
       onClaim={handleClaim}
       isClaimPending={isPending}
       isClaimReady={prepare.isSuccess}
-      isLast={isLast}
+      isFirst={isFirst}
+      sourceName={sourceName}
+      sourceTokenAddress={sourceTokenAddress}
+      isAllChainsView={isAllChainsView}
+      onSwitchChain={onSwitchChain}
     />
   )
 }
