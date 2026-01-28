@@ -1,9 +1,9 @@
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconDiscord } from '@shared/icons/IconDiscord'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { IconSliders } from '@shared/icons/IconSliders'
 import { IconTelegram } from '@shared/icons/IconTelegram'
 import { IconTwitter } from '@shared/icons/IconTwitter'
+import { LogoCuration } from '@shared/icons/LogoCuration'
 import { LogoGithub } from '@shared/icons/LogoGithub'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import { LogoYearnMark } from '@shared/icons/LogoYearnMark'
@@ -41,7 +41,7 @@ function NavTile({ item, isDark }: { item: TNavTile; isDark: boolean }): ReactEl
     <Link href={item.href}>
       <div
         className={cl(
-          'group flex items-center rounded-lg p-2 transition-colors',
+          'group/nav-item flex items-center rounded-lg p-2 transition-colors',
           hasIcon ? 'gap-3' : 'gap-0',
           isDark ? 'hover:bg-white/10' : 'hover:bg-neutral-100'
         )}
@@ -50,12 +50,14 @@ function NavTile({ item, isDark }: { item: TNavTile; isDark: boolean }): ReactEl
           <div className={cl('flex size-8 items-center justify-center rounded-lg', iconWrapperClass)}>{item.icon}</div>
         )}
         <div className={cl('flex-1', hasIcon ? '' : 'pl-1')}>
-          <div className={'flex items-center gap-1'}>
-            <span className={cl('text-sm font-semibold', isDark ? 'text-white' : 'text-neutral-900')}>{item.name}</span>
+          <div className={'flex w-full items-center justify-between gap-2'}>
+            <span className={cl('truncate text-sm font-semibold', isDark ? 'text-white' : 'text-neutral-900')}>
+              {item.name}
+            </span>
             {isExternalHref(item.href) && (
               <IconLinkOut
                 className={cl(
-                  'size-3 opacity-0 transition-opacity group-hover:opacity-100',
+                  'size-3 opacity-0 transition-opacity group-hover/nav-item:opacity-100',
                   isDark ? 'text-neutral-400' : 'text-neutral-500'
                 )}
               />
@@ -80,14 +82,14 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
     {
       name: 'yVaults',
       href: '/vaults',
-      description: 'Yield-Generating Smart Contracts',
-      icon: <LogoYearnMark className={'size-7 text-primary'} />
+      description: 'Yield-Generating Vaults',
+      icon: <LogoYearnMark className={'size-6 text-primary'} />
     },
     {
       name: 'Curation',
-      href: 'https://curation.yearn.fi',
-      description: 'Lending and Borrowing Market Curation',
-      icon: <IconSliders className={'size-7 text-emerald-500'} />
+      href: 'https://app.morpho.org/ethereum/earn?v2=false&curators=yearn',
+      description: 'Lending Market Curation',
+      icon: <LogoCuration className={'size-11'} back={'text-transparent'} front={'text-primary'} />
     },
     {
       name: 'yCRV',
@@ -96,7 +98,7 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
       icon: (
         <img
           alt={'yCRV'}
-          className={'size-8'}
+          className={'size-6'}
           src={`${BASE_YEARN_ASSET_URI}/tokens/1/0xfcc5c47be19d06bf83eb04298b026f81069ff65b/logo-128.png`}
           loading={'eager'}
           decoding={'async'}
@@ -107,7 +109,7 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
       name: 'yYB',
       href: 'https://yyb.yearn.fi',
       description: 'veYB Liquid Locker',
-      icon: <img alt={'yYB'} className={'size-8'} src={'/yYB-logo.svg'} loading={'eager'} decoding={'async'} />
+      icon: <img alt={'yYB'} className={'size-6'} src={'/yYB-logo.svg'} loading={'eager'} decoding={'async'} />
     }
   ]
 
@@ -273,14 +275,14 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
 
   return (
     <div className={'flex items-center gap-3'}>
-      <div className={'relative group'} onMouseEnter={() => handleHoverMenu('products')} onMouseLeave={scheduleClose}>
+      <div className={'relative'} onMouseEnter={() => handleHoverMenu('products')} onMouseLeave={scheduleClose}>
         <button
           type={'button'}
           onClick={() => toggleMenu('products')}
-          className={navTriggerClass(activeMenu === 'products')}
+          className={cl('group', navTriggerClass(activeMenu === 'products'))}
           aria-expanded={activeMenu === 'products'}
         >
-          <span>{'Products'}</span>
+          <span>{'Ecosystem'}</span>
           <IconChevron
             className={cl(
               'size-4 transition-transform group-hover:rotate-180',
@@ -292,24 +294,54 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
           isOpen={activeMenu === 'products'}
           onClose={closeMenu}
           anchor={'left'}
-          className={'w-[350px]'}
+          className={'w-[520px] max-w-[calc(100vw-2rem)]'}
           forceDark={dropdownDarkOverride}
         >
-          <div className={'flex flex-col gap-0'}>
-            {products.map((item) => (
-              <div key={item.href} onClick={closeMenu}>
-                <NavTile item={item} isDark={isDarkMenu} />
+          <div className={'grid grid-cols-1 gap-3 md:grid-cols-2'}>
+            <div className={'flex flex-2 flex-col gap-3'}>
+              <p
+                className={cl(
+                  'text-xs pl-4 font-semibold uppercase tracking-[0.2em]',
+                  isDarkMenu ? 'text-neutral-400' : 'text-neutral-500'
+                )}
+              >
+                {'Products'}
+              </p>
+              <div className={'flex flex-col gap-0'}>
+                {products.map((item) => (
+                  <div key={item.href} onClick={closeMenu}>
+                    <NavTile item={item} isDark={isDarkMenu} />
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            <div className={'flex flex-col gap-3 flex-1'}>
+              <p
+                className={cl(
+                  'text-xs pl-4 font-semibold uppercase tracking-[0.2em]',
+                  isDarkMenu ? 'text-neutral-400' : 'text-neutral-500'
+                )}
+              >
+                {'Tools'}
+              </p>
+              <div className={'flex flex-col gap-0'}>
+                {toolItems.map((item) => (
+                  <div key={item.href} onClick={closeMenu}>
+                    <NavTile item={item} isDark={isDarkMenu} />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </DropdownPanel>
       </div>
 
-      <div className={'relative group'} onMouseEnter={() => handleHoverMenu('resources')} onMouseLeave={scheduleClose}>
+      <div className={'relative'} onMouseEnter={() => handleHoverMenu('resources')} onMouseLeave={scheduleClose}>
         <button
           type={'button'}
           onClick={() => toggleMenu('resources')}
-          className={navTriggerClass(activeMenu === 'resources')}
+          className={cl('group', navTriggerClass(activeMenu === 'resources'))}
           aria-expanded={activeMenu === 'resources'}
         >
           <span>{'Resources'}</span>
@@ -324,10 +356,10 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
           isOpen={activeMenu === 'resources'}
           onClose={closeMenu}
           anchor={'left'}
-          className={'w-[750px] max-w-[calc(100vw-2rem)]'}
+          className={'w-[520px] max-w-[calc(100vw-2rem)]'}
           forceDark={dropdownDarkOverride}
         >
-          <div className={'grid grid-cols-1 gap-3 lg:grid-cols-3'}>
+          <div className={'grid grid-cols-1 gap-3 md:grid-cols-2'}>
             <div className={'flex flex-col gap-3'}>
               <p
                 className={cl(
@@ -357,24 +389,6 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
               </p>
               <div className={'flex flex-col gap-1'}>
                 {communityItems.map((item) => (
-                  <div key={item.href} onClick={closeMenu}>
-                    <NavTile item={item} isDark={isDarkMenu} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className={'flex flex-col gap-3'}>
-              <p
-                className={cl(
-                  'text-xs pl-2 font-semibold uppercase tracking-[0.2em]',
-                  isDarkMenu ? 'text-neutral-400' : 'text-neutral-500'
-                )}
-              >
-                {'Tools'}
-              </p>
-              <div className={'flex flex-col gap-0'}>
-                {toolItems.map((item) => (
                   <div key={item.href} onClick={closeMenu}>
                     <NavTile item={item} isDark={isDarkMenu} />
                   </div>

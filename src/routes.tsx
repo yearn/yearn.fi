@@ -7,6 +7,7 @@ const HomePage = lazy(() => import('@pages/landing'))
 const PortfolioPage = lazy(() => import('@pages/portfolio/index'))
 const VaultsPage = lazy(() => import('@pages/vaults/index'))
 const VaultsDetailPage = lazy(() => import('@pages/vaults/[chainID]/[address]'))
+const IconListPage = lazy(() => import('@pages/icon-list/index'))
 
 // Loading component
 const PageLoader = (): ReactElement => (
@@ -33,6 +34,9 @@ export function Routes(): ReactElement {
 
         {/* Portfolio page */}
         <Route path="/portfolio" element={<PortfolioPage />} />
+
+        {/* Icon inventory page */}
+        <Route path="/icon-list" element={<IconListPage />} />
 
         {/* Unified Vaults routes */}
         <Route path="/vaults">
