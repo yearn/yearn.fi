@@ -42,7 +42,7 @@ const percentFormatter = new Intl.NumberFormat('en-US', {
 const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
 const PORTFOLIO_TABS = [
-  { key: 'positions', label: 'Positions' },
+  { key: 'positions', label: 'Your Vaults' },
   { key: 'activity', label: 'Activity' },
   { key: 'claim-rewards', label: 'Claim Rewards' }
 ] as const
@@ -87,7 +87,7 @@ type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'holdingsRows' | 'isAct
 function PortfolioPageLayout({ children }: { children: ReactElement }): ReactElement {
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
-      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16 sm:gap-8'}>{children}</div>
+      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16 sm:gap-4'}>{children}</div>
     </div>
   )
 }
@@ -212,7 +212,7 @@ function PortfolioHeaderSection({
   ]
 
   return (
-    <section className={'flex flex-col gap-3 sm:gap-4'}>
+    <section className={'flex flex-col gap-2 sm:gap-2'}>
       <Breadcrumbs
         className={'px-1'}
         items={[
@@ -232,24 +232,27 @@ function PortfolioHeaderSection({
           <h1 className={'text-lg font-black text-text-primary md:text-3xl md:leading-10'}>{'Account Overview'}</h1>
         </Tooltip>
       </div>
-      {isActive ? <MetricsCard items={metrics} className={'rounded-lg border border-border'} /> : null}
+      {isActive ? <MetricsCard items={metrics} className={'rounded-t-lg rounded-b-none border border-border'} /> : null}
     </section>
   )
 }
 
 function PortfolioTabSelector({
   activeTab,
-  onSelectTab
+  onSelectTab,
+  mergeWithHeader
 }: {
   activeTab: TPortfolioTabKey
   onSelectTab: (tab: TPortfolioTabKey) => void
+  mergeWithHeader?: boolean
 }): ReactElement {
   return (
     <div className={'flex flex-wrap gap-2 md:gap-3 w-full'}>
       <div
-        className={
-          'flex w-full flex-wrap justify-between gap-2 rounded-lg border border-border bg-surface-secondary p-1'
-        }
+        className={cl(
+          'flex w-full flex-wrap justify-between gap-2 bg-surface-secondary p-1',
+          mergeWithHeader ? 'rounded-b-lg border-x border-b border-border' : 'rounded-lg border border-border'
+        )}
       >
         {PORTFOLIO_TABS.map((tab) => (
           <button
@@ -279,7 +282,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   const hasEntries = cachedEntries.length > 0
 
   return (
-    <section className={'flex flex-col gap-3 sm:gap-4'}>
+    <section className={'flex flex-col gap-2 sm:gap-2'}>
       <div>
         <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'Activity'}</h2>
         <p className={'text-xs text-text-secondary sm:text-sm'}>{'Review your recent Yearn transactions.'}</p>
@@ -571,7 +574,7 @@ function PortfolioClaimRewardsSection({
   const showNoRewards = hasSources && !isLoading && !hasRewards
 
   return (
-    <section className={'flex flex-col gap-3 sm:gap-4'}>
+    <section className={'flex flex-col gap-2 sm:gap-2'}>
       <div>
         <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'Claim rewards'}</h2>
         <p className={'text-xs text-text-secondary sm:text-sm'}>
@@ -650,7 +653,7 @@ function PortfolioHoldingsSection({
   }
 
   return (
-    <section className={'flex flex-col gap-3 sm:gap-3'}>
+    <section className={'flex flex-col gap-2 sm:gap-2'}>
       <div className={'flex flex-wrap items-center justify-between gap-3 sm:gap-4'}>
         <div>
           <Tooltip
@@ -659,7 +662,7 @@ function PortfolioHoldingsSection({
             side={'top'}
             tooltip={<div className={headingTooltipClassName}>{'Track every Yearn position you currently hold.'}</div>}
           >
-            <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'Your vaults'}</h2>
+            <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'Your Vaults'}</h2>
           </Tooltip>
         </div>
       </div>
@@ -744,7 +747,7 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
   }
 
   return (
-    <section className={'flex flex-col gap-3 sm:gap-4'}>
+    <section className={'flex flex-col gap-2 sm:gap-2'}>
       <div>
         <Tooltip
           className={'h-auto gap-0 justify-start md:justify-start'}
@@ -797,15 +800,17 @@ function PortfolioPage(): ReactElement {
     <PortfolioPageLayout>
       {/** biome-ignore lint/complexity/noUselessFragments: <lint error without> */}
       <>
-        <PortfolioHeaderSection
-          blendedMetrics={model.blendedMetrics}
-          isActive={model.isActive}
-          isHoldingsLoading={model.isHoldingsLoading}
-          isSearchingBalances={model.isSearchingBalances}
-          hasKatanaHoldings={model.hasKatanaHoldings}
-          totalPortfolioValue={model.totalPortfolioValue}
-        />
-        <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} />
+        <div className={cl('flex flex-col', model.isActive ? 'gap-0' : 'gap-4 sm:gap-8')}>
+          <PortfolioHeaderSection
+            blendedMetrics={model.blendedMetrics}
+            isActive={model.isActive}
+            isHoldingsLoading={model.isHoldingsLoading}
+            isSearchingBalances={model.isSearchingBalances}
+            hasKatanaHoldings={model.hasKatanaHoldings}
+            totalPortfolioValue={model.totalPortfolioValue}
+          />
+          <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} mergeWithHeader={model.isActive} />
+        </div>
         {activeTab === 'positions' ? (
           <>
             <PortfolioHoldingsSection
