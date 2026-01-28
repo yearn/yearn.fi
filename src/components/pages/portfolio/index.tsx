@@ -16,6 +16,7 @@ import { METRIC_VALUE_CLASS, MetricHeader, MetricsCard, type TMetricBlock } from
 import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
@@ -26,7 +27,6 @@ import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useChainId, useSwitchChain } from 'wagmi'
-import { useAllStakingVaults } from './hooks/useAllStakingVaults'
 import { type TPortfolioModel, usePortfolioModel } from './hooks/usePortfolioModel'
 import { useVaultWithStakingRewards } from './hooks/useVaultWithStakingRewards'
 
@@ -415,7 +415,8 @@ function ChainMerkleRewardsFetcher({
 
 function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioClaimRewardsProps): ReactElement {
   const { address: userAddress } = useWeb3()
-  const stakingVaults = useAllStakingVaults()
+  const { vaults } = useYearn()
+  const stakingVaults = useMemo(() => Object.values(vaults).filter((vault) => vault.staking.available), [vaults])
   const [selectedChainId, setSelectedChainId] = useState<number | null>(null)
   const [isOverlayOpen, setIsOverlayOpen] = useState(false)
   const [activeStep, setActiveStep] = useState<TransactionStep | undefined>()
