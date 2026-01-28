@@ -1,65 +1,61 @@
 import { IconChevron } from '@shared/icons/IconChevron'
+import { IconDiscord } from '@shared/icons/IconDiscord'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { IconVaults } from '@shared/icons/IconVaults'
+import { IconSliders } from '@shared/icons/IconSliders'
+import { IconTelegram } from '@shared/icons/IconTelegram'
+import { IconTwitter } from '@shared/icons/IconTwitter'
+import { LogoGithub } from '@shared/icons/LogoGithub'
+import { LogoYearn } from '@shared/icons/LogoYearn'
+import { LogoYearnMark } from '@shared/icons/LogoYearnMark'
 import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from '/src/components/Link'
 import { DropdownPanel } from './DropdownPanel'
-import { APP_GROUPS, type TAppTile } from './YearnApps'
+import type { TAppTile } from './YearnApps'
 
 type THeaderNavMenuProps = {
   isHomePage: boolean
   isDarkTheme: boolean
 }
 
-type TMenuKey = 'products' | 'tools' | 'resources' | 'community'
+type TMenuKey = 'products' | 'resources'
 
-type TSocialLink = Pick<TAppTile, 'name' | 'href'>
+type TNavTile = Pick<TAppTile, 'name' | 'href' | 'description'> & {
+  icon?: ReactElement
+  iconWrapperClass?: string
+}
 
-const SOCIAL_LINKS: TSocialLink[] = [
-  { name: 'GitHub', href: 'https://github.com/yearn' },
-  { name: 'X (Twitter)', href: 'https://x.com/yearnfi' },
-  { name: 'Discord', href: 'https://discord.gg/yearn' }
-]
+const BASE_YEARN_ASSET_URI = import.meta.env?.VITE_BASE_YEARN_ASSETS_URI ?? ''
 
 function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href)
 }
 
-function getGroupItems(title: string): TAppTile[] {
-  return APP_GROUPS.find((group) => group.title === title)?.items ?? []
-}
+function NavTile({ item, isDark }: { item: TNavTile; isDark: boolean }): ReactElement {
+  const hasIcon = Boolean(item.icon)
+  const iconWrapperClass =
+    item.iconWrapperClass ?? cl(isDark ? 'bg-[#0a0a0a] text-neutral-200' : 'bg-white text-neutral-700')
 
-const BASE_PRODUCTS = getGroupItems('Apps')
-const TOOLS = getGroupItems('Analytics and Tools')
-const RESOURCES = getGroupItems('Resources')
-const DEPRECATED = getGroupItems('Deprecated Projects')
-
-function ProductTile({ item, isDark }: { item: TAppTile; isDark: boolean }): ReactElement {
   return (
     <Link href={item.href}>
       <div
         className={cl(
-          'group flex items-center gap-3 rounded-lg p-3 transition-colors',
+          'group flex items-center rounded-lg p-2 transition-colors',
+          hasIcon ? 'gap-3' : 'gap-0',
           isDark ? 'hover:bg-white/10' : 'hover:bg-neutral-100'
         )}
       >
-        <div
-          className={cl(
-            'flex size-10 items-center justify-center rounded-lg',
-            isDark ? 'bg-white/10' : 'bg-neutral-100'
-          )}
-        >
-          {item.icon}
-        </div>
-        <div className={'flex-1'}>
+        {hasIcon && (
+          <div className={cl('flex size-8 items-center justify-center rounded-lg', iconWrapperClass)}>{item.icon}</div>
+        )}
+        <div className={cl('flex-1', hasIcon ? '' : 'pl-1')}>
           <div className={'flex items-center gap-1'}>
             <span className={cl('text-sm font-semibold', isDark ? 'text-white' : 'text-neutral-900')}>{item.name}</span>
             {isExternalHref(item.href) && (
               <IconLinkOut
                 className={cl(
-                  'size-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100',
+                  'size-3 opacity-0 transition-opacity group-hover:opacity-100',
                   isDark ? 'text-neutral-400' : 'text-neutral-500'
                 )}
               />
@@ -74,50 +70,159 @@ function ProductTile({ item, isDark }: { item: TAppTile; isDark: boolean }): Rea
   )
 }
 
-function TextItem({ item, isDark }: { item: Pick<TAppTile, 'name' | 'href'>; isDark: boolean }): ReactElement {
-  return (
-    <Link href={item.href}>
-      <div
-        className={cl(
-          'group flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition-colors',
-          isDark ? 'text-white hover:bg-white/10' : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-        )}
-      >
-        <span>{item.name}</span>
-        {isExternalHref(item.href) && (
-          <IconLinkOut
-            className={cl(
-              'size-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100',
-              isDark ? 'text-neutral-400' : 'text-neutral-500'
-            )}
-          />
-        )}
-      </div>
-    </Link>
-  )
-}
-
 export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps): ReactElement {
   const [activeMenu, setActiveMenu] = useState<TMenuKey | null>(null)
+  const [pinnedMenu, setPinnedMenu] = useState<TMenuKey | null>(null)
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isDarkMenu = isHomePage || isDarkTheme
-  const [isDeprecatedExpanded, setIsDeprecatedExpanded] = useState(false)
-  const products: TAppTile[] = [
+  const neutralImageClass = cl('size-5 grayscale', isDarkMenu ? 'invert brightness-125' : 'opacity-90')
+  const products: TNavTile[] = [
     {
-      name: 'Vaults',
+      name: 'yVaults',
       href: '/vaults',
-      description: 'Yearn yield vaults',
-      icon: <IconVaults className={cl('size-6', isDarkMenu ? 'text-white' : 'text-neutral-900')} />
+      description: 'Yield-Generating Smart Contracts',
+      icon: <LogoYearnMark className={'size-7 text-primary'} />
     },
-    ...BASE_PRODUCTS
+    {
+      name: 'Curation',
+      href: 'https://curation.yearn.fi',
+      description: 'Lending and Borrowing Market Curation',
+      icon: <IconSliders className={'size-7 text-emerald-500'} />
+    },
+    {
+      name: 'yCRV',
+      href: 'https://ycrv.yearn.fi',
+      description: 'veCRV Liquid Locker',
+      icon: (
+        <img
+          alt={'yCRV'}
+          className={'size-8'}
+          src={`${BASE_YEARN_ASSET_URI}/tokens/1/0xfcc5c47be19d06bf83eb04298b026f81069ff65b/logo-128.png`}
+          loading={'eager'}
+          decoding={'async'}
+        />
+      )
+    },
+    {
+      name: 'yYB',
+      href: 'https://yyb.yearn.fi',
+      description: 'veYB Liquid Locker',
+      icon: <img alt={'yYB'} className={'size-8'} src={'/yYB-logo.svg'} loading={'eager'} decoding={'async'} />
+    }
   ]
 
-  const deprecatedToggleClass = cl(
-    'mt-4 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors',
-    isDarkMenu
-      ? 'text-neutral-400 hover:bg-white/10 hover:text-white'
-      : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
-  )
+  const infoItems: TNavTile[] = [
+    {
+      name: 'Docs',
+      href: 'https://docs.yearn.fi/',
+      description: 'Yearn Knowledge Base',
+      icon: (
+        <img
+          alt={'GitBook'}
+          className={neutralImageClass}
+          src={'/GitBook%20-%20Icon%20-%20Dark.svg'}
+          loading={'eager'}
+          decoding={'async'}
+        />
+      )
+    },
+    {
+      name: 'X (Twitter)',
+      href: 'https://x.com/yearnfi',
+      description: 'Official Yearn News Feed',
+      icon: <IconTwitter className={'size-5'} />
+    },
+    {
+      name: 'Github',
+      href: 'https://github.com/yearn',
+      description: 'Yearn Codebase',
+      icon: <LogoGithub className={'size-5'} />
+    },
+    {
+      name: 'Blog',
+      href: 'https://blog.yearn.fi/',
+      description: 'Articles about Yearn',
+      icon: (
+        <img alt={'Blog'} className={neutralImageClass} src={'/paragraph.svg'} loading={'eager'} decoding={'async'} />
+      )
+    },
+    {
+      name: 'Brand Assets',
+      href: 'https://brand.yearn.fi',
+      description: 'Yearn Brand Resources',
+      icon: (
+        <LogoYearn
+          width={20}
+          height={20}
+          className={'size-5'}
+          back={isDarkMenu ? 'text-neutral-200' : 'text-neutral-700'}
+          front={'text-white'}
+        />
+      )
+    }
+  ]
+
+  const toolItems: TNavTile[] = [
+    {
+      name: 'PowerGlove',
+      href: 'https://powerglove.yearn.fi',
+      description: 'Vault Analytics',
+      icon: undefined
+    },
+    {
+      name: 'Kong',
+      href: 'https://kong.yearn.fi',
+      description: 'Vault Data',
+      icon: undefined
+    },
+    {
+      name: 'Kalani',
+      href: 'https://kalani.yearn.fi',
+      description: 'Vault Management Interface',
+      icon: undefined
+    },
+    {
+      name: 'yFactory',
+      href: 'https://factory.yearn.fi',
+      description: 'LP token Vault Creation',
+      icon: undefined
+    },
+    {
+      name: 'APR Oracle',
+      href: 'https://oracle.yearn.fi',
+      description: 'Projected Vault APY Tool',
+      icon: undefined
+    }
+  ]
+
+  const communityItems: TNavTile[] = [
+    {
+      name: 'Support',
+      href: 'https://discord.gg/yearn',
+      description: 'Yearn Discord Server',
+      icon: <IconDiscord className={'size-5'} />
+    },
+    {
+      name: 'Telegram Chat',
+      href: 'https://t.me/yearnfinance',
+      description: 'Discuss Yearn on Telegram',
+      icon: <IconTelegram className={'size-5'} />
+    },
+    {
+      name: 'Governance',
+      href: 'https://gov.yearn.fi/',
+      description: 'Yearn Discussion Forum',
+      icon: (
+        <img
+          alt={'Discourse'}
+          className={neutralImageClass}
+          src={'/discourse-icon.svg'}
+          loading={'eager'}
+          decoding={'async'}
+        />
+      )
+    }
+  ]
 
   function navTriggerClass(isActive: boolean): string {
     const baseClass = 'cursor-pointer inline-flex items-center gap-1 text-base font-medium transition-colors relative'
@@ -136,30 +241,39 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
   }
 
   const scheduleClose = (): void => {
+    if (pinnedMenu) return
     closeTimeoutRef.current = setTimeout(() => {
       setActiveMenu(null)
     }, 150)
   }
 
   const toggleMenu = (menuKey: TMenuKey): void => {
-    setActiveMenu((current) => (current === menuKey ? null : menuKey))
+    if (pinnedMenu === menuKey) {
+      setPinnedMenu(null)
+      setActiveMenu(null)
+      return
+    }
+    setPinnedMenu(menuKey)
+    setActiveMenu(menuKey)
   }
 
   const closeMenu = (): void => {
     setActiveMenu(null)
+    setPinnedMenu(null)
   }
 
   const dropdownDarkOverride = isHomePage || undefined
 
-  useEffect(() => {
-    if (activeMenu !== 'resources') {
-      setIsDeprecatedExpanded(false)
+  const handleHoverMenu = (menuKey: TMenuKey): void => {
+    if (pinnedMenu && pinnedMenu !== menuKey) {
+      setPinnedMenu(null)
     }
-  }, [activeMenu])
+    openMenu(menuKey)
+  }
 
   return (
     <div className={'flex items-center gap-3'}>
-      <div className={'relative'} onMouseEnter={() => openMenu('products')} onMouseLeave={scheduleClose}>
+      <div className={'relative group'} onMouseEnter={() => handleHoverMenu('products')} onMouseLeave={scheduleClose}>
         <button
           type={'button'}
           onClick={() => toggleMenu('products')}
@@ -167,53 +281,31 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
           aria-expanded={activeMenu === 'products'}
         >
           <span>{'Products'}</span>
-          <IconChevron className={cl('size-4 transition-transform', activeMenu === 'products' ? 'rotate-180' : '')} />
+          <IconChevron
+            className={cl(
+              'size-4 transition-transform group-hover:rotate-180',
+              activeMenu === 'products' ? 'rotate-180' : ''
+            )}
+          />
         </button>
         <DropdownPanel
           isOpen={activeMenu === 'products'}
           onClose={closeMenu}
           anchor={'left'}
-          className={'w-[420px]'}
+          className={'w-[350px]'}
           forceDark={dropdownDarkOverride}
         >
-          <div className={'grid grid-cols-2 gap-1'}>
+          <div className={'flex flex-col gap-0'}>
             {products.map((item) => (
               <div key={item.href} onClick={closeMenu}>
-                <ProductTile item={item} isDark={isDarkMenu} />
+                <NavTile item={item} isDark={isDarkMenu} />
               </div>
             ))}
           </div>
         </DropdownPanel>
       </div>
 
-      <div className={'relative'} onMouseEnter={() => openMenu('tools')} onMouseLeave={scheduleClose}>
-        <button
-          type={'button'}
-          onClick={() => toggleMenu('tools')}
-          className={navTriggerClass(activeMenu === 'tools')}
-          aria-expanded={activeMenu === 'tools'}
-        >
-          <span>{'Tools'}</span>
-          <IconChevron className={cl('size-4 transition-transform', activeMenu === 'tools' ? 'rotate-180' : '')} />
-        </button>
-        <DropdownPanel
-          isOpen={activeMenu === 'tools'}
-          onClose={closeMenu}
-          anchor={'left'}
-          className={'w-[320px]'}
-          forceDark={dropdownDarkOverride}
-        >
-          <div className={'grid grid-cols-2 gap-1'}>
-            {TOOLS.map((item) => (
-              <div key={item.href} onClick={closeMenu}>
-                <TextItem item={item} isDark={isDarkMenu} />
-              </div>
-            ))}
-          </div>
-        </DropdownPanel>
-      </div>
-
-      <div className={'relative'} onMouseEnter={() => openMenu('resources')} onMouseLeave={scheduleClose}>
+      <div className={'relative group'} onMouseEnter={() => handleHoverMenu('resources')} onMouseLeave={scheduleClose}>
         <button
           type={'button'}
           onClick={() => toggleMenu('resources')}
@@ -221,68 +313,74 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
           aria-expanded={activeMenu === 'resources'}
         >
           <span>{'Resources'}</span>
-          <IconChevron className={cl('size-4 transition-transform', activeMenu === 'resources' ? 'rotate-180' : '')} />
+          <IconChevron
+            className={cl(
+              'size-4 transition-transform group-hover:rotate-180',
+              activeMenu === 'resources' ? 'rotate-180' : ''
+            )}
+          />
         </button>
         <DropdownPanel
           isOpen={activeMenu === 'resources'}
           onClose={closeMenu}
           anchor={'left'}
-          className={'w-[360px]'}
+          className={'w-[750px] max-w-[calc(100vw-2rem)]'}
           forceDark={dropdownDarkOverride}
         >
-          <div className={'flex flex-col'}>
-            <div className={'flex flex-col'}>
-              {RESOURCES.map((item) => (
-                <div key={item.href} onClick={closeMenu}>
-                  <TextItem item={item} isDark={isDarkMenu} />
-                </div>
-              ))}
-            </div>
-
-            <button
-              type={'button'}
-              onClick={() => setIsDeprecatedExpanded((prev) => !prev)}
-              className={deprecatedToggleClass}
-            >
-              <span>{'Deprecated'}</span>
-              <IconChevron className={cl('size-3 transition-transform', isDeprecatedExpanded ? 'rotate-180' : '')} />
-            </button>
-            {isDeprecatedExpanded && (
-              <div className={'mt-1 flex flex-col'}>
-                {DEPRECATED.map((item) => (
+          <div className={'grid grid-cols-1 gap-3 lg:grid-cols-3'}>
+            <div className={'flex flex-col gap-3'}>
+              <p
+                className={cl(
+                  'text-xs pl-4 font-semibold uppercase tracking-[0.2em]',
+                  isDarkMenu ? 'text-neutral-400' : 'text-neutral-500'
+                )}
+              >
+                {'Information'}
+              </p>
+              <div className={'flex flex-col gap-0'}>
+                {infoItems.map((item) => (
                   <div key={item.href} onClick={closeMenu}>
-                    <TextItem item={item} isDark={isDarkMenu} />
+                    <NavTile item={item} isDark={isDarkMenu} />
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        </DropdownPanel>
-      </div>
+            </div>
 
-      <div className={'relative'} onMouseEnter={() => openMenu('community')} onMouseLeave={scheduleClose}>
-        <button
-          type={'button'}
-          onClick={() => toggleMenu('community')}
-          className={navTriggerClass(activeMenu === 'community')}
-          aria-expanded={activeMenu === 'community'}
-        >
-          <span>{'Community'}</span>
-          <IconChevron className={cl('size-4 transition-transform', activeMenu === 'community' ? 'rotate-180' : '')} />
-        </button>
-        <DropdownPanel
-          isOpen={activeMenu === 'community'}
-          onClose={closeMenu}
-          anchor={'left'}
-          className={'w-[260px]'}
-          forceDark={dropdownDarkOverride}
-        >
-          <div className={'flex flex-col'}>
-            {SOCIAL_LINKS.map((item) => (
-              <div key={item.href} onClick={closeMenu}>
-                <TextItem item={item} isDark={isDarkMenu} />
+            <div className={'flex flex-col gap-3'}>
+              <p
+                className={cl(
+                  'text-xs pl-4 font-semibold uppercase tracking-[0.2em]',
+                  isDarkMenu ? 'text-neutral-400' : 'text-neutral-500'
+                )}
+              >
+                {'Community'}
+              </p>
+              <div className={'flex flex-col gap-1'}>
+                {communityItems.map((item) => (
+                  <div key={item.href} onClick={closeMenu}>
+                    <NavTile item={item} isDark={isDarkMenu} />
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            <div className={'flex flex-col gap-3'}>
+              <p
+                className={cl(
+                  'text-xs pl-2 font-semibold uppercase tracking-[0.2em]',
+                  isDarkMenu ? 'text-neutral-400' : 'text-neutral-500'
+                )}
+              >
+                {'Tools'}
+              </p>
+              <div className={'flex flex-col gap-0'}>
+                {toolItems.map((item) => (
+                  <div key={item.href} onClick={closeMenu}>
+                    <NavTile item={item} isDark={isDarkMenu} />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </DropdownPanel>
       </div>

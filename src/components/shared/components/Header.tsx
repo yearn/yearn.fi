@@ -130,17 +130,15 @@ function AppHeader(): ReactElement {
           <div className={'flex items-center justify-end gap-2'}>
             {!isHomePage && (
               <>
-                <div className={'hidden items-center justify-end md:flex'}>
+                <div className={'hidden items-center justify-end md:flex gap-2'}>
                   <Link href={'/portfolio'}>
                     <span
-                      className={
-                        'mr-3 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary'
-                      }
+                      className={'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'}
                     >
                       {'Portfolio'}
                     </span>
                   </Link>
-                  <div className={'mr-3 h-6 w-px bg-text-primary/20'} />
+
                   <button
                     className={
                       'min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary'
