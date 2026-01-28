@@ -3,8 +3,10 @@ import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
+import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import type { WidgetActionType } from '@pages/vaults/types'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
@@ -15,6 +17,7 @@ import {
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
+import { isYvUsdVault } from '@pages/vaults/utils/yvUsd'
 import {
   METRIC_FOOTNOTE_CLASS,
   METRIC_VALUE_CLASS,
@@ -24,9 +27,11 @@ import {
 } from '@shared/components/MetricsCard'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { Tooltip } from '@shared/components/Tooltip'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { cl, formatUSD, toAddress, toNormalizedBN } from '@shared/utils'
+import { IconLock } from '@shared/icons/IconLock'
+import { cl, formatUSD, isZero, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
@@ -44,9 +49,11 @@ function VaultHeaderIdentity({
   className?: string
 }): ReactElement {
   const chainName = getNetwork(currentVault.chainID).name
-  const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-    currentVault.chainID
-  }/${currentVault.token.address.toLowerCase()}/logo-128.png`
+  const isYvUsd = isYvUsdVault(currentVault)
+  const yvUsdLogoSrc = `${import.meta.env.BASE_URL}yvUSD.png`
+  const tokenLogoSrc = isYvUsd
+    ? yvUsdLogoSrc
+    : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
   const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
@@ -307,11 +314,50 @@ function VaultOverviewCard({
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
   const listKind = deriveListKind(currentVault)
   const isFactoryVault = listKind === 'factory'
+  const isYvUsd = isYvUsdVault(currentVault)
+  const { metrics: yvUsdMetrics, unlockedVault, lockedVault } = useYvUsdVaults()
+  const unlockedForwardApy =
+    yvUsdMetrics?.unlocked.apy ?? (currentVault.apr?.forwardAPR?.netAPR || currentVault.apr?.netAPR || 0)
+  const lockedForwardApy = yvUsdMetrics?.locked.apy ?? unlockedForwardApy
+  const unlockedMonthly = unlockedVault?.apr?.points?.monthAgo ?? currentVault.apr.points.monthAgo
+  const unlockedWeekly = unlockedVault?.apr?.points?.weekAgo ?? currentVault.apr.points.weekAgo
+  const unlockedHistorical = isZero(unlockedMonthly) ? unlockedWeekly : unlockedMonthly
+  const lockedMonthly = lockedVault?.apr?.points?.monthAgo ?? unlockedMonthly
+  const lockedWeekly = lockedVault?.apr?.points?.weekAgo ?? unlockedWeekly
+  const lockedHistorical = isZero(lockedMonthly) ? lockedWeekly : lockedMonthly
+  const unlockedTvl = unlockedVault?.tvl?.tvl ?? yvUsdMetrics?.unlocked.tvl ?? 0
+  const lockedTvl = lockedVault?.tvl?.tvl ?? yvUsdMetrics?.locked.tvl ?? 0
+  const combinedTvl = currentVault.tvl?.tvl ?? unlockedTvl + lockedTvl
+  const yvUsdEstApyTooltip = isYvUsd ? (
+    <YvUsdApyTooltipContent lockedValue={lockedForwardApy} unlockedValue={unlockedForwardApy} />
+  ) : undefined
+  const yvUsdHistoricalApyTooltip = isYvUsd ? (
+    <YvUsdApyTooltipContent lockedValue={lockedHistorical} unlockedValue={unlockedHistorical} />
+  ) : undefined
+  const yvUsdTvlTooltip = isYvUsd ? (
+    <YvUsdTvlTooltipContent
+      lockedValue={lockedTvl}
+      unlockedValue={unlockedTvl}
+      className="border-0 bg-transparent p-0"
+    />
+  ) : undefined
   const metrics: TMetricBlock[] = [
     {
       key: 'est-apy',
       header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY for the next period'} />,
-      value: (
+      value: isYvUsd ? (
+        <Tooltip className={'gap-0 h-auto'} openDelayMs={150} tooltip={yvUsdEstApyTooltip ?? ''} align={'center'}>
+          <span className={cl('inline-flex items-center gap-2', METRIC_VALUE_CLASS)}>
+            <IconLock className="size-4 text-text-secondary" />
+            <RenderAmount
+              value={lockedForwardApy}
+              symbol={'percent'}
+              decimals={6}
+              options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
+            />
+          </span>
+        </Tooltip>
+      ) : (
         <VaultForwardAPY
           currentVault={currentVault}
           showSubline={false}
@@ -324,7 +370,24 @@ function VaultOverviewCard({
     {
       key: 'historical-apy',
       header: <MetricHeader label={'30 Day APY'} tooltip={'Average realized APY over the previous 30 days'} />,
-      value: (
+      value: isYvUsd ? (
+        <Tooltip
+          className={'gap-0 h-auto'}
+          openDelayMs={150}
+          tooltip={yvUsdHistoricalApyTooltip ?? ''}
+          align={'center'}
+        >
+          <span className={cl('inline-flex items-center gap-2', METRIC_VALUE_CLASS)}>
+            <IconLock className="size-4 text-text-secondary" />
+            <RenderAmount
+              value={lockedHistorical}
+              symbol={'percent'}
+              decimals={6}
+              options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
+            />
+          </span>
+        </Tooltip>
+      ) : (
         <VaultHistoricalAPY
           currentVault={currentVault}
           showSublineTooltip
@@ -337,8 +400,25 @@ function VaultOverviewCard({
     {
       key: 'tvl',
       header: <MetricHeader label={'TVL'} tooltip={'Total value currently deposited into this vault'} />,
-      value: <VaultTVL currentVault={currentVault} valueClassName={METRIC_VALUE_CLASS} />,
-      footnote: (
+      value: isYvUsd ? (
+        <span className={METRIC_VALUE_CLASS}>
+          <RenderAmount
+            value={combinedTvl || 0}
+            symbol={'USD'}
+            decimals={0}
+            options={{
+              shouldCompactValue: true,
+              maximumFractionDigits: 2,
+              minimumFractionDigits: 0
+            }}
+          />
+        </span>
+      ) : (
+        <VaultTVL currentVault={currentVault} valueClassName={METRIC_VALUE_CLASS} />
+      ),
+      footnote: isYvUsd ? (
+        yvUsdTvlTooltip
+      ) : (
         <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
           <RenderAmount
             value={Number(totalAssets)}

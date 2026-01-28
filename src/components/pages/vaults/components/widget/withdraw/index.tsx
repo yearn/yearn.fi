@@ -23,7 +23,9 @@ import { useWithdrawNotifications } from './useWithdrawNotifications'
 import { WithdrawDetails } from './WithdrawDetails'
 import { WithdrawDetailsOverlay } from './WithdrawDetailsOverlay'
 
-export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; disableBorderRadius?: boolean }> = ({
+export const WidgetWithdraw: FC<
+  WithdrawWidgetProps & { hideSettings?: boolean; hideContainerBorder?: boolean; disableBorderRadius?: boolean }
+> = ({
   vaultAddress,
   assetAddress,
   stakingAddress,
@@ -32,7 +34,9 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
   handleWithdrawSuccess: onWithdrawSuccess,
   onOpenSettings,
   isSettingsOpen,
-  disableBorderRadius
+  hideSettings,
+  hideContainerBorder = false,
+  disableBorderRadius = false
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -352,10 +356,15 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
   // ============================================================================
   // Render
   // ============================================================================
-  const isSettingsVisible = !!account && !!isSettingsOpen
+  const isSettingsVisible = !!account && !!isSettingsOpen && !hideSettings
 
   return (
-    <div className={cl('flex flex-col relative border border-border h-full', { 'rounded-lg': !disableBorderRadius })}>
+    <div
+      className={cl('flex flex-col relative h-full', {
+        'border border-border': !hideContainerBorder,
+        'rounded-lg': !disableBorderRadius
+      })}
+    >
       <div className="flex items-center justify-between gap-3 px-6 pt-4 ">
         <h3 className="text-base font-semibold text-text-primary">Withdraw</h3>
       </div>
@@ -469,7 +478,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
               </Button>
             )}
           </div>
-          {account && onOpenSettings ? (
+          {account && onOpenSettings && !hideSettings ? (
             <button
               type="button"
               onClick={onOpenSettings}

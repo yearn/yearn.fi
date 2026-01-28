@@ -4,6 +4,8 @@ import {
   type TVaultChartTimeframe,
   VaultChartsSection
 } from '@pages/vaults/components/detail/VaultChartsSection'
+import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
+import { isYvUsdVault } from '@pages/vaults/utils/yvUsd'
 import {
   AllocationChart,
   DARK_MODE_COLORS,
@@ -83,15 +85,25 @@ export default function VaultsListRowExpandedContent({
               }
             />
             {expandedView in EXPANDED_VIEW_TO_CHART_TAB ? (
-              <VaultChartsSection
-                chainId={currentVault.chainID}
-                vaultAddress={currentVault.address}
-                shouldRenderSelectors={false}
-                chartTab={EXPANDED_VIEW_TO_CHART_TAB[expandedView as keyof typeof EXPANDED_VIEW_TO_CHART_TAB]}
-                timeframe={chartTimeframe}
-                chartHeightPx={200}
-                chartHeightMdPx={200}
-              />
+              isYvUsdVault(currentVault) ? (
+                <YvUsdChartsSection
+                  shouldRenderSelectors={false}
+                  chartTab={EXPANDED_VIEW_TO_CHART_TAB[expandedView as keyof typeof EXPANDED_VIEW_TO_CHART_TAB]}
+                  timeframe={chartTimeframe}
+                  chartHeightPx={200}
+                  chartHeightMdPx={200}
+                />
+              ) : (
+                <VaultChartsSection
+                  chainId={currentVault.chainID}
+                  vaultAddress={currentVault.address}
+                  shouldRenderSelectors={false}
+                  chartTab={EXPANDED_VIEW_TO_CHART_TAB[expandedView as keyof typeof EXPANDED_VIEW_TO_CHART_TAB]}
+                  timeframe={chartTimeframe}
+                  chartHeightPx={200}
+                  chartHeightMdPx={200}
+                />
+              )
             ) : (
               <VaultStrategyAllocationPreview currentVault={currentVault} />
             )}

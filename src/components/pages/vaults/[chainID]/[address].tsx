@@ -7,13 +7,17 @@ import { VaultDetailsHeader } from '@pages/vaults/components/detail/VaultDetails
 import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSection'
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
+import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
 import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
+import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
 import { fetchYBoldVault } from '@pages/vaults/utils/handleYBold'
+import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -62,6 +66,8 @@ function Index(): ReactElement | null {
   const { yDaemonBaseUri } = useYDaemonBaseURI({
     chainID: chainId
   })
+  const { listVault: yvUsdVault, isLoading: isLoadingYvUsd } = useYvUsdVaults()
+  const isYvUsd = isYvUsdAddress(params.address)
 
   // Use vault address as key to reset state
   const vaultKey = `${params.chainID}-${params.address}`
@@ -173,12 +179,12 @@ function Index(): ReactElement | null {
 
   // Create a stable endpoint that includes the vault key to force SWR to refetch
   const endpoint = useMemo(() => {
-    if (!params.address || !yDaemonBaseUri) return null
+    if (isYvUsd || !params.address || !yDaemonBaseUri) return null
     return `${yDaemonBaseUri}/vaults/${toAddress(params.address as string)}?${new URLSearchParams({
       strategiesDetails: 'withDetails',
       strategiesCondition: 'inQueue'
     })}`
-  }, [params.address, yDaemonBaseUri])
+  }, [isYvUsd, params.address, yDaemonBaseUri])
 
   const {
     data: vault,
@@ -200,10 +206,12 @@ function Index(): ReactElement | null {
   }, [endpoint, mutate])
 
   const currentVault = useMemo(() => {
+    if (isYvUsd) return yvUsdVault
     return overrideVault ?? _currentVault
-  }, [overrideVault, _currentVault])
+  }, [isYvUsd, yvUsdVault, overrideVault, _currentVault])
 
   useEffect(() => {
+    if (isYvUsd) return
     if (!hasFetchedOverride && _currentVault && _currentVault.address) {
       setHasFetchedOverride(true)
       fetchYBoldVault(yDaemonBaseUri, _currentVault).then((_vault) => {
@@ -212,14 +220,16 @@ function Index(): ReactElement | null {
         }
       })
     }
-  }, [yDaemonBaseUri, _currentVault, hasFetchedOverride])
+  }, [isYvUsd, yDaemonBaseUri, _currentVault, hasFetchedOverride])
+  // </WORKAROUND>
 
   useEffect((): void => {
+    if (isYvUsd) return
     if (vault && (!_currentVault || vault.address !== _currentVault.address)) {
       setCurrentVault(vault)
       setIsInit(true)
     }
-  }, [vault, _currentVault])
+  }, [isYvUsd, vault, _currentVault])
 
   useEffect((): void => {
     if (address && isActive) {
@@ -388,7 +398,10 @@ function Index(): ReactElement | null {
         key: 'charts' as const,
         shouldRender: Number.isInteger(chainId),
         ref: sectionRefs.charts,
-        content: (
+
+        content: isYvUsd ? (
+          <YvUsdChartsSection chartHeightPx={180} chartHeightMdPx={230} />
+        ) : (
           <VaultChartsSection
             chainId={chainId}
             vaultAddress={currentVault.address}
@@ -422,7 +435,7 @@ function Index(): ReactElement | null {
         content: <VaultInfoSection currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
       }
     ]
-  }, [chainId, currentVault, sectionRefs, yDaemonBaseUri])
+  }, [chainId, currentVault, isYvUsd, sectionRefs, yDaemonBaseUri])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const sectionTabs = renderableSections.map((section) => ({
@@ -586,12 +599,16 @@ function Index(): ReactElement | null {
   )
 
   useEffect(() => {
+    if (isYvUsd) return
     if (isMobileDrawerOpen && mobileWidgetRef.current) {
       mobileWidgetRef.current.setMode(mobileDrawerAction)
     }
-  }, [isMobileDrawerOpen, mobileDrawerAction])
+  }, [isMobileDrawerOpen, mobileDrawerAction, isYvUsd])
 
-  if (isLoadingVault || !params.address || !isInit || !yDaemonBaseUri) {
+  const isPageLoading = isYvUsd ? isLoadingYvUsd : isLoadingVault
+  const isPageInit = isYvUsd ? Boolean(yvUsdVault) : isInit
+
+  if (isPageLoading || !params.address || !isPageInit || !yDaemonBaseUri) {
     return (
       <div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
         <div className={'mt-[20%] flex h-10 items-center justify-center'}>
@@ -620,6 +637,10 @@ function Index(): ReactElement | null {
         ? 'Withdraw'
         : 'Migrate'
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
+  const yvUsdLogoSrc = `${import.meta.env.BASE_URL}yvUSD.png`
+  const tokenLogoSrc = isYvUsd
+    ? yvUsdLogoSrc
+    : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`
 
   return (
     <div
@@ -658,14 +679,7 @@ function Index(): ReactElement | null {
         <div className="md:hidden mt-4 mb-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
-              <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-                  currentVault.chainID
-                }/${currentVault.token.address.toLowerCase()}/logo-128.png`}
-                alt={currentVault.token.symbol || ''}
-                width={40}
-                height={40}
-              />
+              <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={40} height={40} />
             </div>
             <div className="flex-1 min-w-0">
               <h1 className={'text-lg font-black leading-tight truncate-safe text-text-primary'}>
@@ -764,21 +778,33 @@ function Index(): ReactElement | null {
                     className={cl('flex flex-col min-h-0', isWidgetPanelActive ? 'flex' : 'hidden')}
                     aria-hidden={!isWidgetPanelActive}
                   >
-                    <Widget
-                      ref={widgetRef}
-                      vaultAddress={currentVault.address}
-                      currentVault={currentVault}
-                      gaugeAddress={currentVault.staking.address}
-                      actions={widgetActions}
-                      chainId={chainId}
-                      mode={widgetMode}
-                      onModeChange={setWidgetMode}
-                      showTabs={false}
-                      onOpenSettings={toggleWidgetSettings}
-                      isSettingsOpen={isWidgetSettingsOpen}
-                      depositPrefill={depositPrefill}
-                      onDepositPrefillConsumed={() => setDepositPrefill(null)}
-                    />
+                    {isYvUsd ? (
+                      <YvUsdWidget
+                        currentVault={currentVault}
+                        chainId={chainId}
+                        mode={widgetMode}
+                        onModeChange={setWidgetMode}
+                        showTabs={false}
+                        onOpenSettings={toggleWidgetSettings}
+                        isSettingsOpen={isWidgetSettingsOpen}
+                      />
+                    ) : (
+                      <Widget
+                        ref={widgetRef}
+                        vaultAddress={currentVault.address}
+                        currentVault={currentVault}
+                        gaugeAddress={currentVault.staking.address}
+                        actions={widgetActions}
+                        chainId={chainId}
+                        mode={widgetMode}
+                        onModeChange={setWidgetMode}
+                        showTabs={false}
+                        onOpenSettings={toggleWidgetSettings}
+                        isSettingsOpen={isWidgetSettingsOpen}
+                        depositPrefill={depositPrefill}
+                        onDepositPrefillConsumed={() => setDepositPrefill(null)}
+                      />
+                    )}
                   </div>
                 )}
                 <WalletPanel
@@ -906,18 +932,22 @@ function Index(): ReactElement | null {
         title={currentVault.name}
         headerActions={<MobileDrawerSettingsButton />}
       >
-        <Widget
-          ref={mobileWidgetRef}
-          vaultAddress={currentVault.address}
-          currentVault={currentVault}
-          gaugeAddress={currentVault.staking.address}
-          actions={widgetActions}
-          chainId={chainId}
-          hideTabSelector
-          onOpenSettings={toggleWidgetSettings}
-          isSettingsOpen={isWidgetSettingsOpen}
-          disableBorderRadius
-        />
+        {isYvUsd ? (
+          <YvUsdWidget currentVault={currentVault} chainId={chainId} mode={mobileDrawerAction} showTabs={false} />
+        ) : (
+          <Widget
+            ref={mobileWidgetRef}
+            vaultAddress={currentVault.address}
+            currentVault={currentVault}
+            gaugeAddress={currentVault.staking.address}
+            actions={widgetActions}
+            chainId={chainId}
+            hideTabSelector
+            onOpenSettings={toggleWidgetSettings}
+            isSettingsOpen={isWidgetSettingsOpen}
+            disableBorderRadius
+          />
+        )}
       </BottomDrawer>
     </div>
   )
