@@ -5,7 +5,7 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import type { TNormalizedBN } from '@shared/types'
-import { formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
@@ -21,13 +21,14 @@ import { useWithdrawNotifications } from './useWithdrawNotifications'
 import { WithdrawDetails } from './WithdrawDetails'
 import { WithdrawDetailsOverlay } from './WithdrawDetailsOverlay'
 
-export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean }> = ({
+export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; hideContainerBorder?: boolean }> = ({
   vaultAddress,
   assetAddress,
   stakingAddress,
   chainId,
   vaultSymbol,
-  handleWithdrawSuccess: onWithdrawSuccess
+  handleWithdrawSuccess: onWithdrawSuccess,
+  hideContainerBorder = false
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -386,7 +387,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean }
   // Render
   // ============================================================================
   return (
-    <div className="flex flex-col relative border border-border rounded-lg h-full">
+    <div className={cl('flex flex-col relative h-full', hideContainerBorder ? '' : 'border border-border rounded-lg')}>
       <div className="flex flex-col flex-1 p-4 gap-6">
         {/* Withdraw From Selector */}
         {hasBothBalances && <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />}

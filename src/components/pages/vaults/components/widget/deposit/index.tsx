@@ -5,7 +5,7 @@ import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
-import { formatTAmount, toAddress } from '@shared/utils'
+import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { type FC, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
@@ -42,6 +42,7 @@ interface Props {
   detailsContent?: ReactNode
   hideDetails?: boolean
   hideActionButton?: boolean
+  hideContainerBorder?: boolean
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -59,7 +60,8 @@ export const WidgetDeposit: FC<Props> = ({
   hideSettings: _hideSettings,
   detailsContent,
   hideDetails = false,
-  hideActionButton = false
+  hideActionButton = false,
+  hideContainerBorder = false
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -374,7 +376,7 @@ export const WidgetDeposit: FC<Props> = ({
   // Render
   // ============================================================================
   return (
-    <div className="flex flex-col border border-border rounded-lg relative h-full">
+    <div className={cl('flex flex-col relative h-full', hideContainerBorder ? '' : 'border border-border rounded-lg')}>
       <div className="flex flex-col flex-1 p-4 gap-6">
         {/* Amount Section */}
         <InputTokenAmount
