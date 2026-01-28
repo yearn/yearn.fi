@@ -99,7 +99,7 @@ function AppHeader(): ReactElement {
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { notificationStatus } = useNotifications()
-  const { isActive, openLoginModal, address, ens, clusters } = useWeb3()
+  const { address, ens, clusters } = useWeb3()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
 
@@ -140,6 +140,7 @@ function AppHeader(): ReactElement {
                       {'Portfolio'}
                     </span>
                   </Link>
+                  <div className={'mr-3 h-6 w-px bg-text-primary/20'} />
                   <button
                     className={
                       'min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary'
@@ -178,14 +179,6 @@ function AppHeader(): ReactElement {
         pathname={pathname}
         isDarkTheme={isDarkTheme}
         onThemeToggle={() => setThemePreference(isDarkTheme ? 'light' : 'soft-dark')}
-        onAccountClick={() => {
-          setIsMobileMenuOpen(false)
-          if (isActive) {
-            setIsAccountSidebarOpen(true)
-          } else {
-            openLoginModal()
-          }
-        }}
         notificationStatus={notificationStatus}
         walletIdentity={walletIdentity}
       />

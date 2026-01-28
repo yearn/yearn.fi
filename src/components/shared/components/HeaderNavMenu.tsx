@@ -1,4 +1,5 @@
 import { IconChevron } from '@shared/icons/IconChevron'
+import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconVaults } from '@shared/icons/IconVaults'
 import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'
@@ -40,7 +41,7 @@ function ProductTile({ item, isDark }: { item: TAppTile; isDark: boolean }): Rea
     <Link href={item.href}>
       <div
         className={cl(
-          'flex items-center gap-3 rounded-lg p-3 transition-colors',
+          'group flex items-center gap-3 rounded-lg p-3 transition-colors',
           isDark ? 'hover:bg-white/10' : 'hover:bg-neutral-100'
         )}
       >
@@ -56,7 +57,12 @@ function ProductTile({ item, isDark }: { item: TAppTile; isDark: boolean }): Rea
           <div className={'flex items-center gap-1'}>
             <span className={cl('text-sm font-semibold', isDark ? 'text-white' : 'text-neutral-900')}>{item.name}</span>
             {isExternalHref(item.href) && (
-              <span className={cl('text-xs', isDark ? 'text-neutral-400' : 'text-neutral-500')}>{'↗'}</span>
+              <IconLinkOut
+                className={cl(
+                  'size-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100',
+                  isDark ? 'text-neutral-400' : 'text-neutral-500'
+                )}
+              />
             )}
           </div>
           {item.description && (
@@ -73,12 +79,19 @@ function TextItem({ item, isDark }: { item: Pick<TAppTile, 'name' | 'href'>; isD
     <Link href={item.href}>
       <div
         className={cl(
-          'flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition-colors',
+          'group flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition-colors',
           isDark ? 'text-white hover:bg-white/10' : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
         )}
       >
         <span>{item.name}</span>
-        {isExternalHref(item.href) && <span className={'text-xs'}>{'↗'}</span>}
+        {isExternalHref(item.href) && (
+          <IconLinkOut
+            className={cl(
+              'size-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100',
+              isDark ? 'text-neutral-400' : 'text-neutral-500'
+            )}
+          />
+        )}
       </div>
     </Link>
   )
