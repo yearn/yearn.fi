@@ -12,7 +12,10 @@ import { IconSettings } from '@shared/icons/IconSettings'
 import { IconSun } from '@shared/icons/IconSun'
 import { IconTwitter } from '@shared/icons/IconTwitter'
 import { IconWallet } from '@shared/icons/IconWallet'
+import { LogoCuration } from '@shared/icons/LogoCuration'
 import { LogoGithub } from '@shared/icons/LogoGithub'
+import { LogoYearn } from '@shared/icons/LogoYearn'
+import { LogoYearnMark } from '@shared/icons/LogoYearnMark'
 import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
 import { cl, formatUSD } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
@@ -20,30 +23,26 @@ import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import Link from '/src/components/Link'
-import { APP_GROUPS, type TAppTile } from './YearnApps'
+import { IconTelegram } from '../icons/IconTelegram'
 
-type TNavItem = Pick<TAppTile, 'name' | 'href'>
+type TNavItem = {
+  name: string
+  href: string
+}
 
-const COMMUNITY_LINKS: TNavItem[] = [
-  { name: 'Discord', href: 'https://discord.gg/yearn' },
-  { name: 'GitHub', href: 'https://github.com/yearn' },
-  { name: 'X (Twitter)', href: 'https://x.com/yearnfi' }
-]
+type TNavTile = TNavItem & {
+  description?: string
+  icon?: ReactElement
+  iconWrapperClass?: string
+}
+
+const BASE_YEARN_ASSET_URI = import.meta.env?.VITE_BASE_YEARN_ASSETS_URI ?? ''
 
 function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href)
 }
 
-function getGroupItems(title: string): TAppTile[] {
-  return APP_GROUPS.find((group) => group.title === title)?.items ?? []
-}
-
-const BASE_PRODUCTS = getGroupItems('Apps')
-const TOOLS = getGroupItems('Analytics and Tools')
-const RESOURCES = getGroupItems('Resources')
-const DEPRECATED = getGroupItems('Deprecated Projects')
-
-type TSectionKey = 'products' | 'tools' | 'resources' | 'community'
+type TSectionKey = 'products' | 'info' | 'community' | 'tools'
 
 type TMobileNavMenuProps = {
   isOpen: boolean
@@ -55,6 +54,54 @@ type TMobileNavMenuProps = {
   walletIdentity?: string
 }
 
+function MobileNavTile({
+  item,
+  isDark,
+  onClick
+}: {
+  item: TNavTile
+  isDark: boolean
+  onClick: () => void
+}): ReactElement {
+  const hasIcon = Boolean(item.icon)
+  const iconWrapperClass =
+    item.iconWrapperClass ?? cl(isDark ? 'bg-[#0a0a0a] text-neutral-200' : 'bg-white text-neutral-700')
+
+  return (
+    <Link href={item.href} onClick={onClick} className={'w-full'}>
+      <div
+        className={cl(
+          'group/nav-item flex items-center rounded-lg p-2 transition-colors',
+          hasIcon ? 'gap-3' : 'gap-0',
+          isDark ? 'hover:bg-white/10' : 'hover:bg-neutral-100'
+        )}
+      >
+        {hasIcon && (
+          <div className={cl('flex size-8 items-center justify-center rounded-lg', iconWrapperClass)}>{item.icon}</div>
+        )}
+        <div className={cl('flex-1', hasIcon ? '' : 'pl-1')}>
+          <div className={'flex w-full items-center justify-between gap-2'}>
+            <span className={cl('truncate text-sm font-semibold', isDark ? 'text-white' : 'text-neutral-900')}>
+              {item.name}
+            </span>
+            {isExternalHref(item.href) && (
+              <IconLinkOut
+                className={cl(
+                  'size-3 opacity-0 transition-opacity group-hover/nav-item:opacity-100',
+                  isDark ? 'text-neutral-400' : 'text-neutral-500'
+                )}
+              />
+            )}
+          </div>
+          {item.description && (
+            <p className={cl('text-xs', isDark ? 'text-neutral-400' : 'text-neutral-500')}>{item.description}</p>
+          )}
+        </div>
+      </div>
+    </Link>
+  )
+}
+
 export function MobileNavMenu({
   isOpen,
   onClose,
@@ -64,12 +111,11 @@ export function MobileNavMenu({
   notificationStatus,
   walletIdentity
 }: TMobileNavMenuProps): ReactElement {
-  const [isDeprecatedExpanded, setIsDeprecatedExpanded] = useState(false)
   const [expandedSections, setExpandedSections] = useState<Record<TSectionKey, boolean>>({
     products: false,
-    tools: false,
-    resources: false,
-    community: false
+    info: false,
+    community: false,
+    tools: false
   })
   const [isWalletDrawerOpen, setIsWalletDrawerOpen] = useState(false)
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false)
@@ -80,12 +126,11 @@ export function MobileNavMenu({
 
   useEffect(() => {
     if (!isOpen) {
-      setIsDeprecatedExpanded(false)
       setExpandedSections({
         products: false,
-        tools: false,
-        resources: false,
-        community: false
+        info: false,
+        community: false,
+        tools: false
       })
     }
   }, [isOpen])
@@ -94,7 +139,7 @@ export function MobileNavMenu({
     return cl(
       'flex min-h-[44px] w-full items-center rounded-lg px-4 text-lg font-medium transition-colors',
       isExternal ? 'justify-between' : '',
-      isActive ? 'bg-primary/10 text-primary' : 'text-text-primary hover:bg-surface-tertiary'
+      isActive ? 'bg-primary/10 text-text-primary' : 'text-text-primary hover:bg-surface-tertiary'
     )
   }
 
@@ -103,21 +148,6 @@ export function MobileNavMenu({
     'text-text-primary hover:bg-surface-tertiary'
   )
 
-  const navSubToggleClass = cl(
-    'mt-1 flex min-h-[44px] w-full items-center justify-between rounded-lg px-8 text-lg font-medium transition-colors',
-    'text-text-primary hover:bg-surface-tertiary'
-  )
-
-  function navSubItemClass(isExternal: boolean): string {
-    return cl(
-      'group flex min-h-[44px] w-full items-center rounded-lg px-8 text-base font-medium transition-colors',
-      isExternal ? 'justify-between' : '',
-      'text-text-primary hover:bg-surface-tertiary'
-    )
-  }
-
-  const externalIconClass =
-    'size-4 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100'
   const notificationDotColor = (() => {
     switch (notificationStatus) {
       case 'error':
@@ -132,7 +162,130 @@ export function MobileNavMenu({
     }
   })()
 
-  const products: TNavItem[] = [...BASE_PRODUCTS]
+  const neutralImageClass = cl('size-5 grayscale', isDarkTheme ? 'invert brightness-125' : 'opacity-90')
+  const neutralIconForeground = isDarkTheme ? 'text-white' : 'text-neutral-700'
+  const products: TNavTile[] = [
+    {
+      name: 'yVaults',
+      href: '/vaults',
+      description: 'Yield-Generating Vaults',
+      icon: <LogoYearnMark className={'size-6 text-primary'} />
+    },
+    {
+      name: 'Curation',
+      href: 'https://app.morpho.org/ethereum/earn?v2=false&curators=yearn',
+      description: 'Lending Market Curation',
+      icon: <LogoCuration className={'size-11'} back={'text-transparent'} front={'text-primary'} />
+    },
+    {
+      name: 'yCRV',
+      href: 'https://ycrv.yearn.fi',
+      description: 'veCRV Liquid Locker',
+      icon: (
+        <img
+          alt={'yCRV'}
+          className={'size-6'}
+          src={`${BASE_YEARN_ASSET_URI}/tokens/1/0xfcc5c47be19d06bf83eb04298b026f81069ff65b/logo-128.png`}
+          loading={'eager'}
+          decoding={'async'}
+        />
+      )
+    },
+    {
+      name: 'yYB',
+      href: 'https://yyb.yearn.fi',
+      description: 'veYB Liquid Locker',
+      icon: <img alt={'yYB'} className={'size-6'} src={'/yYB-logo.svg'} loading={'eager'} decoding={'async'} />
+    }
+  ]
+
+  const resourceInfoItems: TNavTile[] = [
+    {
+      name: 'Docs',
+      href: 'https://docs.yearn.fi/',
+      description: 'Yearn Knowledge Base',
+      icon: (
+        <img
+          alt={'GitBook'}
+          className={neutralImageClass}
+          src={'/GitBook%20-%20Icon%20-%20Dark.svg'}
+          loading={'eager'}
+          decoding={'async'}
+        />
+      )
+    },
+    {
+      name: 'X (Twitter)',
+      href: 'https://x.com/yearnfi',
+      description: 'Official Yearn News Feed',
+      icon: <IconTwitter className={cl('size-5', neutralIconForeground)} />
+    },
+    {
+      name: 'Github',
+      href: 'https://github.com/yearn',
+      description: 'Yearn Codebase',
+      icon: <LogoGithub className={cl('size-5', neutralIconForeground)} />
+    },
+    {
+      name: 'Blog',
+      href: 'https://blog.yearn.fi/',
+      description: 'Articles about Yearn',
+      icon: (
+        <img alt={'Blog'} className={neutralImageClass} src={'/paragraph.svg'} loading={'eager'} decoding={'async'} />
+      )
+    },
+    {
+      name: 'Brand Assets',
+      href: 'https://brand.yearn.fi',
+      description: 'Yearn Brand Resources',
+      icon: (
+        <LogoYearn
+          width={20}
+          height={20}
+          className={'size-5'}
+          back={isDarkTheme ? 'text-neutral-200' : 'text-neutral-700'}
+          front={'text-white'}
+        />
+      )
+    }
+  ]
+
+  const resourceCommunityItems: TNavTile[] = [
+    {
+      name: 'Support',
+      href: 'https://discord.gg/yearn',
+      description: 'Get help on the Yearn Discord Server',
+      icon: <IconDiscord className={cl('size-5', neutralIconForeground)} />
+    },
+    {
+      name: 'Telegram Chat',
+      href: 'https://t.me/yearnfinance',
+      description: 'Discuss Yearn on Telegram',
+      icon: <IconTelegram className={cl('size-5', neutralIconForeground)} />
+    },
+    {
+      name: 'Governance',
+      href: 'https://gov.yearn.fi/',
+      description: 'Yearn Discussion Forum',
+      icon: (
+        <img
+          alt={'Discourse'}
+          className={neutralImageClass}
+          src={'/discourse-icon.svg'}
+          loading={'eager'}
+          decoding={'async'}
+        />
+      )
+    }
+  ]
+
+  const resourceToolItems: TNavTile[] = [
+    { name: 'PowerGlove', href: 'https://powerglove.yearn.fi', description: 'Vault Analytics' },
+    { name: 'Kong', href: 'https://kong.yearn.fi', description: 'Vault Data' },
+    { name: 'Kalani', href: 'https://kalani.yearn.fi', description: 'Vault Management Interface' },
+    { name: 'yFactory', href: 'https://factory.yearn.fi', description: 'LP token Vault Creation' },
+    { name: 'APR Oracle', href: 'https://oracle.yearn.fi', description: 'Projected Vault APY Tool' }
+  ]
 
   const displayName = walletIdentity || ens || clusters?.name || (address ? truncateHex(address, 4) : 'Wallet')
   const totalValue = cumulatedValueInV2Vaults + cumulatedValueInV3Vaults
@@ -208,7 +361,9 @@ export function MobileNavMenu({
             leaveFrom={'opacity-100 translate-y-0'}
             leaveTo={'opacity-0 translate-y-4'}
           >
-            <div className={'relative flex min-h-screen w-full flex-col bg-surface'}>
+            <div
+              className={cl('relative flex min-h-screen w-full flex-col', isDarkTheme ? 'bg-[#0a0a0a]' : 'bg-surface')}
+            >
               <div className={'flex h-[var(--header-height)] items-center justify-between border-b border-border px-4'}>
                 <Link href={'/'} onClick={onClose} className={'flex items-center'}>
                   <TypeMarkYearn className={'h-8 w-auto'} color={isDarkTheme ? '#FFFFFF' : '#0657F9'} />
@@ -297,92 +452,22 @@ export function MobileNavMenu({
                         />
                       </button>
                       {expandedSections.products &&
-                        products.map((item) => {
-                          const isExternal = isExternalHref(item.href)
-                          return (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              onClick={onClose}
-                              className={navSubItemClass(isExternal)}
-                            >
-                              <span>{item.name}</span>
-                              {isExternal && <IconLinkOut className={externalIconClass} />}
-                            </Link>
-                          )
-                        })}
-                    </div>
-
-                    <div className={'flex flex-col gap-1'}>
-                      <button type={'button'} onClick={() => handleToggleSection('tools')} className={navSectionClass}>
-                        <span>{'Tools'}</span>
-                        <IconChevron
-                          className={cl('size-4 transition-transform', expandedSections.tools ? 'rotate-180' : '')}
-                        />
-                      </button>
-                      {expandedSections.tools &&
-                        TOOLS.map((item) => (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={onClose}
-                            className={navSubItemClass(isExternalHref(item.href))}
-                          >
-                            <span>{item.name}</span>
-                            {isExternalHref(item.href) && <IconLinkOut className={externalIconClass} />}
-                          </Link>
+                        products.map((item) => (
+                          <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
                         ))}
                     </div>
 
                     <div className={'flex flex-col gap-1'}>
-                      <button
-                        type={'button'}
-                        onClick={() => handleToggleSection('resources')}
-                        className={navSectionClass}
-                      >
-                        <span>{'Resources'}</span>
+                      <button type={'button'} onClick={() => handleToggleSection('info')} className={navSectionClass}>
+                        <span>{'Information'}</span>
                         <IconChevron
-                          className={cl('size-4 transition-transform', expandedSections.resources ? 'rotate-180' : '')}
+                          className={cl('size-4 transition-transform', expandedSections.info ? 'rotate-180' : '')}
                         />
                       </button>
-                      {expandedSections.resources && (
-                        <>
-                          {RESOURCES.map((item) => (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              onClick={onClose}
-                              className={navSubItemClass(isExternalHref(item.href))}
-                            >
-                              <span>{item.name}</span>
-                              {isExternalHref(item.href) && <IconLinkOut className={externalIconClass} />}
-                            </Link>
-                          ))}
-
-                          <button
-                            type={'button'}
-                            onClick={() => setIsDeprecatedExpanded((prev) => !prev)}
-                            className={cl(navSubToggleClass)}
-                          >
-                            <span className={'text-base!'}>{'Deprecated'}</span>
-                            <IconChevron
-                              className={cl('size-4 transition-transform', isDeprecatedExpanded ? 'rotate-180' : '')}
-                            />
-                          </button>
-                          {isDeprecatedExpanded &&
-                            DEPRECATED.map((item) => (
-                              <Link
-                                key={item.href}
-                                href={item.href}
-                                onClick={onClose}
-                                className={navSubItemClass(isExternalHref(item.href))}
-                              >
-                                <span className={'pl-4'}>{item.name}</span>
-                                {isExternalHref(item.href) && <IconLinkOut className={externalIconClass} />}
-                              </Link>
-                            ))}
-                        </>
-                      )}
+                      {expandedSections.info &&
+                        resourceInfoItems.map((item) => (
+                          <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
+                        ))}
                     </div>
 
                     <div className={'flex flex-col gap-1'}>
@@ -397,11 +482,21 @@ export function MobileNavMenu({
                         />
                       </button>
                       {expandedSections.community &&
-                        COMMUNITY_LINKS.map((item) => (
-                          <Link key={item.href} href={item.href} onClick={onClose} className={navSubItemClass(true)}>
-                            <span>{item.name}</span>
-                            <IconLinkOut className={externalIconClass} />
-                          </Link>
+                        resourceCommunityItems.map((item) => (
+                          <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
+                        ))}
+                    </div>
+
+                    <div className={'flex flex-col gap-1'}>
+                      <button type={'button'} onClick={() => handleToggleSection('tools')} className={navSectionClass}>
+                        <span>{'Tools'}</span>
+                        <IconChevron
+                          className={cl('size-4 transition-transform', expandedSections.tools ? 'rotate-180' : '')}
+                        />
+                      </button>
+                      {expandedSections.tools &&
+                        resourceToolItems.map((item) => (
+                          <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
                         ))}
                     </div>
                   </div>
@@ -419,7 +514,7 @@ export function MobileNavMenu({
                       }
                       aria-label={'Discord'}
                     >
-                      <IconDiscord className={'size-6 text-text-primary'} />
+                      <IconDiscord className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
                     </Link>
                     <Link
                       href={'https://github.com/yearn'}
@@ -429,7 +524,7 @@ export function MobileNavMenu({
                       }
                       aria-label={'GitHub'}
                     >
-                      <LogoGithub className={'size-6 text-text-primary'} />
+                      <LogoGithub className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
                     </Link>
                     <Link
                       href={'https://x.com/yearnfi'}
@@ -439,7 +534,7 @@ export function MobileNavMenu({
                       }
                       aria-label={'Twitter'}
                     >
-                      <IconTwitter className={'size-6 text-text-primary'} />
+                      <IconTwitter className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
                     </Link>
                   </div>
                 </div>
