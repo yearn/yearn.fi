@@ -78,6 +78,7 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isDarkMenu = isHomePage || isDarkTheme
   const neutralImageClass = cl('size-5 grayscale', isDarkMenu ? 'invert brightness-125' : 'opacity-90')
+  const neutralIconForeground = isDarkMenu ? 'text-white' : 'text-neutral-700'
   const products: TNavTile[] = [
     {
       name: 'yVaults',
@@ -132,13 +133,13 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
       name: 'X (Twitter)',
       href: 'https://x.com/yearnfi',
       description: 'Official Yearn News Feed',
-      icon: <IconTwitter className={'size-5'} />
+      icon: <IconTwitter className={cl('size-5', neutralIconForeground)} />
     },
     {
       name: 'Github',
       href: 'https://github.com/yearn',
       description: 'Yearn Codebase',
-      icon: <LogoGithub className={'size-5'} />
+      icon: <LogoGithub className={cl('size-5', neutralIconForeground)} />
     },
     {
       name: 'Blog',
@@ -202,13 +203,13 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
       name: 'Support',
       href: 'https://discord.gg/yearn',
       description: 'Yearn Discord Server',
-      icon: <IconDiscord className={'size-5'} />
+      icon: <IconDiscord className={cl('size-5', neutralIconForeground)} />
     },
     {
       name: 'Telegram Chat',
       href: 'https://t.me/yearnfinance',
       description: 'Discuss Yearn on Telegram',
-      icon: <IconTelegram className={'size-5'} />
+      icon: <IconTelegram className={cl('size-5', neutralIconForeground)} />
     },
     {
       name: 'Governance',

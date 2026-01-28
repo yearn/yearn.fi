@@ -139,7 +139,7 @@ export function MobileNavMenu({
     return cl(
       'flex min-h-[44px] w-full items-center rounded-lg px-4 text-lg font-medium transition-colors',
       isExternal ? 'justify-between' : '',
-      isActive ? 'bg-primary/10 text-primary' : 'text-text-primary hover:bg-surface-tertiary'
+      isActive ? 'bg-primary/10 text-text-primary' : 'text-text-primary hover:bg-surface-tertiary'
     )
   }
 
@@ -163,6 +163,7 @@ export function MobileNavMenu({
   })()
 
   const neutralImageClass = cl('size-5 grayscale', isDarkTheme ? 'invert brightness-125' : 'opacity-90')
+  const neutralIconForeground = isDarkTheme ? 'text-white' : 'text-neutral-700'
   const products: TNavTile[] = [
     {
       name: 'yVaults',
@@ -217,13 +218,13 @@ export function MobileNavMenu({
       name: 'X (Twitter)',
       href: 'https://x.com/yearnfi',
       description: 'Official Yearn News Feed',
-      icon: <IconTwitter className={'size-5'} />
+      icon: <IconTwitter className={cl('size-5', neutralIconForeground)} />
     },
     {
       name: 'Github',
       href: 'https://github.com/yearn',
       description: 'Yearn Codebase',
-      icon: <LogoGithub className={'size-5'} />
+      icon: <LogoGithub className={cl('size-5', neutralIconForeground)} />
     },
     {
       name: 'Blog',
@@ -254,13 +255,13 @@ export function MobileNavMenu({
       name: 'Support',
       href: 'https://discord.gg/yearn',
       description: 'Get help on the Yearn Discord Server',
-      icon: <IconDiscord className={'size-5'} />
+      icon: <IconDiscord className={cl('size-5', neutralIconForeground)} />
     },
     {
       name: 'Telegram Chat',
       href: 'https://t.me/yearnfinance',
       description: 'Discuss Yearn on Telegram',
-      icon: <IconTelegram className={'size-5'} />
+      icon: <IconTelegram className={cl('size-5', neutralIconForeground)} />
     },
     {
       name: 'Governance',
@@ -360,7 +361,9 @@ export function MobileNavMenu({
             leaveFrom={'opacity-100 translate-y-0'}
             leaveTo={'opacity-0 translate-y-4'}
           >
-            <div className={'relative flex min-h-screen w-full flex-col bg-surface'}>
+            <div
+              className={cl('relative flex min-h-screen w-full flex-col', isDarkTheme ? 'bg-[#0a0a0a]' : 'bg-surface')}
+            >
               <div className={'flex h-[var(--header-height)] items-center justify-between border-b border-border px-4'}>
                 <Link href={'/'} onClick={onClose} className={'flex items-center'}>
                   <TypeMarkYearn className={'h-8 w-auto'} color={isDarkTheme ? '#FFFFFF' : '#0657F9'} />
@@ -511,7 +514,7 @@ export function MobileNavMenu({
                       }
                       aria-label={'Discord'}
                     >
-                      <IconDiscord className={'size-6 text-text-primary'} />
+                      <IconDiscord className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
                     </Link>
                     <Link
                       href={'https://github.com/yearn'}
@@ -521,7 +524,7 @@ export function MobileNavMenu({
                       }
                       aria-label={'GitHub'}
                     >
-                      <LogoGithub className={'size-6 text-text-primary'} />
+                      <LogoGithub className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
                     </Link>
                     <Link
                       href={'https://x.com/yearnfi'}
@@ -531,7 +534,7 @@ export function MobileNavMenu({
                       }
                       aria-label={'Twitter'}
                     >
-                      <IconTwitter className={'size-6 text-text-primary'} />
+                      <IconTwitter className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
                     </Link>
                   </div>
                 </div>
