@@ -54,6 +54,7 @@ interface Props {
   detailsContent?: ReactNode
   hideDetails?: boolean
   hideActionButton?: boolean
+  hideContainerBorder?: boolean
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -76,7 +77,8 @@ export const WidgetDeposit: FC<Props> = ({
   collapseDetails,
   detailsContent,
   hideDetails = false,
-  hideActionButton = false
+  hideActionButton = false,
+  hideContainerBorder = false
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -492,7 +494,10 @@ export const WidgetDeposit: FC<Props> = ({
 
   return (
     <div
-      className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}
+      className={cl('flex flex-col relative h-full', {
+        'border border-border': !hideContainerBorder,
+        'rounded-lg': !hideContainerBorder && !disableBorderRadius
+      })}
       data-tour="vault-detail-deposit-widget"
     >
       <div className="flex items-center justify-between gap-3 px-6 pt-4">

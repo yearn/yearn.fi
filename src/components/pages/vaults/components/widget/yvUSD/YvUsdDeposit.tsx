@@ -87,6 +87,7 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
         handleDepositSuccess={onDepositSuccess}
         hideDetails={!variant}
         hideActionButton={!variant}
+        hideContainerBorder
         detailsContent={
           !variant ? (
             <div className="flex flex-col gap-4 text-center text-sm text-text-secondary">

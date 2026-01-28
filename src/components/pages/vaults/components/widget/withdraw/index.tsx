@@ -28,7 +28,12 @@ import { WithdrawDetails } from './WithdrawDetails'
 import { WithdrawDetailsOverlay } from './WithdrawDetailsOverlay'
 
 export const WidgetWithdraw: FC<
-  WithdrawWidgetProps & { hideSettings?: boolean; disableBorderRadius?: boolean; collapseDetails?: boolean }
+  WithdrawWidgetProps & {
+    hideSettings?: boolean
+    disableBorderRadius?: boolean
+    collapseDetails?: boolean
+    hideContainerBorder?: boolean
+  }
 > = ({
   vaultAddress,
   assetAddress,
@@ -41,7 +46,8 @@ export const WidgetWithdraw: FC<
   onOpenSettings,
   isSettingsOpen,
   disableBorderRadius,
-  collapseDetails
+  collapseDetails,
+  hideContainerBorder = false
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -490,7 +496,10 @@ export const WidgetWithdraw: FC<
 
   return (
     <div
-      className={cl('flex flex-col relative border border-border h-full', { 'rounded-lg': !disableBorderRadius })}
+      className={cl('flex flex-col relative h-full', {
+        'border border-border': !hideContainerBorder,
+        'rounded-lg': !hideContainerBorder && !disableBorderRadius
+      })}
       data-tour="vault-detail-withdraw-widget"
     >
       <div className="flex items-center justify-between gap-3 px-6 pt-4 ">
