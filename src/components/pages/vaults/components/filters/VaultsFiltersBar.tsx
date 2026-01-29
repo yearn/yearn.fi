@@ -1,4 +1,5 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
+import { usePlausible } from '@hooks/usePlausible'
 import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
 import { getChainDescription } from '@pages/vaults/utils/vaultTagCopy'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
@@ -7,6 +8,7 @@ import { useChainOptions } from '@shared/hooks/useChains'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSearch } from '@shared/icons/IconSearch'
 import { cl } from '@shared/utils'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { type TVaultsChainButton, VaultsChainSelector } from './VaultsChainSelector'
@@ -590,6 +592,7 @@ function FiltersModal({
   filtersInitialState?: TPendingFiltersState
   onApplyFilters?: (state: TPendingFiltersState) => void
 }): ReactElement {
+  const trackEvent = usePlausible()
   const [pendingState, setPendingState] = useState<TPendingFiltersState>(filtersInitialState ?? EMPTY_FILTERS_STATE)
 
   useEffect(() => {
@@ -603,6 +606,27 @@ function FiltersModal({
   }
 
   const handleSave = (): void => {
+    if (pendingState.minTvl !== DEFAULT_MIN_TVL) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_TVL, { props: { value: pendingState.minTvl.toString() } })
+    }
+    if (pendingState.categories.length > 0) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_CATEGORY, { props: { value: pendingState.categories.join(',') } })
+    }
+    if (pendingState.aggressiveness.length > 0) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_RISK, { props: { value: pendingState.aggressiveness.join(',') } })
+    }
+    if (pendingState.underlyingAssets.length > 0) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_ASSET, { props: { value: pendingState.underlyingAssets.join(',') } })
+    }
+    if (pendingState.showLegacyVaults) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_LEGACY, { props: { enabled: 'true' } })
+    }
+    if (pendingState.showHiddenVaults) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_HIDDEN, { props: { enabled: 'true' } })
+    }
+    if (pendingState.showStrategies) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_STRATEGIES, { props: { enabled: 'true' } })
+    }
     if (onApplyFilters) {
       onApplyFilters(pendingState)
     }
