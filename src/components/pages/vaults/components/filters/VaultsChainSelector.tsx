@@ -1,8 +1,10 @@
+import { usePlausible } from '@hooks/usePlausible'
 import { TOOLTIP_DELAY_MS } from '@pages/vaults/utils/vaultTagCopy'
 import { Tooltip } from '@shared/components/Tooltip'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import { cl } from '@shared/utils'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement, RefObject } from 'react'
 
 type TVaultsChainButton = {
@@ -40,8 +42,19 @@ export function VaultsChainSelector({
   onOpenChainModal,
   selectorRef
 }: TVaultsChainSelectorProps): ReactElement {
+  const trackEvent = usePlausible()
   const shouldStretchChainButtons = !enableResponsiveLayout && !isStacked
   const tooltipWrapperClass = cl('h-full', shouldStretchChainButtons ? 'flex-1 w-full' : '')
+
+  function handleSelectAllChains(): void {
+    trackEvent(PLAUSIBLE_EVENTS.FILTER_CHAIN, { props: { value: 'all' } })
+    onSelectAllChains()
+  }
+
+  function handleSelectChain(chainId: number): void {
+    trackEvent(PLAUSIBLE_EVENTS.FILTER_CHAIN, { props: { value: chainId.toString() } })
+    onSelectChain(chainId)
+  }
 
   return (
     <div
@@ -60,7 +73,7 @@ export function VaultsChainSelector({
           !enableResponsiveLayout && !isStacked ? 'flex-1' : ''
         )}
         data-active={areAllChainsSelected}
-        onClick={onSelectAllChains}
+        onClick={handleSelectAllChains}
         aria-pressed={areAllChainsSelected}
       >
         <span className={'size-5 overflow-hidden rounded-full'}>
@@ -81,7 +94,7 @@ export function VaultsChainSelector({
               !enableResponsiveLayout && !isStacked ? 'flex-1' : ''
             )}
             data-active={chain.isSelected}
-            onClick={(): void => onSelectChain(chain.id)}
+            onClick={(): void => handleSelectChain(chain.id)}
             aria-pressed={chain.isSelected}
             aria-label={showChainLabel ? undefined : chain.label}
           >
