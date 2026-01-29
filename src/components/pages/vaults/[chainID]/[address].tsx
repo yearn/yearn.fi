@@ -129,6 +129,7 @@ function Index(): ReactElement | null {
   const [pendingSectionKey, setPendingSectionKey] = useState<SectionKey | null>(null)
 
   useEffect(() => {
+    void vaultKey
     initialHeaderOffsetRef.current = null
     if (typeof window !== 'undefined') {
       document.documentElement.style.removeProperty('--vault-header-initial-offset')
@@ -171,7 +172,11 @@ function Index(): ReactElement | null {
 
   /**RG: This should have almost everything we need and fetches the latest vault info from the snapshot API */
   // codex: Fetch the Kong REST snapshot for this vault, used to enrich strategy debt + meta.
-  const { data: snapshotVault, isLoading: isLoadingSnapshotVault, mutate: mutateSnapshot } = useVaultSnapshot({
+  const {
+    data: snapshotVault,
+    isLoading: isLoadingSnapshotVault,
+    mutate: mutateSnapshot
+  } = useVaultSnapshot({
     chainId,
     address: params.address
   })

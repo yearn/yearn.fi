@@ -118,7 +118,7 @@ export function VaultInfoSection({ currentVault }: { currentVault: TYDaemonVault
             href={`${KONG_REST_BASE}/snapshot/${currentVault.chainID}/${currentVault.address}`}
             target={'_blank'}
             rel={'noopener noreferrer'}
-            className={'text-sm text-text-primary hover:underline'}
+            className={'text-sm text-text-primary md:flex-1 md:text-right hover:underline'}
             suppressHydrationWarning
           >
             {'View API Data'}

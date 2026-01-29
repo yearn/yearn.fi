@@ -57,11 +57,15 @@ export const kongVaultListItemSchema = z.object({
   kind: z.string().nullable(),
 
   v3: z.boolean(),
-  yearn: z.boolean(),
+  yearn: z.boolean().optional(),
   isRetired: z.boolean(),
   isHidden: z.boolean(),
   isBoosted: z.boolean(),
   isHighlighted: z.boolean(),
+
+  inclusion: z.record(z.string(), z.boolean()).optional(),
+  migration: z.boolean().optional(),
+  origin: z.string().nullable().optional(),
 
   strategiesCount: z.number(),
   riskLevel: z.number().nullable()

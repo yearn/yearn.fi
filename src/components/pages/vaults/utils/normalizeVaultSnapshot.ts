@@ -1,5 +1,10 @@
 import { toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
-import type { TKongVaultSnapshot, TKongVaultSnapshotDebt } from '@shared/utils/schemas/kongVaultSnapshotSchema'
+import type {
+  TKongVaultSnapshot,
+  TKongVaultSnapshotComposition,
+  TKongVaultSnapshotDebt,
+  TKongVaultSnapshotStakingReward
+} from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { zeroAddress } from 'viem'
@@ -88,6 +93,18 @@ const computeDebtRatioFromCurrentDebt = (
   return Number((debt * 10000n) / total)
 }
 
+const computeDebtRatioFromTotalAssets = (
+  totalDebt: string | number | bigint | null | undefined,
+  totalAssets: string | number | bigint | null | undefined
+): number => {
+  const debt = toBigIntValue(totalDebt)
+  const assets = toBigIntValue(totalAssets)
+  if (debt <= 0n || assets <= 0n) {
+    return 0
+  }
+  return Number((debt * 10000n) / assets)
+}
+
 const computeTotalDebtForRatios = (snapshot: TKongVaultSnapshot, base?: TYDaemonVault): string => {
   const snapshotTotalDebt = toBigIntValue(snapshot.totalDebt)
   if (snapshotTotalDebt > 0n) {
@@ -118,6 +135,20 @@ const computeTotalDebtForRatios = (snapshot: TKongVaultSnapshot, base?: TYDaemon
   }
 
   return '0'
+}
+
+const resolveTotalAssetsForRatios = (snapshot: TKongVaultSnapshot, base?: TYDaemonVault): bigint => {
+  const snapshotAssets = toBigIntValue(snapshot.totalAssets)
+  if (snapshotAssets > 0n) {
+    return snapshotAssets
+  }
+
+  const baseAssets = toBigIntValue(base?.tvl.totalAssets)
+  if (baseAssets > 0n) {
+    return baseAssets
+  }
+
+  return 0n
 }
 
 const pickNumber = (...values: Array<number | null | undefined>): number => {
@@ -172,6 +203,81 @@ const buildRiskScores = (riskScore: TSnapshotRiskScore | undefined, fallback?: n
     return fallback
   }
   return scores
+}
+
+const normalizeCompositionStatus = (
+  status: TKongVaultSnapshotComposition['status'],
+  hasAllocation: boolean
+): TYDaemonVaultStrategy['status'] => {
+  if (typeof status === 'string') {
+    const normalized = status.toLowerCase().replace(/[\s-]+/g, '_')
+    if (['active', 'enabled', 'live'].includes(normalized)) {
+      return 'active'
+    }
+    if (['inactive', 'not_active', 'disabled', 'deprecated', 'retired', 'paused'].includes(normalized)) {
+      return 'not_active'
+    }
+    if (['unallocated', 'idle', 'unfunded', 'no_debt'].includes(normalized)) {
+      return 'unallocated'
+    }
+  }
+
+  if (typeof status === 'number') {
+    if (status === 1) {
+      return 'active'
+    }
+    if (status <= 0) {
+      return hasAllocation ? 'active' : 'unallocated'
+    }
+    return 'not_active'
+  }
+
+  return hasAllocation ? 'active' : 'unallocated'
+}
+
+const mapSnapshotComposition = (
+  composition: TKongVaultSnapshotComposition[] | undefined,
+  totalAssetsForRatios: bigint
+): TYDaemonVaultStrategy[] => {
+  if (!composition || composition.length === 0) {
+    return []
+  }
+
+  const strategies: TYDaemonVaultStrategy[] = []
+  composition.forEach((entry, index) => {
+    const resolvedAddress = toAddress(entry.address ?? entry.strategy)
+    if (resolvedAddress === zeroAddress) {
+      return
+    }
+    const totalDebt = pickNonZeroBigNumberish(entry.totalDebt, entry.currentDebt, '0')
+    const computedDebtRatio = computeDebtRatioFromTotalAssets(totalDebt, totalAssetsForRatios)
+    const debtRatio = normalizeNumber(entry.debtRatio ?? computedDebtRatio, computedDebtRatio)
+    const totalGain = entry.totalGain ?? '0'
+    const totalLoss = entry.totalLoss ?? '0'
+    const performanceFee = normalizeNumber(entry.performanceFee ?? 0)
+    const lastReport = normalizeNumber(entry.lastReport ?? 0)
+    const hasAllocation = toBigInt(totalDebt) > 0n || debtRatio > 0
+    const status = normalizeCompositionStatus(entry.status, hasAllocation)
+    const name = entry.name?.trim() || `Strategy ${index + 1}`
+    const oracleApy = entry.performance?.oracle?.apy
+    const resolvedApr = normalizeNumber(oracleApy ?? entry.latestReportApr, 0)
+    strategies.push({
+      address: resolvedAddress,
+      name,
+      description: '',
+      netAPR: resolvedApr,
+      status,
+      details: {
+        totalDebt,
+        totalLoss,
+        totalGain,
+        performanceFee,
+        lastReport,
+        debtRatio
+      }
+    })
+  })
+  return strategies
 }
 
 const mapSnapshotDebts = (
@@ -252,6 +358,57 @@ const mergeStrategies = (
   return mapSnapshotDebts(debts, totalDebtForRatios)
 }
 
+const mapSnapshotStakingRewards = (
+  rewards: TKongVaultSnapshotStakingReward[] | undefined
+): TYDaemonVault['staking']['rewards'] => {
+  if (!rewards || rewards.length === 0) {
+    return []
+  }
+
+  return rewards.map((reward) => ({
+    address: toAddress(reward.address ?? zeroAddress),
+    name: reward.name ?? '',
+    symbol: reward.symbol ?? '',
+    decimals: resolveDecimals(reward.decimals ?? null),
+    price: normalizeNumber(reward.price ?? 0),
+    isFinished: Boolean(reward.isFinished),
+    finishedAt: normalizeNumber(reward.finishedAt ?? 0),
+    apr: reward.apr === null || reward.apr === undefined || Number.isNaN(reward.apr) ? null : reward.apr,
+    perWeek: normalizeNumber(reward.perWeek ?? 0)
+  }))
+}
+
+const mapSnapshotStaking = (snapshot: TKongVaultSnapshot): TYDaemonVault['staking'] => {
+  if (!snapshot.staking) {
+    return {
+      address: zeroAddress,
+      available: false,
+      source: '',
+      rewards: []
+    }
+  }
+
+  return {
+    address: toAddress(snapshot.staking.address ?? zeroAddress),
+    available: Boolean(snapshot.staking.available),
+    source: snapshot.staking.source ?? '',
+    rewards: mapSnapshotStakingRewards(snapshot.staking.rewards)
+  }
+}
+
+const resolveStrategies = (
+  snapshot: TKongVaultSnapshot,
+  base: TYDaemonVault | undefined,
+  totalDebtForRatios: string,
+  totalAssetsForRatios: bigint
+): TYDaemonVaultStrategy[] => {
+  const compositionStrategies = mapSnapshotComposition(snapshot.composition, totalAssetsForRatios)
+  if (compositionStrategies.length > 0) {
+    return compositionStrategies
+  }
+  return mergeStrategies(base?.strategies, snapshot.debts, totalDebtForRatios)
+}
+
 const computePrice = (totalAssets: string, decimals: number, tvlUsd: number, fallback?: number): number => {
   const normalizedAssets = toNormalizedBN(totalAssets, decimals).normalized
   if (!Number.isFinite(tvlUsd) || tvlUsd <= 0 || normalizedAssets <= 0) {
@@ -263,9 +420,11 @@ const computePrice = (totalAssets: string, decimals: number, tvlUsd: number, fal
 const buildSnapshotVault = (
   snapshot: TKongVaultSnapshot,
   base?: TYDaemonVault,
-  totalDebtForRatios?: string
+  totalDebtForRatios?: string,
+  totalAssetsForRatios?: bigint
 ): TYDaemonVault => {
   const resolvedTotalDebtForRatios = totalDebtForRatios ?? computeTotalDebtForRatios(snapshot, base)
+  const resolvedTotalAssetsForRatios = totalAssetsForRatios ?? resolveTotalAssetsForRatios(snapshot, base)
   const metaToken = snapshot.meta?.token
   const tokenFallback = base?.token
   const token = {
@@ -315,6 +474,8 @@ const buildSnapshotVault = (
   const riskScore = buildRiskScores(snapshot.risk?.riskScore, base?.info.riskScore)
   const riskLevel = Math.max(0, normalizeNumber(snapshot.risk?.riskLevel, base?.info.riskLevel ?? 0))
   const riskScoreComment = snapshot.risk?.riskScore?.comment || base?.info.riskScoreComment || ''
+  const strategies = resolveStrategies(snapshot, base, resolvedTotalDebtForRatios, resolvedTotalAssetsForRatios)
+  const staking = mapSnapshotStaking(snapshot)
 
   return yDaemonVaultSchema.parse({
     address: snapshot.address,
@@ -359,8 +520,8 @@ const buildSnapshotVault = (
       }
     },
     featuringScore: base?.featuringScore ?? 0,
-    strategies: mergeStrategies(base?.strategies, snapshot.debts, resolvedTotalDebtForRatios),
-    staking: base?.staking ?? undefined,
+    strategies,
+    staking,
     migration: {
       available: snapshot.meta?.migration?.available ?? base?.migration.available ?? false,
       address: snapshot.meta?.migration?.target ?? base?.migration.address ?? zeroAddress,
@@ -396,7 +557,8 @@ export const mergeVaultSnapshot = (
   }
 
   const totalDebtForRatios = computeTotalDebtForRatios(snapshot, base)
-  const merged = buildSnapshotVault(snapshot, base, totalDebtForRatios)
+  const totalAssetsForRatios = resolveTotalAssetsForRatios(snapshot, base)
+  const merged = buildSnapshotVault(snapshot, base, totalDebtForRatios, totalAssetsForRatios)
   return {
     ...base,
     ...merged,
@@ -404,8 +566,8 @@ export const mergeVaultSnapshot = (
       ...merged.token,
       ...base.token
     },
-    strategies: mergeStrategies(base.strategies, snapshot.debts, totalDebtForRatios),
-    staking: base.staking,
+    strategies: merged.strategies,
+    staking: merged.staking,
     info: {
       ...base.info,
       ...merged.info,

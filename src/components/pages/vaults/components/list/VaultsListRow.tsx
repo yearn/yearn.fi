@@ -26,7 +26,7 @@ import { baseFetcher } from '@shared/utils/fetchers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { mutate } from 'swr'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
@@ -103,7 +103,6 @@ export function VaultsListRow({
   showProductTypeChipOverride?: boolean
   mobileSecondaryMetric?: 'tvl' | 'holdings'
 }): ReactElement {
-  const rowRef = useRef<HTMLDivElement | null>(null)
   const navigate = useNavigate()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
@@ -155,31 +154,16 @@ export function VaultsListRow({
     setIsExpandedState(next)
   }
 
-  useEffect(() => {
-    if (!rowRef.current || typeof window === 'undefined') {
-      return
-    }
-
+  const prefetchSnapshot = useCallback((): void => {
     const endpoint = buildSnapshotEndpoint(currentVault.chainID, currentVault.address)
     if (prefetchedSnapshotEndpoints.has(endpoint)) {
       return
     }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0]
-        if (!entry?.isIntersecting) return
-        prefetchedSnapshotEndpoints.add(endpoint)
-        void mutate(endpoint, baseFetcher(endpoint), { revalidate: false }).then(() => {
-          maybeToastSnapshot(endpoint, currentVault.address, 'prefetch')
-        })
-        observer.disconnect()
-      },
-      { rootMargin: '200px' }
-    )
-
-    observer.observe(rowRef.current)
-    return () => observer.disconnect()
+    prefetchedSnapshotEndpoints.add(endpoint)
+    void mutate(endpoint, baseFetcher(endpoint), { revalidate: false }).then(() => {
+      maybeToastSnapshot(endpoint, currentVault.address, 'prefetch')
+    })
   }, [currentVault.address, currentVault.chainID])
 
   const isHiddenVault = Boolean(flags?.isHidden)
@@ -270,7 +254,7 @@ export function VaultsListRow({
   }, [isExpanded])
 
   return (
-    <div ref={rowRef} className={cl('w-full overflow-hidden transition-colors bg-surface relative')}>
+    <div className={cl('w-full overflow-hidden transition-colors bg-surface relative')}>
       <button
         type={'button'}
         aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
@@ -293,6 +277,8 @@ export function VaultsListRow({
           'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
+        onMouseEnter={prefetchSnapshot}
+        onFocus={prefetchSnapshot}
         onClickCapture={(event): void => {
           const target = event.target as HTMLElement | null
           if (!target) return

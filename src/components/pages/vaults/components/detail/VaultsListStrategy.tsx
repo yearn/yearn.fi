@@ -1,10 +1,5 @@
-import { findLatestAPY } from '@pages/vaults/domain/reports/findLatestAPY'
-import type { TYDaemonReports } from '@pages/vaults/domain/reports/reports.schema'
-import { yDaemonReportsSchema } from '@pages/vaults/domain/reports/reports.schema'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { useFetch } from '@shared/hooks/useFetch'
-import { useYDaemonBaseURI } from '@shared/hooks/useYDaemonBaseURI'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
@@ -15,7 +10,7 @@ import { copyToClipboard } from '@shared/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement } from 'react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import Link from '/src/components/Link'
 
 export function VaultsListStrategy({
@@ -44,19 +39,6 @@ export function VaultsListStrategy({
   isUnallocated?: boolean
 }): ReactElement {
   const [isExpanded, setIsExpanded] = useState(false)
-
-  const isStrategy = !apr
-
-  const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: chainId })
-
-  // Fetch if component is used for strategies that are not vaults
-  const { data: reports } = useFetch<TYDaemonReports>({
-    endpoint: isStrategy ? `${yDaemonBaseUri}/reports/${address}` : '',
-    schema: yDaemonReportsSchema
-  })
-  const latestApr = useMemo((): number => findLatestAPY(reports), [reports])
-
-  const finalApr = apr || latestApr
 
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
 
@@ -112,7 +94,11 @@ export function VaultsListStrategy({
           <div className={'flex flex-col md:col-span-5 md:text-right'}>
             <p className={'text-xs text-text-primary/60 mb-1'}>{'APY'}</p>
             <p className={'font-semibold'}>
-              <RenderAmount shouldHideTooltip value={finalApr} symbol={'percent'} decimals={6} />
+              {apr === undefined ? (
+                '--'
+              ) : (
+                <RenderAmount shouldHideTooltip value={apr} symbol={'percent'} decimals={6} />
+              )}
             </p>
           </div>
         </div>

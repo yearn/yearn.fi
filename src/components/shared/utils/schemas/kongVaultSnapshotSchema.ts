@@ -127,6 +127,45 @@ const snapshotDebtSchema = z
   })
   .passthrough()
 
+const snapshotCompositionSchema = z
+  .object({
+    address: addressSchema.optional(),
+    strategy: addressSchema.optional(),
+    name: z.string().optional().default('').catch(''),
+    status: z.union([z.string(), z.number()]).optional().catch(''),
+    debtRatio: nullableNumberSchema.optional().catch(null),
+    currentDebt: bigNumberishSchema.optional(),
+    totalDebt: bigNumberishSchema.optional(),
+    maxDebt: bigNumberishSchema.optional(),
+    totalGain: bigNumberishSchema.optional(),
+    totalLoss: bigNumberishSchema.optional(),
+    performanceFee: nullableNumberSchema.optional().catch(null),
+    lastReport: nullableNumberSchema.optional().catch(null),
+    latestReportApr: nullableNumberSchema.optional().catch(null),
+    performance: z
+      .object({
+        oracle: z
+          .object({
+            apr: nullableNumberSchema.optional().catch(null),
+            apy: nullableNumberSchema.optional().catch(null)
+          })
+          .optional(),
+        historical: z
+          .object({
+            net: nullableNumberSchema.optional().catch(null),
+            weeklyNet: nullableNumberSchema.optional().catch(null),
+            monthlyNet: nullableNumberSchema.optional().catch(null),
+            inceptionNet: nullableNumberSchema.optional().catch(null)
+          })
+          .optional()
+      })
+      .optional(),
+    totalDebtUsd: nullableNumberSchema.optional().catch(null),
+    totalGainUsd: nullableNumberSchema.optional().catch(null),
+    totalLossUsd: nullableNumberSchema.optional().catch(null)
+  })
+  .passthrough()
+
 const snapshotMigrationSchema = z
   .object({
     target: addressSchema.optional().catch(zeroAddress),
@@ -169,6 +208,30 @@ const snapshotAssetSchema = z
   })
   .passthrough()
 
+const snapshotStakingRewardSchema = z
+  .object({
+    address: addressSchema.optional().catch(zeroAddress),
+    name: z.string().optional().default('').catch(''),
+    symbol: z.string().optional().default('').catch(''),
+    decimals: decimalsSchema.optional().catch(18),
+    price: nullableNumberSchema.optional().catch(null),
+    isFinished: z.boolean().optional().catch(false),
+    finishedAt: nullableNumberSchema.optional().catch(null),
+    apr: nullableNumberSchema.optional().catch(null),
+    perWeek: nullableNumberSchema.optional().catch(null)
+  })
+  .passthrough()
+
+const snapshotStakingSchema = z
+  .object({
+    address: addressSchema.optional().catch(zeroAddress),
+    available: z.boolean().optional().default(false).catch(false),
+    source: z.string().optional().default('').catch(''),
+    rewards: z.array(snapshotStakingRewardSchema).optional().default([]).catch([])
+  })
+  .nullable()
+  .optional()
+
 export const kongVaultSnapshotSchema = z
   .object({
     address: addressSchema,
@@ -186,10 +249,15 @@ export const kongVaultSnapshotSchema = z
     risk: snapshotRiskSchema,
     meta: snapshotMetaSchema.optional(),
     performance: snapshotPerformanceSchema.optional().default({}),
+    composition: z.array(snapshotCompositionSchema).optional().default([]),
     debts: z.array(snapshotDebtSchema).optional().default([]),
-    strategies: z.array(addressSchema).optional().default([])
+    strategies: z.array(addressSchema).optional().default([]),
+    staking: snapshotStakingSchema
   })
   .passthrough()
 
 export type TKongVaultSnapshot = z.infer<typeof kongVaultSnapshotSchema>
 export type TKongVaultSnapshotDebt = z.infer<typeof snapshotDebtSchema>
+export type TKongVaultSnapshotComposition = z.infer<typeof snapshotCompositionSchema>
+export type TKongVaultSnapshotStaking = z.infer<typeof snapshotStakingSchema>
+export type TKongVaultSnapshotStakingReward = z.infer<typeof snapshotStakingRewardSchema>

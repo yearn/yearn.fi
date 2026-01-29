@@ -21,7 +21,7 @@ import { zeroAddress } from 'viem'
  *****************************************************************************/
 const DEFAULT_CHAIN_IDS = [1, 10, 137, 146, 250, 8453, 42161, 747474]
 
-const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/lists/vaults`
+const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/list/vaults`
 
 const normalizeNumber = (value: number | null | undefined, fallback = 0): number => {
   if (value === null || value === undefined || Number.isNaN(value)) {
@@ -160,7 +160,10 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
     }
     const chainIdSet = new Set(resolvedChainIds)
     return kongVaultList
-      .filter((item) => item.yearn && chainIdSet.has(item.chainId))
+      .filter((item) => {
+        const isYearn = item.inclusion?.yearn ?? item.inclusion?.isYearn ?? item.yearn ?? false
+        return isYearn && chainIdSet.has(item.chainId)
+      })
       .map((item) => mapKongListItemToVault(item))
       .filter((item): item is TYDaemonVault => Boolean(item))
   }, [kongVaultList, resolvedChainIds])
