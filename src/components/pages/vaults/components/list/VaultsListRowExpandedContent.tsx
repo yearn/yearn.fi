@@ -56,7 +56,7 @@ export default function VaultsListRowExpandedContent({
           <div className={'col-span-12 border-r border-border'}>
             <VaultAboutSection
               currentVault={currentVault}
-              className={'p-0'}
+              className={'md:px-15'}
               showKindTag={showKindTag}
               showVaultAddress={true}
               showHiddenTag={showHiddenTag}
@@ -208,7 +208,7 @@ function VaultStrategyAllocationPreview({ currentVault }: { currentVault: TYDaem
   }
 
   return (
-    <div className={'flex flex-col pl-4 gap-6'}>
+    <div className={'flex flex-col h-full justify-center pl-4 gap-6'}>
       <div className={'flex flex-row-reverse items-center gap-6'}>
         <div className={'flex-2'}>
           <AllocationChart allocationChartData={allocationChartData} />
