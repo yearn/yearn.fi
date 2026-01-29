@@ -4,7 +4,7 @@ import { STAKING_REWARDS_ABI } from '@shared/contracts/abi/stakingRewards.abi'
 import { V3_STAKING_REWARDS_ABI } from '@shared/contracts/abi/V3StakingRewards.abi'
 import { VEYFI_GAUGE_ABI } from '@shared/contracts/abi/veYFIGauge.abi'
 import { toNormalizedValue } from '@shared/utils'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useReadContract, useReadContracts } from 'wagmi'
 
 export type TRewardToken = {
@@ -195,12 +195,12 @@ export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRe
 
   const isLoading = isLoadingV3 || isLoadingVeYFI || isLoadingJuiced || isLoadingLegacy
 
-  const refetch = () => {
+  const refetch = useCallback(() => {
     if (isV3Staking) refetchV3()
     if (isVeYFIGauge) refetchVeYFI()
     if (isJuiced) refetchJuiced()
     if (isLegacy) refetchLegacy()
-  }
+  }, [isV3Staking, isVeYFIGauge, isJuiced, isLegacy, refetchV3, refetchVeYFI, refetchJuiced, refetchLegacy])
 
   return { rewards, isLoading, refetch }
 }

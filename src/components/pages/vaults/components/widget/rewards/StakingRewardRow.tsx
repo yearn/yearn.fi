@@ -3,7 +3,7 @@ import { toNormalizedValue } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useCallback, useMemo } from 'react'
 import type { UseSimulateContractReturnType } from 'wagmi'
-import { useChainId, useSwitchChain, useWriteContract } from 'wagmi'
+import { useChainId, useWriteContract } from 'wagmi'
 import type { TransactionStep } from '../shared/TransactionOverlay'
 import { RewardRow } from './RewardRow'
 import type { TStakingReward } from './types'
@@ -14,13 +14,28 @@ type TStakingRewardRowProps = {
   stakingSource: string
   chainId: number
   onStartClaim: (step: TransactionStep) => void
-  isLast?: boolean
+  isFirst?: boolean
+  vaultName?: string
+  vaultTokenAddress?: `0x${string}`
+  isAllChainsView?: boolean
+  onSwitchChain?: () => void
 }
 
 export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
-  const { reward, stakingAddress, stakingSource, chainId, onStartClaim, isLast } = props
+  const {
+    reward,
+    stakingAddress,
+    stakingSource,
+    chainId,
+    onStartClaim,
+    isFirst,
+    vaultName,
+    vaultTokenAddress,
+    isAllChainsView,
+    onSwitchChain
+  } = props
+
   const currentChainId = useChainId()
-  const { switchChainAsync } = useSwitchChain()
   const { isPending } = useWriteContract()
 
   const { prepare } = useClaimStakingRewards({
@@ -47,22 +62,15 @@ export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
     }
   }, [prepare, formattedAmount, reward.symbol])
 
-  const handleClaim = useCallback(async () => {
-    if (currentChainId !== chainId) {
-      try {
-        await switchChainAsync({ chainId })
-      } catch {
-        return
-      }
-    }
-    if (step) {
-      onStartClaim(step)
-    }
-  }, [currentChainId, chainId, switchChainAsync, step, onStartClaim])
+  const handleClaim = useCallback(() => {
+    if (!step) return
+    onStartClaim(step)
+  }, [step, onStartClaim])
 
   return (
     <RewardRow
       chainId={chainId}
+      currentChainId={currentChainId}
       tokenAddress={reward.tokenAddress}
       symbol={reward.symbol}
       amount={normalizedAmount.toString()}
@@ -70,7 +78,11 @@ export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
       onClaim={handleClaim}
       isClaimPending={isPending}
       isClaimReady={prepare.isSuccess}
-      isLast={isLast}
+      isFirst={isFirst}
+      sourceName={vaultName}
+      sourceTokenAddress={vaultTokenAddress}
+      isAllChainsView={isAllChainsView}
+      onSwitchChain={onSwitchChain}
     />
   )
 }

@@ -1,10 +1,12 @@
 import Link from '@components/Link'
+import { ConnectWalletPrompt } from '@pages/portfolio/components/ConnectWalletPrompt'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { Notification } from '@pages/vaults/components/notifications/Notification'
 import { SuggestedVaultCard } from '@pages/vaults/components/SuggestedVaultCard'
 import { MerkleRewardRow } from '@pages/vaults/components/widget/rewards/MerkleRewardRow'
 import { StakingRewardRow } from '@pages/vaults/components/widget/rewards/StakingRewardRow'
+import type { TGroupedMerkleReward, TStakingReward } from '@pages/vaults/components/widget/rewards/types'
 import { TransactionOverlay, type TransactionStep } from '@pages/vaults/components/widget/shared/TransactionOverlay'
 import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
@@ -15,17 +17,19 @@ import { METRIC_VALUE_CLASS, MetricHeader, MetricsCard, type TMetricBlock } from
 import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
 import { cl, SUPPORTED_NETWORKS } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
-import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
+import { useChainId, useSwitchChain } from 'wagmi'
 import { type TPortfolioModel, usePortfolioModel } from './hooks/usePortfolioModel'
+import { useVaultWithStakingRewards } from './hooks/useVaultWithStakingRewards'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -48,11 +52,6 @@ const PORTFOLIO_TABS = [
 ] as const
 
 type TPortfolioTabKey = (typeof PORTFOLIO_TABS)[number]['key']
-
-type TRewardCardStatus = {
-  hasRewards: boolean
-  isLoading: boolean
-}
 
 type TPortfolioHeaderProps = Pick<
   TPortfolioModel,
@@ -82,7 +81,7 @@ type TPortfolioSuggestedProps = Pick<TPortfolioModel, 'suggestedRows'>
 
 type TPortfolioActivityProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'>
 
-type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'holdingsRows' | 'isActive' | 'openLoginModal'>
+type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'>
 
 function PortfolioPageLayout({ children }: { children: ReactElement }): ReactElement {
   return (
@@ -93,23 +92,23 @@ function PortfolioPageLayout({ children }: { children: ReactElement }): ReactEle
 }
 
 function HoldingsEmptyState({ isActive, onConnect }: { isActive: boolean; onConnect: () => void }): ReactElement {
+  if (!isActive) {
+    return (
+      <ConnectWalletPrompt
+        title="Connect a wallet to get started"
+        description="Link a wallet to load your Yearn balances."
+        onConnect={onConnect}
+      />
+    )
+  }
+
   return (
-    <div className={'flex flex-col items-center justify-center gap-4 px-4 py-12 text-center sm:px-6 sm:py-16'}>
-      <p className={'text-base font-semibold text-text-primary sm:text-lg'}>
-        {isActive ? 'No vault positions yet' : 'Connect a wallet to get started'}
-      </p>
-      <p className={'max-w-md text-sm text-text-secondary'}>
-        {isActive ? 'Deposit into a Yearn vault to see it here.' : 'Link a wallet to load your Yearn balances.'}
-      </p>
-      {isActive ? (
-        <Link to="/vaults" className={'yearn--button min-h-[44px] px-6'} data-variant={'filled'}>
-          {'Browse vaults'}
-        </Link>
-      ) : (
-        <Button onClick={onConnect} variant={'filled'} className={'min-h-[44px] px-6'}>
-          {'Connect wallet'}
-        </Button>
-      )}
+    <div className="flex flex-col items-center justify-center gap-4 px-4 py-12 text-center sm:px-6 sm:py-16">
+      <p className="text-base font-semibold text-text-primary sm:text-lg">No vault positions yet</p>
+      <p className="max-w-md text-sm text-text-secondary">Deposit into a Yearn vault to see it here.</p>
+      <Link to="/vaults" className="yearn--button min-h-[44px] px-6" data-variant="filled">
+        Browse vaults
+      </Link>
     </div>
   )
 }
@@ -129,110 +128,94 @@ function PortfolioHeaderSection({
     </div>
   )
 
-  const renderMetricSpinner = (): ReactElement => (
-    <span className={'inline-flex h-6 w-20 items-center justify-center animate-spin'}>
-      <IconSpinner className={'size-4 text-text-secondary'} />
+  const metricSpinner = (
+    <span className="inline-flex h-6 w-20 animate-spin items-center justify-center">
+      <IconSpinner className="size-4 text-text-secondary" />
     </span>
   )
 
-  const renderApyValue = (value: string, shouldShowAsterisk: boolean): ReactElement => {
+  function renderApyValue(value: string, shouldShowAsterisk: boolean): ReactElement {
     if (!shouldShowAsterisk) {
       return <span>{value}</span>
     }
     return (
-      <span className={'relative inline-flex items-center'}>
+      <span className="relative inline-flex items-center">
         {value}
         <Tooltip
-          className={'cursor-default ml-1 !h-auto !w-auto !gap-0 !justify-start'}
+          className="ml-1 cursor-default !h-auto !w-auto !gap-0 !justify-start"
           openDelayMs={150}
-          side={'top'}
+          side="top"
           tooltip={katanaTooltipContent}
         >
-          <span className={'text-md text-text-secondary transition-colors hover:text-accent-500'}>{'*'}</span>
+          <span className="text-md text-text-secondary transition-colors hover:text-accent-500">{'*'}</span>
         </Tooltip>
       </span>
     )
   }
 
+  function renderApyMetric(apyValue: number | null): ReactElement {
+    if (isHoldingsLoading) return metricSpinner
+    if (apyValue === null) return <span>{'—'}</span>
+    return renderApyValue(`${percentFormatter.format(apyValue)}%`, hasKatanaHoldings)
+  }
+
+  function renderCurrencyMetric(value: number | null): ReactElement {
+    if (isHoldingsLoading) return metricSpinner
+    if (value === null) return <span>{'—'}</span>
+    return <span>{currencyFormatter.format(value)}</span>
+  }
+
   const metrics: TMetricBlock[] = [
     {
       key: 'total-balance',
-      header: <MetricHeader label={'Total Balance'} tooltip={'Total USD value of all your vault deposits.'} />,
+      header: <MetricHeader label="Total Balance" tooltip="Total USD value of all your vault deposits." />,
       value: (
         <span className={METRIC_VALUE_CLASS}>
-          {isSearchingBalances ? renderMetricSpinner() : currencyFormatter.format(totalPortfolioValue)}
+          {isSearchingBalances ? metricSpinner : currencyFormatter.format(totalPortfolioValue)}
         </span>
       )
     },
     {
       key: 'current-apy',
-      header: (
-        <MetricHeader label={'Current APY'} tooltip={'Weighted by your total deposits across all Yearn vaults.'} />
-      ),
-      value: (
-        <span className={METRIC_VALUE_CLASS}>
-          {isHoldingsLoading
-            ? renderMetricSpinner()
-            : blendedMetrics.blendedCurrentAPY !== null
-              ? renderApyValue(`${percentFormatter.format(blendedMetrics.blendedCurrentAPY)}%`, hasKatanaHoldings)
-              : '—'}
-        </span>
-      )
+      header: <MetricHeader label="Current APY" tooltip="Weighted by your total deposits across all Yearn vaults." />,
+      value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedCurrentAPY)}</span>
     },
     {
       key: '30-day-apy',
-      header: (
-        <MetricHeader label={'30-day APY'} tooltip={'Blended 30-day performance using your current positions.'} />
-      ),
-      value: (
-        <span className={METRIC_VALUE_CLASS}>
-          {isHoldingsLoading
-            ? renderMetricSpinner()
-            : blendedMetrics.blendedHistoricalAPY !== null
-              ? renderApyValue(`${percentFormatter.format(blendedMetrics.blendedHistoricalAPY)}%`, hasKatanaHoldings)
-              : '—'}
-        </span>
-      )
+      header: <MetricHeader label="30-day APY" tooltip="Blended 30-day performance using your current positions." />,
+      value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedHistoricalAPY)}</span>
     },
     {
       key: 'est-annual',
       header: (
-        <MetricHeader label={'Est. Annual'} tooltip={'Projects potential returns based on your blended current APY.'} />
+        <MetricHeader label="Est. Annual" tooltip="Projects potential returns based on your blended current APY." />
       ),
-      value: (
-        <span className={METRIC_VALUE_CLASS}>
-          {isHoldingsLoading
-            ? renderMetricSpinner()
-            : blendedMetrics.estimatedAnnualReturn !== null
-              ? currencyFormatter.format(blendedMetrics.estimatedAnnualReturn)
-              : '—'}
-        </span>
-      )
+      value: <span className={METRIC_VALUE_CLASS}>{renderCurrencyMetric(blendedMetrics.estimatedAnnualReturn)}</span>
     }
   ]
 
   return (
-    <section className={'flex flex-col gap-2 sm:gap-2'}>
+    <section className="flex flex-col gap-2 sm:gap-2">
       <Breadcrumbs
-        className={'px-1'}
+        className="px-1"
         items={[
           { label: 'Home', href: '/' },
           { label: 'Portfolio', isCurrent: true }
         ]}
       />
-      <div className={'px-1'}>
+      <div className="px-1">
         <Tooltip
-          className={'h-auto gap-0 justify-start md:justify-start'}
+          className="h-auto gap-0 justify-start md:justify-start"
           openDelayMs={150}
-          side={'top'}
+          side="top"
           tooltip={
             <div className={headingTooltipClassName}>{'Monitor your balances, returns, and discover new vaults.'}</div>
           }
         >
-          <h1 className={'text-lg font-black text-text-primary md:text-3xl md:leading-10'}>{'Account Overview'}</h1>
+          <h1 className="text-lg font-black text-text-primary md:text-3xl md:leading-10">{'Account Overview'}</h1>
         </Tooltip>
       </div>
-      {isActive ? <MetricsCard items={metrics} className={'rounded-t-lg rounded-b-none border border-border'} /> : null}
+      {isActive && <MetricsCard items={metrics} className="rounded-t-lg rounded-b-none border border-border" />}
     </section>
   )
 }
@@ -281,62 +264,102 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   const { cachedEntries, isLoading, error } = useNotifications()
   const hasEntries = cachedEntries.length > 0
 
+  function renderActivityContent(): ReactElement {
+    if (isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-2 py-6 text-sm text-text-secondary">
+          <IconSpinner className="size-5 animate-spin text-text-secondary" />
+          <span>{'Loading activity...'}</span>
+        </div>
+      )
+    }
+    if (error) {
+      return (
+        <div className="py-6 text-center">
+          <p className="text-sm font-medium text-red-600">{'Error loading activity'}</p>
+          <p className="mt-2 text-xs text-text-secondary">{error}</p>
+        </div>
+      )
+    }
+    if (!hasEntries) {
+      return <div className="py-6 text-center text-sm text-text-secondary">{'No transactions to show.'}</div>
+    }
+    return (
+      <div className="flex flex-col">
+        {cachedEntries.toReversed().map((entry) => (
+          <Notification key={`notification-${entry.id}`} notification={entry} variant="v3" />
+        ))}
+      </div>
+    )
+  }
+
   return (
-    <section className={'flex flex-col gap-2 sm:gap-2'}>
+    <section className="flex flex-col gap-2 sm:gap-2">
       <div>
-        <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'Activity'}</h2>
-        <p className={'text-xs text-text-secondary sm:text-sm'}>{'Review your recent Yearn transactions.'}</p>
+        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">Activity</h2>
+        <p className="text-xs text-text-secondary sm:text-sm">Review your recent Yearn transactions.</p>
       </div>
       {!isActive ? (
-        <div className={'rounded-lg border border-border bg-surface p-6 text-center'}>
-          <p className={'text-sm font-semibold text-text-primary'}>{'Connect a wallet to view activity.'}</p>
-          <p className={'mt-2 text-xs text-text-secondary'}>
-            {'Track deposits, withdrawals, and claims in one place.'}
-          </p>
-          <Button onClick={openLoginModal} variant={'filled'} className={'mt-4 min-h-[40px] px-5 text-sm'}>
-            {'Connect wallet'}
-          </Button>
+        <div className="rounded-lg border border-border bg-surface">
+          <ConnectWalletPrompt
+            title="Connect a wallet to view activity"
+            description="Track deposits, withdrawals, and claims in one place."
+            onConnect={openLoginModal}
+          />
         </div>
       ) : (
-        <div className={'rounded-lg border border-border bg-surface p-4'}>
-          {isLoading ? (
-            <div className={'flex flex-col items-center justify-center gap-2 py-6 text-sm text-text-secondary'}>
-              <IconSpinner className={'size-5 animate-spin text-text-secondary'} />
-              <span>{'Loading activity...'}</span>
-            </div>
-          ) : error ? (
-            <div className={'py-6 text-center'}>
-              <p className={'text-sm font-medium text-red-600'}>{'Error loading activity'}</p>
-              <p className={'mt-2 text-xs text-text-secondary'}>{error}</p>
-            </div>
-          ) : !hasEntries ? (
-            <div className={'py-6 text-center text-sm text-text-secondary'}>{'No transactions to show.'}</div>
-          ) : (
-            <div className={'flex flex-col'}>
-              {cachedEntries.toReversed().map((entry) => (
-                <Notification key={`notification-${entry.id}`} notification={entry} variant={'v3'} />
-              ))}
-            </div>
-          )}
-        </div>
+        <div className="rounded-lg border border-border bg-surface p-4">{renderActivityContent()}</div>
       )}
     </section>
   )
 }
 
-function VaultStakingRewardsCard({
-  vault,
+type TChainRewardData = {
+  chainId: number
+  chainName: string
+  rewardCount: number
+  totalUsd: number
+  isLoading: boolean
+  stakingRewards: Array<{
+    vault: TYDaemonVault
+    stakingAddress: `0x${string}`
+    stakingSource: string
+    rewards: TStakingReward[]
+  }>
+  merkleRewards: TGroupedMerkleReward[]
+  refetchStaking: () => void
+  refetchMerkle: () => void
+}
+
+function rewardsArrayEqual(a: TStakingReward[], b: TStakingReward[]): boolean {
+  if (a.length !== b.length) return false
+  return a.every((r, i) => r.tokenAddress === b[i]?.tokenAddress && r.amount === b[i]?.amount)
+}
+
+function merkleRewardsEqual(a: TGroupedMerkleReward[], b: TGroupedMerkleReward[]): boolean {
+  if (a.length !== b.length) return false
+  return a.every((r, i) => r.token.address === b[i]?.token.address && r.totalUnclaimed === b[i]?.totalUnclaimed)
+}
+
+function ChainStakingRewardsFetcher({
+  vault: originalVault,
   userAddress,
   isActive,
-  onStatusChange
+  onRewards
 }: {
   vault: TYDaemonVault
   userAddress?: `0x${string}`
   isActive: boolean
-  onStatusChange: (key: string, status: TRewardCardStatus) => void
-}): ReactElement | null {
-  const [isOverlayOpen, setIsOverlayOpen] = useState(false)
-  const [activeStep, setActiveStep] = useState<TransactionStep | undefined>()
+  onRewards: (
+    vault: TYDaemonVault,
+    stakingAddress: `0x${string}`,
+    stakingSource: string,
+    rewards: TChainRewardData['stakingRewards'][number]['rewards'],
+    refetch: () => void,
+    isLoading: boolean
+  ) => void
+}): null {
+  const { vault, isLoading: isLoadingVault } = useVaultWithStakingRewards(originalVault, isActive)
 
   const stakingAddress = vault.staking.available ? vault.staking.address : undefined
   const rewardTokens = useMemo(
@@ -352,7 +375,11 @@ function VaultStakingRewardsCard({
   )
 
   const isEnabled = isActive && !!stakingAddress && rewardTokens.length > 0
-  const { rewards, isLoading, refetch } = useStakingRewards({
+  const {
+    rewards,
+    isLoading: isLoadingRewards,
+    refetch
+  } = useStakingRewards({
     stakingAddress,
     stakingSource: vault.staking.source,
     rewardTokens,
@@ -361,86 +388,36 @@ function VaultStakingRewardsCard({
     enabled: isEnabled
   })
 
-  const hasRewards = rewards.length > 0
-  const totalUsd = useMemo(() => rewards.reduce((acc, reward) => acc + reward.usdValue, 0), [rewards])
-  const cardKey = useMemo(() => `vault-${getVaultKey(vault)}`, [vault])
+  const isLoading = isLoadingVault || isLoadingRewards
 
+  // Stable refs to avoid recreating the effect callback
+  const latestRef = useRef({ onRewards, refetch, vault, rewards })
+  latestRef.current = { onRewards, refetch, vault, rewards }
+
+  // Primitive keys to detect actual data changes without object reference instability
+  const rewardsKey = rewards.map((r) => `${r.tokenAddress}:${r.amount}`).join(',')
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: vault.address and rewardsKey are intentional primitive deps
   useEffect(() => {
-    onStatusChange(cardKey, { hasRewards, isLoading })
-  }, [cardKey, hasRewards, isLoading, onStatusChange])
+    if (!stakingAddress) return
+    const { onRewards, refetch, vault, rewards } = latestRef.current
+    onRewards(vault, stakingAddress, vault.staking.source ?? '', rewards, refetch, isLoading)
+  }, [vault.address, stakingAddress, rewardsKey, isLoading])
 
-  const handleStartClaim = useCallback((step: TransactionStep) => {
-    setActiveStep(step)
-    setIsOverlayOpen(true)
-  }, [])
-
-  const handleClaimComplete = useCallback(() => {
-    setIsOverlayOpen(false)
-    setActiveStep(undefined)
-    refetch()
-  }, [refetch])
-
-  const handleOverlayClose = useCallback(() => {
-    setIsOverlayOpen(false)
-    setActiveStep(undefined)
-  }, [])
-
-  if (!isEnabled || !hasRewards) {
-    return null
-  }
-
-  return (
-    <div className="relative overflow-hidden rounded-lg border border-border bg-surface">
-      <div className="flex flex-col gap-2 bg-surface p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-text-secondary">Claimable Rewards</span>
-            <span className="text-sm font-semibold text-text-primary">{getVaultName(vault)}</span>
-          </div>
-          <span className="text-lg font-bold text-text-primary">{formatUSD(totalUsd, 2, 2)}</span>
-        </div>
-      </div>
-      <div className="h-px w-full bg-border" />
-      <div className="p-4">
-        {rewards.map((reward, index) => (
-          <StakingRewardRow
-            key={`${reward.tokenAddress}-${reward.amount}`}
-            reward={reward}
-            stakingAddress={stakingAddress!}
-            stakingSource={vault.staking.source ?? ''}
-            chainId={vault.chainID}
-            onStartClaim={handleStartClaim}
-            isLast={index === rewards.length - 1}
-          />
-        ))}
-      </div>
-      <TransactionOverlay
-        isOpen={isOverlayOpen}
-        onClose={handleOverlayClose}
-        step={activeStep}
-        isLastStep={true}
-        onAllComplete={handleClaimComplete}
-        topOffset="0"
-        contentAlign="center"
-      />
-    </div>
-  )
+  return null
 }
 
-function ChainMerkleRewardsCard({
+function ChainMerkleRewardsFetcher({
   chainId,
   userAddress,
   isActive,
-  onStatusChange
+  onRewards
 }: {
   chainId: number
   userAddress?: `0x${string}`
   isActive: boolean
-  onStatusChange: (key: string, status: TRewardCardStatus) => void
-}): ReactElement | null {
-  const [isOverlayOpen, setIsOverlayOpen] = useState(false)
-  const [activeStep, setActiveStep] = useState<TransactionStep | undefined>()
-
+  onRewards: (chainId: number, rewards: TGroupedMerkleReward[], isLoading: boolean, refetch: () => void) => void
+}): null {
   const isEnabled = isActive && !!userAddress
   const { groupedRewards, isLoading, refetch } = useMerkleRewards({
     userAddress,
@@ -448,20 +425,132 @@ function ChainMerkleRewardsCard({
     enabled: isEnabled
   })
 
-  const hasRewards = groupedRewards.length > 0
-  const totalUsd = useMemo(
-    () => groupedRewards.reduce((acc, reward) => acc + reward.totalUsdValue, 0),
-    [groupedRewards]
-  )
-  const cardKey = useMemo(() => `merkle-${chainId}`, [chainId])
-  const chainLabel = useMemo(
-    () => SUPPORTED_NETWORKS.find((network) => network.id === chainId)?.name ?? `Chain ${chainId}`,
-    [chainId]
+  // Stable refs to avoid recreating the effect callback
+  const latestRef = useRef({ onRewards, refetch, groupedRewards })
+  latestRef.current = { onRewards, refetch, groupedRewards }
+
+  // Primitive key to detect actual data changes without object reference instability
+  const rewardsKey = groupedRewards.map((r) => `${r.token.address}:${r.totalUnclaimed}`).join(',')
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: rewardsKey is intentional primitive dep
+  useEffect(() => {
+    const { onRewards, refetch, groupedRewards } = latestRef.current
+    onRewards(chainId, groupedRewards, isLoading, refetch)
+  }, [chainId, rewardsKey, isLoading])
+
+  return null
+}
+
+function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioClaimRewardsProps): ReactElement {
+  const { address: userAddress } = useWeb3()
+  const { vaults } = useYearn()
+  const stakingVaults = useMemo(() => Object.values(vaults).filter((vault) => vault.staking.available), [vaults])
+  const [selectedChainId, setSelectedChainId] = useState<number | null>(null)
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false)
+  const [activeStep, setActiveStep] = useState<TransactionStep | undefined>()
+  const currentChainId = useChainId()
+  const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain()
+
+  const chainIds = useMemo(() => SUPPORTED_NETWORKS.map((network) => network.id), [])
+
+  const [chainStakingData, setChainStakingData] = useState<
+    Record<number, { rewards: TChainRewardData['stakingRewards']; isLoading: boolean; refetch: () => void }>
+  >({})
+
+  const [chainMerkleData, setChainMerkleData] = useState<
+    Record<number, { rewards: TGroupedMerkleReward[]; isLoading: boolean; refetch: () => void }>
+  >({})
+
+  const handleStakingRewards = useCallback(
+    (
+      vault: TYDaemonVault,
+      stakingAddress: `0x${string}`,
+      stakingSource: string,
+      rewards: TChainRewardData['stakingRewards'][number]['rewards'],
+      refetch: () => void,
+      isLoading: boolean
+    ) => {
+      const chainId = vault.chainID
+      setChainStakingData((prev) => {
+        const existing = prev[chainId]
+        const existingVaultData = existing?.rewards.find((r) => r.vault.address === vault.address)
+
+        // Bail out if nothing changed
+        if (existing?.isLoading === isLoading) {
+          if (existingVaultData && rewardsArrayEqual(existingVaultData.rewards, rewards)) return prev
+          if (!existingVaultData && rewards.length === 0) return prev
+        }
+
+        const filteredRewards = (existing?.rewards ?? []).filter((r) => r.vault.address !== vault.address)
+        const newRewards =
+          rewards.length > 0 ? [...filteredRewards, { vault, stakingAddress, stakingSource, rewards }] : filteredRewards
+
+        return { ...prev, [chainId]: { rewards: newRewards, isLoading, refetch } }
+      })
+    },
+    []
   )
 
-  useEffect(() => {
-    onStatusChange(cardKey, { hasRewards, isLoading })
-  }, [cardKey, hasRewards, isLoading, onStatusChange])
+  const handleMerkleRewards = useCallback(
+    (chainId: number, rewards: TGroupedMerkleReward[], isLoading: boolean, refetch: () => void) => {
+      setChainMerkleData((prev) => {
+        const existing = prev[chainId]
+
+        // Bail out if nothing changed
+        if (existing?.isLoading === isLoading && merkleRewardsEqual(existing.rewards, rewards)) return prev
+        if (!existing && rewards.length === 0 && isLoading) return prev
+
+        return { ...prev, [chainId]: { rewards, isLoading, refetch } }
+      })
+    },
+    []
+  )
+
+  const chainRewardsData = useMemo((): TChainRewardData[] => {
+    return chainIds.map((chainId) => {
+      const network = SUPPORTED_NETWORKS.find((n) => n.id === chainId)
+      const chainName = network?.name ?? `Chain ${chainId}`
+      const merkle = chainMerkleData[chainId]
+      const staking = chainStakingData[chainId]
+
+      const stakingRewardCount = staking?.rewards.reduce((sum, r) => sum + r.rewards.length, 0) ?? 0
+      const merkleRewardCount = merkle?.rewards.length ?? 0
+      const stakingUsd =
+        staking?.rewards.reduce((sum, r) => sum + r.rewards.reduce((s, rw) => s + rw.usdValue, 0), 0) ?? 0
+      const merkleUsd = merkle?.rewards.reduce((sum, r) => sum + r.totalUsdValue, 0) ?? 0
+
+      return {
+        chainId,
+        chainName,
+        rewardCount: stakingRewardCount + merkleRewardCount,
+        totalUsd: stakingUsd + merkleUsd,
+        isLoading: (staking?.isLoading ?? true) || (merkle?.isLoading ?? true),
+        stakingRewards: staking?.rewards ?? [],
+        merkleRewards: merkle?.rewards ?? [],
+        refetchStaking: staking?.refetch ?? (() => {}),
+        refetchMerkle: merkle?.refetch ?? (() => {})
+      }
+    })
+  }, [chainIds, chainMerkleData, chainStakingData])
+
+  const totalRewardCount = useMemo(
+    () => chainRewardsData.reduce((sum, c) => sum + c.rewardCount, 0),
+    [chainRewardsData]
+  )
+  const totalUsd = useMemo(() => chainRewardsData.reduce((sum, c) => sum + c.totalUsd, 0), [chainRewardsData])
+  const isLoading = chainRewardsData.some((c) => c.isLoading)
+
+  const selectedChainData = useMemo(() => {
+    if (selectedChainId === null) return null
+    return chainRewardsData.find((c) => c.chainId === selectedChainId) ?? null
+  }, [selectedChainId, chainRewardsData])
+
+  const displayedRewards = useMemo(() => {
+    if (selectedChainId === null) {
+      return chainRewardsData.filter((c) => c.rewardCount > 0)
+    }
+    return selectedChainData && selectedChainData.rewardCount > 0 ? [selectedChainData] : []
+  }, [selectedChainId, chainRewardsData, selectedChainData])
 
   const handleStartClaim = useCallback((step: TransactionStep) => {
     setActiveStep(step)
@@ -471,165 +560,227 @@ function ChainMerkleRewardsCard({
   const handleClaimComplete = useCallback(() => {
     setIsOverlayOpen(false)
     setActiveStep(undefined)
-    refetch()
-  }, [refetch])
+    chainRewardsData.forEach((c) => {
+      c.refetchStaking()
+      c.refetchMerkle()
+    })
+  }, [chainRewardsData])
 
   const handleOverlayClose = useCallback(() => {
     setIsOverlayOpen(false)
     setActiveStep(undefined)
   }, [])
 
-  if (!isEnabled || !hasRewards) {
-    return null
+  function getChainLogoUrl(chainId: number): string {
+    return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
+  }
+
+  function renderRewardsContent(): ReactElement {
+    if (isLoading && totalRewardCount === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-2 py-8 text-text-secondary">
+          <IconSpinner className="size-5 animate-spin" />
+          <span className="text-sm">Loading rewards...</span>
+        </div>
+      )
+    }
+    if (displayedRewards.length === 0) {
+      return <p className="py-8 text-center text-sm text-text-secondary">No rewards found!</p>
+    }
+    const isAllChainsView = selectedChainId === null
+    const showChainHeader = isAllChainsView && displayedRewards.length > 1
+    const needsSwitchChain = (chainData: TChainRewardData): boolean =>
+      !isAllChainsView && currentChainId !== chainData.chainId && chainData.rewardCount > 0
+
+    return (
+      <div className="flex flex-col gap-4">
+        {displayedRewards.map((chainData) => (
+          <div key={chainData.chainId}>
+            {showChainHeader && (
+              <div className="mb-2 flex items-center gap-2">
+                <img
+                  src={getChainLogoUrl(chainData.chainId)}
+                  alt={chainData.chainName}
+                  className="size-5 rounded-full"
+                />
+                <span className="text-sm font-semibold text-text-primary">{chainData.chainName}</span>
+              </div>
+            )}
+            {chainData.stakingRewards.flatMap((sr, srIdx) =>
+              sr.rewards.map((reward, rewardIdx) => (
+                <StakingRewardRow
+                  key={`${sr.vault.address}-${reward.tokenAddress}`}
+                  reward={reward}
+                  stakingAddress={sr.stakingAddress}
+                  stakingSource={sr.stakingSource}
+                  chainId={chainData.chainId}
+                  onStartClaim={handleStartClaim}
+                  isFirst={srIdx === 0 && rewardIdx === 0}
+                  vaultName={sr.vault.name}
+                  vaultTokenAddress={sr.vault.token.address}
+                  isAllChainsView={isAllChainsView}
+                  onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+                />
+              ))
+            )}
+            {chainData.merkleRewards.map((groupedReward, idx) => (
+              <MerkleRewardRow
+                key={groupedReward.token.address}
+                groupedReward={groupedReward}
+                userAddress={userAddress!}
+                chainId={chainData.chainId}
+                onStartClaim={handleStartClaim}
+                isFirst={idx === 0 && chainData.stakingRewards.length === 0}
+                sourceName="Merkle Rewards"
+                isAllChainsView={isAllChainsView}
+                onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+              />
+            ))}
+            {needsSwitchChain(chainData) && (
+              <div className="mt-4 flex items-center justify-center gap-4 rounded-lg border border-border bg-surface-secondary p-4">
+                <span className="text-sm text-text-secondary">
+                  Switch to {chainData.chainName} to claim these rewards
+                </span>
+                <Button
+                  onClick={() => switchChainAsync({ chainId: chainData.chainId })}
+                  isBusy={isSwitchingChain}
+                  variant="filled"
+                  className="!px-4 !py-1.5 !text-sm"
+                >
+                  Switch Chain
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (!isActive) {
+    return (
+      <section className="flex flex-col gap-2 sm:gap-2">
+        <div>
+          <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">Claim rewards</h2>
+          <p className="text-xs text-text-secondary sm:text-sm">
+            Claim all of your staking and Merkle rewards across Yearn.
+          </p>
+        </div>
+        <div className="rounded-lg border border-border bg-surface">
+          <ConnectWalletPrompt
+            title="Connect a wallet to claim rewards"
+            description="We will surface any claimable rewards once connected."
+            onConnect={openLoginModal}
+          />
+        </div>
+      </section>
+    )
   }
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-border bg-surface">
-      <div className="flex flex-col gap-2 bg-surface p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-text-secondary">Claimable Rewards</span>
-            <span className="text-sm font-semibold text-text-primary">{chainLabel}</span>
+    <section className="relative flex flex-col gap-2 sm:gap-2">
+      {stakingVaults.map((vault) => (
+        <ChainStakingRewardsFetcher
+          key={getVaultKey(vault)}
+          vault={vault}
+          userAddress={userAddress}
+          isActive={isActive}
+          onRewards={handleStakingRewards}
+        />
+      ))}
+      {chainIds.map((chainId) => (
+        <ChainMerkleRewardsFetcher
+          key={`merkle-${chainId}`}
+          chainId={chainId}
+          userAddress={userAddress}
+          isActive={isActive}
+          onRewards={handleMerkleRewards}
+        />
+      ))}
+
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="flex flex-col md:flex-row">
+          {/* Left sidebar - Chain selector */}
+          <div className="w-full border-b border-border bg-surface-secondary md:w-64 md:shrink-0 md:border-b-0 md:border-r">
+            {/* All chains option */}
+            <div className="border-b border-border">
+              <button
+                type="button"
+                onClick={() => setSelectedChainId(null)}
+                className={cl(
+                  'flex w-full items-center justify-between px-4 py-4 transition-colors',
+                  selectedChainId === null
+                    ? 'bg-surface text-text-primary'
+                    : 'text-text-secondary hover:bg-surface/50 hover:text-text-primary'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-8 items-center justify-center rounded-full bg-surface-secondary">
+                    <span className="text-sm font-bold text-text-primary">All</span>
+                  </div>
+                  <span className="font-medium">All Chains</span>
+                  {selectedChainId === null && <span className="size-2 rounded-full bg-green-500" />}
+                </div>
+                <span className="text-sm font-medium">{totalRewardCount || '-'}</span>
+              </button>
+            </div>
+
+            {/* Chain list */}
+            {[...chainRewardsData]
+              .sort((a, b) => b.rewardCount - a.rewardCount)
+              .map((chainData, index) => {
+                const chainId = chainData.chainId
+                const isSelected = selectedChainId === chainId
+                return (
+                  <button
+                    key={chainId}
+                    type="button"
+                    onClick={() => setSelectedChainId(chainId)}
+                    className={cl(
+                      'flex w-full items-center justify-between px-4 py-3 transition-colors',
+                      index > 0 ? 'border-t border-border' : '',
+                      isSelected
+                        ? 'bg-surface text-text-primary'
+                        : 'text-text-secondary hover:bg-surface/50 hover:text-text-primary'
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <img src={getChainLogoUrl(chainId)} alt={chainData.chainName} className="size-8 rounded-full" />
+                      <span className="font-medium">{chainData.chainName}</span>
+                      {isSelected && <span className="size-2 rounded-full bg-green-500" />}
+                    </div>
+                    <span className="text-sm font-medium">{chainData.rewardCount || '-'}</span>
+                  </button>
+                )
+              })}
           </div>
-          <span className="text-lg font-bold text-text-primary">{formatUSD(totalUsd, 2, 2)}</span>
+
+          {/* Right content - Rewards panel */}
+          <div className="flex-1">
+            {/* Header */}
+            <div className="flex min-h-[64px] items-center justify-between border-b border-border px-6">
+              <h3 className="text-lg font-semibold text-text-primary">Claimable Rewards</h3>
+              <span className="text-xl font-bold text-text-primary">
+                {formatUSD(selectedChainId === null ? totalUsd : (selectedChainData?.totalUsd ?? 0), 2, 2)}
+              </span>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 pb-6 pt-2">{renderRewardsContent()}</div>
+          </div>
         </div>
       </div>
-      <div className="h-px w-full bg-border" />
-      <div className="p-4">
-        {groupedRewards.map((groupedReward, index) => (
-          <MerkleRewardRow
-            key={groupedReward.token.address}
-            groupedReward={groupedReward}
-            userAddress={userAddress!}
-            chainId={chainId}
-            onStartClaim={handleStartClaim}
-            isLast={index === groupedRewards.length - 1}
-          />
-        ))}
-      </div>
-      <TransactionOverlay
-        isOpen={isOverlayOpen}
-        onClose={handleOverlayClose}
-        step={activeStep}
-        isLastStep={true}
-        onAllComplete={handleClaimComplete}
-        topOffset="0"
-        contentAlign="center"
-      />
-    </div>
-  )
-}
 
-function PortfolioClaimRewardsSection({
-  holdingsRows,
-  isActive,
-  openLoginModal
-}: TPortfolioClaimRewardsProps): ReactElement {
-  const { address: userAddress } = useWeb3()
-  const vaultsWithRewards = useMemo(
-    () =>
-      holdingsRows
-        .map((row) => row.vault)
-        .filter((vault) => vault.staking.available && (vault.staking.rewards?.length ?? 0) > 0),
-    [holdingsRows]
-  )
-  const merkleChainIds = useMemo(
-    () => Array.from(new Set(holdingsRows.map((row) => row.vault.chainID))),
-    [holdingsRows]
-  )
-
-  const rewardKeys = useMemo(() => {
-    const vaultKeys = vaultsWithRewards.map((vault) => `vault-${getVaultKey(vault)}`)
-    const merkleKeys = merkleChainIds.map((chainId) => `merkle-${chainId}`)
-    return [...vaultKeys, ...merkleKeys]
-  }, [vaultsWithRewards, merkleChainIds])
-
-  const [cardStatuses, setCardStatuses] = useState<Record<string, TRewardCardStatus>>({})
-
-  useEffect(() => {
-    setCardStatuses((previous) => {
-      const next: Record<string, TRewardCardStatus> = {}
-      rewardKeys.forEach((key) => {
-        next[key] = previous[key] ?? { hasRewards: false, isLoading: true }
-      })
-      return next
-    })
-  }, [rewardKeys])
-
-  const handleStatusChange = useCallback((key: string, status: TRewardCardStatus) => {
-    setCardStatuses((previous) => {
-      const previousStatus = previous[key]
-      if (previousStatus?.hasRewards === status.hasRewards && previousStatus?.isLoading === status.isLoading) {
-        return previous
-      }
-      return { ...previous, [key]: status }
-    })
-  }, [])
-
-  const statusEntries = Object.values(cardStatuses)
-  const hasSources = rewardKeys.length > 0
-  const hasRewards = statusEntries.some((status) => status.hasRewards)
-  const isLoading = hasSources && (statusEntries.length === 0 || statusEntries.some((status) => status.isLoading))
-  const showNoSources = !hasSources && !isLoading
-  const showNoRewards = hasSources && !isLoading && !hasRewards
-
-  return (
-    <section className={'flex flex-col gap-2 sm:gap-2'}>
-      <div>
-        <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'Claim rewards'}</h2>
-        <p className={'text-xs text-text-secondary sm:text-sm'}>
-          {'Claim all of your staking and Merkle rewards across Yearn.'}
-        </p>
-      </div>
-      {!isActive ? (
-        <div className={'rounded-lg border border-border bg-surface p-6 text-center'}>
-          <p className={'text-sm font-semibold text-text-primary'}>{'Connect a wallet to claim rewards.'}</p>
-          <p className={'mt-2 text-xs text-text-secondary'}>
-            {'We will surface any claimable rewards once connected.'}
-          </p>
-          <Button onClick={openLoginModal} variant={'filled'} className={'mt-4 min-h-[40px] px-5 text-sm'}>
-            {'Connect wallet'}
-          </Button>
-        </div>
-      ) : (
-        <div className={'flex flex-col gap-4'}>
-          {vaultsWithRewards.map((vault) => (
-            <VaultStakingRewardsCard
-              key={getVaultKey(vault)}
-              vault={vault}
-              userAddress={userAddress}
-              isActive={isActive}
-              onStatusChange={handleStatusChange}
-            />
-          ))}
-          {merkleChainIds.map((chainId) => (
-            <ChainMerkleRewardsCard
-              key={chainId}
-              chainId={chainId}
-              userAddress={userAddress}
-              isActive={isActive}
-              onStatusChange={handleStatusChange}
-            />
-          ))}
-          {isLoading && !hasRewards ? (
-            <div className={'rounded-lg border border-border bg-surface p-6 text-center text-sm text-text-secondary'}>
-              <div className={'flex flex-col items-center justify-center gap-2'}>
-                <IconSpinner className={'size-5 animate-spin text-text-secondary'} />
-                <span>{'Loading rewards...'}</span>
-              </div>
-            </div>
-          ) : null}
-          {showNoRewards ? (
-            <div className={'rounded-lg border border-border bg-surface p-6 text-center text-sm text-text-secondary'}>
-              {'No claimable rewards yet.'}
-            </div>
-          ) : null}
-          {showNoSources ? (
-            <div className={'rounded-lg border border-border bg-surface p-6 text-center text-sm text-text-secondary'}>
-              {'No rewards sources available yet.'}
-            </div>
-          ) : null}
-        </div>
+      {isOverlayOpen && (
+        <TransactionOverlay
+          isOpen={isOverlayOpen}
+          onClose={handleOverlayClose}
+          step={activeStep}
+          isLastStep={true}
+          onAllComplete={handleClaimComplete}
+          topOffset="0"
+          contentAlign="center"
+        />
       )}
     </section>
   )
@@ -647,55 +798,68 @@ function PortfolioHoldingsSection({
   setSortDirection,
   vaultFlags
 }: TPortfolioHoldingsProps): ReactElement {
-  const handleSort = (newSortBy: string, newDirection: TSortDirection): void => {
+  function handleSort(newSortBy: string, newDirection: TSortDirection): void {
     setSortBy(newSortBy as TPossibleSortBy)
     setSortDirection(newDirection)
   }
 
-  return (
-    <section className={'flex flex-col gap-2 sm:gap-2'}>
-      <div className={'flex flex-wrap items-center justify-between gap-3 sm:gap-4'}>
-        <div>
-          <Tooltip
-            className={'h-auto gap-0 justify-start md:justify-start'}
-            openDelayMs={150}
-            side={'top'}
-            tooltip={<div className={headingTooltipClassName}>{'Track every Yearn position you currently hold.'}</div>}
-          >
-            <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'Your Vaults'}</h2>
-          </Tooltip>
+  function renderHoldingsContent(): ReactElement {
+    if (isHoldingsLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16">
+          <IconSpinner className="size-5 text-text-secondary sm:size-6" />
+          <span>{'Searching for Yearn balances...'}</span>
         </div>
+      )
+    }
+    if (!hasHoldings) {
+      return <HoldingsEmptyState isActive={isActive} onConnect={openLoginModal} />
+    }
+    return (
+      <div className="flex flex-col gap-px bg-border">
+        {holdingsRows.map((row) => (
+          <VaultsListRow
+            key={row.key}
+            currentVault={row.vault}
+            flags={vaultFlags[row.key]}
+            hrefOverride={row.hrefOverride}
+            showBoostDetails={false}
+            activeProductType="all"
+            showStrategies
+            showAllocatorChip={false}
+            showProductTypeChipOverride={true}
+            showHoldingsChipOverride={false}
+            mobileSecondaryMetric="holdings"
+          />
+        ))}
       </div>
-      <div className={'overflow-hidden rounded-lg border border-border'}>
-        <div className={'flex flex-col'}>
+    )
+  }
+
+  return (
+    <section className="flex flex-col gap-2 sm:gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+        <Tooltip
+          className="h-auto gap-0 justify-start md:justify-start"
+          openDelayMs={150}
+          side="top"
+          tooltip={<div className={headingTooltipClassName}>{'Track every Yearn position you currently hold.'}</div>}
+        >
+          <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">{'Your Vaults'}</h2>
+        </Tooltip>
+      </div>
+      <div className="overflow-hidden rounded-lg border border-border">
+        <div className="flex flex-col">
           <VaultsListHead
             sortBy={sortBy}
             sortDirection={sortDirection}
             onSort={handleSort}
-            wrapperClassName={'rounded-t-lg bg-surface-secondary'}
-            containerClassName={'rounded-t-lg bg-surface-secondary'}
+            wrapperClassName="rounded-t-lg bg-surface-secondary"
+            containerClassName="rounded-t-lg bg-surface-secondary"
             items={[
-              {
-                type: 'sort',
-                label: 'Vault Name',
-                value: 'vault',
-                sortable: false,
-                className: 'col-span-12'
-              },
-              {
-                type: 'sort',
-                label: 'Est. APY',
-                value: 'estAPY',
-                sortable: true,
-                className: 'col-span-4'
-              },
-              {
-                type: 'sort',
-                label: 'TVL',
-                value: 'tvl',
-                sortable: true,
-                className: 'col-span-4'
-              },
+              { type: 'sort', label: 'Vault Name', value: 'vault', sortable: false, className: 'col-span-12' },
+              { type: 'sort', label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-4' },
+              { type: 'sort', label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-4' },
               {
                 type: 'sort',
                 label: 'Your Holdings',
@@ -705,36 +869,7 @@ function PortfolioHoldingsSection({
               }
             ]}
           />
-          {isHoldingsLoading ? (
-            <div
-              className={
-                'flex flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16'
-              }
-            >
-              <IconSpinner className={'size-5 text-text-secondary sm:size-6'} />
-              <span>{'Searching for Yearn balances...'}</span>
-            </div>
-          ) : hasHoldings ? (
-            <div className={'flex flex-col gap-px bg-border'}>
-              {holdingsRows.map((row) => (
-                <VaultsListRow
-                  key={row.key}
-                  currentVault={row.vault}
-                  flags={vaultFlags[row.key]}
-                  hrefOverride={row.hrefOverride}
-                  showBoostDetails={false}
-                  activeProductType={'all'}
-                  showStrategies
-                  showAllocatorChip={false}
-                  showProductTypeChipOverride={true}
-                  showHoldingsChipOverride={false}
-                  mobileSecondaryMetric={'holdings'}
-                />
-              ))}
-            </div>
-          ) : (
-            <HoldingsEmptyState isActive={isActive} onConnect={openLoginModal} />
-          )}
+          {renderHoldingsContent()}
         </div>
       </div>
     </section>
@@ -747,22 +882,18 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
   }
 
   return (
-    <section className={'flex flex-col gap-2 sm:gap-2'}>
-      <div>
-        <Tooltip
-          className={'h-auto gap-0 justify-start md:justify-start'}
-          openDelayMs={150}
-          side={'top'}
-          tooltip={
-            <div className={headingTooltipClassName}>
-              {'Vaults picked for you based on performance and popularity.'}
-            </div>
-          }
-        >
-          <h2 className={'text-xl font-semibold text-text-primary sm:text-2xl'}>{'You might like'}</h2>
-        </Tooltip>
-      </div>
-      <div className={'grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:gap-4 xl:grid-cols-4'}>
+    <section className="flex flex-col gap-2 sm:gap-2">
+      <Tooltip
+        className="h-auto gap-0 justify-start md:justify-start"
+        openDelayMs={150}
+        side="top"
+        tooltip={
+          <div className={headingTooltipClassName}>{'Vaults picked for you based on performance and popularity.'}</div>
+        }
+      >
+        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">{'You might like'}</h2>
+      </Tooltip>
+      <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         {suggestedRows.map((row) => (
           <SuggestedVaultCard key={row.key} vault={row.vault} />
         ))}
@@ -796,22 +927,10 @@ function PortfolioPage(): ReactElement {
     [searchParams, setSearchParams]
   )
 
-  return (
-    <PortfolioPageLayout>
-      {/** biome-ignore lint/complexity/noUselessFragments: <lint error without> */}
-      <>
-        <div className={cl('flex flex-col', model.isActive ? 'gap-0' : 'gap-4 sm:gap-8')}>
-          <PortfolioHeaderSection
-            blendedMetrics={model.blendedMetrics}
-            isActive={model.isActive}
-            isHoldingsLoading={model.isHoldingsLoading}
-            isSearchingBalances={model.isSearchingBalances}
-            hasKatanaHoldings={model.hasKatanaHoldings}
-            totalPortfolioValue={model.totalPortfolioValue}
-          />
-          <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} mergeWithHeader={model.isActive} />
-        </div>
-        {activeTab === 'positions' ? (
+  function renderTabContent(): ReactElement | null {
+    switch (activeTab) {
+      case 'positions':
+        return (
           <>
             <PortfolioHoldingsSection
               hasHoldings={model.hasHoldings}
@@ -827,17 +946,32 @@ function PortfolioPage(): ReactElement {
             />
             <PortfolioSuggestedSection suggestedRows={model.suggestedRows} />
           </>
-        ) : null}
-        {activeTab === 'activity' ? (
-          <PortfolioActivitySection isActive={model.isActive} openLoginModal={model.openLoginModal} />
-        ) : null}
-        {activeTab === 'claim-rewards' ? (
-          <PortfolioClaimRewardsSection
-            holdingsRows={model.holdingsRows}
+        )
+      case 'activity':
+        return <PortfolioActivitySection isActive={model.isActive} openLoginModal={model.openLoginModal} />
+      case 'claim-rewards':
+        return <PortfolioClaimRewardsSection isActive={model.isActive} openLoginModal={model.openLoginModal} />
+      default:
+        return null
+    }
+  }
+
+  return (
+    <PortfolioPageLayout>
+      {/** biome-ignore lint/complexity/noUselessFragments: <lint error without> */}
+      <>
+        <div className={cl('flex flex-col', model.isActive ? 'gap-0' : 'gap-4 sm:gap-8')}>
+          <PortfolioHeaderSection
+            blendedMetrics={model.blendedMetrics}
             isActive={model.isActive}
-            openLoginModal={model.openLoginModal}
+            isHoldingsLoading={model.isHoldingsLoading}
+            isSearchingBalances={model.isSearchingBalances}
+            hasKatanaHoldings={model.hasKatanaHoldings}
+            totalPortfolioValue={model.totalPortfolioValue}
           />
-        ) : null}
+          <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} mergeWithHeader={model.isActive} />
+        </div>
+        <div key={activeTab}>{renderTabContent()}</div>
       </>
     </PortfolioPageLayout>
   )
