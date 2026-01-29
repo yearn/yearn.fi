@@ -13,5 +13,7 @@ export const PLAUSIBLE_EVENTS = {
   FILTER_LEGACY: 'filter_legacy',
   FILTER_HIDDEN: 'filter_hidden',
   FILTER_STRATEGIES: 'filter_strategies',
-  FILTER_SEARCH: 'filter_search'
+  FILTER_SEARCH: 'filter_search',
+  VAULT_EXPAND: 'vault_expand',
+  VAULT_CLICK: 'vault_click'
 } as const

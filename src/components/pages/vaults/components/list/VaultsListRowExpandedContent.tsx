@@ -1,3 +1,4 @@
+import { usePlausible } from '@hooks/usePlausible'
 import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
 import {
   type TVaultChartTab,
@@ -15,7 +16,8 @@ import {
 } from '@shared/components/AllocationChart'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
-import { formatCounterValue, toNormalizedBN } from '@shared/utils'
+import { formatCounterValue, toAddress, toNormalizedBN } from '@shared/utils'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
@@ -49,6 +51,7 @@ export default function VaultsListRowExpandedContent({
   showHiddenTag = false,
   isHidden
 }: TVaultsListRowExpandedContentProps): ReactElement {
+  const trackEvent = usePlausible()
   const chartTimeframe: TVaultChartTimeframe = '1y'
   const { data: snapshotVault } = useVaultSnapshot({
     chainId: currentVault.chainID,
@@ -58,6 +61,18 @@ export default function VaultsListRowExpandedContent({
     () => mergeVaultSnapshot(currentVault, snapshotVault),
     [currentVault, snapshotVault]
   )
+
+  const handleGoToVault = (event: React.MouseEvent): void => {
+    event.stopPropagation()
+    trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK, {
+      props: {
+        vaultAddress: toAddress(currentVault.address),
+        vaultSymbol: currentVault.symbol,
+        chainID: currentVault.chainID.toString()
+      }
+    })
+    onNavigateToVault()
+  }
 
   return (
     <div className={'hidden md:block bg-surface'}>
@@ -80,10 +95,7 @@ export default function VaultsListRowExpandedContent({
               rightElement={
                 <button
                   type={'button'}
-                  onClick={(event): void => {
-                    event.stopPropagation()
-                    onNavigateToVault()
-                  }}
+                  onClick={handleGoToVault}
                   className={
                     'h-full rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
                   }

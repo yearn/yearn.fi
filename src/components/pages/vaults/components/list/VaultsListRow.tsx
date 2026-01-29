@@ -1,4 +1,5 @@
 import Link from '@components/Link'
+import { usePlausible } from '@hooks/usePlausible'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
@@ -23,6 +24,7 @@ import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { cl, formatAmount, formatTvlDisplay, toAddress, toNormalizedBN } from '@shared/utils'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -105,6 +107,7 @@ export function VaultsListRow({
   mobileSecondaryMetric?: 'tvl' | 'holdings'
 }): ReactElement {
   const navigate = useNavigate()
+  const trackEvent = usePlausible()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
@@ -274,6 +277,15 @@ export function VaultsListRow({
         aria-expanded={isExpanded}
         onClick={(event): void => {
           event.stopPropagation()
+          if (!isExpanded) {
+            trackEvent(PLAUSIBLE_EVENTS.VAULT_EXPAND, {
+              props: {
+                vaultAddress: toAddress(currentVault.address),
+                vaultSymbol: currentVault.symbol,
+                chainID: currentVault.chainID.toString()
+              }
+            })
+          }
           handleExpandedChange(!isExpanded)
         }}
         className={cl(
@@ -302,7 +314,15 @@ export function VaultsListRow({
           if (showCompareToggle && onToggleCompare) {
             event.preventDefault()
             onToggleCompare(currentVault)
+            return
           }
+          trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK, {
+            props: {
+              vaultAddress: toAddress(currentVault.address),
+              vaultSymbol: currentVault.symbol,
+              chainID: currentVault.chainID.toString()
+            }
+          })
         }}
       >
         <div
