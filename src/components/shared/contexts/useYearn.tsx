@@ -12,7 +12,8 @@ import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
 import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
-import { createContext, memo, useCallback, useContext, useMemo } from 'react'
+import { createContext, memo, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router'
 import { deserialize, serialize } from 'wagmi'
 
 export const DEFAULT_SLIPPAGE = 0.5
@@ -34,6 +35,7 @@ export type TYearnContext = {
   zapProvider: TSolver
   isAutoStakingEnabled: boolean
   mutateVaultList: () => Promise<QueryObserverResult<TKongVaultList, Error>>
+  enableVaultListFetch: () => void
   setMaxLoss: (value: bigint) => void
   setZapSlippage: (value: number) => void
   setZapProvider: (value: TSolver) => void
@@ -63,6 +65,7 @@ const YearnContext = createContext<TYearnContext>({
   isAutoStakingEnabled: true,
   mutateVaultList: (): Promise<QueryObserverResult<TKongVaultList, Error>> =>
     Promise.resolve({} as QueryObserverResult<TKongVaultList, Error>),
+  enableVaultListFetch: (): void => undefined,
   setMaxLoss: (): void => undefined,
   setZapSlippage: (): void => undefined,
   setZapProvider: (): void => undefined,
@@ -73,6 +76,7 @@ const YearnContext = createContext<TYearnContext>({
 })
 
 export const YearnContextApp = memo(function YearnContextApp({ children }: { children: ReactElement }): ReactElement {
+  const location = useLocation()
   const { value: maxLoss, set: setMaxLoss } = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
     defaultValue: DEFAULT_MAX_LOSS,
     parse: (str, fallback): bigint => (str ? deserialize(str) : (fallback ?? DEFAULT_MAX_LOSS)),
@@ -91,9 +95,33 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
     }
   )
 
+  const isVaultsRoute = location.pathname.startsWith('/vaults')
+  const isVaultDetailPage = isVaultsRoute && location.pathname.split('/').length === 4
+  const isPortfolioRoute = location.pathname.startsWith('/portfolio')
+  const shouldEnableVaultList = (isVaultsRoute && !isVaultDetailPage) || isPortfolioRoute
+  const [isVaultListEnabled, setIsVaultListEnabled] = useState(shouldEnableVaultList)
+
+  useEffect(() => {
+    if (shouldEnableVaultList) {
+      setIsVaultListEnabled(true)
+    }
+  }, [shouldEnableVaultList])
+
+  const enableVaultListFetch = useCallback(() => {
+    setIsVaultListEnabled(true)
+  }, [])
+
   const prices = useFetchYearnPrices()
   const earned = useFetchYearnEarnedForUser()
-  const { vaults: rawVaults, vaultsMigrations, vaultsRetired, isLoading, refetch } = useFetchYearnVaults()
+  const {
+    vaults: rawVaults,
+    vaultsMigrations,
+    vaultsRetired,
+    isLoading,
+    refetch
+  } = useFetchYearnVaults(undefined, {
+    enabled: isVaultListEnabled
+  })
   const { data: katanaAprs, isLoading: isLoadingKatanaAprs } = useKatanaAprs()
 
   const vaults = useMemo(() => {
@@ -132,6 +160,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
         katanaAprs,
         isLoadingKatanaAprs,
         mutateVaultList: refetch,
+        enableVaultListFetch,
         getPrice
       }}
     >

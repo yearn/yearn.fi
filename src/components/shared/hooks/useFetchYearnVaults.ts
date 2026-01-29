@@ -133,13 +133,17 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
   return parsed.data
 }
 
-function useFetchYearnVaults(chainIDs?: number[] | undefined): {
+function useFetchYearnVaults(
+  chainIDs?: number[] | undefined,
+  options?: { enabled?: boolean }
+): {
   vaults: TDict<TYDaemonVault>
   vaultsMigrations: TDict<TYDaemonVault>
   vaultsRetired: TDict<TYDaemonVault>
   isLoading: boolean
   refetch: () => Promise<QueryObserverResult<TKongVaultList, Error>>
 } {
+  const isEnabled = options?.enabled ?? true
   const resolvedChainIds = chainIDs ?? DEFAULT_CHAIN_IDS
   const {
     data: kongVaultList,
@@ -149,7 +153,8 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
     endpoint: VAULT_LIST_ENDPOINT,
     schema: kongVaultListSchema,
     config: {
-      cacheDuration: 1000 * 60 * 60 // 1 hour
+      cacheDuration: 15 * 60 * 1000,
+      enabled: isEnabled
     }
   })
 
@@ -160,7 +165,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
     const chainIdSet = new Set(resolvedChainIds)
     return kongVaultList
       .filter((item) => {
-        const isYearn = item.inclusion?.yearn ?? item.inclusion?.isYearn ?? item.yearn ?? false
+        const isYearn = item.inclusion?.isYearn ?? false
         return isYearn && chainIdSet.has(item.chainId)
       })
       .map((item) => mapKongListItemToVault(item))
@@ -239,7 +244,7 @@ function usePrefetchYearnVaults(enabled = true): void {
       void queryClient.prefetchQuery({
         queryKey,
         queryFn: () => fetchWithSchema(endpoint, kongVaultListSchema),
-        staleTime: 1000 * 60 * 60
+        staleTime: 15 * 60 * 1000
       })
     })
   }, [enabled, endpoints, queryClient])

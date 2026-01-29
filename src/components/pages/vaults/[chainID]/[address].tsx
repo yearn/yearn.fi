@@ -64,7 +64,7 @@ function Index(): ReactElement | null {
   // This is coming from context that preloads all vaults. We don't need this when loading a page directly.
   // RG: ideally we dont need all of this on initial load of this page as we only need the specific vault data.
   // RG: It would be good to lazy load the full vaults list after initial render and getting the primary page data.
-  const { vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList } = useYearn()
+  const { vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [mobileDrawerAction, setMobileDrawerAction] = useState<
@@ -127,6 +127,7 @@ function Index(): ReactElement | null {
   const scrollTargetRef = useRef<number | null>(null)
   const scrollTimeoutRef = useRef<number | null>(null)
   const [pendingSectionKey, setPendingSectionKey] = useState<SectionKey | null>(null)
+  const [hasTriggeredVaultListFetch, setHasTriggeredVaultListFetch] = useState(false)
 
   useEffect(() => {
     void vaultKey
@@ -169,6 +170,9 @@ function Index(): ReactElement | null {
     const resolvedAddress = toAddress(params.address)
     return vaults[resolvedAddress] ?? vaultsMigrations[resolvedAddress] ?? vaultsRetired[resolvedAddress]
   }, [params.address, vaults, vaultsMigrations, vaultsRetired])
+
+  const hasVaultList =
+    Object.keys(vaults).length > 0 || Object.keys(vaultsMigrations).length > 0 || Object.keys(vaultsRetired).length > 0
 
   /**RG: This should have almost everything we need and fetches the latest vault info from the snapshot API */
   // codex: Fetch the Kong REST snapshot for this vault, used to enrich strategy debt + meta.
@@ -213,6 +217,15 @@ function Index(): ReactElement | null {
   }, [baseMergedVault, isYBold, yBoldStakingVault])
 
   const isLoadingVault = !currentVault && (isLoadingSnapshotVault || isLoadingVaultList)
+
+  useEffect(() => {
+    if (hasTriggeredVaultListFetch || hasVaultList || !snapshotVault) {
+      return
+    }
+    setHasTriggeredVaultListFetch(true)
+    const frame = requestAnimationFrame(() => enableVaultListFetch())
+    return () => cancelAnimationFrame(frame)
+  }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, snapshotVault])
 
   useEffect((): void => {
     if (address && isActive) {
