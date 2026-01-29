@@ -160,6 +160,20 @@ const pickNumber = (...values: Array<number | null | undefined>): number => {
   return 0
 }
 
+const pickNumberOrNull = (...values: Array<number | string | null | undefined>): number | null => {
+  for (const value of values) {
+    if (value === null || value === undefined) {
+      continue
+    }
+    const normalized = typeof value === 'number' ? value : Number(value)
+    if (!Number.isFinite(normalized)) {
+      continue
+    }
+    return normalized
+  }
+  return null
+}
+
 const normalizeFee = (value: number | null | undefined): number => {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return 0
@@ -259,8 +273,12 @@ const mapSnapshotComposition = (
     const hasAllocation = toBigInt(totalDebt) > 0n || debtRatio > 0
     const status = normalizeCompositionStatus(entry.status, hasAllocation)
     const name = entry.name?.trim() || `Strategy ${index + 1}`
-    const oracleApy = entry.performance?.oracle?.apy
-    const resolvedApr = normalizeNumber(oracleApy ?? entry.latestReportApr, 0)
+    const resolvedApr = pickNumberOrNull(
+      entry.latestReportApr,
+      entry.performance?.historical?.net,
+      entry.performance?.oracle?.apr,
+      entry.performance?.oracle?.apy
+    )
     strategies.push({
       address: resolvedAddress,
       name,
@@ -298,7 +316,7 @@ const mapSnapshotDebts = (
       address: toAddress(debt.strategy),
       name: `Strategy ${index + 1}`,
       description: '',
-      netAPR: 0,
+      netAPR: null,
       status: hasAllocation ? 'active' : 'unallocated',
       details: {
         totalDebt,

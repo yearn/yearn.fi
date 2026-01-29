@@ -7,7 +7,7 @@ import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode } from '@shared/compon
 import { useYearn } from '@shared/contexts/useYearn'
 import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
 import type { TSortDirection } from '@shared/types'
-import { cl, formatCounterValue, formatPercent, toNormalizedBN } from '@shared/utils'
+import { cl, formatCounterValue, formatPercent, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { lazy, Suspense, useMemo } from 'react'
@@ -23,6 +23,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
   // RG: same note as before, if someone visits this page directly we should lazy load the vaults list after initial render.
   const { vaults } = useYearn()
   const isDark = useDarkMode()
+  const vaultVariant = currentVault.version?.startsWith('3') || currentVault.version?.startsWith('~3') ? 'v3' : 'v2'
   const { sortDirection, sortBy, onChangeSortDirection, onChangeSortBy } = useQueryArguments({
     defaultSortBy: 'allocationPercentage',
     defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
@@ -34,53 +35,44 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
     chainID: currentVault.chainID
   })
 
-  // codex: Build a list of strategies that are also vaults (v3 allocators/strategies live in the vaults map).
-  /** Gets the strategies for the vault and looks for them in the vaults list to get their details.
-   * This will only pick up v3 strategies since those are also vaults.
-   */
-  const vaultList = useMemo((): TYDaemonVault[] => {
-    const _vaultList = []
-    for (const strategy of currentVault?.strategies || []) {
-      console.dir('strategy', strategy)
-      _vaultList.push({
-        ...vaults[strategy.address],
-        details: strategy.details,
-        status: strategy.status
-      })
-    }
-    console.dir('_vaultlist', _vaultList)
-    return _vaultList.filter((vault) => !!vault.address)
-  }, [vaults, currentVault])
-
-  // codex: Collect strategies that are not represented as vaults (legacy/v2 style strategies).
-  const strategyList = useMemo((): TYDaemonVaultStrategy[] => {
-    const _stratList = []
-    for (const strategy of currentVault?.strategies || []) {
-      console.dir('strategies2', strategy)
-      if (!vaults[strategy.address]) {
-        _stratList.push(strategy)
+  // codex: Build a unified list of strategies, enriching with vault metadata when available.
+  const mergedList = useMemo(() => {
+    const strategies = currentVault?.strategies || []
+    const rows = strategies.map((strategy) => {
+      const vault = vaults[strategy.address]
+      if (vault) {
+        return {
+          ...vault,
+          name: strategy.name || vault.name,
+          apr: {
+            ...vault.apr,
+            netAPR: strategy.netAPR ?? vault.apr?.netAPR ?? 0
+          },
+          details: strategy.details,
+          status: strategy.status,
+          netAPR: strategy.netAPR
+        }
       }
-    }
-    console.dir('_stratlist', _stratList)
-    return _stratList
+      return {
+        ...strategy,
+        apr: {
+          netAPR: strategy.netAPR ?? 0
+        }
+      }
+    })
+    return rows as (TYDaemonVault & {
+      details: TYDaemonVaultStrategy['details']
+      status: TYDaemonVaultStrategy['status']
+      netAPR: TYDaemonVaultStrategy['netAPR']
+    })[]
   }, [vaults, currentVault])
-
-  // codex: Merge both sources into one list the UI can sort, chart, and render.
-  const mergedList = useMemo(
-    () =>
-      [...vaultList, ...strategyList] as (TYDaemonVault & {
-        details: TYDaemonVaultStrategy['details']
-        status: TYDaemonVaultStrategy['status']
-      })[],
-    [vaultList, strategyList]
-  )
 
   // codex: Compute unallocated values by subtracting strategy allocations from total assets.
-  const unallocatedPercentage =
-    100 * 100 - mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
-  const unallocatedValue =
-    Number(currentVault.tvl.totalAssets) -
-    mergedList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0)
+  const allocatedRatio = mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
+  const unallocatedPercentage = Math.max(0, 10000 - allocatedRatio)
+  const totalAssets = currentVault.tvl.totalAssets ?? 0n
+  const allocatedDebt = mergedList.reduce((acc, strategy) => acc + toBigInt(strategy.details?.totalDebt || 0), 0n)
+  const unallocatedValue = totalAssets > allocatedDebt ? totalAssets - allocatedDebt : 0n
 
   // codex: Drop inactive strategies before charting/sorting; list rendering uses this filtered set.
   const filteredVaultList = useMemo(() => {
@@ -117,7 +109,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
   // codex: Add the unallocated slice to the allocation chart if there is remaining value.
   const allocationChartData = useMemo(() => {
     const unallocatedData =
-      unallocatedValue > 0
+      unallocatedValue > 0n
         ? {
             id: 'unallocated',
             name: 'Unallocated',
@@ -230,12 +222,12 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   tokenAddress={currentVault.token.address}
                   address={strategy.address}
                   isVault={!!vaults[strategy.address]}
-                  variant="v3"
+                  variant={vaultVariant}
                   apr={strategy.netAPR}
                   fees={currentVault.apr.fees}
                 />
               ))}
-            {unallocatedPercentage > 0 && unallocatedValue > 0 ? (
+            {unallocatedPercentage > 0 && unallocatedValue > 0n ? (
               <div className={'w-full rounded-lg text-text-primary opacity-50'}>
                 <div className={'grid grid-cols-1 md:grid-cols-24 items-center w-full gap-4 py-3 px-4 md:px-8'}>
                   <div className={'col-span-9 flex flex-row items-center gap-4'}>
@@ -296,7 +288,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   tokenAddress={currentVault.token.address}
                   address={strategy.address}
                   isVault={!!vaults[strategy.address]}
-                  variant="v3"
+                  variant={vaultVariant}
                   apr={strategy.netAPR}
                   fees={currentVault.apr.fees}
                 />

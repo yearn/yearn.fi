@@ -1,5 +1,10 @@
+import { findLatestAPY } from '@pages/vaults/domain/reports/findLatestAPY'
+import type { TYDaemonReports } from '@pages/vaults/domain/reports/reports.schema'
+import { yDaemonReportsSchema } from '@pages/vaults/domain/reports/reports.schema'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { useFetch } from '@shared/hooks/useFetch'
+import { useYDaemonBaseURI } from '@shared/hooks/useYDaemonBaseURI'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
@@ -10,7 +15,7 @@ import { copyToClipboard } from '@shared/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement } from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from '/src/components/Link'
 
 export function VaultsListStrategy({
@@ -34,11 +39,27 @@ export function VaultsListStrategy({
   address: TAddress
   isVault?: boolean
   variant: 'v2' | 'v3'
-  apr: number | undefined
+  apr: number | null | undefined
   fees: TYDaemonVault['apr']['fees']
   isUnallocated?: boolean
 }): ReactElement {
   const [isExpanded, setIsExpanded] = useState(false)
+  const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: chainId })
+  const shouldFetchReports = variant === 'v2' && !isVault && apr == null
+
+  const { data: reports } = useFetch<TYDaemonReports>({
+    endpoint: shouldFetchReports ? `${yDaemonBaseUri}/reports/${address}` : null,
+    schema: yDaemonReportsSchema,
+    config: {
+      keepPreviousData: true
+    }
+  })
+
+  const latestApr = useMemo(
+    (): number | null => (shouldFetchReports ? findLatestAPY(reports) : null),
+    [reports, shouldFetchReports]
+  )
+  const displayApr = apr ?? latestApr
 
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
 
@@ -94,10 +115,10 @@ export function VaultsListStrategy({
           <div className={'flex flex-col md:col-span-5 md:text-right'}>
             <p className={'text-xs text-text-primary/60 mb-1'}>{'APY'}</p>
             <p className={'font-semibold'}>
-              {apr === undefined ? (
+              {displayApr == null ? (
                 '--'
               ) : (
-                <RenderAmount shouldHideTooltip value={apr} symbol={'percent'} decimals={6} />
+                <RenderAmount shouldHideTooltip value={displayApr} symbol={'percent'} decimals={6} />
               )}
             </p>
           </div>
