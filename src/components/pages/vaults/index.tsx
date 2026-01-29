@@ -1,3 +1,4 @@
+import { usePlausible } from '@hooks/usePlausible'
 import { VaultsCompareModal } from '@pages/vaults/components/compare/VaultsCompareModal'
 import { VaultsFiltersBar } from '@pages/vaults/components/filters/VaultsFiltersBar'
 import { VaultsFiltersPanel } from '@pages/vaults/components/filters/VaultsFiltersPanel'
@@ -14,9 +15,10 @@ import { Button } from '@shared/components/Button'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconGitCompare } from '@shared/icons/IconGitCompare'
 import { cl } from '@shared/utils'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useVaultsPageModel } from './hooks/useVaultsPageModel'
 
 type TVaultsListSectionProps = {
@@ -72,6 +74,7 @@ function VaultsListSection({
 
 export default function Index(): ReactElement {
   const { refs, filtersBar, list } = useVaultsPageModel()
+  const trackEvent = usePlausible()
   const { varsRef, filtersRef } = refs
   const { search, filters, chains, shouldStackFilters, activeVaultType, onChangeVaultType } = filtersBar
   const {
@@ -103,6 +106,18 @@ export default function Index(): ReactElement {
   const [isCompareOpen, setIsCompareOpen] = useState(false)
   const [isCompareMode, setIsCompareMode] = useState(false)
   const [expandedVaultKeys, setExpandedVaultKeys] = useState<Record<string, boolean>>({})
+  const lastLoggedSearchRef = useRef('')
+
+  const handleSearchBlur = useCallback(() => {
+    const query = search.value
+    const resultCount = totalMatchingVaults
+    if (query.length > 0 && query !== lastLoggedSearchRef.current) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_SEARCH, {
+        props: { queryLength: query.length.toString(), resultCount: resultCount.toString() }
+      })
+      lastLoggedSearchRef.current = query
+    }
+  }, [search.value, totalMatchingVaults, trackEvent])
 
   const handleToggleCompare = useCallback((vault: TYDaemonVault): void => {
     setCompareVaultKeys((prev) => toggleInArray(prev, getVaultKey(vault)))
@@ -420,7 +435,8 @@ export default function Index(): ReactElement {
               <VaultsFiltersBar
                 search={{
                   ...search,
-                  shouldDebounce: true
+                  shouldDebounce: true,
+                  onBlur: handleSearchBlur
                 }}
                 filters={{
                   ...filters,

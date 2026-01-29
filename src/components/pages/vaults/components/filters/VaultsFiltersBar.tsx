@@ -30,6 +30,7 @@ export type TSearchProps = {
   shouldDebounce?: boolean
   alertContent?: ReactNode
   trailingControls?: ReactNode
+  onBlur?: () => void
 }
 
 export type TFiltersProps = {
@@ -310,6 +311,7 @@ export function VaultsFiltersBar({
             showInlineSearch={true}
             searchValue={search.value}
             onSearch={search.onChange}
+            onSearchBlur={search.onBlur}
             shouldDebounce={search.shouldDebounce}
             searchAlertContent={search.alertContent}
             controlsRowRef={controlsRowRef}
@@ -360,6 +362,7 @@ function FilterControls({
   showInlineSearch,
   searchValue,
   onSearch,
+  onSearchBlur,
   shouldDebounce,
   searchAlertContent,
   controlsRowRef,
@@ -382,6 +385,7 @@ function FilterControls({
   showInlineSearch: boolean
   searchValue: string
   onSearch: (value: string) => void
+  onSearchBlur?: () => void
   shouldDebounce?: boolean
   searchAlertContent?: ReactNode
   controlsRowRef?: RefObject<HTMLDivElement | null>
@@ -403,6 +407,7 @@ function FilterControls({
         searchPlaceholder={'Find a Vault'}
         searchValue={searchValue}
         onSearch={onSearch}
+        onBlur={onSearchBlur}
         shouldDebounce={shouldDebounce || false}
         highlightWhenActive={true}
         alertContent={searchAlertContent}
