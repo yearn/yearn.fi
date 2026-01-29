@@ -274,10 +274,9 @@ const mapSnapshotComposition = (
     const status = normalizeCompositionStatus(entry.status, hasAllocation)
     const name = entry.name?.trim() || `Strategy ${index + 1}`
     const resolvedApr = pickNumberOrNull(
-      entry.latestReportApr,
+      entry.performance?.oracle?.apy,
       entry.performance?.historical?.net,
-      entry.performance?.oracle?.apr,
-      entry.performance?.oracle?.apy
+      entry.latestReportApr
     )
     strategies.push({
       address: resolvedAddress,

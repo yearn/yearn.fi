@@ -1,10 +1,10 @@
-import { findLatestAPY } from '@pages/vaults/domain/reports/findLatestAPY'
-import type { TYDaemonReports } from '@pages/vaults/domain/reports/reports.schema'
-import { yDaemonReportsSchema } from '@pages/vaults/domain/reports/reports.schema'
+import { findLatestReportApr } from '@pages/vaults/domain/reports/findLatestReportApr'
+import type { TKongReports } from '@pages/vaults/domain/reports/kongReports.schema'
+import { kongReportsSchema } from '@pages/vaults/domain/reports/kongReports.schema'
+import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useFetch } from '@shared/hooks/useFetch'
-import { useYDaemonBaseURI } from '@shared/hooks/useYDaemonBaseURI'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
@@ -29,7 +29,8 @@ export function VaultsListStrategy({
   variant = 'v3',
   apr,
   fees,
-  isUnallocated = false
+  isUnallocated = false,
+  vaultAddress
 }: {
   details: TYDaemonVaultStrategy['details']
   chainId: number
@@ -42,22 +43,25 @@ export function VaultsListStrategy({
   apr: number | null | undefined
   fees: TYDaemonVault['apr']['fees']
   isUnallocated?: boolean
+  vaultAddress?: TAddress
 }): ReactElement {
   const [isExpanded, setIsExpanded] = useState(false)
-  const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: chainId })
   const shouldFetchReports = variant === 'v2' && !isVault && apr == null
 
-  const { data: reports } = useFetch<TYDaemonReports>({
-    endpoint: shouldFetchReports ? `${yDaemonBaseUri}/reports/${address}` : null,
-    schema: yDaemonReportsSchema,
+  const reportEndpoint =
+    shouldFetchReports && vaultAddress ? `${KONG_REST_BASE}/reports/${chainId}/${toAddress(vaultAddress)}` : null
+
+  const { data: reports } = useFetch<TKongReports>({
+    endpoint: reportEndpoint,
+    schema: kongReportsSchema,
     config: {
       keepPreviousData: true
     }
   })
 
   const latestApr = useMemo(
-    (): number | null => (shouldFetchReports ? findLatestAPY(reports) : null),
-    [reports, shouldFetchReports]
+    (): number | null => (reportEndpoint ? findLatestReportApr(reports, address) : null),
+    [reports, reportEndpoint, address]
   )
   const displayApr = apr ?? latestApr
 
