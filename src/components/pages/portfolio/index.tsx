@@ -1,4 +1,5 @@
 import Link from '@components/Link'
+import { ConnectWalletPrompt } from '@pages/portfolio/components/ConnectWalletPrompt'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { Notification } from '@pages/vaults/components/notifications/Notification'
@@ -24,7 +25,7 @@ import { cl, SUPPORTED_NETWORKS } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useChainId, useSwitchChain } from 'wagmi'
 import { type TPortfolioModel, usePortfolioModel } from './hooks/usePortfolioModel'
@@ -91,23 +92,23 @@ function PortfolioPageLayout({ children }: { children: ReactElement }): ReactEle
 }
 
 function HoldingsEmptyState({ isActive, onConnect }: { isActive: boolean; onConnect: () => void }): ReactElement {
+  if (!isActive) {
+    return (
+      <ConnectWalletPrompt
+        title="Connect a wallet to get started"
+        description="Link a wallet to load your Yearn balances."
+        onConnect={onConnect}
+      />
+    )
+  }
+
   return (
-    <div className={'flex flex-col items-center justify-center gap-4 px-4 py-12 text-center sm:px-6 sm:py-16'}>
-      <p className={'text-base font-semibold text-text-primary sm:text-lg'}>
-        {isActive ? 'No vault positions yet' : 'Connect a wallet to get started'}
-      </p>
-      <p className={'max-w-md text-sm text-text-secondary'}>
-        {isActive ? 'Deposit into a Yearn vault to see it here.' : 'Link a wallet to load your Yearn balances.'}
-      </p>
-      {isActive ? (
-        <Link to="/vaults" className={'yearn--button min-h-[44px] px-6'} data-variant={'filled'}>
-          {'Browse vaults'}
-        </Link>
-      ) : (
-        <Button onClick={onConnect} variant={'filled'} className={'min-h-[44px] px-6'}>
-          {'Connect wallet'}
-        </Button>
-      )}
+    <div className="flex flex-col items-center justify-center gap-4 px-4 py-12 text-center sm:px-6 sm:py-16">
+      <p className="text-base font-semibold text-text-primary sm:text-lg">No vault positions yet</p>
+      <p className="max-w-md text-sm text-text-secondary">Deposit into a Yearn vault to see it here.</p>
+      <Link to="/vaults" className="yearn--button min-h-[44px] px-6" data-variant="filled">
+        Browse vaults
+      </Link>
     </div>
   )
 }
@@ -295,16 +296,16 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   return (
     <section className="flex flex-col gap-2 sm:gap-2">
       <div>
-        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">{'Activity'}</h2>
-        <p className="text-xs text-text-secondary sm:text-sm">{'Review your recent Yearn transactions.'}</p>
+        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">Activity</h2>
+        <p className="text-xs text-text-secondary sm:text-sm">Review your recent Yearn transactions.</p>
       </div>
       {!isActive ? (
-        <div className="rounded-lg border border-border bg-surface p-6 text-center">
-          <p className="text-sm font-semibold text-text-primary">{'Connect a wallet to view activity.'}</p>
-          <p className="mt-2 text-xs text-text-secondary">{'Track deposits, withdrawals, and claims in one place.'}</p>
-          <Button onClick={openLoginModal} variant="filled" className="mt-4 min-h-[40px] px-5 text-sm">
-            {'Connect wallet'}
-          </Button>
+        <div className="rounded-lg border border-border bg-surface">
+          <ConnectWalletPrompt
+            title="Connect a wallet to view activity"
+            description="Track deposits, withdrawals, and claims in one place."
+            onConnect={openLoginModal}
+          />
         </div>
       ) : (
         <div className="rounded-lg border border-border bg-surface p-4">{renderActivityContent()}</div>
@@ -328,6 +329,16 @@ type TChainRewardData = {
   merkleRewards: TGroupedMerkleReward[]
   refetchStaking: () => void
   refetchMerkle: () => void
+}
+
+function rewardsArrayEqual(a: TStakingReward[], b: TStakingReward[]): boolean {
+  if (a.length !== b.length) return false
+  return a.every((r, i) => r.tokenAddress === b[i]?.tokenAddress && r.amount === b[i]?.amount)
+}
+
+function merkleRewardsEqual(a: TGroupedMerkleReward[], b: TGroupedMerkleReward[]): boolean {
+  if (a.length !== b.length) return false
+  return a.every((r, i) => r.token.address === b[i]?.token.address && r.totalUnclaimed === b[i]?.totalUnclaimed)
 }
 
 function ChainStakingRewardsFetcher({
@@ -379,11 +390,19 @@ function ChainStakingRewardsFetcher({
 
   const isLoading = isLoadingVault || isLoadingRewards
 
+  // Stable refs to avoid recreating the effect callback
+  const latestRef = useRef({ onRewards, refetch, vault, rewards })
+  latestRef.current = { onRewards, refetch, vault, rewards }
+
+  // Primitive keys to detect actual data changes without object reference instability
+  const rewardsKey = rewards.map((r) => `${r.tokenAddress}:${r.amount}`).join(',')
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: vault.address and rewardsKey are intentional primitive deps
   useEffect(() => {
-    if (stakingAddress) {
-      onRewards(vault, stakingAddress, vault.staking.source ?? '', rewards, refetch, isLoading)
-    }
-  }, [vault, stakingAddress, rewards, refetch, isLoading, onRewards])
+    if (!stakingAddress) return
+    const { onRewards, refetch, vault, rewards } = latestRef.current
+    onRewards(vault, stakingAddress, vault.staking.source ?? '', rewards, refetch, isLoading)
+  }, [vault.address, stakingAddress, rewardsKey, isLoading])
 
   return null
 }
@@ -406,9 +425,18 @@ function ChainMerkleRewardsFetcher({
     enabled: isEnabled
   })
 
+  // Stable refs to avoid recreating the effect callback
+  const latestRef = useRef({ onRewards, refetch, groupedRewards })
+  latestRef.current = { onRewards, refetch, groupedRewards }
+
+  // Primitive key to detect actual data changes without object reference instability
+  const rewardsKey = groupedRewards.map((r) => `${r.token.address}:${r.totalUnclaimed}`).join(',')
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: rewardsKey is intentional primitive dep
   useEffect(() => {
+    const { onRewards, refetch, groupedRewards } = latestRef.current
     onRewards(chainId, groupedRewards, isLoading, refetch)
-  }, [chainId, groupedRewards, isLoading, refetch, onRewards])
+  }, [chainId, rewardsKey, isLoading])
 
   return null
 }
@@ -435,7 +463,6 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
   const handleStakingRewards = useCallback(
     (
-      chainId: number,
       vault: TYDaemonVault,
       stakingAddress: `0x${string}`,
       stakingSource: string,
@@ -443,19 +470,22 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
       refetch: () => void,
       isLoading: boolean
     ) => {
+      const chainId = vault.chainID
       setChainStakingData((prev) => {
-        const existing = prev[chainId] ?? { rewards: [], isLoading: true, refetch: () => {} }
-        const filteredRewards = existing.rewards.filter((r) => r.vault.address !== vault.address)
+        const existing = prev[chainId]
+        const existingVaultData = existing?.rewards.find((r) => r.vault.address === vault.address)
+
+        // Bail out if nothing changed
+        if (existing?.isLoading === isLoading) {
+          if (existingVaultData && rewardsArrayEqual(existingVaultData.rewards, rewards)) return prev
+          if (!existingVaultData && rewards.length === 0) return prev
+        }
+
+        const filteredRewards = (existing?.rewards ?? []).filter((r) => r.vault.address !== vault.address)
         const newRewards =
           rewards.length > 0 ? [...filteredRewards, { vault, stakingAddress, stakingSource, rewards }] : filteredRewards
-        return {
-          ...prev,
-          [chainId]: {
-            rewards: newRewards,
-            isLoading: isLoading,
-            refetch
-          }
-        }
+
+        return { ...prev, [chainId]: { rewards: newRewards, isLoading, refetch } }
       })
     },
     []
@@ -463,10 +493,15 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
   const handleMerkleRewards = useCallback(
     (chainId: number, rewards: TGroupedMerkleReward[], isLoading: boolean, refetch: () => void) => {
-      setChainMerkleData((prev) => ({
-        ...prev,
-        [chainId]: { rewards, isLoading, refetch }
-      }))
+      setChainMerkleData((prev) => {
+        const existing = prev[chainId]
+
+        // Bail out if nothing changed
+        if (existing?.isLoading === isLoading && merkleRewardsEqual(existing.rewards, rewards)) return prev
+        if (!existing && rewards.length === 0 && isLoading) return prev
+
+        return { ...prev, [chainId]: { rewards, isLoading, refetch } }
+      })
     },
     []
   )
@@ -631,28 +666,26 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
             Claim all of your staking and Merkle rewards across Yearn.
           </p>
         </div>
-        <div className="rounded-lg border border-border bg-surface p-6 text-center">
-          <p className="text-sm font-semibold text-text-primary">Connect a wallet to claim rewards.</p>
-          <p className="mt-2 text-xs text-text-secondary">We will surface any claimable rewards once connected.</p>
-          <Button onClick={openLoginModal} variant="filled" className="mt-4 min-h-[40px] px-5 text-sm">
-            Connect wallet
-          </Button>
+        <div className="rounded-lg border border-border bg-surface">
+          <ConnectWalletPrompt
+            title="Connect a wallet to claim rewards"
+            description="We will surface any claimable rewards once connected."
+            onConnect={openLoginModal}
+          />
         </div>
       </section>
     )
   }
 
   return (
-    <section className="flex flex-col gap-2 sm:gap-2">
+    <section className="relative flex flex-col gap-2 sm:gap-2">
       {stakingVaults.map((vault) => (
         <ChainStakingRewardsFetcher
           key={getVaultKey(vault)}
           vault={vault}
           userAddress={userAddress}
           isActive={isActive}
-          onRewards={(v, addr, src, rewards, refetch, loading) =>
-            handleStakingRewards(vault.chainID, v, addr, src, rewards, refetch, loading)
-          }
+          onRewards={handleStakingRewards}
         />
       ))}
       {chainIds.map((chainId) => (
@@ -740,15 +773,17 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
         </div>
       </div>
 
-      <TransactionOverlay
-        isOpen={isOverlayOpen}
-        onClose={handleOverlayClose}
-        step={activeStep}
-        isLastStep={true}
-        onAllComplete={handleClaimComplete}
-        topOffset="0"
-        contentAlign="center"
-      />
+      {isOverlayOpen && (
+        <TransactionOverlay
+          isOpen={isOverlayOpen}
+          onClose={handleOverlayClose}
+          step={activeStep}
+          isLastStep={true}
+          onAllComplete={handleClaimComplete}
+          topOffset="0"
+          contentAlign="center"
+        />
+      )}
     </section>
   )
 }
@@ -938,7 +973,7 @@ function PortfolioPage(): ReactElement {
           />
           <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} mergeWithHeader={model.isActive} />
         </div>
-        {renderTabContent()}
+        <div key={activeTab}>{renderTabContent()}</div>
       </>
     </PortfolioPageLayout>
   )
