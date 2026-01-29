@@ -721,40 +721,38 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                   <span className="font-medium">All Chains</span>
                   {selectedChainId === null && <span className="size-2 rounded-full bg-green-500" />}
                 </div>
-                <span className="text-sm font-medium">{totalRewardCount}</span>
+                <span className="text-sm font-medium">{totalRewardCount || '-'}</span>
               </button>
             </div>
 
             {/* Chain list */}
-            {chainIds.map((chainId, index) => {
-              const chainData = chainRewardsData.find((c) => c.chainId === chainId)
-              const isSelected = selectedChainId === chainId
-              return (
-                <button
-                  key={chainId}
-                  type="button"
-                  onClick={() => setSelectedChainId(chainId)}
-                  className={cl(
-                    'flex w-full items-center justify-between px-4 py-3 transition-colors',
-                    index > 0 ? 'border-t border-border' : '',
-                    isSelected
-                      ? 'bg-surface text-text-primary'
-                      : 'text-text-secondary hover:bg-surface/50 hover:text-text-primary'
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={getChainLogoUrl(chainId)}
-                      alt={chainData?.chainName ?? ''}
-                      className="size-8 rounded-full"
-                    />
-                    <span className="font-medium">{chainData?.chainName}</span>
-                    {isSelected && <span className="size-2 rounded-full bg-green-500" />}
-                  </div>
-                  <span className="text-sm font-medium">{chainData?.rewardCount ?? 0}</span>
-                </button>
-              )
-            })}
+            {[...chainRewardsData]
+              .sort((a, b) => b.rewardCount - a.rewardCount)
+              .map((chainData, index) => {
+                const chainId = chainData.chainId
+                const isSelected = selectedChainId === chainId
+                return (
+                  <button
+                    key={chainId}
+                    type="button"
+                    onClick={() => setSelectedChainId(chainId)}
+                    className={cl(
+                      'flex w-full items-center justify-between px-4 py-3 transition-colors',
+                      index > 0 ? 'border-t border-border' : '',
+                      isSelected
+                        ? 'bg-surface text-text-primary'
+                        : 'text-text-secondary hover:bg-surface/50 hover:text-text-primary'
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <img src={getChainLogoUrl(chainId)} alt={chainData.chainName} className="size-8 rounded-full" />
+                      <span className="font-medium">{chainData.chainName}</span>
+                      {isSelected && <span className="size-2 rounded-full bg-green-500" />}
+                    </div>
+                    <span className="text-sm font-medium">{chainData.rewardCount || '-'}</span>
+                  </button>
+                )
+              })}
           </div>
 
           {/* Right content - Rewards panel */}
