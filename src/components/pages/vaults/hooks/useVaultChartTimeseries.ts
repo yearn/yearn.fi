@@ -1,8 +1,8 @@
 import type { TChartTimeseriesResponse } from '@pages/vaults/types/charts'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { toAddress } from '@shared/utils'
 import { vaultChartTimeseriesSchema } from '@shared/utils/schemas/vaultChartsSchema'
-import useSWR from 'swr'
 
 const DEFAULT_LIMIT = 1000
 const MAX_LIMIT = 2000
@@ -120,20 +120,19 @@ export function useVaultChartTimeseries({ chainId, address, limit }: UseVaultCha
   const normalizedAddress = address ? toAddress(address).toLowerCase() : undefined
   const limitValue = Math.min(Math.max(limit ?? DEFAULT_LIMIT, 1), MAX_LIMIT)
 
-  const shouldFetch = normalizedAddress && Number.isInteger(chainId)
+  const shouldFetch = Boolean(normalizedAddress) && Number.isInteger(chainId)
 
-  return useSWR<TChartTimeseriesResponse>(
-    shouldFetch ? ['vault-charts', chainId, normalizedAddress, limitValue] : null,
-    ([, chainIdValue, addressValue, limitParam]) =>
+  return useQuery<TChartTimeseriesResponse>({
+    queryKey: ['vault-charts', chainId, normalizedAddress, limitValue],
+    enabled: shouldFetch,
+    queryFn: () =>
       fetchVaultCharts({
-        chainId: Number(chainIdValue),
-        address: String(addressValue),
-        limit: Number(limitParam)
+        chainId: Number(chainId),
+        address: normalizedAddress as string,
+        limit: Number(limitValue)
       }),
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 5 * 60 * 1000,
-      keepPreviousData: true
-    }
-  )
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData
+  })
 }

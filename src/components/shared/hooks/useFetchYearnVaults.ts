@@ -1,18 +1,17 @@
 import { patchYBoldVaults } from '@pages/vaults/domain/normalizeVault'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { useDeepCompareMemo } from '@react-hookz/web'
-import { useFetch } from '@shared/hooks/useFetch'
+import { fetchWithSchema, getFetchQueryKey, useFetch } from '@shared/hooks/useFetch'
 import type { TDict } from '@shared/types'
 import { toAddress } from '@shared/utils'
-import { baseFetcher } from '@shared/utils/fetchers'
 import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import { kongVaultListSchema } from '@shared/utils/schemas/kongVaultListSchema'
-import type { TYDaemonVault, TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 
 import { useEffect, useMemo } from 'react'
-import type { KeyedMutator } from 'swr'
-import { mutate } from 'swr'
+import type { QueryObserverResult } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { zeroAddress } from 'viem'
 
 /******************************************************************************
@@ -139,13 +138,13 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
   vaultsMigrations: TDict<TYDaemonVault>
   vaultsRetired: TDict<TYDaemonVault>
   isLoading: boolean
-  mutate: KeyedMutator<TYDaemonVaults>
+  refetch: () => Promise<QueryObserverResult<TKongVaultList, Error>>
 } {
   const resolvedChainIds = chainIDs ?? DEFAULT_CHAIN_IDS
   const {
     data: kongVaultList,
     isLoading,
-    mutate
+    refetch
   } = useFetch<TKongVaultList>({
     endpoint: VAULT_LIST_ENDPOINT,
     schema: kongVaultListSchema,
@@ -212,7 +211,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
     vaultsMigrations: vaultsMigrationsObject,
     vaultsRetired: vaultsRetiredObject,
     isLoading,
-    mutate: mutate as unknown as KeyedMutator<TYDaemonVaults>
+    refetch: refetch as unknown as () => Promise<QueryObserverResult<TKongVaultList, Error>>
   }
 }
 
@@ -220,6 +219,7 @@ const prefetchedEndpoints = new Set<string>()
 
 function usePrefetchYearnVaults(enabled = true): void {
   const endpoints = useMemo(() => [VAULT_LIST_ENDPOINT], [])
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     if (!enabled) {
@@ -232,9 +232,17 @@ function usePrefetchYearnVaults(enabled = true): void {
       }
 
       prefetchedEndpoints.add(endpoint)
-      void mutate(endpoint, baseFetcher(endpoint), { revalidate: false })
+      const queryKey = getFetchQueryKey(endpoint)
+      if (!queryKey) {
+        return
+      }
+      void queryClient.prefetchQuery({
+        queryKey,
+        queryFn: () => fetchWithSchema(endpoint, kongVaultListSchema),
+        staleTime: 1000 * 60 * 60
+      })
     })
-  }, [enabled, endpoints])
+  }, [enabled, endpoints, queryClient])
 }
 
 export { useFetchYearnVaults, usePrefetchYearnVaults }

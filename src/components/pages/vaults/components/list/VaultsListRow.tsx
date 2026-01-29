@@ -15,20 +15,21 @@ import {
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import { useMediaQuery } from '@react-hookz/web'
+import { useQueryClient } from '@tanstack/react-query'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { cl, formatAmount, formatTvlDisplay, toAddress, toNormalizedBN } from '@shared/utils'
-import { baseFetcher } from '@shared/utils/fetchers'
+import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { mutate } from 'swr'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
 import { VaultsListChip } from './VaultsListChip'
 
@@ -115,6 +116,7 @@ export function VaultsListRow({
   const isExpanded = isExpandedProp ?? isExpandedState
   const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('strategies')
   const [interactiveHoverCount, setInteractiveHoverCount] = useState(0)
+  const queryClient = useQueryClient()
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
@@ -161,10 +163,21 @@ export function VaultsListRow({
     }
 
     prefetchedSnapshotEndpoints.add(endpoint)
-    void mutate(endpoint, baseFetcher(endpoint), { revalidate: false }).then(() => {
-      maybeToastSnapshot(endpoint, currentVault.address, 'prefetch')
-    })
-  }, [currentVault.address, currentVault.chainID])
+    const queryKey = getFetchQueryKey(endpoint)
+    if (!queryKey) {
+      return
+    }
+
+    void queryClient
+      .prefetchQuery({
+        queryKey,
+        queryFn: () => fetchWithSchema(endpoint, kongVaultSnapshotSchema),
+        staleTime: 30 * 1000
+      })
+      .then(() => {
+        maybeToastSnapshot(endpoint, currentVault.address, 'prefetch')
+      })
+  }, [currentVault.address, currentVault.chainID, queryClient])
 
   const isHiddenVault = Boolean(flags?.isHidden)
   const baseKindType: 'multi' | 'single' | undefined =

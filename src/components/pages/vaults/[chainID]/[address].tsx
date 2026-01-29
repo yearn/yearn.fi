@@ -175,7 +175,7 @@ function Index(): ReactElement | null {
   const {
     data: snapshotVault,
     isLoading: isLoadingSnapshotVault,
-    mutate: mutateSnapshot
+    refetch: refetchSnapshot
   } = useVaultSnapshot({
     chainId,
     address: params.address
@@ -192,7 +192,7 @@ function Index(): ReactElement | null {
   }, [baseMergedVault?.address, params.address])
 
   // codex: Fetch the yBOLD staking vault snapshot so we can merge it into the current vault.
-  const { data: yBoldSnapshot, mutate: mutateYBoldSnapshot } = useVaultSnapshot({
+  const { data: yBoldSnapshot, refetch: refetchYBoldSnapshot } = useVaultSnapshot({
     chainId: isYBold ? chainId : undefined,
     address: isYBold ? YBOLD_STAKING_ADDRESS : undefined
   })
@@ -349,15 +349,15 @@ function Index(): ReactElement | null {
     if (!currentVault) {
       return
     }
-    mutateSnapshot()
+    refetchSnapshot()
     if (isYBold) {
-      mutateYBoldSnapshot()
+      refetchYBoldSnapshot()
     }
     onRefresh([
       { address: currentVault.address, chainID: currentVault.chainID },
       { address: currentVault.token.address, chainID: currentVault.chainID }
     ])
-  }, [currentVault, mutateSnapshot, mutateYBoldSnapshot, onRefresh, isYBold])
+  }, [currentVault, refetchSnapshot, refetchYBoldSnapshot, onRefresh, isYBold])
 
   useEffect(() => {
     updateCollapsedWidgetHeight()

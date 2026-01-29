@@ -1,17 +1,18 @@
 import { Solver, type TSolver } from '@pages/vaults/types/solvers'
 import { useLocalStorageValue } from '@react-hookz/web'
+import type { QueryObserverResult } from '@tanstack/react-query'
 import { useFetchYearnEarnedForUser } from '@shared/hooks/useFetchYearnEarnedForUser'
 import { useFetchYearnPrices } from '@shared/hooks/useFetchYearnPrices'
 import { useFetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
 import { type TKatanaAprs, useKatanaAprs } from '@shared/hooks/useKatanaAprs'
 import type { TAddress, TDict, TNormalizedBN } from '@shared/types'
 import { toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import type { TKongVaultList } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
 import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
-import type { TYDaemonVault, TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useMemo } from 'react'
-import type { KeyedMutator } from 'swr'
 import { deserialize, serialize } from 'wagmi'
 
 export const DEFAULT_SLIPPAGE = 0.5
@@ -32,7 +33,7 @@ export type TYearnContext = {
   maxLoss: bigint
   zapProvider: TSolver
   isAutoStakingEnabled: boolean
-  mutateVaultList: KeyedMutator<TYDaemonVaults>
+  mutateVaultList: () => Promise<QueryObserverResult<TKongVaultList, Error>>
   setMaxLoss: (value: bigint) => void
   setZapSlippage: (value: number) => void
   setZapProvider: (value: TSolver) => void
@@ -60,7 +61,8 @@ const YearnContext = createContext<TYearnContext>({
   zapSlippage: 0.1,
   zapProvider: Solver.enum.Cowswap,
   isAutoStakingEnabled: true,
-  mutateVaultList: (): Promise<TYDaemonVaults> => Promise.resolve([]),
+  mutateVaultList: (): Promise<QueryObserverResult<TKongVaultList, Error>> =>
+    Promise.resolve({} as QueryObserverResult<TKongVaultList, Error>),
   setMaxLoss: (): void => undefined,
   setZapSlippage: (): void => undefined,
   setZapProvider: (): void => undefined,
@@ -91,7 +93,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
 
   const prices = useFetchYearnPrices()
   const earned = useFetchYearnEarnedForUser()
-  const { vaults: rawVaults, vaultsMigrations, vaultsRetired, isLoading, mutate } = useFetchYearnVaults()
+  const { vaults: rawVaults, vaultsMigrations, vaultsRetired, isLoading, refetch } = useFetchYearnVaults()
   const { data: katanaAprs, isLoading: isLoadingKatanaAprs } = useKatanaAprs()
 
   const vaults = useMemo(() => {
@@ -129,7 +131,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
         isLoadingVaultList: isLoading,
         katanaAprs,
         isLoadingKatanaAprs,
-        mutateVaultList: mutate,
+        mutateVaultList: refetch,
         getPrice
       }}
     >
