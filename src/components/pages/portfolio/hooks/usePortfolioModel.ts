@@ -121,7 +121,7 @@ export function usePortfolioModel(): TPortfolioModel {
       const key = getVaultKey(vault)
       flags[key] = {
         hasHoldings: true,
-        isMigratable: false,
+        isMigratable: Boolean(vault.migration?.available),
         isRetired: Boolean(vault.info?.isRetired),
         isHidden: Boolean(vault.info?.isHidden)
       }
