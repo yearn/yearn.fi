@@ -2,6 +2,7 @@ import { Button } from '@shared/components/Button'
 import { useNotificationsActions } from '@shared/contexts/useNotificationsActions'
 import type { TCreateNotificationParams } from '@shared/types/notifications'
 import { cl } from '@shared/utils'
+import { getNetwork } from '@shared/utils/wagmi'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useReward } from 'react-rewards'
 import type { TypedData, TypedDataDomain } from 'viem'
@@ -81,10 +82,16 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Fast chains like BASE need extra confirmations
   const confirmations = currentChainId === 8453 ? 2 : 1
-  const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash, confirmations })
 
   // Track the step that was just executed (for showing success messages)
   const executedStepRef = useRef<TransactionStep | null>(null)
+
+  const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash, confirmations })
+  const txHash = (writeContract.data || ensoTxHash) as `0x${string}` | undefined
+  const explorerChainId =
+    ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? currentChainId
+  const blockExplorer = explorerChainId ? getNetwork(explorerChainId).defaultBlockExplorer : ''
+  const explorerTxUrl = txHash && blockExplorer ? `${blockExplorer}/tx/${txHash}` : ''
 
   // Track if the executed step was the last step (captured at execution time)
   const wasLastStepRef = useRef(false)
@@ -462,6 +469,16 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
               <Spinner />
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction pending</h3>
               <p className="text-sm text-text-secondary">Waiting for confirmation...</p>
+              {explorerTxUrl ? (
+                <a
+                  href={explorerTxUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 text-sm font-semibold text-text-primary underline"
+                >
+                  View on block explorer
+                </a>
+              ) : null}
             </>
           )}
 

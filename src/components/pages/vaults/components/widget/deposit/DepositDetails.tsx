@@ -100,7 +100,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
         {/* You will deposit/swap/stake */}
         <div className="flex items-center justify-between h-5">
           <p className="text-sm text-text-secondary">{'You will ' + getActionVerb()}</p>
-          <p className="text-sm text-text-primary">
+          <p className="text-sm font-semibold text-text-primary">
             {depositAmountBn > 0n
               ? formatTAmount({
                   value: depositAmountBn,
@@ -116,7 +116,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
         {isSwap && !isStake && (
           <div className="flex items-center justify-between h-5">
             <p className="text-sm text-text-secondary">{'For at least'}</p>
-            <p className="text-sm text-text-primary">
+            <p className="text-sm font-semibold text-text-primary">
               {isLoadingQuote ? (
                 <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : expectedOutInAsset > 0n ? (
@@ -153,7 +153,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 />
               </svg>
             </button>
-            <p className="text-sm text-text-primary">
+            <p className="text-sm font-semibold text-text-primary">
               {isLoadingQuote ? (
                 <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : depositAmountBn > 0n && expectedVaultShares > 0n ? (
@@ -187,7 +187,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 />
               </svg>
             </button>
-            <p className="text-sm text-text-primary">
+            <p className="text-sm font-semibold text-text-primary">
               {isLoadingQuote ? (
                 <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
               ) : (
@@ -219,7 +219,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 />
               </svg>
             </button>
-            <p className="text-sm text-text-primary">
+            <p className="text-sm font-semibold text-text-primary">
               {depositAmountBn > 0n ? `~${estimatedAnnualReturn}` : '0'} {inputTokenSymbol}
             </p>
           </div>
@@ -256,12 +256,12 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 <button
                   type="button"
                   onClick={onAllowanceClick}
-                  className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
+                  className="text-sm font-semibold text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
                 >
                   {allowanceDisplay}
                 </button>
               ) : (
-                <p className="text-sm text-text-primary">{allowanceDisplay}</p>
+                <p className="text-sm font-semibold text-text-primary">{allowanceDisplay}</p>
               )}
             </div>
           </div>

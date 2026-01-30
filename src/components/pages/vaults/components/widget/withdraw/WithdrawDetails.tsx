@@ -80,7 +80,7 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
                 />
               </svg>
             </button>
-            <p className="text-sm text-text-primary">
+            <p className="text-sm font-semibold text-text-primary">
               {isLoadingQuote ? (
                 <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : (
@@ -103,7 +103,7 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
           <div className="flex items-center justify-between h-5">
             <p className="text-sm text-text-secondary">You will swap</p>
             <div className="flex items-center gap-1">
-              <p className="text-sm text-text-primary">
+              <p className="text-sm font-semibold text-text-primary">
                 {withdrawAmountSimple} {assetSymbol}
               </p>
             </div>
@@ -114,7 +114,7 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
         <div className="flex items-center justify-between h-5">
           <p className="text-sm text-text-secondary">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
           <div className="flex items-center gap-1">
-            <p className="text-sm text-text-primary">
+            <p className="text-sm font-semibold text-text-primary">
               {isLoadingQuote ? (
                 <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : expectedOut > 0n ? (
@@ -134,12 +134,12 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
               <button
                 type="button"
                 onClick={onAllowanceClick}
-                className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
+                className="text-sm font-semibold text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
               >
                 {allowanceDisplay}
               </button>
             ) : (
-              <p className="text-sm text-text-primary">{allowanceDisplay}</p>
+              <p className="text-sm font-semibold text-text-primary">{allowanceDisplay}</p>
             )}
           </div>
         )}
