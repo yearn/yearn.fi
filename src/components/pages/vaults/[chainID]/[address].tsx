@@ -1,3 +1,4 @@
+import Link from '@components/Link'
 import { useScrollSpy } from '@hooks/useScrollSpy'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { MobileKeyMetrics } from '@pages/vaults/components/detail/QuickStatsGrid'
@@ -601,9 +602,22 @@ function Index(): ReactElement | null {
 
   if (!currentVault) {
     return (
-      <div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
-        <div className={'mt-[20%] flex h-10 items-center justify-center'}>
-          <p className={'text-sm text-text-primary'}>{"We couldn't find this vault on the connected network."}</p>
+      <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
+        <div className={'mx-auto w-full max-w-[1232px] px-4 py-16'}>
+          <div className={'rounded-3xl border border-border bg-surface p-6 text-center md:p-10'}>
+            <h1 className={'text-xl font-black text-text-primary md:text-2xl'}>{'Vault not found'}</h1>
+            <p className={'mt-3 text-sm text-text-secondary'}>
+              {"We couldn't find a vault at this address on this network."}
+            </p>
+            <p className={'mt-2 text-xs text-text-tertiary'}>
+              {`Chain: ${params.chainID || 'unknown'} • Address: ${params.address || 'unknown'}`}
+            </p>
+            <div className={'mt-6 flex justify-center gap-3'}>
+              <Link href={'/vaults'} className={'yearn--button--nextgen'} data-variant={'filled'}>
+                {'Back to Vaults'}
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -682,6 +696,12 @@ function Index(): ReactElement | null {
 
         <div className="md:hidden space-y-4">
           <MobileKeyMetrics currentVault={currentVault} />
+
+          {isRetired ? (
+            <div className={'rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm text-text-primary'}>
+              <p className={'font-semibold'}>{'This vault is retired. Please Withdraw or Migrate.'}</p>
+            </div>
+          ) : null}
 
           {Number.isInteger(chainId) && (
             <div className="border border-border rounded-lg bg-surface overflow-hidden">
@@ -817,6 +837,14 @@ function Index(): ReactElement | null {
           </div>
 
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
+            {isRetired ? (
+              <div
+                className={'rounded-lg border border-border bg-surface-secondary px-6 py-4 text-sm text-text-primary'}
+              >
+                <p className={'font-semibold'}>{'This vault is retired. Please Withdraw or Migrate.'}</p>
+              </div>
+            ) : null}
+
             {renderableSections.map((section) => {
               const isCollapsible =
                 section.key === 'about' ||
