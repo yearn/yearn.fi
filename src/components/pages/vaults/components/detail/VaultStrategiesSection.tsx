@@ -125,7 +125,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
 
   return (
     <>
-      <div className={cl(isFilteredVaultListEmpty ? 'hidden' : 'flex p-4 pt-0 pb-2 md:p-6 md:pt-0 md:pb-2')}>
+      <div className={cl(isFilteredVaultListEmpty ? 'hidden' : 'flex p-4 pb-2 md:p-6 md:pt-0 md:pb-2')}>
         <div
           className={
             'grid w-full grid-cols-1 place-content-start gap-y-6 md:gap-x-6 lg:max-w-[846px] lg:grid-cols-9 lg:gap-y-4'

@@ -343,10 +343,7 @@ export const WidgetDeposit: FC<Props> = ({
 
   return (
     <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
-      <div className="flex items-center justify-between gap-3 px-6 pt-4">
-        <h3 className="text-base font-semibold text-text-primary">Deposit</h3>
-      </div>
-      <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
+      <div className="flex flex-col flex-1 px-6 pb-6 pt-4 gap-6">
         {/* Amount Section */}
         <InputTokenAmount
           input={depositInput}

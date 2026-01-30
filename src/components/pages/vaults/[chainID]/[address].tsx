@@ -1059,8 +1059,6 @@ function Index(): ReactElement | null {
           actions={widgetActions}
           chainId={chainId}
           mode={mobileDrawerAction}
-          onModeChange={setMobileDrawerAction}
-          hideTabSelector
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
           disableBorderRadius
