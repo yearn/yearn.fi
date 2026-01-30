@@ -79,20 +79,26 @@ export function VaultsListStrategy({
       >
         {/* Top row on mobile: Name + Chevron */}
         <div className={'flex flex-row items-center justify-between w-full md:col-span-9 md:w-auto'}>
-          <div className={'flex flex-row items-center gap-4 flex-1 min-w-0'}>
-            <div className={'rounded-full flex-shrink-0'}>
-              <TokenLogo
-                src={`${
-                  import.meta.env.VITE_BASE_YEARN_ASSETS_URI
-                }/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-                tokenSymbol={name}
-                tokenName={name}
-                width={24}
-                height={24}
-                className="rounded-full"
+          <div className={'flex flex-row items-center gap-2 flex-1 min-w-0'}>
+            <div className={'flex items-center justify-center size-6 flex-shrink-0'}>
+              <div
+                className={cl(
+                  'size-2 rounded-full',
+                  (details?.debtRatio || 0) > 0 ? 'bg-green-500' : 'bg-text-secondary'
+                )}
               />
             </div>
-            <strong title={name} className={'block truncate font-bold'}>
+            <TokenLogo
+              src={`${
+                import.meta.env.VITE_BASE_YEARN_ASSETS_URI
+              }/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+              tokenSymbol={name}
+              tokenName={name}
+              width={24}
+              height={24}
+              className="rounded-full flex-shrink-0"
+            />
+            <strong title={name} className={'block truncate font-bold min-w-0'}>
               {name}
             </strong>
           </div>
@@ -106,18 +112,18 @@ export function VaultsListStrategy({
 
         {/* Stats row - 3 columns on mobile */}
         <div className={'grid grid-cols-3 gap-2 w-full md:col-span-14 md:grid-cols-15 md:gap-4'}>
-          <div className={'flex flex-col md:col-span-5 md:text-right'}>
-            <p className={'text-xs text-text-primary/60 mb-1'}>{'Allocation %'}</p>
+          <div className={'flex flex-col md:col-span-5 md:items-end'}>
+            <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Allocation %'}</p>
             <p className={'font-semibold'}>{formatPercent((details?.debtRatio || 0) / 100, 0)}</p>
           </div>
-          <div className={'flex flex-col md:col-span-5 md:text-right'}>
-            <p className={'text-xs text-text-primary/60 mb-1'}>{'Amount'}</p>
+          <div className={'flex flex-col md:col-span-5 md:items-end'}>
+            <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Amount'}</p>
             <p className={'font-semibold truncate'} title={allocation}>
               {allocation}
             </p>
           </div>
-          <div className={'flex flex-col md:col-span-5 md:text-right'}>
-            <p className={'text-xs text-text-primary/60 mb-1'}>{'APY'}</p>
+          <div className={'flex flex-col md:col-span-5 md:items-end'}>
+            <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'APY'}</p>
             <p className={'font-semibold'}>
               {displayApr == null ? (
                 '--'

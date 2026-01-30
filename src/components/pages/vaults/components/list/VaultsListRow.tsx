@@ -262,7 +262,11 @@ export function VaultsListRow({
   }, [isExpanded])
 
   return (
-    <div className={cl('w-full overflow-hidden transition-colors bg-surface relative')}>
+    <div
+      className={cl(
+        'w-full overflow-hidden transition-colors bg-surface relative border-b border-border md:border-b-0'
+      )}
+    >
       <button
         type={'button'}
         aria-label={isExpanded ? 'Collapse row' : 'Expand row'}

@@ -92,7 +92,7 @@ export function VaultsListHead({
         disabled={!isSortable || item.disabled}
         className={cl(
           'yearn--table-head-label-wrapper group w-full',
-          shouldIndent ? '' : 'justify-start!',
+          shouldIndent ? 'justify-end' : 'justify-start!',
           item.className
         )}
         datatype={'number'}
@@ -101,7 +101,7 @@ export function VaultsListHead({
           className={cl(
             'yearn--table-head-label',
             'transition-colors',
-            shouldIndent ? '' : 'text-left',
+            shouldIndent ? 'text-right' : 'text-left',
             shouldHighlight
               ? 'text-text-primary'
               : isSortable
@@ -109,14 +109,14 @@ export function VaultsListHead({
                 : 'text-text-primary/60'
           )}
         >
-          {shouldIndent ? <>&nbsp;{item.label}</> : item.label}
+          {item.label}
         </p>
         {isSortable ? renderChevron(shouldHighlight) : null}
       </button>
     )
   }
 
-  const renderToggleItem = (item: TToggleListHeadItem, shouldIndent: boolean): ReactElement => {
+  const renderToggleItem = (item: TToggleListHeadItem, _shouldIndent: boolean): ReactElement => {
     const isActive = activeToggles.has(item.value)
     const isDisabled = item.disabled || !onToggle
 
@@ -141,7 +141,7 @@ export function VaultsListHead({
             isActive ? 'text-text-primary' : undefined
           )}
         >
-          {shouldIndent ? <>&nbsp;{item.label}</> : item.label}
+          {item.label}
         </p>
         <span className={'flex items-center justify-center'}>
           {isActive ? (

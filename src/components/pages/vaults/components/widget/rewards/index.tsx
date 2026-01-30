@@ -1,12 +1,14 @@
 import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { type TRewardToken, useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import { Button } from '@shared/components/Button'
+import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconCross } from '@shared/icons/IconCross'
 import { cl } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useChainId, useSwitchChain } from 'wagmi'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { MerkleRewardRow } from './MerkleRewardRow'
 import { StakingRewardRow } from './StakingRewardRow'
@@ -37,6 +39,10 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false)
   const [activeStep, setActiveStep] = useState<TransactionStep | undefined>()
   const [isComplete, setIsComplete] = useState(false)
+  const currentChainId = useChainId()
+  const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain()
+
+  const isOnCorrectChain = currentChainId === chainId
 
   const {
     rewards: stakingRewards,
@@ -153,7 +159,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
               isDisabled={!onOpenRewards}
               classNameOverride="yearn--button-nextgen min-h-[44px] px-3 rounded-xl text-md bg-primary text-white hover:bg-primary/90"
             >
-              {'Claim rewards'}
+              {'View rewards'}
             </Button>
           )}
         </div>
@@ -203,6 +209,13 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
                     isFirst={index === 0 && !hasStakingRewards}
                   />
                 ))}
+                {!isOnCorrectChain && (
+                  <SwitchChainPrompt
+                    chainId={chainId}
+                    onSwitchChain={() => switchChainAsync({ chainId })}
+                    isSwitching={isSwitchingChain}
+                  />
+                )}
               </div>
             )}
           </div>

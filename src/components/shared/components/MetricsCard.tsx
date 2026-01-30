@@ -53,7 +53,7 @@ function MetricInfoModal({
             >
               <Dialog.Panel
                 className={
-                  'w-full max-w-md transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-lg transition-all'
+                  'w-full max-w-md transform overflow-hidden rounded-lg border border-border bg-surface-secondary p-6 text-left align-middle shadow-lg transition-all'
                 }
               >
                 <Dialog.Title as={'h3'} className={'text-lg font-semibold leading-6 text-text-primary'}>
@@ -69,7 +69,7 @@ function MetricInfoModal({
                   <button
                     type={'button'}
                     className={
-                      'inline-flex w-full items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-neutral-0 transition-colors hover:bg-neutral-800'
+                      'inline-flex w-full items-center justify-center rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:bg-surface-secondary'
                     }
                     onClick={onClose}
                   >
@@ -89,16 +89,27 @@ export function MetricsCard({
   footnoteDisplay = 'inline',
   hideFootnotes = false,
   items,
-  className
+  className,
+  mobileLayout = 'stack'
 }: {
   items: TMetricBlock[]
   footnoteDisplay?: 'inline' | 'tooltip'
   hideFootnotes?: boolean
   className?: string
+  mobileLayout?: 'stack' | 'grid'
 }): ReactElement {
+  const isGrid = mobileLayout === 'grid'
+
   return (
     <div className={cl('rounded-lg bg-surface text-text-primary', className)}>
-      <div className={'divide-y divide-neutral-300 md:flex md:divide-y-0'}>
+      <div
+        className={cl(
+          'md:flex md:divide-y-0',
+          isGrid
+            ? 'grid grid-cols-2 gap-px bg-border md:grid-cols-none md:gap-0 md:bg-transparent'
+            : 'divide-y divide-neutral-300'
+        )}
+      >
         {items.map((item, index): ReactElement => {
           const showFootnote = Boolean(item.footnote) && !hideFootnotes
           const useTooltip = showFootnote && footnoteDisplay === 'tooltip'
@@ -124,6 +135,7 @@ export function MetricsCard({
               key={item.key}
               className={cl(
                 'flex flex-1 flex-col gap-1 px-5 py-3',
+                isGrid ? 'bg-surface' : '',
                 index < items.length - 1 ? 'md:border-r md:border-border' : ''
               )}
             >
@@ -138,7 +150,15 @@ export function MetricsCard({
   )
 }
 
-export function MetricHeader({ label, tooltip }: { label: string; tooltip?: string }): ReactElement {
+export function MetricHeader({
+  label,
+  tooltip,
+  labelClassName
+}: {
+  label: string
+  tooltip?: string
+  labelClassName?: string
+}): ReactElement {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const infoButton = (
@@ -147,7 +167,7 @@ export function MetricHeader({ label, tooltip }: { label: string; tooltip?: stri
       onClick={(): void => setIsModalOpen(true)}
       aria-label={`Learn more about ${label}`}
       className={
-        'inline-flex size-4 items-center justify-center rounded-full border bg-surface border-border text-[10px] font-normal text-text-secondary transition-colors hover:border-neutral-500 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300 md:hidden'
+        'inline-flex size-4 items-center justify-center rounded-full border border-border bg-surface-secondary text-[10px] font-normal text-text-secondary transition-colors hover:border-neutral-500 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300 md:hidden'
       }
     >
       <span className={'leading-none'}>{'i'}</span>
@@ -156,7 +176,12 @@ export function MetricHeader({ label, tooltip }: { label: string; tooltip?: stri
 
   return (
     <>
-      <p className={'flex items-center gap-1 text-xs font-normal uppercase tracking-wide text-text-secondary'}>
+      <p
+        className={cl(
+          'flex items-center gap-1 text-xs font-normal uppercase tracking-wide',
+          labelClassName ?? 'text-text-secondary'
+        )}
+      >
         {tooltip ? (
           <>
             <Tooltip

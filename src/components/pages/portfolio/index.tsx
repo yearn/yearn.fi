@@ -12,8 +12,8 @@ import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
-import { Button } from '@shared/components/Button'
 import { METRIC_VALUE_CLASS, MetricHeader, MetricsCard, type TMetricBlock } from '@shared/components/MetricsCard'
+import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -176,6 +176,17 @@ function PortfolioHeaderSection({
       )
     },
     {
+      key: 'est-annual',
+      header: (
+        <MetricHeader
+          label="Est. Annual"
+          tooltip="Projects potential returns based on your blended current APY."
+          labelClassName="text-accent-500"
+        />
+      ),
+      value: <span className={METRIC_VALUE_CLASS}>{renderCurrencyMetric(blendedMetrics.estimatedAnnualReturn)}</span>
+    },
+    {
       key: 'current-apy',
       header: <MetricHeader label="Current APY" tooltip="Weighted by your total deposits across all Yearn vaults." />,
       value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedCurrentAPY)}</span>
@@ -184,13 +195,6 @@ function PortfolioHeaderSection({
       key: '30-day-apy',
       header: <MetricHeader label="30-day APY" tooltip="Blended 30-day performance using your current positions." />,
       value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedHistoricalAPY)}</span>
-    },
-    {
-      key: 'est-annual',
-      header: (
-        <MetricHeader label="Est. Annual" tooltip="Projects potential returns based on your blended current APY." />
-      ),
-      value: <span className={METRIC_VALUE_CLASS}>{renderCurrencyMetric(blendedMetrics.estimatedAnnualReturn)}</span>
     }
   ]
 
@@ -216,7 +220,9 @@ function PortfolioHeaderSection({
           <h1 className="text-lg font-black text-text-primary md:text-3xl md:leading-10">{'Account Overview'}</h1>
         </Tooltip>
       </div>
-      {isActive ? <MetricsCard items={metrics} className={'rounded-t-lg rounded-b-none border border-border'} /> : null}
+      {isActive && (
+        <MetricsCard items={metrics} className="rounded-t-lg rounded-b-none border border-border" mobileLayout="grid" />
+      )}
     </section>
   )
 }
@@ -231,10 +237,10 @@ function PortfolioTabSelector({
   mergeWithHeader?: boolean
 }): ReactElement {
   return (
-    <div className={'flex flex-wrap gap-2 md:gap-3 w-full'}>
+    <div className={'flex gap-2 md:gap-3 w-full'}>
       <div
         className={cl(
-          'flex w-full flex-wrap justify-between gap-2 bg-surface-secondary p-1',
+          'flex w-full justify-between gap-1 bg-surface-secondary p-1',
           mergeWithHeader ? 'rounded-b-lg border-x border-b border-border' : 'rounded-lg border border-border'
         )}
       >
@@ -244,7 +250,7 @@ function PortfolioTabSelector({
             type={'button'}
             onClick={() => onSelectTab(tab.key)}
             className={cl(
-              'flex-1 min-w-[120px] rounded-md px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
+              'flex-1 rounded-md px-2 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5',
               'border border-transparent focus-visible:outline-none focus-visible:ring-0',
               'min-h-[36px] active:scale-[0.98]',
               activeTab === tab.key
@@ -617,8 +623,6 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                   chainId={chainData.chainId}
                   onStartClaim={handleStartClaim}
                   isFirst={srIdx === 0 && rewardIdx === 0}
-                  vaultName={sr.vault.name}
-                  vaultTokenAddress={sr.vault.token.address}
                   isAllChainsView={isAllChainsView}
                   onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
                 />
@@ -632,25 +636,16 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                 chainId={chainData.chainId}
                 onStartClaim={handleStartClaim}
                 isFirst={idx === 0 && chainData.stakingRewards.length === 0}
-                sourceName="Merkle Rewards"
                 isAllChainsView={isAllChainsView}
                 onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
               />
             ))}
             {needsSwitchChain(chainData) && (
-              <div className="mt-4 flex items-center justify-center gap-4 rounded-lg border border-border bg-surface-secondary p-4">
-                <span className="text-sm text-text-secondary">
-                  Switch to {chainData.chainName} to claim these rewards
-                </span>
-                <Button
-                  onClick={() => switchChainAsync({ chainId: chainData.chainId })}
-                  isBusy={isSwitchingChain}
-                  variant="filled"
-                  className="!px-4 !py-1.5 !text-sm"
-                >
-                  Switch Chain
-                </Button>
-              </div>
+              <SwitchChainPrompt
+                chainId={chainData.chainId}
+                onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+                isSwitching={isSwitchingChain}
+              />
             )}
           </div>
         ))}
