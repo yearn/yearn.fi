@@ -11,14 +11,10 @@ import { useMemo } from 'react'
 
 export function useYearnTokens({
   vaults,
-  vaultsMigrations,
-  vaultsRetired,
   isLoadingVaultList,
   isEnabled = true
 }: {
   vaults: TDict<TYDaemonVault>
-  vaultsMigrations: TDict<TYDaemonVault>
-  vaultsRetired: TDict<TYDaemonVault>
   isLoadingVaultList: boolean
   isEnabled?: boolean
 }): TUseBalancesTokens[] {
@@ -29,8 +25,8 @@ export function useYearnTokens({
     if (!isEnabled) {
       return []
     }
-    return [...Object.values(vaults), ...Object.values(vaultsMigrations), ...Object.values(vaultsRetired)]
-  }, [isEnabled, vaults, vaultsMigrations, vaultsRetired])
+    return [...Object.values(vaults)]
+  }, [isEnabled, vaults])
 
   /**************************************************************************
    ** Define the list of available tokens. This list is retrieved from the

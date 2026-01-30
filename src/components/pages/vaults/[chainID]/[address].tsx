@@ -60,11 +60,7 @@ function Index(): ReactElement | null {
   const chainId = Number(params.chainID)
   const { onRefresh } = useWallet()
 
-  // codex: Pull the base vault registries; strategies that are also vaults are resolved from here.
-  // This is coming from context that preloads all vaults. We don't need this when loading a page directly.
-  // RG: ideally we dont need all of this on initial load of this page as we only need the specific vault data.
-  // RG: It would be good to lazy load the full vaults list after initial render and getting the primary page data.
-  const { vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList } = useYearn()
+  const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [mobileDrawerAction, setMobileDrawerAction] = useState<
@@ -127,6 +123,7 @@ function Index(): ReactElement | null {
   const scrollTargetRef = useRef<number | null>(null)
   const scrollTimeoutRef = useRef<number | null>(null)
   const [pendingSectionKey, setPendingSectionKey] = useState<SectionKey | null>(null)
+  const [hasTriggeredVaultListFetch, setHasTriggeredVaultListFetch] = useState(false)
 
   useEffect(() => {
     void vaultKey
@@ -160,50 +157,42 @@ function Index(): ReactElement | null {
     }
   }, [vaultKey])
 
-  /**RG: This seems to be getting vault info from the existing vaults array if it exists.
-   * Great if the user is coming from the vaults page, but if not, ideally we don't have to fetch this data yet.
-   * */
-  // codex: Select the base yDaemon vault record (includes strategies + details) that we later augment.
   const baseVault = useMemo(() => {
     if (!params.address) return undefined
     const resolvedAddress = toAddress(params.address)
-    return vaults[resolvedAddress] ?? vaultsMigrations[resolvedAddress] ?? vaultsRetired[resolvedAddress]
-  }, [params.address, vaults, vaultsMigrations, vaultsRetired])
+    return vaults[resolvedAddress]
+  }, [params.address, vaults])
 
-  /**RG: This should have almost everything we need and fetches the latest vault info from the snapshot API */
-  // codex: Fetch the Kong REST snapshot for this vault, used to enrich strategy debt + meta.
+  const hasVaultList = Object.keys(vaults).length > 0
+
   const {
     data: snapshotVault,
     isLoading: isLoadingSnapshotVault,
-    mutate: mutateSnapshot
+    refetch: refetchSnapshot
   } = useVaultSnapshot({
     chainId,
     address: params.address
   })
 
-  // codex: Merge snapshot data into the base vault so strategies and metrics have the latest snapshot values.
   const baseMergedVault = useMemo(() => mergeVaultSnapshot(baseVault, snapshotVault), [baseVault, snapshotVault])
 
-  // codex: yBOLD needs an additional staking vault snapshot to override strategy data.
   const isYBold = useMemo(() => {
     if (!baseMergedVault?.address && !params.address) return false
     const resolvedAddress = baseMergedVault?.address ?? toAddress(params.address ?? '')
     return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
   }, [baseMergedVault?.address, params.address])
 
-  // codex: Fetch the yBOLD staking vault snapshot so we can merge it into the current vault.
-  const { data: yBoldSnapshot, mutate: mutateYBoldSnapshot } = useVaultSnapshot({
+  const { data: yBoldSnapshot, refetch: refetchYBoldSnapshot } = useVaultSnapshot({
     chainId: isYBold ? chainId : undefined,
     address: isYBold ? YBOLD_STAKING_ADDRESS : undefined
   })
 
-  // codex: Build the staking vault payload (including strategies) that will be merged into yBOLD.
   const yBoldStakingVault = useMemo(() => {
     if (!isYBold) return undefined
     const baseStakingVault = vaults[toAddress(YBOLD_STAKING_ADDRESS)]
     return mergeVaultSnapshot(baseStakingVault, yBoldSnapshot)
   }, [isYBold, vaults, yBoldSnapshot])
-  // codex: Final vault payload consumed by VaultStrategiesSection (after snapshot + yBOLD merges).
+
   const currentVault = useMemo(() => {
     if (!baseMergedVault) return undefined
     if (isYBold && yBoldStakingVault) {
@@ -213,6 +202,15 @@ function Index(): ReactElement | null {
   }, [baseMergedVault, isYBold, yBoldStakingVault])
 
   const isLoadingVault = !currentVault && (isLoadingSnapshotVault || isLoadingVaultList)
+
+  useEffect(() => {
+    if (hasTriggeredVaultListFetch || hasVaultList || !snapshotVault) {
+      return
+    }
+    setHasTriggeredVaultListFetch(true)
+    const frame = requestAnimationFrame(() => enableVaultListFetch())
+    return () => cancelAnimationFrame(frame)
+  }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, snapshotVault])
 
   useEffect((): void => {
     if (address && isActive) {
@@ -349,15 +347,15 @@ function Index(): ReactElement | null {
     if (!currentVault) {
       return
     }
-    mutateSnapshot()
+    refetchSnapshot()
     if (isYBold) {
-      mutateYBoldSnapshot()
+      refetchYBoldSnapshot()
     }
     onRefresh([
       { address: currentVault.address, chainID: currentVault.chainID },
       { address: currentVault.token.address, chainID: currentVault.chainID }
     ])
-  }, [currentVault, mutateSnapshot, mutateYBoldSnapshot, onRefresh, isYBold])
+  }, [currentVault, refetchSnapshot, refetchYBoldSnapshot, onRefresh, isYBold])
 
   useEffect(() => {
     updateCollapsedWidgetHeight()
@@ -401,7 +399,6 @@ function Index(): ReactElement | null {
       },
       {
         key: 'strategies' as const,
-        // codex: Only render the Strategies section when the final vault payload includes strategies.
         shouldRender: Number(currentVault.strategies?.length || 0) > 0,
         ref: sectionRefs.strategies,
         content: <VaultStrategiesSection currentVault={currentVault} />

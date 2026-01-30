@@ -358,7 +358,7 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     (): TVaultsQueryDefaults => ({
       defaultTypes: config.defaultTypes ?? [],
       defaultCategories: config.defaultCategories ?? [],
-      defaultSortBy: config.defaultSortBy || 'featuringScore'
+      defaultSortBy: config.defaultSortBy || 'tvl'
     }),
     [config.defaultCategories, config.defaultSortBy, config.defaultTypes]
   )

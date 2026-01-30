@@ -1,17 +1,18 @@
 import { Solver, type TSolver } from '@pages/vaults/types/solvers'
 import { useLocalStorageValue } from '@react-hookz/web'
-import { useFetchYearnEarnedForUser } from '@shared/hooks/useFetchYearnEarnedForUser'
 import { useFetchYearnPrices } from '@shared/hooks/useFetchYearnPrices'
 import { useFetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
 import { type TKatanaAprs, useKatanaAprs } from '@shared/hooks/useKatanaAprs'
 import type { TAddress, TDict, TNormalizedBN } from '@shared/types'
 import { toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import type { TKongVaultList } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
 import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
-import type { TYDaemonVault, TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { QueryObserverResult } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
-import { createContext, memo, useCallback, useContext, useMemo } from 'react'
-import type { KeyedMutator } from 'swr'
+import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
+import { useLocation } from 'react-router'
 import { deserialize, serialize } from 'wagmi'
 
 export const DEFAULT_SLIPPAGE = 0.5
@@ -23,8 +24,6 @@ export type TYearnContext = {
   earned?: TYDaemonEarned
   prices?: TYDaemonPricesChain
   vaults: TDict<TYDaemonVault>
-  vaultsMigrations: TDict<TYDaemonVault>
-  vaultsRetired: TDict<TYDaemonVault>
   isLoadingVaultList: boolean
   katanaAprs: Partial<TKatanaAprs>
   isLoadingKatanaAprs: boolean
@@ -32,7 +31,8 @@ export type TYearnContext = {
   maxLoss: bigint
   zapProvider: TSolver
   isAutoStakingEnabled: boolean
-  mutateVaultList: KeyedMutator<TYDaemonVaults>
+  mutateVaultList: () => Promise<QueryObserverResult<TKongVaultList, Error>>
+  enableVaultListFetch: () => void
   setMaxLoss: (value: bigint) => void
   setZapSlippage: (value: number) => void
   setZapProvider: (value: TSolver) => void
@@ -51,8 +51,6 @@ const YearnContext = createContext<TYearnContext>({
   },
   prices: {},
   vaults: {},
-  vaultsMigrations: {},
-  vaultsRetired: {},
   isLoadingVaultList: false,
   katanaAprs: {},
   isLoadingKatanaAprs: false,
@@ -60,7 +58,9 @@ const YearnContext = createContext<TYearnContext>({
   zapSlippage: 0.1,
   zapProvider: Solver.enum.Cowswap,
   isAutoStakingEnabled: true,
-  mutateVaultList: (): Promise<TYDaemonVaults> => Promise.resolve([]),
+  mutateVaultList: (): Promise<QueryObserverResult<TKongVaultList, Error>> =>
+    Promise.resolve({} as QueryObserverResult<TKongVaultList, Error>),
+  enableVaultListFetch: (): void => undefined,
   setMaxLoss: (): void => undefined,
   setZapSlippage: (): void => undefined,
   setZapProvider: (): void => undefined,
@@ -71,6 +71,7 @@ const YearnContext = createContext<TYearnContext>({
 })
 
 export const YearnContextApp = memo(function YearnContextApp({ children }: { children: ReactElement }): ReactElement {
+  const location = useLocation()
   const { value: maxLoss, set: setMaxLoss } = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
     defaultValue: DEFAULT_MAX_LOSS,
     parse: (str, fallback): bigint => (str ? deserialize(str) : (fallback ?? DEFAULT_MAX_LOSS)),
@@ -89,18 +90,28 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
     }
   )
 
-  const prices = useFetchYearnPrices()
-  const earned = useFetchYearnEarnedForUser()
-  const { vaults: rawVaults, vaultsMigrations, vaultsRetired, isLoading, mutate } = useFetchYearnVaults()
-  const { data: katanaAprs, isLoading: isLoadingKatanaAprs } = useKatanaAprs()
+  const isVaultsRoute = location.pathname.startsWith('/vaults')
+  const isVaultDetailPage = isVaultsRoute && location.pathname.split('/').length === 4
+  const isPortfolioRoute = location.pathname.startsWith('/portfolio')
+  const shouldEnableVaultList = (isVaultsRoute && !isVaultDetailPage) || isPortfolioRoute
+  const [isVaultListEnabled, setIsVaultListEnabled] = useState(shouldEnableVaultList)
 
-  const vaults = useMemo(() => {
-    const vaults: TDict<TYDaemonVault> = {}
-    for (const vault of Object.values(rawVaults)) {
-      vaults[toAddress(vault.address)] = { ...vault }
+  useEffect(() => {
+    if (shouldEnableVaultList) {
+      setIsVaultListEnabled(true)
     }
-    return vaults
-  }, [rawVaults])
+  }, [shouldEnableVaultList])
+
+  const enableVaultListFetch = useCallback(() => {
+    setIsVaultListEnabled(true)
+  }, [])
+
+  const prices = useFetchYearnPrices()
+  //RG this endpoint returns empty objects for retired and migrations
+  const { vaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
+    enabled: isVaultListEnabled
+  })
+  const { data: katanaAprs, isLoading: isLoadingKatanaAprs } = useKatanaAprs()
 
   const getPrice = useCallback(
     ({ address, chainID }: TTokenAndChain): TNormalizedBN => {
@@ -114,7 +125,6 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
       value={{
         currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
         prices,
-        earned,
         zapSlippage: zapSlippage ?? DEFAULT_SLIPPAGE,
         maxLoss: maxLoss ?? DEFAULT_MAX_LOSS,
         zapProvider: zapProvider ?? Solver.enum.Cowswap,
@@ -124,12 +134,11 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
         setZapProvider,
         setIsAutoStakingEnabled,
         vaults,
-        vaultsMigrations,
-        vaultsRetired,
         isLoadingVaultList: isLoading,
         katanaAprs,
         isLoadingKatanaAprs,
-        mutateVaultList: mutate,
+        mutateVaultList: refetch,
+        enableVaultListFetch,
         getPrice
       }}
     >

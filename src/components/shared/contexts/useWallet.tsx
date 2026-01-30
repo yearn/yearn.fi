@@ -46,12 +46,10 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   children: ReactElement
   shouldWorkOnTestnet?: boolean
 }): ReactElement {
-  const { vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, getPrice } = useYearn()
+  const { vaults, isLoadingVaultList, getPrice } = useYearn()
   const { address: userAddress } = useWeb3()
   const allTokens = useYearnTokens({
     vaults,
-    vaultsMigrations,
-    vaultsRetired,
     isLoadingVaultList,
     isEnabled: Boolean(userAddress)
   })
@@ -120,11 +118,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   )
 
   const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
-    const allVaults = {
-      ...vaults,
-      ...vaultsMigrations,
-      ...vaultsRetired
-    }
+    const allVaults = vaults
 
     let cumulatedValueInV2Vaults = 0
     let cumulatedValueInV3Vaults = 0
@@ -163,7 +157,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       }
     }
     return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults]
-  }, [balances, getBalance, getPrice, vaults, vaultsMigrations, vaultsRetired])
+  }, [balances, getBalance, getPrice, vaults])
 
   /***************************************************************************
    **	Setup and render the Context provider to use in the app.

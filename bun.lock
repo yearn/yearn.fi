@@ -23,7 +23,6 @@
         "react-rewards": "2.1.0",
         "react-router": "7.12.0",
         "recharts": "2.15.4",
-        "swr": "2.3.6",
         "use-indexeddb": "2.0.2",
         "vaul": "1.1.2",
         "viem": "2.38.6",
@@ -1700,8 +1699,6 @@
     "supports-color": ["supports-color@8.1.1", "", { "dependencies": { "has-flag": "^4.0.0" } }, "sha512-MpUEN2OodtUzxvKQl72cUF7RQ5EiHsGvSsVG0ia9c5RbWGL2CI4C7EpPS8UTBIplnlzZiNuV56w+FuNxy3ty2Q=="],
 
     "supports-preserve-symlinks-flag": ["supports-preserve-symlinks-flag@1.0.0", "", {}, "sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w=="],
-
-    "swr": ["swr@2.3.6", "", { "dependencies": { "dequal": "^2.0.3", "use-sync-external-store": "^1.4.0" }, "peerDependencies": { "react": "^16.11.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-wfHRmHWk/isGNMwlLGlZX5Gzz/uTgo0o2IRuTMcf4CPuPFJZlq0rDaKUx+ozB5nBOReNV1kiOyzMfj+MBMikLw=="],
 
     "tabbable": ["tabbable@6.3.0", "", {}, "sha512-EIHvdY5bPLuWForiR/AN2Bxngzpuwn1is4asboytXtpTgsArc+WmSJKVLlhdh71u7jFcryDqB2A8lQvj78MkyQ=="],
 

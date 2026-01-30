@@ -65,19 +65,14 @@ export function usePortfolioModel(): TPortfolioModel {
     balances
   } = useWallet()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
-  const { getPrice, katanaAprs, vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList } = useYearn()
+  const { getPrice, katanaAprs, vaults, isLoadingVaultList } = useYearn()
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
 
   const vaultLookup = useMemo(() => {
     const map = new Map<string, TYDaemonVault>()
-    const allVaults = {
-      ...vaults,
-      ...vaultsMigrations,
-      ...vaultsRetired
-    }
 
-    Object.values(allVaults).forEach((vault) => {
+    Object.values(vaults).forEach((vault) => {
       const vaultKey = getVaultKey(vault)
       map.set(vaultKey, vault)
 
@@ -88,7 +83,7 @@ export function usePortfolioModel(): TPortfolioModel {
     })
 
     return map
-  }, [vaults, vaultsMigrations, vaultsRetired])
+  }, [vaults])
 
   const holdingsVaults = useMemo(() => {
     const result: TYDaemonVault[] = []
@@ -119,15 +114,6 @@ export function usePortfolioModel(): TPortfolioModel {
     return result
   }, [balances, vaultLookup])
 
-  const migratableSet = useMemo(
-    () => new Set(Object.values(vaultsMigrations).map((vault) => getVaultKey(vault))),
-    [vaultsMigrations]
-  )
-  const retiredSet = useMemo(
-    () => new Set(Object.values(vaultsRetired).map((vault) => getVaultKey(vault))),
-    [vaultsRetired]
-  )
-
   const vaultFlags = useMemo(() => {
     const flags: Record<string, TVaultFlags> = {}
 
@@ -135,14 +121,14 @@ export function usePortfolioModel(): TPortfolioModel {
       const key = getVaultKey(vault)
       flags[key] = {
         hasHoldings: true,
-        isMigratable: migratableSet.has(key),
-        isRetired: retiredSet.has(key),
+        isMigratable: false,
+        isRetired: Boolean(vault.info?.isRetired),
         isHidden: Boolean(vault.info?.isHidden)
       }
     })
 
     return flags
-  }, [holdingsVaults, migratableSet, retiredSet])
+  }, [holdingsVaults])
 
   const isSearchingBalances =
     (isActive || isUserConnecting) && (isWalletLoading || isUserConnecting || isIdentityLoading)

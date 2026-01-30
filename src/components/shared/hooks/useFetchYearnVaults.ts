@@ -1,18 +1,17 @@
 import { patchYBoldVaults } from '@pages/vaults/domain/normalizeVault'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
+import { deriveAssetCategory } from '@pages/vaults/utils/vaultListFacets'
 import { useDeepCompareMemo } from '@react-hookz/web'
-import { useFetch } from '@shared/hooks/useFetch'
+import { fetchWithSchema, getFetchQueryKey, useFetch } from '@shared/hooks/useFetch'
 import type { TDict } from '@shared/types'
 import { toAddress } from '@shared/utils'
-import { baseFetcher } from '@shared/utils/fetchers'
 import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import { kongVaultListSchema } from '@shared/utils/schemas/kongVaultListSchema'
-import type { TYDaemonVault, TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-
+import type { QueryObserverResult } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
-import type { KeyedMutator } from 'swr'
-import { mutate } from 'swr'
 import { zeroAddress } from 'viem'
 
 /******************************************************************************
@@ -21,7 +20,7 @@ import { zeroAddress } from 'viem'
  *****************************************************************************/
 const DEFAULT_CHAIN_IDS = [1, 10, 137, 146, 250, 8453, 42161, 747474]
 
-const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/list/vaults`
+const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/list/vaults?origin=yearn`
 
 const normalizeNumber = (value: number | null | undefined, fallback = 0): number => {
   if (value === null || value === undefined || Number.isNaN(value)) {
@@ -49,6 +48,50 @@ const resolveDecimals = (...values: Array<number | null | undefined>): number =>
   return 18
 }
 
+const isV3Item = (item: TKongVaultListItem): boolean => {
+  if (item.v3) {
+    return true
+  }
+  const apiVersion = item.apiVersion ?? ''
+  return apiVersion.startsWith('3') || apiVersion.startsWith('~3')
+}
+
+const isKnownKind = (value: string | null | undefined): value is TYDaemonVault['kind'] => {
+  return value === 'Legacy' || value === 'Multi Strategy' || value === 'Single Strategy'
+}
+
+const resolveVaultKind = (item: TKongVaultListItem): TYDaemonVault['kind'] => {
+  if (isKnownKind(item.kind)) {
+    return item.kind
+  }
+  if (isV3Item(item)) {
+    return item.strategiesCount > 0 ? 'Multi Strategy' : 'Single Strategy'
+  }
+  return 'Legacy'
+}
+
+const isKnownType = (value: string | null | undefined): value is TYDaemonVault['type'] => {
+  return (
+    value === 'Automated' ||
+    value === 'Automated Yearn Vault' ||
+    value === 'Experimental' ||
+    value === 'Experimental Yearn Vault' ||
+    value === 'Standard' ||
+    value === 'Yearn Vault'
+  )
+}
+
+const resolveVaultType = (item: TKongVaultListItem): TYDaemonVault['type'] => {
+  if (isKnownType(item.type)) {
+    return item.type
+  }
+  const name = item.name.toLowerCase()
+  if (name.includes('factory')) {
+    return 'Automated Yearn Vault'
+  }
+  return 'Standard'
+}
+
 const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null => {
   const tokenDecimals = resolveDecimals(item.asset?.decimals ?? null, item.decimals ?? null)
   const tokenSymbol = item.asset?.symbol ?? item.symbol ?? ''
@@ -57,16 +100,18 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
   const historical = item.performance?.historical
   const forwardApr = normalizeNumber(item.performance?.oracle?.apr)
   const aprType = item.performance?.oracle?.apr !== null && item.performance?.oracle?.apr !== undefined ? 'oracle' : ''
+  const vaultKind = resolveVaultKind(item)
+  const vaultType = resolveVaultType(item)
 
   const parsed = yDaemonVaultSchema.safeParse({
     address: item.address,
     version: item.apiVersion ?? (item.v3 ? '3' : '2'),
-    type: item.type ?? 'Standard',
-    kind: item.kind ?? 'Legacy',
+    type: vaultType,
+    kind: vaultKind,
     symbol: item.symbol ?? tokenSymbol ?? '',
     name: item.name ?? '',
     description: '',
-    category: item.category ?? 'Volatile',
+    category: item.category ?? 'Unknown',
     decimals: resolveDecimals(item.decimals ?? null, tokenDecimals),
     chainID: item.chainId,
     token: {
@@ -131,26 +176,37 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
     return null
   }
 
+  if (!item.category) {
+    const derivedCategory = deriveAssetCategory({ ...parsed.data, category: '' })
+    return {
+      ...parsed.data,
+      category: derivedCategory
+    }
+  }
+
   return parsed.data
 }
 
-function useFetchYearnVaults(chainIDs?: number[] | undefined): {
+function useFetchYearnVaults(
+  chainIDs?: number[] | undefined,
+  options?: { enabled?: boolean }
+): {
   vaults: TDict<TYDaemonVault>
-  vaultsMigrations: TDict<TYDaemonVault>
-  vaultsRetired: TDict<TYDaemonVault>
   isLoading: boolean
-  mutate: KeyedMutator<TYDaemonVaults>
+  refetch: () => Promise<QueryObserverResult<TKongVaultList, Error>>
 } {
+  const isEnabled = options?.enabled ?? true
   const resolvedChainIds = chainIDs ?? DEFAULT_CHAIN_IDS
   const {
     data: kongVaultList,
     isLoading,
-    mutate
+    refetch
   } = useFetch<TKongVaultList>({
     endpoint: VAULT_LIST_ENDPOINT,
     schema: kongVaultListSchema,
     config: {
-      cacheDuration: 1000 * 60 * 60 // 1 hour
+      cacheDuration: 15 * 60 * 1000,
+      enabled: isEnabled
     }
   })
 
@@ -160,59 +216,30 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
     }
     const chainIdSet = new Set(resolvedChainIds)
     return kongVaultList
-      .filter((item) => {
-        const isYearn = item.inclusion?.yearn ?? item.inclusion?.isYearn ?? item.yearn ?? false
-        return isYearn && chainIdSet.has(item.chainId)
-      })
+      .filter((item) => item.inclusion?.isYearn !== false)
+      .filter((item) => chainIdSet.has(item.chainId))
       .map((item) => mapKongListItemToVault(item))
       .filter((item): item is TYDaemonVault => Boolean(item))
   }, [kongVaultList, resolvedChainIds])
 
-  const { activeVaults, retiredVaults } = useDeepCompareMemo(() => {
-    const active: TYDaemonVault[] = []
-    const retired: TYDaemonVault[] = []
-    for (const vault of mappedVaults) {
-      if (vault.info?.isRetired) {
-        retired.push(vault)
-      } else {
-        active.push(vault)
-      }
-    }
-    return { activeVaults: active, retiredVaults: retired }
-  }, [mappedVaults])
-
   const vaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
-    if (!activeVaults.length) {
+    if (!mappedVaults.length) {
       return {}
     }
-    return activeVaults.reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
+    return mappedVaults.reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
       acc[toAddress(vault.address)] = vault
       return acc
     }, {})
-  }, [activeVaults])
+  }, [mappedVaults])
 
   const patchedVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
     return patchYBoldVaults(vaultsObject)
   }, [vaultsObject])
 
-  const vaultsMigrationsObject = useMemo((): TDict<TYDaemonVault> => ({}), [])
-
-  const vaultsRetiredObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
-    if (!retiredVaults.length) {
-      return {}
-    }
-    return retiredVaults.reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
-      acc[toAddress(vault.address)] = vault
-      return acc
-    }, {})
-  }, [retiredVaults])
-
   return {
     vaults: patchedVaultsObject,
-    vaultsMigrations: vaultsMigrationsObject,
-    vaultsRetired: vaultsRetiredObject,
     isLoading,
-    mutate: mutate as unknown as KeyedMutator<TYDaemonVaults>
+    refetch: refetch as unknown as () => Promise<QueryObserverResult<TKongVaultList, Error>>
   }
 }
 
@@ -220,6 +247,7 @@ const prefetchedEndpoints = new Set<string>()
 
 function usePrefetchYearnVaults(enabled = true): void {
   const endpoints = useMemo(() => [VAULT_LIST_ENDPOINT], [])
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     if (!enabled) {
@@ -232,9 +260,17 @@ function usePrefetchYearnVaults(enabled = true): void {
       }
 
       prefetchedEndpoints.add(endpoint)
-      void mutate(endpoint, baseFetcher(endpoint), { revalidate: false })
+      const queryKey = getFetchQueryKey(endpoint)
+      if (!queryKey) {
+        return
+      }
+      void queryClient.prefetchQuery({
+        queryKey,
+        queryFn: () => fetchWithSchema(endpoint, kongVaultListSchema),
+        staleTime: 15 * 60 * 1000
+      })
     })
-  }, [enabled, endpoints])
+  }, [enabled, endpoints, queryClient])
 }
 
 export { useFetchYearnVaults, usePrefetchYearnVaults }

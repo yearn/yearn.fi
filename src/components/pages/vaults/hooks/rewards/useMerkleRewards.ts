@@ -1,7 +1,7 @@
 import type { TGroupedMerkleReward, TMerkleReward } from '@pages/vaults/components/widget/rewards/types'
 import { toNormalizedValue } from '@shared/utils'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import useSWR from 'swr'
 
 type MerklV4Reward = {
   amount: string
@@ -33,7 +33,7 @@ type UseMerkleRewardsReturn = {
   rewards: TMerkleReward[]
   groupedRewards: TGroupedMerkleReward[]
   isLoading: boolean
-  refetch: () => void
+  refetch: () => Promise<unknown>
 }
 
 const fetcher = async (url: string): Promise<MerklAPIResponse> => {
@@ -48,15 +48,15 @@ export function useMerkleRewards(params: UseMerkleRewardsParams): UseMerkleRewar
   const { userAddress, chainId, enabled = true } = params
 
   const isEnabled = enabled && !!userAddress
+  const endpoint = isEnabled ? `https://api.merkl.xyz/v4/users/${userAddress}/rewards?chainId=${chainId}` : null
 
-  const { data, isLoading, mutate } = useSWR<MerklAPIResponse>(
-    isEnabled ? `https://api.merkl.xyz/v4/users/${userAddress}/rewards?chainId=${chainId}` : null,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 30000
-    }
-  )
+  const { data, isLoading, refetch } = useQuery<MerklAPIResponse>({
+    queryKey: ['merkl-rewards', userAddress, chainId],
+    enabled: Boolean(endpoint),
+    queryFn: () => fetcher(endpoint as string),
+    staleTime: 30000,
+    refetchOnWindowFocus: false
+  })
 
   const rewards = useMemo((): TMerkleReward[] => {
     if (!data || !Array.isArray(data)) return []
@@ -114,6 +114,6 @@ export function useMerkleRewards(params: UseMerkleRewardsParams): UseMerkleRewar
     rewards,
     groupedRewards,
     isLoading,
-    refetch: mutate
+    refetch
   }
 }
