@@ -42,11 +42,7 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
   const showSwitchChainButton = isWrongChain && isAllChainsView && !!onSwitchChain
   const canClaim = isClaimReady && !isWrongChain
 
-  function getButtonVariant(): 'filled' | 'light' {
-    if (showSwitchChainButton) return 'light'
-    if (canClaim) return 'filled'
-    return 'light'
-  }
+  const buttonVariant: 'filled' | 'light' = canClaim && !showSwitchChainButton ? 'filled' : 'light'
 
   return (
     <div className="flex flex-col">
@@ -66,7 +62,7 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
             onClick={showSwitchChainButton ? onSwitchChain : onClaim}
             isDisabled={!showSwitchChainButton && !canClaim}
             isBusy={isClaimPending}
-            variant={getButtonVariant()}
+            variant={buttonVariant}
             className="!px-4 !py-1.5 !text-sm"
             classNameOverride="yearn--button--nextgen"
           >

@@ -75,7 +75,7 @@ export function VaultInfoSection({
   })()
 
   return (
-    <div className={'grid w-full grid-cols-1 gap-10 p-4 pt-0 md:p-6 md:pt-0'}>
+    <div className={'grid w-full grid-cols-1 gap-10 p-4 md:p-6 md:pt-0'}>
       <div className={'col-span-1 grid w-full gap-1'}>
         <AddressLink
           address={currentVault.address}

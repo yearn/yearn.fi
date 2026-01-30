@@ -732,7 +732,13 @@ function Index(): ReactElement | null {
 
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const headerStickyTop = 'var(--header-height)'
-  const resolvedWidgetMode = widgetActions.includes(widgetMode) ? widgetMode : widgetActions[0]
+  const mobileListKind = deriveListKind(currentVault)
+  function getMobileProductTypeLabel(): string {
+    if (mobileListKind === 'allocator' || mobileListKind === 'strategy') return 'Single Asset'
+    if (mobileListKind === 'legacy') return 'Legacy'
+    return 'LP Token'
+  }
+  const mobileProductTypeLabel = getMobileProductTypeLabel()
   const widgetModeLabel =
     resolvedWidgetMode === WidgetActionType.Deposit
       ? 'Deposit'
@@ -791,9 +797,18 @@ function Index(): ReactElement | null {
               <h1 className={'text-lg font-black leading-tight truncate-safe text-text-primary'}>
                 {getVaultName(currentVault)} yVault
               </h1>
-              <p className="text-mobile-label text-text-secondary">
-                {currentVault.token.symbol} • v{currentVault.version}
-              </p>
+              <div className="flex items-center gap-1 mt-1">
+                {currentVault.category ? (
+                  <VaultsListChip
+                    label={currentVault.category}
+                    tooltipDescription={getCategoryDescription(currentVault.category) || undefined}
+                  />
+                ) : null}
+                <VaultsListChip
+                  label={mobileProductTypeLabel}
+                  tooltipDescription={getProductTypeDescription(mobileListKind)}
+                />
+              </div>
             </div>
           </div>
         </div>

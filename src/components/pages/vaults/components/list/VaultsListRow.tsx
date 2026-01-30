@@ -120,12 +120,18 @@ export function VaultsListRow({
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
   const productType = isAllocatorVault ? 'v3' : 'lp'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
-  const productTypeAriaLabel = isAllocatorVault
-    ? 'Show single asset vaults'
-    : isLegacyVault
-      ? 'Legacy vault'
-      : 'Show LP token vaults'
+  function getProductTypeLabel(): string {
+    if (isAllocatorVault) return 'Single Asset'
+    if (isLegacyVault) return 'Legacy'
+    return 'LP Token'
+  }
+  const productTypeLabel = getProductTypeLabel()
+  function getProductTypeAriaLabel(): string {
+    if (isAllocatorVault) return 'Show single asset vaults'
+    if (isLegacyVault) return 'Legacy vault'
+    return 'Show LP token vaults'
+  }
+  const productTypeAriaLabel = getProductTypeAriaLabel()
   const showProductTypeChip = showProductTypeChipOverride ?? (Boolean(activeProductType) || Boolean(onToggleVaultType))
   const isProductTypeActive = activeProductType === productType
   const shouldCollapseProductTypeChip =
