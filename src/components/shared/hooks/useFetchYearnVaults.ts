@@ -1,5 +1,6 @@
 import { patchYBoldVaults } from '@pages/vaults/domain/normalizeVault'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
+import { normalizeVaultCategory } from '@pages/vaults/utils/normalizeVaultCategory'
 import { deriveAssetCategory } from '@pages/vaults/utils/vaultListFacets'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { fetchWithSchema, getFetchQueryKey, useFetch } from '@shared/hooks/useFetch'
@@ -111,7 +112,7 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
     symbol: item.symbol ?? tokenSymbol ?? '',
     name: item.name ?? '',
     description: '',
-    category: item.category ?? 'Unknown',
+    category: normalizeVaultCategory(item.category) || 'Unknown',
     decimals: resolveDecimals(item.decimals ?? null, tokenDecimals),
     chainID: item.chainId,
     token: {
@@ -154,7 +155,7 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
     strategies: [],
     staking: undefined,
     migration: {
-      available: false,
+      available: Boolean(item.migration),
       address: zeroAddress,
       contract: zeroAddress
     },
