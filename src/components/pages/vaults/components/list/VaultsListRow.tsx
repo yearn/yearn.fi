@@ -15,7 +15,6 @@ import {
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import { useMediaQuery } from '@react-hookz/web'
-import { useQueryClient } from '@tanstack/react-query'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -27,6 +26,7 @@ import { cl, formatAmount, formatTvlDisplay, toAddress, toNormalizedBN } from '@
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
+import { useQueryClient } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'

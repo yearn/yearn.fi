@@ -1,6 +1,6 @@
 import type { TGroupedMerkleReward, TMerkleReward } from '@pages/vaults/components/widget/rewards/types'
-import { useQuery } from '@tanstack/react-query'
 import { toNormalizedValue } from '@shared/utils'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 type MerklV4Reward = {

@@ -27,7 +27,7 @@ export function useVaultFilter(
   retiredVaults: TYDaemonVault[]
   migratableVaults: TYDaemonVault[]
 } {
-  const { vaults, vaultsMigrations, vaultsRetired, getPrice } = useYearn()
+  const { vaults, getPrice } = useYearn()
   const { getBalance } = useWallet()
   const { shouldHideDust } = useAppSettings()
 
@@ -137,8 +137,11 @@ export function useVaultFilter(
     visibleVaults,
     (vault) => vault.category === 'Curve' && isAutomatedVault(vault)
   )
-  const migratableVaults = useFilteredVaults(vaultsMigrations, (v) => filterMigrationCallback(v))
-  const retiredVaults = useFilteredVaults(vaultsRetired, (v) => filterMigrationCallback(v))
+  const migratableVaults = useMemo((): TYDaemonVault[] => [], [])
+  const retiredVaults = useFilteredVaults(
+    visibleVaults,
+    (vault) => Boolean(vault.info?.isRetired) && filterMigrationCallback(vault)
+  )
   /* 🔵 - Yearn Finance **************************************************************************
    **	First, we need to determine in which category we are. The activeVaults function will
    **	decide which vaults to display based on the category. No extra filters are applied.

@@ -1,8 +1,8 @@
 import type { TChartTimeseriesResponse } from '@pages/vaults/types/charts'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { toAddress } from '@shared/utils'
 import { vaultChartTimeseriesSchema } from '@shared/utils/schemas/vaultChartsSchema'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 
 const DEFAULT_LIMIT = 1000
 const MAX_LIMIT = 2000

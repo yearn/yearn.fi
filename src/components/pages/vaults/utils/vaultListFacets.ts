@@ -44,7 +44,9 @@ const KNOWN_STABLECOIN_SYMBOLS = new Set([
   'USD0',
   'PYUSD',
   'USDP',
-  'SDAI'
+  'SDAI',
+  'AUSD',
+  'BOLD'
 ])
 
 const AGGRESSIVENESS_OVERRIDES: Record<string, TVaultAggressiveness> = {}

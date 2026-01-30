@@ -1,7 +1,5 @@
 import { Solver, type TSolver } from '@pages/vaults/types/solvers'
 import { useLocalStorageValue } from '@react-hookz/web'
-import type { QueryObserverResult } from '@tanstack/react-query'
-import { useFetchYearnEarnedForUser } from '@shared/hooks/useFetchYearnEarnedForUser'
 import { useFetchYearnPrices } from '@shared/hooks/useFetchYearnPrices'
 import { useFetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
 import { type TKatanaAprs, useKatanaAprs } from '@shared/hooks/useKatanaAprs'
@@ -11,8 +9,9 @@ import type { TKongVaultList } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
 import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { QueryObserverResult } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
-import { createContext, memo, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 import { deserialize, serialize } from 'wagmi'
 
@@ -25,8 +24,6 @@ export type TYearnContext = {
   earned?: TYDaemonEarned
   prices?: TYDaemonPricesChain
   vaults: TDict<TYDaemonVault>
-  vaultsMigrations: TDict<TYDaemonVault>
-  vaultsRetired: TDict<TYDaemonVault>
   isLoadingVaultList: boolean
   katanaAprs: Partial<TKatanaAprs>
   isLoadingKatanaAprs: boolean
@@ -54,8 +51,6 @@ const YearnContext = createContext<TYearnContext>({
   },
   prices: {},
   vaults: {},
-  vaultsMigrations: {},
-  vaultsRetired: {},
   isLoadingVaultList: false,
   katanaAprs: {},
   isLoadingKatanaAprs: false,
@@ -112,25 +107,11 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
   }, [])
 
   const prices = useFetchYearnPrices()
-  const earned = useFetchYearnEarnedForUser()
-  const {
-    vaults: rawVaults,
-    vaultsMigrations,
-    vaultsRetired,
-    isLoading,
-    refetch
-  } = useFetchYearnVaults(undefined, {
+  //RG this endpoint returns empty objects for retired and migrations
+  const { vaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
     enabled: isVaultListEnabled
   })
   const { data: katanaAprs, isLoading: isLoadingKatanaAprs } = useKatanaAprs()
-
-  const vaults = useMemo(() => {
-    const vaults: TDict<TYDaemonVault> = {}
-    for (const vault of Object.values(rawVaults)) {
-      vaults[toAddress(vault.address)] = { ...vault }
-    }
-    return vaults
-  }, [rawVaults])
 
   const getPrice = useCallback(
     ({ address, chainID }: TTokenAndChain): TNormalizedBN => {
@@ -144,7 +125,6 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
       value={{
         currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
         prices,
-        earned,
         zapSlippage: zapSlippage ?? DEFAULT_SLIPPAGE,
         maxLoss: maxLoss ?? DEFAULT_MAX_LOSS,
         zapProvider: zapProvider ?? Solver.enum.Cowswap,
@@ -154,8 +134,6 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
         setZapProvider,
         setIsAutoStakingEnabled,
         vaults,
-        vaultsMigrations,
-        vaultsRetired,
         isLoadingVaultList: isLoading,
         katanaAprs,
         isLoadingKatanaAprs,

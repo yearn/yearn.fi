@@ -19,8 +19,6 @@ const AllocationChart = lazy(() =>
 )
 
 export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
-  // codex: Global vault registry used to resolve strategy addresses that are also standalone vaults (v3).
-  // RG: same note as before, if someone visits this page directly we should lazy load the vaults list after initial render.
   const { vaults } = useYearn()
   const isDark = useDarkMode()
   const vaultVariant = currentVault.version?.startsWith('3') || currentVault.version?.startsWith('~3') ? 'v3' : 'v2'
@@ -29,13 +27,11 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
     defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
     defaultPathname: '/vaults/[chainID]/[address]'
   })
-  // codex: Token price is used to format strategy allocation amounts in the chart and list.
   const tokenPrice = useYearnTokenPrice({
     address: currentVault.token.address,
     chainID: currentVault.chainID
   })
 
-  // codex: Build a unified list of strategies, enriching with vault metadata when available.
   const mergedList = useMemo(() => {
     const strategies = currentVault?.strategies || []
     const rows = strategies.map((strategy) => {
@@ -67,27 +63,23 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
     })[]
   }, [vaults, currentVault])
 
-  // codex: Compute unallocated values by subtracting strategy allocations from total assets.
   const allocatedRatio = mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
   const unallocatedPercentage = Math.max(0, 10000 - allocatedRatio)
   const totalAssets = currentVault.tvl.totalAssets ?? 0n
   const allocatedDebt = mergedList.reduce((acc, strategy) => acc + toBigInt(strategy.details?.totalDebt || 0), 0n)
   const unallocatedValue = totalAssets > allocatedDebt ? totalAssets - allocatedDebt : 0n
 
-  // codex: Drop inactive strategies before charting/sorting; list rendering uses this filtered set.
   const filteredVaultList = useMemo(() => {
     const strategies = mergedList.filter((vault) => vault.status !== 'not_active')
     return strategies
   }, [mergedList])
 
-  // codex: Sort strategies using query params so the list and table are consistent with user choice.
   const sortedVaultsToDisplay = useSortVaults(filteredVaultList, sortBy, sortDirection) as (TYDaemonVault & {
     details: TYDaemonVaultStrategy['details']
     status: TYDaemonVaultStrategy['status']
     netAPR: TYDaemonVaultStrategy['netAPR']
   })[]
 
-  // codex: Build chart series from allocated strategies only (needs debtRatio + non-zero totalDebt).
   const activeStrategyData = useMemo(() => {
     return filteredVaultList
       .filter((strategy) => {
@@ -106,7 +98,6 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
       }))
   }, [filteredVaultList, currentVault.token.decimals, tokenPrice])
 
-  // codex: Add the unallocated slice to the allocation chart if there is remaining value.
   const allocationChartData = useMemo(() => {
     const unallocatedData =
       unallocatedValue > 0n

@@ -1,9 +1,9 @@
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
+import { yToast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
-import { useYearn } from '@shared/contexts/useYearn'
 import useWallet from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { yToast } from '@shared/components/yToast'
+import { useYearn } from '@shared/contexts/useYearn'
 import { IconArrowLeft } from '@shared/icons/IconArrowLeft'
 import { IconArrowRight } from '@shared/icons/IconArrowRight'
 import { IconChevron } from '@shared/icons/IconChevron'
@@ -24,7 +24,7 @@ type TAccountDropdownProps = {
   onClose: () => void
 }
 
-type TView = 'account' | 'settings' | 'advanced'
+type TView = 'account' | 'settings'
 
 function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void; onClose: () => void }): ReactElement {
   const { address, ens, clusters, onDesactivate } = useWeb3()
@@ -186,9 +186,13 @@ const DARK_VARIANT_LABELS: Record<string, string> = {
   midnight: 'Midnight'
 }
 
-function SettingsView({ onBack, onAdvancedClick }: { onBack: () => void; onAdvancedClick: () => void }): ReactElement {
+function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
+  const { mutateVaultList, enableVaultListFetch, isLoadingVaultList } = useYearn()
+  const { toast } = yToast()
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
+  const [isRefreshingVaults, setIsRefreshingVaults] = useState(false)
 
   const backButtonClass = cl(
     'flex size-7 items-center justify-center rounded-full transition-colors',
@@ -203,6 +207,20 @@ function SettingsView({ onBack, onAdvancedClick }: { onBack: () => void; onAdvan
       ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
       : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
   )
+
+  const handleRefreshVaultList = useCallback(async () => {
+    enableVaultListFetch()
+    setIsRefreshingVaults(true)
+    try {
+      await mutateVaultList()
+      toast({ content: 'Vault list refreshed', type: 'success' })
+    } catch (error) {
+      console.error('[AccountDropdown] Failed to refresh vault list', error)
+      toast({ content: 'Failed to refresh vault list', type: 'error' })
+    } finally {
+      setIsRefreshingVaults(false)
+    }
+  }, [enableVaultListFetch, mutateVaultList, toast])
 
   function getVariantButtonClass(variant: string): string {
     if (themePreference === variant) {
@@ -263,69 +281,35 @@ function SettingsView({ onBack, onAdvancedClick }: { onBack: () => void; onAdvan
         </div>
       )}
 
-      <button className={menuItemClass} onClick={onAdvancedClick}>
-        <span>{'Advanced'}</span>
-        <IconChevron className={'size-4 -rotate-90'} />
-      </button>
-    </div>
-  )
-}
-
-function AdvancedView({ onBack }: { onBack: () => void }): ReactElement {
-  const themePreference = useThemePreference()
-  const isDarkTheme = themePreference !== 'light'
-  const { mutateVaultList, enableVaultListFetch, isLoadingVaultList } = useYearn()
-  const { toast } = yToast()
-  const [isRefreshingVaults, setIsRefreshingVaults] = useState(false)
-
-  const backButtonClass = cl(
-    'flex size-7 items-center justify-center rounded-full transition-colors',
-    isDarkTheme
-      ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-      : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
-  )
-
-  const menuItemClass = cl(
-    'flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-    isDarkTheme
-      ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-      : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-  )
-
-  const handleRefreshVaultList = useCallback(async () => {
-    enableVaultListFetch()
-    setIsRefreshingVaults(true)
-    try {
-      await mutateVaultList()
-      toast({ content: 'Vault list refreshed', type: 'success' })
-    } catch (error) {
-      console.error('[AccountDropdown] Failed to refresh vault list', error)
-      toast({ content: 'Failed to refresh vault list', type: 'error' })
-    } finally {
-      setIsRefreshingVaults(false)
-    }
-  }, [enableVaultListFetch, mutateVaultList, toast])
-
-  return (
-    <div className={'flex flex-col'}>
-      <div className={'mb-4 flex items-center'}>
-        <button onClick={onBack} className={backButtonClass}>
-          <IconArrowLeft className={'size-4'} />
-        </button>
-        <h2 className={'flex-1 text-center text-base font-semibold text-text-primary'}>{'Advanced'}</h2>
-        <div className={'w-7'} />
-      </div>
-
       <button
         className={menuItemClass}
-        onClick={handleRefreshVaultList}
-        disabled={isRefreshingVaults || isLoadingVaultList}
+        onClick={() => setIsAdvancedOpen((prev) => !prev)}
+        aria-expanded={isAdvancedOpen}
+        aria-controls={'account-dropdown-advanced'}
       >
-        <span>{'Refresh vault list'}</span>
-        <span className={'text-xs text-text-secondary'}>
-          {isRefreshingVaults || isLoadingVaultList ? 'Refreshing…' : 'Run'}
-        </span>
+        <span>{'Advanced'}</span>
+        <IconChevron className={cl('size-4 transition-transform', isAdvancedOpen ? 'rotate-0' : '-rotate-90')} />
       </button>
+      {isAdvancedOpen && (
+        <div
+          id={'account-dropdown-advanced'}
+          className={cl(
+            'mt-2 rounded-lg border p-2',
+            isDarkTheme ? 'border-border bg-surface-secondary' : 'border-neutral-200 bg-neutral-50'
+          )}
+        >
+          <button
+            className={cl(menuItemClass, 'w-full justify-between')}
+            onClick={handleRefreshVaultList}
+            disabled={isRefreshingVaults || isLoadingVaultList}
+          >
+            <span>{'Refresh vault list'}</span>
+            <span className={'text-xs text-text-secondary'}>
+              {isRefreshingVaults || isLoadingVaultList ? 'Refreshing…' : 'Run'}
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -343,10 +327,8 @@ export function AccountDropdown({ isOpen, onClose }: TAccountDropdownProps): Rea
     <DropdownPanel isOpen={isOpen} onClose={onClose} anchor={'right'} className={'w-80 max-md:w-full'}>
       {view === 'account' ? (
         <AccountView onSettingsClick={() => setView('settings')} onClose={onClose} />
-      ) : view === 'settings' ? (
-        <SettingsView onBack={() => setView('account')} onAdvancedClick={() => setView('advanced')} />
       ) : (
-        <AdvancedView onBack={() => setView('settings')} />
+        <SettingsView onBack={() => setView('account')} />
       )}
     </DropdownPanel>
   )
