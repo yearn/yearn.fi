@@ -932,7 +932,7 @@ function PortfolioPage(): ReactElement {
     switch (activeTab) {
       case 'positions':
         return (
-          <>
+          <div className="flex flex-col gap-6 sm:gap-8">
             <PortfolioHoldingsSection
               hasHoldings={model.hasHoldings}
               holdingsRows={model.holdingsRows}
@@ -946,7 +946,7 @@ function PortfolioPage(): ReactElement {
               vaultFlags={model.vaultFlags}
             />
             <PortfolioSuggestedSection suggestedRows={model.suggestedRows} />
-          </>
+          </div>
         )
       case 'activity':
         return <PortfolioActivitySection isActive={model.isActive} openLoginModal={model.openLoginModal} />
