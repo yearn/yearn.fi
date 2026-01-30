@@ -53,6 +53,15 @@ export function VaultInfoSection({
   const blockExplorer =
     getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
     getNetwork(currentVault.chainID).blockExplorers?.default.url
+  const sourceUrl = String(currentVault.info?.sourceURL || '').toLowerCase()
+  const isVelodrome = currentVault.category?.toLowerCase() === 'velodrome' || sourceUrl.includes('velodrome.finance')
+  const isAerodrome = currentVault.category?.toLowerCase() === 'aerodrome' || sourceUrl.includes('aerodrome.finance')
+  const liquidityUrl = isVelodrome
+    ? `https://velodrome.finance/liquidity?query=${currentVault.token.address}`
+    : isAerodrome
+      ? `https://aerodrome.finance/liquidity?query=${currentVault.token.address}`
+      : ''
+  const powergloveUrl = `https://powerglove.yearn.fi/vaults/${currentVault.chainID}/${currentVault.address}`
   const deployedLabel = (() => {
     if (typeof inceptTime !== 'number' || !Number.isFinite(inceptTime) || inceptTime <= 0) {
       return null
@@ -122,6 +131,26 @@ export function VaultInfoSection({
           </div>
         ) : null}
 
+        {liquidityUrl ? (
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+            <p className={'w-full text-sm text-text-secondary md:w-44'}>{isVelodrome ? 'Velodrome' : 'Aerodrome'}</p>
+            <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+              <a
+                href={liquidityUrl}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'flex items-center gap-1 text-sm text-text-primary transition-colors hover:text-text-secondary'
+                }
+                suppressHydrationWarning
+              >
+                {'View liquidity'}
+                <IconLinkOut className={'size-3'} />
+              </a>
+            </div>
+          </div>
+        ) : null}
+
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
           <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Current Price Per Share'}</p>
           <p className={'text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
@@ -148,6 +177,19 @@ export function VaultInfoSection({
             suppressHydrationWarning
           >
             {'View API Data'}
+          </a>
+        </div>
+
+        <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Powerglove'}</p>
+          <a
+            href={powergloveUrl}
+            target={'_blank'}
+            rel={'noopener noreferrer'}
+            className={'text-sm text-text-primary md:flex-1 md:text-right hover:underline'}
+            suppressHydrationWarning
+          >
+            {'View'}
           </a>
         </div>
       </div>
