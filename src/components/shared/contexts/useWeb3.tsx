@@ -54,23 +54,23 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   const { openChainModal } = useChainModal()
   const trackEvent = usePlausible()
   const [clusters, setClusters] = useState<{ name: string; avatar: string } | undefined>(undefined)
-  const [hasUserRequestedConnection, setHasUserRequestedConnection] = useState(false)
   const [isUserConnecting, setIsUserConnecting] = useState(false)
   const [isFetchingClusters, setIsFetchingClusters] = useState(false)
   const wasConnectedRef = useRef(false)
   const previousChainIDRef = useRef<number | undefined>(undefined)
+  const hasUserRequestedConnectionRef = useRef(false)
 
   const chainID = chain?.id ?? 1
 
   useEffect(() => {
-    if (!wasConnectedRef.current && isConnected && hasUserRequestedConnection) {
+    if (!wasConnectedRef.current && isConnected && hasUserRequestedConnectionRef.current) {
       trackEvent(PLAUSIBLE_EVENTS.CONNECT_WALLET, {
         props: { address: address ?? '', connector: connector?.name ?? '', chainID, generation: 3 }
       })
-      setHasUserRequestedConnection(false)
+      hasUserRequestedConnectionRef.current = false
     }
     wasConnectedRef.current = isConnected
-  }, [isConnected, hasUserRequestedConnection, address, connector, chainID, trackEvent])
+  }, [isConnected, address, connector, chainID, trackEvent])
 
   useEffect(() => {
     if (isConnected && previousChainIDRef.current !== undefined && previousChainIDRef.current !== chainID) {
@@ -104,7 +104,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     } else {
       const ledgerConnector = connectors.find((c) => c.id.toLowerCase().includes('ledger'))
       if (isIframe() && ledgerConnector) {
-        setHasUserRequestedConnection(true)
+        hasUserRequestedConnectionRef.current = true
         await connectAsync({
           connector: ledgerConnector,
           chainId: chainID
@@ -113,7 +113,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
       }
 
       if (openConnectModal) {
-        setHasUserRequestedConnection(true)
+        hasUserRequestedConnectionRef.current = true
         openConnectModal()
       } else if (openChainModal) {
         openChainModal()
@@ -159,19 +159,14 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
 
   useEffect(() => {
     if (isConnecting) {
-      if (hasUserRequestedConnection) {
+      if (hasUserRequestedConnectionRef.current) {
         setIsUserConnecting(true)
       }
       return
     }
 
     setIsUserConnecting(false)
-    // Only reset if connection was cancelled (not connected)
-    // Successful connections reset in the tracking effect
-    if (hasUserRequestedConnection && !isConnected) {
-      setHasUserRequestedConnection(false)
-    }
-  }, [hasUserRequestedConnection, isConnecting, isConnected])
+  }, [isConnecting])
 
   const isIdentityLoading = Boolean((isEnsLoading && !!address) || isFetchingClusters)
   const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false
