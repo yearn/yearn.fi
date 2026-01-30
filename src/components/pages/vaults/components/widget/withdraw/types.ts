@@ -8,6 +8,7 @@ export interface WithdrawWidgetProps {
   stakingAddress?: `0x${string}`
   chainId: number
   vaultSymbol: string
+  isVaultRetired?: boolean
   handleWithdrawSuccess?: () => void
   onOpenSettings?: () => void
   isSettingsOpen?: boolean

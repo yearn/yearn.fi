@@ -59,7 +59,7 @@ function Index(): ReactElement | null {
   const { address, isActive } = useWeb3()
   const params = useParams()
   const chainId = Number(params.chainID)
-  const { onRefresh } = useWallet()
+  const { getBalance, onRefresh } = useWallet()
 
   const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const vaultKey = `${params.chainID}-${params.address}`
@@ -248,14 +248,22 @@ function Index(): ReactElement | null {
     currentVault?.staking.address
   ])
 
+  const migratableShareBalance = useMemo(() => {
+    if (!currentVault?.address || !Number.isInteger(currentVault?.chainID) || !isActive) {
+      return 0n
+    }
+    return getBalance({ address: toAddress(currentVault.address), chainID: currentVault.chainID }).raw
+  }, [currentVault?.address, currentVault?.chainID, getBalance, isActive])
+
   const isMigratable = Boolean(currentVault?.migration?.available)
+  const canShowMigrateAction = isMigratable && migratableShareBalance > 0n
   const isRetired = Boolean(currentVault?.info?.isRetired)
   const widgetActions = useMemo(() => {
     if (isRetired || isMigratable) {
-      return isMigratable ? [WidgetActionType.Migrate, WidgetActionType.Withdraw] : [WidgetActionType.Withdraw]
+      return canShowMigrateAction ? [WidgetActionType.Migrate, WidgetActionType.Withdraw] : [WidgetActionType.Withdraw]
     }
     return [WidgetActionType.Deposit, WidgetActionType.Withdraw]
-  }, [isMigratable, isRetired])
+  }, [canShowMigrateAction, isMigratable, isRetired])
   const [widgetMode, setWidgetMode] = useState<WidgetActionType>(widgetActions[0])
   const [isWidgetSettingsOpen, setIsWidgetSettingsOpen] = useState(false)
   const [isWidgetWalletOpen, setIsWidgetWalletOpen] = useState(false)
@@ -268,7 +276,7 @@ function Index(): ReactElement | null {
   } | null>(null)
 
   useEffect(() => {
-    setWidgetMode(widgetActions[0])
+    setWidgetMode((previous) => (widgetActions.includes(previous) ? previous : widgetActions[0]))
   }, [widgetActions])
 
   useEffect(() => {
@@ -700,8 +708,27 @@ function Index(): ReactElement | null {
           <MobileKeyMetrics currentVault={currentVault} />
 
           {isRetired ? (
-            <div className={'rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm text-text-primary'}>
-              <p className={'font-semibold'}>{'This vault is retired. Please Withdraw or Migrate.'}</p>
+            <div
+              className={
+                'rounded-lg border border-border border-l-4 border-l-orange-500 dark:border-l-yellow-500 bg-surface-secondary px-4 py-3 text-sm text-text-primary'
+              }
+            >
+              <div className="flex items-start gap-3">
+                <svg
+                  className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <p className={'font-semibold'}>{'This vault is retired. Please Withdraw or Migrate.'}</p>
+              </div>
             </div>
           ) : null}
 
@@ -841,9 +868,26 @@ function Index(): ReactElement | null {
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
             {isRetired ? (
               <div
-                className={'rounded-lg border border-border bg-surface-secondary px-6 py-4 text-sm text-text-primary'}
+                className={
+                  'rounded-lg border border-border border-l-4 border-l-orange-500 dark:border-l-yellow-500 bg-surface-secondary px-6 py-4 text-sm text-text-primary'
+                }
               >
-                <p className={'font-semibold'}>{'This vault is retired. Please Withdraw or Migrate.'}</p>
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <p className={'font-semibold'}>{'This vault is retired. Please Withdraw or Migrate.'}</p>
+                </div>
               </div>
             ) : null}
 

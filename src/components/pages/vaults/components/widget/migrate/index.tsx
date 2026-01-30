@@ -415,9 +415,12 @@ export const WidgetMigrate: FC<Props> = ({
 
   return (
     <div className="flex flex-col border border-border rounded-lg relative h-full">
-      <div className="flex flex-col flex-1">
+      <div className="flex items-center justify-between gap-3 px-6 pt-4 ">
+        <h3 className="text-base font-semibold text-text-primary">Migrate</h3>
+      </div>
+      <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         {/* Educational Banner */}
-        <div className="mx-6 mt-7 p-4 bg-surface-secondary border-l-4 border-l-orange-500 dark:border-l-yellow-500 rounded-lg">
+        <div className="p-4 bg-surface-secondary border-l-4 border-l-orange-500 dark:border-l-yellow-500 rounded-lg">
           <div className="flex items-start gap-3">
             <svg
               className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
@@ -433,17 +436,17 @@ export const WidgetMigrate: FC<Props> = ({
               />
             </svg>
             <div>
-              <h4 className="text-sm font-semibold text-text-primary">Vault is retired</h4>
+              <h4 className="text-sm font-semibold text-text-primary">This vault is retired</h4>
               <p className="text-xs text-text-secondary mt-1">
-                This vault is retired and won't be earning yield. Please migrate your shares to the newest version.
+                This vault is retired and won't be earning yield. You can migrate to a new version below.
               </p>
             </div>
           </div>
         </div>
 
         {/* Balance Section */}
-        <div className="px-6 pt-6">
-          <div className="flex justify-between items-center mb-2">
+        <div>
+          <div className="flex justify-between items-center mb-1">
             <span className="text-xs text-text-secondary">Your Balance</span>
           </div>
           <div className="flex flex-col items-start">
@@ -455,7 +458,7 @@ export const WidgetMigrate: FC<Props> = ({
         </div>
 
         {/* Destination Section */}
-        <div className="px-6 pt-6">
+        <div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs text-text-secondary">Destination</span>
           </div>
@@ -492,7 +495,7 @@ export const WidgetMigrate: FC<Props> = ({
 
         <div className="mt-auto">
           {/* Action Button */}
-          <div className="px-6 pt-6 pb-6">
+          <div>
             {!account ? (
               <Button
                 onClick={openLoginModal}
