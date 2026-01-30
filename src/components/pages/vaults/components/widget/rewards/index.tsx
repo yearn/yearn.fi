@@ -1,10 +1,13 @@
+import { usePlausible } from '@hooks/usePlausible'
 import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { type TRewardToken, useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import { Button } from '@shared/components/Button'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconCross } from '@shared/icons/IconCross'
+import { toAddress } from '@shared/utils'
 import { cl } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
@@ -34,6 +37,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
     onClaimSuccess
   } = props
   const { address: userAddress, isActive } = useWeb3()
+  const trackEvent = usePlausible()
   const [isOverlayOpen, setIsOverlayOpen] = useState(false)
   const [activeStep, setActiveStep] = useState<TransactionStep | undefined>()
   const [isComplete, setIsComplete] = useState(false)
@@ -92,13 +96,21 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   }, [])
 
   const handleClaimComplete = useCallback(() => {
+    trackEvent(PLAUSIBLE_EVENTS.CLAIM, {
+      props: {
+        chainID: chainId,
+        stakingAddress: stakingAddress ? toAddress(stakingAddress) : '',
+        valueUsd: totalUsd,
+        source: 'vault'
+      }
+    })
     setIsOverlayOpen(false)
     setActiveStep(undefined)
     setIsComplete(true)
     refetchStaking()
     refetchMerkle()
     onClaimSuccess?.()
-  }, [refetchStaking, refetchMerkle, onClaimSuccess])
+  }, [trackEvent, chainId, stakingAddress, totalUsd, refetchStaking, refetchMerkle, onClaimSuccess])
 
   const handleOverlayClose = useCallback(() => {
     setIsOverlayOpen(false)
