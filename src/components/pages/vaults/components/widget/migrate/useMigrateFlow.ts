@@ -169,7 +169,7 @@ export const useMigrateFlow = ({
     chainId,
     query: { enabled: prepareMulticallEnabled && !!multicallData }
   })
-  console.log(prepareMulticall)
+
   // Determine error state
   const error = useMemo(() => {
     if (isCheckingPermit) return undefined
