@@ -137,7 +137,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
               chainID: tokenData.chainID
             })
 
-            stakingValue = stakingBalance.normalized * tokenPrice.normalized
+            if (!allVaults?.[toAddress(stakingAddress)]) {
+              stakingValue = stakingBalance.normalized * tokenPrice.normalized
+            }
           }
         }
 
