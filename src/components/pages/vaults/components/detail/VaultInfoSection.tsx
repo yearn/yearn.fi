@@ -24,7 +24,7 @@ function AddressLink({
           href={`${explorerUrl}/address/${address}`}
           target={'_blank'}
           rel={'noopener noreferrer'}
-          className={'flex items-center gap-1 text-sm text-text-primary transition-colors hover:text-text-secondary'}
+          className={'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'}
           suppressHydrationWarning
         >
           {truncateHex(address, 4)}
@@ -71,7 +71,7 @@ export function VaultInfoSection({
     if (Number.isNaN(date.getTime())) {
       return null
     }
-    return date.toLocaleString(undefined, { month: 'long', year: 'numeric' })
+    return date.toLocaleString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
   })()
 
   return (
@@ -105,7 +105,7 @@ export function VaultInfoSection({
                 href={currentVault.info.sourceURL}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
-                className={'text-sm text-text-primary hover:underline'}
+                className={'md:text-sm text-text-primary hover:underline'}
                 suppressHydrationWarning
               >
                 {currentVault.info.sourceURL}
@@ -122,7 +122,7 @@ export function VaultInfoSection({
                 href={currentVault.info.sourceURL}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
-                className={'whitespace-nowrap text-sm text-text-primary hover:underline'}
+                className={'whitespace-nowrap md:text-sm text-text-primary hover:underline'}
                 suppressHydrationWarning
               >
                 {currentVault.info.sourceURL}
@@ -140,11 +140,12 @@ export function VaultInfoSection({
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 className={
-                  'flex items-center gap-1 text-sm text-text-primary transition-colors hover:text-text-secondary'
+                  'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
                 }
                 suppressHydrationWarning
               >
-                {'View liquidity'}
+                {isVelodrome ? 'Velodrome ' : 'Aerodrome '}
+                {'Liquidity Pool Info'}
                 <IconLinkOut className={'size-3'} />
               </a>
             </div>
@@ -153,44 +154,54 @@ export function VaultInfoSection({
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
           <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Current Price Per Share'}</p>
-          <p className={'text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
+          <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
             {currentVault.apr.pricePerShare.today}
           </p>
         </div>
 
         {deployedLabel ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-            <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Deployed'}</p>
-            <p className={'text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
+            <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Deployed on'}</p>
+            <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
               {deployedLabel}
             </p>
           </div>
         ) : null}
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Vault Snapshot Data'}</p>
-          <a
-            href={`${KONG_REST_BASE}/snapshot/${currentVault.chainID}/${currentVault.address}`}
-            target={'_blank'}
-            rel={'noopener noreferrer'}
-            className={'text-sm text-text-primary md:flex-1 md:text-right hover:underline'}
-            suppressHydrationWarning
-          >
-            {'View API Data'}
-          </a>
+          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Powerglove Analytics Page'}</p>
+          <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+            <a
+              href={powergloveUrl}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              className={
+                'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+              }
+              suppressHydrationWarning
+            >
+              {'View Page'}
+              <IconLinkOut className={'size-3'} />
+            </a>
+          </div>
         </div>
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Powerglove'}</p>
-          <a
-            href={powergloveUrl}
-            target={'_blank'}
-            rel={'noopener noreferrer'}
-            className={'text-sm text-text-primary md:flex-1 md:text-right hover:underline'}
-            suppressHydrationWarning
-          >
-            {'View'}
-          </a>
+          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Vault Snapshot Data'}</p>
+          <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+            <a
+              href={`${KONG_REST_BASE}/snapshot/${currentVault.chainID}/${currentVault.address}`}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              className={
+                'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+              }
+              suppressHydrationWarning
+            >
+              {'View API Data'}
+              <IconLinkOut className={'size-3'} />
+            </a>
+          </div>
         </div>
       </div>
     </div>
