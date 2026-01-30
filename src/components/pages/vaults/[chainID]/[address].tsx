@@ -171,6 +171,7 @@ function Index(): ReactElement | null {
     chainId,
     address: params.address
   })
+  const shouldDisableStakingForDeposit = Boolean(snapshotVault?.inclusion?.shouldDisableStaking)
 
   const baseMergedVault = useMemo(() => mergeVaultSnapshot(baseVault, snapshotVault), [baseVault, snapshotVault])
 
@@ -419,10 +420,10 @@ function Index(): ReactElement | null {
         key: 'info' as const,
         shouldRender: true,
         ref: sectionRefs.info,
-        content: <VaultInfoSection currentVault={currentVault} />
+        content: <VaultInfoSection currentVault={currentVault} inceptTime={snapshotVault?.inceptTime ?? null} />
       }
     ]
-  }, [chainId, currentVault, sectionRefs])
+  }, [chainId, currentVault, sectionRefs, snapshotVault?.inceptTime])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const sectionTabs = renderableSections.map((section) => ({
@@ -770,6 +771,7 @@ function Index(): ReactElement | null {
                       vaultAddress={currentVault.address}
                       currentVault={currentVault}
                       gaugeAddress={currentVault.staking.address}
+                      disableDepositStaking={shouldDisableStakingForDeposit}
                       actions={widgetActions}
                       chainId={chainId}
                       mode={resolvedWidgetMode}
@@ -918,6 +920,7 @@ function Index(): ReactElement | null {
           vaultAddress={currentVault.address}
           currentVault={currentVault}
           gaugeAddress={currentVault.staking.address}
+          disableDepositStaking={shouldDisableStakingForDeposit}
           actions={widgetActions}
           chainId={chainId}
           hideTabSelector

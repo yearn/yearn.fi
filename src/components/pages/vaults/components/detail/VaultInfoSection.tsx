@@ -43,10 +43,27 @@ function AddressLink({
   )
 }
 
-export function VaultInfoSection({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+export function VaultInfoSection({
+  currentVault,
+  inceptTime
+}: {
+  currentVault: TYDaemonVault
+  inceptTime?: number | null
+}): ReactElement {
   const blockExplorer =
     getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
     getNetwork(currentVault.chainID).blockExplorers?.default.url
+  const deployedLabel = (() => {
+    if (typeof inceptTime !== 'number' || !Number.isFinite(inceptTime) || inceptTime <= 0) {
+      return null
+    }
+    const ms = inceptTime > 1_000_000_000_000 ? inceptTime : inceptTime * 1000
+    const date = new Date(ms)
+    if (Number.isNaN(date.getTime())) {
+      return null
+    }
+    return date.toLocaleString(undefined, { month: 'long', year: 'numeric' })
+  })()
 
   return (
     <div className={'grid w-full grid-cols-1 gap-10 p-4 pt-0 md:p-6 md:pt-0'}>
@@ -111,6 +128,15 @@ export function VaultInfoSection({ currentVault }: { currentVault: TYDaemonVault
             {currentVault.apr.pricePerShare.today}
           </p>
         </div>
+
+        {deployedLabel ? (
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+            <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Deployed'}</p>
+            <p className={'text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
+              {deployedLabel}
+            </p>
+          </div>
+        ) : null}
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
           <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Vault Snapshot Data'}</p>
