@@ -67,6 +67,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
       trackEvent(PLAUSIBLE_EVENTS.CONNECT_WALLET, {
         props: { address: address ?? '', connector: connector?.name ?? '', chainID, generation: 3 }
       })
+      setHasUserRequestedConnection(false)
     }
     wasConnectedRef.current = isConnected
   }, [isConnected, hasUserRequestedConnection, address, connector, chainID, trackEvent])
@@ -165,10 +166,12 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     }
 
     setIsUserConnecting(false)
-    if (hasUserRequestedConnection) {
+    // Only reset if connection was cancelled (not connected)
+    // Successful connections reset in the tracking effect
+    if (hasUserRequestedConnection && !isConnected) {
       setHasUserRequestedConnection(false)
     }
-  }, [hasUserRequestedConnection, isConnecting])
+  }, [hasUserRequestedConnection, isConnecting, isConnected])
 
   const isIdentityLoading = Boolean((isEnsLoading && !!address) || isFetchingClusters)
   const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false
