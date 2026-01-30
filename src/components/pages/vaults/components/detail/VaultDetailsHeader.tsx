@@ -479,7 +479,7 @@ export function VaultDetailsHeader({
           {'Vaults'}
         </Link>
         <span>{'>'}</span>
-        <span className={'font-medium text-text-primary'}>{getVaultName(currentVault)}</span>
+        <span className={'font-medium text-text-primary'}>{getVaultName(currentVault)} yVault</span>
       </div>
       {isCompressed ? (
         <div className={'md:col-span-13 md:row-start-2 pt-4'}>

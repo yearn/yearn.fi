@@ -195,11 +195,12 @@ function PortfolioHeaderSection({
   ]
 
   return (
-    <section className="flex flex-col gap-2 sm:gap-2">
+    <section className={'flex flex-col gap-2 sm:gap-2'}>
       <Breadcrumbs
         className="px-1"
         items={[
           { label: 'Home', href: '/' },
+          { label: 'Vaults', href: '/vaults' },
           { label: 'Portfolio', isCurrent: true }
         ]}
       />
@@ -215,7 +216,7 @@ function PortfolioHeaderSection({
           <h1 className="text-lg font-black text-text-primary md:text-3xl md:leading-10">{'Account Overview'}</h1>
         </Tooltip>
       </div>
-      {isActive && <MetricsCard items={metrics} className="rounded-t-lg rounded-b-none border border-border" />}
+      {isActive ? <MetricsCard items={metrics} className={'rounded-t-lg rounded-b-none border border-border'} /> : null}
     </section>
   )
 }
@@ -294,7 +295,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   }
 
   return (
-    <section className="flex flex-col gap-2 sm:gap-2">
+    <section className={'flex flex-col gap-2 sm:gap-2'}>
       <div>
         <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">Activity</h2>
         <p className="text-xs text-text-secondary sm:text-sm">Review your recent Yearn transactions.</p>
