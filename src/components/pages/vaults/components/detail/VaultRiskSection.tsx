@@ -72,13 +72,10 @@ function SimpleRiskScore({
   const toggleItem = (index: number): void => {
     setOpenIndex(openIndex === index ? null : index)
   }
-  const renderInlineRiskScoreTag = (): ReactElement => (
-    <VaultRiskScoreTag
-      riskLevel={currentVault.info.riskLevel}
-      variant={'inline'}
-      className={'w-auto flex-shrink-0 md:pt-0'}
-    />
-  )
+  const renderInlineRiskScoreTag = (riskLevelOverride?: number): ReactElement => {
+    const riskLevel = riskLevelOverride ?? currentVault.info.riskLevel
+    return <VaultRiskScoreTag riskLevel={riskLevel} variant={'inline'} className={'w-auto flex-shrink-0 md:pt-0'} />
+  }
 
   if (isMultiStrategy) {
     const multiStrategyRiskScore = {
@@ -210,18 +207,27 @@ function SimpleRiskScore({
             />
           ))
         ) : deriveListKind(currentVault) === 'factory' ? (
-          <div className={'rounded-3xl border border-border bg-surface-secondary p-4 text-text-primary'}>
-            <p className={'font-semibold'}>{'LP-token risk (factory vault)'}</p>
-            <p className={'mt-2 text-sm text-text-secondary'}>
+          <div className={'text-text-primary'}>
+            <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
+              <div className={'flex items-end gap-2'}>
+                <p className={'text-xl font-bold'}>{'Overall Risk Score'}</p>
+              </div>
+              <div className={'flex items-end gap-4'}>
+                <div className={'flex items-center font-bold'}>
+                  <p className={'mr-2 text-xl'}>{1}</p>
+                  <span className={'text-text-tertiary'}>{' / 5'}</span>
+                </div>
+                {renderInlineRiskScoreTag(1)}
+              </div>
+            </div>
+            <small className={'mt-2 block whitespace-break-spaces text-sm text-text-secondary'}>
               {
-                "This vault accepts LP token deposits. While the vault contract itself is considered very low risk (risk score -1), the assets inside the LP token—and the LP mechanics—can carry additional risk that we don't account for or measure here."
+                "LP Token Vaults accepts liquidity pool token deposits. While the vault contract itself is considered very low risk because all it does is compound curve and other rewards, the assets inside the LP token—and the LP mechanics themselves—can carry additional risk that we don't account for or measure here."
               }
-            </p>
+            </small>
           </div>
         ) : (
-          <div className={'rounded-3xl border border-border bg-surface-secondary p-4 text-center text-text-primary'}>
-            {'No risk data available for this vault.'}
-          </div>
+          <div className={'p-4 text-center text-text-primary'}>{'No risk data available for this vault.'}</div>
         )}
       </div>
     </div>

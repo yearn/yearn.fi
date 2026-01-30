@@ -166,12 +166,14 @@ function Index(): ReactElement | null {
 
   const {
     data: snapshotVault,
+    error: snapshotError,
     isLoading: isLoadingSnapshotVault,
     refetch: refetchSnapshot
   } = useVaultSnapshot({
     chainId,
     address: params.address
   })
+  const isSnapshotNotFound = (snapshotError as any)?.response?.status === 404
   const shouldDisableStakingForDeposit = Boolean(snapshotVault?.meta?.shouldDisableStaking)
 
   const baseMergedVault = useMemo(() => mergeVaultSnapshot(baseVault, snapshotVault), [baseVault, snapshotVault])
@@ -201,7 +203,7 @@ function Index(): ReactElement | null {
     return baseMergedVault
   }, [baseMergedVault, isYBold, yBoldStakingVault])
 
-  const isLoadingVault = !currentVault && (isLoadingSnapshotVault || isLoadingVaultList)
+  const isLoadingVault = !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
 
   useEffect(() => {
     if (hasTriggeredVaultListFetch || hasVaultList || !snapshotVault) {
