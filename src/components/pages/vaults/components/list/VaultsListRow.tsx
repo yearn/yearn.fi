@@ -3,7 +3,6 @@ import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/com
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
-import { maybeToastSnapshot } from '@pages/vaults/utils/snapshotToast'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
   getCategoryDescription,
@@ -168,15 +167,11 @@ export function VaultsListRow({
       return
     }
 
-    void queryClient
-      .prefetchQuery({
-        queryKey,
-        queryFn: () => fetchWithSchema(endpoint, kongVaultSnapshotSchema),
-        staleTime: 30 * 1000
-      })
-      .then(() => {
-        maybeToastSnapshot(endpoint, currentVault.address, 'prefetch')
-      })
+    void queryClient.prefetchQuery({
+      queryKey,
+      queryFn: () => fetchWithSchema(endpoint, kongVaultSnapshotSchema),
+      staleTime: 30 * 1000
+    })
   }, [currentVault.address, currentVault.chainID, queryClient])
 
   const isHiddenVault = Boolean(flags?.isHidden)

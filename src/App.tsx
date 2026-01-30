@@ -1,4 +1,3 @@
-import { DevToolbar } from '@components/DevToolbar'
 import { IframeAutoConnect } from '@components/IframeAutoConnect'
 import { AppSettingsContextApp } from '@pages/vaults/contexts/useAppSettings'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
@@ -27,7 +26,6 @@ import { useLocation } from 'react-router'
 import { WagmiProvider } from 'wagmi'
 import { wagmiConfig } from '@/config/wagmi'
 import { ChainsProvider } from '@/context/ChainsProvider'
-import { DevFlagsProvider } from '/src/contexts/useDevFlags'
 import PlausibleProvider from './components/PlausibleProvider'
 import { Routes } from './routes'
 
@@ -102,10 +100,7 @@ function App(): ReactElement {
                                   <IndexedDB>
                                     <WithNotifications>
                                       <WithNotificationsActions>
-                                        <DevFlagsProvider>
-                                          <WithLayout />
-                                          <DevToolbar />
-                                        </DevFlagsProvider>
+                                        <WithLayout />
                                       </WithNotificationsActions>
                                     </WithNotifications>
                                   </IndexedDB>
