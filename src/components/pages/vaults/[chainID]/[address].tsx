@@ -172,7 +172,7 @@ function Index(): ReactElement | null {
     chainId,
     address: params.address
   })
-  const shouldDisableStakingForDeposit = Boolean(snapshotVault?.inclusion?.shouldDisableStaking)
+  const shouldDisableStakingForDeposit = Boolean(snapshotVault?.meta?.shouldDisableStaking)
 
   const baseMergedVault = useMemo(() => mergeVaultSnapshot(baseVault, snapshotVault), [baseVault, snapshotVault])
 

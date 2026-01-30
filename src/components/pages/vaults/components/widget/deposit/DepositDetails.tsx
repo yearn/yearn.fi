@@ -68,15 +68,15 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
 
   // Determine action verb based on route type
   const getActionVerb = () => {
-    if (isStake) return 'stake'
-    if (isSwap) return 'swap'
-    return 'deposit'
+    if (isStake) return 'Stake'
+    if (isSwap) return 'Swap'
+    return 'Deposit'
   }
   // Format allowance display
   const formatAllowance = () => {
     if (allowance === undefined || allowanceTokenDecimals === undefined) return null
     if (allowance >= maxUint256 / 2n) return 'Unlimited'
-    return `${formatTAmount({ value: allowance, decimals: allowanceTokenDecimals })} ${allowanceTokenSymbol || ''}`
+    return `${formatTAmount({ value: allowance, decimals: allowanceTokenDecimals })}`
   }
 
   const allowanceDisplay = formatAllowance()
@@ -99,7 +99,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
       <div className="flex flex-col gap-2">
         {/* You will deposit/swap/stake */}
         <div className="flex items-center justify-between h-5">
-          <p className="text-sm text-text-secondary">{'You will ' + getActionVerb()}</p>
+          <p className="text-sm text-text-secondary">{'You Will ' + getActionVerb()}</p>
           <p className="text-sm text-text-primary">
             <span className="font-semibold">
               {depositAmountBn > 0n
@@ -148,7 +148,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
             onClick={onShowVaultSharesModal}
             className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
           >
-            You will receive
+            You Will Receive
           </button>
           <p className="text-sm text-text-primary">
             {isLoadingQuote ? (
@@ -186,7 +186,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
               <>
                 <span className="font-semibold">{vaultShareValueFormatted}</span>{' '}
                 <span className="font-normal">{`${assetTokenSymbol || ''} (`}</span>
-                <span className="font-semibold">{`$${vaultShareValueUsd}`}</span>
+                <span className="font-normal">{`$${vaultShareValueUsd}`}</span>
                 <span className="font-normal">{')'}</span>
               </>
             )}
@@ -231,11 +231,17 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 onClick={onAllowanceClick}
                 className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
               >
-                <span className="font-semibold">{allowanceDisplay}</span>
+                <span className="font-normal">
+                  <span className={'font-semibold'}>{allowanceDisplay} </span>{' '}
+                  <span> {allowanceTokenSymbol || ''}</span>
+                </span>
               </button>
             ) : (
               <p className="text-sm text-text-primary">
-                <span className="font-semibold">{allowanceDisplay}</span>
+                <span className="font-normal">
+                  <span className={'font-semibold'}>{allowanceDisplay} </span>{' '}
+                  <span> {allowanceTokenSymbol || ''}</span>
+                </span>
               </p>
             )}
           </div>
