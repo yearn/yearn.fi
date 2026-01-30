@@ -100,15 +100,17 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
         {/* You will deposit/swap/stake */}
         <div className="flex items-center justify-between h-5">
           <p className="text-sm text-text-secondary">{'You will ' + getActionVerb()}</p>
-          <p className="text-sm font-semibold text-text-primary">
-            {depositAmountBn > 0n
-              ? formatTAmount({
-                  value: depositAmountBn,
-                  decimals: inputTokenDecimals,
-                  options: { maximumFractionDigits: 6 }
-                })
-              : '0'}{' '}
-            {inputTokenSymbol}
+          <p className="text-sm text-text-primary">
+            <span className="font-semibold">
+              {depositAmountBn > 0n
+                ? formatTAmount({
+                    value: depositAmountBn,
+                    decimals: inputTokenDecimals,
+                    options: { maximumFractionDigits: 6 }
+                  })
+                : '0'}
+            </span>{' '}
+            <span className="font-normal">{inputTokenSymbol}</span>
           </p>
         </div>
 
@@ -116,16 +118,24 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
         {isSwap && !isStake && (
           <div className="flex items-center justify-between h-5">
             <p className="text-sm text-text-secondary">{'For at least'}</p>
-            <p className="text-sm font-semibold text-text-primary">
+            <p className="text-sm text-text-primary">
               {isLoadingQuote ? (
                 <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : expectedOutInAsset > 0n ? (
-                `${formatTAmount({
-                  value: expectedOutInAsset,
-                  decimals: assetTokenDecimals
-                })} ${assetTokenSymbol || 'tokens'}`
+                <>
+                  <span className="font-semibold">
+                    {formatTAmount({
+                      value: expectedOutInAsset,
+                      decimals: assetTokenDecimals
+                    })}
+                  </span>{' '}
+                  <span className="font-normal">{assetTokenSymbol || 'tokens'}</span>
+                </>
               ) : (
-                `0 ${assetTokenSymbol || 'tokens'}`
+                <>
+                  <span className="font-semibold">{'0'}</span>{' '}
+                  <span className="font-normal">{assetTokenSymbol || 'tokens'}</span>
+                </>
               )}
             </p>
           </div>
@@ -134,136 +144,89 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
         {/* You will receive (vault shares or staked shares) */}
         <div className="flex items-center justify-between h-5">
           <p className="text-sm text-text-secondary">You will receive</p>
-          <div className="flex items-center gap-1">
+          {isLoadingQuote ? (
+            <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
+          ) : (
             <button
+              type="button"
               onClick={onShowVaultSharesModal}
-              className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-full p-0.5 transition-colors"
+              className="text-sm text-text-primary underline decoration-text-tertiary underline-offset-2 hover:decoration-text-secondary transition-colors"
             >
-              <svg
-                className="h-3.5 w-3.5 text-text-tertiary hover:text-text-secondary"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              <span className="font-semibold">
+                {depositAmountBn > 0n && expectedVaultShares > 0n
+                  ? formatTAmount({
+                      value: expectedVaultShares,
+                      decimals: sharesDisplayDecimals,
+                      options: { maximumFractionDigits: 4 }
+                    })
+                  : '0'}
+              </span>{' '}
+              <span className="font-normal">{sharesLabel}</span>
             </button>
-            <p className="text-sm font-semibold text-text-primary">
-              {isLoadingQuote ? (
-                <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
-              ) : depositAmountBn > 0n && expectedVaultShares > 0n ? (
-                `${formatTAmount({ value: expectedVaultShares, decimals: sharesDisplayDecimals, options: { maximumFractionDigits: 4 } })} ${sharesLabel}`
-              ) : (
-                `0 ${sharesLabel}`
-              )}
-            </p>
-          </div>
+          )}
         </div>
 
         {/* Vault share value in underlying asset */}
         <div className="flex items-center justify-between h-5">
           <p className="text-sm text-text-secondary">Vault share value</p>
-          <div className="flex items-center gap-1">
+          {isLoadingQuote ? (
+            <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
+          ) : (
             <button
+              type="button"
               onClick={onShowVaultShareValueModal}
-              className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-full p-0.5 transition-colors"
+              className="text-sm text-text-primary underline decoration-text-tertiary underline-offset-2 hover:decoration-text-secondary transition-colors"
             >
-              <svg
-                className="h-3.5 w-3.5 text-text-tertiary hover:text-text-secondary"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              <span className="font-semibold">{vaultShareValueFormatted}</span>{' '}
+              <span className="font-normal">{`${assetTokenSymbol || ''} (`}</span>
+              <span className="font-semibold">{`$${vaultShareValueUsd}`}</span>
+              <span className="font-normal">{')'}</span>
             </button>
-            <p className="text-sm font-semibold text-text-primary">
-              {isLoadingQuote ? (
-                <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
-              ) : (
-                `${vaultShareValueFormatted} ${assetTokenSymbol || ''} ($${vaultShareValueUsd})`
-              )}
-            </p>
-          </div>
+          )}
         </div>
 
         {/* Est. Annual Return */}
         <div className="flex items-center justify-between h-5">
           <p className="text-sm text-text-secondary">Est. Annual Return</p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={onShowAnnualReturnModal}
-              className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-full p-0.5 transition-colors"
-            >
-              <svg
-                className="h-3.5 w-3.5 text-text-tertiary hover:text-text-secondary"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </button>
-            <p className="text-sm font-semibold text-text-primary">
-              {depositAmountBn > 0n ? `~${estimatedAnnualReturn}` : '0'} {inputTokenSymbol}
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={onShowAnnualReturnModal}
+            className="text-sm text-text-primary underline decoration-text-tertiary underline-offset-2 hover:decoration-text-secondary transition-colors"
+          >
+            <span className="font-semibold">{depositAmountBn > 0n ? `~${estimatedAnnualReturn}` : '0'}</span>{' '}
+            <span className="font-normal">{inputTokenSymbol}</span>
+          </button>
         </div>
 
         {/* Approved allowance */}
         {allowanceDisplay && (
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-text-secondary">
-              Existing Approval{approvalSpenderName ? ` (${approvalSpenderName})` : ''}
-            </p>
-            <div className="flex items-center gap-1">
-              {onShowApprovalOverlay && (
-                <button
-                  onClick={onShowApprovalOverlay}
-                  className="inline-flex items-center justify-center hover:bg-surface-secondary rounded-full p-0.5 transition-colors"
-                >
-                  <svg
-                    className="h-3.5 w-3.5 text-text-tertiary hover:text-text-secondary"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </button>
-              )}
-              {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
-                <button
-                  type="button"
-                  onClick={onAllowanceClick}
-                  className="text-sm font-semibold text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
-                >
-                  {allowanceDisplay}
-                </button>
-              ) : (
-                <p className="text-sm font-semibold text-text-primary">{allowanceDisplay}</p>
-              )}
-            </div>
+            {onShowApprovalOverlay ? (
+              <button
+                type="button"
+                onClick={onShowApprovalOverlay}
+                className="text-sm text-text-secondary underline decoration-text-tertiary underline-offset-2 hover:text-text-primary hover:decoration-text-secondary transition-colors"
+              >
+                Existing Approval{approvalSpenderName ? ` (${approvalSpenderName})` : ''}
+              </button>
+            ) : (
+              <p className="text-sm text-text-secondary">
+                Existing Approval{approvalSpenderName ? ` (${approvalSpenderName})` : ''}
+              </p>
+            )}
+            {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
+              <button
+                type="button"
+                onClick={onAllowanceClick}
+                className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
+              >
+                <span className="font-semibold">{allowanceDisplay}</span>
+              </button>
+            ) : (
+              <p className="text-sm text-text-primary">
+                <span className="font-semibold">{allowanceDisplay}</span>
+              </p>
+            )}
           </div>
         )}
       </div>
