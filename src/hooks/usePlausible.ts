@@ -1,7 +1,7 @@
 import Plausible from 'plausible-tracker'
 
 export const plausible = Plausible({
-  domain: 'yearn.fi',
+  domain: window.location.hostname,
   apiHost: '/proxy/plausible',
   trackLocalhost: import.meta.env.VITE_PLAUSIBLE_TRACK_LOCALHOST === 'true'
 })
