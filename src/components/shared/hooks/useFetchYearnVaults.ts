@@ -216,6 +216,7 @@ function useFetchYearnVaults(
     }
     const chainIdSet = new Set(resolvedChainIds)
     return kongVaultList
+      .filter((item) => item.inclusion?.isYearn !== false)
       .filter((item) => chainIdSet.has(item.chainId))
       .map((item) => mapKongListItemToVault(item))
       .filter((item): item is TYDaemonVault => Boolean(item))
