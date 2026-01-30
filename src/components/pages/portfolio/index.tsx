@@ -1,5 +1,5 @@
-import { usePlausible } from '@hooks/usePlausible'
 import Link from '@components/Link'
+import { usePlausible } from '@hooks/usePlausible'
 import { ConnectWalletPrompt } from '@pages/portfolio/components/ConnectWalletPrompt'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'

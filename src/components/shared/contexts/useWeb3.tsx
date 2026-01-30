@@ -1,3 +1,4 @@
+import { usePlausible } from '@hooks/usePlausible'
 import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import type { TAddress } from '@shared/types/address'
@@ -5,7 +6,6 @@ import { fetchClusterName, getClusterImageUrl, isAddress } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { toAddress } from '@shared/utils/tools.address'
-import { usePlausible } from '@hooks/usePlausible'
 import type { ReactElement } from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { mainnet } from 'viem/chains'
@@ -79,6 +79,8 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     }
     if (isConnected) {
       previousChainIDRef.current = chainID
+    } else {
+      previousChainIDRef.current = undefined
     }
   }, [isConnected, chainID, trackEvent])
 
