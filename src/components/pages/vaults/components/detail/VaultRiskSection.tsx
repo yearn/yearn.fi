@@ -222,7 +222,7 @@ function SimpleRiskScore({
             </div>
             <small className={'mt-2 block whitespace-break-spaces text-sm text-text-secondary'}>
               {
-                "LP Token Vaults accepts liquidity pool token deposits. While the vault contract itself is considered very low risk because all it does is compound curve and other rewards, the assets inside the LP token—and the LP mechanics themselves—can carry additional risk that we don't account for or measure here."
+                "LP Token Vaults accepts liquidity pool token deposits. While the vault contract itself is considered very low risk because all it does is compound the pool incentives, the assets inside the LP token—and the LP mechanics themselves—can carry additional risk that we don't account for or measure here."
               }
             </small>
           </div>
