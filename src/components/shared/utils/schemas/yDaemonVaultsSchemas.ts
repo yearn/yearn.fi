@@ -51,7 +51,7 @@ const yDaemonVaultStrategySchema = z.object({
   address: addressSchema,
   name: z.string(),
   description: z.string().optional().default(''),
-  netAPR: z.number().default(0).catch(0),
+  netAPR: z.number().nullable().optional().default(null).catch(null),
   status: z
     .literal('active')
     .or(z.literal('not_active'))

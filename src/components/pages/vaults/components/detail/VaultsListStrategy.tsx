@@ -1,10 +1,10 @@
-import { findLatestAPY } from '@pages/vaults/domain/reports/findLatestAPY'
-import type { TYDaemonReports } from '@pages/vaults/domain/reports/reports.schema'
-import { yDaemonReportsSchema } from '@pages/vaults/domain/reports/reports.schema'
+import { findLatestReportApr } from '@pages/vaults/domain/reports/findLatestReportApr'
+import type { TKongReports } from '@pages/vaults/domain/reports/kongReports.schema'
+import { kongReportsSchema } from '@pages/vaults/domain/reports/kongReports.schema'
+import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useFetch } from '@shared/hooks/useFetch'
-import { useYDaemonBaseURI } from '@shared/hooks/useYDaemonBaseURI'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
@@ -29,7 +29,8 @@ export function VaultsListStrategy({
   variant = 'v3',
   apr,
   fees,
-  isUnallocated = false
+  isUnallocated = false,
+  vaultAddress
 }: {
   details: TYDaemonVaultStrategy['details']
   chainId: number
@@ -39,24 +40,30 @@ export function VaultsListStrategy({
   address: TAddress
   isVault?: boolean
   variant: 'v2' | 'v3'
-  apr: number | undefined
+  apr: number | null | undefined
   fees: TYDaemonVault['apr']['fees']
   isUnallocated?: boolean
+  vaultAddress?: TAddress
 }): ReactElement {
   const [isExpanded, setIsExpanded] = useState(false)
+  const shouldFetchReports = variant === 'v2' && !isVault && apr == null
 
-  const isStrategy = !apr
+  const reportEndpoint =
+    shouldFetchReports && vaultAddress ? `${KONG_REST_BASE}/reports/${chainId}/${toAddress(vaultAddress)}` : null
 
-  const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: chainId })
-
-  // Fetch if component is used for strategies that are not vaults
-  const { data: reports } = useFetch<TYDaemonReports>({
-    endpoint: isStrategy ? `${yDaemonBaseUri}/reports/${address}` : '',
-    schema: yDaemonReportsSchema
+  const { data: reports } = useFetch<TKongReports>({
+    endpoint: reportEndpoint,
+    schema: kongReportsSchema,
+    config: {
+      keepPreviousData: true
+    }
   })
-  const latestApr = useMemo((): number => findLatestAPY(reports), [reports])
 
-  const finalApr = apr || latestApr
+  const latestApr = useMemo(
+    (): number | null => (reportEndpoint ? findLatestReportApr(reports, address) : null),
+    [reports, reportEndpoint, address]
+  )
+  const displayApr = apr ?? latestApr
 
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
 
@@ -112,7 +119,11 @@ export function VaultsListStrategy({
           <div className={'flex flex-col md:col-span-5 md:text-right'}>
             <p className={'text-xs text-text-primary/60 mb-1'}>{'APY'}</p>
             <p className={'font-semibold'}>
-              <RenderAmount shouldHideTooltip value={finalApr} symbol={'percent'} decimals={6} />
+              {displayApr == null ? (
+                '--'
+              ) : (
+                <RenderAmount shouldHideTooltip value={displayApr} symbol={'percent'} decimals={6} />
+              )}
             </p>
           </div>
         </div>

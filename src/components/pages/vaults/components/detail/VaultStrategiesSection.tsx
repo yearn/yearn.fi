@@ -7,7 +7,7 @@ import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode } from '@shared/compon
 import { useYearn } from '@shared/contexts/useYearn'
 import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
 import type { TSortDirection } from '@shared/types'
-import { cl, formatCounterValue, formatPercent, toNormalizedBN } from '@shared/utils'
+import { cl, formatCounterValue, formatPercent, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { lazy, Suspense, useMemo } from 'react'
@@ -21,6 +21,7 @@ const AllocationChart = lazy(() =>
 export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
   const { vaults } = useYearn()
   const isDark = useDarkMode()
+  const vaultVariant = currentVault.version?.startsWith('3') || currentVault.version?.startsWith('~3') ? 'v3' : 'v2'
   const { sortDirection, sortBy, onChangeSortDirection, onChangeSortBy } = useQueryArguments({
     defaultSortBy: 'allocationPercentage',
     defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
@@ -31,42 +32,42 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
     chainID: currentVault.chainID
   })
 
-  const vaultList = useMemo((): TYDaemonVault[] => {
-    const _vaultList = []
-    for (const strategy of currentVault?.strategies || []) {
-      _vaultList.push({
-        ...vaults[strategy.address],
-        details: strategy.details,
-        status: strategy.status
-      })
-    }
-    return _vaultList.filter((vault) => !!vault.address)
-  }, [vaults, currentVault])
-
-  const strategyList = useMemo((): TYDaemonVaultStrategy[] => {
-    const _stratList = []
-    for (const strategy of currentVault?.strategies || []) {
-      if (!vaults[strategy.address]) {
-        _stratList.push(strategy)
+  const mergedList = useMemo(() => {
+    const strategies = currentVault?.strategies || []
+    const rows = strategies.map((strategy) => {
+      const vault = vaults[strategy.address]
+      if (vault) {
+        return {
+          ...vault,
+          name: strategy.name || vault.name,
+          apr: {
+            ...vault.apr,
+            netAPR: strategy.netAPR ?? vault.apr?.netAPR ?? 0
+          },
+          details: strategy.details,
+          status: strategy.status,
+          netAPR: strategy.netAPR
+        }
       }
-    }
-    return _stratList
+      return {
+        ...strategy,
+        apr: {
+          netAPR: strategy.netAPR ?? 0
+        }
+      }
+    })
+    return rows as (TYDaemonVault & {
+      details: TYDaemonVaultStrategy['details']
+      status: TYDaemonVaultStrategy['status']
+      netAPR: TYDaemonVaultStrategy['netAPR']
+    })[]
   }, [vaults, currentVault])
 
-  const mergedList = useMemo(
-    () =>
-      [...vaultList, ...strategyList] as (TYDaemonVault & {
-        details: TYDaemonVaultStrategy['details']
-        status: TYDaemonVaultStrategy['status']
-      })[],
-    [vaultList, strategyList]
-  )
-
-  const unallocatedPercentage =
-    100 * 100 - mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
-  const unallocatedValue =
-    Number(currentVault.tvl.totalAssets) -
-    mergedList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0)
+  const allocatedRatio = mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
+  const unallocatedPercentage = Math.max(0, 10000 - allocatedRatio)
+  const totalAssets = currentVault.tvl.totalAssets ?? 0n
+  const allocatedDebt = mergedList.reduce((acc, strategy) => acc + toBigInt(strategy.details?.totalDebt || 0), 0n)
+  const unallocatedValue = totalAssets > allocatedDebt ? totalAssets - allocatedDebt : 0n
 
   const filteredVaultList = useMemo(() => {
     const strategies = mergedList.filter((vault) => vault.status !== 'not_active')
@@ -99,7 +100,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
 
   const allocationChartData = useMemo(() => {
     const unallocatedData =
-      unallocatedValue > 0
+      unallocatedValue > 0n
         ? {
             id: 'unallocated',
             name: 'Unallocated',
@@ -212,12 +213,13 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   tokenAddress={currentVault.token.address}
                   address={strategy.address}
                   isVault={!!vaults[strategy.address]}
-                  variant="v3"
+                  variant={vaultVariant}
                   apr={strategy.netAPR}
                   fees={currentVault.apr.fees}
+                  vaultAddress={currentVault.address}
                 />
               ))}
-            {unallocatedPercentage > 0 && unallocatedValue > 0 ? (
+            {unallocatedPercentage > 0 && unallocatedValue > 0n ? (
               <div className={'w-full rounded-lg text-text-primary opacity-50'}>
                 <div className={'grid grid-cols-1 md:grid-cols-24 items-center w-full gap-4 py-3 px-4 md:px-8'}>
                   <div className={'col-span-9 flex flex-row items-center gap-4'}>
@@ -278,9 +280,10 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   tokenAddress={currentVault.token.address}
                   address={strategy.address}
                   isVault={!!vaults[strategy.address]}
-                  variant="v3"
+                  variant={vaultVariant}
                   apr={strategy.netAPR}
                   fees={currentVault.apr.fees}
+                  vaultAddress={currentVault.address}
                 />
               ))}
           </div>

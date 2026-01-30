@@ -12,23 +12,23 @@ import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
+import { mergeYBoldVault, YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
+import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { WidgetActionType } from '@pages/vaults/types'
-import { fetchYBoldVault } from '@pages/vaults/utils/handleYBold'
+import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
 import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
-import { useFetch } from '@shared/hooks/useFetch'
-import { useYDaemonBaseURI } from '@shared/hooks/useYDaemonBaseURI'
 import { IconChevron } from '@shared/icons/IconChevron'
 import type { TToken } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { yDaemonVaultSchema } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
+import { isAddressEqual } from 'viem'
 import { useDevFlags } from '@/contexts/useDevFlags'
 
 const resolveHeaderOffset = (): number => {
@@ -59,17 +59,9 @@ function Index(): ReactElement | null {
   const params = useParams()
   const chainId = Number(params.chainID)
   const { onRefresh } = useWallet()
-  const { yDaemonBaseUri } = useYDaemonBaseURI({
-    chainID: chainId
-  })
 
-  // Use vault address as key to reset state
+  const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const vaultKey = `${params.chainID}-${params.address}`
-  const [_currentVault, setCurrentVault] = useState<TYDaemonVault | undefined>(undefined)
-  const [isInit, setIsInit] = useState(false)
-  const [overrideVault, setOverrideVault] = useState<TYDaemonVault | undefined>(undefined)
-  const [hasFetchedOverride, setHasFetchedOverride] = useState(false)
-  const [lastVaultKey, setLastVaultKey] = useState(vaultKey)
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [mobileDrawerAction, setMobileDrawerAction] = useState<
     typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw
@@ -131,21 +123,15 @@ function Index(): ReactElement | null {
   const scrollTargetRef = useRef<number | null>(null)
   const scrollTimeoutRef = useRef<number | null>(null)
   const [pendingSectionKey, setPendingSectionKey] = useState<SectionKey | null>(null)
+  const [hasTriggeredVaultListFetch, setHasTriggeredVaultListFetch] = useState(false)
 
-  // Reset state when vault changes
   useEffect(() => {
-    if (vaultKey !== lastVaultKey) {
-      setCurrentVault(undefined)
-      setOverrideVault(undefined)
-      setHasFetchedOverride(false)
-      setIsInit(false)
-      setLastVaultKey(vaultKey)
-      initialHeaderOffsetRef.current = null
-      if (typeof window !== 'undefined') {
-        document.documentElement.style.removeProperty('--vault-header-initial-offset')
-      }
+    void vaultKey
+    initialHeaderOffsetRef.current = null
+    if (typeof window !== 'undefined') {
+      document.documentElement.style.removeProperty('--vault-header-initial-offset')
     }
-  }, [vaultKey, lastVaultKey])
+  }, [vaultKey])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -171,55 +157,60 @@ function Index(): ReactElement | null {
     }
   }, [vaultKey])
 
-  // Create a stable endpoint that includes the vault key to force SWR to refetch
-  const endpoint = useMemo(() => {
-    if (!params.address || !yDaemonBaseUri) return null
-    return `${yDaemonBaseUri}/vaults/${toAddress(params.address as string)}?${new URLSearchParams({
-      strategiesDetails: 'withDetails',
-      strategiesCondition: 'inQueue'
-    })}`
-  }, [params.address, yDaemonBaseUri])
+  const baseVault = useMemo(() => {
+    if (!params.address) return undefined
+    const resolvedAddress = toAddress(params.address)
+    return vaults[resolvedAddress]
+  }, [params.address, vaults])
+
+  const hasVaultList = Object.keys(vaults).length > 0
 
   const {
-    data: vault,
-    isLoading: isLoadingVault,
-    mutate
-  } = useFetch<TYDaemonVault>({
-    endpoint,
-    schema: yDaemonVaultSchema,
-    config: {
-      // Force re-fetch when vault key changes
-      revalidateOnMount: true,
-      keepPreviousData: false,
-      dedupingInterval: 0 // Disable deduping to ensure fresh fetch
-    }
+    data: snapshotVault,
+    isLoading: isLoadingSnapshotVault,
+    refetch: refetchSnapshot
+  } = useVaultSnapshot({
+    chainId,
+    address: params.address
   })
 
-  useEffect(() => {
-    if (endpoint) mutate()
-  }, [endpoint, mutate])
+  const baseMergedVault = useMemo(() => mergeVaultSnapshot(baseVault, snapshotVault), [baseVault, snapshotVault])
+
+  const isYBold = useMemo(() => {
+    if (!baseMergedVault?.address && !params.address) return false
+    const resolvedAddress = baseMergedVault?.address ?? toAddress(params.address ?? '')
+    return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
+  }, [baseMergedVault?.address, params.address])
+
+  const { data: yBoldSnapshot, refetch: refetchYBoldSnapshot } = useVaultSnapshot({
+    chainId: isYBold ? chainId : undefined,
+    address: isYBold ? YBOLD_STAKING_ADDRESS : undefined
+  })
+
+  const yBoldStakingVault = useMemo(() => {
+    if (!isYBold) return undefined
+    const baseStakingVault = vaults[toAddress(YBOLD_STAKING_ADDRESS)]
+    return mergeVaultSnapshot(baseStakingVault, yBoldSnapshot)
+  }, [isYBold, vaults, yBoldSnapshot])
 
   const currentVault = useMemo(() => {
-    return overrideVault ?? _currentVault
-  }, [overrideVault, _currentVault])
+    if (!baseMergedVault) return undefined
+    if (isYBold && yBoldStakingVault) {
+      return mergeYBoldVault(baseMergedVault, yBoldStakingVault)
+    }
+    return baseMergedVault
+  }, [baseMergedVault, isYBold, yBoldStakingVault])
+
+  const isLoadingVault = !currentVault && (isLoadingSnapshotVault || isLoadingVaultList)
 
   useEffect(() => {
-    if (!hasFetchedOverride && _currentVault && _currentVault.address) {
-      setHasFetchedOverride(true)
-      fetchYBoldVault(yDaemonBaseUri, _currentVault).then((_vault) => {
-        if (_vault) {
-          setOverrideVault(_vault)
-        }
-      })
+    if (hasTriggeredVaultListFetch || hasVaultList || !snapshotVault) {
+      return
     }
-  }, [yDaemonBaseUri, _currentVault, hasFetchedOverride])
-
-  useEffect((): void => {
-    if (vault && (!_currentVault || vault.address !== _currentVault.address)) {
-      setCurrentVault(vault)
-      setIsInit(true)
-    }
-  }, [vault, _currentVault])
+    setHasTriggeredVaultListFetch(true)
+    const frame = requestAnimationFrame(() => enableVaultListFetch())
+    return () => cancelAnimationFrame(frame)
+  }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, snapshotVault])
 
   useEffect((): void => {
     if (address && isActive) {
@@ -356,12 +347,15 @@ function Index(): ReactElement | null {
     if (!currentVault) {
       return
     }
-    mutate()
+    refetchSnapshot()
+    if (isYBold) {
+      refetchYBoldSnapshot()
+    }
     onRefresh([
       { address: currentVault.address, chainID: currentVault.chainID },
       { address: currentVault.token.address, chainID: currentVault.chainID }
     ])
-  }, [currentVault, mutate, onRefresh])
+  }, [currentVault, refetchSnapshot, refetchYBoldSnapshot, onRefresh, isYBold])
 
   useEffect(() => {
     updateCollapsedWidgetHeight()
@@ -379,7 +373,7 @@ function Index(): ReactElement | null {
   }, [updateCollapsedWidgetHeight])
 
   const sections = useMemo(() => {
-    if (!currentVault || !yDaemonBaseUri) {
+    if (!currentVault) {
       return []
     }
 
@@ -419,10 +413,10 @@ function Index(): ReactElement | null {
         key: 'info' as const,
         shouldRender: true,
         ref: sectionRefs.info,
-        content: <VaultInfoSection currentVault={currentVault} yDaemonBaseUri={yDaemonBaseUri} />
+        content: <VaultInfoSection currentVault={currentVault} />
       }
     ]
-  }, [chainId, currentVault, sectionRefs, yDaemonBaseUri])
+  }, [chainId, currentVault, sectionRefs])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const sectionTabs = renderableSections.map((section) => ({
@@ -591,7 +585,7 @@ function Index(): ReactElement | null {
     }
   }, [isMobileDrawerOpen, mobileDrawerAction])
 
-  if (isLoadingVault || !params.address || !isInit || !yDaemonBaseUri) {
+  if (isLoadingVault || !params.address) {
     return (
       <div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
         <div className={'mt-[20%] flex h-10 items-center justify-center'}>

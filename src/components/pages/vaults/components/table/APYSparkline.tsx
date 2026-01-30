@@ -13,8 +13,7 @@ export function APYSparkline({ chainId, vaultAddress }: APYSparklineProps): Reac
   const gradientId = useId().replace(/:/g, '')
   const { data: timeseries, isLoading } = useVaultChartTimeseries({
     chainId,
-    address: vaultAddress,
-    limit: 30
+    address: vaultAddress
   })
 
   const chartData = useMemo(() => {

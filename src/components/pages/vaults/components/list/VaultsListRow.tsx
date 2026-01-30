@@ -2,6 +2,8 @@ import Link from '@components/Link'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
+import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
+import { maybeToastSnapshot } from '@pages/vaults/utils/snapshotToast'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
   getCategoryDescription,
@@ -17,13 +19,16 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { cl, formatAmount, formatTvlDisplay, toAddress, toNormalizedBN } from '@shared/utils'
+import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
+import { useQueryClient } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
 import { VaultsListChip } from './VaultsListChip'
@@ -46,6 +51,11 @@ type TVaultRowFlags = {
   isRetired?: boolean
   isHidden?: boolean
 }
+
+const prefetchedSnapshotEndpoints = new Set<string>()
+
+const buildSnapshotEndpoint = (chainId: number, address: string): string =>
+  `${KONG_REST_BASE}/snapshot/${chainId}/${toAddress(address)}`
 
 export function VaultsListRow({
   currentVault,
@@ -106,6 +116,7 @@ export function VaultsListRow({
   const isExpanded = isExpandedProp ?? isExpandedState
   const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('strategies')
   const [interactiveHoverCount, setInteractiveHoverCount] = useState(0)
+  const queryClient = useQueryClient()
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
@@ -144,6 +155,29 @@ export function VaultsListRow({
     }
     setIsExpandedState(next)
   }
+
+  const prefetchSnapshot = useCallback((): void => {
+    const endpoint = buildSnapshotEndpoint(currentVault.chainID, currentVault.address)
+    if (prefetchedSnapshotEndpoints.has(endpoint)) {
+      return
+    }
+
+    prefetchedSnapshotEndpoints.add(endpoint)
+    const queryKey = getFetchQueryKey(endpoint)
+    if (!queryKey) {
+      return
+    }
+
+    void queryClient
+      .prefetchQuery({
+        queryKey,
+        queryFn: () => fetchWithSchema(endpoint, kongVaultSnapshotSchema),
+        staleTime: 30 * 1000
+      })
+      .then(() => {
+        maybeToastSnapshot(endpoint, currentVault.address, 'prefetch')
+      })
+  }, [currentVault.address, currentVault.chainID, queryClient])
 
   const isHiddenVault = Boolean(flags?.isHidden)
   const baseKindType: 'multi' | 'single' | undefined =
@@ -256,6 +290,8 @@ export function VaultsListRow({
           'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
+        onMouseEnter={prefetchSnapshot}
+        onFocus={prefetchSnapshot}
         onClickCapture={(event): void => {
           const target = event.target as HTMLElement | null
           if (!target) return

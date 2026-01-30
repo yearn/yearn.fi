@@ -1,7 +1,9 @@
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
+import { yToast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import useWallet from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
 import { IconArrowLeft } from '@shared/icons/IconArrowLeft'
 import { IconArrowRight } from '@shared/icons/IconArrowRight'
 import { IconChevron } from '@shared/icons/IconChevron'
@@ -187,6 +189,10 @@ const DARK_VARIANT_LABELS: Record<string, string> = {
 function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
+  const { mutateVaultList, enableVaultListFetch, isLoadingVaultList } = useYearn()
+  const { toast } = yToast()
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
+  const [isRefreshingVaults, setIsRefreshingVaults] = useState(false)
 
   const backButtonClass = cl(
     'flex size-7 items-center justify-center rounded-full transition-colors',
@@ -201,6 +207,20 @@ function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
       ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
       : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
   )
+
+  const handleRefreshVaultList = useCallback(async () => {
+    enableVaultListFetch()
+    setIsRefreshingVaults(true)
+    try {
+      await mutateVaultList()
+      toast({ content: 'Vault list refreshed', type: 'success' })
+    } catch (error) {
+      console.error('[AccountDropdown] Failed to refresh vault list', error)
+      toast({ content: 'Failed to refresh vault list', type: 'error' })
+    } finally {
+      setIsRefreshingVaults(false)
+    }
+  }, [enableVaultListFetch, mutateVaultList, toast])
 
   function getVariantButtonClass(variant: string): string {
     if (themePreference === variant) {
@@ -261,10 +281,35 @@ function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
         </div>
       )}
 
-      <button className={menuItemClass}>
+      <button
+        className={menuItemClass}
+        onClick={() => setIsAdvancedOpen((prev) => !prev)}
+        aria-expanded={isAdvancedOpen}
+        aria-controls={'account-dropdown-advanced'}
+      >
         <span>{'Advanced'}</span>
-        <IconChevron className={'size-4 -rotate-90'} />
+        <IconChevron className={cl('size-4 transition-transform', isAdvancedOpen ? 'rotate-0' : '-rotate-90')} />
       </button>
+      {isAdvancedOpen && (
+        <div
+          id={'account-dropdown-advanced'}
+          className={cl(
+            'mt-2 rounded-lg border p-2',
+            isDarkTheme ? 'border-border bg-surface-secondary' : 'border-neutral-200 bg-neutral-50'
+          )}
+        >
+          <button
+            className={cl(menuItemClass, 'w-full justify-between')}
+            onClick={handleRefreshVaultList}
+            disabled={isRefreshingVaults || isLoadingVaultList}
+          >
+            <span>{'Refresh vault list'}</span>
+            <span className={'text-xs text-text-secondary'}>
+              {isRefreshingVaults || isLoadingVaultList ? 'Refreshing…' : 'Run'}
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   )
 }

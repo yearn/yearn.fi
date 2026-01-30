@@ -67,7 +67,7 @@ export function useV3VaultFilter(
   showHiddenVaults?: boolean,
   enabled?: boolean
 ): TV3VaultFilterResult {
-  const { vaults, vaultsMigrations, vaultsRetired, getPrice, isLoadingVaultList } = useYearn()
+  const { vaults, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
   const { shouldHideDust } = useAppSettings()
   const isEnabled = enabled ?? true
@@ -148,25 +148,12 @@ export function useV3VaultFilter(
       if (!shouldIncludeVault(vault)) {
         return
       }
-      upsertVault(vault, { isActive: true })
-    })
-
-    Object.values(vaultsMigrations).forEach((vault) => {
-      if (!shouldIncludeVault(vault)) {
-        return
-      }
-      upsertVault(vault, { isMigratable: true })
-    })
-
-    Object.values(vaultsRetired).forEach((vault) => {
-      if (!shouldIncludeVault(vault)) {
-        return
-      }
-      upsertVault(vault, { isRetired: true })
+      const isRetired = Boolean(vault.info?.isRetired)
+      upsertVault(vault, { isActive: !isRetired, isRetired, isMigratable: false })
     })
 
     return vaultMap
-  }, [isEnabled, isEnabled ? vaults : null, isEnabled ? vaultsMigrations : null, isEnabled ? vaultsRetired : null])
+  }, [isEnabled, isEnabled ? vaults : null])
 
   const walletFlags = useMemo(() => {
     const flags = new Map<string, TVaultWalletFlags>()
@@ -242,6 +229,9 @@ export function useV3VaultFilter(
       if (!isActive && !hasHoldings) {
         return
       }
+      if (!showHiddenVaults && isHidden) {
+        return
+      }
       if (!matchesSearch(searchableText)) {
         return
       }
@@ -283,8 +273,7 @@ export function useV3VaultFilter(
       const shouldIncludeByCategory = !hasCategoryFilter || Boolean(categories?.includes(category))
       const isPinnedByUserContext = hasUserHoldings || isMigratableVault || isRetiredVault
       const isStrategy = kind === 'strategy'
-      const shouldIncludeByFeaturedGate =
-        showHiddenVaults || (!isHidden && (isStrategy || isFeatured || isPinnedByUserContext))
+      const shouldIncludeByFeaturedGate = showHiddenVaults || isStrategy || isFeatured || isPinnedByUserContext
       const shouldIncludeByKind =
         !hasTypeFilter ||
         (Boolean(types?.includes('multi')) && kind === 'allocator') ||

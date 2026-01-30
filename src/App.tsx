@@ -19,13 +19,11 @@ import { IconAlertError } from '@shared/icons/IconAlertError'
 import { IconCheckmark } from '@shared/icons/IconCheckmark'
 import { cl } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
-import { defaultSWRConfig } from '@shared/utils/swrConfig'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router'
-import { SWRConfig } from 'swr'
 import { WagmiProvider } from 'wagmi'
 import { wagmiConfig } from '@/config/wagmi'
 import { ChainsProvider } from '@/context/ChainsProvider'
@@ -87,41 +85,39 @@ function App(): ReactElement {
           <PlausibleProvider domain={'yearn.fi'} enabled={true}>
             <WagmiProvider config={wagmiConfig} reconnectOnMount={!isIframe()}>
               <QueryClientProvider client={queryClient}>
-                <SWRConfig value={defaultSWRConfig}>
-                  <ChainsProvider>
-                    <RainbowKitProvider>
-                      <IframeAutoConnect>
-                        <Web3ContextApp>
-                          <WithTokenList
-                            lists={[
-                              'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/yearn.json',
-                              'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/popular.json'
-                            ]}
-                          >
-                            <AppSettingsContextApp>
-                              <ChartStyleContextApp>
-                                <YearnContextApp>
-                                  <WalletContextApp>
-                                    <IndexedDB>
-                                      <WithNotifications>
-                                        <WithNotificationsActions>
-                                          <DevFlagsProvider>
-                                            <WithLayout />
-                                            <DevToolbar />
-                                          </DevFlagsProvider>
-                                        </WithNotificationsActions>
-                                      </WithNotifications>
-                                    </IndexedDB>
-                                  </WalletContextApp>
-                                </YearnContextApp>
-                              </ChartStyleContextApp>
-                            </AppSettingsContextApp>
-                          </WithTokenList>
-                        </Web3ContextApp>
-                      </IframeAutoConnect>
-                    </RainbowKitProvider>
-                  </ChainsProvider>
-                </SWRConfig>
+                <ChainsProvider>
+                  <RainbowKitProvider>
+                    <IframeAutoConnect>
+                      <Web3ContextApp>
+                        <WithTokenList
+                          lists={[
+                            'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/yearn.json',
+                            'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/popular.json'
+                          ]}
+                        >
+                          <AppSettingsContextApp>
+                            <ChartStyleContextApp>
+                              <YearnContextApp>
+                                <WalletContextApp>
+                                  <IndexedDB>
+                                    <WithNotifications>
+                                      <WithNotificationsActions>
+                                        <DevFlagsProvider>
+                                          <WithLayout />
+                                          <DevToolbar />
+                                        </DevFlagsProvider>
+                                      </WithNotificationsActions>
+                                    </WithNotifications>
+                                  </IndexedDB>
+                                </WalletContextApp>
+                              </YearnContextApp>
+                            </ChartStyleContextApp>
+                          </AppSettingsContextApp>
+                        </WithTokenList>
+                      </Web3ContextApp>
+                    </IframeAutoConnect>
+                  </RainbowKitProvider>
+                </ChainsProvider>
               </QueryClientProvider>
             </WagmiProvider>
           </PlausibleProvider>

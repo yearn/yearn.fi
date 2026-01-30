@@ -1,12 +1,10 @@
 import type { TChartTimeseriesResponse } from '@pages/vaults/types/charts'
+import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { toAddress } from '@shared/utils'
 import { vaultChartTimeseriesSchema } from '@shared/utils/schemas/vaultChartsSchema'
-import useSWR from 'swr'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 
-const DEFAULT_LIMIT = 1000
-const MAX_LIMIT = 2000
-const REST_BASE = (import.meta.env.VITE_KONG_REST_URL || 'https://kong.yearn.fi/api/rest').replace(/\/$/, '')
-const TIMESERIES_BASE = `${REST_BASE}/timeseries`
+const TIMESERIES_BASE = `${KONG_REST_BASE}/timeseries`
 
 type RestTimeseriesPoint = {
   time: number | string
@@ -17,23 +15,13 @@ type RestTimeseriesPoint = {
 type TVaultChartsVariables = {
   chainId: number
   address: string
-  limit: number
 }
 
-function buildTimeseriesUrl(
-  segment: string,
-  chainId: number,
-  address: string,
-  components?: string[],
-  limit?: number
-): string {
+function buildTimeseriesUrl(segment: string, chainId: number, address: string, components?: string[]): string {
   const url = new URL(`${TIMESERIES_BASE}/${segment}/${chainId}/${address}`)
   components?.forEach((component) => {
     url.searchParams.append('components', component)
   })
-  if (limit && Number.isFinite(limit)) {
-    url.searchParams.set('limit', String(limit))
-  }
   return url.toString()
 }
 
@@ -41,10 +29,9 @@ async function fetchTimeseriesSegment(
   segment: string,
   chainId: number,
   address: string,
-  components?: string[],
-  limit?: number
+  components?: string[]
 ): Promise<RestTimeseriesPoint[]> {
-  const url = buildTimeseriesUrl(segment, chainId, address, components, limit)
+  const url = buildTimeseriesUrl(segment, chainId, address, components)
   const response = await fetch(url)
 
   if (response.status === 404) {
@@ -81,14 +68,29 @@ function mapRestPoints(
   })
 }
 
-async function fetchVaultCharts({ chainId, address, limit }: TVaultChartsVariables): Promise<TChartTimeseriesResponse> {
+function splitApyComponents(points: RestTimeseriesPoint[]): {
+  weekly: RestTimeseriesPoint[]
+  monthly: RestTimeseriesPoint[]
+} {
+  const hasComponent = points.some((point) => point.component)
+  if (!hasComponent) {
+    return { weekly: points, monthly: points }
+  }
+  return {
+    weekly: points.filter((point) => point.component === 'weeklyNet'),
+    monthly: points.filter((point) => point.component === 'monthlyNet')
+  }
+}
+
+async function fetchVaultCharts({ chainId, address }: TVaultChartsVariables): Promise<TChartTimeseriesResponse> {
   try {
-    const [apyWeekly, apyMonthly, tvl, pps] = await Promise.all([
-      fetchTimeseriesSegment('apy-historical', chainId, address, ['weeklyNet'], limit),
-      fetchTimeseriesSegment('apy-historical', chainId, address, ['monthlyNet'], limit),
-      fetchTimeseriesSegment('tvl', chainId, address, undefined, limit),
-      fetchTimeseriesSegment('pps', chainId, address, ['humanized'], limit)
+    const [apyCombined, tvl, pps] = await Promise.all([
+      fetchTimeseriesSegment('apy-historical', chainId, address, ['weeklyNet', 'monthlyNet']),
+      fetchTimeseriesSegment('tvl', chainId, address),
+      fetchTimeseriesSegment('pps', chainId, address, ['humanized'])
     ])
+
+    const { weekly: apyWeekly, monthly: apyMonthly } = splitApyComponents(apyCombined)
 
     const payload = {
       apyWeekly: mapRestPoints(apyWeekly, chainId, address, 'apy-bwd-delta-pps'),
@@ -113,27 +115,23 @@ async function fetchVaultCharts({ chainId, address, limit }: TVaultChartsVariabl
 type UseVaultChartsProps = {
   chainId?: number
   address?: string
-  limit?: number
 }
 
-export function useVaultChartTimeseries({ chainId, address, limit }: UseVaultChartsProps) {
+export function useVaultChartTimeseries({ chainId, address }: UseVaultChartsProps) {
   const normalizedAddress = address ? toAddress(address).toLowerCase() : undefined
-  const limitValue = Math.min(Math.max(limit ?? DEFAULT_LIMIT, 1), MAX_LIMIT)
 
-  const shouldFetch = normalizedAddress && Number.isInteger(chainId)
+  const shouldFetch = Boolean(normalizedAddress) && Number.isInteger(chainId)
 
-  return useSWR<TChartTimeseriesResponse>(
-    shouldFetch ? ['vault-charts', chainId, normalizedAddress, limitValue] : null,
-    ([, chainIdValue, addressValue, limitParam]) =>
+  return useQuery<TChartTimeseriesResponse>({
+    queryKey: ['vault-charts', chainId, normalizedAddress],
+    enabled: shouldFetch,
+    queryFn: () =>
       fetchVaultCharts({
-        chainId: Number(chainIdValue),
-        address: String(addressValue),
-        limit: Number(limitParam)
+        chainId: Number(chainId),
+        address: normalizedAddress as string
       }),
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 5 * 60 * 1000,
-      keepPreviousData: true
-    }
-  )
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData
+  })
 }
