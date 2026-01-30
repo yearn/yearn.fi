@@ -3,7 +3,7 @@ import { useDeepCompareMemo } from '@react-hookz/web'
 import { useFetch } from '@shared/hooks/useFetch'
 import { useYDaemonBaseURI } from '@shared/hooks/useYDaemonBaseURI'
 import type { TDict } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress } from '@shared/utils'
 import { baseFetcher } from '@shared/utils/fetchers'
 import type { TYDaemonVault, TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultsSchema } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -108,7 +108,11 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
     }
     const _migratableVaultsObject = (vaultsMigrations || []).reduce(
       (acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
-        if (toAddress(vault.address) !== toAddress(vault.migration.address)) {
+        const hasMigrationTarget =
+          vault.migration.available &&
+          !isZeroAddress(vault.migration.address) &&
+          toAddress(vault.address) !== toAddress(vault.migration.address)
+        if (hasMigrationTarget) {
           acc[toAddress(vault.address)] = vault
         }
         return acc
