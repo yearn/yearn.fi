@@ -63,9 +63,7 @@ function Index(): ReactElement | null {
   const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
-  const [mobileDrawerAction, setMobileDrawerAction] = useState<
-    typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw
-  >(WidgetActionType.Deposit)
+  const [mobileDrawerAction, setMobileDrawerAction] = useState<WidgetActionType>(WidgetActionType.Deposit)
   const mobileWidgetRef = useRef<TWidgetRef>(null)
   const detailsRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement | null>(null)
@@ -246,12 +244,14 @@ function Index(): ReactElement | null {
     currentVault?.staking.address
   ])
 
+  const isMigratable = Boolean(currentVault?.migration?.available)
+  const isRetired = Boolean(currentVault?.info?.isRetired)
   const widgetActions = useMemo(() => {
-    if (currentVault?.migration?.available) {
-      return [WidgetActionType.Deposit, WidgetActionType.Migrate, WidgetActionType.Withdraw]
+    if (isRetired || isMigratable) {
+      return isMigratable ? [WidgetActionType.Migrate, WidgetActionType.Withdraw] : [WidgetActionType.Withdraw]
     }
     return [WidgetActionType.Deposit, WidgetActionType.Withdraw]
-  }, [currentVault?.migration?.available])
+  }, [isMigratable, isRetired])
   const [widgetMode, setWidgetMode] = useState<WidgetActionType>(widgetActions[0])
   const [isWidgetSettingsOpen, setIsWidgetSettingsOpen] = useState(false)
   const [isWidgetWalletOpen, setIsWidgetWalletOpen] = useState(false)
@@ -266,6 +266,12 @@ function Index(): ReactElement | null {
   useEffect(() => {
     setWidgetMode(widgetActions[0])
   }, [widgetActions])
+
+  useEffect(() => {
+    if (!widgetActions.includes(mobileDrawerAction)) {
+      setMobileDrawerAction(widgetActions[0])
+    }
+  }, [mobileDrawerAction, widgetActions])
 
   const toggleWidgetSettings = (): void => {
     setIsWidgetSettingsOpen((prev) => {
@@ -571,13 +577,10 @@ function Index(): ReactElement | null {
     window.scrollTo({ top: targetTop, behavior: 'smooth' })
   }
 
-  const handleFloatingButtonClick = useCallback(
-    (action: typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw): void => {
-      setMobileDrawerAction(action)
-      setIsMobileDrawerOpen(true)
-    },
-    []
-  )
+  const handleFloatingButtonClick = useCallback((action: WidgetActionType): void => {
+    setMobileDrawerAction(action)
+    setIsMobileDrawerOpen(true)
+  }, [])
 
   useEffect(() => {
     if (isMobileDrawerOpen && mobileWidgetRef.current) {
@@ -607,13 +610,17 @@ function Index(): ReactElement | null {
 
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const headerStickyTop = 'var(--header-height)'
+  const resolvedWidgetMode = widgetActions.includes(widgetMode) ? widgetMode : widgetActions[0]
   const widgetModeLabel =
-    widgetMode === WidgetActionType.Deposit
+    resolvedWidgetMode === WidgetActionType.Deposit
       ? 'Deposit'
-      : widgetMode === WidgetActionType.Withdraw
+      : resolvedWidgetMode === WidgetActionType.Withdraw
         ? 'Withdraw'
         : 'Migrate'
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
+  const showDepositAction = widgetActions.includes(WidgetActionType.Deposit)
+  const showMigrateAction = widgetActions.includes(WidgetActionType.Migrate)
+  const showWithdrawAction = widgetActions.includes(WidgetActionType.Withdraw)
 
   return (
     <div
@@ -640,7 +647,7 @@ function Index(): ReactElement | null {
             onSelectSection={(key): void => handleSelectSection(key as SectionKey)}
             sectionSelectorRef={sectionSelectorRef}
             widgetActions={widgetActions}
-            widgetMode={widgetMode}
+            widgetMode={resolvedWidgetMode}
             onWidgetModeChange={setWidgetMode}
             isWidgetWalletOpen={isWidgetWalletOpen}
             onWidgetWalletOpen={openWidgetWallet}
@@ -765,7 +772,7 @@ function Index(): ReactElement | null {
                       gaugeAddress={currentVault.staking.address}
                       actions={widgetActions}
                       chainId={chainId}
-                      mode={widgetMode}
+                      mode={resolvedWidgetMode}
                       onModeChange={setWidgetMode}
                       showTabs={false}
                       onOpenSettings={toggleWidgetSettings}
@@ -874,22 +881,28 @@ function Index(): ReactElement | null {
           )}
         >
           <div className="flex gap-3 max-w-[1232px] mx-auto">
-            <button
-              type="button"
-              onClick={() => handleFloatingButtonClick(WidgetActionType.Deposit)}
-              className="yearn--button--nextgen flex-1"
-              data-variant="filled"
-            >
-              Deposit
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFloatingButtonClick(WidgetActionType.Withdraw)}
-              className="yearn--button flex-1"
-              data-variant="light"
-            >
-              Withdraw
-            </button>
+            {showDepositAction || showMigrateAction ? (
+              <button
+                type="button"
+                onClick={() =>
+                  handleFloatingButtonClick(showMigrateAction ? WidgetActionType.Migrate : WidgetActionType.Deposit)
+                }
+                className="yearn--button--nextgen flex-1"
+                data-variant="filled"
+              >
+                {showMigrateAction ? 'Migrate' : 'Deposit'}
+              </button>
+            ) : null}
+            {showWithdrawAction ? (
+              <button
+                type="button"
+                onClick={() => handleFloatingButtonClick(WidgetActionType.Withdraw)}
+                className="yearn--button flex-1"
+                data-variant="light"
+              >
+                Withdraw
+              </button>
+            ) : null}
           </div>
         </div>
       )}
