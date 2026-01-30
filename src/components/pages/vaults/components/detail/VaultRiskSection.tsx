@@ -1,4 +1,5 @@
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
+import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { cl } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { type ReactElement, useMemo, useState } from 'react'
@@ -208,6 +209,15 @@ function SimpleRiskScore({
               rightContent={item.rightContent}
             />
           ))
+        ) : deriveListKind(currentVault) === 'factory' ? (
+          <div className={'rounded-3xl border border-border bg-surface-secondary p-4 text-text-primary'}>
+            <p className={'font-semibold'}>{'LP-token risk (factory vault)'}</p>
+            <p className={'mt-2 text-sm text-text-secondary'}>
+              {
+                "This vault accepts LP token deposits. While the vault contract itself is considered very low risk (risk score -1), the assets inside the LP token—and the LP mechanics—can carry additional risk that we don't account for or measure here."
+              }
+            </p>
+          </div>
         ) : (
           <div className={'rounded-3xl border border-border bg-surface-secondary p-4 text-center text-text-primary'}>
             {'No risk data available for this vault.'}
