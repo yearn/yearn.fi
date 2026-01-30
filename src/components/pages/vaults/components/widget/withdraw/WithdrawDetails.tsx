@@ -60,15 +60,17 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
       <div className="flex flex-col gap-2">
         {/* You will unstake/redeem */}
         <div className="flex items-center justify-between h-5">
-          <p className="text-sm text-text-secondary">{actionLabel}</p>
+          <button
+            type="button"
+            onClick={onShowDetailsModal}
+            className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
+          >
+            {actionLabel}
+          </button>
           {isLoadingQuote ? (
             <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
           ) : (
-            <button
-              type="button"
-              onClick={onShowDetailsModal}
-              className="text-sm text-text-primary underline decoration-text-tertiary underline-offset-2 hover:decoration-text-secondary transition-colors"
-            >
+            <p className="text-sm text-text-primary">
               <span className="font-semibold">
                 {requiredShares > 0n
                   ? formatTAmount({
@@ -78,7 +80,7 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
                   : '0'}
               </span>{' '}
               <span className="font-normal">{'Vault shares'}</span>
-            </button>
+            </p>
           )}
         </div>
 

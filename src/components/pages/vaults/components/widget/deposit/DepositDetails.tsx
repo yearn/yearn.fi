@@ -143,59 +143,70 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
 
         {/* You will receive (vault shares or staked shares) */}
         <div className="flex items-center justify-between h-5">
-          <p className="text-sm text-text-secondary">You will receive</p>
-          {isLoadingQuote ? (
-            <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
-          ) : (
-            <button
-              type="button"
-              onClick={onShowVaultSharesModal}
-              className="text-sm text-text-primary underline decoration-text-tertiary underline-offset-2 hover:decoration-text-secondary transition-colors"
-            >
-              <span className="font-semibold">
-                {depositAmountBn > 0n && expectedVaultShares > 0n
-                  ? formatTAmount({
-                      value: expectedVaultShares,
-                      decimals: sharesDisplayDecimals,
-                      options: { maximumFractionDigits: 4 }
-                    })
-                  : '0'}
-              </span>{' '}
-              <span className="font-normal">{sharesLabel}</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onShowVaultSharesModal}
+            className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
+          >
+            You will receive
+          </button>
+          <p className="text-sm text-text-primary">
+            {isLoadingQuote ? (
+              <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
+            ) : (
+              <>
+                <span className="font-semibold">
+                  {depositAmountBn > 0n && expectedVaultShares > 0n
+                    ? formatTAmount({
+                        value: expectedVaultShares,
+                        decimals: sharesDisplayDecimals,
+                        options: { maximumFractionDigits: 4 }
+                      })
+                    : '0'}
+                </span>{' '}
+                <span className="font-normal">{sharesLabel}</span>
+              </>
+            )}
+          </p>
         </div>
 
         {/* Vault share value in underlying asset */}
         <div className="flex items-center justify-between h-5">
-          <p className="text-sm text-text-secondary">Vault share value</p>
-          {isLoadingQuote ? (
-            <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
-          ) : (
-            <button
-              type="button"
-              onClick={onShowVaultShareValueModal}
-              className="text-sm text-text-primary underline decoration-text-tertiary underline-offset-2 hover:decoration-text-secondary transition-colors"
-            >
-              <span className="font-semibold">{vaultShareValueFormatted}</span>{' '}
-              <span className="font-normal">{`${assetTokenSymbol || ''} (`}</span>
-              <span className="font-semibold">{`$${vaultShareValueUsd}`}</span>
-              <span className="font-normal">{')'}</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onShowVaultShareValueModal}
+            className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
+          >
+            Vault share value
+          </button>
+          <p className="text-sm text-text-primary">
+            {isLoadingQuote ? (
+              <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
+            ) : (
+              <>
+                <span className="font-semibold">{vaultShareValueFormatted}</span>{' '}
+                <span className="font-normal">{`${assetTokenSymbol || ''} (`}</span>
+                <span className="font-semibold">{`$${vaultShareValueUsd}`}</span>
+                <span className="font-normal">{')'}</span>
+              </>
+            )}
+          </p>
         </div>
 
         {/* Est. Annual Return */}
         <div className="flex items-center justify-between h-5">
-          <p className="text-sm text-text-secondary">Est. Annual Return</p>
           <button
             type="button"
             onClick={onShowAnnualReturnModal}
-            className="text-sm text-text-primary underline decoration-text-tertiary underline-offset-2 hover:decoration-text-secondary transition-colors"
+            className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
           >
-            <span className="font-semibold">{depositAmountBn > 0n ? `~${estimatedAnnualReturn}` : '0'}</span>{' '}
-            <span className="font-normal">{inputTokenSymbol}</span>
+            Est. Annual Return
           </button>
+          <p className="text-sm text-text-primary">
+            <span className="font-normal">{depositAmountBn > 0n ? '~' : ''}</span>
+            <span className="font-semibold">{depositAmountBn > 0n ? estimatedAnnualReturn : '0'}</span>{' '}
+            <span className="font-normal">{inputTokenSymbol}</span>
+          </p>
         </div>
 
         {/* Approved allowance */}
@@ -205,7 +216,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
               <button
                 type="button"
                 onClick={onShowApprovalOverlay}
-                className="text-sm text-text-secondary underline decoration-text-tertiary underline-offset-2 hover:text-text-primary hover:decoration-text-secondary transition-colors"
+                className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
               >
                 Existing Approval{approvalSpenderName ? ` (${approvalSpenderName})` : ''}
               </button>
