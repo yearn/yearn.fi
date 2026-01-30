@@ -82,7 +82,7 @@ function App(): ReactElement {
       />
       <WithFonts>
         <main className={'font-aeonik size-full min-h-screen'}>
-          <PlausibleProvider domain={'yearn.fi'} enabled={true}>
+          <PlausibleProvider enabled={true}>
             <WagmiProvider config={wagmiConfig} reconnectOnMount={!isIframe()}>
               <QueryClientProvider client={queryClient}>
                 <ChainsProvider>

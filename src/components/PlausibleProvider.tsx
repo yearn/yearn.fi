@@ -1,24 +1,17 @@
-import Plausible from 'plausible-tracker'
+import { plausible } from '@hooks/usePlausible'
 import type { ReactElement, ReactNode } from 'react'
 import { useEffect } from 'react'
 
 interface PlausibleProviderProps {
-  domain: string
   enabled?: boolean
   children: ReactNode
 }
 
-const plausible = Plausible({
-  domain: 'yearn.fi',
-  apiHost: '/proxy/plausible'
-})
-
 export function PlausibleProvider({ enabled = true, children }: PlausibleProviderProps): ReactElement {
   useEffect(() => {
-    if (enabled) {
-      // Enable automatic pageview tracking
-      plausible.enableAutoPageviews()
-    }
+    if (!enabled) return
+    const cleanup = plausible.enableAutoPageviews()
+    return cleanup
   }, [enabled])
 
   return <>{children}</>
