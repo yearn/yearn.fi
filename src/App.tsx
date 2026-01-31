@@ -20,7 +20,7 @@ import { cl } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router'
 import { WagmiProvider } from 'wagmi'
@@ -52,7 +52,7 @@ function App(): ReactElement {
 
   // Scroll to top on route change
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on pathname change only
-  useEffect(() => {
+  useLayoutEffect(() => {
     window.scrollTo(0, 0)
   }, [location.pathname])
 
