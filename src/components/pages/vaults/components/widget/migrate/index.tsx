@@ -5,10 +5,11 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { formatTAmount, isZeroAddress } from '@shared/utils'
+import { formatCounterValue, formatTAmount, isZeroAddress, toNormalizedBN } from '@shared/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
-import { formatUnits, hexToNumber, slice } from 'viem'
+import { hexToNumber, slice } from 'viem'
 import { useAccount, usePublicClient } from 'wagmi'
+import { useYearn } from '@/components/shared/contexts/useYearn'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { useMigrateError } from './useMigrateError'
 import { useMigrateFlow } from './useMigrateFlow'
@@ -41,6 +42,7 @@ export const WidgetMigrate: FC<Props> = ({
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { getToken } = useWallet()
+  const { getPrice } = useYearn()
   const client = usePublicClient({ chainId })
 
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
@@ -54,7 +56,6 @@ export const WidgetMigrate: FC<Props> = ({
   // Get user's vault balance
   const {
     vaultToken,
-    pricePerShare,
     isLoading: isLoadingVaultData,
     refetch: refetchVaultUserData
   } = useVaultUserData({
@@ -97,11 +98,13 @@ export const WidgetMigrate: FC<Props> = ({
   })
 
   const balanceUsd = useMemo(() => {
-    if (migrateBalance === 0n || !pricePerShare) return '0.00'
-    const valueInAsset = (migrateBalance * pricePerShare) / 10n ** BigInt(vaultToken?.decimals ?? 18)
-    // Simple USD estimate - in a full implementation would use price oracle
-    return formatUnits(valueInAsset, 18).slice(0, 10)
-  }, [migrateBalance, pricePerShare, vaultToken?.decimals])
+    if (migrateBalance === 0n) return '$0.00'
+
+    return formatCounterValue(
+      toNormalizedBN(migrateBalance, vaultToken?.decimals ?? 18).display,
+      getPrice({ address: vaultAddress, chainID: chainId }).normalized
+    )
+  }, [migrateBalance, vaultAddress, chainId, getPrice, vaultToken?.decimals])
 
   // Determine flow based on routeType
   const isPermitFlow = periphery.routeType === 'permit'
@@ -453,7 +456,7 @@ export const WidgetMigrate: FC<Props> = ({
             <span className="text-xl font-semibold text-text-primary">
               {formattedBalance} {vaultToken?.symbol || vaultSymbol}
             </span>
-            <span className="text-sm text-text-secondary">${balanceUsd}</span>
+            <span className="text-sm text-text-secondary">{balanceUsd}</span>
           </div>
         </div>
 

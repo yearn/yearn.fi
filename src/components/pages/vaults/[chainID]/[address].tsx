@@ -643,9 +643,6 @@ function Index(): ReactElement | null {
         ? 'Withdraw'
         : 'Migrate'
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
-  const showDepositAction = widgetActions.includes(WidgetActionType.Deposit)
-  const showMigrateAction = widgetActions.includes(WidgetActionType.Migrate)
-  const showWithdrawAction = widgetActions.includes(WidgetActionType.Withdraw)
 
   return (
     <div
@@ -947,38 +944,32 @@ function Index(): ReactElement | null {
         </section>
       </div>
 
-      {/* Mobile Floating Action Buttons - visible only on viewports ≤640px, hidden when drawer is open */}
+      {/* Mobile Floating Action Buttons - visible until desktop widget appears (md:), hidden when drawer is open */}
       {!isMobileDrawerOpen && (
         <div
           className={cl(
-            'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 sm:hidden',
+            'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 md:hidden',
             'backdrop-blur-md',
             'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]'
           )}
         >
           <div className="flex gap-3 max-w-[1232px] mx-auto">
-            {showDepositAction || showMigrateAction ? (
-              <button
-                type="button"
-                onClick={() =>
-                  handleFloatingButtonClick(showMigrateAction ? WidgetActionType.Migrate : WidgetActionType.Deposit)
-                }
-                className="yearn--button--nextgen flex-1"
-                data-variant="filled"
-              >
-                {showMigrateAction ? 'Migrate' : 'Deposit'}
-              </button>
-            ) : null}
-            {showWithdrawAction ? (
-              <button
-                type="button"
-                onClick={() => handleFloatingButtonClick(WidgetActionType.Withdraw)}
-                className="yearn--button flex-1"
-                data-variant="light"
-              >
-                Withdraw
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={() => handleFloatingButtonClick(widgetActions[0])}
+              className="yearn--button--nextgen flex-1"
+              data-variant="filled"
+            >
+              {widgetActions[0] === WidgetActionType.Migrate ? 'Migrate' : 'Deposit'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFloatingButtonClick(widgetActions[1])}
+              className="yearn--button flex-1"
+              data-variant="light"
+            >
+              Withdraw
+            </button>
           </div>
         </div>
       )}
@@ -997,6 +988,8 @@ function Index(): ReactElement | null {
           disableDepositStaking={shouldDisableStakingForDeposit}
           actions={widgetActions}
           chainId={chainId}
+          mode={mobileDrawerAction}
+          onModeChange={setMobileDrawerAction}
           hideTabSelector
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
