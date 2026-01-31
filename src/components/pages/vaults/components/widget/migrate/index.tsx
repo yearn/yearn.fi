@@ -367,7 +367,7 @@ export const WidgetMigrate: FC<Props> = ({
 
     if (migrateBalance === 0n) return true
 
-    if (isLoadingPermitData || !permitData || periphery.isCheckingPermit) return true
+    if (isLoadingPermitData || periphery.isCheckingPermit) return true
 
     // Permit flow
     if (isPermitFlow) {
@@ -390,7 +390,6 @@ export const WidgetMigrate: FC<Props> = ({
     migrateBalance,
     isPermitFlow,
     isLoadingPermitData,
-    permitData,
     permitSignature,
     needsApproval,
     periphery.prepareApproveEnabled,
