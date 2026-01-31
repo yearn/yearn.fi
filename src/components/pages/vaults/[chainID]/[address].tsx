@@ -334,24 +334,19 @@ function Index(): ReactElement | null {
     currentVault?.staking.address
   ])
 
-  const vaultShareBalance = useMemo(() => {
-    if (!currentVault?.address || !Number.isInteger(currentVault?.chainID) || !isActive) {
-      return 0n
-    }
-    return getBalance({ address: toAddress(currentVault.address), chainID: currentVault.chainID }).raw
-  }, [currentVault?.address, currentVault?.chainID, getBalance, isActive])
+  const vaultShareBalance =
+    address && isActive && currentVault?.address && Number.isInteger(currentVault?.chainID)
+      ? getBalance({ address: toAddress(currentVault.address), chainID: currentVault.chainID }).raw
+      : 0n
 
-  const stakingShareBalance = useMemo(() => {
-    if (
-      !currentVault?.staking.available ||
-      isZeroAddress(currentVault?.staking.address) ||
-      !Number.isInteger(currentVault?.chainID) ||
-      !isActive
-    ) {
-      return 0n
-    }
-    return getBalance({ address: toAddress(currentVault.staking.address), chainID: currentVault.chainID }).raw
-  }, [currentVault?.staking.available, currentVault?.staking.address, currentVault?.chainID, getBalance, isActive])
+  const stakingShareBalance =
+    address &&
+    isActive &&
+    currentVault?.staking.available &&
+    !isZeroAddress(currentVault?.staking.address) &&
+    Number.isInteger(currentVault?.chainID)
+      ? getBalance({ address: toAddress(currentVault.staking.address), chainID: currentVault.chainID }).raw
+      : 0n
 
   const isMigratable = Boolean(currentVault?.migration?.available)
   const canShowMigrateAction = isMigratable && vaultShareBalance > 0n
