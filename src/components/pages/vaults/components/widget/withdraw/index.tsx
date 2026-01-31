@@ -29,7 +29,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
   stakingAddress,
   chainId,
   vaultSymbol,
-  isVaultRetired,
   handleWithdrawSuccess: onWithdrawSuccess,
   onOpenSettings,
   isSettingsOpen,
@@ -78,7 +77,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
   const hasVaultBalance = (vault?.balance.raw ?? 0n) > 0n
   const hasStakingBalance = (stakingToken?.balance.raw ?? 0n) > 0n
   const hasBothBalances = hasVaultBalance && hasStakingBalance
-  const shouldShowRetiredBannerBody = Boolean(account) && (hasVaultBalance || hasStakingBalance)
 
   useEffect(() => {
     if (!hasBothBalances && (hasVaultBalance || hasStakingBalance)) {
@@ -363,34 +361,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
       </div>
       <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         <div>
-          {isVaultRetired ? (
-            <div className="p-4 bg-surface-secondary border-l-4 border-l-orange-500 dark:border-l-yellow-500 rounded-lg">
-              <div className="flex items-start gap-3">
-                <svg
-                  className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-                <div>
-                  <h4 className="text-sm font-semibold text-text-primary">This vault is retired</h4>
-                  {shouldShowRetiredBannerBody ? (
-                    <p className="text-xs text-text-secondary mt-1">
-                      This vault is retired and won't be earning yield. You can withdraw below.
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          ) : null}
-
           {/* Withdraw From Selector */}
           {hasBothBalances && <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />}
 
