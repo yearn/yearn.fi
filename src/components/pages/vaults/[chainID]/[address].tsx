@@ -18,9 +18,7 @@ import { WidgetActionType } from '@pages/vaults/types'
 import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { useWallet } from '@shared/contexts/useWallet'
-import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
-import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
 import { IconChevron } from '@shared/icons/IconChevron'
 import type { TToken } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
@@ -55,7 +53,6 @@ function Index(): ReactElement | null {
   const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
 
-  const { address, isActive } = useWeb3()
   const params = useParams()
   const chainId = Number(params.chainID)
   const { onRefresh } = useWallet()
@@ -211,40 +208,6 @@ function Index(): ReactElement | null {
     const frame = requestAnimationFrame(() => enableVaultListFetch())
     return () => cancelAnimationFrame(frame)
   }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, snapshotVault])
-
-  useEffect((): void => {
-    if (address && isActive) {
-      const tokensToRefresh: TUseBalancesTokens[] = []
-      if (currentVault?.address) {
-        tokensToRefresh.push({
-          address: currentVault.address,
-          chainID: currentVault.chainID
-        })
-      }
-      if (currentVault?.token?.address) {
-        tokensToRefresh.push({
-          address: currentVault.token.address,
-          chainID: currentVault.chainID
-        })
-      }
-      if (currentVault?.staking.available) {
-        tokensToRefresh.push({
-          address: currentVault.staking.address,
-          chainID: currentVault.chainID
-        })
-      }
-      onRefresh(tokensToRefresh)
-    }
-  }, [
-    currentVault?.address,
-    currentVault?.token.address,
-    address,
-    isActive,
-    onRefresh,
-    currentVault?.chainID,
-    currentVault?.staking.available,
-    currentVault?.staking.address
-  ])
 
   const widgetActions = useMemo(() => {
     if (currentVault?.migration?.available) {
