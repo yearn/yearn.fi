@@ -1,10 +1,9 @@
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
-import { maybeToastSnapshot } from '@pages/vaults/utils/snapshotToast'
 import { useFetch } from '@shared/hooks/useFetch'
 import { toAddress } from '@shared/utils'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 
 type UseVaultSnapshotProps = {
   chainId?: number
@@ -26,13 +25,6 @@ export function useVaultSnapshot({ chainId, address }: UseVaultSnapshotProps) {
       keepPreviousData: false
     }
   })
-
-  useEffect(() => {
-    if (!endpoint || !normalizedAddress || !result.data) {
-      return
-    }
-    maybeToastSnapshot(endpoint, normalizedAddress, 'hook')
-  }, [endpoint, normalizedAddress, result.data])
 
   return result
 }

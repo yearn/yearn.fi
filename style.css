@@ -818,3 +818,10 @@ input[type='number'] {
     opacity: 0.7;
   }
 }
+
+.yearn--link-dots {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}

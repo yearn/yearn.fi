@@ -360,45 +360,47 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
         <h3 className="text-base font-semibold text-text-primary">Withdraw</h3>
       </div>
       <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
-        {/* Withdraw From Selector */}
-        {hasBothBalances && <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />}
+        <div>
+          {/* Withdraw From Selector */}
+          {hasBothBalances && <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />}
 
-        {/* Amount Section */}
-        <div className="flex flex-col gap-4">
-          <InputTokenAmount
-            input={withdrawInput}
-            title="Amount"
-            placeholder="0.00"
-            balance={totalBalanceInUnderlying.raw}
-            decimals={assetToken?.decimals ?? 18}
-            symbol={assetToken?.symbol || 'tokens'}
-            disabled={!!hasBothBalances && !withdrawalSource}
-            errorMessage={withdrawError || undefined}
-            inputTokenUsdPrice={assetTokenPrice}
-            outputTokenUsdPrice={outputTokenPrice}
-            tokenAddress={assetToken?.address}
-            tokenChainId={assetToken?.chainID}
-            showTokenSelector={withdrawToken === assetAddress}
-            onTokenSelectorClick={() => setShowTokenSelector(true)}
-            onInputChange={(value: bigint) => {
-              if (value === totalBalanceInUnderlying.raw) {
-                const exactAmount = formatUnits(totalBalanceInUnderlying.raw, assetToken?.decimals ?? 18)
-                withdrawInput[2](exactAmount)
+          {/* Amount Section */}
+          <div className="flex flex-col gap-4">
+            <InputTokenAmount
+              input={withdrawInput}
+              title="Amount"
+              placeholder="0.00"
+              balance={totalBalanceInUnderlying.raw}
+              decimals={assetToken?.decimals ?? 18}
+              symbol={assetToken?.symbol || 'tokens'}
+              disabled={!!hasBothBalances && !withdrawalSource}
+              errorMessage={withdrawError || undefined}
+              inputTokenUsdPrice={assetTokenPrice}
+              outputTokenUsdPrice={outputTokenPrice}
+              tokenAddress={assetToken?.address}
+              tokenChainId={assetToken?.chainID}
+              showTokenSelector={withdrawToken === assetAddress}
+              onTokenSelectorClick={() => setShowTokenSelector(true)}
+              onInputChange={(value: bigint) => {
+                if (value === totalBalanceInUnderlying.raw) {
+                  const exactAmount = formatUnits(totalBalanceInUnderlying.raw, assetToken?.decimals ?? 18)
+                  withdrawInput[2](exactAmount)
+                }
+              }}
+              zapToken={zapToken}
+              onRemoveZap={() => {
+                setSelectedToken(assetAddress)
+                setSelectedChainId(chainId)
+              }}
+              zapNotificationText={
+                isUnstake
+                  ? 'This transaction will unstake'
+                  : withdrawToken !== assetAddress
+                    ? '⚡ This transaction will use Enso to Zap to:'
+                    : undefined
               }
-            }}
-            zapToken={zapToken}
-            onRemoveZap={() => {
-              setSelectedToken(assetAddress)
-              setSelectedChainId(chainId)
-            }}
-            zapNotificationText={
-              isUnstake
-                ? 'This transaction will unstake'
-                : withdrawToken !== assetAddress
-                  ? '⚡ This transaction will use Enso to Zap to:'
-                  : undefined
-            }
-          />
+            />
+          </div>
         </div>
 
         {/* Details Section */}

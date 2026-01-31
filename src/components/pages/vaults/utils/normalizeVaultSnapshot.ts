@@ -8,6 +8,7 @@ import type {
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { zeroAddress } from 'viem'
+import { normalizeVaultCategory } from './normalizeVaultCategory'
 
 const RISK_SCORE_KEYS = [
   'review',
@@ -502,7 +503,7 @@ const buildSnapshotVault = (
     symbol: snapshot.symbol || snapshot.meta?.displaySymbol || base?.symbol || '',
     name: snapshot.name || snapshot.meta?.name || snapshot.meta?.displayName || base?.name || '',
     description: snapshot.meta?.description ?? base?.description ?? '',
-    category: snapshot.meta?.category ?? base?.category ?? '',
+    category: normalizeVaultCategory(snapshot.meta?.category ?? base?.category ?? ''),
     decimals: vaultDecimals,
     chainID: snapshot.chainId,
     token,
