@@ -1,8 +1,10 @@
+import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import type { TChartTimeseriesResponse } from '@pages/vaults/types/charts'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { toAddress } from '@shared/utils'
 import { vaultChartTimeseriesSchema } from '@shared/utils/schemas/vaultChartsSchema'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { isAddressEqual } from 'viem'
 
 const TIMESERIES_BASE = `${KONG_REST_BASE}/timeseries`
 
@@ -118,7 +120,13 @@ type UseVaultChartsProps = {
 }
 
 export function useVaultChartTimeseries({ chainId, address }: UseVaultChartsProps) {
-  const normalizedAddress = address ? toAddress(address).toLowerCase() : undefined
+  const resolvedAddress = address ? toAddress(address) : undefined
+  const resolvedChartAddress = resolvedAddress
+    ? isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
+      ? YBOLD_STAKING_ADDRESS
+      : resolvedAddress
+    : undefined
+  const normalizedAddress = resolvedChartAddress ? resolvedChartAddress.toLowerCase() : undefined
 
   const shouldFetch = Boolean(normalizedAddress) && Number.isInteger(chainId)
 

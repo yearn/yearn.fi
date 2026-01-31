@@ -62,7 +62,7 @@ export function useFetch<T>({ endpoint, schema, config }: TUseZodProps<T>): UseQ
     retry ??
     ((failureCount: number, err: unknown): boolean => {
       const anyErr = err as any
-      const status = anyErr?.response?.status as number | undefined
+      const status = (anyErr?.response?.status as number | undefined) ?? (anyErr?.status as number | undefined)
       const code = anyErr?.code as string | undefined
       const isNetworkLike = code === 'ERR_NETWORK' || (!anyErr?.response && anyErr?.request)
       if (isNetworkLike) return false

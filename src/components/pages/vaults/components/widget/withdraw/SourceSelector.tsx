@@ -8,16 +8,15 @@ interface SourceSelectorProps {
 
 export const SourceSelector: FC<SourceSelectorProps> = ({ value, onChange }) => {
   return (
-    <div className="px-6 pb-4">
+    <div className="">
       <div className="flex flex-col gap-2">
-        <label className="font-medium text-sm text-text-primary">Withdraw from</label>
         <div className="relative">
           <select
             value={value || ''}
             onChange={(e) => onChange((e.target.value as WithdrawalSource) || null)}
             className="bg-surface border border-border rounded-md h-9 w-full px-3 py-2 text-sm text-text-primary appearance-none pr-10"
           >
-            <option value="">Not selected</option>
+            <option value="">Select Withdrawal Source</option>
             <option value="vault">Vault shares</option>
             <option value="staking">Staking contract</option>
           </select>

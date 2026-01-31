@@ -11,6 +11,7 @@ interface Props {
   currentVault: TYDaemonVault
   vaultAddress?: TAddress
   gaugeAddress?: TAddress
+  disableDepositStaking?: boolean
   actions: ActionType[]
   chainId: number
   handleSuccess?: () => void
@@ -50,6 +51,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
       currentVault,
       vaultAddress,
       gaugeAddress,
+      disableDepositStaking,
       actions,
       chainId,
       handleSuccess,
@@ -69,6 +71,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
     const currentMode = mode ?? internalMode
     const setMode = onModeChange ?? setInternalMode
     const assetToken = currentVault.token.address
+    const resolvedStakingAddress = isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)
 
     useImperativeHandle(ref, () => ({
       setMode: (newMode: ActionType) => {
@@ -91,7 +94,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
             <WidgetDeposit
               vaultAddress={toAddress(vaultAddress)}
               assetAddress={toAddress(assetToken)}
-              stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
+              stakingAddress={disableDepositStaking ? undefined : resolvedStakingAddress}
               chainId={chainId}
               vaultAPR={currentVault?.apr?.forwardAPR?.netAPR || 0}
               vaultSymbol={currentVault?.symbol || ''}
@@ -110,9 +113,10 @@ export const Widget = forwardRef<TWidgetRef, Props>(
             <WidgetWithdraw
               vaultAddress={toAddress(vaultAddress)}
               assetAddress={toAddress(assetToken)}
-              stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
+              stakingAddress={resolvedStakingAddress}
               chainId={chainId}
               vaultSymbol={currentVault?.symbol || ''}
+              isVaultRetired={Boolean(currentVault?.info?.isRetired)}
               handleWithdrawSuccess={handleSuccess}
               onOpenSettings={onOpenSettings}
               isSettingsOpen={isSettingsOpen}
@@ -125,7 +129,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
             <WidgetMigrate
               vaultAddress={toAddress(vaultAddress)}
               assetAddress={toAddress(assetToken)}
-              stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
+              stakingAddress={resolvedStakingAddress}
               chainId={chainId}
               vaultSymbol={currentVault?.symbol || ''}
               vaultVersion={currentVault?.version}
@@ -138,7 +142,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
     }, [
       currentMode,
       vaultAddress,
-      gaugeAddress,
+      disableDepositStaking,
       currentVault,
       assetToken,
       chainId,
@@ -148,7 +152,8 @@ export const Widget = forwardRef<TWidgetRef, Props>(
       onOpenSettings,
       isSettingsOpen,
       hideTabSelector,
-      disableBorderRadius
+      disableBorderRadius,
+      resolvedStakingAddress
     ])
 
     // Mobile mode: simple layout without tabs

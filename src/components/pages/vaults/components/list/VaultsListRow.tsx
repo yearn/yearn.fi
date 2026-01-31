@@ -3,7 +3,6 @@ import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/com
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
-import { maybeToastSnapshot } from '@pages/vaults/utils/snapshotToast'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
   getCategoryDescription,
@@ -108,7 +107,7 @@ export function VaultsListRow({
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
-  const { isActive: isWalletActive } = useWeb3()
+  const { address } = useWeb3()
   const { getToken } = useWallet()
   const { getPrice } = useYearn()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
@@ -137,7 +136,7 @@ export function VaultsListRow({
   const leftColumnSpan = 'col-span-12'
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
-  const showHoldingsColumn = isWalletActive
+  const showHoldingsColumn = !!address
   const apyColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-6'
   const tvlColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-5'
   const holdingsColumnSpan = 'col-span-4'
@@ -168,15 +167,11 @@ export function VaultsListRow({
       return
     }
 
-    void queryClient
-      .prefetchQuery({
-        queryKey,
-        queryFn: () => fetchWithSchema(endpoint, kongVaultSnapshotSchema),
-        staleTime: 30 * 1000
-      })
-      .then(() => {
-        maybeToastSnapshot(endpoint, currentVault.address, 'prefetch')
-      })
+    void queryClient.prefetchQuery({
+      queryKey,
+      queryFn: () => fetchWithSchema(endpoint, kongVaultSnapshotSchema),
+      staleTime: 30 * 1000
+    })
   }, [currentVault.address, currentVault.chainID, queryClient])
 
   const isHiddenVault = Boolean(flags?.isHidden)

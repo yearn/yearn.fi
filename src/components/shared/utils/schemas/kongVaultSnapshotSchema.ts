@@ -237,6 +237,7 @@ export const kongVaultSnapshotSchema = z
     address: addressSchema,
     chainId: z.number(),
     apiVersion: z.string().optional().nullable(),
+    inceptTime: nullableNumberSchema.optional().catch(null),
     name: z.string().optional().default('').catch(''),
     symbol: z.string().optional().default('').catch(''),
     decimals: decimalsSchema.optional().catch(18),
@@ -252,7 +253,8 @@ export const kongVaultSnapshotSchema = z
     composition: z.array(snapshotCompositionSchema).optional().default([]),
     debts: z.array(snapshotDebtSchema).optional().default([]),
     strategies: z.array(addressSchema).optional().default([]),
-    staking: snapshotStakingSchema
+    staking: snapshotStakingSchema,
+    inclusion: z.record(z.string(), z.boolean()).optional()
   })
   .passthrough()
 
