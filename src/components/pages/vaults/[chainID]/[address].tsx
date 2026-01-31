@@ -63,9 +63,7 @@ function Index(): ReactElement | null {
   const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
-  const [mobileDrawerAction, setMobileDrawerAction] = useState<
-    typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw
-  >(WidgetActionType.Deposit)
+  const [mobileDrawerAction, setMobileDrawerAction] = useState<WidgetActionType>(WidgetActionType.Deposit)
   const mobileWidgetRef = useRef<TWidgetRef>(null)
   const detailsRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement | null>(null)
@@ -248,7 +246,7 @@ function Index(): ReactElement | null {
 
   const widgetActions = useMemo(() => {
     if (currentVault?.migration?.available) {
-      return [WidgetActionType.Deposit, WidgetActionType.Migrate, WidgetActionType.Withdraw]
+      return [WidgetActionType.Migrate, WidgetActionType.Withdraw]
     }
     return [WidgetActionType.Deposit, WidgetActionType.Withdraw]
   }, [currentVault?.migration?.available])
@@ -571,13 +569,10 @@ function Index(): ReactElement | null {
     window.scrollTo({ top: targetTop, behavior: 'smooth' })
   }
 
-  const handleFloatingButtonClick = useCallback(
-    (action: typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw): void => {
-      setMobileDrawerAction(action)
-      setIsMobileDrawerOpen(true)
-    },
-    []
-  )
+  const handleFloatingButtonClick = useCallback((action: WidgetActionType): void => {
+    setMobileDrawerAction(action)
+    setIsMobileDrawerOpen(true)
+  }, [])
 
   useEffect(() => {
     if (isMobileDrawerOpen && mobileWidgetRef.current) {
@@ -864,11 +859,11 @@ function Index(): ReactElement | null {
         </section>
       </div>
 
-      {/* Mobile Floating Action Buttons - visible only on viewports ≤640px, hidden when drawer is open */}
+      {/* Mobile Floating Action Buttons - visible until desktop widget appears (md:), hidden when drawer is open */}
       {!isMobileDrawerOpen && (
         <div
           className={cl(
-            'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 sm:hidden',
+            'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 md:hidden',
             'backdrop-blur-md',
             'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]'
           )}
@@ -876,15 +871,15 @@ function Index(): ReactElement | null {
           <div className="flex gap-3 max-w-[1232px] mx-auto">
             <button
               type="button"
-              onClick={() => handleFloatingButtonClick(WidgetActionType.Deposit)}
+              onClick={() => handleFloatingButtonClick(widgetActions[0])}
               className="yearn--button--nextgen flex-1"
               data-variant="filled"
             >
-              Deposit
+              {widgetActions[0] === WidgetActionType.Migrate ? 'Migrate' : 'Deposit'}
             </button>
             <button
               type="button"
-              onClick={() => handleFloatingButtonClick(WidgetActionType.Withdraw)}
+              onClick={() => handleFloatingButtonClick(widgetActions[1])}
               className="yearn--button flex-1"
               data-variant="light"
             >
@@ -907,6 +902,8 @@ function Index(): ReactElement | null {
           gaugeAddress={currentVault.staking.address}
           actions={widgetActions}
           chainId={chainId}
+          mode={mobileDrawerAction}
+          onModeChange={setMobileDrawerAction}
           hideTabSelector
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}

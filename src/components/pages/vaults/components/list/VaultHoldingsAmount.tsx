@@ -8,7 +8,7 @@ import type { FC } from 'react'
 import { useMemo } from 'react'
 
 export const VaultHoldingsAmount: FC<{ currentVault: TYDaemonVault }> = ({ currentVault }) => {
-  const { getToken } = useWallet()
+  const { getToken, isLoading } = useWallet()
   const { getPrice } = useYearn()
 
   const tokenPrice = useMemo(
@@ -32,6 +32,16 @@ export const VaultHoldingsAmount: FC<{ currentVault: TYDaemonVault }> = ({ curre
     currentVault.staking.available,
     getToken
   ])
+
+  if (isLoading) {
+    return (
+      <div className={'flex flex-col pt-0 text-right'}>
+        <p className={'yearn--table-data-section-item-value text-neutral-400'}>{'—'}</p>
+        <small className={'invisible text-xs'}>{'—'}</small>
+      </div>
+    )
+  }
+
   return (
     <div className={'flex flex-col pt-0 text-right'}>
       <p

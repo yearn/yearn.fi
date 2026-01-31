@@ -108,7 +108,7 @@ export function VaultsListRow({
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
-  const { isActive: isWalletActive } = useWeb3()
+  const { address } = useWeb3()
   const { getToken } = useWallet()
   const { getPrice } = useYearn()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
@@ -137,7 +137,7 @@ export function VaultsListRow({
   const leftColumnSpan = 'col-span-12'
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
-  const showHoldingsColumn = isWalletActive
+  const showHoldingsColumn = !!address
   const apyColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-6'
   const tvlColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-5'
   const holdingsColumnSpan = 'col-span-4'
