@@ -258,6 +258,8 @@ const mapSnapshotComposition = (
     return []
   }
 
+  const ONE_WEEK_IN_SECONDS = 7 * 24 * 60 * 60
+  const nowSeconds = Math.floor(Date.now() / 1000)
   const strategies: TYDaemonVaultStrategy[] = []
   composition.forEach((entry, index) => {
     const resolvedAddress = toAddress(entry.address ?? entry.strategy)
@@ -271,14 +273,20 @@ const mapSnapshotComposition = (
     const totalLoss = entry.totalLoss ?? '0'
     const performanceFee = normalizeNumber(entry.performanceFee ?? 0)
     const lastReport = normalizeNumber(entry.lastReport ?? 0)
+    const lastReportSeconds = lastReport > 1_000_000_000_000 ? Math.floor(lastReport / 1000) : lastReport
     const hasAllocation = toBigInt(totalDebt) > 0n || debtRatio > 0
+    const shouldUseLatestReportApr =
+      hasAllocation && lastReportSeconds > 0 && nowSeconds - lastReportSeconds <= ONE_WEEK_IN_SECONDS
     const status = normalizeCompositionStatus(entry.status, hasAllocation)
     const name = entry.name?.trim() || `Strategy ${index + 1}`
-    const resolvedApr = pickNumberOrNull(
-      entry.performance?.oracle?.apy,
-      entry.performance?.historical?.net,
-      entry.latestReportApr
-    )
+    const resolvedApr = hasAllocation
+      ? pickNumberOrNull(
+          entry.performance?.estimated?.apy,
+          shouldUseLatestReportApr ? entry.latestReportApr : undefined,
+          entry.performance?.oracle?.apy,
+          entry.performance?.historical?.net
+        )
+      : null
     strategies.push({
       address: resolvedAddress,
       name,
@@ -458,17 +466,40 @@ const buildSnapshotVault = (
   const tvlUsd = pickNumber(snapshot.tvl?.close, base?.tvl.tvl, 0)
   const price = computePrice(totalAssets, token.decimals, tvlUsd, base?.tvl.price)
 
+  const estimated = snapshot.performance?.estimated
   const historical = snapshot.performance?.historical
   const netApr = pickNumber(snapshot.apy?.net, historical?.net, base?.apr.netAPR, 0)
   const weekNet = pickNumber(snapshot.apy?.weeklyNet, historical?.weeklyNet, base?.apr.points?.weekAgo, 0)
   const monthNet = pickNumber(snapshot.apy?.monthlyNet, historical?.monthlyNet, base?.apr.points?.monthAgo, 0)
   const inceptionNet = pickNumber(snapshot.apy?.inceptionNet, historical?.inceptionNet, base?.apr.points?.inception, 0)
-  const forwardNet = pickNumber(snapshot.performance?.oracle?.apr, base?.apr.forwardAPR.netAPR, 0)
+  const forwardNet = pickNumber(
+    estimated?.apy,
+    estimated?.apr,
+    snapshot.performance?.oracle?.apy,
+    snapshot.performance?.oracle?.apr,
+    base?.apr.forwardAPR.netAPR,
+    0
+  )
 
-  const forwardType =
-    snapshot.performance?.oracle?.apr !== null && snapshot.performance?.oracle?.apr !== undefined
+  const forwardType = estimated
+    ? 'estimated'
+    : snapshot.performance?.oracle?.apr !== null && snapshot.performance?.oracle?.apr !== undefined
       ? 'oracle'
       : (base?.apr.forwardAPR.type ?? 'unknown')
+
+  const forwardComposite = estimated
+    ? {
+        ...base?.apr.forwardAPR.composite,
+        boost: estimated.components?.boost ?? base?.apr.forwardAPR.composite?.boost ?? 0,
+        poolAPY: estimated.components?.poolAPY ?? base?.apr.forwardAPR.composite?.poolAPY ?? 0,
+        boostedAPR: estimated.components?.boostedAPR ?? base?.apr.forwardAPR.composite?.boostedAPR ?? 0,
+        baseAPR: estimated.components?.baseAPR ?? base?.apr.forwardAPR.composite?.baseAPR ?? 0,
+        rewardsAPR: estimated.components?.rewardsAPR ?? base?.apr.forwardAPR.composite?.rewardsAPR ?? 0,
+        cvxAPR: estimated.components?.cvxAPR ?? base?.apr.forwardAPR.composite?.cvxAPR ?? 0,
+        keepCRV: estimated.components?.keepCRV ?? base?.apr.forwardAPR.composite?.keepCRV ?? 0,
+        keepVELO: estimated.components?.keepVelo ?? base?.apr.forwardAPR.composite?.keepVELO ?? 0
+      }
+    : base?.apr.forwardAPR.composite
 
   const feesPerformance = snapshot.fees ? normalizeFee(snapshot.fees.performanceFee) : (base?.apr.fees.performance ?? 0)
   const feesManagement = snapshot.fees ? normalizeFee(snapshot.fees.managementFee) : (base?.apr.fees.management ?? 0)
@@ -534,7 +565,7 @@ const buildSnapshotVault = (
       forwardAPR: {
         type: forwardType,
         netAPR: forwardNet,
-        composite: base?.apr.forwardAPR.composite ?? undefined
+        composite: forwardComposite ?? undefined
       }
     },
     featuringScore: base?.featuringScore ?? 0,

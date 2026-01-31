@@ -2,13 +2,29 @@ import { toAddress } from '@shared/utils'
 
 import type { TKongReport } from './kongReports.schema'
 
-export function findLatestReportApr(reports: TKongReport[] | undefined, strategyAddress: string): number | null {
+export function findLatestReportApr(
+  reports: TKongReport[] | undefined,
+  strategyAddress: string,
+  options?: { maxAgeSeconds?: number }
+): number | null {
   if (!reports?.length || !strategyAddress) {
     return null
   }
 
   const normalizedStrategy = toAddress(strategyAddress)
-  const filtered = reports.filter((report) => toAddress(report.strategy) === normalizedStrategy)
+  const nowSeconds = Math.floor(Date.now() / 1000)
+  const maxAgeSeconds = options?.maxAgeSeconds
+  const filtered = reports.filter((report) => {
+    if (toAddress(report.strategy) !== normalizedStrategy) {
+      return false
+    }
+    if (!maxAgeSeconds) {
+      return true
+    }
+    const reportTime = report.blockTime ?? 0
+    const reportSeconds = reportTime > 1_000_000_000_000 ? Math.floor(reportTime / 1000) : reportTime
+    return reportSeconds > 0 && nowSeconds - reportSeconds <= maxAgeSeconds
+  })
   if (!filtered.length) {
     return null
   }
