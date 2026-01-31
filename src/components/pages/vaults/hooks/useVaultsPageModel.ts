@@ -130,7 +130,8 @@ export type TVaultsPageModel = {
 }
 
 export function useVaultsPageModel(): TVaultsPageModel {
-  const { isActive: isWalletActive } = useWeb3()
+  const { address } = useWeb3()
+  const hasWalletAddress = !!address
   const {
     vaultType,
     hasTypesParam,
@@ -828,14 +829,14 @@ export function useVaultsPageModel(): TVaultsPageModel {
         label: 'Est. APY',
         value: 'estAPY',
         sortable: true,
-        className: isWalletActive ? 'col-span-4' : 'col-span-6'
+        className: hasWalletAddress ? 'col-span-4' : 'col-span-6'
       },
       {
         type: 'sort',
         label: 'TVL',
         value: 'tvl',
         sortable: true,
-        className: isWalletActive ? 'col-span-4' : 'col-span-5'
+        className: hasWalletAddress ? 'col-span-4' : 'col-span-5'
       },
       // {
       //   type: 'toggle',
@@ -844,7 +845,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       //   className: 'col-span-3',
       //   disabled: availableVaults.length === 0
       // },
-      ...(isWalletActive
+      ...(hasWalletAddress
         ? ([
             {
               type: 'toggle',
