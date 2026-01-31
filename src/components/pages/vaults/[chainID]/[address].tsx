@@ -335,13 +335,12 @@ function Index(): ReactElement | null {
   ])
 
   const vaultShareBalance =
-    address && isActive && currentVault?.address && Number.isInteger(currentVault?.chainID)
+    !!address && currentVault?.address && Number.isInteger(currentVault?.chainID)
       ? getBalance({ address: toAddress(currentVault.address), chainID: currentVault.chainID }).raw
       : 0n
 
   const stakingShareBalance =
-    address &&
-    isActive &&
+    !!address &&
     currentVault?.staking.available &&
     !isZeroAddress(currentVault?.staking.address) &&
     Number.isInteger(currentVault?.chainID)
