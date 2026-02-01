@@ -1,4 +1,4 @@
-import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWallet } from '@shared/contexts/useWallet'
@@ -31,6 +31,7 @@ type WalletPanelProps = {
   vaultAddress: `0x${string}`
   stakingAddress?: `0x${string}`
   chainId: number
+  vaultUserData: VaultUserData
   onSelectZapToken?: (token: TToken) => void
 }
 
@@ -58,6 +59,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   vaultAddress,
   stakingAddress,
   chainId,
+  vaultUserData,
   onSelectZapToken
 }) => {
   const { address, isActive: isWalletActive, openLoginModal } = useWeb3()
@@ -67,13 +69,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   const { getPrice } = useYearn()
   const [activeTab, setActiveTab] = useState<WalletTabKey>('balances')
   const { assetToken, vaultToken, stakingToken, depositedValue, depositedShares, pricePerShare, isLoading } =
-    useVaultUserData({
-      vaultAddress,
-      assetAddress: currentVault.token.address,
-      stakingAddress,
-      chainId,
-      account: address || undefined
-    })
+    vaultUserData
 
   const assetSymbol = assetToken?.symbol || currentVault.token.symbol
   const vaultSymbol = vaultToken?.symbol || currentVault.symbol || assetSymbol

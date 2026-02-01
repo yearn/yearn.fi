@@ -4,7 +4,6 @@ import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoric
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
-import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import type { WidgetActionType } from '@pages/vaults/types'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
@@ -24,7 +23,6 @@ import {
 } from '@shared/components/MetricsCard'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { cl, formatUSD, SELECTOR_BAR_STYLES, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
@@ -422,6 +420,7 @@ function UserHoldingsCard({
 
 export function VaultDetailsHeader({
   currentVault,
+  depositedValue,
   isCollapsibleMode = true,
   sectionTabs = [],
   activeSectionKey,
@@ -436,6 +435,7 @@ export function VaultDetailsHeader({
   onWidgetCloseOverlays
 }: {
   currentVault: TYDaemonVault
+  depositedValue: bigint
   isCollapsibleMode?: boolean
   sectionTabs?: { key: string; label: string }[]
   activeSectionKey?: string
@@ -449,21 +449,12 @@ export function VaultDetailsHeader({
   isWidgetWalletOpen?: boolean
   onWidgetCloseOverlays?: () => void
 }): ReactElement {
-  const { address } = useWeb3()
   const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode })
 
   useEffect(() => {
     onCompressionChange?.(isCompressed)
   }, [isCompressed, onCompressionChange])
 
-  // Shared hook with widget - cache updates automatically when widget refetches
-  const { depositedValue } = useVaultUserData({
-    vaultAddress: toAddress(currentVault.address),
-    assetAddress: toAddress(currentVault.token.address),
-    stakingAddress: currentVault.staking.available ? toAddress(currentVault.staking.address) : undefined,
-    chainId: currentVault.chainID,
-    account: address
-  })
   const tokenPrice = currentVault.tvl.price || 0
 
   return (

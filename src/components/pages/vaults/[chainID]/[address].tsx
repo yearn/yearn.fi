@@ -15,13 +15,12 @@ import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { mergeYBoldVault, YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
+import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType } from '@pages/vaults/types'
 import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { useWallet } from '@shared/contexts/useWallet'
-import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
-import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
 import { IconChevron } from '@shared/icons/IconChevron'
 import type { TToken } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
@@ -31,6 +30,7 @@ import type { ReactElement } from 'react'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { isAddressEqual } from 'viem'
+import { useWeb3 } from '@/components/shared/contexts/useWeb3'
 import { useDevFlags } from '@/contexts/useDevFlags'
 
 const resolveHeaderOffset = (): number => {
@@ -142,11 +142,10 @@ function Index(): ReactElement | null {
   const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
 
-  const { address, isActive } = useWeb3()
   const params = useParams()
   const chainId = Number(params.chainID)
   const { getBalance, onRefresh } = useWallet()
-
+  const { address } = useWeb3()
   const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
@@ -291,6 +290,14 @@ function Index(): ReactElement | null {
 
   const isLoadingVault = !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
 
+  const vaultUserData = useVaultUserData({
+    vaultAddress: toAddress(currentVault?.address ?? '0x'),
+    assetAddress: toAddress(currentVault?.token?.address ?? '0x'),
+    stakingAddress: currentVault?.staking?.available ? toAddress(currentVault.staking.address) : undefined,
+    chainId,
+    account: address
+  })
+
   useEffect(() => {
     if (hasTriggeredVaultListFetch || hasVaultList || !snapshotVault) {
       return
@@ -299,40 +306,6 @@ function Index(): ReactElement | null {
     const frame = requestAnimationFrame(() => enableVaultListFetch())
     return () => cancelAnimationFrame(frame)
   }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, snapshotVault])
-
-  useEffect((): void => {
-    if (address && isActive) {
-      const tokensToRefresh: TUseBalancesTokens[] = []
-      if (currentVault?.address) {
-        tokensToRefresh.push({
-          address: currentVault.address,
-          chainID: currentVault.chainID
-        })
-      }
-      if (currentVault?.token?.address) {
-        tokensToRefresh.push({
-          address: currentVault.token.address,
-          chainID: currentVault.chainID
-        })
-      }
-      if (currentVault?.staking.available) {
-        tokensToRefresh.push({
-          address: currentVault.staking.address,
-          chainID: currentVault.chainID
-        })
-      }
-      onRefresh(tokensToRefresh)
-    }
-  }, [
-    currentVault?.address,
-    currentVault?.token.address,
-    address,
-    isActive,
-    onRefresh,
-    currentVault?.chainID,
-    currentVault?.staking.available,
-    currentVault?.staking.address
-  ])
 
   const vaultShareBalance =
     !!address && currentVault?.address && Number.isInteger(currentVault?.chainID)
@@ -760,6 +733,7 @@ function Index(): ReactElement | null {
         >
           <VaultDetailsHeader
             currentVault={currentVault}
+            depositedValue={vaultUserData.depositedValue}
             isCollapsibleMode={isCollapsibleMode}
             sectionTabs={sectionTabs}
             activeSectionKey={activeSection}
@@ -896,6 +870,7 @@ function Index(): ReactElement | null {
                       disableDepositStaking={shouldDisableStakingForDeposit}
                       actions={widgetActions}
                       chainId={chainId}
+                      vaultUserData={vaultUserData}
                       mode={resolvedWidgetMode}
                       onModeChange={setWidgetMode}
                       showTabs={false}
@@ -914,6 +889,7 @@ function Index(): ReactElement | null {
                     isZeroAddress(currentVault.staking.address) ? undefined : toAddress(currentVault.staking.address)
                   }
                   chainId={chainId}
+                  vaultUserData={vaultUserData}
                   onSelectZapToken={handleZapTokenSelect}
                 />
               </div>
@@ -1043,6 +1019,7 @@ function Index(): ReactElement | null {
           disableDepositStaking={shouldDisableStakingForDeposit}
           actions={widgetActions}
           chainId={chainId}
+          vaultUserData={vaultUserData}
           mode={mobileDrawerAction}
           onModeChange={setMobileDrawerAction}
           hideTabSelector
