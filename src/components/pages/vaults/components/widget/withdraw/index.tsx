@@ -1,5 +1,4 @@
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
-import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -29,6 +28,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
   stakingAddress,
   chainId,
   vaultSymbol,
+  vaultUserData,
   handleWithdrawSuccess: onWithdrawSuccess,
   onOpenSettings,
   isSettingsOpen,
@@ -53,13 +53,7 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
     pricePerShare,
     isLoading: isLoadingVaultData,
     refetch: refetchVaultUserData
-  } = useVaultUserData({
-    vaultAddress,
-    assetAddress,
-    stakingAddress,
-    chainId,
-    account
-  })
+  } = vaultUserData
 
   const priorityTokens = getPriorityTokens(chainId, vaultAddress, stakingAddress)
 
@@ -337,8 +331,8 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
     chainId,
     stakingAddress,
     refreshWalletBalances,
-    refetchVaultUserData,
-    onWithdrawSuccess
+    onWithdrawSuccess,
+    refetchVaultUserData
   ])
 
   if (isLoadingVaultData) {

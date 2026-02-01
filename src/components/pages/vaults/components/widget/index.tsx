@@ -1,3 +1,4 @@
+import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import type { TAddress } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
@@ -14,6 +15,7 @@ interface Props {
   disableDepositStaking?: boolean
   actions: ActionType[]
   chainId: number
+  vaultUserData: VaultUserData
   handleSuccess?: () => void
   mode?: ActionType
   onModeChange?: (mode: ActionType) => void
@@ -54,6 +56,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
       disableDepositStaking,
       actions,
       chainId,
+      vaultUserData,
       handleSuccess,
       mode,
       onModeChange,
@@ -99,6 +102,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               vaultAPR={currentVault?.apr?.forwardAPR?.netAPR || 0}
               vaultSymbol={currentVault?.symbol || ''}
               stakingSource={currentVault?.staking?.source}
+              vaultUserData={vaultUserData}
               handleDepositSuccess={handleSuccess}
               prefill={depositPrefill ?? undefined}
               onPrefillApplied={onDepositPrefillConsumed}
@@ -117,6 +121,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               chainId={chainId}
               vaultSymbol={currentVault?.symbol || ''}
               isVaultRetired={Boolean(currentVault?.info?.isRetired)}
+              vaultUserData={vaultUserData}
               handleWithdrawSuccess={handleSuccess}
               onOpenSettings={onOpenSettings}
               isSettingsOpen={isSettingsOpen}
@@ -135,6 +140,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               vaultVersion={currentVault?.version}
               migrationTarget={toAddress(currentVault?.migration?.address)}
               migrationContract={toAddress(currentVault?.migration?.contract)}
+              vaultUserData={vaultUserData}
               handleMigrateSuccess={handleSuccess}
             />
           )
@@ -146,6 +152,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
       currentVault,
       assetToken,
       chainId,
+      vaultUserData,
       handleSuccess,
       depositPrefill,
       onDepositPrefillConsumed,

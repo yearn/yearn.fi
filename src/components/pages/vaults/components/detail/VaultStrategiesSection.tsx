@@ -42,17 +42,18 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
           name: strategy.name || vault.name,
           apr: {
             ...vault.apr,
-            netAPR: strategy.netAPR ?? vault.apr?.netAPR ?? 0
+            netAPR: strategy.estimatedAPY ?? 0
           },
           details: strategy.details,
           status: strategy.status,
-          netAPR: strategy.netAPR
+          netAPR: strategy.netAPR,
+          estimatedAPY: strategy.estimatedAPY
         }
       }
       return {
         ...strategy,
         apr: {
-          netAPR: strategy.netAPR ?? 0
+          netAPR: strategy.estimatedAPY ?? 0
         }
       }
     })
@@ -60,6 +61,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
       details: TYDaemonVaultStrategy['details']
       status: TYDaemonVaultStrategy['status']
       netAPR: TYDaemonVaultStrategy['netAPR']
+      estimatedAPY: TYDaemonVaultStrategy['estimatedAPY']
     })[]
   }, [vaults, currentVault])
 
@@ -77,6 +79,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
     details: TYDaemonVaultStrategy['details']
     status: TYDaemonVaultStrategy['status']
     netAPR: TYDaemonVaultStrategy['netAPR']
+    estimatedAPY: TYDaemonVaultStrategy['estimatedAPY']
   })[]
 
   const formatAllocationAmount = useCallback(
@@ -227,7 +230,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   address={strategy.address}
                   isVault={!!vaults[strategy.address]}
                   variant={vaultVariant}
-                  apr={strategy.netAPR}
+                  apr={strategy.estimatedAPY}
                   fees={currentVault.apr.fees}
                 />
               ))}
@@ -283,7 +286,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   address={strategy.address}
                   isVault={!!vaults[strategy.address]}
                   variant={vaultVariant}
-                  apr={strategy.netAPR}
+                  apr={strategy.estimatedAPY}
                   fees={currentVault.apr.fees}
                 />
               ))}

@@ -48,6 +48,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 }): ReactElement {
   const { vaults, isLoadingVaultList, getPrice } = useYearn()
   const { address: userAddress } = useWeb3()
+
   const allTokens = useYearnTokens({
     vaults,
     isLoadingVaultList,
@@ -92,9 +93,10 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
    ** This prevents the UI from flickering to DEFAULT_ERC20 temporarily.
    **************************************************************************/
   const tokenCache = useRef<TDict<TToken>>({})
+
   const getToken = useCallback(
     ({ address, chainID }: TTokenAndChain): TToken => {
-      const cacheKey = `${chainID || 1}-${address}`
+      const cacheKey = `${userAddress || 'disconnected'}-${chainID || 1}-${address}`
       const token = balances?.[chainID || 1]?.[address]
 
       // If we have a valid token from balances, update the cache
@@ -105,7 +107,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       // If balances is empty (during refetch), return cached token if available
       return tokenCache.current[cacheKey] || DEFAULT_ERC20
     },
-    [balances]
+    [balances, userAddress]
   )
 
   /**************************************************************************

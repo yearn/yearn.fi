@@ -1,7 +1,7 @@
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { cl, formatAmount } from '@shared/utils'
+import { cl, formatAmount, formatApyDisplay } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useConnect } from 'wagmi'
@@ -51,10 +51,6 @@ function formatUSD(value: number): string {
   return `$${value.toFixed(2)}`
 }
 
-function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(2)}%`
-}
-
 function formatBalance(balance: number, symbol: string): string {
   return `${formatAmount(balance, 0, 6)} ${symbol}`
 }
@@ -75,7 +71,7 @@ export function VaultMetricsGrid({ currentVault }: VaultMetricsGridProps): React
       {/* Top row: TVL, Forward APY */}
       <div className="grid grid-cols-2 gap-1.5 min-[375px]:gap-2">
         <StatCard label="TVL" value={formatUSD(currentVault.tvl.tvl)} />
-        <StatCard label="Fwd. APY" value={formatPercent(forwardAPY)} />
+        <StatCard label="Fwd. APY" value={formatApyDisplay(forwardAPY)} />
       </div>
     </div>
   )
@@ -214,7 +210,7 @@ export function MobileKeyMetrics({ currentVault, showSectionNav = true }: Mobile
       <div className="grid grid-cols-3 gap-1.5 min-[375px]:gap-2">
         <CompactStatBox label="Deposited" value={depositValue} />
         <CompactStatBox label="TVL" value={formatUSD(currentVault.tvl.tvl)} />
-        <CompactStatBox label="Fwd. APY" value={formatPercent(forwardAPY)} />
+        <CompactStatBox label="Fwd. APY" value={formatApyDisplay(forwardAPY)} />
       </div>
       {showSectionNav ? (
         <div className="grid grid-cols-4 gap-2">

@@ -279,12 +279,18 @@ const mapSnapshotComposition = (
       hasAllocation && lastReportSeconds > 0 && nowSeconds - lastReportSeconds <= ONE_WEEK_IN_SECONDS
     const status = normalizeCompositionStatus(entry.status, hasAllocation)
     const name = entry.name?.trim() || `Strategy ${index + 1}`
+    const estimatedAPY = (() => {
+      const oracleApy = pickNumberOrNull(entry.performance?.oracle?.apy)
+      if (oracleApy !== null) {
+        return oracleApy
+      }
+      const estimatedApy = pickNumberOrNull(entry.performance?.estimated?.apy)
+      return estimatedApy === null ? undefined : estimatedApy
+    })()
     const resolvedApr = hasAllocation
       ? pickNumberOrNull(
-          entry.performance?.estimated?.apy,
-          shouldUseLatestReportApr ? entry.latestReportApr : undefined,
-          entry.performance?.oracle?.apy,
-          entry.performance?.historical?.net
+          entry.performance?.historical?.net,
+          shouldUseLatestReportApr ? entry.latestReportApr : undefined
         )
       : null
     strategies.push({
@@ -292,6 +298,7 @@ const mapSnapshotComposition = (
       name,
       description: '',
       netAPR: resolvedApr,
+      estimatedAPY,
       status,
       details: {
         totalDebt,

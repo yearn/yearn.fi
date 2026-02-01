@@ -1,3 +1,5 @@
+import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+
 export type WithdrawRouteType = 'DIRECT_WITHDRAW' | 'DIRECT_UNSTAKE' | 'ENSO'
 
 export type WithdrawalSource = 'vault' | 'staking' | null
@@ -9,6 +11,7 @@ export interface WithdrawWidgetProps {
   chainId: number
   vaultSymbol: string
   isVaultRetired?: boolean
+  vaultUserData: VaultUserData
   handleWithdrawSuccess?: () => void
   onOpenSettings?: () => void
   isSettingsOpen?: boolean

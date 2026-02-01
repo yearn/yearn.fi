@@ -1,4 +1,4 @@
-import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWallet } from '@shared/contexts/useWallet'
@@ -10,7 +10,15 @@ import { IconLoader } from '@shared/icons/IconLoader'
 import { IconWallet } from '@shared/icons/IconWallet'
 import type { TToken } from '@shared/types'
 import type { TNotification, TNotificationStatus } from '@shared/types/notifications'
-import { cl, formatTAmount, formatUSD, toAddress, toNormalizedBN, truncateHex } from '@shared/utils'
+import {
+  cl,
+  formatTAmount,
+  formatUSD,
+  SELECTOR_BAR_STYLES,
+  toAddress,
+  toNormalizedBN,
+  truncateHex
+} from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
@@ -23,6 +31,7 @@ type WalletPanelProps = {
   vaultAddress: `0x${string}`
   stakingAddress?: `0x${string}`
   chainId: number
+  vaultUserData: VaultUserData
   onSelectZapToken?: (token: TToken) => void
 }
 
@@ -50,6 +59,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   vaultAddress,
   stakingAddress,
   chainId,
+  vaultUserData,
   onSelectZapToken
 }) => {
   const { address, isActive: isWalletActive, openLoginModal } = useWeb3()
@@ -59,13 +69,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   const { getPrice } = useYearn()
   const [activeTab, setActiveTab] = useState<WalletTabKey>('balances')
   const { assetToken, vaultToken, stakingToken, depositedValue, depositedShares, pricePerShare, isLoading } =
-    useVaultUserData({
-      vaultAddress,
-      assetAddress: currentVault.token.address,
-      stakingAddress,
-      chainId,
-      account: address || undefined
-    })
+    vaultUserData
 
   const assetSymbol = assetToken?.symbol || currentVault.token.symbol
   const vaultSymbol = vaultToken?.symbol || currentVault.symbol || assetSymbol
@@ -199,7 +203,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
         <div className="flex items-center justify-between gap-3 px-6 py-3">
           <h3 className="text-base font-semibold text-text-primary">Wallet</h3>
           <div className="flex items-center justify-end ml-auto">
-            <div className="flex items-center gap-0.5 md:gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
+            <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
               {WALLET_TABS.map((tab) => (
                 <button
                   key={tab.id}
@@ -208,9 +212,8 @@ export const WalletPanel: FC<WalletPanelProps> = ({
                   className={cl(
                     'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold transition-all',
                     'min-h-[36px] md:min-h-0 active:scale-[0.98] whitespace-nowrap',
-                    activeTab === tab.id
-                      ? 'bg-surface text-text-primary'
-                      : 'bg-transparent text-text-secondary hover:text-text-primary'
+                    SELECTOR_BAR_STYLES.buttonBase,
+                    activeTab === tab.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
                   )}
                 >
                   {tab.label}

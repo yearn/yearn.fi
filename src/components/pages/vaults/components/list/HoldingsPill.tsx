@@ -16,7 +16,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'⚔️ '}</span>
-          {formatApyDisplay(katanaApr)}
+          <span className={'font-semibold'}>{formatApyDisplay(katanaApr)}</span>
         </>
       )
     }
@@ -26,9 +26,9 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
         return (
           <>
             <span>{'⚡️ '}</span>
-            {formatApyDisplay(data.estAprRange[0])}
+            <span className={'font-semibold'}>{formatApyDisplay(data.estAprRange[0])}</span>
             <span>{' → '}</span>
-            {formatApyDisplay(data.estAprRange[1])}
+            <span className={'font-semibold'}>{formatApyDisplay(data.estAprRange[1])}</span>
           </>
         )
       }
@@ -36,7 +36,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'⚡️ '}</span>
-          {formatApyDisplay(boostedApr)}
+          <span className={'font-semibold'}>{formatApyDisplay(boostedApr)}</span>
         </>
       )
     }
@@ -45,7 +45,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'🚀 '}</span>
-          {formatApyDisplay(vault.apr.forwardAPR.netAPR)}
+          <span className={'font-semibold'}>{formatApyDisplay(vault.apr.forwardAPR.netAPR)}</span>
           {data.boost ? (
             <span className={'text-[0.65rem] uppercase tracking-wide text-text-primary/70'}>
               {` • Boost ${formatAmount(data.boost, 2, 2)}x`}
@@ -59,7 +59,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'APY '}</span>
-          {formatApyDisplay(data.baseForwardApr)}
+          <span className={'font-semibold'}>{formatApyDisplay(data.baseForwardApr)}</span>
         </>
       )
     }
@@ -67,7 +67,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
     return (
       <>
         <span>{'Hist. '}</span>
-        {formatApyDisplay(data.netApr)}
+        <span className={'font-semibold'}>{formatApyDisplay(data.netApr)}</span>
       </>
     )
   })()
