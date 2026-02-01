@@ -1,5 +1,4 @@
 import { useDeepCompareMemo } from '@react-hookz/web'
-import { useQueryClient } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
@@ -49,7 +48,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 }): ReactElement {
   const { vaults, isLoadingVaultList, getPrice } = useYearn()
   const { address: userAddress } = useWeb3()
-  const queryClient = useQueryClient()
+
   const allTokens = useYearnTokens({
     vaults,
     isLoadingVaultList,
@@ -94,18 +93,6 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
    ** This prevents the UI from flickering to DEFAULT_ERC20 temporarily.
    **************************************************************************/
   const tokenCache = useRef<TDict<TToken>>({})
-  const lastAddressRef = useRef<TAddress | undefined>(userAddress)
-
-  useEffect(() => {
-    if (lastAddressRef.current === userAddress) {
-      return
-    }
-
-    tokenCache.current = {}
-    queryClient.removeQueries({ queryKey: ['balances'] })
-    queryClient.removeQueries({ queryKey: ['enso-balances'] })
-    lastAddressRef.current = userAddress
-  }, [queryClient, userAddress])
 
   const getToken = useCallback(
     ({ address, chainID }: TTokenAndChain): TToken => {
