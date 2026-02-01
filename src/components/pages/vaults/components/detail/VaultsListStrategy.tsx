@@ -2,14 +2,13 @@ import { findLatestReportApr } from '@pages/vaults/domain/reports/findLatestRepo
 import type { TKongReports } from '@pages/vaults/domain/reports/kongReports.schema'
 import { kongReportsSchema } from '@pages/vaults/domain/reports/kongReports.schema'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
-import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useFetch } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import type { TAddress } from '@shared/types'
-import { cl, formatPercent, toAddress, truncateHex } from '@shared/utils'
+import { cl, formatApyDisplay, formatPercent, toAddress, truncateHex } from '@shared/utils'
 import { formatDuration } from '@shared/utils/format.time'
 import { copyToClipboard } from '@shared/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -83,7 +82,7 @@ export function VaultsListStrategy({
   if (shouldShowPlaceholders) {
     apyContent = '-'
   } else if (displayApr != null) {
-    apyContent = <RenderAmount shouldHideTooltip value={displayApr} symbol={'percent'} decimals={6} />
+    apyContent = formatApyDisplay(displayApr)
   }
 
   const allocationContent = isInactive ? '-' : isUnallocated ? '-' : formatPercent((details?.debtRatio || 0) / 100, 0)
