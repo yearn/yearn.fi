@@ -1,7 +1,7 @@
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import type { TSortDirection } from '@shared/types'
-import { normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
+import { isZeroAddress, normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { getVaultName, numberSort, stringSort } from '@shared/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy, TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -46,7 +46,7 @@ export function useSortVaults(
 
     const getDepositedValue = (vault: TYDaemonVault): number => {
       const depositedBalance = Number(getBalance({ address: vault.address, chainID: vault.chainID })?.normalized || 0)
-      const stakedBalance = vault.staking.available
+      const stakedBalance = !isZeroAddress(toAddress(vault.staking?.address))
         ? Number(getBalance({ address: vault.staking.address, chainID: vault.chainID })?.normalized || 0)
         : 0
       const price = getPrice({ address: vault.address, chainID: vault.chainID }).normalized || 0

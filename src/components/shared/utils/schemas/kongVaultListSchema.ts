@@ -74,7 +74,14 @@ export const kongVaultListItemSchema = z.object({
   origin: z.string().nullable().optional(),
 
   strategiesCount: z.number(),
-  riskLevel: z.number().nullable()
+  riskLevel: z.number().nullable(),
+
+  staking: z
+    .object({
+      address: addressSchema.nullable(),
+      available: z.boolean()
+    })
+    .nullish()
 })
 
 export const kongVaultListSchema = z.array(kongVaultListItemSchema)
