@@ -467,7 +467,9 @@ export function VaultDetailsHeader({
   const tokenPrice = currentVault.tvl.price || 0
 
   return (
-    <div className={'grid w-full grid-cols-1 gap-y-0 gap-x-6 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
+    <div
+      className={'grid w-full grid-cols-1 gap-y-0 gap-x-6 text-left md:auto-rows-min md:grid-cols-20 bg-app rounded-lg'}
+    >
       <div className={'hidden md:flex items-center gap-2 text-sm text-text-secondary md:col-span-20 px-1'}>
         <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
           {'Home'}
