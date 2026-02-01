@@ -52,6 +52,7 @@ const yDaemonVaultStrategySchema = z.object({
   name: z.string(),
   description: z.string().optional().default(''),
   netAPR: z.number().nullable().optional().default(null).catch(null),
+  estimatedAPY: z.number().nullable().optional().catch(null),
   status: z
     .literal('active')
     .or(z.literal('not_active'))
