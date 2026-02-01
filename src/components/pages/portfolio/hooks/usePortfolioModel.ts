@@ -137,9 +137,18 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const suggestedVaultCandidates = useMemo(
     () =>
-      Object.values(vaults).filter(
-        (vault) => vault.chainID === KATANA_CHAIN_ID && deriveListKind(vault) === 'allocator'
-      ),
+      Object.values(vaults).filter((vault) => {
+        if (vault.chainID !== KATANA_CHAIN_ID || deriveListKind(vault) !== 'allocator') {
+          return false
+        }
+
+        const isHidden = Boolean(vault.info?.isHidden)
+        const isRetired = Boolean(vault.info?.isRetired)
+        const isMigratable = Boolean(vault.migration?.available)
+        const isHighlighted = Boolean(vault.info?.isHighlighted)
+
+        return !isHidden && !isRetired && !isMigratable && isHighlighted
+      }),
     [vaults]
   )
 
