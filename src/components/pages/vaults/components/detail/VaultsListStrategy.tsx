@@ -23,7 +23,9 @@ export function VaultsListStrategy({
   isVault = false,
   variant = 'v3',
   apr,
-  fees
+  netApr,
+  fees,
+  totalValueUsd
 }: {
   details: TYDaemonVaultStrategy['details']
   status: TYDaemonVaultStrategy['status']
@@ -35,19 +37,21 @@ export function VaultsListStrategy({
   isVault?: boolean
   variant: 'v2' | 'v3'
   apr: number | null | undefined
+  netApr: number | null | undefined
   fees: TYDaemonVault['apr']['fees']
+  totalValueUsd: number
 }): ReactElement {
   const [isExpanded, setIsExpanded] = useState(false)
   const isInactive = status === 'not_active'
   const isUnallocated = status === 'unallocated'
   const shouldShowPlaceholders = isInactive || isUnallocated
-  const displayApr = apr ?? null
+  const displayApr = apr ?? netApr ?? 0
 
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
   let apyContent: ReactElement | string = '-'
   if (shouldShowPlaceholders) {
     apyContent = '-'
-  } else if (displayApr != null) {
+  } else {
     apyContent = formatApyDisplay(displayApr)
   }
 
@@ -56,7 +60,7 @@ export function VaultsListStrategy({
   const amountContent = isInactive ? '-' : isUnallocated ? '-' : allocation
 
   return (
-    <div className={cl('w-full rounded-lg text-text-primary', isUnallocated ? 'opacity-50' : '')}>
+    <div className={cl('w-full rounded-lg text-text-primary', shouldShowPlaceholders ? 'opacity-50' : '')}>
       {/* Collapsible header - always visible */}
       <div
         className={cl(
@@ -69,12 +73,7 @@ export function VaultsListStrategy({
         <div className={'flex w-full items-center justify-between md:col-span-9 md:w-auto'}>
           <div className={'flex min-w-0 flex-1 items-center gap-2'}>
             <div className={'flex items-center justify-center size-6 shrink-0'}>
-              <div
-                className={cl(
-                  'size-2 rounded-full',
-                  (details?.debtRatio || 0) > 0 ? 'bg-green-500' : 'bg-text-secondary'
-                )}
-              />
+              <div className={cl('size-2 rounded-full', totalValueUsd > 0.01 ? 'bg-green-500' : 'bg-text-secondary')} />
             </div>
             <div className="shrink-0 flex items-center md:hidden">
               <TokenLogo

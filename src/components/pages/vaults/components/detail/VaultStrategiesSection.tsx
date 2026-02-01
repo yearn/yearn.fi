@@ -42,7 +42,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
           name: strategy.name || vault.name,
           apr: {
             ...vault.apr,
-            netAPR: strategy.estimatedAPY ?? 0
+            netAPR: strategy.estimatedAPY ?? strategy.netAPR ?? 0
           },
           details: strategy.details,
           status: strategy.status,
@@ -53,7 +53,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
       return {
         ...strategy,
         apr: {
-          netAPR: strategy.estimatedAPY ?? 0
+          netAPR: strategy.estimatedAPY ?? strategy.netAPR ?? 0
         }
       }
     })
@@ -82,13 +82,17 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
     estimatedAPY: TYDaemonVaultStrategy['estimatedAPY']
   })[]
 
-  const formatAllocationAmount = useCallback(
-    (totalDebt: string | undefined): string => {
+  const resolveStrategyUsdValue = useCallback(
+    (totalDebt: string | undefined): number => {
       const normalized = toNormalizedBN(totalDebt || 0, currentVault.token.decimals).normalized
-      const usdValue = Number(normalized) * tokenPrice
-      return formatTvlDisplay(usdValue)
+      return Number(normalized) * tokenPrice
     },
     [currentVault.token.decimals, tokenPrice]
+  )
+
+  const formatAllocationAmount = useCallback(
+    (totalDebt: string | undefined): string => formatTvlDisplay(resolveStrategyUsdValue(totalDebt)),
+    [resolveStrategyUsdValue]
   )
 
   const activeStrategyData = useMemo(() => {
@@ -225,12 +229,14 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   status={strategy.status}
                   chainId={currentVault.chainID}
                   allocation={formatAllocationAmount(strategy.details?.totalDebt)}
+                  totalValueUsd={resolveStrategyUsdValue(strategy.details?.totalDebt)}
                   name={strategy.name}
                   tokenAddress={currentVault.token.address}
                   address={strategy.address}
                   isVault={!!vaults[strategy.address]}
                   variant={vaultVariant}
                   apr={strategy.estimatedAPY}
+                  netApr={strategy.netAPR}
                   fees={currentVault.apr.fees}
                 />
               ))}
@@ -281,12 +287,14 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   status={strategy.status}
                   chainId={currentVault.chainID}
                   allocation={formatAllocationAmount(strategy.details?.totalDebt)}
+                  totalValueUsd={resolveStrategyUsdValue(strategy.details?.totalDebt)}
                   name={strategy.name}
                   tokenAddress={currentVault.token.address}
                   address={strategy.address}
                   isVault={!!vaults[strategy.address]}
                   variant={vaultVariant}
                   apr={strategy.estimatedAPY}
+                  netApr={strategy.netAPR}
                   fees={currentVault.apr.fees}
                 />
               ))}
