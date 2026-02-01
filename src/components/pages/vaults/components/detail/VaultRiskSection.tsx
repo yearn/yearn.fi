@@ -86,8 +86,8 @@ function SimpleRiskScore({
     }
 
     return (
-      <div className={'grid grid-cols-1 gap-4 p-4 md:grid-cols-12 md:gap-10 md:p-6 md:pt-0'}>
-        <div className={'col-span-12 mt-6 w-full md:mt-0'}>
+      <div className={'grid grid-cols-1 gap-4 p-4 pt-0 md:grid-cols-12 md:gap-10 md:p-6 md:pt-0'}>
+        <div className={'col-span-12 w-full'}>
           <div className={'flex flex-col'}>
             <div className={'flex flex-col gap-2'}>
               <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
@@ -191,8 +191,8 @@ function SimpleRiskScore({
   ]
 
   return (
-    <div className={'grid grid-cols-1 gap-4 p-4 md:grid-cols-12 md:gap-10 md:p-6 md:pt-0'}>
-      <div className={'col-span-12 mt-6 w-full space-y-1 md:mt-0'}>
+    <div className={'grid grid-cols-1 gap-4 p-4 pt-0 md:grid-cols-12 md:gap-10 md:p-6 md:pt-0'}>
+      <div className={'col-span-12 w-full space-y-1'}>
         {hasRiskScore ? (
           riskScoreData.map((item, index) => (
             <RiskScoreItem

@@ -87,16 +87,30 @@ export function VaultsListStrategy({
                 )}
               />
             </div>
-            <TokenLogo
-              src={`${
-                import.meta.env.VITE_BASE_YEARN_ASSETS_URI
-              }/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-              tokenSymbol={name}
-              tokenName={name}
-              width={24}
-              height={24}
-              className="rounded-full flex-shrink-0"
-            />
+            <div className="flex-shrink-0 flex items-center md:hidden">
+              <TokenLogo
+                src={`${
+                  import.meta.env.VITE_BASE_YEARN_ASSETS_URI
+                }/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                tokenSymbol={name}
+                tokenName={name}
+                width={20}
+                height={20}
+                className="rounded-full"
+              />
+            </div>
+            <div className="flex-shrink-0 hidden md:flex md:items-center">
+              <TokenLogo
+                src={`${
+                  import.meta.env.VITE_BASE_YEARN_ASSETS_URI
+                }/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                tokenSymbol={name}
+                tokenName={name}
+                width={28}
+                height={28}
+                className="rounded-full"
+              />
+            </div>
             <strong title={name} className={'block truncate font-bold min-w-0'}>
               {name}
             </strong>

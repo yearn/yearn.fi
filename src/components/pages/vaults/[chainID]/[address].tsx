@@ -1069,6 +1069,7 @@ function Index(): ReactElement | null {
           actions={widgetActions}
           chainId={chainId}
           mode={mobileDrawerAction}
+          onModeChange={setMobileDrawerAction}
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
           disableBorderRadius
