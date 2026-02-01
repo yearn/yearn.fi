@@ -1,4 +1,4 @@
-import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
@@ -24,19 +24,20 @@ interface Props {
   migrationTarget: `0x${string}`
   migrationContract: `0x${string}`
   migrationTargetSymbol?: string
+  vaultUserData: VaultUserData
   handleMigrateSuccess?: () => void
 }
 
 export const WidgetMigrate: FC<Props> = ({
   vaultAddress,
   assetAddress,
-  stakingAddress,
   chainId,
   vaultSymbol,
   vaultVersion,
   migrationTarget,
   migrationContract,
   migrationTargetSymbol,
+  vaultUserData,
   handleMigrateSuccess: onMigrateSuccess
 }) => {
   const { address: account } = useAccount()
@@ -53,18 +54,8 @@ export const WidgetMigrate: FC<Props> = ({
   // Get destination vault token info
   const destinationVault = getToken({ address: migrationTarget, chainID: chainId })
 
-  // Get user's vault balance
-  const {
-    vaultToken,
-    isLoading: isLoadingVaultData,
-    refetch: refetchVaultUserData
-  } = useVaultUserData({
-    vaultAddress,
-    assetAddress,
-    stakingAddress,
-    chainId,
-    account
-  })
+  // Get user's vault balance from props
+  const { vaultToken, isLoading: isLoadingVaultData, refetch: refetchVaultUserData } = vaultUserData
 
   // Use only vault token balance (not staked)
   const migrateBalance = vaultToken?.balance.raw ?? 0n
@@ -341,7 +332,7 @@ export const WidgetMigrate: FC<Props> = ({
     setPermitSignature(undefined) // Clear permit signature after successful migration
     refetchVaultUserData()
     onMigrateSuccess?.()
-  }, [refetchVaultUserData, onMigrateSuccess])
+  }, [onMigrateSuccess, refetchVaultUserData])
 
   const handleOverlayClose = useCallback(() => {
     setShowTransactionOverlay(false)

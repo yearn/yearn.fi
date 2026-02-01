@@ -15,6 +15,7 @@ import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { mergeYBoldVault, YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
+import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType } from '@pages/vaults/types'
 import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
@@ -58,7 +59,7 @@ function Index(): ReactElement | null {
   const params = useParams()
   const chainId = Number(params.chainID)
   const { getBalance, onRefresh } = useWallet()
-  const { isActive } = useWeb3()
+  const { isActive, address: userAddress } = useWeb3()
   const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
@@ -202,6 +203,14 @@ function Index(): ReactElement | null {
   }, [baseMergedVault, isYBold, yBoldStakingVault])
 
   const isLoadingVault = !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
+
+  const vaultUserData = useVaultUserData({
+    vaultAddress: toAddress(currentVault?.address ?? '0x'),
+    assetAddress: toAddress(currentVault?.token?.address ?? '0x'),
+    stakingAddress: currentVault?.staking?.available ? toAddress(currentVault.staking.address) : undefined,
+    chainId,
+    account: userAddress
+  })
 
   useEffect(() => {
     if (hasTriggeredVaultListFetch || hasVaultList || !snapshotVault) {
@@ -627,6 +636,7 @@ function Index(): ReactElement | null {
         >
           <VaultDetailsHeader
             currentVault={currentVault}
+            depositedValue={vaultUserData.depositedValue}
             isCollapsibleMode={isCollapsibleMode}
             sectionTabs={sectionTabs}
             activeSectionKey={activeSection}
@@ -784,6 +794,7 @@ function Index(): ReactElement | null {
                       disableDepositStaking={shouldDisableStakingForDeposit}
                       actions={widgetActions}
                       chainId={chainId}
+                      vaultUserData={vaultUserData}
                       mode={resolvedWidgetMode}
                       onModeChange={setWidgetMode}
                       showTabs={false}
@@ -802,6 +813,7 @@ function Index(): ReactElement | null {
                     isZeroAddress(currentVault.staking.address) ? undefined : toAddress(currentVault.staking.address)
                   }
                   chainId={chainId}
+                  vaultUserData={vaultUserData}
                   onSelectZapToken={handleZapTokenSelect}
                 />
               </div>
@@ -952,6 +964,7 @@ function Index(): ReactElement | null {
           disableDepositStaking={shouldDisableStakingForDeposit}
           actions={widgetActions}
           chainId={chainId}
+          vaultUserData={vaultUserData}
           mode={mobileDrawerAction}
           onModeChange={setMobileDrawerAction}
           hideTabSelector
