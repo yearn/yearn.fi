@@ -31,6 +31,9 @@ import type { ReactElement } from 'react'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { isAddressEqual } from 'viem'
+import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
+import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
+import { getCategoryDescription, getProductTypeDescription } from '@/components/pages/vaults/utils/vaultTagCopy'
 import { useDevFlags } from '@/contexts/useDevFlags'
 
 const resolveHeaderOffset = (): number => {
@@ -730,21 +733,28 @@ function Index(): ReactElement | null {
     )
   }
 
-  const isCollapsibleMode = headerDisplayMode === 'collapsible'
-  const headerStickyTop = 'var(--header-height)'
-  const mobileListKind = deriveListKind(currentVault)
   function getMobileProductTypeLabel(): string {
     if (mobileListKind === 'allocator' || mobileListKind === 'strategy') return 'Single Asset'
     if (mobileListKind === 'legacy') return 'Legacy'
     return 'LP Token'
   }
+  function getWidgetModeLabel(mode: WidgetActionType): string {
+    switch (mode) {
+      case WidgetActionType.Deposit:
+        return 'Deposit'
+      case WidgetActionType.Withdraw:
+        return 'Withdraw'
+      default:
+        return 'Migrate'
+    }
+  }
+
+  const isCollapsibleMode = headerDisplayMode === 'collapsible'
+  const headerStickyTop = 'var(--header-height)'
+  const resolvedWidgetMode = widgetActions.includes(widgetMode) ? widgetMode : widgetActions[0]
+  const mobileListKind = deriveListKind(currentVault)
   const mobileProductTypeLabel = getMobileProductTypeLabel()
-  const widgetModeLabel =
-    resolvedWidgetMode === WidgetActionType.Deposit
-      ? 'Deposit'
-      : resolvedWidgetMode === WidgetActionType.Withdraw
-        ? 'Withdraw'
-        : 'Migrate'
+  const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
 
   return (

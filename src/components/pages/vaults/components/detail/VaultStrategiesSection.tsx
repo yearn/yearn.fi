@@ -7,7 +7,7 @@ import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode } from '@shared/compon
 import { useYearn } from '@shared/contexts/useYearn'
 import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
 import type { TSortDirection } from '@shared/types'
-import { cl, formatCounterValue, formatPercent, toBigInt, toNormalizedBN } from '@shared/utils'
+import { cl, formatPercent, formatTvlDisplay, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { lazy, Suspense, useCallback, useMemo } from 'react'
