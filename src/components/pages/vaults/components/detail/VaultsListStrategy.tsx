@@ -1,20 +1,15 @@
-import { findLatestReportApr } from '@pages/vaults/domain/reports/findLatestReportApr'
-import type { TKongReports } from '@pages/vaults/domain/reports/kongReports.schema'
-import { kongReportsSchema } from '@pages/vaults/domain/reports/kongReports.schema'
-import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { useFetch } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import type { TAddress } from '@shared/types'
-import { cl, formatAllocationPercent, formatApyDisplay, formatPercent, toAddress, truncateHex } from '@shared/utils'
+import { cl, formatApyDisplay, formatPercent, toAddress, truncateHex } from '@shared/utils'
 import { formatDuration } from '@shared/utils/format.time'
 import { copyToClipboard } from '@shared/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement } from 'react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import Link from '/src/components/Link'
 
 export function VaultsListStrategy({
@@ -28,8 +23,7 @@ export function VaultsListStrategy({
   isVault = false,
   variant = 'v3',
   apr,
-  fees,
-  vaultAddress
+  fees
 }: {
   details: TYDaemonVaultStrategy['details']
   status: TYDaemonVaultStrategy['status']
@@ -42,47 +36,19 @@ export function VaultsListStrategy({
   variant: 'v2' | 'v3'
   apr: number | null | undefined
   fees: TYDaemonVault['apr']['fees']
-  vaultAddress?: TAddress
 }): ReactElement {
   const [isExpanded, setIsExpanded] = useState(false)
   const isInactive = status === 'not_active'
   const isUnallocated = status === 'unallocated'
   const shouldShowPlaceholders = isInactive || isUnallocated
-  const ONE_WEEK_IN_SECONDS = 7 * 24 * 60 * 60
-  const nowSeconds = Math.floor(Date.now() / 1000)
-  const lastReportSeconds =
-    details?.lastReport && details.lastReport > 0
-      ? details.lastReport > 1_000_000_000_000
-        ? Math.floor(details.lastReport / 1000)
-        : details.lastReport
-      : null
-  const isLatestReportFresh = lastReportSeconds ? nowSeconds - lastReportSeconds <= ONE_WEEK_IN_SECONDS : true
-  const shouldFetchReports = variant === 'v2' && !isVault && status === 'active' && apr == null && isLatestReportFresh
-
-  const reportEndpoint =
-    shouldFetchReports && vaultAddress ? `${KONG_REST_BASE}/reports/${chainId}/${toAddress(vaultAddress)}` : null
-
-  const { data: reports } = useFetch<TKongReports>({
-    endpoint: reportEndpoint,
-    schema: kongReportsSchema,
-    config: {
-      keepPreviousData: true
-    }
-  })
-
-  const latestApr = useMemo(
-    (): number | null =>
-      reportEndpoint ? findLatestReportApr(reports, address, { maxAgeSeconds: ONE_WEEK_IN_SECONDS }) : null,
-    [reports, reportEndpoint, address]
-  )
-  const displayApr = apr ?? latestApr
+  const displayApr = apr ?? null
 
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
-  let apyContent: ReactElement | string = '--'
+  let apyContent: ReactElement | string = '-'
   if (shouldShowPlaceholders) {
     apyContent = '-'
   } else if (displayApr != null) {
-    apyContent = <RenderAmount shouldHideTooltip value={displayApr} symbol={'percent'} decimals={6} />
+    apyContent = formatApyDisplay(displayApr)
   }
 
   const allocationContent = isInactive ? '-' : isUnallocated ? '-' : formatPercent((details?.debtRatio || 0) / 100, 0)
@@ -102,7 +68,7 @@ export function VaultsListStrategy({
         {/* Top row on mobile: Name + Chevron */}
         <div className={'flex w-full items-center justify-between md:col-span-9 md:w-auto'}>
           <div className={'flex min-w-0 flex-1 items-center gap-2'}>
-            <div className={'flex items-center justify-center size-6 flex-shrink-0'}>
+            <div className={'flex items-center justify-center size-6 shrink-0'}>
               <div
                 className={cl(
                   'size-2 rounded-full',
@@ -110,7 +76,7 @@ export function VaultsListStrategy({
                 )}
               />
             </div>
-            <div className="flex-shrink-0 flex items-center md:hidden">
+            <div className="shrink-0 flex items-center md:hidden">
               <TokenLogo
                 src={`${
                   import.meta.env.VITE_BASE_YEARN_ASSETS_URI
@@ -122,7 +88,7 @@ export function VaultsListStrategy({
                 className="rounded-full"
               />
             </div>
-            <div className="flex-shrink-0 hidden md:flex md:items-center">
+            <div className="shrink-0 hidden md:flex md:items-center">
               <TokenLogo
                 src={`${
                   import.meta.env.VITE_BASE_YEARN_ASSETS_URI
@@ -150,7 +116,7 @@ export function VaultsListStrategy({
         <div className={'grid w-full grid-cols-3 gap-2 md:col-span-14 md:grid-cols-15 md:gap-4'}>
           <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Allocation %'}</p>
-            <p className={'font-semibold'}>{formatAllocationPercent((details?.debtRatio || 0) / 100)}</p>
+            <p className={'font-semibold'}>{allocationContent}</p>
           </div>
           <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Amount'}</p>
@@ -160,7 +126,7 @@ export function VaultsListStrategy({
           </div>
           <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'APY'}</p>
-            <p className={'font-semibold'}>{displayApr == null ? '--' : formatApyDisplay(displayApr)}</p>
+            <p className={'font-semibold'}>{apyContent}</p>
           </div>
         </div>
 

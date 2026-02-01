@@ -229,7 +229,6 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   variant={vaultVariant}
                   apr={strategy.netAPR}
                   fees={currentVault.apr.fees}
-                  vaultAddress={currentVault.address}
                 />
               ))}
             {unallocatedPercentage > 0 && unallocatedValue > 0n ? (
@@ -286,7 +285,6 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   variant={vaultVariant}
                   apr={strategy.netAPR}
                   fees={currentVault.apr.fees}
-                  vaultAddress={currentVault.address}
                 />
               ))}
           </div>
