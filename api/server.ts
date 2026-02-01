@@ -65,7 +65,6 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
 async function handleEnsoBalances(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const eoaAddress = url.searchParams.get('eoaAddress')
-  const chainId = url.searchParams.get('chainId')
 
   if (!eoaAddress) {
     return Response.json({ error: 'Missing eoaAddress' }, { status: 400 })
@@ -79,12 +78,9 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
 
   const params = new URLSearchParams({
     eoaAddress,
-    useEoa: 'true'
+    useEoa: 'true',
+    chainId: 'all'
   })
-
-  if (chainId) {
-    params.set('chainId', chainId)
-  }
 
   const ensoUrl = `${ENSO_API_BASE}/api/v1/wallet/balances?${params}`
 

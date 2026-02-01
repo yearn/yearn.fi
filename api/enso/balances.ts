@@ -7,7 +7,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { eoaAddress, chainId } = req.query
+  const { eoaAddress } = req.query
 
   if (!eoaAddress || typeof eoaAddress !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid eoaAddress' })
@@ -22,12 +22,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const params = new URLSearchParams({
       eoaAddress,
-      useEoa: 'true'
+      useEoa: 'true',
+      chainId: 'all'
     })
-
-    if (chainId && typeof chainId === 'string') {
-      params.set('chainId', chainId)
-    }
 
     const url = `${ENSO_API_BASE}/api/v1/wallet/balances?${params}`
 

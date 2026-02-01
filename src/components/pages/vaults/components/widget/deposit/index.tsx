@@ -1,6 +1,6 @@
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
-import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -32,6 +32,7 @@ interface Props {
   vaultAPR: number
   vaultSymbol: string
   stakingSource?: string
+  vaultUserData: VaultUserData
   handleDepositSuccess?: () => void
   onOpenSettings?: () => void
   isSettingsOpen?: boolean
@@ -53,6 +54,7 @@ export const WidgetDeposit: FC<Props> = ({
   vaultAPR,
   vaultSymbol,
   stakingSource,
+  vaultUserData,
   handleDepositSuccess: onDepositSuccess,
   onOpenSettings,
   isSettingsOpen,
@@ -83,14 +85,7 @@ export const WidgetDeposit: FC<Props> = ({
     pricePerShare,
     isLoading: isLoadingVaultData,
     refetch: refetchVaultUserData
-  } = useVaultUserData({
-    vaultAddress,
-    assetAddress,
-    stakingAddress,
-    chainId,
-    account
-  })
-
+  } = vaultUserData
   // Derived token values
   const depositToken = selectedToken || assetAddress
   const sourceChainId = selectedChainId || chainId
@@ -314,8 +309,8 @@ export const WidgetDeposit: FC<Props> = ({
     vaultAddress,
     chainId,
     stakingAddress,
-    refetchVaultUserData,
-    onDepositSuccess
+    onDepositSuccess,
+    refetchVaultUserData
   ])
 
   const handleTokenChange = useCallback(

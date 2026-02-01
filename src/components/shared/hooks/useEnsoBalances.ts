@@ -30,14 +30,11 @@ export const ENSO_SUPPORTED_CHAINS = SUPPORTED_NETWORKS.map((n) => n.id).filter(
 )
 
 /*******************************************************************************
- ** Fetch balances from Enso API for a single chain via server proxy
+ ** Fetch balances from Enso API for a given address
+ ** Uses chainId=all to fetch all chains in a single request
  ******************************************************************************/
-async function fetchEnsoBalancesForChain(address: TAddress, chainId: number): Promise<TEnsoBalanceResponse[]> {
-  const params = new URLSearchParams({
-    eoaAddress: address,
-    chainId: chainId.toString()
-  })
-
+async function fetchEnsoBalances(address: TAddress): Promise<TEnsoBalanceResponse[]> {
+  const params = new URLSearchParams({ eoaAddress: address })
   const url = `/api/enso/balances?${params}`
   const response = await fetch(url)
 
@@ -45,17 +42,10 @@ async function fetchEnsoBalancesForChain(address: TAddress, chainId: number): Pr
     return []
   }
 
-  return response.json()
-}
+  const balances: TEnsoBalanceResponse[] = await response.json()
 
-/*******************************************************************************
- ** Fetch balances from Enso API for a given address
- ** Fetches all supported chains in parallel
- ******************************************************************************/
-async function fetchEnsoBalances(address: TAddress, chainId?: number): Promise<TEnsoBalanceResponse[]> {
-  const chainsToFetch = chainId ? [chainId] : ENSO_SUPPORTED_CHAINS
-  const results = await Promise.all(chainsToFetch.map((chain) => fetchEnsoBalancesForChain(address, chain)))
-  return results.flat()
+  // Filter out unsupported networks (e.g., Fantom)
+  return balances.filter((balance) => !ENSO_UNSUPPORTED_NETWORKS.includes(balance.chainId))
 }
 
 /*******************************************************************************
@@ -94,11 +84,11 @@ function transformEnsoResponse(balances: TEnsoBalanceResponse[]): TChainTokens {
 /*******************************************************************************
  ** Hook for fetching balances via Enso API
  ** Returns balances in the same TChainTokens format as useBalancesQueries
+ ** Fetches all supported chains in a single request using chainId=all
  ******************************************************************************/
 export function useEnsoBalances(
   userAddress: TAddress | undefined,
   options?: {
-    chainId?: number
     enabled?: boolean
     staleTime?: number
   }
@@ -116,12 +106,12 @@ export function useEnsoBalances(
   const enabled = Boolean(options?.enabled !== false && userAddress && !isZeroAddress(userAddress))
 
   const query = useQuery({
-    queryKey: ['enso-balances', userAddress, options?.chainId ?? 'all'],
+    queryKey: ['enso-balances', userAddress],
     queryFn: async () => {
       if (!userAddress || isZeroAddress(userAddress)) {
         return {}
       }
-      const balances = await fetchEnsoBalances(userAddress, options?.chainId)
+      const balances = await fetchEnsoBalances(userAddress)
       return transformEnsoResponse(balances)
     },
     enabled,
@@ -177,8 +167,8 @@ export function useEnsoBalances(
 /*******************************************************************************
  ** Standalone fetch function for use outside of React components
  ******************************************************************************/
-export async function getEnsoBalances(address: TAddress, chainId?: number): Promise<TChainTokens> {
-  const balances = await fetchEnsoBalances(address, chainId)
+export async function getEnsoBalances(address: TAddress): Promise<TChainTokens> {
+  const balances = await fetchEnsoBalances(address)
   return transformEnsoResponse(balances)
 }
 

@@ -192,6 +192,7 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
 
         const freshBalances = await fetchTokenBalances(chainId, userAddress, chainTokens, true)
 
+        // Update multicall query cache
         const allQueries = queryClient.getQueriesData<TDict<TToken>>({
           queryKey: balanceQueryKeys.byChainAndUser(chainId, userAddress),
           exact: false
@@ -205,6 +206,24 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
         })
 
         updatedBalances[chainId] = freshBalances
+      }
+
+      // Also update Enso cache if we're using Enso for these chains
+      const ensoQueryKey = ['enso-balances', userAddress]
+      const currentEnsoData = queryClient.getQueryData<TChainTokens>(ensoQueryKey)
+
+      if (currentEnsoData) {
+        const mergedEnsoData = { ...currentEnsoData }
+        for (const [chainIdStr, tokens] of Object.entries(updatedBalances)) {
+          const chainId = Number(chainIdStr)
+          if (!ENSO_UNSUPPORTED_NETWORKS.includes(chainId)) {
+            if (!mergedEnsoData[chainId]) {
+              mergedEnsoData[chainId] = {}
+            }
+            mergedEnsoData[chainId] = { ...mergedEnsoData[chainId], ...tokens }
+          }
+        }
+        queryClient.setQueryData(ensoQueryKey, mergedEnsoData)
       }
 
       return updatedBalances
