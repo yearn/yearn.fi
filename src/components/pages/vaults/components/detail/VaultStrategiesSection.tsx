@@ -70,8 +70,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
   const unallocatedValue = totalAssets > allocatedDebt ? totalAssets - allocatedDebt : 0n
 
   const filteredVaultList = useMemo(() => {
-    const strategies = mergedList.filter((vault) => vault.status !== 'not_active')
-    return strategies
+    return mergedList
   }, [mergedList])
 
   const sortedVaultsToDisplay = useSortVaults(filteredVaultList, sortBy, sortDirection) as (TYDaemonVault & {
@@ -219,8 +218,8 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
               .map((strategy) => (
                 <VaultsListStrategy
                   key={strategy.address}
-                  isUnallocated={false}
                   details={strategy.details}
+                  status={strategy.status}
                   chainId={currentVault.chainID}
                   allocation={formatAllocationAmount(strategy.details?.totalDebt)}
                   name={strategy.name}
@@ -276,8 +275,8 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
               .map((strategy) => (
                 <VaultsListStrategy
                   key={strategy.address}
-                  isUnallocated={true}
                   details={strategy.details}
+                  status={strategy.status}
                   chainId={currentVault.chainID}
                   allocation={formatAllocationAmount(strategy.details?.totalDebt)}
                   name={strategy.name}

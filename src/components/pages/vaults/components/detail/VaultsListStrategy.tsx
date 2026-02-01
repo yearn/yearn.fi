@@ -19,6 +19,7 @@ import Link from '/src/components/Link'
 
 export function VaultsListStrategy({
   details,
+  status,
   chainId,
   allocation,
   name,
@@ -28,10 +29,10 @@ export function VaultsListStrategy({
   variant = 'v3',
   apr,
   fees,
-  isUnallocated = false,
   vaultAddress
 }: {
   details: TYDaemonVaultStrategy['details']
+  status: TYDaemonVaultStrategy['status']
   chainId: number
   allocation: string
   name: string
@@ -41,11 +42,22 @@ export function VaultsListStrategy({
   variant: 'v2' | 'v3'
   apr: number | null | undefined
   fees: TYDaemonVault['apr']['fees']
-  isUnallocated?: boolean
   vaultAddress?: TAddress
 }): ReactElement {
   const [isExpanded, setIsExpanded] = useState(false)
-  const shouldFetchReports = variant === 'v2' && !isVault && apr == null
+  const isInactive = status === 'not_active'
+  const isUnallocated = status === 'unallocated'
+  const shouldShowPlaceholders = isInactive || isUnallocated
+  const ONE_WEEK_IN_SECONDS = 7 * 24 * 60 * 60
+  const nowSeconds = Math.floor(Date.now() / 1000)
+  const lastReportSeconds =
+    details?.lastReport && details.lastReport > 0
+      ? details.lastReport > 1_000_000_000_000
+        ? Math.floor(details.lastReport / 1000)
+        : details.lastReport
+      : null
+  const isLatestReportFresh = lastReportSeconds ? nowSeconds - lastReportSeconds <= ONE_WEEK_IN_SECONDS : true
+  const shouldFetchReports = variant === 'v2' && !isVault && status === 'active' && apr == null && isLatestReportFresh
 
   const reportEndpoint =
     shouldFetchReports && vaultAddress ? `${KONG_REST_BASE}/reports/${chainId}/${toAddress(vaultAddress)}` : null
@@ -59,12 +71,23 @@ export function VaultsListStrategy({
   })
 
   const latestApr = useMemo(
-    (): number | null => (reportEndpoint ? findLatestReportApr(reports, address) : null),
+    (): number | null =>
+      reportEndpoint ? findLatestReportApr(reports, address, { maxAgeSeconds: ONE_WEEK_IN_SECONDS }) : null,
     [reports, reportEndpoint, address]
   )
   const displayApr = apr ?? latestApr
 
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
+  let apyContent: ReactElement | string = '--'
+  if (shouldShowPlaceholders) {
+    apyContent = '-'
+  } else if (displayApr != null) {
+    apyContent = <RenderAmount shouldHideTooltip value={displayApr} symbol={'percent'} decimals={6} />
+  }
+
+  const allocationContent = isInactive ? '-' : isUnallocated ? '-' : formatPercent((details?.debtRatio || 0) / 100, 0)
+
+  const amountContent = isInactive ? '-' : isUnallocated ? '-' : allocation
 
   return (
     <div className={cl('w-full rounded-lg text-text-primary', isUnallocated ? 'opacity-50' : '')}>
@@ -132,7 +155,7 @@ export function VaultsListStrategy({
           <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Amount'}</p>
             <p className={'font-semibold truncate'} title={allocation}>
-              {allocation}
+              {amountContent}
             </p>
           </div>
           <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
