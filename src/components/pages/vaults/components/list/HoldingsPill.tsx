@@ -1,7 +1,6 @@
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
-import { RenderAmount } from '@shared/components/RenderAmount'
-import { formatAmount, isZero, toAddress } from '@shared/utils'
+import { formatAmount, formatApyDisplay, isZero, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement, ReactNode } from 'react'
 
@@ -17,7 +16,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'⚔️ '}</span>
-          <RenderAmount shouldHideTooltip value={katanaApr} symbol={'percent'} decimals={6} />
+          <span className={'font-semibold'}>{formatApyDisplay(katanaApr)}</span>
         </>
       )
     }
@@ -27,9 +26,9 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
         return (
           <>
             <span>{'⚡️ '}</span>
-            <RenderAmount shouldHideTooltip value={data.estAprRange[0]} symbol={'percent'} decimals={6} />
+            <span className={'font-semibold'}>{formatApyDisplay(data.estAprRange[0])}</span>
             <span>{' → '}</span>
-            <RenderAmount shouldHideTooltip value={data.estAprRange[1]} symbol={'percent'} decimals={6} />
+            <span className={'font-semibold'}>{formatApyDisplay(data.estAprRange[1])}</span>
           </>
         )
       }
@@ -37,7 +36,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'⚡️ '}</span>
-          <RenderAmount shouldHideTooltip value={boostedApr} symbol={'percent'} decimals={6} />
+          <span className={'font-semibold'}>{formatApyDisplay(boostedApr)}</span>
         </>
       )
     }
@@ -46,7 +45,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'🚀 '}</span>
-          <RenderAmount shouldHideTooltip value={vault.apr.forwardAPR.netAPR} symbol={'percent'} decimals={6} />
+          <span className={'font-semibold'}>{formatApyDisplay(vault.apr.forwardAPR.netAPR)}</span>
           {data.boost ? (
             <span className={'text-[0.65rem] uppercase tracking-wide text-text-primary/70'}>
               {` • Boost ${formatAmount(data.boost, 2, 2)}x`}
@@ -60,7 +59,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'APY '}</span>
-          <RenderAmount shouldHideTooltip value={data.baseForwardApr} symbol={'percent'} decimals={6} />
+          <span className={'font-semibold'}>{formatApyDisplay(data.baseForwardApr)}</span>
         </>
       )
     }
@@ -68,7 +67,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
     return (
       <>
         <span>{'Hist. '}</span>
-        <RenderAmount shouldHideTooltip value={data.netApr} symbol={'percent'} decimals={6} />
+        <span className={'font-semibold'}>{formatApyDisplay(data.netApr)}</span>
       </>
     )
   })()

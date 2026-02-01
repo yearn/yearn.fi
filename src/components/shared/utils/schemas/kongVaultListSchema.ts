@@ -34,6 +34,12 @@ export const kongVaultListItemSchema = z.object({
           apy: coerceNullableNumber
         })
         .nullish(),
+      estimated: z
+        .object({
+          apy: coerceNullableNumber,
+          type: z.string().nullable().optional()
+        })
+        .nullish(),
       historical: z
         .object({
           net: coerceNullableNumber,

@@ -498,8 +498,8 @@ export function formatUSD(n: number, min = 2, max = 2): string {
 
 export function formatPercent(n: number, min = 2, max = 2, upperLimit = 500): string {
   const safeN = n || 0
-  if (safeN > upperLimit) {
-    return `≧ ${formatAmount(upperLimit, min, max)}%`
+  if (safeN >= upperLimit) {
+    return `≥ ${formatAmount(upperLimit, min, max)}%`
   }
   return `${formatAmount(safeN || 0, min, max)}%`
 }
@@ -524,6 +524,9 @@ export function formatApyDisplay(value: number, options?: { locales?: string[] }
   }
   const safeValue = Number.isFinite(value) ? value : 0
   const percentValue = safeValue * 100
+  if (percentValue >= 500) {
+    return '≥ 500%'
+  }
   const fractionDigits = resolveApyFractionDigits(percentValue)
   const formatter = new Intl.NumberFormat(resolveLocales(options), {
     minimumFractionDigits: fractionDigits,

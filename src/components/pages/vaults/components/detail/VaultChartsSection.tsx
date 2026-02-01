@@ -1,7 +1,7 @@
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useVaultChartTimeseries } from '@pages/vaults/hooks/useVaultChartTimeseries'
 import { transformVaultChartData } from '@pages/vaults/utils/charts'
-import { cl } from '@shared/utils'
+import { cl, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { ChartErrorBoundary } from './charts/ChartErrorBoundary'
@@ -77,11 +77,7 @@ export function VaultChartsSection({
       {shouldRenderSelectors ? (
         <div className={'flex flex-col gap-2 md:gap-3 px-3 md:px-4 md:flex-row md:items-start md:justify-between'}>
           <div className={'flex flex-col'}>
-            <div
-              className={
-                'flex items-center gap-0.5 md:gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner w-full md:w-auto'
-              }
-            >
+            <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
               {VAULT_CHART_TABS.map((tab) => (
                 <button
                   key={tab.id}
@@ -90,9 +86,8 @@ export function VaultChartsSection({
                   className={cl(
                     'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold transition-all',
                     'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                    activeTab === tab.id
-                      ? 'bg-surface text-text-primary'
-                      : 'bg-transparent text-text-secondary hover:text-text-primary'
+                    SELECTOR_BAR_STYLES.buttonBase,
+                    activeTab === tab.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
                   )}
                 >
                   {tab.label}
@@ -106,11 +101,7 @@ export function VaultChartsSection({
             ) : null}
           </div>
           <div className={'hidden md:flex flex-wrap gap-2 md:gap-3'}>
-            <div
-              className={
-                'flex items-center gap-0.5 md:gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner w-full md:w-auto'
-              }
-            >
+            <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
               {VAULT_CHART_TIMEFRAME_OPTIONS.map((option) => (
                 <button
                   key={option.value}
@@ -118,9 +109,10 @@ export function VaultChartsSection({
                   className={cl(
                     'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
                     'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                    SELECTOR_BAR_STYLES.buttonBase,
                     option.value === activeTimeframe
-                      ? 'bg-surface text-text-primary'
-                      : 'bg-transparent text-text-secondary hover:text-text-primary'
+                      ? SELECTOR_BAR_STYLES.buttonActive
+                      : SELECTOR_BAR_STYLES.buttonInactive
                   )}
                   onClick={() => setActiveTimeframe(option.value)}
                 >

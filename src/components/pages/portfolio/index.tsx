@@ -21,7 +21,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
-import { cl, SUPPORTED_NETWORKS } from '@shared/utils'
+import { cl, formatPercent, SUPPORTED_NETWORKS } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
@@ -34,11 +34,6 @@ import { useVaultWithStakingRewards } from './hooks/useVaultWithStakingRewards'
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2
-})
-
-const percentFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2
 })
@@ -156,7 +151,7 @@ function PortfolioHeaderSection({
   function renderApyMetric(apyValue: number | null): ReactElement {
     if (isHoldingsLoading) return metricSpinner
     if (apyValue === null) return <span>{'—'}</span>
-    return renderApyValue(`${percentFormatter.format(apyValue)}%`, hasKatanaHoldings)
+    return renderApyValue(formatPercent(apyValue, 2, 2), hasKatanaHoldings)
   }
 
   function renderCurrencyMetric(value: number | null): ReactElement {

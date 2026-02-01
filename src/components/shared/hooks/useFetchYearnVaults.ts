@@ -99,10 +99,24 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
   const tokenName = item.asset?.name ?? item.name ?? ''
   const tokenAddress = item.asset?.address ?? zeroAddress
   const historical = item.performance?.historical
-  const forwardApr = normalizeNumber(item.performance?.oracle?.apr)
-  const aprType = item.performance?.oracle?.apr !== null && item.performance?.oracle?.apr !== undefined ? 'oracle' : ''
+  const oracleApy = item.performance?.oracle?.apy
+  const estimated = item.performance?.estimated
+  const hasOracleApy = typeof oracleApy === 'number'
+  const hasEstimatedApy = typeof estimated?.apy === 'number'
+  const aprType = hasOracleApy ? 'oracle' : (estimated?.type ?? 'unknown')
+  const forwardAprType = hasOracleApy || hasEstimatedApy ? aprType : ''
   const vaultKind = resolveVaultKind(item)
   const vaultType = resolveVaultType(item)
+  const forwardApr = (() => {
+    const candidates = [oracleApy, estimated?.apy, historical?.net]
+    for (const candidate of candidates) {
+      if (candidate === null || candidate === undefined) {
+        continue
+      }
+      return normalizeNumber(candidate)
+    }
+    return 0
+  })()
 
   const parsed = yDaemonVaultSchema.safeParse({
     address: item.address,
@@ -128,8 +142,8 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
       price: 0
     },
     apr: {
-      type: aprType || 'unknown',
-      netAPR: normalizeNumber(historical?.net ?? forwardApr),
+      type: aprType,
+      netAPR: normalizeNumber(historical?.net),
       fees: {
         performance: normalizeFee(item.fees?.performanceFee),
         withdrawal: 0,
@@ -146,7 +160,7 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
         monthAgo: 0
       },
       forwardAPR: {
-        type: aprType,
+        type: forwardAprType,
         netAPR: forwardApr,
         composite: undefined
       }
