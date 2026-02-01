@@ -173,7 +173,10 @@ function PortfolioHeaderSection({
     {
       key: 'est-annual',
       header: (
-        <MetricHeader label="Est. Annual" tooltip="Projects potential returns based on your blended current APY." />
+        <MetricHeader
+          label="Est. Annual Return"
+          tooltip="Projects potential returns based on your blended current APY."
+        />
       ),
       value: <span className={METRIC_VALUE_CLASS}>{renderCurrencyMetric(blendedMetrics.estimatedAnnualReturn)}</span>
     },
