@@ -7,6 +7,7 @@ export * from './fetchers'
 export * from './format'
 export * from './handlers'
 export * from './helpers'
+export * from './selectorStyles'
 export * from './tools.address'
 export * from './tools.is'
 // export * from './tools.math';
