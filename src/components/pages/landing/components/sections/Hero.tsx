@@ -92,7 +92,7 @@ export function Hero(): ReactElement {
             backgroundPosition: 'center',
             overflow: 'hidden'
           }}
-          className={'relative flex h-[600px] w-[2365px] max-w-[2352px] flex-col items-center self-center'}
+          className={'relative flex h-[600px] w-full min-w-[2352px] flex-col items-center self-center'}
         >
           <AnimatedLogos />
           <div className={'flex h-full items-center justify-center'}>
