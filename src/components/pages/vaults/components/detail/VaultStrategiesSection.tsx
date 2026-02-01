@@ -70,8 +70,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
   const unallocatedValue = totalAssets > allocatedDebt ? totalAssets - allocatedDebt : 0n
 
   const filteredVaultList = useMemo(() => {
-    const strategies = mergedList.filter((vault) => vault.status !== 'not_active')
-    return strategies
+    return mergedList
   }, [mergedList])
 
   const sortedVaultsToDisplay = useSortVaults(filteredVaultList, sortBy, sortDirection) as (TYDaemonVault & {
@@ -202,8 +201,8 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
               .map((strategy) => (
                 <VaultsListStrategy
                   key={strategy.address}
-                  isUnallocated={false}
                   details={strategy.details}
+                  status={strategy.status}
                   chainId={currentVault.chainID}
                   allocation={formatCounterValue(
                     toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
@@ -245,7 +244,12 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                       datatype={'number'}
                     >
                       <p className={'inline text-start text-xs text-text-primary/60 md:hidden'}>{'Amount'}</p>
-                      <p>{toNormalizedBN(unallocatedValue, currentVault.token.decimals).display}</p>
+                      <p>
+                        {formatCounterValue(
+                          toNormalizedBN(unallocatedValue, currentVault.token.decimals).display,
+                          tokenPrice
+                        )}
+                      </p>
                     </div>
                     <div
                       className={'flex flex-row justify-between sm:flex-col md:col-span-5 md:text-right'}
@@ -269,8 +273,8 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
               .map((strategy) => (
                 <VaultsListStrategy
                   key={strategy.address}
-                  isUnallocated={true}
                   details={strategy.details}
+                  status={strategy.status}
                   chainId={currentVault.chainID}
                   allocation={formatCounterValue(
                     toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
