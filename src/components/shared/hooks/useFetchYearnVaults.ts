@@ -101,7 +101,10 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
   const historical = item.performance?.historical
   const oracleApy = item.performance?.oracle?.apy
   const estimated = item.performance?.estimated
-  const aprType = oracleApy !== null && oracleApy !== undefined ? 'oracle' : (estimated?.type ?? 'unknown')
+  const hasOracleApy = typeof oracleApy === 'number'
+  const hasEstimatedApy = typeof estimated?.apy === 'number'
+  const aprType = hasOracleApy ? 'oracle' : (estimated?.type ?? 'unknown')
+  const forwardAprType = hasOracleApy || hasEstimatedApy ? aprType : ''
   const vaultKind = resolveVaultKind(item)
   const vaultType = resolveVaultType(item)
   const forwardApr = (() => {
@@ -157,7 +160,7 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
         monthAgo: 0
       },
       forwardAPR: {
-        type: aprType,
+        type: forwardAprType,
         netAPR: forwardApr,
         composite: undefined
       }
