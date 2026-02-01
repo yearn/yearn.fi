@@ -47,24 +47,28 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
   return (
     <div className="flex flex-col">
       {!isFirst && <div className="h-px w-full bg-border" />}
-      <div className="flex items-center justify-between gap-4 py-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="flex flex-col gap-3 py-3 md:flex-row md:items-center md:justify-between md:gap-4">
+        <div className="flex w-full items-center justify-between gap-3 md:w-auto md:flex-1 md:justify-start">
           <div className="flex items-center gap-1.5">
             <span className="text-base font-bold text-text-primary">{formatAmount(amount, 2, 6)}</span>
             <span className="text-base text-text-secondary">({formatUSD(usdValue, 2, 2)})</span>
-            <TokenLogo src={getTokenLogoUrl(chainId, tokenAddress)} tokenSymbol={symbol} width={18} height={18} />
+          </div>
+          <div className="flex items-center gap-1.5 md:hidden">
             <span className="text-base text-text-secondary">{symbol}</span>
+            <TokenLogo src={getTokenLogoUrl(chainId, tokenAddress)} tokenSymbol={symbol} width={18} height={18} />
+          </div>
+          <div className="hidden items-center gap-1.5 md:flex">
+            <TokenLogo src={getTokenLogoUrl(chainId, tokenAddress)} tokenSymbol={symbol} width={18} height={18} />
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-6">
+        <div className="w-full md:w-auto md:shrink-0">
           <Button
             onClick={showSwitchChainButton ? onSwitchChain : onClaim}
             isDisabled={!showSwitchChainButton && !canClaim}
             isBusy={isClaimPending}
             variant={buttonVariant}
-            className="!px-4 !py-1.5 !text-sm"
-            classNameOverride="yearn--button--nextgen"
+            classNameOverride="yearn--button--nextgen w-full md:w-auto"
           >
             {showSwitchChainButton ? 'Switch Chain' : 'Claim'}
           </Button>
