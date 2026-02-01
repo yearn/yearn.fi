@@ -37,11 +37,11 @@ export function ScrollToTopButton({ className }: TProps): ReactElement | null {
       onClick={scrollToTop}
       aria-label="Scroll to top"
       className={cl(
-        'fixed z-40 size-12 rounded-full',
+        'fixed z-50 size-12 rounded-full',
         'bg-surface border border-border',
         'flex items-center justify-center',
         'shadow-lg transition-all duration-200',
-        'active:scale-95',
+        'hover:bg-surface-secondary active:scale-95',
         className
       )}
     >

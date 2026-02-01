@@ -2,14 +2,13 @@ import { findLatestReportApr } from '@pages/vaults/domain/reports/findLatestRepo
 import type { TKongReports } from '@pages/vaults/domain/reports/kongReports.schema'
 import { kongReportsSchema } from '@pages/vaults/domain/reports/kongReports.schema'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
-import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useFetch } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import type { TAddress } from '@shared/types'
-import { cl, formatPercent, toAddress, truncateHex } from '@shared/utils'
+import { cl, formatAllocationPercent, formatApyDisplay, formatPercent, toAddress, truncateHex } from '@shared/utils'
 import { formatDuration } from '@shared/utils/format.time'
 import { copyToClipboard } from '@shared/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -114,7 +113,7 @@ export function VaultsListStrategy({
         <div className={'grid w-full grid-cols-3 gap-2 md:col-span-14 md:grid-cols-15 md:gap-4'}>
           <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Allocation %'}</p>
-            <p className={'font-semibold'}>{formatPercent((details?.debtRatio || 0) / 100, 0)}</p>
+            <p className={'font-semibold'}>{formatAllocationPercent((details?.debtRatio || 0) / 100)}</p>
           </div>
           <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Amount'}</p>
@@ -124,13 +123,7 @@ export function VaultsListStrategy({
           </div>
           <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'APY'}</p>
-            <p className={'font-semibold'}>
-              {displayApr == null ? (
-                '--'
-              ) : (
-                <RenderAmount shouldHideTooltip value={displayApr} symbol={'percent'} decimals={6} />
-              )}
-            </p>
+            <p className={'font-semibold'}>{displayApr == null ? '--' : formatApyDisplay(displayApr)}</p>
           </div>
         </div>
 

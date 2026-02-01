@@ -523,8 +523,8 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
       const merkleUsd = merkle?.rewards.reduce((sum, r) => sum + r.totalUsdValue, 0) ?? 0
 
       const hasStakingVaultsOnChain = stakingVaults.some((v) => v.chainID === chainId)
-      const stakingIsLoading = hasStakingVaultsOnChain ? (staking?.isLoading ?? true) : false
-      const merkleIsLoading = merkle?.isLoading ?? true
+      const stakingIsLoading = hasStakingVaultsOnChain ? (staking?.isLoading ?? false) : false
+      const merkleIsLoading = merkle?.isLoading ?? false
 
       return {
         chainId,

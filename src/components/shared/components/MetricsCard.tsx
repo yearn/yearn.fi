@@ -29,7 +29,7 @@ export function MetricsCard({
   const isGrid = mobileLayout === 'grid'
 
   return (
-    <div className={cl('rounded-lg bg-surface text-text-primary', className)}>
+    <div className={cl('rounded-lg bg-surface text-text-primary overflow-hidden', className)}>
       <div
         className={cl(
           'md:flex md:divide-y-0',

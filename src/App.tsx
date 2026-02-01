@@ -1,4 +1,5 @@
 import { IframeAutoConnect } from '@components/IframeAutoConnect'
+import { ScrollToTopButton } from '@pages/vaults/components/detail/ScrollToTopButton'
 import { AppSettingsContextApp } from '@pages/vaults/contexts/useAppSettings'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import AppHeader from '@shared/components/Header'
@@ -42,6 +43,7 @@ function WithLayout(): ReactElement {
           <Routes />
         </div>
       </div>
+      <ScrollToTopButton className="bottom-20 right-4 md:bottom-6 md:right-6" />
     </>
   )
 }
