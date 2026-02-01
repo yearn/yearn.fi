@@ -131,11 +131,10 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
             'grid w-full grid-cols-1 place-content-start gap-y-6 md:gap-x-6 lg:max-w-[846px] lg:grid-cols-9 lg:gap-y-4'
           }
         >
-          <div className={'col-span-9 flex w-full flex-col'}></div>
           <div className={'col-span-9 flex flex-col gap-6'}>
             {allocationChartData.length > 0 ? (
               <div className={'flex flex-col gap-4'}>
-                <div className={'flex flex-row items-center justify-center gap-8 md:justify-start'}>
+                <div className={'flex items-center justify-center gap-8 md:justify-start'}>
                   <Suspense
                     fallback={<div className={'size-48 md:size-32 animate-pulse rounded-full bg-surface-secondary'} />}
                   >
@@ -152,12 +151,12 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                       <AllocationChart allocationChartData={allocationChartData} />
                     </div>
                   </Suspense>
-                  <div className={'hidden md:flex flex-col gap-2'}>
+                  <div className={'hidden flex-col gap-2 md:flex'}>
                     {activeStrategyData.map((item, index) => {
                       const colors = isDark ? DARK_MODE_COLORS : LIGHT_MODE_COLORS
                       const color = colors[index % colors.length]
                       return (
-                        <div key={item.id} className={'flex flex-row items-center gap-2'}>
+                        <div key={item.id} className={'flex items-center gap-2'}>
                           <div className={'h-3 w-3 rounded-sm'} style={{ backgroundColor: color }} />
                           <span className={'text-sm text-text-primary'}>{item.name}</span>
                         </div>
@@ -236,31 +235,31 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
               ))}
             {unallocatedPercentage > 0 && unallocatedValue > 0n ? (
               <div className={'w-full rounded-lg text-text-primary opacity-50'}>
-                <div className={'grid grid-cols-1 md:grid-cols-24 items-center w-full gap-4 py-3 px-4 md:px-8'}>
-                  <div className={'col-span-9 flex flex-row items-center gap-2'}>
-                    <div className={'flex items-center justify-center size-6'}>
+                <div className={'grid w-full grid-cols-1 items-center gap-4 px-4 py-3 md:grid-cols-24 md:px-8'}>
+                  <div className={'col-span-9 flex items-center gap-2'}>
+                    <div className={'flex size-6 items-center justify-center'}>
                       <div className={'size-2 rounded-full bg-text-secondary'} />
                     </div>
                     <strong title={'Unallocated'} className={'block truncate font-bold'}>
-                      {'Unallocated'}
+                      Unallocated
                     </strong>
                   </div>
-                  <div className={'md:col-span-14 grid grid-cols-3 gap-2 md:grid-cols-15 md:gap-4 mt-4 md:mt-0'}>
-                    <div className={'flex flex-col md:col-span-5 md:items-end'} datatype={'number'}>
-                      <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Allocation %'}</p>
+                  <div className={'mt-4 grid grid-cols-3 gap-2 md:col-span-14 md:mt-0 md:grid-cols-15 md:gap-4'}>
+                    <div className={'flex flex-col items-center md:items-end md:col-span-5'} datatype={'number'}>
+                      <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>Allocation %</p>
                       <p className={'font-semibold'}>{formatPercent(unallocatedPercentage / 100, 0)}</p>
                     </div>
-                    <div className={'flex flex-col md:col-span-5 md:items-end'} datatype={'number'}>
-                      <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Amount'}</p>
+                    <div className={'flex flex-col items-center md:items-end md:col-span-5'} datatype={'number'}>
+                      <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>Amount</p>
                       <p className={'font-semibold'}>
                         {formatTvlDisplay(
                           Number(toNormalizedBN(unallocatedValue, currentVault.token.decimals).normalized) * tokenPrice
                         )}
                       </p>
                     </div>
-                    <div className={'flex flex-col md:col-span-5 md:items-end'} datatype={'number'}>
-                      <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'APY'}</p>
-                      <p className={'font-semibold'}>{'—'}</p>
+                    <div className={'flex flex-col items-center md:items-end md:col-span-5'} datatype={'number'}>
+                      <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>APY</p>
+                      <p className={'font-semibold'}>—</p>
                     </div>
                   </div>
                   <div className={'col-span-1'}></div>

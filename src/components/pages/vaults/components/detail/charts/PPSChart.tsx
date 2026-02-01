@@ -13,6 +13,7 @@ import { Area, CartesianGrid, ComposedChart, Line, LineChart, XAxis, YAxis } fro
 import type { ChartConfig } from './ChartPrimitives'
 import { ChartContainer, ChartTooltip } from './ChartPrimitives'
 import {
+  CHART_TOOLTIP_WRAPPER_STYLE,
   CHART_WITH_AXES_MARGIN,
   CHART_Y_AXIS_TICK_MARGIN,
   CHART_Y_AXIS_TICK_STYLE,
@@ -156,6 +157,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
                   : [(value ?? 0).toFixed(3), 'PPS']
               }
               labelFormatter={formatChartTooltipDate}
+              wrapperStyle={CHART_TOOLTIP_WRAPPER_STYLE}
               contentStyle={{
                 backgroundColor: 'var(--chart-tooltip-bg)',
                 borderRadius: 'var(--chart-tooltip-radius)',
@@ -214,6 +216,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
                   : [(value ?? 0).toFixed(3), 'PPS']
               }
               labelFormatter={formatChartTooltipDate}
+              wrapperStyle={CHART_TOOLTIP_WRAPPER_STYLE}
               contentStyle={{
                 backgroundColor: 'var(--chart-tooltip-bg)',
                 borderRadius: 'var(--chart-tooltip-radius)',
@@ -272,6 +275,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
                 : [(value ?? 0).toFixed(3), 'PPS']
             }
             labelFormatter={formatChartTooltipDate}
+            wrapperStyle={CHART_TOOLTIP_WRAPPER_STYLE}
             contentStyle={{
               backgroundColor: 'var(--chart-tooltip-bg)',
               borderRadius: 'var(--chart-tooltip-radius)',

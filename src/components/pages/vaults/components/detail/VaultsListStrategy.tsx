@@ -68,7 +68,7 @@ export function VaultsListStrategy({
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
 
   return (
-    <div className={cl('w-full', 'rounded-lg', 'text-text-primary', isUnallocated ? 'opacity-50' : '')}>
+    <div className={cl('w-full rounded-lg text-text-primary', isUnallocated ? 'opacity-50' : '')}>
       {/* Collapsible header - always visible */}
       <div
         className={cl(
@@ -78,8 +78,8 @@ export function VaultsListStrategy({
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {/* Top row on mobile: Name + Chevron */}
-        <div className={'flex flex-row items-center justify-between w-full md:col-span-9 md:w-auto'}>
-          <div className={'flex flex-row items-center gap-2 flex-1 min-w-0'}>
+        <div className={'flex w-full items-center justify-between md:col-span-9 md:w-auto'}>
+          <div className={'flex min-w-0 flex-1 items-center gap-2'}>
             <div className={'flex items-center justify-center size-6 flex-shrink-0'}>
               <div
                 className={cl(
@@ -102,7 +102,7 @@ export function VaultsListStrategy({
               {name}
             </strong>
           </div>
-          <div className={'flex md:hidden ml-2'}>
+          <div className={'ml-2 flex md:hidden'}>
             <IconChevron
               className={cl('size-4 text-text-secondary transition-transform duration-200')}
               direction={isExpanded ? 'up' : 'down'}
@@ -111,18 +111,18 @@ export function VaultsListStrategy({
         </div>
 
         {/* Stats row - 3 columns on mobile */}
-        <div className={'grid grid-cols-3 gap-2 w-full md:col-span-14 md:grid-cols-15 md:gap-4'}>
-          <div className={'flex flex-col md:col-span-5 md:items-end'}>
+        <div className={'grid w-full grid-cols-3 gap-2 md:col-span-14 md:grid-cols-15 md:gap-4'}>
+          <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Allocation %'}</p>
             <p className={'font-semibold'}>{formatPercent((details?.debtRatio || 0) / 100, 0)}</p>
           </div>
-          <div className={'flex flex-col md:col-span-5 md:items-end'}>
+          <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Amount'}</p>
             <p className={'font-semibold truncate'} title={allocation}>
               {allocation}
             </p>
           </div>
-          <div className={'flex flex-col md:col-span-5 md:items-end'}>
+          <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'APY'}</p>
             <p className={'font-semibold'}>
               {displayApr == null ? (
@@ -148,19 +148,19 @@ export function VaultsListStrategy({
         <div className={'px-4 pb-4 md:px-12 md:pb-6'}>
           <div className={'flex flex-col gap-1 text-sm pt-2'}>
             <div className={'flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3'}>
-              <span className={'w-full text-text-secondary md:w-36'}>{'Management Fee:'}</span>
+              <span className={'w-full text-text-secondary md:w-36'}>Management Fee:</span>
               <span>{formatPercent((fees?.management || 0) * 100, 0)}</span>
             </div>
             <div className={'flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3'}>
-              <span className={'w-full text-text-secondary md:w-36'}>{'Performance Fee:'}</span>
+              <span className={'w-full text-text-secondary md:w-36'}>Performance Fee:</span>
               <span>{formatPercent((details?.performanceFee || 0) / 100, 0)}</span>
             </div>
             <div className={'flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3'}>
-              <span className={'w-full text-text-secondary md:w-36'}>{'Last Report:'}</span>
+              <span className={'w-full text-text-secondary md:w-36'}>Last Report:</span>
               <span>{lastReportTime}</span>
             </div>
             <div className={'flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3'}>
-              <span className={'w-full text-text-secondary md:w-36'}>{'Address:'}</span>
+              <span className={'w-full text-text-secondary md:w-36'}>Address:</span>
               <div className={'flex items-center gap-2'}>
                 <span title={address}>{truncateHex(address, 6)}</span>
                 <button
@@ -180,11 +180,11 @@ export function VaultsListStrategy({
               <div className={'flex items-start'}>
                 <Link
                   href={`/vaults/${chainId}/${toAddress(address)}`}
-                  className={cl('flex gap-1 items-center text-text-secondary hover:text-text-primary')}
+                  className={'flex items-center gap-1 text-text-secondary hover:text-text-primary'}
                   target={'_blank'}
                   rel={'noopener noreferrer'}
                 >
-                  {'View Vault Page'}
+                  View Vault Page
                   <IconLinkOut className={'inline-block size-4'} />
                 </Link>
               </div>
@@ -193,11 +193,11 @@ export function VaultsListStrategy({
               <Link
                 href={`${getNetwork(chainId)?.defaultBlockExplorer}/address/${address}`}
                 onClick={(event: React.MouseEvent): void => event.stopPropagation()}
-                className={cl('flex gap-1 items-center text-text-secondary hover:text-text-primary')}
+                className={'flex items-center gap-1 text-text-secondary hover:text-text-primary'}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
               >
-                {'View on Block Explorer'}
+                View on Block Explorer
                 <IconLinkOut className={'inline-block size-4'} />
               </Link>
             </div>

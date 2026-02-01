@@ -86,7 +86,7 @@ type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'isActive' | 'openLogin
 function PortfolioPageLayout({ children }: { children: ReactElement }): ReactElement {
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
-      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16 sm:gap-4'}>{children}</div>
+      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16'}>{children}</div>
     </div>
   )
 }
@@ -178,11 +178,7 @@ function PortfolioHeaderSection({
     {
       key: 'est-annual',
       header: (
-        <MetricHeader
-          label="Est. Annual"
-          tooltip="Projects potential returns based on your blended current APY."
-          labelClassName="text-accent-500"
-        />
+        <MetricHeader label="Est. Annual" tooltip="Projects potential returns based on your blended current APY." />
       ),
       value: <span className={METRIC_VALUE_CLASS}>{renderCurrencyMetric(blendedMetrics.estimatedAnnualReturn)}</span>
     },
@@ -199,7 +195,7 @@ function PortfolioHeaderSection({
   ]
 
   return (
-    <section className={'flex flex-col gap-2 sm:gap-2'}>
+    <section className={'flex flex-col gap-2'}>
       <Breadcrumbs
         className="px-1"
         items={[
@@ -210,7 +206,7 @@ function PortfolioHeaderSection({
       />
       <div className="px-1">
         <Tooltip
-          className="h-auto gap-0 justify-start md:justify-start"
+          className="h-auto justify-start gap-0"
           openDelayMs={150}
           side="top"
           tooltip={
@@ -301,7 +297,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   }
 
   return (
-    <section className={'flex flex-col gap-2 sm:gap-2'}>
+    <section className={'flex flex-col gap-2'}>
       <div>
         <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">Activity</h2>
         <p className="text-xs text-text-secondary sm:text-sm">Review your recent Yearn transactions.</p>
@@ -526,19 +522,23 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
         staking?.rewards.reduce((sum, r) => sum + r.rewards.reduce((s, rw) => s + rw.usdValue, 0), 0) ?? 0
       const merkleUsd = merkle?.rewards.reduce((sum, r) => sum + r.totalUsdValue, 0) ?? 0
 
+      const hasStakingVaultsOnChain = stakingVaults.some((v) => v.chainID === chainId)
+      const stakingIsLoading = hasStakingVaultsOnChain ? (staking?.isLoading ?? true) : false
+      const merkleIsLoading = merkle?.isLoading ?? true
+
       return {
         chainId,
         chainName,
         rewardCount: stakingRewardCount + merkleRewardCount,
         totalUsd: stakingUsd + merkleUsd,
-        isLoading: (staking?.isLoading ?? true) || (merkle?.isLoading ?? true),
+        isLoading: stakingIsLoading || merkleIsLoading,
         stakingRewards: staking?.rewards ?? [],
         merkleRewards: merkle?.rewards ?? [],
         refetchStaking: staking?.refetch ?? (() => {}),
         refetchMerkle: merkle?.refetch ?? (() => {})
       }
     })
-  }, [chainIds, chainMerkleData, chainStakingData])
+  }, [chainIds, chainMerkleData, chainStakingData, stakingVaults])
 
   const totalRewardCount = useMemo(
     () => chainRewardsData.reduce((sum, c) => sum + c.rewardCount, 0),
@@ -655,7 +655,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
   if (!isActive) {
     return (
-      <section className="flex flex-col gap-2 sm:gap-2">
+      <section className="flex flex-col gap-2">
         <div>
           <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">Claim rewards</h2>
           <p className="text-xs text-text-secondary sm:text-sm">
@@ -696,8 +696,8 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <div className="flex flex-col md:flex-row">
-          {/* Left sidebar - Chain selector */}
-          <div className="w-full border-b border-border bg-surface-secondary md:w-64 md:shrink-0 md:border-b-0 md:border-r">
+          {/* Left sidebar - Chain selector (hidden on mobile, defaults to All Chains view) */}
+          <div className="hidden bg-surface-secondary md:block md:w-64 md:shrink-0 md:border-r md:border-border">
             {/* All chains option */}
             <div className="border-b border-border">
               <button
@@ -753,10 +753,10 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
           {/* Right content - Rewards panel */}
           <div className="flex-1">
-            {/* Header */}
-            <div className="flex min-h-[64px] items-center justify-between border-b border-border px-6">
+            {/* Header - stacked on mobile for prominent total display */}
+            <div className="flex min-h-[64px] flex-col items-center justify-center gap-1 border-b border-border px-6 py-4 md:flex-row md:justify-between md:gap-0 md:py-0">
               <h3 className="text-lg font-semibold text-text-primary">Claimable Rewards</h3>
-              <span className="text-xl font-bold text-text-primary">
+              <span className="text-2xl font-bold text-text-primary md:text-xl">
                 {formatUSD(selectedChainId === null ? totalUsd : (selectedChainData?.totalUsd ?? 0), 2, 2)}
               </span>
             </div>
@@ -833,10 +833,10 @@ function PortfolioHoldingsSection({
   }
 
   return (
-    <section className="flex flex-col gap-2 sm:gap-2">
+    <section className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
         <Tooltip
-          className="h-auto gap-0 justify-start md:justify-start"
+          className="h-auto justify-start gap-0"
           openDelayMs={150}
           side="top"
           tooltip={<div className={headingTooltipClassName}>{'Track every Yearn position you currently hold.'}</div>}
@@ -878,9 +878,9 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
   }
 
   return (
-    <section className="flex flex-col gap-2 sm:gap-2">
+    <section className="flex flex-col gap-2">
       <Tooltip
-        className="h-auto gap-0 justify-start md:justify-start"
+        className="h-auto justify-start gap-0"
         openDelayMs={150}
         side="top"
         tooltip={

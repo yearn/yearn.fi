@@ -5,7 +5,7 @@ import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconCross } from '@shared/icons/IconCross'
 import { cl } from '@shared/utils'
-import { formatUSD } from '@shared/utils/format'
+import { formatUSDWithThreshold } from '@shared/utils/format'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useChainId, useSwitchChain } from 'wagmi'
@@ -141,7 +141,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
         <div className="flex items-center justify-between gap-3 bg-surface p-6">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium uppercase tracking-wide text-text-secondary">Claimable Rewards</span>
-            <span className="text-2xl font-bold text-text-primary">{formatUSD(totalUsd, 2, 2)}</span>
+            <span className="text-2xl font-bold text-text-primary">{formatUSDWithThreshold(totalUsd, 2, 2)}</span>
           </div>
           {isPanelOpen ? (
             <button

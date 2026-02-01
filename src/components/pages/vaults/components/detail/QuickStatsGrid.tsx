@@ -150,10 +150,10 @@ export function UserBalanceGrid({ currentVault }: UserBalanceGridProps): ReactEl
 }
 
 const MOBILE_SECTIONS = [
-  { id: 'about', label: 'About' },
-  { id: 'risk', label: 'Risk' },
+  { id: 'about', label: 'Vault Info' },
   { id: 'strategies', label: 'Strategies' },
-  { id: 'info', label: 'Info' }
+  { id: 'risk', label: 'Risk' },
+  { id: 'info', label: 'More Info' }
 ] as const
 
 function SectionNavButton({ sectionId, label }: { sectionId: string; label: string }): ReactElement {

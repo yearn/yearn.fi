@@ -294,20 +294,6 @@ export function VaultsFiltersBar({
           <MobileFiltersDrawer
             isOpen={isMobileFiltersOpen}
             onClose={(): void => setIsMobileFiltersOpen(false)}
-            chainButtons={chainButtons}
-            onSelectAllChains={handleSelectAllChains}
-            areAllChainsSelected={areAllChainsSelected}
-            onSelectChain={handleChainToggle}
-            onOpenChainModal={(): void => setIsChainModalOpen(true)}
-            showMoreChainsButton={showMoreChainsButton}
-            allChainsLabel={allChainsLabel}
-            filtersCount={filters.count}
-            onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
-            searchValue={search.value}
-            onSearch={search.onChange}
-            shouldDebounce={search.shouldDebounce}
-            searchAlertContent={search.alertContent}
-            searchTrailingControls={search.trailingControls}
             filtersContent={filters.content}
           />
         </div>
@@ -371,6 +357,7 @@ function FilterControls({
   onOpenChainModal,
   showMoreChainsButton = true,
   allChainsLabel,
+  showChainSelector = true,
   showFiltersButton = true,
   filtersCount,
   onOpenFiltersModal,
@@ -393,6 +380,7 @@ function FilterControls({
   onOpenChainModal: () => void
   showMoreChainsButton?: boolean
   allChainsLabel: string
+  showChainSelector?: boolean
   showFiltersButton?: boolean
   filtersCount: number
   onOpenFiltersModal: () => void
@@ -407,7 +395,7 @@ function FilterControls({
   filtersTrailingControls?: ReactNode
   layout?: 'inline' | 'stacked'
   leadingControls?: ReactNode
-}): ReactElement {
+}): ReactElement | null {
   const isStacked = layout === 'stacked'
   const filtersButtonElement = showFiltersButton ? (
     <VaultsFiltersButton filtersCount={filtersCount} onClick={onOpenFiltersModal} />
@@ -426,7 +414,7 @@ function FilterControls({
       />
     </div>
   ) : null
-  const chainSelectorElement = (
+  const chainSelectorElement = showChainSelector ? (
     <VaultsChainSelector
       chainButtons={chainButtons}
       areAllChainsSelected={areAllChainsSelected}
@@ -437,7 +425,7 @@ function FilterControls({
       onSelectChain={onSelectChain}
       onOpenChainModal={onOpenChainModal}
     />
-  )
+  ) : null
   const searchTrailingElement =
     showInlineSearch && searchTrailingControls ? <div className={'shrink-0'}>{searchTrailingControls}</div> : null
 
@@ -462,7 +450,7 @@ function FilterControls({
         <div className={'flex flex-col gap-2'}>
           <div ref={controlsRowRef} className={'flex w-full items-center gap-3 flex-wrap'}>
             {leadingControls ? <div className={'shrink-0'}>{leadingControls}</div> : null}
-            <div className={'shrink min-w-0 max-w-[580px]'}>{chainSelectorElement}</div>
+            {chainSelectorElement ? <div className={'shrink min-w-0 max-w-[580px]'}>{chainSelectorElement}</div> : null}
             <div className={'flex flex-row items-center gap-1.5 flex-1 min-w-0'}>
               {filtersButtonElement}
               {filtersTrailingControls ? <div className={'shrink-0'}>{filtersTrailingControls}</div> : null}
@@ -489,38 +477,10 @@ const EMPTY_FILTERS_STATE: TPendingFiltersState = {
 function MobileFiltersDrawer({
   isOpen,
   onClose,
-  chainButtons,
-  onSelectAllChains,
-  areAllChainsSelected,
-  onSelectChain,
-  onOpenChainModal,
-  showMoreChainsButton,
-  allChainsLabel,
-  filtersCount,
-  onOpenFiltersModal,
-  searchValue,
-  onSearch,
-  shouldDebounce,
-  searchAlertContent,
-  searchTrailingControls,
   filtersContent
 }: {
   isOpen: boolean
   onClose: () => void
-  chainButtons: TVaultsChainButton[]
-  onSelectAllChains: () => void
-  areAllChainsSelected: boolean
-  onSelectChain: (chainId: number) => void
-  onOpenChainModal: () => void
-  showMoreChainsButton: boolean
-  allChainsLabel: string
-  filtersCount: number
-  onOpenFiltersModal: () => void
-  searchValue: string
-  onSearch: (value: string) => void
-  shouldDebounce?: boolean
-  searchAlertContent?: ReactNode
-  searchTrailingControls?: ReactNode
   filtersContent?: ReactNode
 }): ReactElement {
   return (
@@ -564,24 +524,6 @@ function MobileFiltersDrawer({
                     <IconCross className={'size-4'} />
                   </button>
                 </div>
-                <FilterControls
-                  chainButtons={chainButtons}
-                  onSelectAllChains={onSelectAllChains}
-                  areAllChainsSelected={areAllChainsSelected}
-                  onSelectChain={onSelectChain}
-                  onOpenChainModal={onOpenChainModal}
-                  showMoreChainsButton={showMoreChainsButton}
-                  allChainsLabel={allChainsLabel}
-                  showFiltersButton={false}
-                  filtersCount={filtersCount}
-                  onOpenFiltersModal={onOpenFiltersModal}
-                  showInlineSearch={false}
-                  searchValue={searchValue}
-                  onSearch={onSearch}
-                  shouldDebounce={shouldDebounce}
-                  searchAlertContent={searchAlertContent}
-                  searchTrailingControls={searchTrailingControls}
-                />
                 {filtersContent}
               </Dialog.Panel>
             </TransitionChild>

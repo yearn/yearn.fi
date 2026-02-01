@@ -120,18 +120,17 @@ export function VaultsListRow({
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
   const productType = isAllocatorVault ? 'v3' : 'lp'
-  function getProductTypeLabel(): string {
+  const productTypeLabel = (() => {
     if (isAllocatorVault) return 'Single Asset'
     if (isLegacyVault) return 'Legacy'
     return 'LP Token'
-  }
-  const productTypeLabel = getProductTypeLabel()
-  function getProductTypeAriaLabel(): string {
+  })()
+
+  const productTypeAriaLabel = (() => {
     if (isAllocatorVault) return 'Show single asset vaults'
     if (isLegacyVault) return 'Legacy vault'
     return 'Show LP token vaults'
-  }
-  const productTypeAriaLabel = getProductTypeAriaLabel()
+  })()
   const showProductTypeChip = showProductTypeChipOverride ?? (Boolean(activeProductType) || Boolean(onToggleVaultType))
   const isProductTypeActive = activeProductType === productType
   const shouldCollapseProductTypeChip =
@@ -181,14 +180,24 @@ export function VaultsListRow({
   }, [currentVault.address, currentVault.chainID, queryClient])
 
   const isHiddenVault = Boolean(flags?.isHidden)
-  const baseKindType: 'multi' | 'single' | undefined =
-    currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
+  const baseKindType: 'multi' | 'single' | undefined = (() => {
+    if (currentVault.kind === 'Multi Strategy') return 'multi'
+    if (currentVault.kind === 'Single Strategy') return 'single'
+    return undefined
+  })()
 
-  const fallbackKindType: 'multi' | 'single' | undefined =
-    listKind === 'allocator' ? 'multi' : listKind === 'strategy' ? 'single' : undefined
+  const fallbackKindType: 'multi' | 'single' | undefined = (() => {
+    if (listKind === 'allocator') return 'multi'
+    if (listKind === 'strategy') return 'single'
+    return undefined
+  })()
+
   const kindType = baseKindType ?? fallbackKindType
-  const kindLabel: string | undefined =
-    kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : currentVault.kind
+  const kindLabel: string | undefined = (() => {
+    if (kindType === 'multi') return 'Allocator'
+    if (kindType === 'single') return 'Strategy'
+    return currentVault.kind
+  })()
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
   const showKindChip = showStrategies && Boolean(kindType) && (showAllocatorChip || kindType !== 'multi')
@@ -270,7 +279,7 @@ export function VaultsListRow({
   return (
     <div
       className={cl(
-        'w-full overflow-hidden transition-colors bg-surface relative border-b border-border md:border-b-0'
+        'w-full overflow-hidden transition-colors bg-surface relative border-b-2 border-border md:border-b'
       )}
     >
       <button
@@ -336,9 +345,7 @@ export function VaultsListRow({
             'flex flex-col items-start sm:pt-0 md:flex-row md:items-center md:justify-between'
           )}
         >
-          <div
-            className={'flex flex-row w-full gap-6 pb-2 border-b border-border md:pb-0 md:border-none overflow-visible'}
-          >
+          <div className={'flex w-full gap-6 overflow-visible border-b border-border pb-2 md:border-none md:pb-0'}>
             {showCompareToggle ? (
               // biome-ignore lint/a11y/useSemanticElements: native checkbox has double-firing issues with parent Link's onClickCapture
               <div
@@ -350,7 +357,7 @@ export function VaultsListRow({
                     : `Add ${currentVault.name} to comparison`
                 }
                 tabIndex={0}
-                className={'flex items-center justify-center cursor-pointer'}
+                className={'flex cursor-pointer items-center justify-center'}
                 onClick={(event): void => {
                   event.stopPropagation()
                   event.preventDefault()
