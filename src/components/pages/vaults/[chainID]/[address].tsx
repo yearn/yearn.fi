@@ -26,6 +26,7 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import type { TToken } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
+import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
@@ -49,6 +50,91 @@ const resolveHeaderOffset = (): number => {
   }
 
   return Number.isNaN(nextOffset) ? 0 : nextOffset
+}
+
+const RETIRED_VAULT_ALERT_MESSAGES = {
+  noFunds: 'This vault is retired.',
+  sternMigration: 'This vault is retired. Please withdraw or migrate your funds.',
+  softMigration:
+    'This vault is retired, but still earning yield. It is still recommended to migrate your funds to the newest vault for the best experience and yield. Deposits are no longer allowed, but withdrawals will remain open indefinitely.',
+  sternNoMigration: 'This vault is retired. Please withdraw your funds.',
+  softNoMigration:
+    'This vault is retired but still earning yield. Deposits are no longer allowed, but withdrawals will remain open indefinitely.'
+} as const
+
+const isSoftRetiredVault = (vault: TYDaemonVault): boolean => {
+  const hasActiveRouterStrategy = (vault.strategies ?? []).some(
+    (strategy) => strategy.status === 'active' && strategy.name.toLowerCase().includes('router')
+  )
+  const hasPositiveMonthlyNetApy = vault.apr.points.monthAgo > 0 && vault.chainID !== 250
+  return hasActiveRouterStrategy || hasPositiveMonthlyNetApy
+}
+
+const getRetiredVaultAlertMessage = ({
+  vault,
+  hasUserFundsInVault
+}: {
+  vault: TYDaemonVault
+  hasUserFundsInVault: boolean
+}): string => {
+  if (!hasUserFundsInVault) {
+    return RETIRED_VAULT_ALERT_MESSAGES.noFunds
+  }
+
+  if (vault.symbol.includes('yv^2')) {
+    return RETIRED_VAULT_ALERT_MESSAGES.softMigration
+  }
+
+  const hasMigrationPath = Boolean(vault.migration.available)
+  const isSoft = isSoftRetiredVault(vault)
+
+  if (hasMigrationPath) {
+    return isSoft ? RETIRED_VAULT_ALERT_MESSAGES.softMigration : RETIRED_VAULT_ALERT_MESSAGES.sternMigration
+  }
+
+  return isSoft ? RETIRED_VAULT_ALERT_MESSAGES.softNoMigration : RETIRED_VAULT_ALERT_MESSAGES.sternNoMigration
+}
+
+const splitFirstSentence = (message: string): { title: string; body?: string } => {
+  const firstPeriodIndex = message.indexOf('.')
+  if (firstPeriodIndex === -1) return { title: message }
+
+  const title = message.slice(0, firstPeriodIndex + 1).trim()
+  const body = message.slice(firstPeriodIndex + 1).trim()
+  return body ? { title, body } : { title }
+}
+
+function RetiredVaultAlert({ message, className }: { message: string; className: string }): ReactElement {
+  const { title, body } = splitFirstSentence(message)
+
+  return (
+    <div
+      className={cl(
+        'rounded-lg border border-border border-l-4 border-l-orange-500 dark:border-l-yellow-500 bg-surface-secondary text-sm text-text-primary',
+        className
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <svg
+          className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+        <div className="flex flex-col">
+          <p className={'font-semibold'}>{title}</p>
+          {body ? <p className="text-text-secondary">{body}</p> : null}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function Index(): ReactElement | null {
@@ -248,16 +334,27 @@ function Index(): ReactElement | null {
     currentVault?.staking.address
   ])
 
-  const migratableShareBalance = useMemo(() => {
-    if (!currentVault?.address || !Number.isInteger(currentVault?.chainID) || !isActive) {
-      return 0n
-    }
-    return getBalance({ address: toAddress(currentVault.address), chainID: currentVault.chainID }).raw
-  }, [currentVault?.address, currentVault?.chainID, getBalance, isActive])
+  const vaultShareBalance =
+    !!address && currentVault?.address && Number.isInteger(currentVault?.chainID)
+      ? getBalance({ address: toAddress(currentVault.address), chainID: currentVault.chainID }).raw
+      : 0n
+
+  const stakingShareBalance =
+    !!address &&
+    currentVault?.staking.available &&
+    !isZeroAddress(currentVault?.staking.address) &&
+    Number.isInteger(currentVault?.chainID)
+      ? getBalance({ address: toAddress(currentVault.staking.address), chainID: currentVault.chainID }).raw
+      : 0n
 
   const isMigratable = Boolean(currentVault?.migration?.available)
-  const canShowMigrateAction = isMigratable && migratableShareBalance > 0n
+  const canShowMigrateAction = isMigratable && vaultShareBalance > 0n
   const isRetired = Boolean(currentVault?.info?.isRetired)
+  const hasUserFundsInVault = vaultShareBalance > 0n || stakingShareBalance > 0n
+  const retiredVaultAlertMessage = useMemo(() => {
+    if (!isRetired || !currentVault) return null
+    return getRetiredVaultAlertMessage({ vault: currentVault, hasUserFundsInVault })
+  }, [currentVault, hasUserFundsInVault, isRetired])
   const widgetActions = useMemo(() => {
     if (isRetired || isMigratable) {
       return canShowMigrateAction ? [WidgetActionType.Migrate, WidgetActionType.Withdraw] : [WidgetActionType.Withdraw]
@@ -704,29 +801,8 @@ function Index(): ReactElement | null {
         <div className="md:hidden space-y-4">
           <MobileKeyMetrics currentVault={currentVault} />
 
-          {isRetired ? (
-            <div
-              className={
-                'rounded-lg border border-border border-l-4 border-l-orange-500 dark:border-l-yellow-500 bg-surface-secondary px-4 py-3 text-sm text-text-primary'
-              }
-            >
-              <div className="flex items-start gap-3">
-                <svg
-                  className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-                <p className={'font-semibold'}>{'This vault is retired. Please Withdraw or Migrate.'}</p>
-              </div>
-            </div>
+          {isRetired && retiredVaultAlertMessage ? (
+            <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-4 py-3" />
           ) : null}
 
           {Number.isInteger(chainId) && (
@@ -863,29 +939,8 @@ function Index(): ReactElement | null {
           </div>
 
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
-            {isRetired ? (
-              <div
-                className={
-                  'rounded-lg border border-border border-l-4 border-l-orange-500 dark:border-l-yellow-500 bg-surface-secondary px-6 py-4 text-sm text-text-primary'
-                }
-              >
-                <div className="flex items-start gap-3">
-                  <svg
-                    className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
-                  <p className={'font-semibold'}>{'This vault is retired. Please Withdraw or Migrate.'}</p>
-                </div>
-              </div>
+            {isRetired && retiredVaultAlertMessage ? (
+              <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
             ) : null}
 
             {renderableSections.map((section) => {
