@@ -243,7 +243,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
             {unallocatedPercentage > 0 && unallocatedValue > 0n ? (
               <div className={'w-full rounded-lg text-text-primary opacity-50'}>
                 <div className={'grid w-full grid-cols-1 items-center gap-4 px-4 py-3 md:grid-cols-24 md:px-8'}>
-                  <div className={'col-span-9 flex items-center gap-2'}>
+                  <div className={'flex w-full items-center gap-2 md:col-span-9 md:w-auto'}>
                     <div className={'flex size-6 items-center justify-center'}>
                       <div className={'size-2 rounded-full bg-text-secondary'} />
                     </div>
@@ -251,7 +251,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                       Unallocated
                     </strong>
                   </div>
-                  <div className={'mt-4 grid grid-cols-3 gap-2 md:col-span-14 md:mt-0 md:grid-cols-15 md:gap-4'}>
+                  <div className={'grid w-full grid-cols-3 gap-2 md:col-span-14 md:grid-cols-15 md:gap-4'}>
                     <div className={'flex flex-col items-center md:items-end md:col-span-5'} datatype={'number'}>
                       <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>Allocation %</p>
                       <p className={'font-semibold'}>{formatPercent(unallocatedPercentage / 100, 0)}</p>
@@ -266,10 +266,10 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                     </div>
                     <div className={'flex flex-col items-center md:items-end md:col-span-5'} datatype={'number'}>
                       <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>APY</p>
-                      <p className={'font-semibold'}>—</p>
+                      <p className={'font-semibold'}>-</p>
                     </div>
                   </div>
-                  <div className={'col-span-1'}></div>
+                  <div className={'hidden md:block md:col-span-1'}></div>
                 </div>
               </div>
             ) : null}
