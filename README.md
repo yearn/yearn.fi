@@ -1,4 +1,4 @@
-# yearn.fi
+# yearn.fi - LEGACY
 
 ![](./public/og.png)
 
