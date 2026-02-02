@@ -18,6 +18,7 @@ import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType } from '@pages/vaults/types'
 import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
+import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -27,9 +28,12 @@ import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { isAddressEqual } from 'viem'
+import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
+import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
+import { getCategoryDescription, getProductTypeDescription } from '@/components/pages/vaults/utils/vaultTagCopy'
 import { useWeb3 } from '@/components/shared/contexts/useWeb3'
 import { useDevFlags } from '@/contexts/useDevFlags'
 
@@ -150,7 +154,9 @@ function Index(): ReactElement | null {
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [mobileDrawerAction, setMobileDrawerAction] = useState<WidgetActionType>(WidgetActionType.Deposit)
+  const [hideMobileDrawerTabs, setHideMobileDrawerTabs] = useState(false)
   const mobileWidgetRef = useRef<TWidgetRef>(null)
+  const mobileDrawerPanelRef = useRef<HTMLDivElement>(null)
   const detailsRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement | null>(null)
   const sectionSelectorRef = useRef<HTMLDivElement>(null)
@@ -183,7 +189,7 @@ function Index(): ReactElement | null {
   })
   const collapsibleTitles: Record<SectionKey, string> = {
     about: 'Vault Info',
-    risk: 'Risk Score',
+    risk: 'Risk',
     strategies: 'Strategies',
     info: 'More Info',
     charts: 'Performance'
@@ -664,6 +670,30 @@ function Index(): ReactElement | null {
     setIsMobileDrawerOpen(true)
   }, [])
 
+  useLayoutEffect(() => {
+    // Reset when switching actions so we can re-measure with tabs visible.
+    void mobileDrawerAction
+    if (!isMobileDrawerOpen) {
+      setHideMobileDrawerTabs((prev) => (prev ? false : prev))
+      return
+    }
+    setHideMobileDrawerTabs((prev) => (prev ? false : prev))
+  }, [isMobileDrawerOpen, mobileDrawerAction])
+
+  useLayoutEffect(() => {
+    // Re-check sizing when the drawer action changes.
+    void mobileDrawerAction
+    if (!isMobileDrawerOpen || hideMobileDrawerTabs) return
+    if (typeof window === 'undefined') return
+    const panel = mobileDrawerPanelRef.current
+    if (!panel) return
+    const maxHeight = window.innerHeight * 0.9
+    const shouldHideTabs = panel.scrollHeight > maxHeight + 1
+    if (shouldHideTabs) {
+      setHideMobileDrawerTabs(true)
+    }
+  }, [isMobileDrawerOpen, mobileDrawerAction, hideMobileDrawerTabs])
+
   useEffect(() => {
     if (isMobileDrawerOpen && mobileWidgetRef.current) {
       mobileWidgetRef.current.setMode(mobileDrawerAction)
@@ -703,15 +733,28 @@ function Index(): ReactElement | null {
     )
   }
 
+  function getMobileProductTypeLabel(): string {
+    if (mobileListKind === 'allocator' || mobileListKind === 'strategy') return 'Single Asset'
+    if (mobileListKind === 'legacy') return 'Legacy'
+    return 'LP Token'
+  }
+  function getWidgetModeLabel(mode: WidgetActionType): string {
+    switch (mode) {
+      case WidgetActionType.Deposit:
+        return 'Deposit'
+      case WidgetActionType.Withdraw:
+        return 'Withdraw'
+      default:
+        return 'Migrate'
+    }
+  }
+
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const headerStickyTop = 'var(--header-height)'
   const resolvedWidgetMode = widgetActions.includes(widgetMode) ? widgetMode : widgetActions[0]
-  const widgetModeLabel =
-    resolvedWidgetMode === WidgetActionType.Deposit
-      ? 'Deposit'
-      : resolvedWidgetMode === WidgetActionType.Withdraw
-        ? 'Withdraw'
-        : 'Migrate'
+  const mobileListKind = deriveListKind(currentVault)
+  const mobileProductTypeLabel = getMobileProductTypeLabel()
+  const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
 
   return (
@@ -749,7 +792,15 @@ function Index(): ReactElement | null {
           />
         </header>
 
-        <div className="md:hidden mt-4 mb-4">
+        <div className="md:hidden md:mt-4 mb-4">
+          <Breadcrumbs
+            className={'mb-3'}
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Vaults', href: '/vaults' },
+              { label: `${getVaultName(currentVault)} yVault`, isCurrent: true }
+            ]}
+          />
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
               <ImageWithFallback
@@ -765,9 +816,18 @@ function Index(): ReactElement | null {
               <h1 className={'text-lg font-black leading-tight truncate-safe text-text-primary'}>
                 {getVaultName(currentVault)} yVault
               </h1>
-              <p className="text-mobile-label text-text-secondary">
-                {currentVault.token.symbol} • v{currentVault.version}
-              </p>
+              <div className="flex items-center gap-1 mt-1">
+                {currentVault.category ? (
+                  <VaultsListChip
+                    label={currentVault.category}
+                    tooltipDescription={getCategoryDescription(currentVault.category) || undefined}
+                  />
+                ) : null}
+                <VaultsListChip
+                  label={mobileProductTypeLabel}
+                  tooltipDescription={getProductTypeDescription(mobileListKind)}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -1010,6 +1070,7 @@ function Index(): ReactElement | null {
         onClose={() => setIsMobileDrawerOpen(false)}
         title={currentVault.name}
         headerActions={<MobileDrawerSettingsButton />}
+        panelRef={mobileDrawerPanelRef}
       >
         <Widget
           ref={mobileWidgetRef}
@@ -1022,9 +1083,9 @@ function Index(): ReactElement | null {
           vaultUserData={vaultUserData}
           mode={mobileDrawerAction}
           onModeChange={setMobileDrawerAction}
-          hideTabSelector
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
+          hideTabSelector={hideMobileDrawerTabs}
           disableBorderRadius
         />
       </BottomDrawer>

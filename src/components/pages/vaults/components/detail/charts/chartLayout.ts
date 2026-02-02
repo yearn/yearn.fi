@@ -13,3 +13,9 @@ export const CHART_Y_AXIS_TICK_STYLE = {
   textAnchor: 'start' as const,
   dx: 6
 }
+
+export const CHART_TOOLTIP_WRAPPER_STYLE: React.CSSProperties = {
+  zIndex: 50,
+  pointerEvents: 'none',
+  maxWidth: 'calc(100vw - 32px)'
+}

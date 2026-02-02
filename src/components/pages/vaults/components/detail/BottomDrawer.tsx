@@ -1,7 +1,7 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { IconClose } from '@shared/icons/IconClose'
 import { cl } from '@shared/utils'
-import type { ReactElement, ReactNode } from 'react'
+import type { ReactElement, ReactNode, Ref } from 'react'
 import { Fragment } from 'react'
 
 type TBottomDrawerProps = {
@@ -10,9 +10,17 @@ type TBottomDrawerProps = {
   children: ReactNode
   title?: string
   headerActions?: ReactNode
+  panelRef?: Ref<HTMLDivElement>
 }
 
-export function BottomDrawer({ isOpen, onClose, children, title, headerActions }: TBottomDrawerProps): ReactElement {
+export function BottomDrawer({
+  isOpen,
+  onClose,
+  children,
+  title,
+  headerActions,
+  panelRef
+}: TBottomDrawerProps): ReactElement {
   return (
     <Transition show={isOpen} as={Fragment}>
       <Dialog as={'div'} className={'relative z-100'} onClose={onClose}>
@@ -40,7 +48,12 @@ export function BottomDrawer({ isOpen, onClose, children, title, headerActions }
               leaveTo={'translate-y-full'}
             >
               <Dialog.Panel
-                className={cl('w-full bg-surface rounded-t-3xl shadow-lg', 'h-[80dvh] max-h-[80dvh]', 'flex flex-col')}
+                ref={panelRef}
+                className={cl(
+                  'w-full bg-surface rounded-t-3xl shadow-lg',
+                  'max-h-[90dvh] overflow-hidden',
+                  'flex flex-col'
+                )}
               >
                 <div className={'flex items-center justify-between p-4 pb-2'}>
                   {title ? <h2 className={'text-lg font-semibold text-text-primary'}>{title}</h2> : <div />}
@@ -61,8 +74,8 @@ export function BottomDrawer({ isOpen, onClose, children, title, headerActions }
                     </button>
                   </div>
                 </div>
-                <div className={'flex-1 overflow-y-auto overflow-x-hidden relative'}>
-                  <div className={'bg-surface-secondary h-full pb-[calc(2rem+env(safe-area-inset-bottom,0px))]'}>
+                <div className={'flex-auto min-h-0 overflow-y-auto overflow-x-hidden relative'}>
+                  <div className={'bg-surface-secondary pb-[calc(2rem+env(safe-area-inset-bottom,0px))]'}>
                     {children}
                   </div>
                 </div>

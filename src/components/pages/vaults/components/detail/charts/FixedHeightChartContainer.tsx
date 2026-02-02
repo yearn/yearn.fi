@@ -27,12 +27,15 @@ export function FixedHeightChartContainer({
       )}
       style={heightVars}
     >
-      <div className={'absolute inset-0'}>
-        <div className={'h-full w-full'}>
+      <div className={'absolute inset-0 overflow-visible'}>
+        <div className={'h-full w-full overflow-visible'}>
           <style>{`
             .fixed-height-chart-container .aspect-video {
               aspect-ratio: auto !important;
               height: 100% !important;
+            }
+            .fixed-height-chart-container .recharts-tooltip-wrapper {
+              overflow: visible !important;
             }
           `}</style>
           {children}

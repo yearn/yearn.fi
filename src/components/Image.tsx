@@ -43,9 +43,10 @@ function Image(props: CustomImageProps): ReactElement {
 
   const [imageSrc, setImageSrc] = useState<string | typeof src>(src)
   const [isVisible, setIsVisible] = useState(loading !== 'lazy' || priority === true)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const imageRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
 
   // Set up IntersectionObserver for lazy loading
@@ -80,6 +81,16 @@ function Image(props: CustomImageProps): ReactElement {
     setHasError(false)
     setIsLoading(true)
   }, [src])
+
+  // Handle already-cached images where onLoad might not fire
+  useEffect(() => {
+    if (!isVisible) return
+    const imageElement = imgRef.current
+    if (imageElement?.complete && imageElement.naturalWidth > 0 && imageElement.naturalHeight > 0) {
+      setIsLoading(false)
+      setHasError(false)
+    }
+  }, [isVisible])
 
   const handleLoadComplete = (): void => {
     setIsLoading(false)
@@ -127,6 +138,7 @@ function Image(props: CustomImageProps): ReactElement {
       {errorPlaceholder}
       {isVisible && (
         <img
+          ref={imgRef}
           src={imageSrc as string}
           alt={alt}
           className={imageClassName}

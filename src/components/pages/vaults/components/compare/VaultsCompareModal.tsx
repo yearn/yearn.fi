@@ -102,7 +102,7 @@ function DesktopCompareGrid({
   const [activeColumn, setActiveColumn] = useState<number | null>(null)
 
   return (
-    <div className={'mt-6 overflow-x-auto'}>
+    <div className={'overflow-x-auto'}>
       <div className={'min-w-[640px]'}>
         <div
           className={'grid gap-x-4'}
@@ -308,11 +308,7 @@ function MobileCompareView({
   vaults: TYDaemonVault[]
   onRemove: (vaultKey: string) => void
 }): ReactElement {
-  return (
-    <div className={'mt-6'}>
-      <SwipeableCompareCarousel vaults={vaults} onRemove={onRemove} />
-    </div>
-  )
+  return <SwipeableCompareCarousel vaults={vaults} onRemove={onRemove} />
 }
 
 export function VaultsCompareModal({ isOpen, onClose, vaults, onRemove }: TVaultsCompareModalProps): ReactElement {
@@ -389,7 +385,8 @@ export function VaultsCompareModal({ isOpen, onClose, vaults, onRemove }: TVault
               <Dialog.Panel
                 className={cl(
                   'w-full overflow-hidden rounded-3xl border border-border bg-surface text-text-primary shadow-lg',
-                  isMobile ? 'max-w-md p-4' : 'max-w-6xl p-6'
+                  isMobile ? 'max-w-md p-4' : 'max-w-6xl p-6',
+                  'max-h-[90dvh] flex flex-col'
                 )}
               >
                 <div className={'flex items-start justify-between gap-4'}>
@@ -416,15 +413,17 @@ export function VaultsCompareModal({ isOpen, onClose, vaults, onRemove }: TVault
                   </div>
                 </div>
 
-                {!hasVaults ? (
-                  <div className={'mt-8 rounded-2xl border border-border bg-surface-secondary/40 p-6 text-center'}>
-                    <p className={'text-sm text-text-secondary'}>{'Select at least two vaults to compare.'}</p>
-                  </div>
-                ) : isMobile ? (
-                  <MobileCompareView vaults={vaults} onRemove={onRemove} />
-                ) : (
-                  <DesktopCompareGrid vaults={vaults} onRemove={onRemove} />
-                )}
+                <div className={'mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain'}>
+                  {!hasVaults ? (
+                    <div className={'rounded-2xl border border-border bg-surface-secondary/40 p-6 text-center'}>
+                      <p className={'text-sm text-text-secondary'}>{'Select at least two vaults to compare.'}</p>
+                    </div>
+                  ) : isMobile ? (
+                    <MobileCompareView vaults={vaults} onRemove={onRemove} />
+                  ) : (
+                    <DesktopCompareGrid vaults={vaults} onRemove={onRemove} />
+                  )}
+                </div>
               </Dialog.Panel>
             </TransitionChild>
           </div>
