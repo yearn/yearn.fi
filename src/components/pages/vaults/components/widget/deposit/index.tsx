@@ -1,3 +1,4 @@
+import { usePlausible } from '@hooks/usePlausible'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
@@ -8,6 +9,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconSettings } from '@shared/icons/IconSettings'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
@@ -67,6 +69,7 @@ export const WidgetDeposit: FC<Props> = ({
   const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, isAutoStakingEnabled, getPrice } = useYearn()
+  const trackEvent = usePlausible()
 
   const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
@@ -290,6 +293,28 @@ export const WidgetDeposit: FC<Props> = ({
   })
 
   const handleDepositSuccess = useCallback(() => {
+    const amountToDeposit = formatUnits(depositAmount.bn, inputToken?.decimals ?? 18)
+    const priceUsd =
+      inputToken?.address && inputToken?.chainID
+        ? getPrice({ address: toAddress(inputToken.address), chainID: inputToken.chainID }).normalized
+        : 0
+    const valueUsd = Number(amountToDeposit) * priceUsd
+
+    trackEvent(PLAUSIBLE_EVENTS.DEPOSIT, {
+      props: {
+        chainID: String(chainId),
+        vaultAddress,
+        vaultSymbol,
+        amountToDeposit,
+        tokenAddress: toAddress(depositToken),
+        tokenSymbol: inputToken?.symbol || '',
+        priceUsd: String(priceUsd),
+        valueUsd: String(valueUsd),
+        isZap: String(routeType === 'ENSO'),
+        action: 'deposit'
+      }
+    })
+
     setDepositInput('')
     const tokensToRefresh = [
       { address: depositToken, chainID: sourceChainId },
@@ -302,12 +327,21 @@ export const WidgetDeposit: FC<Props> = ({
     refetchVaultUserData()
     onDepositSuccess?.()
   }, [
+    depositAmount.bn,
+    inputToken?.decimals,
+    inputToken?.address,
+    inputToken?.chainID,
+    inputToken?.symbol,
+    getPrice,
+    trackEvent,
+    chainId,
+    vaultAddress,
+    vaultSymbol,
+    depositToken,
+    routeType,
     setDepositInput,
     refreshWalletBalances,
-    depositToken,
     sourceChainId,
-    vaultAddress,
-    chainId,
     stakingAddress,
     onDepositSuccess,
     refetchVaultUserData

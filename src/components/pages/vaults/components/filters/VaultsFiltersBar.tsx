@@ -7,6 +7,7 @@ import {
   Transition,
   TransitionChild
 } from '@headlessui/react'
+import { usePlausible } from '@hooks/usePlausible'
 import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
 import { getChainDescription } from '@pages/vaults/utils/vaultTagCopy'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
@@ -17,6 +18,7 @@ import { IconCross } from '@shared/icons/IconCross'
 import { IconSearch } from '@shared/icons/IconSearch'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import { cl } from '@shared/utils'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { type TVaultsChainButton, VaultsChainSelector } from './VaultsChainSelector'
@@ -38,6 +40,7 @@ export type TSearchProps = {
   shouldDebounce?: boolean
   alertContent?: ReactNode
   trailingControls?: ReactNode
+  onBlur?: () => void
 }
 
 export type TFiltersProps = {
@@ -313,6 +316,7 @@ export function VaultsFiltersBar({
             showInlineSearch={true}
             searchValue={search.value}
             onSearch={search.onChange}
+            onSearchBlur={search.onBlur}
             shouldDebounce={search.shouldDebounce}
             searchAlertContent={search.alertContent}
             controlsRowRef={controlsRowRef}
@@ -364,6 +368,7 @@ function FilterControls({
   showInlineSearch,
   searchValue,
   onSearch,
+  onSearchBlur,
   shouldDebounce,
   searchAlertContent,
   controlsRowRef,
@@ -387,6 +392,7 @@ function FilterControls({
   showInlineSearch: boolean
   searchValue: string
   onSearch: (value: string) => void
+  onSearchBlur?: () => void
   shouldDebounce?: boolean
   searchAlertContent?: ReactNode
   controlsRowRef?: RefObject<HTMLDivElement | null>
@@ -408,6 +414,7 @@ function FilterControls({
         searchPlaceholder={'Find a Vault'}
         searchValue={searchValue}
         onSearch={onSearch}
+        onBlur={onSearchBlur}
         shouldDebounce={shouldDebounce || false}
         highlightWhenActive={true}
         alertContent={searchAlertContent}
@@ -551,6 +558,7 @@ function FiltersModal({
   filtersInitialState?: TPendingFiltersState
   onApplyFilters?: (state: TPendingFiltersState) => void
 }): ReactElement {
+  const trackEvent = usePlausible()
   const [pendingState, setPendingState] = useState<TPendingFiltersState>(filtersInitialState ?? EMPTY_FILTERS_STATE)
 
   useEffect(() => {
@@ -564,6 +572,27 @@ function FiltersModal({
   }
 
   const handleSave = (): void => {
+    if (pendingState.minTvl !== DEFAULT_MIN_TVL) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_TVL, { props: { value: pendingState.minTvl.toString() } })
+    }
+    if (pendingState.categories.length > 0) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_CATEGORY, { props: { value: pendingState.categories.join(',') } })
+    }
+    if (pendingState.aggressiveness.length > 0) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_RISK, { props: { value: pendingState.aggressiveness.join(',') } })
+    }
+    if (pendingState.underlyingAssets.length > 0) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_ASSET, { props: { value: pendingState.underlyingAssets.join(',') } })
+    }
+    if (pendingState.showLegacyVaults) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_LEGACY, { props: { enabled: 'true' } })
+    }
+    if (pendingState.showHiddenVaults) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_HIDDEN, { props: { enabled: 'true' } })
+    }
+    if (pendingState.showStrategies) {
+      trackEvent(PLAUSIBLE_EVENTS.FILTER_STRATEGIES, { props: { enabled: 'true' } })
+    }
     if (onApplyFilters) {
       onApplyFilters(pendingState)
     }

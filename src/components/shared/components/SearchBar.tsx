@@ -18,6 +18,7 @@ type TSearchBar = {
   highlightWhenActive?: boolean
   alertContent?: ReactNode
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  onBlur?: () => void
   autoFocus?: boolean
 }
 
@@ -98,6 +99,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
               return props.onSearchClick?.()
             }
           }}
+          onBlur={props.onBlur}
         />
         {props.alertContent ? (
           <div className={'flex items-center gap-2 text-xs text-text-secondary'}>{props.alertContent}</div>

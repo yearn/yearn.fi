@@ -1,3 +1,4 @@
+import { usePlausible } from '@hooks/usePlausible'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
@@ -22,6 +23,7 @@ import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, SUPPORTED_NETWORKS } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -421,6 +423,7 @@ function ChainMerkleRewardsFetcher({
 function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioClaimRewardsProps): ReactElement {
   const { address: userAddress } = useWeb3()
   const { vaults } = useYearn()
+  const trackEvent = usePlausible()
   const stakingVaults = useMemo(() => Object.values(vaults).filter((vault) => vault.staking.available), [vaults])
   const [selectedChainId, setSelectedChainId] = useState<number | null>(null)
   const [isOverlayOpen, setIsOverlayOpen] = useState(false)
@@ -539,13 +542,20 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   }, [])
 
   const handleClaimComplete = useCallback(() => {
+    trackEvent(PLAUSIBLE_EVENTS.CLAIM, {
+      props: {
+        chainID: String(selectedChainId ?? 0),
+        valueUsd: String(selectedChainId === null ? totalUsd : (selectedChainData?.totalUsd ?? 0)),
+        source: 'portfolio'
+      }
+    })
     setIsOverlayOpen(false)
     setActiveStep(undefined)
     chainRewardsData.forEach((c) => {
       c.refetchStaking()
       c.refetchMerkle()
     })
-  }, [chainRewardsData])
+  }, [trackEvent, selectedChainId, totalUsd, selectedChainData?.totalUsd, chainRewardsData])
 
   const handleOverlayClose = useCallback(() => {
     setIsOverlayOpen(false)
