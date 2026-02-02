@@ -535,14 +535,11 @@ export function VaultsListRow({
                   {mobileSecondaryMetric === 'holdings' ? 'Holdings:' : 'TVL:'}
                 </span>
                 {mobileSecondaryMetric === 'holdings' ? (
-                  <span className={'text-lg font-semibold text-text-primary font-number'}>
+                  <span className={'text-lg font-semibold text-text-primary'}>
                     {showHoldingsValue ? formatTvlDisplay(holdingsValue) : '—'}
                   </span>
                 ) : (
-                  <VaultTVL
-                    currentVault={currentVault}
-                    valueClassName={'text-lg font-semibold text-text-primary font-number'}
-                  />
+                  <VaultTVL currentVault={currentVault} valueClassName={'text-lg font-semibold text-text-primary'} />
                 )}
               </div>
             </div>
