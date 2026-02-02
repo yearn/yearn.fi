@@ -568,8 +568,8 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   const handleClaimComplete = useCallback(() => {
     trackEvent(PLAUSIBLE_EVENTS.CLAIM, {
       props: {
-        chainID: selectedChainId ?? 0,
-        valueUsd: selectedChainId === null ? totalUsd : (selectedChainData?.totalUsd ?? 0),
+        chainID: String(selectedChainId ?? 0),
+        valueUsd: String(selectedChainId === null ? totalUsd : (selectedChainData?.totalUsd ?? 0)),
         source: 'portfolio'
       }
     })

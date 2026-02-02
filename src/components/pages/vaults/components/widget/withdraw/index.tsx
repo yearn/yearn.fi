@@ -323,15 +323,15 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
 
     trackEvent(PLAUSIBLE_EVENTS.WITHDRAW, {
       props: {
-        chainID: chainId,
+        chainID: String(chainId),
         vaultAddress,
         vaultSymbol,
         sharesToWithdraw,
         tokenAddress: toAddress(withdrawToken),
         tokenSymbol: outputToken?.symbol || '',
-        priceUsd,
-        valueUsd,
-        isZap: routeType === 'ENSO',
+        priceUsd: String(priceUsd),
+        valueUsd: String(valueUsd),
+        isZap: String(routeType === 'ENSO'),
         action: 'withdraw'
       }
     })

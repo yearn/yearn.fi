@@ -1,11 +1,12 @@
-import Plausible from 'plausible-tracker'
+import { init, track } from '@plausible-analytics/tracker'
 
-export const plausible = Plausible({
-  domain: 'yearnfi-git-measure-yearn.vercel.app',
-  apiHost: '/proxy/plausible',
-  trackLocalhost: import.meta.env.VITE_PLAUSIBLE_TRACK_LOCALHOST === 'true'
+init({
+  domain: 'yearn.fi',
+  endpoint: '/proxy/plausible/api/event',
+  captureOnLocalhost: import.meta.env.VITE_PLAUSIBLE_TRACK_LOCALHOST === 'true',
+  autoCapturePageviews: true
 })
 
 export function usePlausible() {
-  return plausible.trackEvent
+  return track
 }
