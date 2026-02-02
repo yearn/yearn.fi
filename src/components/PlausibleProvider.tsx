@@ -9,7 +9,7 @@ interface PlausibleProviderProps {
 }
 
 const plausible = Plausible({
-  domain: 'yearn.fi',
+  domain: 'legacy.yearn.fi',
   apiHost: '/proxy/plausible'
 })
 
