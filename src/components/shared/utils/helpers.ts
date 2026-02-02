@@ -22,19 +22,6 @@ export async function hash(message: string): Promise<string> {
   return `0x${hashHex}`
 }
 
-/***************************************************************************
- ** Parse some markdown to get the associated rich content. Instead of using
- ** a md parser and add some heavy dependencies, just use regex to replace
- ** the strings to some class and inject that to the code.
- **************************************************************************/
-export function parseMarkdown(markdownText: string): string {
-  const htmlText = markdownText
-    .replace(/\[(.*?)\]\((.*?)\)/gim, "<a class='link' target='_blank' href='$2'>$1</a>")
-    .replace(/~~(.*?)~~/gim, "<span class='line-through'>$1</span>")
-    .replace(/\*\*(.*?)\*\*/gim, "<span class='font-bold'>$1</span>")
-  return htmlText.trim()
-}
-
 export function copyToClipboard(value: string): void {
   const { toast } = yToast()
   navigator.clipboard.writeText(value)
