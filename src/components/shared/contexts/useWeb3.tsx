@@ -65,12 +65,12 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   useEffect(() => {
     if (!wasConnectedRef.current && isConnected && hasUserRequestedConnectionRef.current) {
       trackEvent(PLAUSIBLE_EVENTS.CONNECT_WALLET, {
-        props: { address: address ?? '', connector: connector?.name ?? '', chainID: String(chainID) }
+        props: { connector: connector?.name ?? '', chainID: String(chainID) }
       })
       hasUserRequestedConnectionRef.current = false
     }
     wasConnectedRef.current = isConnected
-  }, [isConnected, address, connector, chainID, trackEvent])
+  }, [isConnected, connector, chainID, trackEvent])
 
   useEffect(() => {
     if (isConnected && previousChainIDRef.current !== undefined && previousChainIDRef.current !== chainID) {
@@ -87,10 +87,10 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
 
   const onDesactivate = useCallback((): void => {
     trackEvent(PLAUSIBLE_EVENTS.DISCONNECT_WALLET, {
-      props: { address: address ?? '', chainID: String(chainID) }
+      props: { chainID: String(chainID) }
     })
     disconnect()
-  }, [disconnect, trackEvent, address, chainID])
+  }, [disconnect, trackEvent, chainID])
 
   const openLoginModal = useCallback(async (): Promise<void> => {
     if (isConnected && connector && address) {
