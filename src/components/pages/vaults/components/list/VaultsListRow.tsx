@@ -17,11 +17,10 @@ import { useMediaQuery } from '@react-hookz/web'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { useYearn } from '@shared/contexts/useYearn'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
-import { cl, formatAmount, formatTvlDisplay, toAddress, toNormalizedBN } from '@shared/utils'
+import { cl, formatAmount, formatTvlDisplay, isZeroAddress, toAddress } from '@shared/utils'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -109,7 +108,6 @@ export function VaultsListRow({
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const { address } = useWeb3()
   const { getToken } = useWallet()
-  const { getPrice } = useYearn()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const [isExpandedState, setIsExpandedState] = useState(false)
   const isExpanded = isExpandedProp ?? isExpandedState
@@ -246,27 +244,22 @@ export function VaultsListRow({
       chainID: currentVault.chainID,
       address: currentVault.address
     })
-    const price = getPrice({
-      address: currentVault.address,
-      chainID: currentVault.chainID
-    })
-    const stakingBalance = currentVault.staking.available
+    const vaultValue = vaultToken.value || 0
+
+    const stakingValue = !isZeroAddress(currentVault.staking?.address)
       ? getToken({
           chainID: currentVault.chainID,
           address: currentVault.staking.address
-        }).balance.raw
-      : 0n
-    const totalRawBalance = vaultToken.balance.raw + stakingBalance
-    const total = toNormalizedBN(totalRawBalance, vaultToken.decimals)
-    return total.normalized * price.normalized
+        }).value || 0
+      : 0
+
+    return vaultValue + stakingValue
   }, [
     showHoldingsChip,
     currentVault.address,
     currentVault.chainID,
-    currentVault.staking.address,
-    currentVault.staking.available,
+    currentVault.staking?.address,
     getToken,
-    getPrice,
     mobileSecondaryMetric
   ])
 
@@ -569,7 +562,7 @@ export function VaultsListRow({
           {!showHoldingsColumn ? <div className={'col-span-1'} /> : null}
           {showHoldingsColumn ? (
             <div className={cl('yearn--table-data-section-item', holdingsColumnSpan)} datatype={'number'}>
-              <VaultHoldingsAmount currentVault={currentVault} />
+              <VaultHoldingsAmount value={holdingsValue} />
             </div>
           ) : null}
         </div>
