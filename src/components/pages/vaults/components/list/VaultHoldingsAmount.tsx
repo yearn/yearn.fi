@@ -2,13 +2,13 @@ import { RenderAmount } from '@shared/components/RenderAmount'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import type { TNormalizedBN } from '@shared/types'
-import { cl, isZero, toNormalizedBN } from '@shared/utils'
+import { cl, isZero, isZeroAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { FC } from 'react'
 import { useMemo } from 'react'
 
 export const VaultHoldingsAmount: FC<{ currentVault: TYDaemonVault }> = ({ currentVault }) => {
-  const { getToken, isLoading } = useWallet()
+  const { getBalance, isLoading } = useWallet()
   const { getPrice } = useYearn()
 
   const tokenPrice = useMemo(
@@ -16,22 +16,15 @@ export const VaultHoldingsAmount: FC<{ currentVault: TYDaemonVault }> = ({ curre
     [currentVault.address, currentVault.chainID, getPrice]
   )
   const staked = useMemo((): TNormalizedBN => {
-    const vaultToken = getToken({ chainID: currentVault.chainID, address: currentVault.address })
-    if (currentVault.staking.available) {
-      const stakingToken = getToken({
-        chainID: currentVault.chainID,
-        address: currentVault.staking.address
-      })
-      return toNormalizedBN(vaultToken.balance.raw + stakingToken.balance.raw, vaultToken.decimals)
-    }
-    return toNormalizedBN(vaultToken.balance.raw, vaultToken.decimals)
-  }, [
-    currentVault.address,
-    currentVault.chainID,
-    currentVault.staking.address,
-    currentVault.staking.available,
-    getToken
-  ])
+    const vaultBalance = getBalance({ chainID: currentVault.chainID, address: currentVault.address })
+    const stakingBalance = !isZeroAddress(currentVault.staking.address)
+      ? getBalance({
+          chainID: currentVault.chainID,
+          address: currentVault.staking.address
+        })
+      : zeroNormalizedBN
+    return toNormalizedBN(vaultBalance.raw + stakingBalance.raw, currentVault.decimals)
+  }, [currentVault.address, currentVault.chainID, currentVault.decimals, currentVault.staking.address, getBalance])
 
   if (isLoading) {
     return (

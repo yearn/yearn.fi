@@ -1,7 +1,7 @@
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { cl, formatAmount, formatApyDisplay } from '@shared/utils'
+import { cl, formatAmount, formatApyDisplay, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useConnect } from 'wagmi'
@@ -79,9 +79,11 @@ export function VaultMetricsGrid({ currentVault }: VaultMetricsGridProps): React
 
 interface UserBalanceGridProps {
   currentVault: TYDaemonVault
+  depositedShares?: bigint
+  depositedValue?: bigint
 }
 
-export function UserBalanceGrid({ currentVault }: UserBalanceGridProps): ReactElement {
+export function UserBalanceGrid({ currentVault, depositedShares, depositedValue }: UserBalanceGridProps): ReactElement {
   const { address, isActive, openLoginModal } = useWeb3()
   const { getToken } = useWallet()
   const { connectors, connect } = useConnect()
@@ -95,8 +97,14 @@ export function UserBalanceGrid({ currentVault }: UserBalanceGridProps): ReactEl
     chainID: currentVault.chainID
   })
 
-  const hasVaultBalance = isActive && address && vaultToken?.balance && vaultToken.balance.raw > 0n
+  const shareBalanceRaw = depositedShares ?? vaultToken.balance.raw
+  const shareBalance = toNormalizedBN(shareBalanceRaw, currentVault.decimals)
+  const hasVaultBalance = isActive && address && shareBalanceRaw > 0n
   const hasUnderlyingBalance = isActive && address && underlyingToken?.balance && underlyingToken.balance.raw > 0n
+  const hasDepositedValue = depositedValue !== undefined
+  const depositedValueUsd = hasDepositedValue
+    ? toNormalizedBN(depositedValue, currentVault.token.decimals).normalized * (currentVault.tvl.price || 0)
+    : vaultToken.value || 0
 
   const handleConnectWallet = (): void => {
     if (openLoginModal) {
@@ -112,8 +120,8 @@ export function UserBalanceGrid({ currentVault }: UserBalanceGridProps): ReactEl
         <div className="grid grid-cols-2 gap-1.5 min-[375px]:gap-2">
           <StatCard
             label="Your Deposit"
-            value={hasVaultBalance ? formatBalance(vaultToken.balance.normalized, currentVault.symbol) : '0.00'}
-            subValue={hasVaultBalance && vaultToken.value ? formatUSD(vaultToken.value) : undefined}
+            value={hasVaultBalance ? formatBalance(shareBalance.normalized, currentVault.symbol) : '0.00'}
+            subValue={hasVaultBalance ? formatUSD(depositedValueUsd) : undefined}
           />
           <StatCard
             label={`${currentVault.token.symbol} Bal`}
@@ -185,9 +193,14 @@ function SectionNavButton({ sectionId, label }: { sectionId: string; label: stri
 interface MobileKeyMetricsProps {
   currentVault: TYDaemonVault
   showSectionNav?: boolean
+  depositedValue?: bigint
 }
 
-export function MobileKeyMetrics({ currentVault, showSectionNav = true }: MobileKeyMetricsProps): ReactElement {
+export function MobileKeyMetrics({
+  currentVault,
+  showSectionNav = true,
+  depositedValue
+}: MobileKeyMetricsProps): ReactElement {
   const { address, isActive } = useWeb3()
   const { getToken } = useWallet()
   const apyData = useVaultApyData(currentVault)
@@ -202,8 +215,13 @@ export function MobileKeyMetrics({ currentVault, showSectionNav = true }: Mobile
     chainID: currentVault.chainID
   })
 
-  const hasVaultBalance = isActive && address && vaultToken?.balance && vaultToken.balance.raw > 0n
-  const depositValue = hasVaultBalance && vaultToken.value ? formatUSD(vaultToken.value) : '$0.00'
+  const hasVaultBalance =
+    isActive && address && (depositedValue !== undefined ? depositedValue > 0n : vaultToken?.balance?.raw > 0n)
+  const hasDepositedValue = depositedValue !== undefined
+  const depositUsdValue = hasDepositedValue
+    ? toNormalizedBN(depositedValue, currentVault.token.decimals).normalized * (currentVault.tvl.price || 0)
+    : vaultToken.value || 0
+  const depositValue = hasVaultBalance ? formatUSD(depositUsdValue) : '$0.00'
 
   return (
     <div className="md:hidden space-y-2">
@@ -225,13 +243,15 @@ export function MobileKeyMetrics({ currentVault, showSectionNav = true }: Mobile
 
 interface QuickStatsGridProps {
   currentVault: TYDaemonVault
+  depositedShares?: bigint
+  depositedValue?: bigint
 }
 
-export function QuickStatsGrid({ currentVault }: QuickStatsGridProps): ReactElement {
+export function QuickStatsGrid({ currentVault, depositedShares, depositedValue }: QuickStatsGridProps): ReactElement {
   return (
     <div className="md:hidden space-y-3">
       <VaultMetricsGrid currentVault={currentVault} />
-      <UserBalanceGrid currentVault={currentVault} />
+      <UserBalanceGrid currentVault={currentVault} depositedShares={depositedShares} depositedValue={depositedValue} />
     </div>
   )
 }
