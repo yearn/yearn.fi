@@ -2,7 +2,7 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import type { TNormalizedBN } from '@shared/types'
-import { cl, formatTvlDisplay, isZeroAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import { cl, formatTvlDisplay, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
@@ -14,13 +14,13 @@ export function VaultHoldingsAmount({
   currentVault: TYDaemonVault
   valueClassName?: string
 }): ReactElement {
-  const { getBalance } = useWallet()
+  const { getToken } = useWallet()
   const { address } = useWeb3()
   const isWalletActive = !!address
   const { getPrice } = useYearn()
 
   const { tokenPrice, staked, hasBalance } = useMemo(() => {
-    const vaultBalance = getBalance({
+    const vaultToken = getToken({
       chainID: currentVault.chainID,
       address: currentVault.address
     })
@@ -29,15 +29,15 @@ export function VaultHoldingsAmount({
       chainID: currentVault.chainID
     })
 
-    const stakingBalance = !isZeroAddress(currentVault.staking.address)
-      ? getBalance({
+    const stakingBalance = currentVault.staking.available
+      ? getToken({
           chainID: currentVault.chainID,
           address: currentVault.staking.address
-        })
-      : zeroNormalizedBN
-    const totalRawBalance = vaultBalance.raw + stakingBalance.raw
+        }).balance.raw
+      : 0n
+    const totalRawBalance = vaultToken.balance.raw + stakingBalance
 
-    const total: TNormalizedBN = toNormalizedBN(totalRawBalance, currentVault.decimals)
+    const total: TNormalizedBN = toNormalizedBN(totalRawBalance, vaultToken.decimals)
     return {
       tokenPrice: price,
       staked: total,
@@ -46,9 +46,9 @@ export function VaultHoldingsAmount({
   }, [
     currentVault.address,
     currentVault.chainID,
-    currentVault.decimals,
     currentVault.staking.address,
-    getBalance,
+    currentVault.staking.available,
+    getToken,
     getPrice
   ])
 

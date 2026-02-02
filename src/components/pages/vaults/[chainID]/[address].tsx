@@ -833,7 +833,7 @@ function Index(): ReactElement | null {
         </div>
 
         <div className="md:hidden space-y-4">
-          <MobileKeyMetrics currentVault={currentVault} depositedValue={vaultUserData.depositedValue} />
+          <MobileKeyMetrics currentVault={currentVault} />
 
           {isRetired && retiredVaultAlertMessage ? (
             <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-4 py-3" />

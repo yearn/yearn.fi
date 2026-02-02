@@ -21,7 +21,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
-import { cl, formatAmount, formatTvlDisplay, isZeroAddress, toAddress, zeroNormalizedBN } from '@shared/utils'
+import { cl, formatAmount, formatTvlDisplay, toAddress, toNormalizedBN } from '@shared/utils'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -108,7 +108,7 @@ export function VaultsListRow({
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const { address } = useWeb3()
-  const { getBalance } = useWallet()
+  const { getToken } = useWallet()
   const { getPrice } = useYearn()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const [isExpandedState, setIsExpandedState] = useState(false)
@@ -242,7 +242,7 @@ export function VaultsListRow({
     if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
       return 0
     }
-    const vaultBalance = getBalance({
+    const vaultToken = getToken({
       chainID: currentVault.chainID,
       address: currentVault.address
     })
@@ -250,19 +250,22 @@ export function VaultsListRow({
       address: currentVault.address,
       chainID: currentVault.chainID
     })
-    const stakingBalance = !isZeroAddress(currentVault.staking.address)
-      ? getBalance({
+    const stakingBalance = currentVault.staking.available
+      ? getToken({
           chainID: currentVault.chainID,
           address: currentVault.staking.address
-        })
-      : zeroNormalizedBN
-    return (vaultBalance.normalized + stakingBalance.normalized) * price.normalized
+        }).balance.raw
+      : 0n
+    const totalRawBalance = vaultToken.balance.raw + stakingBalance
+    const total = toNormalizedBN(totalRawBalance, vaultToken.decimals)
+    return total.normalized * price.normalized
   }, [
     showHoldingsChip,
     currentVault.address,
     currentVault.chainID,
     currentVault.staking.address,
-    getBalance,
+    currentVault.staking.available,
+    getToken,
     getPrice,
     mobileSecondaryMetric
   ])
