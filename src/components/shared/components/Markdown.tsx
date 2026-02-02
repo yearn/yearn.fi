@@ -18,7 +18,12 @@ export function Markdown({ content, className }: TMarkdownProps): ReactElement {
         skipHtml
         components={{
           a: ({ node: _node, className: linkClassName, ...props }) => (
-            <a {...props} className={cl('link', linkClassName)} target="_blank" rel="noopener noreferrer" />
+            <a
+              {...props}
+              className={cl('text-text-primary underline', linkClassName)}
+              target="_blank"
+              rel="noopener noreferrer"
+            />
           ),
           strong: ({ node: _node, className: strongClassName, ...props }) => (
             <strong {...props} className={cl('font-bold', strongClassName)} />

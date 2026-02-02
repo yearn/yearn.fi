@@ -117,7 +117,11 @@ export function VaultAboutSection({
   const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
   const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
 
-  const rawDescription = currentVault.description ?? token.description
+  const rawDescription = currentVault.description?.trim()
+    ? currentVault.description
+    : token.description?.trim()
+      ? token.description
+      : ''
   const descriptionText = rawDescription ? rawDescription.replaceAll('{{token}}', currentVault.token.symbol) : ''
 
   return (

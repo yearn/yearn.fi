@@ -54,10 +54,7 @@ export default function VaultsListRowExpandedContent({
     chainId: currentVault.chainID,
     address: currentVault.address
   })
-  const vaultForStrategies = useMemo(
-    () => mergeVaultSnapshot(currentVault, snapshotVault),
-    [currentVault, snapshotVault]
-  )
+  const mergedVault = useMemo(() => mergeVaultSnapshot(currentVault, snapshotVault), [currentVault, snapshotVault])
 
   return (
     <div className={'hidden md:block bg-surface'}>
@@ -65,7 +62,7 @@ export default function VaultsListRowExpandedContent({
         <div className={'grid gap-6 md:grid-cols-24'}>
           <div className={'col-span-12 border-r border-border'}>
             <VaultAboutSection
-              currentVault={currentVault}
+              currentVault={mergedVault ?? currentVault}
               className={'md:px-15'}
               showKindTag={showKindTag}
               showVaultAddress={true}
@@ -103,7 +100,7 @@ export default function VaultsListRowExpandedContent({
                 chartHeightMdPx={200}
               />
             ) : (
-              <VaultStrategyAllocationPreview currentVault={vaultForStrategies ?? currentVault} />
+              <VaultStrategyAllocationPreview currentVault={mergedVault ?? currentVault} />
             )}
           </div>
         </div>
