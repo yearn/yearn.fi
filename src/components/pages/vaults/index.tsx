@@ -119,9 +119,19 @@ export default function Index(): ReactElement {
     }
   }, [search.value, totalMatchingVaults, trackEvent])
 
-  const handleToggleCompare = useCallback((vault: TYDaemonVault): void => {
-    setCompareVaultKeys((prev) => toggleInArray(prev, getVaultKey(vault)))
-  }, [])
+  const handleToggleCompare = useCallback(
+    (vault: TYDaemonVault): void => {
+      const vaultKey = getVaultKey(vault)
+      const isAdding = !compareVaultKeys.includes(vaultKey)
+      if (isAdding) {
+        trackEvent(PLAUSIBLE_EVENTS.COMPARE_VAULT_ADD, {
+          props: { vaultKey, chainId: vault.chainID.toString(), generation: 3 }
+        })
+      }
+      setCompareVaultKeys((prev) => toggleInArray(prev, vaultKey))
+    },
+    [compareVaultKeys, trackEvent]
+  )
 
   const handleRemoveCompare = useCallback((vaultKey: string): void => {
     setCompareVaultKeys((prev) => prev.filter((entry) => entry !== vaultKey))
@@ -131,16 +141,22 @@ export default function Index(): ReactElement {
     setCompareVaultKeys([])
   }, [])
 
-  const handleToggleCompareMode = useCallback((): void => {
-    setIsCompareMode((prev) => {
-      const next = !prev
-      if (!next) {
-        setCompareVaultKeys([])
-        setIsCompareOpen(false)
-      }
-      return next
+  const handleOpenCompare = useCallback((): void => {
+    trackEvent(PLAUSIBLE_EVENTS.COMPARE_MODAL_OPEN, {
+      props: { vaultCount: compareVaultKeys.length.toString(), generation: 3 }
     })
-  }, [])
+    setIsCompareOpen(true)
+  }, [compareVaultKeys.length, trackEvent])
+
+  const handleToggleCompareMode = useCallback((): void => {
+    const next = !isCompareMode
+    trackEvent(PLAUSIBLE_EVENTS.COMPARE_MODE_TOGGLE, { props: { enabled: String(next), generation: 3 } })
+    setIsCompareMode(next)
+    if (!next) {
+      setCompareVaultKeys([])
+      setIsCompareOpen(false)
+    }
+  }, [isCompareMode, trackEvent])
 
   const handleExpandedChange = useCallback((vaultKey: string, next: boolean): void => {
     setExpandedVaultKeys((prev) => {
@@ -393,7 +409,7 @@ export default function Index(): ReactElement {
           </Button>
           <Button
             variant={'filled'}
-            onClick={(): void => setIsCompareOpen(true)}
+            onClick={handleOpenCompare}
             classNameOverride={'yearn--button--nextgen yearn--button-smaller'}
             isDisabled={compareCount < 2}
           >
