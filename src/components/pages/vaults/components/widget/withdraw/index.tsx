@@ -506,7 +506,7 @@ export const WidgetWithdraw: FC<
               aria-expanded={isDetailsPanelOpen}
               className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-surface"
             >
-              <span>Transaction details</span>
+              <span>Your Transaction Details</span>
               <IconChevron className="size-4 text-text-secondary" direction="right" />
             </button>
             {actionRow}
@@ -525,7 +525,7 @@ export const WidgetWithdraw: FC<
       {collapseDetails && isDetailsPanelOpen ? (
         <div className="absolute inset-0 z-10 bg-surface rounded-lg flex flex-col">
           <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
-            <span className="text-base font-semibold text-text-primary">Transaction details</span>
+            <span className="text-base font-semibold text-text-primary">Your Transaction Details</span>
             <button
               type="button"
               onClick={() => setIsDetailsPanelOpen(false)}
