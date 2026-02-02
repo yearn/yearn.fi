@@ -1,9 +1,12 @@
+import type { TVaultForwardAPYHandle } from '@pages/vaults/components/table/VaultForwardAPY'
+import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { cl, formatAmount, formatApyDisplay } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import type { ReactElement } from 'react'
+import type { KeyboardEvent, ReactElement, ReactNode } from 'react'
+import { useRef } from 'react'
 import { useConnect } from 'wagmi'
 
 interface StatCardProps {
@@ -26,14 +29,33 @@ function StatCard({ label, value, subValue }: StatCardProps): ReactElement {
 
 interface CompactStatBoxProps {
   label: string
-  value: string
+  value: ReactNode
+  onClick?: () => void
 }
 
-function CompactStatBox({ label, value }: CompactStatBoxProps): ReactElement {
+function CompactStatBox({ label, value, onClick }: CompactStatBoxProps): ReactElement {
+  const isInteractive = Boolean(onClick)
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (!isInteractive) return
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    onClick?.()
+  }
+
   return (
-    <div className="flex-1 min-w-0 rounded-lg bg-surface-secondary border border-border px-2 py-1.5 min-[375px]:px-3 min-[375px]:py-2">
+    <div
+      className={cl(
+        'flex-1 min-w-0 rounded-lg bg-surface-secondary border border-border px-2 py-1.5 min-[375px]:px-3 min-[375px]:py-2',
+        isInteractive ? 'cursor-pointer' : undefined
+      )}
+      role={isInteractive ? 'button' : undefined}
+      tabIndex={isInteractive ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+    >
       <p className="text-[10px] min-[375px]:text-xs text-text-secondary truncate">{label}</p>
-      <p className="text-xs min-[375px]:text-sm font-semibold text-text-primary truncate">{value}</p>
+      <div className="text-xs min-[375px]:text-sm font-semibold text-text-primary truncate">{value}</div>
     </div>
   )
 }
@@ -71,7 +93,7 @@ export function VaultMetricsGrid({ currentVault }: VaultMetricsGridProps): React
       {/* Top row: TVL, Forward APY */}
       <div className="grid grid-cols-2 gap-1.5 min-[375px]:gap-2">
         <StatCard label="TVL" value={formatUSD(currentVault.tvl.tvl)} />
-        <StatCard label="Fwd. APY" value={formatApyDisplay(forwardAPY)} />
+        <StatCard label="Est. APY" value={formatApyDisplay(forwardAPY)} />
       </div>
     </div>
   )
@@ -146,10 +168,10 @@ export function UserBalanceGrid({ currentVault }: UserBalanceGridProps): ReactEl
 }
 
 const MOBILE_SECTIONS = [
-  { id: 'about', label: 'About' },
-  { id: 'risk', label: 'Risk' },
+  { id: 'about', label: 'Vault Info' },
   { id: 'strategies', label: 'Strategies' },
-  { id: 'info', label: 'Info' }
+  { id: 'risk', label: 'Risk' },
+  { id: 'info', label: 'More Info' }
 ] as const
 
 function SectionNavButton({ sectionId, label }: { sectionId: string; label: string }): ReactElement {
@@ -190,12 +212,7 @@ interface MobileKeyMetricsProps {
 export function MobileKeyMetrics({ currentVault, showSectionNav = true }: MobileKeyMetricsProps): ReactElement {
   const { address, isActive } = useWeb3()
   const { getToken } = useWallet()
-  const apyData = useVaultApyData(currentVault)
-
-  const forwardAPY =
-    apyData.mode === 'katana' && apyData.katanaEstApr !== undefined
-      ? apyData.katanaEstApr
-      : currentVault.apr.forwardAPR.netAPR
+  const forwardApyRef = useRef<TVaultForwardAPYHandle>(null)
 
   const vaultToken = getToken({
     address: currentVault.address,
@@ -208,9 +225,25 @@ export function MobileKeyMetrics({ currentVault, showSectionNav = true }: Mobile
   return (
     <div className="md:hidden space-y-2">
       <div className="grid grid-cols-3 gap-1.5 min-[375px]:gap-2">
-        <CompactStatBox label="Deposited" value={depositValue} />
+        <CompactStatBox
+          label="Est. APY"
+          onClick={() => forwardApyRef.current?.openModal()}
+          value={
+            <VaultForwardAPY
+              ref={forwardApyRef}
+              currentVault={currentVault}
+              showSubline={false}
+              showSublineTooltip
+              showBoostDetails={false}
+              className="items-start text-left"
+              valueClassName="text-xs min-[375px]:text-sm font-semibold text-text-primary"
+              containerClassName="w-full"
+              isContainerInteractive
+            />
+          }
+        />
         <CompactStatBox label="TVL" value={formatUSD(currentVault.tvl.tvl)} />
-        <CompactStatBox label="Fwd. APY" value={formatApyDisplay(forwardAPY)} />
+        <CompactStatBox label="Deposited" value={depositValue} />
       </div>
       {showSectionNav ? (
         <div className="grid grid-cols-4 gap-2">

@@ -162,7 +162,7 @@ export function VaultAboutSection({
   const isDescriptionString = typeof vaultDescription === 'string'
 
   return (
-    <div className={cl('p-4 pt-0 md:p-6 md:pt-0', className)}>
+    <div className={cl('p-4 md:p-6 md:pt-0', className)}>
       <div className={'flex flex-col gap-2'}>
         <div className={'text-sm text-text-secondary'}>
           <div className="">
