@@ -1,6 +1,5 @@
-import Link from '@components/Link'
 import { usePlausible } from '@hooks/usePlausible'
-import { ConnectWalletPrompt } from '@pages/portfolio/components/ConnectWalletPrompt'
+import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { Notification } from '@pages/vaults/components/notifications/Notification'
@@ -84,28 +83,6 @@ function PortfolioPageLayout({ children }: { children: ReactElement }): ReactEle
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
       <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16'}>{children}</div>
-    </div>
-  )
-}
-
-function HoldingsEmptyState({ isActive, onConnect }: { isActive: boolean; onConnect: () => void }): ReactElement {
-  if (!isActive) {
-    return (
-      <ConnectWalletPrompt
-        title="Connect a wallet to get started"
-        description="Link a wallet to load your Yearn balances."
-        onConnect={onConnect}
-      />
-    )
-  }
-
-  return (
-    <div className="flex flex-col items-center justify-center gap-4 px-4 py-12 text-center sm:px-6 sm:py-16">
-      <p className="text-base font-semibold text-text-primary sm:text-lg">No vault positions yet</p>
-      <p className="max-w-md text-sm text-text-secondary">Deposit into a Yearn vault to see it here.</p>
-      <Link to="/vaults" className="yearn--button min-h-[44px] px-6" data-variant="filled">
-        Browse vaults
-      </Link>
     </div>
   )
 }
@@ -303,13 +280,12 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         <p className="text-xs text-text-secondary sm:text-sm">Review your recent Yearn transactions.</p>
       </div>
       {!isActive ? (
-        <div className="rounded-lg border border-border bg-surface">
-          <ConnectWalletPrompt
-            title="Connect a wallet to view activity"
-            description="Track deposits, withdrawals, and claims in one place."
-            onConnect={openLoginModal}
-          />
-        </div>
+        <EmptySectionCard
+          title="Connect a wallet to view activity"
+          description="Track deposits, withdrawals, and claims in one place."
+          ctaLabel="Connect wallet"
+          onClick={openLoginModal}
+        />
       ) : (
         <div className="rounded-lg border border-border bg-surface p-4">{renderActivityContent()}</div>
       )}
@@ -670,13 +646,12 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
             Claim all of your staking and Merkle rewards across Yearn.
           </p>
         </div>
-        <div className="rounded-lg border border-border bg-surface">
-          <ConnectWalletPrompt
-            title="Connect a wallet to claim rewards"
-            description="We will surface any claimable rewards once connected."
-            onConnect={openLoginModal}
-          />
-        </div>
+        <EmptySectionCard
+          title="Connect a wallet to claim rewards"
+          description="We will surface any claimable rewards once connected."
+          ctaLabel="Connect wallet"
+          onClick={openLoginModal}
+        />
       </section>
     )
   }
@@ -817,7 +792,14 @@ function PortfolioHoldingsSection({
       )
     }
     if (!hasHoldings) {
-      return <HoldingsEmptyState isActive={isActive} onConnect={openLoginModal} />
+      return (
+        <EmptySectionCard
+          title="No vault positions yet"
+          description="Deposit into a Yearn vault to see it here."
+          ctaLabel="Browse vaults"
+          href="/vaults"
+        />
+      )
     }
     return (
       <div className="flex flex-col gap-px bg-border">
@@ -842,40 +824,43 @@ function PortfolioHoldingsSection({
 
   return (
     <section className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
-        <Tooltip
-          className="h-auto justify-start gap-0"
-          openDelayMs={150}
-          side="top"
-          tooltip={<div className={headingTooltipClassName}>{'Track every Yearn position you currently hold.'}</div>}
-        >
-          <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">{'Your Vaults'}</h2>
-        </Tooltip>
+      <div>
+        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">{'Your Vaults'}</h2>
+        <p className="text-xs text-text-secondary sm:text-sm">{'Track every Yearn position you currently hold.'}</p>
       </div>
-      <div className="overflow-hidden rounded-lg border border-border">
-        <div className="flex flex-col">
-          <VaultsListHead
-            sortBy={sortBy}
-            sortDirection={sortDirection}
-            onSort={handleSort}
-            wrapperClassName="rounded-t-lg bg-surface-secondary"
-            containerClassName="rounded-t-lg bg-surface-secondary"
-            items={[
-              { type: 'sort', label: 'Vault Name', value: 'vault', sortable: false, className: 'col-span-12' },
-              { type: 'sort', label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-4' },
-              { type: 'sort', label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-4' },
-              {
-                type: 'sort',
-                label: 'Your Holdings',
-                value: 'deposited',
-                sortable: true,
-                className: 'col-span-4 justify-end'
-              }
-            ]}
-          />
-          {renderHoldingsContent()}
+      {!isActive ? (
+        <EmptySectionCard
+          title="Connect a wallet to view your vaults"
+          description="See all your Yearn deposits in one place."
+          ctaLabel="Connect wallet"
+          onClick={openLoginModal}
+        />
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-border">
+          <div className="flex flex-col">
+            <VaultsListHead
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+              wrapperClassName="rounded-t-lg bg-surface-secondary"
+              containerClassName="rounded-t-lg bg-surface-secondary"
+              items={[
+                { type: 'sort', label: 'Vault Name', value: 'vault', sortable: false, className: 'col-span-12' },
+                { type: 'sort', label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-4' },
+                { type: 'sort', label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-4' },
+                {
+                  type: 'sort',
+                  label: 'Your Holdings',
+                  value: 'deposited',
+                  sortable: true,
+                  className: 'col-span-4 justify-end'
+                }
+              ]}
+            />
+            {renderHoldingsContent()}
+          </div>
         </div>
-      </div>
+      )}
     </section>
   )
 }
