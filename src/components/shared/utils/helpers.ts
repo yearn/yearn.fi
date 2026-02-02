@@ -12,7 +12,7 @@ export function getVaultName(vault: TYDaemonVault): string {
   baseName = baseName.replace(/^(curve|aerodrome|velodrome)\s+/i, '')
 
   if (baseName.includes(' Factory yVault')) {
-    return baseName.replace(' Factory yVault', '')
+    return baseName.replace(' Factory yVault', ' LP')
   }
 
   if (baseName.includes(' yVault')) {
