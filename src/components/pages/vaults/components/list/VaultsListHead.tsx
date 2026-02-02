@@ -139,12 +139,13 @@ export function VaultsListHead({
         >
           {shouldIndent ? <>&nbsp;{item.label}</> : item.label}
         </p>
-        <span className={'flex items-center justify-center'}>
-          {isActive ? (
-            <IconChevron className={'size-4 min-w-[16px] text-text-primary'} direction="up" />
-          ) : (
-            <IconChevron className={'size-4 min-w-[16px] text-text-primary/60 group-hover:text-text-primary'} />
+        <span
+          className={cl(
+            'flex items-center justify-center text-xl font-medium transition-colors',
+            isActive ? 'text-text-primary' : 'text-text-primary/60 group-hover:text-text-primary'
           )}
+        >
+          {isActive ? '−' : '+'}
         </span>
       </button>
     )
