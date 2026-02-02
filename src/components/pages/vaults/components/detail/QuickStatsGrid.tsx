@@ -1,13 +1,11 @@
 import type { TVaultForwardAPYHandle } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { cl, formatAmount, formatApyDisplay } from '@shared/utils'
+import { cl, formatApyDisplay, toNormalizedBN } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { useRef } from 'react'
-import { useConnect } from 'wagmi'
 
 interface StatCardProps {
   label: string
@@ -73,10 +71,6 @@ function formatUSD(value: number): string {
   return `$${value.toFixed(2)}`
 }
 
-function formatBalance(balance: number, symbol: string): string {
-  return `${formatAmount(balance, 0, 6)} ${symbol}`
-}
-
 interface VaultMetricsGridProps {
   currentVault: TYDaemonVault
 }
@@ -95,74 +89,6 @@ export function VaultMetricsGrid({ currentVault }: VaultMetricsGridProps): React
         <StatCard label="TVL" value={formatUSD(currentVault.tvl.tvl)} />
         <StatCard label="Est. APY" value={formatApyDisplay(forwardAPY)} />
       </div>
-    </div>
-  )
-}
-
-interface UserBalanceGridProps {
-  currentVault: TYDaemonVault
-}
-
-export function UserBalanceGrid({ currentVault }: UserBalanceGridProps): ReactElement {
-  const { address, isActive, openLoginModal } = useWeb3()
-  const { getToken } = useWallet()
-  const { connectors, connect } = useConnect()
-
-  const vaultToken = getToken({
-    address: currentVault.address,
-    chainID: currentVault.chainID
-  })
-  const underlyingToken = getToken({
-    address: currentVault.token.address,
-    chainID: currentVault.chainID
-  })
-
-  const hasVaultBalance = isActive && address && vaultToken?.balance && vaultToken.balance.raw > 0n
-  const hasUnderlyingBalance = isActive && address && underlyingToken?.balance && underlyingToken.balance.raw > 0n
-
-  const handleConnectWallet = (): void => {
-    if (openLoginModal) {
-      openLoginModal()
-    } else if (connectors[0]) {
-      connect({ connector: connectors[0] })
-    }
-  }
-
-  return (
-    <div className="md:hidden">
-      {isActive && address ? (
-        <div className="grid grid-cols-2 gap-1.5 min-[375px]:gap-2">
-          <StatCard
-            label="Your Deposit"
-            value={hasVaultBalance ? formatBalance(vaultToken.balance.normalized, currentVault.symbol) : '0.00'}
-            subValue={hasVaultBalance && vaultToken.value ? formatUSD(vaultToken.value) : undefined}
-          />
-          <StatCard
-            label={`${currentVault.token.symbol} Bal`}
-            value={
-              hasUnderlyingBalance
-                ? formatBalance(underlyingToken.balance.normalized, currentVault.token.symbol)
-                : '0.00'
-            }
-            subValue={hasUnderlyingBalance && underlyingToken.value ? formatUSD(underlyingToken.value) : undefined}
-          />
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={handleConnectWallet}
-          className={cl(
-            'w-full rounded-lg bg-text-primary hover:bg-text-primary/90',
-            'py-3 min-[375px]:py-3.5 px-3 min-[375px]:px-4 text-xs min-[375px]:text-sm font-semibold text-surface',
-            'transition-colors duration-200',
-            'active:scale-[0.99]',
-            'min-h-[44px]'
-          )}
-        >
-          <span className="hidden min-[375px]:inline">Connect Wallet to View Balances</span>
-          <span className="min-[375px]:hidden">Connect Wallet</span>
-        </button>
-      )}
     </div>
   )
 }
@@ -207,20 +133,23 @@ function SectionNavButton({ sectionId, label }: { sectionId: string; label: stri
 interface MobileKeyMetricsProps {
   currentVault: TYDaemonVault
   showSectionNav?: boolean
+  depositedValue?: bigint
+  tokenPrice: number
 }
 
-export function MobileKeyMetrics({ currentVault, showSectionNav = true }: MobileKeyMetricsProps): ReactElement {
+export function MobileKeyMetrics({
+  currentVault,
+  showSectionNav = true,
+  depositedValue,
+  tokenPrice
+}: MobileKeyMetricsProps): ReactElement {
   const { address, isActive } = useWeb3()
-  const { getToken } = useWallet()
   const forwardApyRef = useRef<TVaultForwardAPYHandle>(null)
 
-  const vaultToken = getToken({
-    address: currentVault.address,
-    chainID: currentVault.chainID
-  })
-
-  const hasVaultBalance = isActive && address && vaultToken?.balance && vaultToken.balance.raw > 0n
-  const depositValue = hasVaultBalance && vaultToken.value ? formatUSD(vaultToken.value) : '$0.00'
+  const hasVaultBalance = isActive && address && depositedValue !== undefined && depositedValue > 0n
+  const depositedAmount = toNormalizedBN(depositedValue ?? 0n, currentVault.token.decimals)
+  const depositUsdValue = depositedAmount.normalized * tokenPrice
+  const depositValue = hasVaultBalance ? formatUSD(depositUsdValue) : '$0.00'
 
   return (
     <div className="md:hidden space-y-2">
@@ -252,19 +181,6 @@ export function MobileKeyMetrics({ currentVault, showSectionNav = true }: Mobile
           ))}
         </div>
       ) : null}
-    </div>
-  )
-}
-
-interface QuickStatsGridProps {
-  currentVault: TYDaemonVault
-}
-
-export function QuickStatsGrid({ currentVault }: QuickStatsGridProps): ReactElement {
-  return (
-    <div className="md:hidden space-y-3">
-      <VaultMetricsGrid currentVault={currentVault} />
-      <UserBalanceGrid currentVault={currentVault} />
     </div>
   )
 }
