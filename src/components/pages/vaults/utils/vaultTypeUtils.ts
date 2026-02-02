@@ -1,7 +1,8 @@
 import { V2_SUPPORTED_CHAINS, V3_SUPPORTED_CHAINS } from './constants'
 import type { TVaultType } from './vaultTypeCopy'
 
-export const ALL_SUPPORTED_CHAINS = Array.from(new Set([...V2_SUPPORTED_CHAINS, ...V3_SUPPORTED_CHAINS]))
+//TODO: see what can be combined with src/components/pages/vaults/utils/constants.ts
+export const ALL_SUPPORTED_CHAINS = [1, 747474, 8453, 137, 42161, 10]
 
 export function normalizeVaultTypeParam(typeParam: string | null): TVaultType {
   if (typeParam === 'all') return 'all'
