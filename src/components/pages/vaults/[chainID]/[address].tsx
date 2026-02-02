@@ -18,6 +18,7 @@ import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType } from '@pages/vaults/types'
 import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
+import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -27,7 +28,7 @@ import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { isAddressEqual } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
@@ -153,7 +154,9 @@ function Index(): ReactElement | null {
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [mobileDrawerAction, setMobileDrawerAction] = useState<WidgetActionType>(WidgetActionType.Deposit)
+  const [hideMobileDrawerTabs, setHideMobileDrawerTabs] = useState(false)
   const mobileWidgetRef = useRef<TWidgetRef>(null)
+  const mobileDrawerPanelRef = useRef<HTMLDivElement>(null)
   const detailsRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement | null>(null)
   const sectionSelectorRef = useRef<HTMLDivElement>(null)
@@ -667,6 +670,30 @@ function Index(): ReactElement | null {
     setIsMobileDrawerOpen(true)
   }, [])
 
+  useLayoutEffect(() => {
+    // Reset when switching actions so we can re-measure with tabs visible.
+    void mobileDrawerAction
+    if (!isMobileDrawerOpen) {
+      setHideMobileDrawerTabs((prev) => (prev ? false : prev))
+      return
+    }
+    setHideMobileDrawerTabs((prev) => (prev ? false : prev))
+  }, [isMobileDrawerOpen, mobileDrawerAction])
+
+  useLayoutEffect(() => {
+    // Re-check sizing when the drawer action changes.
+    void mobileDrawerAction
+    if (!isMobileDrawerOpen || hideMobileDrawerTabs) return
+    if (typeof window === 'undefined') return
+    const panel = mobileDrawerPanelRef.current
+    if (!panel) return
+    const maxHeight = window.innerHeight * 0.9
+    const shouldHideTabs = panel.scrollHeight > maxHeight + 1
+    if (shouldHideTabs) {
+      setHideMobileDrawerTabs(true)
+    }
+  }, [isMobileDrawerOpen, mobileDrawerAction, hideMobileDrawerTabs])
+
   useEffect(() => {
     if (isMobileDrawerOpen && mobileWidgetRef.current) {
       mobileWidgetRef.current.setMode(mobileDrawerAction)
@@ -765,7 +792,15 @@ function Index(): ReactElement | null {
           />
         </header>
 
-        <div className="md:hidden mt-4 mb-4">
+        <div className="md:hidden md:mt-4 mb-4">
+          <Breadcrumbs
+            className={'mb-3'}
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Vaults', href: '/vaults' },
+              { label: `${getVaultName(currentVault)} yVault`, isCurrent: true }
+            ]}
+          />
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
               <ImageWithFallback
@@ -1035,6 +1070,7 @@ function Index(): ReactElement | null {
         onClose={() => setIsMobileDrawerOpen(false)}
         title={currentVault.name}
         headerActions={<MobileDrawerSettingsButton />}
+        panelRef={mobileDrawerPanelRef}
       >
         <Widget
           ref={mobileWidgetRef}
@@ -1049,6 +1085,7 @@ function Index(): ReactElement | null {
           onModeChange={setMobileDrawerAction}
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
+          hideTabSelector={hideMobileDrawerTabs}
           disableBorderRadius
         />
       </BottomDrawer>

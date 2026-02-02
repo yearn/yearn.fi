@@ -167,7 +167,13 @@ export const Widget = forwardRef<TWidgetRef, Props>(
     if (hideTabSelector) {
       return (
         <div className="flex flex-col gap-0 w-full h-full">
-          <div className={cl('bg-surface rounded-lg relative w-full min-w-0')}>{SelectedComponent}</div>
+          <div
+            className={cl('bg-surface relative w-full min-w-0', {
+              'rounded-lg': !disableBorderRadius
+            })}
+          >
+            {SelectedComponent}
+          </div>
         </div>
       )
     }
