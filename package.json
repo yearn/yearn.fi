@@ -38,8 +38,6 @@
     "react-rewards": "2.1.0",
     "react-router": "7.12.0",
     "recharts": "2.15.4",
-    "rehype-sanitize": "6.0.0",
-    "remark-gfm": "4.0.1",
     "use-indexeddb": "2.0.2",
     "vaul": "1.1.2",
     "viem": "2.38.6",

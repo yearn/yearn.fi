@@ -1,8 +1,6 @@
 import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'
 import ReactMarkdown from 'react-markdown'
-import rehypeSanitize from 'rehype-sanitize'
-import remarkGfm from 'remark-gfm'
 
 type TMarkdownProps = {
   content: string
@@ -13,8 +11,6 @@ export function Markdown({ content, className }: TMarkdownProps): ReactElement {
   return (
     <div className={className}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeSanitize]}
         skipHtml
         components={{
           a: ({ node: _node, className: linkClassName, ...props }) => (
