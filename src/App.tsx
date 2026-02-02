@@ -35,10 +35,10 @@ const queryClient = new QueryClient()
 function WithLayout(): ReactElement {
   return (
     <>
-      <div className={'sticky top-0 z-60 w-full'}>
+      <div className={'sticky top-0 z-60 w-full max-md:fixed max-md:inset-x-0'}>
         <AppHeader />
       </div>
-      <div id={'app'} className={cl('mx-auto mb-0 flex')}>
+      <div id={'app'} className={cl('mx-auto mb-0 flex', 'max-md:pt-[var(--header-height)]')}>
         <div className={'block size-full min-h-max'}>
           <Routes />
         </div>
