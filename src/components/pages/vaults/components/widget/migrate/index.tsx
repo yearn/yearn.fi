@@ -334,7 +334,7 @@ export const WidgetMigrate: FC<Props> = ({
   const handleMigrateSuccess = useCallback(() => {
     trackEvent(PLAUSIBLE_EVENTS.MIGRATE, {
       props: {
-        chainID: chainId,
+        chainID: String(chainId),
         fromVault: toAddress(vaultAddress),
         toVault: toAddress(migrationTarget),
         vaultSymbol

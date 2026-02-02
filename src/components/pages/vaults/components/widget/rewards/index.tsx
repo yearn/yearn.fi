@@ -103,9 +103,9 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   const handleClaimComplete = useCallback(() => {
     trackEvent(PLAUSIBLE_EVENTS.CLAIM, {
       props: {
-        chainID: chainId,
+        chainID: String(chainId),
         stakingAddress: stakingAddress ? toAddress(stakingAddress) : '',
-        valueUsd: totalUsd,
+        valueUsd: String(totalUsd),
         source: 'vault'
       }
     })

@@ -27,7 +27,7 @@ import { useLocation } from 'react-router'
 import { WagmiProvider } from 'wagmi'
 import { wagmiConfig } from '@/config/wagmi'
 import { ChainsProvider } from '@/context/ChainsProvider'
-import PlausibleProvider from './components/PlausibleProvider'
+import '@hooks/usePlausible'
 import { Routes } from './routes'
 
 const queryClient = new QueryClient()
@@ -82,42 +82,40 @@ function App(): ReactElement {
       />
       <WithFonts>
         <main className={'font-aeonik size-full min-h-screen'}>
-          <PlausibleProvider enabled={true}>
-            <WagmiProvider config={wagmiConfig} reconnectOnMount={!isIframe()}>
-              <QueryClientProvider client={queryClient}>
-                <ChainsProvider>
-                  <RainbowKitProvider>
-                    <IframeAutoConnect>
-                      <Web3ContextApp>
-                        <WithTokenList
-                          lists={[
-                            'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/yearn.json',
-                            'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/popular.json'
-                          ]}
-                        >
-                          <AppSettingsContextApp>
-                            <ChartStyleContextApp>
-                              <YearnContextApp>
-                                <WalletContextApp>
-                                  <IndexedDB>
-                                    <WithNotifications>
-                                      <WithNotificationsActions>
-                                        <WithLayout />
-                                      </WithNotificationsActions>
-                                    </WithNotifications>
-                                  </IndexedDB>
-                                </WalletContextApp>
-                              </YearnContextApp>
-                            </ChartStyleContextApp>
-                          </AppSettingsContextApp>
-                        </WithTokenList>
-                      </Web3ContextApp>
-                    </IframeAutoConnect>
-                  </RainbowKitProvider>
-                </ChainsProvider>
-              </QueryClientProvider>
-            </WagmiProvider>
-          </PlausibleProvider>
+          <WagmiProvider config={wagmiConfig} reconnectOnMount={!isIframe()}>
+            <QueryClientProvider client={queryClient}>
+              <ChainsProvider>
+                <RainbowKitProvider>
+                  <IframeAutoConnect>
+                    <Web3ContextApp>
+                      <WithTokenList
+                        lists={[
+                          'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/yearn.json',
+                          'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/popular.json'
+                        ]}
+                      >
+                        <AppSettingsContextApp>
+                          <ChartStyleContextApp>
+                            <YearnContextApp>
+                              <WalletContextApp>
+                                <IndexedDB>
+                                  <WithNotifications>
+                                    <WithNotificationsActions>
+                                      <WithLayout />
+                                    </WithNotificationsActions>
+                                  </WithNotifications>
+                                </IndexedDB>
+                              </WalletContextApp>
+                            </YearnContextApp>
+                          </ChartStyleContextApp>
+                        </AppSettingsContextApp>
+                      </WithTokenList>
+                    </Web3ContextApp>
+                  </IframeAutoConnect>
+                </RainbowKitProvider>
+              </ChainsProvider>
+            </QueryClientProvider>
+          </WagmiProvider>
           <Toaster
             toastOptions={{
               duration: 5000,

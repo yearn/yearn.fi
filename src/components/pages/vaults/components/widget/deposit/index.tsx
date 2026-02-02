@@ -302,15 +302,15 @@ export const WidgetDeposit: FC<Props> = ({
 
     trackEvent(PLAUSIBLE_EVENTS.DEPOSIT, {
       props: {
-        chainID: chainId,
+        chainID: String(chainId),
         vaultAddress,
         vaultSymbol,
         amountToDeposit,
         tokenAddress: toAddress(depositToken),
         tokenSymbol: inputToken?.symbol || '',
-        priceUsd,
-        valueUsd,
-        isZap: routeType === 'ENSO',
+        priceUsd: String(priceUsd),
+        valueUsd: String(valueUsd),
+        isZap: String(routeType === 'ENSO'),
         action: 'deposit'
       }
     })

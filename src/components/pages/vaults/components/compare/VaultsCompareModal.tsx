@@ -155,7 +155,7 @@ function DesktopCompareGrid({
                       props: {
                         vaultAddress: toAddress(vault.address),
                         vaultSymbol: vault.symbol,
-                        chainID: vault.chainID
+                        chainID: String(vault.chainID)
                       }
                     })
                   }}
