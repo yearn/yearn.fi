@@ -1,7 +1,7 @@
 import { init, track } from '@plausible-analytics/tracker'
 
 init({
-  domain: 'yearnfi-git-measure-fork-yearn.vercel.app',
+  domain: 'yearn.fi',
   endpoint: '/proxy/plausible/api/event',
   captureOnLocalhost: import.meta.env.VITE_PLAUSIBLE_TRACK_LOCALHOST === 'true',
   autoCapturePageviews: true
