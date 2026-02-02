@@ -311,7 +311,6 @@ export const WidgetDeposit: FC<Props> = ({
         priceUsd,
         valueUsd,
         isZap: routeType === 'ENSO',
-        generation: 3,
         action: 'deposit'
       }
     })

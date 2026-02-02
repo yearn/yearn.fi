@@ -125,7 +125,7 @@ export default function Index(): ReactElement {
       const isAdding = !compareVaultKeys.includes(vaultKey)
       if (isAdding) {
         trackEvent(PLAUSIBLE_EVENTS.COMPARE_VAULT_ADD, {
-          props: { vaultKey, chainId: vault.chainID.toString(), generation: 3 }
+          props: { vaultKey, chainId: vault.chainID.toString() }
         })
       }
       setCompareVaultKeys((prev) => toggleInArray(prev, vaultKey))
@@ -143,14 +143,14 @@ export default function Index(): ReactElement {
 
   const handleOpenCompare = useCallback((): void => {
     trackEvent(PLAUSIBLE_EVENTS.COMPARE_MODAL_OPEN, {
-      props: { vaultCount: compareVaultKeys.length.toString(), generation: 3 }
+      props: { vaultCount: compareVaultKeys.length.toString() }
     })
     setIsCompareOpen(true)
   }, [compareVaultKeys.length, trackEvent])
 
   const handleToggleCompareMode = useCallback((): void => {
     const next = !isCompareMode
-    trackEvent(PLAUSIBLE_EVENTS.COMPARE_MODE_TOGGLE, { props: { enabled: String(next), generation: 3 } })
+    trackEvent(PLAUSIBLE_EVENTS.COMPARE_MODE_TOGGLE, { props: { enabled: String(next) } })
     setIsCompareMode(next)
     if (!next) {
       setCompareVaultKeys([])

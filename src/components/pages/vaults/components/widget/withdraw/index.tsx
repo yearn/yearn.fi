@@ -332,7 +332,6 @@ export const WidgetWithdraw: FC<WithdrawWidgetProps & { hideSettings?: boolean; 
         priceUsd,
         valueUsd,
         isZap: routeType === 'ENSO',
-        generation: 3,
         action: 'withdraw'
       }
     })

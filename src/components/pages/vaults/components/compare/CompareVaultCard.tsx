@@ -107,8 +107,7 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
               props: {
                 vaultAddress: toAddress(vault.address),
                 vaultSymbol: vault.symbol,
-                chainID: vault.chainID,
-                generation: 3
+                chainID: vault.chainID
               }
             })
           }}
