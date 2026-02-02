@@ -30,6 +30,7 @@ interface Props {
   onDepositPrefillConsumed?: () => void
   hideTabSelector?: boolean
   disableBorderRadius?: boolean
+  collapseDetails?: boolean
 }
 
 export type TWidgetRef = {
@@ -66,7 +67,8 @@ export const Widget = forwardRef<TWidgetRef, Props>(
       depositPrefill,
       onDepositPrefillConsumed,
       hideTabSelector,
-      disableBorderRadius
+      disableBorderRadius,
+      collapseDetails
     },
     ref
   ) => {
@@ -110,6 +112,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               isSettingsOpen={isSettingsOpen}
               hideSettings={hideTabSelector}
               disableBorderRadius={disableBorderRadius}
+              collapseDetails={collapseDetails}
             />
           )
         case ActionType.Withdraw:
@@ -127,6 +130,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               isSettingsOpen={isSettingsOpen}
               hideSettings={hideTabSelector}
               disableBorderRadius={disableBorderRadius}
+              collapseDetails={collapseDetails}
             />
           )
         case ActionType.Migrate:
@@ -160,7 +164,8 @@ export const Widget = forwardRef<TWidgetRef, Props>(
       isSettingsOpen,
       hideTabSelector,
       disableBorderRadius,
-      resolvedStakingAddress
+      resolvedStakingAddress,
+      collapseDetails
     ])
 
     // Mobile mode: simple layout without tabs

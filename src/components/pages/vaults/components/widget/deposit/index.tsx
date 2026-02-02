@@ -5,6 +5,8 @@ import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { IconChevron } from '@shared/icons/IconChevron'
+import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
@@ -44,6 +46,7 @@ interface Props {
   onPrefillApplied?: () => void
   hideSettings?: boolean
   disableBorderRadius?: boolean
+  collapseDetails?: boolean
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -61,7 +64,8 @@ export const WidgetDeposit: FC<Props> = ({
   prefill,
   onPrefillApplied,
   hideSettings: _hideSettings,
-  disableBorderRadius
+  disableBorderRadius,
+  collapseDetails
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -76,6 +80,7 @@ export const WidgetDeposit: FC<Props> = ({
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
+  const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
   const appliedPrefillRef = useRef<string | null>(null)
 
   const {
@@ -121,6 +126,12 @@ export const WidgetDeposit: FC<Props> = ({
     }
     onPrefillApplied?.()
   }, [prefill, setDepositInput, onPrefillApplied])
+
+  useEffect(() => {
+    if (!collapseDetails && isDetailsPanelOpen) {
+      setIsDetailsPanelOpen(false)
+    }
+  }, [collapseDetails, isDetailsPanelOpen])
 
   const { routeType, activeFlow } = useDepositFlow({
     depositToken,
@@ -336,9 +347,104 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   const isSettingsVisible = !!account && !!isSettingsOpen
 
+  const detailsSection = (
+    <DepositDetails
+      depositAmountBn={depositAmount.bn}
+      inputTokenSymbol={inputToken?.symbol}
+      inputTokenDecimals={inputToken?.decimals ?? 18}
+      routeType={routeType}
+      isSwap={selectedToken !== assetAddress}
+      isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+      expectedOutInAsset={expectedOutInAsset}
+      assetTokenSymbol={assetToken?.symbol}
+      assetTokenDecimals={assetToken?.decimals ?? 18}
+      expectedVaultShares={activeFlow.periphery.expectedOut}
+      vaultDecimals={vaultDecimals}
+      sharesDisplayDecimals={sharesDecimals}
+      pricePerShare={pricePerShare || 0n}
+      assetUsdPrice={assetTokenPrice}
+      willReceiveStakedShares={willReceiveStakedShares}
+      onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
+      onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
+      estimatedAnnualReturn={estimatedAnnualReturn}
+      onShowAnnualReturnModal={() => setShowAnnualReturnModal(true)}
+      allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
+      allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
+      allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
+      approvalSpenderName={!isNativeToken ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined}
+      onAllowanceClick={
+        !isNativeToken && activeFlow.periphery.allowance > 0n
+          ? () => setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
+          : undefined
+      }
+      onShowApprovalOverlay={!isNativeToken ? () => setShowApprovalOverlay(true) : undefined}
+    />
+  )
+
+  const actionRow = (
+    <div className="flex items-center gap-2">
+      <div className="flex-1">
+        {!account ? (
+          <Button
+            onClick={openLoginModal}
+            variant="filled"
+            className="w-full"
+            classNameOverride="yearn--button--nextgen w-full"
+          >
+            Connect Wallet
+          </Button>
+        ) : (
+          <Button
+            onClick={() => setShowTransactionOverlay(true)}
+            variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
+            isBusy={activeFlow.periphery.isLoadingRoute}
+            disabled={
+              !!depositError ||
+              depositAmount.bn === 0n ||
+              activeFlow.periphery.isLoadingRoute ||
+              depositAmount.isDebouncing ||
+              (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
+              (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled)
+            }
+            className="w-full"
+            classNameOverride="yearn--button--nextgen w-full"
+          >
+            {activeFlow.periphery.isLoadingRoute
+              ? 'Fetching quote'
+              : !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
+                ? `Approve & ${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'}`
+                : routeType === 'DIRECT_STAKE'
+                  ? 'Stake'
+                  : 'Deposit'}
+          </Button>
+        )}
+      </div>
+      {account && onOpenSettings ? (
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          aria-label="Open transaction settings"
+          aria-pressed={isSettingsOpen}
+          className={cl(
+            'flex items-center justify-center rounded-md border border-transparent px-3 py-2 text-text-secondary transition-all duration-200',
+            'min-h-11',
+            isSettingsOpen
+              ? 'bg-surface text-text-primary !border-border'
+              : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
+          )}
+        >
+          <IconSettings className="h-4 w-4" />
+        </button>
+      ) : null}
+    </div>
+  )
+
   return (
     <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
-      <div className="flex flex-col flex-1 px-6 pb-6 pt-4 gap-6">
+      <div className="flex items-center justify-between gap-3 px-6 pt-4">
+        <h3 className="text-base font-semibold text-text-primary">Deposit</h3>
+      </div>
+      <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         {/* Amount Section */}
         <InputTokenAmount
           input={depositInput}
@@ -359,96 +465,47 @@ export const WidgetDeposit: FC<Props> = ({
           onTokenSelectorClick={() => setShowTokenSelector(true)}
         />
 
-        {/* Details Section */}
-        <DepositDetails
-          depositAmountBn={depositAmount.bn}
-          inputTokenSymbol={inputToken?.symbol}
-          inputTokenDecimals={inputToken?.decimals ?? 18}
-          routeType={routeType}
-          isSwap={selectedToken !== assetAddress}
-          isLoadingQuote={activeFlow.periphery.isLoadingRoute}
-          expectedOutInAsset={expectedOutInAsset}
-          assetTokenSymbol={assetToken?.symbol}
-          assetTokenDecimals={assetToken?.decimals ?? 18}
-          expectedVaultShares={activeFlow.periphery.expectedOut}
-          vaultDecimals={vaultDecimals}
-          sharesDisplayDecimals={sharesDecimals}
-          pricePerShare={pricePerShare || 0n}
-          assetUsdPrice={assetTokenPrice}
-          willReceiveStakedShares={willReceiveStakedShares}
-          onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
-          onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
-          estimatedAnnualReturn={estimatedAnnualReturn}
-          onShowAnnualReturnModal={() => setShowAnnualReturnModal(true)}
-          allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
-          allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
-          allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
-          approvalSpenderName={!isNativeToken ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined}
-          onAllowanceClick={
-            !isNativeToken && activeFlow.periphery.allowance > 0n
-              ? () => setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
-              : undefined
-          }
-          onShowApprovalOverlay={!isNativeToken ? () => setShowApprovalOverlay(true) : undefined}
-        />
-
-        {/* Action Button */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1">
-            {!account ? (
-              <Button
-                onClick={openLoginModal}
-                variant="filled"
-                className="w-full"
-                classNameOverride="yearn--button--nextgen w-full"
-              >
-                Connect Wallet
-              </Button>
-            ) : (
-              <Button
-                onClick={() => setShowTransactionOverlay(true)}
-                variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-                isBusy={activeFlow.periphery.isLoadingRoute}
-                disabled={
-                  !!depositError ||
-                  depositAmount.bn === 0n ||
-                  activeFlow.periphery.isLoadingRoute ||
-                  depositAmount.isDebouncing ||
-                  (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
-                  (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled)
-                }
-                className="w-full"
-                classNameOverride="yearn--button--nextgen w-full"
-              >
-                {activeFlow.periphery.isLoadingRoute
-                  ? 'Fetching quote'
-                  : !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
-                    ? `Approve & ${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'}`
-                    : routeType === 'DIRECT_STAKE'
-                      ? 'Stake'
-                      : 'Deposit'}
-              </Button>
-            )}
-          </div>
-          {account && onOpenSettings ? (
+        {collapseDetails ? (
+          <>
             <button
               type="button"
-              onClick={onOpenSettings}
-              aria-label="Open transaction settings"
-              aria-pressed={isSettingsOpen}
-              className={cl(
-                'flex items-center justify-center rounded-md border border-transparent px-3 py-2 text-text-secondary transition-all duration-200',
-                'min-h-11',
-                isSettingsOpen
-                  ? 'bg-surface text-text-primary !border-border'
-                  : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
-              )}
+              onClick={() => setIsDetailsPanelOpen(true)}
+              aria-expanded={isDetailsPanelOpen}
+              className="flex w-full items-center justify-between gap-3 border border-border rounded-lg bg-surface-secondary px-4 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-surface"
             >
-              <IconSettings className="h-4 w-4" />
+              <span>Transaction details</span>
+              <IconChevron className="size-4 text-text-secondary" direction="right" />
             </button>
-          ) : null}
-        </div>
+            {actionRow}
+          </>
+        ) : (
+          <>
+            {/* Details Section */}
+            {detailsSection}
+
+            {/* Action Button */}
+            {actionRow}
+          </>
+        )}
       </div>
+
+      {collapseDetails && isDetailsPanelOpen ? (
+        <div className="absolute inset-0 z-10 bg-surface rounded-lg flex flex-col">
+          <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
+            <span className="text-base font-semibold text-text-primary">Transaction details</span>
+            <button
+              type="button"
+              onClick={() => setIsDetailsPanelOpen(false)}
+              aria-label="Close transaction details"
+              className="flex size-7 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
+            >
+              <IconCross className="size-3.5" />
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">{detailsSection}</div>
+          <div className="border-t border-border px-6 py-6">{actionRow}</div>
+        </div>
+      ) : null}
 
       {onOpenSettings ? (
         <SettingsPanel isActive={isSettingsVisible} onClose={onOpenSettings} variant="overlay" />
