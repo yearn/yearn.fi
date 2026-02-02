@@ -1,4 +1,4 @@
-import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
+import { KATANA_CHAIN_ID, SPECTRA_MARKET_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { cl, formatAmount, formatApyDisplay } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -171,7 +171,7 @@ export function VaultForwardAPYInlineDetails({
   // Check if vault is eligible for Spectra boost (Katana chain only)
   const isEligibleForSpectraBoost =
     currentVault.chainID === KATANA_CHAIN_ID &&
-    SPECTRA_BOOST_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
+    SPECTRA_MARKET_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
 
   const hasKatanaDetails = currentVault.chainID === KATANA_CHAIN_ID && katanaExtras && data.katanaEstApr !== undefined
 
