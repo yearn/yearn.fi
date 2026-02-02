@@ -15,25 +15,13 @@ type TStakingRewardRowProps = {
   chainId: number
   onStartClaim: (step: TransactionStep) => void
   isFirst?: boolean
-  vaultName?: string
-  vaultTokenAddress?: `0x${string}`
   isAllChainsView?: boolean
   onSwitchChain?: () => void
 }
 
 export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
-  const {
-    reward,
-    stakingAddress,
-    stakingSource,
-    chainId,
-    onStartClaim,
-    isFirst,
-    vaultName,
-    vaultTokenAddress,
-    isAllChainsView,
-    onSwitchChain
-  } = props
+  const { reward, stakingAddress, stakingSource, chainId, onStartClaim, isFirst, isAllChainsView, onSwitchChain } =
+    props
 
   const currentChainId = useChainId()
   const { isPending } = useWriteContract()
@@ -79,8 +67,6 @@ export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
       isClaimPending={isPending}
       isClaimReady={prepare.isSuccess}
       isFirst={isFirst}
-      sourceName={vaultName}
-      sourceTokenAddress={vaultTokenAddress}
       isAllChainsView={isAllChainsView}
       onSwitchChain={onSwitchChain}
     />

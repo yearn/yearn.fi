@@ -1,14 +1,18 @@
 import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import { formatAmount, formatApyDisplay } from '@shared/utils'
+import { cl, formatAmount, formatApyDisplay } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement, ReactNode } from 'react'
-import { Fragment, useState } from 'react'
+import { Fragment, forwardRef, useCallback, useImperativeHandle, useState } from 'react'
 import { APYDetailsModal } from './APYDetailsModal'
 import { ApyDisplay } from './ApyDisplay'
 import { resolveForwardApyDisplayConfig } from './apyDisplayConfig'
 
 export type TVaultForwardAPYVariant = 'default' | 'factory-list'
+
+export type TVaultForwardAPYHandle = {
+  openModal: () => void
+}
 
 const INLINE_DETAILS_CONTAINER_CLASS =
   'w-full rounded-lg border border-border bg-surface-secondary p-3 text-text-primary'
@@ -27,6 +31,8 @@ type TVaultForwardAPYProps = {
   displayVariant?: TVaultForwardAPYVariant
   showBoostDetails?: boolean
   onInteractiveHoverChange?: (isHovering: boolean) => void
+  containerClassName?: string
+  isContainerInteractive?: boolean
 }
 
 type TVaultForwardAPYInlineDetailsProps = {
@@ -48,27 +54,34 @@ function InlineDetailRow({ label, value }: TInlineDetailRowProps): ReactElement 
   )
 }
 
-export function VaultForwardAPY({
-  currentVault,
-  onMobileToggle,
-  className,
-  valueClassName,
-  showSubline = true,
-  showSublineTooltip = false,
-  displayVariant = 'default',
-  showBoostDetails = true,
-  onInteractiveHoverChange
-}: TVaultForwardAPYProps): ReactElement {
+export const VaultForwardAPY = forwardRef<TVaultForwardAPYHandle, TVaultForwardAPYProps>(function VaultForwardAPY(
+  {
+    currentVault,
+    onMobileToggle,
+    className,
+    valueClassName,
+    showSubline = true,
+    showSublineTooltip = false,
+    displayVariant = 'default',
+    showBoostDetails = true,
+    onInteractiveHoverChange,
+    containerClassName,
+    isContainerInteractive = false
+  }: TVaultForwardAPYProps,
+  ref
+): ReactElement {
   const data = useVaultApyData(currentVault)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const canOpenModal = displayVariant !== 'factory-list'
-  function openModal(): void {
+  const openModal = useCallback((): void => {
     setIsModalOpen(true)
-  }
+  }, [])
 
-  function closeModal(): void {
+  const closeModal = useCallback((): void => {
     setIsModalOpen(false)
-  }
+  }, [])
+
+  useImperativeHandle(ref, () => ({ openModal }), [openModal])
 
   const { displayConfig, modalConfig } = resolveForwardApyDisplayConfig({
     currentVault,
@@ -96,15 +109,48 @@ export function VaultForwardAPY({
     openModal()
   }
 
+  const shouldWrap = Boolean(containerClassName || isContainerInteractive)
+  const handleContainerClick = isContainerInteractive
+    ? (e: React.MouseEvent): void => {
+        handleValueClick(e)
+      }
+    : undefined
+
+  const handleContainerKeyDown = isContainerInteractive
+    ? (e: React.KeyboardEvent): void => {
+        if (e.key !== 'Enter' && e.key !== ' ') {
+          return
+        }
+        e.preventDefault()
+        handleValueClick(e as unknown as React.MouseEvent)
+      }
+    : undefined
+
+  const apyDisplay = (
+    <ApyDisplay
+      config={displayConfig}
+      className={className}
+      valueClassName={valueClassName}
+      onValueClick={handleValueClick}
+      onHoverChange={onInteractiveHoverChange}
+    />
+  )
+
   return (
     <Fragment>
-      <ApyDisplay
-        config={displayConfig}
-        className={className}
-        valueClassName={valueClassName}
-        onValueClick={handleValueClick}
-        onHoverChange={onInteractiveHoverChange}
-      />
+      {shouldWrap ? (
+        <div
+          className={cl(containerClassName, isContainerInteractive ? 'cursor-pointer' : undefined)}
+          role={isContainerInteractive ? 'button' : undefined}
+          tabIndex={isContainerInteractive ? 0 : undefined}
+          onClick={handleContainerClick}
+          onKeyDown={handleContainerKeyDown}
+        >
+          {apyDisplay}
+        </div>
+      ) : (
+        apyDisplay
+      )}
       {modalConfig?.canOpen ? (
         <APYDetailsModal isOpen={isModalOpen} onClose={closeModal} title={modalConfig.title}>
           {modalConfig.content}
@@ -112,7 +158,7 @@ export function VaultForwardAPY({
       ) : null}
     </Fragment>
   )
-}
+})
 
 // Inline details for mobile accordion rendering controlled by parent
 export function VaultForwardAPYInlineDetails({

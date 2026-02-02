@@ -46,7 +46,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   const { connectors, connectAsync } = useConnect()
   const { disconnect } = useDisconnect()
   const { data: ensName, isLoading: isEnsLoading } = useEnsName({
-    address: address,
+    address: isConnected ? address : undefined,
     chainId: mainnet.id
   })
   const { openAccountModal } = useAccountModal()
@@ -134,7 +134,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   ])
 
   useAsyncTrigger(async (): Promise<void> => {
-    if (!isAddress(address)) {
+    if (!isConnected || !isAddress(address)) {
       setClusters(undefined)
       setIsFetchingClusters(false)
       return
@@ -155,7 +155,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     } finally {
       setIsFetchingClusters(false)
     }
-  }, [address])
+  }, [address, isConnected])
 
   useEffect(() => {
     if (isConnecting) {
@@ -174,9 +174,9 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
 
   const contextValue = useMemo(
     () => ({
-      address: address ? toAddress(address) : undefined,
-      ens: ensName || '',
-      clusters,
+      address: isConnected && address ? toAddress(address) : undefined,
+      ens: isConnected && ensName ? ensName : undefined,
+      clusters: isConnected ? clusters : undefined,
       chainID,
       isActive: isConnected,
       isWalletSafe,

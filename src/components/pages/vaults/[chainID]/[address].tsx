@@ -1,3 +1,4 @@
+import Link from '@components/Link'
 import { useScrollSpy } from '@hooks/useScrollSpy'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { MobileKeyMetrics } from '@pages/vaults/components/detail/QuickStatsGrid'
@@ -14,21 +15,26 @@ import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { mergeYBoldVault, YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
+import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType } from '@pages/vaults/types'
 import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
+import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { useWallet } from '@shared/contexts/useWallet'
-import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
-import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
 import { IconChevron } from '@shared/icons/IconChevron'
 import type { TToken } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
+import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { isAddressEqual } from 'viem'
+import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
+import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
+import { getCategoryDescription, getProductTypeDescription } from '@/components/pages/vaults/utils/vaultTagCopy'
+import { useWeb3 } from '@/components/shared/contexts/useWeb3'
 import { useDevFlags } from '@/contexts/useDevFlags'
 
 const resolveHeaderOffset = (): number => {
@@ -50,23 +56,107 @@ const resolveHeaderOffset = (): number => {
   return Number.isNaN(nextOffset) ? 0 : nextOffset
 }
 
+const RETIRED_VAULT_ALERT_MESSAGES = {
+  noFunds: 'This vault is retired.',
+  sternMigration: 'This vault is retired. Please withdraw or migrate your funds.',
+  softMigration:
+    'This vault is retired, but still earning yield. It is still recommended to migrate your funds to the newest vault for the best experience and yield. Deposits are no longer allowed, but withdrawals will remain open indefinitely.',
+  sternNoMigration: 'This vault is retired. Please withdraw your funds.',
+  softNoMigration:
+    'This vault is retired but still earning yield. Deposits are no longer allowed, but withdrawals will remain open indefinitely.'
+} as const
+
+const isSoftRetiredVault = (vault: TYDaemonVault): boolean => {
+  const hasActiveRouterStrategy = (vault.strategies ?? []).some(
+    (strategy) => strategy.status === 'active' && strategy.name.toLowerCase().includes('router')
+  )
+  const hasPositiveMonthlyNetApy = vault.apr.points.monthAgo > 0 && vault.chainID !== 250
+  return hasActiveRouterStrategy || hasPositiveMonthlyNetApy
+}
+
+const getRetiredVaultAlertMessage = ({
+  vault,
+  hasUserFundsInVault
+}: {
+  vault: TYDaemonVault
+  hasUserFundsInVault: boolean
+}): string => {
+  if (!hasUserFundsInVault) {
+    return RETIRED_VAULT_ALERT_MESSAGES.noFunds
+  }
+
+  if (vault.symbol.includes('yv^2')) {
+    return RETIRED_VAULT_ALERT_MESSAGES.softMigration
+  }
+
+  const hasMigrationPath = Boolean(vault.migration.available)
+  const isSoft = isSoftRetiredVault(vault)
+
+  if (hasMigrationPath) {
+    return isSoft ? RETIRED_VAULT_ALERT_MESSAGES.softMigration : RETIRED_VAULT_ALERT_MESSAGES.sternMigration
+  }
+
+  return isSoft ? RETIRED_VAULT_ALERT_MESSAGES.softNoMigration : RETIRED_VAULT_ALERT_MESSAGES.sternNoMigration
+}
+
+const splitFirstSentence = (message: string): { title: string; body?: string } => {
+  const firstPeriodIndex = message.indexOf('.')
+  if (firstPeriodIndex === -1) return { title: message }
+
+  const title = message.slice(0, firstPeriodIndex + 1).trim()
+  const body = message.slice(firstPeriodIndex + 1).trim()
+  return body ? { title, body } : { title }
+}
+
+function RetiredVaultAlert({ message, className }: { message: string; className: string }): ReactElement {
+  const { title, body } = splitFirstSentence(message)
+
+  return (
+    <div
+      className={cl(
+        'rounded-lg border border-border border-l-4 border-l-orange-500 dark:border-l-yellow-500 bg-surface-secondary text-sm text-text-primary',
+        className
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <svg
+          className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+        <div className="flex flex-col">
+          <p className={'font-semibold'}>{title}</p>
+          {body ? <p className="text-text-secondary">{body}</p> : null}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
   const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
 
-  const { address, isActive } = useWeb3()
   const params = useParams()
   const chainId = Number(params.chainID)
-  const { onRefresh } = useWallet()
-
+  const { getBalance, onRefresh } = useWallet()
+  const { address } = useWeb3()
   const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
-  const [mobileDrawerAction, setMobileDrawerAction] = useState<
-    typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw
-  >(WidgetActionType.Deposit)
+  const [mobileDrawerAction, setMobileDrawerAction] = useState<WidgetActionType>(WidgetActionType.Deposit)
+  const [hideMobileDrawerTabs, setHideMobileDrawerTabs] = useState(false)
   const mobileWidgetRef = useRef<TWidgetRef>(null)
+  const mobileDrawerPanelRef = useRef<HTMLDivElement>(null)
   const detailsRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement | null>(null)
   const sectionSelectorRef = useRef<HTMLDivElement>(null)
@@ -99,7 +189,7 @@ function Index(): ReactElement | null {
   })
   const collapsibleTitles: Record<SectionKey, string> = {
     about: 'Vault Info',
-    risk: 'Risk Score',
+    risk: 'Risk',
     strategies: 'Strategies',
     info: 'More Info',
     charts: 'Performance'
@@ -167,12 +257,15 @@ function Index(): ReactElement | null {
 
   const {
     data: snapshotVault,
+    error: snapshotError,
     isLoading: isLoadingSnapshotVault,
     refetch: refetchSnapshot
   } = useVaultSnapshot({
     chainId,
     address: params.address
   })
+  const isSnapshotNotFound = (snapshotError as any)?.response?.status === 404
+  const shouldDisableStakingForDeposit = Boolean(snapshotVault?.meta?.shouldDisableStaking)
 
   const baseMergedVault = useMemo(() => mergeVaultSnapshot(baseVault, snapshotVault), [baseVault, snapshotVault])
 
@@ -201,7 +294,15 @@ function Index(): ReactElement | null {
     return baseMergedVault
   }, [baseMergedVault, isYBold, yBoldStakingVault])
 
-  const isLoadingVault = !currentVault && (isLoadingSnapshotVault || isLoadingVaultList)
+  const isLoadingVault = !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
+
+  const vaultUserData = useVaultUserData({
+    vaultAddress: toAddress(currentVault?.address ?? '0x'),
+    assetAddress: toAddress(currentVault?.token?.address ?? '0x'),
+    stakingAddress: currentVault?.staking?.available ? toAddress(currentVault.staking.address) : undefined,
+    chainId,
+    account: address
+  })
 
   useEffect(() => {
     if (hasTriggeredVaultListFetch || hasVaultList || !snapshotVault) {
@@ -212,46 +313,33 @@ function Index(): ReactElement | null {
     return () => cancelAnimationFrame(frame)
   }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, snapshotVault])
 
-  useEffect((): void => {
-    if (address && isActive) {
-      const tokensToRefresh: TUseBalancesTokens[] = []
-      if (currentVault?.address) {
-        tokensToRefresh.push({
-          address: currentVault.address,
-          chainID: currentVault.chainID
-        })
-      }
-      if (currentVault?.token?.address) {
-        tokensToRefresh.push({
-          address: currentVault.token.address,
-          chainID: currentVault.chainID
-        })
-      }
-      if (currentVault?.staking.available) {
-        tokensToRefresh.push({
-          address: currentVault.staking.address,
-          chainID: currentVault.chainID
-        })
-      }
-      onRefresh(tokensToRefresh)
-    }
-  }, [
-    currentVault?.address,
-    currentVault?.token.address,
-    address,
-    isActive,
-    onRefresh,
-    currentVault?.chainID,
-    currentVault?.staking.available,
-    currentVault?.staking.address
-  ])
+  const vaultShareBalance =
+    !!address && currentVault?.address && Number.isInteger(currentVault?.chainID)
+      ? getBalance({ address: toAddress(currentVault.address), chainID: currentVault.chainID }).raw
+      : 0n
 
+  const stakingShareBalance =
+    !!address &&
+    currentVault?.staking.available &&
+    !isZeroAddress(currentVault?.staking.address) &&
+    Number.isInteger(currentVault?.chainID)
+      ? getBalance({ address: toAddress(currentVault.staking.address), chainID: currentVault.chainID }).raw
+      : 0n
+
+  const isMigratable = Boolean(currentVault?.migration?.available)
+  const canShowMigrateAction = isMigratable && vaultShareBalance > 0n
+  const isRetired = Boolean(currentVault?.info?.isRetired)
+  const hasUserFundsInVault = vaultShareBalance > 0n || stakingShareBalance > 0n
+  const retiredVaultAlertMessage = useMemo(() => {
+    if (!isRetired || !currentVault) return null
+    return getRetiredVaultAlertMessage({ vault: currentVault, hasUserFundsInVault })
+  }, [currentVault, hasUserFundsInVault, isRetired])
   const widgetActions = useMemo(() => {
-    if (currentVault?.migration?.available) {
-      return [WidgetActionType.Deposit, WidgetActionType.Migrate, WidgetActionType.Withdraw]
+    if (isRetired || isMigratable) {
+      return canShowMigrateAction ? [WidgetActionType.Migrate, WidgetActionType.Withdraw] : [WidgetActionType.Withdraw]
     }
     return [WidgetActionType.Deposit, WidgetActionType.Withdraw]
-  }, [currentVault?.migration?.available])
+  }, [canShowMigrateAction, isMigratable, isRetired])
   const [widgetMode, setWidgetMode] = useState<WidgetActionType>(widgetActions[0])
   const [isWidgetSettingsOpen, setIsWidgetSettingsOpen] = useState(false)
   const [isWidgetWalletOpen, setIsWidgetWalletOpen] = useState(false)
@@ -264,8 +352,14 @@ function Index(): ReactElement | null {
   } | null>(null)
 
   useEffect(() => {
-    setWidgetMode(widgetActions[0])
+    setWidgetMode((previous) => (widgetActions.includes(previous) ? previous : widgetActions[0]))
   }, [widgetActions])
+
+  useEffect(() => {
+    if (!widgetActions.includes(mobileDrawerAction)) {
+      setMobileDrawerAction(widgetActions[0])
+    }
+  }, [mobileDrawerAction, widgetActions])
 
   const toggleWidgetSettings = (): void => {
     setIsWidgetSettingsOpen((prev) => {
@@ -413,10 +507,10 @@ function Index(): ReactElement | null {
         key: 'info' as const,
         shouldRender: true,
         ref: sectionRefs.info,
-        content: <VaultInfoSection currentVault={currentVault} />
+        content: <VaultInfoSection currentVault={currentVault} inceptTime={snapshotVault?.inceptTime ?? null} />
       }
     ]
-  }, [chainId, currentVault, sectionRefs])
+  }, [chainId, currentVault, sectionRefs, snapshotVault?.inceptTime])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const sectionTabs = renderableSections.map((section) => ({
@@ -571,13 +665,34 @@ function Index(): ReactElement | null {
     window.scrollTo({ top: targetTop, behavior: 'smooth' })
   }
 
-  const handleFloatingButtonClick = useCallback(
-    (action: typeof WidgetActionType.Deposit | typeof WidgetActionType.Withdraw): void => {
-      setMobileDrawerAction(action)
-      setIsMobileDrawerOpen(true)
-    },
-    []
-  )
+  const handleFloatingButtonClick = useCallback((action: WidgetActionType): void => {
+    setMobileDrawerAction(action)
+    setIsMobileDrawerOpen(true)
+  }, [])
+
+  useLayoutEffect(() => {
+    // Reset when switching actions so we can re-measure with tabs visible.
+    void mobileDrawerAction
+    if (!isMobileDrawerOpen) {
+      setHideMobileDrawerTabs((prev) => (prev ? false : prev))
+      return
+    }
+    setHideMobileDrawerTabs((prev) => (prev ? false : prev))
+  }, [isMobileDrawerOpen, mobileDrawerAction])
+
+  useLayoutEffect(() => {
+    // Re-check sizing when the drawer action changes.
+    void mobileDrawerAction
+    if (!isMobileDrawerOpen || hideMobileDrawerTabs) return
+    if (typeof window === 'undefined') return
+    const panel = mobileDrawerPanelRef.current
+    if (!panel) return
+    const maxHeight = window.innerHeight * 0.9
+    const shouldHideTabs = panel.scrollHeight > maxHeight + 1
+    if (shouldHideTabs) {
+      setHideMobileDrawerTabs(true)
+    }
+  }, [isMobileDrawerOpen, mobileDrawerAction, hideMobileDrawerTabs])
 
   useEffect(() => {
     if (isMobileDrawerOpen && mobileWidgetRef.current) {
@@ -597,22 +712,49 @@ function Index(): ReactElement | null {
 
   if (!currentVault) {
     return (
-      <div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
-        <div className={'mt-[20%] flex h-10 items-center justify-center'}>
-          <p className={'text-sm text-text-primary'}>{"We couldn't find this vault on the connected network."}</p>
+      <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
+        <div className={'mx-auto w-full max-w-[1232px] px-4 py-16'}>
+          <div className={'rounded-3xl border border-border bg-surface p-6 text-center md:p-10'}>
+            <h1 className={'text-xl font-black text-text-primary md:text-2xl'}>{'Vault not found'}</h1>
+            <p className={'mt-3 text-sm text-text-secondary'}>
+              {"We couldn't find a vault at this address on this network."}
+            </p>
+            <p className={'mt-2 text-xs text-text-tertiary'}>
+              {`Chain: ${params.chainID || 'unknown'} • Address: ${params.address || 'unknown'}`}
+            </p>
+            <div className={'mt-6 flex justify-center gap-3'}>
+              <Link href={'/vaults'} className={'yearn--button--nextgen'} data-variant={'filled'}>
+                {'Back to Vaults'}
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     )
   }
 
+  function getMobileProductTypeLabel(): string {
+    if (mobileListKind === 'allocator' || mobileListKind === 'strategy') return 'Single Asset'
+    if (mobileListKind === 'legacy') return 'Legacy'
+    return 'LP Token'
+  }
+  function getWidgetModeLabel(mode: WidgetActionType): string {
+    switch (mode) {
+      case WidgetActionType.Deposit:
+        return 'Deposit'
+      case WidgetActionType.Withdraw:
+        return 'Withdraw'
+      default:
+        return 'Migrate'
+    }
+  }
+
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const headerStickyTop = 'var(--header-height)'
-  const widgetModeLabel =
-    widgetMode === WidgetActionType.Deposit
-      ? 'Deposit'
-      : widgetMode === WidgetActionType.Withdraw
-        ? 'Withdraw'
-        : 'Migrate'
+  const resolvedWidgetMode = widgetActions.includes(widgetMode) ? widgetMode : widgetActions[0]
+  const mobileListKind = deriveListKind(currentVault)
+  const mobileProductTypeLabel = getMobileProductTypeLabel()
+  const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
 
   return (
@@ -634,13 +776,14 @@ function Index(): ReactElement | null {
         >
           <VaultDetailsHeader
             currentVault={currentVault}
+            depositedValue={vaultUserData.depositedValue}
             isCollapsibleMode={isCollapsibleMode}
             sectionTabs={sectionTabs}
             activeSectionKey={activeSection}
             onSelectSection={(key): void => handleSelectSection(key as SectionKey)}
             sectionSelectorRef={sectionSelectorRef}
             widgetActions={widgetActions}
-            widgetMode={widgetMode}
+            widgetMode={resolvedWidgetMode}
             onWidgetModeChange={setWidgetMode}
             isWidgetWalletOpen={isWidgetWalletOpen}
             onWidgetWalletOpen={openWidgetWallet}
@@ -649,7 +792,15 @@ function Index(): ReactElement | null {
           />
         </header>
 
-        <div className="md:hidden mt-4 mb-4">
+        <div className="md:hidden md:mt-4 mb-4">
+          <Breadcrumbs
+            className={'mb-3'}
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Vaults', href: '/vaults' },
+              { label: `${getVaultName(currentVault)} yVault`, isCurrent: true }
+            ]}
+          />
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
               <ImageWithFallback
@@ -665,15 +816,28 @@ function Index(): ReactElement | null {
               <h1 className={'text-lg font-black leading-tight truncate-safe text-text-primary'}>
                 {getVaultName(currentVault)} yVault
               </h1>
-              <p className="text-mobile-label text-text-secondary">
-                {currentVault.token.symbol} • v{currentVault.version}
-              </p>
+              <div className="flex items-center gap-1 mt-1">
+                {currentVault.category ? (
+                  <VaultsListChip
+                    label={currentVault.category}
+                    tooltipDescription={getCategoryDescription(currentVault.category) || undefined}
+                  />
+                ) : null}
+                <VaultsListChip
+                  label={mobileProductTypeLabel}
+                  tooltipDescription={getProductTypeDescription(mobileListKind)}
+                />
+              </div>
             </div>
           </div>
         </div>
 
         <div className="md:hidden space-y-4">
           <MobileKeyMetrics currentVault={currentVault} />
+
+          {isRetired && retiredVaultAlertMessage ? (
+            <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-4 py-3" />
+          ) : null}
 
           {Number.isInteger(chainId) && (
             <div className="border border-border rounded-lg bg-surface overflow-hidden">
@@ -763,9 +927,11 @@ function Index(): ReactElement | null {
                       vaultAddress={currentVault.address}
                       currentVault={currentVault}
                       gaugeAddress={currentVault.staking.address}
+                      disableDepositStaking={shouldDisableStakingForDeposit}
                       actions={widgetActions}
                       chainId={chainId}
-                      mode={widgetMode}
+                      vaultUserData={vaultUserData}
+                      mode={resolvedWidgetMode}
                       onModeChange={setWidgetMode}
                       showTabs={false}
                       onOpenSettings={toggleWidgetSettings}
@@ -783,6 +949,7 @@ function Index(): ReactElement | null {
                     isZeroAddress(currentVault.staking.address) ? undefined : toAddress(currentVault.staking.address)
                   }
                   chainId={chainId}
+                  vaultUserData={vaultUserData}
                   onSelectZapToken={handleZapTokenSelect}
                 />
               </div>
@@ -808,6 +975,10 @@ function Index(): ReactElement | null {
           </div>
 
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
+            {isRetired && retiredVaultAlertMessage ? (
+              <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
+            ) : null}
+
             {renderableSections.map((section) => {
               const isCollapsible =
                 section.key === 'about' ||
@@ -864,11 +1035,11 @@ function Index(): ReactElement | null {
         </section>
       </div>
 
-      {/* Mobile Floating Action Buttons - visible only on viewports ≤640px, hidden when drawer is open */}
+      {/* Mobile Floating Action Buttons - visible until desktop widget appears (md:), hidden when drawer is open */}
       {!isMobileDrawerOpen && (
         <div
           className={cl(
-            'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 sm:hidden',
+            'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 md:hidden',
             'backdrop-blur-md',
             'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]'
           )}
@@ -876,15 +1047,15 @@ function Index(): ReactElement | null {
           <div className="flex gap-3 max-w-[1232px] mx-auto">
             <button
               type="button"
-              onClick={() => handleFloatingButtonClick(WidgetActionType.Deposit)}
+              onClick={() => handleFloatingButtonClick(widgetActions[0])}
               className="yearn--button--nextgen flex-1"
               data-variant="filled"
             >
-              Deposit
+              {widgetActions[0] === WidgetActionType.Migrate ? 'Migrate' : 'Deposit'}
             </button>
             <button
               type="button"
-              onClick={() => handleFloatingButtonClick(WidgetActionType.Withdraw)}
+              onClick={() => handleFloatingButtonClick(widgetActions[1])}
               className="yearn--button flex-1"
               data-variant="light"
             >
@@ -899,17 +1070,22 @@ function Index(): ReactElement | null {
         onClose={() => setIsMobileDrawerOpen(false)}
         title={currentVault.name}
         headerActions={<MobileDrawerSettingsButton />}
+        panelRef={mobileDrawerPanelRef}
       >
         <Widget
           ref={mobileWidgetRef}
           vaultAddress={currentVault.address}
           currentVault={currentVault}
           gaugeAddress={currentVault.staking.address}
+          disableDepositStaking={shouldDisableStakingForDeposit}
           actions={widgetActions}
           chainId={chainId}
-          hideTabSelector
+          vaultUserData={vaultUserData}
+          mode={mobileDrawerAction}
+          onModeChange={setMobileDrawerAction}
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
+          hideTabSelector={hideMobileDrawerTabs}
           disableBorderRadius
         />
       </BottomDrawer>

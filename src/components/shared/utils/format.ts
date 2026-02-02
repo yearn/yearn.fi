@@ -496,12 +496,29 @@ export function formatUSD(n: number, min = 2, max = 2): string {
   return `$${formatAmount(n || 0, min, max)}`
 }
 
+export function formatUSDWithThreshold(n: number, min = 2, max = 2): string {
+  if (n > 0 && n < 0.01) {
+    return '< $0.01'
+  }
+  return formatUSD(n, min, max)
+}
+
 export function formatPercent(n: number, min = 2, max = 2, upperLimit = 500): string {
   const safeN = n || 0
-  if (safeN > upperLimit) {
-    return `≧ ${formatAmount(upperLimit, min, max)}%`
+  if (safeN >= upperLimit) {
+    return `≥ ${formatAmount(upperLimit, min, max)}%`
   }
   return `${formatAmount(safeN || 0, min, max)}%`
+}
+
+export function formatAllocationPercent(value: number, options?: { locales?: string[] }): string {
+  const safeValue = Number.isFinite(value) ? value : 0
+  const fractionDigits = resolveSignificantFractionDigits(safeValue)
+  const formatter = new Intl.NumberFormat(resolveLocales(options), {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits
+  })
+  return `${formatter.format(safeValue)}%`
 }
 
 function resolveLocales(options?: { locales?: string[] }): string[] {
@@ -524,6 +541,9 @@ export function formatApyDisplay(value: number, options?: { locales?: string[] }
   }
   const safeValue = Number.isFinite(value) ? value : 0
   const percentValue = safeValue * 100
+  if (percentValue >= 500) {
+    return '≥ 500%'
+  }
   const fractionDigits = resolveApyFractionDigits(percentValue)
   const formatter = new Intl.NumberFormat(resolveLocales(options), {
     minimumFractionDigits: fractionDigits,
@@ -541,10 +561,14 @@ export function normalizeApyDisplayValue(value: number): number {
   return Number(percentValue.toFixed(fractionDigits))
 }
 
-function resolveApyFractionDigits(value: number): number {
+function resolveSignificantFractionDigits(value: number): number {
   const absValue = Math.abs(value)
   const digitsBefore = absValue >= 100 ? 3 : absValue >= 10 ? 2 : 1
   return Math.max(0, 3 - digitsBefore)
+}
+
+function resolveApyFractionDigits(value: number): number {
+  return resolveSignificantFractionDigits(value)
 }
 
 export function formatTvlDisplay(value: number, options?: { locales?: string[] }): string {

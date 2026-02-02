@@ -4,7 +4,6 @@ import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoric
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
-import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import type { WidgetActionType } from '@pages/vaults/types'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
@@ -24,9 +23,8 @@ import {
 } from '@shared/components/MetricsCard'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { cl, formatUSD, toAddress, toNormalizedBN } from '@shared/utils'
+import { cl, formatUSD, SELECTOR_BAR_STYLES, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
@@ -281,11 +279,9 @@ function SectionSelectorBar({
             }}
             className={cl(
               'flex-1 rounded-md px-2 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5',
-              'border border-transparent focus-visible:outline-none focus-visible:ring-0',
-              'min-h-[36px] active:scale-[0.98] truncate',
-              activeSectionKey === section.key
-                ? 'bg-surface text-text-primary !border-border'
-                : 'bg-transparent text-text-secondary hover:text-text-primary'
+              SELECTOR_BAR_STYLES.buttonBase,
+              'min-h-9 active:scale-[0.98] truncate',
+              activeSectionKey === section.key ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
             )}
             aria-disabled={!isCompressed && section.key === 'charts'}
           >
@@ -424,6 +420,7 @@ function UserHoldingsCard({
 
 export function VaultDetailsHeader({
   currentVault,
+  depositedValue,
   isCollapsibleMode = true,
   sectionTabs = [],
   activeSectionKey,
@@ -438,6 +435,7 @@ export function VaultDetailsHeader({
   onWidgetCloseOverlays
 }: {
   currentVault: TYDaemonVault
+  depositedValue: bigint
   isCollapsibleMode?: boolean
   sectionTabs?: { key: string; label: string }[]
   activeSectionKey?: string
@@ -451,25 +449,18 @@ export function VaultDetailsHeader({
   isWidgetWalletOpen?: boolean
   onWidgetCloseOverlays?: () => void
 }): ReactElement {
-  const { address } = useWeb3()
   const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode })
 
   useEffect(() => {
     onCompressionChange?.(isCompressed)
   }, [isCompressed, onCompressionChange])
 
-  // Shared hook with widget - cache updates automatically when widget refetches
-  const { depositedValue } = useVaultUserData({
-    vaultAddress: toAddress(currentVault.address),
-    assetAddress: toAddress(currentVault.token.address),
-    stakingAddress: currentVault.staking.available ? toAddress(currentVault.staking.address) : undefined,
-    chainId: currentVault.chainID,
-    account: address
-  })
   const tokenPrice = currentVault.tvl.price || 0
 
   return (
-    <div className={'grid w-full grid-cols-1 gap-y-0 gap-x-6 text-left md:auto-rows-min md:grid-cols-20 bg-app'}>
+    <div
+      className={'grid w-full grid-cols-1 gap-y-0 gap-x-6 text-left md:auto-rows-min md:grid-cols-20 bg-app rounded-lg'}
+    >
       <div className={'hidden md:flex items-center gap-2 text-sm text-text-secondary md:col-span-20 px-1'}>
         <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
           {'Home'}

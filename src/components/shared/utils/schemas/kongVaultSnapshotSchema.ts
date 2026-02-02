@@ -87,8 +87,30 @@ const snapshotRiskSchema = z
   .optional()
   .default(null)
 
+const estimatedAprSchema = z.object({
+  apr: z.union([z.number(), z.string()]).transform((value) => Number(value)),
+  apy: z.union([z.number(), z.string()]).transform((value) => Number(value)),
+  type: z.string().optional().default('').catch(''),
+  components: z
+    .object({
+      boost: nullableNumberSchema.nullish(),
+      poolAPY: nullableNumberSchema.nullish(),
+      boostedAPR: nullableNumberSchema.nullish(),
+      baseAPR: nullableNumberSchema.nullish(),
+      rewardsAPR: nullableNumberSchema.nullish(),
+      rewardsAPY: nullableNumberSchema.nullish(),
+      cvxAPR: nullableNumberSchema.nullish(),
+      keepCRV: nullableNumberSchema.nullish(),
+      keepVelo: nullableNumberSchema.nullish()
+    })
+    .partial()
+    .optional()
+    .default({})
+})
+
 const snapshotPerformanceSchema = z
   .object({
+    estimated: estimatedAprSchema.optional().catch(undefined),
     oracle: z
       .object({
         apr: nullableNumberSchema.optional().catch(null),
@@ -144,6 +166,7 @@ const snapshotCompositionSchema = z
     latestReportApr: nullableNumberSchema.optional().catch(null),
     performance: z
       .object({
+        estimated: estimatedAprSchema.optional().catch(undefined),
         oracle: z
           .object({
             apr: nullableNumberSchema.optional().catch(null),
@@ -237,6 +260,7 @@ export const kongVaultSnapshotSchema = z
     address: addressSchema,
     chainId: z.number(),
     apiVersion: z.string().optional().nullable(),
+    inceptTime: nullableNumberSchema.optional().catch(null),
     name: z.string().optional().default('').catch(''),
     symbol: z.string().optional().default('').catch(''),
     decimals: decimalsSchema.optional().catch(18),
@@ -252,7 +276,8 @@ export const kongVaultSnapshotSchema = z
     composition: z.array(snapshotCompositionSchema).optional().default([]),
     debts: z.array(snapshotDebtSchema).optional().default([]),
     strategies: z.array(addressSchema).optional().default([]),
-    staking: snapshotStakingSchema
+    staking: snapshotStakingSchema,
+    inclusion: z.record(z.string(), z.boolean()).optional()
   })
   .passthrough()
 

@@ -1,3 +1,4 @@
+import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import type { TAddress } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
@@ -11,8 +12,10 @@ interface Props {
   currentVault: TYDaemonVault
   vaultAddress?: TAddress
   gaugeAddress?: TAddress
+  disableDepositStaking?: boolean
   actions: ActionType[]
   chainId: number
+  vaultUserData: VaultUserData
   handleSuccess?: () => void
   mode?: ActionType
   onModeChange?: (mode: ActionType) => void
@@ -50,8 +53,10 @@ export const Widget = forwardRef<TWidgetRef, Props>(
       currentVault,
       vaultAddress,
       gaugeAddress,
+      disableDepositStaking,
       actions,
       chainId,
+      vaultUserData,
       handleSuccess,
       mode,
       onModeChange,
@@ -69,6 +74,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
     const currentMode = mode ?? internalMode
     const setMode = onModeChange ?? setInternalMode
     const assetToken = currentVault.token.address
+    const resolvedStakingAddress = isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)
 
     useImperativeHandle(ref, () => ({
       setMode: (newMode: ActionType) => {
@@ -91,11 +97,12 @@ export const Widget = forwardRef<TWidgetRef, Props>(
             <WidgetDeposit
               vaultAddress={toAddress(vaultAddress)}
               assetAddress={toAddress(assetToken)}
-              stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
+              stakingAddress={disableDepositStaking ? undefined : resolvedStakingAddress}
               chainId={chainId}
               vaultAPR={currentVault?.apr?.forwardAPR?.netAPR || 0}
               vaultSymbol={currentVault?.symbol || ''}
               stakingSource={currentVault?.staking?.source}
+              vaultUserData={vaultUserData}
               handleDepositSuccess={handleSuccess}
               prefill={depositPrefill ?? undefined}
               onPrefillApplied={onDepositPrefillConsumed}
@@ -110,9 +117,11 @@ export const Widget = forwardRef<TWidgetRef, Props>(
             <WidgetWithdraw
               vaultAddress={toAddress(vaultAddress)}
               assetAddress={toAddress(assetToken)}
-              stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
+              stakingAddress={resolvedStakingAddress}
               chainId={chainId}
               vaultSymbol={currentVault?.symbol || ''}
+              isVaultRetired={Boolean(currentVault?.info?.isRetired)}
+              vaultUserData={vaultUserData}
               handleWithdrawSuccess={handleSuccess}
               onOpenSettings={onOpenSettings}
               isSettingsOpen={isSettingsOpen}
@@ -125,12 +134,13 @@ export const Widget = forwardRef<TWidgetRef, Props>(
             <WidgetMigrate
               vaultAddress={toAddress(vaultAddress)}
               assetAddress={toAddress(assetToken)}
-              stakingAddress={isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)}
+              stakingAddress={resolvedStakingAddress}
               chainId={chainId}
               vaultSymbol={currentVault?.symbol || ''}
               vaultVersion={currentVault?.version}
               migrationTarget={toAddress(currentVault?.migration?.address)}
               migrationContract={toAddress(currentVault?.migration?.contract)}
+              vaultUserData={vaultUserData}
               handleMigrateSuccess={handleSuccess}
             />
           )
@@ -138,24 +148,32 @@ export const Widget = forwardRef<TWidgetRef, Props>(
     }, [
       currentMode,
       vaultAddress,
-      gaugeAddress,
+      disableDepositStaking,
       currentVault,
       assetToken,
       chainId,
+      vaultUserData,
       handleSuccess,
       depositPrefill,
       onDepositPrefillConsumed,
       onOpenSettings,
       isSettingsOpen,
       hideTabSelector,
-      disableBorderRadius
+      disableBorderRadius,
+      resolvedStakingAddress
     ])
 
     // Mobile mode: simple layout without tabs
     if (hideTabSelector) {
       return (
         <div className="flex flex-col gap-0 w-full h-full">
-          <div className={cl('bg-surface rounded-lg relative w-full min-w-0')}>{SelectedComponent}</div>
+          <div
+            className={cl('bg-surface relative w-full min-w-0', {
+              'rounded-lg': !disableBorderRadius
+            })}
+          >
+            {SelectedComponent}
+          </div>
         </div>
       )
     }

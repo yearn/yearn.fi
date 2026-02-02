@@ -8,11 +8,13 @@ import {
   getTimeframeLimit
 } from '@pages/vaults/utils/charts'
 import { useChartStyle } from '@shared/contexts/useChartStyle'
+import { formatPercent } from '@shared/utils'
 import { useId, useMemo } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, LineChart, XAxis, YAxis } from 'recharts'
 import type { ChartConfig } from './ChartPrimitives'
 import { ChartContainer, ChartTooltip } from './ChartPrimitives'
 import {
+  CHART_TOOLTIP_WRAPPER_STYLE,
   CHART_WITH_AXES_MARGIN,
   CHART_Y_AXIS_TICK_MARGIN,
   CHART_Y_AXIS_TICK_STYLE,
@@ -39,7 +41,7 @@ const SERIES_META: Record<SeriesKey, { chartLabel: string; legendLabel: string; 
   }
 }
 
-const formatPercentTick = (value: number | string) => (Number(value) === 0 ? '' : `${value}%`)
+const formatPercentTick = (value: number | string) => (Number(value) === 0 ? '' : formatPercent(Number(value), 0, 2))
 
 type APYChartProps = {
   chartData: TAprApyChartData
@@ -105,9 +107,10 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
             {!hideTooltip && (
               <ChartTooltip
                 formatter={(value: number, name: string) => {
-                  return [`${(value ?? 0).toFixed(2)}%`, formatSeriesLabel(name)]
+                  return [formatPercent(value ?? 0, 2, 2), formatSeriesLabel(name)]
                 }}
                 labelFormatter={formatChartTooltipDate}
+                wrapperStyle={CHART_TOOLTIP_WRAPPER_STYLE}
                 contentStyle={{
                   backgroundColor: 'var(--chart-tooltip-bg)',
                   borderRadius: 'var(--chart-tooltip-radius)',
@@ -189,9 +192,10 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
             {!hideTooltip && (
               <ChartTooltip
                 formatter={(value: number, name: string) => {
-                  return [`${(value ?? 0).toFixed(2)}%`, formatSeriesLabel(name)]
+                  return [formatPercent(value ?? 0, 2, 2), formatSeriesLabel(name)]
                 }}
                 labelFormatter={formatChartTooltipDate}
+                wrapperStyle={CHART_TOOLTIP_WRAPPER_STYLE}
                 contentStyle={{
                   backgroundColor: 'var(--chart-tooltip-bg)',
                   borderRadius: 'var(--chart-tooltip-radius)',
@@ -247,9 +251,10 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
           {!hideTooltip && (
             <ChartTooltip
               formatter={(value: number, name: string) => {
-                return [`${(value ?? 0).toFixed(2)}%`, formatSeriesLabel(name)]
+                return [formatPercent(value ?? 0, 2, 2), formatSeriesLabel(name)]
               }}
               labelFormatter={formatChartTooltipDate}
+              wrapperStyle={CHART_TOOLTIP_WRAPPER_STYLE}
               contentStyle={{
                 backgroundColor: 'var(--chart-tooltip-bg)',
                 borderRadius: 'var(--chart-tooltip-radius)',

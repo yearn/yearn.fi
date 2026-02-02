@@ -1,5 +1,5 @@
-import { DevToolbar } from '@components/DevToolbar'
 import { IframeAutoConnect } from '@components/IframeAutoConnect'
+import { ScrollToTopButton } from '@pages/vaults/components/detail/ScrollToTopButton'
 import { AppSettingsContextApp } from '@pages/vaults/contexts/useAppSettings'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import AppHeader from '@shared/components/Header'
@@ -21,13 +21,12 @@ import { cl } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router'
 import { WagmiProvider } from 'wagmi'
 import { wagmiConfig } from '@/config/wagmi'
 import { ChainsProvider } from '@/context/ChainsProvider'
-import { DevFlagsProvider } from '/src/contexts/useDevFlags'
 import PlausibleProvider from './components/PlausibleProvider'
 import { Routes } from './routes'
 
@@ -36,14 +35,15 @@ const queryClient = new QueryClient()
 function WithLayout(): ReactElement {
   return (
     <>
-      <div className={'sticky top-0 z-60 w-full'}>
+      <div className={'sticky top-0 z-60 w-full max-md:fixed max-md:inset-x-0'}>
         <AppHeader />
       </div>
-      <div id={'app'} className={cl('mx-auto mb-0 flex')}>
+      <div id={'app'} className={cl('mx-auto mb-0 flex', 'max-md:pt-[var(--header-height)]')}>
         <div className={'block size-full min-h-max'}>
           <Routes />
         </div>
       </div>
+      <ScrollToTopButton className="bottom-20 right-4 md:bottom-6 md:right-6" />
     </>
   )
 }
@@ -54,7 +54,7 @@ function App(): ReactElement {
 
   // Scroll to top on route change
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on pathname change only
-  useEffect(() => {
+  useLayoutEffect(() => {
     window.scrollTo(0, 0)
   }, [location.pathname])
 
@@ -102,10 +102,7 @@ function App(): ReactElement {
                                   <IndexedDB>
                                     <WithNotifications>
                                       <WithNotificationsActions>
-                                        <DevFlagsProvider>
-                                          <WithLayout />
-                                          <DevToolbar />
-                                        </DevFlagsProvider>
+                                        <WithLayout />
                                       </WithNotificationsActions>
                                     </WithNotifications>
                                   </IndexedDB>

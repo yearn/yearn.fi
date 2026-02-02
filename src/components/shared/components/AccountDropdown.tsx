@@ -7,6 +7,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconArrowLeft } from '@shared/icons/IconArrowLeft'
 import { IconArrowRight } from '@shared/icons/IconArrowRight'
 import { IconChevron } from '@shared/icons/IconChevron'
+import { IconCopy } from '@shared/icons/IconCopy'
 import { IconMoon } from '@shared/icons/IconMoon'
 import { IconPower } from '@shared/icons/IconPower'
 import { IconSettings } from '@shared/icons/IconSettings'
@@ -33,6 +34,7 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
   const navigate = useNavigate()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
+  const { toast } = yToast()
 
   const totalValue = cumulatedValueInV2Vaults + cumulatedValueInV3Vaults
 
@@ -42,6 +44,12 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
     if (address) return truncateHex(address, 4)
     return 'Not connected'
   }, [address, ens, clusters])
+
+  const handleCopyAddress = useCallback(() => {
+    if (!address) return
+    navigator.clipboard.writeText(address)
+    toast({ content: 'Address copied', type: 'success' })
+  }, [address, toast])
 
   const recentActivity = useMemo(() => {
     return cachedEntries.toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)).slice(0, 3)
@@ -93,7 +101,16 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
       <div className={cl('rounded-2xl p-4', isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100')}>
         <div className={'mb-4 flex items-start justify-between'}>
           <div className={'flex flex-col'}>
-            <p className={'text-sm font-medium text-text-primary'}>{displayName}</p>
+            <button
+              onClick={handleCopyAddress}
+              disabled={!address}
+              className={
+                'group flex items-center gap-1.5 text-sm font-medium text-text-primary hover:text-primary transition-colors disabled:cursor-default disabled:hover:text-text-primary'
+              }
+            >
+              <span>{displayName}</span>
+              {address && <IconCopy className={'size-3.5 opacity-50 group-hover:opacity-100 transition-opacity'} />}
+            </button>
             {isWalletLoading ? (
               <div className={'mt-1 h-7 w-20 animate-pulse rounded bg-surface-tertiary'} />
             ) : (
@@ -109,7 +126,11 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
             <button onClick={onSettingsClick} className={iconButtonClass}>
               <IconSettings className={'size-4'} />
             </button>
-            <button onClick={handleDisconnect} className={iconButtonClass}>
+            <button
+              onClick={handleDisconnect}
+              disabled={isWalletLoading}
+              className={cl(iconButtonClass, { 'opacity-50 cursor-not-allowed': isWalletLoading })}
+            >
               <IconPower className={'size-4'} />
             </button>
           </div>

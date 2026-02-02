@@ -13,8 +13,8 @@ import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
-import { Button } from '@shared/components/Button'
 import { METRIC_VALUE_CLASS, MetricHeader, MetricsCard, type TMetricBlock } from '@shared/components/MetricsCard'
+import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -22,7 +22,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
-import { cl, SUPPORTED_NETWORKS } from '@shared/utils'
+import { cl, formatPercent, SUPPORTED_NETWORKS } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -36,11 +36,6 @@ import { useVaultWithStakingRewards } from './hooks/useVaultWithStakingRewards'
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2
-})
-
-const percentFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2
 })
@@ -88,7 +83,7 @@ type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'isActive' | 'openLogin
 function PortfolioPageLayout({ children }: { children: ReactElement }): ReactElement {
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
-      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16 sm:gap-4'}>{children}</div>
+      <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16'}>{children}</div>
     </div>
   )
 }
@@ -158,7 +153,7 @@ function PortfolioHeaderSection({
   function renderApyMetric(apyValue: number | null): ReactElement {
     if (isHoldingsLoading) return metricSpinner
     if (apyValue === null) return <span>{'—'}</span>
-    return renderApyValue(`${percentFormatter.format(apyValue)}%`, hasKatanaHoldings)
+    return renderApyValue(formatPercent(apyValue, 2, 2), hasKatanaHoldings)
   }
 
   function renderCurrencyMetric(value: number | null): ReactElement {
@@ -178,6 +173,16 @@ function PortfolioHeaderSection({
       )
     },
     {
+      key: 'est-annual',
+      header: (
+        <MetricHeader
+          label="Est. Annual Return"
+          tooltip="Projects potential returns based on your blended current APY."
+        />
+      ),
+      value: <span className={METRIC_VALUE_CLASS}>{renderCurrencyMetric(blendedMetrics.estimatedAnnualReturn)}</span>
+    },
+    {
       key: 'current-apy',
       header: <MetricHeader label="Current APY" tooltip="Weighted by your total deposits across all Yearn vaults." />,
       value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedCurrentAPY)}</span>
@@ -186,18 +191,11 @@ function PortfolioHeaderSection({
       key: '30-day-apy',
       header: <MetricHeader label="30-day APY" tooltip="Blended 30-day performance using your current positions." />,
       value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedHistoricalAPY)}</span>
-    },
-    {
-      key: 'est-annual',
-      header: (
-        <MetricHeader label="Est. Annual" tooltip="Projects potential returns based on your blended current APY." />
-      ),
-      value: <span className={METRIC_VALUE_CLASS}>{renderCurrencyMetric(blendedMetrics.estimatedAnnualReturn)}</span>
     }
   ]
 
   return (
-    <section className={'flex flex-col gap-2 sm:gap-2'}>
+    <section className={'flex flex-col gap-2'}>
       <Breadcrumbs
         className="px-1"
         items={[
@@ -208,7 +206,7 @@ function PortfolioHeaderSection({
       />
       <div className="px-1">
         <Tooltip
-          className="h-auto gap-0 justify-start md:justify-start"
+          className="h-auto justify-start gap-0"
           openDelayMs={150}
           side="top"
           tooltip={
@@ -218,7 +216,9 @@ function PortfolioHeaderSection({
           <h1 className="text-lg font-black text-text-primary md:text-3xl md:leading-10">{'Account Overview'}</h1>
         </Tooltip>
       </div>
-      {isActive ? <MetricsCard items={metrics} className={'rounded-t-lg rounded-b-none border border-border'} /> : null}
+      {isActive && (
+        <MetricsCard items={metrics} className="rounded-t-lg rounded-b-none border border-border" mobileLayout="grid" />
+      )}
     </section>
   )
 }
@@ -233,10 +233,10 @@ function PortfolioTabSelector({
   mergeWithHeader?: boolean
 }): ReactElement {
   return (
-    <div className={'flex flex-wrap gap-2 md:gap-3 w-full'}>
+    <div className={'flex gap-2 md:gap-3 w-full'}>
       <div
         className={cl(
-          'flex w-full flex-wrap justify-between gap-2 bg-surface-secondary p-1',
+          'flex w-full justify-between gap-1 bg-surface-secondary p-1',
           mergeWithHeader ? 'rounded-b-lg border-x border-b border-border' : 'rounded-lg border border-border'
         )}
       >
@@ -246,7 +246,7 @@ function PortfolioTabSelector({
             type={'button'}
             onClick={() => onSelectTab(tab.key)}
             className={cl(
-              'flex-1 min-w-[120px] rounded-md px-3 py-2 text-xs font-semibold transition-all md:min-w-0 md:flex-1 md:px-4 md:py-2.5',
+              'flex-1 rounded-md px-2 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5',
               'border border-transparent focus-visible:outline-none focus-visible:ring-0',
               'min-h-[36px] active:scale-[0.98]',
               activeTab === tab.key
@@ -297,7 +297,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   }
 
   return (
-    <section className={'flex flex-col gap-2 sm:gap-2'}>
+    <section className={'flex flex-col gap-2'}>
       <div>
         <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">Activity</h2>
         <p className="text-xs text-text-secondary sm:text-sm">Review your recent Yearn transactions.</p>
@@ -523,19 +523,23 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
         staking?.rewards.reduce((sum, r) => sum + r.rewards.reduce((s, rw) => s + rw.usdValue, 0), 0) ?? 0
       const merkleUsd = merkle?.rewards.reduce((sum, r) => sum + r.totalUsdValue, 0) ?? 0
 
+      const hasStakingVaultsOnChain = stakingVaults.some((v) => v.chainID === chainId)
+      const stakingIsLoading = hasStakingVaultsOnChain ? (staking?.isLoading ?? false) : false
+      const merkleIsLoading = merkle?.isLoading ?? false
+
       return {
         chainId,
         chainName,
         rewardCount: stakingRewardCount + merkleRewardCount,
         totalUsd: stakingUsd + merkleUsd,
-        isLoading: (staking?.isLoading ?? true) || (merkle?.isLoading ?? true),
+        isLoading: stakingIsLoading || merkleIsLoading,
         stakingRewards: staking?.rewards ?? [],
         merkleRewards: merkle?.rewards ?? [],
         refetchStaking: staking?.refetch ?? (() => {}),
         refetchMerkle: merkle?.refetch ?? (() => {})
       }
     })
-  }, [chainIds, chainMerkleData, chainStakingData])
+  }, [chainIds, chainMerkleData, chainStakingData, stakingVaults])
 
   const totalRewardCount = useMemo(
     () => chainRewardsData.reduce((sum, c) => sum + c.rewardCount, 0),
@@ -627,8 +631,6 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                   chainId={chainData.chainId}
                   onStartClaim={handleStartClaim}
                   isFirst={srIdx === 0 && rewardIdx === 0}
-                  vaultName={sr.vault.name}
-                  vaultTokenAddress={sr.vault.token.address}
                   isAllChainsView={isAllChainsView}
                   onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
                 />
@@ -642,25 +644,16 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                 chainId={chainData.chainId}
                 onStartClaim={handleStartClaim}
                 isFirst={idx === 0 && chainData.stakingRewards.length === 0}
-                sourceName="Merkle Rewards"
                 isAllChainsView={isAllChainsView}
                 onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
               />
             ))}
             {needsSwitchChain(chainData) && (
-              <div className="mt-4 flex items-center justify-center gap-4 rounded-lg border border-border bg-surface-secondary p-4">
-                <span className="text-sm text-text-secondary">
-                  Switch to {chainData.chainName} to claim these rewards
-                </span>
-                <Button
-                  onClick={() => switchChainAsync({ chainId: chainData.chainId })}
-                  isBusy={isSwitchingChain}
-                  variant="filled"
-                  className="!px-4 !py-1.5 !text-sm"
-                >
-                  Switch Chain
-                </Button>
-              </div>
+              <SwitchChainPrompt
+                chainId={chainData.chainId}
+                onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+                isSwitching={isSwitchingChain}
+              />
             )}
           </div>
         ))}
@@ -670,7 +663,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
   if (!isActive) {
     return (
-      <section className="flex flex-col gap-2 sm:gap-2">
+      <section className="flex flex-col gap-2">
         <div>
           <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">Claim rewards</h2>
           <p className="text-xs text-text-secondary sm:text-sm">
@@ -711,8 +704,8 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <div className="flex flex-col md:flex-row">
-          {/* Left sidebar - Chain selector */}
-          <div className="w-full border-b border-border bg-surface-secondary md:w-64 md:shrink-0 md:border-b-0 md:border-r">
+          {/* Left sidebar - Chain selector (hidden on mobile, defaults to All Chains view) */}
+          <div className="hidden bg-surface-secondary md:block md:w-64 md:shrink-0 md:border-r md:border-border">
             {/* All chains option */}
             <div className="border-b border-border">
               <button
@@ -768,10 +761,10 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
           {/* Right content - Rewards panel */}
           <div className="flex-1">
-            {/* Header */}
-            <div className="flex min-h-[64px] items-center justify-between border-b border-border px-6">
+            {/* Header - stacked on mobile for prominent total display */}
+            <div className="flex min-h-[64px] flex-col items-center justify-center gap-1 border-b border-border px-6 py-4 md:flex-row md:justify-between md:gap-0 md:py-0">
               <h3 className="text-lg font-semibold text-text-primary">Claimable Rewards</h3>
-              <span className="text-xl font-bold text-text-primary">
+              <span className="text-2xl font-bold text-text-primary md:text-xl">
                 {formatUSD(selectedChainId === null ? totalUsd : (selectedChainData?.totalUsd ?? 0), 2, 2)}
               </span>
             </div>
@@ -848,10 +841,10 @@ function PortfolioHoldingsSection({
   }
 
   return (
-    <section className="flex flex-col gap-2 sm:gap-2">
+    <section className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
         <Tooltip
-          className="h-auto gap-0 justify-start md:justify-start"
+          className="h-auto justify-start gap-0"
           openDelayMs={150}
           side="top"
           tooltip={<div className={headingTooltipClassName}>{'Track every Yearn position you currently hold.'}</div>}
@@ -893,9 +886,9 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
   }
 
   return (
-    <section className="flex flex-col gap-2 sm:gap-2">
+    <section className="flex flex-col gap-2">
       <Tooltip
-        className="h-auto gap-0 justify-start md:justify-start"
+        className="h-auto justify-start gap-0"
         openDelayMs={150}
         side="top"
         tooltip={
@@ -942,7 +935,7 @@ function PortfolioPage(): ReactElement {
     switch (activeTab) {
       case 'positions':
         return (
-          <>
+          <div className="flex flex-col gap-6 sm:gap-8">
             <PortfolioHoldingsSection
               hasHoldings={model.hasHoldings}
               holdingsRows={model.holdingsRows}
@@ -956,7 +949,7 @@ function PortfolioPage(): ReactElement {
               vaultFlags={model.vaultFlags}
             />
             <PortfolioSuggestedSection suggestedRows={model.suggestedRows} />
-          </>
+          </div>
         )
       case 'activity':
         return <PortfolioActivitySection isActive={model.isActive} openLoginModal={model.openLoginModal} />

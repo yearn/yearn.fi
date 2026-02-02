@@ -1,6 +1,6 @@
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
-import { isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
+import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -121,7 +121,7 @@ export function usePortfolioModel(): TPortfolioModel {
       const key = getVaultKey(vault)
       flags[key] = {
         hasHoldings: true,
-        isMigratable: false,
+        isMigratable: Boolean(vault.migration?.available),
         isRetired: Boolean(vault.info?.isRetired),
         isHidden: Boolean(vault.info?.isHidden)
       }
@@ -135,10 +135,25 @@ export function usePortfolioModel(): TPortfolioModel {
   const isLoading = isLoadingVaultList
   const isHoldingsLoading = (isLoading && isActive) || isSearchingBalances
 
-  const v3Vaults = useMemo(() => Object.values(vaults).filter((vault) => isPortfolioV3Vault(vault)), [vaults])
+  const suggestedVaultCandidates = useMemo(
+    () =>
+      Object.values(vaults).filter((vault) => {
+        if (vault.chainID !== KATANA_CHAIN_ID || deriveListKind(vault) !== 'allocator') {
+          return false
+        }
+
+        const isHidden = Boolean(vault.info?.isHidden)
+        const isRetired = Boolean(vault.info?.isRetired)
+        const isMigratable = Boolean(vault.migration?.available)
+        const isHighlighted = Boolean(vault.info?.isHighlighted)
+
+        return !isHidden && !isRetired && !isMigratable && isHighlighted
+      }),
+    [vaults]
+  )
 
   const sortedHoldings = useSortVaults(holdingsVaults, sortBy, sortDirection)
-  const sortedCandidates = useSortVaults(v3Vaults, 'featuringScore', 'desc')
+  const sortedCandidates = useSortVaults(suggestedVaultCandidates, 'tvl', 'desc')
 
   const holdingsKeySet = useMemo(() => new Set(sortedHoldings.map((vault) => getVaultKey(vault))), [sortedHoldings])
 

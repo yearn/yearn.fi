@@ -1,16 +1,17 @@
 import { usePlausible } from '@hooks/usePlausible'
-import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { formatTAmount, isZeroAddress, toAddress } from '@shared/utils'
+import { formatCounterValue, formatTAmount, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
-import { formatUnits, hexToNumber, slice } from 'viem'
+import { hexToNumber, slice } from 'viem'
 import { useAccount, usePublicClient } from 'wagmi'
+import { useYearn } from '@/components/shared/contexts/useYearn'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { useMigrateError } from './useMigrateError'
 import { useMigrateFlow } from './useMigrateFlow'
@@ -25,25 +26,27 @@ interface Props {
   migrationTarget: `0x${string}`
   migrationContract: `0x${string}`
   migrationTargetSymbol?: string
+  vaultUserData: VaultUserData
   handleMigrateSuccess?: () => void
 }
 
 export const WidgetMigrate: FC<Props> = ({
   vaultAddress,
   assetAddress,
-  stakingAddress,
   chainId,
   vaultSymbol,
   vaultVersion,
   migrationTarget,
   migrationContract,
   migrationTargetSymbol,
+  vaultUserData,
   handleMigrateSuccess: onMigrateSuccess
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { getToken } = useWallet()
   const trackEvent = usePlausible()
+  const { getPrice } = useYearn()
   const client = usePublicClient({ chainId })
 
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
@@ -54,19 +57,8 @@ export const WidgetMigrate: FC<Props> = ({
   // Get destination vault token info
   const destinationVault = getToken({ address: migrationTarget, chainID: chainId })
 
-  // Get user's vault balance
-  const {
-    vaultToken,
-    pricePerShare,
-    isLoading: isLoadingVaultData,
-    refetch: refetchVaultUserData
-  } = useVaultUserData({
-    vaultAddress,
-    assetAddress,
-    stakingAddress,
-    chainId,
-    account
-  })
+  // Get user's vault balance from props
+  const { vaultToken, isLoading: isLoadingVaultData, refetch: refetchVaultUserData } = vaultUserData
 
   // Use only vault token balance (not staked)
   const migrateBalance = vaultToken?.balance.raw ?? 0n
@@ -100,11 +92,13 @@ export const WidgetMigrate: FC<Props> = ({
   })
 
   const balanceUsd = useMemo(() => {
-    if (migrateBalance === 0n || !pricePerShare) return '0.00'
-    const valueInAsset = (migrateBalance * pricePerShare) / 10n ** BigInt(vaultToken?.decimals ?? 18)
-    // Simple USD estimate - in a full implementation would use price oracle
-    return formatUnits(valueInAsset, 18).slice(0, 10)
-  }, [migrateBalance, pricePerShare, vaultToken?.decimals])
+    if (migrateBalance === 0n) return '$0.00'
+
+    return formatCounterValue(
+      toNormalizedBN(migrateBalance, vaultToken?.decimals ?? 18).display,
+      getPrice({ address: vaultAddress, chainID: chainId }).normalized
+    )
+  }, [migrateBalance, vaultAddress, chainId, getPrice, vaultToken?.decimals])
 
   // Determine flow based on routeType
   const isPermitFlow = periphery.routeType === 'permit'
@@ -375,7 +369,7 @@ export const WidgetMigrate: FC<Props> = ({
 
     if (migrateBalance === 0n) return true
 
-    if (isLoadingPermitData || !permitData || periphery.isCheckingPermit) return true
+    if (isLoadingPermitData || periphery.isCheckingPermit) return true
 
     // Permit flow
     if (isPermitFlow) {
@@ -398,7 +392,6 @@ export const WidgetMigrate: FC<Props> = ({
     migrateBalance,
     isPermitFlow,
     isLoadingPermitData,
-    permitData,
     permitSignature,
     needsApproval,
     periphery.prepareApproveEnabled,
@@ -426,47 +419,25 @@ export const WidgetMigrate: FC<Props> = ({
 
   return (
     <div className="flex flex-col border border-border rounded-lg relative h-full">
-      <div className="flex flex-col flex-1">
-        {/* Educational Banner */}
-        <div className="mx-6 mt-7 p-4 bg-surface-secondary border-l-4 border-l-orange-500 dark:border-l-yellow-500 rounded-lg">
-          <div className="flex items-start gap-3">
-            <svg
-              className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            <div>
-              <h4 className="text-sm font-semibold text-text-primary">Vault is retired</h4>
-              <p className="text-xs text-text-secondary mt-1">
-                This vault is retired and won't be earning yield. Please migrate your shares to the newest version.
-              </p>
-            </div>
-          </div>
-        </div>
-
+      <div className="flex items-center justify-between gap-3 px-6 pt-4 ">
+        <h3 className="text-base font-semibold text-text-primary">Migrate</h3>
+      </div>
+      <div className="flex flex-col flex-1 p-6 gap-6">
         {/* Balance Section */}
-        <div className="px-6 pt-6">
-          <div className="flex justify-between items-center mb-2">
+        <div>
+          <div className="flex justify-between items-center mb-1">
             <span className="text-xs text-text-secondary">Your Balance</span>
           </div>
           <div className="flex flex-col items-start">
             <span className="text-xl font-semibold text-text-primary">
               {formattedBalance} {vaultToken?.symbol || vaultSymbol}
             </span>
-            <span className="text-sm text-text-secondary">${balanceUsd}</span>
+            <span className="text-sm text-text-secondary">{balanceUsd}</span>
           </div>
         </div>
 
         {/* Destination Section */}
-        <div className="px-6 pt-6">
+        <div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs text-text-secondary">Destination</span>
           </div>
@@ -503,7 +474,7 @@ export const WidgetMigrate: FC<Props> = ({
 
         <div className="mt-auto">
           {/* Action Button */}
-          <div className="px-6 pt-6 pb-6">
+          <div>
             {!account ? (
               <Button
                 onClick={openLoginModal}

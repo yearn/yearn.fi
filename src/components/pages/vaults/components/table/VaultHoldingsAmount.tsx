@@ -15,7 +15,8 @@ export function VaultHoldingsAmount({
   valueClassName?: string
 }): ReactElement {
   const { getToken } = useWallet()
-  const { isActive: isWalletActive } = useWeb3()
+  const { address } = useWeb3()
+  const isWalletActive = !!address
   const { getPrice } = useYearn()
 
   const { tokenPrice, staked, hasBalance } = useMemo(() => {

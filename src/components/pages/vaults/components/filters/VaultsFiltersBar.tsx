@@ -1,12 +1,22 @@
-import { Dialog, Transition, TransitionChild } from '@headlessui/react'
+import {
+  Dialog,
+  Listbox,
+  ListboxButton,
+  ListboxOption,
+  ListboxOptions,
+  Transition,
+  TransitionChild
+} from '@headlessui/react'
 import { usePlausible } from '@hooks/usePlausible'
 import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
 import { getChainDescription } from '@pages/vaults/utils/vaultTagCopy'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
 import { SearchBar } from '@shared/components/SearchBar'
 import { useChainOptions } from '@shared/hooks/useChains'
+import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSearch } from '@shared/icons/IconSearch'
+import { LogoYearn } from '@shared/icons/LogoYearn'
 import { cl } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement, ReactNode, RefObject } from 'react'
@@ -220,6 +230,15 @@ export function VaultsFiltersBar({
       <div className={'relative col-span-24 w-full md:col-span-19'}>
         <div className={'md:hidden'}>
           {mobileExtraContent ? <div className={'mb-2 w-full'}>{mobileExtraContent}</div> : null}
+          <div className={'mb-2 w-full'}>
+            <MobileChainDropdown
+              chainButtons={chainButtons}
+              areAllChainsSelected={areAllChainsSelected}
+              allChainsLabel={allChainsLabel}
+              onSelectAllChains={handleSelectAllChains}
+              onSelectChain={handleChainToggle}
+            />
+          </div>
           {isMobileSearchExpanded ? (
             <div className={'flex w-full items-center gap-1'}>
               <div className={'flex-1'}>
@@ -242,7 +261,7 @@ export function VaultsFiltersBar({
               <button
                 type={'button'}
                 className={
-                  'flex size-10 shrink-0 items-center justify-center rounded-[4px] bg-neutral-800/20 text-text-secondary transition-colors hover:text-text-primary'
+                  'flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition-colors hover:border-hover hover:text-text-primary'
                 }
                 onClick={(): void => setIsMobileSearchExpanded(false)}
                 aria-label={'Close search'}
@@ -255,7 +274,7 @@ export function VaultsFiltersBar({
               <button
                 type={'button'}
                 className={
-                  'h-10 flex-1 cursor-pointer rounded-[4px] bg-neutral-800/20 text-sm text-text-primary transition-colors hover:bg-neutral-800/40'
+                  'flex h-10 flex-1 cursor-pointer items-center justify-center rounded-lg border border-border bg-surface text-sm font-medium text-text-secondary transition-colors hover:border-hover hover:text-text-primary'
                 }
                 onClick={(): void => setIsMobileFiltersOpen(true)}
               >
@@ -265,7 +284,7 @@ export function VaultsFiltersBar({
               <button
                 type={'button'}
                 className={cl(
-                  'flex size-10 shrink-0 items-center justify-center rounded-[4px] bg-neutral-800/20 text-text-secondary transition-colors hover:text-text-primary',
+                  'flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition-colors hover:border-hover hover:text-text-primary',
                   search.value ? 'text-text-primary' : ''
                 )}
                 onClick={(): void => setIsMobileSearchExpanded(true)}
@@ -278,20 +297,6 @@ export function VaultsFiltersBar({
           <MobileFiltersDrawer
             isOpen={isMobileFiltersOpen}
             onClose={(): void => setIsMobileFiltersOpen(false)}
-            chainButtons={chainButtons}
-            onSelectAllChains={handleSelectAllChains}
-            areAllChainsSelected={areAllChainsSelected}
-            onSelectChain={handleChainToggle}
-            onOpenChainModal={(): void => setIsChainModalOpen(true)}
-            showMoreChainsButton={showMoreChainsButton}
-            allChainsLabel={allChainsLabel}
-            filtersCount={filters.count}
-            onOpenFiltersModal={(): void => setIsFiltersModalOpen(true)}
-            searchValue={search.value}
-            onSearch={search.onChange}
-            shouldDebounce={search.shouldDebounce}
-            searchAlertContent={search.alertContent}
-            searchTrailingControls={search.trailingControls}
             filtersContent={filters.content}
           />
         </div>
@@ -356,6 +361,7 @@ function FilterControls({
   onOpenChainModal,
   showMoreChainsButton = true,
   allChainsLabel,
+  showChainSelector = true,
   showFiltersButton = true,
   filtersCount,
   onOpenFiltersModal,
@@ -379,6 +385,7 @@ function FilterControls({
   onOpenChainModal: () => void
   showMoreChainsButton?: boolean
   allChainsLabel: string
+  showChainSelector?: boolean
   showFiltersButton?: boolean
   filtersCount: number
   onOpenFiltersModal: () => void
@@ -394,7 +401,7 @@ function FilterControls({
   filtersTrailingControls?: ReactNode
   layout?: 'inline' | 'stacked'
   leadingControls?: ReactNode
-}): ReactElement {
+}): ReactElement | null {
   const isStacked = layout === 'stacked'
   const filtersButtonElement = showFiltersButton ? (
     <VaultsFiltersButton filtersCount={filtersCount} onClick={onOpenFiltersModal} />
@@ -414,7 +421,7 @@ function FilterControls({
       />
     </div>
   ) : null
-  const chainSelectorElement = (
+  const chainSelectorElement = showChainSelector ? (
     <VaultsChainSelector
       chainButtons={chainButtons}
       areAllChainsSelected={areAllChainsSelected}
@@ -425,7 +432,7 @@ function FilterControls({
       onSelectChain={onSelectChain}
       onOpenChainModal={onOpenChainModal}
     />
-  )
+  ) : null
   const searchTrailingElement =
     showInlineSearch && searchTrailingControls ? <div className={'shrink-0'}>{searchTrailingControls}</div> : null
 
@@ -450,7 +457,7 @@ function FilterControls({
         <div className={'flex flex-col gap-2'}>
           <div ref={controlsRowRef} className={'flex w-full items-center gap-3 flex-wrap'}>
             {leadingControls ? <div className={'shrink-0'}>{leadingControls}</div> : null}
-            <div className={'shrink min-w-0 max-w-[580px]'}>{chainSelectorElement}</div>
+            {chainSelectorElement ? <div className={'shrink min-w-0 max-w-[580px]'}>{chainSelectorElement}</div> : null}
             <div className={'flex flex-row items-center gap-1.5 flex-1 min-w-0'}>
               {filtersButtonElement}
               {filtersTrailingControls ? <div className={'shrink-0'}>{filtersTrailingControls}</div> : null}
@@ -477,38 +484,10 @@ const EMPTY_FILTERS_STATE: TPendingFiltersState = {
 function MobileFiltersDrawer({
   isOpen,
   onClose,
-  chainButtons,
-  onSelectAllChains,
-  areAllChainsSelected,
-  onSelectChain,
-  onOpenChainModal,
-  showMoreChainsButton,
-  allChainsLabel,
-  filtersCount,
-  onOpenFiltersModal,
-  searchValue,
-  onSearch,
-  shouldDebounce,
-  searchAlertContent,
-  searchTrailingControls,
   filtersContent
 }: {
   isOpen: boolean
   onClose: () => void
-  chainButtons: TVaultsChainButton[]
-  onSelectAllChains: () => void
-  areAllChainsSelected: boolean
-  onSelectChain: (chainId: number) => void
-  onOpenChainModal: () => void
-  showMoreChainsButton: boolean
-  allChainsLabel: string
-  filtersCount: number
-  onOpenFiltersModal: () => void
-  searchValue: string
-  onSearch: (value: string) => void
-  shouldDebounce?: boolean
-  searchAlertContent?: ReactNode
-  searchTrailingControls?: ReactNode
   filtersContent?: ReactNode
 }): ReactElement {
   return (
@@ -552,24 +531,6 @@ function MobileFiltersDrawer({
                     <IconCross className={'size-4'} />
                   </button>
                 </div>
-                <FilterControls
-                  chainButtons={chainButtons}
-                  onSelectAllChains={onSelectAllChains}
-                  areAllChainsSelected={areAllChainsSelected}
-                  onSelectChain={onSelectChain}
-                  onOpenChainModal={onOpenChainModal}
-                  showMoreChainsButton={showMoreChainsButton}
-                  allChainsLabel={allChainsLabel}
-                  showFiltersButton={false}
-                  filtersCount={filtersCount}
-                  onOpenFiltersModal={onOpenFiltersModal}
-                  showInlineSearch={false}
-                  searchValue={searchValue}
-                  onSearch={onSearch}
-                  shouldDebounce={shouldDebounce}
-                  searchAlertContent={searchAlertContent}
-                  searchTrailingControls={searchTrailingControls}
-                />
                 {filtersContent}
               </Dialog.Panel>
             </TransitionChild>
@@ -866,5 +827,107 @@ function ChainSelectionModal({
         </div>
       </Dialog>
     </Transition>
+  )
+}
+
+function MobileChainDropdown({
+  chainButtons,
+  areAllChainsSelected,
+  allChainsLabel,
+  onSelectAllChains,
+  onSelectChain
+}: {
+  chainButtons: TVaultsChainButton[]
+  areAllChainsSelected: boolean
+  allChainsLabel: string
+  onSelectAllChains: () => void
+  onSelectChain: (chainId: number) => void
+}): ReactElement {
+  const selectedChain = areAllChainsSelected ? null : (chainButtons.find((c) => c.isSelected) ?? null)
+
+  const handleChange = (chainId: number | null): void => {
+    if (chainId === null) {
+      onSelectAllChains()
+    } else {
+      onSelectChain(chainId)
+    }
+  }
+
+  return (
+    <Listbox value={selectedChain?.id ?? null} onChange={handleChange}>
+      <div className={'relative'}>
+        <ListboxButton
+          className={
+            'flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-text-primary transition-colors hover:border-hover'
+          }
+        >
+          <div className={'flex items-center gap-2'}>
+            {selectedChain ? (
+              <>
+                {selectedChain.icon ? (
+                  <span className={'size-5 overflow-hidden rounded-full'}>{selectedChain.icon}</span>
+                ) : null}
+                <span>{selectedChain.label}</span>
+              </>
+            ) : (
+              <>
+                <span className={'size-5 overflow-hidden rounded-full'}>
+                  <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
+                </span>
+                <span>{allChainsLabel}</span>
+              </>
+            )}
+          </div>
+          <IconChevron className={'size-4 text-text-secondary'} />
+        </ListboxButton>
+        <Transition
+          as={Fragment}
+          enter={'transition ease-out duration-100'}
+          enterFrom={'opacity-0 scale-95'}
+          enterTo={'opacity-100 scale-100'}
+          leave={'transition ease-in duration-75'}
+          leaveFrom={'opacity-100 scale-100'}
+          leaveTo={'opacity-0 scale-95'}
+        >
+          <ListboxOptions
+            className={
+              'absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-border bg-surface-secondary py-1 shadow-lg scrollbar-themed'
+            }
+          >
+            <ListboxOption
+              value={null}
+              className={({ active, selected }) =>
+                cl(
+                  'flex cursor-pointer items-center gap-2 px-3 py-2 text-sm',
+                  active ? 'bg-surface' : '',
+                  selected ? 'font-semibold text-text-primary' : 'text-text-secondary'
+                )
+              }
+            >
+              <span className={'size-5 overflow-hidden rounded-full'}>
+                <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
+              </span>
+              <span>{allChainsLabel}</span>
+            </ListboxOption>
+            {chainButtons.map((chain) => (
+              <ListboxOption
+                key={chain.id}
+                value={chain.id}
+                className={({ active, selected }) =>
+                  cl(
+                    'flex cursor-pointer items-center gap-2 px-3 py-2 text-sm',
+                    active ? 'bg-surface' : '',
+                    selected ? 'font-semibold text-text-primary' : 'text-text-secondary'
+                  )
+                }
+              >
+                {chain.icon ? <span className={'size-5 overflow-hidden rounded-full'}>{chain.icon}</span> : null}
+                <span>{chain.label}</span>
+              </ListboxOption>
+            ))}
+          </ListboxOptions>
+        </Transition>
+      </div>
+    </Listbox>
   )
 }

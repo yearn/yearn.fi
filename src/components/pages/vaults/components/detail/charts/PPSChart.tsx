@@ -8,11 +8,12 @@ import {
   getTimeframeLimit
 } from '@pages/vaults/utils/charts'
 import { useChartStyle } from '@shared/contexts/useChartStyle'
-import { useId, useMemo } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, LineChart, XAxis, YAxis } from 'recharts'
 import type { ChartConfig } from './ChartPrimitives'
 import { ChartContainer, ChartTooltip } from './ChartPrimitives'
 import {
+  CHART_TOOLTIP_WRAPPER_STYLE,
   CHART_WITH_AXES_MARGIN,
   CHART_Y_AXIS_TICK_MARGIN,
   CHART_Y_AXIS_TICK_STYLE,
@@ -63,9 +64,32 @@ const renderPpsTick = ({ x = 0, y = 0, payload, index }: YAxisTickProps) => {
   )
 }
 
+const MOBILE_BREAKPOINT = 640
+
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia === 'undefined') {
+      return
+    }
+    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const updateIsMobile = (): void => {
+      setIsMobile(mediaQuery.matches)
+    }
+    updateIsMobile()
+    mediaQuery.addEventListener('change', updateIsMobile)
+    return () => mediaQuery.removeEventListener('change', updateIsMobile)
+  }, [])
+
+  return isMobile
+}
+
 export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }: PPSChartProps) {
   const gradientId = useId().replace(/:/g, '')
   const { chartStyle } = useChartStyle()
+  const isMobile = useIsMobile()
+  const strokeWidth = isMobile ? 1.5 : 2
   const isPowerglove = chartStyle === 'powerglove'
   const isBlended = chartStyle === 'blended'
   const filteredData = useMemo(() => {
@@ -133,6 +157,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
                   : [(value ?? 0).toFixed(3), 'PPS']
               }
               labelFormatter={formatChartTooltipDate}
+              wrapperStyle={CHART_TOOLTIP_WRAPPER_STYLE}
               contentStyle={{
                 backgroundColor: 'var(--chart-tooltip-bg)',
                 borderRadius: 'var(--chart-tooltip-radius)',
@@ -145,7 +170,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
             type={'monotone'}
             dataKey={dataKey}
             stroke={seriesColor}
-            strokeWidth={2}
+            strokeWidth={strokeWidth}
             dot={false}
             isAnimationActive={false}
           />
@@ -191,6 +216,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
                   : [(value ?? 0).toFixed(3), 'PPS']
               }
               labelFormatter={formatChartTooltipDate}
+              wrapperStyle={CHART_TOOLTIP_WRAPPER_STYLE}
               contentStyle={{
                 backgroundColor: 'var(--chart-tooltip-bg)',
                 borderRadius: 'var(--chart-tooltip-radius)',
@@ -213,7 +239,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
             type={'monotone'}
             dataKey={dataKey}
             stroke={seriesColor}
-            strokeWidth={2}
+            strokeWidth={strokeWidth}
             dot={false}
             isAnimationActive={false}
           />
@@ -249,6 +275,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
                 : [(value ?? 0).toFixed(3), 'PPS']
             }
             labelFormatter={formatChartTooltipDate}
+            wrapperStyle={CHART_TOOLTIP_WRAPPER_STYLE}
             contentStyle={{
               backgroundColor: 'var(--chart-tooltip-bg)',
               borderRadius: 'var(--chart-tooltip-radius)',
@@ -271,7 +298,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
           type={'monotone'}
           dataKey={dataKey}
           stroke={seriesColor}
-          strokeWidth={2}
+          strokeWidth={strokeWidth}
           dot={false}
           isAnimationActive={false}
         />

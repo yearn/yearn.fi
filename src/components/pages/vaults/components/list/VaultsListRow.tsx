@@ -4,7 +4,6 @@ import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/com
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
-import { maybeToastSnapshot } from '@pages/vaults/utils/snapshotToast'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
   getCategoryDescription,
@@ -111,7 +110,7 @@ export function VaultsListRow({
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
-  const { isActive: isWalletActive } = useWeb3()
+  const { address } = useWeb3()
   const { getToken } = useWallet()
   const { getPrice } = useYearn()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
@@ -124,12 +123,17 @@ export function VaultsListRow({
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
   const productType = isAllocatorVault ? 'v3' : 'lp'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
-  const productTypeAriaLabel = isAllocatorVault
-    ? 'Show single asset vaults'
-    : isLegacyVault
-      ? 'Legacy vault'
-      : 'Show LP token vaults'
+  const productTypeLabel = (() => {
+    if (isAllocatorVault) return 'Single Asset'
+    if (isLegacyVault) return 'Legacy'
+    return 'LP Token'
+  })()
+
+  const productTypeAriaLabel = (() => {
+    if (isAllocatorVault) return 'Show single asset vaults'
+    if (isLegacyVault) return 'Legacy vault'
+    return 'Show LP token vaults'
+  })()
   const showProductTypeChip = showProductTypeChipOverride ?? (Boolean(activeProductType) || Boolean(onToggleVaultType))
   const isProductTypeActive = activeProductType === productType
   const shouldCollapseProductTypeChip =
@@ -140,7 +144,7 @@ export function VaultsListRow({
   const leftColumnSpan = 'col-span-12'
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
-  const showHoldingsColumn = isWalletActive
+  const showHoldingsColumn = !!address
   const apyColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-6'
   const tvlColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-5'
   const holdingsColumnSpan = 'col-span-4'
@@ -171,26 +175,32 @@ export function VaultsListRow({
       return
     }
 
-    void queryClient
-      .prefetchQuery({
-        queryKey,
-        queryFn: () => fetchWithSchema(endpoint, kongVaultSnapshotSchema),
-        staleTime: 30 * 1000
-      })
-      .then(() => {
-        maybeToastSnapshot(endpoint, currentVault.address, 'prefetch')
-      })
+    void queryClient.prefetchQuery({
+      queryKey,
+      queryFn: () => fetchWithSchema(endpoint, kongVaultSnapshotSchema),
+      staleTime: 30 * 1000
+    })
   }, [currentVault.address, currentVault.chainID, queryClient])
 
   const isHiddenVault = Boolean(flags?.isHidden)
-  const baseKindType: 'multi' | 'single' | undefined =
-    currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
+  const baseKindType: 'multi' | 'single' | undefined = (() => {
+    if (currentVault.kind === 'Multi Strategy') return 'multi'
+    if (currentVault.kind === 'Single Strategy') return 'single'
+    return undefined
+  })()
 
-  const fallbackKindType: 'multi' | 'single' | undefined =
-    listKind === 'allocator' ? 'multi' : listKind === 'strategy' ? 'single' : undefined
+  const fallbackKindType: 'multi' | 'single' | undefined = (() => {
+    if (listKind === 'allocator') return 'multi'
+    if (listKind === 'strategy') return 'single'
+    return undefined
+  })()
+
   const kindType = baseKindType ?? fallbackKindType
-  const kindLabel: string | undefined =
-    kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : currentVault.kind
+  const kindLabel: string | undefined = (() => {
+    if (kindType === 'multi') return 'Allocator'
+    if (kindType === 'single') return 'Strategy'
+    return currentVault.kind
+  })()
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
   const showKindChip = showStrategies && Boolean(kindType) && (showAllocatorChip || kindType !== 'multi')
@@ -270,7 +280,11 @@ export function VaultsListRow({
   }, [isExpanded])
 
   return (
-    <div className={cl('w-full overflow-hidden transition-colors bg-surface relative')}>
+    <div
+      className={cl(
+        'w-full overflow-hidden transition-colors bg-surface relative border-b-2 border-border md:border-b'
+      )}
+    >
       <button
         type={'button'}
         aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
@@ -351,9 +365,7 @@ export function VaultsListRow({
             'flex flex-col items-start sm:pt-0 md:flex-row md:items-center md:justify-between'
           )}
         >
-          <div
-            className={'flex flex-row w-full gap-6 pb-2 border-b border-border md:pb-0 md:border-none overflow-visible'}
-          >
+          <div className={'flex w-full gap-6 overflow-visible border-b border-border pb-2 md:border-none md:pb-0'}>
             {showCompareToggle ? (
               // biome-ignore lint/a11y/useSemanticElements: native checkbox has double-firing issues with parent Link's onClickCapture
               <div
@@ -365,7 +377,7 @@ export function VaultsListRow({
                     : `Add ${currentVault.name} to comparison`
                 }
                 tabIndex={0}
-                className={'flex items-center justify-center cursor-pointer'}
+                className={'flex cursor-pointer items-center justify-center'}
                 onClick={(event): void => {
                   event.stopPropagation()
                   event.preventDefault()
@@ -543,14 +555,11 @@ export function VaultsListRow({
                   {mobileSecondaryMetric === 'holdings' ? 'Holdings:' : 'TVL:'}
                 </span>
                 {mobileSecondaryMetric === 'holdings' ? (
-                  <span className={'text-lg font-semibold text-text-primary font-number'}>
+                  <span className={'text-lg font-semibold text-text-primary'}>
                     {showHoldingsValue ? formatTvlDisplay(holdingsValue) : '—'}
                   </span>
                 ) : (
-                  <VaultTVL
-                    currentVault={currentVault}
-                    valueClassName={'text-lg font-semibold text-text-primary font-number'}
-                  />
+                  <VaultTVL currentVault={currentVault} valueClassName={'text-lg font-semibold text-text-primary'} />
                 )}
               </div>
             </div>

@@ -149,7 +149,7 @@ export function useV3VaultFilter(
         return
       }
       const isRetired = Boolean(vault.info?.isRetired)
-      upsertVault(vault, { isActive: !isRetired, isRetired, isMigratable: false })
+      upsertVault(vault, { isActive: !isRetired, isRetired, isMigratable: Boolean(vault.migration?.available) })
     })
 
     return vaultMap

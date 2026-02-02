@@ -1,7 +1,7 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
-import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -34,6 +34,7 @@ interface Props {
   vaultAPR: number
   vaultSymbol: string
   stakingSource?: string
+  vaultUserData: VaultUserData
   handleDepositSuccess?: () => void
   onOpenSettings?: () => void
   isSettingsOpen?: boolean
@@ -55,6 +56,7 @@ export const WidgetDeposit: FC<Props> = ({
   vaultAPR,
   vaultSymbol,
   stakingSource,
+  vaultUserData,
   handleDepositSuccess: onDepositSuccess,
   onOpenSettings,
   isSettingsOpen,
@@ -86,14 +88,7 @@ export const WidgetDeposit: FC<Props> = ({
     pricePerShare,
     isLoading: isLoadingVaultData,
     refetch: refetchVaultUserData
-  } = useVaultUserData({
-    vaultAddress,
-    assetAddress,
-    stakingAddress,
-    chainId,
-    account
-  })
-
+  } = vaultUserData
   // Derived token values
   const depositToken = selectedToken || assetAddress
   const sourceChainId = selectedChainId || chainId
@@ -349,8 +344,8 @@ export const WidgetDeposit: FC<Props> = ({
     refreshWalletBalances,
     sourceChainId,
     stakingAddress,
-    refetchVaultUserData,
-    onDepositSuccess
+    onDepositSuccess,
+    refetchVaultUserData
   ])
 
   const handleTokenChange = useCallback(
@@ -378,10 +373,7 @@ export const WidgetDeposit: FC<Props> = ({
 
   return (
     <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
-      <div className="flex items-center justify-between gap-3 px-6 pt-4">
-        <h3 className="text-base font-semibold text-text-primary">Deposit</h3>
-      </div>
-      <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
+      <div className="flex flex-col flex-1 px-6 pb-6 pt-4 gap-6">
         {/* Amount Section */}
         <InputTokenAmount
           input={depositInput}
