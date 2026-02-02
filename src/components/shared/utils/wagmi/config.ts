@@ -14,7 +14,7 @@ import type { Chain } from 'viem/chains'
 import type { Config, ResolvedRegister } from 'wagmi'
 import { cookieStorage, createStorage, custom, fallback, http, unstable_connector, webSocket } from 'wagmi'
 import { injected, safe } from 'wagmi/connectors'
-import { getNetwork } from './utils'
+import { getNetwork, getRpcUriFor } from './utils'
 
 let CONFIG: Config | undefined
 let CONFIG_CHAINS: Chain[] = []
@@ -49,7 +49,7 @@ export function getConfig({ chains }: { chains: Chain[] }): ResolvedRegister['co
     /**************************************************************************************
      ** Assign the transport via the env variables
      *************************************************************************************/
-    const newRPC = import.meta.env.VITE_RPC_URI_FOR?.[chain.id] || ''
+    const newRPC = getRpcUriFor(chain.id)
     const oldRPC = import.meta.env.VITE_JSON_RPC_URI?.[chain.id] || import.meta.env.VITE_JSON_RPC_URL?.[chain.id]
     const defaultJsonRPCURL = chain?.rpcUrls?.public?.http?.[0]
     const envRPC = newRPC || oldRPC || defaultJsonRPCURL
@@ -138,7 +138,7 @@ export function getConfig({ chains }: { chains: Chain[] }): ResolvedRegister['co
       wsURI = 'ws' + wsURI
     }
     const availableRPCs: string[] = []
-    const newRPC = import.meta.env.VITE_RPC_URI_FOR?.[chain.id] || ''
+    const newRPC = getRpcUriFor(chain.id)
     const oldRPC = import.meta.env.VITE_JSON_RPC_URI?.[chain.id] || import.meta.env.VITE_JSON_RPC_URL?.[chain.id]
     const defaultJsonRPCURL = chain?.rpcUrls?.public?.http?.[0]
     const injectedRPC = newRPC || oldRPC || defaultJsonRPCURL || ''

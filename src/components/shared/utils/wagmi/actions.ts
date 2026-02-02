@@ -47,6 +47,8 @@ const ALTERNATE_ERC20_APPROVE_ABI = [
   }
 ] as const
 
+const isDevelopment = import.meta.env.MODE === 'development'
+
 /*******************************************************************************
  ** isApprovedERC20 is a _VIEW_ function that checks if a token is approved for
  ** a spender.
@@ -116,7 +118,7 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
     return await handleTx(propsWithoutOnTrySomethingElse, {
       address: toAddress(props.contractAddress),
       abi: ALTERNATE_ERC20_APPROVE_ABI,
-      confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined),
+      confirmation: props.confirmation ?? (isDevelopment ? 1 : undefined),
       functionName: 'approve',
       args: [props.spenderAddress, props.amount]
     })
@@ -125,7 +127,7 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
   return await handleTx(props, {
     address: props.contractAddress,
     abi: erc20Abi,
-    confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined),
+    confirmation: props.confirmation ?? (isDevelopment ? 1 : undefined),
     functionName: 'approve',
     args: [props.spenderAddress, props.amount]
   })
@@ -153,7 +155,7 @@ export async function deposit(props: TDeposit): Promise<TTxResponse> {
     abi: VAULT_ABI,
     functionName: 'deposit',
     args: [props.amount, wagmiProvider.address],
-    confirmation: props.confirmation ?? (import.meta.env.VITE_NODE_ENV === 'development' ? 1 : undefined)
+    confirmation: props.confirmation ?? (isDevelopment ? 1 : undefined)
   })
 }
 

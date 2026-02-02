@@ -108,7 +108,7 @@ api/                      # Vercel serverless functions
 Supported networks (configured in `src/components/shared/utils/constants.tsx`):
 - Ethereum (1), Optimism (10), Gnosis (100), Polygon (137), Fantom (250), Arbitrum (42161), Base (8453)
 
-RPC URIs configured via environment variables: `RPC_URI_FOR_<chainId>`
+RPC URIs configured via environment variables: `VITE_RPC_URI_FOR_<chainId>`
 
 ## Environment Setup
 
