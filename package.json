@@ -32,7 +32,7 @@
     "react-paginate": "8.3.0",
     "react-router": "7.13.0",
     "recharts": "2.15.4",
-    "swr": "2.3.8",
+    "swr": "2.4.0",
     "use-indexeddb": "2.0.2",
     "vaul": "1.1.2",
     "viem": "2.45.0",
