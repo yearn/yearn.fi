@@ -21,7 +21,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
-import { cl, formatAmount, formatTvlDisplay, toAddress, toNormalizedBN } from '@shared/utils'
+import { cl, formatAmount, formatTvlDisplay, getVaultName, toAddress, toNormalizedBN } from '@shared/utils'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -37,7 +37,7 @@ const VaultsListRowExpandedContent = lazy(() => import('./VaultsListRowExpandedC
 const ExpandedRowFallback = (): ReactElement => (
   <div className={'hidden md:block bg-surface'}>
     <div className={'px-6 pb-6 pt-3'}>
-      <div className={'flex min-h-[240px] items-center justify-center'}>
+      <div className={'flex min-h-60 items-center justify-center'}>
         <span className={'loader'} />
       </div>
     </div>
@@ -411,7 +411,7 @@ export function VaultsListRow({
                   'block truncate-safe whitespace-nowrap font-black text-text-primary md:mb-0 text-lg leading-tight'
                 }
               >
-                {currentVault.name}
+                {getVaultName(currentVault)}
               </strong>
               <div className={'mt-1 flex items-center gap-2 text-xs text-text-primary/70 whitespace-nowrap'}>
                 <div className={'hidden md:block'}>

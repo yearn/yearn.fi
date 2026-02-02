@@ -7,10 +7,18 @@ import type { TSortDirection } from '../types/mixed'
 import { toNormalizedBN } from './format'
 
 export function getVaultName(vault: TYDaemonVault): string {
-  const baseName = vault.name
+  let baseName = vault.name
+
+  baseName = baseName.replace(/^(curve|aerodrome|velodrome)\s+/i, '')
+
+  if (baseName.includes(' Factory yVault')) {
+    return baseName.replace(' Factory yVault', '')
+  }
+
   if (baseName.includes(' yVault')) {
     return baseName.replace(' yVault', '')
   }
+
   return baseName
 }
 
