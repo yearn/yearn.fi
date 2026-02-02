@@ -17,7 +17,9 @@ export const PLAUSIBLE_EVENTS = {
   FILTER_STRATEGIES: 'filter_strategies',
   FILTER_SEARCH: 'filter_search',
   VAULT_EXPAND: 'vault_expand',
-  VAULT_CLICK: 'vault_click',
+  VAULT_CLICK_LIST_ROW: 'vault_click_list_row',
+  VAULT_CLICK_LIST_ROW_EXPANDED: 'vault_click_list_row_expanded',
+  VAULT_CLICK_COMPARE: 'vault_click_compare',
   COMPARE_MODE_TOGGLE: 'compare_mode_toggle',
   COMPARE_VAULT_ADD: 'compare_vault_add',
   COMPARE_MODAL_OPEN: 'compare_modal_open'

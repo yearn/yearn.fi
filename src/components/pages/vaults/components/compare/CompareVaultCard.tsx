@@ -1,4 +1,5 @@
 import Link from '@components/Link'
+import { usePlausible } from '@hooks/usePlausible'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
@@ -8,6 +9,7 @@ import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconClose } from '@shared/icons/IconClose'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { cl, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement, ReactNode } from 'react'
@@ -60,6 +62,7 @@ function normalizeRiskLevel(riskLevel: number): number {
 }
 
 export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): ReactElement {
+  const trackEvent = usePlausible()
   const network = getNetwork(vault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${vault.chainID}/logo-32.png`
   const vaultKey = getVaultKey(vault)
@@ -99,6 +102,16 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
           )}
           aria-label={`Open ${vault.name} vault in a new tab`}
+          onClick={(): void => {
+            trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_COMPARE, {
+              props: {
+                vaultAddress: toAddress(vault.address),
+                vaultSymbol: vault.symbol,
+                chainID: vault.chainID,
+                generation: 3
+              }
+            })
+          }}
         >
           <div className={'min-w-0 flex-1'}>
             <div className={'flex items-center gap-3'}>

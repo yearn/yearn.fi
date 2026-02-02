@@ -64,7 +64,7 @@ export default function VaultsListRowExpandedContent({
 
   const handleGoToVault = (event: React.MouseEvent): void => {
     event.stopPropagation()
-    trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK, {
+    trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW_EXPANDED, {
       props: {
         vaultAddress: toAddress(currentVault.address),
         vaultSymbol: currentVault.symbol,

@@ -1,5 +1,6 @@
 import Link from '@components/Link'
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
+import { usePlausible } from '@hooks/usePlausible'
 import { SwipeableCompareCarousel } from '@pages/vaults/components/compare/SwipeableCompareCarousel'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
@@ -10,6 +11,7 @@ import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconClose } from '@shared/icons/IconClose'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { cl, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import { Fragment, type ReactElement, type ReactNode, useEffect, useState } from 'react'
@@ -97,6 +99,7 @@ function DesktopCompareGrid({
   vaults: TYDaemonVault[]
   onRemove: (vaultKey: string) => void
 }): ReactElement {
+  const trackEvent = usePlausible()
   const columnsCount = Math.max(vaults.length, 1)
   const gridTemplateColumns = `minmax(160px, 220px) repeat(${columnsCount}, minmax(180px, 1fr))`
   const [activeColumn, setActiveColumn] = useState<number | null>(null)
@@ -147,6 +150,16 @@ function DesktopCompareGrid({
                   )}
                   aria-label={`Open ${vault.name} vault in a new tab`}
                   onFocus={(): void => setActiveColumn(index)}
+                  onClick={(): void => {
+                    trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_COMPARE, {
+                      props: {
+                        vaultAddress: toAddress(vault.address),
+                        vaultSymbol: vault.symbol,
+                        chainID: vault.chainID,
+                        generation: 3
+                      }
+                    })
+                  }}
                 >
                   <div className={'min-w-0'}>
                     <div className={'flex items-center gap-3'}>

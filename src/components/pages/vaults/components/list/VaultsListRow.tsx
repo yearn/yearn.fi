@@ -330,7 +330,7 @@ export function VaultsListRow({
             onToggleCompare(currentVault)
             return
           }
-          trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK, {
+          trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW, {
             props: {
               vaultAddress: toAddress(currentVault.address),
               vaultSymbol: currentVault.symbol,
