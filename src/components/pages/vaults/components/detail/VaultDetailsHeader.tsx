@@ -146,7 +146,7 @@ function VaultHeaderIdentity({
                 isCompressed ? 'md:text-[30px] md:leading-9 max-w-[260px] truncate whitespace-nowrap' : ''
               )}
             >
-              {vaultName} {' yVault'}
+              {vaultName}
             </strong>
             {isCompressed && isTitleClipped ? (
               <span
@@ -154,7 +154,7 @@ function VaultHeaderIdentity({
                   'pointer-events-none absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-app px-0 py-0 text-[30px] font-black leading-tight text-text-primary group-hover:block'
                 }
               >
-                {vaultName} {' yVault'}
+                {vaultName}
               </span>
             ) : null}
             {!isCompressed && explorerHref ? (
@@ -481,7 +481,7 @@ export function VaultDetailsHeader({
           {'Vaults'}
         </Link>
         <span>{'>'}</span>
-        <span className={'font-medium text-text-primary'}>{getVaultName(currentVault)} yVault</span>
+        <span className={'font-medium text-text-primary'}>{getVaultName(currentVault)}</span>
       </div>
       {isCompressed ? (
         <div className={'md:col-span-13 md:row-start-2 pt-4'}>
