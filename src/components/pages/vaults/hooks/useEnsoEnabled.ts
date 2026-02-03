@@ -1,3 +1,8 @@
+import { useEnsoStatus } from '@pages/vaults/contexts/useEnsoStatus'
+
 export function useEnsoEnabled(): boolean {
-  return import.meta.env.VITE_ENSO_DISABLED !== 'true'
+  const { isEnsoFailed } = useEnsoStatus()
+  const envDisabled = import.meta.env.VITE_ENSO_DISABLED === 'true'
+
+  return !envDisabled && !isEnsoFailed
 }
