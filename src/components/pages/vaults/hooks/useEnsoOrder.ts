@@ -79,7 +79,6 @@ export const useEnsoOrder = ({
   }, [getEnsoTransaction, walletClient, publicClient, chainId])
 
   const ensoTx = getEnsoTransaction()
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Clear states when transaction data changes
   useEffect(() => {
     setError(null)
     setTxHash(undefined)

@@ -7,10 +7,18 @@ import type { TSortDirection } from '../types/mixed'
 import { toNormalizedBN } from './format'
 
 export function getVaultName(vault: TYDaemonVault): string {
-  const baseName = vault.name
+  let baseName = vault.name
+
+  baseName = baseName.replace(/^(curve|aerodrome|velodrome)\s+/i, '')
+
+  if (baseName.includes(' Factory yVault')) {
+    return baseName.replace(' Factory yVault', ' LP')
+  }
+
   if (baseName.includes(' yVault')) {
     return baseName.replace(' yVault', '')
   }
+
   return baseName
 }
 
@@ -20,19 +28,6 @@ export async function hash(message: string): Promise<string> {
   const hashArray = Array.from(new Uint8Array(hashBuffer)) // convert buffer to byte array
   const hashHex = hashArray.map((b): string => b.toString(16).padStart(2, '0')).join('') // convert bytes to hex string
   return `0x${hashHex}`
-}
-
-/***************************************************************************
- ** Parse some markdown to get the associated rich content. Instead of using
- ** a md parser and add some heavy dependencies, just use regex to replace
- ** the strings to some class and inject that to the code.
- **************************************************************************/
-export function parseMarkdown(markdownText: string): string {
-  const htmlText = markdownText
-    .replace(/\[(.*?)\]\((.*?)\)/gim, "<a class='link' target='_blank' href='$2'>$1</a>")
-    .replace(/~~(.*?)~~/gim, "<span class='line-through'>$1</span>")
-    .replace(/\*\*(.*?)\*\*/gim, "<span class='font-bold'>$1</span>")
-  return htmlText.trim()
 }
 
 export function copyToClipboard(value: string): void {

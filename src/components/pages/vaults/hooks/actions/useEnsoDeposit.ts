@@ -39,13 +39,11 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
   const isEnsoAllowanceSufficient =
     isNativeToken || !ensoFlow.periphery.routerAddress || ensoFlow.periphery.allowance >= params.amount
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Reset route when raw amount changes to prevent stale error display
   useEffect(() => {
     ensoFlow.methods.resetRoute()
   }, [params.currentAmount])
 
   // Fetch route when debounced amount changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Infinite loop
   useEffect(() => {
     if (params.amount > 0n && params.enabled) {
       ensoFlow.methods.getRoute()

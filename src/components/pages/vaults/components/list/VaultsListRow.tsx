@@ -1,4 +1,5 @@
 import Link from '@components/Link'
+import { usePlausible } from '@hooks/usePlausible'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
@@ -20,7 +21,8 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
-import { cl, formatAmount, formatTvlDisplay, isZeroAddress, toAddress } from '@shared/utils'
+import { cl, formatAmount, formatTvlDisplay, getVaultName, isZeroAddress, toAddress } from '@shared/utils'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -36,7 +38,7 @@ const VaultsListRowExpandedContent = lazy(() => import('./VaultsListRowExpandedC
 const ExpandedRowFallback = (): ReactElement => (
   <div className={'hidden md:block bg-surface'}>
     <div className={'px-6 pb-6 pt-3'}>
-      <div className={'flex min-h-[240px] items-center justify-center'}>
+      <div className={'flex min-h-60 items-center justify-center'}>
         <span className={'loader'} />
       </div>
     </div>
@@ -103,6 +105,7 @@ export function VaultsListRow({
   mobileSecondaryMetric?: 'tvl' | 'holdings'
 }): ReactElement {
   const navigate = useNavigate()
+  const trackEvent = usePlausible()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
@@ -279,8 +282,18 @@ export function VaultsListRow({
         type={'button'}
         aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
         aria-expanded={isExpanded}
+        data-tour="vaults-row-expand"
         onClick={(event): void => {
           event.stopPropagation()
+          if (!isExpanded) {
+            trackEvent(PLAUSIBLE_EVENTS.VAULT_EXPAND, {
+              props: {
+                vaultAddress: toAddress(currentVault.address),
+                vaultSymbol: currentVault.symbol,
+                chainID: currentVault.chainID.toString()
+              }
+            })
+          }
           handleExpandedChange(!isExpanded)
         }}
         className={cl(
@@ -297,6 +310,7 @@ export function VaultsListRow({
           'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
+        data-tour="vaults-row"
         onMouseEnter={prefetchSnapshot}
         onFocus={prefetchSnapshot}
         onClickCapture={(event): void => {
@@ -309,7 +323,15 @@ export function VaultsListRow({
           if (showCompareToggle && onToggleCompare) {
             event.preventDefault()
             onToggleCompare(currentVault)
+            return
           }
+          trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW, {
+            props: {
+              vaultAddress: toAddress(currentVault.address),
+              vaultSymbol: currentVault.symbol,
+              chainID: currentVault.chainID.toString()
+            }
+          })
         }}
       >
         <div
@@ -404,7 +426,7 @@ export function VaultsListRow({
                   'block truncate-safe whitespace-nowrap font-black text-text-primary md:mb-0 text-lg leading-tight'
                 }
               >
-                {currentVault.name}
+                {getVaultName(currentVault)}
               </strong>
               <div className={'mt-1 flex items-center gap-2 text-xs text-text-primary/70 whitespace-nowrap'}>
                 <div className={'hidden md:block'}>

@@ -1,4 +1,4 @@
-import { KATANA_CHAIN_ID, SPECTRA_BOOST_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
+import { KATANA_CHAIN_ID, SPECTRA_MARKET_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
 import { getFixedTermMarkets, type TFixedTermMarket } from '@pages/vaults/constants/fixedTermMarkets'
 import type { TVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
@@ -197,7 +197,7 @@ export function resolveForwardApyDisplayConfig({
   const fixedTermContext = buildFixedTermContext(currentVault)
   const isEligibleForSpectraBoost =
     currentVault.chainID === KATANA_CHAIN_ID &&
-    SPECTRA_BOOST_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
+    SPECTRA_MARKET_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
   const baseSublineProps: TApySublineConfig = {
     hasPendleArbRewards: data.hasPendleArbRewards,
     hasKelpNEngenlayer: data.hasKelpNEngenlayer,
@@ -518,7 +518,7 @@ export function resolveHistoricalApyDisplayConfig({
   const fixedTermContext = buildFixedTermContext(currentVault)
   const isEligibleForSpectraBoost =
     currentVault.chainID === KATANA_CHAIN_ID &&
-    SPECTRA_BOOST_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
+    SPECTRA_MARKET_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
   const baseSublineProps: TApySublineConfig = {
     hasPendleArbRewards: data.hasPendleArbRewards,
     hasKelpNEngenlayer: data.hasKelpNEngenlayer,

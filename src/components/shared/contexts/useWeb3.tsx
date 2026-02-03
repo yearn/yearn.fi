@@ -1,11 +1,13 @@
+import { usePlausible } from '@hooks/usePlausible'
 import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import type { TAddress } from '@shared/types/address'
 import { fetchClusterName, getClusterImageUrl, isAddress } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { toAddress } from '@shared/utils/tools.address'
 import type { ReactElement } from 'react'
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { mainnet } from 'viem/chains'
 import { useAccount, useConnect, useDisconnect, useEnsName } from 'wagmi'
 
@@ -50,16 +52,45 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   const { openAccountModal } = useAccountModal()
   const { openConnectModal } = useConnectModal()
   const { openChainModal } = useChainModal()
+  const trackEvent = usePlausible()
   const [clusters, setClusters] = useState<{ name: string; avatar: string } | undefined>(undefined)
-  const [hasUserRequestedConnection, setHasUserRequestedConnection] = useState(false)
   const [isUserConnecting, setIsUserConnecting] = useState(false)
   const [isFetchingClusters, setIsFetchingClusters] = useState(false)
+  const wasConnectedRef = useRef(false)
+  const previousChainIDRef = useRef<number | undefined>(undefined)
+  const hasUserRequestedConnectionRef = useRef(false)
 
   const chainID = chain?.id ?? 1
 
+  useEffect(() => {
+    if (!wasConnectedRef.current && isConnected && hasUserRequestedConnectionRef.current) {
+      trackEvent(PLAUSIBLE_EVENTS.CONNECT_WALLET, {
+        props: { connector: connector?.name ?? '', chainID: String(chainID) }
+      })
+      hasUserRequestedConnectionRef.current = false
+    }
+    wasConnectedRef.current = isConnected
+  }, [isConnected, connector, chainID, trackEvent])
+
+  useEffect(() => {
+    if (isConnected && previousChainIDRef.current !== undefined && previousChainIDRef.current !== chainID) {
+      trackEvent(PLAUSIBLE_EVENTS.CHANGE_NETWORK, {
+        props: { fromChainID: String(previousChainIDRef.current), toChainID: String(chainID) }
+      })
+    }
+    if (isConnected) {
+      previousChainIDRef.current = chainID
+    } else {
+      previousChainIDRef.current = undefined
+    }
+  }, [isConnected, chainID, trackEvent])
+
   const onDesactivate = useCallback((): void => {
+    trackEvent(PLAUSIBLE_EVENTS.DISCONNECT_WALLET, {
+      props: { chainID: String(chainID) }
+    })
     disconnect()
-  }, [disconnect])
+  }, [disconnect, trackEvent, chainID])
 
   const openLoginModal = useCallback(async (): Promise<void> => {
     if (isConnected && connector && address) {
@@ -73,7 +104,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     } else {
       const ledgerConnector = connectors.find((c) => c.id.toLowerCase().includes('ledger'))
       if (isIframe() && ledgerConnector) {
-        setHasUserRequestedConnection(true)
+        hasUserRequestedConnectionRef.current = true
         await connectAsync({
           connector: ledgerConnector,
           chainId: chainID
@@ -82,7 +113,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
       }
 
       if (openConnectModal) {
-        setHasUserRequestedConnection(true)
+        hasUserRequestedConnectionRef.current = true
         openConnectModal()
       } else if (openChainModal) {
         openChainModal()
@@ -128,17 +159,14 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
 
   useEffect(() => {
     if (isConnecting) {
-      if (hasUserRequestedConnection) {
+      if (hasUserRequestedConnectionRef.current) {
         setIsUserConnecting(true)
       }
       return
     }
 
     setIsUserConnecting(false)
-    if (hasUserRequestedConnection) {
-      setHasUserRequestedConnection(false)
-    }
-  }, [hasUserRequestedConnection, isConnecting])
+  }, [isConnecting])
 
   const isIdentityLoading = Boolean((isEnsLoading && !!address) || isFetchingClusters)
   const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false

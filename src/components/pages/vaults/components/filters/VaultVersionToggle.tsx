@@ -1,3 +1,4 @@
+import { usePlausible } from '@hooks/usePlausible'
 import { TOOLTIP_DELAY_MS } from '@pages/vaults/utils/vaultTagCopy'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { getVaultTypeDescription, getVaultTypeLabel } from '@pages/vaults/utils/vaultTypeCopy'
@@ -8,6 +9,7 @@ import {
 } from '@pages/vaults/utils/vaultTypeUtils'
 import { Tooltip } from '@shared/components/Tooltip'
 import { cl } from '@shared/utils'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement } from 'react'
 import { useSearchParams } from 'react-router'
 
@@ -38,10 +40,12 @@ export function VaultVersionToggle({
   isPending
 }: TVaultVersionToggleProps): ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
+  const trackEvent = usePlausible()
   const normalizedType = normalizeVaultTypeParam(searchParams.get('type'))
   const resolvedType = activeType ?? normalizedType
 
   function handleClick(config: TButtonConfig): void {
+    trackEvent(PLAUSIBLE_EVENTS.FILTER_VAULT_TYPE, { props: { value: config.type } })
     if (onTypeChange) {
       onTypeChange(config.type)
       return

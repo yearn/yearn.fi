@@ -1,3 +1,4 @@
+import { usePlausible } from '@hooks/usePlausible'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { TokenLogo } from '@shared/components/TokenLogo'
@@ -5,7 +6,8 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { formatCounterValue, formatTAmount, isZeroAddress, toNormalizedBN } from '@shared/utils'
+import { formatCounterValue, formatTAmount, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { hexToNumber, slice } from 'viem'
 import { useAccount, usePublicClient } from 'wagmi'
@@ -43,6 +45,7 @@ export const WidgetMigrate: FC<Props> = ({
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { getToken } = useWallet()
+  const trackEvent = usePlausible()
   const { getPrice } = useYearn()
   const client = usePublicClient({ chainId })
 
@@ -329,10 +332,18 @@ export const WidgetMigrate: FC<Props> = ({
 
   // Handlers
   const handleMigrateSuccess = useCallback(() => {
+    trackEvent(PLAUSIBLE_EVENTS.MIGRATE, {
+      props: {
+        chainID: String(chainId),
+        fromVault: toAddress(vaultAddress),
+        toVault: toAddress(migrationTarget),
+        vaultSymbol
+      }
+    })
     setPermitSignature(undefined) // Clear permit signature after successful migration
     refetchVaultUserData()
     onMigrateSuccess?.()
-  }, [onMigrateSuccess, refetchVaultUserData])
+  }, [trackEvent, chainId, vaultAddress, migrationTarget, vaultSymbol, refetchVaultUserData, onMigrateSuccess])
 
   const handleOverlayClose = useCallback(() => {
     setShowTransactionOverlay(false)

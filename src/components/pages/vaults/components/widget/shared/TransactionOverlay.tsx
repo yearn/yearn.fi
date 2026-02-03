@@ -113,7 +113,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const hasStartedRef = useRef(false)
 
   // Reset state when overlay closes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Only trigger on isOpen change to prevent infinite loops
   useEffect(() => {
     if (!isOpen) {
       setOverlayState('idle')
@@ -347,7 +346,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   }, [onClose])
 
   // Start step when overlay opens
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Only depend on isOpen and overlayState to prevent infinite loops
   useEffect(() => {
     if (isOpen && overlayState === 'idle' && step && !hasStartedRef.current) {
       hasStartedRef.current = true
@@ -356,7 +354,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   }, [isOpen, overlayState])
 
   // Handle transaction success
-  // biome-ignore lint/correctness/useExhaustiveDependencies: writeContract excluded to prevent loops
   useEffect(() => {
     // For multi-step flows, wait until next step is ready before showing success
     // Check that step has changed (different label) and is ready
@@ -393,7 +390,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   ])
 
   // Handle transaction error
-  // biome-ignore lint/correctness/useExhaustiveDependencies: writeContract excluded to prevent loops
   useEffect(() => {
     if (receipt.isError && receipt.error && overlayState === 'pending') {
       setOverlayState('error')

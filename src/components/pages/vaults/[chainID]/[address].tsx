@@ -8,6 +8,7 @@ import { VaultDetailsHeader } from '@pages/vaults/components/detail/VaultDetails
 import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSection'
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
+import { VaultDetailsWelcomeTour } from '@pages/vaults/components/tour/VaultDetailsWelcomeTour'
 import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
@@ -345,6 +346,17 @@ function Index(): ReactElement | null {
   const [isWidgetWalletOpen, setIsWidgetWalletOpen] = useState(false)
   const [isWidgetRewardsOpen, setIsWidgetRewardsOpen] = useState(false)
   const [collapsedWidgetHeight, setCollapsedWidgetHeight] = useState<number | null>(null)
+  const [isShortViewport, setIsShortViewport] = useState(false)
+  const [isCompactWidget, setIsCompactWidget] = useState(false)
+  const [shouldShowWidgetRewards, setShouldShowWidgetRewards] = useState(true)
+  const [vaultTourState, setVaultTourState] = useState<{ isOpen: boolean; stepId?: string }>({ isOpen: false })
+  const tourWidgetStateRef = useRef<{
+    widgetMode: WidgetActionType
+    isWalletOpen: boolean
+    isSettingsOpen: boolean
+    isRewardsOpen: boolean
+  } | null>(null)
+  const tourSectionsRef = useRef<Record<SectionKey, boolean> | null>(null)
   const [depositPrefill, setDepositPrefill] = useState<{
     address: `0x${string}`
     chainId: number
@@ -360,6 +372,111 @@ function Index(): ReactElement | null {
       setMobileDrawerAction(widgetActions[0])
     }
   }, [mobileDrawerAction, widgetActions])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const updateViewport = (): void => {
+      setIsShortViewport(window.innerHeight < 890)
+    }
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+    return (): void => window.removeEventListener('resize', updateViewport)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const updateViewport = (): void => {
+      setIsCompactWidget(window.innerHeight < 800)
+    }
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+    return (): void => window.removeEventListener('resize', updateViewport)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const updateRewardsVisibility = (): void => {
+      const shouldShow = window.innerHeight >= 730
+      setShouldShowWidgetRewards(shouldShow)
+      if (!shouldShow) {
+        setIsWidgetRewardsOpen(false)
+      }
+    }
+    updateRewardsVisibility()
+    window.addEventListener('resize', updateRewardsVisibility)
+    return (): void => window.removeEventListener('resize', updateRewardsVisibility)
+  }, [])
+
+  useEffect(() => {
+    if (!vaultTourState.isOpen) {
+      return
+    }
+    if (!tourWidgetStateRef.current) {
+      tourWidgetStateRef.current = {
+        widgetMode,
+        isWalletOpen: isWidgetWalletOpen,
+        isSettingsOpen: isWidgetSettingsOpen,
+        isRewardsOpen: isWidgetRewardsOpen
+      }
+    }
+    if (!tourSectionsRef.current) {
+      tourSectionsRef.current = openSections
+    }
+  }, [vaultTourState.isOpen, widgetMode, isWidgetWalletOpen, isWidgetSettingsOpen, isWidgetRewardsOpen, openSections])
+
+  useEffect(() => {
+    if (vaultTourState.isOpen) {
+      return
+    }
+    if (tourWidgetStateRef.current) {
+      const { widgetMode: savedMode, isWalletOpen, isSettingsOpen, isRewardsOpen } = tourWidgetStateRef.current
+      if (widgetActions.includes(savedMode)) {
+        setWidgetMode(savedMode)
+      }
+      setIsWidgetWalletOpen(isWalletOpen)
+      setIsWidgetSettingsOpen(isSettingsOpen)
+      setIsWidgetRewardsOpen(isRewardsOpen)
+      tourWidgetStateRef.current = null
+    }
+    if (tourSectionsRef.current) {
+      setOpenSections(tourSectionsRef.current)
+      tourSectionsRef.current = null
+    }
+  }, [vaultTourState.isOpen, widgetActions])
+
+  useEffect(() => {
+    if (!vaultTourState.isOpen) {
+      return
+    }
+    const stepId = vaultTourState.stepId
+    const isWalletStep = stepId === 'my-info'
+
+    if (isWalletStep) {
+      setIsWidgetWalletOpen(true)
+      setIsWidgetSettingsOpen(false)
+      setIsWidgetRewardsOpen(false)
+      return
+    }
+
+    if (isWidgetWalletOpen) {
+      setIsWidgetWalletOpen(false)
+    }
+
+    const shouldShowDeposit = stepId === 'user-deposit' || stepId === 'deposit-widget'
+    if (shouldShowDeposit && widgetActions.includes(WidgetActionType.Deposit)) {
+      setWidgetMode(WidgetActionType.Deposit)
+    }
+
+    const tourSectionMap: Partial<Record<string, SectionKey>> = {
+      info: 'info',
+      strategies: 'strategies',
+      risk: 'risk'
+    }
+    const targetSection = stepId ? tourSectionMap[stepId] : undefined
+    if (targetSection) {
+      setOpenSections((prev) => (prev[targetSection] ? prev : { ...prev, [targetSection]: true }))
+    }
+  }, [vaultTourState.isOpen, vaultTourState.stepId, widgetActions, isWidgetWalletOpen])
 
   const toggleWidgetSettings = (): void => {
     setIsWidgetSettingsOpen((prev) => {
@@ -517,6 +634,13 @@ function Index(): ReactElement | null {
     key: section.key,
     label: collapsibleTitles[section.key]
   }))
+  const sectionTourTargets: Partial<Record<SectionKey, string>> = {
+    charts: 'vault-detail-section-charts',
+    about: 'vault-detail-section-about',
+    strategies: 'vault-detail-section-strategies',
+    risk: 'vault-detail-section-risk',
+    info: 'vault-detail-section-info'
+  }
   const scrollSpySections = useMemo(
     () =>
       renderableSections.map((section) => ({
@@ -634,36 +758,55 @@ function Index(): ReactElement | null {
     }
   }, [updateSectionScrollOffset])
 
-  const handleSelectSection = (key: SectionKey): void => {
-    setActiveSection(key)
-    const element = sectionRefs[key]?.current
-    if (!element || typeof window === 'undefined') return
+  const handleSelectSection = useCallback(
+    (key: SectionKey): void => {
+      setActiveSection(key)
+      const element = sectionRefs[key]?.current
+      if (!element || typeof window === 'undefined') return
 
-    if (!isHeaderCompressed) {
+      if (!isHeaderCompressed) {
+        setIsProgrammaticScroll(true)
+        setPendingSectionKey(key)
+        window.scrollTo({ top: 1, behavior: 'auto' })
+        return
+      }
+
+      const scrollOffset = updateSectionScrollOffset()
+      const top = element.getBoundingClientRect().top + window.scrollY - scrollOffset
+      const baseTarget = key === 'charts' ? Math.max(top, 1) : top
+      const targetTop = Math.max(1, baseTarget - scrollPadding)
+
       setIsProgrammaticScroll(true)
-      setPendingSectionKey(key)
-      window.scrollTo({ top: 1, behavior: 'auto' })
+      scrollTargetRef.current = targetTop
+      if (scrollTimeoutRef.current) {
+        window.clearTimeout(scrollTimeoutRef.current)
+      }
+      scrollTimeoutRef.current = window.setTimeout(() => {
+        scrollTargetRef.current = null
+        setIsProgrammaticScroll(false)
+        scrollTimeoutRef.current = null
+      }, 1200)
+
+      window.scrollTo({ top: targetTop, behavior: 'smooth' })
+    },
+    [isHeaderCompressed, sectionRefs, updateSectionScrollOffset]
+  )
+
+  useEffect(() => {
+    if (!vaultTourState.isOpen || !vaultTourState.stepId) {
       return
     }
-
-    const scrollOffset = updateSectionScrollOffset()
-    const top = element.getBoundingClientRect().top + window.scrollY - scrollOffset
-    const baseTarget = key === 'charts' ? Math.max(top, 1) : top
-    const targetTop = Math.max(1, baseTarget - scrollPadding)
-
-    setIsProgrammaticScroll(true)
-    scrollTargetRef.current = targetTop
-    if (scrollTimeoutRef.current) {
-      window.clearTimeout(scrollTimeoutRef.current)
+    const tourScrollMap: Partial<Record<string, SectionKey>> = {
+      charts: 'charts',
+      about: 'about',
+      strategies: 'strategies',
+      risk: 'risk'
     }
-    scrollTimeoutRef.current = window.setTimeout(() => {
-      scrollTargetRef.current = null
-      setIsProgrammaticScroll(false)
-      scrollTimeoutRef.current = null
-    }, 1200)
-
-    window.scrollTo({ top: targetTop, behavior: 'smooth' })
-  }
+    const targetSection = tourScrollMap[vaultTourState.stepId]
+    if (targetSection) {
+      handleSelectSection(targetSection)
+    }
+  }, [vaultTourState.isOpen, vaultTourState.stepId, handleSelectSection])
 
   const handleFloatingButtonClick = useCallback((action: WidgetActionType): void => {
     setMobileDrawerAction(action)
@@ -752,6 +895,7 @@ function Index(): ReactElement | null {
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const headerStickyTop = 'var(--header-height)'
   const resolvedWidgetMode = widgetActions.includes(widgetMode) ? widgetMode : widgetActions[0]
+  const shouldCollapseWidgetDetails = isCompactWidget
   const mobileListKind = deriveListKind(currentVault)
   const mobileProductTypeLabel = getMobileProductTypeLabel()
   const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
@@ -798,7 +942,7 @@ function Index(): ReactElement | null {
             items={[
               { label: 'Home', href: '/' },
               { label: 'Vaults', href: '/vaults' },
-              { label: `${getVaultName(currentVault)} yVault`, isCurrent: true }
+              { label: `${getVaultName(currentVault)}`, isCurrent: true }
             ]}
           />
           <div className="flex items-center gap-3">
@@ -814,7 +958,7 @@ function Index(): ReactElement | null {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className={'text-lg font-black leading-tight truncate-safe text-text-primary'}>
-                {getVaultName(currentVault)} yVault
+                {getVaultName(currentVault)}
               </h1>
               <div className="flex items-center gap-1 mt-1">
                 {currentVault.category ? (
@@ -897,16 +1041,21 @@ function Index(): ReactElement | null {
             className={cl(
               'hidden md:block',
               'order-1 md:order-2',
-              'md:col-span-7 md:col-start-14 md:sticky md:h-[calc(100vh-var(--vault-header-initial-offset))] pt-4',
+              'md:col-span-7 md:col-start-14 md:sticky pt-4',
               'flex flex-col overflow-hidden',
-              'max-h-[calc(100vh-var(--vault-header-initial-offset))]'
+              isShortViewport
+                ? 'md:h-[calc(100vh-0.75rem-(var(--vault-header-height)+20px))] max-h-[calc(100vh-0.75rem-(var(--vault-header-height)+20px))]'
+                : 'md:h-[calc(100vh-var(--vault-header-initial-offset)-16px)] max-h-[calc(100vh-var(--vault-header-initial-offset)-16px)]'
             )}
             style={{ top: 'var(--vault-header-height, var(--header-height))' }}
           >
             <div
               ref={widgetStackRef}
               className={cl(
-                'relative grid w-full min-w-0 flex-1 min-h-0 max-h-[calc(100vh-16px-var(--vault-header-initial-offset))] overflow-hidden',
+                'relative grid w-full min-w-0 flex-1 min-h-0 overflow-hidden',
+                isShortViewport
+                  ? 'max-h-[calc(100vh-16px-(var(--vault-header-height,var(--header-height))-16px))]'
+                  : 'max-h-[calc(100vh-16px-var(--vault-header-initial-offset))]',
                 isWidgetRewardsOpen ? 'grid-rows-[auto_minmax(0,1fr)]' : 'grid-rows-[minmax(0,1fr)_auto]'
               )}
               style={isWidgetRewardsOpen && collapsedWidgetHeight ? { height: collapsedWidgetHeight } : undefined}
@@ -942,6 +1091,7 @@ function Index(): ReactElement | null {
                       isSettingsOpen={isWidgetSettingsOpen}
                       depositPrefill={depositPrefill}
                       onDepositPrefillConsumed={() => setDepositPrefill(null)}
+                      collapseDetails={shouldCollapseWidgetDetails}
                     />
                   </div>
                 )}
@@ -957,24 +1107,26 @@ function Index(): ReactElement | null {
                   onSelectZapToken={handleZapTokenSelect}
                 />
               </div>
-              <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
-                <WidgetRewards
-                  stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
-                  stakingSource={currentVault.staking.source}
-                  rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
-                    address: r.address,
-                    symbol: r.symbol,
-                    decimals: r.decimals,
-                    price: r.price,
-                    isFinished: r.isFinished
-                  }))}
-                  chainId={chainId}
-                  isPanelOpen={isWidgetRewardsOpen}
-                  onOpenRewards={openWidgetRewards}
-                  onCloseRewards={closeWidgetRewards}
-                  onClaimSuccess={handleRewardsClaimSuccess}
-                />
-              </div>
+              {shouldShowWidgetRewards ? (
+                <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
+                  <WidgetRewards
+                    stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
+                    stakingSource={currentVault.staking.source}
+                    rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
+                      address: r.address,
+                      symbol: r.symbol,
+                      decimals: r.decimals,
+                      price: r.price,
+                      isFinished: r.isFinished
+                    }))}
+                    chainId={chainId}
+                    isPanelOpen={isWidgetRewardsOpen}
+                    onOpenRewards={openWidgetRewards}
+                    onCloseRewards={closeWidgetRewards}
+                    onClaimSuccess={handleRewardsClaimSuccess}
+                  />
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -998,6 +1150,7 @@ function Index(): ReactElement | null {
                     key={section.key}
                     ref={section.ref}
                     data-scroll-spy-key={section.key}
+                    data-tour={sectionTourTargets[section.key as SectionKey]}
                     className={'border border-border rounded-lg bg-surface'}
                     style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
                   >
@@ -1027,6 +1180,7 @@ function Index(): ReactElement | null {
                   key={section.key}
                   ref={section.ref}
                   data-scroll-spy-key={section.key}
+                  data-tour={sectionTourTargets[section.key as SectionKey]}
                   className={'border border-border rounded-lg bg-surface'}
                   style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
                 >
@@ -1093,6 +1247,7 @@ function Index(): ReactElement | null {
           disableBorderRadius
         />
       </BottomDrawer>
+      <VaultDetailsWelcomeTour onTourStateChange={setVaultTourState} />
     </div>
   )
 }
