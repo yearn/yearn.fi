@@ -345,6 +345,9 @@ function Index(): ReactElement | null {
   const [isWidgetWalletOpen, setIsWidgetWalletOpen] = useState(false)
   const [isWidgetRewardsOpen, setIsWidgetRewardsOpen] = useState(false)
   const [collapsedWidgetHeight, setCollapsedWidgetHeight] = useState<number | null>(null)
+  const [isShortViewport, setIsShortViewport] = useState(false)
+  const [isCompactWidget, setIsCompactWidget] = useState(false)
+  const [shouldShowWidgetRewards, setShouldShowWidgetRewards] = useState(true)
   const [depositPrefill, setDepositPrefill] = useState<{
     address: `0x${string}`
     chainId: number
@@ -360,6 +363,40 @@ function Index(): ReactElement | null {
       setMobileDrawerAction(widgetActions[0])
     }
   }, [mobileDrawerAction, widgetActions])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const updateViewport = (): void => {
+      setIsShortViewport(window.innerHeight < 890)
+    }
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+    return (): void => window.removeEventListener('resize', updateViewport)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const updateViewport = (): void => {
+      setIsCompactWidget(window.innerHeight < 800)
+    }
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+    return (): void => window.removeEventListener('resize', updateViewport)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const updateRewardsVisibility = (): void => {
+      const shouldShow = window.innerHeight >= 730
+      setShouldShowWidgetRewards(shouldShow)
+      if (!shouldShow) {
+        setIsWidgetRewardsOpen(false)
+      }
+    }
+    updateRewardsVisibility()
+    window.addEventListener('resize', updateRewardsVisibility)
+    return (): void => window.removeEventListener('resize', updateRewardsVisibility)
+  }, [])
 
   const toggleWidgetSettings = (): void => {
     setIsWidgetSettingsOpen((prev) => {
@@ -752,6 +789,7 @@ function Index(): ReactElement | null {
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const headerStickyTop = 'var(--header-height)'
   const resolvedWidgetMode = widgetActions.includes(widgetMode) ? widgetMode : widgetActions[0]
+  const shouldCollapseWidgetDetails = isCompactWidget
   const mobileListKind = deriveListKind(currentVault)
   const mobileProductTypeLabel = getMobileProductTypeLabel()
   const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
@@ -893,16 +931,21 @@ function Index(): ReactElement | null {
             className={cl(
               'hidden md:block',
               'order-1 md:order-2',
-              'md:col-span-7 md:col-start-14 md:sticky md:h-[calc(100vh-var(--vault-header-initial-offset))] pt-4',
+              'md:col-span-7 md:col-start-14 md:sticky pt-4',
               'flex flex-col overflow-hidden',
-              'max-h-[calc(100vh-var(--vault-header-initial-offset))]'
+              isShortViewport
+                ? 'md:h-[calc(100vh-0.75rem-(var(--vault-header-height)+20px))] max-h-[calc(100vh-0.75rem-(var(--vault-header-height)+20px))]'
+                : 'md:h-[calc(100vh-var(--vault-header-initial-offset)-16px)] max-h-[calc(100vh-var(--vault-header-initial-offset)-16px)]'
             )}
             style={{ top: 'var(--vault-header-height, var(--header-height))' }}
           >
             <div
               ref={widgetStackRef}
               className={cl(
-                'relative grid w-full min-w-0 flex-1 min-h-0 max-h-[calc(100vh-16px-var(--vault-header-initial-offset))] overflow-hidden',
+                'relative grid w-full min-w-0 flex-1 min-h-0 overflow-hidden',
+                isShortViewport
+                  ? 'max-h-[calc(100vh-16px-(var(--vault-header-height,var(--header-height))-16px))]'
+                  : 'max-h-[calc(100vh-16px-var(--vault-header-initial-offset))]',
                 isWidgetRewardsOpen ? 'grid-rows-[auto_minmax(0,1fr)]' : 'grid-rows-[minmax(0,1fr)_auto]'
               )}
               style={isWidgetRewardsOpen && collapsedWidgetHeight ? { height: collapsedWidgetHeight } : undefined}
@@ -938,6 +981,7 @@ function Index(): ReactElement | null {
                       isSettingsOpen={isWidgetSettingsOpen}
                       depositPrefill={depositPrefill}
                       onDepositPrefillConsumed={() => setDepositPrefill(null)}
+                      collapseDetails={shouldCollapseWidgetDetails}
                     />
                   </div>
                 )}
@@ -953,24 +997,26 @@ function Index(): ReactElement | null {
                   onSelectZapToken={handleZapTokenSelect}
                 />
               </div>
-              <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
-                <WidgetRewards
-                  stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
-                  stakingSource={currentVault.staking.source}
-                  rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
-                    address: r.address,
-                    symbol: r.symbol,
-                    decimals: r.decimals,
-                    price: r.price,
-                    isFinished: r.isFinished
-                  }))}
-                  chainId={chainId}
-                  isPanelOpen={isWidgetRewardsOpen}
-                  onOpenRewards={openWidgetRewards}
-                  onCloseRewards={closeWidgetRewards}
-                  onClaimSuccess={handleRewardsClaimSuccess}
-                />
-              </div>
+              {shouldShowWidgetRewards ? (
+                <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
+                  <WidgetRewards
+                    stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
+                    stakingSource={currentVault.staking.source}
+                    rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
+                      address: r.address,
+                      symbol: r.symbol,
+                      decimals: r.decimals,
+                      price: r.price,
+                      isFinished: r.isFinished
+                    }))}
+                    chainId={chainId}
+                    isPanelOpen={isWidgetRewardsOpen}
+                    onOpenRewards={openWidgetRewards}
+                    onCloseRewards={closeWidgetRewards}
+                    onClaimSuccess={handleRewardsClaimSuccess}
+                  />
+                </div>
+              ) : null}
             </div>
           </div>
 

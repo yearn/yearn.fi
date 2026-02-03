@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 type UseHeaderCompressionOptions = {
   enabled?: boolean
+  forceCompressed?: boolean
 }
 
 type UseHeaderCompressionReturn = {
@@ -10,7 +11,10 @@ type UseHeaderCompressionReturn = {
   setIsCompressed: Dispatch<SetStateAction<boolean>>
 }
 
-export function useHeaderCompression({ enabled = true }: UseHeaderCompressionOptions = {}): UseHeaderCompressionReturn {
+export function useHeaderCompression({
+  enabled = true,
+  forceCompressed = false
+}: UseHeaderCompressionOptions = {}): UseHeaderCompressionReturn {
   const [isCompressed, setIsCompressed] = useState(false)
   const isCompressedRef = useRef(isCompressed)
   const blockScrollUntilCompressedRef = useRef(true)
@@ -37,6 +41,12 @@ export function useHeaderCompression({ enabled = true }: UseHeaderCompressionOpt
     if (!enabled) {
       blockScrollUntilCompressedRef.current = false
       setIsCompressed(false)
+      return
+    }
+
+    if (forceCompressed) {
+      blockScrollUntilCompressedRef.current = false
+      setIsCompressed(true)
       return
     }
 
@@ -101,10 +111,10 @@ export function useHeaderCompression({ enabled = true }: UseHeaderCompressionOpt
       window.removeEventListener('touchmove', consumeScrollWhileExpanding)
       window.removeEventListener('touchstart', handleTouchStart)
     }
-  }, [enabled, getScrollPriorityContainer])
+  }, [enabled, forceCompressed, getScrollPriorityContainer])
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || forceCompressed) {
       return
     }
 
@@ -166,10 +176,10 @@ export function useHeaderCompression({ enabled = true }: UseHeaderCompressionOpt
 
     window.addEventListener('keydown', consumeKeyboardScrollWhileExpanding)
     return (): void => window.removeEventListener('keydown', consumeKeyboardScrollWhileExpanding)
-  }, [enabled, getScrollPriorityContainer])
+  }, [enabled, forceCompressed, getScrollPriorityContainer])
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || forceCompressed) {
       return
     }
 
@@ -188,7 +198,7 @@ export function useHeaderCompression({ enabled = true }: UseHeaderCompressionOpt
     handleScroll()
     window.addEventListener('scroll', handleScroll, { passive: true })
     return (): void => window.removeEventListener('scroll', handleScroll)
-  }, [enabled])
+  }, [enabled, forceCompressed])
 
   return { isCompressed, setIsCompressed }
 }

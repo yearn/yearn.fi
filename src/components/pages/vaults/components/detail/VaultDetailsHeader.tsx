@@ -449,7 +449,18 @@ export function VaultDetailsHeader({
   isWidgetWalletOpen?: boolean
   onWidgetCloseOverlays?: () => void
 }): ReactElement {
-  const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode })
+  const [forceCompressed, setForceCompressed] = useState(false)
+  const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode, forceCompressed })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const updateViewport = (): void => {
+      setForceCompressed(window.innerHeight < 890)
+    }
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+    return (): void => window.removeEventListener('resize', updateViewport)
+  }, [])
 
   useEffect(() => {
     onCompressionChange?.(isCompressed)
