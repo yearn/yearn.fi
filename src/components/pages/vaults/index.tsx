@@ -9,6 +9,7 @@ import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { VaultsListRowSkeleton } from '@pages/vaults/components/list/VaultsListRowSkeleton'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
+import { VaultsWelcomeTour } from '@pages/vaults/components/tour/VaultsWelcomeTour'
 import { toggleInArray } from '@pages/vaults/utils/constants'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
@@ -106,6 +107,8 @@ export default function Index(): ReactElement {
   const [isCompareOpen, setIsCompareOpen] = useState(false)
   const [isCompareMode, setIsCompareMode] = useState(false)
   const [expandedVaultKeys, setExpandedVaultKeys] = useState<Record<string, boolean>>({})
+  const [tourState, setTourState] = useState<{ isOpen: boolean; stepId?: string }>({ isOpen: false })
+  const tourExpandedKeysRef = useRef<Record<string, boolean> | null>(null)
   const lastLoggedSearchRef = useRef('')
 
   const handleSearchBlur = useCallback(() => {
@@ -176,6 +179,10 @@ export default function Index(): ReactElement {
   }, [])
 
   const visibleVaults = useMemo(() => [...pinnedVaults, ...mainVaults], [pinnedVaults, mainVaults])
+  const tourTargetVaultKey = useMemo(() => {
+    const firstVault = visibleVaults[0]
+    return firstVault ? getVaultKey(firstVault) : null
+  }, [visibleVaults])
   const compareVaults = useMemo(() => {
     const vaultMap = new Map<string, TYDaemonVault>()
     for (const vault of visibleVaults) {
@@ -214,6 +221,51 @@ export default function Index(): ReactElement {
       setIsCompareOpen(false)
     }
   }, [compareVaultKeys.length, isCompareOpen])
+
+  useEffect(() => {
+    if (!tourState.isOpen) {
+      if (tourExpandedKeysRef.current) {
+        setExpandedVaultKeys((prev) => {
+          const next = tourExpandedKeysRef.current ?? {}
+          const prevKeys = Object.keys(prev)
+          const nextKeys = Object.keys(next)
+          if (prevKeys.length === nextKeys.length && prevKeys.every((key) => prev[key] === next[key])) {
+            return prev
+          }
+          return { ...next }
+        })
+        tourExpandedKeysRef.current = null
+      }
+      return
+    }
+
+    if (!tourExpandedKeysRef.current) {
+      tourExpandedKeysRef.current = { ...expandedVaultKeys }
+    }
+
+    const shouldForceExpanded = ['expanded', 'expanded-info', 'expanded-strategy'].includes(tourState.stepId ?? '')
+    if (shouldForceExpanded && tourTargetVaultKey) {
+      setExpandedVaultKeys((prev) => {
+        if (prev[tourTargetVaultKey]) {
+          return prev
+        }
+        return { ...prev, [tourTargetVaultKey]: true }
+      })
+      return
+    }
+
+    if (tourExpandedKeysRef.current) {
+      const baseline = tourExpandedKeysRef.current
+      setExpandedVaultKeys((prev) => {
+        const prevKeys = Object.keys(prev)
+        const nextKeys = Object.keys(baseline)
+        if (prevKeys.length === nextKeys.length && prevKeys.every((key) => prev[key] === baseline[key])) {
+          return prev
+        }
+        return { ...baseline }
+      })
+    }
+  }, [tourState.isOpen, tourState.stepId, tourTargetVaultKey, expandedVaultKeys])
 
   useEffect(() => {
     const root = varsRef.current
@@ -478,18 +530,21 @@ export default function Index(): ReactElement {
                 isStackedLayout={shouldStackFilters}
               />
             </div>
-            <VaultsListSection
-              isUpdatingProductType={isUpdatingProductType}
-              isUpdatingList={isUpdatingList}
-              listHead={<VaultsListHead {...listHeadProps} />}
-            >
-              {vaultListContent}
-            </VaultsListSection>
+            <div data-tour="vaults-list">
+              <VaultsListSection
+                isUpdatingProductType={isUpdatingProductType}
+                isUpdatingList={isUpdatingList}
+                listHead={<VaultsListHead {...listHeadProps} />}
+              >
+                {vaultListContent}
+              </VaultsListSection>
+            </div>
           </div>
         </div>
       </div>
       {compareBarElement}
       {compareModalElement}
+      <VaultsWelcomeTour onTourStateChange={setTourState} />
     </>
   )
 }

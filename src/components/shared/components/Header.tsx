@@ -124,7 +124,7 @@ function AppHeader(): ReactElement {
     >
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         <header className={'flex h-[var(--header-height)] w-full items-center justify-between px-0'}>
-          <div className={'flex items-center justify-start gap-x-6 px-1 py-2 md:py-1'}>
+          <div className={'flex items-center justify-start gap-x-6 px-1 py-2 md:py-1'} data-tour="vaults-header-nav">
             <Link href={'/'} className={'flex items-center gap-1 transition-colors hover:opacity-80'}>
               <TypeMarkYearn className={'h-8 w-auto'} color={isHomePage || isDarkTheme ? '#FFFFFF' : '#0657F9'} />
             </Link>
@@ -135,7 +135,7 @@ function AppHeader(): ReactElement {
           <div className={'flex items-center justify-end gap-2'}>
             {!isHomePage && (
               <>
-                <div className={'hidden items-center justify-end md:flex gap-2'}>
+                <div className={'hidden items-center justify-end md:flex gap-2'} data-tour="vaults-header-user">
                   <Link href={'/portfolio'}>
                     <span
                       className={'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'}

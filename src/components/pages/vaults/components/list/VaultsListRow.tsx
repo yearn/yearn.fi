@@ -289,6 +289,7 @@ export function VaultsListRow({
         type={'button'}
         aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
         aria-expanded={isExpanded}
+        data-tour="vaults-row-expand"
         onClick={(event): void => {
           event.stopPropagation()
           if (!isExpanded) {
@@ -316,6 +317,7 @@ export function VaultsListRow({
           'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
+        data-tour="vaults-row"
         onMouseEnter={prefetchSnapshot}
         onFocus={prefetchSnapshot}
         onClickCapture={(event): void => {
