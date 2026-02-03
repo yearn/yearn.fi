@@ -1,3 +1,4 @@
+import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
@@ -6,7 +7,6 @@ import type { WithdrawalSource, WithdrawRouteType } from './types'
 interface UseWithdrawRouteProps {
   withdrawToken: Address
   assetAddress: Address
-  vaultAddress: Address
   withdrawalSource: WithdrawalSource
   chainId: number
   outputChainId: number
@@ -27,8 +27,20 @@ export const useWithdrawRoute = ({
   outputChainId,
   isUnstake
 }: UseWithdrawRouteProps): WithdrawRouteType => {
+  const ensoEnabled = useEnsoEnabled()
+
   return useMemo(() => {
-    // Case 1: Direct withdraw (vault → asset, same token, from vault source)
+    // Case 1: Unstake (staking → vault tokens) - always allowed, doesn't need Enso
+    if (isUnstake) {
+      return 'DIRECT_UNSTAKE'
+    }
+
+    // When Enso disabled, always use direct withdraw
+    if (!ensoEnabled) {
+      return 'DIRECT_WITHDRAW'
+    }
+
+    // Case 2: Direct withdraw (vault → asset, same token, from vault source)
     if (
       toAddress(withdrawToken) === toAddress(assetAddress) &&
       withdrawalSource === 'vault' &&
@@ -37,12 +49,7 @@ export const useWithdrawRoute = ({
       return 'DIRECT_WITHDRAW'
     }
 
-    // Case 2: Unstake (staking → vault tokens)
-    if (isUnstake) {
-      return 'DIRECT_UNSTAKE'
-    }
-
     // Case 3: Everything else uses Enso
     return 'ENSO'
-  }, [withdrawToken, chainId, outputChainId, assetAddress, withdrawalSource, isUnstake])
+  }, [ensoEnabled, isUnstake, withdrawToken, chainId, outputChainId, assetAddress, withdrawalSource])
 }

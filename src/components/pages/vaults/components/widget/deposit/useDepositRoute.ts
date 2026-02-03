@@ -1,3 +1,4 @@
+import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
@@ -24,7 +25,14 @@ export const useDepositRoute = ({
   vaultAddress,
   stakingAddress
 }: UseDepositRouteProps): DepositRouteType => {
+  const ensoEnabled = useEnsoEnabled()
+
   return useMemo(() => {
+    // When Enso disabled, always use direct deposit
+    if (!ensoEnabled) {
+      return 'DIRECT_DEPOSIT'
+    }
+
     // Case 1: Direct vault deposit (asset → vault)
     if (
       toAddress(depositToken) === toAddress(assetAddress) &&
@@ -44,5 +52,5 @@ export const useDepositRoute = ({
 
     // Case 3: All other cases use Enso
     return 'ENSO'
-  }, [depositToken, assetAddress, destinationToken, vaultAddress, stakingAddress])
+  }, [ensoEnabled, depositToken, assetAddress, destinationToken, vaultAddress, stakingAddress])
 }

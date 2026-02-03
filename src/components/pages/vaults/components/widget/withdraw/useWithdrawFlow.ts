@@ -71,7 +71,6 @@ export const useWithdrawFlow = ({
   const routeType = useWithdrawRoute({
     withdrawToken,
     assetAddress,
-    vaultAddress,
     withdrawalSource,
     chainId,
     outputChainId,
