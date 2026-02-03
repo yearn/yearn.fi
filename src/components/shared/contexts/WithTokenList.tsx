@@ -73,6 +73,7 @@ export const WithTokenList = ({
     'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/tokenlistooor.json'
   ]
 }: TTokenListProviderProps): ReactElement => {
+  const isDevelopment = import.meta.env.MODE === 'development'
   const { chainID } = useWeb3()
   const { value: extraTokenlist } = useLocalStorageValue<string[]>('extraTokenlists')
   const { value: extraTokens, set: setExtraTokens } = useLocalStorageValue<TTokenList['tokens']>('extraTokens')
@@ -128,11 +129,7 @@ export const WithTokenList = ({
        ** If we are in development mode, we also want to add the token to our list, but only
        ** if the token's chainID is 1 (Ethereum).
        *************************************************************************************/
-      if (
-        import.meta.env.VITE_NODE_ENV === 'development' &&
-        Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) &&
-        eachToken.chainId === 1
-      ) {
+      if (isDevelopment && Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) && eachToken.chainId === 1) {
         if (!tokenListTokens[1337]) {
           tokenListTokens[1337] = {}
         }
@@ -194,11 +191,7 @@ export const WithTokenList = ({
            ** If we are in development mode, we also want to add the token to our list, but only
            ** if the token's chainID is 1 (Ethereum).
            *************************************************************************************/
-          if (
-            import.meta.env.VITE_NODE_ENV === 'development' &&
-            Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) &&
-            chainId === 1
-          ) {
+          if (isDevelopment && Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) && chainId === 1) {
             if (!tokenListTokens[1337]) {
               tokenListTokens[1337] = {}
             }
@@ -252,11 +245,7 @@ export const WithTokenList = ({
          ** If we are in development mode, we also want to add the token to our list, but only
          ** if the token's chainID is 1 (Ethereum).
          *************************************************************************************/
-        if (
-          import.meta.env.VITE_NODE_ENV === 'development' &&
-          Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) &&
-          eachToken.chainId === 1
-        ) {
+        if (isDevelopment && Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) && eachToken.chainId === 1) {
           if (!tokenListTokens[1337]) {
             tokenListTokens[1337] = {}
           }

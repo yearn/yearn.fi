@@ -87,6 +87,15 @@ const isChain = (chain: wagmiChains.Chain | unknown): chain is wagmiChains.Chain
   )
 }
 
+export function getRpcUriFor(chainId: number | string): string {
+  const key = `VITE_RPC_URI_FOR_${chainId}`
+  const value = import.meta.env[key]
+  if (typeof value !== 'string') {
+    return ''
+  }
+  return value.trim()
+}
+
 function getAlchemyBaseURL(chainID: number): string {
   switch (chainID) {
     case wagmiChains.mainnet.id:
@@ -145,11 +154,13 @@ function initIndexedWagmiChains(): TNDict<TExtendedChain> {
         ...extendedChain.contracts
       }
 
-      const newRPC = import.meta.env.VITE_RPC_URI_FOR?.[extendedChain.id] || ''
+      const newRPC = getRpcUriFor(extendedChain.id)
       const oldRPC =
         import.meta.env.VITE_JSON_RPC_URI?.[extendedChain.id] || import.meta.env.VITE_JSON_RPC_URL?.[extendedChain.id]
       if (!newRPC && oldRPC) {
-        console.debug(`JSON_RPC_URI[${extendedChain.id}] is deprecated. Please use RPC_URI_FOR[${extendedChain.id}]`)
+        console.debug(
+          `VITE_JSON_RPC_URI[${extendedChain.id}] is deprecated. Please use VITE_RPC_URI_FOR_${extendedChain.id}`
+        )
       }
       const defaultJsonRPCURL = extendedChain?.rpcUrls?.public?.http?.[0]
 
@@ -202,7 +213,7 @@ export function getClient(chainID: number): PublicClient {
   }
   const chainConfig = indexedWagmiChains?.[chainID] || retrieveConfig().chains.find((chain) => chain.id === chainID)
 
-  const newRPC = import.meta.env.VITE_RPC_URI_FOR?.[chainID] || ''
+  const newRPC = getRpcUriFor(chainID)
   const oldRPC = import.meta.env.VITE_JSON_RPC_URI?.[chainID] || import.meta.env.VITE_JSON_RPC_URL?.[chainID]
 
   const url =

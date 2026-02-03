@@ -1,4 +1,4 @@
-import { getNetwork, registerConfig } from '@shared/utils/wagmi'
+import { getNetwork, getRpcUriFor, registerConfig } from '@shared/utils/wagmi'
 import { connectorsForWallets } from '@rainbow-me/rainbowkit'
 import {
   frameWallet,
@@ -45,7 +45,7 @@ function buildTransports(): Record<TSupportedChainId, Transport> {
       availableTransports.push(http(network.defaultRPC, { batch: true }))
     }
 
-    const envRPC = import.meta.env.VITE_RPC_URI_FOR?.[chain.id]
+    const envRPC = getRpcUriFor(chain.id)
     if (envRPC) {
       availableTransports.push(http(envRPC, { batch: true }))
     }
