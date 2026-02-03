@@ -1,7 +1,7 @@
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import type { TSortDirection } from '@shared/types'
-import { normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
+import { isZeroAddress, normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { getVaultName, numberSort, stringSort } from '@shared/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy, TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -25,8 +25,8 @@ export function useSortVaults(
   sortBy: TPossibleSortBy,
   sortDirection: TSortDirection
 ): TYDaemonVaults {
-  const { getBalance } = useWallet()
-  const { getPrice, katanaAprs } = useYearn()
+  const { getBalance, getToken } = useWallet()
+  const { katanaAprs } = useYearn()
   const isFeaturingScoreSortedDesc = useMemo((): boolean => {
     if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
       return false
@@ -45,12 +45,14 @@ export function useSortVaults(
     }
 
     const getDepositedValue = (vault: TYDaemonVault): number => {
-      const depositedBalance = Number(getBalance({ address: vault.address, chainID: vault.chainID })?.normalized || 0)
-      const stakedBalance = vault.staking.available
-        ? Number(getBalance({ address: vault.staking.address, chainID: vault.chainID })?.normalized || 0)
+      const vaultToken = getToken({ address: vault.address, chainID: vault.chainID })
+      const vaultValue = vaultToken.value || 0
+
+      const stakingValue = !isZeroAddress(toAddress(vault.staking?.address))
+        ? getToken({ address: vault.staking.address, chainID: vault.chainID }).value || 0
         : 0
-      const price = getPrice({ address: vault.address, chainID: vault.chainID }).normalized || 0
-      return price * (depositedBalance + stakedBalance)
+
+      return vaultValue + stakingValue
     }
 
     switch (sortBy) {
@@ -136,7 +138,7 @@ export function useSortVaults(
       default:
         return vaultList
     }
-  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, katanaAprs, getBalance, getPrice])
+  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, katanaAprs, getBalance, getToken])
 
   return sortedVaults
 }

@@ -5,7 +5,7 @@ import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
 import { useBalancesCombined } from '../hooks/useBalancesCombined'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
-import { DEFAULT_ERC20, toAddress, zeroNormalizedBN } from '../utils'
+import { DEFAULT_ERC20, isZeroAddress, toAddress, zeroNormalizedBN } from '../utils'
 import { useWeb3 } from './useWeb3'
 import { useYearn } from './useYearn'
 import { useYearnTokens } from './useYearn.helper'
@@ -46,7 +46,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   children: ReactElement
   shouldWorkOnTestnet?: boolean
 }): ReactElement {
-  const { vaults, isLoadingVaultList, getPrice } = useYearn()
+  const { vaults, isLoadingVaultList } = useYearn()
   const { address: userAddress } = useWeb3()
 
   const allTokens = useYearnTokens({
@@ -120,46 +120,41 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   )
 
   const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
-    const allVaults = vaults
+    // Build staking address → vault address lookup
+    const stakingToVault = new Map<string, string>()
+    for (const [vaultAddress, vault] of Object.entries(vaults)) {
+      if (vault.staking?.address && !isZeroAddress(toAddress(vault.staking.address))) {
+        stakingToVault.set(toAddress(vault.staking.address), vaultAddress)
+      }
+    }
 
     let cumulatedValueInV2Vaults = 0
     let cumulatedValueInV3Vaults = 0
 
-    for (const perChain of Object.values(balances)) {
+    for (const [_chainId, perChain] of Object.entries(balances)) {
       for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
-        if (!allVaults?.[toAddress(tokenAddress)]) {
-          continue
+        const normalizedAddress = toAddress(tokenAddress)
+
+        // Resolve vault details (direct vault or via staking lookup)
+        let vaultDetails = vaults?.[normalizedAddress]
+        if (!vaultDetails && stakingToVault.has(normalizedAddress)) {
+          vaultDetails = vaults?.[stakingToVault.get(normalizedAddress)!]
         }
 
-        const tokenBalance = tokenData.balance
-        const tokenPrice = getPrice({ address: tokenData.address, chainID: tokenData.chainID })
-        const tokenValue = tokenBalance.normalized * tokenPrice.normalized
+        if (!vaultDetails) continue
 
-        const vaultDetails = allVaults[toAddress(tokenAddress)]
+        const tokenValue = tokenData.value || 0
+        const isV3 = vaultDetails.version?.split('.')?.[0] === '3' || vaultDetails.version?.split('.')?.[0] === '~3'
 
-        const stakingValue = (() => {
-          if (!vaultDetails?.staking) return 0
-          const { staking } = vaultDetails
-          const hasStaking = staking.available ?? false
-          if (!hasStaking || !staking.address) return 0
-          const stakingBalance = getBalance({
-            address: staking.address,
-            chainID: tokenData.chainID
-          })
-          return stakingBalance.normalized * tokenPrice.normalized
-        })()
-
-        if (allVaults?.[toAddress(tokenAddress)]) {
-          if (vaultDetails.version.split('.')?.[0] === '3' || vaultDetails.version.split('.')?.[0] === '~3') {
-            cumulatedValueInV3Vaults += tokenValue + stakingValue
-          } else {
-            cumulatedValueInV2Vaults += tokenValue + stakingValue
-          }
+        if (isV3) {
+          cumulatedValueInV3Vaults += tokenValue
+        } else {
+          cumulatedValueInV2Vaults += tokenValue
         }
       }
     }
     return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults]
-  }, [balances, getBalance, getPrice, vaults])
+  }, [balances, vaults])
 
   /***************************************************************************
    **	Setup and render the Context provider to use in the app.

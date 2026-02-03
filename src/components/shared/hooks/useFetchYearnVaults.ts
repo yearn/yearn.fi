@@ -5,7 +5,7 @@ import { deriveAssetCategory } from '@pages/vaults/utils/vaultListFacets'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { fetchWithSchema, getFetchQueryKey, useFetch } from '@shared/hooks/useFetch'
 import type { TDict } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress } from '@shared/utils'
 import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import { kongVaultListSchema } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -167,7 +167,14 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
     },
     featuringScore: 0,
     strategies: [],
-    staking: undefined,
+    staking: !isZeroAddress(toAddress(item.staking?.address))
+      ? {
+          address: toAddress(item.staking?.address ?? zeroAddress),
+          available: item.staking?.available ?? false,
+          source: '',
+          rewards: []
+        }
+      : undefined,
     migration: {
       available: Boolean(item.migration),
       address: zeroAddress,
