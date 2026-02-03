@@ -37,7 +37,8 @@
         "useNodejsImportProtocol": "off"
       },
       "correctness": {
-        "noUnusedVariables": "warn"
+        "noUnusedVariables": "warn",
+        "useExhaustiveDependencies": "off"
       }
     }
   },

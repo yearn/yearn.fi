@@ -53,7 +53,6 @@ function App(): ReactElement {
   const { manifest } = useCurrentApp()
 
   // Scroll to top on route change
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on pathname change only
   useLayoutEffect(() => {
     window.scrollTo(0, 0)
   }, [location.pathname])
