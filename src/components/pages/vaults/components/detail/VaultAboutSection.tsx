@@ -6,12 +6,13 @@ import {
   getKindDescription,
   getProductTypeDescription
 } from '@pages/vaults/utils/vaultTagCopy'
+import { Markdown } from '@shared/components/Markdown'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { cl, formatPercent } from '@shared/utils'
-import { copyToClipboard, parseMarkdown } from '@shared/utils/helpers'
+import { copyToClipboard } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { type ReactElement, type ReactNode, useState } from 'react'
@@ -116,65 +117,52 @@ export function VaultAboutSection({
   const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
   const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
 
-  function getVaultDescription(): string | ReactElement {
-    if (currentVault.description) {
-      return parseMarkdown(currentVault.description.replaceAll('{{token}}', currentVault.token.symbol))
-    }
-    if (token.description) {
-      return parseMarkdown(token.description.replaceAll('{{token}}', currentVault.token.symbol))
-    }
-    return (
-      <>
-        Sorry, we don't have a description for this vault right now. To learn more about how Yearn Vaults work, check
-        out our{' '}
-        <a
-          href="https://docs.yearn.fi"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-text-primary underline"
-        >
-          docs
-        </a>
-        , or if you want to learn more about this vault, head to our{' '}
-        <a
-          href="https://discord.gg/yearn"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-text-primary underline"
-        >
-          discord
-        </a>{' '}
-        or{' '}
-        <a
-          href="https://t.me/yearnfinance"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-text-primary underline"
-        >
-          telegram
-        </a>{' '}
-        and ask.
-      </>
-    )
-  }
-
-  const vaultDescription = getVaultDescription()
-  const isDescriptionString = typeof vaultDescription === 'string'
+  const rawDescription = currentVault.description?.trim()
+    ? currentVault.description
+    : token.description?.trim()
+      ? token.description
+      : ''
+  const descriptionText = rawDescription ? rawDescription.replaceAll('{{token}}', currentVault.token.symbol) : ''
 
   return (
     <div className={cl('p-4 md:p-6 md:pt-0', className)}>
       <div className={'flex flex-col gap-2'}>
         <div className={'text-sm text-text-secondary'}>
           <div className="">
-            {isDescriptionString ? (
-              <div
-                // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled description content
-                dangerouslySetInnerHTML={{
-                  __html: vaultDescription as string
-                }}
-              />
+            {rawDescription ? (
+              <Markdown content={descriptionText} />
             ) : (
-              <div>{vaultDescription}</div>
+              <div>
+                Sorry, we don't have a description for this vault right now. To learn more about how Yearn Vaults work,
+                check out our{' '}
+                <a
+                  href="https://docs.yearn.fi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-text-primary underline"
+                >
+                  docs
+                </a>
+                , or if you want to learn more about this vault, head to our{' '}
+                <a
+                  href="https://discord.gg/yearn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-text-primary underline"
+                >
+                  discord
+                </a>{' '}
+                or{' '}
+                <a
+                  href="https://t.me/yearnfinance"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-text-primary underline"
+                >
+                  telegram
+                </a>{' '}
+                and ask.
+              </div>
             )}
           </div>
           {showVaultAddress ? (
