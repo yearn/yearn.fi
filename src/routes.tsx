@@ -1,18 +1,13 @@
 import type { ReactElement } from 'react'
 import { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router'
+import { Navigate, Route, Routes as RouterRoutes } from 'react-router'
 
 // Lazy load all page components
-const HomePage = lazy(() => import('../pages/index'))
-const AppsPage = lazy(() => import('../pages/apps/index'))
-const VaultsPage = lazy(() => import('../pages/vaults/index'))
-const VaultsAboutPage = lazy(() => import('../pages/vaults/about'))
-const VaultsDetailPage = lazy(() => import('../pages/vaults/[chainID]/[address]'))
-const V3Page = lazy(() => import('../pages/v3/index'))
-const V3AboutPage = lazy(() => import('../pages/v3/about'))
-const V3DetailPage = lazy(() => import('../pages/v3/[chainID]/[address]'))
-const VaultsBetaPage = lazy(() => import('../pages/vaults-beta/index'))
-const VaultsBetaSearchPage = lazy(() => import('../pages/vaults-beta/search/[query]'))
+const HomePage = lazy(() => import('@pages/landing'))
+const PortfolioPage = lazy(() => import('@pages/portfolio/index'))
+const VaultsPage = lazy(() => import('@pages/vaults/index'))
+const VaultsDetailPage = lazy(() => import('@pages/vaults/[chainID]/[address]'))
+const IconListPage = lazy(() => import('@pages/icon-list/index'))
 
 // Loading component
 const PageLoader = (): ReactElement => (
@@ -29,70 +24,33 @@ const ExternalRedirect = ({ to }: { to: string }): ReactElement => {
   return <PageLoader />
 }
 
-// Route configuration for reference
-export const routeConfig = {
-  home: '/',
-  apps: '/apps',
-  vaults: {
-    index: '/vaults',
-    about: '/vaults/about',
-    detail: '/vaults/:chainID/:address',
-    factory: '/vaults/factory/*'
-  },
-  v3: {
-    index: '/v3',
-    about: '/v3/about',
-    detail: '/v3/:chainID/:address',
-    chainOnly: '/v3/:chainID'
-  },
-  vaultsBeta: {
-    index: '/vaults-beta',
-    search: '/vaults-beta/search/:query'
-  },
-  external: {
-    ybribe: '/ybribe/*',
-    ycrv: '/ycrv/*',
-    veyfi: '/veyfi/*',
-    twitter: '/twitter',
-    telegram: '/telegram',
-    medium: '/medium',
-    governance: '/governance',
-    snapshot: '/snapshot',
-    github: '/github'
-  }
-}
-
 // Main routes component
-export function AppRoutes(): ReactElement {
+export function Routes(): ReactElement {
   return (
     <Suspense fallback={<PageLoader />}>
-      <Routes>
+      <RouterRoutes>
         {/* Home page */}
         <Route path="/" element={<HomePage />} />
 
-        {/* Apps page */}
-        <Route path="/apps" element={<AppsPage />} />
+        {/* Portfolio page */}
+        <Route path="/portfolio" element={<PortfolioPage />} />
 
-        {/* Vaults routes */}
+        {/* Icon inventory page */}
+        <Route path="/icon-list" element={<IconListPage />} />
+
+        {/* Unified Vaults routes */}
         <Route path="/vaults">
           <Route index element={<VaultsPage />} />
-          <Route path="about" element={<VaultsAboutPage />} />
           <Route path=":chainID/:address" element={<VaultsDetailPage />} />
-          <Route path="factory/*" element={<ExternalRedirect to="https://factory.yearn.fi" />} />
         </Route>
 
-        {/* V3 routes */}
-        <Route path="/v3" element={<V3Page />} />
-        <Route path="/v3/about" element={<V3AboutPage />} />
-        <Route path="/v3/:chainID/:address" element={<V3DetailPage />} />
-        {/* Redirect /v3/:chainId without address to /v3 */}
-        <Route path="/v3/:chainID" element={<Navigate to="/v3" replace />} />
-
-        {/* Vaults Beta routes */}
-        <Route path="/vaults-beta">
-          <Route index element={<VaultsBetaPage />} />
-          <Route path="search/:query" element={<VaultsBetaSearchPage />} />
-        </Route>
+        {/* Legacy redirects to new /vaults routes */}
+        <Route path="/v2" element={<Navigate to="/vaults?type=lp" replace />} />
+        <Route path="/v2/*" element={<Navigate to="/vaults?type=lp" replace />} />
+        <Route path="/v3" element={<Navigate to="/vaults" replace />} />
+        {/* Legacy v3 vault detail alias */}
+        <Route path="/v3/:chainID/:address" element={<VaultsDetailPage />} />
+        <Route path="/v3/*" element={<Navigate to="/vaults" replace />} />
 
         {/* External redirects */}
         <Route path="/ybribe/*" element={<ExternalRedirect to="https://ybribe.yearn.fi" />} />
@@ -107,7 +65,7 @@ export function AppRoutes(): ReactElement {
 
         {/* Catch all - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      </RouterRoutes>
     </Suspense>
   )
 }

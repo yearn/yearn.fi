@@ -1,5 +1,5 @@
-<!doctype html>
-<html lang="en" class="duration-150 bg-neutral-0 transition-colors">
+<!DOCTYPE html>
+<html lang="en" class="duration-150 transition-colors">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -28,54 +28,66 @@
     <link rel="icon" href="/favicon.ico" />
     <title>Yearn Finance</title>
     <script>
-      const darkModeMediaQuery = window.matchMedia(
-        '(prefers-color-scheme: dark)'
-      )
+      // Theme initialization script - runs before React loads to prevent flash
+      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const NEW_THEME_STORAGE_KEY = 'yearn-theme'
+      const OLD_THEME_STORAGE_KEY = 'isDarkMode'
+      const THEME_EVENT_NAME = 'yearn-theme-change'
 
-      updateMode()
-      darkModeMediaQuery.addEventListener('change', updateMode)
-      window.addEventListener('storage', updateMode)
-      window.addEventListener('beforeunload', updateMode)
+      function resolveTheme() {
+        // Check new storage key first
+        const storedValue = window.localStorage.getItem(NEW_THEME_STORAGE_KEY)
+        if (storedValue === 'light' || storedValue === 'soft-dark' || storedValue === 'blue-dark' || storedValue === 'midnight') {
+          return storedValue
+        }
+        if (storedValue === 'dark') {
+          window.localStorage.setItem(NEW_THEME_STORAGE_KEY, 'midnight')
+          return 'midnight'
+        }
 
-      const observeUrlChange = () => {
-        let oldHref = document.location.href
-        const body = document.querySelector('body')
-        const observer = new MutationObserver((_mutations) => {
-          if (oldHref !== document.location.href) {
-            oldHref = document.location.href
-            updateMode()
-          }
-        })
-        observer.observe(body, { childList: true, subtree: true })
+        // Backward compatibility: check old storage key
+        const oldStoredValue = window.localStorage.getItem(OLD_THEME_STORAGE_KEY)
+        if (oldStoredValue === 'true') {
+          window.localStorage.setItem(NEW_THEME_STORAGE_KEY, 'soft-dark')
+          return 'soft-dark'
+        }
+        if (oldStoredValue === 'false') {
+          window.localStorage.setItem(NEW_THEME_STORAGE_KEY, 'light')
+          return 'light'
+        }
+
+        // Default to system preference
+        return darkModeMediaQuery.matches ? 'soft-dark' : 'light'
+      }
+
+      function applyTheme(theme) {
+        const root = document.documentElement
+
+        // Set data-theme attribute for CSS variable system
+        root.setAttribute('data-theme', theme)
+
+        // Keep legacy classes for backward compatibility
+        root.classList.remove('dark', 'light', 'v3')
+        if (theme === 'soft-dark' || theme === 'blue-dark' || theme === 'midnight') {
+          root.classList.add('dark')
+          root.classList.add('v3')
+        } else {
+          root.classList.add('light')
+        }
       }
 
       function updateMode() {
-        const isSystemDarkMode = darkModeMediaQuery.matches
-        const isDarkMode =
-          window.localStorage.isDarkMode === 'true' ||
-          (!('isDarkMode' in window.localStorage) && isSystemDarkMode)
-        const isV3 = window.location.pathname.includes('v3')
-        const isHomePage = window.location.pathname === '/'
-
-        if (isV3) {
-          document.documentElement.classList.add('v3')
-          document.documentElement.classList.remove('dark')
-          document.documentElement.classList.remove('light')
-        } else if (isDarkMode || isHomePage) {
-          document.documentElement.classList.add('dark')
-          document.documentElement.classList.remove('light')
-          document.documentElement.classList.remove('v3')
-        } else {
-          document.documentElement.classList.remove('v3')
-          document.documentElement.classList.remove('dark')
-          document.documentElement.classList.add('light')
-        }
-
-        if (isDarkMode === isSystemDarkMode && !isHomePage) {
-          delete window.localStorage.isDarkMode
-        }
+        const theme = resolveTheme()
+        applyTheme(theme)
       }
-      window.onload = observeUrlChange
+
+      // Apply theme immediately to prevent flash
+      updateMode()
+
+      // Listen for changes
+      darkModeMediaQuery.addEventListener('change', updateMode)
+      window.addEventListener('storage', updateMode)
+      window.addEventListener(THEME_EVENT_NAME, updateMode)
     </script>
   </head>
   <body>

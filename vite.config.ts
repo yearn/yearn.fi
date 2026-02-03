@@ -1,44 +1,64 @@
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import webfontDownload from 'vite-plugin-webfont-dl'
 
-function envRemapper() {
-  return {
-    name: 'env-remapper',
-    config(_: any, { mode }: any) {
-      const env = loadEnv(mode, process.cwd(), '')
-      const remappedEnv: Record<string, string | any> = {}
-      const rpcUriFor: Record<string, string> = {}
+const API_PROXY_TARGET = 'http://localhost:3001'
+const API_HEALTHCHECK_PATH = '/api/enso/balances'
+const API_HEALTHCHECK_EXPECTED_ERROR = 'Missing eoaAddress'
+const API_HEALTHCHECK_TIMEOUT_MS = 500
+const API_HEALTHCHECK_RETRIES = 10
+const API_HEALTHCHECK_DELAY_MS = 300
 
-      // Map non-VITE_ prefixed env vars to VITE_ prefixed ones
-      Object.keys(env).forEach((key) => {
-        if (!key.startsWith('VITE_')) {
-          // Special handling for RPC_URI_FOR_* variables
-          if (key.startsWith('RPC_URI_FOR_')) {
-            const chainId = key.replace('RPC_URI_FOR_', '')
-            rpcUriFor[chainId] = env[key]
-          } else if (key === 'INFURA_KEY') {
-            // Map INFURA_KEY to VITE_INFURA_PROJECT_ID for compatibility
-            // biome-ignore lint/complexity/useLiteralKeys: it's ok
-            remappedEnv['VITE_INFURA_PROJECT_ID'] = env[key]
-          } else {
-            remappedEnv[`VITE_${key}`] = env[key]
+const proxy = {
+  '/api': {
+    target: API_PROXY_TARGET,
+    changeOrigin: true
+  },
+  '/proxy/plausible': {
+    target: 'https://plausible.io',
+    changeOrigin: true,
+    rewrite: (path: string) => path.replace('/proxy/plausible', '')
+  }
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function pingApi() {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), API_HEALTHCHECK_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(`${API_PROXY_TARGET}${API_HEALTHCHECK_PATH}`, { signal: controller.signal })
+    const data = await response.json().catch(() => null)
+    if (response.status !== 400 || data?.error !== API_HEALTHCHECK_EXPECTED_ERROR) {
+      throw new Error('Unexpected API healthcheck response')
+    }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+function previewApiGuard() {
+  return {
+    name: 'preview-api-guard',
+    async configurePreviewServer(server: { config: { logger: { error: (msg: string) => void } } }) {
+      for (let attempt = 0; attempt < API_HEALTHCHECK_RETRIES; attempt += 1) {
+        try {
+          await pingApi()
+          return
+        } catch (_error) {
+          if (attempt < API_HEALTHCHECK_RETRIES - 1) {
+            await sleep(API_HEALTHCHECK_DELAY_MS)
           }
         }
-      })
-
-      // Add the aggregated RPC_URI_FOR object
-      if (Object.keys(rpcUriFor).length > 0) {
-        // biome-ignore lint/complexity/useLiteralKeys: it's ok
-        remappedEnv['VITE_RPC_URI_FOR'] = rpcUriFor
       }
 
-      return {
-        define: Object.fromEntries(
-          Object.entries(remappedEnv).map(([key, value]) => [`import.meta.env.${key}`, JSON.stringify(value)])
-        )
-      }
+      const message = `Preview requires the API server running at ${API_PROXY_TARGET}. Start it with: bun run dev:server`
+      server.config.logger.error(message)
+      throw new Error(message)
     }
   }
 }
@@ -46,7 +66,7 @@ function envRemapper() {
 export default defineConfig({
   plugins: [
     react(),
-    envRemapper(),
+    previewApiGuard(),
     webfontDownload(['https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600;700&display=swap'], {
       injectAsStyleTag: true,
       minifyCss: true,
@@ -57,15 +77,11 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@lib': path.resolve(__dirname, './apps/lib'),
+      '@': path.resolve(__dirname, './src'),
+      '@shared': path.resolve(__dirname, './src/components/shared'),
+      '@pages': path.resolve(__dirname, './src/components/pages'),
       '@components': path.resolve(__dirname, './src/components'),
       '@hooks': path.resolve(__dirname, './src/hooks'),
-      '@vaults': path.resolve(__dirname, './apps/vaults'),
-      '@vaults-v2': path.resolve(__dirname, './apps/vaults-v2'),
-      '@vaults-v3': path.resolve(__dirname, './apps/vaults-v3'),
-      '@landing': path.resolve(__dirname, './apps/landing'),
-      '@nextgen': path.resolve(__dirname, './apps/nextgen'),
-      '@utils': path.resolve(__dirname, './apps/nextgen/utils'),
       '@safe-global/safe-apps-sdk': path.resolve(__dirname, 'node_modules/@safe-global/safe-apps-sdk/dist/esm'),
       // Polyfill node-fetch for browser
       'node-fetch': 'cross-fetch'
@@ -77,13 +93,10 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    proxy: {
-      '/proxy/plausible': {
-        target: 'https://plausible.io',
-        changeOrigin: true,
-        rewrite: (path) => path.replace('/proxy/plausible', '')
-      }
-    }
+    proxy
+  },
+  preview: {
+    proxy
   },
   build: {
     outDir: 'dist',
@@ -94,7 +107,9 @@ export default defineConfig({
           'react-vendor': ['react', 'react-dom', 'react-router'],
           'wagmi-vendor': ['wagmi', 'viem'],
           rainbowkit: ['@rainbow-me/rainbowkit'],
-          'ui-vendor': ['@headlessui/react', 'framer-motion', 'recharts']
+          'ui-vendor': ['@headlessui/react'],
+          'motion-vendor': ['framer-motion'],
+          'charts-vendor': ['recharts']
         }
       }
     }

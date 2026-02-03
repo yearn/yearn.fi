@@ -1,0 +1,123 @@
+import { SectionHeader } from '@shared/components/SectionHeader'
+import type { FC, ReactNode } from 'react'
+import { useState } from 'react'
+import Image from '/src/components/Image'
+
+type TFAQItem = {
+  title: string
+  children: ReactNode
+  isOpen: boolean
+  onToggle: () => void
+}
+
+const FAQItem: FC<TFAQItem> = ({ title, children, isOpen, onToggle }) => {
+  return (
+    <div className={'w-full'}>
+      <button
+        onClick={onToggle}
+        className={
+          'flex w-full min-h-[56px] items-center justify-between rounded-lg bg-black/70 px-4 py-4 text-neutral-900 transition-colors hover:bg-black/80 sm:min-h-[60px] sm:px-6 sm:py-5'
+        }
+      >
+        <span className={'text-left text-base sm:text-lg'}>{title}</span>
+        <span
+          className={'ml-3 shrink-0 text-xl transition-transform sm:text-2xl'}
+          style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
+        >
+          {'+'}
+        </span>
+      </button>
+      {isOpen && (
+        <div className={'mt-px rounded-b-lg bg-black/70 px-4 py-3 text-sm text-gray-300 sm:px-6 sm:py-4 sm:text-base'}>
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const faqData = [
+  {
+    title: 'What is a Yearn Vault?',
+    content: (
+      <p>
+        {
+          "Yearn Vaults are DeFi's yield-optimizing asset management platform. You deposit tokens, and our strategies automatically maximize your yields across various protocols."
+        }
+      </p>
+    )
+  },
+  {
+    title: 'What are the risks?',
+    content: (
+      <p>
+        {
+          'As with any DeFi protocol, there are smart contract risks. Yearn goes to great lengths to minimize these risks through thorough auditing and testing of all code before deployment.'
+        }
+      </p>
+    )
+  },
+  {
+    title: 'What is YFI?',
+    content: (
+      <p>
+        {
+          "YFI is Yearn's governance token. YFI holders can vote on proposals and shape the future of the protocol. It was launched with a fair distribution with no founder, investor or VC allocation."
+        }
+      </p>
+    )
+  },
+  {
+    title: 'Are there Developer Docs?',
+    content: (
+      <p>
+        {'Yes! Yearn has extensive documentation for developers looking to build on top of our protocol. Visit our'}{' '}
+        <a href={'https://docs.yearn.fi'} className={'text-blue-400 underline'}>
+          {'docs'}
+        </a>{' '}
+        {'to learn more.'}
+      </p>
+    )
+  }
+]
+
+export const FAQs: FC = () => {
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null)
+
+  const toggleFAQ = (index: number): void => {
+    setOpenFAQ(openFAQ === index ? null : index)
+  }
+
+  return (
+    <section className={'flex w-full justify-center pb-8 pt-12 sm:pt-16 lg:pt-32'}>
+      <div className={'flex w-full max-w-[1180px] flex-col items-center justify-between md:flex-row'}>
+        <div className={'w-full px-4'}>
+          <div className={'mb-6 flex flex-col justify-between gap-y-6 sm:mb-8 md:mb-10 md:flex-row'}>
+            <SectionHeader
+              tagline={'Education'}
+              title={'FAQs'}
+              description={'Frequently asked questions about Yearn'}
+            />
+          </div>
+          <div className={'flex flex-col gap-6 sm:gap-8 md:flex-row'}>
+            <div className={'hidden h-[427px] w-[427px] shrink-0 md:block'}>
+              <Image
+                src={'/landing/pill4.png'}
+                height={427}
+                alt={'blue-pill'}
+                className={'size-full rounded-lg border border-[#ffffff]/10 object-cover'}
+              />
+            </div>
+            <div className={'flex flex-1 flex-col space-y-2'}>
+              {faqData.map((faq, index) => (
+                <FAQItem key={faq.title} title={faq.title} isOpen={openFAQ === index} onToggle={() => toggleFAQ(index)}>
+                  {faq.content}
+                </FAQItem>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}

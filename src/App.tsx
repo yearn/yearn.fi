@@ -1,56 +1,50 @@
-import { LandingAppHeader } from '@landing/components/common/Header'
-import AppHeader from '@lib/components/Header'
-import { Meta } from '@lib/components/Meta'
-import { WithFonts } from '@lib/components/WithFonts'
-import { IndexedDB } from '@lib/contexts/useIndexedDB'
-import { WithNotifications } from '@lib/contexts/useNotifications'
-import { WithNotificationsActions } from '@lib/contexts/useNotificationsActions'
-import { WalletContextApp } from '@lib/contexts/useWallet'
-import { YearnContextApp } from '@lib/contexts/useYearn'
-import { WithMom } from '@lib/contexts/WithMom'
-import { useCurrentApp } from '@lib/hooks/useCurrentApp'
-import { IconAlertCritical } from '@lib/icons/IconAlertCritical'
-import { IconAlertError } from '@lib/icons/IconAlertError'
-import { IconCheckmark } from '@lib/icons/IconCheckmark'
-import { cl } from '@lib/utils'
-import { SUPPORTED_NETWORKS } from '@lib/utils/constants'
-import { AppSettingsContextApp } from '@vaults-v2/contexts/useAppSettings'
+import { IframeAutoConnect } from '@components/IframeAutoConnect'
+import { ScrollToTopButton } from '@pages/vaults/components/detail/ScrollToTopButton'
+import { AppSettingsContextApp } from '@pages/vaults/contexts/useAppSettings'
+import { EnsoStatusProvider } from '@pages/vaults/contexts/useEnsoStatus'
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
+import AppHeader from '@shared/components/Header'
+import { Meta } from '@shared/components/Meta'
+import { WithFonts } from '@shared/components/WithFonts'
+import { ChartStyleContextApp } from '@shared/contexts/useChartStyle'
+import { IndexedDB } from '@shared/contexts/useIndexedDB'
+import { WithNotifications } from '@shared/contexts/useNotifications'
+import { WithNotificationsActions } from '@shared/contexts/useNotificationsActions'
+import { WalletContextApp } from '@shared/contexts/useWallet'
+import { Web3ContextApp } from '@shared/contexts/useWeb3'
+import { YearnContextApp } from '@shared/contexts/useYearn'
+import { WithTokenList } from '@shared/contexts/WithTokenList'
+import { useCurrentApp } from '@shared/hooks/useCurrentApp'
+import { IconAlertCritical } from '@shared/icons/IconAlertCritical'
+import { IconAlertError } from '@shared/icons/IconAlertError'
+import { IconCheckmark } from '@shared/icons/IconCheckmark'
+import { cl } from '@shared/utils'
+import { isIframe } from '@shared/utils/helpers'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
+import { useLayoutEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router'
-import PlausibleProvider from './components/PlausibleProvider'
-import { AppRoutes } from './routes'
+import { WagmiProvider } from 'wagmi'
+import { wagmiConfig } from '@/config/wagmi'
+import { ChainsProvider } from '@/context/ChainsProvider'
+import '@hooks/usePlausible'
+import { Routes } from './routes'
+
+const queryClient = new QueryClient()
 
 function WithLayout(): ReactElement {
-  const location = useLocation()
-  const isAppsPage = location.pathname?.startsWith('/apps')
-  const isHomePage = location.pathname === '/'
-
-  if (isAppsPage) {
-    return (
-      <>
-        <div className={cl('mx-auto mb-0 flex z-60 max-w-[1232px] absolute top-0 inset-x-0 px-4 bg-neutral-0')}>
-          <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />
-        </div>
-        <div id={'app'} className={'bg-neutral-0 mb-0 flex min-h-screen justify-center'}>
-          <div className={'flex w-full max-w-[1230px] justify-start'}>
-            <AppRoutes />
-          </div>
-        </div>
-      </>
-    )
-  }
-
   return (
     <>
-      <div className={cl('mx-auto mb-0 flex z-60 max-w-[1232px] absolute top-0 inset-x-0 px-4')}>
-        {isHomePage ? <LandingAppHeader /> : <AppHeader supportedNetworks={SUPPORTED_NETWORKS} />}
+      <div className={'sticky top-0 z-60 w-full max-md:fixed max-md:inset-x-0'}>
+        <AppHeader />
       </div>
-      <div id={'app'} className={cl('mx-auto mb-0 flex')}>
+      <div id={'app'} className={cl('mx-auto mb-0 flex', 'max-md:pt-[var(--header-height)]')}>
         <div className={'block size-full min-h-max'}>
-          <AppRoutes />
+          <Routes />
         </div>
       </div>
+      <ScrollToTopButton className="bottom-20 right-4 md:bottom-6 md:right-6" />
     </>
   )
 }
@@ -59,29 +53,22 @@ function App(): ReactElement {
   const location = useLocation()
   const { manifest } = useCurrentApp()
 
-  // Determine dynamic meta for V3 vault detail pages
+  // Scroll to top on route change
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
+
+  // Determine dynamic meta for vault detail pages
   const asPath = location.pathname
 
   // Get most basic og and uri info
-  let ogUrl = manifest.og || 'https://yearn.fi/og.png'
-  let pageUri = manifest.uri || 'https://yearn.fi'
-
   const ogBaseUrl = 'https://og.yearn.fi'
-
-  if (asPath.startsWith('/v3/') && asPath.split('/').length === 4) {
-    // Default to production
-
-    // Use dynamic OG API for V3 vault pages: /v3/[chainID]/[address]
-    const [, , chainID, address] = asPath.split('/')
-    ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
-    pageUri = `https://yearn.fi${asPath}`
-  }
-  if (asPath.startsWith('/vaults/') && asPath.split('/').length === 4) {
-    // Use dynamic OG API for v2 vault pages: /vaults/[chainID]/[address]
-    const [, , chainID, address] = asPath.split('/')
-    ogUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
-    pageUri = `https://yearn.fi${asPath}`
-  }
+  const isVaultDetailPage = asPath.startsWith('/vaults/') && asPath.split('/').length === 4
+  const [, , chainID, address] = isVaultDetailPage ? asPath.split('/') : []
+  const ogUrl = isVaultDetailPage
+    ? `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
+    : manifest.og || 'https://yearn.fi/og.png'
+  const pageUri = isVaultDetailPage ? `https://yearn.fi${asPath}` : manifest.uri || 'https://yearn.fi'
 
   return (
     <>
@@ -95,29 +82,42 @@ function App(): ReactElement {
       />
       <WithFonts>
         <main className={'font-aeonik size-full min-h-screen'}>
-          <PlausibleProvider domain={'yearn.fi'} enabled={true}>
-            <WithMom
-              supportedChains={SUPPORTED_NETWORKS}
-              tokenLists={[
-                'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/yearn.json',
-                'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/popular.json'
-              ]}
-            >
-              <AppSettingsContextApp>
-                <YearnContextApp>
-                  <WalletContextApp>
-                    <IndexedDB>
-                      <WithNotifications>
-                        <WithNotificationsActions>
-                          <WithLayout />
-                        </WithNotificationsActions>
-                      </WithNotifications>
-                    </IndexedDB>
-                  </WalletContextApp>
-                </YearnContextApp>
-              </AppSettingsContextApp>
-            </WithMom>
-          </PlausibleProvider>
+          <WagmiProvider config={wagmiConfig} reconnectOnMount={!isIframe()}>
+            <QueryClientProvider client={queryClient}>
+              <ChainsProvider>
+                <RainbowKitProvider>
+                  <IframeAutoConnect>
+                    <Web3ContextApp>
+                      <WithTokenList
+                        lists={[
+                          'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/yearn.json',
+                          'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/popular.json'
+                        ]}
+                      >
+                        <AppSettingsContextApp>
+                          <EnsoStatusProvider>
+                            <ChartStyleContextApp>
+                              <YearnContextApp>
+                                <WalletContextApp>
+                                  <IndexedDB>
+                                    <WithNotifications>
+                                      <WithNotificationsActions>
+                                        <WithLayout />
+                                      </WithNotificationsActions>
+                                    </WithNotifications>
+                                  </IndexedDB>
+                                </WalletContextApp>
+                              </YearnContextApp>
+                            </ChartStyleContextApp>
+                          </EnsoStatusProvider>
+                        </AppSettingsContextApp>
+                      </WithTokenList>
+                    </Web3ContextApp>
+                  </IframeAutoConnect>
+                </RainbowKitProvider>
+              </ChainsProvider>
+            </QueryClientProvider>
+          </WagmiProvider>
           <Toaster
             toastOptions={{
               duration: 5000,
@@ -143,6 +143,7 @@ function App(): ReactElement {
               }
             }}
             position={'bottom-right'}
+            containerStyle={{ maxWidth: 'calc(100vw - 32px)', width: '100%' }}
           />
         </main>
       </WithFonts>

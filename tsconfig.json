@@ -3,15 +3,11 @@
     "rootDirs": ["."],
     "baseUrl": ".",
     "paths": {
+      "@/*": ["src/*"],
+      "@shared/*": ["src/components/shared/*"],
+      "@pages/*": ["src/components/pages/*"],
       "@components/*": ["src/components/*"],
       "@hooks/*": ["src/hooks/*"],
-      "@lib/*": ["apps/lib/*"],
-      "@vaults/*": ["apps/vaults/*"],
-      "@vaults-v2/*": ["apps/vaults-v2/*"],
-      "@vaults-v3/*": ["apps/vaults-v3/*"],
-      "@landing/*": ["apps/landing/*"],
-      "@nextgen/*": ["apps/nextgen/*"],
-      "@utils/*": ["apps/nextgen/utils/*"],
       "/src/*": ["src/*"]
     },
     /* Basic Options */
@@ -45,7 +41,7 @@
     "isolatedModules": true,
     "types": ["vite/client"]
   },
-  "exclude": ["node_modules", "_app", "api"],
+  "exclude": ["node_modules", "_app", "api", "worktrees", "vitest.config.ts"],
   "include": [
     "**/*.css",
     "**/*.ts",
@@ -55,7 +51,6 @@
     "postcss.config.js",
     "tailwind.config.js",
     "vite.config.ts",
-    "vitest.config.ts",
     "worker/index.js",
     "env.d.ts"
   ]

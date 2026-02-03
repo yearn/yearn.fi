@@ -31,6 +31,10 @@
       "destination": "/api/vault/meta?chainId=$1&address=$2"
     },
     {
+      "source": "/vaults-beta/:chainId/:address",
+      "destination": "/api/vault/meta?chainId=$1&address=$2"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }

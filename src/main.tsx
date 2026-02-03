@@ -1,3 +1,10 @@
+// Polyfill BigInt serialization for React DevTools compatibility
+// React DevTools tries to JSON.stringify component props/state for display,
+// but BigInt values can't be serialized natively. This converts them to strings.
+;(BigInt.prototype as unknown as { toJSON: () => string }).toJSON = function () {
+  return this.toString()
+}
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'

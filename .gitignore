@@ -22,6 +22,7 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
+.claude
 .env
 .next
 .vercel
@@ -41,9 +42,16 @@ _app
 
 # docs
 /docs
+AGENTS.md
 
 # playwright
 .playwright-mcp
 
 # local worktree clones
 yearn.fi-worktree-*
+
+# claude settings
+.claude
+
+# codex settings
+.codex
