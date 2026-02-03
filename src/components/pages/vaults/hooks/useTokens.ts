@@ -1,5 +1,5 @@
 import type { TNormalizedBN } from '@shared/types'
-import { toNormalizedBN } from '@shared/utils'
+import { isZeroAddress, toNormalizedBN } from '@shared/utils'
 import { useQuery } from '@tanstack/react-query'
 import { type Address, erc20Abi, getContract } from 'viem'
 import { useConfig } from 'wagmi'
@@ -75,7 +75,7 @@ async function fetchTokenData(config: any, addresses: Address[], chainId: number
 export const useTokens = (addresses: (Address | undefined)[], chainId?: number, account?: Address) => {
   const config = useConfig()
 
-  const validAddresses = addresses.filter((addr): addr is Address => !!addr)
+  const validAddresses = addresses.filter((addr): addr is Address => !isZeroAddress(addr))
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['tokens', validAddresses.map((a) => a.toLowerCase()).join('.'), chainId, account],
