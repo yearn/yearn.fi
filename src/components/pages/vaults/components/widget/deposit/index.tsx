@@ -474,7 +474,7 @@ export const WidgetDeposit: FC<Props> = ({
   )
 
   return (
-    <div 
+    <div
       className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}
       data-tour="vault-detail-deposit-widget"
     >
