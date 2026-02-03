@@ -72,7 +72,7 @@ export default function VaultsListRowExpandedContent({
   }
 
   return (
-    <div className={'hidden md:block bg-surface'}>
+    <div className={'hidden md:block bg-surface'} data-tour="vaults-row-expanded">
       <div className={'px-6 pb-6 md'}>
         <div className={'grid gap-6 md:grid-cols-24'}>
           <div className={'col-span-12 border-r border-border'}>
@@ -85,7 +85,7 @@ export default function VaultsListRowExpandedContent({
               isHidden={isHidden}
             />
           </div>
-          <div className={'col-span-12 flex flex-col gap-4'}>
+          <div className={'col-span-12 flex flex-col gap-4'} data-tour="vaults-row-expanded-strategy">
             <VaultsExpandedSelector
               activeView={expandedView}
               onViewChange={onExpandedViewChange}

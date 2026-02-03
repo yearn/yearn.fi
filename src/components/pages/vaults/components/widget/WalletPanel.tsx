@@ -198,6 +198,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
         isPanelActive ? 'flex flex-col' : 'hidden'
       )}
       aria-hidden={!isPanelActive}
+      data-tour="vault-detail-wallet-panel"
     >
       <div className="bg-surface border border-border rounded-lg flex flex-col flex-1 min-h-0">
         <div className="flex items-center justify-between gap-3 px-6 py-3">

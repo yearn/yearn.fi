@@ -227,7 +227,7 @@ export function VaultsFiltersBar({
 
   return (
     <>
-      <div className={'relative col-span-24 w-full md:col-span-19'}>
+      <div className={'relative col-span-24 w-full md:col-span-19'} data-tour="vaults-filters">
         <div className={'md:hidden'}>
           {mobileExtraContent ? <div className={'mb-2 w-full'}>{mobileExtraContent}</div> : null}
           <div className={'mb-2 w-full'}>

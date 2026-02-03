@@ -214,6 +214,7 @@ export const WidgetTabs: FC<{
   isWalletOpen?: boolean
   onCloseOverlays?: () => void
   disableBorderRadius?: boolean
+  dataTour?: string
 }> = ({
   actions,
   activeAction,
@@ -222,7 +223,8 @@ export const WidgetTabs: FC<{
   onOpenWallet,
   isWalletOpen,
   onCloseOverlays,
-  disableBorderRadius
+  disableBorderRadius,
+  dataTour
 }) => {
   const isWalletTabActive = !!isWalletOpen
   return (
@@ -230,6 +232,7 @@ export const WidgetTabs: FC<{
       className={cl('bg-surface-secondary border border-border gap-2 flex min-h-9 p-1', className, {
         'rounded-b-lg': !disableBorderRadius
       })}
+      data-tour={dataTour}
     >
       {actions.map((action) => (
         <TabButton
@@ -250,6 +253,7 @@ export const WidgetTabs: FC<{
             onCloseOverlays?.()
             onOpenWallet()
           }}
+          dataTour="vault-detail-widget-my-info"
         >
           {'My Info'}
         </TabButton>
@@ -263,11 +267,13 @@ const TabButton: FC<{
   children: React.ReactNode
   onClick: () => void
   isActive: boolean
-}> = ({ children, onClick, isActive, className }) => {
+  dataTour?: string
+}> = ({ children, onClick, isActive, className, dataTour }) => {
   return (
     <button
       type="button"
       onClick={onClick}
+      data-tour={dataTour}
       className={cl(
         'flex-1 px-3 py-3 md:py-2.5 text-sm min-h-9 md:text-xs font-semibold transition-all duration-200',
         'border border-transparent focus-visible:outline-none focus-visible:ring-0',

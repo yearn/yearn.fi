@@ -484,7 +484,10 @@ export const WidgetWithdraw: FC<
   )
 
   return (
-    <div className={cl('flex flex-col relative border border-border h-full', { 'rounded-lg': !disableBorderRadius })}>
+    <div
+      className={cl('flex flex-col relative border border-border h-full', { 'rounded-lg': !disableBorderRadius })}
+      data-tour="vault-detail-withdraw-widget"
+    >
       <div className="flex items-center justify-between gap-3 px-6 pt-4 ">
         <h3 className="text-base font-semibold text-text-primary">Withdraw</h3>
       </div>

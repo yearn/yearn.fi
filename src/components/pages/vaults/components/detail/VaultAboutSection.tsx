@@ -125,7 +125,7 @@ export function VaultAboutSection({
   const descriptionText = rawDescription ? rawDescription.replaceAll('{{token}}', currentVault.token.symbol) : ''
 
   return (
-    <div className={cl('p-4 md:p-6 md:pt-0', className)}>
+    <div className={cl('p-4 md:p-6 md:pt-0', className)} data-tour="vaults-row-expanded-info">
       <div className={'flex flex-col gap-2'}>
         <div className={'text-sm text-text-secondary'}>
           <div className="">

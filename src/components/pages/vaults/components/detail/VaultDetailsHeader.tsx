@@ -113,7 +113,10 @@ function VaultHeaderIdentity({
   }, [isCompressed])
 
   return (
-    <div className={cl('flex flex-col gap-1 px-1 mt-0', isCompressed ? 'md:justify-center' : 'pt-4', className)}>
+    <div
+      className={cl('flex flex-col gap-1 px-1 mt-0', isCompressed ? 'md:justify-center' : 'pt-4', className)}
+      data-tour="vault-detail-title"
+    >
       <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
         <div
           className={cl(
@@ -260,7 +263,11 @@ function SectionSelectorBar({
   isCompressed: boolean
 }): ReactElement {
   return (
-    <div className={'flex flex-wrap gap-2 md:gap-3 w-full'} ref={sectionSelectorRef}>
+    <div
+      className={'flex flex-wrap gap-2 md:gap-3 w-full'}
+      ref={sectionSelectorRef}
+      data-tour="vault-detail-section-nav"
+    >
       <div
         className={cl(
           'flex w-full flex-wrap justify-between gap-2 rounded-b-lg border-border bg-surface-secondary p-1',
@@ -353,11 +360,16 @@ function VaultOverviewCard({
   ]
 
   return (
-    <MetricsCard
-      items={metrics}
-      className={cl('rounded-b-none', isCompressed ? 'border-l border-border rounded-l-none' : 'border border-border')}
-      footnoteDisplay={'tooltip'}
-    />
+    <div data-tour="vault-detail-overview">
+      <MetricsCard
+        items={metrics}
+        className={cl(
+          'rounded-b-none',
+          isCompressed ? 'border-l border-border rounded-l-none' : 'border border-border'
+        )}
+        footnoteDisplay={'tooltip'}
+      />
+    </div>
   )
 }
 
@@ -407,14 +419,16 @@ function UserHoldingsCard({
   ]
 
   return (
-    <MetricsCard
-      items={sections}
-      className={cl(
-        'rounded-b-none',
-        isCompressed ? 'rounded-tl-lg border-t border-x border-border' : 'border-t border-x border-border'
-      )}
-      footnoteDisplay={'tooltip'}
-    />
+    <div data-tour="vault-detail-user-holdings">
+      <MetricsCard
+        items={sections}
+        className={cl(
+          'rounded-b-none',
+          isCompressed ? 'rounded-tl-lg border-t border-x border-border' : 'border-t border-x border-border'
+        )}
+        footnoteDisplay={'tooltip'}
+      />
+    </div>
   )
 }
 
@@ -522,6 +536,8 @@ export function VaultDetailsHeader({
             className={'md:col-span-20 md:row-start-2'}
           />
           <div className={cl('md:col-span-13 md:row-start-3')}>
+            {' '}
+            {/* step 2 should be here*/}
             <div className={'flex flex-col'}>
               <div className={'pt-4'}>
                 <VaultOverviewCard currentVault={currentVault} isCompressed={isCompressed} />
@@ -546,6 +562,8 @@ export function VaultDetailsHeader({
           isCompressed ? 'md:col-span-7 md:col-start-14 md:row-start-2' : 'md:col-span-7 md:col-start-14 md:row-start-3'
         )}
       >
+        {' '}
+        {/* step 3 should be here */}
         <UserHoldingsCard
           currentVault={currentVault}
           depositedValue={depositedValue}
@@ -561,6 +579,7 @@ export function VaultDetailsHeader({
             onOpenWallet={onWidgetWalletOpen}
             isWalletOpen={isWidgetWalletOpen}
             onCloseOverlays={onWidgetCloseOverlays}
+            dataTour="vault-detail-widget-tabs"
           />
         ) : null}
       </div>
