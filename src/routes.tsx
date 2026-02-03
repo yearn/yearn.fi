@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes as RouterRoutes } from 'react-router'
+import { Navigate, Route, Routes as RouterRoutes, useParams } from 'react-router'
 
 // Lazy load all page components
 const HomePage = lazy(() => import('@pages/landing'))
@@ -22,6 +22,12 @@ const PageLoader = (): ReactElement => (
 const ExternalRedirect = ({ to }: { to: string }): ReactElement => {
   window.location.href = to
   return <PageLoader />
+}
+
+// Legacy vault detail redirect
+const LegacyVaultRedirect = (): ReactElement => {
+  const { chainID, address } = useParams()
+  return <Navigate to={`/vaults/${chainID}/${address}`} replace />
 }
 
 // Main routes component
@@ -48,6 +54,7 @@ export function Routes(): ReactElement {
         <Route path="/v2" element={<Navigate to="/vaults?type=lp" replace />} />
         <Route path="/v2/*" element={<Navigate to="/vaults?type=lp" replace />} />
         <Route path="/v3" element={<Navigate to="/vaults" replace />} />
+        <Route path="/v3/:chainID/:address" element={<LegacyVaultRedirect />} />
         <Route path="/v3/*" element={<Navigate to="/vaults" replace />} />
 
         {/* External redirects */}
