@@ -14,28 +14,10 @@ type TourStep = {
 
 const TOUR_STEPS: TourStep[] = [
   {
-    id: 'header-nav',
-    title: 'Navigate Yearn',
-    description: 'Quick links to vaults, apps, and resources live up here.',
-    selector: '[data-tour="vaults-header-nav"]'
-  },
-  {
     id: 'header-user',
     title: 'Your account',
     description: 'Wallet status, notifications, and settings are on the right.',
     selector: '[data-tour="vaults-header-user"]'
-  },
-  {
-    id: 'filters',
-    title: 'Filters bar',
-    description: 'Filter vaults by chain, category, and more.',
-    selector: '[data-tour="vaults-filters"]'
-  },
-  {
-    id: 'list',
-    title: 'Vaults list',
-    description: 'Scan yields, TVL, and key data across all vaults.',
-    selector: '[data-tour="vaults-list"]'
   },
   {
     id: 'row',
@@ -45,7 +27,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'expand-button',
-    title: 'Use this button to expand a vault',
+    title: 'Expand a vault',
     description: 'Use the chevron on a row to reveal extra details.',
     selector: '[data-tour="vaults-row-expand"]'
   },
@@ -56,15 +38,9 @@ const TOUR_STEPS: TourStep[] = [
     selector: '[data-tour="vaults-row-expanded"]'
   },
   {
-    id: 'expanded-info',
-    title: 'Vault info',
-    description: 'Review key vault facts and tags in this panel.',
-    selector: '[data-tour="vaults-row-expanded-info"]'
-  },
-  {
     id: 'expanded-strategy',
-    title: 'Strategies & charts',
-    description: 'Switch between charts and strategy allocation here.',
+    title: 'Strategies',
+    description: 'See how deposits are allocated across yield-generating strategies and track historical performance.',
     selector: '[data-tour="vaults-row-expanded-strategy"]'
   }
 ]

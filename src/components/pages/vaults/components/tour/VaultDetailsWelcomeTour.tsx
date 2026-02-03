@@ -14,12 +14,6 @@ type TourStep = {
 
 const TOUR_STEPS: TourStep[] = [
   {
-    id: 'title',
-    title: 'Vault title',
-    description: 'This is the name of the vault you are viewing.',
-    selectors: ['[data-tour="vault-detail-title"]']
-  },
-  {
     id: 'vault-stats',
     title: 'Vault stats',
     description: 'Track the vault performance and jump to sections here.',
@@ -36,24 +30,6 @@ const TOUR_STEPS: TourStep[] = [
     title: 'Deposit widget',
     description: 'Use the widget to deposit and withdraw to and from the vault.',
     selectors: ['[data-tour="vault-detail-deposit-widget"]']
-  },
-  {
-    id: 'my-info',
-    title: 'My Info',
-    description: 'Open your vault info to see balances and activity.',
-    selectors: ['[data-tour="vault-detail-widget-my-info"]', '[data-tour="vault-detail-wallet-panel"]']
-  },
-  {
-    id: 'charts',
-    title: 'Charts',
-    description: 'Explore vault performance over time here.',
-    selectors: ['[data-tour="vault-detail-section-charts"]']
-  },
-  {
-    id: 'info',
-    title: 'Info',
-    description: 'Review vault metadata and details.',
-    selectors: ['[data-tour="vault-detail-section-about"]']
   },
   {
     id: 'strategies',
