@@ -1,3 +1,4 @@
+import { useEnsoStatus } from '@pages/vaults/contexts/useEnsoStatus'
 import type { TNormalizedBN } from '@shared/types'
 import { isZeroAddress, toNormalizedBN } from '@shared/utils'
 import { useCallback, useState } from 'react'
@@ -87,6 +88,7 @@ export const useSolverEnso = ({
   decimalsOut = 18,
   enabled = true
 }: UseSolverEnsoProps): UseSolverEnsoReturn => {
+  const { setEnsoFailed } = useEnsoStatus()
   const [route, setRoute] = useState<EnsoRouteResponse | undefined>()
   const [error, setError] = useState<EnsoError | undefined>()
   const [isLoadingRoute, setIsLoadingRoute] = useState(false)
@@ -130,16 +132,38 @@ export const useSolverEnso = ({
 
       if (data.error) {
         setError(data)
+        // Only trigger fallback for server errors (5xx) or auth issues (401/403)
+        // Normal errors like "no route found" (4xx) should not disable Enso
+        const statusCode = data.statusCode || response.status
+        if (statusCode >= 500 || statusCode === 401 || statusCode === 403) {
+          setEnsoFailed(true)
+        }
         throw new Error(`Enso API error: ${data.message}`)
       }
       setError(undefined)
       setRoute(data)
-    } catch (error) {
-      console.error('Failed to get Enso route:', error)
+    } catch (err) {
+      // Network errors (fetch failed) indicate API is unreachable
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setEnsoFailed(true)
+      }
+      console.error('Failed to get Enso route:', err)
     } finally {
       setIsLoadingRoute(false)
     }
-  }, [tokenIn, tokenOut, amountIn, fromAddress, receiver, chainId, destinationChainId, slippage, enabled, isCrossChain])
+  }, [
+    tokenIn,
+    tokenOut,
+    amountIn,
+    fromAddress,
+    receiver,
+    chainId,
+    destinationChainId,
+    slippage,
+    enabled,
+    isCrossChain,
+    setEnsoFailed
+  ])
 
   const getEnsoTransaction = useCallback((): EnsoRouteResponse['tx'] | undefined => {
     return route?.tx

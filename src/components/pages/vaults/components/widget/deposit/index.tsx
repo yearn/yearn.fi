@@ -1,6 +1,7 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
+import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
@@ -74,6 +75,7 @@ export const WidgetDeposit: FC<Props> = ({
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, isAutoStakingEnabled, getPrice } = useYearn()
   const trackEvent = usePlausible()
+  const ensoEnabled = useEnsoEnabled()
 
   const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
@@ -494,7 +496,7 @@ export const WidgetDeposit: FC<Props> = ({
           isMaxButtonLoading={isFetchingMaxQuote}
           onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
           errorMessage={depositError || undefined}
-          showTokenSelector
+          showTokenSelector={ensoEnabled}
           inputTokenUsdPrice={inputTokenPrice}
           outputTokenUsdPrice={outputTokenPrice}
           tokenAddress={inputToken?.address}

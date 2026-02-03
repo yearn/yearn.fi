@@ -1,5 +1,6 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
+import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -46,6 +47,7 @@ export const WidgetWithdraw: FC<
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, getPrice } = useYearn()
   const trackEvent = usePlausible()
+  const ensoEnabled = useEnsoEnabled()
 
   const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
@@ -511,7 +513,7 @@ export const WidgetWithdraw: FC<
               outputTokenUsdPrice={outputTokenPrice}
               tokenAddress={assetToken?.address}
               tokenChainId={assetToken?.chainID}
-              showTokenSelector={withdrawToken === assetAddress}
+              showTokenSelector={ensoEnabled && withdrawToken === assetAddress}
               onTokenSelectorClick={() => setShowTokenSelector(true)}
               onInputChange={(value: bigint) => {
                 if (value === totalBalanceInUnderlying.raw) {

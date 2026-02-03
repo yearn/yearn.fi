@@ -1,6 +1,7 @@
 import { IframeAutoConnect } from '@components/IframeAutoConnect'
 import { ScrollToTopButton } from '@pages/vaults/components/detail/ScrollToTopButton'
 import { AppSettingsContextApp } from '@pages/vaults/contexts/useAppSettings'
+import { EnsoStatusProvider } from '@pages/vaults/contexts/useEnsoStatus'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import AppHeader from '@shared/components/Header'
 import { Meta } from '@shared/components/Meta'
@@ -94,19 +95,21 @@ function App(): ReactElement {
                         ]}
                       >
                         <AppSettingsContextApp>
-                          <ChartStyleContextApp>
-                            <YearnContextApp>
-                              <WalletContextApp>
-                                <IndexedDB>
-                                  <WithNotifications>
-                                    <WithNotificationsActions>
-                                      <WithLayout />
-                                    </WithNotificationsActions>
-                                  </WithNotifications>
-                                </IndexedDB>
-                              </WalletContextApp>
-                            </YearnContextApp>
-                          </ChartStyleContextApp>
+                          <EnsoStatusProvider>
+                            <ChartStyleContextApp>
+                              <YearnContextApp>
+                                <WalletContextApp>
+                                  <IndexedDB>
+                                    <WithNotifications>
+                                      <WithNotificationsActions>
+                                        <WithLayout />
+                                      </WithNotificationsActions>
+                                    </WithNotifications>
+                                  </IndexedDB>
+                                </WalletContextApp>
+                              </YearnContextApp>
+                            </ChartStyleContextApp>
+                          </EnsoStatusProvider>
                         </AppSettingsContextApp>
                       </WithTokenList>
                     </Web3ContextApp>
