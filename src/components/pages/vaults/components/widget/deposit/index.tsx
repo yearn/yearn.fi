@@ -138,13 +138,6 @@ export const WidgetDeposit: FC<Props> = ({
     }
   }, [collapseDetails, isDetailsPanelOpen])
 
-  // Force token to asset when Enso disabled
-  useEffect(() => {
-    if (!ensoEnabled && selectedToken !== assetAddress) {
-      setSelectedToken(assetAddress)
-    }
-  }, [ensoEnabled, assetAddress, selectedToken])
-
   const { routeType, activeFlow } = useDepositFlow({
     depositToken,
     assetAddress,

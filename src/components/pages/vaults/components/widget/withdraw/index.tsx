@@ -99,13 +99,6 @@ export const WidgetWithdraw: FC<
     }
   }, [collapseDetails, isDetailsPanelOpen])
 
-  // Force token to asset when Enso disabled
-  useEffect(() => {
-    if (!ensoEnabled && selectedToken !== assetAddress) {
-      setSelectedToken(assetAddress)
-    }
-  }, [ensoEnabled, assetAddress, selectedToken])
-
   const totalVaultBalance: TNormalizedBN =
     withdrawalSource === 'vault' && vault
       ? vault.balance
