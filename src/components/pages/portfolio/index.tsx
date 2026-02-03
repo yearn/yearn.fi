@@ -376,7 +376,6 @@ function ChainStakingRewardsFetcher({
   // Primitive keys to detect actual data changes without object reference instability
   const rewardsKey = rewards.map((r) => `${r.tokenAddress}:${r.amount}`).join(',')
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: vault.address and rewardsKey are intentional primitive deps
   useEffect(() => {
     if (!stakingAddress) return
     const { onRewards, refetch, vault, rewards } = latestRef.current
@@ -411,7 +410,6 @@ function ChainMerkleRewardsFetcher({
   // Primitive key to detect actual data changes without object reference instability
   const rewardsKey = groupedRewards.map((r) => `${r.token.address}:${r.totalUnclaimed}`).join(',')
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: rewardsKey is intentional primitive dep
   useEffect(() => {
     const { onRewards, refetch, groupedRewards } = latestRef.current
     onRewards(chainId, groupedRewards, isLoading, refetch)
