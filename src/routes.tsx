@@ -48,6 +48,8 @@ export function Routes(): ReactElement {
         <Route path="/v2" element={<Navigate to="/vaults?type=lp" replace />} />
         <Route path="/v2/*" element={<Navigate to="/vaults?type=lp" replace />} />
         <Route path="/v3" element={<Navigate to="/vaults" replace />} />
+        {/* Legacy v3 vault detail alias */}
+        <Route path="/v3/:chainID/:address" element={<VaultsDetailPage />} />
         <Route path="/v3/*" element={<Navigate to="/vaults" replace />} />
 
         {/* External redirects */}
