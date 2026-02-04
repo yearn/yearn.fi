@@ -47,6 +47,36 @@ export type TransactionStep = {
   onPermitSigned?: (signature: `0x${string}`) => void
 }
 
+const getPrepareDebugInfo = (prepare?: UseSimulateContractReturnType) => {
+  if (!prepare) return undefined
+  const request = prepare.data?.request as any
+
+  return {
+    isSuccess: prepare.isSuccess,
+    isError: prepare.isError,
+    isLoading: prepare.isLoading,
+    isFetching: prepare.isFetching,
+    status: prepare.status,
+    error: prepare.error ? (prepare.error as Error).message || String(prepare.error) : undefined,
+    request: request
+      ? {
+          chainId: request.chainId,
+          address: request.address,
+          functionName: request.functionName
+        }
+      : undefined
+  }
+}
+
+const getStepDebugInfo = (step?: TransactionStep) => {
+  if (!step) return { step: 'missing' }
+  return {
+    label: step.label,
+    isPermit: step.isPermit,
+    prepare: getPrepareDebugInfo(step.prepare)
+  }
+}
+
 type TransactionOverlayProps = {
   isOpen: boolean
   onClose: () => void
@@ -166,6 +196,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     [notificationId, updateNotification]
   )
   const executeStep = useCallback(async () => {
+    if (!step) {
+      console.warn('[TransactionOverlay] Execute called without step')
+      return
+    }
+
     // For permit steps, we don't need prepare.isSuccess - we need permitData
     if (step?.isPermit && step?.permitData) {
       // Handle permit signing flow
@@ -185,6 +220,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         }
 
         if (!permitDataDirect) {
+          console.error('[TransactionOverlay] Missing permit data', getStepDebugInfo(step))
           throw new Error('Failed to get permit data')
         }
 
@@ -220,6 +256,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     }
 
     if (!step?.prepare.isSuccess || !step?.prepare.data?.request) {
+      console.warn('[TransactionOverlay] Transaction not ready', getStepDebugInfo(step))
       setOverlayState('error')
       setErrorMessage('Transaction not ready. Please try again.')
       return
@@ -238,9 +275,15 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     // Handle chain switch if needed
     if (wrongNetwork && txChainId) {
       try {
+        console.info('[TransactionOverlay] Switching chain', {
+          from: currentChainId,
+          to: txChainId,
+          step: step.label
+        })
         await switchChainAsync({ chainId: txChainId })
       } catch {
         // User rejected chain switch - silent close
+        console.warn('[TransactionOverlay] Chain switch rejected', { to: txChainId, step: step.label })
         onClose()
         return
       }
@@ -251,6 +294,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
     try {
       if (isEnsoOrder) {
+        console.info('[TransactionOverlay] Executing Enso order', {
+          step: step.label,
+          isCrossChain
+        })
         const customWriteAsync = (step.prepare.data.request as any).writeContractAsync
         const result = await customWriteAsync()
         if (result.hash) {
@@ -282,7 +329,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
             if (gasEstimate) {
               gasOverrides = { gas: (gasEstimate * BigInt(110)) / BigInt(100) }
             }
-          } catch {
+          } catch (error) {
+            console.warn('[TransactionOverlay] Gas estimation failed', {
+              step: step.label,
+              error: (error as Error)?.message || error
+            })
             // Gas estimation failed, proceed without override
           }
         }
@@ -323,6 +374,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     reward,
     onAllComplete
   ])
+
+  useEffect(() => {
+    if (step?.prepare.isError) {
+      console.error('[TransactionOverlay] Prepare failed', getStepDebugInfo(step))
+    }
+  }, [step?.prepare.isError, step?.prepare.error, step?.label])
 
   const handleNextStep = useCallback(() => {
     if (wasLastStepRef.current) {

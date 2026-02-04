@@ -1,5 +1,6 @@
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
 import { erc4626Abi } from '@shared/contracts/abi/4626.abi'
+import { vaultAbi } from '@shared/contracts/abi/vaultV2.abi'
 import { toAddress } from '@shared/utils'
 import type { Address } from 'viem'
 import { maxUint256 } from 'viem'
@@ -17,6 +18,7 @@ interface UseDirectWithdrawParams {
   decimals: number // asset decimals
   vaultDecimals: number // vault decimals
   enabled: boolean
+  useErc4626: boolean
 }
 
 export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWithdrawFlowReturn {
@@ -35,17 +37,31 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
 
   // Prepare withdraw transaction using ERC4626 withdraw function
   // withdraw(assets, receiver, owner) - no approval needed when owner == msg.sender
-  const prepareWithdraw: UseSimulateContractReturnType = useSimulateContract({
+  const prepareWithdrawErc4626: UseSimulateContractReturnType = useSimulateContract({
     abi: erc4626Abi,
     functionName: redeemAll ? 'redeem' : 'withdraw',
     address: params.vaultAddress,
-    args: redeemAll
-      ? [redeemShares, toAddress(params.account), toAddress(params.account)]
-      : [params.amount, toAddress(params.account), toAddress(params.account)],
-    account: toAddress(params.account),
+    args: params.account
+      ? redeemAll
+        ? [redeemShares, toAddress(params.account), toAddress(params.account)]
+        : [params.amount, toAddress(params.account), toAddress(params.account)]
+      : undefined,
+    account: params.account ? toAddress(params.account) : undefined,
     chainId: params.chainId,
-    query: { enabled: prepareWithdrawEnabled }
+    query: { enabled: prepareWithdrawEnabled && params.useErc4626 }
   })
+
+  const prepareWithdrawV2: UseSimulateContractReturnType = useSimulateContract({
+    abi: vaultAbi,
+    functionName: 'withdraw',
+    address: params.vaultAddress,
+    args: params.account ? [redeemAll ? redeemShares : requiredShares, toAddress(params.account)] : undefined,
+    account: params.account ? toAddress(params.account) : undefined,
+    chainId: params.chainId,
+    query: { enabled: prepareWithdrawEnabled && !params.useErc4626 }
+  })
+
+  const prepareWithdraw = params.useErc4626 ? prepareWithdrawErc4626 : prepareWithdrawV2
 
   const expectedOut = redeemAll
     ? params.pricePerShare > 0n

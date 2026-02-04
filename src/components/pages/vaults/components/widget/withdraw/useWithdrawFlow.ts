@@ -36,6 +36,7 @@ interface UseWithdrawFlowProps {
   withdrawalSource: WithdrawalSource
   isUnstake: boolean
   isDebouncing: boolean
+  useErc4626: boolean
 }
 
 export interface WithdrawFlowResult {
@@ -65,7 +66,8 @@ export const useWithdrawFlow = ({
   slippage,
   withdrawalSource,
   isUnstake,
-  isDebouncing
+  isDebouncing,
+  useErc4626
 }: UseWithdrawFlowProps): WithdrawFlowResult => {
   // Determine routing type
   const routeType = useWithdrawRoute({
@@ -89,7 +91,8 @@ export const useWithdrawFlow = ({
     chainId,
     decimals: assetDecimals,
     vaultDecimals,
-    enabled: routeType === 'DIRECT_WITHDRAW' && amount > 0n
+    enabled: routeType === 'DIRECT_WITHDRAW' && amount > 0n,
+    useErc4626
   })
 
   // Direct unstake flow (staking → vault)

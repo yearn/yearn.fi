@@ -35,6 +35,7 @@ export const WidgetWithdraw: FC<
   stakingAddress,
   chainId,
   vaultSymbol,
+  vaultVersion,
   vaultUserData,
   handleWithdrawSuccess: onWithdrawSuccess,
   onOpenSettings,
@@ -129,6 +130,7 @@ export const WidgetWithdraw: FC<
 
   const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
+  const usesErc4626 = Boolean(vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3'))
 
   const isMaxWithdraw = useMemo(() => {
     return (
@@ -173,7 +175,8 @@ export const WidgetWithdraw: FC<
     slippage: zapSlippage,
     withdrawalSource,
     isUnstake,
-    isDebouncing: withdrawAmount.isDebouncing
+    isDebouncing: withdrawAmount.isDebouncing,
+    useErc4626: usesErc4626
   })
 
   const isCrossChain = destinationChainId !== chainId
