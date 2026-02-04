@@ -13,6 +13,7 @@ import { hexToNumber, slice } from 'viem'
 import { useAccount, usePublicClient } from 'wagmi'
 import { useYearn } from '@/components/shared/contexts/useYearn'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
+import { WidgetHeader } from '../shared/WidgetHeader'
 import { useMigrateError } from './useMigrateError'
 import { useMigrateFlow } from './useMigrateFlow'
 
@@ -411,17 +412,18 @@ export const WidgetMigrate: FC<Props> = ({
   // Loading state
   if (isLoadingVaultData) {
     return (
-      <div className="flex items-center justify-center h-[317px]">
-        <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+      <div className="flex flex-col border border-border rounded-lg relative h-full">
+        <WidgetHeader title="Migrate" />
+        <div className="flex items-center justify-center flex-1 p-6">
+          <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+        </div>
       </div>
     )
   }
 
   return (
     <div className="flex flex-col border border-border rounded-lg relative h-full">
-      <div className="flex items-center justify-between gap-3 px-6 pt-4 ">
-        <h3 className="text-base font-semibold text-text-primary">Migrate</h3>
-      </div>
+      <WidgetHeader title="Migrate" />
       <div className="flex flex-col flex-1 p-6 gap-6">
         {/* Balance Section */}
         <div>
