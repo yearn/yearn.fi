@@ -123,6 +123,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               stakingAddress={resolvedStakingAddress}
               chainId={chainId}
               vaultSymbol={currentVault?.symbol || ''}
+              vaultVersion={currentVault?.version}
               isVaultRetired={Boolean(currentVault?.info?.isRetired)}
               vaultUserData={vaultUserData}
               handleWithdrawSuccess={handleSuccess}

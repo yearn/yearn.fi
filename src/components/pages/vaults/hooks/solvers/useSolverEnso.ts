@@ -131,6 +131,16 @@ export const useSolverEnso = ({
       const data: EnsoRouteResponse & EnsoError = await response.json()
 
       if (data.error) {
+        console.warn('[Enso] Route error', {
+          chainId,
+          destinationChainId,
+          tokenIn,
+          tokenOut,
+          amountIn: amountIn.toString(),
+          statusCode: data.statusCode || response.status,
+          message: data.message,
+          requestId: data.requestId
+        })
         setError(data)
         // Only trigger fallback for server errors (5xx) or auth issues (401/403)
         // Normal errors like "no route found" (4xx) should not disable Enso
@@ -147,7 +157,13 @@ export const useSolverEnso = ({
       if (err instanceof TypeError && err.message.includes('fetch')) {
         setEnsoFailed(true)
       }
-      console.error('Failed to get Enso route:', err)
+      console.error('Failed to get Enso route:', err, {
+        chainId,
+        destinationChainId,
+        tokenIn,
+        tokenOut,
+        amountIn: amountIn.toString()
+      })
     } finally {
       setIsLoadingRoute(false)
     }
