@@ -113,7 +113,7 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
 }
 
 serve({
-  async fetch(req) {
+  async fetch(req: Request): Promise<Response> {
     const url = new URL(req.url)
 
     if (url.pathname === '/api/enso/balances') {

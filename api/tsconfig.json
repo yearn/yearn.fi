@@ -4,6 +4,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "lib": ["ES2020"],
+    "types": ["bun-types"],
     "allowJs": true,
     "strict": true,
     "esModuleInterop": true,
