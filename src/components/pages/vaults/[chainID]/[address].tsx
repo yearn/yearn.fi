@@ -274,10 +274,10 @@ function Index(): ReactElement | null {
   }, [baseMergedVault])
   const snapshotShouldDisableStaking = snapshotVault?.meta?.shouldDisableStaking
   const shouldDisableStakingForDeposit = useMemo(() => {
-    if (typeof snapshotShouldDisableStaking === 'boolean') {
-      return snapshotShouldDisableStaking
+    if (isFactoryVault) {
+      return true
     }
-    return isFactoryVault
+    return snapshotShouldDisableStaking === true
   }, [snapshotShouldDisableStaking, isFactoryVault])
 
   const isYBold = useMemo(() => {
