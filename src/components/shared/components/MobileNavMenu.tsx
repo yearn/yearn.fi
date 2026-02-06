@@ -196,6 +196,12 @@ export function MobileNavMenu({
       href: 'https://yyb.yearn.fi',
       description: 'veYB Liquid Locker',
       icon: <img alt={'yYB'} className={'size-6'} src={'/yYB-logo.svg'} loading={'eager'} decoding={'async'} />
+    },
+    {
+      name: 'stYFI',
+      href: 'https://styfi.yearn.fi',
+      description: 'YFI Staking',
+      icon: <img alt={'stYFI'} className={'size-6'} src={'/stYFI-logo.svg'} loading={'eager'} decoding={'async'} />
     }
   ]
 
