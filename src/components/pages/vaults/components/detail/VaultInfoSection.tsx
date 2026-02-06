@@ -6,8 +6,8 @@ import { copyToClipboard } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { isAutomatedVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
+import { useQuery } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
-import { useEffect, useState } from 'react'
 
 type TCurvePoolEntry = {
   address?: string
@@ -18,54 +18,22 @@ type TCurvePoolEntry = {
   pool_urls?: { deposit?: string[] | null }
 }
 
+type TCurvePoolsApiResponse = {
+  data?: {
+    poolData?: unknown
+  }
+}
+
 const CURVE_POOLS_CACHE_TTL_MS = 30 * 60 * 1000
-const curvePoolsCache: {
-  data: TCurvePoolEntry[] | null
-  fetchedAt: number
-  inflight: Promise<TCurvePoolEntry[]> | null
-} = {
-  data: null,
-  fetchedAt: 0,
-  inflight: null
-}
-
-const fetchCurvePoolsCached = async (): Promise<TCurvePoolEntry[]> => {
-  const now = Date.now()
-  if (curvePoolsCache.data && now - curvePoolsCache.fetchedAt < CURVE_POOLS_CACHE_TTL_MS) {
-    return curvePoolsCache.data
-  }
-  if (curvePoolsCache.inflight) {
-    return curvePoolsCache.inflight
-  }
-
-  curvePoolsCache.inflight = baseFetcher<unknown>('https://api.curve.finance/v1/getPools/all')
-    .then((response) => {
-      const pools = extractCurvePools(response)
-      curvePoolsCache.data = pools
-      curvePoolsCache.fetchedAt = Date.now()
-      return pools
-    })
-    .finally(() => {
-      curvePoolsCache.inflight = null
-    })
-
-  return curvePoolsCache.inflight
-}
+const CURVE_POOLS_CACHE_GC_MS = 60 * 60 * 1000
+const CURVE_POOLS_ENDPOINT = 'https://api.curve.finance/v1/getPools/all'
 
 const extractCurvePools = (payload: unknown): TCurvePoolEntry[] => {
-  if (!payload || typeof payload !== 'object') {
-    return []
+  if (Array.isArray(payload)) {
+    return payload as TCurvePoolEntry[]
   }
-  const root = payload as Record<string, unknown>
-  const data = root.data as Record<string, unknown> | undefined
-  const candidates = [root, data, data?.poolData, data?.pool_data, data?.pools, data?.data] as Array<unknown>
-
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate)) {
-      return candidate as TCurvePoolEntry[]
-    }
-  }
-  return []
+  const poolData = (payload as TCurvePoolsApiResponse | null)?.data?.poolData
+  return Array.isArray(poolData) ? (poolData as TCurvePoolEntry[]) : []
 }
 
 const resolveCurveDepositUrl = (pools: TCurvePoolEntry[], tokenAddress: string): string => {
@@ -74,24 +42,25 @@ const resolveCurveDepositUrl = (pools: TCurvePoolEntry[], tokenAddress: string):
     return ''
   }
 
-  const match =
-    pools.find((pool) => {
-      const poolAddress = typeof pool?.address === 'string' ? toAddress(pool.address) : null
-      return poolAddress === normalizedTarget
-    }) ||
-    pools.find((pool) => {
-      const poolLpAddress =
-        typeof pool?.lpTokenAddress === 'string'
-          ? toAddress(pool.lpTokenAddress)
-          : typeof pool?.lp_token_address === 'string'
-            ? toAddress(pool.lp_token_address)
-            : null
-      return poolLpAddress === normalizedTarget
-    })
+  for (const pool of pools) {
+    const poolAddress = typeof pool?.address === 'string' ? toAddress(pool.address) : null
+    const poolLpAddress =
+      typeof pool?.lpTokenAddress === 'string'
+        ? toAddress(pool.lpTokenAddress)
+        : typeof pool?.lp_token_address === 'string'
+          ? toAddress(pool.lp_token_address)
+          : null
+    if (poolAddress !== normalizedTarget && poolLpAddress !== normalizedTarget) {
+      continue
+    }
 
-  const urls = match?.poolURLs?.deposit ?? match?.poolUrls?.deposit ?? match?.pool_urls?.deposit ?? []
+    const urls = pool.poolURLs?.deposit ?? pool.poolUrls?.deposit ?? pool.pool_urls?.deposit ?? []
+    if (Array.isArray(urls) && typeof urls[0] === 'string') {
+      return urls[0]
+    }
+  }
 
-  return Array.isArray(urls) && typeof urls[0] === 'string' ? urls[0] : ''
+  return ''
 }
 
 function AddressLink({
@@ -140,45 +109,29 @@ export function VaultInfoSection({
   const blockExplorer =
     getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
     getNetwork(currentVault.chainID).blockExplorers?.default.url
-  const sourceUrlLower = String(currentVault.info?.sourceURL || '').toLowerCase()
+  const sourceUrl = String(currentVault.info?.sourceURL || '')
+  const sourceUrlLower = sourceUrl.toLowerCase()
   const isVelodrome =
     currentVault.category?.toLowerCase() === 'velodrome' || sourceUrlLower.includes('velodrome.finance')
   const isAerodrome =
     currentVault.category?.toLowerCase() === 'aerodrome' || sourceUrlLower.includes('aerodrome.finance')
   const isCurveCategory = currentVault.category?.toLowerCase() === 'curve'
   const isCurveFactory = isCurveCategory && isAutomatedVault(currentVault)
-  const [curvePoolUrl, setCurvePoolUrl] = useState('')
-  useEffect(() => {
-    if (!isCurveFactory) {
-      setCurvePoolUrl('')
-      return
-    }
-    const tokenAddress = currentVault.token.address
-    if (isZeroAddress(toAddress(tokenAddress))) {
-      setCurvePoolUrl('')
-      return
-    }
-
-    let isActive = true
-    const loadCurvePoolUrl = async (): Promise<void> => {
-      try {
-        const pools = await fetchCurvePoolsCached()
-        const depositUrl = resolveCurveDepositUrl(pools, tokenAddress)
-        if (isActive) {
-          setCurvePoolUrl(depositUrl)
-        }
-      } catch {
-        if (isActive) {
-          setCurvePoolUrl('')
-        }
-      }
-    }
-
-    void loadCurvePoolUrl()
-    return () => {
-      isActive = false
-    }
-  }, [currentVault.token.address, isCurveFactory])
+  const shouldFetchCurvePools = isCurveFactory && !isZeroAddress(toAddress(currentVault.token.address))
+  const { data: curvePoolUrl = '' } = useQuery({
+    queryKey: ['curve-pools'],
+    queryFn: async (): Promise<TCurvePoolEntry[]> => {
+      const response = await baseFetcher<unknown>(CURVE_POOLS_ENDPOINT)
+      return extractCurvePools(response)
+    },
+    select: (pools) => resolveCurveDepositUrl(pools, currentVault.token.address),
+    enabled: shouldFetchCurvePools,
+    staleTime: CURVE_POOLS_CACHE_TTL_MS,
+    gcTime: CURVE_POOLS_CACHE_GC_MS,
+    refetchOnWindowFocus: false
+  })
+  const curveSourceUrl = isCurveCategory && sourceUrlLower.includes('curve.finance') ? sourceUrl : ''
+  const resolvedCurvePoolUrl = curvePoolUrl || curveSourceUrl
   const liquidityUrl = isVelodrome
     ? `https://velodrome.finance/liquidity?query=${currentVault.token.address}`
     : isAerodrome
@@ -220,12 +173,12 @@ export function VaultInfoSection({
           />
         ) : null}
 
-        {curvePoolUrl ? (
+        {resolvedCurvePoolUrl ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
             <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Curve Pool URL'}</p>
             <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
               <a
-                href={curvePoolUrl}
+                href={resolvedCurvePoolUrl}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 className={
