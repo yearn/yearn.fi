@@ -5,9 +5,10 @@ import { useFetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
 import { type TKatanaAprs, useKatanaAprs } from '@shared/hooks/useKatanaAprs'
 import type { TAddress, TDict, TNormalizedBN } from '@shared/types'
 import { toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
-import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
+import type { TKongVaultList } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
 import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
+import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { QueryObserverResult } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
@@ -22,7 +23,8 @@ export type TYearnContext = {
   currentPartner: TAddress
   earned?: TYDaemonEarned
   prices?: TYDaemonPricesChain
-  vaults: TDict<TKongVaultListItem>
+  vaults: TDict<TYDaemonVault>
+  allVaults: TDict<TYDaemonVault>
   isLoadingVaultList: boolean
   katanaAprs: Partial<TKatanaAprs>
   isLoadingKatanaAprs: boolean
@@ -50,6 +52,7 @@ const YearnContext = createContext<TYearnContext>({
   },
   prices: {},
   vaults: {},
+  allVaults: {},
   isLoadingVaultList: false,
   katanaAprs: {},
   isLoadingKatanaAprs: false,
@@ -107,7 +110,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
 
   const prices = useFetchYearnPrices()
   //RG this endpoint returns empty objects for retired and migrations
-  const { vaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
+  const { vaults, allVaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
     enabled: isVaultListEnabled
   })
   const { data: katanaAprs, isLoading: isLoadingKatanaAprs } = useKatanaAprs()
@@ -133,6 +136,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
         setZapProvider,
         setIsAutoStakingEnabled,
         vaults,
+        allVaults,
         isLoadingVaultList: isLoading,
         katanaAprs,
         isLoadingKatanaAprs,
