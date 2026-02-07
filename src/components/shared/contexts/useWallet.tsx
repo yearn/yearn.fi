@@ -1,20 +1,12 @@
-import {
-  getVaultAddress,
-  getVaultChainID,
-  getVaultDecimals,
-  getVaultStaking,
-  getVaultVersion,
-  type TKongVault
-} from '@pages/vaults/domain/kongVaultSelectors'
-import { getVaultSharePriceUsd } from '@pages/vaults/utils/holdingsValue'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
 import { useBalancesCombined } from '../hooks/useBalancesCombined'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
+import { getVaultHoldingsUsdValue } from '../hooks/useVaultFilterUtils'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
-import { DEFAULT_ERC20, isZeroAddress, toAddress, toNormalizedBN, zeroNormalizedBN } from '../utils'
+import { DEFAULT_ERC20, isZeroAddress, toAddress, zeroNormalizedBN } from '../utils'
 import { useWeb3 } from './useWeb3'
 import { useYearn } from './useYearn'
 import { useYearnTokens } from './useYearn.helper'
@@ -56,17 +48,15 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   children: ReactElement
   shouldWorkOnTestnet?: boolean
 }): ReactElement {
-  const { vaults, isLoadingVaultList, getPrice } = useYearn()
+  const { allVaults, isLoadingVaultList, getPrice } = useYearn()
   const { address: userAddress } = useWeb3()
 
   const allTokens = useYearnTokens({
-    vaults,
+    vaults: allVaults,
     isLoadingVaultList,
     isEnabled: Boolean(userAddress)
   })
-
   const { getToken: getTokenListToken } = useTokenList()
-
   const useBalancesHook = USE_ENSO_BALANCES ? useBalancesCombined : useBalancesWithQuery
   const {
     data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
@@ -120,7 +110,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       // If balances is empty (during refetch), return cached token if available
       return tokenCache.current[cacheKey] || getTokenListToken({ address, chainID })
     },
-    [balances, userAddress]
+    [balances, userAddress, getTokenListToken]
   )
 
   /**************************************************************************
@@ -133,56 +123,36 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   )
 
   const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
-    const vaultByAddress = new Map<string, TKongVault>()
-    const stakingToVault = new Map<string, TKongVault>()
-
-    for (const vault of Object.values(vaults)) {
-      const chainId = getVaultChainID(vault)
-      const vaultAddress = toAddress(getVaultAddress(vault))
-      vaultByAddress.set(`${chainId}:${vaultAddress}`, vault as TKongVault)
-
-      const staking = getVaultStaking(vault)
-      if (staking.address && !isZeroAddress(staking.address)) {
-        stakingToVault.set(`${chainId}:${toAddress(staking.address)}`, vault as TKongVault)
+    // Build staking address → vault address lookup
+    const stakingToVault = new Map<string, string>()
+    for (const [vaultAddress, vault] of Object.entries(allVaults)) {
+      if (vault.staking?.address && !isZeroAddress(toAddress(vault.staking.address))) {
+        stakingToVault.set(toAddress(vault.staking.address), vaultAddress)
       }
     }
 
     let cumulatedValueInV2Vaults = 0
     let cumulatedValueInV3Vaults = 0
+    const countedVaults = new Set<string>()
 
-    for (const [chainIdKey, perChain] of Object.entries(balances)) {
-      const parsedChainId = Number(chainIdKey)
-      if (!Number.isFinite(parsedChainId)) {
-        continue
-      }
+    for (const [_chainId, perChain] of Object.entries(balances)) {
+      for (const [tokenAddress] of Object.entries(perChain)) {
+        const normalizedAddress = toAddress(tokenAddress)
 
-      for (const [tokenAddress, tokenData] of Object.entries(perChain || {})) {
-        const rawBalance = tokenData?.balance?.raw ?? 0n
-        if (rawBalance <= 0n) {
-          continue
+        // Resolve vault details (direct vault or via staking lookup)
+        let vaultDetails = allVaults?.[normalizedAddress]
+        if (!vaultDetails && stakingToVault.has(normalizedAddress)) {
+          vaultDetails = allVaults?.[stakingToVault.get(normalizedAddress)!]
         }
 
-        const key = `${parsedChainId}:${toAddress(tokenAddress)}`
+        if (!vaultDetails) continue
+        const vaultKey = `${vaultDetails.chainID}/${toAddress(vaultDetails.address)}`
+        if (countedVaults.has(vaultKey)) continue
+        countedVaults.add(vaultKey)
 
-        // Staking mapping takes precedence when an address is both a vault token and a staking token.
-        const vault = stakingToVault.get(key) ?? vaultByAddress.get(key)
-        if (!vault) {
-          continue
-        }
+        const tokenValue = getVaultHoldingsUsdValue(vaultDetails, getToken, getBalance, getPrice)
+        const isV3 = vaultDetails.version?.split('.')?.[0] === '3' || vaultDetails.version?.split('.')?.[0] === '~3'
 
-        const vaultDecimals = getVaultDecimals(vault)
-        const sharePriceUsd = getVaultSharePriceUsd(vault, getPrice)
-        if (!Number.isFinite(sharePriceUsd) || sharePriceUsd <= 0) {
-          continue
-        }
-
-        const tokenValue = toNormalizedBN(rawBalance, vaultDecimals).normalized * sharePriceUsd
-        if (!Number.isFinite(tokenValue) || tokenValue <= 0) {
-          continue
-        }
-
-        const version = getVaultVersion(vault)
-        const isV3 = version.split('.')?.[0] === '3' || version.split('.')?.[0] === '~3'
         if (isV3) {
           cumulatedValueInV3Vaults += tokenValue
         } else {
@@ -190,9 +160,8 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         }
       }
     }
-
     return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults]
-  }, [vaults, balances, getPrice])
+  }, [allVaults, balances, getBalance, getPrice, getToken])
 
   /***************************************************************************
    **	Setup and render the Context provider to use in the app.
