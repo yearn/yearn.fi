@@ -10,6 +10,7 @@
     "preview": "concurrently \"bun run preview:server\" \"bun run preview:client\"",
     "preview:client": "vite preview",
     "preview:server": "bun scripts/ensure-api-server.js",
+    "audit:kong-vault-inclusion": "bun scripts/audit-kong-vault-inclusion.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "tslint": "tsc -p tsconfig.json --noEmit",
