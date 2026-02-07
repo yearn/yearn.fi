@@ -1,13 +1,3 @@
-import {
-  getVaultAddress,
-  getVaultChainID,
-  getVaultDecimals,
-  getVaultName,
-  getVaultStaking,
-  getVaultSymbol,
-  getVaultToken,
-  type TKongVault
-} from '@pages/vaults/domain/kongVaultSelectors'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
@@ -15,6 +5,7 @@ import { useChainID } from '@shared/hooks/useChainID'
 import type { TDict } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
+import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useMemo } from 'react'
 
@@ -23,20 +14,25 @@ export function useYearnTokens({
   isLoadingVaultList,
   isEnabled = true
 }: {
-  vaults: TDict<TKongVault>
+  vaults: TDict<TYDaemonVault>
   isLoadingVaultList: boolean
   isEnabled?: boolean
 }): TUseBalancesTokens[] {
   const { currentNetworkTokenList } = useTokenList()
 
   const { safeChainID } = useChainID()
-  const allVaults = useMemo((): TKongVault[] => {
+  const allVaults = useMemo((): TYDaemonVault[] => {
     if (!isEnabled) {
       return []
     }
     return [...Object.values(vaults)]
   }, [isEnabled, vaults])
 
+  /**************************************************************************
+   ** Define the list of available tokens. This list is retrieved from the
+   ** tokenList context and filtered to only keep the tokens of the current
+   ** network.
+   **************************************************************************/
   const availableTokenListTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
     if (!isEnabled) {
       return []
@@ -66,6 +62,7 @@ export function useYearnTokens({
     return tokens
   }, [isEnabled, safeChainID, currentNetworkTokenList])
 
+  //List available tokens
   const availableTokens = useMemo((): TDict<TUseBalancesTokens> => {
     if (!isEnabled || isLoadingVaultList) {
       return {}
@@ -89,41 +86,39 @@ export function useYearnTokens({
       tokens[key] = token
     }
 
-    const vaultAddressKeys = new Set(
-      allVaults.map((vault) => `${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`)
-    )
+    const vaultAddressKeys = new Set(allVaults.map((vault) => `${vault.chainID}/${toAddress(vault.address)}`))
 
-    allVaults.forEach((vault?: TKongVault): void => {
+    allVaults.forEach((vault?: TYDaemonVault): void => {
       if (!vault) {
         return
       }
 
-      const chainID = getVaultChainID(vault)
-      const address = toAddress(getVaultAddress(vault))
-      const name = getVaultName(vault)
-      const symbol = getVaultSymbol(vault)
-      const decimals = getVaultDecimals(vault)
-      const token = getVaultToken(vault)
-      const staking = getVaultStaking(vault)
-      const hasStaking = !isZeroAddress(staking.address)
-      const stakingAddress = hasStaking ? toAddress(staking.address) : undefined
-      const isVaultBackedStaking = hasStaking ? vaultAddressKeys.has(`${chainID}/${toAddress(staking.address)}`) : false
-      const isStakingOnlyPair = hasStaking && !isVaultBackedStaking
+      const chainID = vault.chainID
+      const address = toAddress(vault.address)
+      const name = vault.name
+      const symbol = vault.symbol
+      const decimals = vault.decimals
       const vaultKey = `${chainID}/${address}`
+      const stakingAddress = !isZeroAddress(toAddress(vault.staking.address)) ? toAddress(vault.staking.address) : undefined
+      const hasStaking = Boolean(stakingAddress)
+      const isVaultBackedStaking = hasStaking ? vaultAddressKeys.has(`${chainID}/${stakingAddress}`) : false
+      const isStakingOnlyPair = hasStaking && !isVaultBackedStaking
 
       if (!tokens[vaultKey]) {
-        tokens[vaultKey] = {
+        const newToken = {
           address,
           chainID,
           symbol,
           decimals,
           name,
-          for: 'vault',
+          for: 'vault-share',
           isVaultToken: true,
           isStakingOnlyPair: hasStaking ? isStakingOnlyPair : undefined,
           isVaultBackedStaking: hasStaking ? isVaultBackedStaking : undefined,
           pairedStakingAddress: stakingAddress
         }
+
+        tokens[vaultKey] = newToken
       } else {
         const existingToken = tokens[vaultKey]
 
@@ -138,7 +133,7 @@ export function useYearnTokens({
             tokens[vaultKey].decimals = decimals
           }
           if (!existingToken?.for) {
-            tokens[vaultKey].for = 'vault'
+            tokens[vaultKey].for = 'vault-share'
           }
           tokens[vaultKey].isVaultToken = true
           if (!existingToken?.pairedStakingAddress && stakingAddress) {
@@ -153,54 +148,56 @@ export function useYearnTokens({
         }
       }
 
-      if (token.address && !availableTokenListTokens.some((item) => item.address === token.address)) {
-        tokens[`${chainID}/${toAddress(token.address)}`] = {
-          address: token.address,
-          chainID,
-          decimals: token.decimals
+      // Add vaults tokens
+      if (vault?.token?.address && !availableTokenListTokens.some((token) => token.address === vault.token.address)) {
+        const newToken = {
+          address: vault.token.address,
+          chainID: vault.chainID,
+          decimals: vault.token.decimals
         }
+
+        tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`] = newToken
       }
 
-      if (stakingAddress) {
-        const stakingKey = `${chainID}/${stakingAddress}`
-        if (!tokens[stakingKey]) {
-          tokens[stakingKey] = {
-            address: stakingAddress,
-            chainID,
-            symbol,
-            decimals,
-            name,
-            for: 'staking',
-            isStakingToken: true,
-            isStakingOnlyPair,
-            isVaultBackedStaking,
-            pairedVaultAddress: address
+      // Add staking token
+      if (stakingAddress && !tokens[`${chainID}/${stakingAddress}`]) {
+        const newToken = {
+          address: stakingAddress,
+          chainID,
+          symbol,
+          decimals,
+          name,
+          for: 'vault-staking',
+          isStakingToken: true,
+          isStakingOnlyPair,
+          isVaultBackedStaking,
+          pairedVaultAddress: address
+        }
+        tokens[`${chainID}/${stakingAddress}`] = newToken
+      } else if (stakingAddress) {
+        const existingToken = tokens[`${chainID}/${stakingAddress}`]
+        if (existingToken) {
+          if (!existingToken?.name && name) {
+            tokens[`${chainID}/${stakingAddress}`].name = name
           }
-        } else {
-          const existingToken = tokens[stakingKey]
-          if (existingToken) {
-            if (!existingToken?.name && name) {
-              tokens[stakingKey].name = name
-            }
-            if (!existingToken?.symbol && symbol) {
-              tokens[stakingKey].symbol = symbol
-            }
-            if (!existingToken?.decimals && decimals) {
-              tokens[stakingKey].decimals = decimals
-            }
-            if (!existingToken?.for) {
-              tokens[stakingKey].for = 'staking'
-            }
-            tokens[stakingKey].isStakingToken = true
-            if (!existingToken?.pairedVaultAddress) {
-              tokens[stakingKey].pairedVaultAddress = address
-            }
-            if (isStakingOnlyPair) {
-              tokens[stakingKey].isStakingOnlyPair = true
-            }
-            if (isVaultBackedStaking) {
-              tokens[stakingKey].isVaultBackedStaking = true
-            }
+          if (!existingToken?.symbol && symbol) {
+            tokens[`${chainID}/${stakingAddress}`].symbol = symbol
+          }
+          if (!existingToken?.decimals && decimals) {
+            tokens[`${chainID}/${stakingAddress}`].decimals = decimals
+          }
+          if (!existingToken?.for) {
+            tokens[`${chainID}/${stakingAddress}`].for = 'vault-staking'
+          }
+          tokens[`${chainID}/${stakingAddress}`].isStakingToken = true
+          if (!existingToken?.pairedVaultAddress) {
+            tokens[`${chainID}/${stakingAddress}`].pairedVaultAddress = address
+          }
+          if (isStakingOnlyPair) {
+            tokens[`${chainID}/${stakingAddress}`].isStakingOnlyPair = true
+          }
+          if (isVaultBackedStaking) {
+            tokens[`${chainID}/${stakingAddress}`].isVaultBackedStaking = true
           }
         }
       }
@@ -214,9 +211,14 @@ export function useYearnTokens({
       return []
     }
     const fromAvailableTokens = Object.values(availableTokens)
-    return [...fromAvailableTokens, ...availableTokenListTokens]
+    const tokens = [...fromAvailableTokens, ...availableTokenListTokens]
+    return tokens
   }, [isEnabled, isLoadingVaultList, availableTokens, availableTokenListTokens])
 
+  /**************************************************************************************************
+   ** The following function can be used to clone the tokens list for the forknet. This is useful
+   ** for debuging purpose and should not be used in production.
+   *************************************************************************************************/
   function cloneForForknet(tokens: TUseBalancesTokens[]): TUseBalancesTokens[] {
     const clonedTokens: TUseBalancesTokens[] = []
     tokens.forEach((token): void => {
@@ -228,11 +230,13 @@ export function useYearnTokens({
     return clonedTokens
   }
 
+  // Use deep compare memo for the final result to ensure stability
   const finalTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
     const shouldEnableForknet = false
     if (shouldEnableForknet) {
       return cloneForForknet(allTokens)
     }
+    // console.log('useYearnTokens returning tokens, count:', allTokens.length)
     return allTokens
   }, [allTokens])
 

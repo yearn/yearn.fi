@@ -10,6 +10,15 @@ import { balanceQueryKeys } from './useBalancesQuery'
 import { partitionTokensByBalanceSource } from './useBalancesRouting'
 import { ENSO_UNSUPPORTED_NETWORKS, useEnsoBalances } from './useEnsoBalances'
 
+// Enso omits zero-balance assets, so we only fallback-multicall for vault position tokens.
+const isEnsoFallbackToken = (token: TUseBalancesTokens): boolean =>
+  token.isVaultToken ||
+  token.isStakingToken ||
+  token.for === 'vault-share' ||
+  token.for === 'vault-staking' ||
+  token.for === 'vault' ||
+  token.for === 'staking'
+
 /*******************************************************************************
  ** Combined balance hook that uses Enso API for supported chains
  ** and falls back to multicall (RPC) for unsupported chains like Fantom
@@ -46,19 +55,31 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     enabled: ensoTokens.length > 0
   })
 
-  // Fallback to multicall for unsupported chains and explicit Enso failures.
-  // Enso responses are sparse (typically non-zero balances only), so absence is not a miss signal.
-  const fallbackTokens = useMemo(() => {
-    const fallback: TUseBalancesTokens[] = [...multicallTokens]
-
-    if (ensoError) {
-      fallback.push(...ensoTokens)
+  const missingEnsoTokens = useMemo((): TUseBalancesTokens[] => {
+    if (ensoTokens.length === 0) {
+      return []
     }
+    if (ensoError) {
+      return ensoTokens
+    }
+    if (!ensoSuccess || !ensoBalances) {
+      return []
+    }
+    return ensoTokens.filter(
+      (token) => isEnsoFallbackToken(token) && !ensoBalances[token.chainID]?.[toAddress(token.address)]
+    )
+  }, [ensoBalances, ensoError, ensoSuccess, ensoTokens])
 
-    return fallback
-  }, [multicallTokens, ensoError, ensoTokens])
+  const multicallFallbackTokens = useMemo((): TUseBalancesTokens[] => {
+    const deduped: Record<string, TUseBalancesTokens> = {}
+    for (const token of [...multicallTokens, ...missingEnsoTokens]) {
+      const key = `${token.chainID}:${toAddress(token.address)}`
+      deduped[key] = token
+    }
+    return Object.values(deduped)
+  }, [missingEnsoTokens, multicallTokens])
 
-  // Fetch fallback balances via multicall RPC.
+  // Fetch from multicall for unsupported chains (e.g., Fantom)
   const {
     data: multicallBalances,
     isLoading: multicallLoading,
@@ -69,14 +90,14 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     chainLoadingStatus: multicallChainLoading,
     chainSuccessStatus: multicallChainSuccess,
     chainErrorStatus: multicallChainError
-  } = useBalancesQueries(userAddress, fallbackTokens, {
-    enabled: fallbackTokens.length > 0
+  } = useBalancesQueries(userAddress, multicallFallbackTokens, {
+    enabled: multicallFallbackTokens.length > 0
   })
 
   // Merge balances from both sources
   const balances = useMemo(() => {
     const hasEnsoData = ensoTokens.length > 0
-    const hasMulticallData = fallbackTokens.length > 0
+    const hasMulticallData = multicallFallbackTokens.length > 0
 
     const result: TChainTokens = {}
 
@@ -97,9 +118,9 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
       }
     }
 
-    // Process multicall fallback tokens (unsupported chains + Enso misses)
+    // Process multicall tokens (unsupported chains)
     if (hasMulticallData && multicallBalances) {
-      for (const token of fallbackTokens) {
+      for (const token of multicallFallbackTokens) {
         const chainId = token.chainID
         const tokenAddress = toAddress(token.address)
 
@@ -115,34 +136,34 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     }
 
     return result
-  }, [ensoBalances, multicallBalances, ensoTokens, fallbackTokens])
+  }, [ensoBalances, multicallBalances, ensoTokens, multicallFallbackTokens])
 
   // Combine loading/error/success states
   const isLoading = useMemo(() => {
     const ensoRelevant = ensoTokens.length > 0
-    const multicallRelevant = fallbackTokens.length > 0
+    const multicallRelevant = multicallFallbackTokens.length > 0
     return (ensoRelevant && ensoLoading) || (multicallRelevant && multicallLoading)
-  }, [ensoTokens.length, fallbackTokens.length, ensoLoading, multicallLoading])
+  }, [ensoTokens.length, multicallFallbackTokens.length, ensoLoading, multicallLoading])
 
   const isError = useMemo(() => {
     const ensoRelevant = ensoTokens.length > 0
-    const multicallRelevant = fallbackTokens.length > 0
+    const multicallRelevant = multicallFallbackTokens.length > 0
     // Only error if both sources that are relevant have errors
     const ensoFailed = ensoRelevant && ensoError
     const multicallFailed = multicallRelevant && multicallError
     // If both are relevant, both must fail. If only one is relevant, that one must fail.
     if (ensoRelevant && multicallRelevant) return ensoFailed && multicallFailed
     return ensoFailed || multicallFailed
-  }, [ensoTokens.length, fallbackTokens.length, ensoError, multicallError])
+  }, [ensoTokens.length, multicallFallbackTokens.length, ensoError, multicallError])
 
   const isSuccess = useMemo(() => {
     const ensoRelevant = ensoTokens.length > 0
-    const multicallRelevant = fallbackTokens.length > 0
+    const multicallRelevant = multicallFallbackTokens.length > 0
     // Success if at least one relevant source succeeds
     const ensoOk = !ensoRelevant || ensoSuccess
     const multicallOk = !multicallRelevant || multicallSuccess
     return ensoOk && multicallOk
-  }, [ensoTokens.length, fallbackTokens.length, ensoSuccess, multicallSuccess])
+  }, [ensoTokens.length, multicallFallbackTokens.length, ensoSuccess, multicallSuccess])
 
   const error = ensoErrorObj || multicallErrorObj || null
 
@@ -161,8 +182,8 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
 
   const refetch = useCallback(() => {
     if (ensoTokens.length > 0) ensoRefetch()
-    if (fallbackTokens.length > 0) multicallRefetch()
-  }, [ensoTokens.length, fallbackTokens.length, ensoRefetch, multicallRefetch])
+    if (multicallFallbackTokens.length > 0) multicallRefetch()
+  }, [ensoTokens.length, multicallFallbackTokens.length, ensoRefetch, multicallRefetch])
 
   const onUpdate = useCallback(
     async (shouldForceFetch?: boolean): Promise<TChainTokens> => {
