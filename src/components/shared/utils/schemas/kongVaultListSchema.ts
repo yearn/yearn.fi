@@ -6,6 +6,9 @@ const coerceNullableNumber = z.preprocess(
   (val) => (val === null || val === undefined ? null : Number(val)),
   z.number().nullable()
 )
+const coerceNullableBigNumberish = z
+  .union([z.number(), z.string(), z.null()])
+  .transform((value) => (value === null ? null : String(value)))
 
 export const kongVaultListItemSchema = z.object({
   chainId: z.number(),
@@ -81,7 +84,9 @@ export const kongVaultListItemSchema = z.object({
       address: addressSchema.nullable(),
       available: z.boolean()
     })
-    .nullish()
+    .nullish(),
+
+  pricePerShare: coerceNullableBigNumberish.optional()
 })
 
 export const kongVaultListSchema = z.array(kongVaultListItemSchema)
