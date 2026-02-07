@@ -12,6 +12,7 @@ import {
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
+import { isZeroAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { useMemo } from 'react'
 import {
@@ -112,7 +113,7 @@ export function useV2VaultFilter(
         if (vaultBalance.raw > 0n) {
           return true
         }
-        if (!vault.staking.available) {
+        if (isZeroAddress(vault.staking.address)) {
           return false
         }
         const stakingBalance = getBalance({
