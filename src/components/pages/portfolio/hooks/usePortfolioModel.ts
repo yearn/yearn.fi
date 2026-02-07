@@ -6,7 +6,7 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultHoldingsUsdValue, getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { calculateVaultEstimatedAPY, calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { useMemo, useState } from 'react'
@@ -77,7 +77,7 @@ export function usePortfolioModel(): TPortfolioModel {
       const vaultKey = getVaultKey(vault)
       map.set(vaultKey, vault)
 
-      if (vault.staking?.available && vault.staking.address) {
+      if (vault.staking?.address && !isZeroAddress(vault.staking.address)) {
         const stakingKey = getChainAddressKey(vault.chainID, vault.staking.address)
         map.set(stakingKey, vault)
       }
