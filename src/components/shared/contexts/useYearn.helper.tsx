@@ -3,7 +3,7 @@ import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
 import { useChainID } from '@shared/hooks/useChainID'
 import type { TDict } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -97,7 +97,8 @@ export function useYearnTokens({
           chainID: vault.chainID,
           symbol: vault.symbol,
           decimals: vault.decimals,
-          name: vault.name
+          name: vault.name,
+          for: 'vault-share'
         }
 
         tokens[`${vault.chainID}/${toAddress(vault.address)}`] = newToken
@@ -114,6 +115,9 @@ export function useYearnTokens({
           if (!existingToken?.decimals && vault.decimals) {
             tokens[`${vault.chainID}/${toAddress(vault.address)}`].decimals = vault.decimals
           }
+          if (!existingToken?.for) {
+            tokens[`${vault.chainID}/${toAddress(vault.address)}`].for = 'vault-share'
+          }
         }
       }
 
@@ -129,16 +133,18 @@ export function useYearnTokens({
       }
 
       // Add staking token
-      if (vault?.staking?.available && !tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`]) {
+      const hasStakingAddress = Boolean(vault?.staking?.address) && !isZeroAddress(toAddress(vault?.staking.address))
+      if (hasStakingAddress && !tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`]) {
         const newToken = {
           address: toAddress(vault?.staking?.address),
           chainID: vault.chainID,
           symbol: vault.symbol,
           decimals: vault.decimals,
-          name: vault.name
+          name: vault.name,
+          for: 'vault-staking'
         }
         tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`] = newToken
-      } else {
+      } else if (hasStakingAddress) {
         const existingToken = tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`]
         if (existingToken) {
           if (!existingToken?.name && vault.name) {
@@ -149,6 +155,9 @@ export function useYearnTokens({
           }
           if (!existingToken?.decimals && vault.decimals) {
             tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].decimals = vault.decimals
+          }
+          if (!existingToken?.for) {
+            tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].for = 'vault-staking'
           }
         }
       }
