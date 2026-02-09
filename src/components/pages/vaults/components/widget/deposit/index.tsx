@@ -10,7 +10,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
-import { cl, formatTAmount, toAddress } from '@shared/utils'
+import { cl, formatTAmount, formatUSD, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -235,7 +235,7 @@ export const WidgetDeposit: FC<Props> = ({
       options: { maximumFractionDigits: 6 }
     })
 
-    const usd = (Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice).toFixed(2)
+    const usd = formatUSD(Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice)
 
     return { formatted, usd }
   }, [activeFlow.periphery.expectedOut, vaultDecimals, assetToken?.decimals, pricePerShare, assetTokenPrice])

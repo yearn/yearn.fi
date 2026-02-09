@@ -1,5 +1,6 @@
-import { formatTAmount } from '@shared/utils'
-import type { FC } from 'react'
+import { IconChevron } from '@shared/icons/IconChevron'
+import { cl, formatTAmount, formatUSD } from '@shared/utils'
+import { type FC, useState } from 'react'
 import { formatUnits, maxUint256 } from 'viem'
 import type { DepositRouteType } from './types'
 
@@ -63,16 +64,16 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   onAllowanceClick,
   onShowApprovalOverlay
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false)
   const isStake = routeType === 'DIRECT_STAKE'
   const sharesLabel = willReceiveStakedShares ? 'Staked shares' : 'Vault shares'
 
-  // Determine action verb based on route type
   const getActionVerb = () => {
-    if (isStake) return 'Stake'
-    if (isSwap) return 'Swap'
-    return 'Deposit'
+    if (isStake) return 'stake'
+    if (isSwap) return 'swap'
+    return 'deposit'
   }
-  // Format allowance display
+
   const formatAllowance = () => {
     if (allowance === undefined || allowanceTokenDecimals === undefined) return null
     if (allowance >= maxUint256 / 2n) return 'Unlimited'
@@ -86,20 +87,25 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
     expectedVaultShares > 0n && pricePerShare > 0n
       ? (expectedVaultShares * pricePerShare) / 10n ** BigInt(vaultDecimals)
       : 0n
-  const vaultShareValueFormatted = formatTAmount({
-    value: vaultShareValueInAsset,
-    decimals: assetTokenDecimals,
-    options: { maximumFractionDigits: 6 }
-  })
-  const vaultShareValueUsd = (Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice).toFixed(
-    2
-  )
+  const vaultShareValueUsdNum = Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
+  const vaultShareValueUsd = formatUSD(vaultShareValueUsdNum)
+
+  // Exchange rate: 1 asset = X vault shares
+  const sharesPerToken =
+    pricePerShare > 0n
+      ? formatTAmount({
+          value: 10n ** BigInt(vaultDecimals * 2) / pricePerShare,
+          decimals: vaultDecimals,
+          options: { maximumFractionDigits: 4 }
+        })
+      : '0'
+
   return (
     <div>
       <div className="flex flex-col gap-2">
         {/* You will deposit/swap/stake */}
         <div className="flex items-center justify-between h-5">
-          <p className="text-sm text-text-secondary">{'You Will ' + getActionVerb()}</p>
+          <p className="text-sm text-text-secondary">{'You will ' + getActionVerb()}</p>
           <p className="text-sm text-text-primary">
             <span className="font-semibold">
               {depositAmountBn > 0n
@@ -148,7 +154,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
             onClick={onShowVaultSharesModal}
             className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
           >
-            You Will Receive
+            You will receive
           </button>
           <p className="text-sm text-text-primary">
             {isLoadingQuote ? (
@@ -170,82 +176,95 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
           </p>
         </div>
 
-        {/* Vault share value in underlying asset */}
-        <div className="flex items-center justify-between h-5">
-          <button
-            type="button"
-            onClick={onShowVaultShareValueModal}
+        {/* Expandable exchange rate summary */}
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center justify-between h-5 w-full group"
+        >
+          <span
+            onClick={(e) => {
+              e.stopPropagation()
+              onShowVaultShareValueModal()
+            }}
             className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
           >
-            Vault share value
-          </button>
-          <p className="text-sm text-text-primary">
-            {isLoadingQuote ? (
-              <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
-            ) : (
-              <>
-                <span className="font-semibold">{vaultShareValueFormatted}</span>{' '}
-                <span className="font-normal">{`${assetTokenSymbol || ''} (`}</span>
-                <span className="font-normal">{`$${vaultShareValueUsd}`}</span>
-                <span className="font-normal">{')'}</span>
-              </>
+            {`1 ${assetTokenSymbol || 'token'} = ${sharesPerToken} vault shares${vaultShareValueUsdNum > 0 ? ` (${vaultShareValueUsd})` : ''}`}
+          </span>
+          <IconChevron
+            size={14}
+            className={cl(
+              'text-text-secondary group-hover:text-text-primary transition-transform duration-200',
+              isExpanded ? 'rotate-180' : ''
             )}
-          </p>
-        </div>
+          />
+        </button>
 
-        {/* Est. Annual Return */}
-        <div className="flex items-center justify-between h-5">
-          <button
-            type="button"
-            onClick={onShowAnnualReturnModal}
-            className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
-          >
-            Est. Annual Return
-          </button>
-          <p className="text-sm text-text-primary">
-            <span className="font-normal">{depositAmountBn > 0n ? '~' : ''}</span>
-            <span className="font-semibold">{depositAmountBn > 0n ? estimatedAnnualReturn : '0'}</span>{' '}
-            <span className="font-normal">{inputTokenSymbol}</span>
-          </p>
-        </div>
+        {/* Expandable section */}
+        <div
+          className={cl(
+            'grid transition-[grid-template-rows] duration-200 ease-out',
+            isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+          )}
+        >
+          <div className="overflow-hidden">
+            <div className="flex flex-col gap-2">
+              {/* Est. annual return */}
+              <div className="flex items-center justify-between h-5">
+                <button
+                  type="button"
+                  onClick={onShowAnnualReturnModal}
+                  className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
+                >
+                  Est. annual return
+                </button>
+                <p className="text-sm text-text-primary">
+                  <span className="font-normal">{depositAmountBn > 0n ? '~' : ''}</span>
+                  <span className="font-semibold">{depositAmountBn > 0n ? estimatedAnnualReturn : '0'}</span>{' '}
+                  <span className="font-normal">{inputTokenSymbol}</span>
+                </p>
+              </div>
 
-        {/* Approved allowance */}
-        {allowanceDisplay && (
-          <div className="flex items-center justify-between h-5">
-            {onShowApprovalOverlay ? (
-              <button
-                type="button"
-                onClick={onShowApprovalOverlay}
-                className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
-              >
-                Existing Approval{approvalSpenderName ? ` (${approvalSpenderName})` : ''}
-              </button>
-            ) : (
-              <p className="text-sm text-text-secondary">
-                Existing Approval{approvalSpenderName ? ` (${approvalSpenderName})` : ''}
-              </p>
-            )}
-            {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
-              <button
-                type="button"
-                onClick={onAllowanceClick}
-                className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
-              >
-                <span className="font-normal">
-                  <span className={'font-semibold'}>{allowanceDisplay} </span>{' '}
-                  <span> {allowanceTokenSymbol || ''}</span>
-                </span>
-              </button>
-            ) : (
-              <p className="text-sm text-text-primary">
-                <span className="font-normal">
-                  <span className={'font-semibold'}>{allowanceDisplay} </span>{' '}
-                  <span> {allowanceTokenSymbol || ''}</span>
-                </span>
-              </p>
-            )}
+              {/* Existing approval */}
+              {allowanceDisplay && (
+                <div className="flex items-center justify-between h-5">
+                  {onShowApprovalOverlay ? (
+                    <button
+                      type="button"
+                      onClick={onShowApprovalOverlay}
+                      className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
+                    >
+                      Existing approval{approvalSpenderName ? ` (${approvalSpenderName})` : ''}
+                    </button>
+                  ) : (
+                    <p className="text-sm text-text-secondary">
+                      Existing approval{approvalSpenderName ? ` (${approvalSpenderName})` : ''}
+                    </p>
+                  )}
+                  {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
+                    <button
+                      type="button"
+                      onClick={onAllowanceClick}
+                      className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
+                    >
+                      <span className="font-normal">
+                        <span className="font-semibold">{allowanceDisplay} </span>{' '}
+                        <span> {allowanceTokenSymbol || ''}</span>
+                      </span>
+                    </button>
+                  ) : (
+                    <p className="text-sm text-text-primary">
+                      <span className="font-normal">
+                        <span className="font-semibold">{allowanceDisplay} </span>{' '}
+                        <span> {allowanceTokenSymbol || ''}</span>
+                      </span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
