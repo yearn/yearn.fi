@@ -43,7 +43,7 @@ export function createCheckHasHoldings(
       return vaultPrice
     }
 
-    if (vault.staking.available) {
+    if (!isZeroAddress(vault.staking.address)) {
       const stakingBalance = getBalance({
         address: vault.staking.address,
         chainID: vault.chainID
