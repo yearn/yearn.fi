@@ -2,6 +2,8 @@ import { Button } from '@shared/components/Button'
 import { SectionHeader } from '@shared/components/SectionHeader'
 import { TvlStat } from '@shared/components/TvlStat'
 import { useFetch } from '@shared/hooks/useFetch'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
+import { usePlausible } from '@hooks/usePlausible'
 import type { ReactElement } from 'react'
 import * as z from 'zod'
 import Image from '/src/components/Image'
@@ -71,6 +73,7 @@ function AnimatedLogos(): ReactElement {
 }
 
 export function Hero(): ReactElement {
+  const trackEvent = usePlausible()
   const { data: tvl } = useFetch<number>({
     endpoint: 'https://api.llama.fi/tvl/yearn',
     schema: z.number()
@@ -107,7 +110,7 @@ export function Hero(): ReactElement {
                 description={"Yearn is DeFi's Yield Aggregator"}
               />
               <div className={'flex flex-row items-center justify-center gap-4'}>
-                <Link href={'/vaults'}>
+                <Link href={'/vaults'} onClick={() => trackEvent(PLAUSIBLE_EVENTS.LANDER_CTA_EXPLORE_VAULTS, {})}>
                   <Button className={'!text-[18px] max-w-xs !px-4 !py-3 !rounded-full !bg-primary'} variant={'primary'}>
                     {'Explore Vaults'}
                   </Button>
@@ -149,7 +152,11 @@ export function Hero(): ReactElement {
               description={"DeFi's most battle tested yield aggregator"}
             />
             <div className={'flex flex-col items-center justify-center'}>
-              <Link href={'/vaults'} className={'block w-full max-w-[280px]'}>
+              <Link
+                href={'/vaults'}
+                className={'block w-full max-w-[280px]'}
+                onClick={() => trackEvent(PLAUSIBLE_EVENTS.LANDER_CTA_EXPLORE_VAULTS, {})}
+              >
                 <Button
                   className={
                     '!text-[16px] sm:!text-[18px] w-full !px-6 !py-4 sm:!py-5 !rounded-full !bg-primary min-h-[48px]'
