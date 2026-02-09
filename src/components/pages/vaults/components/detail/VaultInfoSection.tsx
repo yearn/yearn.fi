@@ -1,11 +1,56 @@
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { truncateHex } from '@shared/utils'
+import { baseFetcher, isCurveHostUrl, isZeroAddress, normalizeCurveUrl, toAddress, truncateHex } from '@shared/utils'
 import { copyToClipboard } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import { isAutomatedVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
+import { useQuery } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
+
+type TCurvePoolEntry = {
+  address?: string
+  lpTokenAddress?: string
+  poolUrls?: { deposit?: string[] | null }
+}
+
+type TCurvePoolsApiResponse = {
+  data?: {
+    poolData?: unknown
+  }
+}
+
+const CURVE_POOLS_CACHE_TTL_MS = 30 * 60 * 1000
+const CURVE_POOLS_CACHE_GC_MS = 60 * 60 * 1000
+const CURVE_POOLS_ENDPOINT = 'https://api.curve.finance/v1/getPools/all'
+
+export const extractCurvePools = (payload: unknown): TCurvePoolEntry[] => {
+  const poolData = (payload as TCurvePoolsApiResponse | null)?.data?.poolData
+  return Array.isArray(poolData) ? (poolData as TCurvePoolEntry[]) : []
+}
+
+export const resolveCurveDepositUrl = (pools: TCurvePoolEntry[], tokenAddress: string): string => {
+  const normalizedTarget = toAddress(tokenAddress)
+  if (isZeroAddress(normalizedTarget)) {
+    return ''
+  }
+
+  for (const pool of pools) {
+    const poolAddress = typeof pool?.address === 'string' ? toAddress(pool.address) : null
+    const poolLpAddress = typeof pool?.lpTokenAddress === 'string' ? toAddress(pool.lpTokenAddress) : null
+    if (poolAddress !== normalizedTarget && poolLpAddress !== normalizedTarget) {
+      continue
+    }
+
+    const urls = pool.poolUrls?.deposit ?? []
+    if (Array.isArray(urls) && typeof urls[0] === 'string') {
+      return normalizeCurveUrl(urls[0])
+    }
+  }
+
+  return ''
+}
 
 function AddressLink({
   address,
@@ -53,9 +98,29 @@ export function VaultInfoSection({
   const blockExplorer =
     getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
     getNetwork(currentVault.chainID).blockExplorers?.default.url
-  const sourceUrl = String(currentVault.info?.sourceURL || '').toLowerCase()
-  const isVelodrome = currentVault.category?.toLowerCase() === 'velodrome' || sourceUrl.includes('velodrome.finance')
-  const isAerodrome = currentVault.category?.toLowerCase() === 'aerodrome' || sourceUrl.includes('aerodrome.finance')
+  const sourceUrl = String(currentVault.info?.sourceURL || '')
+  const sourceUrlLower = sourceUrl.toLowerCase()
+  const isVelodrome =
+    currentVault.category?.toLowerCase() === 'velodrome' || sourceUrlLower.includes('velodrome.finance')
+  const isAerodrome =
+    currentVault.category?.toLowerCase() === 'aerodrome' || sourceUrlLower.includes('aerodrome.finance')
+  const isCurveCategory = currentVault.category?.toLowerCase() === 'curve'
+  const isCurveFactory = isCurveCategory && isAutomatedVault(currentVault)
+  const shouldFetchCurvePools = isCurveFactory && !isZeroAddress(toAddress(currentVault.token.address))
+  const { data: curvePoolUrl = '' } = useQuery({
+    queryKey: ['curve-pools'],
+    queryFn: async (): Promise<TCurvePoolEntry[]> => {
+      const response = await baseFetcher<unknown>(CURVE_POOLS_ENDPOINT)
+      return extractCurvePools(response)
+    },
+    select: (pools) => resolveCurveDepositUrl(pools, currentVault.token.address),
+    enabled: shouldFetchCurvePools,
+    staleTime: CURVE_POOLS_CACHE_TTL_MS,
+    gcTime: CURVE_POOLS_CACHE_GC_MS,
+    refetchOnWindowFocus: false
+  })
+  const curveSourceUrl = isCurveCategory && isCurveHostUrl(sourceUrl) ? normalizeCurveUrl(sourceUrl) : ''
+  const resolvedCurvePoolUrl = curvePoolUrl || curveSourceUrl
   const liquidityUrl = isVelodrome
     ? `https://velodrome.finance/liquidity?query=${currentVault.token.address}`
     : isAerodrome
@@ -97,18 +162,21 @@ export function VaultInfoSection({
           />
         ) : null}
 
-        {(currentVault.info?.sourceURL || '')?.includes('curve.finance') ? (
+        {resolvedCurvePoolUrl ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-            <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Curve deposit URI'}</p>
-            <div className={'flex md:flex-1 md:justify-end'}>
+            <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Curve Pool URL'}</p>
+            <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
               <a
-                href={currentVault.info.sourceURL}
+                href={resolvedCurvePoolUrl}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
-                className={'md:text-sm text-text-primary hover:underline'}
+                className={
+                  'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+                }
                 suppressHydrationWarning
               >
-                {currentVault.info.sourceURL}
+                {'Liquidity Pool Info'}
+                <IconLinkOut className={'size-3'} />
               </a>
             </div>
           </div>
@@ -133,7 +201,9 @@ export function VaultInfoSection({
 
         {liquidityUrl ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-            <p className={'w-full text-sm text-text-secondary md:w-44'}>{isVelodrome ? 'Velodrome' : 'Aerodrome'}</p>
+            <p className={'w-full text-sm text-text-secondary md:w-44'}>
+              {isVelodrome ? 'Velodrome Pool URL' : 'Aerodrome Pool URL'}
+            </p>
             <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
               <a
                 href={liquidityUrl}
