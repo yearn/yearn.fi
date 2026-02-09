@@ -17,6 +17,11 @@ describe('normalizeCurveUrl', () => {
   it('returns empty string for invalid urls', () => {
     expect(normalizeCurveUrl('not-a-url')).toBe('')
   })
+
+  it('returns empty string for non-http schemes', () => {
+    expect(normalizeCurveUrl('javascript://curve.fi/%0Aalert(1)')).toBe('')
+    expect(normalizeCurveUrl('ftp://curve.fi/pools')).toBe('')
+  })
 })
 
 describe('isCurveHostUrl', () => {
@@ -30,5 +35,10 @@ describe('isCurveHostUrl', () => {
   it('rejects non-curve hosts and invalid urls', () => {
     expect(isCurveHostUrl('https://example.com/pools')).toBe(false)
     expect(isCurveHostUrl('not-a-url')).toBe(false)
+  })
+
+  it('rejects non-http schemes even for allowed curve hosts', () => {
+    expect(isCurveHostUrl('javascript://curve.fi/%0Aalert(1)')).toBe(false)
+    expect(isCurveHostUrl('ftp://www.curve.finance/pools')).toBe(false)
   })
 })

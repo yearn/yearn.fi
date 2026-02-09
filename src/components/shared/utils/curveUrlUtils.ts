@@ -1,30 +1,39 @@
 const CURVE_CANONICAL_HOST = 'www.curve.finance'
 const CURVE_ALLOWED_HOSTS = new Set([CURVE_CANONICAL_HOST, 'curve.finance', 'curve.fi', 'www.curve.fi'])
+const WEB_PROTOCOLS = new Set(['http:', 'https:'])
 
-export function normalizeCurveUrl(rawUrl: string): string {
+function parseWebUrl(rawUrl: string): URL | null {
   if (!rawUrl) {
-    return ''
+    return null
   }
   try {
     const url = new URL(rawUrl)
-    const host = url.hostname.toLowerCase()
-    if (host === 'curve.fi' || host === 'www.curve.fi' || host === 'curve.finance') {
-      url.hostname = CURVE_CANONICAL_HOST
-    }
-    return url.toString()
+    return WEB_PROTOCOLS.has(url.protocol) ? url : null
   } catch {
-    return ''
+    return null
   }
 }
 
+export function normalizeCurveUrl(rawUrl: string): string {
+  const url = parseWebUrl(rawUrl)
+  if (!url) {
+    return ''
+  }
+
+  const host = url.hostname.toLowerCase()
+  if (host === 'curve.fi' || host === 'www.curve.fi' || host === 'curve.finance') {
+    url.hostname = CURVE_CANONICAL_HOST
+  }
+
+  return url.toString()
+}
+
 export function isCurveHostUrl(rawUrl: string): boolean {
-  if (!rawUrl) {
+  const url = parseWebUrl(rawUrl)
+  if (!url) {
     return false
   }
-  try {
-    const host = new URL(rawUrl).hostname.toLowerCase()
-    return CURVE_ALLOWED_HOSTS.has(host)
-  } catch {
-    return false
-  }
+
+  const host = url.hostname.toLowerCase()
+  return CURVE_ALLOWED_HOSTS.has(host)
 }
