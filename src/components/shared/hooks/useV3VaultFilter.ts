@@ -227,16 +227,6 @@ export function useV3VaultFilter(
   }, [vaultIndex, walletFlags])
 
   const filteredResults = useMemo(() => {
-    const filteredVaults: TYDaemonVault[] = []
-    const vaultFlags: Record<string, TVaultFlags> = {}
-
-    let totalMatchingVaults = 0
-    let totalHoldingsMatching = 0
-    let totalAvailableMatching = 0
-    let totalMigratableMatching = 0
-    let totalRetiredMatching = 0
-    const availableUnderlyingAssets = new Set<string>()
-    const underlyingAssetVaults: Record<string, TYDaemonVault> = {}
     const hasChainFilter = Boolean(chains?.length)
     const hasCategoryFilter = Boolean(categories?.length)
     const hasAggressivenessFilter = Boolean(aggressiveness?.length)
@@ -253,115 +243,130 @@ export function useV3VaultFilter(
       return searchableText.includes(lowercaseSearch)
     }
 
-    vaultIndex.forEach((entry) => {
-      const {
-        key,
-        vault,
-        searchableText,
-        kind,
-        category,
-        aggressiveness: aggressivenessScore,
-        isHidden,
-        isFeatured,
-        isActive,
-        isMigratable,
-        isRetired
-      } = entry
-      const walletFlag = walletFlags.get(key)
-      const hasHoldings = Boolean(walletFlag?.hasHoldings)
-      const hasAvailableBalance = Boolean(walletFlag?.hasAvailableBalance)
-      const isMigratableVault = Boolean(isMigratable && hasHoldings)
-      const isRetiredVault = Boolean(isRetired && hasHoldings)
-      const hasUserHoldings = hasHoldings || isMigratableVault || isRetiredVault
+    const reducedResults = Array.from(vaultIndex.values()).reduce(
+      (acc, entry) => {
+        const {
+          key,
+          vault,
+          searchableText,
+          kind,
+          category,
+          aggressiveness: aggressivenessScore,
+          isHidden,
+          isFeatured,
+          isActive,
+          isMigratable,
+          isRetired
+        } = entry
+        const walletFlag = walletFlags.get(key)
+        const hasHoldings = Boolean(walletFlag?.hasHoldings)
+        const hasAvailableBalance = Boolean(walletFlag?.hasAvailableBalance)
+        const isMigratableVault = Boolean(isMigratable && hasHoldings)
+        const isRetiredVault = Boolean(isRetired && hasHoldings)
+        const hasUserHoldings = hasHoldings || isMigratableVault || isRetiredVault
 
-      if (!isActive && !hasHoldings) {
-        return
-      }
-      if (!showHiddenVaults && isHidden) {
-        return
-      }
-      if (!matchesSearch(searchableText)) {
-        return
-      }
-
-      if (!hasUserHoldings && hasChainFilter && !chains?.includes(vault.chainID)) {
-        return
-      }
-
-      const vaultTvl = vault.tvl?.tvl || 0
-      if (!hasUserHoldings && vaultTvl < minTvlValue) {
-        return
-      }
-
-      vaultFlags[key] = {
-        hasHoldings: hasUserHoldings,
-        isMigratable: isMigratableVault,
-        isRetired: isRetiredVault,
-        isHidden
-      }
-
-      totalMatchingVaults++
-      if (hasUserHoldings) {
-        totalHoldingsMatching++
-      }
-      if (hasAvailableBalance) {
-        totalAvailableMatching++
-      }
-      if (isMigratableVault) {
-        totalMigratableMatching++
-      }
-      if (isRetiredVault) {
-        totalRetiredMatching++
-      }
-
-      const shouldIncludeByCategory = hasUserHoldings || !hasCategoryFilter || Boolean(categories?.includes(category))
-      const isPinnedByUserContext = hasUserHoldings || isMigratableVault || isRetiredVault
-      const isStrategy = kind === 'strategy'
-      const shouldIncludeByFeaturedGate = showHiddenVaults || isStrategy || isFeatured || isPinnedByUserContext
-      const shouldIncludeByKind =
-        hasUserHoldings ||
-        !hasTypeFilter ||
-        (Boolean(types?.includes('multi')) && kind === 'allocator') ||
-        (Boolean(types?.includes('single')) && kind === 'strategy')
-      const shouldIncludeByAggressiveness =
-        hasUserHoldings ||
-        !hasAggressivenessFilter ||
-        (aggressivenessScore !== null && Boolean(aggressiveness?.includes(aggressivenessScore)))
-
-      if (
-        shouldIncludeByCategory &&
-        shouldIncludeByFeaturedGate &&
-        shouldIncludeByKind &&
-        shouldIncludeByAggressiveness
-      ) {
-        const assetKey = normalizeUnderlyingAssetSymbol(vault.token?.symbol)
-        if (assetKey && !underlyingAssetVaults[assetKey]) {
-          availableUnderlyingAssets.add(assetKey)
-          underlyingAssetVaults[assetKey] = vault
-        } else if (assetKey) {
-          availableUnderlyingAssets.add(assetKey)
+        if (!isActive && !hasHoldings) {
+          return acc
+        }
+        if (!showHiddenVaults && isHidden) {
+          return acc
+        }
+        if (!matchesSearch(searchableText)) {
+          return acc
         }
 
-        const matchesUnderlyingAsset =
-          hasUserHoldings || !hasUnderlyingAssetFilter || (assetKey && expandedUnderlyingAssets.has(assetKey))
-
-        if (matchesUnderlyingAsset) {
-          filteredVaults.push(vault)
+        if (!hasUserHoldings && hasChainFilter && !chains?.includes(vault.chainID)) {
+          return acc
         }
+
+        const vaultTvl = vault.tvl?.tvl || 0
+        if (!hasUserHoldings && vaultTvl < minTvlValue) {
+          return acc
+        }
+
+        acc.vaultFlags[key] = {
+          hasHoldings: hasUserHoldings,
+          isMigratable: isMigratableVault,
+          isRetired: isRetiredVault,
+          isHidden
+        }
+
+        acc.totalMatchingVaults += 1
+        if (hasUserHoldings) {
+          acc.totalHoldingsMatching += 1
+        }
+        if (hasAvailableBalance) {
+          acc.totalAvailableMatching += 1
+        }
+        if (isMigratableVault) {
+          acc.totalMigratableMatching += 1
+        }
+        if (isRetiredVault) {
+          acc.totalRetiredMatching += 1
+        }
+
+        const shouldIncludeByCategory = hasUserHoldings || !hasCategoryFilter || Boolean(categories?.includes(category))
+        const isPinnedByUserContext = hasUserHoldings || isMigratableVault || isRetiredVault
+        const isStrategy = kind === 'strategy'
+        const shouldIncludeByFeaturedGate = showHiddenVaults || isStrategy || isFeatured || isPinnedByUserContext
+        const shouldIncludeByKind =
+          hasUserHoldings ||
+          !hasTypeFilter ||
+          (Boolean(types?.includes('multi')) && kind === 'allocator') ||
+          (Boolean(types?.includes('single')) && kind === 'strategy')
+        const shouldIncludeByAggressiveness =
+          hasUserHoldings ||
+          !hasAggressivenessFilter ||
+          (aggressivenessScore !== null && Boolean(aggressiveness?.includes(aggressivenessScore)))
+
+        if (
+          shouldIncludeByCategory &&
+          shouldIncludeByFeaturedGate &&
+          shouldIncludeByKind &&
+          shouldIncludeByAggressiveness
+        ) {
+          const assetKey = normalizeUnderlyingAssetSymbol(vault.token?.symbol)
+          if (assetKey && !acc.underlyingAssetVaults[assetKey]) {
+            acc.availableUnderlyingAssets.add(assetKey)
+            acc.underlyingAssetVaults[assetKey] = vault
+          } else if (assetKey) {
+            acc.availableUnderlyingAssets.add(assetKey)
+          }
+
+          const matchesUnderlyingAsset =
+            hasUserHoldings || !hasUnderlyingAssetFilter || (assetKey && expandedUnderlyingAssets.has(assetKey))
+
+          if (matchesUnderlyingAsset) {
+            acc.filteredVaults.push(vault)
+          }
+        }
+
+        return acc
+      },
+      {
+        filteredVaults: [] as TYDaemonVault[],
+        vaultFlags: {} as Record<string, TVaultFlags>,
+        availableUnderlyingAssets: new Set<string>(),
+        underlyingAssetVaults: {} as Record<string, TYDaemonVault>,
+        totalMatchingVaults: 0,
+        totalHoldingsMatching: 0,
+        totalAvailableMatching: 0,
+        totalMigratableMatching: 0,
+        totalRetiredMatching: 0
       }
-    })
+    )
 
     return {
-      filteredVaults,
+      filteredVaults: reducedResults.filteredVaults,
       holdingsVaults,
-      vaultFlags,
-      availableUnderlyingAssets: Array.from(availableUnderlyingAssets),
-      underlyingAssetVaults,
-      totalMatchingVaults,
-      totalHoldingsMatching,
-      totalAvailableMatching,
-      totalMigratableMatching,
-      totalRetiredMatching
+      vaultFlags: reducedResults.vaultFlags,
+      availableUnderlyingAssets: Array.from(reducedResults.availableUnderlyingAssets),
+      underlyingAssetVaults: reducedResults.underlyingAssetVaults,
+      totalMatchingVaults: reducedResults.totalMatchingVaults,
+      totalHoldingsMatching: reducedResults.totalHoldingsMatching,
+      totalAvailableMatching: reducedResults.totalAvailableMatching,
+      totalMigratableMatching: reducedResults.totalMigratableMatching,
+      totalRetiredMatching: reducedResults.totalRetiredMatching
     }
   }, [
     vaultIndex,

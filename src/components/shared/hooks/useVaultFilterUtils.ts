@@ -34,14 +34,7 @@ export function createCheckHasHoldings(
   return function checkHasHoldings(vault: TYDaemonVault): boolean {
     const vaultBalance = getBalance({ address: vault.address, chainID: vault.chainID })
     const hasVaultBalance = vaultBalance.raw > 0n
-    let vaultPrice: { normalized: number } | null = null
-
-    const getVaultPrice = (): { normalized: number } => {
-      if (!vaultPrice) {
-        vaultPrice = getPrice({ address: vault.address, chainID: vault.chainID })
-      }
-      return vaultPrice
-    }
+    const vaultPrice = getPrice({ address: vault.address, chainID: vault.chainID })
 
     if (!isZeroAddress(vault.staking.address)) {
       const stakingBalance = getBalance({
@@ -50,8 +43,7 @@ export function createCheckHasHoldings(
       })
       const hasValidStakedBalance = stakingBalance.raw > 0n
       if (hasValidStakedBalance) {
-        const price = getVaultPrice()
-        const stakedBalanceValue = Number(stakingBalance.normalized) * price.normalized
+        const stakedBalanceValue = Number(stakingBalance.normalized) * vaultPrice.normalized
         if (!(shouldHideDust && stakedBalanceValue < 0.01)) {
           return true
         }
@@ -62,8 +54,7 @@ export function createCheckHasHoldings(
       return false
     }
 
-    const price = getVaultPrice()
-    const balanceValue = Number(vaultBalance.normalized) * price.normalized
+    const balanceValue = Number(vaultBalance.normalized) * vaultPrice.normalized
 
     return !(shouldHideDust && balanceValue < 0.01)
   }

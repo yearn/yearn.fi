@@ -51,14 +51,8 @@ const normalizePricePerShare = (value: string | number | null | undefined, decim
   return normalized
 }
 
-const resolveDecimals = (...values: Array<number | null | undefined>): number => {
-  for (const value of values) {
-    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-      return value
-    }
-  }
-  return 18
-}
+const resolveDecimals = (...values: Array<number | null | undefined>): number =>
+  values.find((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0) ?? 18
 
 const isV3Item = (item: TKongVaultListItem): boolean => {
   if (item.v3) {
@@ -123,16 +117,12 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
   const vaultKind = resolveVaultKind(item)
   const vaultType = resolveVaultType(item)
   const vaultDecimals = resolveDecimals(item.decimals ?? null, tokenDecimals)
-  const forwardApr = (() => {
-    const candidates = [oracleApy, estimated?.apy, historical?.net]
-    for (const candidate of candidates) {
-      if (candidate === null || candidate === undefined) {
-        continue
-      }
-      return normalizeNumber(candidate)
-    }
-    return 0
-  })()
+  const forwardApr =
+    normalizeNumber(
+      [oracleApy, estimated?.apy, historical?.net].find(
+        (candidate): candidate is number => candidate !== null && candidate !== undefined
+      )
+    ) || 0
 
   const parsed = yDaemonVaultSchema.safeParse({
     address: item.address,
@@ -255,18 +245,16 @@ function useFetchYearnVaults(
       return []
     }
     const chainIdSet = new Set(resolvedChainIds)
-    const entries: Array<{ item: TKongVaultListItem; vault: TYDaemonVault }> = []
-    for (const item of kongVaultList) {
+    return kongVaultList.flatMap((item) => {
       if (!chainIdSet.has(item.chainId)) {
-        continue
+        return []
       }
       const vault = mapKongListItemToVault(item)
       if (!vault) {
-        continue
+        return []
       }
-      entries.push({ item, vault })
-    }
-    return entries
+      return [{ item, vault }]
+    })
   }, [kongVaultList, resolvedChainIds])
 
   const allVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
