@@ -66,14 +66,18 @@ export function usePortfolioModel(): TPortfolioModel {
     balances
   } = useWallet()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
-  const { getPrice, katanaAprs, vaults, allVaults, isLoadingVaultList } = useYearn()
+  const { getPrice, katanaAprs, vaults, inclusionYearnVaults, isLoadingVaultList } = useYearn()
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
+
+  const yearnHoldingsUniverse = useMemo((): Record<string, TYDaemonVault> => {
+    return { ...vaults, ...inclusionYearnVaults }
+  }, [vaults, inclusionYearnVaults])
 
   const vaultLookup = useMemo(() => {
     const map = new Map<string, TYDaemonVault>()
 
-    Object.values(allVaults).forEach((vault) => {
+    Object.values(yearnHoldingsUniverse).forEach((vault) => {
       const vaultKey = getVaultKey(vault)
       map.set(vaultKey, vault)
 
@@ -84,7 +88,7 @@ export function usePortfolioModel(): TPortfolioModel {
     })
 
     return map
-  }, [allVaults])
+  }, [yearnHoldingsUniverse])
 
   const holdingsVaults = useMemo(() => {
     const result: TYDaemonVault[] = []

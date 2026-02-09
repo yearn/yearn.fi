@@ -63,7 +63,7 @@ export function useV2VaultFilter(
   showHiddenVaults?: boolean,
   enabled?: boolean
 ): TOptimizedV2VaultFilterResult {
-  const { vaults, allVaults, getPrice, isLoadingVaultList } = useYearn()
+  const { vaults, inclusionYearnVaults, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
   const { shouldHideDust } = useAppSettings()
   const isEnabled = enabled ?? true
@@ -170,7 +170,7 @@ export function useV2VaultFilter(
       upsertVault(vault, { isActive: !isRetired, isRetired, isMigratable: Boolean(vault.migration?.available) })
     })
 
-    Object.values(allVaults).forEach((vault) => {
+    Object.values(inclusionYearnVaults).forEach((vault) => {
       if (!shouldIncludeVault(vault)) {
         return
       }
@@ -191,7 +191,7 @@ export function useV2VaultFilter(
     })
 
     return vaultMap
-  }, [isEnabled, isEnabled ? vaults : null, isEnabled ? allVaults : null, checkHasRawHoldings])
+  }, [isEnabled, isEnabled ? vaults : null, isEnabled ? inclusionYearnVaults : null, checkHasRawHoldings])
 
   const walletFlags = useMemo(() => {
     const flags = new Map<string, TVaultWalletFlags>()

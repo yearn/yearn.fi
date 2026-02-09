@@ -104,8 +104,9 @@ const resolveVaultType = (item: TKongVaultListItem): TYDaemonVault['type'] => {
   return 'Standard'
 }
 
-const isCatalogYearnVault = (item: TKongVaultListItem): boolean =>
-  item.origin === 'yearn' || item.inclusion?.isYearn === true
+const isCatalogYearnVault = (item: TKongVaultListItem): boolean => item.origin === 'yearn'
+
+const isInclusionYearnVault = (item: TKongVaultListItem): boolean => item.inclusion?.isYearn === true
 
 const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null => {
   const tokenDecimals = resolveDecimals(item.asset?.decimals ?? null, item.decimals ?? null)
@@ -229,6 +230,7 @@ function useFetchYearnVaults(
   options?: { enabled?: boolean }
 ): {
   vaults: TDict<TYDaemonVault>
+  inclusionYearnVaults: TDict<TYDaemonVault>
   allVaults: TDict<TYDaemonVault>
   isLoading: boolean
   refetch: () => Promise<QueryObserverResult<TKongVaultList, Error>>
@@ -292,6 +294,20 @@ function useFetchYearnVaults(
     }, {})
   }, [mappedVaultEntries])
 
+  const inclusionYearnVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
+    if (!mappedVaultEntries.length) {
+      return {}
+    }
+    return mappedVaultEntries.reduce((acc: TDict<TYDaemonVault>, entry): TDict<TYDaemonVault> => {
+      if (!isInclusionYearnVault(entry.item)) {
+        return acc
+      }
+      const vault = entry.vault
+      acc[toAddress(vault.address)] = vault
+      return acc
+    }, {})
+  }, [mappedVaultEntries])
+
   const patchedAllVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
     return patchYBoldVaults(allVaultsObject)
   }, [allVaultsObject])
@@ -300,8 +316,13 @@ function useFetchYearnVaults(
     return patchYBoldVaults(catalogVaultsObject)
   }, [catalogVaultsObject])
 
+  const patchedInclusionYearnVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
+    return patchYBoldVaults(inclusionYearnVaultsObject)
+  }, [inclusionYearnVaultsObject])
+
   return {
     vaults: patchedCatalogVaultsObject,
+    inclusionYearnVaults: patchedInclusionYearnVaultsObject,
     allVaults: patchedAllVaultsObject,
     isLoading,
     refetch: refetch as unknown as () => Promise<QueryObserverResult<TKongVaultList, Error>>
