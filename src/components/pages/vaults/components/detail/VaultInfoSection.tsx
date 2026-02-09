@@ -1,7 +1,7 @@
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { baseFetcher, isZeroAddress, toAddress, truncateHex } from '@shared/utils'
+import { baseFetcher, isCurveHostUrl, isZeroAddress, normalizeCurveUrl, toAddress, truncateHex } from '@shared/utils'
 import { copyToClipboard } from '@shared/utils/helpers'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { isAutomatedVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -12,10 +12,7 @@ import type { ReactElement } from 'react'
 type TCurvePoolEntry = {
   address?: string
   lpTokenAddress?: string
-  lp_token_address?: string
-  poolURLs?: { deposit?: string[] | null }
   poolUrls?: { deposit?: string[] | null }
-  pool_urls?: { deposit?: string[] | null }
 }
 
 type TCurvePoolsApiResponse = {
@@ -28,15 +25,12 @@ const CURVE_POOLS_CACHE_TTL_MS = 30 * 60 * 1000
 const CURVE_POOLS_CACHE_GC_MS = 60 * 60 * 1000
 const CURVE_POOLS_ENDPOINT = 'https://api.curve.finance/v1/getPools/all'
 
-const extractCurvePools = (payload: unknown): TCurvePoolEntry[] => {
-  if (Array.isArray(payload)) {
-    return payload as TCurvePoolEntry[]
-  }
+export const extractCurvePools = (payload: unknown): TCurvePoolEntry[] => {
   const poolData = (payload as TCurvePoolsApiResponse | null)?.data?.poolData
   return Array.isArray(poolData) ? (poolData as TCurvePoolEntry[]) : []
 }
 
-const resolveCurveDepositUrl = (pools: TCurvePoolEntry[], tokenAddress: string): string => {
+export const resolveCurveDepositUrl = (pools: TCurvePoolEntry[], tokenAddress: string): string => {
   const normalizedTarget = toAddress(tokenAddress)
   if (isZeroAddress(normalizedTarget)) {
     return ''
@@ -44,19 +38,14 @@ const resolveCurveDepositUrl = (pools: TCurvePoolEntry[], tokenAddress: string):
 
   for (const pool of pools) {
     const poolAddress = typeof pool?.address === 'string' ? toAddress(pool.address) : null
-    const poolLpAddress =
-      typeof pool?.lpTokenAddress === 'string'
-        ? toAddress(pool.lpTokenAddress)
-        : typeof pool?.lp_token_address === 'string'
-          ? toAddress(pool.lp_token_address)
-          : null
+    const poolLpAddress = typeof pool?.lpTokenAddress === 'string' ? toAddress(pool.lpTokenAddress) : null
     if (poolAddress !== normalizedTarget && poolLpAddress !== normalizedTarget) {
       continue
     }
 
-    const urls = pool.poolURLs?.deposit ?? pool.poolUrls?.deposit ?? pool.pool_urls?.deposit ?? []
+    const urls = pool.poolUrls?.deposit ?? []
     if (Array.isArray(urls) && typeof urls[0] === 'string') {
-      return urls[0]
+      return normalizeCurveUrl(urls[0])
     }
   }
 
@@ -130,7 +119,7 @@ export function VaultInfoSection({
     gcTime: CURVE_POOLS_CACHE_GC_MS,
     refetchOnWindowFocus: false
   })
-  const curveSourceUrl = isCurveCategory && sourceUrlLower.includes('curve.finance') ? sourceUrl : ''
+  const curveSourceUrl = isCurveCategory && isCurveHostUrl(sourceUrl) ? normalizeCurveUrl(sourceUrl) : ''
   const resolvedCurvePoolUrl = curvePoolUrl || curveSourceUrl
   const liquidityUrl = isVelodrome
     ? `https://velodrome.finance/liquidity?query=${currentVault.token.address}`
