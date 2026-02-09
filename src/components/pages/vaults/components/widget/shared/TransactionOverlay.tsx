@@ -1,4 +1,5 @@
 import { Button } from '@shared/components/Button'
+import { toast } from '@shared/components/yToast'
 import { useNotificationsActions } from '@shared/contexts/useNotificationsActions'
 import type { TCreateNotificationParams } from '@shared/types/notifications'
 import { cl } from '@shared/utils'
@@ -329,12 +330,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
             if (gasEstimate) {
               gasOverrides = { gas: (gasEstimate * BigInt(110)) / BigInt(100) }
             }
-          } catch (error) {
-            console.warn('[TransactionOverlay] Gas estimation failed', {
-              step: step.label,
-              error: (error as Error)?.message || error
+          } catch {
+            toast({
+              content: 'Gas estimation failed. Transaction will proceed with default gas limit.',
+              type: 'warning'
             })
-            // Gas estimation failed, proceed without override
           }
         }
 
