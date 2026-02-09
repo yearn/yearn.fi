@@ -71,6 +71,7 @@ const RETIRED_VAULT_ALERT_MESSAGES = {
   softNoMigration:
     'This vault is retired but still earning yield. Deposits are no longer allowed, but withdrawals will remain open indefinitely.'
 } as const
+const NON_YEARN_ENDORSED_VAULT_ALERT_MESSAGE = 'This is not a Yearn endorsed vault. Please proceed with caution.'
 
 const isSoftRetiredVault = (vault: TKongVaultView): boolean => {
   const hasActiveRouterStrategy = (vault.strategies ?? []).some(
@@ -208,7 +209,7 @@ function Index(): ReactElement | null {
   const chainId = Number(params.chainID)
   const { getBalance, onRefresh } = useWallet()
   const { address } = useWeb3()
-  const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
+  const { vaults, inclusionYearnVaults, allVaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [mobileDrawerAction, setMobileDrawerAction] = useState<WidgetActionType>(WidgetActionType.Deposit)
@@ -384,6 +385,15 @@ function Index(): ReactElement | null {
     if (!vaultViewInput) return undefined
     return getVaultView(vaultViewInput, mergedSnapshot)
   }, [vaultViewInput, mergedSnapshot])
+  const currentVaultAddress = useMemo(() => {
+    if (currentVault?.address) {
+      return toAddress(currentVault.address)
+    }
+    if (params.address) {
+      return toAddress(params.address)
+    }
+    return undefined
+  }, [currentVault?.address, params.address])
 
   const isLoadingVault = !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
 
@@ -425,6 +435,17 @@ function Index(): ReactElement | null {
     if (!isRetired || !currentVault) return null
     return getRetiredVaultAlertMessage({ vault: currentVault, hasUserFundsInVault })
   }, [currentVault, hasUserFundsInVault, isRetired])
+  const isYearnEndorsedVault = useMemo(() => {
+    if (!currentVaultAddress) return true
+    const hasKnownVaultIdentity = Boolean(allVaults[currentVaultAddress])
+    const hasLoadedAnyVaultMetadata = Object.keys(allVaults).length > 0
+    const hasCompletedVaultListLookup = hasLoadedAnyVaultMetadata || (hasTriggeredVaultListFetch && !isLoadingVaultList)
+    if (!hasKnownVaultIdentity && !hasCompletedVaultListLookup) return true
+    const hasYearnOrigin = Boolean(vaults[currentVaultAddress])
+    const hasYearnInclusion = Boolean(inclusionYearnVaults[currentVaultAddress])
+    return hasYearnOrigin && hasYearnInclusion
+  }, [allVaults, currentVaultAddress, hasTriggeredVaultListFetch, inclusionYearnVaults, isLoadingVaultList, vaults])
+  const shouldShowNonYearnEndorsedAlert = Boolean(currentVault) && !isYearnEndorsedVault
   const widgetActions = useMemo(() => {
     if (isRetired || isMigratable) {
       return canShowMigrateAction ? [WidgetActionType.Migrate, WidgetActionType.Withdraw] : [WidgetActionType.Withdraw]
@@ -1076,6 +1097,9 @@ function Index(): ReactElement | null {
           {isRetired && retiredVaultAlertMessage ? (
             <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-4 py-3" />
           ) : null}
+          {shouldShowNonYearnEndorsedAlert ? (
+            <RetiredVaultAlert message={NON_YEARN_ENDORSED_VAULT_ALERT_MESSAGE} className="px-4 py-3" />
+          ) : null}
 
           {Number.isInteger(chainId) && (
             <div className="border border-border rounded-lg bg-surface overflow-hidden">
@@ -1223,6 +1247,9 @@ function Index(): ReactElement | null {
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
             {isRetired && retiredVaultAlertMessage ? (
               <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
+            ) : null}
+            {shouldShowNonYearnEndorsedAlert ? (
+              <RetiredVaultAlert message={NON_YEARN_ENDORSED_VAULT_ALERT_MESSAGE} className="px-6 py-4" />
             ) : null}
 
             {renderableSections.map((section) => {
