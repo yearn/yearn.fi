@@ -1,28 +1,26 @@
-import { formatAmount, formatTAmount } from '@shared/utils'
+import { formatTAmount } from '@shared/utils'
 import type { FC } from 'react'
-import { formatUnits, maxUint256 } from 'viem'
+import { maxUint256 } from 'viem'
+import { CollapsibleDetails } from '../shared/CollapsibleDetails'
 import type { WithdrawRouteType } from './types'
 
 interface WithdrawDetailsProps {
-  // Action label
   actionLabel: string
-  // Required shares
   requiredShares: bigint
   sharesDecimals: number
   isLoadingQuote: boolean
-  // Output info
   expectedOut: bigint
   outputDecimals: number
   outputSymbol?: string
-  // Optional swap info
   showSwapRow: boolean
   withdrawAmountSimple: string
   assetSymbol?: string
-  // Route type for "at least" text
+  pricePerShare: bigint
+  vaultDecimals: number
+  assetTokenSymbol?: string
+  assetUsdPrice: number
   routeType: WithdrawRouteType
-  // Modal trigger
   onShowDetailsModal: () => void
-  // Approval info (for zap withdrawals)
   allowance?: bigint
   allowanceTokenDecimals?: number
   allowanceTokenSymbol?: string
@@ -40,6 +38,10 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
   showSwapRow,
   withdrawAmountSimple,
   assetSymbol,
+  pricePerShare,
+  vaultDecimals,
+  assetTokenSymbol,
+  assetUsdPrice,
   routeType,
   onShowDetailsModal,
   allowance,
@@ -47,100 +49,88 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
   allowanceTokenSymbol,
   onAllowanceClick
 }) => {
-  // Format allowance display
-  const formatAllowance = () => {
-    if (allowance === undefined || allowanceTokenDecimals === undefined) return null
-    if (allowance >= maxUint256 / 2n) return 'Unlimited'
-    return `${formatTAmount({ value: allowance, decimals: allowanceTokenDecimals })} ${allowanceTokenSymbol || ''}`
-  }
+  const allowanceDisplay =
+    allowance === undefined || allowanceTokenDecimals === undefined
+      ? null
+      : allowance >= maxUint256 / 2n
+        ? 'Unlimited'
+        : formatTAmount({ value: allowance, decimals: allowanceTokenDecimals })
 
-  const allowanceDisplay = formatAllowance()
+  const outputFormatted =
+    expectedOut > 0n
+      ? formatTAmount({ value: expectedOut, decimals: outputDecimals, options: { maximumFractionDigits: 6 } })
+      : '0'
+
   return (
-    <div>
-      <div className="flex flex-col gap-2">
-        {/* You will unstake/redeem */}
+    <CollapsibleDetails
+      variant="withdraw"
+      pricePerShare={pricePerShare}
+      vaultDecimals={vaultDecimals}
+      assetTokenSymbol={assetTokenSymbol}
+      assetUsdPrice={assetUsdPrice}
+      onSummaryClick={onShowDetailsModal}
+    >
+      <div className="flex items-center justify-between h-5">
+        <p className="text-sm text-text-secondary">{actionLabel}</p>
+        {isLoadingQuote ? (
+          <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
+        ) : (
+          <p className="text-sm text-text-primary">
+            <span className="font-semibold">
+              {requiredShares > 0n
+                ? formatTAmount({
+                    value: requiredShares,
+                    decimals: sharesDecimals
+                  })
+                : '0'}
+            </span>{' '}
+            <span className="font-normal">Vault shares</span>
+          </p>
+        )}
+      </div>
+
+      {showSwapRow && (
         <div className="flex items-center justify-between h-5">
-          <button
-            type="button"
-            onClick={onShowDetailsModal}
-            className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
-          >
-            {actionLabel}
-          </button>
+          <p className="text-sm text-text-secondary">You will swap</p>
+          <p className="text-sm text-text-primary">
+            <span className="font-semibold">{withdrawAmountSimple}</span>{' '}
+            <span className="font-normal">{assetSymbol}</span>
+          </p>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between h-5">
+        <p className="text-sm text-text-secondary">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
+        <p className="text-sm text-text-primary">
           {isLoadingQuote ? (
             <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
           ) : (
+            <>
+              <span className="font-semibold">{outputFormatted}</span>{' '}
+              <span className="font-normal">{outputSymbol || 'tokens'}</span>
+            </>
+          )}
+        </p>
+      </div>
+
+      {allowanceDisplay && (
+        <div className="flex items-center justify-between h-5">
+          <p className="text-sm text-text-secondary">Existing approval</p>
+          {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
+            <button
+              type="button"
+              onClick={onAllowanceClick}
+              className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
+            >
+              <span className="font-semibold">{allowanceDisplay}</span> {allowanceTokenSymbol || ''}
+            </button>
+          ) : (
             <p className="text-sm text-text-primary">
-              <span className="font-semibold">
-                {requiredShares > 0n
-                  ? formatTAmount({
-                      value: requiredShares,
-                      decimals: sharesDecimals
-                    })
-                  : '0'}
-              </span>{' '}
-              <span className="font-normal">{'Vault shares'}</span>
+              <span className="font-semibold">{allowanceDisplay}</span> {allowanceTokenSymbol || ''}
             </p>
           )}
         </div>
-
-        {/* You will swap (only shown when zapping) */}
-        {showSwapRow && (
-          <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-text-secondary">You will swap</p>
-            <div className="flex items-center gap-1">
-              <p className="text-sm text-text-primary">
-                <span className="font-semibold">{withdrawAmountSimple}</span>{' '}
-                <span className="font-normal">{assetSymbol}</span>
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* You will receive */}
-        <div className="flex items-center justify-between h-5">
-          <p className="text-sm text-text-secondary">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
-          <div className="flex items-center gap-1">
-            <p className="text-sm text-text-primary">
-              {isLoadingQuote ? (
-                <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
-              ) : expectedOut > 0n ? (
-                <>
-                  <span className="font-semibold">
-                    {formatAmount(Number(formatUnits(expectedOut, outputDecimals)), 3, 6)}
-                  </span>{' '}
-                  <span className="font-normal">{outputSymbol}</span>
-                </>
-              ) : (
-                <>
-                  <span className="font-semibold">{'0'}</span>{' '}
-                  <span className="font-normal">{outputSymbol || 'tokens'}</span>
-                </>
-              )}
-            </p>
-          </div>
-        </div>
-
-        {/* Approved allowance (for zap withdrawals) */}
-        {allowanceDisplay && (
-          <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-text-secondary">Existing Approval</p>
-            {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
-              <button
-                type="button"
-                onClick={onAllowanceClick}
-                className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
-              >
-                <span className="font-semibold">{allowanceDisplay}</span>
-              </button>
-            ) : (
-              <p className="text-sm text-text-primary">
-                <span className="font-semibold">{allowanceDisplay}</span>
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </CollapsibleDetails>
   )
 }
