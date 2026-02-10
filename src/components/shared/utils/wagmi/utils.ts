@@ -88,12 +88,7 @@ const isChain = (chain: wagmiChains.Chain | unknown): chain is wagmiChains.Chain
 }
 
 export function getRpcUriFor(chainId: number | string): string {
-  const key = `VITE_RPC_URI_FOR_${chainId}`
-  const value = import.meta.env[key]
-  if (typeof value !== 'string') {
-    return ''
-  }
-  return value.trim()
+  return `https://rpc.yearn.fi/chain/${chainId}`
 }
 
 function getAlchemyBaseURL(chainID: number): string {
