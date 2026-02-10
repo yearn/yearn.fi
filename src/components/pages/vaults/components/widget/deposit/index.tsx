@@ -183,6 +183,7 @@ export const WidgetDeposit: FC<Props> = ({
     account,
     isLoadingRoute: activeFlow.periphery.isLoadingRoute,
     flowError: activeFlow.periphery.error,
+    routeType,
     selectedToken,
     vaultAddress,
     isAutoStakingEnabled
@@ -558,6 +559,8 @@ export const WidgetDeposit: FC<Props> = ({
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
         isLastStep={!needsApproval}
+        autoContinueToNextStep
+        autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleDepositSuccess}
       />
 

@@ -266,9 +266,19 @@ function Index(): ReactElement | null {
     address: params.address
   })
   const isSnapshotNotFound = (snapshotError as any)?.response?.status === 404
-  const shouldDisableStakingForDeposit = Boolean(snapshotVault?.meta?.shouldDisableStaking)
 
   const baseMergedVault = useMemo(() => mergeVaultSnapshot(baseVault, snapshotVault), [baseVault, snapshotVault])
+  const isFactoryVault = useMemo(() => {
+    if (!baseMergedVault) return false
+    return deriveListKind(baseMergedVault) === 'factory'
+  }, [baseMergedVault])
+  const snapshotShouldDisableStaking = snapshotVault?.meta?.shouldDisableStaking
+  const shouldDisableStakingForDeposit = useMemo(() => {
+    if (isFactoryVault) {
+      return true
+    }
+    return snapshotShouldDisableStaking === true
+  }, [snapshotShouldDisableStaking, isFactoryVault])
 
   const isYBold = useMemo(() => {
     if (!baseMergedVault?.address && !params.address) return false
