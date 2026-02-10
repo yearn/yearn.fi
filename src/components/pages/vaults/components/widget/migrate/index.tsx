@@ -505,6 +505,8 @@ export const WidgetMigrate: FC<Props> = ({
         onClose={handleOverlayClose}
         step={currentStep}
         isLastStep={isLastStep}
+        autoContinueToNextStep
+        autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleMigrateSuccess}
       />
     </div>
