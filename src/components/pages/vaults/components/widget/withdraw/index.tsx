@@ -594,6 +594,8 @@ export const WidgetWithdraw: FC<
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
         isLastStep={!needsApproval}
+        autoContinueToNextStep
+        autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleWithdrawSuccess}
       />
 
