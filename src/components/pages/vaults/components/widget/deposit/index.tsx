@@ -182,6 +182,7 @@ export const WidgetDeposit: FC<Props> = ({
     account,
     isLoadingRoute: activeFlow.periphery.isLoadingRoute,
     flowError: activeFlow.periphery.error,
+    routeType,
     selectedToken,
     vaultAddress,
     isAutoStakingEnabled

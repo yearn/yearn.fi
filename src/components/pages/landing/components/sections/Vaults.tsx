@@ -1,6 +1,8 @@
+import { usePlausible } from '@hooks/usePlausible'
 import { SectionHeader } from '@shared/components/SectionHeader'
 import { useYearn } from '@shared/contexts/useYearn'
 import { formatPercent } from '@shared/utils/format'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Image from '/src/components/Image'
@@ -11,6 +13,8 @@ type TRow = {
   description?: string
   href: string
   address?: string
+  symbol?: string
+  chainID?: string
   bgClass?: string
 }
 
@@ -100,6 +104,7 @@ const appRows: TRow[] = [
 
 export const Vaults: FC = () => {
   const { vaults, isLoadingVaultList } = useYearn()
+  const trackEvent = usePlausible()
   const [activeSlide, setActiveSlide] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
@@ -115,7 +120,9 @@ export const Vaults: FC = () => {
             icon: vault.icon,
             text: `Earn on ${vault.symbol}`,
             href: vault.href,
-            address: vault.address
+            address: vault.address,
+            symbol: vault.symbol,
+            chainID: '1'
           }
         }
         // safely pull out APR parts
@@ -128,7 +135,9 @@ export const Vaults: FC = () => {
           icon: vault.icon,
           text: apr > 0 ? `Earn up to ${formatPercent(apr * 100, 2, 2)} on ${vault.symbol}` : `Earn on ${vault.symbol}`,
           href: vault.href,
-          address: vault.address
+          address: vault.address,
+          symbol: vault.symbol,
+          chainID: vaultData.chainID.toString()
         }
       }),
       appRows.map((app, index) => {
@@ -260,6 +269,21 @@ export const Vaults: FC = () => {
                         <a
                           key={row.href}
                           href={row.href}
+                          onClick={() => {
+                            if (row.symbol) {
+                              trackEvent(PLAUSIBLE_EVENTS.LANDER_VAULT_CLICK, {
+                                props: {
+                                  vaultAddress: row.address ?? '',
+                                  vaultSymbol: row.symbol,
+                                  chainID: row.chainID ?? ''
+                                }
+                              })
+                            } else {
+                              trackEvent(PLAUSIBLE_EVENTS.LANDER_APP_CLICK, {
+                                props: { name: row.text }
+                              })
+                            }
+                          }}
                           className={`${row.bgClass} flex min-h-[48px] cursor-pointer items-center justify-between rounded-[12px] p-3 transition-opacity duration-200 hover:opacity-50 sm:min-h-[52px] md:rounded-[16px] md:p-[8px]`}
                         >
                           <div className={'flex items-center'}>

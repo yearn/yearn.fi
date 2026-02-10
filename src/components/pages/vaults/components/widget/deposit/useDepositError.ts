@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import type { Address } from 'viem'
+import type { DepositRouteType } from './types'
 
 interface UseDepositErrorProps {
   // Amount state
@@ -13,6 +14,7 @@ interface UseDepositErrorProps {
   // Flow state
   isLoadingRoute: boolean
   flowError?: unknown
+  routeType: DepositRouteType
   // Settings
   selectedToken?: Address
   vaultAddress: Address
@@ -27,6 +29,7 @@ export const useDepositError = ({
   account,
   isLoadingRoute,
   flowError,
+  routeType,
   selectedToken,
   vaultAddress,
   isAutoStakingEnabled
@@ -43,7 +46,7 @@ export const useDepositError = ({
     }
 
     // Route-dependent validation - wait for debounce and route fetch
-    if (flowError && !isLoadingRoute && debouncedAmount > 0n && !isDebouncing) {
+    if (routeType === 'ENSO' && flowError && !isLoadingRoute && debouncedAmount > 0n && !isDebouncing) {
       return 'Unable to find route'
     }
 
@@ -56,6 +59,7 @@ export const useDepositError = ({
     account,
     isLoadingRoute,
     flowError,
+    routeType,
     selectedToken,
     vaultAddress,
     isAutoStakingEnabled
