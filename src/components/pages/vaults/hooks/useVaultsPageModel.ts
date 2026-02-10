@@ -838,13 +838,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
         sortable: true,
         className: hasWalletAddress ? 'col-span-4' : 'col-span-5'
       },
-      // {
-      //   type: 'toggle',
-      //   label: 'Available',
-      //   value: AVAILABLE_TOGGLE_VALUE,
-      //   className: 'col-span-3',
-      //   disabled: availableVaults.length === 0
-      // },
       ...(hasWalletAddress
         ? ([
             {
