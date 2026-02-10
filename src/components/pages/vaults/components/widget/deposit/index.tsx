@@ -483,25 +483,28 @@ export const WidgetDeposit: FC<Props> = ({
     >
       <WidgetHeader title="Deposit" />
       <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
-        {/* Amount Section */}
-        <InputTokenAmount
-          input={depositInput}
-          title="Amount"
-          placeholder="0.00"
-          balance={inputToken?.balance.raw}
-          decimals={inputToken?.decimals}
-          symbol={inputToken?.symbol}
-          disabled={isFetchingMaxQuote}
-          isMaxButtonLoading={isFetchingMaxQuote}
-          onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
-          errorMessage={depositError || undefined}
-          showTokenSelector={ensoEnabled}
-          inputTokenUsdPrice={inputTokenPrice}
-          outputTokenUsdPrice={outputTokenPrice}
-          tokenAddress={inputToken?.address}
-          tokenChainId={inputToken?.chainID}
-          onTokenSelectorClick={() => setShowTokenSelector(true)}
-        />
+        {/* Amount + Details Stack */}
+        <div className="flex flex-col gap-3">
+          <InputTokenAmount
+            input={depositInput}
+            title="Amount"
+            placeholder="0.00"
+            balance={inputToken?.balance.raw}
+            decimals={inputToken?.decimals}
+            symbol={inputToken?.symbol}
+            disabled={isFetchingMaxQuote}
+            isMaxButtonLoading={isFetchingMaxQuote}
+            onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
+            errorMessage={depositError || undefined}
+            showTokenSelector={ensoEnabled}
+            inputTokenUsdPrice={inputTokenPrice}
+            outputTokenUsdPrice={outputTokenPrice}
+            tokenAddress={inputToken?.address}
+            tokenChainId={inputToken?.chainID}
+            onTokenSelectorClick={() => setShowTokenSelector(true)}
+          />
+          {!collapseDetails && detailsSection}
+        </div>
 
         {collapseDetails ? (
           <>
@@ -517,13 +520,7 @@ export const WidgetDeposit: FC<Props> = ({
             {actionRow}
           </>
         ) : (
-          <>
-            {/* Details Section */}
-            {detailsSection}
-
-            {/* Action Button */}
-            {actionRow}
-          </>
+          actionRow
         )}
       </div>
 

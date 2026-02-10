@@ -416,6 +416,10 @@ export const WidgetWithdraw: FC<
         withdrawAmount.bn > 0n ? formatWidgetValue(withdrawAmount.bn, assetToken?.decimals ?? 18) : '0'
       }
       assetSymbol={assetToken?.symbol}
+      pricePerShare={pricePerShare}
+      vaultDecimals={vaultDecimals}
+      assetTokenSymbol={assetToken?.symbol}
+      assetUsdPrice={assetTokenPrice}
       routeType={routeType}
       onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
       allowance={showApprove ? activeFlow.periphery.allowance : undefined}
@@ -504,8 +508,8 @@ export const WidgetWithdraw: FC<
           {/* Withdraw From Selector */}
           {hasBothBalances && <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />}
 
-          {/* Amount Section */}
-          <div className="flex flex-col gap-4">
+          {/* Amount + Details Stack */}
+          <div className="flex flex-col gap-3">
             <InputTokenAmount
               input={withdrawInput}
               title="Amount"
@@ -540,6 +544,7 @@ export const WidgetWithdraw: FC<
                     : undefined
               }
             />
+            {!collapseDetails && detailsSection}
           </div>
         </div>
 
@@ -557,13 +562,7 @@ export const WidgetWithdraw: FC<
             {actionRow}
           </>
         ) : (
-          <>
-            {/* Details Section */}
-            {detailsSection}
-
-            {/* Action Button */}
-            {actionRow}
-          </>
+          actionRow
         )}
       </div>
 
