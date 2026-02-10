@@ -19,6 +19,7 @@ import { useAccount } from 'wagmi'
 import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
+import { WidgetHeader } from '../shared/WidgetHeader'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
 import { DepositDetails } from './DepositDetails'
@@ -372,8 +373,11 @@ export const WidgetDeposit: FC<Props> = ({
 
   if (isLoadingVaultData) {
     return (
-      <div className="flex items-center justify-center h-[317px]">
-        <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+      <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
+        <WidgetHeader title="Deposit" />
+        <div className="flex items-center justify-center flex-1 p-6">
+          <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+        </div>
       </div>
     )
   }
@@ -480,9 +484,7 @@ export const WidgetDeposit: FC<Props> = ({
       className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}
       data-tour="vault-detail-deposit-widget"
     >
-      <div className="flex items-center justify-between gap-3 px-6 pt-4">
-        <h3 className="text-base font-semibold text-text-primary">Deposit</h3>
-      </div>
+      <WidgetHeader title="Deposit" />
       <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         {/* Amount Section */}
         <InputTokenAmount
