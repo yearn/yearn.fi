@@ -91,14 +91,6 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
           </div>
         </div>
       </div>
-      {/* <div
-        className={
-          'mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#0657F9] transition-colors group-hover:text-[#0543c0]'
-        }
-      >
-        <span>{'View vault'}</span>
-        <span aria-hidden>{'→'}</span>
-      </div> */}
     </Link>
   )
 }

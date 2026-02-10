@@ -58,6 +58,7 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
             <TokenLogo src={getTokenLogoUrl(chainId, tokenAddress)} tokenSymbol={symbol} width={18} height={18} />
           </div>
           <div className="hidden items-center gap-1.5 md:flex">
+            <span className="text-base text-text-secondary">{symbol}</span>
             <TokenLogo src={getTokenLogoUrl(chainId, tokenAddress)} tokenSymbol={symbol} width={18} height={18} />
           </div>
         </div>
