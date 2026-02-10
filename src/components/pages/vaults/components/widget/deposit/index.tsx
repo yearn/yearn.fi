@@ -10,7 +10,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
-import { cl, formatTAmount, toAddress } from '@shared/utils'
+import { cl, formatTAmount, formatUSD, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -236,7 +236,7 @@ export const WidgetDeposit: FC<Props> = ({
       options: { maximumFractionDigits: 6 }
     })
 
-    const usd = (Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice).toFixed(2)
+    const usd = formatUSD(Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice)
 
     return { formatted, usd }
   }, [activeFlow.periphery.expectedOut, vaultDecimals, assetToken?.decimals, pricePerShare, assetTokenPrice])
@@ -485,25 +485,28 @@ export const WidgetDeposit: FC<Props> = ({
         <h3 className="text-base font-semibold text-text-primary">Deposit</h3>
       </div>
       <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
-        {/* Amount Section */}
-        <InputTokenAmount
-          input={depositInput}
-          title="Amount"
-          placeholder="0.00"
-          balance={inputToken?.balance.raw}
-          decimals={inputToken?.decimals}
-          symbol={inputToken?.symbol}
-          disabled={isFetchingMaxQuote}
-          isMaxButtonLoading={isFetchingMaxQuote}
-          onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
-          errorMessage={depositError || undefined}
-          showTokenSelector={ensoEnabled}
-          inputTokenUsdPrice={inputTokenPrice}
-          outputTokenUsdPrice={outputTokenPrice}
-          tokenAddress={inputToken?.address}
-          tokenChainId={inputToken?.chainID}
-          onTokenSelectorClick={() => setShowTokenSelector(true)}
-        />
+        {/* Amount + Details Stack */}
+        <div className="flex flex-col gap-3">
+          <InputTokenAmount
+            input={depositInput}
+            title="Amount"
+            placeholder="0.00"
+            balance={inputToken?.balance.raw}
+            decimals={inputToken?.decimals}
+            symbol={inputToken?.symbol}
+            disabled={isFetchingMaxQuote}
+            isMaxButtonLoading={isFetchingMaxQuote}
+            onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
+            errorMessage={depositError || undefined}
+            showTokenSelector={ensoEnabled}
+            inputTokenUsdPrice={inputTokenPrice}
+            outputTokenUsdPrice={outputTokenPrice}
+            tokenAddress={inputToken?.address}
+            tokenChainId={inputToken?.chainID}
+            onTokenSelectorClick={() => setShowTokenSelector(true)}
+          />
+          {!collapseDetails && detailsSection}
+        </div>
 
         {collapseDetails ? (
           <>
@@ -519,13 +522,7 @@ export const WidgetDeposit: FC<Props> = ({
             {actionRow}
           </>
         ) : (
-          <>
-            {/* Details Section */}
-            {detailsSection}
-
-            {/* Action Button */}
-            {actionRow}
-          </>
+          actionRow
         )}
       </div>
 

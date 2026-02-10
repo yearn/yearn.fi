@@ -1,3 +1,4 @@
+import { toast } from '@shared/components/yToast'
 import { useCallback, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
@@ -55,7 +56,7 @@ export const useFetchMaxQuote = ({
 
       const data = await response.json()
       if (data.error) {
-        console.error('Enso MAX quote error:', data.message)
+        toast({ content: 'Unable to calculate max deposit amount. Please try again.', type: 'warning' })
         return
       }
 
@@ -70,8 +71,8 @@ export const useFetchMaxQuote = ({
         const adjustedBalance = balance - gasReserve
         onResult(formatUnits(adjustedBalance, decimals))
       }
-    } catch (error) {
-      console.error('Failed to fetch MAX quote:', error)
+    } catch {
+      toast({ content: 'Failed to fetch max deposit quote. Please try again.', type: 'error' })
     } finally {
       setIsFetching(false)
     }
