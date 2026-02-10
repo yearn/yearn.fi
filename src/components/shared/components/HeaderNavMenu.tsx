@@ -27,6 +27,7 @@ type TNavTile = Pick<TAppTile, 'name' | 'href' | 'description'> & {
 }
 
 const BASE_YEARN_ASSET_URI = import.meta.env?.VITE_BASE_YEARN_ASSETS_URI ?? ''
+const HEADER_DROPDOWN_ICON_COLOR = 'text-[#0657F9]'
 
 function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href)
@@ -84,13 +85,13 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
       name: 'yVaults',
       href: '/vaults',
       description: 'Yield-Generating Vaults',
-      icon: <LogoYearnMark className={'size-6 text-primary'} />
+      icon: <LogoYearnMark className={cl('size-6', HEADER_DROPDOWN_ICON_COLOR)} />
     },
     {
       name: 'Curation',
       href: 'https://app.morpho.org/ethereum/earn?v2=false&curators=yearn',
       description: 'Lending Market Curation',
-      icon: <LogoCuration className={'size-11'} back={'text-transparent'} front={'text-primary'} />
+      icon: <LogoCuration className={'size-11'} back={'text-transparent'} front={HEADER_DROPDOWN_ICON_COLOR} />
     },
     {
       name: 'yCRV',

@@ -18,11 +18,12 @@ import { useCurrentApp } from '@shared/hooks/useCurrentApp'
 import { IconAlertCritical } from '@shared/icons/IconAlertCritical'
 import { IconAlertError } from '@shared/icons/IconAlertError'
 import { IconCheckmark } from '@shared/icons/IconCheckmark'
+import { resolvePartnerFromPath } from '@shared/partners/resolvePartnerFromPath'
 import { cl } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
-import { useLayoutEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router'
 import { WagmiProvider } from 'wagmi'
@@ -60,6 +61,7 @@ function App(): ReactElement {
 
   // Determine dynamic meta for vault detail pages
   const asPath = location.pathname
+  const partnerSlug = resolvePartnerFromPath(asPath)
 
   // Get most basic og and uri info
   const ogBaseUrl = 'https://og.yearn.fi'
@@ -69,6 +71,15 @@ function App(): ReactElement {
     ? `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
     : manifest.og || 'https://yearn.fi/og.png'
   const pageUri = isVaultDetailPage ? `https://yearn.fi${asPath}` : manifest.uri || 'https://yearn.fi'
+  const canonical = isVaultDetailPage ? undefined : manifest.canonical || (partnerSlug ? pageUri : undefined)
+
+  useEffect(() => {
+    if (!partnerSlug) {
+      document.documentElement.removeAttribute('data-partner')
+      return
+    }
+    document.documentElement.setAttribute('data-partner', partnerSlug)
+  }, [partnerSlug])
 
   return (
     <>
@@ -79,6 +90,7 @@ function App(): ReactElement {
         themeColor={'#000000'}
         og={ogUrl}
         uri={pageUri}
+        canonical={canonical}
       />
       <WithFonts>
         <main className={'font-aeonik size-full min-h-screen'}>

@@ -1,0 +1,85 @@
+/* Partner-specific visual overrides. Keep scope narrow and token-based. */
+:root[data-partner="aerodrome"] {
+  --partner-page-overlay-base: linear-gradient(0deg, rgb(9 14 31) 0%, rgb(9 14 31) 100%);
+  --partner-page-overlay-texture:
+    repeating-radial-gradient(circle at 16% 122%, rgb(90 140 255 / 0.42) 0 1px, transparent 1px 18px),
+    repeating-radial-gradient(circle at 82% 126%, rgb(15 30 84 / 0.5) 0 1px, transparent 1px 20px);
+  --partner-page-overlay-texture-opacity: 0.46;
+  --partner-page-overlay-texture-blend: screen;
+  --color-primary: #0052ff;
+  --color-primary-hover: #054ded;
+}
+
+:root[data-partner="curve"] {
+  --partner-page-overlay-base: linear-gradient(90deg, #5b1110 0%, #bd2e2a 18%, #f2d13f 40%, #47a451 62%, #1f62e7 100%);
+  --partner-page-overlay-texture:
+    repeating-radial-gradient(circle at 14% 128%, rgb(255 255 255 / 0.3) 0 1px, transparent 1px 16px),
+    repeating-radial-gradient(circle at 84% 120%, rgb(0 0 0 / 0.28) 0 1px, transparent 1px 18px);
+  --partner-page-overlay-texture-opacity: 0.55;
+  --partner-page-overlay-texture-blend: overlay;
+  --color-primary: #1763fd;
+  --color-primary-hover: #034cde;
+}
+
+:root[data-partner="katana"] {
+  --partner-page-overlay-base: linear-gradient(90deg, #f4ff00 0%, #8f9952 42%, #02132c 100%);
+  --color-primary: hsl(172 90% 42%);
+  --color-primary-hover: hsl(172 90% 36%);
+}
+
+:root[data-partner="morpho"] {
+  --partner-page-overlay-base: linear-gradient(0deg, #02132c 0%, #02132c 100%);
+  --partner-page-overlay-texture:
+    radial-gradient(rgb(255 255 255 / 0.28) 0.55px, transparent 0.55px),
+    radial-gradient(rgb(255 255 255 / 0.18) 0.45px, transparent 0.45px);
+  --partner-page-overlay-texture-size: 3px 3px, 5px 5px;
+  --partner-page-overlay-texture-opacity: 0.26;
+  --partner-page-overlay-texture-blend: soft-light;
+  --color-primary: #2973ff;
+  --color-primary-hover: #2066e8;
+}
+
+:root[data-partner="pooltogether"] {
+  --partner-page-overlay-base: linear-gradient(0deg, #5a32b8 0%, #5a32b8 100%);
+  --color-primary: #c521d4;
+  --color-primary-hover: #dc25ed;
+}
+
+:root[data-partner="velodrome"] {
+  --partner-page-overlay-base: linear-gradient(0deg, #ff1100 0%, #ff1100 100%);
+  --partner-page-overlay-texture:
+    repeating-radial-gradient(circle at 18% 124%, rgb(255 236 176 / 0.32) 0 1px, transparent 1px 17px),
+    repeating-radial-gradient(circle at 78% 121%, rgb(93 0 0 / 0.45) 0 1px, transparent 1px 19px);
+  --partner-page-overlay-texture-opacity: 0.48;
+  --partner-page-overlay-texture-blend: overlay;
+  --color-primary: #ee2524;
+  --color-primary-hover: #c81e1d;
+}
+
+.partner-vaults-gradient {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 0;
+  height: 75vh;
+  pointer-events: none;
+  background-image: var(--partner-page-overlay-base, linear-gradient(0deg, transparent 0%, transparent 100%));
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  -webkit-mask-image: linear-gradient(to top, rgb(0 0 0 / 1) 0%, rgb(0 0 0 / 0) 100%);
+  mask-image: linear-gradient(to top, rgb(0 0 0 / 1) 0%, rgb(0 0 0 / 0) 100%);
+}
+
+.partner-vaults-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: var(--partner-page-overlay-texture, none);
+  background-size: var(--partner-page-overlay-texture-size, auto);
+  background-position: center bottom;
+  background-repeat: repeat;
+  opacity: var(--partner-page-overlay-texture-opacity, 0);
+  mix-blend-mode: var(--partner-page-overlay-texture-blend, normal);
+}
