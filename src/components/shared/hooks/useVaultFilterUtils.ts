@@ -1,7 +1,7 @@
 import { getNativeTokenWrapperContract } from '@pages/vaults/utils/nativeTokens'
 import type { TAddress } from '@shared/types/address'
 import type { TNormalizedBN } from '@shared/types/mixed'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 
@@ -24,6 +24,7 @@ export type TVaultFlags = {
 type TTokenAndChain = { address: TAddress; chainID: number }
 type TBalanceGetter = (params: TTokenAndChain) => TNormalizedBN
 type TPriceGetter = (params: TTokenAndChain) => { normalized: number }
+type TTokenGetter = (params: TTokenAndChain) => { value?: number }
 
 export function createCheckHasHoldings(
   getBalance: TBalanceGetter,
@@ -33,24 +34,16 @@ export function createCheckHasHoldings(
   return function checkHasHoldings(vault: TYDaemonVault): boolean {
     const vaultBalance = getBalance({ address: vault.address, chainID: vault.chainID })
     const hasVaultBalance = vaultBalance.raw > 0n
-    let vaultPrice: { normalized: number } | null = null
+    const vaultPrice = getPrice({ address: vault.address, chainID: vault.chainID })
 
-    const getVaultPrice = (): { normalized: number } => {
-      if (!vaultPrice) {
-        vaultPrice = getPrice({ address: vault.address, chainID: vault.chainID })
-      }
-      return vaultPrice
-    }
-
-    if (vault.staking.available) {
+    if (!isZeroAddress(vault.staking.address)) {
       const stakingBalance = getBalance({
         address: vault.staking.address,
         chainID: vault.chainID
       })
       const hasValidStakedBalance = stakingBalance.raw > 0n
       if (hasValidStakedBalance) {
-        const price = getVaultPrice()
-        const stakedBalanceValue = Number(stakingBalance.normalized) * price.normalized
+        const stakedBalanceValue = Number(stakingBalance.normalized) * vaultPrice.normalized
         if (!(shouldHideDust && stakedBalanceValue < 0.01)) {
           return true
         }
@@ -61,8 +54,7 @@ export function createCheckHasHoldings(
       return false
     }
 
-    const price = getVaultPrice()
-    const balanceValue = Number(vaultBalance.normalized) * price.normalized
+    const balanceValue = Number(vaultBalance.normalized) * vaultPrice.normalized
 
     return !(shouldHideDust && balanceValue < 0.01)
   }
@@ -85,6 +77,58 @@ export function createCheckHasAvailableBalance(getBalance: TBalanceGetter): (vau
 
     return false
   }
+}
+
+export function getVaultHoldingsUsdValue(
+  vault: TYDaemonVault,
+  getToken: TTokenGetter,
+  getBalance: TBalanceGetter,
+  getPrice: TPriceGetter
+): number {
+  const vaultToken = getToken({ address: vault.address, chainID: vault.chainID })
+  const vaultDirectValue = Number(vaultToken.value || 0)
+  const vaultShares = Number(getBalance({ address: vault.address, chainID: vault.chainID }).normalized || 0)
+
+  const canUseStaking = !isZeroAddress(vault.staking.address)
+  const stakingToken = canUseStaking ? getToken({ address: vault.staking.address, chainID: vault.chainID }) : null
+  const stakingDirectValue = Number(stakingToken?.value || 0)
+  const stakingShares = canUseStaking
+    ? Number(getBalance({ address: vault.staking.address, chainID: vault.chainID }).normalized || 0)
+    : 0
+
+  const vaultSharePrice = Number(getPrice({ address: vault.address, chainID: vault.chainID }).normalized || 0)
+  const pricePerShare = Number(vault.apr?.pricePerShare?.today || 0)
+  const resolvedAssetPrice = Number(getPrice({ address: vault.token.address, chainID: vault.chainID }).normalized || 0)
+  const assetPrice = resolvedAssetPrice > 0 ? resolvedAssetPrice : Number(vault.tvl?.price || 0)
+
+  const resolvePositionValue = (directValue: number, shares: number): number => {
+    if (Number.isFinite(directValue) && directValue > 0) {
+      return directValue
+    }
+    if (!Number.isFinite(shares) || shares <= 0) {
+      return 0
+    }
+    if (Number.isFinite(vaultSharePrice) && vaultSharePrice > 0) {
+      const viaVaultPrice = shares * vaultSharePrice
+      if (Number.isFinite(viaVaultPrice)) {
+        return viaVaultPrice
+      }
+    }
+    if (Number.isFinite(pricePerShare) && pricePerShare > 0 && Number.isFinite(assetPrice) && assetPrice > 0) {
+      const viaPps = shares * pricePerShare * assetPrice
+      if (Number.isFinite(viaPps)) {
+        return viaPps
+      }
+    }
+    return 0
+  }
+
+  const totalValue =
+    resolvePositionValue(vaultDirectValue, vaultShares) + resolvePositionValue(stakingDirectValue, stakingShares)
+  if (!Number.isFinite(totalValue)) {
+    return 0
+  }
+  return totalValue
 }
 
 export function getVaultKey(vault: TYDaemonVault): string {

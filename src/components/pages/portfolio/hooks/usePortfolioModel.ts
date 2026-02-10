@@ -4,9 +4,9 @@ import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/va
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
-import { getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
+import { getVaultHoldingsUsdValue, getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { calculateVaultEstimatedAPY, calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { useMemo, useState } from 'react'
@@ -61,29 +61,34 @@ export function usePortfolioModel(): TPortfolioModel {
     cumulatedValueInV2Vaults,
     cumulatedValueInV3Vaults,
     isLoading: isWalletLoading,
+    getToken,
     getBalance,
     balances
   } = useWallet()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
-  const { getPrice, katanaAprs, vaults, isLoadingVaultList } = useYearn()
+  const { getPrice, katanaAprs, vaults, inclusionYearnVaults, isLoadingVaultList } = useYearn()
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
+
+  const yearnHoldingsUniverse = useMemo((): Record<string, TYDaemonVault> => {
+    return { ...vaults, ...inclusionYearnVaults }
+  }, [vaults, inclusionYearnVaults])
 
   const vaultLookup = useMemo(() => {
     const map = new Map<string, TYDaemonVault>()
 
-    Object.values(vaults).forEach((vault) => {
+    Object.values(yearnHoldingsUniverse).forEach((vault) => {
       const vaultKey = getVaultKey(vault)
       map.set(vaultKey, vault)
 
-      if (vault.staking?.available && vault.staking.address) {
+      if (vault.staking?.address && !isZeroAddress(vault.staking.address)) {
         const stakingKey = getChainAddressKey(vault.chainID, vault.staking.address)
         map.set(stakingKey, vault)
       }
     })
 
     return map
-  }, [vaults])
+  }, [yearnHoldingsUniverse])
 
   const holdingsVaults = useMemo(() => {
     const result: TYDaemonVault[] = []
@@ -204,27 +209,9 @@ export function usePortfolioModel(): TPortfolioModel {
   const getVaultValue = useMemo(
     () =>
       (vault: (typeof holdingsVaults)[number]): number => {
-        const shareBalance = getBalance({
-          address: vault.address,
-          chainID: vault.chainID
-        })
-        const price = getPrice({
-          address: vault.address,
-          chainID: vault.chainID
-        })
-        const baseValue = shareBalance.normalized * price.normalized
-
-        const stakingValue =
-          vault.staking?.available && vault.staking.address
-            ? getBalance({
-                address: vault.staking.address,
-                chainID: vault.chainID
-              }).normalized * price.normalized
-            : 0
-
-        return baseValue + stakingValue
+        return getVaultHoldingsUsdValue(vault, getToken, getBalance, getPrice)
       },
-    [getBalance, getPrice]
+    [getBalance, getPrice, getToken]
   )
 
   const blendedMetrics = useMemo(() => {

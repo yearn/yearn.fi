@@ -5,7 +5,7 @@ import { deriveAssetCategory } from '@pages/vaults/utils/vaultListFacets'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { fetchWithSchema, getFetchQueryKey, useFetch } from '@shared/hooks/useFetch'
 import type { TDict } from '@shared/types'
-import { isZeroAddress, toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import { kongVaultListSchema } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -21,7 +21,7 @@ import { zeroAddress } from 'viem'
  *****************************************************************************/
 const DEFAULT_CHAIN_IDS = [1, 10, 137, 146, 250, 8453, 42161, 747474]
 
-const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/list/vaults?origin=yearn`
+const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/list/vaults`
 
 const normalizeNumber = (value: number | null | undefined, fallback = 0): number => {
   if (value === null || value === undefined || Number.isNaN(value)) {
@@ -40,14 +40,19 @@ const normalizeFee = (value: number | null | undefined): number => {
   return value
 }
 
-const resolveDecimals = (...values: Array<number | null | undefined>): number => {
-  for (const value of values) {
-    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-      return value
-    }
+const normalizePricePerShare = (value: string | number | null | undefined, decimals: number): number => {
+  if (value === null || value === undefined) {
+    return 0
   }
-  return 18
+  const normalized = toNormalizedBN(value, decimals).normalized
+  if (!Number.isFinite(normalized)) {
+    return 0
+  }
+  return normalized
 }
+
+const resolveDecimals = (...values: Array<number | null | undefined>): number =>
+  values.find((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0) ?? 18
 
 const isV3Item = (item: TKongVaultListItem): boolean => {
   if (item.v3) {
@@ -93,6 +98,10 @@ const resolveVaultType = (item: TKongVaultListItem): TYDaemonVault['type'] => {
   return 'Standard'
 }
 
+const isCatalogYearnVault = (item: TKongVaultListItem): boolean => item.origin === 'yearn'
+
+const isInclusionYearnVault = (item: TKongVaultListItem): boolean => item.inclusion?.isYearn === true
+
 const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null => {
   const tokenDecimals = resolveDecimals(item.asset?.decimals ?? null, item.decimals ?? null)
   const tokenSymbol = item.asset?.symbol ?? item.symbol ?? ''
@@ -107,16 +116,13 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
   const forwardAprType = hasOracleApy || hasEstimatedApy ? aprType : ''
   const vaultKind = resolveVaultKind(item)
   const vaultType = resolveVaultType(item)
-  const forwardApr = (() => {
-    const candidates = [oracleApy, estimated?.apy, historical?.net]
-    for (const candidate of candidates) {
-      if (candidate === null || candidate === undefined) {
-        continue
-      }
-      return normalizeNumber(candidate)
-    }
-    return 0
-  })()
+  const vaultDecimals = resolveDecimals(item.decimals ?? null, tokenDecimals)
+  const forwardApr =
+    normalizeNumber(
+      [oracleApy, estimated?.apy, historical?.net].find(
+        (candidate): candidate is number => candidate !== null && candidate !== undefined
+      )
+    ) || 0
 
   const parsed = yDaemonVaultSchema.safeParse({
     address: item.address,
@@ -127,7 +133,7 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
     name: item.name ?? '',
     description: '',
     category: normalizeVaultCategory(item.category) || 'Unknown',
-    decimals: resolveDecimals(item.decimals ?? null, tokenDecimals),
+    decimals: vaultDecimals,
     chainID: item.chainId,
     token: {
       address: tokenAddress,
@@ -155,7 +161,7 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
         inception: normalizeNumber(historical?.inceptionNet)
       },
       pricePerShare: {
-        today: 0,
+        today: normalizePricePerShare(item.pricePerShare, vaultDecimals),
         weekAgo: 0,
         monthAgo: 0
       },
@@ -214,6 +220,8 @@ function useFetchYearnVaults(
   options?: { enabled?: boolean }
 ): {
   vaults: TDict<TYDaemonVault>
+  inclusionYearnVaults: TDict<TYDaemonVault>
+  allVaults: TDict<TYDaemonVault>
   isLoading: boolean
   refetch: () => Promise<QueryObserverResult<TKongVaultList, Error>>
 } {
@@ -232,34 +240,78 @@ function useFetchYearnVaults(
     }
   })
 
-  const mappedVaults = useDeepCompareMemo((): TYDaemonVault[] => {
+  const mappedVaultEntries = useDeepCompareMemo((): Array<{ item: TKongVaultListItem; vault: TYDaemonVault }> => {
     if (!kongVaultList) {
       return []
     }
     const chainIdSet = new Set(resolvedChainIds)
-    return kongVaultList
-      .filter((item) => item.inclusion?.isYearn !== false)
-      .filter((item) => chainIdSet.has(item.chainId))
-      .map((item) => mapKongListItemToVault(item))
-      .filter((item): item is TYDaemonVault => Boolean(item))
+    return kongVaultList.flatMap((item) => {
+      if (!chainIdSet.has(item.chainId)) {
+        return []
+      }
+      const vault = mapKongListItemToVault(item)
+      if (!vault) {
+        return []
+      }
+      return [{ item, vault }]
+    })
   }, [kongVaultList, resolvedChainIds])
 
-  const vaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
-    if (!mappedVaults.length) {
+  const allVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
+    if (!mappedVaultEntries.length) {
       return {}
     }
-    return mappedVaults.reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
+    return mappedVaultEntries.reduce((acc: TDict<TYDaemonVault>, entry): TDict<TYDaemonVault> => {
+      const vault = entry.vault
       acc[toAddress(vault.address)] = vault
       return acc
     }, {})
-  }, [mappedVaults])
+  }, [mappedVaultEntries])
 
-  const patchedVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
-    return patchYBoldVaults(vaultsObject)
-  }, [vaultsObject])
+  const catalogVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
+    if (!mappedVaultEntries.length) {
+      return {}
+    }
+    return mappedVaultEntries.reduce((acc: TDict<TYDaemonVault>, entry): TDict<TYDaemonVault> => {
+      if (!isCatalogYearnVault(entry.item)) {
+        return acc
+      }
+      const vault = entry.vault
+      acc[toAddress(vault.address)] = vault
+      return acc
+    }, {})
+  }, [mappedVaultEntries])
+
+  const inclusionYearnVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
+    if (!mappedVaultEntries.length) {
+      return {}
+    }
+    return mappedVaultEntries.reduce((acc: TDict<TYDaemonVault>, entry): TDict<TYDaemonVault> => {
+      if (!isInclusionYearnVault(entry.item)) {
+        return acc
+      }
+      const vault = entry.vault
+      acc[toAddress(vault.address)] = vault
+      return acc
+    }, {})
+  }, [mappedVaultEntries])
+
+  const patchedAllVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
+    return patchYBoldVaults(allVaultsObject)
+  }, [allVaultsObject])
+
+  const patchedCatalogVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
+    return patchYBoldVaults(catalogVaultsObject)
+  }, [catalogVaultsObject])
+
+  const patchedInclusionYearnVaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
+    return patchYBoldVaults(inclusionYearnVaultsObject)
+  }, [inclusionYearnVaultsObject])
 
   return {
-    vaults: patchedVaultsObject,
+    vaults: patchedCatalogVaultsObject,
+    inclusionYearnVaults: patchedInclusionYearnVaultsObject,
+    allVaults: patchedAllVaultsObject,
     isLoading,
     refetch: refetch as unknown as () => Promise<QueryObserverResult<TKongVaultList, Error>>
   }

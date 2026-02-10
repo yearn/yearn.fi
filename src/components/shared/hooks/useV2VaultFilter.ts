@@ -12,6 +12,7 @@ import {
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
+import { isZeroAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { useMemo } from 'react'
 import {
@@ -33,6 +34,7 @@ type TVaultIndexEntry = {
   isActive: boolean
   isMigratable: boolean
   isRetired: boolean
+  isBypassedHolding: boolean
 }
 
 type TVaultWalletFlags = {
@@ -61,7 +63,7 @@ export function useV2VaultFilter(
   showHiddenVaults?: boolean,
   enabled?: boolean
 ): TOptimizedV2VaultFilterResult {
-  const { vaults, getPrice, isLoadingVaultList } = useYearn()
+  const { vaults, inclusionYearnVaults, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
   const { shouldHideDust } = useAppSettings()
   const isEnabled = enabled ?? true
@@ -101,6 +103,27 @@ export function useV2VaultFilter(
   )
 
   const checkHasAvailableBalance = useMemo(() => createCheckHasAvailableBalance(getBalance), [getBalance])
+  const checkHasRawHoldings = useMemo(
+    () =>
+      (vault: TYDaemonVault): boolean => {
+        const vaultBalance = getBalance({
+          address: vault.address,
+          chainID: vault.chainID
+        })
+        if (vaultBalance.raw > 0n) {
+          return true
+        }
+        if (isZeroAddress(vault.staking.address)) {
+          return false
+        }
+        const stakingBalance = getBalance({
+          address: vault.staking.address,
+          chainID: vault.chainID
+        })
+        return stakingBalance.raw > 0n
+      },
+    [getBalance]
+  )
 
   const vaultIndex = useDeepCompareMemo(() => {
     if (!isEnabled) {
@@ -113,7 +136,7 @@ export function useV2VaultFilter(
 
     const upsertVault = (
       vault: TYDaemonVault,
-      updates: Partial<Pick<TVaultIndexEntry, 'isActive' | 'isMigratable' | 'isRetired'>>
+      updates: Partial<Pick<TVaultIndexEntry, 'isActive' | 'isMigratable' | 'isRetired' | 'isBypassedHolding'>>
     ): void => {
       const key = getVaultKey(vault)
       const existing = vaultMap.get(key)
@@ -134,7 +157,8 @@ export function useV2VaultFilter(
         isHidden: Boolean(vault.info?.isHidden),
         isActive: Boolean(updates.isActive),
         isMigratable: Boolean(updates.isMigratable),
-        isRetired: Boolean(updates.isRetired)
+        isRetired: Boolean(updates.isRetired),
+        isBypassedHolding: Boolean(updates.isBypassedHolding)
       })
     }
 
@@ -146,19 +170,40 @@ export function useV2VaultFilter(
       upsertVault(vault, { isActive: !isRetired, isRetired, isMigratable: Boolean(vault.migration?.available) })
     })
 
+    Object.values(inclusionYearnVaults).forEach((vault) => {
+      if (!shouldIncludeVault(vault)) {
+        return
+      }
+      const key = getVaultKey(vault)
+      if (vaultMap.has(key)) {
+        return
+      }
+      if (!checkHasRawHoldings(vault)) {
+        return
+      }
+      const isRetired = Boolean(vault.info?.isRetired)
+      upsertVault(vault, {
+        isActive: !isRetired,
+        isRetired,
+        isMigratable: Boolean(vault.migration?.available),
+        isBypassedHolding: true
+      })
+    })
+
     return vaultMap
-  }, [isEnabled, isEnabled ? vaults : null])
+  }, [isEnabled, isEnabled ? vaults : null, isEnabled ? inclusionYearnVaults : null, checkHasRawHoldings])
 
   const walletFlags = useMemo(() => {
     const flags = new Map<string, TVaultWalletFlags>()
     vaultIndex.forEach((entry, key) => {
+      const hasRawHoldings = entry.isBypassedHolding ? checkHasRawHoldings(entry.vault) : false
       flags.set(key, {
-        hasHoldings: checkHasHoldings(entry.vault),
+        hasHoldings: hasRawHoldings || checkHasHoldings(entry.vault),
         hasAvailableBalance: checkHasAvailableBalance(entry.vault)
       })
     })
     return flags
-  }, [vaultIndex, checkHasHoldings, checkHasAvailableBalance])
+  }, [vaultIndex, checkHasHoldings, checkHasAvailableBalance, checkHasRawHoldings])
 
   const holdingsVaults = useMemo(() => {
     return Array.from(vaultIndex.values())
@@ -212,6 +257,9 @@ export function useV2VaultFilter(
       } = entry
       const walletFlag = walletFlags.get(key)
       const hasHoldings = Boolean(walletFlag?.hasHoldings)
+      const isMigratableVault = Boolean(isMigratable && hasHoldings)
+      const isRetiredVault = Boolean(isRetired && hasHoldings)
+      const hasUserHoldings = hasHoldings || isMigratableVault || isRetiredVault
 
       if (!isActive && !hasHoldings) {
         return
@@ -224,18 +272,14 @@ export function useV2VaultFilter(
         return
       }
 
-      if (hasChainFilter && !chains?.includes(vault.chainID)) {
+      if (!hasUserHoldings && hasChainFilter && !chains?.includes(vault.chainID)) {
         return
       }
 
       const vaultTvl = vault.tvl?.tvl || 0
-      if (vaultTvl < minTvlValue) {
+      if (!hasUserHoldings && vaultTvl < minTvlValue) {
         return
       }
-
-      const isMigratableVault = Boolean(isMigratable && hasHoldings)
-      const isRetiredVault = Boolean(isRetired && hasHoldings)
-      const hasUserHoldings = hasHoldings || isMigratableVault || isRetiredVault
 
       vaultFlags[key] = {
         hasHoldings: hasUserHoldings,
@@ -244,9 +288,10 @@ export function useV2VaultFilter(
         isHidden
       }
 
-      const matchesKind = !hasTypeFilter || Boolean(types?.includes(kind))
-      const matchesCategory = !hasCategoryFilter || Boolean(categories?.includes(category))
+      const matchesKind = hasUserHoldings || !hasTypeFilter || Boolean(types?.includes(kind))
+      const matchesCategory = hasUserHoldings || !hasCategoryFilter || Boolean(categories?.includes(category))
       const matchesAggressiveness =
+        hasUserHoldings ||
         !hasAggressivenessFilter ||
         (aggressivenessScore !== null && Boolean(aggressiveness?.includes(aggressivenessScore)))
 
@@ -259,7 +304,8 @@ export function useV2VaultFilter(
           availableUnderlyingAssets.add(assetKey)
         }
 
-        const matchesUnderlyingAsset = !hasUnderlyingAssetFilter || (assetKey && expandedUnderlyingAssets.has(assetKey))
+        const matchesUnderlyingAsset =
+          hasUserHoldings || !hasUnderlyingAssetFilter || (assetKey && expandedUnderlyingAssets.has(assetKey))
         if (!matchesUnderlyingAsset) {
           return
         }

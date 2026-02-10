@@ -18,10 +18,12 @@ import { useMediaQuery } from '@react-hookz/web'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
+import { getVaultHoldingsUsdValue } from '@shared/hooks/useVaultFilterUtils'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
-import { cl, formatAmount, formatTvlDisplay, getVaultName, isZeroAddress, toAddress } from '@shared/utils'
+import { cl, formatAmount, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -110,7 +112,8 @@ export function VaultsListRow({
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const { address } = useWeb3()
-  const { getToken } = useWallet()
+  const { getToken, getBalance } = useWallet()
+  const { getPrice } = useYearn()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const [isExpandedState, setIsExpandedState] = useState(false)
   const isExpanded = isExpandedProp ?? isExpandedState
@@ -243,26 +246,16 @@ export function VaultsListRow({
     if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
       return 0
     }
-    const vaultToken = getToken({
-      chainID: currentVault.chainID,
-      address: currentVault.address
-    })
-    const vaultValue = vaultToken.value || 0
-
-    const stakingValue = !isZeroAddress(currentVault.staking?.address)
-      ? getToken({
-          chainID: currentVault.chainID,
-          address: currentVault.staking.address
-        }).value || 0
-      : 0
-
-    return vaultValue + stakingValue
+    return getVaultHoldingsUsdValue(currentVault, getToken, getBalance, getPrice)
   }, [
     showHoldingsChip,
+    currentVault,
+    getBalance,
+    getPrice,
+    getToken,
     currentVault.address,
     currentVault.chainID,
     currentVault.staking?.address,
-    getToken,
     mobileSecondaryMetric
   ])
 

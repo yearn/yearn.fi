@@ -1,7 +1,8 @@
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
+import { getVaultHoldingsUsdValue } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
-import { isZeroAddress, normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
+import { normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { getVaultName, numberSort, stringSort } from '@shared/utils/helpers'
 import type { TYDaemonVault, TYDaemonVaultStrategy, TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -26,7 +27,7 @@ export function useSortVaults(
   sortDirection: TSortDirection
 ): TYDaemonVaults {
   const { getBalance, getToken } = useWallet()
-  const { katanaAprs } = useYearn()
+  const { katanaAprs, getPrice } = useYearn()
   const isFeaturingScoreSortedDesc = useMemo((): boolean => {
     if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
       return false
@@ -45,14 +46,7 @@ export function useSortVaults(
     }
 
     const getDepositedValue = (vault: TYDaemonVault): number => {
-      const vaultToken = getToken({ address: vault.address, chainID: vault.chainID })
-      const vaultValue = vaultToken.value || 0
-
-      const stakingValue = !isZeroAddress(toAddress(vault.staking?.address))
-        ? getToken({ address: vault.staking.address, chainID: vault.chainID }).value || 0
-        : 0
-
-      return vaultValue + stakingValue
+      return getVaultHoldingsUsdValue(vault, getToken, getBalance, getPrice)
     }
 
     switch (sortBy) {
@@ -138,7 +132,7 @@ export function useSortVaults(
       default:
         return vaultList
     }
-  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, katanaAprs, getBalance, getToken])
+  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, katanaAprs, getBalance, getPrice, getToken])
 
   return sortedVaults
 }
