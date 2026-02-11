@@ -18,6 +18,7 @@ import { useMediaQuery } from '@react-hookz/web'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
@@ -106,6 +107,7 @@ export function VaultsListRow({
 }): ReactElement {
   const navigate = useNavigate()
   const trackEvent = usePlausible()
+  const { activePartnerSlug } = useYearn()
   const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
   const network = getNetwork(currentVault.chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
@@ -239,6 +241,7 @@ export function VaultsListRow({
   const hasHoldings = Boolean(flags?.hasHoldings)
   const showHoldingsChip = showHoldingsChipOverride ?? hasHoldings
   const showHoldingsValue = hasHoldings
+  const rowBackgroundClassName = activePartnerSlug ? 'partner-vault-row-bg' : 'bg-surface'
   const holdingsValue = useMemo(() => {
     if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
       return 0
@@ -275,7 +278,8 @@ export function VaultsListRow({
   return (
     <div
       className={cl(
-        'w-full overflow-hidden transition-colors bg-surface relative border-b-2 border-border md:border-b'
+        'w-full overflow-hidden transition-colors relative border-b-2 border-border md:border-b',
+        rowBackgroundClassName
       )}
     >
       <button
@@ -306,9 +310,10 @@ export function VaultsListRow({
       <Link
         href={href}
         className={cl(
-          'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
+          'grid w-full grid-cols-1 md:grid-cols-24',
           'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',
-          'cursor-pointer relative group'
+          'cursor-pointer relative group',
+          rowBackgroundClassName
         )}
         data-tour="vaults-row"
         onMouseEnter={prefetchSnapshot}

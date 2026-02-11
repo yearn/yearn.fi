@@ -613,7 +613,7 @@ export default function Index(): ReactElement {
                 isStackedLayout={shouldStackFilters}
               />
             </div>
-            <div data-tour="vaults-list">
+            <div data-tour="vaults-list" className={cl(partnerConfig && 'partner-vaults-list')}>
               <VaultsListSection
                 isUpdatingProductType={isUpdatingProductType}
                 isUpdatingList={isUpdatingList}

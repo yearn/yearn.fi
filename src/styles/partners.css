@@ -1,9 +1,9 @@
 /* Partner-specific visual overrides. Keep scope narrow and token-based. */
 :root[data-partner="aerodrome"] {
-  --partner-page-overlay-base: linear-gradient(0deg, rgb(9 14 31) 0%, rgb(9 14 31) 100%);
+  --partner-page-overlay-base: linear-gradient(0deg, rgb(8, 31, 107) 0%, rgb(155, 1, 1) 100%);
   --partner-page-overlay-texture:
-    repeating-radial-gradient(circle at 16% 122%, rgb(90 140 255 / 0.42) 0 1px, transparent 1px 18px),
-    repeating-radial-gradient(circle at 82% 126%, rgb(15 30 84 / 0.5) 0 1px, transparent 1px 20px);
+    repeating-radial-gradient(circle at 16% 122%, rgba(34, 72, 159, 0.42) 0 1px, transparent 1px 18px),
+    repeating-radial-gradient(circle at 82% 126%, rgba(162, 19, 19, 0.5) 0 1px, transparent 1px 20px);
   --partner-page-overlay-texture-opacity: 0.46;
   --partner-page-overlay-texture-blend: screen;
   --color-primary: #0052ff;
@@ -22,18 +22,18 @@
 }
 
 :root[data-partner="katana"] {
-  --partner-page-overlay-base: linear-gradient(90deg, #f4ff00 0%, #8f9952 42%, #02132c 100%);
-  --color-primary: hsl(172 90% 42%);
-  --color-primary-hover: hsl(172 90% 36%);
+  --partner-page-overlay-base: linear-gradient(90deg, #022fe2 0%, #ffd000 50%, #000564 100%);
+  --color-primary: hsl(240, 100%, 35%);
+  --color-primary-hover: hsl(240, 100%, 35%);
 }
 
 :root[data-partner="morpho"] {
-  --partner-page-overlay-base: linear-gradient(0deg, #02132c 0%, #02132c 100%);
+  --partner-page-overlay-base: linear-gradient(0deg, #001a40 0%, #002589 100%);
   --partner-page-overlay-texture:
     radial-gradient(rgb(255 255 255 / 0.28) 0.55px, transparent 0.55px),
     radial-gradient(rgb(255 255 255 / 0.18) 0.45px, transparent 0.45px);
   --partner-page-overlay-texture-size: 3px 3px, 5px 5px;
-  --partner-page-overlay-texture-opacity: 0.26;
+  --partner-page-overlay-texture-opacity: 0.6;
   --partner-page-overlay-texture-blend: soft-light;
   --color-primary: #2973ff;
   --color-primary-hover: #2066e8;
@@ -48,10 +48,10 @@
 :root[data-partner="velodrome"] {
   --partner-page-overlay-base: linear-gradient(0deg, #ff1100 0%, #ff1100 100%);
   --partner-page-overlay-texture:
-    repeating-radial-gradient(circle at 18% 124%, rgb(255 236 176 / 0.32) 0 1px, transparent 1px 17px),
-    repeating-radial-gradient(circle at 78% 121%, rgb(93 0 0 / 0.45) 0 1px, transparent 1px 19px);
-  --partner-page-overlay-texture-opacity: 0.48;
-  --partner-page-overlay-texture-blend: overlay;
+    repeating-radial-gradient(circle at 14% 102%, rgba(215, 166, 166, 0.5) 0 1px, transparent 1.2px 25px),
+    repeating-radial-gradient(circle at 86% 102%, rgba(208, 171, 171, 0.7) 0 1px, transparent 1px 25px);
+  --partner-page-overlay-texture-opacity: 0.7;
+  --partner-page-overlay-texture-blend: normal;
   --color-primary: #ee2524;
   --color-primary-hover: #c81e1d;
 }
@@ -61,14 +61,28 @@
   inset-inline: 0;
   bottom: 0;
   z-index: 0;
-  height: 75vh;
+  height: 60vh;
   pointer-events: none;
   background-image: var(--partner-page-overlay-base, linear-gradient(0deg, transparent 0%, transparent 100%));
   background-size: cover;
   background-position: center bottom;
   background-repeat: no-repeat;
-  -webkit-mask-image: linear-gradient(to top, rgb(0 0 0 / 1) 0%, rgb(0 0 0 / 0) 100%);
-  mask-image: linear-gradient(to top, rgb(0 0 0 / 1) 0%, rgb(0 0 0 / 0) 100%);
+  -webkit-mask-image: linear-gradient(
+    to top,
+    rgb(0 0 0 / 1) 0%,
+    rgb(0 0 0 / 0.5) 25%,
+    rgb(0 0 0 / 0.25) 50%,
+    rgb(0 0 0 / 0.08) 75%,
+    rgb(0 0 0 / 0) 100%
+  );
+  mask-image: linear-gradient(
+    to top,
+    rgb(0 0 0 / 1) 0%,
+    rgb(0 0 0 / 0.5) 25%,
+    rgb(0 0 0 / 0.25) 50%,
+    rgb(0 0 0 / 0.08) 75%,
+    rgb(0 0 0 / 0) 100%
+  );
 }
 
 .partner-vaults-gradient::before {
@@ -82,4 +96,24 @@
   background-repeat: repeat;
   opacity: var(--partner-page-overlay-texture-opacity, 0);
   mix-blend-mode: var(--partner-page-overlay-texture-blend, normal);
+}
+
+:root[data-partner] .partner-vault-row-bg {
+  background-color: color-mix(in srgb, var(--color-surface) 25%, transparent);
+}
+
+:root[data-partner] .partner-vaults-list .bg-surface {
+  background-color: color-mix(in srgb, var(--color-surface) 50%, transparent);
+}
+
+:root[data-partner] .partner-vaults-list .bg-surface-secondary {
+  background-color: color-mix(in srgb, var(--color-surface-secondary) 76%, transparent);
+}
+
+:root[data-partner] .partner-vaults-list .bg-surface-tertiary {
+  background-color: color-mix(in srgb, var(--color-surface-tertiary) 74%, transparent);
+}
+
+:root[data-partner] .partner-vaults-list .bg-border {
+  background-color: color-mix(in srgb, var(--color-border) 60%, transparent);
 }
