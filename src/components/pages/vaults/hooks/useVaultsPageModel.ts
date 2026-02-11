@@ -34,6 +34,8 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { usePrefetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
+import { useV2VaultFilter } from '@shared/hooks/useV2VaultFilter'
+import { useV3VaultFilter } from '@shared/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@shared/types'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { RefObject } from 'react'
@@ -136,7 +138,7 @@ export type TVaultsPageModel = {
 
 export function useVaultsPageModel(): TVaultsPageModel {
   const { address } = useWeb3()
-  const { activePartnerSlug, vaults } = useYearn()
+  const { activePartnerSlug } = useYearn()
   const isPartnerPage = Boolean(activePartnerSlug)
   const defaultMinTvl = isPartnerPage ? PARTNER_DEFAULT_MIN_TVL : DEFAULT_MIN_TVL
   const hasWalletAddress = !!address
@@ -384,49 +386,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       allChainsLabel: 'All Chains'
     }
   }, [listVaultType])
-  const partnerChainIds = useMemo(() => {
-    if (!isPartnerPage) {
-      return []
-    }
-    const uniqueChainIds = new Set<number>()
-    for (const vault of Object.values(vaults)) {
-      uniqueChainIds.add(vault.chainID)
-    }
-    return Array.from(uniqueChainIds).sort((left, right) => left - right)
-  }, [isPartnerPage, vaults])
-  const chainConfig = useMemo((): TChainConfig => {
-    if (!isPartnerPage) {
-      return baseChainConfig
-    }
 
-    const partnerSet = new Set(partnerChainIds)
-    const supportedChainIds = baseChainConfig.supportedChainIds.filter((chainId) => partnerSet.has(chainId))
-    const supportedSet = new Set(supportedChainIds)
-
-    return {
-      ...baseChainConfig,
-      supportedChainIds,
-      primaryChainIds: (baseChainConfig.primaryChainIds ?? supportedChainIds).filter((chainId) =>
-        supportedSet.has(chainId)
-      ),
-      defaultSecondaryChainIds: (baseChainConfig.defaultSecondaryChainIds ?? []).filter((chainId) =>
-        supportedSet.has(chainId)
-      ),
-      chainDisplayOrder: (baseChainConfig.chainDisplayOrder ?? supportedChainIds).filter((chainId) =>
-        supportedSet.has(chainId)
-      )
-    }
-  }, [baseChainConfig, isPartnerPage, partnerChainIds])
-  const constrainedDisplayedChains = useMemo(
-    () => sanitizeChainSelection(displayedChains, chainConfig.supportedChainIds),
-    [displayedChains, sanitizeChainSelection, chainConfig.supportedChainIds]
-  )
-  const constrainedListChains = useMemo(
-    () => sanitizeChainSelection(listChains, chainConfig.supportedChainIds),
-    [listChains, sanitizeChainSelection, chainConfig.supportedChainIds]
-  )
-  const showChainSelector = !isPartnerPage || chainConfig.supportedChainIds.length > 1
-  const showTypeSelector = !isPartnerPage
   const categoryOptions = useMemo(
     () => (isPartnerPage ? Array.from(new Set([...V2_ASSET_CATEGORIES, ...V3_ASSET_CATEGORIES])) : V3_ASSET_CATEGORIES),
     [isPartnerPage]
@@ -460,12 +420,24 @@ export function useVaultsPageModel(): TVaultsPageModel {
     return (displayedCategories || []).filter((value) => allowed.includes(value))
   }, [categoryOptions, displayedCategories])
 
+  const listCategoriesForChainAvailability = useMemo(() => {
+    const allowed = categoryOptions
+    return (listCategories || []).filter((value) => allowed.includes(value))
+  }, [categoryOptions, listCategories])
+
   const displayedAggressivenessSanitized = useMemo(() => {
     const allowed = new Set(AGGRESSIVENESS_OPTIONS)
     return (displayedAggressiveness || []).filter((value): value is TVaultAggressiveness =>
       allowed.has(value as TVaultAggressiveness)
     )
   }, [displayedAggressiveness])
+
+  const listAggressivenessForChainAvailability = useMemo(() => {
+    const allowed = new Set(AGGRESSIVENESS_OPTIONS)
+    return (listAggressiveness || []).filter((value): value is TVaultAggressiveness =>
+      allowed.has(value as TVaultAggressiveness)
+    )
+  }, [listAggressiveness])
 
   const displayedUnderlyingAssetsSanitized = useMemo(() => {
     const normalized = (displayedUnderlyingAssets || [])
@@ -480,6 +452,89 @@ export function useVaultsPageModel(): TVaultsPageModel {
       .filter(Boolean)
     return Array.from(new Set(normalized))
   }, [listUnderlyingAssets])
+
+  const isV3ViewForChainAvailability = isPartnerPage && (listVaultType === 'v3' || listVaultType === 'all')
+  const isV2ViewForChainAvailability = isPartnerPage && (listVaultType === 'factory' || listVaultType === 'all')
+  const listV2TypesForChainAvailability = useMemo(
+    () => (listShowLegacyVaults ? ['factory', 'legacy'] : ['factory']),
+    [listShowLegacyVaults]
+  )
+
+  const { filteredVaults: filteredV3VaultsForChainAvailability } = useV3VaultFilter(
+    isV3ViewForChainAvailability ? listV3Types : null,
+    null,
+    '',
+    isV3ViewForChainAvailability ? listCategoriesForChainAvailability : null,
+    isV3ViewForChainAvailability ? listAggressivenessForChainAvailability : null,
+    isV3ViewForChainAvailability ? listUnderlyingAssetsSanitized : null,
+    listMinTvl,
+    isV3ViewForChainAvailability ? listShowHiddenVaults : undefined,
+    isV3ViewForChainAvailability
+  )
+
+  const { filteredVaults: filteredV2VaultsForChainAvailability } = useV2VaultFilter(
+    isV2ViewForChainAvailability ? listV2TypesForChainAvailability : null,
+    null,
+    '',
+    isV2ViewForChainAvailability ? listCategoriesForChainAvailability : null,
+    isV2ViewForChainAvailability ? listAggressivenessForChainAvailability : null,
+    isV2ViewForChainAvailability ? listUnderlyingAssetsSanitized : null,
+    listMinTvl,
+    listShowHiddenVaults,
+    isV2ViewForChainAvailability
+  )
+
+  const partnerChainIds = useMemo(() => {
+    if (!isPartnerPage) {
+      return []
+    }
+
+    const chainSourceVaults =
+      listVaultType === 'v3'
+        ? filteredV3VaultsForChainAvailability
+        : listVaultType === 'factory'
+          ? filteredV2VaultsForChainAvailability
+          : [...filteredV3VaultsForChainAvailability, ...filteredV2VaultsForChainAvailability]
+
+    const uniqueChainIds = new Set<number>()
+    for (const vault of chainSourceVaults) {
+      uniqueChainIds.add(vault.chainID)
+    }
+    return Array.from(uniqueChainIds).sort((left, right) => left - right)
+  }, [filteredV2VaultsForChainAvailability, filteredV3VaultsForChainAvailability, isPartnerPage, listVaultType])
+  const chainConfig = useMemo((): TChainConfig => {
+    if (!isPartnerPage) {
+      return baseChainConfig
+    }
+
+    const partnerSet = new Set(partnerChainIds)
+    const supportedChainIds = baseChainConfig.supportedChainIds.filter((chainId) => partnerSet.has(chainId))
+    const supportedSet = new Set(supportedChainIds)
+
+    return {
+      ...baseChainConfig,
+      supportedChainIds,
+      primaryChainIds: (baseChainConfig.primaryChainIds ?? supportedChainIds).filter((chainId) =>
+        supportedSet.has(chainId)
+      ),
+      defaultSecondaryChainIds: (baseChainConfig.defaultSecondaryChainIds ?? []).filter((chainId) =>
+        supportedSet.has(chainId)
+      ),
+      chainDisplayOrder: (baseChainConfig.chainDisplayOrder ?? supportedChainIds).filter((chainId) =>
+        supportedSet.has(chainId)
+      )
+    }
+  }, [baseChainConfig, isPartnerPage, partnerChainIds])
+  const constrainedDisplayedChains = useMemo(
+    () => sanitizeChainSelection(displayedChains, chainConfig.supportedChainIds),
+    [displayedChains, sanitizeChainSelection, chainConfig.supportedChainIds]
+  )
+  const constrainedListChains = useMemo(
+    () => sanitizeChainSelection(listChains, chainConfig.supportedChainIds),
+    [listChains, sanitizeChainSelection, chainConfig.supportedChainIds]
+  )
+  const showChainSelector = !isPartnerPage || chainConfig.supportedChainIds.length > 1
+  const showTypeSelector = !isPartnerPage
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
   const effectiveSortBy = sortBy === 'featuringScore' ? DEFAULT_SORT_BY : sortBy
   const effectiveSortDirection = sortBy === 'featuringScore' ? 'desc' : sortDirection
