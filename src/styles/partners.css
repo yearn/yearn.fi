@@ -28,13 +28,20 @@
 }
 
 :root[data-partner="morpho"] {
-  --partner-page-overlay-base: linear-gradient(0deg, #001a40 0%, #002589 100%);
-  --partner-page-overlay-texture:
-    radial-gradient(rgb(255 255 255 / 0.28) 0.55px, transparent 0.55px),
-    radial-gradient(rgb(255 255 255 / 0.18) 0.45px, transparent 0.45px);
-  --partner-page-overlay-texture-size: 3px 3px, 5px 5px;
-  --partner-page-overlay-texture-opacity: 0.6;
-  --partner-page-overlay-texture-blend: soft-light;
+  --partner-page-overlay-base: linear-gradient(0deg, #022765 0%, #405cab 50%, #002da9 100%);
+  /* Swap texture file to try variants:
+   * /partner-noise-simple.svg
+   * /partner-noise-blotchy-soft.svg
+   * /partner-noise-blotchy-mid.svg
+   * /partner-noise-blotchy-contrast.svg
+   * /partner-noise-perlin.svg
+   */
+  --partner-page-overlay-texture: url("/partner-noise-perlin.svg");
+  --partner-page-overlay-texture-size: 250% 250%;
+  --partner-page-overlay-texture-position: center;
+  --partner-page-overlay-texture-repeat: no-repeat;
+  --partner-page-overlay-texture-opacity: 0.9;
+  --partner-page-overlay-texture-blend: multiply;
   --color-primary: #2973ff;
   --color-primary-hover: #2066e8;
 }
@@ -72,7 +79,7 @@
     rgb(0 0 0 / 1) 0%,
     rgb(0 0 0 / 0.5) 25%,
     rgb(0 0 0 / 0.25) 50%,
-    rgb(0 0 0 / 0.08) 75%,
+    rgb(0 0 0 / 0.1) 75%,
     rgb(0 0 0 / 0) 100%
   );
   mask-image: linear-gradient(
@@ -80,7 +87,7 @@
     rgb(0 0 0 / 1) 0%,
     rgb(0 0 0 / 0.5) 25%,
     rgb(0 0 0 / 0.25) 50%,
-    rgb(0 0 0 / 0.08) 75%,
+    rgb(0 0 0 / 0.1) 75%,
     rgb(0 0 0 / 0) 100%
   );
 }
@@ -92,8 +99,8 @@
   pointer-events: none;
   background-image: var(--partner-page-overlay-texture, none);
   background-size: var(--partner-page-overlay-texture-size, auto);
-  background-position: center bottom;
-  background-repeat: repeat;
+  background-position: var(--partner-page-overlay-texture-position, center bottom);
+  background-repeat: var(--partner-page-overlay-texture-repeat, repeat);
   opacity: var(--partner-page-overlay-texture-opacity, 0);
   mix-blend-mode: var(--partner-page-overlay-texture-blend, normal);
 }
