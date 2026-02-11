@@ -855,6 +855,10 @@ export function useVaultsPageModel(): TVaultsPageModel {
           setHoldingsPinnedSortDirection('desc')
           return
         }
+        if (holdingsPinnedSortDirection === 'desc') {
+          setHoldingsPinnedSortDirection('asc')
+          return
+        }
         setHoldingsPinnedSortDirection('')
         setActiveToggleValues((prev) => prev.filter((entry) => entry !== value))
         return
