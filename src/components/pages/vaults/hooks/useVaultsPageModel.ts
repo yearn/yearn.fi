@@ -57,6 +57,9 @@ const DEFAULT_VAULT_TYPES = ['multi', 'single']
 const DEFAULT_SORT_BY: TPossibleSortBy = 'tvl'
 const VAULTS_FILTERS_STORAGE_KEY = 'yearn.fi/vaults-filters@1'
 const PARTNER_DEFAULT_MIN_TVL = 0
+const PARTNER_DEFAULT_SHOW_LEGACY_VAULTS = true
+const PARTNER_DEFAULT_SHOW_HIDDEN_VAULTS = true
+const PARTNER_DEFAULT_SHOW_STRATEGIES = true
 
 type TVaultsPinnedSection = {
   key: string
@@ -141,6 +144,9 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const { activePartnerSlug } = useYearn()
   const isPartnerPage = Boolean(activePartnerSlug)
   const defaultMinTvl = isPartnerPage ? PARTNER_DEFAULT_MIN_TVL : DEFAULT_MIN_TVL
+  const defaultShowLegacyVaults = isPartnerPage ? PARTNER_DEFAULT_SHOW_LEGACY_VAULTS : false
+  const defaultShowHiddenVaults = isPartnerPage ? PARTNER_DEFAULT_SHOW_HIDDEN_VAULTS : false
+  const defaultShowStrategies = isPartnerPage ? PARTNER_DEFAULT_SHOW_STRATEGIES : false
   const hasWalletAddress = !!address
   const {
     vaultType,
@@ -177,6 +183,10 @@ export function useVaultsPageModel(): TVaultsPageModel {
     defaultCategories: [],
     defaultPathname: '/vaults',
     defaultSortBy: DEFAULT_SORT_BY,
+    defaultMinTvl,
+    defaultShowLegacyVaults,
+    defaultShowHiddenVaults,
+    defaultShowStrategies,
     resetTypes: DEFAULT_VAULT_TYPES,
     resetCategories: [],
     persistToStorage: true,
@@ -290,24 +300,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
       setOptimisticMinTvl(null)
     }
   }, [optimisticMinTvl, minTvl])
-
-  const appliedPartnerDefaultMinTvlRef = useRef<string | null>(null)
-
-  useEffect(() => {
-    if (!activePartnerSlug) {
-      appliedPartnerDefaultMinTvlRef.current = null
-      return
-    }
-    if (appliedPartnerDefaultMinTvlRef.current === activePartnerSlug) {
-      return
-    }
-
-    appliedPartnerDefaultMinTvlRef.current = activePartnerSlug
-    if (minTvl !== PARTNER_DEFAULT_MIN_TVL) {
-      setOptimisticMinTvl(PARTNER_DEFAULT_MIN_TVL)
-      onChangeMinTvl(PARTNER_DEFAULT_MIN_TVL)
-    }
-  }, [activePartnerSlug, minTvl, onChangeMinTvl])
 
   useEffect(() => {
     if (optimisticShowLegacyVaults !== null && optimisticShowLegacyVaults === showLegacyVaults) {
@@ -540,6 +532,10 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const effectiveSortDirection = sortBy === 'featuringScore' ? 'desc' : sortDirection
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
+  const defaultDisplayedV3Types = useMemo(
+    () => (defaultShowStrategies ? ['multi', 'single'] : ['multi']),
+    [defaultShowStrategies]
+  )
   const {
     defaultCategories,
     listCategoriesSanitized,
@@ -585,9 +581,9 @@ export function useVaultsPageModel(): TVaultsPageModel {
   }, [availableVaults.length, isAvailablePinned])
 
   const filtersCount = useMemo(() => {
-    const typeCount = displayedV3Types.includes('single') ? 1 : 0
-    const legacyCount = displayedShowLegacyVaults ? 1 : 0
-    const hiddenCount = displayedShowHiddenVaults ? 1 : 0
+    const typeCount = areArraysEquivalent(displayedV3Types, defaultDisplayedV3Types) ? 0 : 1
+    const legacyCount = displayedShowLegacyVaults !== defaultShowLegacyVaults ? 1 : 0
+    const hiddenCount = displayedShowHiddenVaults !== defaultShowHiddenVaults ? 1 : 0
     const categoryCount = displayedCategoriesSanitized.length
     const aggressivenessCount = displayedAggressivenessSanitized.length
     const underlyingAssetCount = displayedUnderlyingAssetsSanitized.length
@@ -596,6 +592,10 @@ export function useVaultsPageModel(): TVaultsPageModel {
       typeCount + legacyCount + hiddenCount + categoryCount + aggressivenessCount + underlyingAssetCount + minTvlCount
     )
   }, [
+    areArraysEquivalent,
+    defaultDisplayedV3Types,
+    defaultShowHiddenVaults,
+    defaultShowLegacyVaults,
     displayedAggressivenessSanitized.length,
     displayedCategoriesSanitized.length,
     displayedShowHiddenVaults,
@@ -777,15 +777,19 @@ export function useVaultsPageModel(): TVaultsPageModel {
     setOptimisticUnderlyingAssets([])
     setOptimisticMinTvl(defaultMinTvl)
     setOptimisticTypes(DEFAULT_VAULT_TYPES)
-    setOptimisticShowLegacyVaults(false)
-    setOptimisticShowHiddenVaults(false)
-    setOptimisticShowStrategies(false)
+    setOptimisticShowLegacyVaults(defaultShowLegacyVaults)
+    setOptimisticShowHiddenVaults(defaultShowHiddenVaults)
+    setOptimisticShowStrategies(defaultShowStrategies)
     onResetMultiSelect()
     onResetExtraFilters()
-    if (defaultMinTvl !== DEFAULT_MIN_TVL) {
-      onChangeMinTvl(defaultMinTvl)
-    }
-  }, [defaultMinTvl, onChangeMinTvl, onResetExtraFilters, onResetMultiSelect])
+  }, [
+    defaultMinTvl,
+    defaultShowHiddenVaults,
+    defaultShowLegacyVaults,
+    defaultShowStrategies,
+    onResetExtraFilters,
+    onResetMultiSelect
+  ])
 
   const minTvlInput = createElement(
     'div',

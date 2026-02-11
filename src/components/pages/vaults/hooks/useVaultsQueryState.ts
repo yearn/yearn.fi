@@ -12,6 +12,10 @@ type TVaultsQueryStateConfig = {
   defaultTypes?: string[]
   defaultCategories?: string[]
   defaultSortBy?: TPossibleSortBy
+  defaultMinTvl?: number
+  defaultShowLegacyVaults?: boolean
+  defaultShowHiddenVaults?: boolean
+  defaultShowStrategies?: boolean
   defaultPathname?: string
   resetTypes?: string[]
   resetCategories?: string[]
@@ -75,6 +79,10 @@ type TVaultsQueryDefaults = {
   defaultTypes: string[]
   defaultCategories: string[]
   defaultSortBy: TPossibleSortBy
+  defaultMinTvl: number
+  defaultShowLegacyVaults: boolean
+  defaultShowHiddenVaults: boolean
+  defaultShowStrategies: boolean
 }
 
 type TNormalizedSortDirection = 'asc' | 'desc'
@@ -109,12 +117,17 @@ function clearVaultQueryParams(params: URLSearchParams): URLSearchParams {
   return nextParams
 }
 
-function applyBooleanParam(params: URLSearchParams, key: string, value: boolean): void {
-  if (value) {
-    params.set(key, '1')
-  } else {
+function applyBooleanParamWithDefault(
+  params: URLSearchParams,
+  key: string,
+  value: boolean,
+  defaultValue: boolean
+): void {
+  if (value === defaultValue) {
     params.delete(key)
+    return
   }
+  params.set(key, value ? '1' : '0')
 }
 
 function sanitizeStringList(values: string[] | null | undefined): string[] {
@@ -278,14 +291,19 @@ function buildSnapshotFromParams(params: URLSearchParams, defaults: TVaultsQuery
   const underlyingAssets = normalizeUnderlyingAssetList(
     params.has('assets') ? parseStringList(params.get('assets')) : []
   )
-  const minTvl = normalizeMinTvl(params.get('minTvl'), DEFAULT_MIN_TVL)
+  const minTvl = normalizeMinTvl(params.get('minTvl'), defaults.defaultMinTvl)
   const search = params.get('search') ?? ''
   const showLegacyParam = params.get('showLegacy')
   const showLegacyFromParam = showLegacyParam !== null ? readBooleanParam(params, 'showLegacy') : false
   const legacyFallback = rawTypes.includes('legacy')
-  const showLegacyVaults = showLegacyParam !== null ? showLegacyFromParam : legacyFallback
-  const showHiddenVaults = readBooleanParam(params, 'showHidden')
-  const showStrategies = readBooleanParam(params, 'showStrategies')
+  const showLegacyVaults =
+    showLegacyParam !== null ? showLegacyFromParam : legacyFallback || defaults.defaultShowLegacyVaults
+  const showHiddenVaults = params.has('showHidden')
+    ? readBooleanParam(params, 'showHidden')
+    : defaults.defaultShowHiddenVaults
+  const showStrategies = params.has('showStrategies')
+    ? readBooleanParam(params, 'showStrategies')
+    : defaults.defaultShowStrategies
   const sortBy = (params.get('sortBy') as TPossibleSortBy) || defaults.defaultSortBy
   const sortDirection = parseSortDirection(params.get('sortDirection'))
 
@@ -326,7 +344,7 @@ function readSnapshotFromStorage(storageKey: string, defaults: TVaultsQueryDefau
     const underlyingAssets = normalizeUnderlyingAssetList(
       Array.isArray(parsed.underlyingAssets) ? parsed.underlyingAssets : null
     )
-    const minTvl = normalizeMinTvl(parsed.minTvl, DEFAULT_MIN_TVL)
+    const minTvl = normalizeMinTvl(parsed.minTvl, defaults.defaultMinTvl)
 
     return {
       vaultType,
@@ -337,9 +355,12 @@ function readSnapshotFromStorage(storageKey: string, defaults: TVaultsQueryDefau
       aggressiveness: sanitizeStringList(Array.isArray(parsed.aggressiveness) ? parsed.aggressiveness : null),
       underlyingAssets,
       minTvl,
-      showLegacyVaults: Boolean(parsed.showLegacyVaults),
-      showHiddenVaults: Boolean(parsed.showHiddenVaults),
-      showStrategies: Boolean(parsed.showStrategies),
+      showLegacyVaults:
+        typeof parsed.showLegacyVaults === 'boolean' ? parsed.showLegacyVaults : defaults.defaultShowLegacyVaults,
+      showHiddenVaults:
+        typeof parsed.showHiddenVaults === 'boolean' ? parsed.showHiddenVaults : defaults.defaultShowHiddenVaults,
+      showStrategies:
+        typeof parsed.showStrategies === 'boolean' ? parsed.showStrategies : defaults.defaultShowStrategies,
       sortBy:
         typeof parsed.sortBy === 'string' && parsed.sortBy
           ? (parsed.sortBy as TPossibleSortBy)
@@ -358,11 +379,31 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     (): TVaultsQueryDefaults => ({
       defaultTypes: config.defaultTypes ?? [],
       defaultCategories: config.defaultCategories ?? [],
-      defaultSortBy: config.defaultSortBy || 'tvl'
+      defaultSortBy: config.defaultSortBy || 'tvl',
+      defaultMinTvl: normalizeMinTvl(config.defaultMinTvl, DEFAULT_MIN_TVL),
+      defaultShowLegacyVaults: Boolean(config.defaultShowLegacyVaults),
+      defaultShowHiddenVaults: Boolean(config.defaultShowHiddenVaults),
+      defaultShowStrategies: Boolean(config.defaultShowStrategies)
     }),
-    [config.defaultCategories, config.defaultSortBy, config.defaultTypes]
+    [
+      config.defaultCategories,
+      config.defaultMinTvl,
+      config.defaultShowHiddenVaults,
+      config.defaultShowLegacyVaults,
+      config.defaultShowStrategies,
+      config.defaultSortBy,
+      config.defaultTypes
+    ]
   )
-  const { defaultCategories, defaultSortBy, defaultTypes } = defaults
+  const {
+    defaultCategories,
+    defaultMinTvl,
+    defaultShowHiddenVaults,
+    defaultShowLegacyVaults,
+    defaultShowStrategies,
+    defaultSortBy,
+    defaultTypes
+  } = defaults
   const storageKey = config.storageKey ?? ''
   const shouldPersistToStorage = Boolean(config.persistToStorage && storageKey)
   const shouldClearUrlAfterInit = Boolean(config.clearUrlAfterInit)
@@ -464,11 +505,14 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     setSnapshot((prev) => ({ ...prev, underlyingAssets: nextAssets }))
   }, [])
 
-  const onChangeMinTvl = useCallback((value: number): void => {
-    isOwnUrlUpdateRef.current = true
-    const nextMinTvl = normalizeMinTvl(value, DEFAULT_MIN_TVL)
-    setSnapshot((prev) => ({ ...prev, minTvl: nextMinTvl }))
-  }, [])
+  const onChangeMinTvl = useCallback(
+    (value: number): void => {
+      isOwnUrlUpdateRef.current = true
+      const nextMinTvl = normalizeMinTvl(value, defaultMinTvl)
+      setSnapshot((prev) => ({ ...prev, minTvl: nextMinTvl }))
+    },
+    [defaultMinTvl]
+  )
 
   const onChangeShowLegacyVaults = useCallback((value: boolean): void => {
     isOwnUrlUpdateRef.current = true
@@ -522,12 +566,12 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
       ...prev,
       aggressiveness: [],
       underlyingAssets: [],
-      minTvl: DEFAULT_MIN_TVL,
-      showLegacyVaults: false,
-      showHiddenVaults: false,
-      showStrategies: false
+      minTvl: defaultMinTvl,
+      showLegacyVaults: defaultShowLegacyVaults,
+      showHiddenVaults: defaultShowHiddenVaults,
+      showStrategies: defaultShowStrategies
     }))
-  }, [])
+  }, [defaultMinTvl, defaultShowHiddenVaults, defaultShowLegacyVaults, defaultShowStrategies])
 
   const buildUrlParamsFromSnapshot = useCallback(
     (snap: TVaultsQuerySnapshot): URLSearchParams => {
@@ -570,13 +614,13 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
         params.set('assets', normalizedUnderlyingAssets.join('_'))
       }
 
-      if (snap.minTvl !== DEFAULT_MIN_TVL) {
+      if (snap.minTvl !== defaultMinTvl) {
         params.set('minTvl', String(snap.minTvl))
       }
 
-      applyBooleanParam(params, 'showLegacy', snap.showLegacyVaults)
-      applyBooleanParam(params, 'showHidden', snap.showHiddenVaults)
-      applyBooleanParam(params, 'showStrategies', snap.showStrategies)
+      applyBooleanParamWithDefault(params, 'showLegacy', snap.showLegacyVaults, defaultShowLegacyVaults)
+      applyBooleanParamWithDefault(params, 'showHidden', snap.showHiddenVaults, defaultShowHiddenVaults)
+      applyBooleanParamWithDefault(params, 'showStrategies', snap.showStrategies, defaultShowStrategies)
 
       if (snap.sortBy !== defaultSortBy) {
         params.set('sortBy', snap.sortBy)
@@ -589,7 +633,15 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
 
       return params
     },
-    [defaultTypes, defaultCategories, defaultSortBy]
+    [
+      defaultCategories,
+      defaultMinTvl,
+      defaultShowHiddenVaults,
+      defaultShowLegacyVaults,
+      defaultShowStrategies,
+      defaultSortBy,
+      defaultTypes
+    ]
   )
 
   const buildShareParams = useCallback((): URLSearchParams => {
