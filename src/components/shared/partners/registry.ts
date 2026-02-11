@@ -18,7 +18,7 @@ const PARTNER_CONFIGS: Record<TPartnerSlug, TPartnerConfig> = {
 }
 
 export function isPartnerSlug(value: string): value is TPartnerSlug {
-  return value in PARTNER_CONFIGS
+  return Object.hasOwn(PARTNER_CONFIGS, value)
 }
 
 export function getPartnerConfig(slug: TPartnerSlug | null | undefined): TPartnerConfig | undefined {
