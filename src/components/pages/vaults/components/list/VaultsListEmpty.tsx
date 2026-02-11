@@ -7,6 +7,7 @@ type TVaultListEmpty = {
   currentCategories: string[] | null
   currentChains: number[] | null
   onReset: () => void
+  onShowAllResults?: () => void
   isLoading: boolean
   loadingLabel?: string
   defaultCategories?: string[]
@@ -18,6 +19,7 @@ export function VaultsListEmpty({
   currentSearch,
   currentCategories,
   onReset,
+  onShowAllResults,
   isLoading,
   loadingLabel,
   defaultCategories = [],
@@ -73,7 +75,7 @@ export function VaultsListEmpty({
             <p className={'text-center font-normal text-neutral-600'}>
               {`Found ${potentialResultsCount} vault${potentialResultsCount > 1 ? 's' : ''} when searching all categories.`}
             </p>
-            <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
+            <Button className={'mt-4 w-full md:w-48'} onClick={onShowAllResults || onReset}>
               {'Show all results'}
             </Button>
           </>

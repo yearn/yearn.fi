@@ -87,6 +87,7 @@ export default function Index(): ReactElement {
     data,
     handlers,
     onResetFilters,
+    onShowAllSearchResults,
     resolveApyDisplayVariant
   } = list
   const {
@@ -346,6 +347,7 @@ export default function Index(): ReactElement {
           currentCategories={listCategoriesSanitized}
           currentChains={listChains}
           onReset={onResetFilters}
+          onShowAllResults={onShowAllSearchResults}
           defaultCategories={defaultCategories}
           potentialResultsCount={totalMatchingVaults}
         />
@@ -426,6 +428,7 @@ export default function Index(): ReactElement {
     listVaultType,
     mainVaults,
     onResetFilters,
+    onShowAllSearchResults,
     onToggleCategory,
     onToggleChain,
     onToggleType,

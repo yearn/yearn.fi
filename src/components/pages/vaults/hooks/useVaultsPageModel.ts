@@ -113,6 +113,7 @@ type TVaultsListModel = {
     onToggleVaultType: (type: 'v3' | 'lp') => void
   }
   onResetFilters: () => void
+  onShowAllSearchResults: () => void
   resolveApyDisplayVariant: (vault: TYDaemonVault) => 'default' | 'factory-list'
 }
 
@@ -610,6 +611,38 @@ export function useVaultsPageModel(): TVaultsPageModel {
     onResetExtraFilters()
   }, [onResetExtraFilters, onResetMultiSelect])
 
+  const handleShowAllSearchResults = useCallback((): void => {
+    setOptimisticChains([])
+    setOptimisticCategories([])
+    setOptimisticAggressiveness([])
+    setOptimisticUnderlyingAssets([])
+    setOptimisticMinTvl(DEFAULT_MIN_TVL)
+    setOptimisticTypes(DEFAULT_VAULT_TYPES)
+    setOptimisticShowLegacyVaults(false)
+    setOptimisticShowHiddenVaults(true)
+    setOptimisticShowStrategies(false)
+
+    onChangeTypes(DEFAULT_VAULT_TYPES)
+    onChangeCategories(null)
+    onChangeChains(null)
+    onChangeAggressiveness(null)
+    onChangeUnderlyingAssets(null)
+    onChangeMinTvl(DEFAULT_MIN_TVL)
+    onChangeShowLegacyVaults(false)
+    onChangeShowHiddenVaults(true)
+    onChangeShowStrategies(false)
+  }, [
+    onChangeAggressiveness,
+    onChangeCategories,
+    onChangeChains,
+    onChangeMinTvl,
+    onChangeShowHiddenVaults,
+    onChangeShowLegacyVaults,
+    onChangeShowStrategies,
+    onChangeTypes,
+    onChangeUnderlyingAssets
+  ])
+
   const minTvlInput = createElement(
     'div',
     { className: 'flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2' },
@@ -939,6 +972,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
         onToggleVaultType: handleToggleVaultType
       },
       onResetFilters: handleResetFilters,
+      onShowAllSearchResults: handleShowAllSearchResults,
       resolveApyDisplayVariant
     }
   }
