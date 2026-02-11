@@ -17,8 +17,8 @@ export const KATANA_PARTNER_CONFIG: TPartnerConfig = {
   },
   themeOverrides: {
     cssVariables: {
-      '--color-primary': 'hsl(172 90% 42%)',
-      '--color-primary-hover': 'hsl(172 90% 36%)'
+      '--color-primary': '#e00101',
+      '--color-primary-hover': '#e00101'
     }
   },
   badge: {

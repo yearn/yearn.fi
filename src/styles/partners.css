@@ -1,20 +1,20 @@
 /* Partner-specific visual overrides. Keep scope narrow and token-based. */
 :root[data-partner="aerodrome"] {
-  --partner-page-overlay-base: linear-gradient(0deg, rgb(8, 31, 107) 0%, #9b0101 100%);
+  --partner-page-overlay-base: linear-gradient(0deg, #081f6b 0%, #9b0101 100%);
   --partner-page-overlay-texture:
     repeating-radial-gradient(circle at 16% 122%, rgba(34, 72, 159, 0.42) 0 1px, transparent 1px 18px),
     repeating-radial-gradient(circle at 82% 126%, rgba(162, 19, 19, 0.5) 0 1px, transparent 1px 20px);
   --partner-page-overlay-texture-opacity: 0.46;
   --partner-page-overlay-texture-blend: screen;
-  --color-primary: #0052ff;
-  --color-primary-hover: #054ded;
+  --color-primary: #1763fd;
+  --color-primary-hover: #034cde;
 }
 
 :root[data-partner="curve"] {
   --partner-page-overlay-base: linear-gradient(90deg, #5b1110 0%, #bd2e2a 18%, #f2d13f 40%, #47a451 62%, #1f62e7 100%);
   --partner-page-overlay-texture:
     repeating-radial-gradient(circle at 14% 128%, rgb(255 255 255 / 0.3) 0 1px, transparent 1px 16px),
-    repeating-radial-gradient(circle at 84% 120%, rgb(0 0 0 / 0.28) 0 1px, transparent 1px 18px);
+    repeating-radial-gradient(circle at 84% 120%, rgba(0, 0, 0, 0.28) 0 1px, transparent 1px 18px);
   --partner-page-overlay-texture-opacity: 0.55;
   --partner-page-overlay-texture-blend: overlay;
   --color-primary: #1763fd;
@@ -23,8 +23,8 @@
 
 :root[data-partner="katana"] {
   --partner-page-overlay-base: linear-gradient(90deg, #022fe2 0%, #ffd000 50%, #000564 100%);
-  --color-primary: hsl(240, 100%, 35%);
-  --color-primary-hover: hsl(240, 100%, 35%);
+  --color-primary: #1763fd;
+  --color-primary-hover: #034cde;
 }
 
 :root[data-partner="morpho"] {
@@ -42,8 +42,8 @@
   --partner-page-overlay-texture-repeat: no-repeat;
   --partner-page-overlay-texture-opacity: 0.9;
   --partner-page-overlay-texture-blend: multiply;
-  --color-primary: #2973ff;
-  --color-primary-hover: #2066e8;
+  --color-primary: #1763fd;
+  --color-primary-hover: #034cde;
 }
 
 :root[data-partner="pooltogether"] {
