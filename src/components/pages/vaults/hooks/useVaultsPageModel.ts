@@ -361,6 +361,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     return Array.from(new Set(normalized))
   }, [listUnderlyingAssets])
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
+  const [holdingsPinnedSortDirection, setHoldingsPinnedSortDirection] = useState<TSortDirection>('')
   const effectiveSortBy = sortBy === 'featuringScore' ? DEFAULT_SORT_BY : sortBy
   const effectiveSortDirection = sortBy === 'featuringScore' ? 'desc' : sortDirection
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
@@ -392,12 +393,14 @@ export function useVaultsPageModel(): TVaultsPageModel {
     searchValue,
     sortBy: effectiveSortBy,
     sortDirection: effectiveSortDirection,
+    holdingsPinnedSortDirection,
     isHoldingsPinned,
     isAvailablePinned
   })
 
   useEffect(() => {
     if (holdingsVaults.length === 0 && isHoldingsPinned) {
+      setHoldingsPinnedSortDirection('')
       setActiveToggleValues((prev) => prev.filter((value) => value !== HOLDINGS_TOGGLE_VALUE))
     }
   }, [holdingsVaults.length, isHoldingsPinned])
@@ -808,6 +811,23 @@ export function useVaultsPageModel(): TVaultsPageModel {
       onChangeSortDirection(targetSortDirection)
     },
     onToggle: (value): void => {
+      if (value === HOLDINGS_TOGGLE_VALUE) {
+        const isHoldingsActive = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
+        if (!isHoldingsActive) {
+          setHoldingsPinnedSortDirection('')
+          setActiveToggleValues([HOLDINGS_TOGGLE_VALUE])
+          return
+        }
+        if (holdingsPinnedSortDirection === '') {
+          setHoldingsPinnedSortDirection('desc')
+          return
+        }
+        setHoldingsPinnedSortDirection('')
+        setActiveToggleValues((prev) => prev.filter((entry) => entry !== value))
+        return
+      }
+
+      setHoldingsPinnedSortDirection('')
       setActiveToggleValues((prev) => {
         if (prev.includes(value)) {
           return prev.filter((entry) => entry !== value)

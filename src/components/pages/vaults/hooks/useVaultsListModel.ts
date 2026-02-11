@@ -34,6 +34,7 @@ type TVaultsListModelArgs = {
   searchValue: string
   sortBy: TPossibleSortBy
   sortDirection: TSortDirection
+  holdingsPinnedSortDirection: TSortDirection
   isHoldingsPinned: boolean
   isAvailablePinned: boolean
 }
@@ -67,6 +68,7 @@ export function useVaultsListModel({
   searchValue,
   sortBy,
   sortDirection,
+  holdingsPinnedSortDirection,
   isHoldingsPinned,
   isAvailablePinned
 }: TVaultsListModelArgs): TVaultsListModel {
@@ -203,6 +205,12 @@ export function useVaultsListModel({
     [sortedVaults, holdingsKeySet]
   )
 
+  const sortedHoldingsVaultsByDeposited = useSortVaults(
+    holdingsVaults,
+    'deposited',
+    holdingsPinnedSortDirection || 'desc'
+  )
+
   const sortedAvailableVaults = useMemo(
     () => sortedVaults.filter((vault) => availableKeySet.has(getVaultKey(vault))),
     [sortedVaults, availableKeySet]
@@ -234,7 +242,9 @@ export function useVaultsListModel({
     }
 
     if (isHoldingsPinned) {
-      const holdingsSectionVaults = sortedHoldingsVaults.filter((vault) => {
+      const holdingsSourceVaults =
+        holdingsPinnedSortDirection === '' ? sortedHoldingsVaults : sortedHoldingsVaultsByDeposited
+      const holdingsSectionVaults = holdingsSourceVaults.filter((vault) => {
         const key = getVaultKey(vault)
         if (seen.has(key)) {
           return false
@@ -252,7 +262,14 @@ export function useVaultsListModel({
     }
 
     return sections
-  }, [isAvailablePinned, sortedAvailableVaults, isHoldingsPinned, sortedHoldingsVaults])
+  }, [
+    isAvailablePinned,
+    sortedAvailableVaults,
+    isHoldingsPinned,
+    holdingsPinnedSortDirection,
+    sortedHoldingsVaults,
+    sortedHoldingsVaultsByDeposited
+  ])
 
   const pinnedVaults = useMemo(() => pinnedSections.flatMap((section) => section.vaults), [pinnedSections])
 
