@@ -16,7 +16,9 @@ import { Button } from '@shared/components/Button'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconGitCompare } from '@shared/icons/IconGitCompare'
+import { TypeMarkYearnBadge } from '@shared/icons/TypeMarkYearnBadge'
 import { getPartnerConfig } from '@shared/partners/registry'
+import type { TPartnerConfig } from '@shared/partners/types'
 import { cl } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -70,6 +72,76 @@ function VaultsListSection({
             <span className={'text-sm font-medium'}>{'Updating vaults…'}</span>
           </span>
         </output>
+      ) : null}
+    </div>
+  )
+}
+
+type TPartnerFiltersBadgeProps = {
+  partnerConfig: TPartnerConfig
+  fullWidth?: boolean
+  size?: 'slot' | 'combined'
+}
+
+function PartnerFiltersBadge({
+  partnerConfig,
+  fullWidth = false,
+  size = 'slot'
+}: TPartnerFiltersBadgeProps): ReactElement {
+  const borderColor = partnerConfig.badge?.borderColor
+  const isBorderTransparent = borderColor === 'transparent'
+  const PartnerTypemarkComponent = partnerConfig.badge?.partnerTypemarkComponent
+  const partnerTypemarkPath = partnerConfig.badge?.partnerTypemarkPath
+  const [showPartnerTypemarkImage, setShowPartnerTypemarkImage] = useState(Boolean(partnerTypemarkPath))
+
+  useEffect(() => {
+    setShowPartnerTypemarkImage(Boolean(partnerTypemarkPath))
+  }, [partnerTypemarkPath])
+
+  const badgeStyle: CSSProperties = {
+    ...(partnerConfig.badge?.background
+      ? { background: partnerConfig.badge.background, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%' }
+      : {}),
+    ...(partnerConfig.badge?.labelTextColor ? { color: partnerConfig.badge.labelTextColor } : {}),
+    ...(borderColor ? { borderColor } : {}),
+    ...(isBorderTransparent ? { borderWidth: 0 } : {})
+  }
+  const yearnTypemarkStyle: CSSProperties = {
+    transform: `translate(${partnerConfig.badge?.yearnTypemarkOffsetXPx ?? 0}px, ${partnerConfig.badge?.yearnTypemarkOffsetYPx ?? 0}px)`
+  }
+  const partnerTypemarkStyle: CSSProperties = {
+    height: `${partnerConfig.badge?.partnerTypemarkHeightPx ?? 32}px`,
+    maxWidth: `${partnerConfig.badge?.partnerTypemarkMaxWidthPx ?? 120}px`,
+    transform: `translate(${partnerConfig.badge?.partnerTypemarkOffsetXPx ?? 0}px, ${partnerConfig.badge?.partnerTypemarkOffsetYPx ?? 0}px)`
+  }
+
+  return (
+    <div
+      className={cl(
+        'flex h-10 items-center justify-center gap-2 rounded-lg border border-primary/20 bg-transparent px-3 text-md font-semibold text-primary',
+        fullWidth ? 'w-full' : size === 'combined' ? 'min-w-[396px]' : 'min-w-[300px]'
+      )}
+      style={badgeStyle}
+    >
+      <TypeMarkYearnBadge
+        className={'h-6 w-auto shrink-0'}
+        color={partnerConfig.badge?.yearnTypemarkColor || '#0657F9'}
+        style={yearnTypemarkStyle}
+        aria-hidden={true}
+      />
+      <span className={'shrink-0 font-semibold'} aria-hidden={true}>
+        {'x'}
+      </span>
+      {PartnerTypemarkComponent ? (
+        <PartnerTypemarkComponent className={'w-auto shrink-0'} style={partnerTypemarkStyle} aria-hidden={true} />
+      ) : showPartnerTypemarkImage && partnerTypemarkPath ? (
+        <img
+          src={partnerTypemarkPath}
+          alt={partnerConfig.badge?.partnerTypemarkAlt || `${partnerConfig.displayName} typemark`}
+          className={'w-auto shrink-0 object-contain'}
+          style={partnerTypemarkStyle}
+          onError={(): void => setShowPartnerTypemarkImage(false)}
+        />
       ) : null}
     </div>
   )
@@ -334,53 +406,36 @@ export default function Index(): ReactElement {
     </button>
   )
 
+  const shouldShowTypeSlotBadge = Boolean(partnerConfig) && !showTypeSelector
+  const shouldUseCombinedTypeBadge = shouldShowTypeSlotBadge && !showChainSelector
+  const shouldShowChainSlotBadge = Boolean(partnerConfig) && showTypeSelector && !showChainSelector
+
   const desktopPartnerPlaceholder = useMemo(() => {
-    if (!partnerConfig) {
+    if (!partnerConfig || !shouldShowTypeSlotBadge) {
       return undefined
     }
-    return (
-      <div
-        className={
-          'flex h-10 min-w-[176px] items-center justify-center gap-2 rounded-lg border border-primary/20 bg-transparent px-3 text-sm font-semibold text-primary'
-        }
-      >
-        <span className={'size-2 rounded-full bg-primary/85'} />
-        <span className={'truncate'}>{`Yearn x ${partnerConfig.displayName}`}</span>
-      </div>
-    )
-  }, [partnerConfig])
+    return <PartnerFiltersBadge partnerConfig={partnerConfig} size={shouldUseCombinedTypeBadge ? 'combined' : 'slot'} />
+  }, [partnerConfig, shouldShowTypeSlotBadge, shouldUseCombinedTypeBadge])
 
   const mobilePartnerPlaceholder = useMemo(() => {
-    if (!partnerConfig) {
+    if (!partnerConfig || !shouldShowTypeSlotBadge) {
       return undefined
     }
     return (
-      <div
-        className={
-          'flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-primary/20 bg-transparent px-3 text-sm font-semibold text-primary'
-        }
-      >
-        <span className={'size-2 rounded-full bg-primary/85'} />
-        <span className={'truncate'}>{`Yearn x ${partnerConfig.displayName}`}</span>
-      </div>
+      <PartnerFiltersBadge
+        partnerConfig={partnerConfig}
+        fullWidth={true}
+        size={shouldUseCombinedTypeBadge ? 'combined' : 'slot'}
+      />
     )
-  }, [partnerConfig])
+  }, [partnerConfig, shouldShowTypeSlotBadge, shouldUseCombinedTypeBadge])
 
   const chainPlaceholder = useMemo(() => {
-    if (!partnerConfig || showChainSelector) {
+    if (!partnerConfig || !shouldShowChainSlotBadge) {
       return undefined
     }
-    return (
-      <div
-        className={
-          'flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-primary/20 bg-transparent px-3 text-sm font-semibold text-primary'
-        }
-      >
-        <span className={'size-2 rounded-full bg-primary/85'} />
-        <span className={'truncate'}>{`Yearn x ${partnerConfig.displayName}`}</span>
-      </div>
-    )
-  }, [partnerConfig, showChainSelector])
+    return <PartnerFiltersBadge partnerConfig={partnerConfig} fullWidth={true} />
+  }, [partnerConfig, shouldShowChainSlotBadge])
 
   const breadcrumbItems = useMemo(() => {
     if (!partnerConfig) {

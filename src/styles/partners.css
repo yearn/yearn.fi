@@ -1,6 +1,6 @@
 /* Partner-specific visual overrides. Keep scope narrow and token-based. */
 :root[data-partner="aerodrome"] {
-  --partner-page-overlay-base: linear-gradient(0deg, rgb(8, 31, 107) 0%, rgb(155, 1, 1) 100%);
+  --partner-page-overlay-base: linear-gradient(0deg, rgb(8, 31, 107) 0%, #9b0101 100%);
   --partner-page-overlay-texture:
     repeating-radial-gradient(circle at 16% 122%, rgba(34, 72, 159, 0.42) 0 1px, transparent 1px 18px),
     repeating-radial-gradient(circle at 82% 126%, rgba(162, 19, 19, 0.5) 0 1px, transparent 1px 20px);

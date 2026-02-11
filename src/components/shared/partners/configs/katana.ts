@@ -1,3 +1,4 @@
+import { TypeMarkKatana } from '@shared/icons/TypeMarkKatana'
 import { isKatanaVaultListItem } from '@shared/partners/isKatanaVaultListItem'
 import type { TPartnerConfig } from '@shared/partners/types'
 
@@ -19,6 +20,16 @@ export const KATANA_PARTNER_CONFIG: TPartnerConfig = {
       '--color-primary': 'hsl(172 90% 42%)',
       '--color-primary-hover': 'hsl(172 90% 36%)'
     }
+  },
+  badge: {
+    background: 'linear-gradient(90deg, #fbad18 0%, #003279 100%)',
+    labelTextColor: '#FFFFFF',
+    borderColor: 'border-border',
+    dotColor: '#F4FF00',
+    yearnTypemarkColor: '#FFFFFF',
+    partnerTypemarkOffsetYPx: 1,
+    partnerTypemarkMaxWidthPx: 120,
+    partnerTypemarkComponent: TypeMarkKatana
   },
   vaultListFilter: (item) => isKatanaVaultListItem(item)
 }

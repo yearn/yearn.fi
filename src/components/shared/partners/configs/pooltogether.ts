@@ -1,3 +1,4 @@
+import { TypeMarkPoolTogether } from '@shared/icons/TypeMarkPoolTogether'
 import { isPoolTogetherVaultListItem } from '@shared/partners/isPoolTogetherVaultListItem'
 import type { TPartnerConfig } from '@shared/partners/types'
 
@@ -19,6 +20,14 @@ export const POOLTOGETHER_PARTNER_CONFIG: TPartnerConfig = {
       '--color-primary': '#C521D4',
       '--color-primary-hover': '#DC25ED'
     }
+  },
+  badge: {
+    background: '#5A32B8',
+    labelTextColor: '#FFFFFF',
+    borderColor: '#9E7DF8',
+    dotColor: '#C7B4FF',
+    yearnTypemarkColor: '#FFFFFF',
+    partnerTypemarkComponent: TypeMarkPoolTogether
   },
   vaultListFilter: (item) => isPoolTogetherVaultListItem(item)
 }

@@ -77,10 +77,15 @@ export default function PartnersPage(): ReactElement {
                     ? {
                         backgroundImage: `url(${tile.backgroundImage})`,
                         backgroundSize: 'cover',
-                        backgroundPosition: 'center'
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundOrigin: 'padding-box',
+                        backgroundClip: 'padding-box'
                       }
                     : {
-                        backgroundColor: '#0D2A68'
+                        backgroundColor: '#0D2A68',
+                        backgroundOrigin: 'padding-box',
+                        backgroundClip: 'padding-box'
                       }
                 }
               >
@@ -90,7 +95,9 @@ export default function PartnersPage(): ReactElement {
                   }
                   style={{
                     backgroundImage:
-                      'linear-gradient(180deg, rgba(3,11,26,0.86) 0%, rgba(3,11,26,0.72) 40%, rgba(3,11,26,0.64) 100%)'
+                      'linear-gradient(180deg, rgba(3,11,26,0.86) 0%, rgba(3,11,26,0.72) 40%, rgba(3,11,26,0.64) 100%)',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '100% 100%'
                   }}
                 />
                 <div className={'relative z-10 flex h-full flex-col p-5 text-white'}>

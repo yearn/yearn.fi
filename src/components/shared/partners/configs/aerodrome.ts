@@ -1,3 +1,4 @@
+import { TypeMarkAerodrome } from '@shared/icons/TypeMarkAerodrome'
 import { isAerodromeVaultListItem } from '@shared/partners/isAerodromeVaultListItem'
 import type { TPartnerConfig } from '@shared/partners/types'
 
@@ -19,6 +20,15 @@ export const AERODROME_PARTNER_CONFIG: TPartnerConfig = {
       '--color-primary': '#0052FF',
       '--color-primary-hover': '#054DED'
     }
+  },
+  badge: {
+    background: 'linear-gradient(90deg, #0B1538 0%, #9b0101 100%)',
+    labelTextColor: '#E6F0FF',
+    borderColor: '#transparent',
+    dotColor: '#73A1FF',
+    yearnTypemarkColor: '#FFFFFF',
+    partnerTypemarkMaxWidthPx: 180,
+    partnerTypemarkComponent: TypeMarkAerodrome
   },
   vaultListFilter: (item) => isAerodromeVaultListItem(item)
 }
