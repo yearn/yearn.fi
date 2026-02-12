@@ -2,8 +2,8 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { toAddress } from '@shared/utils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { yDaemonVaultSchema } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import useSWR from 'swr'
 import {
   YVUSD_BASELINE_VAULT_ADDRESS,
   YVUSD_CHAIN_ID,
@@ -129,15 +129,17 @@ export function useYvUsdVaults(): TYvUsdVaults {
 
   const baseVault = useMemo(() => vaults[toAddress(YVUSD_BASELINE_VAULT_ADDRESS)], [vaults])
 
-  const { data: unlockedSnapshot, isLoading: isLoadingUnlocked } = useSWR(
-    baseVault ? ['yvusd-snapshot', YVUSD_UNLOCKED_ADDRESS] : null,
-    () => fetchSnapshotVault(YVUSD_UNLOCKED_ADDRESS)
-  )
+  const { data: unlockedSnapshot, isLoading: isLoadingUnlocked } = useQuery({
+    queryKey: ['yvusd-snapshot', YVUSD_UNLOCKED_ADDRESS],
+    queryFn: () => fetchSnapshotVault(YVUSD_UNLOCKED_ADDRESS),
+    enabled: Boolean(baseVault)
+  })
 
-  const { data: lockedSnapshot, isLoading: isLoadingLocked } = useSWR(
-    baseVault ? ['yvusd-snapshot', YVUSD_LOCKED_ADDRESS] : null,
-    () => fetchSnapshotVault(YVUSD_LOCKED_ADDRESS)
-  )
+  const { data: lockedSnapshot, isLoading: isLoadingLocked } = useQuery({
+    queryKey: ['yvusd-snapshot', YVUSD_LOCKED_ADDRESS],
+    queryFn: () => fetchSnapshotVault(YVUSD_LOCKED_ADDRESS),
+    enabled: Boolean(baseVault)
+  })
 
   const unlockedVault = useMemo(() => {
     if (!baseVault) return undefined

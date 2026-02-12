@@ -64,6 +64,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
 
   const activeVariant = variant ?? 'unlocked'
   const selectedVault = activeVariant === 'locked' ? lockedVault : unlockedVault
+  const selectedVaultUserData = activeVariant === 'locked' ? lockedUserData : unlockedUserData
   const showToggle = hasUnlocked && hasLocked
 
   return (
@@ -129,6 +130,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
         assetAddress={assetAddress}
         chainId={chainId}
         vaultSymbol={activeVariant === 'locked' ? 'yvUSD (Locked)' : 'yvUSD (Unlocked)'}
+        vaultUserData={selectedVaultUserData}
         handleWithdrawSuccess={onWithdrawSuccess}
         hideContainerBorder
       />

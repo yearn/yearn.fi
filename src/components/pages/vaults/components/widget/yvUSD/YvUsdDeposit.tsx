@@ -1,11 +1,18 @@
+import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
-import { type TYvUsdVariant, YVUSD_LOCKED_COOLDOWN_DAYS, YVUSD_WITHDRAW_WINDOW_DAYS } from '@pages/vaults/utils/yvUsd'
+import {
+  type TYvUsdVariant,
+  YVUSD_BASELINE_VAULT_ADDRESS,
+  YVUSD_LOCKED_COOLDOWN_DAYS,
+  YVUSD_WITHDRAW_WINDOW_DAYS
+} from '@pages/vaults/utils/yvUsd'
 import { Button } from '@shared/components/Button'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import { cl, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
+import { useAccount } from 'wagmi'
 import { WidgetDeposit } from '../deposit'
 
 type Props = {
@@ -15,8 +22,16 @@ type Props = {
 }
 
 export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props): ReactElement {
+  const { address: account } = useAccount()
   const { unlockedVault, lockedVault, metrics, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
+  const selectedVaultAddress = variant === 'locked' ? lockedVault?.address : unlockedVault?.address
+  const selectedVaultUserData = useVaultUserData({
+    vaultAddress: selectedVaultAddress ?? YVUSD_BASELINE_VAULT_ADDRESS,
+    assetAddress,
+    chainId,
+    account
+  })
 
   if (isLoading || !unlockedVault || !lockedVault) {
     return (
@@ -84,6 +99,7 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
         chainId={chainId}
         vaultAPR={variant === 'locked' ? lockedApr : unlockedApr}
         vaultSymbol={variant === 'locked' ? 'yvUSD (Locked)' : variant === 'unlocked' ? 'yvUSD (Unlocked)' : 'yvUSD'}
+        vaultUserData={selectedVaultUserData}
         handleDepositSuccess={onDepositSuccess}
         hideDetails={!variant}
         hideActionButton={!variant}
