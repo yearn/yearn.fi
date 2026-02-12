@@ -1,30 +1,62 @@
+import { Switch as HeadlessSwitch } from '@headlessui/react'
 import { Button } from '@shared/components/Button'
+import { cl } from '@shared/utils'
 import type { TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import type { ReactElement } from 'react'
+import { type ReactElement, useCallback, useEffect, useState } from 'react'
+
+type TVaultsBlockingFilterAction = {
+  key: string
+  label: string
+  additionalResults: number
+  onApply: () => void
+}
 
 type TVaultListEmpty = {
   currentSearch: string
-  currentCategories: string[] | null
-  currentChains: number[] | null
+  currentCategories?: string[] | null
   onReset: () => void
-  onShowAllResults?: () => void
+  hiddenByFiltersCount?: number
+  blockingFilterActions?: TVaultsBlockingFilterAction[]
   isLoading: boolean
   loadingLabel?: string
-  defaultCategories?: string[]
-  potentialResultsCount?: number
   // @deprecated: retained for compatibility with existing usages in worktrees being cleaned up
   sortedVaultsToDisplay?: TYDaemonVaults
 }
 export function VaultsListEmpty({
   currentSearch,
-  currentCategories,
+  currentCategories = null,
   onReset,
-  onShowAllResults,
+  hiddenByFiltersCount = 0,
+  blockingFilterActions = [],
   isLoading,
-  loadingLabel,
-  defaultCategories = [],
-  potentialResultsCount = 0
+  loadingLabel
 }: TVaultListEmpty): ReactElement {
+  const hasSearch = currentSearch !== ''
+  const hasBlockingFilterActions = blockingFilterActions.length > 0
+  const hasHiddenByFiltersResults = hiddenByFiltersCount > 0
+  const [selectedBlockingFilters, setSelectedBlockingFilters] = useState<string[]>([])
+
+  useEffect(() => {
+    setSelectedBlockingFilters((prev) =>
+      prev.filter((key) => blockingFilterActions.some((action) => action.key === key))
+    )
+  }, [blockingFilterActions])
+
+  const toggleBlockingFilter = useCallback((key: string): void => {
+    setSelectedBlockingFilters((prev) => (prev.includes(key) ? prev.filter((entry) => entry !== key) : [...prev, key]))
+  }, [])
+
+  const applySelectedBlockingFilters = useCallback((): void => {
+    const selected = new Set(selectedBlockingFilters)
+    for (const action of blockingFilterActions) {
+      if (selected.has(action.key)) {
+        action.onApply()
+      }
+    }
+  }, [blockingFilterActions, selectedBlockingFilters])
+
+  const hasSelectedBlockingFilters = selectedBlockingFilters.length > 0
+
   if (isLoading) {
     const label = loadingLabel ?? 'Fetching Vaults…'
     return (
@@ -52,36 +84,71 @@ export function VaultsListEmpty({
     )
   }
 
-  const selectedCategoryCount = currentCategories?.length ?? 0
-  const hasSearch = currentSearch !== ''
-  const isFullCategorySelection = selectedCategoryCount >= defaultCategories.length
-
-  if (hasSearch && isFullCategorySelection) {
-    return (
-      <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
-        <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
-        <p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist`}</p>
-      </div>
-    )
-  }
-
-  if (hasSearch && !isFullCategorySelection) {
+  if (hasSearch && (hasBlockingFilterActions || hasHiddenByFiltersResults)) {
+    const hiddenByFiltersLabel = `${hiddenByFiltersCount} vault${hiddenByFiltersCount > 1 ? 's' : ''}`
     return (
       <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
         <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
         <p className={'text-center text-neutral-600'}>{`No results for "${currentSearch}" with current filters.`}</p>
-        {potentialResultsCount > 0 ? (
-          <>
-            <p className={'text-center font-normal text-neutral-600'}>
-              {`Found ${potentialResultsCount} vault${potentialResultsCount > 1 ? 's' : ''} when searching all categories.`}
-            </p>
-            <Button className={'mt-4 w-full md:w-48'} onClick={onShowAllResults || onReset}>
-              {'Show all results'}
+        {hiddenByFiltersCount > 0 ? (
+          <p
+            className={'text-center font-normal text-neutral-600'}
+          >{`${hiddenByFiltersLabel} found that are hidden by filters. Enable them below.`}</p>
+        ) : null}
+        {hasBlockingFilterActions ? (
+          <div className={'mt-2 flex w-full flex-col gap-2 md:w-96'}>
+            {blockingFilterActions.map((action) => {
+              const isSelected = selectedBlockingFilters.includes(action.key)
+              return (
+                <div
+                  key={action.key}
+                  className={
+                    'flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2'
+                  }
+                >
+                  <p className={'text-sm text-text-primary'}>
+                    {`${action.label}${action.additionalResults > 0 ? ` (+${action.additionalResults})` : ''}`}
+                  </p>
+                  <HeadlessSwitch
+                    checked={isSelected}
+                    onChange={(): void => toggleBlockingFilter(action.key)}
+                    className={cl(
+                      'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200',
+                      isSelected ? 'border-blue-500 bg-blue-500' : 'border-neutral-300 bg-white'
+                    )}
+                  >
+                    <span className={'sr-only'}>{`Enable ${action.label}`}</span>
+                    <span
+                      aria-hidden={'true'}
+                      className={cl(
+                        'inline-block size-4 transform rounded-full shadow transition-transform duration-200',
+                        isSelected ? 'translate-x-6 bg-white' : 'translate-x-1 bg-neutral-500'
+                      )}
+                    />
+                  </HeadlessSwitch>
+                </div>
+              )
+            })}
+            <Button
+              className={'mt-2 w-full'}
+              onClick={applySelectedBlockingFilters}
+              isDisabled={!hasSelectedBlockingFilters}
+            >
+              {'Search'}
             </Button>
-          </>
+          </div>
         ) : (
-          <p className={'text-center font-normal text-neutral-600'}>{`The vault "${currentSearch}" does not exist.`}</p>
+          <p className={'text-center font-normal text-neutral-600'}>{'Try adjusting your selected filters.'}</p>
         )}
+      </div>
+    )
+  }
+
+  if (hasSearch) {
+    return (
+      <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
+        <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
+        <p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist`}</p>
       </div>
     )
   }

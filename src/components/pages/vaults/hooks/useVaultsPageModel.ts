@@ -20,7 +20,10 @@ import {
   V3_SUPPORTED_CHAINS
 } from '@pages/vaults/utils/constants'
 import {
+  deriveAssetCategory,
   deriveListKind,
+  deriveV3Aggressiveness,
+  expandUnderlyingAssetSelection,
   getUnderlyingAssetLabel,
   normalizeUnderlyingAssetSymbol,
   type TVaultAggressiveness
@@ -32,6 +35,7 @@ import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDrop
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { usePrefetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
+import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { RefObject } from 'react'
@@ -56,6 +60,68 @@ const VAULTS_FILTERS_STORAGE_KEY = 'yearn.fi/vaults-filters@1'
 type TVaultsPinnedSection = {
   key: string
   vaults: TYDaemonVault[]
+}
+
+type TVaultsBlockingFilterActionKey =
+  | 'showStrategies'
+  | 'showLegacyVaults'
+  | 'showHiddenVaults'
+  | 'showAllChains'
+  | 'showAllCategories'
+  | 'showAllAggressiveness'
+  | 'showAllUnderlyingAssets'
+  | 'clearMinTvl'
+  | 'showAllTypes'
+  | 'showAllVaults'
+  | 'applyCommonFilters'
+
+type TVaultsBlockingFilterBaseActionKey = Exclude<TVaultsBlockingFilterActionKey, 'applyCommonFilters'>
+
+export type TVaultsBlockingFilterAction = {
+  key: TVaultsBlockingFilterActionKey
+  label: string
+  additionalResults: number
+  onApply: () => void
+}
+
+const BLOCKING_FILTER_LABELS: Record<TVaultsBlockingFilterBaseActionKey, string> = {
+  showStrategies: 'Show single asset strategies',
+  showLegacyVaults: 'Show legacy vaults',
+  showHiddenVaults: 'Show hidden vaults',
+  showAllChains: 'Show all chains',
+  showAllCategories: 'Show all categories',
+  showAllAggressiveness: 'Show all aggressiveness levels',
+  showAllUnderlyingAssets: 'Show all underlying assets',
+  clearMinTvl: 'Clear minimum TVL',
+  showAllTypes: 'Show all strategy types',
+  showAllVaults: 'Show all vaults'
+}
+
+function capitalizeLabel(value: string): string {
+  if (value.length === 0) {
+    return value
+  }
+  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`
+}
+
+function formatCombinedBlockingFilterLabel(keys: TVaultsBlockingFilterBaseActionKey[]): string {
+  const normalizedKeys = Array.from(new Set(keys))
+  if (
+    normalizedKeys.length === 2 &&
+    normalizedKeys.includes('showAllChains') &&
+    normalizedKeys.includes('showAllVaults')
+  ) {
+    return 'Show all chains and vaults'
+  }
+
+  const labels = normalizedKeys.map((key) => BLOCKING_FILTER_LABELS[key].toLowerCase())
+  if (labels.length === 2) {
+    return `${capitalizeLabel(labels[0])} and ${labels[1]}`
+  }
+  if (labels.length > 2) {
+    return `Apply ${labels.slice(0, -1).join(', ')}, and ${labels.at(-1)}`
+  }
+  return 'Apply suggested filters'
 }
 
 type TVaultsFiltersBarModel = {
@@ -88,11 +154,10 @@ type TVaultsListData = {
   pinnedVaults: TYDaemonVault[]
   mainVaults: TYDaemonVault[]
   vaultFlags: Record<string, { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }>
-  listCategoriesSanitized: string[]
   listChains: number[] | null
-  defaultCategories: string[]
   totalMatchingVaults: number
-  hasHoldings: boolean
+  hiddenByFiltersCount: number
+  blockingFilterActions: TVaultsBlockingFilterAction[]
 }
 
 type TVaultsListModel = {
@@ -113,7 +178,6 @@ type TVaultsListModel = {
     onToggleVaultType: (type: 'v3' | 'lp') => void
   }
   onResetFilters: () => void
-  onShowAllSearchResults: () => void
   resolveApyDisplayVariant: (vault: TYDaemonVault) => 'default' | 'factory-list'
 }
 
@@ -335,6 +399,10 @@ export function useVaultsPageModel(): TVaultsPageModel {
     () => resolveV3Types(listTypes, listShowStrategies, hasListTypesParam),
     [listTypes, listShowStrategies, hasListTypesParam, resolveV3Types]
   )
+  const listV3TypesWithStrategies = useMemo(
+    () => resolveV3Types(listTypes, true, hasListTypesParam),
+    [listTypes, hasListTypesParam, resolveV3Types]
+  )
 
   const displayedCategoriesSanitized = useMemo(() => {
     const allowed = V3_ASSET_CATEGORIES
@@ -347,6 +415,13 @@ export function useVaultsPageModel(): TVaultsPageModel {
       allowed.has(value as TVaultAggressiveness)
     )
   }, [displayedAggressiveness])
+
+  const listAggressivenessSanitized = useMemo(() => {
+    const allowed = new Set(AGGRESSIVENESS_OPTIONS)
+    return (listAggressiveness || []).filter((value): value is TVaultAggressiveness =>
+      allowed.has(value as TVaultAggressiveness)
+    )
+  }, [listAggressiveness])
 
   const displayedUnderlyingAssetsSanitized = useMemo(() => {
     const normalized = (displayedUnderlyingAssets || [])
@@ -368,7 +443,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
   const {
-    defaultCategories,
     listCategoriesSanitized,
     holdingsVaults,
     availableVaults,
@@ -398,6 +472,221 @@ export function useVaultsPageModel(): TVaultsPageModel {
     isHoldingsPinned,
     isAvailablePinned
   })
+
+  const shouldComputeBlockingInsights = searchValue !== '' && pinnedVaults.length === 0 && mainVaults.length === 0
+  const isTypesFilterBlockingResults =
+    listVaultType !== 'factory' &&
+    listShowStrategies &&
+    hasListTypesParam &&
+    !areArraysEquivalent(listV3Types, DEFAULT_VAULT_TYPES)
+  const hasVaultTypeFilterBlockingResults = listVaultType !== 'all'
+  const listUnderlyingAssetsExpanded = useMemo(
+    () => expandUnderlyingAssetSelection(listUnderlyingAssetsSanitized),
+    [listUnderlyingAssetsSanitized]
+  )
+  const activeV3Kinds = useMemo(() => {
+    const kinds = new Set<'allocator' | 'strategy'>()
+    if (listV3Types.includes('multi')) {
+      kinds.add('allocator')
+    }
+    if (listV3Types.includes('single')) {
+      kinds.add('strategy')
+    }
+    return kinds
+  }, [listV3Types])
+  const blockingProbeSortDirection: TSortDirection = ''
+  const blockingProbeBaseArgs: Parameters<typeof useVaultsListModel>[0] = {
+    enabled: shouldComputeBlockingInsights,
+    listVaultType,
+    listChains,
+    listV3Types,
+    listCategories,
+    listAggressiveness: listAggressivenessSanitized.length > 0 ? listAggressivenessSanitized : null,
+    listUnderlyingAssets: listUnderlyingAssetsSanitized,
+    listMinTvl,
+    listShowLegacyVaults,
+    listShowHiddenVaults,
+    searchValue,
+    sortBy: effectiveSortBy,
+    sortDirection: blockingProbeSortDirection,
+    holdingsPinnedSortDirection: blockingProbeSortDirection,
+    isHoldingsPinned: false,
+    isAvailablePinned: false
+  }
+
+  const { pinnedVaults: showStrategiesPinnedVaults, mainVaults: showStrategiesMainVaults } = useVaultsListModel({
+    ...blockingProbeBaseArgs,
+    listV3Types: listV3TypesWithStrategies
+  })
+
+  const { pinnedVaults: showLegacyPinnedVaults, mainVaults: showLegacyMainVaults } = useVaultsListModel({
+    ...blockingProbeBaseArgs,
+    listShowLegacyVaults: true
+  })
+
+  const { pinnedVaults: showHiddenPinnedVaults, mainVaults: showHiddenMainVaults } = useVaultsListModel({
+    ...blockingProbeBaseArgs,
+    listShowHiddenVaults: true
+  })
+
+  const { pinnedVaults: showAllChainsPinnedVaults, mainVaults: showAllChainsMainVaults } = useVaultsListModel({
+    ...blockingProbeBaseArgs,
+    listChains: null
+  })
+
+  const { pinnedVaults: showAllCategoriesPinnedVaults, mainVaults: showAllCategoriesMainVaults } = useVaultsListModel({
+    ...blockingProbeBaseArgs,
+    listCategories: null
+  })
+
+  const { pinnedVaults: showAllAggressivenessPinnedVaults, mainVaults: showAllAggressivenessMainVaults } =
+    useVaultsListModel({
+      ...blockingProbeBaseArgs,
+      listAggressiveness: null
+    })
+
+  const { pinnedVaults: showAllUnderlyingAssetsPinnedVaults, mainVaults: showAllUnderlyingAssetsMainVaults } =
+    useVaultsListModel({
+      ...blockingProbeBaseArgs,
+      listUnderlyingAssets: null
+    })
+
+  const { pinnedVaults: clearMinTvlPinnedVaults, mainVaults: clearMinTvlMainVaults } = useVaultsListModel({
+    ...blockingProbeBaseArgs,
+    listMinTvl: DEFAULT_MIN_TVL
+  })
+
+  const { pinnedVaults: showAllTypesPinnedVaults, mainVaults: showAllTypesMainVaults } = useVaultsListModel({
+    ...blockingProbeBaseArgs,
+    listV3Types: DEFAULT_VAULT_TYPES
+  })
+
+  const { pinnedVaults: showAllVaultsPinnedVaults, mainVaults: showAllVaultsMainVaults } = useVaultsListModel({
+    ...blockingProbeBaseArgs,
+    enabled: shouldComputeBlockingInsights && hasVaultTypeFilterBlockingResults,
+    listVaultType: 'all'
+  })
+
+  const { pinnedVaults: allBlockingFiltersPinnedVaults, mainVaults: allBlockingFiltersMainVaults } = useVaultsListModel(
+    {
+      ...blockingProbeBaseArgs,
+      listVaultType: 'all',
+      listChains: null,
+      listV3Types: DEFAULT_VAULT_TYPES,
+      listCategories: null,
+      listAggressiveness: null,
+      listUnderlyingAssets: null,
+      listMinTvl: DEFAULT_MIN_TVL,
+      listShowLegacyVaults: true,
+      listShowHiddenVaults: true
+    }
+  )
+
+  const currentVisibleVaultKeys = useMemo(() => {
+    return new Set([...pinnedVaults, ...mainVaults].map((vault) => getVaultKey(vault)))
+  }, [mainVaults, pinnedVaults])
+
+  const allBlockingFiltersVaults = useMemo(
+    () => [...allBlockingFiltersPinnedVaults, ...allBlockingFiltersMainVaults],
+    [allBlockingFiltersMainVaults, allBlockingFiltersPinnedVaults]
+  )
+
+  const hiddenByFiltersVaults = useMemo(() => {
+    return allBlockingFiltersVaults.filter((vault) => !currentVisibleVaultKeys.has(getVaultKey(vault)))
+  }, [allBlockingFiltersVaults, currentVisibleVaultKeys])
+
+  const getBlockingFilterKeysForVault = useCallback(
+    (vault: TYDaemonVault): TVaultsBlockingFilterBaseActionKey[] => {
+      const blockingKeys = new Set<TVaultsBlockingFilterBaseActionKey>()
+      const listKind = deriveListKind(vault)
+      const isV3Kind = listKind === 'allocator' || listKind === 'strategy'
+      const isV2Kind = listKind === 'factory' || listKind === 'legacy'
+
+      if ((listVaultType === 'v3' && isV2Kind) || (listVaultType === 'factory' && isV3Kind)) {
+        blockingKeys.add('showAllVaults')
+      }
+
+      if (!listShowHiddenVaults && Boolean(vault.info?.isHidden)) {
+        blockingKeys.add('showHiddenVaults')
+      }
+      if (!listShowLegacyVaults && listKind === 'legacy') {
+        blockingKeys.add('showLegacyVaults')
+      }
+      if (listChains !== null && !listChains.includes(vault.chainID)) {
+        blockingKeys.add('showAllChains')
+      }
+
+      if (listCategoriesSanitized.length > 0) {
+        const vaultCategory = deriveAssetCategory(vault)
+        if (!listCategoriesSanitized.includes(vaultCategory)) {
+          blockingKeys.add('showAllCategories')
+        }
+      }
+
+      if (listAggressivenessSanitized.length > 0) {
+        const vaultAggressiveness = deriveV3Aggressiveness(vault)
+        if (!vaultAggressiveness || !listAggressivenessSanitized.includes(vaultAggressiveness)) {
+          blockingKeys.add('showAllAggressiveness')
+        }
+      }
+
+      if (listUnderlyingAssetsExpanded.size > 0) {
+        const assetKey = normalizeUnderlyingAssetSymbol(vault.token?.symbol)
+        if (!assetKey || !listUnderlyingAssetsExpanded.has(assetKey)) {
+          blockingKeys.add('showAllUnderlyingAssets')
+        }
+      }
+
+      if (listMinTvl !== DEFAULT_MIN_TVL) {
+        const tvl = vault.tvl?.tvl || 0
+        if (tvl < listMinTvl) {
+          blockingKeys.add('clearMinTvl')
+        }
+      }
+
+      if (isV3Kind) {
+        if (!listShowStrategies && listKind === 'strategy') {
+          blockingKeys.add('showStrategies')
+        }
+        if (isTypesFilterBlockingResults && !activeV3Kinds.has(listKind)) {
+          blockingKeys.add('showAllTypes')
+        }
+      }
+
+      return Array.from(blockingKeys)
+    },
+    [
+      activeV3Kinds,
+      isTypesFilterBlockingResults,
+      listAggressivenessSanitized,
+      listCategoriesSanitized,
+      listChains,
+      listMinTvl,
+      listShowHiddenVaults,
+      listShowLegacyVaults,
+      listShowStrategies,
+      listUnderlyingAssetsExpanded,
+      listVaultType
+    ]
+  )
+
+  const commonBlockingFilterKeys = useMemo((): TVaultsBlockingFilterBaseActionKey[] => {
+    if (!shouldComputeBlockingInsights || hiddenByFiltersVaults.length === 0) {
+      return []
+    }
+
+    const common = new Set(getBlockingFilterKeysForVault(hiddenByFiltersVaults[0]))
+    for (const vault of hiddenByFiltersVaults.slice(1)) {
+      const currentBlockingSet = new Set(getBlockingFilterKeysForVault(vault))
+      for (const key of Array.from(common)) {
+        if (!currentBlockingSet.has(key)) {
+          common.delete(key)
+        }
+      }
+    }
+
+    return Array.from(common)
+  }, [getBlockingFilterKeysForVault, hiddenByFiltersVaults, shouldComputeBlockingInsights])
 
   useEffect(() => {
     if (holdingsVaults.length === 0 && isHoldingsPinned) {
@@ -611,36 +900,216 @@ export function useVaultsPageModel(): TVaultsPageModel {
     onResetExtraFilters()
   }, [onResetExtraFilters, onResetMultiSelect])
 
-  const handleShowAllSearchResults = useCallback((): void => {
-    setOptimisticChains([])
-    setOptimisticCategories([])
-    setOptimisticAggressiveness([])
-    setOptimisticUnderlyingAssets([])
-    setOptimisticMinTvl(DEFAULT_MIN_TVL)
-    setOptimisticTypes(DEFAULT_VAULT_TYPES)
-    setOptimisticShowLegacyVaults(false)
-    setOptimisticShowHiddenVaults(true)
-    setOptimisticShowStrategies(false)
+  const handleEnableShowStrategies = useCallback((): void => {
+    setOptimisticShowStrategies(true)
+    onChangeShowStrategies(true)
+  }, [onChangeShowStrategies])
 
-    onChangeTypes(DEFAULT_VAULT_TYPES)
-    onChangeCategories(null)
-    onChangeChains(null)
-    onChangeAggressiveness(null)
-    onChangeUnderlyingAssets(null)
-    onChangeMinTvl(DEFAULT_MIN_TVL)
-    onChangeShowLegacyVaults(false)
+  const handleEnableShowLegacyVaults = useCallback((): void => {
+    setOptimisticShowLegacyVaults(true)
+    onChangeShowLegacyVaults(true)
+  }, [onChangeShowLegacyVaults])
+
+  const handleEnableShowHiddenVaults = useCallback((): void => {
+    setOptimisticShowHiddenVaults(true)
     onChangeShowHiddenVaults(true)
-    onChangeShowStrategies(false)
+  }, [onChangeShowHiddenVaults])
+
+  const handleShowAllChains = useCallback((): void => {
+    handleChainsChange(null)
+  }, [handleChainsChange])
+
+  const handleShowAllCategories = useCallback((): void => {
+    handleCategoriesChange(null)
+  }, [handleCategoriesChange])
+
+  const handleShowAllAggressiveness = useCallback((): void => {
+    handleAggressivenessChange(null)
+  }, [handleAggressivenessChange])
+
+  const handleShowAllUnderlyingAssets = useCallback((): void => {
+    handleUnderlyingAssetsChange(null)
+  }, [handleUnderlyingAssetsChange])
+
+  const handleClearMinTvl = useCallback((): void => {
+    handleMinTvlChange(DEFAULT_MIN_TVL)
+  }, [handleMinTvlChange])
+
+  const handleShowAllTypes = useCallback((): void => {
+    handleTypesChange(DEFAULT_VAULT_TYPES)
+  }, [handleTypesChange])
+
+  const handleShowAllVaults = useCallback((): void => {
+    handleVaultVersionToggle('all')
+  }, [handleVaultVersionToggle])
+
+  const currentVisibleResultsCount = pinnedVaults.length + mainVaults.length
+  const showStrategiesResultsCount = showStrategiesPinnedVaults.length + showStrategiesMainVaults.length
+  const showLegacyResultsCount = showLegacyPinnedVaults.length + showLegacyMainVaults.length
+  const showHiddenResultsCount = showHiddenPinnedVaults.length + showHiddenMainVaults.length
+  const showAllChainsResultsCount = showAllChainsPinnedVaults.length + showAllChainsMainVaults.length
+  const showAllCategoriesResultsCount = showAllCategoriesPinnedVaults.length + showAllCategoriesMainVaults.length
+  const showAllAggressivenessResultsCount =
+    showAllAggressivenessPinnedVaults.length + showAllAggressivenessMainVaults.length
+  const showAllUnderlyingAssetsResultsCount =
+    showAllUnderlyingAssetsPinnedVaults.length + showAllUnderlyingAssetsMainVaults.length
+  const clearMinTvlResultsCount = clearMinTvlPinnedVaults.length + clearMinTvlMainVaults.length
+  const showAllTypesResultsCount = showAllTypesPinnedVaults.length + showAllTypesMainVaults.length
+  const showAllVaultsResultsCount = showAllVaultsPinnedVaults.length + showAllVaultsMainVaults.length
+  const allBlockingFiltersResultsCount = allBlockingFiltersPinnedVaults.length + allBlockingFiltersMainVaults.length
+
+  const showStrategiesAdditionalResults = Math.max(0, showStrategiesResultsCount - currentVisibleResultsCount)
+  const showLegacyAdditionalResults = Math.max(0, showLegacyResultsCount - currentVisibleResultsCount)
+  const showHiddenAdditionalResults = Math.max(0, showHiddenResultsCount - currentVisibleResultsCount)
+  const showAllChainsAdditionalResults = Math.max(0, showAllChainsResultsCount - currentVisibleResultsCount)
+  const showAllCategoriesAdditionalResults = Math.max(0, showAllCategoriesResultsCount - currentVisibleResultsCount)
+  const showAllAggressivenessAdditionalResults = Math.max(
+    0,
+    showAllAggressivenessResultsCount - currentVisibleResultsCount
+  )
+  const showAllUnderlyingAssetsAdditionalResults = Math.max(
+    0,
+    showAllUnderlyingAssetsResultsCount - currentVisibleResultsCount
+  )
+  const clearMinTvlAdditionalResults = Math.max(0, clearMinTvlResultsCount - currentVisibleResultsCount)
+  const showAllTypesAdditionalResults = Math.max(0, showAllTypesResultsCount - currentVisibleResultsCount)
+  const showAllVaultsAdditionalResults = Math.max(0, showAllVaultsResultsCount - currentVisibleResultsCount)
+  const hiddenByFiltersCount = Math.max(0, allBlockingFiltersResultsCount - currentVisibleResultsCount)
+
+  const blockingFilterActions = useMemo((): TVaultsBlockingFilterAction[] => {
+    const actionsByKey = new Map<TVaultsBlockingFilterBaseActionKey, TVaultsBlockingFilterAction>()
+    const actionHandlers: Record<TVaultsBlockingFilterBaseActionKey, () => void> = {
+      showStrategies: handleEnableShowStrategies,
+      showLegacyVaults: handleEnableShowLegacyVaults,
+      showHiddenVaults: handleEnableShowHiddenVaults,
+      showAllChains: handleShowAllChains,
+      showAllCategories: handleShowAllCategories,
+      showAllAggressiveness: handleShowAllAggressiveness,
+      showAllUnderlyingAssets: handleShowAllUnderlyingAssets,
+      clearMinTvl: handleClearMinTvl,
+      showAllTypes: handleShowAllTypes,
+      showAllVaults: handleShowAllVaults
+    }
+    const upsertAction = (
+      key: TVaultsBlockingFilterBaseActionKey,
+      additionalResults: number,
+      onApply: () => void
+    ): void => {
+      const nextAction: TVaultsBlockingFilterAction = {
+        key,
+        label: BLOCKING_FILTER_LABELS[key],
+        additionalResults,
+        onApply
+      }
+      const existing = actionsByKey.get(key)
+      if (!existing || nextAction.additionalResults > existing.additionalResults) {
+        actionsByKey.set(key, nextAction)
+      }
+    }
+
+    const actionCandidates: Array<{
+      key: TVaultsBlockingFilterBaseActionKey
+      isApplicable: boolean
+      additionalResults: number
+    }> = [
+      { key: 'showStrategies', isApplicable: !listShowStrategies, additionalResults: showStrategiesAdditionalResults },
+      { key: 'showLegacyVaults', isApplicable: !listShowLegacyVaults, additionalResults: showLegacyAdditionalResults },
+      { key: 'showHiddenVaults', isApplicable: !listShowHiddenVaults, additionalResults: showHiddenAdditionalResults },
+      { key: 'showAllChains', isApplicable: listChains !== null, additionalResults: showAllChainsAdditionalResults },
+      {
+        key: 'showAllCategories',
+        isApplicable: listCategoriesSanitized.length > 0,
+        additionalResults: showAllCategoriesAdditionalResults
+      },
+      {
+        key: 'showAllAggressiveness',
+        isApplicable: listAggressivenessSanitized.length > 0,
+        additionalResults: showAllAggressivenessAdditionalResults
+      },
+      {
+        key: 'showAllUnderlyingAssets',
+        isApplicable: listUnderlyingAssetsSanitized.length > 0,
+        additionalResults: showAllUnderlyingAssetsAdditionalResults
+      },
+      {
+        key: 'clearMinTvl',
+        isApplicable: listMinTvl !== DEFAULT_MIN_TVL,
+        additionalResults: clearMinTvlAdditionalResults
+      },
+      {
+        key: 'showAllTypes',
+        isApplicable: isTypesFilterBlockingResults,
+        additionalResults: showAllTypesAdditionalResults
+      },
+      {
+        key: 'showAllVaults',
+        isApplicable: hasVaultTypeFilterBlockingResults,
+        additionalResults: showAllVaultsAdditionalResults
+      }
+    ]
+    for (const candidate of actionCandidates) {
+      if (!candidate.isApplicable || candidate.additionalResults <= 0) {
+        continue
+      }
+      upsertAction(candidate.key, candidate.additionalResults, actionHandlers[candidate.key])
+    }
+
+    const sortedActions = Array.from(actionsByKey.values()).sort(
+      (left, right) => right.additionalResults - left.additionalResults
+    )
+    const comboKeys = commonBlockingFilterKeys
+    if (hiddenByFiltersCount > 0 && comboKeys.length > 1) {
+      const shouldShowComboAction = sortedActions.length === 0 || comboKeys.some((key) => !actionsByKey.has(key))
+
+      if (shouldShowComboAction) {
+        const comboAction: TVaultsBlockingFilterAction = {
+          key: 'applyCommonFilters',
+          label: formatCombinedBlockingFilterLabel(comboKeys),
+          additionalResults: hiddenByFiltersCount,
+          onApply: (): void => {
+            for (const key of comboKeys) {
+              actionHandlers[key]()
+            }
+          }
+        }
+        return [comboAction, ...sortedActions]
+      }
+    }
+
+    return sortedActions
   }, [
-    onChangeAggressiveness,
-    onChangeCategories,
-    onChangeChains,
-    onChangeMinTvl,
-    onChangeShowHiddenVaults,
-    onChangeShowLegacyVaults,
-    onChangeShowStrategies,
-    onChangeTypes,
-    onChangeUnderlyingAssets
+    clearMinTvlAdditionalResults,
+    handleClearMinTvl,
+    handleEnableShowHiddenVaults,
+    handleEnableShowLegacyVaults,
+    handleEnableShowStrategies,
+    handleShowAllAggressiveness,
+    handleShowAllCategories,
+    handleShowAllChains,
+    handleShowAllTypes,
+    handleShowAllUnderlyingAssets,
+    handleShowAllVaults,
+    hasVaultTypeFilterBlockingResults,
+    hiddenByFiltersCount,
+    isTypesFilterBlockingResults,
+    listAggressivenessSanitized.length,
+    listCategoriesSanitized.length,
+    listChains,
+    listShowHiddenVaults,
+    listShowLegacyVaults,
+    listShowStrategies,
+    listUnderlyingAssetsSanitized.length,
+    listMinTvl,
+    showAllAggressivenessAdditionalResults,
+    showAllCategoriesAdditionalResults,
+    showAllChainsAdditionalResults,
+    showAllTypesAdditionalResults,
+    showAllUnderlyingAssetsAdditionalResults,
+    showAllVaultsAdditionalResults,
+    showHiddenAdditionalResults,
+    showLegacyAdditionalResults,
+    showStrategiesAdditionalResults,
+    commonBlockingFilterKeys
   ])
 
   const minTvlInput = createElement(
@@ -963,11 +1432,10 @@ export function useVaultsPageModel(): TVaultsPageModel {
         pinnedVaults,
         mainVaults,
         vaultFlags,
-        listCategoriesSanitized,
         listChains,
-        defaultCategories,
         totalMatchingVaults,
-        hasHoldings: holdingsVaults.length > 0
+        hiddenByFiltersCount,
+        blockingFilterActions
       },
       handlers: {
         onToggleChain: handleToggleChain,
@@ -976,7 +1444,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
         onToggleVaultType: handleToggleVaultType
       },
       onResetFilters: handleResetFilters,
-      onShowAllSearchResults: handleShowAllSearchResults,
       resolveApyDisplayVariant
     }
   }

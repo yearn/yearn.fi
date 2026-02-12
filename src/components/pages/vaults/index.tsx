@@ -87,7 +87,6 @@ export default function Index(): ReactElement {
     data,
     handlers,
     onResetFilters,
-    onShowAllSearchResults,
     resolveApyDisplayVariant
   } = list
   const {
@@ -96,10 +95,10 @@ export default function Index(): ReactElement {
     pinnedVaults,
     mainVaults,
     vaultFlags,
-    listCategoriesSanitized,
     listChains,
-    defaultCategories,
-    totalMatchingVaults
+    totalMatchingVaults,
+    hiddenByFiltersCount,
+    blockingFilterActions
   } = data
   const { activeChains, activeCategories, activeProductType } = activeFilters
   const { onToggleChain, onToggleCategory, onToggleType, onToggleVaultType } = handlers
@@ -344,12 +343,9 @@ export default function Index(): ReactElement {
         <VaultsListEmpty
           isLoading={false}
           currentSearch={search.value}
-          currentCategories={listCategoriesSanitized}
-          currentChains={listChains}
           onReset={onResetFilters}
-          onShowAllResults={onShowAllSearchResults}
-          defaultCategories={defaultCategories}
-          potentialResultsCount={totalMatchingVaults}
+          hiddenByFiltersCount={hiddenByFiltersCount}
+          blockingFilterActions={blockingFilterActions}
         />
       )
     }
@@ -415,20 +411,19 @@ export default function Index(): ReactElement {
     activeCategories,
     activeChains,
     activeProductType,
+    blockingFilterActions,
     compareVaultKeys,
-    defaultCategories,
     displayedShowStrategies,
     expandedVaultKeys,
     handleExpandedChange,
     handleToggleCompare,
+    hiddenByFiltersCount,
     isCompareMode,
     isLoading,
-    listCategoriesSanitized,
     listChains,
     listVaultType,
     mainVaults,
     onResetFilters,
-    onShowAllSearchResults,
     onToggleCategory,
     onToggleChain,
     onToggleType,
@@ -438,7 +433,6 @@ export default function Index(): ReactElement {
     resolveApyDisplayVariant,
     search.value,
     shouldCollapseChips,
-    totalMatchingVaults,
     vaultFlags
   ])
 
