@@ -8,6 +8,11 @@ import type {
 import type { TListHead } from '@pages/vaults/components/list/VaultsListHead'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import {
+  getAdditionalResultsForCombo,
+  getCommonBlockingKeys,
+  shouldShowComboBlockingAction
+} from '@pages/vaults/utils/blockingFilterInsights'
+import {
   AGGRESSIVENESS_OPTIONS,
   AVAILABLE_TOGGLE_VALUE,
   DEFAULT_MIN_TVL,
@@ -670,23 +675,20 @@ export function useVaultsPageModel(): TVaultsPageModel {
     ]
   )
 
-  const commonBlockingFilterKeys = useMemo((): TVaultsBlockingFilterBaseActionKey[] => {
+  const hiddenByFiltersBlockingKeys = useMemo((): TVaultsBlockingFilterBaseActionKey[][] => {
     if (!shouldComputeBlockingInsights || hiddenByFiltersVaults.length === 0) {
       return []
     }
-
-    const common = new Set(getBlockingFilterKeysForVault(hiddenByFiltersVaults[0]))
-    for (const vault of hiddenByFiltersVaults.slice(1)) {
-      const currentBlockingSet = new Set(getBlockingFilterKeysForVault(vault))
-      for (const key of Array.from(common)) {
-        if (!currentBlockingSet.has(key)) {
-          common.delete(key)
-        }
-      }
-    }
-
-    return Array.from(common)
+    return hiddenByFiltersVaults.map((vault) => getBlockingFilterKeysForVault(vault))
   }, [getBlockingFilterKeysForVault, hiddenByFiltersVaults, shouldComputeBlockingInsights])
+
+  const commonBlockingFilterKeys = useMemo((): TVaultsBlockingFilterBaseActionKey[] => {
+    return getCommonBlockingKeys(hiddenByFiltersBlockingKeys)
+  }, [hiddenByFiltersBlockingKeys])
+
+  const commonBlockingFilterAdditionalResults = useMemo((): number => {
+    return getAdditionalResultsForCombo(hiddenByFiltersBlockingKeys, commonBlockingFilterKeys)
+  }, [commonBlockingFilterKeys, hiddenByFiltersBlockingKeys])
 
   useEffect(() => {
     if (holdingsVaults.length === 0 && isHoldingsPinned) {
@@ -1058,22 +1060,24 @@ export function useVaultsPageModel(): TVaultsPageModel {
       (left, right) => right.additionalResults - left.additionalResults
     )
     const comboKeys = commonBlockingFilterKeys
-    if (hiddenByFiltersCount > 0 && comboKeys.length > 1) {
-      const shouldShowComboAction = sortedActions.length === 0 || comboKeys.some((key) => !actionsByKey.has(key))
+    const shouldShowComboAction = shouldShowComboBlockingAction({
+      hiddenByFiltersCount,
+      comboKeys,
+      actionableKeys: new Set(actionsByKey.keys())
+    })
 
-      if (shouldShowComboAction) {
-        const comboAction: TVaultsBlockingFilterAction = {
-          key: 'applyCommonFilters',
-          label: formatCombinedBlockingFilterLabel(comboKeys),
-          additionalResults: hiddenByFiltersCount,
-          onApply: (): void => {
-            for (const key of comboKeys) {
-              actionHandlers[key]()
-            }
+    if (shouldShowComboAction) {
+      const comboAction: TVaultsBlockingFilterAction = {
+        key: 'applyCommonFilters',
+        label: formatCombinedBlockingFilterLabel(comboKeys),
+        additionalResults: commonBlockingFilterAdditionalResults,
+        onApply: (): void => {
+          for (const key of comboKeys) {
+            actionHandlers[key]()
           }
         }
-        return [comboAction, ...sortedActions]
       }
+      return [comboAction, ...sortedActions]
     }
 
     return sortedActions
@@ -1109,6 +1113,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     showHiddenAdditionalResults,
     showLegacyAdditionalResults,
     showStrategiesAdditionalResults,
+    commonBlockingFilterAdditionalResults,
     commonBlockingFilterKeys
   ])
 
