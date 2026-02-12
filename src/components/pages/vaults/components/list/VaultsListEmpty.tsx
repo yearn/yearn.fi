@@ -1,7 +1,7 @@
 import { Switch as HeadlessSwitch } from '@headlessui/react'
 import { Button } from '@shared/components/Button'
-import { cl } from '@shared/utils'
 import { EmptyState } from '@shared/components/EmptyState'
+import { cl } from '@shared/utils'
 import type { TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { type ReactElement, useCallback, useEffect, useState } from 'react'
 
