@@ -1,5 +1,5 @@
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -25,9 +25,9 @@ const baseVault = {
   tvl: {
     tvl: 1234567
   }
-} as unknown as TYDaemonVault
+} as unknown as TKongVaultInput
 
-function renderCard(vault: TYDaemonVault): string {
+function renderCard(vault: TKongVaultInput): string {
   const originalWindow = globalThis.window
   ;(globalThis as unknown as { window: unknown }).window = {
     location: { href: 'https://yearn.fi/', hostname: 'yearn.fi' }

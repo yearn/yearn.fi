@@ -6,7 +6,7 @@ import type { TAddress } from '@shared/types'
 import { cl, formatApyDisplay, formatPercent, toAddress, truncateHex } from '@shared/utils'
 import { formatDuration } from '@shared/utils/format.time'
 import { copyToClipboard } from '@shared/utils/helpers'
-import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { TKongVaultApr, TKongVaultStrategy } from '@pages/vaults/domain/kongVaultSelectors'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
@@ -27,8 +27,8 @@ export function VaultsListStrategy({
   fees,
   totalValueUsd
 }: {
-  details: TYDaemonVaultStrategy['details']
-  status: TYDaemonVaultStrategy['status']
+  details: TKongVaultStrategy['details']
+  status: TKongVaultStrategy['status']
   chainId: number
   allocation: string
   name: string
@@ -38,7 +38,7 @@ export function VaultsListStrategy({
   variant: 'v2' | 'v3'
   apr: number | null | undefined
   netApr: number | null | undefined
-  fees: TYDaemonVault['apr']['fees']
+  fees: TKongVaultApr['fees']
   totalValueUsd: number
 }): ReactElement {
   const [isExpanded, setIsExpanded] = useState(false)

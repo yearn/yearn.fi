@@ -1,5 +1,5 @@
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { Button } from '@shared/components/Button'
-import type { TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 
 type TVaultListEmpty = {
@@ -12,7 +12,7 @@ type TVaultListEmpty = {
   defaultCategories?: string[]
   potentialResultsCount?: number
   // @deprecated: retained for compatibility with existing usages in worktrees being cleaned up
-  sortedVaultsToDisplay?: TYDaemonVaults
+  sortedVaultsToDisplay?: TKongVaultInput[]
 }
 export function VaultsListEmpty({
   currentSearch,

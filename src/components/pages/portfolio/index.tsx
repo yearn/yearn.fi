@@ -11,6 +11,12 @@ import { TransactionOverlay, type TransactionStep } from '@pages/vaults/componen
 import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultStaking,
+  type TKongVault
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { METRIC_VALUE_CLASS, MetricHeader, MetricsCard, type TMetricBlock } from '@shared/components/MetricsCard'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
@@ -24,7 +30,6 @@ import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, SUPPORTED_NETWORKS } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
@@ -300,7 +305,7 @@ type TChainRewardData = {
   totalUsd: number
   isLoading: boolean
   stakingRewards: Array<{
-    vault: TYDaemonVault
+    vault: TKongVault
     stakingAddress: `0x${string}`
     stakingSource: string
     rewards: TStakingReward[]
@@ -326,11 +331,11 @@ function ChainStakingRewardsFetcher({
   isActive,
   onRewards
 }: {
-  vault: TYDaemonVault
+  vault: TKongVault
   userAddress?: `0x${string}`
   isActive: boolean
   onRewards: (
-    vault: TYDaemonVault,
+    vault: TKongVault,
     stakingAddress: `0x${string}`,
     stakingSource: string,
     rewards: TChainRewardData['stakingRewards'][number]['rewards'],
@@ -338,19 +343,19 @@ function ChainStakingRewardsFetcher({
     isLoading: boolean
   ) => void
 }): null {
-  const { vault, isLoading: isLoadingVault } = useVaultWithStakingRewards(originalVault, isActive)
+  const { vault, staking, isLoading: isLoadingVault } = useVaultWithStakingRewards(originalVault, isActive)
 
-  const stakingAddress = vault.staking.available ? vault.staking.address : undefined
+  const stakingAddress = staking.available ? staking.address : undefined
   const rewardTokens = useMemo(
     () =>
-      (vault.staking.rewards ?? []).map((reward) => ({
+      (staking.rewards ?? []).map((reward) => ({
         address: reward.address,
         symbol: reward.symbol,
         decimals: reward.decimals,
         price: reward.price,
         isFinished: reward.isFinished
       })),
-    [vault.staking.rewards]
+    [staking.rewards]
   )
 
   const isEnabled = isActive && !!stakingAddress && rewardTokens.length > 0
@@ -360,10 +365,10 @@ function ChainStakingRewardsFetcher({
     refetch
   } = useStakingRewards({
     stakingAddress,
-    stakingSource: vault.staking.source,
+    stakingSource: staking.source,
     rewardTokens,
     userAddress,
-    chainId: vault.chainID,
+    chainId: getVaultChainID(vault),
     enabled: isEnabled
   })
 
@@ -379,8 +384,8 @@ function ChainStakingRewardsFetcher({
   useEffect(() => {
     if (!stakingAddress) return
     const { onRewards, refetch, vault, rewards } = latestRef.current
-    onRewards(vault, stakingAddress, vault.staking.source ?? '', rewards, refetch, isLoading)
-  }, [vault.address, stakingAddress, rewardsKey, isLoading])
+    onRewards(vault, stakingAddress, staking.source ?? '', rewards, refetch, isLoading)
+  }, [vault, stakingAddress, rewardsKey, isLoading, staking.source])
 
   return null
 }
@@ -422,7 +427,10 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   const { address: userAddress } = useWeb3()
   const { vaults } = useYearn()
   const trackEvent = usePlausible()
-  const stakingVaults = useMemo(() => Object.values(vaults).filter((vault) => vault.staking.available), [vaults])
+  const stakingVaults = useMemo(
+    () => Object.values(vaults).filter((vault) => getVaultStaking(vault).available),
+    [vaults]
+  )
   const [selectedChainId, setSelectedChainId] = useState<number | null>(null)
   const [isOverlayOpen, setIsOverlayOpen] = useState(false)
   const [activeStep, setActiveStep] = useState<TransactionStep | undefined>()
@@ -441,17 +449,17 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
   const handleStakingRewards = useCallback(
     (
-      vault: TYDaemonVault,
+      vault: TKongVault,
       stakingAddress: `0x${string}`,
       stakingSource: string,
       rewards: TChainRewardData['stakingRewards'][number]['rewards'],
       refetch: () => void,
       isLoading: boolean
     ) => {
-      const chainId = vault.chainID
+      const chainId = getVaultChainID(vault)
       setChainStakingData((prev) => {
         const existing = prev[chainId]
-        const existingVaultData = existing?.rewards.find((r) => r.vault.address === vault.address)
+        const existingVaultData = existing?.rewards.find((r) => getVaultAddress(r.vault) === getVaultAddress(vault))
 
         // Bail out if nothing changed
         if (existing?.isLoading === isLoading) {
@@ -459,7 +467,9 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
           if (!existingVaultData && rewards.length === 0) return prev
         }
 
-        const filteredRewards = (existing?.rewards ?? []).filter((r) => r.vault.address !== vault.address)
+        const filteredRewards = (existing?.rewards ?? []).filter(
+          (r) => getVaultAddress(r.vault) !== getVaultAddress(vault)
+        )
         const newRewards =
           rewards.length > 0 ? [...filteredRewards, { vault, stakingAddress, stakingSource, rewards }] : filteredRewards
 
@@ -497,7 +507,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
         staking?.rewards.reduce((sum, r) => sum + r.rewards.reduce((s, rw) => s + rw.usdValue, 0), 0) ?? 0
       const merkleUsd = merkle?.rewards.reduce((sum, r) => sum + r.totalUsdValue, 0) ?? 0
 
-      const hasStakingVaultsOnChain = stakingVaults.some((v) => v.chainID === chainId)
+      const hasStakingVaultsOnChain = stakingVaults.some((v) => getVaultChainID(v) === chainId)
       const stakingIsLoading = hasStakingVaultsOnChain ? (staking?.isLoading ?? false) : false
       const merkleIsLoading = merkle?.isLoading ?? false
 
@@ -598,7 +608,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
             {chainData.stakingRewards.flatMap((sr, srIdx) =>
               sr.rewards.map((reward, rewardIdx) => (
                 <StakingRewardRow
-                  key={`${sr.vault.address}-${reward.tokenAddress}`}
+                  key={`${getVaultAddress(sr.vault)}-${reward.tokenAddress}`}
                   reward={reward}
                   stakingAddress={sr.stakingAddress}
                   stakingSource={sr.stakingSource}

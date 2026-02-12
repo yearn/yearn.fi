@@ -1,12 +1,22 @@
 import { getNativeTokenWrapperContract } from '@pages/vaults/utils/nativeTokens'
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultName,
+  getVaultStaking,
+  getVaultSymbol,
+  getVaultToken,
+  getVaultVersion,
+  type TKongVault,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import type { TAddress } from '@shared/types/address'
 import type { TNormalizedBN } from '@shared/types/mixed'
 import { toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 
 export type TVaultWithMetadata = {
-  vault: TYDaemonVault
+  vault: TKongVault
   hasHoldings: boolean
   hasAvailableBalance: boolean
   isHoldingsVault: boolean
@@ -29,23 +39,27 @@ export function createCheckHasHoldings(
   getBalance: TBalanceGetter,
   getPrice: TPriceGetter,
   shouldHideDust: boolean
-): (vault: TYDaemonVault) => boolean {
-  return function checkHasHoldings(vault: TYDaemonVault): boolean {
-    const vaultBalance = getBalance({ address: vault.address, chainID: vault.chainID })
+): (vault: TKongVaultInput) => boolean {
+  return function checkHasHoldings(vault: TKongVaultInput): boolean {
+    const address = getVaultAddress(vault)
+    const chainID = getVaultChainID(vault)
+    const staking = getVaultStaking(vault)
+
+    const vaultBalance = getBalance({ address, chainID })
     const hasVaultBalance = vaultBalance.raw > 0n
     let vaultPrice: { normalized: number } | null = null
 
     const getVaultPrice = (): { normalized: number } => {
       if (!vaultPrice) {
-        vaultPrice = getPrice({ address: vault.address, chainID: vault.chainID })
+        vaultPrice = getPrice({ address, chainID })
       }
       return vaultPrice
     }
 
-    if (vault.staking.available) {
+    if (staking.available) {
       const stakingBalance = getBalance({
-        address: vault.staking.address,
-        chainID: vault.chainID
+        address: staking.address,
+        chainID
       })
       const hasValidStakedBalance = stakingBalance.raw > 0n
       if (hasValidStakedBalance) {
@@ -68,16 +82,18 @@ export function createCheckHasHoldings(
   }
 }
 
-export function createCheckHasAvailableBalance(getBalance: TBalanceGetter): (vault: TYDaemonVault) => boolean {
-  return function checkHasAvailableBalance(vault: TYDaemonVault): boolean {
-    const wantBalance = getBalance({ address: vault.token.address, chainID: vault.chainID })
+export function createCheckHasAvailableBalance(getBalance: TBalanceGetter): (vault: TKongVaultInput) => boolean {
+  return function checkHasAvailableBalance(vault: TKongVaultInput): boolean {
+    const token = getVaultToken(vault)
+    const chainID = getVaultChainID(vault)
+    const wantBalance = getBalance({ address: token.address, chainID })
     if (wantBalance.raw > 0n) {
       return true
     }
 
-    const nativeWrapper = getNativeTokenWrapperContract(vault.chainID)
-    if (toAddress(vault.token.address) === toAddress(nativeWrapper)) {
-      const nativeBalance = getBalance({ address: ETH_TOKEN_ADDRESS, chainID: vault.chainID })
+    const nativeWrapper = getNativeTokenWrapperContract(chainID)
+    if (toAddress(token.address) === toAddress(nativeWrapper)) {
+      const nativeBalance = getBalance({ address: ETH_TOKEN_ADDRESS, chainID })
       if (nativeBalance.raw > 0n) {
         return true
       }
@@ -87,12 +103,13 @@ export function createCheckHasAvailableBalance(getBalance: TBalanceGetter): (vau
   }
 }
 
-export function getVaultKey(vault: TYDaemonVault): string {
-  return `${vault.chainID}_${toAddress(vault.address)}`
+export function getVaultKey(vault: TKongVaultInput): string {
+  return `${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}`
 }
 
-export function matchesSearch(vault: TYDaemonVault, search: string): boolean {
-  const searchableText = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
+export function matchesSearch(vault: TKongVaultInput, search: string): boolean {
+  const token = getVaultToken(vault)
+  const searchableText = `${getVaultName(vault)} ${getVaultSymbol(vault)} ${token.name} ${token.symbol} ${getVaultAddress(vault)} ${token.address}`
 
   try {
     const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -104,17 +121,18 @@ export function matchesSearch(vault: TYDaemonVault, search: string): boolean {
   }
 }
 
-export function isV3Vault(vault: TYDaemonVault, isAllocatorOverride: boolean): boolean {
-  return vault.version?.startsWith('3') || vault.version?.startsWith('~3') || isAllocatorOverride
+export function isV3Vault(vault: TKongVaultInput, isAllocatorOverride: boolean): boolean {
+  const version = getVaultVersion(vault)
+  return version.startsWith('3') || version.startsWith('~3') || isAllocatorOverride
 }
 
-export function extractHoldingsVaults(vaultMap: Map<string, TVaultWithMetadata>): TYDaemonVault[] {
+export function extractHoldingsVaults(vaultMap: Map<string, TVaultWithMetadata>): TKongVault[] {
   return Array.from(vaultMap.values())
     .filter(({ hasHoldings }) => hasHoldings)
     .map(({ vault }) => vault)
 }
 
-export function extractAvailableVaults(vaultMap: Map<string, TVaultWithMetadata>): TYDaemonVault[] {
+export function extractAvailableVaults(vaultMap: Map<string, TVaultWithMetadata>): TKongVault[] {
   return Array.from(vaultMap.values())
     .filter(({ hasAvailableBalance }) => hasAvailableBalance)
     .map(({ vault }) => vault)

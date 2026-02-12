@@ -1,13 +1,25 @@
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
+import {
+  getVaultAPR,
+  getVaultChainID,
+  getVaultName,
+  getVaultStaking,
+  getVaultToken,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { formatAmount, formatApyDisplay, isZero, toAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement, ReactNode } from 'react'
 
-function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
+function HoldingsPill({ vault }: { vault: TKongVaultInput }): ReactElement {
   const data = useVaultApyData(vault)
+  const staking = getVaultStaking(vault)
+  const apr = getVaultAPR(vault)
+  const chainID = getVaultChainID(vault)
+  const token = getVaultToken(vault)
+  const vaultName = getVaultName(vault)
 
-  const isVeYfi = vault.staking.source === 'VeYFI'
+  const isVeYfi = staking.source === 'VeYFI'
   const boostedApr = data.baseForwardApr + data.rewardsAprSum
   const katanaApr = data.katanaEstApr ?? data.baseForwardApr
 
@@ -45,7 +57,7 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
       return (
         <>
           <span>{'🚀 '}</span>
-          <span className={'font-semibold'}>{formatApyDisplay(vault.apr.forwardAPR.netAPR)}</span>
+          <span className={'font-semibold'}>{formatApyDisplay(apr.forwardAPR.netAPR)}</span>
           {data.boost ? (
             <span className={'text-[0.65rem] uppercase tracking-wide text-text-primary/70'}>
               {` • Boost ${formatAmount(data.boost, 2, 2)}x`}
@@ -72,8 +84,8 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
     )
   })()
 
-  const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainID}/${toAddress(
-    vault.token.address
+  const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(
+    token.address
   ).toLowerCase()}/logo-128.png`
 
   return (
@@ -89,14 +101,14 @@ function HoldingsPill({ vault }: { vault: TYDaemonVault }): ReactElement {
               <div className={'h-4 w-4 overflow-hidden rounded-full'}>
                 <ImageWithFallback
                   src={tokenLogoSrc}
-                  alt={vault.token.symbol || ''}
+                  alt={token.symbol || ''}
                   width={16}
                   height={16}
                   className={'h-full w-full object-cover'}
                 />
               </div>
             </div>
-            <div className={'truncate text-left text-base font-semibold text-text-primary'}>{vault.name}</div>
+            <div className={'truncate text-left text-base font-semibold text-text-primary'}>{vaultName}</div>
           </div>
           <div className={'flex flex-row items-center gap-1 text-mobile-label text-text-primary'}> {apyContent} </div>
         </div>

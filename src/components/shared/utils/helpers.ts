@@ -1,13 +1,13 @@
 import { yToast } from '@shared/components/yToast'
+import { getVaultName as getKongVaultName, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TAddress } from '@shared/types'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { EncodeFunctionDataParameters, Hex } from 'viem'
 import { encodeFunctionData, toHex } from 'viem'
 import type { TSortDirection } from '../types/mixed'
 import { toNormalizedBN } from './format'
 
-export function getVaultName(vault: TYDaemonVault): string {
-  let baseName = vault.name
+export function getVaultName(vault: TKongVaultInput): string {
+  let baseName = getKongVaultName(vault)
 
   baseName = baseName.replace(/^(curve|aerodrome|velodrome)\s+/i, '')
 

@@ -1,5 +1,13 @@
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultInfo,
+  getVaultMigration,
+  getVaultStaking,
+  type TKongVault
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -7,19 +15,18 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
 import { toAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { calculateVaultEstimatedAPY, calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { useMemo, useState } from 'react'
 
 type THoldingsRow = {
   key: string
-  vault: TYDaemonVault
+  vault: TKongVault
   hrefOverride?: string
 }
 
 type TSuggestedVaultRow = {
   key: string
-  vault: TYDaemonVault
+  vault: TKongVault
 }
 
 export type TPortfolioBlendedMetrics = {
@@ -52,7 +59,7 @@ function getChainAddressKey(chainID: number | undefined, address: string): strin
   return `${chainID}_${toAddress(address)}`
 }
 
-function isPortfolioV3Vault(vault: TYDaemonVault): boolean {
+function isPortfolioV3Vault(vault: TKongVault): boolean {
   return isV3Vault(vault, isAllocatorVaultOverride(vault))
 }
 
@@ -70,14 +77,15 @@ export function usePortfolioModel(): TPortfolioModel {
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
 
   const vaultLookup = useMemo(() => {
-    const map = new Map<string, TYDaemonVault>()
+    const map = new Map<string, TKongVault>()
 
     Object.values(vaults).forEach((vault) => {
       const vaultKey = getVaultKey(vault)
       map.set(vaultKey, vault)
 
-      if (vault.staking?.available && vault.staking.address) {
-        const stakingKey = getChainAddressKey(vault.chainID, vault.staking.address)
+      const staking = getVaultStaking(vault)
+      if (staking?.available && staking.address) {
+        const stakingKey = getChainAddressKey(getVaultChainID(vault), staking.address)
         map.set(stakingKey, vault)
       }
     })
@@ -86,7 +94,7 @@ export function usePortfolioModel(): TPortfolioModel {
   }, [vaults])
 
   const holdingsVaults = useMemo(() => {
-    const result: TYDaemonVault[] = []
+    const result: TKongVault[] = []
     const seen = new Set<string>()
 
     Object.entries(balances || {}).forEach(([chainIDKey, perChain]) => {
@@ -119,11 +127,13 @@ export function usePortfolioModel(): TPortfolioModel {
 
     holdingsVaults.forEach((vault) => {
       const key = getVaultKey(vault)
+      const info = getVaultInfo(vault)
+      const migration = getVaultMigration(vault)
       flags[key] = {
         hasHoldings: true,
-        isMigratable: Boolean(vault.migration?.available),
-        isRetired: Boolean(vault.info?.isRetired),
-        isHidden: Boolean(vault.info?.isHidden)
+        isMigratable: Boolean(migration?.available),
+        isRetired: Boolean(info?.isRetired),
+        isHidden: Boolean(info?.isHidden)
       }
     })
 
@@ -138,14 +148,16 @@ export function usePortfolioModel(): TPortfolioModel {
   const suggestedVaultCandidates = useMemo(
     () =>
       Object.values(vaults).filter((vault) => {
-        if (vault.chainID !== KATANA_CHAIN_ID || deriveListKind(vault) !== 'allocator') {
+        if (getVaultChainID(vault) !== KATANA_CHAIN_ID || deriveListKind(vault) !== 'allocator') {
           return false
         }
 
-        const isHidden = Boolean(vault.info?.isHidden)
-        const isRetired = Boolean(vault.info?.isRetired)
-        const isMigratable = Boolean(vault.migration?.available)
-        const isHighlighted = Boolean(vault.info?.isHighlighted)
+        const info = getVaultInfo(vault)
+        const migration = getVaultMigration(vault)
+        const isHidden = Boolean(info?.isHidden)
+        const isRetired = Boolean(info?.isRetired)
+        const isMigratable = Boolean(migration?.available)
+        const isHighlighted = Boolean(info?.isHighlighted)
 
         return !isHidden && !isRetired && !isMigratable && isHighlighted
       }),
@@ -167,7 +179,7 @@ export function usePortfolioModel(): TPortfolioModel {
       const key = getVaultKey(vault)
       const hrefOverride = isPortfolioV3Vault(vault)
         ? undefined
-        : `/vaults/${vault.chainID}/${toAddress(vault.address)}`
+        : `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
       return { key, vault, hrefOverride }
     })
   }, [sortedHoldings])
@@ -179,7 +191,7 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const hasHoldings = sortedHoldings.length > 0
   const hasKatanaHoldings = useMemo(
-    () => holdingsVaults.some((vault) => vault.chainID === KATANA_CHAIN_ID),
+    () => holdingsVaults.some((vault) => getVaultChainID(vault) === KATANA_CHAIN_ID),
     [holdingsVaults]
   )
   const totalPortfolioValue = (cumulatedValueInV2Vaults || 0) + (cumulatedValueInV3Vaults || 0)
@@ -188,7 +200,7 @@ export function usePortfolioModel(): TPortfolioModel {
     () =>
       (vault: (typeof holdingsVaults)[number]): number | null => {
         const apy = calculateVaultEstimatedAPY(vault, katanaAprs)
-        return apy === 0 && !vault.apr?.netAPR ? null : apy
+        return apy === 0 ? null : apy
       },
     [katanaAprs]
   )
@@ -204,21 +216,25 @@ export function usePortfolioModel(): TPortfolioModel {
   const getVaultValue = useMemo(
     () =>
       (vault: (typeof holdingsVaults)[number]): number => {
+        const chainID = getVaultChainID(vault)
+        const address = getVaultAddress(vault)
+        const staking = getVaultStaking(vault)
+
         const shareBalance = getBalance({
-          address: vault.address,
-          chainID: vault.chainID
+          address,
+          chainID
         })
         const price = getPrice({
-          address: vault.address,
-          chainID: vault.chainID
+          address,
+          chainID
         })
         const baseValue = shareBalance.normalized * price.normalized
 
         const stakingValue =
-          vault.staking?.available && vault.staking.address
+          staking?.available && staking.address
             ? getBalance({
-                address: vault.staking.address,
-                chainID: vault.chainID
+                address: staking.address,
+                chainID
               }).normalized * price.normalized
             : 0
 

@@ -9,16 +9,16 @@ import {
 } from '@pages/vaults/utils/constants'
 import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
+import type { TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { useV2VaultFilter } from '@shared/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@shared/hooks/useV3VaultFilter'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { useMemo } from 'react'
 
 type TVaultsPinnedSection = {
   key: string
-  vaults: TYDaemonVault[]
+  vaults: TKongVault[]
 }
 
 type TVaultsListModelArgs = {
@@ -41,14 +41,14 @@ type TVaultsListModelArgs = {
 type TVaultsListModel = {
   defaultCategories: string[]
   listCategoriesSanitized: string[]
-  holdingsVaults: TYDaemonVault[]
-  availableVaults: TYDaemonVault[]
+  holdingsVaults: TKongVault[]
+  availableVaults: TKongVault[]
   vaultFlags: Record<string, { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }>
-  underlyingAssetVaults: Record<string, TYDaemonVault>
+  underlyingAssetVaults: Record<string, TKongVault>
   pinnedSections: TVaultsPinnedSection[]
-  pinnedVaults: TYDaemonVault[]
-  mainVaults: TYDaemonVault[]
-  suggestedVaults: TYDaemonVault[]
+  pinnedVaults: TKongVault[]
+  mainVaults: TKongVault[]
+  suggestedVaults: TKongVault[]
   totalMatchingVaults: number
   totalHoldingsMatching: number
   isLoadingVaultList: boolean

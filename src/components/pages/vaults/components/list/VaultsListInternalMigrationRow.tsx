@@ -1,15 +1,25 @@
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { useYearnBalance } from '@shared/hooks/useYearnBalance'
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultName,
+  getVaultToken,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { cl, formatAmount, toAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import Link from '/src/components/Link'
 import { VaultChainTag } from '../VaultChainTag'
 
-export function VaultsListInternalMigrationRow({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+export function VaultsListInternalMigrationRow({ currentVault }: { currentVault: TKongVaultInput }): ReactElement {
+  const chainID = getVaultChainID(currentVault)
+  const vaultAddress = getVaultAddress(currentVault)
+  const vaultName = getVaultName(currentVault)
+  const token = getVaultToken(currentVault)
   const balanceToMigrate = useYearnBalance({
-    address: currentVault.address,
-    chainID: currentVault.chainID
+    address: vaultAddress,
+    chainID
   })
 
   return (
@@ -25,16 +35,16 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
         <div className={'flex flex-row space-x-6'}>
           <div className={'mt-2.5 size-8 rounded-full md:flex'}>
             <ImageWithFallback
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-32.png`}
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${token.address.toLowerCase()}/logo-32.png`}
               alt={''}
               width={32}
               height={32}
             />
           </div>
           <div>
-            <strong className={'mb-1 block text-xl font-black text-text-primary'}>{currentVault.name}</strong>
-            <p className={'mb-2 block text-text-primary'}>{currentVault.token.name}</p>
-            <VaultChainTag chainID={currentVault.chainID} />
+            <strong className={'mb-1 block text-xl font-black text-text-primary'}>{vaultName}</strong>
+            <p className={'mb-2 block text-text-primary'}>{token.name}</p>
+            <VaultChainTag chainID={chainID} />
           </div>
         </div>
       </div>
@@ -46,7 +56,7 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
         </div>
 
         <div className={'mt-6 flex w-full items-center md:ml-auto md:mt-0 md:justify-end'}>
-          <Link className={'w-full'} href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
+          <Link className={'w-full'} href={`/vaults/${chainID}/${toAddress(vaultAddress)}`}>
             <button
               className={cl('rounded-lg overflow-hidden flex', 'px-4 py-2 w-full', 'relative group', 'border-none')}
             >
@@ -59,7 +69,7 @@ export function VaultsListInternalMigrationRow({ currentVault }: { currentVault:
               />
               <p className={'z-10 mx-auto whitespace-nowrap text-text-primary'}>
                 {'Migrate '}
-                {`${formatAmount(balanceToMigrate.normalized)} ${currentVault.token.symbol}`}
+                {`${formatAmount(balanceToMigrate.normalized)} ${token.symbol}`}
               </p>
             </button>
           </Link>

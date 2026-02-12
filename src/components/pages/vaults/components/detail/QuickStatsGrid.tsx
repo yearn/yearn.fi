@@ -1,9 +1,9 @@
 import type { TVaultForwardAPYHandle } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
+import { getVaultAPR, getVaultTVL, getVaultToken, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { cl, formatApyDisplay, toNormalizedBN } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { useRef } from 'react'
 
@@ -72,21 +72,21 @@ function formatUSD(value: number): string {
 }
 
 interface VaultMetricsGridProps {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
 }
 
 export function VaultMetricsGrid({ currentVault }: VaultMetricsGridProps): ReactElement {
   const apyData = useVaultApyData(currentVault)
+  const apr = getVaultAPR(currentVault)
+  const tvl = getVaultTVL(currentVault)
   const forwardAPY =
-    apyData.mode === 'katana' && apyData.katanaEstApr !== undefined
-      ? apyData.katanaEstApr
-      : currentVault.apr.forwardAPR.netAPR
+    apyData.mode === 'katana' && apyData.katanaEstApr !== undefined ? apyData.katanaEstApr : apr.forwardAPR.netAPR
 
   return (
     <div className="md:hidden">
       {/* Top row: TVL, Forward APY */}
       <div className="grid grid-cols-2 gap-1.5 min-[375px]:gap-2">
-        <StatCard label="TVL" value={formatUSD(currentVault.tvl.tvl)} />
+        <StatCard label="TVL" value={formatUSD(tvl.tvl)} />
         <StatCard label="Est. APY" value={formatApyDisplay(forwardAPY)} />
       </div>
     </div>
@@ -131,7 +131,7 @@ function SectionNavButton({ sectionId, label }: { sectionId: string; label: stri
 }
 
 interface MobileKeyMetricsProps {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   showSectionNav?: boolean
   depositedValue?: bigint
   tokenPrice: number
@@ -145,9 +145,11 @@ export function MobileKeyMetrics({
 }: MobileKeyMetricsProps): ReactElement {
   const { address, isActive } = useWeb3()
   const forwardApyRef = useRef<TVaultForwardAPYHandle>(null)
+  const token = getVaultToken(currentVault)
+  const tvl = getVaultTVL(currentVault)
 
   const hasVaultBalance = isActive && address && depositedValue !== undefined && depositedValue > 0n
-  const depositedAmount = toNormalizedBN(depositedValue ?? 0n, currentVault.token.decimals)
+  const depositedAmount = toNormalizedBN(depositedValue ?? 0n, token.decimals)
   const depositUsdValue = depositedAmount.normalized * tokenPrice
   const depositValue = hasVaultBalance ? formatUSD(depositUsdValue) : '$0.00'
 
@@ -171,7 +173,7 @@ export function MobileKeyMetrics({
             />
           }
         />
-        <CompactStatBox label="TVL" value={formatUSD(currentVault.tvl.tvl)} />
+        <CompactStatBox label="TVL" value={formatUSD(tvl.tvl)} />
         <CompactStatBox label="Deposited" value={depositValue} />
       </div>
       {showSectionNav ? (

@@ -1,25 +1,33 @@
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
+import {
+  getVaultAPR,
+  getVaultChainID,
+  getVaultToken,
+  getVaultTVL,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { cl, formatApyDisplay, formatTvlDisplay } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
 
 interface MobileStickyHeaderProps {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
 }
 
 export function MobileStickyHeader({ currentVault }: MobileStickyHeaderProps): ReactElement {
   const [isSticky, setIsSticky] = useState(false)
   const apyData = useVaultApyData(currentVault)
+  const apr = getVaultAPR(currentVault)
+  const chainID = getVaultChainID(currentVault)
+  const token = getVaultToken(currentVault)
+  const tvl = getVaultTVL(currentVault)
 
   const forwardAPY =
-    apyData.mode === 'katana' && apyData.katanaEstApr !== undefined
-      ? apyData.katanaEstApr
-      : currentVault.apr.forwardAPR.netAPR
+    apyData.mode === 'katana' && apyData.katanaEstApr !== undefined ? apyData.katanaEstApr : apr.forwardAPR.netAPR
 
-  const historicalAPY = currentVault.apr.netAPR
+  const historicalAPY = apr.netAPR
 
   useEffect(() => {
     const handleScroll = (): void => {
@@ -32,9 +40,7 @@ export function MobileStickyHeader({ currentVault }: MobileStickyHeaderProps): R
     return (): void => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-    currentVault.chainID
-  }/${currentVault.token.address.toLowerCase()}/logo-128.png`
+  const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${token.address.toLowerCase()}/logo-128.png`
 
   return (
     <div
@@ -47,7 +53,7 @@ export function MobileStickyHeader({ currentVault }: MobileStickyHeaderProps): R
     >
       <div className="flex items-center gap-2">
         <div className="flex items-center justify-center size-8 rounded-full bg-surface/70 shrink-0">
-          <ImageWithFallback src={tokenLogoSrc} alt={currentVault.token.symbol || ''} width={32} height={32} />
+          <ImageWithFallback src={tokenLogoSrc} alt={token.symbol || ''} width={32} height={32} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-text-primary truncate leading-tight">{getVaultName(currentVault)}</p>
@@ -63,7 +69,7 @@ export function MobileStickyHeader({ currentVault }: MobileStickyHeaderProps): R
           </div>
           <div className="text-right">
             <p className="text-text-secondary text-[10px] leading-tight">TVL</p>
-            <p className="font-semibold text-text-primary leading-tight">{formatTvlDisplay(currentVault.tvl.tvl)}</p>
+            <p className="font-semibold text-text-primary leading-tight">{formatTvlDisplay(tvl.tvl)}</p>
           </div>
         </div>
       </div>

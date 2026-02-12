@@ -1,11 +1,18 @@
 import { KATANA_CHAIN_ID, SPECTRA_MARKET_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
 import { getFixedTermMarkets, type TFixedTermMarket } from '@pages/vaults/constants/fixedTermMarkets'
+import {
+  getVaultAPR,
+  getVaultAddress,
+  getVaultChainID,
+  getVaultInfo,
+  getVaultStaking,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import type { TVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconPendle } from '@shared/icons/IconPendle'
 import { IconSpectra } from '@shared/icons/IconSpectra'
 import { formatAmount, formatApyDisplay, isZero } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment } from 'react'
 import { APYSubline, getApySublineLines } from './APYSubline'
@@ -63,8 +70,8 @@ function withTooltipMode(config: TApyTooltipConfig, mode: TApyTooltipMode): TApy
   return { ...config, mode }
 }
 
-export function buildFixedTermContext(currentVault: TYDaemonVault): TFixedTermContext {
-  const fixedTermMarkets = getFixedTermMarkets(currentVault.address)
+export function buildFixedTermContext(currentVault: TKongVaultInput): TFixedTermContext {
+  const fixedTermMarkets = getFixedTermMarkets(getVaultAddress(currentVault))
   const fixedTermProviders = fixedTermMarkets.filter(
     (market, index, list) => list.findIndex((item) => item.provider === market.provider) === index
   )
@@ -171,7 +178,7 @@ function resolveTooltipMode(allowModal: boolean, hasTooltipContent: boolean): TA
 }
 
 type TForwardApyDisplayParams = {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   data: TVaultApyData
   displayVariant: TVaultForwardAPYVariant
   showSubline: boolean
@@ -194,10 +201,14 @@ export function resolveForwardApyDisplayConfig({
   displayConfig: TApyDisplayConfig
   modalConfig?: TApyModalConfig
 } {
+  const chainID = getVaultChainID(currentVault)
+  const vaultAddress = getVaultAddress(currentVault)
+  const apr = getVaultAPR(currentVault)
+  const info = getVaultInfo(currentVault)
+  const staking = getVaultStaking(currentVault)
   const fixedTermContext = buildFixedTermContext(currentVault)
   const isEligibleForSpectraBoost =
-    currentVault.chainID === KATANA_CHAIN_ID &&
-    SPECTRA_MARKET_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
+    chainID === KATANA_CHAIN_ID && SPECTRA_MARKET_VAULT_ADDRESSES.includes(vaultAddress.toLowerCase())
   const baseSublineProps: TApySublineConfig = {
     hasPendleArbRewards: data.hasPendleArbRewards,
     hasKelpNEngenlayer: data.hasKelpNEngenlayer,
@@ -217,8 +228,8 @@ export function resolveForwardApyDisplayConfig({
     },
     showSubline
   )
-  const shouldRenderForward = !currentVault.apr.forwardAPR?.type.includes('new')
-  const shouldRenderHistorical = !currentVault.apr.type.includes('new')
+  const shouldRenderForward = !apr.forwardAPR?.type.includes('new')
+  const shouldRenderHistorical = !apr.type.includes('new')
   const fixedRateTooltipLines =
     fixedTermContext.fixedTermProviders.length > 0
       ? fixedTermContext.fixedTermProviders.map((market) => `Fixed-rate markets available on ${market.label}.`)
@@ -239,7 +250,7 @@ export function resolveForwardApyDisplayConfig({
 
   const katanaExtras = data.katanaExtras
   const hasKatanaEstApr = typeof data.katanaEstApr === 'number'
-  const isKatanaVault = currentVault.chainID === KATANA_CHAIN_ID && katanaExtras && hasKatanaEstApr
+  const isKatanaVault = chainID === KATANA_CHAIN_ID && katanaExtras && hasKatanaEstApr
   const katanaTooltipContent =
     showSublineTooltip && isKatanaVault
       ? buildKatanaTooltipContent({
@@ -309,7 +320,7 @@ export function resolveForwardApyDisplayConfig({
   }
 
   // No forward APY (or Katana with no extras)
-  if (data.mode === 'noForward' || currentVault.chainID === KATANA_CHAIN_ID) {
+  if (data.mode === 'noForward' || chainID === KATANA_CHAIN_ID) {
     const boostedAPY = data.rewardsAprSum + data.netApr
 
     if (data.rewardsAprSum > 0) {
@@ -377,7 +388,7 @@ export function resolveForwardApyDisplayConfig({
     const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
     const displayConfig: TApyDisplayConfig = {
       fixedRateIndicator,
-      value: formatApyDisplay(currentVault.apr.forwardAPR.netAPR),
+      value: formatApyDisplay(apr.forwardAPR.netAPR),
       shouldRender: shouldRenderForward,
       fallbackLabel: 'NEW',
       tooltip: tooltipConfig,
@@ -392,7 +403,7 @@ export function resolveForwardApyDisplayConfig({
 
   // Rewards (VeYFI or generic)
   if (data.mode === 'rewards') {
-    const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
+    const isSourceVeYFI = staking.source === 'VeYFI'
     const veYFIRange: [number, number] | undefined = isSourceVeYFI ? data.veYfiRange : undefined
     const estAPYRange: [number, number] | undefined = isSourceVeYFI ? data.estAprRange : undefined
     const boostedAPY = isSourceVeYFI
@@ -458,7 +469,7 @@ export function resolveForwardApyDisplayConfig({
       fixedRateIndicator,
       value: (
         <>
-          {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
+          {info.isBoosted ? '⚡️ ' : ''}
           {formatApyDisplay(data.baseForwardApr)}
         </>
       ),
@@ -481,7 +492,7 @@ export function resolveForwardApyDisplayConfig({
     fixedRateIndicator,
     value: (
       <>
-        {currentVault?.info?.isBoosted ? '⚡️ ' : ''}
+        {info.isBoosted ? '⚡️ ' : ''}
         {formatApyDisplay(data.netApr)}
       </>
     ),
@@ -498,7 +509,7 @@ export function resolveForwardApyDisplayConfig({
 }
 
 type THistoricalApyDisplayParams = {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   data: TVaultApyData
   showSublineTooltip: boolean
   showBoostDetails?: boolean
@@ -515,10 +526,12 @@ export function resolveHistoricalApyDisplayConfig({
   displayConfig: TApyDisplayConfig
   modalConfig?: TApyModalConfig
 } {
+  const chainID = getVaultChainID(currentVault)
+  const vaultAddress = getVaultAddress(currentVault)
+  const apr = getVaultAPR(currentVault)
   const fixedTermContext = buildFixedTermContext(currentVault)
   const isEligibleForSpectraBoost =
-    currentVault.chainID === KATANA_CHAIN_ID &&
-    SPECTRA_MARKET_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
+    chainID === KATANA_CHAIN_ID && SPECTRA_MARKET_VAULT_ADDRESSES.includes(vaultAddress.toLowerCase())
   const baseSublineProps: TApySublineConfig = {
     hasPendleArbRewards: data.hasPendleArbRewards,
     hasKelpNEngenlayer: data.hasKelpNEngenlayer,
@@ -547,13 +560,13 @@ export function resolveHistoricalApyDisplayConfig({
     showFixedRateLinks: showSublineTooltip && fixedTermContext.fixedTermProviders.length > 0
   })
 
-  const shouldUseKatanaAPRs = currentVault.chainID === KATANA_CHAIN_ID
+  const shouldUseKatanaAPRs = chainID === KATANA_CHAIN_ID
   const katanaThirtyDayApr = data.katanaThirtyDayApr
   const hasKatanaApr = typeof katanaThirtyDayApr === 'number'
-  const monthlyAPY = currentVault.apr.points.monthAgo
-  const weeklyAPY = currentVault.apr.points.weekAgo
+  const monthlyAPY = apr.points.monthAgo
+  const weeklyAPY = apr.points.weekAgo
   const standardThirtyDayApr = isZero(monthlyAPY) ? weeklyAPY : monthlyAPY
-  const standardShouldRender = !currentVault.apr?.type.includes('new')
+  const standardShouldRender = !apr?.type.includes('new')
   let displayValue = standardThirtyDayApr
   if (shouldUseKatanaAPRs && hasKatanaApr) {
     displayValue = katanaThirtyDayApr ?? 0

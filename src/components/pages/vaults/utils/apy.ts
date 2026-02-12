@@ -1,31 +1,33 @@
+import { getVaultAPR, getVaultAddress, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
 import { toAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 
-export function isPendleArbVault(vault: TYDaemonVault): boolean {
-  return toAddress(vault.address) === toAddress(VAULT_ADDRESSES.PENDLE_ARB_REWARDS)
+export function isPendleArbVault(vault: TKongVaultInput): boolean {
+  return toAddress(getVaultAddress(vault)) === toAddress(VAULT_ADDRESSES.PENDLE_ARB_REWARDS)
 }
 
-export function isKelpEigenVault(vault: TYDaemonVault): boolean {
-  return toAddress(vault.address) === toAddress(VAULT_ADDRESSES.KELP_N_ENGENLAYER)
+export function isKelpEigenVault(vault: TKongVaultInput): boolean {
+  return toAddress(getVaultAddress(vault)) === toAddress(VAULT_ADDRESSES.KELP_N_ENGENLAYER)
 }
 
-export function isKelpVault(vault: TYDaemonVault): boolean {
-  return toAddress(vault.address) === toAddress(VAULT_ADDRESSES.KELP)
+export function isKelpVault(vault: TKongVaultInput): boolean {
+  return toAddress(getVaultAddress(vault)) === toAddress(VAULT_ADDRESSES.KELP)
 }
 
 export function sumApr(values: number[]): number {
   return values.reduce((acc, v) => acc + v, 0)
 }
 
-export function projectVeYfiRange(vault: TYDaemonVault): [number, number] {
-  const sumOfRewardsAPY = vault.apr.extra.stakingRewardsAPR + vault.apr.extra.gammaRewardAPR
-  const minRewards = vault.apr.extra.stakingRewardsAPR / 10 + vault.apr.extra.gammaRewardAPR
+export function projectVeYfiRange(vault: TKongVaultInput): [number, number] {
+  const apr = getVaultAPR(vault)
+  const sumOfRewardsAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
+  const minRewards = apr.extra.stakingRewardsAPR / 10 + apr.extra.gammaRewardAPR
   return [minRewards, sumOfRewardsAPY]
 }
 
-export function calcBoostedApr(vault: TYDaemonVault): { boost: number; unboosted: number } {
-  const boost = vault.apr.forwardAPR.composite?.boost || 0
-  const unboosted = boost > 0 ? vault.apr.forwardAPR.netAPR / boost : vault.apr.forwardAPR.netAPR
+export function calcBoostedApr(vault: TKongVaultInput): { boost: number; unboosted: number } {
+  const apr = getVaultAPR(vault)
+  const boost = apr.forwardAPR.composite?.boost || 0
+  const unboosted = boost > 0 ? apr.forwardAPR.netAPR / boost : apr.forwardAPR.netAPR
   return { boost, unboosted }
 }

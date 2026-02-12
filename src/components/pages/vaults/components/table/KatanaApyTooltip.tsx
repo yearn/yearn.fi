@@ -1,7 +1,7 @@
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { Tooltip } from '@shared/components/Tooltip'
+import { getVaultChainID, getVaultToken, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { cl, formatAmount, formatApyDisplay } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 
 type TKatanaTooltipProps = {
@@ -15,7 +15,7 @@ type TKatanaTooltipProps = {
   position?: 'bottom' | 'top'
   maxWidth?: string
   className?: string
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   children?: ReactElement
 }
 
@@ -66,8 +66,8 @@ export function KatanaApyTooltipContent({
   const width = maxWidth || 'w-full max-w-[360px]'
   const resolvedNativeYieldLabel = nativeYieldLabel ?? 'Katana Native 30 Day APY'
   const baseAssetsUrl = import.meta.env.VITE_BASE_YEARN_ASSETS_URI
-  const chainId = currentVault.chainID
-  const tokenAddress = currentVault.token.address.toLowerCase()
+  const chainId = getVaultChainID(currentVault)
+  const tokenAddress = getVaultToken(currentVault).address.toLowerCase()
   const tokenLogoSrc = `${baseAssetsUrl}/tokens/${chainId}/${tokenAddress}/logo-32.png`
   const chainLogoSrc = `${baseAssetsUrl}/chains/${chainId}/logo-32.png`
   const hasSteerPoints = (steerPointsPerDollar || 0) > 0
