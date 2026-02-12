@@ -1,5 +1,5 @@
-import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import type { TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
+import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import { cl } from '@shared/utils'
 import type { ReactElement, ReactNode } from 'react'
 import { useMemo, useState } from 'react'

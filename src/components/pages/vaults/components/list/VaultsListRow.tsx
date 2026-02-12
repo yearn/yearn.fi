@@ -5,6 +5,11 @@ import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/com
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import {
+  YvUsdApyDetailsContent,
+  YvUsdApyTooltipContent,
+  YvUsdTvlTooltipContent
+} from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
+import {
   getVaultAddress,
   getVaultAPR,
   getVaultCategory,
@@ -17,11 +22,6 @@ import {
   getVaultTVL,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
-import {
-  YvUsdApyDetailsContent,
-  YvUsdApyTooltipContent,
-  YvUsdTvlTooltipContent
-} from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'

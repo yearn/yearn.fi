@@ -1,5 +1,5 @@
-import { toAddress } from '@shared/utils'
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { toAddress } from '@shared/utils'
 import type { Address } from 'viem'
 
 export const YVUSD_CHAIN_ID = 1
