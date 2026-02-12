@@ -3,20 +3,20 @@ import { usePlausible } from '@hooks/usePlausible'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
-import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
-import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
-  getVaultAPR,
   getVaultAddress,
+  getVaultAPR,
   getVaultCategory,
   getVaultChainID,
-  getVaultKind,
   getVaultName as getVaultDisplayName,
+  getVaultKind,
   getVaultStaking,
   getVaultSymbol,
   getVaultToken,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
+import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
   getCategoryDescription,
   getChainDescription,

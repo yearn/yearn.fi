@@ -1,4 +1,3 @@
-import { getNativeTokenWrapperContract } from '@pages/vaults/utils/nativeTokens'
 import {
   getVaultAddress,
   getVaultChainID,
@@ -10,6 +9,7 @@ import {
   type TKongVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { getNativeTokenWrapperContract } from '@pages/vaults/utils/nativeTokens'
 import type { TAddress } from '@shared/types/address'
 import type { TNormalizedBN } from '@shared/types/mixed'
 import { toAddress } from '@shared/utils'

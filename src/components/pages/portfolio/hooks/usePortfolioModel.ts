@@ -1,5 +1,4 @@
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
-import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
 import {
   getVaultAddress,
   getVaultChainID,
@@ -8,6 +7,7 @@ import {
   getVaultStaking,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'

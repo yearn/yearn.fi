@@ -1,5 +1,5 @@
-import { yToast } from '@shared/components/yToast'
 import { getVaultName as getKongVaultName, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { yToast } from '@shared/components/yToast'
 import type { TAddress } from '@shared/types'
 import type { EncodeFunctionDataParameters, Hex } from 'viem'
 import { encodeFunctionData, toHex } from 'viem'

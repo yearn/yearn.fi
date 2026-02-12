@@ -1,10 +1,10 @@
-import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import {
   getVaultDecimals,
   getVaultSymbol,
   getVaultTVL,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWallet } from '@shared/contexts/useWallet'

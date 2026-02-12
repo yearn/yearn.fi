@@ -1,7 +1,6 @@
-import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
-  getVaultAPR,
   getVaultAddress,
+  getVaultAPR,
   getVaultCategory,
   getVaultChainID,
   getVaultDescription,
@@ -10,6 +9,7 @@ import {
   getVaultToken,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
   getCategoryDescription,
   getChainDescription,

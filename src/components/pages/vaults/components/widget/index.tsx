@@ -1,5 +1,3 @@
-import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
-import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import {
   getVaultAPR,
   getVaultInfo,
@@ -10,6 +8,8 @@ import {
   getVaultVersion,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import type { TAddress } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import { type FC, forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react'

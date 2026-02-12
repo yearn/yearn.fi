@@ -1,6 +1,6 @@
 import {
-  getVaultAPR,
   getVaultAddress,
+  getVaultAPR,
   getVaultChainID,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'

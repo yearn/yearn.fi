@@ -8,15 +8,15 @@ import { MerkleRewardRow } from '@pages/vaults/components/widget/rewards/MerkleR
 import { StakingRewardRow } from '@pages/vaults/components/widget/rewards/StakingRewardRow'
 import type { TGroupedMerkleReward, TStakingReward } from '@pages/vaults/components/widget/rewards/types'
 import { TransactionOverlay, type TransactionStep } from '@pages/vaults/components/widget/shared/TransactionOverlay'
-import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
-import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
-import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import {
   getVaultAddress,
   getVaultChainID,
   getVaultStaking,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
+import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
+import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { METRIC_VALUE_CLASS, MetricHeader, MetricsCard, type TMetricBlock } from '@shared/components/MetricsCard'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'

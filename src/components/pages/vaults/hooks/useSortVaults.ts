@@ -1,13 +1,13 @@
 import {
-  getVaultAPR,
   getVaultAddress,
+  getVaultAPR,
   getVaultChainID,
   getVaultFeaturingScore,
   getVaultInfo,
   getVaultName,
   getVaultStaking,
-  getVaultTVL,
   getVaultToken,
+  getVaultTVL,
   type TKongVaultInput,
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'

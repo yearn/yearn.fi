@@ -1,7 +1,6 @@
-import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import {
-  getVaultAPR,
   getVaultAddress,
+  getVaultAPR,
   getVaultCategory,
   getVaultChainID,
   getVaultInfo,
@@ -10,6 +9,7 @@ import {
   isAutomatedVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { baseFetcher, isCurveHostUrl, isZeroAddress, normalizeCurveUrl, toAddress, truncateHex } from '@shared/utils'

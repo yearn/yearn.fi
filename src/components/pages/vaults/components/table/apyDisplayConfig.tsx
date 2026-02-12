@@ -1,8 +1,8 @@
 import { KATANA_CHAIN_ID, SPECTRA_MARKET_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
 import { getFixedTermMarkets, type TFixedTermMarket } from '@pages/vaults/constants/fixedTermMarkets'
 import {
-  getVaultAPR,
   getVaultAddress,
+  getVaultAPR,
   getVaultChainID,
   getVaultInfo,
   getVaultStaking,

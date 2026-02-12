@@ -89,13 +89,6 @@ function MetricValue({
   )
 }
 
-// function renderPercentValue(value: number | null | undefined): ReactElement {
-//   if (value === null || value === undefined || Number.isNaN(value)) {
-//     return <span className={'text-text-secondary'}>{'—'}</span>
-//   }
-//   return <span className={'font-semibold'}>{formatApyDisplay(value)}</span>
-// }
-
 function hasAllocatedFunds(strategy: TVaultStrategyItem): boolean {
   const { debtRatio, totalDebt } = strategy.details ?? {}
   return Boolean(debtRatio && debtRatio > 0 && totalDebt && totalDebt !== '0')

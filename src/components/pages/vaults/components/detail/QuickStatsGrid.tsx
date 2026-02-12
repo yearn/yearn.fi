@@ -1,7 +1,7 @@
 import type { TVaultForwardAPYHandle } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
+import { getVaultAPR, getVaultToken, getVaultTVL, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import { getVaultAPR, getVaultTVL, getVaultToken, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { cl, formatApyDisplay, toNormalizedBN } from '@shared/utils'
 import type { KeyboardEvent, ReactElement, ReactNode } from 'react'

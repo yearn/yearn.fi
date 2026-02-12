@@ -1,11 +1,4 @@
 import { ALL_VAULTSV3_KINDS_KEYS } from '@pages/vaults/constants'
-import { useQueryArguments } from '@pages/vaults/hooks/useVaultsQueryArgs'
-import type { TAllocationChartData } from '@shared/components/AllocationChart'
-import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode } from '@shared/components/AllocationChart'
-import { useYearn } from '@shared/contexts/useYearn'
-import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
-import type { TSortDirection } from '@shared/types'
-import { cl, formatPercent, formatTvlDisplay, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import {
   getVaultAPR,
   getVaultChainID,
@@ -17,6 +10,13 @@ import {
   type TKongVaultInput,
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { useQueryArguments } from '@pages/vaults/hooks/useVaultsQueryArgs'
+import type { TAllocationChartData } from '@shared/components/AllocationChart'
+import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode } from '@shared/components/AllocationChart'
+import { useYearn } from '@shared/contexts/useYearn'
+import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
+import type { TSortDirection } from '@shared/types'
+import { cl, formatPercent, formatTvlDisplay, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { lazy, Suspense, useCallback, useMemo } from 'react'
 import { VaultsListHead } from './VaultsListHead'

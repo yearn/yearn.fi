@@ -1,3 +1,4 @@
+import type { TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
 import {
   AGGRESSIVENESS_OPTIONS,
@@ -9,7 +10,6 @@ import {
 } from '@pages/vaults/utils/constants'
 import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
-import type { TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { useV2VaultFilter } from '@shared/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@shared/hooks/useV3VaultFilter'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'

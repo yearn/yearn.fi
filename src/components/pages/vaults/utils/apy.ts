@@ -1,5 +1,5 @@
-import { getVaultAPR, getVaultAddress, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
+import { getVaultAddress, getVaultAPR, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { toAddress } from '@shared/utils'
 
 export function isPendleArbVault(vault: TKongVaultInput): boolean {
