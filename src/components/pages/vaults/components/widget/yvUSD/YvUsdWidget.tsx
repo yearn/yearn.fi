@@ -1,13 +1,13 @@
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
+import type { TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
 import { cl } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement, ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { YvUsdDeposit } from './YvUsdDeposit'
 import { YvUsdWithdraw } from './YvUsdWithdraw'
 
 interface Props {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultView
   chainId: number
   handleSuccess?: () => void
   mode?: ActionType

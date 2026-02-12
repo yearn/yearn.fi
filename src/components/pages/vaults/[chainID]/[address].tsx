@@ -16,12 +16,17 @@ import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/Mobi
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
-import { mergeYBoldVault, YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
+import { getVaultView, type TKongVault, type TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
+import {
+  mergeYBoldSnapshot,
+  mergeYBoldVault,
+  YBOLD_STAKING_ADDRESS,
+  YBOLD_VAULT_ADDRESS
+} from '@pages/vaults/domain/normalizeVault'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
-import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
 import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
@@ -31,7 +36,7 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import type { TToken } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
@@ -71,7 +76,7 @@ const RETIRED_VAULT_ALERT_MESSAGES = {
     'This vault is retired but still earning yield. Deposits are no longer allowed, but withdrawals will remain open indefinitely.'
 } as const
 
-const isSoftRetiredVault = (vault: TYDaemonVault): boolean => {
+const isSoftRetiredVault = (vault: TKongVaultView): boolean => {
   const hasActiveRouterStrategy = (vault.strategies ?? []).some(
     (strategy) => strategy.status === 'active' && strategy.name.toLowerCase().includes('router')
   )
@@ -83,7 +88,7 @@ const getRetiredVaultAlertMessage = ({
   vault,
   hasUserFundsInVault
 }: {
-  vault: TYDaemonVault
+  vault: TKongVaultView
   hasUserFundsInVault: boolean
 }): string => {
   if (!hasUserFundsInVault) {
@@ -111,6 +116,58 @@ const splitFirstSentence = (message: string): { title: string; body?: string } =
   const title = message.slice(0, firstPeriodIndex + 1).trim()
   const body = message.slice(firstPeriodIndex + 1).trim()
   return body ? { title, body } : { title }
+}
+
+const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
+  const token = snapshot.meta?.token
+  const asset = snapshot.asset
+    ? {
+        address: snapshot.asset.address,
+        name: snapshot.asset.name,
+        symbol: snapshot.asset.symbol,
+        decimals: snapshot.asset.decimals
+      }
+    : token
+      ? {
+          address: token.address,
+          name: token.name,
+          symbol: token.symbol,
+          decimals: token.decimals
+        }
+      : null
+
+  return {
+    chainId: snapshot.chainId,
+    address: snapshot.address,
+    name: snapshot.name || snapshot.meta?.name || snapshot.meta?.displayName || '',
+    symbol: snapshot.symbol || snapshot.meta?.displaySymbol || null,
+    apiVersion: snapshot.apiVersion ?? null,
+    decimals: snapshot.decimals ?? token?.decimals ?? asset?.decimals ?? null,
+    asset,
+    tvl: snapshot.tvl?.close ?? null,
+    performance: null,
+    fees: null,
+    category: snapshot.meta?.category ?? null,
+    type: snapshot.meta?.type ?? null,
+    kind: snapshot.meta?.kind ?? null,
+    v3: snapshot.apiVersion?.startsWith('3') ?? false,
+    yearn: true,
+    isRetired: snapshot.meta?.isRetired ?? false,
+    isHidden: snapshot.meta?.isHidden ?? false,
+    isBoosted: snapshot.meta?.isBoosted ?? false,
+    isHighlighted: snapshot.meta?.isHighlighted ?? false,
+    inclusion: snapshot.inclusion,
+    migration: snapshot.meta?.migration?.available,
+    origin: null,
+    strategiesCount: snapshot.composition?.length ?? snapshot.debts?.length ?? 0,
+    riskLevel: snapshot.risk?.riskLevel ?? null,
+    staking: snapshot.staking
+      ? {
+          address: snapshot.staking.address ?? null,
+          available: snapshot.staking.available
+        }
+      : null
+  }
 }
 
 function RetiredVaultAlert({ message, className }: { message: string; className: string }): ReactElement {
@@ -273,12 +330,56 @@ function Index(): ReactElement | null {
   })
   const isSnapshotNotFound = (snapshotError as any)?.response?.status === 404
 
-  const baseMergedVault = useMemo(() => mergeVaultSnapshot(baseVault, snapshotVault), [baseVault, snapshotVault])
+  const isYBold = useMemo(() => {
+    if (isYvUsd) return false
+    if (!baseVault?.address && !params.address) return false
+    const resolvedAddress = toAddress(baseVault?.address ?? params.address ?? '0x')
+    return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
+  }, [isYvUsd, baseVault?.address, params.address])
+
+  const yBoldStakingVault = useMemo(() => {
+    if (!isYBold) return undefined
+    return vaults[toAddress(YBOLD_STAKING_ADDRESS)]
+  }, [isYBold, vaults])
+
+  const mergedBaseVault = useMemo(() => {
+    if (!baseVault) return undefined
+    if (isYBold && yBoldStakingVault) {
+      return mergeYBoldVault(baseVault, yBoldStakingVault)
+    }
+    return baseVault
+  }, [baseVault, isYBold, yBoldStakingVault])
+
+  const { data: yBoldSnapshot, refetch: refetchYBoldSnapshot } = useVaultSnapshot({
+    chainId: isYBold ? chainId : undefined,
+    address: isYBold ? YBOLD_STAKING_ADDRESS : undefined
+  })
+
+  const mergedSnapshot = useMemo(() => {
+    if (!snapshotVault) return undefined
+    if (isYBold && yBoldSnapshot) {
+      return mergeYBoldSnapshot(snapshotVault, yBoldSnapshot)
+    }
+    return snapshotVault
+  }, [isYBold, snapshotVault, yBoldSnapshot])
+
+  const snapshotBackedVault = useMemo(() => {
+    if (!mergedSnapshot) return undefined
+    return buildSnapshotBackedVault(mergedSnapshot)
+  }, [mergedSnapshot])
+
+  const vaultViewInput = useMemo(() => {
+    if (!mergedBaseVault) return snapshotBackedVault
+    if (!snapshotBackedVault) return mergedBaseVault
+    return mergedBaseVault.chainId === snapshotBackedVault.chainId ? mergedBaseVault : snapshotBackedVault
+  }, [mergedBaseVault, snapshotBackedVault])
+
   const isFactoryVault = useMemo(() => {
-    if (!baseMergedVault) return false
-    return deriveListKind(baseMergedVault) === 'factory'
-  }, [baseMergedVault])
-  const snapshotShouldDisableStaking = snapshotVault?.meta?.shouldDisableStaking
+    if (!vaultViewInput) return false
+    return deriveListKind(vaultViewInput) === 'factory'
+  }, [vaultViewInput])
+
+  const snapshotShouldDisableStaking = mergedSnapshot?.meta?.shouldDisableStaking
   const shouldDisableStakingForDeposit = useMemo(() => {
     if (isFactoryVault) {
       return true
@@ -286,32 +387,11 @@ function Index(): ReactElement | null {
     return snapshotShouldDisableStaking === true
   }, [snapshotShouldDisableStaking, isFactoryVault])
 
-  const isYBold = useMemo(() => {
-    if (isYvUsd) return false
-    if (!baseMergedVault?.address && !params.address) return false
-    const resolvedAddress = baseMergedVault?.address ?? toAddress(params.address ?? '')
-    return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
-  }, [isYvUsd, baseMergedVault?.address, params.address])
-
-  const { data: yBoldSnapshot, refetch: refetchYBoldSnapshot } = useVaultSnapshot({
-    chainId: isYBold ? chainId : undefined,
-    address: isYBold ? YBOLD_STAKING_ADDRESS : undefined
-  })
-
-  const yBoldStakingVault = useMemo(() => {
-    if (!isYBold) return undefined
-    const baseStakingVault = vaults[toAddress(YBOLD_STAKING_ADDRESS)]
-    return mergeVaultSnapshot(baseStakingVault, yBoldSnapshot)
-  }, [isYBold, vaults, yBoldSnapshot])
-
   const currentVault = useMemo(() => {
     if (isYvUsd) return yvUsdVault
-    if (!baseMergedVault) return undefined
-    if (isYBold && yBoldStakingVault) {
-      return mergeYBoldVault(baseMergedVault, yBoldStakingVault)
-    }
-    return baseMergedVault
-  }, [isYvUsd, yvUsdVault, baseMergedVault, isYBold, yBoldStakingVault])
+    if (!vaultViewInput) return undefined
+    return getVaultView(vaultViewInput, mergedSnapshot)
+  }, [isYvUsd, yvUsdVault, vaultViewInput, mergedSnapshot])
 
   const isLoadingVault = isYvUsd
     ? !yvUsdVault && isLoadingYvUsd

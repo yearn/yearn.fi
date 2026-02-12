@@ -4,6 +4,7 @@ import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoric
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
 import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
+import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import type { WidgetActionType } from '@pages/vaults/types'
@@ -31,21 +32,21 @@ import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconLock } from '@shared/icons/IconLock'
 import { cl, formatUSD, isZero, SELECTOR_BAR_STYLES, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement, Ref } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
 function VaultHeaderIdentity({
-  currentVault,
+  currentVault: currentVaultInput,
   isCompressed,
   className
 }: {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   isCompressed: boolean
   className?: string
 }): ReactElement {
+  const currentVault = getVaultView(currentVaultInput)
   const chainName = getNetwork(currentVault.chainID).name
   const isYvUsd = isYvUsdVault(currentVault)
   const tokenLogoSrc = isYvUsd
@@ -307,12 +308,13 @@ function SectionSelectorBar({
 }
 
 function VaultOverviewCard({
-  currentVault,
+  currentVault: currentVaultInput,
   isCompressed
 }: {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   isCompressed: boolean
 }): ReactElement {
+  const currentVault = getVaultView(currentVaultInput)
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
   const listKind = deriveListKind(currentVault)
   const isFactoryVault = listKind === 'factory'
@@ -453,16 +455,17 @@ function VaultOverviewCard({
 }
 
 function UserHoldingsCard({
-  currentVault,
+  currentVault: currentVaultInput,
   depositedValue,
   tokenPrice,
   isCompressed
 }: {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   depositedValue: bigint
   tokenPrice: number
   isCompressed: boolean
 }): ReactElement {
+  const currentVault = getVaultView(currentVaultInput)
   const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
   const depositedValueUSD = depositedAmount.normalized * tokenPrice
   const sections: TMetricBlock[] = [
@@ -512,7 +515,7 @@ function UserHoldingsCard({
 }
 
 export function VaultDetailsHeader({
-  currentVault,
+  currentVault: currentVaultInput,
   depositedValue,
   isCollapsibleMode = true,
   sectionTabs = [],
@@ -527,7 +530,7 @@ export function VaultDetailsHeader({
   isWidgetWalletOpen,
   onWidgetCloseOverlays
 }: {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   depositedValue: bigint
   isCollapsibleMode?: boolean
   sectionTabs?: { key: string; label: string }[]
@@ -542,6 +545,7 @@ export function VaultDetailsHeader({
   isWidgetWalletOpen?: boolean
   onWidgetCloseOverlays?: () => void
 }): ReactElement {
+  const currentVault = getVaultView(currentVaultInput)
   const [forceCompressed, setForceCompressed] = useState(false)
   const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode, forceCompressed })
 

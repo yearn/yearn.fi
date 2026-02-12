@@ -6,9 +6,20 @@ import {
   VaultChartsSection
 } from '@pages/vaults/components/detail/VaultChartsSection'
 import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultName,
+  getVaultStrategies,
+  getVaultSymbol,
+  getVaultToken,
+  getVaultTVL,
+  getVaultView,
+  type TKongVaultInput,
+  type TKongVaultStrategy
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
-import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
-import { isYvUsdVault } from '@pages/vaults/utils/yvUsd'
+import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import {
   AllocationChart,
   DARK_MODE_COLORS,
@@ -18,9 +29,9 @@ import {
 } from '@shared/components/AllocationChart'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
-import { formatCounterValue, toAddress, toNormalizedBN } from '@shared/utils'
+import { formatCounterValue, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 import { type TVaultsExpandedView, VaultsExpandedSelector } from './VaultsExpandedSelector'
@@ -35,7 +46,7 @@ const EXPANDED_VIEW_TO_CHART_TAB: Record<
 }
 
 type TVaultsListRowExpandedContentProps = {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   expandedView: TVaultsExpandedView
   onExpandedViewChange: (nextView: TVaultsExpandedView) => void
   onNavigateToVault: () => void
@@ -55,19 +66,22 @@ export default function VaultsListRowExpandedContent({
 }: TVaultsListRowExpandedContentProps): ReactElement {
   const trackEvent = usePlausible()
   const chartTimeframe: TVaultChartTimeframe = '1y'
+  const chainID = getVaultChainID(currentVault)
+  const vaultAddress = getVaultAddress(currentVault)
+  const isYvUsd = isYvUsdAddress(vaultAddress)
   const { data: snapshotVault } = useVaultSnapshot({
-    chainId: currentVault.chainID,
-    address: currentVault.address
+    chainId: chainID,
+    address: vaultAddress
   })
-  const mergedVault = useMemo(() => mergeVaultSnapshot(currentVault, snapshotVault), [currentVault, snapshotVault])
+  const snapshotMergedVault = useMemo(() => getVaultView(currentVault, snapshotVault), [currentVault, snapshotVault])
 
   const handleGoToVault = (event: React.MouseEvent): void => {
     event.stopPropagation()
     trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW_EXPANDED, {
       props: {
-        vaultAddress: toAddress(currentVault.address),
-        vaultSymbol: currentVault.symbol,
-        chainID: currentVault.chainID.toString()
+        vaultAddress: toAddress(vaultAddress),
+        vaultSymbol: getVaultSymbol(currentVault),
+        chainID: chainID.toString()
       }
     })
     onNavigateToVault()
@@ -79,7 +93,7 @@ export default function VaultsListRowExpandedContent({
         <div className={'grid gap-6 md:grid-cols-24'}>
           <div className={'col-span-12 border-r border-border'}>
             <VaultAboutSection
-              currentVault={mergedVault ?? currentVault}
+              currentVault={snapshotMergedVault}
               className={'md:px-15'}
               showKindTag={showKindTag}
               showVaultAddress={true}
@@ -104,7 +118,7 @@ export default function VaultsListRowExpandedContent({
               }
             />
             {expandedView in EXPANDED_VIEW_TO_CHART_TAB ? (
-              isYvUsdVault(currentVault) ? (
+              isYvUsd ? (
                 <YvUsdChartsSection
                   shouldRenderSelectors={false}
                   chartTab={EXPANDED_VIEW_TO_CHART_TAB[expandedView as keyof typeof EXPANDED_VIEW_TO_CHART_TAB]}
@@ -114,8 +128,8 @@ export default function VaultsListRowExpandedContent({
                 />
               ) : (
                 <VaultChartsSection
-                  chainId={currentVault.chainID}
-                  vaultAddress={currentVault.address}
+                  chainId={chainID}
+                  vaultAddress={vaultAddress}
                   shouldRenderSelectors={false}
                   chartTab={EXPANDED_VIEW_TO_CHART_TAB[expandedView as keyof typeof EXPANDED_VIEW_TO_CHART_TAB]}
                   timeframe={chartTimeframe}
@@ -124,7 +138,7 @@ export default function VaultsListRowExpandedContent({
                 />
               )
             ) : (
-              <VaultStrategyAllocationPreview currentVault={mergedVault ?? currentVault} />
+              <VaultStrategyAllocationPreview currentVault={currentVault} snapshotVault={snapshotVault} />
             )}
           </div>
         </div>
@@ -133,54 +147,34 @@ export default function VaultsListRowExpandedContent({
   )
 }
 
-function VaultStrategyAllocationPreview({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+function VaultStrategyAllocationPreview({
+  currentVault,
+  snapshotVault
+}: {
+  currentVault: TKongVaultInput
+  snapshotVault?: TKongVaultSnapshot
+}): ReactElement {
   const { vaults } = useYearn()
+  const token = getVaultToken(currentVault, snapshotVault)
+  const strategies = getVaultStrategies(currentVault, snapshotVault)
   const tokenPrice = useYearnTokenPrice({
-    address: currentVault.token.address,
-    chainID: currentVault.chainID
+    address: token.address,
+    chainID: getVaultChainID(currentVault)
   })
   const isDark = useDarkMode()
 
-  const vaultList = useMemo(() => {
-    const list: (TYDaemonVault & {
-      details: TYDaemonVaultStrategy['details']
-      status: TYDaemonVaultStrategy['status']
-    })[] = []
-
-    for (const strategy of currentVault?.strategies || []) {
-      const linkedVault = vaults[strategy.address]
-      if (linkedVault?.address) {
-        list.push({
-          ...linkedVault,
-          details: strategy.details,
-          status: strategy.status
-        })
-      }
+  type TMergedStrategy = TKongVaultStrategy & { name: string }
+  const mergedList = useMemo(() => {
+    const list: TMergedStrategy[] = []
+    for (const strategy of strategies) {
+      const linkedVault = vaults[toAddress(strategy.address)]
+      list.push({
+        ...strategy,
+        name: strategy.name || (linkedVault ? getVaultName(linkedVault) : `Strategy ${list.length + 1}`)
+      })
     }
-
     return list
-  }, [currentVault?.strategies, vaults])
-
-  const strategyList = useMemo(() => {
-    const list: TYDaemonVaultStrategy[] = []
-
-    for (const strategy of currentVault?.strategies || []) {
-      if (!vaults[strategy.address]) {
-        list.push(strategy)
-      }
-    }
-
-    return list
-  }, [currentVault?.strategies, vaults])
-
-  const mergedList = useMemo(
-    () =>
-      [...vaultList, ...strategyList] as (TYDaemonVault & {
-        details: TYDaemonVaultStrategy['details']
-        status: TYDaemonVaultStrategy['status']
-      })[],
-    [vaultList, strategyList]
-  )
+  }, [strategies, vaults])
 
   const filteredVaultList = useMemo(
     () => mergedList.filter((strategy) => strategy.status !== 'not_active'),
@@ -201,31 +195,33 @@ function VaultStrategyAllocationPreview({ currentVault }: { currentVault: TYDaem
             name: strategy.name,
             value: (strategy.details?.debtRatio || 0) / 100,
             amount: formatCounterValue(
-              toNormalizedBN(strategy.details?.totalDebt || 0, currentVault.token.decimals).display,
+              toNormalizedBN(strategy.details?.totalDebt || 0, token.decimals).display,
               tokenPrice
             )
           })
         ),
-    [filteredVaultList, currentVault.token.decimals, tokenPrice]
+    [filteredVaultList, token.decimals, tokenPrice]
   )
 
-  const unallocatedPercentage =
+  const unallocatedPercentage = Math.max(
+    0,
     100 * 100 - mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
-  const unallocatedValue =
-    Number(currentVault.tvl?.totalAssets || 0) -
-    mergedList.reduce((acc, strategy) => acc + Number(strategy.details?.totalDebt || 0), 0)
+  )
+  const totalAssets = getVaultTVL(currentVault, snapshotVault).totalAssets
+  const allocatedDebt = mergedList.reduce((acc, strategy) => acc + toBigInt(strategy.details?.totalDebt || 0), 0n)
+  const unallocatedValue = totalAssets > allocatedDebt ? totalAssets - allocatedDebt : 0n
 
   const unallocatedData = useMemo(() => {
-    if (unallocatedValue > 0 && unallocatedPercentage > 0) {
+    if (unallocatedValue > 0n && unallocatedPercentage > 0) {
       return {
         id: 'unallocated',
         name: 'Unallocated',
         value: unallocatedPercentage / 100,
-        amount: formatCounterValue(toNormalizedBN(unallocatedValue, currentVault.token.decimals).display, tokenPrice)
+        amount: formatCounterValue(toNormalizedBN(unallocatedValue, token.decimals).display, tokenPrice)
       }
     }
     return null
-  }, [currentVault.token.decimals, tokenPrice, unallocatedPercentage, unallocatedValue])
+  }, [token.decimals, tokenPrice, unallocatedPercentage, unallocatedValue])
 
   const allocationChartData = useMemo(
     () => [...activeStrategyData, unallocatedData].filter(Boolean) as TAllocationChartData[],

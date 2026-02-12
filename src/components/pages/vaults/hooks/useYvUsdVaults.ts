@@ -1,9 +1,8 @@
+import { getVaultView, type TKongVaultInput, type TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
 import { useYearn } from '@shared/contexts/useYearn'
 import { toAddress } from '@shared/utils'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { useMemo } from 'react'
-import { mergeVaultSnapshot } from '../utils/normalizeVaultSnapshot'
 import {
   YVUSD_BASELINE_VAULT_ADDRESS,
   YVUSD_CHAIN_ID,
@@ -19,10 +18,10 @@ type TYvUsdMetrics = {
 }
 
 type TYvUsdVaults = {
-  baseVault?: TYDaemonVault
-  listVault?: TYDaemonVault
-  unlockedVault?: TYDaemonVault
-  lockedVault?: TYDaemonVault
+  baseVault?: TKongVaultView
+  listVault?: TKongVaultView
+  unlockedVault?: TKongVaultView
+  lockedVault?: TKongVaultView
   metrics?: {
     unlocked: TYvUsdMetrics
     locked: TYvUsdMetrics
@@ -39,10 +38,10 @@ const toFiniteNumber = (value: number | null | undefined): number | undefined =>
   return value
 }
 
-const getVaultApy = (vault: TYDaemonVault): number =>
-  toFiniteNumber(vault.apr?.forwardAPR?.netAPR) ?? toFiniteNumber(vault.apr?.netAPR) ?? 0
+const getVaultApy = (vault: TKongVaultView): number =>
+  toFiniteNumber(vault.apr.forwardAPR.netAPR) ?? toFiniteNumber(vault.apr.netAPR) ?? 0
 
-const getVaultTvl = (vault: TYDaemonVault): number => vault.tvl?.tvl ?? 0
+const getVaultTvl = (vault: TKongVaultView): number => vault.tvl.tvl ?? 0
 
 type TSnapshotApyMetric = 'net' | 'weeklyNet' | 'monthlyNet'
 
@@ -93,31 +92,22 @@ const buildVariantVault = ({
   name,
   fallbackToBase
 }: {
-  baseVault: TYDaemonVault
+  baseVault: TKongVaultInput
   snapshot?: TKongVaultSnapshot
   address: string
   name: string
   fallbackToBase: boolean
-}): TYDaemonVault => {
+}): TKongVaultView => {
   const normalizedAddress = toAddress(address)
-  const baseVariant: TYDaemonVault = {
-    ...baseVault,
-    address: normalizedAddress,
-    chainID: YVUSD_CHAIN_ID,
-    name,
-    symbol: 'yvUSD',
-    description: YVUSD_DESCRIPTION,
-    category: 'Stablecoin'
-  }
+  const baseVariant = getVaultView(baseVault, snapshot)
 
-  const mergedVault = snapshot ? (mergeVaultSnapshot(baseVariant, snapshot) ?? baseVariant) : baseVariant
   const defaults = fallbackToBase
     ? {
-        forwardApy: mergedVault.apr.forwardAPR.netAPR,
-        netApy: mergedVault.apr.netAPR,
-        weeklyApy: mergedVault.apr.points.weekAgo,
-        monthlyApy: mergedVault.apr.points.monthAgo,
-        tvl: mergedVault.tvl.tvl
+        forwardApy: baseVariant.apr.forwardAPR.netAPR,
+        netApy: baseVariant.apr.netAPR,
+        weeklyApy: baseVariant.apr.points.weekAgo,
+        monthlyApy: baseVariant.apr.points.monthAgo,
+        tvl: baseVariant.tvl.tvl
       }
     : {
         forwardApy: 0,
@@ -134,7 +124,7 @@ const buildVariantVault = ({
   const resolvedTvl = resolveSnapshotTvl(snapshot) ?? defaults.tvl
 
   return {
-    ...mergedVault,
+    ...baseVariant,
     address: normalizedAddress,
     chainID: YVUSD_CHAIN_ID,
     name,
@@ -142,29 +132,39 @@ const buildVariantVault = ({
     description: YVUSD_DESCRIPTION,
     category: 'Stablecoin',
     apr: {
-      ...mergedVault.apr,
+      ...baseVariant.apr,
       netAPR: resolvedNetApy,
       points: {
-        ...mergedVault.apr.points,
+        ...baseVariant.apr.points,
         weekAgo: resolvedWeeklyApy,
         monthAgo: resolvedMonthlyApy
       },
       forwardAPR: {
-        ...mergedVault.apr.forwardAPR,
+        ...baseVariant.apr.forwardAPR,
         netAPR: resolvedForwardApy
       }
     },
     tvl: {
-      ...mergedVault.tvl,
+      ...baseVariant.tvl,
       tvl: resolvedTvl
     }
   }
 }
 
-const buildListVault = (baseVault: TYDaemonVault, unlocked: TYDaemonVault, locked: TYDaemonVault): TYDaemonVault => {
-  const combinedTvl = (unlocked.tvl?.tvl ?? 0) + (locked.tvl?.tvl ?? 0)
+const buildListVault = ({
+  baseVault,
+  unlocked,
+  locked
+}: {
+  baseVault: TKongVaultInput
+  unlocked: TKongVaultView
+  locked: TKongVaultView
+}): TKongVaultView => {
+  const baseView = getVaultView(baseVault)
+  const combinedTvl = (unlocked.tvl.tvl ?? 0) + (locked.tvl.tvl ?? 0)
+
   return {
-    ...baseVault,
+    ...baseView,
     address: YVUSD_UNLOCKED_ADDRESS,
     chainID: YVUSD_CHAIN_ID,
     name: 'yvUSD',
@@ -172,24 +172,24 @@ const buildListVault = (baseVault: TYDaemonVault, unlocked: TYDaemonVault, locke
     description: YVUSD_DESCRIPTION,
     category: 'Stablecoin',
     tvl: {
-      ...baseVault.tvl,
+      ...baseView.tvl,
       tvl: combinedTvl
     },
     apr: {
-      ...baseVault.apr,
-      netAPR: unlocked.apr?.netAPR ?? baseVault.apr?.netAPR ?? 0,
+      ...baseView.apr,
+      netAPR: unlocked.apr.netAPR,
       forwardAPR: {
-        ...baseVault.apr.forwardAPR,
-        netAPR: unlocked.apr?.forwardAPR?.netAPR ?? baseVault.apr?.forwardAPR?.netAPR ?? 0
+        ...baseView.apr.forwardAPR,
+        netAPR: unlocked.apr.forwardAPR.netAPR
       }
     },
     info: {
-      ...baseVault.info,
+      ...baseView.info,
       isHighlighted: true,
       uiNotice: YVUSD_DESCRIPTION
     },
-    strategies: unlocked.strategies ?? baseVault.strategies,
-    featuringScore: Math.max(baseVault.featuringScore ?? 0, 9_999)
+    strategies: unlocked.strategies ?? baseView.strategies,
+    featuringScore: Math.max(baseView.featuringScore ?? 0, 9_999)
   }
 }
 
@@ -232,7 +232,11 @@ export function useYvUsdVaults(): TYvUsdVaults {
 
   const listVault = useMemo(() => {
     if (!baseVault || !unlockedVault || !lockedVault) return undefined
-    return buildListVault(baseVault, unlockedVault, lockedVault)
+    return buildListVault({
+      baseVault,
+      unlocked: unlockedVault,
+      locked: lockedVault
+    })
   }, [baseVault, unlockedVault, lockedVault])
 
   const metrics = useMemo(() => {
@@ -250,7 +254,7 @@ export function useYvUsdVaults(): TYvUsdVaults {
   }, [unlockedVault, lockedVault])
 
   return {
-    baseVault,
+    baseVault: baseVault ? getVaultView(baseVault) : undefined,
     listVault,
     unlockedVault,
     lockedVault,

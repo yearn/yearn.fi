@@ -1,5 +1,5 @@
 import { toAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { Address } from 'viem'
 
 export const YVUSD_CHAIN_ID = 1
@@ -21,7 +21,7 @@ export const isYvUsdAddress = (address?: string | null): boolean => {
   return normalized === YVUSD_UNLOCKED_ADDRESS || normalized === YVUSD_LOCKED_ADDRESS
 }
 
-export const isYvUsdVault = (vault?: TYDaemonVault | null): boolean => {
+export const isYvUsdVault = (vault?: TKongVaultInput | null): boolean => {
   if (!vault) return false
   return isYvUsdAddress(vault.address)
 }
