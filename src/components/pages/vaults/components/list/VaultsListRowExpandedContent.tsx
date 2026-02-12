@@ -6,9 +6,9 @@ import {
   VaultChartsSection
 } from '@pages/vaults/components/detail/VaultChartsSection'
 import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
-import { isYvUsdVault } from '@pages/vaults/utils/yvUsd'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
+import { isYvUsdVault } from '@pages/vaults/utils/yvUsd'
 import {
   AllocationChart,
   DARK_MODE_COLORS,

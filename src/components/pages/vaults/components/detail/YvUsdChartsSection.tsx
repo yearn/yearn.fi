@@ -1,5 +1,5 @@
 import { useYvUsdCharts } from '@pages/vaults/hooks/useYvUsdCharts'
-import { cl } from '@shared/utils'
+import { cl, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import { ChartErrorBoundary } from './charts/ChartErrorBoundary'
@@ -37,7 +37,7 @@ export function YvUsdChartsSection({
   const hasError = Boolean(error)
 
   const [uncontrolledTab, setUncontrolledTab] = useState<TYvUsdChartTab>('historical-apy')
-  const [uncontrolledTimeframe, setUncontrolledTimeframe] = useState<TYvUsdChartTimeframe>('all')
+  const [uncontrolledTimeframe, setUncontrolledTimeframe] = useState<TYvUsdChartTimeframe>('1y')
 
   const activeTab = chartTab ?? uncontrolledTab
   const activeTimeframe = timeframe ?? uncontrolledTimeframe
@@ -45,21 +45,21 @@ export function YvUsdChartsSection({
   const setActiveTimeframe = onTimeframeChange ?? setUncontrolledTimeframe
 
   return (
-    <div className={'space-y-4 pt-3 rounded-lg'}>
+    <div className={'space-y-3 md:space-y-4 pt-4 rounded-lg'}>
       {shouldRenderSelectors ? (
-        <div className={'flex flex-col gap-3 px-4 md:flex-row md:items-center md:justify-between'}>
-          <div className={'flex flex-wrap gap-3'}>
-            <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner'}>
+        <div className={'flex flex-col gap-2 md:gap-3 px-3 md:px-4 md:flex-row md:items-start md:justify-between'}>
+          <div className={'flex flex-col'}>
+            <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
               {VAULT_CHART_TABS.map((tab) => (
                 <button
                   key={tab.id}
                   type={'button'}
                   onClick={() => setActiveTab(tab.id)}
                   className={cl(
-                    'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
-                    activeTab === tab.id
-                      ? 'bg-surface text-text-primary'
-                      : 'bg-transparent text-text-secondary hover:text-text-secondary'
+                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold transition-all',
+                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                    SELECTOR_BAR_STYLES.buttonBase,
+                    activeTab === tab.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
                   )}
                 >
                   {tab.label}
@@ -67,17 +67,19 @@ export function YvUsdChartsSection({
               ))}
             </div>
           </div>
-          <div className={'flex flex-wrap gap-3'}>
-            <div className={'flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner'}>
+          <div className={'hidden md:flex flex-wrap gap-2 md:gap-3'}>
+            <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
               {VAULT_CHART_TIMEFRAME_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   type={'button'}
                   className={cl(
-                    'rounded-sm px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                    SELECTOR_BAR_STYLES.buttonBase,
                     option.value === activeTimeframe
-                      ? 'bg-surface text-text-primary'
-                      : 'bg-transparent text-text-secondary hover:text-text-secondary'
+                      ? SELECTOR_BAR_STYLES.buttonActive
+                      : SELECTOR_BAR_STYLES.buttonInactive
                   )}
                   onClick={() => setActiveTimeframe(option.value)}
                 >
@@ -99,7 +101,7 @@ export function YvUsdChartsSection({
           <ChartsLoader loadingState={isLoading ? 'Loading charts' : 'Preparing charts'} />
         </div>
       ) : (
-        <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx}>
+        <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx} className={'mx-4'}>
           <ChartErrorBoundary>
             {activeTab === 'historical-pps' && performanceData ? (
               <YvUsdPerformanceChart chartData={performanceData} timeframe={activeTimeframe} />

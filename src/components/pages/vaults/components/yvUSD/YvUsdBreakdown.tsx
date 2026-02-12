@@ -1,9 +1,4 @@
-import {
-  YVUSD_DESCRIPTION,
-  YVUSD_LOCK_BONUS_APY,
-  YVUSD_LOCKED_COOLDOWN_DAYS,
-  YVUSD_WITHDRAW_WINDOW_DAYS
-} from '@pages/vaults/utils/yvUsd'
+import { YVUSD_DESCRIPTION, YVUSD_LOCKED_COOLDOWN_DAYS, YVUSD_WITHDRAW_WINDOW_DAYS } from '@pages/vaults/utils/yvUsd'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
@@ -102,7 +97,7 @@ export function YvUsdApyDetailsContent({
   lockedValue: number
   unlockedValue: number
 }): ReactElement {
-  const bonusPercent = formatAmount(YVUSD_LOCK_BONUS_APY * 100, 0, 2)
+  const upliftPercent = formatAmount(Math.max(0, (lockedValue - unlockedValue) * 100), 0, 2)
 
   return (
     <div className="space-y-4">
@@ -118,7 +113,7 @@ export function YvUsdApyDetailsContent({
         </div>
       </div>
       <p className="text-xs text-text-secondary">
-        {`Locked deposits include an additional ${bonusPercent}% target uplift and require a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown. Withdrawals are open for ${YVUSD_WITHDRAW_WINDOW_DAYS} days once the cooldown ends.`}
+        {`Locked deposits currently show about ${upliftPercent}% APY uplift and require a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown. Withdrawals are open for ${YVUSD_WITHDRAW_WINDOW_DAYS} days once the cooldown ends.`}
       </p>
     </div>
   )

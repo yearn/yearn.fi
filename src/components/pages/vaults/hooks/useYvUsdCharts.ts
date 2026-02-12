@@ -1,11 +1,6 @@
 import { transformVaultChartData } from '@pages/vaults/utils/charts'
 import { useMemo } from 'react'
-import {
-  YVUSD_BASELINE_VAULT_ADDRESS,
-  YVUSD_CHAIN_ID,
-  YVUSD_LOCK_BONUS_APY,
-  YVUSD_LOCK_TVL_MULTIPLIER
-} from '../utils/yvUsd'
+import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '../utils/yvUsd'
 import { useVaultChartTimeseries } from './useVaultChartTimeseries'
 
 export type TYvUsdSeriesPoint = {
@@ -22,50 +17,106 @@ type TYvUsdCharts = {
   error?: Error
 }
 
+type TSeriesPointWithDate = {
+  date: string
+}
+
+type TApyPointValue = {
+  thirtyDayApy?: number | null
+  sevenDayApy?: number | null
+  derivedApy?: number | null
+  derivedApr?: number | null
+}
+
+const getApyPointValue = (point: TApyPointValue | undefined): number | null =>
+  point?.thirtyDayApy ?? point?.sevenDayApy ?? point?.derivedApy ?? point?.derivedApr ?? null
+
+function mergeByDate<TUnlocked extends TSeriesPointWithDate, TLocked extends TSeriesPointWithDate>({
+  unlockedSeries,
+  lockedSeries,
+  getUnlockedValue,
+  getLockedValue
+}: {
+  unlockedSeries: TUnlocked[] | null
+  lockedSeries: TLocked[] | null
+  getUnlockedValue: (point: TUnlocked | undefined) => number | null
+  getLockedValue: (point: TLocked | undefined) => number | null
+}): TYvUsdSeriesPoint[] | null {
+  const unlockedList = unlockedSeries ?? []
+  const lockedList = lockedSeries ?? []
+  if (unlockedList.length === 0 && lockedList.length === 0) {
+    return null
+  }
+
+  const unlockedByDate = new Map(unlockedList.map((point) => [point.date, point]))
+  const lockedByDate = new Map(lockedList.map((point) => [point.date, point]))
+  const orderedDates = [
+    ...new Set([...unlockedList.map((point) => point.date), ...lockedList.map((point) => point.date)])
+  ]
+
+  return orderedDates.map((date) => ({
+    date,
+    unlocked: getUnlockedValue(unlockedByDate.get(date)),
+    locked: getLockedValue(lockedByDate.get(date))
+  }))
+}
+
 export function useYvUsdCharts(): TYvUsdCharts {
-  const { data, isLoading, error } = useVaultChartTimeseries({
+  const {
+    data: unlockedData,
+    isLoading: isLoadingUnlocked,
+    error: unlockedError
+  } = useVaultChartTimeseries({
     chainId: YVUSD_CHAIN_ID,
-    address: YVUSD_BASELINE_VAULT_ADDRESS
+    address: YVUSD_UNLOCKED_ADDRESS
   })
 
-  const transformed = useMemo(() => transformVaultChartData(data), [data])
+  const {
+    data: lockedData,
+    isLoading: isLoadingLocked,
+    error: lockedError
+  } = useVaultChartTimeseries({
+    chainId: YVUSD_CHAIN_ID,
+    address: YVUSD_LOCKED_ADDRESS
+  })
+
+  const unlockedTransformed = useMemo(() => transformVaultChartData(unlockedData), [unlockedData])
+  const lockedTransformed = useMemo(() => transformVaultChartData(lockedData), [lockedData])
 
   const apyData = useMemo<TYvUsdSeriesPoint[] | null>(() => {
-    if (!transformed.aprApyData) return null
-    return transformed.aprApyData.map((point) => {
-      const baseValue = point.thirtyDayApy ?? point.sevenDayApy ?? point.derivedApy ?? point.derivedApr ?? null
-      const lockedValue = baseValue !== null ? baseValue + YVUSD_LOCK_BONUS_APY * 100 : null
-      return {
-        date: point.date,
-        unlocked: baseValue,
-        locked: lockedValue
-      }
+    return mergeByDate({
+      unlockedSeries: unlockedTransformed.aprApyData,
+      lockedSeries: lockedTransformed.aprApyData,
+      getUnlockedValue: getApyPointValue,
+      getLockedValue: getApyPointValue
     })
-  }, [transformed.aprApyData])
+  }, [lockedTransformed.aprApyData, unlockedTransformed.aprApyData])
 
   const performanceData = useMemo<TYvUsdSeriesPoint[] | null>(() => {
-    if (!transformed.ppsData) return null
-    return transformed.ppsData.map((point) => ({
-      date: point.date,
-      unlocked: point.PPS ?? null,
-      locked: point.PPS !== null ? point.PPS * YVUSD_LOCK_TVL_MULTIPLIER : null
-    }))
-  }, [transformed.ppsData])
+    return mergeByDate({
+      unlockedSeries: unlockedTransformed.ppsData,
+      lockedSeries: lockedTransformed.ppsData,
+      getUnlockedValue: (point) => point?.PPS ?? null,
+      getLockedValue: (point) => point?.PPS ?? null
+    })
+  }, [lockedTransformed.ppsData, unlockedTransformed.ppsData])
 
   const tvlData = useMemo<TYvUsdSeriesPoint[] | null>(() => {
-    if (!transformed.tvlData) return null
-    return transformed.tvlData.map((point) => ({
-      date: point.date,
-      unlocked: point.TVL ?? null,
-      locked: point.TVL !== null ? point.TVL * YVUSD_LOCK_TVL_MULTIPLIER : null
-    }))
-  }, [transformed.tvlData])
+    return mergeByDate({
+      unlockedSeries: unlockedTransformed.tvlData,
+      lockedSeries: lockedTransformed.tvlData,
+      getUnlockedValue: (point) => point?.TVL ?? null,
+      getLockedValue: (point) => point?.TVL ?? null
+    })
+  }, [lockedTransformed.tvlData, unlockedTransformed.tvlData])
+
+  const hasAllSeries = Boolean(apyData && performanceData && tvlData)
 
   return {
     apyData,
     performanceData,
     tvlData,
-    isLoading: isLoading || !transformed.aprApyData || !transformed.ppsData || !transformed.tvlData,
-    error: error as Error | undefined
+    isLoading: isLoadingUnlocked || isLoadingLocked || !hasAllSeries,
+    error: (unlockedError ?? lockedError) as Error | undefined
   }
 }

@@ -1,21 +1,17 @@
 import { useYearn } from '@shared/contexts/useYearn'
 import { toAddress } from '@shared/utils'
+import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { yDaemonVaultSchema } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
+import { mergeVaultSnapshot } from '../utils/normalizeVaultSnapshot'
 import {
   YVUSD_BASELINE_VAULT_ADDRESS,
   YVUSD_CHAIN_ID,
   YVUSD_DESCRIPTION,
-  YVUSD_LOCK_BONUS_APY,
-  YVUSD_LOCK_TVL_MULTIPLIER,
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '../utils/yvUsd'
-
-const REST_BASE = (import.meta.env.VITE_KONG_REST_URL || 'https://kong.yearn.fi/api/rest').replace(/\/$/, '')
-const SNAPSHOT_BASE = `${REST_BASE}/snapshot`
+import { useVaultSnapshot } from './useVaultSnapshot'
 
 type TYvUsdMetrics = {
   apy: number
@@ -34,61 +30,133 @@ type TYvUsdVaults = {
   isLoading: boolean
 }
 
-const fetchSnapshotVault = async (address: string): Promise<TYDaemonVault | null> => {
-  try {
-    const response = await fetch(`${SNAPSHOT_BASE}/${YVUSD_CHAIN_ID}/${address}`)
-    if (!response.ok) {
-      return null
-    }
-    const json = await response.json()
-    const parsed = yDaemonVaultSchema.safeParse(json)
-    if (!parsed.success) {
-      console.warn('[yvUSD] Snapshot schema mismatch', parsed.error)
-      return null
-    }
-    return parsed.data
-  } catch (error) {
-    console.warn('[yvUSD] Snapshot fetch failed', error)
-    return null
+const MAX_REASONABLE_FORWARD_APY = 1
+
+const toFiniteNumber = (value: number | null | undefined): number | undefined => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return undefined
   }
+  return value
 }
 
-const getVaultApy = (vault: TYDaemonVault): number => {
-  const forward = vault.apr?.forwardAPR?.netAPR ?? 0
-  if (forward && Number.isFinite(forward) && forward !== 0) {
-    return forward
-  }
-  return vault.apr?.netAPR ?? 0
-}
+const getVaultApy = (vault: TYDaemonVault): number =>
+  toFiniteNumber(vault.apr?.forwardAPR?.netAPR) ?? toFiniteNumber(vault.apr?.netAPR) ?? 0
 
 const getVaultTvl = (vault: TYDaemonVault): number => vault.tvl?.tvl ?? 0
 
-const applyLockedBonus = (vault: TYDaemonVault): TYDaemonVault => {
-  const nextForward = (vault.apr?.forwardAPR?.netAPR ?? 0) + YVUSD_LOCK_BONUS_APY
-  const nextNet = (vault.apr?.netAPR ?? 0) + YVUSD_LOCK_BONUS_APY
-  const nextPoints = {
-    ...vault.apr.points,
-    weekAgo: (vault.apr.points?.weekAgo ?? 0) + YVUSD_LOCK_BONUS_APY,
-    monthAgo: (vault.apr.points?.monthAgo ?? 0) + YVUSD_LOCK_BONUS_APY
+type TSnapshotApyMetric = 'net' | 'weeklyNet' | 'monthlyNet'
+
+const resolveSnapshotHistoricalApy = (
+  snapshot: TKongVaultSnapshot | undefined,
+  metric: TSnapshotApyMetric
+): number | undefined =>
+  toFiniteNumber(snapshot?.apy?.[metric]) ?? toFiniteNumber(snapshot?.performance?.historical?.[metric])
+
+const resolveSnapshotNetApy = (snapshot?: TKongVaultSnapshot): number | undefined =>
+  resolveSnapshotHistoricalApy(snapshot, 'net')
+
+const resolveSnapshotWeeklyApy = (snapshot?: TKongVaultSnapshot): number | undefined =>
+  resolveSnapshotHistoricalApy(snapshot, 'weeklyNet')
+
+const resolveSnapshotMonthlyApy = (snapshot?: TKongVaultSnapshot): number | undefined =>
+  resolveSnapshotHistoricalApy(snapshot, 'monthlyNet')
+
+const resolveSnapshotForwardApy = (snapshot?: TKongVaultSnapshot): number | undefined => {
+  const estimatedApy = toFiniteNumber(snapshot?.performance?.estimated?.apy)
+  if (estimatedApy !== undefined) {
+    return estimatedApy
   }
 
-  return {
-    ...vault,
-    address: YVUSD_LOCKED_ADDRESS,
+  const estimatedApr = toFiniteNumber(snapshot?.performance?.estimated?.apr)
+  if (estimatedApr !== undefined) {
+    return estimatedApr
+  }
+
+  for (const oracleValue of [
+    toFiniteNumber(snapshot?.performance?.oracle?.apy),
+    toFiniteNumber(snapshot?.performance?.oracle?.apr)
+  ]) {
+    if (oracleValue !== undefined && Math.abs(oracleValue) <= MAX_REASONABLE_FORWARD_APY) {
+      return oracleValue
+    }
+  }
+
+  return resolveSnapshotNetApy(snapshot)
+}
+
+const resolveSnapshotTvl = (snapshot?: TKongVaultSnapshot): number | undefined => toFiniteNumber(snapshot?.tvl?.close)
+
+const buildVariantVault = ({
+  baseVault,
+  snapshot,
+  address,
+  name,
+  fallbackToBase
+}: {
+  baseVault: TYDaemonVault
+  snapshot?: TKongVaultSnapshot
+  address: string
+  name: string
+  fallbackToBase: boolean
+}): TYDaemonVault => {
+  const normalizedAddress = toAddress(address)
+  const baseVariant: TYDaemonVault = {
+    ...baseVault,
+    address: normalizedAddress,
     chainID: YVUSD_CHAIN_ID,
-    name: `${vault.name} (Locked)`,
+    name,
+    symbol: 'yvUSD',
+    description: YVUSD_DESCRIPTION,
+    category: 'Stablecoin'
+  }
+
+  const mergedVault = snapshot ? (mergeVaultSnapshot(baseVariant, snapshot) ?? baseVariant) : baseVariant
+  const defaults = fallbackToBase
+    ? {
+        forwardApy: mergedVault.apr.forwardAPR.netAPR,
+        netApy: mergedVault.apr.netAPR,
+        weeklyApy: mergedVault.apr.points.weekAgo,
+        monthlyApy: mergedVault.apr.points.monthAgo,
+        tvl: mergedVault.tvl.tvl
+      }
+    : {
+        forwardApy: 0,
+        netApy: 0,
+        weeklyApy: 0,
+        monthlyApy: 0,
+        tvl: 0
+      }
+
+  const resolvedNetApy = resolveSnapshotNetApy(snapshot) ?? defaults.netApy
+  const resolvedWeeklyApy = resolveSnapshotWeeklyApy(snapshot) ?? defaults.weeklyApy
+  const resolvedMonthlyApy = resolveSnapshotMonthlyApy(snapshot) ?? defaults.monthlyApy
+  const resolvedForwardApy = resolveSnapshotForwardApy(snapshot) ?? defaults.forwardApy
+  const resolvedTvl = resolveSnapshotTvl(snapshot) ?? defaults.tvl
+
+  return {
+    ...mergedVault,
+    address: normalizedAddress,
+    chainID: YVUSD_CHAIN_ID,
+    name,
+    symbol: 'yvUSD',
+    description: YVUSD_DESCRIPTION,
+    category: 'Stablecoin',
     apr: {
-      ...vault.apr,
-      netAPR: nextNet,
-      points: nextPoints,
+      ...mergedVault.apr,
+      netAPR: resolvedNetApy,
+      points: {
+        ...mergedVault.apr.points,
+        weekAgo: resolvedWeeklyApy,
+        monthAgo: resolvedMonthlyApy
+      },
       forwardAPR: {
-        ...vault.apr.forwardAPR,
-        netAPR: nextForward
+        ...mergedVault.apr.forwardAPR,
+        netAPR: resolvedForwardApy
       }
     },
     tvl: {
-      ...vault.tvl,
-      tvl: (vault.tvl?.tvl ?? 0) * YVUSD_LOCK_TVL_MULTIPLIER
+      ...mergedVault.tvl,
+      tvl: resolvedTvl
     }
   }
 }
@@ -120,6 +188,7 @@ const buildListVault = (baseVault: TYDaemonVault, unlocked: TYDaemonVault, locke
       isHighlighted: true,
       uiNotice: YVUSD_DESCRIPTION
     },
+    strategies: unlocked.strategies ?? baseVault.strategies,
     featuringScore: Math.max(baseVault.featuringScore ?? 0, 9_999)
   }
 }
@@ -129,54 +198,37 @@ export function useYvUsdVaults(): TYvUsdVaults {
 
   const baseVault = useMemo(() => vaults[toAddress(YVUSD_BASELINE_VAULT_ADDRESS)], [vaults])
 
-  const { data: unlockedSnapshot, isLoading: isLoadingUnlocked } = useQuery({
-    queryKey: ['yvusd-snapshot', YVUSD_UNLOCKED_ADDRESS],
-    queryFn: () => fetchSnapshotVault(YVUSD_UNLOCKED_ADDRESS),
-    enabled: Boolean(baseVault)
+  const { data: unlockedSnapshot, isLoading: isLoadingUnlocked } = useVaultSnapshot({
+    chainId: YVUSD_CHAIN_ID,
+    address: YVUSD_UNLOCKED_ADDRESS
   })
 
-  const { data: lockedSnapshot, isLoading: isLoadingLocked } = useQuery({
-    queryKey: ['yvusd-snapshot', YVUSD_LOCKED_ADDRESS],
-    queryFn: () => fetchSnapshotVault(YVUSD_LOCKED_ADDRESS),
-    enabled: Boolean(baseVault)
+  const { data: lockedSnapshot, isLoading: isLoadingLocked } = useVaultSnapshot({
+    chainId: YVUSD_CHAIN_ID,
+    address: YVUSD_LOCKED_ADDRESS
   })
 
   const unlockedVault = useMemo(() => {
     if (!baseVault) return undefined
-    const snapshot = unlockedSnapshot ?? null
-    const merged = snapshot
-      ? {
-          ...baseVault,
-          ...snapshot,
-          address: YVUSD_UNLOCKED_ADDRESS,
-          chainID: YVUSD_CHAIN_ID,
-          name: 'yvUSD',
-          symbol: 'yvUSD'
-        }
-      : {
-          ...baseVault,
-          address: YVUSD_UNLOCKED_ADDRESS,
-          chainID: YVUSD_CHAIN_ID,
-          name: 'yvUSD',
-          symbol: 'yvUSD'
-        }
-    return merged
+    return buildVariantVault({
+      baseVault,
+      snapshot: unlockedSnapshot,
+      address: YVUSD_UNLOCKED_ADDRESS,
+      name: 'yvUSD',
+      fallbackToBase: true
+    })
   }, [baseVault, unlockedSnapshot])
 
   const lockedVault = useMemo(() => {
-    if (!baseVault || !unlockedVault) return undefined
-    if (lockedSnapshot) {
-      return {
-        ...baseVault,
-        ...lockedSnapshot,
-        address: YVUSD_LOCKED_ADDRESS,
-        chainID: YVUSD_CHAIN_ID,
-        name: 'yvUSD (Locked)',
-        symbol: 'yvUSD'
-      }
-    }
-    return applyLockedBonus(unlockedVault)
-  }, [baseVault, lockedSnapshot, unlockedVault])
+    if (!baseVault) return undefined
+    return buildVariantVault({
+      baseVault,
+      snapshot: lockedSnapshot,
+      address: YVUSD_LOCKED_ADDRESS,
+      name: 'yvUSD (Locked)',
+      fallbackToBase: false
+    })
+  }, [baseVault, lockedSnapshot])
 
   const listVault = useMemo(() => {
     if (!baseVault || !unlockedVault || !lockedVault) return undefined

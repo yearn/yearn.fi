@@ -3,6 +3,7 @@ import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
+import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import type { WidgetActionType } from '@pages/vaults/types'
@@ -16,7 +17,6 @@ import {
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import { isYvUsdVault } from '@pages/vaults/utils/yvUsd'
-import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import {
   METRIC_FOOTNOTE_CLASS,
   METRIC_VALUE_CLASS,
@@ -320,12 +320,12 @@ function VaultOverviewCard({
   const { metrics: yvUsdMetrics, unlockedVault, lockedVault } = useYvUsdVaults()
   const unlockedForwardApy =
     yvUsdMetrics?.unlocked.apy ?? (currentVault.apr?.forwardAPR?.netAPR || currentVault.apr?.netAPR || 0)
-  const lockedForwardApy = yvUsdMetrics?.locked.apy ?? unlockedForwardApy
+  const lockedForwardApy = yvUsdMetrics?.locked.apy ?? lockedVault?.apr?.forwardAPR?.netAPR ?? 0
   const unlockedMonthly = unlockedVault?.apr?.points?.monthAgo ?? currentVault.apr.points.monthAgo
   const unlockedWeekly = unlockedVault?.apr?.points?.weekAgo ?? currentVault.apr.points.weekAgo
   const unlockedHistorical = isZero(unlockedMonthly) ? unlockedWeekly : unlockedMonthly
-  const lockedMonthly = lockedVault?.apr?.points?.monthAgo ?? unlockedMonthly
-  const lockedWeekly = lockedVault?.apr?.points?.weekAgo ?? unlockedWeekly
+  const lockedMonthly = lockedVault?.apr?.points?.monthAgo ?? 0
+  const lockedWeekly = lockedVault?.apr?.points?.weekAgo ?? 0
   const lockedHistorical = isZero(lockedMonthly) ? lockedWeekly : lockedMonthly
   const unlockedTvl = unlockedVault?.tvl?.tvl ?? yvUsdMetrics?.unlocked.tvl ?? 0
   const lockedTvl = lockedVault?.tvl?.tvl ?? yvUsdMetrics?.locked.tvl ?? 0

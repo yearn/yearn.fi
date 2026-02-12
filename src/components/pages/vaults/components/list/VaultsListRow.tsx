@@ -4,6 +4,12 @@ import { APYDetailsModal } from '@pages/vaults/components/table/APYDetailsModal'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
+import {
+  YvUsdApyDetailsContent,
+  YvUsdApyTooltipContent,
+  YvUsdTvlTooltipContent
+} from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
@@ -15,13 +21,7 @@ import {
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
-import { isYvUsdVault, YVUSD_LOCK_BONUS_APY, YVUSD_LOCK_TVL_MULTIPLIER } from '@pages/vaults/utils/yvUsd'
-import {
-  YvUsdApyDetailsContent,
-  YvUsdApyTooltipContent,
-  YvUsdTvlTooltipContent
-} from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
-import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import { isYvUsdVault } from '@pages/vaults/utils/yvUsd'
 import { useMediaQuery } from '@react-hookz/web'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
@@ -175,10 +175,11 @@ export function VaultsListRow({
     const unlockedApy =
       yvUsdMetrics?.unlocked.apy ?? (currentVault.apr?.forwardAPR?.netAPR || currentVault.apr?.netAPR || 0)
     const unlockedTvl = yvUsdMetrics?.unlocked.tvl ?? currentVault.tvl?.tvl ?? 0
-    const lockedTvl = yvUsdMetrics?.locked.tvl ?? unlockedTvl * YVUSD_LOCK_TVL_MULTIPLIER
+    const lockedApy = yvUsdMetrics?.locked.apy ?? 0
+    const lockedTvl = yvUsdMetrics?.locked.tvl ?? 0
     return {
       unlockedApy,
-      lockedApy: yvUsdMetrics?.locked.apy ?? unlockedApy + YVUSD_LOCK_BONUS_APY,
+      lockedApy,
       unlockedTvl,
       lockedTvl,
       combinedTvl: currentVault.tvl?.tvl ?? unlockedTvl + lockedTvl

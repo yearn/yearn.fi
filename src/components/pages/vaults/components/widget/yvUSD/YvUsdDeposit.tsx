@@ -41,8 +41,8 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
     )
   }
 
-  const unlockedApr = metrics?.unlocked.apy ?? unlockedVault.apr?.forwardAPR?.netAPR ?? 0
-  const lockedApr = metrics?.locked.apy ?? lockedVault.apr?.forwardAPR?.netAPR ?? 0
+  const unlockedApr = metrics?.unlocked.apy ?? unlockedVault.apr?.netAPR ?? 0
+  const lockedApr = metrics?.locked.apy ?? lockedVault.apr?.netAPR ?? 0
   const unlockedAprPercent = unlockedApr * 100
   const lockedAprPercent = lockedApr * 100
   const selectedVault = variant === 'locked' ? lockedVault : unlockedVault
