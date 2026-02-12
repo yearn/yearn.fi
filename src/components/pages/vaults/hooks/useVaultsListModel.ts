@@ -206,7 +206,7 @@ export function useVaultsListModel({
   )
 
   const sortedHoldingsVaultsByDeposited = useSortVaults(
-    holdingsVaults,
+    sortedHoldingsVaults,
     'deposited',
     holdingsPinnedSortDirection || 'desc'
   )
