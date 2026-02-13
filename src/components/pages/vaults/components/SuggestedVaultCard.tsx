@@ -22,7 +22,13 @@ import { toAddress } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
 
-export function SuggestedVaultCard({ vault }: { vault: TKongVaultInput }): ReactElement {
+export function SuggestedVaultCard({
+  vault,
+  matchedSymbol
+}: {
+  vault: TKongVaultInput
+  matchedSymbol?: string
+}): ReactElement {
   const apyData = useVaultApyData(vault)
   const apyLabel = apyData.mode === 'historical' || apyData.mode === 'noForward' ? '30D APY' : 'Est. APY'
   const chainID = getVaultChainID(vault)
@@ -62,6 +68,7 @@ export function SuggestedVaultCard({ vault }: { vault: TKongVaultInput }): React
         </div>
         <div className={'flex min-w-0 flex-col'}>
           <p className={'truncate text-base font-semibold text-text-primary'}>{vaultName}</p>
+          {matchedSymbol ? <p className={'text-xs text-text-secondary'}>{`You hold ${matchedSymbol}`}</p> : null}
         </div>
       </div>
       <div className={'mt-1 flex flex-wrap items-center gap-1'}>
