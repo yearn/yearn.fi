@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { fireEvent, render } from '@testing-library/react'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router'
@@ -47,7 +47,7 @@ describe('VaultsListRow', () => {
       info: {
         riskLevel: 3
       }
-    } as unknown as TYDaemonVault
+    } as unknown as TKongVaultInput
 
     const { container, queryByText } = render(
       <MemoryRouter>

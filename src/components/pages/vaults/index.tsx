@@ -10,6 +10,7 @@ import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { VaultsListRowSkeleton } from '@pages/vaults/components/list/VaultsListRowSkeleton'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import { VaultsWelcomeTour } from '@pages/vaults/components/tour/VaultsWelcomeTour'
+import { getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { toggleInArray } from '@pages/vaults/utils/constants'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
@@ -17,7 +18,6 @@ import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconGitCompare } from '@shared/icons/IconGitCompare'
 import { cl } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useVaultsPageModel } from './hooks/useVaultsPageModel'
@@ -123,12 +123,12 @@ export default function Index(): ReactElement {
   }, [search.value, totalMatchingVaults, trackEvent])
 
   const handleToggleCompare = useCallback(
-    (vault: TYDaemonVault): void => {
+    (vault: TKongVaultInput): void => {
       const vaultKey = getVaultKey(vault)
       const isAdding = !compareVaultKeys.includes(vaultKey)
       if (isAdding) {
         trackEvent(PLAUSIBLE_EVENTS.COMPARE_VAULT_ADD, {
-          props: { vaultKey, chainId: vault.chainID.toString() }
+          props: { vaultKey, chainId: getVaultChainID(vault).toString() }
         })
       }
       setCompareVaultKeys((prev) => toggleInArray(prev, vaultKey))
@@ -184,11 +184,11 @@ export default function Index(): ReactElement {
     return firstVault ? getVaultKey(firstVault) : null
   }, [visibleVaults])
   const compareVaults = useMemo(() => {
-    const vaultMap = new Map<string, TYDaemonVault>()
+    const vaultMap = new Map<string, TKongVaultInput>()
     for (const vault of visibleVaults) {
       vaultMap.set(getVaultKey(vault), vault)
     }
-    return compareVaultKeys.map((key) => vaultMap.get(key)).filter((vault): vault is TYDaemonVault => Boolean(vault))
+    return compareVaultKeys.map((key) => vaultMap.get(key)).filter((vault): vault is TKongVaultInput => Boolean(vault))
   }, [compareVaultKeys, visibleVaults])
 
   const areArraysEquivalent = useCallback(

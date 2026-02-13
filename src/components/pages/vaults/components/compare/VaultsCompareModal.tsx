@@ -4,6 +4,20 @@ import { usePlausible } from '@hooks/usePlausible'
 import { SwipeableCompareCarousel } from '@pages/vaults/components/compare/SwipeableCompareCarousel'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
+import {
+  getVaultAddress,
+  getVaultAPR,
+  getVaultChainID,
+  getVaultInfo,
+  getVaultKind,
+  getVaultName,
+  getVaultStrategies,
+  getVaultSymbol,
+  getVaultToken,
+  getVaultTVL,
+  type TKongVaultInput,
+  type TKongVaultStrategy
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { useMediaQuery } from '@react-hookz/web'
 import { TokenLogo } from '@shared/components/TokenLogo'
@@ -12,7 +26,6 @@ import { IconClose } from '@shared/icons/IconClose'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { cl, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import { Fragment, type ReactElement, type ReactNode, useEffect, useState } from 'react'
 import { VaultForwardAPY } from '../table/VaultForwardAPY'
@@ -20,11 +33,11 @@ import { VaultForwardAPY } from '../table/VaultForwardAPY'
 type TVaultsCompareModalProps = {
   isOpen: boolean
   onClose: () => void
-  vaults: TYDaemonVault[]
+  vaults: TKongVaultInput[]
   onRemove: (vaultKey: string) => void
 }
 
-type TVaultStrategyItem = NonNullable<TYDaemonVault['strategies']>[number]
+type TVaultStrategyItem = TKongVaultStrategy
 
 const listKindLabels = {
   allocator: 'Allocator',
@@ -89,7 +102,7 @@ function DesktopCompareGrid({
   vaults,
   onRemove
 }: {
-  vaults: TYDaemonVault[]
+  vaults: TKongVaultInput[]
   onRemove: (vaultKey: string) => void
 }): ReactElement {
   const trackEvent = usePlausible()
@@ -107,10 +120,15 @@ function DesktopCompareGrid({
         >
           <div className={'border-b border-border pb-4'} onMouseEnter={(): void => setActiveColumn(null)} />
           {vaults.map((vault, index) => {
-            const network = getNetwork(vault.chainID)
-            const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${vault.chainID}/logo-32.png`
+            const chainID = getVaultChainID(vault)
+            const vaultAddress = getVaultAddress(vault)
+            const vaultName = getVaultName(vault)
+            const vaultSymbol = getVaultSymbol(vault)
+            const vaultToken = getVaultToken(vault)
+            const network = getNetwork(chainID)
+            const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
             const vaultKey = getVaultKey(vault)
-            const vaultHref = `/vaults/${vault.chainID}/${toAddress(vault.address)}`
+            const vaultHref = `/vaults/${chainID}/${toAddress(vaultAddress)}`
             const isColumnActive = activeColumn === index
             return (
               <div
@@ -127,7 +145,7 @@ function DesktopCompareGrid({
                     isColumnActive ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
                     'hover:border-border hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
                   )}
-                  aria-label={`Remove ${vault.name} from comparison`}
+                  aria-label={`Remove ${vaultName} from comparison`}
                   tabIndex={isColumnActive ? 0 : -1}
                 >
                   <IconClose className={'size-3'} />
@@ -141,14 +159,14 @@ function DesktopCompareGrid({
                     'transition-colors hover:bg-surface-secondary/60',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
                   )}
-                  aria-label={`Open ${vault.name} vault in a new tab`}
+                  aria-label={`Open ${vaultName} vault in a new tab`}
                   onFocus={(): void => setActiveColumn(index)}
                   onClick={(): void => {
                     trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_COMPARE, {
                       props: {
-                        vaultAddress: toAddress(vault.address),
-                        vaultSymbol: vault.symbol,
-                        chainID: String(vault.chainID)
+                        vaultAddress: toAddress(vaultAddress),
+                        vaultSymbol,
+                        chainID: String(chainID)
                       }
                     })
                   }}
@@ -156,13 +174,13 @@ function DesktopCompareGrid({
                   <div className={'min-w-0'}>
                     <div className={'flex items-center gap-3'}>
                       <TokenLogo
-                        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainID}/${vault.token.address.toLowerCase()}/logo-128.png`}
-                        tokenSymbol={vault.token.symbol || ''}
+                        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${vaultToken.address.toLowerCase()}/logo-128.png`}
+                        tokenSymbol={vaultToken.symbol}
                         width={28}
                         height={28}
                       />
                       <div className={'min-w-0'}>
-                        <p className={'truncate text-sm font-semibold text-text-primary'}>{vault.name}</p>
+                        <p className={'truncate text-sm font-semibold text-text-primary'}>{vaultName}</p>
                         <div className={'mt-1 flex items-center gap-2 text-xs text-text-secondary'}>
                           <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
                           <span>{network.name}</span>
@@ -206,7 +224,7 @@ function DesktopCompareGrid({
           <MetricLabel label={'TVL'} sublabel={'Total value locked'} onMouseEnter={(): void => setActiveColumn(null)} />
           {vaults.map((vault, index) => (
             <MetricValue key={`tvl-${getVaultKey(vault)}`} onMouseEnter={(): void => setActiveColumn(index)}>
-              <span className={'font-semibold'}>{formatTvlDisplay(vault.tvl?.tvl ?? 0)}</span>
+              <span className={'font-semibold'}>{formatTvlDisplay(getVaultTVL(vault).tvl)}</span>
             </MetricValue>
           ))}
 
@@ -215,28 +233,31 @@ function DesktopCompareGrid({
             sublabel={'Management / Performance'}
             onMouseEnter={(): void => setActiveColumn(null)}
           />
-          {vaults.map((vault, index) => (
-            <MetricValue
-              key={`fees-${getVaultKey(vault)}`}
-              className={'text-xs'}
-              onMouseEnter={(): void => setActiveColumn(index)}
-            >
-              <div className={'flex flex-col gap-1'}>
-                <span>
-                  <span className={'text-text-secondary'}>{'Management:'}</span>{' '}
-                  <span className={'text-text-primary'}>{formatFee(vault.apr?.fees?.management)}</span>
-                </span>
-                <span>
-                  <span className={'text-text-secondary'}>{'Performance:'}</span>{' '}
-                  <span className={'text-text-primary'}>{formatFee(vault.apr?.fees?.performance)}</span>
-                </span>
-              </div>
-            </MetricValue>
-          ))}
+          {vaults.map((vault, index) => {
+            const vaultAPR = getVaultAPR(vault)
+            return (
+              <MetricValue
+                key={`fees-${getVaultKey(vault)}`}
+                className={'text-xs'}
+                onMouseEnter={(): void => setActiveColumn(index)}
+              >
+                <div className={'flex flex-col gap-1'}>
+                  <span>
+                    <span className={'text-text-secondary'}>{'Management:'}</span>{' '}
+                    <span className={'text-text-primary'}>{formatFee(vaultAPR.fees.management)}</span>
+                  </span>
+                  <span>
+                    <span className={'text-text-secondary'}>{'Performance:'}</span>{' '}
+                    <span className={'text-text-primary'}>{formatFee(vaultAPR.fees.performance)}</span>
+                  </span>
+                </div>
+              </MetricValue>
+            )
+          })}
 
           <MetricLabel label={'Risk'} sublabel={'Security score'} onMouseEnter={(): void => setActiveColumn(null)} />
           {vaults.map((vault, index) => {
-            const riskLevel = vault.info?.riskLevel ?? -1
+            const riskLevel = getVaultInfo(vault).riskLevel
             const normalizedRisk = normalizeRiskLevel(riskLevel)
             return (
               <MetricValue key={`risk-${getVaultKey(vault)}`} onMouseEnter={(): void => setActiveColumn(index)}>
@@ -256,11 +277,12 @@ function DesktopCompareGrid({
           {vaults.map((vault, index) => {
             const listKind = deriveListKind(vault)
             const label = listKindLabels[listKind]
+            const vaultKind = getVaultKind(vault)
             return (
               <MetricValue key={`strategy-${getVaultKey(vault)}`} onMouseEnter={(): void => setActiveColumn(index)}>
                 <div className={'flex flex-col gap-1'}>
                   <span className={'text-sm font-semibold text-text-primary'}>{label}</span>
-                  <span className={'text-xs text-text-secondary'}>{vault.kind}</span>
+                  <span className={'text-xs text-text-secondary'}>{vaultKind}</span>
                 </div>
               </MetricValue>
             )
@@ -272,7 +294,7 @@ function DesktopCompareGrid({
             onMouseEnter={(): void => setActiveColumn(null)}
           />
           {vaults.map((vault, index) => {
-            const strategies = (vault.strategies ?? [])
+            const strategies = getVaultStrategies(vault)
               .filter((strategy) => strategy.status !== 'not_active' && hasAllocatedFunds(strategy))
               .sort((left, right) => (right.details?.debtRatio ?? 0) - (left.details?.debtRatio ?? 0))
             return (
@@ -310,7 +332,7 @@ function MobileCompareView({
   vaults,
   onRemove
 }: {
-  vaults: TYDaemonVault[]
+  vaults: TKongVaultInput[]
   onRemove: (vaultKey: string) => void
 }): ReactElement {
   return <SwipeableCompareCarousel vaults={vaults} onRemove={onRemove} />

@@ -1,11 +1,11 @@
+import { getVaultToken, getVaultTVL, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { Tooltip } from '@shared/components/Tooltip'
 import { cl, formatTvlDisplay, toNormalizedBN } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 
 type TVaultTVLProps = {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   className?: string
   valueClassName?: string
   showNativeTooltip?: boolean
@@ -19,8 +19,10 @@ export function VaultTVL({
   showNativeTooltip = false,
   tooltipClassName
 }: TVaultTVLProps): ReactElement {
-  const tvlValue = currentVault.tvl?.tvl ?? 0
-  const normalizedTVL = toNormalizedBN(currentVault.tvl?.totalAssets ?? 0, currentVault.token.decimals).normalized
+  const tvl = getVaultTVL(currentVault)
+  const token = getVaultToken(currentVault)
+  const tvlValue = tvl?.tvl ?? 0
+  const normalizedTVL = toNormalizedBN(tvl?.totalAssets ?? 0, token.decimals).normalized
   const tvlNativeTooltip = (
     <div className={'rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       <span className={'font-number'}>
@@ -36,7 +38,7 @@ export function VaultTVL({
           }}
         />
       </span>
-      <span className={'pl-1'}>{currentVault.token.symbol}</span>
+      <span className={'pl-1'}>{token.symbol}</span>
     </div>
   )
 
