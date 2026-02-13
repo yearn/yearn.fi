@@ -47,7 +47,6 @@ import type { RefObject } from 'react'
 import {
   type ChangeEvent,
   createElement,
-  startTransition,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -316,31 +315,31 @@ export function useVaultsPageModel(): TVaultsPageModel {
   }, [optimisticVaultType, vaultType])
 
   useEffect(() => {
-    if (optimisticChains && areArraysEquivalent(optimisticChains, chains)) {
+    if (optimisticChains !== null && areArraysEquivalent(optimisticChains, chains)) {
       setOptimisticChains(null)
     }
   }, [optimisticChains, chains, areArraysEquivalent])
 
   useEffect(() => {
-    if (optimisticTypes && areArraysEquivalent(optimisticTypes, types)) {
+    if (optimisticTypes !== null && areArraysEquivalent(optimisticTypes, types)) {
       setOptimisticTypes(null)
     }
   }, [optimisticTypes, types, areArraysEquivalent])
 
   useEffect(() => {
-    if (optimisticCategories && areArraysEquivalent(optimisticCategories, categories)) {
+    if (optimisticCategories !== null && areArraysEquivalent(optimisticCategories, categories)) {
       setOptimisticCategories(null)
     }
   }, [optimisticCategories, categories, areArraysEquivalent])
 
   useEffect(() => {
-    if (optimisticAggressiveness && areArraysEquivalent(optimisticAggressiveness, aggressiveness)) {
+    if (optimisticAggressiveness !== null && areArraysEquivalent(optimisticAggressiveness, aggressiveness)) {
       setOptimisticAggressiveness(null)
     }
   }, [optimisticAggressiveness, aggressiveness, areArraysEquivalent])
 
   useEffect(() => {
-    if (optimisticUnderlyingAssets && areArraysEquivalent(optimisticUnderlyingAssets, underlyingAssets)) {
+    if (optimisticUnderlyingAssets !== null && areArraysEquivalent(optimisticUnderlyingAssets, underlyingAssets)) {
       setOptimisticUnderlyingAssets(null)
     }
   }, [optimisticUnderlyingAssets, underlyingAssets, areArraysEquivalent])
@@ -769,9 +768,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     (nextAssets: string[] | null): void => {
       const normalizedAssets = nextAssets ?? []
       setOptimisticUnderlyingAssets(normalizedAssets)
-      startTransition(() => {
-        onChangeUnderlyingAssets(nextAssets)
-      })
+      onChangeUnderlyingAssets(nextAssets)
     },
     [onChangeUnderlyingAssets]
   )
@@ -779,9 +776,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     (nextValue: number): void => {
       const normalizedValue = Number.isFinite(nextValue) ? Math.max(0, nextValue) : DEFAULT_MIN_TVL
       setOptimisticMinTvl(normalizedValue)
-      startTransition(() => {
-        onChangeMinTvl(normalizedValue)
-      })
+      onChangeMinTvl(normalizedValue)
     },
     [onChangeMinTvl]
   )
@@ -979,7 +974,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const hiddenByFiltersCount = Math.max(0, allBlockingFiltersResultsCount - currentVisibleResultsCount)
 
   const blockingFilterActions = useMemo((): TVaultsBlockingFilterAction[] => {
-    const actionsByKey = new Map<TVaultsBlockingFilterBaseActionKey, TVaultsBlockingFilterAction>()
     const actionHandlers: Record<TVaultsBlockingFilterBaseActionKey, () => void> = {
       showStrategies: handleEnableShowStrategies,
       showLegacyVaults: handleEnableShowLegacyVaults,
@@ -991,22 +985,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
       clearMinTvl: handleClearMinTvl,
       showAllTypes: handleShowAllTypes,
       showAllVaults: handleShowAllVaults
-    }
-    const upsertAction = (
-      key: TVaultsBlockingFilterBaseActionKey,
-      additionalResults: number,
-      onApply: () => void
-    ): void => {
-      const nextAction: TVaultsBlockingFilterAction = {
-        key,
-        label: BLOCKING_FILTER_LABELS[key],
-        additionalResults,
-        onApply
-      }
-      const existing = actionsByKey.get(key)
-      if (!existing || nextAction.additionalResults > existing.additionalResults) {
-        actionsByKey.set(key, nextAction)
-      }
     }
 
     const actionCandidates: Array<{
@@ -1049,21 +1027,26 @@ export function useVaultsPageModel(): TVaultsPageModel {
         additionalResults: showAllVaultsAdditionalResults
       }
     ]
-    for (const candidate of actionCandidates) {
-      if (!candidate.isApplicable || candidate.additionalResults <= 0) {
-        continue
-      }
-      upsertAction(candidate.key, candidate.additionalResults, actionHandlers[candidate.key])
-    }
-
-    const sortedActions = Array.from(actionsByKey.values()).sort(
-      (left, right) => right.additionalResults - left.additionalResults
+    const actionableCandidates = actionCandidates.filter(
+      (candidate) => candidate.isApplicable && candidate.additionalResults > 0
     )
+
+    const sortedActions = actionableCandidates
+      .map(
+        (candidate): TVaultsBlockingFilterAction => ({
+          key: candidate.key,
+          label: BLOCKING_FILTER_LABELS[candidate.key],
+          additionalResults: candidate.additionalResults,
+          onApply: actionHandlers[candidate.key]
+        })
+      )
+      .sort((left, right) => right.additionalResults - left.additionalResults)
+    const actionableKeys = new Set(actionableCandidates.map((candidate) => candidate.key))
     const comboKeys = commonBlockingFilterKeys
     const shouldShowComboAction = shouldShowComboBlockingAction({
       hiddenByFiltersCount,
       comboKeys,
-      actionableKeys: new Set(actionsByKey.keys())
+      actionableKeys
     })
 
     if (shouldShowComboAction) {

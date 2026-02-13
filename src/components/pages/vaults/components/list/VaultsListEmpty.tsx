@@ -3,7 +3,7 @@ import { Button } from '@shared/components/Button'
 import { EmptyState } from '@shared/components/EmptyState'
 import { cl } from '@shared/utils'
 import type { TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { type ReactElement, useCallback, useEffect, useState } from 'react'
+import { type ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
 
 type TVaultsBlockingFilterAction = {
   key: string
@@ -36,27 +36,31 @@ export function VaultsListEmpty({
   const hasBlockingFilterActions = blockingFilterActions.length > 0
   const hasHiddenByFiltersResults = hiddenByFiltersCount > 0
   const [selectedBlockingFilters, setSelectedBlockingFilters] = useState<string[]>([])
+  const blockingActionsByKey = useMemo(
+    () => new Map(blockingFilterActions.map((action) => [action.key, action])),
+    [blockingFilterActions]
+  )
+  const availableBlockingFilterKeys = useMemo(
+    () => new Set(blockingFilterActions.map((action) => action.key)),
+    [blockingFilterActions]
+  )
+  const selectedBlockingFilterKeys = useMemo(() => new Set(selectedBlockingFilters), [selectedBlockingFilters])
 
   useEffect(() => {
-    setSelectedBlockingFilters((prev) =>
-      prev.filter((key) => blockingFilterActions.some((action) => action.key === key))
-    )
-  }, [blockingFilterActions])
+    setSelectedBlockingFilters((prev) => prev.filter((key) => availableBlockingFilterKeys.has(key)))
+  }, [availableBlockingFilterKeys])
 
   const toggleBlockingFilter = useCallback((key: string): void => {
     setSelectedBlockingFilters((prev) => (prev.includes(key) ? prev.filter((entry) => entry !== key) : [...prev, key]))
   }, [])
 
   const applySelectedBlockingFilters = useCallback((): void => {
-    const selected = new Set(selectedBlockingFilters)
-    for (const action of blockingFilterActions) {
-      if (selected.has(action.key)) {
-        action.onApply()
-      }
+    for (const key of selectedBlockingFilterKeys) {
+      blockingActionsByKey.get(key)?.onApply()
     }
-  }, [blockingFilterActions, selectedBlockingFilters])
+  }, [blockingActionsByKey, selectedBlockingFilterKeys])
 
-  const hasSelectedBlockingFilters = selectedBlockingFilters.length > 0
+  const hasSelectedBlockingFilters = selectedBlockingFilterKeys.size > 0
 
   if (isLoading) {
     const label = loadingLabel ?? 'Fetching Vaults…'
@@ -100,7 +104,7 @@ export function VaultsListEmpty({
         {hasBlockingFilterActions ? (
           <div className={'mt-2 flex w-full flex-col gap-2 md:w-96'}>
             {blockingFilterActions.map((action) => {
-              const isSelected = selectedBlockingFilters.includes(action.key)
+              const isSelected = selectedBlockingFilterKeys.has(action.key)
               return (
                 <div
                   key={action.key}
@@ -132,6 +136,7 @@ export function VaultsListEmpty({
               )
             })}
             <Button
+              type={'button'}
               className={'mt-2 w-full'}
               onClick={applySelectedBlockingFilters}
               isDisabled={!hasSelectedBlockingFilters}
@@ -160,7 +165,7 @@ export function VaultsListEmpty({
       title="No vaults found"
       description="No vaults found that match your filters."
       action={
-        <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
+        <Button type={'button'} className={'mt-4 w-full md:w-48'} onClick={onReset}>
           {'Search all vaults'}
         </Button>
       }
