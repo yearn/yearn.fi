@@ -1,15 +1,15 @@
+import type { TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { type TVaultFilterResult, useVaultFilter } from './useVaultFilter'
 import type { TVaultFlags } from './useVaultFilterUtils'
 
 type TOptimizedV2VaultFilterResult = {
-  filteredVaults: TYDaemonVault[]
-  holdingsVaults: TYDaemonVault[]
-  availableVaults: TYDaemonVault[]
+  filteredVaults: TKongVault[]
+  holdingsVaults: TKongVault[]
+  availableVaults: TKongVault[]
   vaultFlags: Record<string, TVaultFlags>
   availableUnderlyingAssets: string[]
-  underlyingAssetVaults: Record<string, TYDaemonVault>
+  underlyingAssetVaults: Record<string, TKongVault>
   isLoading: boolean
 }
 

@@ -1,14 +1,22 @@
 import { ALL_VAULTSV3_KINDS_KEYS } from '@pages/vaults/constants'
-import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
-import { useSortVaults } from '@pages/vaults/hooks/useSortVaults'
+import {
+  getVaultAPR,
+  getVaultChainID,
+  getVaultName,
+  getVaultStrategies,
+  getVaultToken,
+  getVaultTVL,
+  getVaultVersion,
+  type TKongVaultInput,
+  type TKongVaultStrategy
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { useQueryArguments } from '@pages/vaults/hooks/useVaultsQueryArgs'
 import type { TAllocationChartData } from '@shared/components/AllocationChart'
 import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode } from '@shared/components/AllocationChart'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
 import type { TSortDirection } from '@shared/types'
-import { cl, formatPercent, formatTvlDisplay, toBigInt, toNormalizedBN } from '@shared/utils'
-import type { TYDaemonVault, TYDaemonVaultStrategy } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import { cl, formatPercent, formatTvlDisplay, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { lazy, Suspense, useCallback, useMemo } from 'react'
 import { VaultsListHead } from './VaultsListHead'
@@ -18,56 +26,44 @@ const AllocationChart = lazy(() =>
   import('@shared/components/AllocationChart').then((m) => ({ default: m.AllocationChart }))
 )
 
-export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemonVault }): ReactElement {
+type TStrategyRow = TKongVaultStrategy & {
+  name: string
+  isVault: boolean
+}
+
+export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVaultInput }): ReactElement {
   const { vaults } = useYearn()
   const isDark = useDarkMode()
-  const vaultVariant = currentVault.version?.startsWith('3') || currentVault.version?.startsWith('~3') ? 'v3' : 'v2'
+  const vaultVersion = getVaultVersion(currentVault)
+  const vaultVariant = vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3') ? 'v3' : 'v2'
+  const chainId = getVaultChainID(currentVault)
+  const token = getVaultToken(currentVault)
+  const fees = getVaultAPR(currentVault).fees
+  const strategies = getVaultStrategies(currentVault)
+  const totalAssets = getVaultTVL(currentVault).totalAssets
   const { sortDirection, sortBy, onChangeSortDirection, onChangeSortBy } = useQueryArguments({
     defaultSortBy: 'allocationPercentage',
     defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
     defaultPathname: '/vaults/[chainID]/[address]'
   })
   const tokenPrice = useYearnTokenPrice({
-    address: currentVault.token.address,
-    chainID: currentVault.chainID
+    address: token.address,
+    chainID: chainId
   })
 
   const mergedList = useMemo(() => {
-    const strategies = currentVault?.strategies || []
-    const rows = strategies.map((strategy) => {
-      const vault = vaults[strategy.address]
-      if (vault) {
-        return {
-          ...vault,
-          name: strategy.name || vault.name,
-          apr: {
-            ...vault.apr,
-            netAPR: strategy.estimatedAPY ?? strategy.netAPR ?? 0
-          },
-          details: strategy.details,
-          status: strategy.status,
-          netAPR: strategy.netAPR,
-          estimatedAPY: strategy.estimatedAPY
-        }
-      }
+    return strategies.map((strategy): TStrategyRow => {
+      const linkedVault = vaults[toAddress(strategy.address)]
       return {
         ...strategy,
-        apr: {
-          netAPR: strategy.estimatedAPY ?? strategy.netAPR ?? 0
-        }
+        name: strategy.name || (linkedVault ? getVaultName(linkedVault) : `Strategy ${strategy.address}`),
+        isVault: Boolean(linkedVault?.address)
       }
     })
-    return rows as (TYDaemonVault & {
-      details: TYDaemonVaultStrategy['details']
-      status: TYDaemonVaultStrategy['status']
-      netAPR: TYDaemonVaultStrategy['netAPR']
-      estimatedAPY: TYDaemonVaultStrategy['estimatedAPY']
-    })[]
-  }, [vaults, currentVault])
+  }, [strategies, vaults])
 
   const allocatedRatio = mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
   const unallocatedPercentage = Math.max(0, 10000 - allocatedRatio)
-  const totalAssets = currentVault.tvl.totalAssets ?? 0n
   const allocatedDebt = mergedList.reduce((acc, strategy) => acc + toBigInt(strategy.details?.totalDebt || 0), 0n)
   const unallocatedValue = totalAssets > allocatedDebt ? totalAssets - allocatedDebt : 0n
 
@@ -75,19 +71,29 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
     return mergedList
   }, [mergedList])
 
-  const sortedVaultsToDisplay = useSortVaults(filteredVaultList, sortBy, sortDirection) as (TYDaemonVault & {
-    details: TYDaemonVaultStrategy['details']
-    status: TYDaemonVaultStrategy['status']
-    netAPR: TYDaemonVaultStrategy['netAPR']
-    estimatedAPY: TYDaemonVaultStrategy['estimatedAPY']
-  })[]
+  const sortedVaultsToDisplay = useMemo(() => {
+    const direction = sortDirection === 'asc' ? 1 : -1
+    const normalizedSortBy = String(sortBy)
+    return filteredVaultList.toSorted((a, b) => {
+      if (normalizedSortBy === 'allocationPercentage') {
+        return direction * ((a.details?.debtRatio || 0) - (b.details?.debtRatio || 0))
+      }
+      if (normalizedSortBy === 'totalDebt') {
+        return direction * Number(toBigInt(a.details?.totalDebt || 0) - toBigInt(b.details?.totalDebt || 0))
+      }
+      if (normalizedSortBy === 'netAPR') {
+        return direction * ((a.estimatedAPY ?? a.netAPR ?? 0) - (b.estimatedAPY ?? b.netAPR ?? 0))
+      }
+      return direction * a.name.localeCompare(b.name)
+    })
+  }, [filteredVaultList, sortBy, sortDirection])
 
   const resolveStrategyUsdValue = useCallback(
     (totalDebt: string | undefined): number => {
-      const normalized = toNormalizedBN(totalDebt || 0, currentVault.token.decimals).normalized
+      const normalized = toNormalizedBN(totalDebt || 0, token.decimals).normalized
       return Number(normalized) * tokenPrice
     },
-    [currentVault.token.decimals, tokenPrice]
+    [token.decimals, tokenPrice]
   )
 
   const formatAllocationAmount = useCallback(
@@ -111,8 +117,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
   }, [filteredVaultList, formatAllocationAmount])
 
   const allocationChartData = useMemo(() => {
-    const unallocatedUsdValue =
-      Number(toNormalizedBN(unallocatedValue, currentVault.token?.decimals).normalized) * tokenPrice
+    const unallocatedUsdValue = Number(toNormalizedBN(unallocatedValue, token.decimals).normalized) * tokenPrice
     const unallocatedData =
       unallocatedValue > 0n
         ? {
@@ -124,7 +129,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
         : null
 
     return [...activeStrategyData, unallocatedData].filter(Boolean) as TAllocationChartData[]
-  }, [activeStrategyData, currentVault.token?.decimals, tokenPrice, unallocatedPercentage, unallocatedValue])
+  }, [activeStrategyData, token.decimals, tokenPrice, unallocatedPercentage, unallocatedValue])
 
   const isVaultListEmpty = mergedList.length === 0
   const isFilteredVaultListEmpty = filteredVaultList.length === 0
@@ -187,8 +192,8 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
               sortBy={sortBy}
               sortDirection={sortDirection}
               onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-                onChangeSortBy(newSortBy as TPossibleSortBy)
-                onChangeSortDirection(newSortDirection as TSortDirection)
+                onChangeSortBy(newSortBy as never)
+                onChangeSortDirection(newSortDirection)
               }}
               items={[
                 {
@@ -227,17 +232,17 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   key={strategy.address}
                   details={strategy.details}
                   status={strategy.status}
-                  chainId={currentVault.chainID}
+                  chainId={chainId}
                   allocation={formatAllocationAmount(strategy.details?.totalDebt)}
                   totalValueUsd={resolveStrategyUsdValue(strategy.details?.totalDebt)}
                   name={strategy.name}
-                  tokenAddress={currentVault.token.address}
+                  tokenAddress={token.address}
                   address={strategy.address}
-                  isVault={!!vaults[strategy.address]}
+                  isVault={strategy.isVault}
                   variant={vaultVariant}
                   apr={strategy.estimatedAPY}
                   netApr={strategy.netAPR}
-                  fees={currentVault.apr.fees}
+                  fees={fees}
                 />
               ))}
             {unallocatedPercentage > 0 && unallocatedValue > 0n ? (
@@ -260,7 +265,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                       <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>Amount</p>
                       <p className={'font-semibold'}>
                         {formatTvlDisplay(
-                          Number(toNormalizedBN(unallocatedValue, currentVault.token.decimals).normalized) * tokenPrice
+                          Number(toNormalizedBN(unallocatedValue, token.decimals).normalized) * tokenPrice
                         )}
                       </p>
                     </div>
@@ -285,17 +290,17 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TYDaemo
                   key={strategy.address}
                   details={strategy.details}
                   status={strategy.status}
-                  chainId={currentVault.chainID}
+                  chainId={chainId}
                   allocation={formatAllocationAmount(strategy.details?.totalDebt)}
                   totalValueUsd={resolveStrategyUsdValue(strategy.details?.totalDebt)}
                   name={strategy.name}
-                  tokenAddress={currentVault.token.address}
+                  tokenAddress={token.address}
                   address={strategy.address}
-                  isVault={!!vaults[strategy.address]}
+                  isVault={strategy.isVault}
                   variant={vaultVariant}
                   apr={strategy.estimatedAPY}
                   netApr={strategy.netAPR}
-                  fees={currentVault.apr.fees}
+                  fees={fees}
                 />
               ))}
           </div>
