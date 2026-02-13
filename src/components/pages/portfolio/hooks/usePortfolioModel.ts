@@ -1,3 +1,5 @@
+import { useExternalSuggestions } from '@pages/portfolio/hooks/useExternalSuggestions'
+import { usePersonalizedSuggestions } from '@pages/portfolio/hooks/usePersonalizedSuggestions'
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
@@ -17,10 +19,18 @@ type THoldingsRow = {
   hrefOverride?: string
 }
 
-type TSuggestedVaultRow = {
-  key: string
-  vault: TYDaemonVault
-}
+export type TSuggestedItem =
+  | { type: 'personalized'; key: string; vault: TYDaemonVault; matchedSymbol: string }
+  | {
+      type: 'external'
+      key: string
+      vault: TYDaemonVault
+      externalProtocol: string
+      externalApy: number
+      yearnApy: number
+      underlyingSymbol: string
+    }
+  | { type: 'generic'; key: string; vault: TYDaemonVault }
 
 export type TPortfolioBlendedMetrics = {
   blendedCurrentAPY: number | null
@@ -39,7 +49,7 @@ export type TPortfolioModel = {
   openLoginModal: () => void
   sortBy: TPossibleSortBy
   sortDirection: TSortDirection
-  suggestedRows: TSuggestedVaultRow[]
+  suggestedRows: TSuggestedItem[]
   totalPortfolioValue: number
   vaultFlags: Record<string, TVaultFlags>
   setSortBy: TSortStateSetter<TPossibleSortBy>
@@ -69,66 +79,56 @@ export function usePortfolioModel(): TPortfolioModel {
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
 
-  const vaultLookup = useMemo(() => {
-    const map = new Map<string, TYDaemonVault>()
-
-    Object.values(vaults).forEach((vault) => {
-      const vaultKey = getVaultKey(vault)
-      map.set(vaultKey, vault)
-
-      if (vault.staking?.available && vault.staking.address) {
-        const stakingKey = getChainAddressKey(vault.chainID, vault.staking.address)
-        map.set(stakingKey, vault)
-      }
-    })
-
-    return map
-  }, [vaults])
+  const vaultLookup = useMemo(
+    () =>
+      new Map(
+        Object.values(vaults).flatMap((vault) => {
+          const entries: [string, TYDaemonVault][] = [[getVaultKey(vault), vault]]
+          if (vault.staking?.available && vault.staking.address) {
+            entries.push([getChainAddressKey(vault.chainID, vault.staking.address), vault])
+          }
+          return entries
+        })
+      ),
+    [vaults]
+  )
 
   const holdingsVaults = useMemo(() => {
-    const result: TYDaemonVault[] = []
-    const seen = new Set<string>()
-
-    Object.entries(balances || {}).forEach(([chainIDKey, perChain]) => {
+    const allMatched = Object.entries(balances || {}).flatMap(([chainIDKey, perChain]) => {
       const parsedChainID = Number(chainIDKey)
       const chainID = Number.isFinite(parsedChainID) ? parsedChainID : undefined
-      Object.values(perChain || {}).forEach((token) => {
-        if (!token?.balance || token.balance.raw <= 0n) {
-          return
-        }
-        const tokenChainID = chainID ?? token.chainID
-        const tokenKey = getChainAddressKey(tokenChainID, token.address)
-        const vault = vaultLookup.get(tokenKey)
-        if (!vault) {
-          return
-        }
-        const vaultKey = getVaultKey(vault)
-        if (seen.has(vaultKey)) {
-          return
-        }
-        seen.add(vaultKey)
-        result.push(vault)
-      })
+      return Object.values(perChain || {})
+        .filter((token) => token?.balance && token.balance.raw > 0n)
+        .flatMap((token) => {
+          const vault = vaultLookup.get(getChainAddressKey(chainID ?? token.chainID, token.address))
+          return vault ? [vault] : []
+        })
     })
 
-    return result
+    const seen = new Set<string>()
+    return allMatched.filter((vault) => {
+      const key = getVaultKey(vault)
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
   }, [balances, vaultLookup])
 
-  const vaultFlags = useMemo(() => {
-    const flags: Record<string, TVaultFlags> = {}
-
-    holdingsVaults.forEach((vault) => {
-      const key = getVaultKey(vault)
-      flags[key] = {
-        hasHoldings: true,
-        isMigratable: Boolean(vault.migration?.available),
-        isRetired: Boolean(vault.info?.isRetired),
-        isHidden: Boolean(vault.info?.isHidden)
-      }
-    })
-
-    return flags
-  }, [holdingsVaults])
+  const vaultFlags = useMemo(
+    () =>
+      Object.fromEntries(
+        holdingsVaults.map((vault) => [
+          getVaultKey(vault),
+          {
+            hasHoldings: true,
+            isMigratable: Boolean(vault.migration?.available),
+            isRetired: Boolean(vault.info?.isRetired),
+            isHidden: Boolean(vault.info?.isHidden)
+          }
+        ])
+      ) as Record<string, TVaultFlags>,
+    [holdingsVaults]
+  )
 
   const isSearchingBalances =
     (isActive || isUserConnecting) && (isWalletLoading || isUserConnecting || isIdentityLoading)
@@ -157,10 +157,13 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const holdingsKeySet = useMemo(() => new Set(sortedHoldings.map((vault) => getVaultKey(vault))), [sortedHoldings])
 
-  const suggestedVaults = useMemo(
+  const genericVaults = useMemo(
     () => sortedCandidates.filter((vault) => !holdingsKeySet.has(getVaultKey(vault))).slice(0, 4),
     [sortedCandidates, holdingsKeySet]
   )
+
+  const personalizedSuggestions = usePersonalizedSuggestions(holdingsKeySet)
+  const { suggestions: externalSuggestions } = useExternalSuggestions(holdingsKeySet)
 
   const holdingsRows = useMemo(() => {
     return sortedHoldings.map((vault) => {
@@ -172,10 +175,62 @@ export function usePortfolioModel(): TPortfolioModel {
     })
   }, [sortedHoldings])
 
-  const suggestedRows = useMemo(
-    () => suggestedVaults.map((vault) => ({ key: getVaultKey(vault), vault })),
-    [suggestedVaults]
-  )
+  const suggestedRows = useMemo((): TSuggestedItem[] => {
+    type TCandidate = { item: TSuggestedItem; cost: number; vaultKey: string }
+
+    const externalCandidates: TCandidate[] = externalSuggestions.map((ext) => {
+      const vaultKey = getVaultKey(ext.vault)
+      return {
+        item: {
+          type: 'external' as const,
+          key: `ext-${vaultKey}`,
+          vault: ext.vault,
+          externalProtocol: ext.externalProtocol,
+          externalApy: ext.externalApy,
+          yearnApy: ext.yearnApy,
+          underlyingSymbol: ext.underlyingSymbol
+        },
+        cost: 2,
+        vaultKey
+      }
+    })
+
+    const personalizedCandidates: TCandidate[] = personalizedSuggestions.map((ps) => {
+      const vaultKey = getVaultKey(ps.vault)
+      return {
+        item: {
+          type: 'personalized' as const,
+          key: `pers-${vaultKey}`,
+          vault: ps.vault,
+          matchedSymbol: ps.matchedSymbol
+        },
+        cost: 1,
+        vaultKey
+      }
+    })
+
+    const genericCandidates: TCandidate[] = genericVaults.map((vault) => {
+      const vaultKey = getVaultKey(vault)
+      return {
+        item: { type: 'generic' as const, key: `gen-${vaultKey}`, vault },
+        cost: 1,
+        vaultKey
+      }
+    })
+
+    return [...externalCandidates, ...personalizedCandidates, ...genericCandidates].reduce<{
+      items: TSuggestedItem[]
+      budget: number
+      usedKeys: Set<string>
+    }>(
+      (acc, { item, cost, vaultKey }) => {
+        if (acc.budget < cost || acc.usedKeys.has(vaultKey)) return acc
+        acc.usedKeys.add(vaultKey)
+        return { items: [...acc.items, item], budget: acc.budget - cost, usedKeys: acc.usedKeys }
+      },
+      { items: [], budget: 4, usedKeys: new Set() }
+    ).items
+  }, [externalSuggestions, personalizedSuggestions, genericVaults])
 
   const hasHoldings = sortedHoldings.length > 0
   const hasKatanaHoldings = useMemo(

@@ -15,7 +15,13 @@ import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
 
-export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactElement {
+export function SuggestedVaultCard({
+  vault,
+  matchedSymbol
+}: {
+  vault: TYDaemonVault
+  matchedSymbol?: string
+}): ReactElement {
   const apyData = useVaultApyData(vault)
   const apyLabel = apyData.mode === 'historical' || apyData.mode === 'noForward' ? '30D APY' : 'Est. APY'
 
@@ -52,6 +58,7 @@ export function SuggestedVaultCard({ vault }: { vault: TYDaemonVault }): ReactEl
         </div>
         <div className={'flex min-w-0 flex-col'}>
           <p className={'truncate text-base font-semibold text-text-primary'}>{vault.name}</p>
+          {matchedSymbol ? <p className={'text-xs text-text-secondary'}>{`You hold ${matchedSymbol}`}</p> : null}
         </div>
       </div>
       <div className={'mt-1 flex flex-wrap items-center gap-1'}>
