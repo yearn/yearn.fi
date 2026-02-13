@@ -1,10 +1,19 @@
+import {
+  getVaultAddress,
+  getVaultAPR,
+  getVaultCategory,
+  getVaultChainID,
+  getVaultInfo,
+  getVaultStaking,
+  getVaultToken,
+  isAutomatedVault,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { baseFetcher, isCurveHostUrl, isZeroAddress, normalizeCurveUrl, toAddress, truncateHex } from '@shared/utils'
 import { copyToClipboard } from '@shared/utils/helpers'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { isAutomatedVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
@@ -92,28 +101,32 @@ export function VaultInfoSection({
   currentVault,
   inceptTime
 }: {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   inceptTime?: number | null
 }): ReactElement {
+  const chainID = getVaultChainID(currentVault)
+  const vaultAddress = getVaultAddress(currentVault)
+  const token = getVaultToken(currentVault)
+  const staking = getVaultStaking(currentVault)
+  const info = getVaultInfo(currentVault)
+  const apr = getVaultAPR(currentVault)
+  const category = getVaultCategory(currentVault)
   const blockExplorer =
-    getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
-    getNetwork(currentVault.chainID).blockExplorers?.default.url
-  const sourceUrl = String(currentVault.info?.sourceURL || '')
+    getNetwork(chainID).blockExplorers?.etherscan?.url || getNetwork(chainID).blockExplorers?.default.url
+  const sourceUrl = String(info?.sourceURL || '')
   const sourceUrlLower = sourceUrl.toLowerCase()
-  const isVelodrome =
-    currentVault.category?.toLowerCase() === 'velodrome' || sourceUrlLower.includes('velodrome.finance')
-  const isAerodrome =
-    currentVault.category?.toLowerCase() === 'aerodrome' || sourceUrlLower.includes('aerodrome.finance')
-  const isCurveCategory = currentVault.category?.toLowerCase() === 'curve'
+  const isVelodrome = category?.toLowerCase() === 'velodrome' || sourceUrlLower.includes('velodrome.finance')
+  const isAerodrome = category?.toLowerCase() === 'aerodrome' || sourceUrlLower.includes('aerodrome.finance')
+  const isCurveCategory = category?.toLowerCase() === 'curve'
   const isCurveFactory = isCurveCategory && isAutomatedVault(currentVault)
-  const shouldFetchCurvePools = isCurveFactory && !isZeroAddress(toAddress(currentVault.token.address))
+  const shouldFetchCurvePools = isCurveFactory && !isZeroAddress(toAddress(token.address))
   const { data: curvePoolUrl = '' } = useQuery({
     queryKey: ['curve-pools'],
     queryFn: async (): Promise<TCurvePoolEntry[]> => {
       const response = await baseFetcher<unknown>(CURVE_POOLS_ENDPOINT)
       return extractCurvePools(response)
     },
-    select: (pools) => resolveCurveDepositUrl(pools, currentVault.token.address),
+    select: (pools) => resolveCurveDepositUrl(pools, token.address),
     enabled: shouldFetchCurvePools,
     staleTime: CURVE_POOLS_CACHE_TTL_MS,
     gcTime: CURVE_POOLS_CACHE_GC_MS,
@@ -122,11 +135,11 @@ export function VaultInfoSection({
   const curveSourceUrl = isCurveCategory && isCurveHostUrl(sourceUrl) ? normalizeCurveUrl(sourceUrl) : ''
   const resolvedCurvePoolUrl = curvePoolUrl || curveSourceUrl
   const liquidityUrl = isVelodrome
-    ? `https://velodrome.finance/liquidity?query=${currentVault.token.address}`
+    ? `https://velodrome.finance/liquidity?query=${token.address}`
     : isAerodrome
-      ? `https://aerodrome.finance/liquidity?query=${currentVault.token.address}`
+      ? `https://aerodrome.finance/liquidity?query=${token.address}`
       : ''
-  const powergloveUrl = `https://powerglove.yearn.fi/vaults/${currentVault.chainID}/${currentVault.address}`
+  const powergloveUrl = `https://powerglove.yearn.fi/vaults/${chainID}/${vaultAddress}`
   const deployedLabel = (() => {
     if (typeof inceptTime !== 'number' || !Number.isFinite(inceptTime) || inceptTime <= 0) {
       return null
@@ -142,24 +155,12 @@ export function VaultInfoSection({
   return (
     <div className={'grid w-full grid-cols-1 gap-10 p-4 md:p-6 md:pt-0'}>
       <div className={'col-span-1 grid w-full gap-1'}>
-        <AddressLink
-          address={currentVault.address}
-          explorerUrl={blockExplorer || ''}
-          label={'Vault Contract Address'}
-        />
+        <AddressLink address={vaultAddress} explorerUrl={blockExplorer || ''} label={'Vault Contract Address'} />
 
-        <AddressLink
-          address={currentVault.token.address}
-          explorerUrl={blockExplorer || ''}
-          label={'Token Contract Address'}
-        />
+        <AddressLink address={token.address} explorerUrl={blockExplorer || ''} label={'Token Contract Address'} />
 
-        {currentVault.staking.available ? (
-          <AddressLink
-            address={currentVault.staking.address}
-            explorerUrl={blockExplorer || ''}
-            label={'Staking Contract Address'}
-          />
+        {staking.available ? (
+          <AddressLink address={staking.address} explorerUrl={blockExplorer || ''} label={'Staking Contract Address'} />
         ) : null}
 
         {resolvedCurvePoolUrl ? (
@@ -182,18 +183,18 @@ export function VaultInfoSection({
           </div>
         ) : null}
 
-        {(currentVault.info?.sourceURL || '')?.includes('gamma') ? (
+        {(info?.sourceURL || '')?.includes('gamma') ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
             <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Gamma Pair'}</p>
             <div className={'flex md:flex-1 md:justify-end'}>
               <a
-                href={currentVault.info.sourceURL}
+                href={info.sourceURL}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 className={'whitespace-nowrap md:text-sm text-text-primary hover:underline'}
                 suppressHydrationWarning
               >
-                {currentVault.info.sourceURL}
+                {info.sourceURL}
               </a>
             </div>
           </div>
@@ -225,7 +226,7 @@ export function VaultInfoSection({
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
           <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Current Price Per Share'}</p>
           <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
-            {currentVault.apr.pricePerShare.today}
+            {apr.pricePerShare.today}
           </p>
         </div>
 
@@ -260,7 +261,7 @@ export function VaultInfoSection({
           <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Vault Snapshot Data'}</p>
           <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
             <a
-              href={`${KONG_REST_BASE}/snapshot/${currentVault.chainID}/${currentVault.address}`}
+              href={`${KONG_REST_BASE}/snapshot/${chainID}/${vaultAddress}`}
               target={'_blank'}
               rel={'noopener noreferrer'}
               className={

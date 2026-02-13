@@ -1,22 +1,7 @@
 import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { useVaultFilter } from './useVaultFilter'
-import type { TVaultFlags } from './useVaultFilterUtils'
+import { type TVaultFilterResult, useVaultFilter } from './useVaultFilter'
 
-type TV3VaultFilterResult = {
-  filteredVaults: TYDaemonVault[]
-  holdingsVaults: TYDaemonVault[]
-  availableVaults: TYDaemonVault[]
-  vaultFlags: Record<string, TVaultFlags>
-  availableUnderlyingAssets: string[]
-  underlyingAssetVaults: Record<string, TYDaemonVault>
-  totalMatchingVaults: number
-  totalHoldingsMatching: number
-  totalAvailableMatching: number
-  totalMigratableMatching: number
-  totalRetiredMatching: number
-  isLoading: boolean
-}
+type TV3VaultFilterResult = TVaultFilterResult
 
 export function useV3VaultFilter(
   types: string[] | null,

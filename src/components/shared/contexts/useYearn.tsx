@@ -5,10 +5,9 @@ import { useFetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
 import { type TKatanaAprs, useKatanaAprs } from '@shared/hooks/useKatanaAprs'
 import type { TAddress, TDict, TNormalizedBN } from '@shared/types'
 import { toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
-import type { TKongVaultList } from '@shared/utils/schemas/kongVaultListSchema'
+import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
 import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { QueryObserverResult } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
@@ -23,7 +22,7 @@ export type TYearnContext = {
   currentPartner: TAddress
   earned?: TYDaemonEarned
   prices?: TYDaemonPricesChain
-  vaults: TDict<TYDaemonVault>
+  vaults: TDict<TKongVaultListItem>
   isLoadingVaultList: boolean
   katanaAprs: Partial<TKatanaAprs>
   isLoadingKatanaAprs: boolean

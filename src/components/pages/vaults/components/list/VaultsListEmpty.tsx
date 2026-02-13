@@ -2,7 +2,7 @@ import { Switch as HeadlessSwitch } from '@headlessui/react'
 import { Button } from '@shared/components/Button'
 import { EmptyState } from '@shared/components/EmptyState'
 import { cl } from '@shared/utils'
-import type { TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { type ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
 
 type TVaultsBlockingFilterAction = {
@@ -21,7 +21,7 @@ type TVaultListEmpty = {
   isLoading: boolean
   loadingLabel?: string
   // @deprecated: retained for compatibility with existing usages in worktrees being cleaned up
-  sortedVaultsToDisplay?: TYDaemonVaults
+  sortedVaultsToDisplay?: TKongVaultInput[]
 }
 export function VaultsListEmpty({
   currentSearch,
