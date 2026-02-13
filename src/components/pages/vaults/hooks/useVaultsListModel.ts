@@ -3,9 +3,7 @@ import {
   AGGRESSIVENESS_OPTIONS,
   AVAILABLE_TOGGLE_VALUE,
   HOLDINGS_TOGGLE_VALUE,
-  selectVaultsByType,
-  V2_ASSET_CATEGORIES,
-  V3_ASSET_CATEGORIES
+  selectVaultsByType
 } from '@pages/vaults/utils/constants'
 import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
@@ -23,6 +21,7 @@ type TVaultsPinnedSection = {
 
 type TVaultsListModelArgs = {
   listVaultType: TVaultType
+  categoryOptions: string[]
   listChains: number[] | null
   listV3Types: string[]
   listCategories: string[] | null
@@ -56,6 +55,7 @@ type TVaultsListModel = {
 
 export function useVaultsListModel({
   listVaultType,
+  categoryOptions,
   listChains,
   listV3Types,
   listCategories,
@@ -80,9 +80,9 @@ export function useVaultsListModel({
   )
 
   const listCategoriesSanitized = useMemo(() => {
-    const allowed = V3_ASSET_CATEGORIES
+    const allowed = categoryOptions
     return (listCategories || []).filter((value) => allowed.includes(value))
-  }, [listCategories])
+  }, [categoryOptions, listCategories])
 
   const listAggressivenessSanitized = useMemo(() => {
     const allowed = new Set(AGGRESSIVENESS_OPTIONS)
@@ -285,7 +285,7 @@ export function useVaultsListModel({
     return suggestedV2Vaults
   }, [listVaultType, suggestedV3Vaults, suggestedV2Vaults])
 
-  const defaultCategories = isV3View ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
+  const defaultCategories = categoryOptions
   const underlyingAssetVaults = useMemo(() => {
     if (listVaultType === 'all') {
       return { ...v3FilterResult.underlyingAssetVaults, ...v2FilterResult.underlyingAssetVaults }

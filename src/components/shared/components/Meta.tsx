@@ -8,6 +8,7 @@ type TMeta = {
   description: string
   og: string
   uri: string
+  canonical?: string
 }
 
 export function Meta(meta: TMeta): ReactElement {
@@ -50,6 +51,7 @@ export function Meta(meta: TMeta): ReactElement {
       <meta property="og:description" content={meta.description} />
 
       {/* Icons and Manifests */}
+      {meta.canonical ? <link rel="canonical" href={meta.canonical} /> : null}
       <link rel="manifest" href="/manifest.json" />
       <link rel="mask-icon" href="/favicons/safari-pinned-tab.svg" color={meta.themeColor} />
       <link rel="shortcut icon" type="image/x-icon" href="/favicons/favicon.ico" />

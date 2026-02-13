@@ -13,6 +13,7 @@ import {
   DEFAULT_MIN_TVL,
   HOLDINGS_TOGGLE_VALUE,
   toggleInArray,
+  V2_ASSET_CATEGORIES,
   V2_SUPPORTED_CHAINS,
   V3_ASSET_CATEGORIES,
   V3_DEFAULT_SECONDARY_CHAIN_IDS,
@@ -31,7 +32,10 @@ import { useMediaQuery } from '@react-hookz/web'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
 import { usePrefetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
+import { useV2VaultFilter } from '@shared/hooks/useV2VaultFilter'
+import { useV3VaultFilter } from '@shared/hooks/useV3VaultFilter'
 import type { TSortDirection } from '@shared/types'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { RefObject } from 'react'
@@ -52,6 +56,10 @@ import { useVaultsQueryState } from './useVaultsQueryState'
 const DEFAULT_VAULT_TYPES = ['multi', 'single']
 const DEFAULT_SORT_BY: TPossibleSortBy = 'tvl'
 const VAULTS_FILTERS_STORAGE_KEY = 'yearn.fi/vaults-filters@1'
+const PARTNER_DEFAULT_MIN_TVL = 0
+const PARTNER_DEFAULT_SHOW_LEGACY_VAULTS = true
+const PARTNER_DEFAULT_SHOW_HIDDEN_VAULTS = true
+const PARTNER_DEFAULT_SHOW_STRATEGIES = true
 
 type TVaultsPinnedSection = {
   key: string
@@ -78,6 +86,8 @@ type TVaultsFiltersBarModel = {
     config: TChainConfig
   }
   shouldStackFilters: boolean
+  showChainSelector: boolean
+  showTypeSelector: boolean
   activeVaultType: TVaultType
   onChangeVaultType: (value: TVaultType) => void
 }
@@ -131,6 +141,12 @@ export type TVaultsPageModel = {
 
 export function useVaultsPageModel(): TVaultsPageModel {
   const { address } = useWeb3()
+  const { activePartnerSlug } = useYearn()
+  const isPartnerPage = Boolean(activePartnerSlug)
+  const defaultMinTvl = isPartnerPage ? PARTNER_DEFAULT_MIN_TVL : DEFAULT_MIN_TVL
+  const defaultShowLegacyVaults = isPartnerPage ? PARTNER_DEFAULT_SHOW_LEGACY_VAULTS : false
+  const defaultShowHiddenVaults = isPartnerPage ? PARTNER_DEFAULT_SHOW_HIDDEN_VAULTS : false
+  const defaultShowStrategies = isPartnerPage ? PARTNER_DEFAULT_SHOW_STRATEGIES : false
   const hasWalletAddress = !!address
   const {
     vaultType,
@@ -167,6 +183,10 @@ export function useVaultsPageModel(): TVaultsPageModel {
     defaultCategories: [],
     defaultPathname: '/vaults',
     defaultSortBy: DEFAULT_SORT_BY,
+    defaultMinTvl,
+    defaultShowLegacyVaults,
+    defaultShowHiddenVaults,
+    defaultShowStrategies,
     resetTypes: DEFAULT_VAULT_TYPES,
     resetCategories: [],
     persistToStorage: true,
@@ -311,6 +331,58 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const displayedShowStrategies = optimisticShowStrategies ?? showStrategies
   const hasDisplayedTypesParam = hasTypesParam || optimisticTypes !== null
   const hasListTypesParam = hasTypesParam
+  const sanitizeChainSelection = useCallback((selection: number[] | null | undefined, supportedChainIds: number[]) => {
+    if (supportedChainIds.length === 0) {
+      return null
+    }
+
+    const supportedSet = new Set(supportedChainIds)
+    const normalized = Array.from(new Set((selection ?? []).filter((chainId) => supportedSet.has(chainId)))).sort(
+      (left, right) => left - right
+    )
+
+    if (normalized.length === 0 || normalized.length === supportedChainIds.length) {
+      return null
+    }
+
+    return normalized
+  }, [])
+  const baseChainConfig = useMemo((): TChainConfig => {
+    if (listVaultType === 'v3') {
+      return {
+        supportedChainIds: V3_SUPPORTED_CHAINS,
+        primaryChainIds: V3_PRIMARY_CHAIN_IDS,
+        defaultSecondaryChainIds: V3_DEFAULT_SECONDARY_CHAIN_IDS,
+        chainDisplayOrder: V3_SUPPORTED_CHAINS,
+        showMoreChainsButton: false,
+        allChainsLabel: 'All Chains'
+      }
+    }
+    if (listVaultType === 'all') {
+      const allChains = getSupportedChainsForVaultType('all')
+      return {
+        supportedChainIds: allChains,
+        primaryChainIds: allChains,
+        defaultSecondaryChainIds: [],
+        chainDisplayOrder: allChains,
+        showMoreChainsButton: false,
+        allChainsLabel: 'All Chains'
+      }
+    }
+    return {
+      supportedChainIds: V2_SUPPORTED_CHAINS,
+      primaryChainIds: V2_SUPPORTED_CHAINS,
+      defaultSecondaryChainIds: [],
+      chainDisplayOrder: V2_SUPPORTED_CHAINS,
+      showMoreChainsButton: false,
+      allChainsLabel: 'All Chains'
+    }
+  }, [listVaultType])
+
+  const categoryOptions = useMemo(
+    () => (isPartnerPage ? Array.from(new Set([...V2_ASSET_CATEGORIES, ...V3_ASSET_CATEGORIES])) : V3_ASSET_CATEGORIES),
+    [isPartnerPage]
+  )
 
   const resolveV3Types = useCallback(
     (selected: string[] | null | undefined, shouldShowStrategies: boolean, hasTypesParam: boolean): string[] => {
@@ -336,9 +408,14 @@ export function useVaultsPageModel(): TVaultsPageModel {
   )
 
   const displayedCategoriesSanitized = useMemo(() => {
-    const allowed = V3_ASSET_CATEGORIES
+    const allowed = categoryOptions
     return (displayedCategories || []).filter((value) => allowed.includes(value))
-  }, [displayedCategories])
+  }, [categoryOptions, displayedCategories])
+
+  const listCategoriesForChainAvailability = useMemo(() => {
+    const allowed = categoryOptions
+    return (listCategories || []).filter((value) => allowed.includes(value))
+  }, [categoryOptions, listCategories])
 
   const displayedAggressivenessSanitized = useMemo(() => {
     const allowed = new Set(AGGRESSIVENESS_OPTIONS)
@@ -346,6 +423,13 @@ export function useVaultsPageModel(): TVaultsPageModel {
       allowed.has(value as TVaultAggressiveness)
     )
   }, [displayedAggressiveness])
+
+  const listAggressivenessForChainAvailability = useMemo(() => {
+    const allowed = new Set(AGGRESSIVENESS_OPTIONS)
+    return (listAggressiveness || []).filter((value): value is TVaultAggressiveness =>
+      allowed.has(value as TVaultAggressiveness)
+    )
+  }, [listAggressiveness])
 
   const displayedUnderlyingAssetsSanitized = useMemo(() => {
     const normalized = (displayedUnderlyingAssets || [])
@@ -360,11 +444,98 @@ export function useVaultsPageModel(): TVaultsPageModel {
       .filter(Boolean)
     return Array.from(new Set(normalized))
   }, [listUnderlyingAssets])
+
+  const isV3ViewForChainAvailability = isPartnerPage && (listVaultType === 'v3' || listVaultType === 'all')
+  const isV2ViewForChainAvailability = isPartnerPage && (listVaultType === 'factory' || listVaultType === 'all')
+  const listV2TypesForChainAvailability = useMemo(
+    () => (listShowLegacyVaults ? ['factory', 'legacy'] : ['factory']),
+    [listShowLegacyVaults]
+  )
+
+  const { filteredVaults: filteredV3VaultsForChainAvailability } = useV3VaultFilter(
+    isV3ViewForChainAvailability ? listV3Types : null,
+    null,
+    '',
+    isV3ViewForChainAvailability ? listCategoriesForChainAvailability : null,
+    isV3ViewForChainAvailability ? listAggressivenessForChainAvailability : null,
+    isV3ViewForChainAvailability ? listUnderlyingAssetsSanitized : null,
+    listMinTvl,
+    isV3ViewForChainAvailability ? listShowHiddenVaults : undefined,
+    isV3ViewForChainAvailability
+  )
+
+  const { filteredVaults: filteredV2VaultsForChainAvailability } = useV2VaultFilter(
+    isV2ViewForChainAvailability ? listV2TypesForChainAvailability : null,
+    null,
+    '',
+    isV2ViewForChainAvailability ? listCategoriesForChainAvailability : null,
+    isV2ViewForChainAvailability ? listAggressivenessForChainAvailability : null,
+    isV2ViewForChainAvailability ? listUnderlyingAssetsSanitized : null,
+    listMinTvl,
+    listShowHiddenVaults,
+    isV2ViewForChainAvailability
+  )
+
+  const partnerChainIds = useMemo(() => {
+    if (!isPartnerPage) {
+      return []
+    }
+
+    const chainSourceVaults =
+      listVaultType === 'v3'
+        ? filteredV3VaultsForChainAvailability
+        : listVaultType === 'factory'
+          ? filteredV2VaultsForChainAvailability
+          : [...filteredV3VaultsForChainAvailability, ...filteredV2VaultsForChainAvailability]
+
+    const uniqueChainIds = new Set<number>()
+    for (const vault of chainSourceVaults) {
+      uniqueChainIds.add(vault.chainID)
+    }
+    return Array.from(uniqueChainIds).sort((left, right) => left - right)
+  }, [filteredV2VaultsForChainAvailability, filteredV3VaultsForChainAvailability, isPartnerPage, listVaultType])
+  const chainConfig = useMemo((): TChainConfig => {
+    if (!isPartnerPage) {
+      return baseChainConfig
+    }
+
+    const partnerSet = new Set(partnerChainIds)
+    const supportedChainIds = baseChainConfig.supportedChainIds.filter((chainId) => partnerSet.has(chainId))
+    const supportedSet = new Set(supportedChainIds)
+
+    return {
+      ...baseChainConfig,
+      supportedChainIds,
+      primaryChainIds: (baseChainConfig.primaryChainIds ?? supportedChainIds).filter((chainId) =>
+        supportedSet.has(chainId)
+      ),
+      defaultSecondaryChainIds: (baseChainConfig.defaultSecondaryChainIds ?? []).filter((chainId) =>
+        supportedSet.has(chainId)
+      ),
+      chainDisplayOrder: (baseChainConfig.chainDisplayOrder ?? supportedChainIds).filter((chainId) =>
+        supportedSet.has(chainId)
+      )
+    }
+  }, [baseChainConfig, isPartnerPage, partnerChainIds])
+  const constrainedDisplayedChains = useMemo(
+    () => sanitizeChainSelection(displayedChains, chainConfig.supportedChainIds),
+    [displayedChains, sanitizeChainSelection, chainConfig.supportedChainIds]
+  )
+  const constrainedListChains = useMemo(
+    () => sanitizeChainSelection(listChains, chainConfig.supportedChainIds),
+    [listChains, sanitizeChainSelection, chainConfig.supportedChainIds]
+  )
+  const showChainSelector = !isPartnerPage || chainConfig.supportedChainIds.length > 1
+  const showTypeSelector = !isPartnerPage
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
   const effectiveSortBy = sortBy === 'featuringScore' ? DEFAULT_SORT_BY : sortBy
   const effectiveSortDirection = sortBy === 'featuringScore' ? 'desc' : sortDirection
   const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
+  const defaultDisplayedV3Types = useMemo(
+    () => (defaultShowStrategies ? ['multi', 'single'] : ['multi']),
+    [defaultShowStrategies]
+  )
   const {
     defaultCategories,
     listCategoriesSanitized,
@@ -381,12 +552,13 @@ export function useVaultsPageModel(): TVaultsPageModel {
     isLoadingVaultList
   } = useVaultsListModel({
     listVaultType,
-    listChains,
+    categoryOptions,
+    listChains: constrainedListChains,
     listV3Types,
     listCategories,
     listAggressiveness,
     listUnderlyingAssets: listUnderlyingAssetsSanitized,
-    listMinTvl,
+    listMinTvl: listMinTvl,
     listShowLegacyVaults,
     listShowHiddenVaults,
     searchValue,
@@ -409,26 +581,31 @@ export function useVaultsPageModel(): TVaultsPageModel {
   }, [availableVaults.length, isAvailablePinned])
 
   const filtersCount = useMemo(() => {
-    const typeCount = displayedV3Types.includes('single') ? 1 : 0
-    const legacyCount = displayedShowLegacyVaults ? 1 : 0
-    const hiddenCount = displayedShowHiddenVaults ? 1 : 0
+    const typeCount = areArraysEquivalent(displayedV3Types, defaultDisplayedV3Types) ? 0 : 1
+    const legacyCount = displayedShowLegacyVaults !== defaultShowLegacyVaults ? 1 : 0
+    const hiddenCount = displayedShowHiddenVaults !== defaultShowHiddenVaults ? 1 : 0
     const categoryCount = displayedCategoriesSanitized.length
     const aggressivenessCount = displayedAggressivenessSanitized.length
     const underlyingAssetCount = displayedUnderlyingAssetsSanitized.length
-    const minTvlCount = displayedMinTvl !== DEFAULT_MIN_TVL ? 1 : 0
+    const minTvlCount = displayedMinTvl !== defaultMinTvl ? 1 : 0
     return (
       typeCount + legacyCount + hiddenCount + categoryCount + aggressivenessCount + underlyingAssetCount + minTvlCount
     )
   }, [
+    areArraysEquivalent,
+    defaultDisplayedV3Types,
+    defaultShowHiddenVaults,
+    defaultShowLegacyVaults,
     displayedAggressivenessSanitized.length,
     displayedCategoriesSanitized.length,
     displayedShowHiddenVaults,
     displayedShowLegacyVaults,
     displayedUnderlyingAssetsSanitized.length,
     displayedMinTvl,
-    displayedV3Types
+    displayedV3Types,
+    defaultMinTvl
   ])
-  const activeChains = useMemo(() => displayedChains ?? [], [displayedChains])
+  const activeChains = useMemo(() => constrainedDisplayedChains ?? [], [constrainedDisplayedChains])
   const activeCategories = displayedCategoriesSanitized
   const activeProductType = useMemo<'all' | 'v3' | 'lp'>(
     () => (displayedVaultType === 'factory' ? 'lp' : displayedVaultType),
@@ -440,11 +617,11 @@ export function useVaultsPageModel(): TVaultsPageModel {
   }, [])
   const handleChainsChange = useCallback(
     (nextChains: number[] | null): void => {
-      const normalizedChains = nextChains ?? []
-      setOptimisticChains(normalizedChains)
-      onChangeChains(nextChains)
+      const sanitizedSelection = sanitizeChainSelection(nextChains, chainConfig.supportedChainIds)
+      setOptimisticChains(sanitizedSelection ?? [])
+      onChangeChains(sanitizedSelection)
     },
-    [onChangeChains]
+    [chainConfig.supportedChainIds, onChangeChains, sanitizeChainSelection]
   )
   const handleTypesChange = useCallback(
     (nextTypes: string[] | null): void => {
@@ -482,13 +659,13 @@ export function useVaultsPageModel(): TVaultsPageModel {
   )
   const handleMinTvlChange = useCallback(
     (nextValue: number): void => {
-      const normalizedValue = Number.isFinite(nextValue) ? Math.max(0, nextValue) : DEFAULT_MIN_TVL
+      const normalizedValue = Number.isFinite(nextValue) ? Math.max(0, nextValue) : defaultMinTvl
       setOptimisticMinTvl(normalizedValue)
       startTransition(() => {
         onChangeMinTvl(normalizedValue)
       })
     },
-    [onChangeMinTvl]
+    [defaultMinTvl, onChangeMinTvl]
   )
   const handleShowLegacyVaultsChange = useCallback(
     (nextValue: boolean): void => {
@@ -513,9 +690,9 @@ export function useVaultsPageModel(): TVaultsPageModel {
   )
   const handleToggleChain = useCallback(
     (chainId: number): void => {
-      handleChainsChange(toggleInArray(displayedChains ?? null, chainId))
+      handleChainsChange(toggleInArray(constrainedDisplayedChains ?? null, chainId))
     },
-    [displayedChains, handleChainsChange]
+    [constrainedDisplayedChains, handleChainsChange]
   )
   const handleToggleCategory = useCallback(
     (category: string): void => {
@@ -598,14 +775,21 @@ export function useVaultsPageModel(): TVaultsPageModel {
     setOptimisticCategories([])
     setOptimisticAggressiveness([])
     setOptimisticUnderlyingAssets([])
-    setOptimisticMinTvl(DEFAULT_MIN_TVL)
+    setOptimisticMinTvl(defaultMinTvl)
     setOptimisticTypes(DEFAULT_VAULT_TYPES)
-    setOptimisticShowLegacyVaults(false)
-    setOptimisticShowHiddenVaults(false)
-    setOptimisticShowStrategies(false)
+    setOptimisticShowLegacyVaults(defaultShowLegacyVaults)
+    setOptimisticShowHiddenVaults(defaultShowHiddenVaults)
+    setOptimisticShowStrategies(defaultShowStrategies)
     onResetMultiSelect()
     onResetExtraFilters()
-  }, [onResetExtraFilters, onResetMultiSelect])
+  }, [
+    defaultMinTvl,
+    defaultShowHiddenVaults,
+    defaultShowLegacyVaults,
+    defaultShowStrategies,
+    onResetExtraFilters,
+    onResetMultiSelect
+  ])
 
   const minTvlInput = createElement(
     'div',
@@ -640,7 +824,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     {
       type: 'checklist',
       title: 'Asset Category',
-      options: V3_ASSET_CATEGORIES.map((value) => ({
+      options: categoryOptions.map((value) => ({
         label: value,
         checked: displayedCategoriesSanitized.includes(value),
         onToggle: (): void => handleCategoriesChange(toggleInArray(displayedCategoriesSanitized, value))
@@ -683,7 +867,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
 
   const filtersConfig = useMemo(
     (): TFiltersConfig => ({
-      categoryOptions: V3_ASSET_CATEGORIES,
+      categoryOptions,
       aggressivenessOptions: AGGRESSIVENESS_OPTIONS,
       toggleOptions: [
         {
@@ -705,7 +889,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       underlyingAssetOptions,
       minTvlEnabled: true
     }),
-    [underlyingAssetOptions]
+    [categoryOptions, underlyingAssetOptions]
   )
 
   const filtersInitialState = useMemo(
@@ -731,10 +915,11 @@ export function useVaultsPageModel(): TVaultsPageModel {
 
   const onApplyFilters = useCallback(
     (state: TPendingFiltersState): void => {
+      const normalizedMinTvl = state.minTvl
       setOptimisticCategories(state.categories)
       setOptimisticAggressiveness(state.aggressiveness)
       setOptimisticUnderlyingAssets(state.underlyingAssets)
-      setOptimisticMinTvl(state.minTvl)
+      setOptimisticMinTvl(normalizedMinTvl)
       setOptimisticShowStrategies(state.showStrategies)
       setOptimisticShowLegacyVaults(state.showLegacyVaults)
       setOptimisticShowHiddenVaults(state.showHiddenVaults)
@@ -742,7 +927,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       onChangeCategories(state.categories.length > 0 ? state.categories : null)
       onChangeAggressiveness(state.aggressiveness.length > 0 ? state.aggressiveness : null)
       onChangeUnderlyingAssets(state.underlyingAssets.length > 0 ? state.underlyingAssets : null)
-      onChangeMinTvl(state.minTvl)
+      onChangeMinTvl(normalizedMinTvl)
       onChangeShowStrategies(state.showStrategies)
       onChangeShowLegacyVaults(state.showLegacyVaults)
       onChangeShowHiddenVaults(state.showHiddenVaults)
@@ -757,38 +942,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
       onChangeShowHiddenVaults
     ]
   )
-
-  const chainConfig = useMemo((): TChainConfig => {
-    if (listVaultType === 'v3') {
-      return {
-        supportedChainIds: V3_SUPPORTED_CHAINS,
-        primaryChainIds: V3_PRIMARY_CHAIN_IDS,
-        defaultSecondaryChainIds: V3_DEFAULT_SECONDARY_CHAIN_IDS,
-        chainDisplayOrder: V3_SUPPORTED_CHAINS,
-        showMoreChainsButton: false,
-        allChainsLabel: 'All Chains'
-      }
-    }
-    if (listVaultType === 'all') {
-      const allChains = getSupportedChainsForVaultType('all')
-      return {
-        supportedChainIds: allChains,
-        primaryChainIds: allChains,
-        defaultSecondaryChainIds: [],
-        chainDisplayOrder: allChains,
-        showMoreChainsButton: false,
-        allChainsLabel: 'All Chains'
-      }
-    }
-    return {
-      supportedChainIds: V2_SUPPORTED_CHAINS,
-      primaryChainIds: V2_SUPPORTED_CHAINS,
-      defaultSecondaryChainIds: [],
-      chainDisplayOrder: V2_SUPPORTED_CHAINS,
-      showMoreChainsButton: false,
-      allChainsLabel: 'All Chains'
-    }
-  }, [listVaultType])
 
   const listHeadProps: TListHead = {
     containerClassName: 'rounded-t-xl bg-surface shrink-0',
@@ -875,11 +1028,13 @@ export function useVaultsPageModel(): TVaultsPageModel {
         onClear: handleResetFilters
       },
       chains: {
-        selected: displayedChains,
+        selected: constrainedDisplayedChains,
         onChange: handleChainsChange,
         config: chainConfig
       },
       shouldStackFilters,
+      showChainSelector,
+      showTypeSelector,
       activeVaultType: displayedVaultType,
       onChangeVaultType: handleVaultVersionToggle
     },
@@ -900,7 +1055,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
         mainVaults,
         vaultFlags,
         listCategoriesSanitized,
-        listChains,
+        listChains: constrainedListChains,
         defaultCategories,
         totalMatchingVaults,
         hasHoldings: holdingsVaults.length > 0

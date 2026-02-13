@@ -13,8 +13,12 @@ import { VaultsWelcomeTour } from '@pages/vaults/components/tour/VaultsWelcomeTo
 import { toggleInArray } from '@pages/vaults/utils/constants'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
+import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconGitCompare } from '@shared/icons/IconGitCompare'
+import { TypeMarkYearnBadge } from '@shared/icons/TypeMarkYearnBadge'
+import { getPartnerConfig } from '@shared/partners/registry'
+import type { TPartnerConfig } from '@shared/partners/types'
 import { cl } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
@@ -73,11 +77,91 @@ function VaultsListSection({
   )
 }
 
+type TPartnerFiltersBadgeProps = {
+  partnerConfig: TPartnerConfig
+  fullWidth?: boolean
+  size?: 'slot' | 'combined'
+}
+
+function PartnerFiltersBadge({
+  partnerConfig,
+  fullWidth = false,
+  size = 'slot'
+}: TPartnerFiltersBadgeProps): ReactElement {
+  const borderColor = partnerConfig.badge?.borderColor
+  const isBorderTransparent = borderColor === 'transparent'
+  const PartnerTypemarkComponent = partnerConfig.badge?.partnerTypemarkComponent
+  const partnerTypemarkPath = partnerConfig.badge?.partnerTypemarkPath
+  const [showPartnerTypemarkImage, setShowPartnerTypemarkImage] = useState(Boolean(partnerTypemarkPath))
+
+  useEffect(() => {
+    setShowPartnerTypemarkImage(Boolean(partnerTypemarkPath))
+  }, [partnerTypemarkPath])
+
+  const badgeStyle: CSSProperties = {
+    ...(partnerConfig.badge?.background
+      ? { background: partnerConfig.badge.background, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%' }
+      : {}),
+    ...(partnerConfig.badge?.labelTextColor ? { color: partnerConfig.badge.labelTextColor } : {}),
+    ...(borderColor ? { borderColor } : {}),
+    ...(isBorderTransparent ? { borderWidth: 0 } : {})
+  }
+  const yearnTypemarkStyle: CSSProperties = {
+    transform: `translate(${partnerConfig.badge?.yearnTypemarkOffsetXPx ?? 0}px, ${partnerConfig.badge?.yearnTypemarkOffsetYPx ?? 0}px)`
+  }
+  const partnerTypemarkStyle: CSSProperties = {
+    height: `${partnerConfig.badge?.partnerTypemarkHeightPx ?? 32}px`,
+    maxWidth: `${partnerConfig.badge?.partnerTypemarkMaxWidthPx ?? 120}px`,
+    transform: `translate(${partnerConfig.badge?.partnerTypemarkOffsetXPx ?? 0}px, ${partnerConfig.badge?.partnerTypemarkOffsetYPx ?? 0}px)`
+  }
+
+  return (
+    <div
+      className={cl(
+        'flex h-10 items-center justify-center gap-2 rounded-lg border border-primary/20 bg-transparent px-3 text-md font-semibold text-primary',
+        fullWidth ? 'w-full' : size === 'combined' ? 'min-w-[396px]' : 'min-w-[300px]'
+      )}
+      style={badgeStyle}
+    >
+      <TypeMarkYearnBadge
+        className={'h-6 w-auto shrink-0'}
+        color={partnerConfig.badge?.yearnTypemarkColor || '#0657F9'}
+        style={yearnTypemarkStyle}
+        aria-hidden={true}
+      />
+      <span className={'shrink-0 font-semibold'} aria-hidden={true}>
+        {'x'}
+      </span>
+      {PartnerTypemarkComponent ? (
+        <PartnerTypemarkComponent className={'w-auto shrink-0'} style={partnerTypemarkStyle} aria-hidden={true} />
+      ) : showPartnerTypemarkImage && partnerTypemarkPath ? (
+        <img
+          src={partnerTypemarkPath}
+          alt={partnerConfig.badge?.partnerTypemarkAlt || `${partnerConfig.displayName} typemark`}
+          className={'w-auto shrink-0 object-contain'}
+          style={partnerTypemarkStyle}
+          onError={(): void => setShowPartnerTypemarkImage(false)}
+        />
+      ) : null}
+    </div>
+  )
+}
+
 export default function Index(): ReactElement {
   const { refs, filtersBar, list } = useVaultsPageModel()
+  const { activePartnerSlug } = useYearn()
   const trackEvent = usePlausible()
   const { varsRef, filtersRef } = refs
-  const { search, filters, chains, shouldStackFilters, activeVaultType, onChangeVaultType } = filtersBar
+  const {
+    search,
+    filters,
+    chains,
+    shouldStackFilters,
+    showChainSelector,
+    showTypeSelector,
+    activeVaultType,
+    onChangeVaultType
+  } = filtersBar
   const {
     listHeadProps,
     listVaultType,
@@ -102,6 +186,7 @@ export default function Index(): ReactElement {
   } = data
   const { activeChains, activeCategories, activeProductType } = activeFilters
   const { onToggleChain, onToggleCategory, onToggleType, onToggleVaultType } = handlers
+  const partnerConfig = useMemo(() => getPartnerConfig(activePartnerSlug), [activePartnerSlug])
 
   const [compareVaultKeys, setCompareVaultKeys] = useState<string[]>([])
   const [isCompareOpen, setIsCompareOpen] = useState(false)
@@ -321,6 +406,52 @@ export default function Index(): ReactElement {
     </button>
   )
 
+  const shouldShowTypeSlotBadge = Boolean(partnerConfig) && !showTypeSelector
+  const shouldUseCombinedTypeBadge = shouldShowTypeSlotBadge && !showChainSelector
+  const shouldShowChainSlotBadge = Boolean(partnerConfig) && showTypeSelector && !showChainSelector
+
+  const desktopPartnerPlaceholder = useMemo(() => {
+    if (!partnerConfig || !shouldShowTypeSlotBadge) {
+      return undefined
+    }
+    return <PartnerFiltersBadge partnerConfig={partnerConfig} size={shouldUseCombinedTypeBadge ? 'combined' : 'slot'} />
+  }, [partnerConfig, shouldShowTypeSlotBadge, shouldUseCombinedTypeBadge])
+
+  const mobilePartnerPlaceholder = useMemo(() => {
+    if (!partnerConfig || !shouldShowTypeSlotBadge) {
+      return undefined
+    }
+    return (
+      <PartnerFiltersBadge
+        partnerConfig={partnerConfig}
+        fullWidth={true}
+        size={shouldUseCombinedTypeBadge ? 'combined' : 'slot'}
+      />
+    )
+  }, [partnerConfig, shouldShowTypeSlotBadge, shouldUseCombinedTypeBadge])
+
+  const chainPlaceholder = useMemo(() => {
+    if (!partnerConfig || !shouldShowChainSlotBadge) {
+      return undefined
+    }
+    return <PartnerFiltersBadge partnerConfig={partnerConfig} fullWidth={true} />
+  }, [partnerConfig, shouldShowChainSlotBadge])
+
+  const breadcrumbItems = useMemo(() => {
+    if (!partnerConfig) {
+      return [
+        { label: 'Home', href: '/' },
+        { label: 'Vaults', href: '/vaults', isCurrent: true }
+      ]
+    }
+
+    return [
+      { label: 'Home', href: '/' },
+      { label: 'Partners', href: '/partners' },
+      { label: partnerConfig.displayName, isCurrent: true }
+    ]
+  }, [partnerConfig])
+
   const vaultListContent = useMemo(() => {
     if (isLoading) {
       return (
@@ -483,21 +614,18 @@ export default function Index(): ReactElement {
 
   return (
     <>
-      <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
-        <div className={'mx-auto w-full max-w-[1232px] px-4 pb-4'}>
+      <div
+        className={cl('min-h-[calc(100vh-var(--header-height))] w-full bg-app', partnerConfig && 'relative isolate')}
+      >
+        {partnerConfig ? <div aria-hidden={true} className={'partner-vaults-gradient'} /> : null}
+        <div className={cl('mx-auto w-full max-w-[1232px] px-4 pb-4', partnerConfig && 'relative z-10')}>
           <div ref={varsRef} className={'flex flex-col'} style={{ '--vaults-filters-height': '0px' } as CSSProperties}>
             <div
               ref={filtersRef}
               className={'sticky z-40 w-full bg-app pb-2 shrink-0'}
               style={{ top: 'var(--header-height)' }}
             >
-              <Breadcrumbs
-                className={'mb-3 mt-2'}
-                items={[
-                  { label: 'Home', href: '/' },
-                  { label: 'Vaults', href: '/vaults', isCurrent: true }
-                ]}
-              />
+              <Breadcrumbs className={'mb-3 mt-2'} items={breadcrumbItems} />
               {/* turn back on when ready for primetime */}
               {/* <TrendingVaults suggestedVaults={suggestedVaults} /> */}
               <VaultsFiltersBar
@@ -512,25 +640,35 @@ export default function Index(): ReactElement {
                   trailingControls: compareToggleControl
                 }}
                 chains={chains}
+                showChainSelector={showChainSelector}
+                chainPlaceholder={chainPlaceholder}
                 mobileExtraContent={
-                  <VaultVersionToggle
-                    stretch={true}
-                    activeType={activeVaultType}
-                    onTypeChange={onChangeVaultType}
-                    isPending={isUpdatingProductType}
-                  />
+                  showTypeSelector ? (
+                    <VaultVersionToggle
+                      stretch={true}
+                      activeType={activeVaultType}
+                      onTypeChange={onChangeVaultType}
+                      isPending={isUpdatingProductType}
+                    />
+                  ) : (
+                    mobilePartnerPlaceholder
+                  )
                 }
                 trailingControls={
-                  <VaultVersionToggle
-                    activeType={activeVaultType}
-                    onTypeChange={onChangeVaultType}
-                    isPending={isUpdatingProductType}
-                  />
+                  showTypeSelector ? (
+                    <VaultVersionToggle
+                      activeType={activeVaultType}
+                      onTypeChange={onChangeVaultType}
+                      isPending={isUpdatingProductType}
+                    />
+                  ) : (
+                    desktopPartnerPlaceholder
+                  )
                 }
                 isStackedLayout={shouldStackFilters}
               />
             </div>
-            <div data-tour="vaults-list">
+            <div data-tour="vaults-list" className={cl(partnerConfig && 'partner-vaults-list')}>
               <VaultsListSection
                 isUpdatingProductType={isUpdatingProductType}
                 isUpdatingList={isUpdatingList}

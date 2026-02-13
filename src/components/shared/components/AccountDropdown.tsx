@@ -163,7 +163,7 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
                       isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100'
                     )}
                   >
-                    <LogoYearn className={'size-5'} front={'text-white'} back={'text-primary'} />
+                    <LogoYearn className={'size-5'} front={'text-white'} back={'text-[#0657F9]'} />
                   </div>
                   <div>
                     <p className={cl('text-sm font-medium capitalize', getStatusColor(activity.status))}>

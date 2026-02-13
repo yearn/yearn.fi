@@ -6,6 +6,8 @@
 @import 'tailwindcss';
 /* Theme System */
 @import './src/styles/themes.css';
+/* Partner theme overrides */
+@import './src/styles/partners.css';
 
 @theme {
   /* Font families */

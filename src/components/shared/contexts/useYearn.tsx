@@ -3,6 +3,8 @@ import { useLocalStorageValue } from '@react-hookz/web'
 import { useFetchYearnPrices } from '@shared/hooks/useFetchYearnPrices'
 import { useFetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
 import { type TKatanaAprs, useKatanaAprs } from '@shared/hooks/useKatanaAprs'
+import { resolvePartnerFromPath } from '@shared/partners/resolvePartnerFromPath'
+import type { TPartnerSlug } from '@shared/partners/types'
 import type { TAddress, TDict, TNormalizedBN } from '@shared/types'
 import { toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import type { TKongVaultList } from '@shared/utils/schemas/kongVaultListSchema'
@@ -21,6 +23,7 @@ export const DEFAULT_MAX_LOSS = 1n
 type TTokenAndChain = { address: TAddress; chainID: number }
 export type TYearnContext = {
   currentPartner: TAddress
+  activePartnerSlug?: TPartnerSlug
   earned?: TYDaemonEarned
   prices?: TYDaemonPricesChain
   vaults: TDict<TYDaemonVault>
@@ -44,6 +47,7 @@ export type TYearnContext = {
 
 const YearnContext = createContext<TYearnContext>({
   currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
+  activePartnerSlug: undefined,
   earned: {
     earned: {},
     totalRealizedGainsUSD: 0,
@@ -93,7 +97,9 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
   const isVaultsRoute = location.pathname.startsWith('/vaults')
   const isVaultDetailPage = isVaultsRoute && location.pathname.split('/').length === 4
   const isPortfolioRoute = location.pathname.startsWith('/portfolio')
-  const shouldEnableVaultList = (isVaultsRoute && !isVaultDetailPage) || isPortfolioRoute
+  const activePartnerSlug = resolvePartnerFromPath(location.pathname)
+  const isPartnerRoute = Boolean(activePartnerSlug)
+  const shouldEnableVaultList = (isVaultsRoute && !isVaultDetailPage) || isPortfolioRoute || isPartnerRoute
   const [isVaultListEnabled, setIsVaultListEnabled] = useState(shouldEnableVaultList)
 
   useEffect(() => {
@@ -109,7 +115,8 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
   const prices = useFetchYearnPrices()
   //RG this endpoint returns empty objects for retired and migrations
   const { vaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
-    enabled: isVaultListEnabled
+    enabled: isVaultListEnabled,
+    partnerSlug: activePartnerSlug ?? null
   })
   const { data: katanaAprs, isLoading: isLoadingKatanaAprs } = useKatanaAprs()
 
@@ -124,6 +131,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
     <YearnContext.Provider
       value={{
         currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
+        activePartnerSlug,
         prices,
         zapSlippage: zapSlippage ?? DEFAULT_SLIPPAGE,
         maxLoss: maxLoss ?? DEFAULT_MAX_LOSS,

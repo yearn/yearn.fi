@@ -5,7 +5,14 @@ import { Navigate, Route, Routes as RouterRoutes } from 'react-router'
 // Lazy load all page components
 const HomePage = lazy(() => import('@pages/landing'))
 const PortfolioPage = lazy(() => import('@pages/portfolio/index'))
+const PartnersPage = lazy(() => import('@pages/partners/index'))
+const AerodromePage = lazy(() => import('@pages/aerodrome/index'))
+const CurvePage = lazy(() => import('@pages/curve/index'))
 const VaultsPage = lazy(() => import('@pages/vaults/index'))
+const KatanaPage = lazy(() => import('@pages/katana/index'))
+const MorphoPage = lazy(() => import('@pages/morpho/index'))
+const PoolTogetherPage = lazy(() => import('@pages/pooltogether/index'))
+const VelodromePage = lazy(() => import('@pages/velodrome/index'))
 const VaultsDetailPage = lazy(() => import('@pages/vaults/[chainID]/[address]'))
 const IconListPage = lazy(() => import('@pages/icon-list/index'))
 
@@ -35,6 +42,9 @@ export function Routes(): ReactElement {
         {/* Portfolio page */}
         <Route path="/portfolio" element={<PortfolioPage />} />
 
+        {/* Partners page */}
+        <Route path="/partners" element={<PartnersPage />} />
+
         {/* Icon inventory page */}
         <Route path="/icon-list" element={<IconListPage />} />
 
@@ -43,6 +53,14 @@ export function Routes(): ReactElement {
           <Route index element={<VaultsPage />} />
           <Route path=":chainID/:address" element={<VaultsDetailPage />} />
         </Route>
+
+        {/* Partner vault routes */}
+        <Route path="/aerodrome" element={<AerodromePage />} />
+        <Route path="/curve" element={<CurvePage />} />
+        <Route path="/katana" element={<KatanaPage />} />
+        <Route path="/morpho" element={<MorphoPage />} />
+        <Route path="/pooltogether" element={<PoolTogetherPage />} />
+        <Route path="/velodrome" element={<VelodromePage />} />
 
         {/* Legacy redirects to new /vaults routes */}
         <Route path="/v2" element={<Navigate to="/vaults?type=lp" replace />} />

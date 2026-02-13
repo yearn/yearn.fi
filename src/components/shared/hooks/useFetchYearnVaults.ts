@@ -4,6 +4,8 @@ import { normalizeVaultCategory } from '@pages/vaults/utils/normalizeVaultCatego
 import { deriveAssetCategory } from '@pages/vaults/utils/vaultListFacets'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { fetchWithSchema, getFetchQueryKey, useFetch } from '@shared/hooks/useFetch'
+import { getPartnerConfig } from '@shared/partners/registry'
+import type { TPartnerSlug } from '@shared/partners/types'
 import type { TDict } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
@@ -22,6 +24,11 @@ import { zeroAddress } from 'viem'
 const DEFAULT_CHAIN_IDS = [1, 10, 137, 146, 250, 8453, 42161, 747474]
 
 const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/list/vaults?origin=yearn`
+
+type TUseFetchYearnVaultsOptions = {
+  enabled?: boolean
+  partnerSlug?: TPartnerSlug | null
+}
 
 const normalizeNumber = (value: number | null | undefined, fallback = 0): number => {
   if (value === null || value === undefined || Number.isNaN(value)) {
@@ -211,14 +218,16 @@ const mapKongListItemToVault = (item: TKongVaultListItem): TYDaemonVault | null 
 
 function useFetchYearnVaults(
   chainIDs?: number[] | undefined,
-  options?: { enabled?: boolean }
+  options?: TUseFetchYearnVaultsOptions
 ): {
   vaults: TDict<TYDaemonVault>
   isLoading: boolean
   refetch: () => Promise<QueryObserverResult<TKongVaultList, Error>>
 } {
   const isEnabled = options?.enabled ?? true
+  const partnerSlug = options?.partnerSlug
   const resolvedChainIds = chainIDs ?? DEFAULT_CHAIN_IDS
+  const partnerConfig = useMemo(() => getPartnerConfig(partnerSlug), [partnerSlug])
   const {
     data: kongVaultList,
     isLoading,
@@ -240,9 +249,10 @@ function useFetchYearnVaults(
     return kongVaultList
       .filter((item) => item.inclusion?.isYearn !== false)
       .filter((item) => chainIdSet.has(item.chainId))
+      .filter((item) => (partnerConfig ? partnerConfig.vaultListFilter(item) : true))
       .map((item) => mapKongListItemToVault(item))
       .filter((item): item is TYDaemonVault => Boolean(item))
-  }, [kongVaultList, resolvedChainIds])
+  }, [kongVaultList, resolvedChainIds, partnerConfig])
 
   const vaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
     if (!mappedVaults.length) {

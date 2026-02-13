@@ -63,6 +63,8 @@ type TVaultsFiltersBarProps = {
   search: TSearchProps
   filters: TFiltersProps
   chains: TChainProps
+  showChainSelector?: boolean
+  chainPlaceholder?: ReactNode
   mobileExtraContent?: ReactNode
   trailingControls?: ReactNode
   isStackedLayout?: boolean
@@ -72,6 +74,8 @@ export function VaultsFiltersBar({
   search,
   filters,
   chains,
+  showChainSelector = true,
+  chainPlaceholder,
   mobileExtraContent,
   trailingControls,
   isStackedLayout: isStackedLayoutProp
@@ -230,15 +234,19 @@ export function VaultsFiltersBar({
       <div className={'relative col-span-24 w-full md:col-span-19'} data-tour="vaults-filters">
         <div className={'md:hidden'}>
           {mobileExtraContent ? <div className={'mb-2 w-full'}>{mobileExtraContent}</div> : null}
-          <div className={'mb-2 w-full'}>
-            <MobileChainDropdown
-              chainButtons={chainButtons}
-              areAllChainsSelected={areAllChainsSelected}
-              allChainsLabel={allChainsLabel}
-              onSelectAllChains={handleSelectAllChains}
-              onSelectChain={handleChainToggle}
-            />
-          </div>
+          {showChainSelector ? (
+            <div className={'mb-2 w-full'}>
+              <MobileChainDropdown
+                chainButtons={chainButtons}
+                areAllChainsSelected={areAllChainsSelected}
+                allChainsLabel={allChainsLabel}
+                onSelectAllChains={handleSelectAllChains}
+                onSelectChain={handleChainToggle}
+              />
+            </div>
+          ) : chainPlaceholder ? (
+            <div className={'mb-2 w-full'}>{chainPlaceholder}</div>
+          ) : null}
           {isMobileSearchExpanded ? (
             <div className={'flex w-full items-center gap-1'}>
               <div className={'flex-1'}>
@@ -325,6 +333,8 @@ export function VaultsFiltersBar({
             leadingControls={isStackedLayout ? stackedControls : trailingControls}
             searchTrailingControls={search.trailingControls}
             filtersTrailingControls={filters.trailingControls}
+            showChainSelector={showChainSelector}
+            chainPlaceholder={chainPlaceholder}
           />
         </div>
       </div>
@@ -362,6 +372,7 @@ function FilterControls({
   showMoreChainsButton = true,
   allChainsLabel,
   showChainSelector = true,
+  chainPlaceholder,
   showFiltersButton = true,
   filtersCount,
   onOpenFiltersModal,
@@ -386,6 +397,7 @@ function FilterControls({
   showMoreChainsButton?: boolean
   allChainsLabel: string
   showChainSelector?: boolean
+  chainPlaceholder?: ReactNode
   showFiltersButton?: boolean
   filtersCount: number
   onOpenFiltersModal: () => void
@@ -432,6 +444,8 @@ function FilterControls({
       onSelectChain={onSelectChain}
       onOpenChainModal={onOpenChainModal}
     />
+  ) : chainPlaceholder ? (
+    <div className={'w-[220px] max-w-full'}>{chainPlaceholder}</div>
   ) : null
   const searchTrailingElement =
     showInlineSearch && searchTrailingControls ? <div className={'shrink-0'}>{searchTrailingControls}</div> : null
