@@ -633,6 +633,7 @@ export function resolveHistoricalApyDisplayConfig({
         katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR ?? katanaExtras.katanaRewardsAPR ?? 0}
         katanaBonusAPR={katanaExtras.katanaBonusAPY ?? 0}
         steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
+        isEligibleForSpectraBoost={isEligibleForSpectraBoost}
         currentVault={currentVault}
         maxWidth={'w-full'}
       />
