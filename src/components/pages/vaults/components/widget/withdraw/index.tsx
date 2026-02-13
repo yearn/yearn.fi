@@ -11,7 +11,7 @@ import { IconSettings } from '@shared/icons/IconSettings'
 import type { TNormalizedBN } from '@shared/types'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FC, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
@@ -33,6 +33,7 @@ export const WidgetWithdraw: FC<
     hideSettings?: boolean
     disableBorderRadius?: boolean
     collapseDetails?: boolean
+    contentBelowInput?: ReactNode
     hideContainerBorder?: boolean
   }
 > = ({
@@ -48,6 +49,7 @@ export const WidgetWithdraw: FC<
   isSettingsOpen,
   disableBorderRadius,
   collapseDetails,
+  contentBelowInput,
   hideContainerBorder = false
 }) => {
   const { address: account } = useAccount()
@@ -549,6 +551,8 @@ export const WidgetWithdraw: FC<
               }
             />
           </div>
+
+          {contentBelowInput}
         </div>
 
         {collapseDetails ? (

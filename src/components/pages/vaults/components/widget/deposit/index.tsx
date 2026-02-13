@@ -53,6 +53,8 @@ interface Props {
   disableBorderRadius?: boolean
   collapseDetails?: boolean
   detailsContent?: ReactNode
+  contentBelowInput?: ReactNode
+  vaultSharesLabel?: string
   hideDetails?: boolean
   hideActionButton?: boolean
   hideContainerBorder?: boolean
@@ -77,6 +79,8 @@ export const WidgetDeposit: FC<Props> = ({
   disableBorderRadius,
   collapseDetails,
   detailsContent,
+  contentBelowInput,
+  vaultSharesLabel,
   hideDetails = false,
   hideActionButton = false,
   hideContainerBorder = false
@@ -421,6 +425,7 @@ export const WidgetDeposit: FC<Props> = ({
       pricePerShare={pricePerShare || 0n}
       assetUsdPrice={assetTokenPrice}
       willReceiveStakedShares={willReceiveStakedShares}
+      vaultSharesLabel={vaultSharesLabel}
       onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
       onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
       estimatedAnnualReturn={estimatedAnnualReturn}
@@ -525,6 +530,8 @@ export const WidgetDeposit: FC<Props> = ({
           tokenChainId={inputToken?.chainID}
           onTokenSelectorClick={() => setShowTokenSelector(true)}
         />
+
+        {contentBelowInput}
 
         {collapseDetails ? (
           <>

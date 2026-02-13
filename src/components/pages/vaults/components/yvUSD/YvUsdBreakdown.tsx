@@ -9,6 +9,7 @@ type TYvUsdTooltipProps = {
   lockedValue: number
   unlockedValue: number
   className?: string
+  iconClassName?: string
 }
 
 const YvUsdTooltipRow = ({
@@ -40,21 +41,26 @@ const YvUsdTooltipRow = ({
   )
 }
 
-export function YvUsdApyTooltipContent({ lockedValue, unlockedValue, className }: TYvUsdTooltipProps): ReactElement {
+export function YvUsdApyTooltipContent({
+  lockedValue,
+  unlockedValue,
+  className,
+  iconClassName = 'size-3'
+}: TYvUsdTooltipProps): ReactElement {
   return (
     <div
       className={cl('rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary', className)}
     >
       <div className="flex flex-col gap-2">
         <YvUsdTooltipRow
-          icon={<IconLock className="size-3" />}
+          icon={<IconLock className={iconClassName} />}
           label="Locked APY"
           value={lockedValue}
           symbol="percent"
           options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
         />
         <YvUsdTooltipRow
-          icon={<IconLockOpen className="size-3" />}
+          icon={<IconLockOpen className={iconClassName} />}
           label="Unlocked APY"
           value={unlockedValue}
           symbol="percent"
@@ -65,21 +71,26 @@ export function YvUsdApyTooltipContent({ lockedValue, unlockedValue, className }
   )
 }
 
-export function YvUsdTvlTooltipContent({ lockedValue, unlockedValue, className }: TYvUsdTooltipProps): ReactElement {
+export function YvUsdTvlTooltipContent({
+  lockedValue,
+  unlockedValue,
+  className,
+  iconClassName = 'size-3'
+}: TYvUsdTooltipProps): ReactElement {
   return (
     <div
       className={cl('rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary', className)}
     >
       <div className="flex flex-col gap-2">
         <YvUsdTooltipRow
-          icon={<IconLock className="size-3" />}
+          icon={<IconLock className={iconClassName} />}
           label="Locked TVL"
           value={lockedValue}
           symbol="USD"
           options={{ shouldCompactValue: true, maximumFractionDigits: 2, minimumFractionDigits: 0 }}
         />
         <YvUsdTooltipRow
-          icon={<IconLockOpen className="size-3" />}
+          icon={<IconLockOpen className={iconClassName} />}
           label="Unlocked TVL"
           value={unlockedValue}
           symbol="USD"

@@ -333,16 +333,17 @@ function VaultOverviewCard({
   const lockedTvl = lockedVault?.tvl?.tvl ?? yvUsdMetrics?.locked.tvl ?? 0
   const combinedTvl = currentVault.tvl?.tvl ?? unlockedTvl + lockedTvl
   const yvUsdEstApyTooltip = isYvUsd ? (
-    <YvUsdApyTooltipContent lockedValue={lockedForwardApy} unlockedValue={unlockedForwardApy} />
+    <YvUsdApyTooltipContent lockedValue={lockedForwardApy} unlockedValue={unlockedForwardApy} iconClassName="size-4" />
   ) : undefined
   const yvUsdHistoricalApyTooltip = isYvUsd ? (
-    <YvUsdApyTooltipContent lockedValue={lockedHistorical} unlockedValue={unlockedHistorical} />
+    <YvUsdApyTooltipContent lockedValue={lockedHistorical} unlockedValue={unlockedHistorical} iconClassName="size-4" />
   ) : undefined
   const yvUsdTvlTooltip = isYvUsd ? (
     <YvUsdTvlTooltipContent
       lockedValue={lockedTvl}
       unlockedValue={unlockedTvl}
       className="border-0 bg-transparent p-0"
+      iconClassName="size-4"
     />
   ) : undefined
   const metrics: TMetricBlock[] = [

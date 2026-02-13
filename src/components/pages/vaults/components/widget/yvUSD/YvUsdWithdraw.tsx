@@ -66,11 +66,10 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
   const selectedVault = activeVariant === 'locked' ? lockedVault : unlockedVault
   const selectedVaultUserData = activeVariant === 'locked' ? lockedUserData : unlockedUserData
   const showToggle = hasUnlocked && hasLocked
-
-  return (
-    <div className="flex flex-col gap-0">
-      {showToggle ? (
-        <div className="px-6 pb-4 pt-4">
+  const withdrawTypeSection =
+    showToggle || activeVariant === 'locked' ? (
+      <div className="flex flex-col gap-4">
+        {showToggle ? (
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{'Withdraw From'}</p>
             <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
@@ -79,13 +78,13 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
                 onClick={() => setVariant('locked')}
                 className={cl(
                   'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
-                  variant === 'locked'
+                  activeVariant === 'locked'
                     ? 'bg-surface text-text-primary'
                     : 'bg-transparent text-text-secondary hover:text-text-secondary'
                 )}
               >
                 <span className="inline-flex items-center gap-1">
-                  <IconLock className="size-3" />
+                  <IconLock className="size-6" />
                   {'Locked'}
                 </span>
               </button>
@@ -94,36 +93,39 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
                 onClick={() => setVariant('unlocked')}
                 className={cl(
                   'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
-                  variant === 'unlocked'
+                  activeVariant === 'unlocked'
                     ? 'bg-surface text-text-primary'
                     : 'bg-transparent text-text-secondary hover:text-text-secondary'
                 )}
               >
                 <span className="inline-flex items-center gap-1">
-                  <IconLockOpen className="size-3" />
+                  <IconLockOpen className="size-6" />
                   {'Unlocked'}
                 </span>
               </button>
             </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {activeVariant === 'locked' ? (
-        <div className="mx-6 mb-4 rounded-lg border border-border bg-surface-secondary p-4 text-sm">
-          <div className="flex flex-col gap-1">
-            <p className="font-semibold text-text-primary">{'Locked withdrawal cooldown'}</p>
-            <p className="text-xs text-text-secondary">
-              {`Cooldown: ${YVUSD_LOCKED_COOLDOWN_DAYS} days | Withdrawal window: ${YVUSD_WITHDRAW_WINDOW_DAYS} days`}
-            </p>
+        {activeVariant === 'locked' ? (
+          <div className="rounded-lg border border-border bg-surface-secondary p-4 text-sm">
+            <div className="flex flex-col gap-1">
+              <p className="font-semibold text-text-primary">{'Locked withdrawal cooldown'}</p>
+              <p className="text-xs text-text-secondary">
+                {`Cooldown: ${YVUSD_LOCKED_COOLDOWN_DAYS} days | Withdrawal window: ${YVUSD_WITHDRAW_WINDOW_DAYS} days`}
+              </p>
+            </div>
+            <div className="mt-3 flex flex-col gap-1 text-xs text-text-secondary">
+              <p>{'Cooldown remaining: --'}</p>
+              <p>{'Withdrawal window remaining: --'}</p>
+            </div>
           </div>
-          <div className="mt-3 flex flex-col gap-1 text-xs text-text-secondary">
-            <p>{'Cooldown remaining: --'}</p>
-            <p>{'Withdrawal window remaining: --'}</p>
-          </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
+    ) : undefined
 
+  return (
+    <div className="flex flex-col gap-0">
       <WidgetWithdraw
         key={selectedVault.address}
         vaultAddress={toAddress(selectedVault.address)}
@@ -133,6 +135,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
         vaultUserData={selectedVaultUserData}
         handleWithdrawSuccess={onWithdrawSuccess}
         hideContainerBorder
+        contentBelowInput={withdrawTypeSection}
       />
     </div>
   )
