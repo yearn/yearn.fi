@@ -1,6 +1,17 @@
+import {
+  getVaultAddress,
+  getVaultCategory,
+  getVaultChainID,
+  getVaultInfo,
+  getVaultKind,
+  getVaultName,
+  getVaultSymbol,
+  getVaultToken,
+  getVaultVersion,
+  isAutomatedVault,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { toAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { isAutomatedVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 
 export type TVaultAssetCategory = 'Stablecoin' | 'Volatile'
 export type TVaultListKind = 'allocator' | 'strategy' | 'factory' | 'legacy'
@@ -52,20 +63,23 @@ const KNOWN_STABLECOIN_SYMBOLS = new Set([
 const AGGRESSIVENESS_OVERRIDES: Record<string, TVaultAggressiveness> = {}
 const ALLOCATOR_VAULT_OVERRIDES = new Set([`1:${toAddress('0x27B5739e22ad9033bcBf192059122d163b60349D')}`])
 
-function getVaultKey(vault: TYDaemonVault): string {
-  return `${vault.chainID}:${toAddress(vault.address)}`
+function getVaultKey(vault: TKongVaultInput): string {
+  return `${getVaultChainID(vault)}:${toAddress(getVaultAddress(vault))}`
 }
 
-function getVaultHaystack(vault: TYDaemonVault): string {
-  return `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol}`.toLowerCase()
+function getVaultHaystack(vault: TKongVaultInput): string {
+  const token = getVaultToken(vault)
+  return `${getVaultName(vault)} ${getVaultSymbol(vault)} ${token.name} ${token.symbol}`.toLowerCase()
 }
 
-export function deriveAssetCategory(vault: TYDaemonVault): TVaultAssetCategory {
-  if (vault.category === 'Stablecoin' || vault.category === 'Volatile') {
-    return vault.category
+export function deriveAssetCategory(vault: TKongVaultInput): TVaultAssetCategory {
+  const category = getVaultCategory(vault)
+  if (category === 'Stablecoin' || category === 'Volatile') {
+    return category
   }
 
-  const tokenSymbol = String(vault.token.symbol || '').toUpperCase()
+  const token = getVaultToken(vault)
+  const tokenSymbol = String(token.symbol || '').toUpperCase()
   if (KNOWN_STABLECOIN_SYMBOLS.has(tokenSymbol)) {
     return 'Stablecoin'
   }
@@ -80,19 +94,22 @@ export function deriveAssetCategory(vault: TYDaemonVault): TVaultAssetCategory {
   return 'Volatile'
 }
 
-export function deriveListKind(vault: TYDaemonVault): TVaultListKind {
+export function deriveListKind(vault: TKongVaultInput): TVaultListKind {
   if (isAllocatorVaultOverride(vault)) {
     return 'allocator'
   }
-  const isV3 = Boolean(vault.version?.startsWith('3') || vault.version?.startsWith('~3'))
+  const version = getVaultVersion(vault)
+  const isV3 = Boolean(version.startsWith('3') || version.startsWith('~3'))
+  const kind = getVaultKind(vault)
+
   if (isV3) {
-    if (vault.kind === 'Multi Strategy') {
+    if (kind === 'Multi Strategy') {
       return 'allocator'
     }
     return 'strategy'
   }
 
-  const name = String(vault.name || '').toLowerCase()
+  const name = String(getVaultName(vault) || '').toLowerCase()
   if (name.includes('factory')) return 'factory'
   if (isAutomatedVault(vault)) return 'factory'
   return 'legacy'
@@ -115,13 +132,13 @@ function getAggressivenessForRiskLevel(value: number): TVaultAggressiveness | nu
   }
 }
 
-export function deriveV3Aggressiveness(vault: TYDaemonVault): TVaultAggressiveness | null {
-  const override = AGGRESSIVENESS_OVERRIDES[getVaultKey(vault)]
+export function deriveV3Aggressiveness(_vault: TKongVaultInput): TVaultAggressiveness | null {
+  const override = AGGRESSIVENESS_OVERRIDES[getVaultKey(_vault)]
   if (override) {
     return override
   }
 
-  const riskLevel = vault.info?.riskLevel
+  const riskLevel = getVaultInfo(_vault).riskLevel
   if (typeof riskLevel === 'number') {
     const mapped = getAggressivenessForRiskLevel(riskLevel)
     if (mapped) {
@@ -132,7 +149,7 @@ export function deriveV3Aggressiveness(vault: TYDaemonVault): TVaultAggressivene
   return null
 }
 
-export function isAllocatorVaultOverride(vault: TYDaemonVault): boolean {
+export function isAllocatorVaultOverride(vault: TKongVaultInput): boolean {
   return ALLOCATOR_VAULT_OVERRIDES.has(getVaultKey(vault))
 }
 

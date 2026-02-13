@@ -1,42 +1,33 @@
-import { useFetch } from '@shared/hooks/useFetch'
-import { useYDaemonBaseURI } from '@shared/hooks/useYDaemonBaseURI'
-import { toAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { yDaemonVaultSchema } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { useMemo } from 'react'
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultStaking,
+  type TKongVault,
+  type TKongVaultStaking
+} from '@pages/vaults/domain/kongVaultSelectors'
+import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 
 type UseVaultWithStakingRewardsReturn = {
-  vault: TYDaemonVault
+  vault: TKongVault
+  staking: TKongVaultStaking
   isLoading: boolean
 }
 
 export function useVaultWithStakingRewards(
-  originalVault: TYDaemonVault,
+  originalVault: TKongVault,
   enabled: boolean
 ): UseVaultWithStakingRewardsReturn {
-  const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: originalVault.chainID })
+  const baseStaking = getVaultStaking(originalVault)
+  const chainId = getVaultChainID(originalVault)
+  const address = getVaultAddress(originalVault)
+  const needsFetch = enabled && baseStaking.available
 
-  const needsFetch =
-    enabled &&
-    originalVault.staking.available &&
-    (!originalVault.staking.rewards || originalVault.staking.rewards.length === 0)
-
-  const endpoint = useMemo(() => {
-    if (!needsFetch) return null
-    return `${yDaemonBaseUri}/vaults/${toAddress(originalVault.address)}`
-  }, [needsFetch, yDaemonBaseUri, originalVault.address])
-
-  const { data: fetchedVault, isLoading } = useFetch<TYDaemonVault>({
-    endpoint,
-    schema: yDaemonVaultSchema
+  const { data: snapshot, isLoading } = useVaultSnapshot({
+    chainId: needsFetch ? chainId : undefined,
+    address: needsFetch ? address : undefined
   })
 
-  const vault = useMemo(() => {
-    if (fetchedVault?.staking.rewards && fetchedVault.staking.rewards.length > 0) {
-      return fetchedVault
-    }
-    return originalVault
-  }, [fetchedVault, originalVault])
+  const staking = getVaultStaking(originalVault, snapshot)
 
-  return { vault, isLoading: needsFetch && isLoading }
+  return { vault: originalVault, staking, isLoading: needsFetch && isLoading }
 }

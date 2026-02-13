@@ -85,6 +85,8 @@ type TransactionOverlayProps = {
   onAllComplete?: () => void
   topOffset?: string
   contentAlign?: 'center' | 'start'
+  autoContinueToNextStep?: boolean
+  autoContinueStepLabels?: string[]
 }
 
 export const TransactionOverlay: FC<TransactionOverlayProps> = ({
@@ -93,7 +95,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   step,
   isLastStep = true,
   onAllComplete,
-  contentAlign = 'center'
+  contentAlign = 'center',
+  autoContinueToNextStep = false,
+  autoContinueStepLabels = []
 }) => {
   const [overlayState, setOverlayState] = useState<OverlayState>('success')
   const [errorMessage, setErrorMessage] = useState<string>('')
@@ -141,6 +145,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Track if we've started execution to prevent re-triggering
   const hasStartedRef = useRef(false)
+  const hasAutoContinuedFromStepRef = useRef<string | null>(null)
 
   // Reset state when overlay closes
   useEffect(() => {
@@ -149,6 +154,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       setErrorMessage('')
       setEnsoTxHash(undefined)
       hasStartedRef.current = false
+      hasAutoContinuedFromStepRef.current = null
       executedStepRef.current = null
       wasLastStepRef.current = false
       setNotificationId(undefined)
@@ -195,6 +201,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     },
     [notificationId, updateNotification]
   )
+
   const executeStep = useCallback(async () => {
     if (!step) {
       console.warn('[TransactionOverlay] Execute called without step')
@@ -375,6 +382,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     onAllComplete
   ])
 
+  const advanceToNextStep = useCallback(() => {
+    // Reset for next step - parent will provide the new step
+    writeContract.reset()
+    setEnsoTxHash(undefined)
+    executeStep()
+  }, [writeContract, executeStep])
+
   useEffect(() => {
     if (step?.prepare.isError) {
       console.error('[TransactionOverlay] Prepare failed', getStepDebugInfo(step))
@@ -385,12 +399,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     if (wasLastStepRef.current) {
       onClose()
     } else {
-      // Reset for next step - parent will provide the new step
-      writeContract.reset()
-      setEnsoTxHash(undefined)
-      executeStep()
+      advanceToNextStep()
     }
-  }, [onClose, writeContract, executeStep])
+  }, [onClose, advanceToNextStep])
 
   const handleRetry = useCallback(() => {
     writeContract.reset()
@@ -401,6 +412,28 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const handleClose = useCallback(() => {
     onClose()
   }, [onClose])
+
+  useEffect(() => {
+    if (!isOpen || overlayState !== 'success') return
+    if (!autoContinueToNextStep || wasLastStepRef.current || !isStepReady) return
+
+    const executedStepLabel = executedStepRef.current?.label
+    if (!executedStepLabel) return
+    if (!step?.label || step.label === executedStepLabel) return
+    if (autoContinueStepLabels.length > 0 && !autoContinueStepLabels.includes(executedStepLabel)) return
+    if (hasAutoContinuedFromStepRef.current === executedStepLabel) return
+
+    hasAutoContinuedFromStepRef.current = executedStepLabel
+    advanceToNextStep()
+  }, [
+    isOpen,
+    overlayState,
+    autoContinueToNextStep,
+    autoContinueStepLabels,
+    isStepReady,
+    step?.label,
+    advanceToNextStep
+  ])
 
   // Start step when overlay opens
   useEffect(() => {

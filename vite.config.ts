@@ -82,9 +82,7 @@ export default defineConfig({
       '@pages': path.resolve(__dirname, './src/components/pages'),
       '@components': path.resolve(__dirname, './src/components'),
       '@hooks': path.resolve(__dirname, './src/hooks'),
-      '@safe-global/safe-apps-sdk': path.resolve(__dirname, 'node_modules/@safe-global/safe-apps-sdk/dist/esm'),
-      // Polyfill node-fetch for browser
-      'node-fetch': 'cross-fetch'
+      '@safe-global/safe-apps-sdk': path.resolve(__dirname, 'node_modules/@safe-global/safe-apps-sdk/dist/esm')
     }
   },
   define: {
@@ -130,9 +128,7 @@ export default defineConfig({
       '@tanstack/react-query',
       'recharts',
       'framer-motion',
-      '@react-hookz/web',
-      '@cowprotocol/cow-sdk',
-      'cross-fetch'
+      '@react-hookz/web'
     ],
     esbuildOptions: {
       define: {

@@ -13,12 +13,13 @@ import { IconSettings } from '@shared/icons/IconSettings'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FC, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
+import { WidgetHeader } from '../shared/WidgetHeader'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
 import { DepositDetails } from './DepositDetails'
@@ -41,6 +42,7 @@ interface Props {
   handleDepositSuccess?: () => void
   onOpenSettings?: () => void
   isSettingsOpen?: boolean
+  onAmountChange?: (value: string) => void
   prefill?: {
     address: `0x${string}`
     chainId: number
@@ -50,6 +52,12 @@ interface Props {
   hideSettings?: boolean
   disableBorderRadius?: boolean
   collapseDetails?: boolean
+  detailsContent?: ReactNode
+  contentBelowInput?: ReactNode
+  vaultSharesLabel?: string
+  hideDetails?: boolean
+  hideActionButton?: boolean
+  hideContainerBorder?: boolean
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -64,11 +72,18 @@ export const WidgetDeposit: FC<Props> = ({
   handleDepositSuccess: onDepositSuccess,
   onOpenSettings,
   isSettingsOpen,
+  onAmountChange,
   prefill,
   onPrefillApplied,
   hideSettings: _hideSettings,
   disableBorderRadius,
-  collapseDetails
+  collapseDetails,
+  detailsContent,
+  contentBelowInput,
+  vaultSharesLabel,
+  hideDetails = false,
+  hideActionButton = false,
+  hideContainerBorder = false
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -118,6 +133,10 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
+
+  useEffect(() => {
+    onAmountChange?.(depositAmount.formValue)
+  }, [depositAmount.formValue, onAmountChange])
 
   useEffect(() => {
     if (!prefill) return
@@ -373,8 +392,11 @@ export const WidgetDeposit: FC<Props> = ({
 
   if (isLoadingVaultData) {
     return (
-      <div className="flex items-center justify-center h-[317px]">
-        <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+      <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
+        <WidgetHeader title="Deposit" />
+        <div className="flex items-center justify-center flex-1 p-6">
+          <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+        </div>
       </div>
     )
   }
@@ -384,7 +406,9 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   const isSettingsVisible = !!account && !!isSettingsOpen
 
-  const detailsSection = (
+  const detailsSection = detailsContent ? (
+    detailsContent
+  ) : hideDetails ? null : (
     <DepositDetails
       depositAmountBn={depositAmount.bn}
       inputTokenSymbol={inputToken?.symbol}
@@ -401,6 +425,7 @@ export const WidgetDeposit: FC<Props> = ({
       pricePerShare={pricePerShare || 0n}
       assetUsdPrice={assetTokenPrice}
       willReceiveStakedShares={willReceiveStakedShares}
+      vaultSharesLabel={vaultSharesLabel}
       onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
       onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
       estimatedAnnualReturn={estimatedAnnualReturn}
@@ -421,7 +446,7 @@ export const WidgetDeposit: FC<Props> = ({
   const actionRow = (
     <div className="flex items-center gap-2">
       <div className="flex-1">
-        {!account ? (
+        {hideActionButton ? null : !account ? (
           <Button
             onClick={openLoginModal}
             variant="filled"
@@ -478,12 +503,13 @@ export const WidgetDeposit: FC<Props> = ({
 
   return (
     <div
-      className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}
+      className={cl('flex flex-col relative h-full', {
+        'border border-border': !hideContainerBorder,
+        'rounded-lg': !hideContainerBorder && !disableBorderRadius
+      })}
       data-tour="vault-detail-deposit-widget"
     >
-      <div className="flex items-center justify-between gap-3 px-6 pt-4">
-        <h3 className="text-base font-semibold text-text-primary">Deposit</h3>
-      </div>
+      <WidgetHeader title="Deposit" />
       <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         {/* Amount Section */}
         <InputTokenAmount
@@ -504,6 +530,8 @@ export const WidgetDeposit: FC<Props> = ({
           tokenChainId={inputToken?.chainID}
           onTokenSelectorClick={() => setShowTokenSelector(true)}
         />
+
+        {contentBelowInput}
 
         {collapseDetails ? (
           <>
@@ -557,6 +585,8 @@ export const WidgetDeposit: FC<Props> = ({
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
         isLastStep={!needsApproval}
+        autoContinueToNextStep
+        autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleDepositSuccess}
       />
 

@@ -11,13 +11,14 @@ import { IconSettings } from '@shared/icons/IconSettings'
 import type { TNormalizedBN } from '@shared/types'
 import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FC, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
+import { WidgetHeader } from '../shared/WidgetHeader'
 import { getPriorityTokens } from './constants'
 import { SourceSelector } from './SourceSelector'
 import type { WithdrawalSource, WithdrawWidgetProps } from './types'
@@ -28,7 +29,13 @@ import { WithdrawDetails } from './WithdrawDetails'
 import { WithdrawDetailsOverlay } from './WithdrawDetailsOverlay'
 
 export const WidgetWithdraw: FC<
-  WithdrawWidgetProps & { hideSettings?: boolean; disableBorderRadius?: boolean; collapseDetails?: boolean }
+  WithdrawWidgetProps & {
+    hideSettings?: boolean
+    disableBorderRadius?: boolean
+    collapseDetails?: boolean
+    contentBelowInput?: ReactNode
+    hideContainerBorder?: boolean
+  }
 > = ({
   vaultAddress,
   assetAddress,
@@ -41,7 +48,9 @@ export const WidgetWithdraw: FC<
   onOpenSettings,
   isSettingsOpen,
   disableBorderRadius,
-  collapseDetails
+  collapseDetails,
+  contentBelowInput,
+  hideContainerBorder = false
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -388,8 +397,11 @@ export const WidgetWithdraw: FC<
 
   if (isLoadingVaultData) {
     return (
-      <div className="flex items-center justify-center h-[317px]">
-        <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+      <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
+        <WidgetHeader title="Withdraw" />
+        <div className="flex items-center justify-center flex-1 p-6">
+          <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+        </div>
       </div>
     )
   }
@@ -490,12 +502,13 @@ export const WidgetWithdraw: FC<
 
   return (
     <div
-      className={cl('flex flex-col relative border border-border h-full', { 'rounded-lg': !disableBorderRadius })}
+      className={cl('flex flex-col relative h-full', {
+        'border border-border': !hideContainerBorder,
+        'rounded-lg': !hideContainerBorder && !disableBorderRadius
+      })}
       data-tour="vault-detail-withdraw-widget"
     >
-      <div className="flex items-center justify-between gap-3 px-6 pt-4 ">
-        <h3 className="text-base font-semibold text-text-primary">Withdraw</h3>
-      </div>
+      <WidgetHeader title="Withdraw" />
       <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         <div>
           {/* Withdraw From Selector */}
@@ -538,6 +551,8 @@ export const WidgetWithdraw: FC<
               }
             />
           </div>
+
+          {contentBelowInput}
         </div>
 
         {collapseDetails ? (
@@ -592,6 +607,8 @@ export const WidgetWithdraw: FC<
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
         isLastStep={!needsApproval}
+        autoContinueToNextStep
+        autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleWithdrawSuccess}
       />
 

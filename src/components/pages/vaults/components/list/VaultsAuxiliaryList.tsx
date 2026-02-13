@@ -1,8 +1,8 @@
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import type { TVaultForwardAPYVariant } from '@pages/vaults/components/table/VaultForwardAPY'
+import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { toAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 
 import type { ReactElement } from 'react'
 
@@ -17,12 +17,12 @@ export type TVaultFlagsRecord = Record<
 
 type TVaultsAuxiliaryListProps = {
   title?: string
-  vaults: TYDaemonVault[]
+  vaults: TKongVaultInput[]
   vaultFlags: TVaultFlagsRecord
   apyDisplayVariant?: TVaultForwardAPYVariant
-  resolveApyDisplayVariant?: (vault: TYDaemonVault) => TVaultForwardAPYVariant
+  resolveApyDisplayVariant?: (vault: TKongVaultInput) => TVaultForwardAPYVariant
   compareVaultKeys?: string[]
-  onToggleCompare?: (vault: TYDaemonVault) => void
+  onToggleCompare?: (vault: TKongVaultInput) => void
   activeChains?: number[]
   activeCategories?: string[]
   activeProductType?: 'v3' | 'lp' | 'all'
@@ -70,9 +70,9 @@ export function VaultsAuxiliaryList({
         items={vaults}
         estimateSize={81}
         itemSpacingClassName={'pb-px'}
-        getItemKey={(vault): string => `${vault.chainID}_${toAddress(vault.address)}`}
+        getItemKey={(vault): string => `${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}`}
         renderItem={(vault): ReactElement => {
-          const key = `${vault.chainID}_${toAddress(vault.address)}`
+          const key = `${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}`
           const rowApyDisplayVariant = resolveApyDisplayVariant?.(vault) ?? apyDisplayVariant
           const isExpanded = expandedVaultKeys ? Boolean(expandedVaultKeys[key]) : undefined
           const handleExpandedChange = onExpandedChange

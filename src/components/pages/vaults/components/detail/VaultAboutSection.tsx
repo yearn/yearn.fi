@@ -1,3 +1,14 @@
+import {
+  getVaultAddress,
+  getVaultAPR,
+  getVaultCategory,
+  getVaultChainID,
+  getVaultDescription,
+  getVaultKind,
+  getVaultSymbol,
+  getVaultToken,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
   getCategoryDescription,
@@ -13,7 +24,6 @@ import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { cl, formatPercent } from '@shared/utils'
 import { copyToClipboard } from '@shared/utils/helpers'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { type ReactElement, type ReactNode, useState } from 'react'
 
@@ -80,49 +90,52 @@ export function VaultAboutSection({
   showKindTag = true,
   showVaultAddress = false
 }: {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   className?: string
   showKindTag?: boolean
   showVaultAddress?: boolean
   showHiddenTag?: boolean
   isHidden?: boolean
 }): ReactElement {
-  const { token, apr } = currentVault
-  const chainName = getNetwork(currentVault.chainID).name
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
+  const token = getVaultToken(currentVault)
+  const apr = getVaultAPR(currentVault)
+  const chainID = getVaultChainID(currentVault)
+  const vaultAddress = getVaultAddress(currentVault)
+  const vaultKind = getVaultKind(currentVault)
+  const vaultCategory = getVaultCategory(currentVault)
+  const vaultSymbol = getVaultSymbol(currentVault)
+  const description = getVaultDescription(currentVault)
+  const chainName = getNetwork(chainID).name
+  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
   const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
   const baseKindType: 'multi' | 'single' | undefined =
-    currentVault.kind === 'Multi Strategy' ? 'multi' : currentVault.kind === 'Single Strategy' ? 'single' : undefined
+    vaultKind === 'Multi Strategy' ? 'multi' : vaultKind === 'Single Strategy' ? 'single' : undefined
   const fallbackKindType: 'multi' | 'single' | undefined =
     listKind === 'allocator' ? 'multi' : listKind === 'strategy' ? 'single' : undefined
   const kindType = baseKindType ?? fallbackKindType
   const kindLabel: string | undefined =
-    kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : currentVault.kind
+    kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : vaultKind
   const shouldShowKind = showKindTag && Boolean(kindLabel)
   const vaultTypeLabel = [productTypeLabel, shouldShowKind ? kindLabel : null].filter(Boolean).join(' | ')
-  const chainDescription = getChainDescription(currentVault.chainID)
-  const chainWebsite = getChainWebsite(currentVault.chainID) ?? ''
+  const chainDescription = getChainDescription(chainID)
+  const chainWebsite = getChainWebsite(chainID) ?? ''
   const hasChainWebsite = Boolean(chainWebsite)
-  const assetTypeLabel = currentVault.category ?? 'Not specified'
-  const assetTypeDescription = getCategoryDescription(currentVault.category) ?? 'No asset category provided.'
+  const assetTypeLabel = vaultCategory ?? 'Not specified'
+  const assetTypeDescription = getCategoryDescription(vaultCategory) ?? 'No asset category provided.'
   const productTypeDescription = getProductTypeDescription(listKind)
   const vaultKindDescription = shouldShowKind ? getKindDescription(kindType, kindLabel) : null
   const managementFee = formatPercent((apr.fees.management || 0) * 100, 0, 2)
   const performanceFee = formatPercent((apr.fees.performance || 0) * 100, 0, 2)
   const feesSummary = `${managementFee} Management Fee | ${performanceFee} Performance Fee`
   const chainIcon = <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={16} height={16} />
-  const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
-  const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
+  const explorerBase = getNetwork(chainID).defaultBlockExplorer
+  const explorerHref = explorerBase ? `${explorerBase}/address/${vaultAddress}` : ''
 
-  const rawDescription = currentVault.description?.trim()
-    ? currentVault.description
-    : token.description?.trim()
-      ? token.description
-      : ''
-  const descriptionText = rawDescription ? rawDescription.replaceAll('{{token}}', currentVault.token.symbol) : ''
+  const rawDescription = description?.trim() ? description : token.description?.trim() ? token.description : ''
+  const descriptionText = rawDescription ? rawDescription.replaceAll('{{token}}', vaultSymbol) : ''
 
   return (
     <div className={cl('p-4 md:p-6 md:pt-0', className)} data-tour="vaults-row-expanded-info">
@@ -177,13 +190,13 @@ export function VaultAboutSection({
                   }
                   aria-label={'View vault on block explorer'}
                 >
-                  {currentVault.address}
+                  {vaultAddress}
                   <IconLinkOut className={'size-3'} />
                 </a>
               ) : null}
               <button
                 type={'button'}
-                onClick={(): void => copyToClipboard(currentVault.address)}
+                onClick={(): void => copyToClipboard(vaultAddress)}
                 className={'text-text-secondary transition-colors hover:text-text-primary'}
                 aria-label={'Copy vault address'}
               >

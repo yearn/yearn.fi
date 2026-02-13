@@ -1,5 +1,14 @@
 import Link from '@components/Link'
 import { SuggestedVaultCard } from '@pages/vaults/components/SuggestedVaultCard'
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultName,
+  getVaultStaking,
+  getVaultToken,
+  getVaultTVL,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
@@ -7,13 +16,12 @@ import { useLocalStorage } from '@shared/hooks/useLocalStorage'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, toAddress } from '@shared/utils'
 import { formatPercent } from '@shared/utils/format'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 type TTrendingVaultsProps = {
-  suggestedVaults: TYDaemonVault[]
+  suggestedVaults: TKongVaultInput[]
 }
 
 const MAX_EXPANDED_VAULTS = 4
@@ -49,19 +57,22 @@ function usePrefersReducedMotion(): boolean {
   return prefersReducedMotion
 }
 
-function TrendingVaultMarqueeItem({ vault }: { vault: TYDaemonVault }): ReactElement {
+function TrendingVaultMarqueeItem({ vault }: { vault: TKongVaultInput }): ReactElement {
   const apyData = useVaultApyData(vault)
-  const chain = getNetwork(vault.chainID)
-  const tokenIcon = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainID}/${toAddress(
-    vault.token.address
-  ).toLowerCase()}/logo-128.png`
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${vault.chainID}/logo-32.png`
+  const chainID = getVaultChainID(vault)
+  const vaultAddress = getVaultAddress(vault)
+  const token = getVaultToken(vault)
+  const chain = getNetwork(chainID)
+  const staking = getVaultStaking(vault)
+  const tvl = getVaultTVL(vault)
+  const tokenIcon = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
+  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
 
   const apyDisplay = useMemo((): string => {
     if (apyData.mode === 'historical' || apyData.mode === 'noForward') {
       return formatPercent(apyData.netApr * 100, 2, 2)
     }
-    if (apyData.mode === 'rewards' && vault.staking.source === 'VeYFI' && apyData.estAprRange) {
+    if (apyData.mode === 'rewards' && staking.source === 'VeYFI' && apyData.estAprRange) {
       return `${formatPercent(apyData.estAprRange[0] * 100, 2, 2)} – ${formatPercent(apyData.estAprRange[1] * 100, 2, 2)}`
     }
     if (apyData.mode === 'katana' && apyData.katanaEstApr !== undefined) {
@@ -72,18 +83,18 @@ function TrendingVaultMarqueeItem({ vault }: { vault: TYDaemonVault }): ReactEle
       return formatPercent(boostedApr * 100, 2, 2)
     }
     return formatPercent(apyData.baseForwardApr * 100, 2, 2)
-  }, [apyData, vault])
+  }, [apyData, staking.source])
 
   return (
     <Link
-      to={`/vaults/${vault.chainID}/${toAddress(vault.address)}`}
+      to={`/vaults/${chainID}/${toAddress(vaultAddress)}`}
       className={cl(
         'inline-flex items-center gap-2 rounded-md border border-border bg-surface px-2 py-1.5',
         'shadow-[0_8px_18px_rgba(4,8,32,0.06)] transition-colors hover:bg-surface-secondary'
       )}
     >
       <div className={'relative flex size-5 items-center justify-center'}>
-        <TokenLogo src={tokenIcon} tokenSymbol={vault.token.symbol || ''} width={20} height={20} />
+        <TokenLogo src={tokenIcon} tokenSymbol={token.symbol || ''} width={20} height={20} />
         <div
           className={
             'absolute -bottom-1 -right-1 flex size-3 items-center justify-center rounded-full border border-border bg-surface'
@@ -92,7 +103,9 @@ function TrendingVaultMarqueeItem({ vault }: { vault: TYDaemonVault }): ReactEle
           <TokenLogo src={chainLogoSrc} tokenSymbol={chain.name} width={12} height={12} />
         </div>
       </div>
-      <span className={'max-w-[160px] truncate text-mobile-label font-semibold text-text-primary'}>{vault.name}</span>
+      <span className={'max-w-[160px] truncate text-mobile-label font-semibold text-text-primary'}>
+        {getVaultName(vault)}
+      </span>
       <span aria-hidden className={'text-text-tertiary'}>
         {'|'}
       </span>
@@ -102,7 +115,7 @@ function TrendingVaultMarqueeItem({ vault }: { vault: TYDaemonVault }): ReactEle
       </span>
       <span className={'text-mobile-label font-semibold tabular-nums text-text-primary'}>
         <RenderAmount
-          value={vault.tvl?.tvl || 0}
+          value={tvl?.tvl || 0}
           symbol={'USD'}
           decimals={0}
           options={{ shouldCompactValue: true, maximumFractionDigits: 2, minimumFractionDigits: 0 }}
@@ -113,13 +126,13 @@ function TrendingVaultMarqueeItem({ vault }: { vault: TYDaemonVault }): ReactEle
   )
 }
 
-function TrendingVaultsCollapsedMarquee({ suggestedVaults }: { suggestedVaults: TYDaemonVault[] }): ReactElement {
+function TrendingVaultsCollapsedMarquee({ suggestedVaults }: { suggestedVaults: TKongVaultInput[] }): ReactElement {
   const [isInteracting, setIsInteracting] = useState(false)
   const prefersReducedMotion = usePrefersReducedMotion()
   const marqueeDuration = `${Math.max(suggestedVaults.length * 6, 24)}s`
   const marqueeItems = useMemo((): ReactElement[] => {
     const vaultItems = suggestedVaults.map((vault) => (
-      <TrendingVaultMarqueeItem key={`${vault.chainID}_${toAddress(vault.address)}`} vault={vault} />
+      <TrendingVaultMarqueeItem key={`${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}`} vault={vault} />
     ))
 
     if (prefersReducedMotion) {
@@ -127,7 +140,10 @@ function TrendingVaultsCollapsedMarquee({ suggestedVaults }: { suggestedVaults: 
     }
 
     const vaultItemsDuplicate = suggestedVaults.map((vault) => (
-      <TrendingVaultMarqueeItem key={`${vault.chainID}_${toAddress(vault.address)}_dup`} vault={vault} />
+      <TrendingVaultMarqueeItem
+        key={`${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}_dup`}
+        vault={vault}
+      />
     ))
 
     return [...vaultItemsDuplicate, ...vaultItems]
@@ -314,7 +330,7 @@ export function TrendingVaults({ suggestedVaults }: TTrendingVaultsProps): React
                 style={{ gridTemplateColumns: `repeat(${expandedVaults.length}, minmax(0, 1fr))` }}
               >
                 {expandedVaults.map((vault, index) => {
-                  const key = `${vault.chainID}_${toAddress(vault.address)}_${index}`
+                  const key = `${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}_${index}`
                   return (
                     <div key={key} className={'min-w-0'}>
                       <SuggestedVaultCard vault={vault} />

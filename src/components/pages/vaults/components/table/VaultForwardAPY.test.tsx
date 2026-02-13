@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { fireEvent, render } from '@testing-library/react'
 import { act } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -17,7 +17,7 @@ const vault = {
   address: '0x0000000000000000000000000000000000000001',
   apr: { forwardAPR: { type: '' }, type: '' },
   staking: { source: 'None' }
-} as unknown as TYDaemonVault
+} as unknown as TKongVaultInput
 
 describe('VaultForwardAPY', () => {
   it('shows subline tooltip when hovering the value', () => {

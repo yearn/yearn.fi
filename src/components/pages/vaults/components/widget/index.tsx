@@ -1,15 +1,24 @@
+import {
+  getVaultAPR,
+  getVaultInfo,
+  getVaultMigration,
+  getVaultStaking,
+  getVaultSymbol,
+  getVaultToken,
+  getVaultVersion,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import type { TAddress } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { type FC, forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react'
 import { WidgetDeposit } from './deposit'
 import { WidgetMigrate } from './migrate'
 import { WidgetWithdraw } from './withdraw'
 
 interface Props {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   vaultAddress?: TAddress
   gaugeAddress?: TAddress
   disableDepositStaking?: boolean
@@ -75,7 +84,13 @@ export const Widget = forwardRef<TWidgetRef, Props>(
     const [internalMode, setInternalMode] = useState<ActionType>(actions[0])
     const currentMode = mode ?? internalMode
     const setMode = onModeChange ?? setInternalMode
-    const assetToken = currentVault.token.address
+    const assetToken = getVaultToken(currentVault).address
+    const vaultAPR = getVaultAPR(currentVault)
+    const vaultSymbol = getVaultSymbol(currentVault)
+    const vaultStaking = getVaultStaking(currentVault)
+    const vaultVersion = getVaultVersion(currentVault)
+    const vaultInfo = getVaultInfo(currentVault)
+    const vaultMigration = getVaultMigration(currentVault)
     const resolvedStakingAddress = isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)
 
     useImperativeHandle(ref, () => ({
@@ -101,9 +116,9 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               assetAddress={toAddress(assetToken)}
               stakingAddress={disableDepositStaking ? undefined : resolvedStakingAddress}
               chainId={chainId}
-              vaultAPR={currentVault?.apr?.forwardAPR?.netAPR || 0}
-              vaultSymbol={currentVault?.symbol || ''}
-              stakingSource={currentVault?.staking?.source}
+              vaultAPR={vaultAPR?.forwardAPR?.netAPR || 0}
+              vaultSymbol={vaultSymbol || ''}
+              stakingSource={vaultStaking?.source}
               vaultUserData={vaultUserData}
               handleDepositSuccess={handleSuccess}
               prefill={depositPrefill ?? undefined}
@@ -122,9 +137,9 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               assetAddress={toAddress(assetToken)}
               stakingAddress={resolvedStakingAddress}
               chainId={chainId}
-              vaultSymbol={currentVault?.symbol || ''}
-              vaultVersion={currentVault?.version}
-              isVaultRetired={Boolean(currentVault?.info?.isRetired)}
+              vaultSymbol={vaultSymbol || ''}
+              vaultVersion={vaultVersion}
+              isVaultRetired={Boolean(vaultInfo?.isRetired)}
               vaultUserData={vaultUserData}
               handleWithdrawSuccess={handleSuccess}
               onOpenSettings={onOpenSettings}
@@ -141,10 +156,10 @@ export const Widget = forwardRef<TWidgetRef, Props>(
               assetAddress={toAddress(assetToken)}
               stakingAddress={resolvedStakingAddress}
               chainId={chainId}
-              vaultSymbol={currentVault?.symbol || ''}
-              vaultVersion={currentVault?.version}
-              migrationTarget={toAddress(currentVault?.migration?.address)}
-              migrationContract={toAddress(currentVault?.migration?.contract)}
+              vaultSymbol={vaultSymbol || ''}
+              vaultVersion={vaultVersion}
+              migrationTarget={toAddress(vaultMigration?.address)}
+              migrationContract={toAddress(vaultMigration?.contract)}
               vaultUserData={vaultUserData}
               handleMigrateSuccess={handleSuccess}
             />

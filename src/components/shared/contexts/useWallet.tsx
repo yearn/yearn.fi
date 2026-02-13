@@ -1,3 +1,4 @@
+import { getVaultStaking, getVaultVersion, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
@@ -123,8 +124,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     // Build staking address → vault address lookup
     const stakingToVault = new Map<string, string>()
     for (const [vaultAddress, vault] of Object.entries(vaults)) {
-      if (vault.staking?.address && !isZeroAddress(toAddress(vault.staking.address))) {
-        stakingToVault.set(toAddress(vault.staking.address), vaultAddress)
+      const staking = getVaultStaking(vault as TKongVault)
+      if (staking?.address && !isZeroAddress(toAddress(staking.address))) {
+        stakingToVault.set(toAddress(staking.address), vaultAddress)
       }
     }
 
@@ -144,7 +146,8 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         if (!vaultDetails) continue
 
         const tokenValue = tokenData.value || 0
-        const isV3 = vaultDetails.version?.split('.')?.[0] === '3' || vaultDetails.version?.split('.')?.[0] === '~3'
+        const version = getVaultVersion(vaultDetails as TKongVault)
+        const isV3 = version.split('.')?.[0] === '3' || version.split('.')?.[0] === '~3'
 
         if (isV3) {
           cumulatedValueInV3Vaults += tokenValue

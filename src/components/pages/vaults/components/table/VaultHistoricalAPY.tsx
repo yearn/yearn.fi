@@ -1,5 +1,5 @@
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement } from 'react'
 import { Fragment, useState } from 'react'
 import { APYDetailsModal } from './APYDetailsModal'
@@ -7,7 +7,7 @@ import { ApyDisplay } from './ApyDisplay'
 import { resolveHistoricalApyDisplayConfig } from './apyDisplayConfig'
 
 type TVaultHistoricalAPYProps = {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   className?: string
   valueClassName?: string
   showSublineTooltip?: boolean
