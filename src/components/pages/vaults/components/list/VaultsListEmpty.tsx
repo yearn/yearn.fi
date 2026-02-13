@@ -1,8 +1,8 @@
 import { Switch as HeadlessSwitch } from '@headlessui/react'
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { Button } from '@shared/components/Button'
 import { EmptyState } from '@shared/components/EmptyState'
 import { cl } from '@shared/utils'
-import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { type ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
 
 type TVaultsBlockingFilterAction = {

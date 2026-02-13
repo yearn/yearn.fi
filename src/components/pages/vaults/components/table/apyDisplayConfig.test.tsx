@@ -1,6 +1,6 @@
 import { KATANA_CHAIN_ID, SPECTRA_MARKET_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { isValidElement } from 'react'
 import { describe, expect, it } from 'vitest'
 import { resolveHistoricalApyDisplayConfig } from './apyDisplayConfig'
@@ -18,7 +18,7 @@ const KATANA_SPECTRA_VAULT = {
       weekAgo: 0.1
     }
   }
-} as unknown as TYDaemonVault
+} as unknown as TKongVaultInput
 
 const KATANA_APY_DATA = {
   mode: 'katana',

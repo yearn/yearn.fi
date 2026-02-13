@@ -8,7 +8,9 @@ import type {
 import type { TListHead } from '@pages/vaults/components/list/VaultsListHead'
 import {
   getVaultChainID,
+  getVaultInfo,
   getVaultToken,
+  getVaultTVL,
   type TKongVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
@@ -605,7 +607,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
   }, [allBlockingFiltersVaults, currentVisibleVaultKeys])
 
   const getBlockingFilterKeysForVault = useCallback(
-    (vault: TYDaemonVault): TVaultsBlockingFilterBaseActionKey[] => {
+    (vault: TKongVaultInput): TVaultsBlockingFilterBaseActionKey[] => {
       const blockingKeys = new Set<TVaultsBlockingFilterBaseActionKey>()
       const listKind = deriveListKind(vault)
       const isV3Kind = listKind === 'allocator' || listKind === 'strategy'
@@ -615,13 +617,13 @@ export function useVaultsPageModel(): TVaultsPageModel {
         blockingKeys.add('showAllVaults')
       }
 
-      if (!listShowHiddenVaults && Boolean(vault.info?.isHidden)) {
+      if (!listShowHiddenVaults && Boolean(getVaultInfo(vault).isHidden)) {
         blockingKeys.add('showHiddenVaults')
       }
       if (!listShowLegacyVaults && listKind === 'legacy') {
         blockingKeys.add('showLegacyVaults')
       }
-      if (listChains !== null && !listChains.includes(vault.chainID)) {
+      if (listChains !== null && !listChains.includes(getVaultChainID(vault))) {
         blockingKeys.add('showAllChains')
       }
 
@@ -640,14 +642,14 @@ export function useVaultsPageModel(): TVaultsPageModel {
       }
 
       if (listUnderlyingAssetsExpanded.size > 0) {
-        const assetKey = normalizeUnderlyingAssetSymbol(vault.token?.symbol)
+        const assetKey = normalizeUnderlyingAssetSymbol(getVaultToken(vault).symbol)
         if (!assetKey || !listUnderlyingAssetsExpanded.has(assetKey)) {
           blockingKeys.add('showAllUnderlyingAssets')
         }
       }
 
       if (listMinTvl !== DEFAULT_MIN_TVL) {
-        const tvl = vault.tvl?.tvl || 0
+        const tvl = getVaultTVL(vault).tvl || 0
         if (tvl < listMinTvl) {
           blockingKeys.add('clearMinTvl')
         }
