@@ -1,5 +1,5 @@
 import { serve } from 'bun'
-import { clearCache, getHistoricalHoldings, initializeSchema, isDatabaseEnabled, validateConfig } from './lib/holdings'
+import { clearCache, getHistoricalHoldings, initializeSchema, validateConfig } from './lib/holdings'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 
@@ -255,14 +255,6 @@ async function handleHoldingsCacheClear(req: Request): Promise<Response> {
   }
 }
 
-async function handleHealth(): Promise<Response> {
-  return Response.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    database: isDatabaseEnabled() ? 'enabled' : 'disabled'
-  })
-}
-
 async function main() {
   validateConfig()
 
@@ -284,13 +276,11 @@ async function main() {
         response = await handleEnsoBalances(req)
       } else if (url.pathname === '/api/enso/route') {
         response = await handleEnsoRoute(req)
-      } else if (url.pathname === '/api/v1/health') {
-        response = await handleHealth()
-      } else if (url.pathname === '/api/v1/holdings/history/simple') {
+      } else if (url.pathname === '/api/holdings/history') {
         response = await handleHoldingsHistorySimple(req)
-      } else if (url.pathname === '/api/v1/holdings/history') {
+      } else if (url.pathname === '/api/holdings/history/full') {
         response = await handleHoldingsHistory(req)
-      } else if (url.pathname === '/api/v1/holdings/cache') {
+      } else if (url.pathname === '/api/holdings/cache') {
         response = await handleHoldingsCacheClear(req)
       } else {
         response = new Response('Not found', { status: 404 })
@@ -302,9 +292,8 @@ async function main() {
   })
 
   console.log('🚀 API server running on http://localhost:3001')
-  console.log('📊 Holdings API: http://localhost:3001/api/v1/holdings/history?address=0x...')
-  console.log('📈 Simple API: http://localhost:3001/api/v1/holdings/history/simple?address=0x...')
-  console.log('💚 Health: http://localhost:3001/api/v1/health')
+  console.log('📊 Holdings API: http://localhost:3001/api/holdings/history?address=0x...')
+  console.log('📊 Full API: http://localhost:3001/api/holdings/history/full?address=0x...')
 }
 
 main().catch((error) => {

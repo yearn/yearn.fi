@@ -4,39 +4,6 @@ import { useMemo } from 'react'
 import type { TPortfolioHistoryChartData, TPortfolioHistorySimpleResponse } from '../types/api'
 import { portfolioHistorySimpleResponseSchema } from '../types/api'
 
-const API_BASE_URL = 'http://localhost:3001/api/v1'
-
-/**
- * Fetches and manages portfolio history data for the connected wallet address.
- *
- * This hook retrieves historical portfolio value data from the local API server,
- * transforming it into a format suitable for chart visualization. The data is cached
- * for 5 minutes to minimize redundant API calls.
- *
- * @returns An object containing:
- * - `data`: Array of historical portfolio data points with date and totalUsdValue, or null if unavailable
- * - `isLoading`: Boolean indicating if the data is currently being fetched
- * - `error`: Error object if the fetch failed, undefined otherwise
- *
- * @remarks
- * - Only fetches data when a wallet is connected and active
- * - Automatically refetches when the wallet address changes
- * - Data is cached for 5 minutes to improve performance
- * - Uses Zod schema validation to ensure API response integrity
- *
- * @example
- * ```tsx
- * function PortfolioChart() {
- *   const { data, isLoading, error } = usePortfolioHistory()
- *
- *   if (isLoading) return <Spinner />
- *   if (error) return <ErrorMessage error={error} />
- *   if (!data) return <EmptyState />
- *
- *   return <LineChart data={data} />
- * }
- * ```
- */
 export function usePortfolioHistory() {
   const { address, isActive } = useWeb3()
 
@@ -44,7 +11,7 @@ export function usePortfolioHistory() {
     if (!address || !isActive) {
       return null
     }
-    return `${API_BASE_URL}/holdings/history/simple?address=${address}`
+    return `/api/holdings/history?address=${address}`
   }, [address, isActive])
 
   const {
