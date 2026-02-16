@@ -1,5 +1,4 @@
-import { getEligibleVaults } from '@pages/portfolio/hooks/getEligibleVaults'
-import { UNDERLYING_ASSET_OVERRIDES } from '@pages/vaults/utils/vaultListFacets'
+import { getEligibleVaults, normalizeSymbol } from '@pages/portfolio/hooks/getEligibleVaults'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
@@ -9,11 +8,6 @@ import { useMemo } from 'react'
 export type TPersonalizedSuggestion = {
   vault: TYDaemonVault
   matchedSymbol: string
-}
-
-function normalizeSymbol(symbol: string): string {
-  const upper = symbol.trim().toUpperCase()
-  return UNDERLYING_ASSET_OVERRIDES[upper] ?? upper
 }
 
 export function usePersonalizedSuggestions(holdingsKeySet: Set<string>): TPersonalizedSuggestion[] {

@@ -1,6 +1,5 @@
 import { EXTERNAL_TOKENS } from '@pages/portfolio/constants/externalTokens'
-import { getEligibleVaults } from '@pages/portfolio/hooks/getEligibleVaults'
-import { UNDERLYING_ASSET_OVERRIDES } from '@pages/vaults/utils/vaultListFacets'
+import { getEligibleVaults, normalizeSymbol } from '@pages/portfolio/hooks/getEligibleVaults'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useEnsoBalances } from '@shared/hooks/useEnsoBalances'
@@ -12,11 +11,6 @@ export type TExternalSuggestion = {
   vault: TYDaemonVault
   externalProtocol: string
   underlyingSymbol: string
-}
-
-function normalizeSymbol(symbol: string): string {
-  const upper = symbol.trim().toUpperCase()
-  return UNDERLYING_ASSET_OVERRIDES[upper] ?? upper
 }
 
 export function useExternalSuggestions(holdingsKeySet: Set<string>): {

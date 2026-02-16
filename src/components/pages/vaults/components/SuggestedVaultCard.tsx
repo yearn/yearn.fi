@@ -45,6 +45,7 @@ export function SuggestedVaultCard({
   const listKind = deriveListKind(vault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
+
   const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
   const chainDescription = getChainDescription(chainID)
   const categoryDescription = getCategoryDescription(vaultCategory)
@@ -70,11 +71,6 @@ export function SuggestedVaultCard({
         </div>
         <div className={'flex min-w-0 flex-col'}>
           <p className={'truncate text-base font-semibold text-text-primary'}>{vaultName}</p>
-          {matchedSymbol ? (
-            <span className={'mt-0.5 w-fit rounded-lg bg-primary/20 px-1 py-0.5 text-xs font-medium text-text-primary'}>
-              {externalProtocol ? `${matchedSymbol} on ${externalProtocol}` : `You hold ${matchedSymbol}`}
-            </span>
-          ) : null}
         </div>
       </div>
       <div className={'mt-1 flex flex-wrap items-center gap-1'}>
@@ -94,7 +90,13 @@ export function SuggestedVaultCard({
           showCollapsedTooltip
         />
       </div>
-      <div className={'mt-1 flex items-end justify-between gap-4'}>
+      {matchedSymbol ? (
+        <span className={'flex items-center gap-1.5 truncate text-xs font-medium text-text-primary'}>
+          <span className={'size-2 shrink-0 rounded-full bg-primary animate-pulse'} />
+          {externalProtocol ? `You hold ${matchedSymbol} on ${externalProtocol}` : `You hold ${matchedSymbol}`}
+        </span>
+      ) : null}
+      <div className={'mt-auto flex items-end justify-between gap-4'}>
         <div>
           <p className={'text-mobile-label text-xs uppercase tracking-wide text-text-secondary'}>{apyLabel}</p>
           <div className={'mt-0'}>

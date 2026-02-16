@@ -1,5 +1,11 @@
+import { UNDERLYING_ASSET_OVERRIDES } from '@pages/vaults/utils/vaultListFacets'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+
+export function normalizeSymbol(symbol: string): string {
+  const upper = symbol.trim().toUpperCase()
+  return UNDERLYING_ASSET_OVERRIDES[upper] ?? upper
+}
 
 export function getEligibleVaults(vaults: Record<string, TYDaemonVault>, holdingsKeySet: Set<string>): TYDaemonVault[] {
   return Object.values(vaults).filter((vault) => {

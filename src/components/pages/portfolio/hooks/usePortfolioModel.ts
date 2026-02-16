@@ -182,45 +182,41 @@ export function usePortfolioModel(): TPortfolioModel {
   }, [sortedHoldings])
 
   const suggestedRows = useMemo((): TSuggestedItem[] => {
-    const maxSlots = 4
-    const results: TSuggestedItem[] = []
-    const usedKeys = new Set<string>()
-
-    const tryAdd = (item: TSuggestedItem, vaultKey: string): boolean => {
-      if (results.length >= maxSlots || usedKeys.has(vaultKey)) return false
-      usedKeys.add(vaultKey)
-      results.push(item)
-      return true
-    }
-
-    for (const ext of externalSuggestions.slice(0, 2)) {
-      const vaultKey = getVaultKey(ext.vault)
-      tryAdd(
-        {
-          type: 'external',
-          key: `ext-${vaultKey}`,
+    const candidates: { item: TSuggestedItem; vaultKey: string }[] = [
+      ...externalSuggestions.slice(0, 2).map((ext) => ({
+        item: {
+          type: 'external' as const,
+          key: `ext-${getVaultKey(ext.vault)}`,
           vault: ext.vault,
           externalProtocol: ext.externalProtocol,
           underlyingSymbol: ext.underlyingSymbol
         },
-        vaultKey
-      )
-    }
+        vaultKey: getVaultKey(ext.vault)
+      })),
+      ...personalizedSuggestions.map((ps) => ({
+        item: {
+          type: 'personalized' as const,
+          key: `pers-${getVaultKey(ps.vault)}`,
+          vault: ps.vault,
+          matchedSymbol: ps.matchedSymbol
+        },
+        vaultKey: getVaultKey(ps.vault)
+      })),
+      ...genericVaults.map((vault) => ({
+        item: { type: 'generic' as const, key: `gen-${getVaultKey(vault)}`, vault },
+        vaultKey: getVaultKey(vault)
+      }))
+    ]
 
-    for (const ps of personalizedSuggestions) {
-      const vaultKey = getVaultKey(ps.vault)
-      tryAdd(
-        { type: 'personalized', key: `pers-${vaultKey}`, vault: ps.vault, matchedSymbol: ps.matchedSymbol },
-        vaultKey
-      )
-    }
-
-    for (const vault of genericVaults) {
-      const vaultKey = getVaultKey(vault)
-      tryAdd({ type: 'generic', key: `gen-${vaultKey}`, vault }, vaultKey)
-    }
-
-    return results
+    const seen = new Set<string>()
+    return candidates
+      .filter(({ vaultKey }) => {
+        if (seen.has(vaultKey)) return false
+        seen.add(vaultKey)
+        return true
+      })
+      .slice(0, 4)
+      .map(({ item }) => item)
   }, [externalSuggestions, personalizedSuggestions, genericVaults])
 
   const hasHoldings = sortedHoldings.length > 0
@@ -232,7 +228,7 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const getVaultEstimatedAPY = useMemo(
     () =>
-      (vault: (typeof holdingsVaults)[number]): number | null => {
+      (vault: TYDaemonVault): number | null => {
         const apy = calculateVaultEstimatedAPY(vault, katanaAprs)
         return apy === 0 ? null : apy
       },
@@ -241,9 +237,8 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const getVaultHistoricalAPY = useMemo(
     () =>
-      (vault: (typeof holdingsVaults)[number]): number | null => {
-        return calculateVaultHistoricalAPY(vault, katanaAprs)
-      },
+      (vault: TYDaemonVault): number | null =>
+        calculateVaultHistoricalAPY(vault, katanaAprs),
     [katanaAprs]
   )
 

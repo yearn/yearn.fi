@@ -1,5 +1,7 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
+import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
+import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { Notification } from '@pages/vaults/components/notifications/Notification'
@@ -34,8 +36,6 @@ import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useChainId, useSwitchChain } from 'wagmi'
-import { type TPortfolioModel, usePortfolioModel } from './hooks/usePortfolioModel'
-import { useVaultWithStakingRewards } from './hooks/useVaultWithStakingRewards'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
