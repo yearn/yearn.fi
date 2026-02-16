@@ -1,3 +1,4 @@
+import { getEligibleVaults } from '@pages/portfolio/hooks/getEligibleVaults'
 import { UNDERLYING_ASSET_OVERRIDES } from '@pages/vaults/utils/vaultListFacets'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -32,21 +33,15 @@ export function usePersonalizedSuggestions(holdingsKeySet: Set<string>): TPerson
       return acc.set(normalized, (acc.get(normalized) ?? 0) + value)
     }, new Map<string, number>())
 
-    // Sort symbols by total USD value (biggest holdings first)
     const sortedSymbols = [...symbolTotals.entries()].sort((a, b) => b[1] - a[1])
 
-    const vaultsBySymbol = Object.values(vaults)
-      .filter((vault) => {
-        if (Boolean(vault.info?.isHidden) || Boolean(vault.info?.isRetired) || Boolean(vault.migration?.available))
-          return false
-        if ((vault.tvl?.tvl ?? 0) <= 0) return false
-        if (holdingsKeySet.has(getVaultKey(vault))) return false
-        return normalizeSymbol(vault.token.symbol ?? '') !== ''
-      })
-      .reduce((acc, vault) => {
-        const vaultSymbol = normalizeSymbol(vault.token.symbol ?? '')
-        return acc.set(vaultSymbol, [...(acc.get(vaultSymbol) ?? []), vault])
-      }, new Map<string, TYDaemonVault[]>())
+    const eligible = getEligibleVaults(vaults, holdingsKeySet)
+
+    const vaultsBySymbol = eligible.reduce((acc, vault) => {
+      const vaultSymbol = normalizeSymbol(vault.token.symbol ?? '')
+      if (!vaultSymbol) return acc
+      return acc.set(vaultSymbol, [...(acc.get(vaultSymbol) ?? []), vault])
+    }, new Map<string, TYDaemonVault[]>())
 
     return sortedSymbols.reduce<{ results: TPersonalizedSuggestion[]; usedVaults: Set<string> }>(
       (acc, [symbol]) => {

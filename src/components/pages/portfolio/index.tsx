@@ -1,6 +1,5 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
-import { ExternalComparisonCard } from '@pages/vaults/components/ExternalComparisonCard'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { Notification } from '@pages/vaults/components/notifications/Notification'
@@ -898,15 +897,12 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
         {suggestedRows.map((row) => {
           if (row.type === 'external') {
             return (
-              <div key={row.key} className="min-[480px]:col-span-2">
-                <ExternalComparisonCard
-                  vault={row.vault}
-                  externalProtocol={row.externalProtocol}
-                  externalApy={row.externalApy}
-                  yearnApy={row.yearnApy}
-                  underlyingSymbol={row.underlyingSymbol}
-                />
-              </div>
+              <SuggestedVaultCard
+                key={row.key}
+                vault={row.vault}
+                matchedSymbol={row.underlyingSymbol}
+                externalProtocol={row.externalProtocol}
+              />
             )
           }
           if (row.type === 'personalized') {
