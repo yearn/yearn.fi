@@ -1,27 +1,23 @@
 export interface HoldingsConfig {
-  envioGraphqlUrl: string
-  envioPassword: string
-  databaseUrl: string | null
-  kongBaseUrl: string
-  defillamaBaseUrl: string
-  ydaemonBaseUrl: string
-  historyDays: number
-}
-
-function getEnv(key: string, defaultValue: string): string {
-  const value = process.env[key]
-  return value ? value : defaultValue
-}
-
-function getEnvOrNull(key: string): string | null {
-  const value = process.env[key]
-  return value ? value : null
+  readonly envioGraphqlUrl: string
+  readonly envioPassword: string
+  readonly databaseUrl: string | null
+  readonly kongBaseUrl: string
+  readonly defillamaBaseUrl: string
+  readonly ydaemonBaseUrl: string
+  readonly historyDays: number
 }
 
 export const config: HoldingsConfig = {
-  envioGraphqlUrl: getEnv('ENVIO_GRAPHQL_URL', 'http://localhost:8080/v1/graphql'),
-  envioPassword: getEnv('ENVIO_PASSWORD', 'testing'),
-  databaseUrl: getEnvOrNull('DATABASE_URL'),
+  get envioGraphqlUrl() {
+    return process.env.ENVIO_GRAPHQL_URL ?? 'http://localhost:8080/v1/graphql'
+  },
+  get envioPassword() {
+    return process.env.ENVIO_PASSWORD ?? 'testing'
+  },
+  get databaseUrl() {
+    return process.env.DATABASE_URL ?? null
+  },
   kongBaseUrl: 'https://kong.yearn.fi',
   defillamaBaseUrl: 'https://coins.llama.fi',
   ydaemonBaseUrl: 'https://ydaemon.yearn.fi',
@@ -29,10 +25,10 @@ export const config: HoldingsConfig = {
 }
 
 export function validateConfig(): void {
-  if (!config.envioGraphqlUrl) {
+  if (!process.env.ENVIO_GRAPHQL_URL) {
     console.warn('[Holdings] ENVIO_GRAPHQL_URL not set, using default localhost:8080')
   }
-  if (!config.databaseUrl) {
+  if (!process.env.DATABASE_URL) {
     console.warn('[Holdings] DATABASE_URL not set, caching disabled')
   }
 }
