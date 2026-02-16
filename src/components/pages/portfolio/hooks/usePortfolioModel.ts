@@ -27,16 +27,8 @@ type THoldingsRow = {
 }
 
 export type TSuggestedItem =
+  | { type: 'external'; key: string; vault: TKongVault; externalProtocol: string; underlyingSymbol: string }
   | { type: 'personalized'; key: string; vault: TKongVault; matchedSymbol: string }
-  | {
-      type: 'external'
-      key: string
-      vault: TKongVault
-      externalProtocol: string
-      externalApy: number
-      yearnApy: number
-      underlyingSymbol: string
-    }
   | { type: 'generic'; key: string; vault: TKongVault }
 
 export type TPortfolioBlendedMetrics = {
@@ -190,60 +182,45 @@ export function usePortfolioModel(): TPortfolioModel {
   }, [sortedHoldings])
 
   const suggestedRows = useMemo((): TSuggestedItem[] => {
-    type TCandidate = { item: TSuggestedItem; cost: number; vaultKey: string }
+    const maxSlots = 4
+    const results: TSuggestedItem[] = []
+    const usedKeys = new Set<string>()
 
-    const externalCandidates: TCandidate[] = externalSuggestions.map((ext) => {
+    const tryAdd = (item: TSuggestedItem, vaultKey: string): boolean => {
+      if (results.length >= maxSlots || usedKeys.has(vaultKey)) return false
+      usedKeys.add(vaultKey)
+      results.push(item)
+      return true
+    }
+
+    for (const ext of externalSuggestions.slice(0, 2)) {
       const vaultKey = getVaultKey(ext.vault)
-      return {
-        item: {
-          type: 'external' as const,
+      tryAdd(
+        {
+          type: 'external',
           key: `ext-${vaultKey}`,
           vault: ext.vault,
           externalProtocol: ext.externalProtocol,
-          externalApy: ext.externalApy,
-          yearnApy: ext.yearnApy,
           underlyingSymbol: ext.underlyingSymbol
         },
-        cost: 2,
         vaultKey
-      }
-    })
+      )
+    }
 
-    const personalizedCandidates: TCandidate[] = personalizedSuggestions.map((ps) => {
+    for (const ps of personalizedSuggestions) {
       const vaultKey = getVaultKey(ps.vault)
-      return {
-        item: {
-          type: 'personalized' as const,
-          key: `pers-${vaultKey}`,
-          vault: ps.vault,
-          matchedSymbol: ps.matchedSymbol
-        },
-        cost: 1,
+      tryAdd(
+        { type: 'personalized', key: `pers-${vaultKey}`, vault: ps.vault, matchedSymbol: ps.matchedSymbol },
         vaultKey
-      }
-    })
+      )
+    }
 
-    const genericCandidates: TCandidate[] = genericVaults.map((vault) => {
+    for (const vault of genericVaults) {
       const vaultKey = getVaultKey(vault)
-      return {
-        item: { type: 'generic' as const, key: `gen-${vaultKey}`, vault },
-        cost: 1,
-        vaultKey
-      }
-    })
+      tryAdd({ type: 'generic', key: `gen-${vaultKey}`, vault }, vaultKey)
+    }
 
-    return [...externalCandidates, ...personalizedCandidates, ...genericCandidates].reduce<{
-      items: TSuggestedItem[]
-      budget: number
-      usedKeys: Set<string>
-    }>(
-      (acc, { item, cost, vaultKey }) => {
-        if (acc.budget < cost || acc.usedKeys.has(vaultKey)) return acc
-        acc.usedKeys.add(vaultKey)
-        return { items: [...acc.items, item], budget: acc.budget - cost, usedKeys: acc.usedKeys }
-      },
-      { items: [], budget: 4, usedKeys: new Set() }
-    ).items
+    return results
   }, [externalSuggestions, personalizedSuggestions, genericVaults])
 
   const hasHoldings = sortedHoldings.length > 0

@@ -24,10 +24,12 @@ import type { ReactElement } from 'react'
 
 export function SuggestedVaultCard({
   vault,
-  matchedSymbol
+  matchedSymbol,
+  externalProtocol
 }: {
   vault: TKongVaultInput
   matchedSymbol?: string
+  externalProtocol?: string
 }): ReactElement {
   const apyData = useVaultApyData(vault)
   const apyLabel = apyData.mode === 'historical' || apyData.mode === 'noForward' ? '30D APY' : 'Est. APY'
@@ -68,7 +70,11 @@ export function SuggestedVaultCard({
         </div>
         <div className={'flex min-w-0 flex-col'}>
           <p className={'truncate text-base font-semibold text-text-primary'}>{vaultName}</p>
-          {matchedSymbol ? <p className={'text-xs text-text-secondary'}>{`You hold ${matchedSymbol}`}</p> : null}
+          {matchedSymbol ? (
+            <span className={'mt-0.5 w-fit rounded-lg bg-primary/20 px-1 py-0.5 text-xs font-medium text-text-primary'}>
+              {externalProtocol ? `${matchedSymbol} on ${externalProtocol}` : `You hold ${matchedSymbol}`}
+            </span>
+          ) : null}
         </div>
       </div>
       <div className={'mt-1 flex flex-wrap items-center gap-1'}>
