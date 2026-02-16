@@ -8,10 +8,20 @@ export interface HoldingsConfig {
   historyDays: number
 }
 
+function getEnv(key: string, defaultValue: string): string {
+  const value = process.env[key]
+  return value ? value : defaultValue
+}
+
+function getEnvOrNull(key: string): string | null {
+  const value = process.env[key]
+  return value ? value : null
+}
+
 export const config: HoldingsConfig = {
-  envioGraphqlUrl: process.env.ENVIO_GRAPHQL_URL || 'http://localhost:8080/v1/graphql',
-  envioPassword: process.env.ENVIO_PASSWORD || 'testing',
-  databaseUrl: process.env.DATABASE_URL || null,
+  envioGraphqlUrl: getEnv('ENVIO_GRAPHQL_URL', 'http://localhost:8080/v1/graphql'),
+  envioPassword: getEnv('ENVIO_PASSWORD', 'testing'),
+  databaseUrl: getEnvOrNull('DATABASE_URL'),
   kongBaseUrl: 'https://kong.yearn.fi',
   defillamaBaseUrl: 'https://coins.llama.fi',
   ydaemonBaseUrl: 'https://ydaemon.yearn.fi',
