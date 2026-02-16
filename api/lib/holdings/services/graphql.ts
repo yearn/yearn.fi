@@ -62,12 +62,19 @@ const TRANSFERS_OUT_QUERY = `
 `
 
 async function executeQuery<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  }
+
+  // Only add admin secret if explicitly configured (not the default 'testing' value)
+  const password = config.envioPassword
+  if (password && password !== 'testing') {
+    headers['x-hasura-admin-secret'] = password
+  }
+
   const response = await fetch(config.envioGraphqlUrl, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-hasura-admin-secret': config.envioPassword
-    },
+    headers,
     body: JSON.stringify({ query, variables })
   })
 

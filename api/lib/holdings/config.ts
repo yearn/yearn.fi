@@ -13,7 +13,7 @@ export const config: HoldingsConfig = {
     return process.env.ENVIO_GRAPHQL_URL ?? 'http://localhost:8080/v1/graphql'
   },
   get envioPassword() {
-    return process.env.ENVIO_PASSWORD ?? 'testing'
+    return process.env.ENVIO_PASSWORD ?? ''
   },
   get databaseUrl() {
     return process.env.DATABASE_URL ?? null
