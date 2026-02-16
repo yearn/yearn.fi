@@ -75,7 +75,7 @@ async function executeQuery<T>(query: string, variables: Record<string, unknown>
     throw new Error(`GraphQL request failed: ${response.status}`)
   }
 
-  const json = await response.json()
+  const json = (await response.json()) as { data: T; errors?: unknown[] }
 
   if (json.errors) {
     throw new Error(`GraphQL errors: ${JSON.stringify(json.errors)}`)

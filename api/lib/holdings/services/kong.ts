@@ -63,7 +63,7 @@ export async function fetchVaultPPS(chainId: number, vaultAddress: string): Prom
     throw new Error(`Kong API request failed: ${response.status} for ${vaultAddress}`)
   }
 
-  const data: KongPPSDataPoint[] = await response.json()
+  const data = (await response.json()) as KongPPSDataPoint[]
   return parsePPSResponse(data)
 }
 

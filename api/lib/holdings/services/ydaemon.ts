@@ -30,7 +30,7 @@ export async function fetchVaultMetadata(chainId: number, vaultAddress: string):
       return null
     }
 
-    const data: YDaemonVaultResponse = await response.json()
+    const data = (await response.json()) as YDaemonVaultResponse
 
     const metadata: VaultMetadata = {
       address: data.address,

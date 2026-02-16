@@ -61,7 +61,7 @@ export async function fetchHistoricalPrices(
         continue
       }
 
-      const data: DefiLlamaBatchResponse = await response.json()
+      const data = (await response.json()) as DefiLlamaBatchResponse
       const batchResult = parseDefiLlamaResponse(data)
 
       for (const [coinKey, priceMap] of batchResult) {
