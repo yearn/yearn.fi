@@ -287,7 +287,7 @@ function DesktopCompareGrid({
                   <div className={'flex flex-col gap-2'}>
                     {strategies.map((strategy) => {
                       const debtRatio = strategy.details?.debtRatio
-                      const allocation = debtRatio ? formatPercent(debtRatio / 100, 0) : null
+                      const allocation = debtRatio ? formatPercent(debtRatio / 100) : null
                       return (
                         <div key={strategy.address} className={'flex items-start gap-2'}>
                           <span className={'text-text-primary'}>{strategy.name}</span>

@@ -9,7 +9,7 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
 import type { TNormalizedBN } from '@shared/types'
-import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import { cl, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
@@ -19,6 +19,7 @@ import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { WidgetHeader } from '../shared/WidgetHeader'
+import { formatWidgetValue } from '../shared/valueDisplay'
 import { getPriorityTokens } from './constants'
 import { SourceSelector } from './SourceSelector'
 import type { WithdrawalSource, WithdrawWidgetProps } from './types'
@@ -246,12 +247,10 @@ export const WidgetWithdraw: FC<
 
     const getExpectedAmount = () => {
       if (isUnstake) {
-        return requiredShares > 0n
-          ? formatAmount(Number(formatUnits(requiredShares, vault?.decimals ?? 18)), 6, 6)
-          : '0'
+        return requiredShares > 0n ? formatWidgetValue(requiredShares, vault?.decimals ?? 18) : '0'
       }
       return activeFlow.periphery.expectedOut && activeFlow.periphery.expectedOut > 0n
-        ? formatAmount(Number(formatUnits(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)), 6, 6)
+        ? formatWidgetValue(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)
         : '0'
     }
 
@@ -413,7 +412,9 @@ export const WidgetWithdraw: FC<
       outputDecimals={outputToken?.decimals ?? 18}
       outputSymbol={outputToken?.symbol}
       showSwapRow={withdrawToken !== assetAddress && !isUnstake}
-      withdrawAmountSimple={withdrawAmount.formValue}
+      withdrawAmountSimple={
+        withdrawAmount.bn > 0n ? formatWidgetValue(withdrawAmount.bn, assetToken?.decimals ?? 18) : '0'
+      }
       assetSymbol={assetToken?.symbol}
       routeType={routeType}
       onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
@@ -606,17 +607,10 @@ export const WidgetWithdraw: FC<
         sourceTokenSymbol={withdrawalSource === 'staking' ? stakingToken?.symbol || vaultSymbol : vaultSymbol}
         vaultAssetSymbol={assetToken?.symbol || ''}
         outputTokenSymbol={outputToken?.symbol || ''}
-        withdrawAmount={
-          requiredShares > 0n
-            ? formatTAmount({
-                value: requiredShares,
-                decimals: sharesDecimals
-              })
-            : '0'
-        }
+        withdrawAmount={requiredShares > 0n ? formatWidgetValue(requiredShares, sharesDecimals) : '0'}
         expectedOutput={
           activeFlow.periphery.expectedOut > 0n
-            ? formatTAmount({ value: activeFlow.periphery.expectedOut, decimals: outputToken?.decimals ?? 18 })
+            ? formatWidgetValue(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)
             : undefined
         }
         hasInputValue={withdrawAmount.bn > 0n}

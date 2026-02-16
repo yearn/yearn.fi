@@ -20,6 +20,7 @@ import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { WidgetHeader } from '../shared/WidgetHeader'
+import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
 import { DepositDetails } from './DepositDetails'
@@ -196,9 +197,8 @@ export const WidgetDeposit: FC<Props> = ({
   const vaultDecimals = vault?.decimals ?? 18
 
   const estimatedAnnualReturn = useMemo(() => {
-    if (depositAmount.debouncedBn === 0n || vaultAPR === 0) return '0'
-    const annualReturn = Number(formatUnits(depositAmount.debouncedBn, inputToken?.decimals ?? 18)) * vaultAPR
-    return annualReturn.toFixed(2)
+    if (depositAmount.debouncedBn === 0n || vaultAPR === 0) return 0
+    return Number(formatUnits(depositAmount.debouncedBn, inputToken?.decimals ?? 18)) * vaultAPR
   }, [depositAmount.debouncedBn, inputToken?.decimals, vaultAPR])
 
   const expectedOutInAsset = useMemo(() => {
@@ -231,13 +231,9 @@ export const WidgetDeposit: FC<Props> = ({
         ? (expectedOut * pricePerShare) / 10n ** BigInt(vaultDecimals)
         : 0n
 
-    const formatted = formatTAmount({
-      value: valueInAsset,
-      decimals: assetDecimals,
-      options: { maximumFractionDigits: 6 }
-    })
+    const formatted = formatWidgetValue(valueInAsset, assetDecimals)
 
-    const usd = (Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice).toFixed(2)
+    const usd = formatWidgetValue(Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice)
 
     return { formatted, usd }
   }, [activeFlow.periphery.expectedOut, vaultDecimals, assetToken?.decimals, pricePerShare, assetTokenPrice])
@@ -574,10 +570,7 @@ export const WidgetDeposit: FC<Props> = ({
         stakingTokenSymbol={stakingToken?.symbol}
         expectedShares={
           activeFlow.periphery.expectedOut > 0n
-            ? formatTAmount({
-                value: activeFlow.periphery.expectedOut,
-                decimals: sharesDecimals
-              })
+            ? formatWidgetValue(activeFlow.periphery.expectedOut, sharesDecimals)
             : '0'
         }
         stakingAddress={stakingAddress}
@@ -589,23 +582,16 @@ export const WidgetDeposit: FC<Props> = ({
       <AnnualReturnOverlay
         isOpen={showAnnualReturnModal}
         onClose={() => setShowAnnualReturnModal(false)}
-        depositAmount={formatTAmount({
-          value: depositAmount.debouncedBn,
-          decimals: inputToken?.decimals ?? 18
-        })}
+        depositAmount={formatWidgetValue(depositAmount.debouncedBn, inputToken?.decimals ?? 18)}
         tokenSymbol={inputToken?.symbol}
-        estimatedReturn={estimatedAnnualReturn}
+        estimatedReturn={formatWidgetValue(estimatedAnnualReturn)}
         currentAPR={vaultAPR}
       />
 
       <VaultShareValueOverlay
         isOpen={showVaultShareValueModal}
         onClose={() => setShowVaultShareValueModal(false)}
-        sharesAmount={formatTAmount({
-          value: activeFlow.periphery.expectedOut,
-          decimals: sharesDecimals,
-          options: { maximumFractionDigits: 4 }
-        })}
+        sharesAmount={formatWidgetValue(activeFlow.periphery.expectedOut, sharesDecimals)}
         shareValue={vaultShareValue.formatted}
         assetSymbol={assetToken?.symbol || ''}
         usdValue={vaultShareValue.usd}
@@ -626,11 +612,7 @@ export const WidgetDeposit: FC<Props> = ({
         )}
         spenderName={routeType === 'ENSO' ? 'Enso Router' : 'Vault'}
         chainId={sourceChainId}
-        currentAllowance={
-          activeFlow.periphery.allowance >= BigInt(2) ** BigInt(255)
-            ? 'Unlimited'
-            : formatTAmount({ value: activeFlow.periphery.allowance, decimals: inputToken?.decimals ?? 18 })
-        }
+        currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, inputToken?.decimals ?? 18) || '0'}
       />
 
       {/* Token Selector Overlay */}

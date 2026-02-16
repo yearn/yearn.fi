@@ -1,6 +1,5 @@
-import { formatAmount, formatTAmount } from '@shared/utils'
 import type { FC } from 'react'
-import { formatUnits, maxUint256 } from 'viem'
+import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import type { WithdrawRouteType } from './types'
 
 interface WithdrawDetailsProps {
@@ -47,14 +46,7 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
   allowanceTokenSymbol,
   onAllowanceClick
 }) => {
-  // Format allowance display
-  const formatAllowance = () => {
-    if (allowance === undefined || allowanceTokenDecimals === undefined) return null
-    if (allowance >= maxUint256 / 2n) return 'Unlimited'
-    return `${formatTAmount({ value: allowance, decimals: allowanceTokenDecimals })} ${allowanceTokenSymbol || ''}`
-  }
-
-  const allowanceDisplay = formatAllowance()
+  const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
   return (
     <div>
       <div className="flex flex-col gap-2">
@@ -72,12 +64,7 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
           ) : (
             <p className="text-sm text-text-primary">
               <span className="font-semibold">
-                {requiredShares > 0n
-                  ? formatTAmount({
-                      value: requiredShares,
-                      decimals: sharesDecimals
-                    })
-                  : '0'}
+                {requiredShares > 0n ? formatWidgetValue(requiredShares, sharesDecimals) : '0'}
               </span>{' '}
               <span className="font-normal">{'Vault shares'}</span>
             </p>
@@ -106,9 +93,7 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
                 <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : expectedOut > 0n ? (
                 <>
-                  <span className="font-semibold">
-                    {formatAmount(Number(formatUnits(expectedOut, outputDecimals)), 3, 6)}
-                  </span>{' '}
+                  <span className="font-semibold">{formatWidgetValue(expectedOut, outputDecimals)}</span>{' '}
                   <span className="font-normal">{outputSymbol}</span>
                 </>
               ) : (
@@ -131,11 +116,17 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
                 onClick={onAllowanceClick}
                 className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
               >
-                <span className="font-semibold">{allowanceDisplay}</span>
+                <span className="font-semibold">
+                  {allowanceDisplay}
+                  {allowanceDisplay !== 'Unlimited' && allowanceTokenSymbol ? ` ${allowanceTokenSymbol}` : ''}
+                </span>
               </button>
             ) : (
               <p className="text-sm text-text-primary">
-                <span className="font-semibold">{allowanceDisplay}</span>
+                <span className="font-semibold">
+                  {allowanceDisplay}
+                  {allowanceDisplay !== 'Unlimited' && allowanceTokenSymbol ? ` ${allowanceTokenSymbol}` : ''}
+                </span>
               </p>
             )}
           </div>

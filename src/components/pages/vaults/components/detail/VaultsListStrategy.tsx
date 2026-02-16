@@ -55,7 +55,7 @@ export function VaultsListStrategy({
     apyContent = formatApyDisplay(displayApr)
   }
 
-  const allocationContent = isInactive ? '-' : isUnallocated ? '-' : formatPercent((details?.debtRatio || 0) / 100, 0)
+  const allocationContent = isInactive ? '-' : isUnallocated ? '-' : formatPercent((details?.debtRatio || 0) / 100)
 
   const amountContent = isInactive ? '-' : isUnallocated ? '-' : allocation
 

@@ -6,7 +6,7 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { formatCounterValue, formatTAmount, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
+import { formatTAmount, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { hexToNumber, slice } from 'viem'
@@ -14,6 +14,7 @@ import { useAccount, usePublicClient } from 'wagmi'
 import { useYearn } from '@/components/shared/contexts/useYearn'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { WidgetHeader } from '../shared/WidgetHeader'
+import { formatWidgetValue } from '../shared/valueDisplay'
 import { useMigrateError } from './useMigrateError'
 import { useMigrateFlow } from './useMigrateFlow'
 
@@ -91,14 +92,15 @@ export const WidgetMigrate: FC<Props> = ({
     decimals: vaultToken?.decimals ?? 18,
     options: { maximumFractionDigits: 6 }
   })
+  const displayBalance = formatWidgetValue(migrateBalance, vaultToken?.decimals ?? 18)
 
   const balanceUsd = useMemo(() => {
-    if (migrateBalance === 0n) return '$0.00'
+    if (migrateBalance === 0n) return '$0'
 
-    return formatCounterValue(
-      toNormalizedBN(migrateBalance, vaultToken?.decimals ?? 18).display,
+    const usdValue =
+      Number(toNormalizedBN(migrateBalance, vaultToken?.decimals ?? 18).display) *
       getPrice({ address: vaultAddress, chainID: chainId }).normalized
-    )
+    return `$${formatWidgetValue(usdValue)}`
   }, [migrateBalance, vaultAddress, chainId, getPrice, vaultToken?.decimals])
 
   // Determine flow based on routeType
@@ -432,7 +434,7 @@ export const WidgetMigrate: FC<Props> = ({
           </div>
           <div className="flex flex-col items-start">
             <span className="text-xl font-semibold text-text-primary">
-              {formattedBalance} {vaultToken?.symbol || vaultSymbol}
+              {displayBalance} {vaultToken?.symbol || vaultSymbol}
             </span>
             <span className="text-sm text-text-secondary">{balanceUsd}</span>
           </div>
