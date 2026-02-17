@@ -84,26 +84,27 @@ export async function saveCachedHoldings(holdings: CachedHolding[]): Promise<voi
   }
 
   try {
-    const values: unknown[] = []
-    const placeholders: string[] = []
-    let paramIndex = 1
-
-    for (const holding of holdings) {
-      placeholders.push(
-        `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5}, $${paramIndex + 6}, $${paramIndex + 7})`
-      )
-      values.push(
-        holding.userAddress.toLowerCase(),
-        holding.date,
-        holding.chainId,
-        holding.vaultAddress.toLowerCase(),
-        holding.shares,
-        holding.usdValue,
-        holding.pricePerShare,
-        holding.underlyingPrice
-      )
-      paramIndex += 8
-    }
+    const FIELDS_PER_ROW = 8
+    const { placeholders, values } = holdings.reduce(
+      (acc, holding, idx) => {
+        const base = idx * FIELDS_PER_ROW + 1
+        acc.placeholders.push(
+          `($${base}, $${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7})`
+        )
+        acc.values.push(
+          holding.userAddress.toLowerCase(),
+          holding.date,
+          holding.chainId,
+          holding.vaultAddress.toLowerCase(),
+          holding.shares,
+          holding.usdValue,
+          holding.pricePerShare,
+          holding.underlyingPrice
+        )
+        return acc
+      },
+      { placeholders: [] as string[], values: [] as unknown[] }
+    )
 
     const query = `
       INSERT INTO holdings_cache (user_address, date, chain_id, vault_address, shares, usd_value, price_per_share, underlying_price)

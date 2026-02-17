@@ -25,24 +25,15 @@ export async function getHistoricalHoldings(userAddress: string): Promise<Holdin
   const cachedDates = new Set(cachedHoldings.map((h) => h.date))
   const missingTimestamps = timestamps.filter((ts) => !cachedDates.has(timestampToDateString(ts)))
 
-  const newHoldings: CachedHolding[] = []
+  const newHoldings: CachedHolding[] = await (async () => {
+    if (missingTimestamps.length === 0) return []
 
-  if (missingTimestamps.length > 0) {
     const events = await fetchUserEvents(userAddress)
 
     const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
 
     if (timeline.length === 0) {
-      return {
-        address: userAddress,
-        periodDays: days,
-        dataPoints: timestamps.map((ts) => ({
-          date: timestampToDateString(ts),
-          timestamp: ts,
-          totalUsdValue: 0,
-          chains: []
-        }))
-      }
+      return []
     }
 
     const vaults = getUniqueVaults(timeline)
@@ -51,28 +42,22 @@ export async function getHistoricalHoldings(userAddress: string): Promise<Holdin
 
     const ppsData = await fetchMultipleVaultsPPS(vaults)
 
-    const underlyingTokens: Array<{ chainId: number; address: string }> = []
-    for (const [_key, metadata] of vaultMetadata) {
-      underlyingTokens.push({
-        chainId: metadata.chainId,
-        address: metadata.token.address
-      })
-    }
+    const underlyingTokens = Array.from(vaultMetadata.values()).map((metadata) => ({
+      chainId: metadata.chainId,
+      address: metadata.token.address
+    }))
 
     const priceData = await fetchHistoricalPrices(underlyingTokens, missingTimestamps)
 
-    for (const timestamp of missingTimestamps) {
+    const computed = missingTimestamps.flatMap((timestamp) => {
       const dateStr = timestampToDateString(timestamp)
-
-      for (const vault of vaults) {
+      return vaults.flatMap((vault) => {
         const vaultKey = `${vault.chainId}:${vault.vaultAddress}`
         const metadata = vaultMetadata.get(vaultKey)
-
-        if (!metadata) continue
+        if (!metadata) return []
 
         const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, timestamp)
-
-        if (shares === BigInt(0)) continue
+        if (shares === BigInt(0)) return []
 
         const ppsMap = ppsData.get(vaultKey)
         const pps = ppsMap ? interpolatePPS(ppsMap, timestamp) : 1.0
@@ -84,23 +69,27 @@ export async function getHistoricalHoldings(userAddress: string): Promise<Holdin
         const sharesFloat = Number(shares) / 10 ** metadata.decimals
         const usdValue = sharesFloat * pps * tokenPrice
 
-        newHoldings.push({
-          userAddress,
-          date: dateStr,
-          chainId: vault.chainId,
-          vaultAddress: vault.vaultAddress,
-          shares: shares.toString(),
-          usdValue,
-          pricePerShare: pps,
-          underlyingPrice: tokenPrice
-        })
-      }
+        return [
+          {
+            userAddress,
+            date: dateStr,
+            chainId: vault.chainId,
+            vaultAddress: vault.vaultAddress,
+            shares: shares.toString(),
+            usdValue,
+            pricePerShare: pps,
+            underlyingPrice: tokenPrice
+          }
+        ]
+      })
+    })
+
+    if (computed.length > 0) {
+      await saveCachedHoldings(computed)
     }
 
-    if (newHoldings.length > 0) {
-      await saveCachedHoldings(newHoldings)
-    }
-  }
+    return computed
+  })()
 
   const allHoldings = [...cachedHoldings, ...newHoldings]
 
@@ -113,20 +102,19 @@ function aggregateHoldings(
   timestamps: number[],
   holdings: CachedHolding[]
 ): HoldingsHistoryResponse {
-  const holdingsByDate = new Map<string, CachedHolding[]>()
-  for (const holding of holdings) {
-    const existing = holdingsByDate.get(holding.date) || []
+  const holdingsByDate = holdings.reduce((acc, holding) => {
+    const existing = acc.get(holding.date) || []
     existing.push(holding)
-    holdingsByDate.set(holding.date, existing)
-  }
+    acc.set(holding.date, existing)
+    return acc
+  }, new Map<string, CachedHolding[]>())
 
   const dataPoints: DailyHoldings[] = timestamps.map((timestamp) => {
     const dateStr = timestampToDateString(timestamp)
     const dayHoldings = holdingsByDate.get(dateStr) || []
 
-    const chainMap = new Map<number, VaultHolding[]>()
-    for (const holding of dayHoldings) {
-      const existing = chainMap.get(holding.chainId) || []
+    const chainMap = dayHoldings.reduce((acc, holding) => {
+      const existing = acc.get(holding.chainId) || []
       existing.push({
         address: holding.vaultAddress,
         shares: holding.shares,
@@ -134,22 +122,22 @@ function aggregateHoldings(
         pricePerShare: holding.pricePerShare,
         underlyingPrice: holding.underlyingPrice
       })
-      chainMap.set(holding.chainId, existing)
-    }
+      acc.set(holding.chainId, existing)
+      return acc
+    }, new Map<number, VaultHolding[]>())
 
-    const chains: ChainHoldings[] = []
-    for (const [chainId, vaults] of chainMap) {
-      const chainConfig = CHAINS.find((c) => c.id === chainId)
-      const totalUsdValue = vaults.reduce((sum, v) => sum + v.usdValue, 0)
-      chains.push({
-        chainId,
-        chainName: chainConfig?.name || 'unknown',
-        totalUsdValue,
-        vaults
+    const chains: ChainHoldings[] = Array.from(chainMap.entries())
+      .map(([chainId, vaults]) => {
+        const chainConfig = CHAINS.find((c) => c.id === chainId)
+        const totalUsdValue = vaults.reduce((sum, v) => sum + v.usdValue, 0)
+        return {
+          chainId,
+          chainName: chainConfig?.name || 'unknown',
+          totalUsdValue,
+          vaults
+        }
       })
-    }
-
-    chains.sort((a, b) => a.chainId - b.chainId)
+      .sort((a, b) => a.chainId - b.chainId)
 
     const totalUsdValue = chains.reduce((sum, c) => sum + c.totalUsdValue, 0)
 

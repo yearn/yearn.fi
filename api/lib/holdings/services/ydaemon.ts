@@ -54,24 +54,25 @@ export async function fetchVaultMetadata(chainId: number, vaultAddress: string):
 export async function fetchMultipleVaultsMetadata(
   vaults: Array<{ chainId: number; vaultAddress: string }>
 ): Promise<Map<string, VaultMetadata>> {
-  const results = new Map<string, VaultMetadata>()
-
   const batchSize = 5
-  for (let i = 0; i < vaults.length; i += batchSize) {
-    const batch = vaults.slice(i, i + batchSize)
-    const promises = batch.map(async ({ chainId, vaultAddress }) => {
-      const key = `${chainId}:${vaultAddress.toLowerCase()}`
-      const metadata = await fetchVaultMetadata(chainId, vaultAddress)
-      return { key, metadata }
-    })
+  const batches = Array.from({ length: Math.ceil(vaults.length / batchSize) }, (_, i) =>
+    vaults.slice(i * batchSize, (i + 1) * batchSize)
+  )
 
-    const batchResults = await Promise.all(promises)
-    for (const { key, metadata } of batchResults) {
-      if (metadata) {
-        results.set(key, metadata)
-      }
-    }
-  }
-
-  return results
+  return batches.reduce(async (accPromise, batch) => {
+    const acc = await accPromise
+    const batchResults = await Promise.all(
+      batch.map(async ({ chainId, vaultAddress }) => {
+        const key = `${chainId}:${vaultAddress.toLowerCase()}`
+        const metadata = await fetchVaultMetadata(chainId, vaultAddress)
+        return { key, metadata }
+      })
+    )
+    batchResults
+      .filter(({ metadata }) => metadata !== null)
+      .forEach(({ key, metadata }) => {
+        acc.set(key, metadata)
+      })
+    return acc
+  }, Promise.resolve(new Map<string, VaultMetadata>()))
 }

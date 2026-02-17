@@ -11,9 +11,9 @@ const CORS_HEADERS = {
 
 function withCors(response: Response): Response {
   const newHeaders = new Headers(response.headers)
-  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+  Object.entries(CORS_HEADERS).forEach(([key, value]) => {
     newHeaders.set(key, value)
-  }
+  })
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -255,6 +255,16 @@ async function handleHoldingsCacheClear(req: Request): Promise<Response> {
   }
 }
 
+async function routeRequest(pathname: string, req: Request): Promise<Response> {
+  if (pathname === '/api/enso/status') return handleEnsoStatus()
+  if (pathname === '/api/enso/balances') return handleEnsoBalances(req)
+  if (pathname === '/api/enso/route') return handleEnsoRoute(req)
+  if (pathname === '/api/holdings/history') return handleHoldingsHistorySimple(req)
+  if (pathname === '/api/holdings/history/full') return handleHoldingsHistory(req)
+  if (pathname === '/api/holdings/cache') return handleHoldingsCacheClear(req)
+  return new Response('Not found', { status: 404 })
+}
+
 async function main() {
   validateConfig()
 
@@ -268,23 +278,7 @@ async function main() {
         return handleCorsPrelight()
       }
 
-      let response: Response
-
-      if (url.pathname === '/api/enso/status') {
-        response = handleEnsoStatus()
-      } else if (url.pathname === '/api/enso/balances') {
-        response = await handleEnsoBalances(req)
-      } else if (url.pathname === '/api/enso/route') {
-        response = await handleEnsoRoute(req)
-      } else if (url.pathname === '/api/holdings/history') {
-        response = await handleHoldingsHistorySimple(req)
-      } else if (url.pathname === '/api/holdings/history/full') {
-        response = await handleHoldingsHistory(req)
-      } else if (url.pathname === '/api/holdings/cache') {
-        response = await handleHoldingsCacheClear(req)
-      } else {
-        response = new Response('Not found', { status: 404 })
-      }
+      const response = await routeRequest(url.pathname, req)
 
       return withCors(response)
     },

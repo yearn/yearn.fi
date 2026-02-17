@@ -2,13 +2,7 @@ import { config } from '../config'
 import type { KongPPSDataPoint } from '../types'
 
 export function parsePPSResponse(response: KongPPSDataPoint[]): Map<number, number> {
-  const ppsMap = new Map<number, number>()
-
-  for (const point of response) {
-    ppsMap.set(point.time, parseFloat(point.value))
-  }
-
-  return ppsMap
+  return new Map(response.map((point) => [point.time, parseFloat(point.value)]))
 }
 
 export function interpolatePPS(ppsMap: Map<number, number>, timestamp: number): number {
@@ -30,18 +24,8 @@ export function interpolatePPS(ppsMap: Map<number, number>, timestamp: number): 
     return ppsMap.get(timestamps[timestamps.length - 1])!
   }
 
-  let lower = timestamps[0]
-  let upper = timestamps[timestamps.length - 1]
-
-  for (const ts of timestamps) {
-    if (ts <= timestamp) {
-      lower = ts
-    }
-    if (ts >= timestamp && ts < upper) {
-      upper = ts
-      break
-    }
-  }
+  const lower = timestamps.reduce((acc, ts) => (ts <= timestamp ? ts : acc), timestamps[0])
+  const upper = timestamps.find((ts) => ts >= timestamp) ?? timestamps[timestamps.length - 1]
 
   if (lower === upper) {
     return ppsMap.get(lower)!
@@ -70,27 +54,28 @@ export async function fetchVaultPPS(chainId: number, vaultAddress: string): Prom
 export async function fetchMultipleVaultsPPS(
   vaults: Array<{ chainId: number; vaultAddress: string }>
 ): Promise<Map<string, Map<number, number>>> {
-  const results = new Map<string, Map<number, number>>()
-
   const batchSize = 5
-  for (let i = 0; i < vaults.length; i += batchSize) {
-    const batch = vaults.slice(i, i + batchSize)
-    const promises = batch.map(async ({ chainId, vaultAddress }) => {
-      const key = `${chainId}:${vaultAddress.toLowerCase()}`
-      try {
-        const ppsMap = await fetchVaultPPS(chainId, vaultAddress)
-        return { key, ppsMap }
-      } catch (error) {
-        console.error(`[Kong] Failed to fetch PPS for ${key}:`, error)
-        return { key, ppsMap: new Map<number, number>() }
-      }
+  const batches = Array.from({ length: Math.ceil(vaults.length / batchSize) }, (_, i) =>
+    vaults.slice(i * batchSize, (i + 1) * batchSize)
+  )
+
+  return batches.reduce(async (accPromise, batch) => {
+    const acc = await accPromise
+    const batchResults = await Promise.all(
+      batch.map(async ({ chainId, vaultAddress }) => {
+        const key = `${chainId}:${vaultAddress.toLowerCase()}`
+        try {
+          const ppsMap = await fetchVaultPPS(chainId, vaultAddress)
+          return { key, ppsMap }
+        } catch (error) {
+          console.error(`[Kong] Failed to fetch PPS for ${key}:`, error)
+          return { key, ppsMap: new Map<number, number>() }
+        }
+      })
+    )
+    batchResults.forEach(({ key, ppsMap }) => {
+      acc.set(key, ppsMap)
     })
-
-    const batchResults = await Promise.all(promises)
-    for (const { key, ppsMap } of batchResults) {
-      results.set(key, ppsMap)
-    }
-  }
-
-  return results
+    return acc
+  }, Promise.resolve(new Map<string, Map<number, number>>()))
 }

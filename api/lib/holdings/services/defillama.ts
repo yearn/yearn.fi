@@ -10,31 +10,19 @@ export function buildBatchHistoricalUrl(
   coins: Array<{ chain: string; address: string }>,
   timestamps: number[]
 ): string {
-  const coinsParam: Record<string, number[]> = {}
-
-  for (const coin of coins) {
-    const key = `${coin.chain}:${coin.address}`
-    coinsParam[key] = timestamps
-  }
+  const coinsParam = Object.fromEntries(coins.map((coin) => [`${coin.chain}:${coin.address}`, timestamps]))
 
   const encodedCoins = encodeURIComponent(JSON.stringify(coinsParam))
   return `${config.defillamaBaseUrl}/batchHistorical?coins=${encodedCoins}`
 }
 
 export function parseDefiLlamaResponse(response: DefiLlamaBatchResponse): Map<string, Map<number, number>> {
-  const result = new Map<string, Map<number, number>>()
-
-  for (const [coinKey, coinData] of Object.entries(response.coins)) {
-    const priceMap = new Map<number, number>()
-
-    for (const pricePoint of coinData.prices) {
-      priceMap.set(pricePoint.timestamp, pricePoint.price)
-    }
-
-    result.set(coinKey.toLowerCase(), priceMap)
-  }
-
-  return result
+  return new Map(
+    Object.entries(response.coins).map(([coinKey, coinData]) => [
+      coinKey.toLowerCase(),
+      new Map(coinData.prices.map((pp) => [pp.timestamp, pp.price]))
+    ])
+  )
 }
 
 export async function fetchHistoricalPrices(
@@ -47,42 +35,44 @@ export async function fetchHistoricalPrices(
   }))
 
   const BATCH_SIZE = 10
-  const result = new Map<string, Map<number, number>>()
+  const batches = Array.from({ length: Math.ceil(timestamps.length / BATCH_SIZE) }, (_, i) =>
+    timestamps.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE)
+  )
 
-  for (let i = 0; i < timestamps.length; i += BATCH_SIZE) {
-    const timestampBatch = timestamps.slice(i, i + BATCH_SIZE)
+  return batches.reduce(async (accPromise, timestampBatch, batchIdx) => {
+    const result = await accPromise
     const url = buildBatchHistoricalUrl(coins, timestampBatch)
 
     try {
       const response = await fetch(url)
 
       if (!response.ok) {
-        console.error(`[DefiLlama] Batch ${Math.floor(i / BATCH_SIZE) + 1} failed: ${response.status}`)
-        continue
+        console.error(`[DefiLlama] Batch ${batchIdx + 1} failed: ${response.status}`)
+        return result
       }
 
       const data = (await response.json()) as DefiLlamaBatchResponse
       const batchResult = parseDefiLlamaResponse(data)
 
-      for (const [coinKey, priceMap] of batchResult) {
+      batchResult.forEach((priceMap, coinKey) => {
         if (!result.has(coinKey)) {
           result.set(coinKey, new Map())
         }
         const existingMap = result.get(coinKey)!
-        for (const [ts, price] of priceMap) {
+        priceMap.forEach((price, ts) => {
           existingMap.set(ts, price)
-        }
-      }
+        })
+      })
     } catch (error) {
-      console.error(`[DefiLlama] Batch ${Math.floor(i / BATCH_SIZE) + 1} error:`, error)
+      console.error(`[DefiLlama] Batch ${batchIdx + 1} error:`, error)
     }
 
-    if (i + BATCH_SIZE < timestamps.length) {
+    if (batchIdx < batches.length - 1) {
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
-  }
 
-  return result
+    return result
+  }, Promise.resolve(new Map<string, Map<number, number>>()))
 }
 
 export function getPriceAtTimestamp(priceMap: Map<number, number>, targetTimestamp: number): number {
@@ -96,16 +86,11 @@ export function getPriceAtTimestamp(priceMap: Map<number, number>, targetTimesta
     return 0
   }
 
-  let closest = timestamps[0]
-  let minDiff = Math.abs(targetTimestamp - closest)
-
-  for (const ts of timestamps) {
+  const closest = timestamps.reduce((acc, ts) => {
     const diff = Math.abs(targetTimestamp - ts)
-    if (diff < minDiff) {
-      minDiff = diff
-      closest = ts
-    }
-  }
+    const accDiff = Math.abs(targetTimestamp - acc)
+    return diff < accDiff ? ts : acc
+  }, timestamps[0])
 
   return priceMap.get(closest) || 0
 }
