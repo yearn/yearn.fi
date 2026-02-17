@@ -1,5 +1,5 @@
-import { getEligibleVaults, normalizeSymbol } from '@pages/portfolio/hooks/getEligibleVaults'
-import { getVaultToken, getVaultTVL, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
+import { getEligibleVaults, normalizeSymbol, selectPreferredVault } from '@pages/portfolio/hooks/getEligibleVaults'
+import { getVaultToken, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
@@ -43,9 +43,7 @@ export function usePersonalizedSuggestions(holdingsKeySet: Set<string>): TPerson
         const candidates = vaultsBySymbol.get(symbol)
         if (!candidates?.length) return acc
 
-        const bestVault = [...candidates]
-          .sort((a, b) => (getVaultTVL(b).tvl ?? 0) - (getVaultTVL(a).tvl ?? 0))
-          .find((vault) => !acc.usedVaults.has(getVaultKey(vault)))
+        const bestVault = selectPreferredVault(candidates.filter((vault) => !acc.usedVaults.has(getVaultKey(vault))))
 
         if (!bestVault) return acc
 

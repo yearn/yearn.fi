@@ -1,6 +1,6 @@
 import { EXTERNAL_TOKENS } from '@pages/portfolio/constants/externalTokens'
-import { getEligibleVaults, normalizeSymbol } from '@pages/portfolio/hooks/getEligibleVaults'
-import { getVaultToken, getVaultTVL, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
+import { getEligibleVaults, normalizeSymbol, selectPreferredVault } from '@pages/portfolio/hooks/getEligibleVaults'
+import { getVaultToken, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useEnsoBalances } from '@shared/hooks/useEnsoBalances'
@@ -34,14 +34,16 @@ export function useExternalSuggestions(holdingsKeySet: Set<string>): {
 
     const eligible = getEligibleVaults(vaults, holdingsKeySet)
 
-    const bestVaultByUnderlying = eligible.reduce((acc, vault) => {
+    const vaultsBySymbol = eligible.reduce((acc, vault) => {
       const normalized = normalizeSymbol(getVaultToken(vault).symbol ?? '')
-      const existing = acc.get(normalized)
-      if (!existing || (getVaultTVL(vault).tvl ?? 0) > (getVaultTVL(existing).tvl ?? 0)) {
-        acc.set(normalized, vault)
-      }
-      return acc
-    }, new Map<string, TKongVault>())
+      return acc.set(normalized, [...(acc.get(normalized) ?? []), vault])
+    }, new Map<string, TKongVault[]>())
+
+    const bestVaultByUnderlying = new Map<string, TKongVault>(
+      [...vaultsBySymbol.entries()]
+        .map(([symbol, candidates]) => [symbol, selectPreferredVault(candidates)] as const)
+        .filter((entry): entry is [string, TKongVault] => entry[1] !== undefined)
+    )
 
     return detectedTokens
       .flatMap((token) => {
