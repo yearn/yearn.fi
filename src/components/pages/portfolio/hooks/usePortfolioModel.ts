@@ -136,8 +136,7 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const isSearchingBalances =
     (isActive || isUserConnecting) && (isWalletLoading || isUserConnecting || isIdentityLoading)
-  const isLoading = isLoadingVaultList
-  const isHoldingsLoading = (isLoading && isActive) || isSearchingBalances
+  const isHoldingsLoading = (isLoadingVaultList && isActive) || isSearchingBalances
 
   const suggestedVaultCandidates = useMemo(
     () =>
@@ -171,15 +170,17 @@ export function usePortfolioModel(): TPortfolioModel {
   const personalizedSuggestions = usePersonalizedSuggestions(holdingsKeySet)
   const { suggestions: externalSuggestions } = useExternalSuggestions(holdingsKeySet)
 
-  const holdingsRows = useMemo(() => {
-    return sortedHoldings.map((vault) => {
-      const key = getVaultKey(vault)
-      const hrefOverride = isPortfolioV3Vault(vault)
-        ? undefined
-        : `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
-      return { key, vault, hrefOverride }
-    })
-  }, [sortedHoldings])
+  const holdingsRows = useMemo(
+    () =>
+      sortedHoldings.map((vault) => ({
+        key: getVaultKey(vault),
+        vault,
+        hrefOverride: isPortfolioV3Vault(vault)
+          ? undefined
+          : `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
+      })),
+    [sortedHoldings]
+  )
 
   const suggestedRows = useMemo((): TSuggestedItem[] => {
     const candidates: { item: TSuggestedItem; vaultKey: string }[] = [
@@ -273,50 +274,33 @@ export function usePortfolioModel(): TPortfolioModel {
   )
 
   const blendedMetrics = useMemo(() => {
+    const isFiniteNumber = (v: number | null): v is number => v !== null && Number.isFinite(v)
+
     const { totalValue, weightedCurrent, weightedHistorical, hasCurrent, hasHistorical } = holdingsVaults.reduce(
       (acc, vault) => {
         const value = getVaultValue(vault)
-        if (!Number.isFinite(value) || value <= 0) {
-          return acc
-        }
+        if (!Number.isFinite(value) || value <= 0) return acc
 
         const estimatedAPY = getVaultEstimatedAPY(vault)
-        const newWeightedCurrent =
-          typeof estimatedAPY === 'number' && Number.isFinite(estimatedAPY)
-            ? acc.weightedCurrent + value * estimatedAPY
-            : acc.weightedCurrent
-        const newHasCurrent = acc.hasCurrent || (typeof estimatedAPY === 'number' && Number.isFinite(estimatedAPY))
-
         const historicalAPY = getVaultHistoricalAPY(vault)
-        const newWeightedHistorical =
-          typeof historicalAPY === 'number' && Number.isFinite(historicalAPY)
-            ? acc.weightedHistorical + value * historicalAPY
-            : acc.weightedHistorical
-        const newHasHistorical =
-          acc.hasHistorical || (typeof historicalAPY === 'number' && Number.isFinite(historicalAPY))
 
         return {
           totalValue: acc.totalValue + value,
-          weightedCurrent: newWeightedCurrent,
-          weightedHistorical: newWeightedHistorical,
-          hasCurrent: newHasCurrent,
-          hasHistorical: newHasHistorical
+          weightedCurrent: acc.weightedCurrent + (isFiniteNumber(estimatedAPY) ? value * estimatedAPY : 0),
+          weightedHistorical: acc.weightedHistorical + (isFiniteNumber(historicalAPY) ? value * historicalAPY : 0),
+          hasCurrent: acc.hasCurrent || isFiniteNumber(estimatedAPY),
+          hasHistorical: acc.hasHistorical || isFiniteNumber(historicalAPY)
         }
       },
       { totalValue: 0, weightedCurrent: 0, weightedHistorical: 0, hasCurrent: false, hasHistorical: false }
     )
 
-    const blendedCurrentAPY = totalValue > 0 && hasCurrent ? weightedCurrent / totalValue : null
-    const blendedHistoricalAPY = totalValue > 0 && hasHistorical ? weightedHistorical / totalValue : null
-    const blendedCurrentAPYPercent = blendedCurrentAPY !== null ? blendedCurrentAPY * 100 : null
-    const blendedHistoricalAPYPercent = blendedHistoricalAPY !== null ? blendedHistoricalAPY * 100 : null
-    const estimatedAnnualReturn = blendedCurrentAPY !== null ? totalPortfolioValue * blendedCurrentAPY : null
+    const blendedCurrentAPY = totalValue > 0 && hasCurrent ? (weightedCurrent / totalValue) * 100 : null
+    const blendedHistoricalAPY = totalValue > 0 && hasHistorical ? (weightedHistorical / totalValue) * 100 : null
+    const estimatedAnnualReturn =
+      totalValue > 0 && hasCurrent ? totalPortfolioValue * (weightedCurrent / totalValue) : null
 
-    return {
-      blendedCurrentAPY: blendedCurrentAPYPercent,
-      blendedHistoricalAPY: blendedHistoricalAPYPercent,
-      estimatedAnnualReturn
-    }
+    return { blendedCurrentAPY, blendedHistoricalAPY, estimatedAnnualReturn }
   }, [getVaultEstimatedAPY, getVaultHistoricalAPY, getVaultValue, holdingsVaults, totalPortfolioValue])
 
   return {

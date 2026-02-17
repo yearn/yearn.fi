@@ -108,7 +108,7 @@ function PortfolioHeaderSection({
   )
 
   const metricSpinner = (
-    <span className="inline-flex h-6 w-20 animate-spin items-center justify-center">
+    <span className="inline-flex h-6 w-20 items-center justify-center">
       <IconSpinner className="size-4 text-text-secondary" />
     </span>
   )
