@@ -315,7 +315,7 @@ function VaultOverviewCard({
   const metrics: TMetricBlock[] = [
     {
       key: 'est-apy',
-      header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY for the next period'} />,
+      header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY based on underlying markets'} />,
       value: (
         <VaultForwardAPY
           currentVault={currentVault}
