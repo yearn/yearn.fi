@@ -170,7 +170,3 @@ export const EXTERNAL_TOKENS: TExternalToken[] = [
     underlyingAddress: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'
   }
 ]
-
-export const EXTERNAL_TOKEN_LOOKUP = new Map<string, TExternalToken>(
-  EXTERNAL_TOKENS.map((token) => [`${token.chainId}:${token.address.toLowerCase()}`, token])
-)
