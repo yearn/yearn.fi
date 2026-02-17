@@ -1,12 +1,12 @@
 import { getEligibleVaults, normalizeSymbol } from '@pages/portfolio/hooks/getEligibleVaults'
+import { getVaultToken, getVaultTVL, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { useMemo } from 'react'
 
 export type TPersonalizedSuggestion = {
-  vault: TYDaemonVault
+  vault: TKongVault
   matchedSymbol: string
 }
 
@@ -32,10 +32,10 @@ export function usePersonalizedSuggestions(holdingsKeySet: Set<string>): TPerson
     const eligible = getEligibleVaults(vaults, holdingsKeySet)
 
     const vaultsBySymbol = eligible.reduce((acc, vault) => {
-      const vaultSymbol = normalizeSymbol(vault.token.symbol ?? '')
+      const vaultSymbol = normalizeSymbol(getVaultToken(vault).symbol ?? '')
       if (!vaultSymbol) return acc
       return acc.set(vaultSymbol, [...(acc.get(vaultSymbol) ?? []), vault])
-    }, new Map<string, TYDaemonVault[]>())
+    }, new Map<string, TKongVault[]>())
 
     return sortedSymbols.reduce<{ results: TPersonalizedSuggestion[]; usedVaults: Set<string> }>(
       (acc, [symbol]) => {
@@ -44,7 +44,7 @@ export function usePersonalizedSuggestions(holdingsKeySet: Set<string>): TPerson
         if (!candidates?.length) return acc
 
         const bestVault = [...candidates]
-          .sort((a, b) => (b.tvl?.tvl ?? 0) - (a.tvl?.tvl ?? 0))
+          .sort((a, b) => (getVaultTVL(b).tvl ?? 0) - (getVaultTVL(a).tvl ?? 0))
           .find((vault) => !acc.usedVaults.has(getVaultKey(vault)))
 
         if (!bestVault) return acc

@@ -228,7 +228,7 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const getVaultEstimatedAPY = useMemo(
     () =>
-      (vault: TYDaemonVault): number | null => {
+      (vault: TKongVault): number | null => {
         const apy = calculateVaultEstimatedAPY(vault, katanaAprs)
         return apy === 0 ? null : apy
       },
@@ -237,7 +237,7 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const getVaultHistoricalAPY = useMemo(
     () =>
-      (vault: TYDaemonVault): number | null =>
+      (vault: TKongVault): number | null =>
         calculateVaultHistoricalAPY(vault, katanaAprs),
     [katanaAprs]
   )
