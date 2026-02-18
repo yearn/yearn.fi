@@ -98,8 +98,6 @@ export async function fetchHistoricalPrices(
     }
   }
 
-  console.log(`[DefiLlama] Fetching ${batches.length} batches...`)
-
   // Process batches in parallel groups
   for (let i = 0; i < batches.length; i += PARALLEL_REQUESTS) {
     const batchGroup = batches.slice(i, i + PARALLEL_REQUESTS)
@@ -125,7 +123,6 @@ export async function fetchHistoricalPrices(
     }
   }
 
-  console.log(`[DefiLlama] Completed, got prices for ${result.size} tokens`)
   return result
 }
 

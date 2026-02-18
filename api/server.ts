@@ -1,5 +1,12 @@
 import { serve } from 'bun'
-import { clearCache, getHistoricalHoldings, initializeSchema, validateConfig, type VaultVersion } from './lib/holdings'
+import {
+  clearCache,
+  fetchUserEvents,
+  getHistoricalHoldings,
+  initializeSchema,
+  type VaultVersion,
+  validateConfig
+} from './lib/holdings'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 
@@ -153,6 +160,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
   const refresh = url.searchParams.get('refresh')
+  const versionParam = url.searchParams.get('version')
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -162,12 +170,15 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
     return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
   }
 
+  // Validate version parameter
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
   try {
     if (refresh === 'true') {
       await clearCache(address)
     }
 
-    const holdings = await getHistoricalHoldings(address)
+    const holdings = await getHistoricalHoldings(address, version)
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
     if (!hasHoldings) {
@@ -262,6 +273,79 @@ async function handleHoldingsCacheClear(req: Request): Promise<Response> {
   }
 }
 
+async function handleHoldingsDebug(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const vault = url.searchParams.get('vault')
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address' }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address' }, { status: 400 })
+  }
+
+  try {
+    const events = await fetchUserEvents(address, 'all')
+
+    const vaultLower = vault?.toLowerCase()
+
+    // Find all events for the specific vault (if provided)
+    const vaultDeposits = vaultLower
+      ? events.deposits.filter((d) => d.vaultAddress.toLowerCase() === vaultLower)
+      : events.deposits
+    const vaultWithdrawals = vaultLower
+      ? events.withdrawals.filter((w) => w.vaultAddress.toLowerCase() === vaultLower)
+      : events.withdrawals
+    const vaultTransfersIn = vaultLower
+      ? events.transfersIn.filter((t) => t.vaultAddress.toLowerCase() === vaultLower)
+      : events.transfersIn
+    const vaultTransfersOut = vaultLower
+      ? events.transfersOut.filter((t) => t.vaultAddress.toLowerCase() === vaultLower)
+      : events.transfersOut
+
+    // Get unique vaults
+    const allVaults = new Set<string>()
+    events.deposits.forEach((d) => {
+      allVaults.add(d.vaultAddress.toLowerCase())
+    })
+    events.withdrawals.forEach((w) => {
+      allVaults.add(w.vaultAddress.toLowerCase())
+    })
+    events.transfersIn.forEach((t) => {
+      allVaults.add(t.vaultAddress.toLowerCase())
+    })
+    events.transfersOut.forEach((t) => {
+      allVaults.add(t.vaultAddress.toLowerCase())
+    })
+
+    return Response.json({
+      address,
+      vault: vaultLower || 'all',
+      summary: {
+        totalDeposits: events.deposits.length,
+        totalWithdrawals: events.withdrawals.length,
+        totalTransfersIn: events.transfersIn.length,
+        totalTransfersOut: events.transfersOut.length,
+        uniqueVaults: Array.from(allVaults)
+      },
+      vaultEvents: {
+        deposits: vaultDeposits,
+        withdrawals: vaultWithdrawals,
+        transfersIn: vaultTransfersIn,
+        transfersOut: vaultTransfersOut
+      }
+    })
+  } catch (error) {
+    console.error('Error in debug:', error)
+    return Response.json(
+      { error: 'Debug failed', message: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    )
+  }
+}
+
 async function main() {
   // Catch uncaught exceptions
   process.on('uncaughtException', (error) => {
@@ -300,6 +384,8 @@ async function main() {
           response = await handleHoldingsHistory(req)
         } else if (url.pathname === '/api/holdings/cache') {
           response = await handleHoldingsCacheClear(req)
+        } else if (url.pathname === '/api/holdings/debug') {
+          response = await handleHoldingsDebug(req)
         } else {
           response = new Response('Not found', { status: 404 })
         }

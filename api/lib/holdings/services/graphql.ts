@@ -34,7 +34,7 @@ const WITHDRAWALS_QUERY = `
 
 const TRANSFERS_IN_QUERY = `
   query GetTransfersIn($receiver: String!) {
-    Transfer(where: { receiver: { _eq: $receiver } }, order_by: { blockTimestamp: asc }) {
+    Transfer(where: { receiver: { _eq: $receiver } }, order_by: { blockTimestamp: asc }, limit: 10000) {
       id
       vaultAddress
       chainId
@@ -49,7 +49,7 @@ const TRANSFERS_IN_QUERY = `
 
 const TRANSFERS_OUT_QUERY = `
   query GetTransfersOut($sender: String!) {
-    Transfer(where: { sender: { _eq: $sender } }, order_by: { blockTimestamp: asc }) {
+    Transfer(where: { sender: { _eq: $sender } }, order_by: { blockTimestamp: asc }, limit: 10000) {
       id
       vaultAddress
       chainId
@@ -161,10 +161,7 @@ function normalizeV2Withdraw(v2: V2WithdrawEvent): WithdrawEvent {
 export type VaultVersion = 'v2' | 'v3' | 'all'
 
 export async function fetchUserEvents(userAddress: string, version: VaultVersion = 'all'): Promise<UserEvents> {
-  console.log('version', version)
   const addressLower = userAddress.toLowerCase()
-
-  console.log(`[GraphQL] Fetching events for ${addressLower}, version: ${version}`)
 
   // Always fetch all deposit/withdraw events to determine vault versions
   const [depositsData, withdrawalsData, transfersInData, transfersOutData, v2DepositsData, v2WithdrawalsData] =
@@ -185,15 +182,30 @@ export async function fetchUserEvents(userAddress: string, version: VaultVersion
   // Build sets of vault addresses by version
   const v3VaultAddresses = new Set<string>()
   const v2VaultAddresses = new Set<string>()
+  const transferOnlyVaults = new Set<string>()
 
   for (const d of v3Deposits) v3VaultAddresses.add(d.vaultAddress.toLowerCase())
   for (const w of v3Withdrawals) v3VaultAddresses.add(w.vaultAddress.toLowerCase())
   for (const d of v2Deposits) v2VaultAddresses.add(d.vaultAddress.toLowerCase())
   for (const w of v2Withdrawals) v2VaultAddresses.add(w.vaultAddress.toLowerCase())
 
-  console.log(`[GraphQL] V3 vaults: ${v3VaultAddresses.size}, V2 vaults: ${v2VaultAddresses.size}`)
-  console.log(`[GraphQL] V3: ${v3Deposits.length} deposits, ${v3Withdrawals.length} withdrawals`)
-  console.log(`[GraphQL] V2: ${v2Deposits.length} deposits, ${v2Withdrawals.length} withdrawals`)
+  const transfersIn = transfersInData.Transfer || []
+  const transfersOut = transfersOutData.Transfer || []
+
+  // Track vaults that only appear in transfers (no deposit/withdraw events indexed)
+  // These include vaults where deposit events aren't indexed (e.g., staking vaults)
+  for (const t of transfersIn) {
+    const addr = t.vaultAddress.toLowerCase()
+    if (!v3VaultAddresses.has(addr) && !v2VaultAddresses.has(addr)) {
+      transferOnlyVaults.add(addr)
+    }
+  }
+  for (const t of transfersOut) {
+    const addr = t.vaultAddress.toLowerCase()
+    if (!v3VaultAddresses.has(addr) && !v2VaultAddresses.has(addr)) {
+      transferOnlyVaults.add(addr)
+    }
+  }
 
   // Filter deposits/withdrawals by version
   const deposits =
@@ -211,28 +223,38 @@ export async function fetchUserEvents(userAddress: string, version: VaultVersion
         : [...v3Withdrawals, ...v2Withdrawals].sort((a, b) => a.blockTimestamp - b.blockTimestamp)
 
   // Filter transfers by vault version
-  const transfersIn = transfersInData.Transfer || []
-  const transfersOut = transfersOutData.Transfer || []
-
+  // For "all" version, include transfer-only vaults (vaults where user has no deposits/withdrawals but received shares via transfer)
   const allowedVaults =
     version === 'v3'
       ? v3VaultAddresses
       : version === 'v2'
         ? v2VaultAddresses
-        : new Set([...v3VaultAddresses, ...v2VaultAddresses])
+        : new Set([...v3VaultAddresses, ...v2VaultAddresses, ...transferOnlyVaults])
 
-  const filteredTransfersIn = transfersIn.filter(
-    (t) =>
-      t.sender.toLowerCase() !== '0x0000000000000000000000000000000000000000' &&
-      allowedVaults.has(t.vaultAddress.toLowerCase())
-  )
-  const filteredTransfersOut = transfersOut.filter(
-    (t) =>
-      t.receiver.toLowerCase() !== '0x0000000000000000000000000000000000000000' &&
-      allowedVaults.has(t.vaultAddress.toLowerCase())
-  )
+  // Filter transfers:
+  // - For vaults WITH deposit/withdraw events: exclude mints (from zero) and burns (to zero) since they're covered by Deposit/Withdraw events
+  // - For transfer-only vaults: INCLUDE mints from zero address (these are deposits for vaults where Deposit events aren't indexed)
+  const filteredTransfersIn = transfersIn.filter((t) => {
+    const vaultAddr = t.vaultAddress.toLowerCase()
+    if (!allowedVaults.has(vaultAddr)) return false
 
-  console.log(`[GraphQL] Filtered transfers: ${filteredTransfersIn.length} in, ${filteredTransfersOut.length} out`)
+    // For transfer-only vaults, include mint events (deposits without Deposit event indexing)
+    if (transferOnlyVaults.has(vaultAddr)) return true
+
+    // For vaults with deposit events, exclude mints (they're tracked via Deposit events)
+    return t.sender.toLowerCase() !== '0x0000000000000000000000000000000000000000'
+  })
+
+  const filteredTransfersOut = transfersOut.filter((t) => {
+    const vaultAddr = t.vaultAddress.toLowerCase()
+    if (!allowedVaults.has(vaultAddr)) return false
+
+    // For transfer-only vaults, include burn events (withdrawals without Withdraw event indexing)
+    if (transferOnlyVaults.has(vaultAddr)) return true
+
+    // For vaults with withdraw events, exclude burns (they're tracked via Withdraw events)
+    return t.receiver.toLowerCase() !== '0x0000000000000000000000000000000000000000'
+  })
 
   return {
     deposits,
