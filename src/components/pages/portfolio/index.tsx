@@ -432,11 +432,25 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   const chainIds = useMemo(() => SUPPORTED_NETWORKS.map((network) => network.id), [])
 
   const [chainStakingData, setChainStakingData] = useState<
-    Record<number, { rewards: TChainRewardData['stakingRewards']; isLoading: boolean; refetch: () => void }>
+    Record<
+      number,
+      {
+        rewards: TChainRewardData['stakingRewards']
+        isLoading: boolean
+        refetch: () => void
+      }
+    >
   >({})
 
   const [chainMerkleData, setChainMerkleData] = useState<
-    Record<number, { rewards: TGroupedMerkleReward[]; isLoading: boolean; refetch: () => void }>
+    Record<
+      number,
+      {
+        rewards: TGroupedMerkleReward[]
+        isLoading: boolean
+        refetch: () => void
+      }
+    >
   >({})
 
   const handleStakingRewards = useCallback(
@@ -465,7 +479,10 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
         const newRewards =
           rewards.length > 0 ? [...filteredRewards, { vault, stakingAddress, stakingSource, rewards }] : filteredRewards
 
-        return { ...prev, [chainId]: { rewards: newRewards, isLoading, refetch } }
+        return {
+          ...prev,
+          [chainId]: { rewards: newRewards, isLoading, refetch }
+        }
       })
     },
     []
@@ -840,7 +857,9 @@ function PortfolioHoldingsSection({
           <div className="flex flex-col">
             <div
               className="relative md:sticky md:z-30"
-              style={{ top: 'calc(var(--header-height) + var(--portfolio-breadcrumbs-height))' }}
+              style={{
+                top: 'calc(var(--header-height) + var(--portfolio-breadcrumbs-height))'
+              }}
             >
               <div aria-hidden={true} className="pointer-events-none absolute inset-0 z-0 bg-app" />
               <VaultsListHead
@@ -850,9 +869,27 @@ function PortfolioHoldingsSection({
                 wrapperClassName="relative z-10 rounded-t-lg border border-border bg-surface-secondary"
                 containerClassName="relative z-10 rounded-t-lg bg-surface-secondary"
                 items={[
-                  { type: 'sort', label: 'Vault Name', value: 'vault', sortable: false, className: 'col-span-12' },
-                  { type: 'sort', label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-4' },
-                  { type: 'sort', label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-4' },
+                  {
+                    type: 'sort',
+                    label: 'Vault Name',
+                    value: 'vault',
+                    sortable: false,
+                    className: 'col-span-12'
+                  },
+                  {
+                    type: 'sort',
+                    label: 'Est. APY',
+                    value: 'estAPY',
+                    sortable: true,
+                    className: 'col-span-4'
+                  },
+                  {
+                    type: 'sort',
+                    label: 'TVL',
+                    value: 'tvl',
+                    sortable: true,
+                    className: 'col-span-4'
+                  },
                   {
                     type: 'sort',
                     label: 'Your Holdings',
@@ -1016,7 +1053,9 @@ function PortfolioPage(): ReactElement {
           />
           <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} mergeWithHeader={model.isActive} />
         </div>
-        <div key={activeTab}>{renderTabContent()}</div>
+        <div className={'pt-4'} key={activeTab}>
+          {renderTabContent()}
+        </div>
       </div>
     </PortfolioPageLayout>
   )
