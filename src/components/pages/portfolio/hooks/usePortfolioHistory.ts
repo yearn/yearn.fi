@@ -5,18 +5,19 @@ import type { TPortfolioHistoryChartData, TPortfolioHistorySimpleResponse } from
 import { portfolioHistorySimpleResponseSchema } from '../types/api'
 
 export function usePortfolioHistory() {
-  const { address, isActive } = useWeb3()
+  const { address } = useWeb3()
 
   const endpoint = useMemo(() => {
-    if (!address || !isActive) {
+    if (!address) {
       return null
     }
     return `/api/holdings/history?address=${address}`
-  }, [address, isActive])
+  }, [address])
 
   const {
     data: rawData,
     isLoading,
+    isFetching,
     error
   } = useFetch<TPortfolioHistorySimpleResponse>({
     endpoint,
@@ -36,9 +37,11 @@ export function usePortfolioHistory() {
     }))
   }, [rawData])
 
+  const isLoadingState = isLoading || isFetching
+
   return {
     data,
-    isLoading,
+    isLoading: isLoadingState,
     error
   }
 }
