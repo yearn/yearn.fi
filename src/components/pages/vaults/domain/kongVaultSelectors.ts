@@ -599,7 +599,7 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
       inception: pickNumber(snapshot?.apy?.inceptionNet ?? null, historical?.inceptionNet)
     },
     pricePerShare: {
-      today: normalizePricePerShare(snapshot?.apy?.pricePerShare, token.decimals),
+      today: normalizePricePerShare(snapshot?.apy?.pricePerShare ?? vault.pricePerShare, token.decimals),
       weekAgo: normalizePricePerShare(snapshot?.apy?.weeklyPricePerShare, token.decimals),
       monthAgo: normalizePricePerShare(snapshot?.apy?.monthlyPricePerShare, token.decimals)
     },
