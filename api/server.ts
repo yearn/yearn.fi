@@ -1,6 +1,5 @@
 import { serve } from 'bun'
 import {
-  clearCache,
   fetchUserEvents,
   getHistoricalHoldings,
   initializeSchema,
@@ -12,7 +11,7 @@ const ENSO_API_BASE = 'https://api.enso.finance'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type'
 }
 
@@ -159,7 +158,6 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
 async function handleHoldingsHistory(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
-  const refresh = url.searchParams.get('refresh')
   const versionParam = url.searchParams.get('version')
 
   if (!address) {
@@ -170,14 +168,9 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
     return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
   }
 
-  // Validate version parameter
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    if (refresh === 'true') {
-      await clearCache(address)
-    }
-
     const holdings = await getHistoricalHoldings(address, version)
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
@@ -199,7 +192,6 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
 async function handleHoldingsHistorySimple(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
-  const refresh = url.searchParams.get('refresh')
   const versionParam = url.searchParams.get('version')
 
   if (!address) {
@@ -210,14 +202,9 @@ async function handleHoldingsHistorySimple(req: Request): Promise<Response> {
     return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
   }
 
-  // Validate version parameter
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    if (refresh === 'true') {
-      await clearCache(address)
-    }
-
     const holdings = await getHistoricalHoldings(address, version)
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
@@ -245,31 +232,6 @@ async function handleHoldingsHistorySimple(req: Request): Promise<Response> {
     const message = error instanceof Error ? error.message : String(error)
     const stack = error instanceof Error ? error.stack : undefined
     return Response.json({ error: 'Failed to fetch historical holdings', message, stack, status: 502 }, { status: 502 })
-  }
-}
-
-async function handleHoldingsCacheClear(req: Request): Promise<Response> {
-  if (req.method !== 'DELETE') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 })
-  }
-
-  const url = new URL(req.url)
-  const address = url.searchParams.get('address')
-
-  try {
-    if (address) {
-      if (!isValidAddress(address)) {
-        return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
-      }
-      await clearCache(address)
-      return Response.json({ message: `Cache cleared for ${address}` })
-    }
-
-    await clearCache()
-    return Response.json({ message: 'All cache cleared' })
-  } catch (error) {
-    console.error('Error clearing cache:', error)
-    return Response.json({ error: 'Failed to clear cache', status: 500 }, { status: 500 })
   }
 }
 
@@ -382,8 +344,6 @@ async function main() {
           response = await handleHoldingsHistorySimple(req)
         } else if (url.pathname === '/api/holdings/history/full') {
           response = await handleHoldingsHistory(req)
-        } else if (url.pathname === '/api/holdings/cache') {
-          response = await handleHoldingsCacheClear(req)
         } else if (url.pathname === '/api/holdings/debug') {
           response = await handleHoldingsDebug(req)
         } else {

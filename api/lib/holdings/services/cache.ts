@@ -121,24 +121,3 @@ export async function saveCachedHoldings(holdings: CachedHolding[]): Promise<voi
     console.error('[Cache] Failed to save holdings:', error)
   }
 }
-
-export async function clearCache(userAddress?: string): Promise<void> {
-  if (!isDatabaseEnabled()) {
-    return
-  }
-
-  const pool = await getPool()
-  if (!pool) {
-    return
-  }
-
-  try {
-    if (userAddress) {
-      await pool.query('DELETE FROM holdings_cache WHERE user_address = $1', [userAddress.toLowerCase()])
-    } else {
-      await pool.query('TRUNCATE holdings_cache')
-    }
-  } catch (error) {
-    console.error('[Cache] Failed to clear cache:', error)
-  }
-}

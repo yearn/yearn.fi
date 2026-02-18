@@ -1,6 +1,5 @@
 export { config, validateConfig } from './config'
 export { initializeSchema, isDatabaseEnabled } from './db/connection'
 export { getHistoricalHoldings } from './services/aggregator'
-export { clearCache } from './services/cache'
 export { fetchUserEvents, type VaultVersion } from './services/graphql'
 export type { ChainHoldings, DailyHoldings, HoldingsHistoryResponse, VaultHolding } from './types'

@@ -27,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  const { address, refresh } = req.query
+  const { address } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -38,13 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Dynamic import to catch any module loading errors
-    const { clearCache, getHistoricalHoldings } = await import('../lib/holdings')
-
-    if (refresh === 'true') {
-      await clearCache(address)
-    }
-
+    const { getHistoricalHoldings } = await import('../lib/holdings')
     const holdings = await getHistoricalHoldings(address)
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
