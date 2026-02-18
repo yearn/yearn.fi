@@ -1,3 +1,4 @@
+import type { TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
@@ -5,7 +6,6 @@ import { useChainID } from '@shared/hooks/useChainID'
 import type { TDict } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useMemo } from 'react'
 
@@ -14,14 +14,14 @@ export function useYearnTokens({
   isLoadingVaultList,
   isEnabled = true
 }: {
-  vaults: TDict<TYDaemonVault>
+  vaults: TDict<TKongVault>
   isLoadingVaultList: boolean
   isEnabled?: boolean
 }): TUseBalancesTokens[] {
   const { currentNetworkTokenList } = useTokenList()
 
   const { safeChainID } = useChainID()
-  const allVaults = useMemo((): TYDaemonVault[] => {
+  const allVaults = useMemo((): TKongVault[] => {
     if (!isEnabled) {
       return []
     }
@@ -86,7 +86,7 @@ export function useYearnTokens({
       tokens[key] = token
     }
 
-    allVaults.forEach((vault?: TYDaemonVault): void => {
+    allVaults.forEach((vault?: TKongVault): void => {
       if (!vault) {
         return
       }

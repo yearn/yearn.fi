@@ -840,20 +840,95 @@ export const getVaultStrategies = (vault: TKongVaultInput, snapshot?: TKongVault
 export const getVaultFeaturingScore = (vault: TKongVaultInput): number =>
   isVaultView(vault) ? vault.featuringScore : 0
 
+const toFallbackListItemFromVaultView = (vault: TKongVaultView): TKongVaultListItem => {
+  const version = vault.version ?? ''
+  const isV3 = version.startsWith('3') || version.startsWith('~3')
+  const isOracleForward = vault.apr.forwardAPR.type === 'oracle'
+
+  return {
+    chainId: vault.chainID,
+    address: vault.address,
+    name: vault.name,
+    symbol: vault.symbol,
+    apiVersion: vault.version,
+    decimals: vault.decimals,
+    asset: {
+      address: vault.token.address,
+      name: vault.token.name,
+      symbol: vault.token.symbol,
+      decimals: vault.token.decimals
+    },
+    tvl: vault.tvl.tvl,
+    performance: {
+      oracle: {
+        apr: isOracleForward ? vault.apr.forwardAPR.netAPR : null,
+        apy: isOracleForward ? vault.apr.forwardAPR.netAPR : null
+      },
+      estimated: {
+        apy: isOracleForward ? null : vault.apr.forwardAPR.netAPR,
+        type: vault.apr.forwardAPR.type || null
+      },
+      historical: {
+        net: vault.apr.netAPR,
+        weeklyNet: vault.apr.points.weekAgo,
+        monthlyNet: vault.apr.points.monthAgo,
+        inceptionNet: vault.apr.points.inception
+      }
+    },
+    fees: {
+      managementFee: vault.apr.fees.management,
+      performanceFee: vault.apr.fees.performance
+    },
+    category: vault.category,
+    type: vault.type,
+    kind: vault.kind,
+    v3: isV3,
+    yearn: true,
+    isRetired: vault.info.isRetired,
+    isHidden: vault.info.isHidden,
+    isBoosted: vault.info.isBoosted,
+    isHighlighted: vault.info.isHighlighted,
+    inclusion: undefined,
+    migration: vault.migration.available,
+    origin: 'yearn',
+    strategiesCount: vault.strategies?.length ?? 0,
+    riskLevel: vault.info.riskLevel,
+    staking: {
+      address: vault.staking.address,
+      available: vault.staking.available
+    },
+    pricePerShare: Number.isFinite(vault.apr.pricePerShare.today) ? String(vault.apr.pricePerShare.today) : null
+  }
+}
+
 export const getVaultView = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultView => {
   if (isVaultView(vault)) {
     if (!snapshot || vault.chainID !== snapshot.chainId) {
       return vault
     }
 
-    const snapshotStrategies = getSnapshotStrategies(snapshot)
-    if (snapshotStrategies.length === 0) {
-      return vault
-    }
+    const fallbackListItem = toFallbackListItemFromVaultView(vault)
+    const snapshotStrategies = getVaultStrategies(fallbackListItem, snapshot)
 
     return {
-      ...vault,
-      strategies: snapshotStrategies
+      address: getVaultAddress(fallbackListItem),
+      version: getVaultVersion(fallbackListItem, snapshot),
+      type: getVaultType(fallbackListItem, snapshot),
+      kind: getVaultKind(fallbackListItem, snapshot),
+      symbol: getVaultSymbol(fallbackListItem, snapshot),
+      name: getVaultName(fallbackListItem, snapshot),
+      description: getVaultDescription(fallbackListItem, snapshot),
+      category: getVaultCategory(fallbackListItem, snapshot),
+      decimals: getVaultDecimals(fallbackListItem, snapshot),
+      chainID: getVaultChainID(fallbackListItem),
+      token: getVaultToken(fallbackListItem, snapshot),
+      tvl: getVaultTVL(fallbackListItem, snapshot),
+      apr: getVaultAPR(fallbackListItem, snapshot),
+      featuringScore: getVaultFeaturingScore(vault),
+      strategies: snapshotStrategies.length > 0 ? snapshotStrategies : (vault.strategies ?? []),
+      staking: getVaultStaking(fallbackListItem, snapshot),
+      migration: getVaultMigration(fallbackListItem, snapshot),
+      info: getVaultInfo(fallbackListItem, snapshot)
     }
   }
 

@@ -1,3 +1,4 @@
+import type { TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
@@ -7,7 +8,6 @@ import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
 import { getVaultHoldingsUsdValue } from '../hooks/useVaultFilterUtils'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
 import { DEFAULT_ERC20, isZeroAddress, toAddress, zeroNormalizedBN } from '../utils'
-import type { TYDaemonVault } from '../utils/schemas/yDaemonVaultsSchemas'
 import { useWeb3 } from './useWeb3'
 import { useYearn } from './useYearn'
 import { useYearnTokens } from './useYearn.helper'
@@ -143,12 +143,12 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         }
         return allVaults?.[stakingVaultAddress]
       })
-      .filter((vault): vault is TYDaemonVault => Boolean(vault))
+      .filter((vault): vault is TKongVault => Boolean(vault))
       .reduce((acc, vault) => {
         const key = `${vault.chainID}/${toAddress(vault.address)}`
         acc.set(key, vault)
         return acc
-      }, new Map<string, TYDaemonVault>())
+      }, new Map<string, TKongVault>())
 
     return Array.from(uniqueHoldingsVaults.values()).reduce(
       (acc, vault) => {

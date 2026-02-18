@@ -448,9 +448,9 @@ function Index(): ReactElement | null {
     const hasLoadedAnyVaultMetadata = Object.keys(allVaults).length > 0
     const hasCompletedVaultListLookup = hasLoadedAnyVaultMetadata || (hasTriggeredVaultListFetch && !isLoadingVaultList)
     if (!hasKnownVaultIdentity && !hasCompletedVaultListLookup) return true
-    const hasYearnOrigin = Boolean(vaults[currentVaultAddress])
+    const hasYearnCatalogEntry = Boolean(vaults[currentVaultAddress])
     const hasYearnInclusion = Boolean(inclusionYearnVaults[currentVaultAddress])
-    return hasYearnOrigin && hasYearnInclusion
+    return hasYearnCatalogEntry || hasYearnInclusion
   }, [allVaults, currentVaultAddress, hasTriggeredVaultListFetch, inclusionYearnVaults, isLoadingVaultList, vaults])
   const shouldShowNonYearnEndorsedAlert = Boolean(currentVault) && !isYearnEndorsedVault
   const widgetActions = useMemo(() => {

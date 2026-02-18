@@ -1,3 +1,4 @@
+import type { TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { Solver, type TSolver } from '@pages/vaults/types/solvers'
 import { useLocalStorageValue } from '@react-hookz/web'
 import { useFetchYearnPrices } from '@shared/hooks/useFetchYearnPrices'
@@ -8,7 +9,6 @@ import { toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import type { TKongVaultList } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
 import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { QueryObserverResult } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
@@ -23,9 +23,9 @@ export type TYearnContext = {
   currentPartner: TAddress
   earned?: TYDaemonEarned
   prices?: TYDaemonPricesChain
-  vaults: TDict<TYDaemonVault>
-  inclusionYearnVaults: TDict<TYDaemonVault>
-  allVaults: TDict<TYDaemonVault>
+  vaults: TDict<TKongVault>
+  inclusionYearnVaults: TDict<TKongVault>
+  allVaults: TDict<TKongVault>
   isLoadingVaultList: boolean
   katanaAprs: Partial<TKatanaAprs>
   isLoadingKatanaAprs: boolean
