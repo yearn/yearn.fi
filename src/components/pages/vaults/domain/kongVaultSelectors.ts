@@ -218,8 +218,6 @@ const deriveDefaultCategory = ({
   return 'Volatile'
 }
 
-export type TKongVault = TKongVaultListItem
-
 export type TKongVaultToken = {
   address: `0x${string}`
   name: string
@@ -227,6 +225,14 @@ export type TKongVaultToken = {
   description: string
   decimals: number
 }
+
+export type TKongVaultType =
+  | 'Automated'
+  | 'Automated Yearn Vault'
+  | 'Experimental'
+  | 'Experimental Yearn Vault'
+  | 'Standard'
+  | 'Yearn Vault'
 
 export type TKongVaultApr = {
   type: string
@@ -291,7 +297,7 @@ export type TKongVaultStaking = {
   address: `0x${string}`
   available: boolean
   source: string
-  rewards: TKongVaultStakingReward[]
+  rewards: TKongVaultStakingReward[] | null
 }
 
 export type TKongVaultMigration = {
@@ -317,7 +323,7 @@ export type TKongVaultStrategy = {
   name: string
   description: string
   netAPR: number | null
-  estimatedAPY?: number
+  estimatedAPY?: number | null
   status: 'active' | 'not_active' | 'unallocated'
   details?: {
     totalDebt: string
@@ -332,7 +338,7 @@ export type TKongVaultStrategy = {
 export type TKongVaultView = {
   address: `0x${string}`
   version: string
-  type: string
+  type: TKongVaultType
   kind: 'Legacy' | 'Multi Strategy' | 'Single Strategy'
   symbol: string
   name: string
@@ -350,7 +356,9 @@ export type TKongVaultView = {
   info: TKongVaultInfo
 }
 
-export type TKongVaultInput = TKongVault | TKongVaultView
+export type TKongVault = TKongVaultView
+
+export type TKongVaultInput = TKongVaultListItem | TKongVaultView
 
 const isVaultView = (vault: TKongVaultInput): vault is TKongVaultView => 'chainID' in vault && 'version' in vault
 
@@ -395,7 +403,7 @@ export const getVaultKind = (
   return 'Legacy'
 }
 
-const KNOWN_TYPE_VALUES = new Set([
+const KNOWN_TYPE_VALUES = new Set<TKongVaultType>([
   'Automated',
   'Automated Yearn Vault',
   'Experimental',
@@ -404,13 +412,13 @@ const KNOWN_TYPE_VALUES = new Set([
   'Yearn Vault'
 ])
 
-export const getVaultType = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): string => {
+export const getVaultType = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultType => {
   if (isVaultView(vault)) {
     return vault.type
   }
   const raw = snapshot?.meta?.type ?? vault.type
-  if (raw && KNOWN_TYPE_VALUES.has(raw)) {
-    return raw
+  if (raw && KNOWN_TYPE_VALUES.has(raw as TKongVaultType)) {
+    return raw as TKongVaultType
   }
 
   const name = (snapshot?.meta?.name ?? snapshot?.name ?? vault.name ?? '').toLowerCase()
@@ -803,10 +811,7 @@ const resolveTotalDebtForRatios = (snapshot?: TKongVaultSnapshot): string => {
   return '0'
 }
 
-export const getVaultStrategies = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultStrategy[] => {
-  if (isVaultView(vault)) {
-    return vault.strategies ?? []
-  }
+const getSnapshotStrategies = (snapshot?: TKongVaultSnapshot): TKongVaultStrategy[] => {
   if (!snapshot) {
     return []
   }
@@ -820,12 +825,36 @@ export const getVaultStrategies = (vault: TKongVaultInput, snapshot?: TKongVault
   return mapSnapshotDebts(snapshot.debts, resolveTotalDebtForRatios(snapshot))
 }
 
+export const getVaultStrategies = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultStrategy[] => {
+  const snapshotStrategies = getSnapshotStrategies(snapshot)
+
+  if (isVaultView(vault)) {
+    if (snapshotStrategies.length > 0) {
+      return snapshotStrategies
+    }
+    return vault.strategies ?? []
+  }
+  return snapshotStrategies
+}
+
 export const getVaultFeaturingScore = (vault: TKongVaultInput): number =>
   isVaultView(vault) ? vault.featuringScore : 0
 
 export const getVaultView = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultView => {
   if (isVaultView(vault)) {
-    return vault
+    if (!snapshot || vault.chainID !== snapshot.chainId) {
+      return vault
+    }
+
+    const snapshotStrategies = getSnapshotStrategies(snapshot)
+    if (snapshotStrategies.length === 0) {
+      return vault
+    }
+
+    return {
+      ...vault,
+      strategies: snapshotStrategies
+    }
   }
 
   return {

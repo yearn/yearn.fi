@@ -14,7 +14,12 @@ import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
-import { getVaultView, type TKongVault, type TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
+import {
+  getVaultChainID,
+  getVaultView,
+  type TKongVaultInput,
+  type TKongVaultView
+} from '@pages/vaults/domain/kongVaultSelectors'
 import {
   mergeYBoldSnapshot,
   mergeYBoldVault,
@@ -115,7 +120,7 @@ const splitFirstSentence = (message: string): { title: string; body?: string } =
   return body ? { title, body } : { title }
 }
 
-const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
+const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVaultInput => {
   const token = snapshot.meta?.token
   const asset = snapshot.asset
     ? {
@@ -365,7 +370,9 @@ function Index(): ReactElement | null {
   const vaultViewInput = useMemo(() => {
     if (!mergedBaseVault) return snapshotBackedVault
     if (!snapshotBackedVault) return mergedBaseVault
-    return mergedBaseVault.chainId === snapshotBackedVault.chainId ? mergedBaseVault : snapshotBackedVault
+    return getVaultChainID(mergedBaseVault) === getVaultChainID(snapshotBackedVault)
+      ? mergedBaseVault
+      : snapshotBackedVault
   }, [mergedBaseVault, snapshotBackedVault])
 
   const isFactoryVault = useMemo(() => {

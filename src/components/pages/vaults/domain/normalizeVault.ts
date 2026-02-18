@@ -3,28 +3,57 @@ import { toAddress } from '@shared/utils'
 import type { TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { type Address, zeroAddress } from 'viem'
+import type { TKongVaultView } from './kongVaultSelectors'
 
 export const YBOLD_VAULT_ADDRESS: Address = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8'
 export const YBOLD_STAKING_ADDRESS: Address = '0x23346B04a7f55b8760E5860AA5A77383D63491cD'
 
-export function mergeYBoldVault(baseVault: TKongVaultListItem, stakedVault: TKongVaultListItem): TKongVaultListItem {
+type TYBoldMergeableVault = TKongVaultListItem | TKongVaultView
+
+const isVaultView = (vault: TYBoldMergeableVault): vault is TKongVaultView => 'chainID' in vault && 'version' in vault
+
+export function mergeYBoldVault<TVault extends TYBoldMergeableVault>(baseVault: TVault, stakedVault: TVault): TVault {
+  if (isVaultView(baseVault) && isVaultView(stakedVault)) {
+    return {
+      ...baseVault,
+      staking: {
+        ...baseVault.staking,
+        address: YBOLD_STAKING_ADDRESS,
+        available: true
+      },
+      apr: {
+        ...baseVault.apr,
+        netAPR: stakedVault.apr.netAPR ?? baseVault.apr.netAPR,
+        points: stakedVault.apr.points ?? baseVault.apr.points,
+        forwardAPR: stakedVault.apr.forwardAPR ?? baseVault.apr.forwardAPR,
+        fees: {
+          ...baseVault.apr.fees,
+          performance: stakedVault.apr.fees?.performance ?? baseVault.apr.fees.performance
+        }
+      }
+    } as TVault
+  }
+
+  const baseListVault = baseVault as TKongVaultListItem
+  const stakedListVault = stakedVault as TKongVaultListItem
+
   return {
-    ...baseVault,
+    ...baseListVault,
     staking: {
       address: YBOLD_STAKING_ADDRESS,
       available: true
     },
     performance: {
-      ...(baseVault.performance ?? {}),
-      historical: stakedVault.performance?.historical ?? baseVault.performance?.historical,
-      estimated: stakedVault.performance?.estimated ?? baseVault.performance?.estimated,
-      oracle: stakedVault.performance?.oracle ?? baseVault.performance?.oracle
+      ...(baseListVault.performance ?? {}),
+      historical: stakedListVault.performance?.historical ?? baseListVault.performance?.historical,
+      estimated: stakedListVault.performance?.estimated ?? baseListVault.performance?.estimated,
+      oracle: stakedListVault.performance?.oracle ?? baseListVault.performance?.oracle
     },
     fees: {
-      managementFee: baseVault.fees?.managementFee ?? 0,
-      performanceFee: stakedVault.fees?.performanceFee ?? baseVault.fees?.performanceFee ?? 0
+      managementFee: baseListVault.fees?.managementFee ?? 0,
+      performanceFee: stakedListVault.fees?.performanceFee ?? baseListVault.fees?.performanceFee ?? 0
     }
-  }
+  } as TVault
 }
 
 export function mergeYBoldSnapshot(
@@ -80,7 +109,7 @@ export function mergeYBoldSnapshot(
   }
 }
 
-export function patchYBoldVaults(vaults: TDict<TKongVaultListItem>): TDict<TKongVaultListItem> {
+export function patchYBoldVaults<TVault extends TYBoldMergeableVault>(vaults: TDict<TVault>): TDict<TVault> {
   const vaultsWithWorkaround = { ...vaults }
   const yBoldVault = vaultsWithWorkaround[toAddress(YBOLD_VAULT_ADDRESS)]
   const stakedVault = vaultsWithWorkaround[toAddress(YBOLD_STAKING_ADDRESS)]
