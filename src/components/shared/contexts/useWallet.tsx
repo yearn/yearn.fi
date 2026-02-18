@@ -48,15 +48,11 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   children: ReactElement
   shouldWorkOnTestnet?: boolean
 }): ReactElement {
-  const { vaults, inclusionYearnVaults, isLoadingVaultList, getPrice } = useYearn()
+  const { allVaults, isLoadingVaultList, getPrice } = useYearn()
   const { address: userAddress } = useWeb3()
-  const yearnHoldingsVaults = useMemo(
-    (): TDict<TYDaemonVault> => ({ ...vaults, ...inclusionYearnVaults }),
-    [vaults, inclusionYearnVaults]
-  )
 
   const allTokens = useYearnTokens({
-    vaults: yearnHoldingsVaults,
+    vaults: allVaults,
     isLoadingVaultList,
     isEnabled: Boolean(userAddress)
   })
@@ -126,7 +122,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   )
 
   const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
-    const stakingToVault = Object.entries(yearnHoldingsVaults).reduce((acc, [vaultAddress, vault]) => {
+    const stakingToVault = Object.entries(allVaults).reduce((acc, [vaultAddress, vault]) => {
       if (vault.staking?.address && !isZeroAddress(toAddress(vault.staking.address))) {
         acc.set(toAddress(vault.staking.address), vaultAddress)
       }
@@ -137,7 +133,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       .flatMap(([, perChain]) => Object.keys(perChain))
       .map((tokenAddress) => {
         const normalizedAddress = toAddress(tokenAddress)
-        const directVault = yearnHoldingsVaults?.[normalizedAddress]
+        const directVault = allVaults?.[normalizedAddress]
         if (directVault) {
           return directVault
         }
@@ -145,7 +141,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         if (!stakingVaultAddress) {
           return undefined
         }
-        return yearnHoldingsVaults?.[stakingVaultAddress]
+        return allVaults?.[stakingVaultAddress]
       })
       .filter((vault): vault is TYDaemonVault => Boolean(vault))
       .reduce((acc, vault) => {
@@ -162,7 +158,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       },
       [0, 0] as [number, number]
     )
-  }, [yearnHoldingsVaults, balances, getBalance, getPrice, getToken])
+  }, [allVaults, balances, getBalance, getPrice, getToken])
 
   /***************************************************************************
    **	Setup and render the Context provider to use in the app.

@@ -49,7 +49,7 @@ export function createCheckHasHoldings(
     const hasVaultBalance = vaultBalance.raw > 0n
     const vaultPrice = getPrice({ address: vaultAddress, chainID })
 
-    if (staking.available && !isZeroAddress(staking.address)) {
+    if (!isZeroAddress(staking.address)) {
       const stakingBalance = getBalance({
         address: staking.address,
         chainID
@@ -108,7 +108,7 @@ export function getVaultHoldingsUsdValue(
   const vaultDirectValue = Number(vaultToken.value || 0)
   const vaultShares = Number(getBalance({ address: vaultAddress, chainID }).normalized || 0)
 
-  const canUseStaking = staking.available && !isZeroAddress(staking.address)
+  const canUseStaking = !isZeroAddress(staking.address)
   const stakingToken = canUseStaking ? getToken({ address: staking.address, chainID }) : null
   const stakingDirectValue = Number(stakingToken?.value || 0)
   const stakingShares = canUseStaking ? Number(getBalance({ address: staking.address, chainID }).normalized || 0) : 0

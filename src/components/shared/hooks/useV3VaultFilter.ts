@@ -69,7 +69,7 @@ export function useV3VaultFilter(
   showHiddenVaults?: boolean,
   enabled?: boolean
 ): TV3VaultFilterResult {
-  const { vaults, inclusionYearnVaults, getPrice, isLoadingVaultList } = useYearn()
+  const { vaults, allVaults, getPrice, isLoadingVaultList } = useYearn()
   const { getBalance } = useWallet()
   const { shouldHideDust } = useAppSettings()
   const isEnabled = enabled ?? true
@@ -176,7 +176,7 @@ export function useV3VaultFilter(
       upsertVault(vault, { isActive: !isRetired, isRetired, isMigratable: Boolean(vault.migration?.available) })
     })
 
-    Object.values(inclusionYearnVaults).forEach((vault) => {
+    Object.values(allVaults).forEach((vault) => {
       if (!shouldIncludeVault(vault)) {
         return
       }
@@ -197,7 +197,7 @@ export function useV3VaultFilter(
     })
 
     return vaultMap
-  }, [isEnabled, isEnabled ? vaults : null, isEnabled ? inclusionYearnVaults : null, checkHasRawHoldings])
+  }, [isEnabled, isEnabled ? vaults : null, isEnabled ? allVaults : null, checkHasRawHoldings])
 
   const walletFlags = useMemo(() => {
     const flags = new Map<string, TVaultWalletFlags>()
