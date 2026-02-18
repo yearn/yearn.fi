@@ -1,60 +1,17 @@
 import { config } from '../config'
 import type { KongPPSDataPoint } from '../types'
 
-export function parsePPSResponse(response: KongPPSDataPoint[]): Map<number, number> {
-  const ppsMap = new Map<number, number>()
+export type PPSTimeline = Map<number, number>
 
-  for (const point of response) {
-    ppsMap.set(point.time, parseFloat(point.value))
-  }
-
-  return ppsMap
+export function buildPPSTimeline(response: KongPPSDataPoint[]): PPSTimeline {
+  return new Map(response.map((p) => [p.time, parseFloat(p.value)]))
 }
 
-export function interpolatePPS(ppsMap: Map<number, number>, timestamp: number): number {
-  const timestamps = Array.from(ppsMap.keys()).sort((a, b) => a - b)
-
-  if (timestamps.length === 0) {
-    return 1.0
-  }
-
-  if (ppsMap.has(timestamp)) {
-    return ppsMap.get(timestamp)!
-  }
-
-  if (timestamp < timestamps[0]) {
-    return ppsMap.get(timestamps[0])!
-  }
-
-  if (timestamp > timestamps[timestamps.length - 1]) {
-    return ppsMap.get(timestamps[timestamps.length - 1])!
-  }
-
-  let lower = timestamps[0]
-  let upper = timestamps[timestamps.length - 1]
-
-  for (const ts of timestamps) {
-    if (ts <= timestamp) {
-      lower = ts
-    }
-    if (ts >= timestamp && ts < upper) {
-      upper = ts
-      break
-    }
-  }
-
-  if (lower === upper) {
-    return ppsMap.get(lower)!
-  }
-
-  const lowerPPS = ppsMap.get(lower)!
-  const upperPPS = ppsMap.get(upper)!
-  const ratio = (timestamp - lower) / (upper - lower)
-
-  return lowerPPS + (upperPPS - lowerPPS) * ratio
+export function getPPS(timeline: PPSTimeline, timestamp: number): number {
+  return timeline.get(timestamp) ?? 1.0
 }
 
-export async function fetchVaultPPS(chainId: number, vaultAddress: string): Promise<Map<number, number>> {
+export async function fetchVaultPPS(chainId: number, vaultAddress: string): Promise<PPSTimeline> {
   const url = `${config.kongBaseUrl}/api/rest/timeseries/pps/${chainId}/${vaultAddress}`
 
   const response = await fetch(url)
@@ -64,33 +21,29 @@ export async function fetchVaultPPS(chainId: number, vaultAddress: string): Prom
   }
 
   const data = (await response.json()) as KongPPSDataPoint[]
-  return parsePPSResponse(data)
+  return buildPPSTimeline(data)
 }
 
 export async function fetchMultipleVaultsPPS(
   vaults: Array<{ chainId: number; vaultAddress: string }>
-): Promise<Map<string, Map<number, number>>> {
-  const results = new Map<string, Map<number, number>>()
-
-  const batchSize = 5
-  for (let i = 0; i < vaults.length; i += batchSize) {
-    const batch = vaults.slice(i, i + batchSize)
-    const promises = batch.map(async ({ chainId, vaultAddress }) => {
-      const key = `${chainId}:${vaultAddress.toLowerCase()}`
-      try {
-        const ppsMap = await fetchVaultPPS(chainId, vaultAddress)
-        return { key, ppsMap }
-      } catch (error) {
-        console.error(`[Kong] Failed to fetch PPS for ${key}:`, error)
-        return { key, ppsMap: new Map<number, number>() }
-      }
-    })
-
-    const batchResults = await Promise.all(promises)
-    for (const { key, ppsMap } of batchResults) {
-      results.set(key, ppsMap)
+): Promise<Map<string, PPSTimeline>> {
+  const promises = vaults.map(async ({ chainId, vaultAddress }) => {
+    const key = `${chainId}:${vaultAddress.toLowerCase()}`
+    try {
+      const timeline = await fetchVaultPPS(chainId, vaultAddress)
+      return { key, timeline }
+    } catch (error) {
+      console.error(`[Kong] Failed to fetch PPS for ${key}:`, error)
+      return { key, timeline: new Map() as PPSTimeline }
     }
+  })
+
+  const results = await Promise.all(promises)
+
+  const map = new Map<string, PPSTimeline>()
+  for (const { key, timeline } of results) {
+    map.set(key, timeline)
   }
 
-  return results
+  return map
 }

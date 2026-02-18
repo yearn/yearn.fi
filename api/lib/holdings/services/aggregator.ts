@@ -11,7 +11,7 @@ import {
   getUniqueVaults,
   timestampToDateString
 } from './holdings'
-import { fetchMultipleVaultsPPS, interpolatePPS } from './kong'
+import { fetchMultipleVaultsPPS, getPPS } from './kong'
 import { fetchMultipleVaultsMetadata } from './ydaemon'
 
 export async function getHistoricalHoldings(
@@ -74,7 +74,7 @@ export async function getHistoricalHoldings(
         if (shares === BigInt(0)) continue
 
         const ppsMap = ppsData.get(vaultKey)
-        const pps = ppsMap ? interpolatePPS(ppsMap, timestamp) : 1.0
+        const pps = ppsMap ? getPPS(ppsMap, timestamp) : 1.0
 
         const priceKey = `${getChainPrefix(vault.chainId)}:${metadata.token.address.toLowerCase()}`
         const tokenPriceMap = priceData.get(priceKey)
