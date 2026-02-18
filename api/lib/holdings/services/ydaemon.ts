@@ -1,75 +1,114 @@
 import { config } from '../config'
 import type { VaultMetadata } from '../types'
 
-interface YDaemonVaultResponse {
+interface KongVault {
   address: string
-  token: {
+  chainId: number
+  symbol: string
+  decimals: number
+  asset: {
     address: string
     symbol: string
     decimals: number
   }
-  decimals: number
+  staking?: {
+    address: string | null
+    available: boolean
+  }
 }
 
-const metadataCache = new Map<string, VaultMetadata>()
+let vaultListCache: Map<string, VaultMetadata> | null = null
+let stakingToVaultMap: Map<string, VaultMetadata> | null = null
 
-export async function fetchVaultMetadata(chainId: number, vaultAddress: string): Promise<VaultMetadata | null> {
-  const cacheKey = `${chainId}:${vaultAddress.toLowerCase()}`
+async function loadVaultList(): Promise<void> {
+  if (vaultListCache !== null) return
 
-  if (metadataCache.has(cacheKey)) {
-    return metadataCache.get(cacheKey)!
-  }
-
-  const url = `${config.ydaemonBaseUrl}/${chainId}/vaults/${vaultAddress}`
+  const url = `${config.kongBaseUrl}/api/rest/list/vaults?origin=yearn`
 
   try {
     const response = await fetch(url)
-
     if (!response.ok) {
-      console.error(`[yDaemon] Failed to fetch metadata for ${vaultAddress}: ${response.status}`)
-      return null
+      console.error(`[Kong] Failed to fetch vault list: ${response.status}`)
+      vaultListCache = new Map()
+      stakingToVaultMap = new Map()
+      return
     }
 
-    const data = (await response.json()) as YDaemonVaultResponse
+    const vaults = (await response.json()) as KongVault[]
+    vaultListCache = new Map()
+    stakingToVaultMap = new Map()
 
-    const metadata: VaultMetadata = {
-      address: data.address,
-      chainId,
-      token: {
-        address: data.token.address,
-        symbol: data.token.symbol,
-        decimals: data.token.decimals
-      },
-      decimals: data.decimals
+    for (const vault of vaults) {
+      const metadata: VaultMetadata = {
+        address: vault.address,
+        chainId: vault.chainId,
+        token: {
+          address: vault.asset.address,
+          symbol: vault.asset.symbol,
+          decimals: vault.asset.decimals
+        },
+        decimals: vault.decimals
+      }
+
+      const key = `${vault.chainId}:${vault.address.toLowerCase()}`
+      vaultListCache.set(key, metadata)
+
+      // Map staking address to vault metadata (using vault as underlying token)
+      if (vault.staking?.address) {
+        const stakingKey = `${vault.chainId}:${vault.staking.address.toLowerCase()}`
+        const stakingMetadata: VaultMetadata = {
+          address: vault.staking.address,
+          chainId: vault.chainId,
+          token: {
+            address: vault.address,
+            symbol: vault.symbol,
+            decimals: vault.decimals
+          },
+          decimals: vault.decimals
+        }
+        stakingToVaultMap.set(stakingKey, stakingMetadata)
+      }
     }
-
-    metadataCache.set(cacheKey, metadata)
-    return metadata
   } catch (error) {
-    console.error(`[yDaemon] Error fetching metadata for ${vaultAddress}:`, error)
-    return null
+    console.error('[Kong] Error fetching vault list:', error)
+    vaultListCache = new Map()
+    stakingToVaultMap = new Map()
   }
+}
+
+export async function fetchVaultMetadata(chainId: number, vaultAddress: string): Promise<VaultMetadata | null> {
+  await loadVaultList()
+
+  const key = `${chainId}:${vaultAddress.toLowerCase()}`
+
+  if (vaultListCache!.has(key)) {
+    return vaultListCache!.get(key)!
+  }
+
+  if (stakingToVaultMap!.has(key)) {
+    return stakingToVaultMap!.get(key)!
+  }
+
+  return null
 }
 
 export async function fetchMultipleVaultsMetadata(
   vaults: Array<{ chainId: number; vaultAddress: string }>
 ): Promise<Map<string, VaultMetadata>> {
+  await loadVaultList()
+
   const results = new Map<string, VaultMetadata>()
 
-  const batchSize = 5
-  for (let i = 0; i < vaults.length; i += batchSize) {
-    const batch = vaults.slice(i, i + batchSize)
-    const promises = batch.map(async ({ chainId, vaultAddress }) => {
-      const key = `${chainId}:${vaultAddress.toLowerCase()}`
-      const metadata = await fetchVaultMetadata(chainId, vaultAddress)
-      return { key, metadata }
-    })
+  for (const { chainId, vaultAddress } of vaults) {
+    const key = `${chainId}:${vaultAddress.toLowerCase()}`
 
-    const batchResults = await Promise.all(promises)
-    for (const { key, metadata } of batchResults) {
-      if (metadata) {
-        results.set(key, metadata)
-      }
+    if (vaultListCache!.has(key)) {
+      results.set(key, vaultListCache!.get(key)!)
+      continue
+    }
+
+    if (stakingToVaultMap!.has(key)) {
+      results.set(key, stakingToVaultMap!.get(key)!)
     }
   }
 
