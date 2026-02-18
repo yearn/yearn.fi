@@ -178,14 +178,6 @@ function PortfolioHeaderSection({
 
   return (
     <section className={'flex flex-col gap-2'}>
-      <Breadcrumbs
-        className="px-1"
-        items={[
-          { label: 'Home', href: '/' },
-          { label: 'Vaults', href: '/vaults' },
-          { label: 'Portfolio', isCurrent: true }
-        ]}
-      />
       <div className="px-1">
         <Tooltip
           className="h-auto justify-start gap-0"
@@ -957,6 +949,16 @@ function PortfolioPage(): ReactElement {
     <PortfolioPageLayout>
       {/** biome-ignore lint/complexity/noUselessFragments: <lint error without> */}
       <>
+        <div className="sticky top-[var(--header-height)] z-40 bg-app pb-2">
+          <Breadcrumbs
+            className="px-1"
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Vaults', href: '/vaults' },
+              { label: 'Portfolio', isCurrent: true }
+            ]}
+          />
+        </div>
         <div className={cl('flex flex-col', model.isActive ? 'gap-0' : 'gap-4 sm:gap-8')}>
           <PortfolioHeaderSection
             blendedMetrics={model.blendedMetrics}
