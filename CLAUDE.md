@@ -1,118 +1,65 @@
-# CLAUDE.md
+# yearn.fi
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Yearn Finance vaults interface — React 19 + TypeScript SPA (Vite, TanStack Query, Tailwind CSS 4, Wagmi/Viem).
 
-## Project Overview
-
-yearn-fi is Yearn Finance's main website and vaults interface - a Vite-based React 19 SPA for depositing/withdrawing from yield vaults across multiple blockchain networks.
-
-## Development Commands
+## Commands
 
 ```bash
-bun install           # Install dependencies
-bun run dev           # Start Vite dev server (port 3000)
-bun run build         # TypeScript check + Vite build
-bun run preview       # Preview production build
-bun run test          # Run Vitest suite
-bun run lint          # Biome check
-bun run lint:fix      # Biome format and fix
-bun run tslint        # TypeScript type check only
-bun run clean         # Clean build artifacts (runs clean.sh)
+bun install                              # Install dependencies
+bun run dev                              # Vite dev server (3000) + API server (3001)
+bun run build                            # TypeScript check + Vite build
+bun run test                             # Full Vitest suite
+bunx vitest run src/path/to/test.ts      # Single test file
+bun run lint:fix                         # Biome format and fix
+bun run tslint                           # TypeScript type check only
 ```
 
-## Code Style & Naming Conventions
+## Verification
 
-Enforced by Biome (biome.jsonc)—format frequently with `bun run lint:fix`:
-- 2-space indentation
-- Single quotes
-- No trailing commas
-- Optional semicolons (omit where possible)
-- 120 character line width
+IMPORTANT: After making code changes, always verify:
+1. `bun run tslint` — type check passes
+2. `bun run lint:fix` — code is formatted
+3. Run relevant test file if one exists
+
+Husky runs `lint-staged` + `bun run tslint` on every commit.
+
+## Code Style
+
+Formatting is enforced by Biome (biome.jsonc) — do not worry about indentation, quotes, or commas.
+
+IMPORTANT: These rules are NOT enforced by tooling — you MUST follow them:
+- NEVER use `let` — always use `const`
+- NEVER use `for`/`while` loops — use `.map()`, `.filter()`, `.reduce()`
+- NEVER use relative imports — use path aliases (`@/*`, `@shared/*`, `@pages/*`, `@components/*`)
+- Use functional style code throughout
 
 Naming:
-- Components: PascalCase (e.g., `VaultListRow.tsx`)
-- Hooks: `useFoo` pattern (e.g., `useFilteredVaults.ts`)
-- Utilities: camelCase (e.g., `format.ts`)
-- Types: prefixed with `T` (e.g., `TSortDirection`, `TVaultType`)
-
-## Best Practices
-
-- Use functional style code
-- Avoid comments where unnecessary
-- Use explicit module imports and extract shared constants instead of duplicating literals across apps
+- Components: PascalCase (`VaultListRow.tsx`)
+- Hooks: `useFoo` (`useFilteredVaults.ts`)
+- Utilities: camelCase (`format.ts`)
+- Types: T-prefixed (`TSortDirection`, `TVaultType`)
 
 ## Architecture
 
-### Directory Structure
+**Tech stack:** React 19, Vite, React Router (lazy-loaded), Tailwind CSS 4, TanStack Query, Wagmi/Viem/RainbowKit
 
-```
-src/
-├── main.tsx              # Vite entry point
-├── App.tsx               # Root with context providers
-├── routes.tsx            # React Router configuration
-├── components/
-│   ├── shared/           # Shared library (@shared alias)
-│   │   ├── components/       # Buttons, Dropdowns, Headers, Icons
-│   │   ├── contexts/         # useWallet, useYearn, useWeb3
-│   │   ├── contracts/        # ABI source of truth
-│   │   ├── hooks/            # Vault data, balances, filtering hooks
-│   │   ├── utils/            # Format, calculations, chain constants
-│   │   ├── icons/            # 50+ icon components
-│   │   └── types/            # Shared type definitions
-│   └── pages/            # Route pages and feature components (@pages alias)
-│       ├── index.tsx         # Home/Landing page
-│       ├── landing/          # Landing page sections
-│       ├── portfolio/        # Portfolio page
-│       │   ├── index.tsx
-│       │   └── usePortfolioModel.ts
-│       └── vaults/           # Vaults pages and components
-│           ├── index.tsx         # Vaults list page
-│           ├── [chainID]/        # Vault detail page
-│           │   └── [address].tsx
-│           ├── components/       # Vaults UI (list, detail, widget)
-│           ├── contexts/         # Vault settings context
-│           ├── domain/           # Domain helpers (reports, normalization)
-│           ├── hooks/            # Vault-specific hooks
-│           └── utils/            # Vault utilities (charts, yBOLD, filters)
-├── hooks/                # Core hooks (useThemePreference, usePlausible)
-└── contexts/             # App-level contexts
-
-api/                      # Vercel serverless functions
-```
-
-### Tech Stack
-
-- **Framework**: React 19 + TypeScript 5.9 (strict mode)
-- **Build**: Vite 7.2
-- **Routing**: React Router 7.9
-- **Styling**: Tailwind CSS 4
-- **State**: TanStack Query 5, React Context
-- **Web3**: Wagmi 2.18, Viem 2.38, RainbowKit 2.2
-
-### Path Aliases (vite.config.ts)
-
+**Path aliases** (defined in vite.config.ts):
 - `@/*` → `src/*`
 - `@shared/*` → `src/components/shared/*`
 - `@pages/*` → `src/components/pages/*`
 - `@components/*` → `src/components/*`
-- `@hooks/*` → `src/hooks/*`
 
-### Key Patterns
+**Key directories:**
+- `src/components/shared/` — shared library (contexts, hooks, utils, types, contracts)
+- `src/components/pages/` — route pages (landing, portfolio, vaults)
+- `api/` — Vercel serverless functions (prod) / Bun dev server (local)
 
-**Context Providers**: Nested in App.tsx - WalletContextApp → YearnContextApp → AppSettingsContextApp
+**Key patterns:**
+- Context provider chain defined in `App.tsx` — read that file for the full order
+- Vault data flows through `useYearn` context → filtered/sorted via hooks in `@shared/hooks/`
+- Dual server: Vite (3000) proxies `/api/*` to Bun API server (3001). In prod, `api/` runs as Vercel serverless functions.
 
-**Data Flow**: Vault data fetched via useYearn context hooks, filtered/sorted via custom hooks in src/components/shared/hooks
+## Multi-Chain
 
-## Multi-Chain Support
-
-Supported networks (configured in `src/components/shared/utils/constants.tsx`):
-- Ethereum (1), Optimism (10), Gnosis (100), Polygon (137), Fantom (250), Arbitrum (42161), Base (8453)
-
-RPC URIs configured via environment variables: `VITE_RPC_URI_FOR_<chainId>`
-
-## Environment Setup
-
-Copy `.env.example` to `.env` and configure:
-- RPC URIs for each chain
-- WalletConnect project ID
-- Yearn API endpoints (yDaemon, Kong REST)
+Supported chains configured in `src/components/shared/utils/constants.tsx`:
+Ethereum (1), Optimism (10), Polygon (137), Fantom (250), Base (8453), Arbitrum (42161), Sonic (146), Katana (747474)
