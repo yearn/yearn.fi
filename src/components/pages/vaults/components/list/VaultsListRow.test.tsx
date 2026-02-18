@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render } from '@testing-library/react'
-import { act } from 'react'
 import type { ComponentProps } from 'react'
+import { act } from 'react'
 import { MemoryRouter } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
 import { zeroAddress } from 'viem'
+import { describe, expect, it, vi } from 'vitest'
 
 import { VaultsListRow } from './VaultsListRow'
 
