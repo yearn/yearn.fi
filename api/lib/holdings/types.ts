@@ -33,6 +33,28 @@ export interface WithdrawEvent {
   shares: string
 }
 
+export interface V2DepositEvent {
+  id: string
+  vaultAddress: string
+  chainId: number
+  blockNumber: number
+  blockTimestamp: number
+  recipient: string
+  amount: string
+  shares: string
+}
+
+export interface V2WithdrawEvent {
+  id: string
+  vaultAddress: string
+  chainId: number
+  blockNumber: number
+  blockTimestamp: number
+  recipient: string
+  amount: string
+  shares: string
+}
+
 export interface TransferEvent {
   id: string
   vaultAddress: string

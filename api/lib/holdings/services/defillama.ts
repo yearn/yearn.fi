@@ -37,6 +37,30 @@ export function parseDefiLlamaResponse(response: DefiLlamaBatchResponse): Map<st
   return result
 }
 
+async function fetchBatch(
+  coinBatch: Array<{ chain: string; address: string }>,
+  timestampBatch: number[],
+  batchLabel: string
+): Promise<Map<string, Map<number, number>>> {
+  const url = buildBatchHistoricalUrl(coinBatch, timestampBatch)
+  const result = new Map<string, Map<number, number>>()
+
+  try {
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      console.error(`[DefiLlama] ${batchLabel} failed: ${response.status}`)
+      return result
+    }
+
+    const data = (await response.json()) as DefiLlamaBatchResponse
+    return parseDefiLlamaResponse(data)
+  } catch (error) {
+    console.error(`[DefiLlama] ${batchLabel} error:`, error)
+    return result
+  }
+}
+
 export async function fetchHistoricalPrices(
   tokens: Array<{ chainId: number; address: string }>,
   timestamps: number[]
@@ -46,24 +70,44 @@ export async function fetchHistoricalPrices(
     address: token.address
   }))
 
-  const BATCH_SIZE = 10
+  const TIMESTAMP_BATCH_SIZE = 10
+  const TOKEN_BATCH_SIZE = 15
+  const PARALLEL_REQUESTS = 5
   const result = new Map<string, Map<number, number>>()
 
-  for (let i = 0; i < timestamps.length; i += BATCH_SIZE) {
-    const timestampBatch = timestamps.slice(i, i + BATCH_SIZE)
-    const url = buildBatchHistoricalUrl(coins, timestampBatch)
+  // Build all batch combinations
+  const batches: Array<{
+    coinBatch: Array<{ chain: string; address: string }>
+    timestampBatch: number[]
+    label: string
+  }> = []
 
-    try {
-      const response = await fetch(url)
+  for (let coinIdx = 0; coinIdx < coins.length; coinIdx += TOKEN_BATCH_SIZE) {
+    const coinBatch = coins.slice(coinIdx, coinIdx + TOKEN_BATCH_SIZE)
+    const coinBatchNum = Math.floor(coinIdx / TOKEN_BATCH_SIZE) + 1
 
-      if (!response.ok) {
-        console.error(`[DefiLlama] Batch ${Math.floor(i / BATCH_SIZE) + 1} failed: ${response.status}`)
-        continue
-      }
+    for (let tsIdx = 0; tsIdx < timestamps.length; tsIdx += TIMESTAMP_BATCH_SIZE) {
+      const timestampBatch = timestamps.slice(tsIdx, tsIdx + TIMESTAMP_BATCH_SIZE)
+      const tsBatchNum = Math.floor(tsIdx / TIMESTAMP_BATCH_SIZE) + 1
 
-      const data = (await response.json()) as DefiLlamaBatchResponse
-      const batchResult = parseDefiLlamaResponse(data)
+      batches.push({
+        coinBatch,
+        timestampBatch,
+        label: `coins=${coinBatchNum} ts=${tsBatchNum}`
+      })
+    }
+  }
 
+  console.log(`[DefiLlama] Fetching ${batches.length} batches...`)
+
+  // Process batches in parallel groups
+  for (let i = 0; i < batches.length; i += PARALLEL_REQUESTS) {
+    const batchGroup = batches.slice(i, i + PARALLEL_REQUESTS)
+    const promises = batchGroup.map((b) => fetchBatch(b.coinBatch, b.timestampBatch, b.label))
+
+    const results = await Promise.all(promises)
+
+    for (const batchResult of results) {
       for (const [coinKey, priceMap] of batchResult) {
         if (!result.has(coinKey)) {
           result.set(coinKey, new Map())
@@ -73,15 +117,15 @@ export async function fetchHistoricalPrices(
           existingMap.set(ts, price)
         }
       }
-    } catch (error) {
-      console.error(`[DefiLlama] Batch ${Math.floor(i / BATCH_SIZE) + 1} error:`, error)
     }
 
-    if (i + BATCH_SIZE < timestamps.length) {
+    // Small delay between groups to avoid rate limiting
+    if (i + PARALLEL_REQUESTS < batches.length) {
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
   }
 
+  console.log(`[DefiLlama] Completed, got prices for ${result.size} tokens`)
   return result
 }
 

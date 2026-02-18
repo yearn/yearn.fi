@@ -1,5 +1,5 @@
 import { serve } from 'bun'
-import { clearCache, getHistoricalHoldings, initializeSchema, validateConfig } from './lib/holdings'
+import { clearCache, getHistoricalHoldings, initializeSchema, validateConfig, type VaultVersion } from './lib/holdings'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 
@@ -189,6 +189,7 @@ async function handleHoldingsHistorySimple(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
   const refresh = url.searchParams.get('refresh')
+  const versionParam = url.searchParams.get('version')
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -198,12 +199,15 @@ async function handleHoldingsHistorySimple(req: Request): Promise<Response> {
     return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
   }
 
+  // Validate version parameter
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
   try {
     if (refresh === 'true') {
       await clearCache(address)
     }
 
-    const holdings = await getHistoricalHoldings(address)
+    const holdings = await getHistoricalHoldings(address, version)
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
     if (!hasHoldings) {
@@ -213,6 +217,7 @@ async function handleHoldingsHistorySimple(req: Request): Promise<Response> {
     return Response.json(
       {
         address: holdings.address,
+        version,
         dataPoints: holdings.dataPoints.map((dp) => ({
           date: dp.date,
           value: dp.totalUsdValue
@@ -226,7 +231,9 @@ async function handleHoldingsHistorySimple(req: Request): Promise<Response> {
     )
   } catch (error) {
     console.error('Error fetching holdings history:', error)
-    return Response.json({ error: 'Failed to fetch historical holdings', status: 502 }, { status: 502 })
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json({ error: 'Failed to fetch historical holdings', message, stack, status: 502 }, { status: 502 })
   }
 }
 
@@ -256,6 +263,15 @@ async function handleHoldingsCacheClear(req: Request): Promise<Response> {
 }
 
 async function main() {
+  // Catch uncaught exceptions
+  process.on('uncaughtException', (error) => {
+    console.error('💥 Uncaught Exception:', error)
+  })
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason)
+  })
+
   validateConfig()
 
   await initializeSchema()
@@ -263,32 +279,44 @@ async function main() {
   serve({
     async fetch(req) {
       const url = new URL(req.url)
+      console.log(`[Server] ${req.method} ${url.pathname}`)
 
-      if (req.method === 'OPTIONS') {
-        return handleCorsPrelight()
+      try {
+        if (req.method === 'OPTIONS') {
+          return handleCorsPrelight()
+        }
+
+        let response: Response
+
+        if (url.pathname === '/api/enso/status') {
+          response = handleEnsoStatus()
+        } else if (url.pathname === '/api/enso/balances') {
+          response = await handleEnsoBalances(req)
+        } else if (url.pathname === '/api/enso/route') {
+          response = await handleEnsoRoute(req)
+        } else if (url.pathname === '/api/holdings/history') {
+          response = await handleHoldingsHistorySimple(req)
+        } else if (url.pathname === '/api/holdings/history/full') {
+          response = await handleHoldingsHistory(req)
+        } else if (url.pathname === '/api/holdings/cache') {
+          response = await handleHoldingsCacheClear(req)
+        } else {
+          response = new Response('Not found', { status: 404 })
+        }
+
+        return withCors(response)
+      } catch (error) {
+        console.error('💥 Request handler error:', error)
+        return withCors(
+          Response.json(
+            { error: 'Internal server error', message: error instanceof Error ? error.message : String(error) },
+            { status: 500 }
+          )
+        )
       }
-
-      let response: Response
-
-      if (url.pathname === '/api/enso/status') {
-        response = handleEnsoStatus()
-      } else if (url.pathname === '/api/enso/balances') {
-        response = await handleEnsoBalances(req)
-      } else if (url.pathname === '/api/enso/route') {
-        response = await handleEnsoRoute(req)
-      } else if (url.pathname === '/api/holdings/history') {
-        response = await handleHoldingsHistorySimple(req)
-      } else if (url.pathname === '/api/holdings/history/full') {
-        response = await handleHoldingsHistory(req)
-      } else if (url.pathname === '/api/holdings/cache') {
-        response = await handleHoldingsCacheClear(req)
-      } else {
-        response = new Response('Not found', { status: 404 })
-      }
-
-      return withCors(response)
     },
-    port: 3001
+    port: 3001,
+    idleTimeout: 120 // 2 minutes for long-running requests like historical holdings
   })
 
   console.log('🚀 API server running on http://localhost:3001')

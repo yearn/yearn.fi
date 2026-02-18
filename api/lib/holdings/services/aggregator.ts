@@ -3,7 +3,7 @@ import type { CachedHolding, ChainHoldings, DailyHoldings, HoldingsHistoryRespon
 import { SUPPORTED_CHAINS as CHAINS } from '../types'
 import { getCachedHoldings, saveCachedHoldings } from './cache'
 import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
-import { fetchUserEvents } from './graphql'
+import { fetchUserEvents, type VaultVersion } from './graphql'
 import {
   buildPositionTimeline,
   generateDailyTimestamps,
@@ -14,25 +14,47 @@ import {
 import { fetchMultipleVaultsPPS, interpolatePPS } from './kong'
 import { fetchMultipleVaultsMetadata } from './ydaemon'
 
-export async function getHistoricalHoldings(userAddress: string): Promise<HoldingsHistoryResponse> {
+export async function getHistoricalHoldings(
+  userAddress: string,
+  version: VaultVersion = 'v3'
+): Promise<HoldingsHistoryResponse> {
+  console.log('[Aggregator] Starting getHistoricalHoldings for:', userAddress, 'version:', version)
+
   const days = config.historyDays
   const timestamps = generateDailyTimestamps(days)
   const startDate = timestampToDateString(timestamps[0])
   const endDate = timestampToDateString(timestamps[timestamps.length - 1])
+  console.log('[Aggregator] Date range:', startDate, 'to', endDate)
 
   const cachedHoldings = await getCachedHoldings(userAddress, startDate, endDate)
+  console.log('[Aggregator] Cached holdings:', cachedHoldings.length)
 
   const cachedDates = new Set(cachedHoldings.map((h) => h.date))
   const missingTimestamps = timestamps.filter((ts) => !cachedDates.has(timestampToDateString(ts)))
+  console.log('[Aggregator] Missing timestamps:', missingTimestamps.length)
 
   const newHoldings: CachedHolding[] = []
 
   if (missingTimestamps.length > 0) {
-    const events = await fetchUserEvents(userAddress)
+    console.log('[Aggregator] Fetching user events...')
+    const events = await fetchUserEvents(userAddress, version)
+    console.log(
+      '[Aggregator] Events:',
+      events.deposits.length,
+      'deposits,',
+      events.withdrawals.length,
+      'withdrawals,',
+      events.transfersIn.length,
+      'transfers in,',
+      events.transfersOut.length,
+      'transfers out'
+    )
 
     const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
+    console.log('[Aggregator] Timeline events:', timeline.length)
 
     if (timeline.length === 0) {
+      console.log('[Aggregator] No timeline events, returning empty')
       return {
         address: userAddress,
         periodDays: days,
@@ -46,10 +68,15 @@ export async function getHistoricalHoldings(userAddress: string): Promise<Holdin
     }
 
     const vaults = getUniqueVaults(timeline)
+    console.log('[Aggregator] Unique vaults:', vaults.length)
 
+    console.log('[Aggregator] Fetching vault metadata...')
     const vaultMetadata = await fetchMultipleVaultsMetadata(vaults)
+    console.log('[Aggregator] Vault metadata entries:', vaultMetadata.size)
 
+    console.log('[Aggregator] Fetching PPS data...')
     const ppsData = await fetchMultipleVaultsPPS(vaults)
+    console.log('[Aggregator] PPS data entries:', ppsData.size)
 
     const underlyingTokens: Array<{ chainId: number; address: string }> = []
     for (const [_key, metadata] of vaultMetadata) {
@@ -58,8 +85,11 @@ export async function getHistoricalHoldings(userAddress: string): Promise<Holdin
         address: metadata.token.address
       })
     }
+    console.log('[Aggregator] Underlying tokens:', underlyingTokens.length)
 
+    console.log('[Aggregator] Fetching historical prices...')
     const priceData = await fetchHistoricalPrices(underlyingTokens, missingTimestamps)
+    console.log('[Aggregator] Price data entries:', priceData.size)
 
     for (const timestamp of missingTimestamps) {
       const dateStr = timestampToDateString(timestamp)
