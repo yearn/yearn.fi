@@ -12,7 +12,7 @@ import {
   timestampToDateString
 } from './holdings'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
-import { fetchMultipleVaultsMetadata } from './ydaemon'
+import { fetchMultipleVaultsMetadata } from './vaults'
 
 export async function getHistoricalHoldings(
   userAddress: string,

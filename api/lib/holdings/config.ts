@@ -4,7 +4,6 @@ export interface HoldingsConfig {
   readonly databaseUrl: string | null
   readonly kongBaseUrl: string
   readonly defillamaBaseUrl: string
-  readonly ydaemonBaseUrl: string
   readonly historyDays: number
 }
 
@@ -20,7 +19,6 @@ export const config: HoldingsConfig = {
   },
   kongBaseUrl: 'https://kong.yearn.fi',
   defillamaBaseUrl: 'https://coins.llama.fi',
-  ydaemonBaseUrl: 'https://ydaemon.yearn.fi',
   historyDays: 90
 }
 
