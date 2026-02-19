@@ -116,6 +116,12 @@ serve({
   async fetch(req) {
     const url = new URL(req.url)
 
+    // A way to make it work locally
+    if (url.pathname === '/api/enso/status') {
+      const apiKey = process.env.ENSO_API_KEY
+      return Response.json({ configured: !!apiKey })
+    }
+
     if (url.pathname === '/api/enso/balances') {
       return handleEnsoBalances(req)
     }
