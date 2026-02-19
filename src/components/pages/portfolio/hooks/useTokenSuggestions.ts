@@ -5,12 +5,12 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { useMemo } from 'react'
 
-export type TPersonalizedSuggestion = {
+export type TTokenSuggestion = {
   vault: TKongVault
   matchedSymbol: string
 }
 
-export function usePersonalizedSuggestions(holdingsKeySet: Set<string>): TPersonalizedSuggestion[] {
+export function useTokenSuggestions(holdingsKeySet: Set<string>): TTokenSuggestion[] {
   const { balances } = useWallet()
   const { vaults } = useYearn()
 
@@ -37,7 +37,7 @@ export function usePersonalizedSuggestions(holdingsKeySet: Set<string>): TPerson
       return acc.set(vaultSymbol, [...(acc.get(vaultSymbol) ?? []), vault])
     }, new Map<string, TKongVault[]>())
 
-    return sortedSymbols.reduce<{ results: TPersonalizedSuggestion[]; usedVaults: Set<string> }>(
+    return sortedSymbols.reduce<{ results: TTokenSuggestion[]; usedVaults: Set<string> }>(
       (acc, [symbol]) => {
         if (acc.results.length >= 4) return acc
         const candidates = vaultsBySymbol.get(symbol)

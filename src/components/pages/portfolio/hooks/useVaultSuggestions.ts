@@ -7,14 +7,14 @@ import { useEnsoBalances } from '@shared/hooks/useEnsoBalances'
 import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
 
-export type TExternalSuggestion = {
+export type TVaultSuggestion = {
   vault: TKongVault
   externalProtocol: string
   underlyingSymbol: string
 }
 
-export function useExternalSuggestions(holdingsKeySet: Set<string>): {
-  suggestions: TExternalSuggestion[]
+export function useVaultSuggestions(holdingsKeySet: Set<string>): {
+  suggestions: TVaultSuggestion[]
 } {
   const { address } = useWeb3()
   const { vaults } = useYearn()
