@@ -28,11 +28,6 @@ export const useDepositRoute = ({
   const ensoEnabled = useEnsoEnabled()
 
   return useMemo(() => {
-    // When Enso disabled, always use direct deposit
-    if (!ensoEnabled) {
-      return 'DIRECT_DEPOSIT'
-    }
-
     // Case 1: Direct vault deposit (asset → vault)
     if (
       toAddress(depositToken) === toAddress(assetAddress) &&
@@ -51,6 +46,9 @@ export const useDepositRoute = ({
     }
 
     // Case 3: All other cases use Enso
-    return 'ENSO'
+    if (ensoEnabled) {
+      return 'ENSO'
+    }
+    return 'NO_ROUTE'
   }, [ensoEnabled, depositToken, assetAddress, destinationToken, vaultAddress, stakingAddress])
 }

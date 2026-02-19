@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address, Hash, Hex } from 'viem'
 import type { UseSimulateContractReturnType } from 'wagmi'
 import { usePublicClient, useWaitForTransactionReceipt, useWalletClient } from 'wagmi'
+import { supportedChains } from '@/config/supportedChains'
 
 interface EnsoTransaction {
   to: Address
@@ -51,19 +52,16 @@ export const useEnsoOrder = ({
       if (!walletClient) throw new Error('No wallet client available')
       if (!publicClient) throw new Error('No public client available')
 
-      // Verify wallet is on the correct chain (use chainId prop, not ensoTx.chainId which may be undefined)
-      if (walletClient.chain?.id !== chainId) {
-        throw new Error(
-          `Chain mismatch: wallet on ${walletClient.chain?.id}, transaction requires ${chainId}. Please try again.`
-        )
-      }
+      // Note: Chain switching is handled by TransactionOverlay before calling executeOrder
+      // We use the target chain from props, not walletClient.chain which may be stale
+      const targetChain = supportedChains.find((c) => c.id === chainId)
 
       // Send the transaction
       const hash = await walletClient.sendTransaction({
         to: ensoTx.to,
         data: ensoTx.data,
         value: BigInt(ensoTx.value || 0),
-        chain: walletClient.chain
+        chain: targetChain ?? walletClient.chain
       })
 
       // Store hash for receipt monitoring
