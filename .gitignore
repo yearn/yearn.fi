@@ -22,7 +22,6 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
-.claude
 .env
 .next
 .vercel
@@ -51,7 +50,9 @@ AGENTS.md
 yearn.fi-worktree-*
 
 # claude settings
-.claude
+.claude/*
+!.claude/rules/
+!.claude/skills/
 
 # codex settings
 .codex
