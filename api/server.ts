@@ -2,6 +2,11 @@ import { serve } from 'bun'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 
+function handleEnsoStatus(): Response {
+  const apiKey = process.env.ENSO_API_KEY
+  return Response.json({ configured: !!apiKey })
+}
+
 async function handleEnsoRoute(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const fromAddress = url.searchParams.get('fromAddress')
@@ -116,10 +121,8 @@ serve({
   async fetch(req) {
     const url = new URL(req.url)
 
-    // A way to make it work locally
     if (url.pathname === '/api/enso/status') {
-      const apiKey = process.env.ENSO_API_KEY
-      return Response.json({ configured: !!apiKey })
+      return handleEnsoStatus()
     }
 
     if (url.pathname === '/api/enso/balances') {
