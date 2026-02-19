@@ -30,7 +30,7 @@ import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, SUPPORTED_NETWORKS } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import type { ReactElement } from 'react'
+import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useChainId, useSwitchChain } from 'wagmi'
@@ -178,14 +178,6 @@ function PortfolioHeaderSection({
 
   return (
     <section className={'flex flex-col gap-2'}>
-      <Breadcrumbs
-        className="px-1"
-        items={[
-          { label: 'Home', href: '/' },
-          { label: 'Vaults', href: '/vaults' },
-          { label: 'Portfolio', isCurrent: true }
-        ]}
-      />
       <div className="px-1">
         <Tooltip
           className="h-auto justify-start gap-0"
@@ -440,11 +432,25 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   const chainIds = useMemo(() => SUPPORTED_NETWORKS.map((network) => network.id), [])
 
   const [chainStakingData, setChainStakingData] = useState<
-    Record<number, { rewards: TChainRewardData['stakingRewards']; isLoading: boolean; refetch: () => void }>
+    Record<
+      number,
+      {
+        rewards: TChainRewardData['stakingRewards']
+        isLoading: boolean
+        refetch: () => void
+      }
+    >
   >({})
 
   const [chainMerkleData, setChainMerkleData] = useState<
-    Record<number, { rewards: TGroupedMerkleReward[]; isLoading: boolean; refetch: () => void }>
+    Record<
+      number,
+      {
+        rewards: TGroupedMerkleReward[]
+        isLoading: boolean
+        refetch: () => void
+      }
+    >
   >({})
 
   const handleStakingRewards = useCallback(
@@ -473,7 +479,10 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
         const newRewards =
           rewards.length > 0 ? [...filteredRewards, { vault, stakingAddress, stakingSource, rewards }] : filteredRewards
 
-        return { ...prev, [chainId]: { rewards: newRewards, isLoading, refetch } }
+        return {
+          ...prev,
+          [chainId]: { rewards: newRewards, isLoading, refetch }
+        }
       })
     },
     []
@@ -844,28 +853,56 @@ function PortfolioHoldingsSection({
           onClick={openLoginModal}
         />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border">
+        <div className="rounded-lg">
           <div className="flex flex-col">
-            <VaultsListHead
-              sortBy={sortBy}
-              sortDirection={sortDirection}
-              onSort={handleSort}
-              wrapperClassName="rounded-t-lg bg-surface-secondary"
-              containerClassName="rounded-t-lg bg-surface-secondary"
-              items={[
-                { type: 'sort', label: 'Vault Name', value: 'vault', sortable: false, className: 'col-span-12' },
-                { type: 'sort', label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-4' },
-                { type: 'sort', label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-4' },
-                {
-                  type: 'sort',
-                  label: 'Your Holdings',
-                  value: 'deposited',
-                  sortable: true,
-                  className: 'col-span-4 justify-end'
-                }
-              ]}
-            />
-            {renderHoldingsContent()}
+            <div
+              className="relative md:sticky md:z-30"
+              style={{
+                top: 'calc(var(--header-height) + var(--portfolio-breadcrumbs-height))'
+              }}
+            >
+              <div aria-hidden={true} className="pointer-events-none absolute inset-0 z-0 bg-app" />
+              <VaultsListHead
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+                wrapperClassName="relative z-10 rounded-t-lg border border-border bg-surface-secondary"
+                containerClassName="relative z-10 rounded-t-lg bg-surface-secondary"
+                items={[
+                  {
+                    type: 'sort',
+                    label: 'Vault Name',
+                    value: 'vault',
+                    sortable: false,
+                    className: 'col-span-12'
+                  },
+                  {
+                    type: 'sort',
+                    label: 'Est. APY',
+                    value: 'estAPY',
+                    sortable: true,
+                    className: 'col-span-4'
+                  },
+                  {
+                    type: 'sort',
+                    label: 'TVL',
+                    value: 'tvl',
+                    sortable: true,
+                    className: 'col-span-4'
+                  },
+                  {
+                    type: 'sort',
+                    label: 'Your Holdings',
+                    value: 'deposited',
+                    sortable: true,
+                    className: 'col-span-4 justify-end'
+                  }
+                ]}
+              />
+            </div>
+            <div className="overflow-hidden rounded-b-lg border-x border-b border-border">
+              {renderHoldingsContent()}
+            </div>
           </div>
         </div>
       )}
@@ -902,6 +939,8 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
   const [searchParams, setSearchParams] = useSearchParams()
+  const varsRef = useRef<HTMLDivElement>(null)
+  const breadcrumbsRef = useRef<HTMLDivElement>(null)
 
   const activeTab = useMemo((): TPortfolioTabKey => {
     const tabParam = searchParams.get('tab')
@@ -923,6 +962,43 @@ function PortfolioPage(): ReactElement {
     },
     [searchParams, setSearchParams]
   )
+
+  useEffect(() => {
+    const root = varsRef.current
+    const breadcrumbsNode = breadcrumbsRef.current
+
+    if (!root || !breadcrumbsNode) {
+      return
+    }
+
+    let frame = 0
+    const update = (): void => {
+      frame = 0
+      const height = breadcrumbsNode.getBoundingClientRect().height
+      root.style.setProperty('--portfolio-breadcrumbs-height', `${height}px`)
+    }
+
+    const schedule = (): void => {
+      if (frame) {
+        cancelAnimationFrame(frame)
+      }
+      frame = requestAnimationFrame(update)
+    }
+
+    schedule()
+
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule)
+    observer?.observe(breadcrumbsNode)
+    window.addEventListener('resize', schedule)
+
+    return () => {
+      if (frame) {
+        cancelAnimationFrame(frame)
+      }
+      observer?.disconnect()
+      window.removeEventListener('resize', schedule)
+    }
+  }, [])
 
   function renderTabContent(): ReactElement | null {
     switch (activeTab) {
@@ -955,8 +1031,17 @@ function PortfolioPage(): ReactElement {
 
   return (
     <PortfolioPageLayout>
-      {/** biome-ignore lint/complexity/noUselessFragments: <lint error without> */}
-      <>
+      <div ref={varsRef} className="flex flex-col" style={{ '--portfolio-breadcrumbs-height': '0px' } as CSSProperties}>
+        <div ref={breadcrumbsRef} className="sticky top-[var(--header-height)] z-40 bg-app pb-2">
+          <Breadcrumbs
+            className="px-1"
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Vaults', href: '/vaults' },
+              { label: 'Portfolio', isCurrent: true }
+            ]}
+          />
+        </div>
         <div className={cl('flex flex-col', model.isActive ? 'gap-0' : 'gap-4 sm:gap-8')}>
           <PortfolioHeaderSection
             blendedMetrics={model.blendedMetrics}
@@ -968,8 +1053,10 @@ function PortfolioPage(): ReactElement {
           />
           <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} mergeWithHeader={model.isActive} />
         </div>
-        <div key={activeTab}>{renderTabContent()}</div>
-      </>
+        <div className={'pt-4'} key={activeTab}>
+          {renderTabContent()}
+        </div>
+      </div>
     </PortfolioPageLayout>
   )
 }
