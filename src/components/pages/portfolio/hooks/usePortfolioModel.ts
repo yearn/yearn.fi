@@ -1,5 +1,5 @@
-import { useExternalSuggestions } from '@pages/portfolio/hooks/useExternalSuggestions'
-import { usePersonalizedSuggestions } from '@pages/portfolio/hooks/usePersonalizedSuggestions'
+import { useTokenSuggestions } from '@pages/portfolio/hooks/useTokenSuggestions'
+import { useVaultSuggestions } from '@pages/portfolio/hooks/useVaultSuggestions'
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import {
   getVaultAddress,
@@ -167,8 +167,8 @@ export function usePortfolioModel(): TPortfolioModel {
     [sortedCandidates, holdingsKeySet]
   )
 
-  const personalizedSuggestions = usePersonalizedSuggestions(holdingsKeySet)
-  const { suggestions: externalSuggestions } = useExternalSuggestions(holdingsKeySet)
+  const tokenSuggestions = useTokenSuggestions(holdingsKeySet)
+  const { suggestions: vaultSuggestions } = useVaultSuggestions(holdingsKeySet)
 
   const holdingsRows = useMemo(
     () =>
@@ -184,7 +184,7 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const suggestedRows = useMemo((): TSuggestedItem[] => {
     const candidates: { item: TSuggestedItem; vaultKey: string }[] = [
-      ...externalSuggestions.slice(0, 2).map((ext) => ({
+      ...vaultSuggestions.slice(0, 2).map((ext) => ({
         item: {
           type: 'external' as const,
           key: `ext-${getVaultKey(ext.vault)}`,
@@ -194,7 +194,7 @@ export function usePortfolioModel(): TPortfolioModel {
         },
         vaultKey: getVaultKey(ext.vault)
       })),
-      ...personalizedSuggestions.map((ps) => ({
+      ...tokenSuggestions.map((ps) => ({
         item: {
           type: 'personalized' as const,
           key: `pers-${getVaultKey(ps.vault)}`,
@@ -218,7 +218,7 @@ export function usePortfolioModel(): TPortfolioModel {
       })
       .slice(0, 4)
       .map(({ item }) => item)
-  }, [externalSuggestions, personalizedSuggestions, genericVaults])
+  }, [vaultSuggestions, tokenSuggestions, genericVaults])
 
   const hasHoldings = sortedHoldings.length > 0
   const hasKatanaHoldings = useMemo(
