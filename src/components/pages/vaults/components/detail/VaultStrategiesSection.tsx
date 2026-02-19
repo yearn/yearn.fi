@@ -259,7 +259,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
                   <div className={'grid w-full grid-cols-3 gap-2 md:col-span-14 md:grid-cols-15 md:gap-4'}>
                     <div className={'flex flex-col items-center md:items-end md:col-span-5'} datatype={'number'}>
                       <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>Allocation %</p>
-                      <p className={'font-semibold'}>{formatPercent(unallocatedPercentage / 100, 0)}</p>
+                      <p className={'font-semibold'}>{formatPercent(unallocatedPercentage / 100)}</p>
                     </div>
                     <div className={'flex flex-col items-center md:items-end md:col-span-5'} datatype={'number'}>
                       <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>Amount</p>

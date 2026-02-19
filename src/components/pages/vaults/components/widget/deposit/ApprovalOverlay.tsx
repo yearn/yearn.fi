@@ -109,7 +109,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   const handleRevoke = useCallback(() => handleApprove(0n), [handleApprove])
   const handleSetUnlimited = useCallback(() => handleApprove(maxUint256), [handleApprove])
 
-  const isRevokeDisabled = !account || currentAllowance === '0.00'
+  const isRevokeDisabled = !account || currentAllowance === '0.00' || currentAllowance === '0'
   const isUnlimitedDisabled = !account || currentAllowance === 'Unlimited'
   const isInTransaction = txState !== 'idle'
 
