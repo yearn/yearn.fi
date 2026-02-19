@@ -451,7 +451,6 @@ function Index(): ReactElement | null {
   const [isWidgetRewardsOpen, setIsWidgetRewardsOpen] = useState(false)
   const [collapsedWidgetHeight, setCollapsedWidgetHeight] = useState<number | null>(null)
   const [isShortViewport, setIsShortViewport] = useState(false)
-  const [isCompactWidget, setIsCompactWidget] = useState(false)
   const [shouldShowWidgetRewards, setShouldShowWidgetRewards] = useState(true)
   const [vaultTourState, setVaultTourState] = useState<{ isOpen: boolean; stepId?: string }>({ isOpen: false })
   const tourWidgetStateRef = useRef<{
@@ -481,16 +480,6 @@ function Index(): ReactElement | null {
     if (typeof window === 'undefined') return
     const updateViewport = (): void => {
       setIsShortViewport(window.innerHeight < 890)
-    }
-    updateViewport()
-    window.addEventListener('resize', updateViewport)
-    return (): void => window.removeEventListener('resize', updateViewport)
-  }, [])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const updateViewport = (): void => {
-      setIsCompactWidget(window.innerHeight < 800)
     }
     updateViewport()
     window.addEventListener('resize', updateViewport)
@@ -999,7 +988,6 @@ function Index(): ReactElement | null {
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const headerStickyTop = 'var(--header-height)'
   const resolvedWidgetMode = widgetActions.includes(widgetMode) ? widgetMode : widgetActions[0]
-  const shouldCollapseWidgetDetails = isCompactWidget
   const mobileListKind = deriveListKind(currentVault)
   const mobileProductTypeLabel = getMobileProductTypeLabel()
   const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
@@ -1195,7 +1183,6 @@ function Index(): ReactElement | null {
                       isSettingsOpen={isWidgetSettingsOpen}
                       depositPrefill={depositPrefill}
                       onDepositPrefillConsumed={() => setDepositPrefill(null)}
-                      collapseDetails={shouldCollapseWidgetDetails}
                     />
                   </div>
                 )}
