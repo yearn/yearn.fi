@@ -489,7 +489,7 @@ export default function Index(): ReactElement {
               style={{ top: 'var(--header-height)' }}
             >
               <Breadcrumbs
-                className={'mb-3 mt-2'}
+                className={'mb-3 px-1'}
                 items={[
                   { label: 'Home', href: '/' },
                   { label: 'Vaults', href: '/vaults', isCurrent: true }
