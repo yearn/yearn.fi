@@ -9,7 +9,6 @@ import {
 } from '@headlessui/react'
 import { usePlausible } from '@hooks/usePlausible'
 import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
-import { getChainDescription } from '@pages/vaults/utils/vaultTagCopy'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
 import { SearchBar } from '@shared/components/SearchBar'
 import { useChainOptions } from '@shared/hooks/useChains'
@@ -164,8 +163,7 @@ export function VaultsFiltersBar({
           id,
           label: option.label,
           icon: option.icon,
-          isSelected: selectedChainSet.has(id),
-          description: getChainDescription(id)
+          isSelected: selectedChainSet.has(id)
         }
       })
       .filter(Boolean) as TVaultsChainButton[]
