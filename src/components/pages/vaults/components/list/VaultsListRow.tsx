@@ -293,7 +293,7 @@ export function VaultsListRow({
     >
       <button
         type={'button'}
-        aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+        aria-label={isExpanded ? 'Collapse vault details' : 'Expand vault details'}
         aria-expanded={isExpanded}
         data-tour="vaults-row-expand"
         onClick={(event): void => {
