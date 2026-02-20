@@ -76,7 +76,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
         props.className
       )}
     >
-      <div className={'flex h-full w-full items-center gap-2 overflow-hidden '}>
+      <div className={'flex h-full w-full items-center gap-2 overflow-hidden'}>
         <input
           id={'search'}
           suppressHydrationWarning

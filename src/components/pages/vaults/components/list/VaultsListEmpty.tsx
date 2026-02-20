@@ -65,7 +65,8 @@ export function VaultsListEmpty({
   if (isLoading) {
     const label = loadingLabel ?? 'Fetching Vaults…'
     return (
-      <div
+      <output
+        aria-live={'polite'}
         className={
           'mt-2 flex h-96 w-full animate-pulse flex-col items-center justify-center gap-2 rounded-[12px] bg-white/5 px-10 py-2'
         }
@@ -74,7 +75,7 @@ export function VaultsListEmpty({
         <div className={'flex h-10 items-center justify-center'}>
           <span className={'loader'} />
         </div>
-      </div>
+      </output>
     )
   }
 
