@@ -5,18 +5,18 @@ import {
   getVaultStaking,
   getVaultSymbol,
   getVaultToken,
+  getVaultTVL,
   getVaultVersion,
-  type TKongVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { getNativeTokenWrapperContract } from '@pages/vaults/utils/nativeTokens'
 import type { TAddress } from '@shared/types/address'
 import type { TNormalizedBN } from '@shared/types/mixed'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 
 export type TVaultWithMetadata = {
-  vault: TKongVault
+  vault: TKongVaultInput
   hasHoldings: boolean
   hasAvailableBalance: boolean
   isHoldingsVault: boolean
@@ -34,6 +34,7 @@ export type TVaultFlags = {
 type TTokenAndChain = { address: TAddress; chainID: number }
 type TBalanceGetter = (params: TTokenAndChain) => TNormalizedBN
 type TPriceGetter = (params: TTokenAndChain) => { normalized: number }
+type TTokenGetter = (params: TTokenAndChain) => { value?: number }
 
 export function createCheckHasHoldings(
   getBalance: TBalanceGetter,
@@ -41,30 +42,21 @@ export function createCheckHasHoldings(
   shouldHideDust: boolean
 ): (vault: TKongVaultInput) => boolean {
   return function checkHasHoldings(vault: TKongVaultInput): boolean {
-    const address = getVaultAddress(vault)
+    const vaultAddress = getVaultAddress(vault)
     const chainID = getVaultChainID(vault)
     const staking = getVaultStaking(vault)
-
-    const vaultBalance = getBalance({ address, chainID })
+    const vaultBalance = getBalance({ address: vaultAddress, chainID })
     const hasVaultBalance = vaultBalance.raw > 0n
-    let vaultPrice: { normalized: number } | null = null
+    const vaultPrice = getPrice({ address: vaultAddress, chainID })
 
-    const getVaultPrice = (): { normalized: number } => {
-      if (!vaultPrice) {
-        vaultPrice = getPrice({ address, chainID })
-      }
-      return vaultPrice
-    }
-
-    if (staking.available) {
+    if (!isZeroAddress(staking.address)) {
       const stakingBalance = getBalance({
         address: staking.address,
         chainID
       })
       const hasValidStakedBalance = stakingBalance.raw > 0n
       if (hasValidStakedBalance) {
-        const price = getVaultPrice()
-        const stakedBalanceValue = Number(stakingBalance.normalized) * price.normalized
+        const stakedBalanceValue = Number(stakingBalance.normalized) * vaultPrice.normalized
         if (!(shouldHideDust && stakedBalanceValue < 0.01)) {
           return true
         }
@@ -75,8 +67,7 @@ export function createCheckHasHoldings(
       return false
     }
 
-    const price = getVaultPrice()
-    const balanceValue = Number(vaultBalance.normalized) * price.normalized
+    const balanceValue = Number(vaultBalance.normalized) * vaultPrice.normalized
 
     return !(shouldHideDust && balanceValue < 0.01)
   }
@@ -103,6 +94,68 @@ export function createCheckHasAvailableBalance(getBalance: TBalanceGetter): (vau
   }
 }
 
+export function getVaultHoldingsUsdValue(
+  vault: TKongVaultInput,
+  getToken: TTokenGetter,
+  getBalance: TBalanceGetter,
+  getPrice: TPriceGetter
+): number {
+  const vaultAddress = getVaultAddress(vault)
+  const chainID = getVaultChainID(vault)
+  const staking = getVaultStaking(vault)
+  const token = getVaultToken(vault)
+  const vaultToken = getToken({ address: vaultAddress, chainID })
+  const vaultDirectValue = Number(vaultToken.value || 0)
+  const vaultShares = Number(getBalance({ address: vaultAddress, chainID }).normalized || 0)
+
+  const canUseStaking = !isZeroAddress(staking.address)
+  const stakingToken = canUseStaking ? getToken({ address: staking.address, chainID }) : null
+  const stakingDirectValue = Number(stakingToken?.value || 0)
+  const stakingShares = canUseStaking ? Number(getBalance({ address: staking.address, chainID }).normalized || 0) : 0
+
+  const vaultSharePrice = Number(getPrice({ address: vaultAddress, chainID }).normalized || 0)
+  const pricePerShare = (() => {
+    if ('apr' in vault) {
+      return Number(vault.apr?.pricePerShare?.today || 0)
+    }
+    if ('pricePerShare' in vault) {
+      return Number(toNormalizedBN(vault.pricePerShare ?? 0, token.decimals).normalized || 0)
+    }
+    return 0
+  })()
+  const resolvedAssetPrice = Number(getPrice({ address: token.address, chainID }).normalized || 0)
+  const assetPrice = resolvedAssetPrice > 0 ? resolvedAssetPrice : Number(getVaultTVL(vault)?.price || 0)
+
+  const resolvePositionValue = (directValue: number, shares: number): number => {
+    if (Number.isFinite(directValue) && directValue > 0) {
+      return directValue
+    }
+    if (!Number.isFinite(shares) || shares <= 0) {
+      return 0
+    }
+    if (Number.isFinite(vaultSharePrice) && vaultSharePrice > 0) {
+      const viaVaultPrice = shares * vaultSharePrice
+      if (Number.isFinite(viaVaultPrice)) {
+        return viaVaultPrice
+      }
+    }
+    if (Number.isFinite(pricePerShare) && pricePerShare > 0 && Number.isFinite(assetPrice) && assetPrice > 0) {
+      const viaPps = shares * pricePerShare * assetPrice
+      if (Number.isFinite(viaPps)) {
+        return viaPps
+      }
+    }
+    return 0
+  }
+
+  const totalValue =
+    resolvePositionValue(vaultDirectValue, vaultShares) + resolvePositionValue(stakingDirectValue, stakingShares)
+  if (!Number.isFinite(totalValue)) {
+    return 0
+  }
+  return totalValue
+}
+
 export function getVaultKey(vault: TKongVaultInput): string {
   return `${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}`
 }
@@ -126,13 +179,13 @@ export function isV3Vault(vault: TKongVaultInput, isAllocatorOverride: boolean):
   return version.startsWith('3') || version.startsWith('~3') || isAllocatorOverride
 }
 
-export function extractHoldingsVaults(vaultMap: Map<string, TVaultWithMetadata>): TKongVault[] {
+export function extractHoldingsVaults(vaultMap: Map<string, TVaultWithMetadata>): TKongVaultInput[] {
   return Array.from(vaultMap.values())
     .filter(({ hasHoldings }) => hasHoldings)
     .map(({ vault }) => vault)
 }
 
-export function extractAvailableVaults(vaultMap: Map<string, TVaultWithMetadata>): TKongVault[] {
+export function extractAvailableVaults(vaultMap: Map<string, TVaultWithMetadata>): TKongVaultInput[] {
   return Array.from(vaultMap.values())
     .filter(({ hasAvailableBalance }) => hasAvailableBalance)
     .map(({ vault }) => vault)

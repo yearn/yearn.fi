@@ -1,7 +1,7 @@
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import type { TVaultForwardAPYVariant } from '@pages/vaults/components/table/VaultForwardAPY'
-import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { getVaultAddress, getVaultChainID, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { toAddress } from '@shared/utils'
 
 import type { ReactElement } from 'react'
@@ -17,12 +17,12 @@ export type TVaultFlagsRecord = Record<
 
 type TVaultsAuxiliaryListProps = {
   title?: string
-  vaults: TKongVaultInput[]
+  vaults: TKongVault[]
   vaultFlags: TVaultFlagsRecord
   apyDisplayVariant?: TVaultForwardAPYVariant
-  resolveApyDisplayVariant?: (vault: TKongVaultInput) => TVaultForwardAPYVariant
+  resolveApyDisplayVariant?: (vault: TKongVault) => TVaultForwardAPYVariant
   compareVaultKeys?: string[]
-  onToggleCompare?: (vault: TKongVaultInput) => void
+  onToggleCompare?: (vault: TKongVault) => void
   activeChains?: number[]
   activeCategories?: string[]
   activeProductType?: 'v3' | 'lp' | 'all'

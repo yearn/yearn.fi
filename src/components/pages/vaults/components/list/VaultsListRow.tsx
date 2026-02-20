@@ -3,18 +3,6 @@ import { usePlausible } from '@hooks/usePlausible'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
-import {
-  getVaultAddress,
-  getVaultAPR,
-  getVaultCategory,
-  getVaultChainID,
-  getVaultName as getVaultDisplayName,
-  getVaultKind,
-  getVaultStaking,
-  getVaultSymbol,
-  getVaultToken,
-  type TKongVaultInput
-} from '@pages/vaults/domain/kongVaultSelectors'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
@@ -30,12 +18,15 @@ import { useMediaQuery } from '@react-hookz/web'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
+import { getVaultHoldingsUsdValue } from '@shared/hooks/useVaultFilterUtils'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
-import { cl, formatAmount, formatTvlDisplay, getVaultName, isZeroAddress, toAddress } from '@shared/utils'
+import { cl, formatAmount, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
+import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
@@ -92,13 +83,13 @@ export function VaultsListRow({
   mobileSecondaryMetric = 'tvl',
   showAllocatorChip = true
 }: {
-  currentVault: TKongVaultInput
+  currentVault: TYDaemonVault
   flags?: TVaultRowFlags
   hrefOverride?: string
   apyDisplayVariant?: TVaultForwardAPYVariant
   showBoostDetails?: boolean
   compareVaultKeys?: string[]
-  onToggleCompare?: (vault: TKongVaultInput) => void
+  onToggleCompare?: (vault: TYDaemonVault) => void
   activeChains?: number[]
   activeCategories?: string[]
   onToggleChain?: (chainId: number) => void
@@ -117,20 +108,12 @@ export function VaultsListRow({
 }): ReactElement {
   const navigate = useNavigate()
   const trackEvent = usePlausible()
-  const chainID = getVaultChainID(currentVault)
-  const vaultAddress = getVaultAddress(currentVault)
-  const vaultSymbol = getVaultSymbol(currentVault)
-  const vaultName = getVaultDisplayName(currentVault)
-  const vaultToken = getVaultToken(currentVault)
-  const staking = getVaultStaking(currentVault)
-  const apr = getVaultAPR(currentVault)
-  const vaultKind = getVaultKind(currentVault)
-  const vaultCategory = getVaultCategory(currentVault)
-  const href = hrefOverride ?? `/vaults/${chainID}/${toAddress(vaultAddress)}`
-  const network = getNetwork(chainID)
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+  const href = hrefOverride ?? `/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`
+  const network = getNetwork(currentVault.chainID)
+  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const { address } = useWeb3()
-  const { getToken } = useWallet()
+  const { getToken, getBalance } = useWallet()
+  const { getPrice } = useYearn()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const [isExpandedState, setIsExpandedState] = useState(false)
   const isExpanded = isExpandedProp ?? isExpandedState
@@ -167,7 +150,7 @@ export function VaultsListRow({
   const tvlColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-5'
   const holdingsColumnSpan = 'col-span-4'
   const showCompareToggle = Boolean(onToggleCompare)
-  const vaultKey = `${chainID}_${toAddress(vaultAddress)}`
+  const vaultKey = `${currentVault.chainID}_${toAddress(currentVault.address)}`
   const isCompareSelected = compareVaultKeys?.includes(vaultKey) ?? false
   const isHoveringInteractive = interactiveHoverCount > 0
   const handleInteractiveHoverChange = (isHovering: boolean): void => {
@@ -182,7 +165,7 @@ export function VaultsListRow({
   }
 
   const prefetchSnapshot = useCallback((): void => {
-    const endpoint = buildSnapshotEndpoint(chainID, vaultAddress)
+    const endpoint = buildSnapshotEndpoint(currentVault.chainID, currentVault.address)
     if (prefetchedSnapshotEndpoints.has(endpoint)) {
       return
     }
@@ -198,12 +181,12 @@ export function VaultsListRow({
       queryFn: () => fetchWithSchema(endpoint, kongVaultSnapshotSchema),
       staleTime: 30 * 1000
     })
-  }, [vaultAddress, chainID, queryClient])
+  }, [currentVault.address, currentVault.chainID, queryClient])
 
   const isHiddenVault = Boolean(flags?.isHidden)
   const baseKindType: 'multi' | 'single' | undefined = (() => {
-    if (vaultKind === 'Multi Strategy') return 'multi'
-    if (vaultKind === 'Single Strategy') return 'single'
+    if (currentVault.kind === 'Multi Strategy') return 'multi'
+    if (currentVault.kind === 'Single Strategy') return 'single'
     return undefined
   })()
 
@@ -217,17 +200,17 @@ export function VaultsListRow({
   const kindLabel: string | undefined = (() => {
     if (kindType === 'multi') return 'Allocator'
     if (kindType === 'single') return 'Strategy'
-    return vaultKind
+    return currentVault.kind
   })()
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
   const showKindChip = showStrategies && Boolean(kindType) && (showAllocatorChip || kindType !== 'multi')
   const isKindActive = false
-  const chainDescription = getChainDescription(chainID)
-  const categoryDescription = getCategoryDescription(vaultCategory)
+  const chainDescription = getChainDescription(currentVault.chainID)
+  const categoryDescription = getCategoryDescription(currentVault.category)
   const productTypeDescription = getProductTypeDescription(listKind)
   const kindDescription = getKindDescription(kindType, kindLabel)
-  const fees = apr?.fees
+  const fees = currentVault.apr?.fees
   const showFeesChip = Boolean(fees) && !isChipsCompressed
   const feesChipLabel = fees
     ? `Fees: ${formatAmount((fees.management || 0) * 100, 0, 2)}% | ${formatAmount(
@@ -263,21 +246,18 @@ export function VaultsListRow({
     if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
       return 0
     }
-    const vaultToken = getToken({
-      chainID,
-      address: vaultAddress
-    })
-    const vaultValue = vaultToken.value || 0
-
-    const stakingValue = !isZeroAddress(staking?.address)
-      ? getToken({
-          chainID,
-          address: staking.address
-        }).value || 0
-      : 0
-
-    return vaultValue + stakingValue
-  }, [showHoldingsChip, vaultAddress, chainID, staking?.address, getToken, mobileSecondaryMetric, showHoldingsChip])
+    return getVaultHoldingsUsdValue(currentVault, getToken, getBalance, getPrice)
+  }, [
+    showHoldingsChip,
+    currentVault,
+    getBalance,
+    getPrice,
+    getToken,
+    currentVault.address,
+    currentVault.chainID,
+    currentVault.staking?.address,
+    mobileSecondaryMetric
+  ])
 
   useEffect(() => {
     if (isExpanded) {
@@ -301,9 +281,9 @@ export function VaultsListRow({
           if (!isExpanded) {
             trackEvent(PLAUSIBLE_EVENTS.VAULT_EXPAND, {
               props: {
-                vaultAddress: toAddress(vaultAddress),
-                vaultSymbol,
-                chainID: chainID.toString()
+                vaultAddress: toAddress(currentVault.address),
+                vaultSymbol: currentVault.symbol,
+                chainID: currentVault.chainID.toString()
               }
             })
           }
@@ -340,9 +320,9 @@ export function VaultsListRow({
           }
           trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW, {
             props: {
-              vaultAddress: toAddress(vaultAddress),
-              vaultSymbol,
-              chainID: chainID.toString()
+              vaultAddress: toAddress(currentVault.address),
+              vaultSymbol: currentVault.symbol,
+              chainID: currentVault.chainID.toString()
             }
           })
         }}
@@ -380,7 +360,9 @@ export function VaultsListRow({
                 role={'checkbox'}
                 aria-checked={isCompareSelected}
                 aria-label={
-                  isCompareSelected ? `Remove ${vaultName} from comparison` : `Add ${vaultName} to comparison`
+                  isCompareSelected
+                    ? `Remove ${currentVault.name} from comparison`
+                    : `Add ${currentVault.name} to comparison`
                 }
                 tabIndex={0}
                 className={'flex cursor-pointer items-center justify-center'}
@@ -415,8 +397,10 @@ export function VaultsListRow({
             ) : null}
             <div className={'relative flex items-center justify-center self-center size-8 min-h-8 min-w-8'}>
               <TokenLogo
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${vaultToken.address.toLowerCase()}/logo-128.png`}
-                tokenSymbol={vaultToken.symbol || ''}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
+                  currentVault.chainID
+                }/${currentVault.token.address.toLowerCase()}/logo-128.png`}
+                tokenSymbol={currentVault.token.symbol || ''}
                 width={32}
                 height={32}
               />
@@ -430,7 +414,7 @@ export function VaultsListRow({
             </div>
             <div className={'min-w-0 flex-1'}>
               <strong
-                title={vaultName}
+                title={currentVault.name}
                 className={
                   'block truncate-safe whitespace-nowrap font-black text-text-primary md:mb-0 text-lg leading-tight'
                 }
@@ -443,25 +427,25 @@ export function VaultsListRow({
                     label={network.name}
                     icon={<TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />}
                     showIconInChip={false}
-                    isActive={activeChainIds.includes(chainID)}
+                    isActive={activeChainIds.includes(currentVault.chainID)}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={chainDescription}
-                    onClick={onToggleChain ? (): void => onToggleChain(chainID) : undefined}
+                    onClick={onToggleChain ? (): void => onToggleChain(currentVault.chainID) : undefined}
                     onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={`Filter by ${network.name}`}
                   />
                 </div>
-                {vaultCategory ? (
+                {currentVault.category ? (
                   <VaultsListChip
-                    label={vaultCategory}
-                    isActive={activeCategoryLabels.includes(vaultCategory)}
+                    label={currentVault.category}
+                    isActive={activeCategoryLabels.includes(currentVault.category)}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={categoryDescription || undefined}
-                    onClick={onToggleCategory ? (): void => onToggleCategory(vaultCategory) : undefined}
+                    onClick={onToggleCategory ? (): void => onToggleCategory(currentVault.category) : undefined}
                     onHoverChange={handleInteractiveHoverChange}
-                    ariaLabel={`Filter by ${vaultCategory}`}
+                    ariaLabel={`Filter by ${currentVault.category}`}
                   />
                 ) : null}
                 {showProductTypeChip ? (
