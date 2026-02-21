@@ -56,6 +56,8 @@ export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
   const shouldUseKatanaAPRs = vault.chainID === KATANA_CHAIN_ID
 
   const baseForwardApr = vault.apr.forwardAPR.netAPR
+  const hasForwardAprSource = vault.apr.forwardAPR.type === 'oracle' || vault.apr.forwardAPR.type === 'estimated'
+  const hasForwardApr = hasForwardAprSource || !isZero(baseForwardApr)
   const netApr = vault.apr.netAPR
   const rewardsAprSum = vault.apr.extra.stakingRewardsAPR + vault.apr.extra.gammaRewardAPR
   const isBoosted =
@@ -104,7 +106,7 @@ export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
       }
       return { mode: 'rewards' }
     }
-    if (!isZero(baseForwardApr)) {
+    if (hasForwardApr) {
       return { mode: 'spot' }
     }
     return { mode: 'historical' }
