@@ -7,7 +7,7 @@ import {
   getVaultVersion,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
-import { UNDERLYING_ASSET_OVERRIDES } from '@pages/vaults/utils/vaultListFacets'
+import { deriveListKind, UNDERLYING_ASSET_OVERRIDES } from '@pages/vaults/utils/vaultListFacets'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 
 export function normalizeSymbol(symbol: string): string {
@@ -46,6 +46,8 @@ export function getEligibleVaults(vaults: Record<string, TKongVault>, holdingsKe
     const info = getVaultInfo(vault)
     const migration = getVaultMigration(vault)
     if (Boolean(info.isHidden) || Boolean(info.isRetired) || Boolean(migration.available)) return false
+    if (deriveListKind(vault) !== 'allocator') return false
+    if (getVaultAPR(vault).forwardAPR.netAPR <= 0.005) return false
     if ((getVaultTVL(vault).tvl ?? 0) <= 0) return false
     if (holdingsKeySet.has(getVaultKey(vault))) return false
     return (getVaultToken(vault).symbol ?? '').trim() !== ''
