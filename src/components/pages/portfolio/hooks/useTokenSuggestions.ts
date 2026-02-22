@@ -17,7 +17,7 @@ export function useTokenSuggestions(holdingsKeySet: Set<string>): TTokenSuggesti
   return useMemo(() => {
     const userTokens = Object.values(balances ?? {}).flatMap((perChain) =>
       Object.values(perChain ?? {}).filter(
-        (token) => token?.balance && token.balance.raw > 0n && token.symbol && token.value > 0
+        (token) => token?.balance && token.balance.raw > 0n && token.symbol && token.value > 1
       )
     )
 
