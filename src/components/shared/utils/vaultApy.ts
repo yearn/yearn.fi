@@ -21,12 +21,13 @@ export function calculateVaultEstimatedAPY(vault: TYDaemonVault, katanaAprs: Par
   }
 
   const sumOfRewardsAPY = (vault.apr?.extra?.stakingRewardsAPR || 0) + (vault.apr?.extra?.gammaRewardAPR || 0)
-  const hasCurrentAPY = !isZero(vault?.apr?.forwardAPR?.netAPR || 0)
+  const hasForwardAPYSource = vault.apr?.forwardAPR?.type === 'oracle' || vault.apr?.forwardAPR?.type === 'estimated'
+  const hasForwardAPY = hasForwardAPYSource || !isZero(vault?.apr?.forwardAPR?.netAPR || 0)
 
   if (sumOfRewardsAPY > 0) {
     return sumOfRewardsAPY + (vault.apr?.forwardAPR?.netAPR || 0)
   }
-  if (hasCurrentAPY) {
+  if (hasForwardAPY) {
     return vault.apr?.forwardAPR?.netAPR || 0
   }
   return vault.apr?.netAPR || 0
