@@ -23,38 +23,26 @@ async function fetchTokenData(config: any, addresses: Address[], chainId: number
 
   const results = await Promise.all(
     addresses.map(async (address) => {
-      try {
-        const contract = getContract({
-          address,
-          abi: erc20Abi,
-          client
-        })
+      const contract = getContract({
+        address,
+        abi: erc20Abi,
+        client
+      })
 
-        const [decimals, symbol, name, balance] = await Promise.all([
-          contract.read.decimals(),
-          contract.read.symbol(),
-          contract.read.name(),
-          account ? contract.read.balanceOf([account]) : Promise.resolve(0n)
-        ])
+      const [decimals, symbol, name, balance] = await Promise.all([
+        contract.read.decimals(),
+        contract.read.symbol(),
+        contract.read.name(),
+        account ? contract.read.balanceOf([account]) : Promise.resolve(0n)
+      ])
 
-        return {
-          address,
-          decimals: Number(decimals),
-          symbol: String(symbol),
-          name: String(name),
-          chainID: chainId,
-          balance: toNormalizedBN(balance, Number(decimals))
-        }
-      } catch (error) {
-        console.error(`Failed to fetch token ${address}:`, error)
-        return {
-          address,
-          decimals: 18,
-          symbol: '???',
-          name: 'Unknown',
-          chainID: chainId,
-          balance: toNormalizedBN(0n, 18)
-        }
+      return {
+        address,
+        decimals: Number(decimals),
+        symbol: String(symbol),
+        name: String(name),
+        chainID: chainId,
+        balance: toNormalizedBN(balance, Number(decimals))
       }
     })
   )
