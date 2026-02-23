@@ -1,7 +1,16 @@
 import { serve } from 'bun'
 import {
+  buildPositionTimeline,
+  fetchHistoricalPrices,
+  fetchMultipleVaultsMetadata,
+  fetchMultipleVaultsPPS,
   fetchUserEvents,
+  getChainPrefix,
   getHistoricalHoldings,
+  getPPS,
+  getPriceAtTimestamp,
+  getShareBalanceAtTimestamp,
+  getUniqueVaults,
   initializeSchema,
   type VaultVersion,
   validateConfig
@@ -308,6 +317,140 @@ async function handleHoldingsDebug(req: Request): Promise<Response> {
   }
 }
 
+async function handleHoldingsBreakdown(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address' }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address' }, { status: 400 })
+  }
+
+  try {
+    const events = await fetchUserEvents(address, 'all')
+    const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
+
+    if (timeline.length === 0) {
+      return Response.json({ address, vaults: [], message: 'No events found' })
+    }
+
+    const vaults = getUniqueVaults(timeline)
+    const vaultMetadata = await fetchMultipleVaultsMetadata(vaults)
+    const ppsData = await fetchMultipleVaultsPPS(vaults)
+
+    const now = Math.floor(Date.now() / 1000)
+
+    // Use today's midnight UTC for PPS/prices (Kong only has midnight data)
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    const midnightTimestamp = Math.floor(today.getTime() / 1000)
+
+    // Fetch token prices using historical API (same as real implementation)
+    const underlyingTokens: Array<{ chainId: number; address: string }> = []
+    for (const [_key, metadata] of vaultMetadata) {
+      underlyingTokens.push({
+        chainId: metadata.chainId,
+        address: metadata.token.address
+      })
+    }
+
+    const priceData = await fetchHistoricalPrices(underlyingTokens, [midnightTimestamp])
+    const results: Array<{
+      chainId: number
+      vaultAddress: string
+      shares: string
+      sharesFormatted: number
+      pricePerShare: number | null
+      tokenPrice: number | null
+      usdValue: number | null
+      metadata: { symbol: string; decimals: number; tokenAddress: string } | null
+      status: string
+    }> = []
+
+    for (const vault of vaults) {
+      const key = `${vault.chainId}:${vault.vaultAddress.toLowerCase()}`
+      const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, now)
+      const metadata = vaultMetadata.get(key)
+      const ppsMap = ppsData.get(key)
+      const pps = ppsMap ? getPPS(ppsMap, midnightTimestamp) : null
+
+      const decimals = metadata?.decimals ?? 18
+      const sharesFormatted = Number(shares) / 10 ** decimals
+
+      let tokenPrice: number | null = null
+      let usdValue: number | null = null
+
+      if (metadata) {
+        const priceKey = `${getChainPrefix(metadata.chainId)}:${metadata.token.address.toLowerCase()}`
+        const tokenPriceMap = priceData.get(priceKey)
+        tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, midnightTimestamp) : 0
+
+        // When price is 0 (missing), usdValue becomes 0 (same as real implementation)
+        usdValue = pps ? sharesFormatted * pps * tokenPrice : 0
+      }
+
+      let status = 'ok'
+      if (!metadata) status = 'missing_metadata'
+      else if (!pps) status = 'missing_pps'
+      else if (tokenPrice === 0) status = 'missing_price'
+
+      results.push({
+        chainId: vault.chainId,
+        vaultAddress: vault.vaultAddress,
+        shares: shares.toString(),
+        sharesFormatted,
+        pricePerShare: pps,
+        tokenPrice,
+        usdValue,
+        metadata: metadata
+          ? {
+              symbol: metadata.token.symbol,
+              decimals: metadata.decimals,
+              tokenAddress: metadata.token.address
+            }
+          : null,
+        status
+      })
+    }
+
+    // Sort by USD value descending (nulls at end)
+    results.sort((a, b) => (b.usdValue ?? 0) - (a.usdValue ?? 0))
+
+    const withShares = results.filter((r) => r.sharesFormatted > 0)
+    const totalUsdValue = withShares.reduce((sum, v) => sum + (v.usdValue ?? 0), 0)
+    const missingMetadata = results.filter((r) => r.status === 'missing_metadata')
+    const missingPps = results.filter((r) => r.status === 'missing_pps')
+    const missingPrice = results.filter((r) => r.status === 'missing_price')
+
+    return Response.json({
+      address,
+      summary: {
+        totalVaults: vaults.length,
+        vaultsWithShares: withShares.length,
+        totalUsdValue,
+        missingMetadata: missingMetadata.length,
+        missingPps: missingPps.length,
+        missingPrice: missingPrice.length
+      },
+      vaults: withShares,
+      issues: {
+        missingMetadata: missingMetadata.map((v) => `${v.chainId}:${v.vaultAddress}`),
+        missingPps: missingPps.filter((v) => v.sharesFormatted > 0).map((v) => `${v.chainId}:${v.vaultAddress}`),
+        missingPrice: missingPrice.filter((v) => v.sharesFormatted > 0).map((v) => `${v.chainId}:${v.vaultAddress}`)
+      }
+    })
+  } catch (error) {
+    console.error('Error in breakdown:', error)
+    return Response.json(
+      { error: 'Breakdown failed', message: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    )
+  }
+}
+
 async function main() {
   // Catch uncaught exceptions
   process.on('uncaughtException', (error) => {
@@ -346,6 +489,8 @@ async function main() {
           response = await handleHoldingsHistory(req)
         } else if (url.pathname === '/api/holdings/debug') {
           response = await handleHoldingsDebug(req)
+        } else if (url.pathname === '/api/holdings/breakdown') {
+          response = await handleHoldingsBreakdown(req)
         } else {
           response = new Response('Not found', { status: 404 })
         }

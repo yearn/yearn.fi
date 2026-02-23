@@ -34,7 +34,7 @@ const WITHDRAWALS_QUERY = `
 
 const TRANSFERS_IN_QUERY = `
   query GetTransfersIn($receiver: String!) {
-    Transfer(where: { receiver: { _eq: $receiver } }, order_by: { blockTimestamp: asc }, limit: 10000) {
+    Transfer(where: { receiver: { _eq: $receiver } }, order_by: { blockTimestamp: asc }, limit: 100000) {
       id
       vaultAddress
       chainId
@@ -49,7 +49,7 @@ const TRANSFERS_IN_QUERY = `
 
 const TRANSFERS_OUT_QUERY = `
   query GetTransfersOut($sender: String!) {
-    Transfer(where: { sender: { _eq: $sender } }, order_by: { blockTimestamp: asc }, limit: 10000) {
+    Transfer(where: { sender: { _eq: $sender } }, order_by: { blockTimestamp: asc }, limit: 100000) {
       id
       vaultAddress
       chainId
