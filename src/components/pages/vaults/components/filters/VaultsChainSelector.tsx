@@ -1,6 +1,4 @@
 import { usePlausible } from '@hooks/usePlausible'
-import { TOOLTIP_DELAY_MS } from '@pages/vaults/utils/vaultTagCopy'
-import { Tooltip } from '@shared/components/Tooltip'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import { cl } from '@shared/utils'
@@ -12,7 +10,6 @@ type TVaultsChainButton = {
   label: string
   icon?: ReactElement
   isSelected: boolean
-  description?: string
 }
 
 type TVaultsChainSelectorProps = {
@@ -43,9 +40,6 @@ export function VaultsChainSelector({
   selectorRef
 }: TVaultsChainSelectorProps): ReactElement {
   const trackEvent = usePlausible()
-  const shouldStretchChainButtons = !enableResponsiveLayout && !isStacked
-  const tooltipWrapperClass = cl('h-full', shouldStretchChainButtons ? 'flex-1 w-full' : '')
-
   function handleSelectAllChains(): void {
     trackEvent(PLAUSIBLE_EVENTS.FILTER_CHAIN, { props: { value: 'all' } })
     onSelectAllChains()
@@ -68,7 +62,7 @@ export function VaultsChainSelector({
         type={'button'}
         className={cl(
           'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
-          'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+          'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/50 data-[active=false]:hover:text-text-primary',
           'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:font-semibold',
           !enableResponsiveLayout && !isStacked ? 'flex-1' : ''
         )}
@@ -83,13 +77,13 @@ export function VaultsChainSelector({
       </button>
       {chainButtons.map((chain) => {
         const showChainLabel = !isMinimal || chain.isSelected
-        const button = (
+        return (
           <button
             key={chain.id}
             type={'button'}
             className={cl(
               'flex h-full items-center justify-center gap-1 px-2 font-medium transition-colors',
-              'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/30 data-[active=false]:hover:text-text-primary',
+              'data-[active=false]:text-text-secondary data-[active=false]:hover:bg-surface/50 data-[active=false]:hover:text-text-primary',
               'data-[active=true]:bg-surface data-[active=true]:text-text-primary data-[active=true]:font-semibold',
               !enableResponsiveLayout && !isStacked ? 'flex-1' : ''
             )}
@@ -104,36 +98,6 @@ export function VaultsChainSelector({
             {showChainLabel ? <span className={'whitespace-nowrap'}>{chain.label}</span> : null}
           </button>
         )
-
-        if (!chain.description) {
-          return button
-        }
-
-        return (
-          <Tooltip
-            key={chain.id}
-            className={tooltipWrapperClass}
-            openDelayMs={TOOLTIP_DELAY_MS}
-            align={'start'}
-            tooltip={
-              <div
-                className={
-                  'max-w-[220px] rounded-lg border border-border bg-surface-secondary px-3 py-2 text-xs text-text-primary shadow-md'
-                }
-              >
-                <div className={'flex items-center gap-1 font-semibold'}>
-                  {chain.icon ? (
-                    <span className={'size-4 overflow-hidden rounded-full bg-surface/80'}>{chain.icon}</span>
-                  ) : null}
-                  <span>{chain.label}</span>
-                </div>
-                <p className={'text-text-secondary'}>{chain.description}</p>
-              </div>
-            }
-          >
-            {button}
-          </Tooltip>
-        )
       })}
 
       {showMoreChainsButton ? (
@@ -141,7 +105,7 @@ export function VaultsChainSelector({
           type={'button'}
           className={cl(
             'flex h-full items-center gap-2 px-3 font-medium transition-colors',
-            'text-text-secondary hover:bg-surface/30 hover:text-text-primary'
+            'text-text-secondary hover:bg-surface/50 hover:text-text-primary'
           )}
           onClick={onOpenChainModal}
         >
