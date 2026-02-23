@@ -1,20 +1,15 @@
 import { serve } from 'bun'
 import {
-  buildPositionTimeline,
-  fetchHistoricalPrices,
-  fetchMultipleVaultsMetadata,
-  fetchMultipleVaultsPPS,
   fetchUserEvents,
-  getChainPrefix,
   getHistoricalHoldings,
-  getPPS,
-  getPriceAtTimestamp,
-  getShareBalanceAtTimestamp,
-  getUniqueVaults,
   initializeSchema,
   type VaultVersion,
   validateConfig
 } from './lib/holdings'
+import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './lib/holdings/services/defillama'
+import { buildPositionTimeline, getShareBalanceAtTimestamp, getUniqueVaults } from './lib/holdings/services/holdings'
+import { fetchMultipleVaultsPPS, getPPS } from './lib/holdings/services/kong'
+import { fetchMultipleVaultsMetadata } from './lib/holdings/services/vaults'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 
@@ -187,40 +182,6 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
 
-    return Response.json(holdings, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-      }
-    })
-  } catch (error) {
-    console.error('Error fetching holdings history:', error)
-    return Response.json({ error: 'Failed to fetch historical holdings', status: 502 }, { status: 502 })
-  }
-}
-
-async function handleHoldingsHistorySimple(req: Request): Promise<Response> {
-  const url = new URL(req.url)
-  const address = url.searchParams.get('address')
-  const versionParam = url.searchParams.get('version')
-
-  if (!address) {
-    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
-  }
-
-  if (!isValidAddress(address)) {
-    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
-  }
-
-  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
-
-  try {
-    const holdings = await getHistoricalHoldings(address, version)
-
-    const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
-    if (!hasHoldings) {
-      return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
-    }
-
     return Response.json(
       {
         address: holdings.address,
@@ -343,21 +304,17 @@ async function handleHoldingsBreakdown(req: Request): Promise<Response> {
 
     const now = Math.floor(Date.now() / 1000)
 
-    // Use today's midnight UTC for PPS/prices (Kong only has midnight data)
     const today = new Date()
     today.setUTCHours(0, 0, 0, 0)
     const midnightTimestamp = Math.floor(today.getTime() / 1000)
 
-    // Fetch token prices using historical API (same as real implementation)
     const underlyingTokens: Array<{ chainId: number; address: string }> = []
     for (const [_key, metadata] of vaultMetadata) {
-      underlyingTokens.push({
-        chainId: metadata.chainId,
-        address: metadata.token.address
-      })
+      underlyingTokens.push({ chainId: metadata.chainId, address: metadata.token.address })
     }
 
     const priceData = await fetchHistoricalPrices(underlyingTokens, [midnightTimestamp])
+
     const results: Array<{
       chainId: number
       vaultAddress: string
@@ -387,8 +344,6 @@ async function handleHoldingsBreakdown(req: Request): Promise<Response> {
         const priceKey = `${getChainPrefix(metadata.chainId)}:${metadata.token.address.toLowerCase()}`
         const tokenPriceMap = priceData.get(priceKey)
         tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, midnightTimestamp) : 0
-
-        // When price is 0 (missing), usdValue becomes 0 (same as real implementation)
         usdValue = pps ? sharesFormatted * pps * tokenPrice : 0
       }
 
@@ -406,41 +361,25 @@ async function handleHoldingsBreakdown(req: Request): Promise<Response> {
         tokenPrice,
         usdValue,
         metadata: metadata
-          ? {
-              symbol: metadata.token.symbol,
-              decimals: metadata.decimals,
-              tokenAddress: metadata.token.address
-            }
+          ? { symbol: metadata.token.symbol, decimals: metadata.decimals, tokenAddress: metadata.token.address }
           : null,
         status
       })
     }
 
-    // Sort by USD value descending (nulls at end)
     results.sort((a, b) => (b.usdValue ?? 0) - (a.usdValue ?? 0))
 
     const withShares = results.filter((r) => r.sharesFormatted > 0)
     const totalUsdValue = withShares.reduce((sum, v) => sum + (v.usdValue ?? 0), 0)
-    const missingMetadata = results.filter((r) => r.status === 'missing_metadata')
-    const missingPps = results.filter((r) => r.status === 'missing_pps')
-    const missingPrice = results.filter((r) => r.status === 'missing_price')
 
     return Response.json({
       address,
       summary: {
         totalVaults: vaults.length,
         vaultsWithShares: withShares.length,
-        totalUsdValue,
-        missingMetadata: missingMetadata.length,
-        missingPps: missingPps.length,
-        missingPrice: missingPrice.length
+        totalUsdValue
       },
-      vaults: withShares,
-      issues: {
-        missingMetadata: missingMetadata.map((v) => `${v.chainId}:${v.vaultAddress}`),
-        missingPps: missingPps.filter((v) => v.sharesFormatted > 0).map((v) => `${v.chainId}:${v.vaultAddress}`),
-        missingPrice: missingPrice.filter((v) => v.sharesFormatted > 0).map((v) => `${v.chainId}:${v.vaultAddress}`)
-      }
+      vaults: withShares
     })
   } catch (error) {
     console.error('Error in breakdown:', error)
@@ -484,8 +423,6 @@ async function main() {
         } else if (url.pathname === '/api/enso/route') {
           response = await handleEnsoRoute(req)
         } else if (url.pathname === '/api/holdings/history') {
-          response = await handleHoldingsHistorySimple(req)
-        } else if (url.pathname === '/api/holdings/history/full') {
           response = await handleHoldingsHistory(req)
         } else if (url.pathname === '/api/holdings/debug') {
           response = await handleHoldingsDebug(req)
@@ -512,7 +449,6 @@ async function main() {
 
   console.log('🚀 API server running on http://localhost:3001')
   console.log('📊 Holdings API: http://localhost:3001/api/holdings/history?address=0x...')
-  console.log('📊 Full API: http://localhost:3001/api/holdings/history/full?address=0x...')
 }
 
 main().catch((error) => {

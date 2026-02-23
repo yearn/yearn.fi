@@ -55,22 +55,13 @@ export async function initializeSchema(): Promise<void> {
   }
 
   const schema = `
-    CREATE TABLE IF NOT EXISTS holdings_cache (
-      id SERIAL PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS holdings_totals (
       user_address VARCHAR(42) NOT NULL,
       date DATE NOT NULL,
-      chain_id INT NOT NULL,
-      vault_address VARCHAR(42) NOT NULL,
-      shares NUMERIC NOT NULL,
       usd_value NUMERIC NOT NULL,
-      price_per_share NUMERIC NOT NULL DEFAULT 1.0,
-      underlying_price NUMERIC NOT NULL DEFAULT 0,
-      created_at TIMESTAMP DEFAULT NOW(),
-      UNIQUE(user_address, date, chain_id, vault_address)
+      updated_at TIMESTAMP DEFAULT NOW(),
+      PRIMARY KEY (user_address, date)
     );
-
-    CREATE INDEX IF NOT EXISTS idx_holdings_user_date
-      ON holdings_cache(user_address, date);
   `
 
   try {

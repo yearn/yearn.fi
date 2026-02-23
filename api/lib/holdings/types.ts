@@ -98,45 +98,6 @@ export interface DefiLlamaBatchResponse {
   }
 }
 
-export interface VaultHolding {
-  address: string
-  shares: string
-  usdValue: number
-  pricePerShare: number
-  underlyingPrice: number
-}
-
-export interface ChainHoldings {
-  chainId: number
-  chainName: string
-  totalUsdValue: number
-  vaults: VaultHolding[]
-}
-
-export interface DailyHoldings {
-  date: string
-  timestamp: number
-  totalUsdValue: number
-  chains: ChainHoldings[]
-}
-
-export interface HoldingsHistoryResponse {
-  address: string
-  periodDays: number
-  dataPoints: DailyHoldings[]
-}
-
-export interface CachedHolding {
-  userAddress: string
-  date: string
-  chainId: number
-  vaultAddress: string
-  shares: string
-  usdValue: number
-  pricePerShare: number
-  underlyingPrice: number
-}
-
 export interface UserEvents {
   deposits: DepositEvent[]
   withdrawals: WithdrawEvent[]
