@@ -1,3 +1,5 @@
+import { useTokenSuggestions } from '@pages/portfolio/hooks/useTokenSuggestions'
+import { useVaultSuggestions } from '@pages/portfolio/hooks/useVaultSuggestions'
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import {
   getVaultAddress,
@@ -24,10 +26,10 @@ type THoldingsRow = {
   hrefOverride?: string
 }
 
-type TSuggestedVaultRow = {
-  key: string
-  vault: TKongVault
-}
+export type TSuggestedItem =
+  | { type: 'external'; key: string; vault: TKongVault; externalProtocol: string; underlyingSymbol: string }
+  | { type: 'personalized'; key: string; vault: TKongVault; matchedSymbol: string }
+  | { type: 'generic'; key: string; vault: TKongVault }
 
 export type TPortfolioBlendedMetrics = {
   blendedCurrentAPY: number | null
@@ -46,7 +48,7 @@ export type TPortfolioModel = {
   openLoginModal: () => void
   sortBy: TPossibleSortBy
   sortDirection: TSortDirection
-  suggestedRows: TSuggestedVaultRow[]
+  suggestedRows: TSuggestedItem[]
   totalPortfolioValue: number
   vaultFlags: Record<string, TVaultFlags>
   setSortBy: TSortStateSetter<TPossibleSortBy>
@@ -76,74 +78,65 @@ export function usePortfolioModel(): TPortfolioModel {
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
 
-  const vaultLookup = useMemo(() => {
-    const map = new Map<string, TKongVault>()
-
-    Object.values(vaults).forEach((vault) => {
-      const vaultKey = getVaultKey(vault)
-      map.set(vaultKey, vault)
-
-      const staking = getVaultStaking(vault)
-      if (staking?.available && staking.address) {
-        const stakingKey = getChainAddressKey(getVaultChainID(vault), staking.address)
-        map.set(stakingKey, vault)
-      }
-    })
-
-    return map
-  }, [vaults])
+  const vaultLookup = useMemo(
+    () =>
+      new Map(
+        Object.values(vaults).flatMap((vault) => {
+          const entries: [string, TKongVault][] = [[getVaultKey(vault), vault]]
+          const staking = getVaultStaking(vault)
+          if (staking?.available && staking.address) {
+            entries.push([getChainAddressKey(getVaultChainID(vault), staking.address), vault])
+          }
+          return entries
+        })
+      ),
+    [vaults]
+  )
 
   const holdingsVaults = useMemo(() => {
-    const result: TKongVault[] = []
-    const seen = new Set<string>()
-
-    Object.entries(balances || {}).forEach(([chainIDKey, perChain]) => {
+    const allMatched = Object.entries(balances || {}).flatMap(([chainIDKey, perChain]) => {
       const parsedChainID = Number(chainIDKey)
       const chainID = Number.isFinite(parsedChainID) ? parsedChainID : undefined
-      Object.values(perChain || {}).forEach((token) => {
-        if (!token?.balance || token.balance.raw <= 0n) {
-          return
-        }
-        const tokenChainID = chainID ?? token.chainID
-        const tokenKey = getChainAddressKey(tokenChainID, token.address)
-        const vault = vaultLookup.get(tokenKey)
-        if (!vault) {
-          return
-        }
-        const vaultKey = getVaultKey(vault)
-        if (seen.has(vaultKey)) {
-          return
-        }
-        seen.add(vaultKey)
-        result.push(vault)
-      })
+      return Object.values(perChain || {})
+        .filter((token) => token?.balance && token.balance.raw > 0n)
+        .flatMap((token) => {
+          const vault = vaultLookup.get(getChainAddressKey(chainID ?? token.chainID, token.address))
+          return vault ? [vault] : []
+        })
     })
 
-    return result
+    const seen = new Set<string>()
+    return allMatched.filter((vault) => {
+      const key = getVaultKey(vault)
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
   }, [balances, vaultLookup])
 
-  const vaultFlags = useMemo(() => {
-    const flags: Record<string, TVaultFlags> = {}
-
-    holdingsVaults.forEach((vault) => {
-      const key = getVaultKey(vault)
-      const info = getVaultInfo(vault)
-      const migration = getVaultMigration(vault)
-      flags[key] = {
-        hasHoldings: true,
-        isMigratable: Boolean(migration?.available),
-        isRetired: Boolean(info?.isRetired),
-        isHidden: Boolean(info?.isHidden)
-      }
-    })
-
-    return flags
-  }, [holdingsVaults])
+  const vaultFlags = useMemo(
+    () =>
+      Object.fromEntries(
+        holdingsVaults.map((vault) => {
+          const info = getVaultInfo(vault)
+          const migration = getVaultMigration(vault)
+          return [
+            getVaultKey(vault),
+            {
+              hasHoldings: true,
+              isMigratable: Boolean(migration?.available),
+              isRetired: Boolean(info?.isRetired),
+              isHidden: Boolean(info?.isHidden)
+            }
+          ]
+        })
+      ) as Record<string, TVaultFlags>,
+    [holdingsVaults]
+  )
 
   const isSearchingBalances =
     (isActive || isUserConnecting) && (isWalletLoading || isUserConnecting || isIdentityLoading)
-  const isLoading = isLoadingVaultList
-  const isHoldingsLoading = (isLoading && isActive) || isSearchingBalances
+  const isHoldingsLoading = (isLoadingVaultList && isActive) || isSearchingBalances
 
   const suggestedVaultCandidates = useMemo(
     () =>
@@ -169,25 +162,63 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const holdingsKeySet = useMemo(() => new Set(sortedHoldings.map((vault) => getVaultKey(vault))), [sortedHoldings])
 
-  const suggestedVaults = useMemo(
+  const genericVaults = useMemo(
     () => sortedCandidates.filter((vault) => !holdingsKeySet.has(getVaultKey(vault))).slice(0, 4),
     [sortedCandidates, holdingsKeySet]
   )
 
-  const holdingsRows = useMemo(() => {
-    return sortedHoldings.map((vault) => {
-      const key = getVaultKey(vault)
-      const hrefOverride = isPortfolioV3Vault(vault)
-        ? undefined
-        : `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
-      return { key, vault, hrefOverride }
-    })
-  }, [sortedHoldings])
+  const tokenSuggestions = useTokenSuggestions(holdingsKeySet)
+  const { suggestions: vaultSuggestions } = useVaultSuggestions(holdingsKeySet)
 
-  const suggestedRows = useMemo(
-    () => suggestedVaults.map((vault) => ({ key: getVaultKey(vault), vault })),
-    [suggestedVaults]
+  const holdingsRows = useMemo(
+    () =>
+      sortedHoldings.map((vault) => ({
+        key: getVaultKey(vault),
+        vault,
+        hrefOverride: isPortfolioV3Vault(vault)
+          ? undefined
+          : `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
+      })),
+    [sortedHoldings]
   )
+
+  const suggestedRows = useMemo((): TSuggestedItem[] => {
+    const candidates: { item: TSuggestedItem; vaultKey: string }[] = [
+      ...vaultSuggestions.slice(0, 2).map((ext) => ({
+        item: {
+          type: 'external' as const,
+          key: `ext-${getVaultKey(ext.vault)}`,
+          vault: ext.vault,
+          externalProtocol: ext.externalProtocol,
+          underlyingSymbol: ext.underlyingSymbol
+        },
+        vaultKey: getVaultKey(ext.vault)
+      })),
+      ...tokenSuggestions.map((ps) => ({
+        item: {
+          type: 'personalized' as const,
+          key: `pers-${getVaultKey(ps.vault)}`,
+          vault: ps.vault,
+          matchedSymbol: ps.matchedSymbol
+        },
+        vaultKey: getVaultKey(ps.vault)
+      })),
+      ...genericVaults.map((vault) => ({
+        item: { type: 'generic' as const, key: `gen-${getVaultKey(vault)}`, vault },
+        vaultKey: getVaultKey(vault)
+      }))
+    ]
+
+    const seen = new Set<string>()
+    return candidates
+      .filter(({ vaultKey }) => {
+        if (seen.has(vaultKey)) return false
+        seen.add(vaultKey)
+        return true
+      })
+      .slice(0, 4)
+      .map(({ item }) => item)
+  }, [vaultSuggestions, tokenSuggestions, genericVaults])
 
   const hasHoldings = sortedHoldings.length > 0
   const hasKatanaHoldings = useMemo(
@@ -198,7 +229,7 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const getVaultEstimatedAPY = useMemo(
     () =>
-      (vault: (typeof holdingsVaults)[number]): number | null => {
+      (vault: TKongVault): number | null => {
         const apy = calculateVaultEstimatedAPY(vault, katanaAprs)
         return apy === 0 ? null : apy
       },
@@ -207,9 +238,8 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const getVaultHistoricalAPY = useMemo(
     () =>
-      (vault: (typeof holdingsVaults)[number]): number | null => {
-        return calculateVaultHistoricalAPY(vault, katanaAprs)
-      },
+      (vault: TKongVault): number | null =>
+        calculateVaultHistoricalAPY(vault, katanaAprs),
     [katanaAprs]
   )
 
@@ -244,50 +274,33 @@ export function usePortfolioModel(): TPortfolioModel {
   )
 
   const blendedMetrics = useMemo(() => {
+    const isFiniteNumber = (v: number | null): v is number => v !== null && Number.isFinite(v)
+
     const { totalValue, weightedCurrent, weightedHistorical, hasCurrent, hasHistorical } = holdingsVaults.reduce(
       (acc, vault) => {
         const value = getVaultValue(vault)
-        if (!Number.isFinite(value) || value <= 0) {
-          return acc
-        }
+        if (!Number.isFinite(value) || value <= 0) return acc
 
         const estimatedAPY = getVaultEstimatedAPY(vault)
-        const newWeightedCurrent =
-          typeof estimatedAPY === 'number' && Number.isFinite(estimatedAPY)
-            ? acc.weightedCurrent + value * estimatedAPY
-            : acc.weightedCurrent
-        const newHasCurrent = acc.hasCurrent || (typeof estimatedAPY === 'number' && Number.isFinite(estimatedAPY))
-
         const historicalAPY = getVaultHistoricalAPY(vault)
-        const newWeightedHistorical =
-          typeof historicalAPY === 'number' && Number.isFinite(historicalAPY)
-            ? acc.weightedHistorical + value * historicalAPY
-            : acc.weightedHistorical
-        const newHasHistorical =
-          acc.hasHistorical || (typeof historicalAPY === 'number' && Number.isFinite(historicalAPY))
 
         return {
           totalValue: acc.totalValue + value,
-          weightedCurrent: newWeightedCurrent,
-          weightedHistorical: newWeightedHistorical,
-          hasCurrent: newHasCurrent,
-          hasHistorical: newHasHistorical
+          weightedCurrent: acc.weightedCurrent + (isFiniteNumber(estimatedAPY) ? value * estimatedAPY : 0),
+          weightedHistorical: acc.weightedHistorical + (isFiniteNumber(historicalAPY) ? value * historicalAPY : 0),
+          hasCurrent: acc.hasCurrent || isFiniteNumber(estimatedAPY),
+          hasHistorical: acc.hasHistorical || isFiniteNumber(historicalAPY)
         }
       },
       { totalValue: 0, weightedCurrent: 0, weightedHistorical: 0, hasCurrent: false, hasHistorical: false }
     )
 
-    const blendedCurrentAPY = totalValue > 0 && hasCurrent ? weightedCurrent / totalValue : null
-    const blendedHistoricalAPY = totalValue > 0 && hasHistorical ? weightedHistorical / totalValue : null
-    const blendedCurrentAPYPercent = blendedCurrentAPY !== null ? blendedCurrentAPY * 100 : null
-    const blendedHistoricalAPYPercent = blendedHistoricalAPY !== null ? blendedHistoricalAPY * 100 : null
-    const estimatedAnnualReturn = blendedCurrentAPY !== null ? totalPortfolioValue * blendedCurrentAPY : null
+    const blendedCurrentAPY = totalValue > 0 && hasCurrent ? (weightedCurrent / totalValue) * 100 : null
+    const blendedHistoricalAPY = totalValue > 0 && hasHistorical ? (weightedHistorical / totalValue) * 100 : null
+    const estimatedAnnualReturn =
+      totalValue > 0 && hasCurrent ? totalPortfolioValue * (weightedCurrent / totalValue) : null
 
-    return {
-      blendedCurrentAPY: blendedCurrentAPYPercent,
-      blendedHistoricalAPY: blendedHistoricalAPYPercent,
-      estimatedAnnualReturn
-    }
+    return { blendedCurrentAPY, blendedHistoricalAPY, estimatedAnnualReturn }
   }, [getVaultEstimatedAPY, getVaultHistoricalAPY, getVaultValue, holdingsVaults, totalPortfolioValue])
 
   return {

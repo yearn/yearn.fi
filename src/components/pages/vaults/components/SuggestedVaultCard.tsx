@@ -22,7 +22,15 @@ import { toAddress } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
 
-export function SuggestedVaultCard({ vault }: { vault: TKongVaultInput }): ReactElement {
+export function SuggestedVaultCard({
+  vault,
+  matchedSymbol,
+  externalProtocol
+}: {
+  vault: TKongVaultInput
+  matchedSymbol?: string
+  externalProtocol?: string
+}): ReactElement {
   const apyData = useVaultApyData(vault)
   const apyLabel = apyData.mode === 'historical' || apyData.mode === 'noForward' ? '30D APY' : 'Est. APY'
   const chainID = getVaultChainID(vault)
@@ -37,6 +45,7 @@ export function SuggestedVaultCard({ vault }: { vault: TKongVaultInput }): React
   const listKind = deriveListKind(vault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
+
   const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
   const chainDescription = getChainDescription(chainID)
   const categoryDescription = getCategoryDescription(vaultCategory)
@@ -81,7 +90,13 @@ export function SuggestedVaultCard({ vault }: { vault: TKongVaultInput }): React
           showCollapsedTooltip
         />
       </div>
-      <div className={'mt-1 flex items-end justify-between gap-4'}>
+      {matchedSymbol ? (
+        <span className={'flex items-center gap-1.5 truncate text-xs font-medium text-text-primary'}>
+          <span className={'size-2 shrink-0 rounded-full bg-primary animate-pulse'} />
+          {externalProtocol ? `You hold ${matchedSymbol} on ${externalProtocol}` : `You hold ${matchedSymbol}`}
+        </span>
+      ) : null}
+      <div className={'mt-auto flex items-end justify-between gap-4'}>
         <div>
           <p className={'text-mobile-label text-xs uppercase tracking-wide text-text-secondary'}>{apyLabel}</p>
           <div className={'mt-0'}>
