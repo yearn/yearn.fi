@@ -1,8 +1,8 @@
 # Holdings History API
 
-This API calculates historical USD values of a user's Yearn vault positions over the past 90 days.
+Calculates historical USD values of a user's Yearn vault positions over the past 90 days.
 
-## Architecture Overview
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -10,7 +10,7 @@ This API calculates historical USD values of a user's Yearn vault positions over
 │                    usePortfolioHistory() hook                               │
 │                              │                                               │
 │                              ▼                                               │
-│                    GET /api/v1/holdings/history/simple?address=0x...        │
+│                    GET /api/holdings/history?address=0x...                  │
 └─────────────────────────────────────────────────────────────────────────────┘
                                │
                                ▼
@@ -35,12 +35,6 @@ This API calculates historical USD values of a user's Yearn vault positions over
 │       │  Envio   │  │   Kong   │  │ DefiLlama│                             │
 │       │ GraphQL  │  │   API    │  │   API    │                             │
 │       └──────────┘  └──────────┘  └──────────┘                             │
-│                            │                                                 │
-│                            ▼                                                 │
-│                     ┌──────────┐                                            │
-│                     │ yDaemon  │                                            │
-│                     │   API    │                                            │
-│                     └──────────┘                                            │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -51,15 +45,15 @@ This API calculates historical USD values of a user's Yearn vault positions over
 User Request → API Server → Aggregator → Response
 ```
 
-### 2. Data Collection (for each day in the 90-day period)
+### 2. Data Collection
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     For each timestamp:                          │
+│                     For 90-day period:                          │
 │                                                                  │
 │  1. Check Cache ──────────────────────────────────────────────► │
 │     │                                                            │
-│     └─► If cached: Use cached data                              │
+│     └─► If cached: Use cached daily totals                      │
 │     └─► If not cached:                                          │
 │                                                                  │
 │  2. Fetch Events from Envio ─────────────────────────────────► │
@@ -72,18 +66,18 @@ User Request → API Server → Aggregator → Response
 │     • Calculate share balance at each point in time             │
 │                                                                  │
 │  4. For each vault position:                                     │
-│     a. Fetch vault metadata (yDaemon) ───────────────────────► │
+│     a. Fetch vault metadata (Kong) ─────────────────────────► │
 │        • Token address, decimals                                 │
 │                                                                  │
-│     b. Fetch Price Per Share (Kong) ─────────────────────────► │
-│        • Historical PPS data                                     │
+│     b. Fetch Price Per Share (Kong) ────────────────────────► │
+│        • Historical PPS timeseries                               │
 │                                                                  │
-│     c. Fetch Token Price (DefiLlama) ────────────────────────► │
+│     c. Fetch Token Price (DefiLlama) ───────────────────────► │
 │        • Historical USD prices                                   │
 │                                                                  │
-│  5. Calculate USD Value ─────────────────────────────────────► │
+│  5. Calculate USD Value per day ────────────────────────────► │
 │                                                                  │
-│  6. Save to Cache ───────────────────────────────────────────► │
+│  6. Save daily totals to Cache ─────────────────────────────► │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -114,10 +108,10 @@ USD Value = 100 × 1.05 × 1.00 = $105.00
 | Service | Source | Purpose |
 |---------|--------|---------|
 | `graphql.ts` | Envio Indexer | Fetch deposit/withdraw/transfer events |
-| `kong.ts` | Kong API | Fetch historical Price Per Share data |
+| `kong.ts` | Kong API | Fetch historical Price Per Share timeseries |
+| `vaults.ts` | Kong API | Fetch vault metadata (token info, decimals) |
 | `defillama.ts` | DefiLlama API | Fetch historical token prices |
-| `ydaemon.ts` | yDaemon API | Fetch vault metadata (token info, decimals) |
-| `cache.ts` | PostgreSQL | Cache calculated holdings to avoid recalculation |
+| `cache.ts` | PostgreSQL | Cache daily USD totals per user |
 | `holdings.ts` | Local | Build position timeline, calculate share balances |
 | `aggregator.ts` | Local | Orchestrate all services, main entry point |
 
@@ -128,68 +122,90 @@ USD Value = 100 × 1.05 × 1.00 = $105.00
 interface HoldingsHistoryResponse {
   address: string
   periodDays: number
-  dataPoints: DailyHoldings[]
+  dataPoints: Array<{
+    date: string        // "2024-01-15"
+    timestamp: number   // Unix timestamp (midnight UTC)
+    totalUsdValue: number
+  }>
 }
 
-// Daily snapshot
-interface DailyHoldings {
-  date: string           // "2024-01-15"
-  timestamp: number      // Unix timestamp
-  totalUsdValue: number  // Total USD across all chains
-  chains: ChainHoldings[]
-}
-
-// Per-chain breakdown
-interface ChainHoldings {
-  chainId: number
-  chainName: string
-  totalUsdValue: number
-  vaults: VaultHolding[]
-}
-
-// Individual vault position
-interface VaultHolding {
+// Simplified response (from server)
+{
   address: string
-  shares: string
-  usdValue: number
-  pricePerShare: number
-  underlyingPrice: number
+  version: 'v2' | 'v3' | 'all'
+  dataPoints: Array<{
+    date: string
+    value: number
+  }>
 }
 ```
 
 ## API Endpoints
 
-### GET `/api/v1/holdings/history`
-Full holdings history with per-chain and per-vault breakdown.
+### GET `/api/holdings/history`
+Holdings history for charts (date + total value).
 
 ```bash
-curl "http://localhost:3001/api/v1/holdings/history?address=0x..."
+curl "http://localhost:3001/api/holdings/history?address=0x..."
 ```
 
-### GET `/api/v1/holdings/history/simple`
-Simplified response for charts (date + total value only).
+Query params:
+- `address` (required): Ethereum address
+- `version` (optional): `v2`, `v3`, or `all` (default: `all`)
+
+Response:
+```json
+{
+  "address": "0x...",
+  "version": "all",
+  "dataPoints": [
+    { "date": "2024-01-01", "value": 1000.50 },
+    { "date": "2024-01-02", "value": 1005.25 }
+  ]
+}
+```
+
+### GET `/api/holdings/breakdown`
+Current vault positions with detailed breakdown (not cached).
 
 ```bash
-curl "http://localhost:3001/api/v1/holdings/history/simple?address=0x..."
+curl "http://localhost:3001/api/holdings/breakdown?address=0x..."
 ```
 
 Response:
 ```json
 {
   "address": "0x...",
-  "dataPoints": [
-    { "date": "2024-01-01", "value": 1000.50 },
-    { "date": "2024-01-02", "value": 1005.25 },
-    ...
+  "summary": {
+    "totalVaults": 5,
+    "vaultsWithShares": 2,
+    "totalUsdValue": 1500.00
+  },
+  "vaults": [
+    {
+      "chainId": 1,
+      "vaultAddress": "0x...",
+      "shares": "1000000000000000000",
+      "sharesFormatted": 1.0,
+      "pricePerShare": 1.05,
+      "tokenPrice": 1.00,
+      "usdValue": 1.05,
+      "metadata": {
+        "symbol": "USDC",
+        "decimals": 18,
+        "tokenAddress": "0x..."
+      },
+      "status": "ok"
+    }
   ]
 }
 ```
 
-### DELETE `/api/v1/holdings/cache`
-Clear cached data (useful for forcing recalculation).
+### GET `/api/holdings/debug`
+Debug endpoint for inspecting raw events.
 
 ```bash
-curl -X DELETE "http://localhost:3001/api/v1/holdings/cache?address=0x..."
+curl "http://localhost:3001/api/holdings/debug?address=0x...&vault=0x..."
 ```
 
 ## Supported Chains
@@ -210,6 +226,8 @@ curl -X DELETE "http://localhost:3001/api/v1/holdings/cache?address=0x..."
 | `DATABASE_URL` | No | `null` | PostgreSQL connection string (caching disabled if not set) |
 
 ## Caching Strategy
+
+The cache stores **daily USD totals per user** (not per-vault breakdowns).
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -232,7 +250,7 @@ curl -X DELETE "http://localhost:3001/api/v1/holdings/cache?address=0x..."
 │           ▼                                                  │
 │  ┌─────────────────────────────────────┐                    │
 │  │ Only calculate missing days (86-90) │                    │
-│  │ Save new calculations to cache      │                    │
+│  │ Save new daily totals to cache      │                    │
 │  └────────┬────────────────────────────┘                    │
 │           │                                                  │
 │           ▼                                                  │
@@ -243,18 +261,22 @@ curl -X DELETE "http://localhost:3001/api/v1/holdings/cache?address=0x..."
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Cache Layers
+
+1. **PostgreSQL** (server): Daily totals cached permanently per user
+2. **HTTP Cache-Control** (CDN): `s-maxage=300, stale-while-revalidate=600`
+3. **TanStack Query** (client): 5-minute stale time
+
 ## Database Schema
 
 ```sql
-CREATE TABLE IF NOT EXISTS holdings_cache (
-  user_address    VARCHAR(42) NOT NULL,
-  date            DATE NOT NULL,
-  chain_id        INTEGER NOT NULL,
-  vault_address   VARCHAR(42) NOT NULL,
-  shares          NUMERIC NOT NULL,
-  usd_value       NUMERIC NOT NULL,
-  price_per_share NUMERIC NOT NULL,
-  underlying_price NUMERIC NOT NULL,
-  PRIMARY KEY (user_address, date, chain_id, vault_address)
+CREATE TABLE IF NOT EXISTS holdings_totals (
+  user_address VARCHAR(42) NOT NULL,
+  date         DATE NOT NULL,
+  usd_value    NUMERIC NOT NULL,
+  updated_at   TIMESTAMP DEFAULT NOW(),
+  PRIMARY KEY (user_address, date)
 );
 ```
+
+One row per user per day = ~90 rows per user for full history.
