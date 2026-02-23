@@ -48,12 +48,17 @@ export async function getHistoricalHoldings(
       const vaultMetadata = await fetchMultipleVaultsMetadata(vaults)
       const ppsData = await fetchMultipleVaultsPPS(vaults)
 
+      const seenTokens = new Set<string>()
       const underlyingTokens: Array<{ chainId: number; address: string }> = []
       for (const [_key, metadata] of vaultMetadata) {
-        underlyingTokens.push({
-          chainId: metadata.chainId,
-          address: metadata.token.address
-        })
+        const tokenKey = `${metadata.chainId}:${metadata.token.address.toLowerCase()}`
+        if (!seenTokens.has(tokenKey)) {
+          seenTokens.add(tokenKey)
+          underlyingTokens.push({
+            chainId: metadata.chainId,
+            address: metadata.token.address
+          })
+        }
       }
 
       const priceData = await fetchHistoricalPrices(underlyingTokens, missingTimestamps)
