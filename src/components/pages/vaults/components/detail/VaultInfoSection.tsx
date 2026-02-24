@@ -34,6 +34,7 @@ type TCurvePoolsApiResponse = {
 const CURVE_POOLS_CACHE_TTL_MS = 30 * 60 * 1000
 const CURVE_POOLS_CACHE_GC_MS = 60 * 60 * 1000
 const CURVE_POOLS_ENDPOINT = 'https://api.curve.finance/v1/getPools/all'
+const INFO_LABEL_CLASS = 'w-full text-sm text-text-secondary md:w-auto md:pr-4'
 
 export const extractCurvePools = (payload: unknown): TCurvePoolEntry[] => {
   const poolData = (payload as TCurvePoolsApiResponse | null)?.data?.poolData
@@ -73,7 +74,7 @@ function AddressLink({
 }): ReactElement {
   return (
     <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-      <p className={'w-full text-sm text-text-secondary md:w-44'}>{label}</p>
+      <p className={INFO_LABEL_CLASS}>{label}</p>
       <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
         <a
           href={`${explorerUrl}/address/${address}`}
@@ -182,7 +183,7 @@ export function VaultInfoSection({
 
         {resolvedCurvePoolUrl ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-            <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Curve Pool URL'}</p>
+            <p className={INFO_LABEL_CLASS}>{'Curve Pool URL'}</p>
             <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
               <a
                 href={resolvedCurvePoolUrl}
@@ -202,7 +203,7 @@ export function VaultInfoSection({
 
         {(info?.sourceURL || '')?.includes('gamma') ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-            <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Gamma Pair'}</p>
+            <p className={INFO_LABEL_CLASS}>{'Gamma Pair'}</p>
             <div className={'flex md:flex-1 md:justify-end'}>
               <a
                 href={info.sourceURL}
@@ -219,9 +220,7 @@ export function VaultInfoSection({
 
         {liquidityUrl ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-            <p className={'w-full text-sm text-text-secondary md:w-44'}>
-              {isVelodrome ? 'Velodrome Pool URL' : 'Aerodrome Pool URL'}
-            </p>
+            <p className={INFO_LABEL_CLASS}>{isVelodrome ? 'Velodrome Pool URL' : 'Aerodrome Pool URL'}</p>
             <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
               <a
                 href={liquidityUrl}
@@ -241,7 +240,7 @@ export function VaultInfoSection({
         ) : null}
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Current Price Per Share'}</p>
+          <p className={INFO_LABEL_CLASS}>{'Current Price Per Share'}</p>
           <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
             {apr.pricePerShare.today}
           </p>
@@ -249,7 +248,7 @@ export function VaultInfoSection({
 
         {deployedLabel ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-            <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Deployed on'}</p>
+            <p className={INFO_LABEL_CLASS}>{'Deployed on'}</p>
             <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
               {deployedLabel}
             </p>
@@ -257,7 +256,7 @@ export function VaultInfoSection({
         ) : null}
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Powerglove Analytics Page'}</p>
+          <p className={INFO_LABEL_CLASS}>{'Powerglove Analytics Page'}</p>
           <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
             <a
               href={powergloveUrl}
@@ -275,7 +274,7 @@ export function VaultInfoSection({
         </div>
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Vault Snapshot Data'}</p>
+          <p className={INFO_LABEL_CLASS}>{'Vault Snapshot Data'}</p>
           <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
             <a
               href={`${KONG_REST_BASE}/snapshot/${chainID}/${vaultAddress}`}
