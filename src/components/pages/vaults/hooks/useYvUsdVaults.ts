@@ -1,7 +1,13 @@
-import { getVaultView, type TKongVaultInput, type TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
+import {
+  getVaultView,
+  type TKongVaultInput,
+  type TKongVaultStrategy,
+  type TKongVaultView
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { useYearn } from '@shared/contexts/useYearn'
-import { toAddress } from '@shared/utils'
+import { toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
+import type { TYvUsdAprServiceStrategy, TYvUsdAprServiceVault } from '@shared/utils/schemas/yvUsdAprServiceSchema'
 import { useMemo } from 'react'
 import {
   YVUSD_BASELINE_VAULT_ADDRESS,
@@ -11,6 +17,7 @@ import {
   YVUSD_UNLOCKED_ADDRESS
 } from '../utils/yvUsd'
 import { useVaultSnapshot } from './useVaultSnapshot'
+import { useYvUsdAprService } from './useYvUsdAprService'
 
 type TYvUsdMetrics = {
   apy: number
@@ -30,6 +37,7 @@ type TYvUsdVaults = {
 }
 
 const MAX_REASONABLE_FORWARD_APY = 1
+const APR_RAW_DECIMALS = 18
 
 const toFiniteNumber = (value: number | null | undefined): number | undefined => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
@@ -85,18 +93,98 @@ const resolveSnapshotForwardApy = (snapshot?: TKongVaultSnapshot): number | unde
 
 const resolveSnapshotTvl = (snapshot?: TKongVaultSnapshot): number | undefined => toFiniteNumber(snapshot?.tvl?.close)
 
+type TYvUsdAprOverlay = {
+  apr?: number
+  apy?: number
+  strategies?: TKongVaultStrategy[]
+}
+
+const normalizeAprRaw = (value: string | null | undefined): number | null => {
+  if (!value) return null
+  try {
+    const normalized = toNormalizedBN(value, APR_RAW_DECIMALS).normalized
+    if (!Number.isFinite(normalized)) {
+      return null
+    }
+    return normalized
+  } catch {
+    return null
+  }
+}
+
+const normalizeWeightToDebtRatio = (weight: number | undefined): number => {
+  if (weight === undefined || !Number.isFinite(weight)) {
+    return 0
+  }
+  return Math.max(0, Math.min(10_000, Math.round(weight * 10_000)))
+}
+
+const hasDebt = (debt: string): boolean => {
+  try {
+    return toBigInt(debt) > 0n
+  } catch {
+    return false
+  }
+}
+
+const mapApiStrategy = (strategy: TYvUsdAprServiceStrategy, index: number): TKongVaultStrategy => {
+  const netApr = normalizeAprRaw(strategy.net_apr_raw || strategy.apr_raw)
+  const debt = strategy.debt || '0'
+  const debtRatio = normalizeWeightToDebtRatio(strategy.weight)
+  const strategyName = strategy.meta?.name?.trim() || `Strategy ${index + 1}`
+  const isAllocated = hasDebt(debt) && debtRatio > 0
+
+  return {
+    address: toAddress(strategy.address),
+    name: strategyName,
+    description: '',
+    netAPR: netApr,
+    estimatedAPY: netApr ?? undefined,
+    status: isAllocated ? 'active' : 'unallocated',
+    details: {
+      totalDebt: debt,
+      totalLoss: '0',
+      totalGain: '0',
+      performanceFee: 0,
+      lastReport: 0,
+      debtRatio
+    }
+  }
+}
+
+const buildAprOverlay = (vault?: TYvUsdAprServiceVault): TYvUsdAprOverlay | undefined => {
+  if (!vault) return undefined
+
+  const strategies = (vault.meta?.strategies || []).map(mapApiStrategy)
+  const overlay = {
+    apr: toFiniteNumber(vault.apr ?? undefined),
+    apy: toFiniteNumber(vault.apy ?? undefined),
+    strategies: strategies.length > 0 ? strategies : undefined
+  }
+
+  const hasApr = overlay.apr !== undefined
+  const hasApy = overlay.apy !== undefined
+  if (!hasApr && !hasApy && !overlay.strategies) {
+    return undefined
+  }
+
+  return overlay
+}
+
 const buildVariantVault = ({
   baseVault,
   snapshot,
   address,
   name,
-  fallbackToBase
+  fallbackToBase,
+  aprOverlay
 }: {
   baseVault: TKongVaultInput
   snapshot?: TKongVaultSnapshot
   address: string
   name: string
   fallbackToBase: boolean
+  aprOverlay?: TYvUsdAprOverlay
 }): TKongVaultView => {
   const normalizedAddress = toAddress(address)
   const baseVariant = getVaultView(baseVault, snapshot)
@@ -117,11 +205,12 @@ const buildVariantVault = ({
         tvl: 0
       }
 
-  const resolvedNetApy = resolveSnapshotNetApy(snapshot) ?? defaults.netApy
+  const resolvedNetApy = resolveSnapshotNetApy(snapshot) ?? aprOverlay?.apr ?? defaults.netApy
   const resolvedWeeklyApy = resolveSnapshotWeeklyApy(snapshot) ?? defaults.weeklyApy
   const resolvedMonthlyApy = resolveSnapshotMonthlyApy(snapshot) ?? defaults.monthlyApy
-  const resolvedForwardApy = resolveSnapshotForwardApy(snapshot) ?? defaults.forwardApy
+  const resolvedForwardApy = aprOverlay?.apy ?? resolveSnapshotForwardApy(snapshot) ?? defaults.forwardApy
   const resolvedTvl = resolveSnapshotTvl(snapshot) ?? defaults.tvl
+  const resolvedStrategies = aprOverlay?.strategies ?? baseVariant.strategies
 
   return {
     ...baseVariant,
@@ -141,13 +230,15 @@ const buildVariantVault = ({
       },
       forwardAPR: {
         ...baseVariant.apr.forwardAPR,
+        type: aprOverlay?.apy !== undefined ? 'yvusd-apr-service' : baseVariant.apr.forwardAPR.type,
         netAPR: resolvedForwardApy
       }
     },
     tvl: {
       ...baseVariant.tvl,
       tvl: resolvedTvl
-    }
+    },
+    strategies: resolvedStrategies
   }
 }
 
@@ -195,6 +286,7 @@ const buildListVault = ({
 
 export function useYvUsdVaults(): TYvUsdVaults {
   const { vaults, isLoadingVaultList } = useYearn()
+  const { unlocked: unlockedAprServiceVault, locked: lockedAprServiceVault } = useYvUsdAprService()
 
   const baseVault = useMemo(() => vaults[toAddress(YVUSD_BASELINE_VAULT_ADDRESS)], [vaults])
 
@@ -208,6 +300,9 @@ export function useYvUsdVaults(): TYvUsdVaults {
     address: YVUSD_LOCKED_ADDRESS
   })
 
+  const unlockedAprOverlay = useMemo(() => buildAprOverlay(unlockedAprServiceVault), [unlockedAprServiceVault])
+  const lockedAprOverlay = useMemo(() => buildAprOverlay(lockedAprServiceVault), [lockedAprServiceVault])
+
   const unlockedVault = useMemo(() => {
     if (!baseVault) return undefined
     return buildVariantVault({
@@ -215,9 +310,10 @@ export function useYvUsdVaults(): TYvUsdVaults {
       snapshot: unlockedSnapshot,
       address: YVUSD_UNLOCKED_ADDRESS,
       name: 'yvUSD',
-      fallbackToBase: true
+      fallbackToBase: true,
+      aprOverlay: unlockedAprOverlay
     })
-  }, [baseVault, unlockedSnapshot])
+  }, [baseVault, unlockedAprOverlay, unlockedSnapshot])
 
   const lockedVault = useMemo(() => {
     if (!baseVault) return undefined
@@ -226,9 +322,10 @@ export function useYvUsdVaults(): TYvUsdVaults {
       snapshot: lockedSnapshot,
       address: YVUSD_LOCKED_ADDRESS,
       name: 'yvUSD (Locked)',
-      fallbackToBase: false
+      fallbackToBase: false,
+      aprOverlay: lockedAprOverlay
     })
-  }, [baseVault, lockedSnapshot])
+  }, [baseVault, lockedAprOverlay, lockedSnapshot])
 
   const listVault = useMemo(() => {
     if (!baseVault || !unlockedVault || !lockedVault) return undefined
