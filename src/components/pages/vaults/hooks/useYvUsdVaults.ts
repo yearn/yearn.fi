@@ -6,16 +6,11 @@ import {
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useYearn } from '@shared/contexts/useYearn'
 import { toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
+import type { TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { TYvUsdAprServiceStrategy, TYvUsdAprServiceVault } from '@shared/utils/schemas/yvUsdAprServiceSchema'
 import { useMemo } from 'react'
-import {
-  YVUSD_BASELINE_VAULT_ADDRESS,
-  YVUSD_CHAIN_ID,
-  YVUSD_DESCRIPTION,
-  YVUSD_LOCKED_ADDRESS,
-  YVUSD_UNLOCKED_ADDRESS
-} from '../utils/yvUsd'
+import { YVUSD_CHAIN_ID, YVUSD_DESCRIPTION, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '../utils/yvUsd'
 import { useVaultSnapshot } from './useVaultSnapshot'
 import { useYvUsdAprService } from './useYvUsdAprService'
 
@@ -171,6 +166,55 @@ const buildAprOverlay = (vault?: TYvUsdAprServiceVault): TYvUsdAprOverlay | unde
   return overlay
 }
 
+const FALLBACK_ASSET = {
+  address: toAddress('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+  name: 'USD Coin',
+  symbol: 'USDC',
+  decimals: 6
+} as const
+
+const buildSyntheticBaseVault = (snapshot?: TKongVaultSnapshot): TKongVaultListItem => {
+  const token = snapshot?.meta?.token
+  const asset = snapshot?.asset
+  const resolvedAsset = {
+    address: toAddress(token?.address ?? asset?.address ?? FALLBACK_ASSET.address),
+    name: token?.name || asset?.name || FALLBACK_ASSET.name,
+    symbol: token?.symbol || asset?.symbol || FALLBACK_ASSET.symbol,
+    decimals: token?.decimals ?? asset?.decimals ?? FALLBACK_ASSET.decimals
+  }
+
+  return {
+    chainId: YVUSD_CHAIN_ID,
+    address: YVUSD_UNLOCKED_ADDRESS,
+    name: 'yvUSD',
+    symbol: 'yvUSD',
+    apiVersion: snapshot?.apiVersion ?? '3.0.0',
+    decimals: snapshot?.decimals ?? 18,
+    asset: resolvedAsset,
+    tvl: toFiniteNumber(snapshot?.tvl?.close) ?? null,
+    performance: null,
+    fees: {
+      managementFee: toFiniteNumber(snapshot?.fees?.managementFee) ?? 0,
+      performanceFee: toFiniteNumber(snapshot?.fees?.performanceFee) ?? 0
+    },
+    category: 'Stablecoin',
+    type: snapshot?.meta?.type || 'Automated Yearn Vault',
+    kind: snapshot?.meta?.kind || 'Multi Strategy',
+    v3: true,
+    yearn: true,
+    isRetired: Boolean(snapshot?.meta?.isRetired),
+    isHidden: Boolean(snapshot?.meta?.isHidden),
+    isBoosted: Boolean(snapshot?.meta?.isBoosted),
+    isHighlighted: true,
+    inclusion: { isYearn: true },
+    migration: false,
+    origin: 'synthetic-yvusd',
+    strategiesCount: snapshot?.composition?.length ?? snapshot?.debts?.length ?? 0,
+    riskLevel: toFiniteNumber(snapshot?.risk?.riskLevel) ?? null,
+    staking: null
+  }
+}
+
 const buildVariantVault = ({
   baseVault,
   snapshot,
@@ -288,8 +332,6 @@ export function useYvUsdVaults(): TYvUsdVaults {
   const { vaults, isLoadingVaultList } = useYearn()
   const { unlocked: unlockedAprServiceVault, locked: lockedAprServiceVault } = useYvUsdAprService()
 
-  const baseVault = useMemo(() => vaults[toAddress(YVUSD_BASELINE_VAULT_ADDRESS)], [vaults])
-
   const { data: unlockedSnapshot, isLoading: isLoadingUnlocked } = useVaultSnapshot({
     chainId: YVUSD_CHAIN_ID,
     address: YVUSD_UNLOCKED_ADDRESS
@@ -299,6 +341,15 @@ export function useYvUsdVaults(): TYvUsdVaults {
     chainId: YVUSD_CHAIN_ID,
     address: YVUSD_LOCKED_ADDRESS
   })
+
+  const baseVault = useMemo<TKongVaultInput>(() => {
+    const baseCandidates = [YVUSD_UNLOCKED_ADDRESS, YVUSD_LOCKED_ADDRESS]
+    const listVaultCandidate = baseCandidates.map((address) => vaults[toAddress(address)]).find(Boolean)
+    if (listVaultCandidate) {
+      return listVaultCandidate
+    }
+    return buildSyntheticBaseVault(unlockedSnapshot ?? lockedSnapshot)
+  }, [lockedSnapshot, unlockedSnapshot, vaults])
 
   const unlockedAprOverlay = useMemo(() => buildAprOverlay(unlockedAprServiceVault), [unlockedAprServiceVault])
   const lockedAprOverlay = useMemo(() => buildAprOverlay(lockedAprServiceVault), [lockedAprServiceVault])
@@ -351,7 +402,7 @@ export function useYvUsdVaults(): TYvUsdVaults {
   }, [unlockedVault, lockedVault])
 
   return {
-    baseVault: baseVault ? getVaultView(baseVault) : undefined,
+    baseVault: getVaultView(baseVault),
     listVault,
     unlockedVault,
     lockedVault,

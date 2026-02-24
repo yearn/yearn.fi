@@ -6,12 +6,7 @@ import {
   yvUsdAprServiceSchema
 } from '@shared/utils/schemas/yvUsdAprServiceSchema'
 import { useMemo } from 'react'
-import {
-  YVUSD_APR_SERVICE_ENDPOINT,
-  YVUSD_LEGACY_LOCKED_ADDRESS,
-  YVUSD_LOCKED_ADDRESS,
-  YVUSD_UNLOCKED_ADDRESS
-} from '../utils/yvUsd'
+import { YVUSD_APR_SERVICE_ENDPOINT, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '../utils/yvUsd'
 
 type TYvUsdAprServiceData = {
   unlocked?: TYvUsdAprServiceVault
@@ -37,7 +32,7 @@ export function useYvUsdAprService(): TYvUsdAprServiceData {
   }, [data])
 
   const unlocked = vaultsByAddress.get(YVUSD_UNLOCKED_ADDRESS)
-  const locked = vaultsByAddress.get(YVUSD_LOCKED_ADDRESS) ?? vaultsByAddress.get(YVUSD_LEGACY_LOCKED_ADDRESS)
+  const locked = vaultsByAddress.get(YVUSD_LOCKED_ADDRESS)
 
   return {
     unlocked,

@@ -27,7 +27,7 @@ import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
-import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
+import { isYvUsdAddress, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { useWallet } from '@shared/contexts/useWallet'
@@ -213,7 +213,12 @@ function Index(): ReactElement | null {
   const { getBalance, onRefresh } = useWallet()
   const { address } = useWeb3()
   const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
-  const { listVault: yvUsdVault, isLoading: isLoadingYvUsd } = useYvUsdVaults()
+  const {
+    listVault: yvUsdVault,
+    unlockedVault: yvUsdUnlockedVault,
+    lockedVault: yvUsdLockedVault,
+    isLoading: isLoadingYvUsd
+  } = useYvUsdVaults()
   const isYvUsd = isYvUsdAddress(params.address)
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
@@ -388,13 +393,28 @@ function Index(): ReactElement | null {
   }, [snapshotShouldDisableStaking, isFactoryVault])
 
   const currentVault = useMemo(() => {
-    if (isYvUsd) return yvUsdVault
+    if (isYvUsd) {
+      const normalizedAddress = params.address ? toAddress(params.address) : undefined
+      const isLockedAddress = normalizedAddress === YVUSD_LOCKED_ADDRESS
+
+      if (isLockedAddress) {
+        return yvUsdLockedVault ?? yvUsdVault ?? yvUsdUnlockedVault
+      }
+
+      const isUnlockedAddress = normalizedAddress === YVUSD_UNLOCKED_ADDRESS
+      if (isUnlockedAddress) {
+        return yvUsdUnlockedVault ?? yvUsdVault ?? yvUsdLockedVault
+      }
+
+      return yvUsdVault ?? yvUsdUnlockedVault ?? yvUsdLockedVault
+    }
     if (!vaultViewInput) return undefined
     return getVaultView(vaultViewInput, mergedSnapshot)
-  }, [isYvUsd, yvUsdVault, vaultViewInput, mergedSnapshot])
+  }, [isYvUsd, yvUsdLockedVault, yvUsdUnlockedVault, yvUsdVault, vaultViewInput, mergedSnapshot, params.address])
 
+  const shouldBootstrapYvUsdVaultList = isYvUsd && !hasVaultList && !hasTriggeredVaultListFetch
   const isLoadingVault = isYvUsd
-    ? !yvUsdVault && isLoadingYvUsd
+    ? !currentVault && (isLoadingYvUsd || isLoadingVaultList || shouldBootstrapYvUsdVaultList)
     : !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
 
   const vaultUserData = useVaultUserData({
@@ -406,13 +426,16 @@ function Index(): ReactElement | null {
   })
 
   useEffect(() => {
-    if (hasTriggeredVaultListFetch || hasVaultList || !snapshotVault) {
+    if (hasTriggeredVaultListFetch || hasVaultList) {
+      return
+    }
+    if (!isYvUsd && !snapshotVault) {
       return
     }
     setHasTriggeredVaultListFetch(true)
     const frame = requestAnimationFrame(() => enableVaultListFetch())
     return () => cancelAnimationFrame(frame)
-  }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, snapshotVault])
+  }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, isYvUsd, snapshotVault])
 
   const vaultShareBalance =
     !!address && currentVault?.address && Number.isInteger(currentVault?.chainID)

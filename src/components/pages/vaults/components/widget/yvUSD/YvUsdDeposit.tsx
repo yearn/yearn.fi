@@ -2,8 +2,9 @@ import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import {
   type TYvUsdVariant,
-  YVUSD_BASELINE_VAULT_ADDRESS,
+  YVUSD_LOCKED_ADDRESS,
   YVUSD_LOCKED_COOLDOWN_DAYS,
+  YVUSD_UNLOCKED_ADDRESS,
   YVUSD_WITHDRAW_WINDOW_DAYS
 } from '@pages/vaults/utils/yvUsd'
 import { Button } from '@shared/components/Button'
@@ -27,7 +28,7 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
   const selectedVaultAddress = variant === 'locked' ? lockedVault?.address : unlockedVault?.address
   const selectedVaultUserData = useVaultUserData({
-    vaultAddress: selectedVaultAddress ?? YVUSD_BASELINE_VAULT_ADDRESS,
+    vaultAddress: selectedVaultAddress ?? (variant === 'locked' ? YVUSD_LOCKED_ADDRESS : YVUSD_UNLOCKED_ADDRESS),
     assetAddress,
     chainId,
     account

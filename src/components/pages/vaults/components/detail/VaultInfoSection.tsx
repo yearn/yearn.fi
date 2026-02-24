@@ -10,6 +10,7 @@ import {
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
+import { isYvUsdAddress, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { baseFetcher, isCurveHostUrl, isZeroAddress, normalizeCurveUrl, toAddress, truncateHex } from '@shared/utils'
@@ -106,6 +107,7 @@ export function VaultInfoSection({
 }): ReactElement {
   const chainID = getVaultChainID(currentVault)
   const vaultAddress = getVaultAddress(currentVault)
+  const isYvUsd = isYvUsdAddress(vaultAddress)
   const token = getVaultToken(currentVault)
   const staking = getVaultStaking(currentVault)
   const info = getVaultInfo(currentVault)
@@ -155,7 +157,22 @@ export function VaultInfoSection({
   return (
     <div className={'grid w-full grid-cols-1 gap-10 p-4 md:p-6 md:pt-0'}>
       <div className={'col-span-1 grid w-full gap-1'}>
-        <AddressLink address={vaultAddress} explorerUrl={blockExplorer || ''} label={'Vault Contract Address'} />
+        {isYvUsd ? (
+          <>
+            <AddressLink
+              address={YVUSD_UNLOCKED_ADDRESS}
+              explorerUrl={blockExplorer || ''}
+              label={'Unlocked Vault Contract Address'}
+            />
+            <AddressLink
+              address={YVUSD_LOCKED_ADDRESS}
+              explorerUrl={blockExplorer || ''}
+              label={'Locked Vault Contract Address'}
+            />
+          </>
+        ) : (
+          <AddressLink address={vaultAddress} explorerUrl={blockExplorer || ''} label={'Vault Contract Address'} />
+        )}
 
         <AddressLink address={token.address} explorerUrl={blockExplorer || ''} label={'Token Contract Address'} />
 

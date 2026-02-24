@@ -2,8 +2,9 @@ import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import {
   type TYvUsdVariant,
-  YVUSD_BASELINE_VAULT_ADDRESS,
+  YVUSD_LOCKED_ADDRESS,
   YVUSD_LOCKED_COOLDOWN_DAYS,
+  YVUSD_UNLOCKED_ADDRESS,
   YVUSD_WITHDRAW_WINDOW_DAYS
 } from '@pages/vaults/utils/yvUsd'
 import { IconLock } from '@shared/icons/IconLock'
@@ -26,13 +27,13 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
 
   const unlockedUserData = useVaultUserData({
-    vaultAddress: unlockedVault?.address ?? YVUSD_BASELINE_VAULT_ADDRESS,
+    vaultAddress: unlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS,
     assetAddress,
     chainId,
     account
   })
   const lockedUserData = useVaultUserData({
-    vaultAddress: lockedVault?.address ?? YVUSD_BASELINE_VAULT_ADDRESS,
+    vaultAddress: lockedVault?.address ?? YVUSD_LOCKED_ADDRESS,
     assetAddress,
     chainId,
     account
