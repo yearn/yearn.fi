@@ -10,9 +10,10 @@ export const YVUSD_BASELINE_VAULT_ADDRESS = toAddress('0xBe53A109B494E5c9f97b9Cd
 
 export const YVUSD_LOCKED_COOLDOWN_DAYS = 14
 export const YVUSD_WITHDRAW_WINDOW_DAYS = 5
-export const YVUSD_APR_SERVICE_ENDPOINT = (
-  import.meta.env.VITE_YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
-).replace(/\/$/, '')
+const configuredYvUsdAprEndpoint = import.meta.env.VITE_YVUSD_APR_SERVICE_API?.trim().replace(/\/$/, '')
+export const YVUSD_APR_SERVICE_ENDPOINT = configuredYvUsdAprEndpoint?.startsWith('/')
+  ? configuredYvUsdAprEndpoint
+  : '/api/yvusd/aprs'
 
 export const YVUSD_DESCRIPTION =
   'USDC-based, cross-chain allocating vault with locked and unlocked options; locked deposits earn a share of unlocked yield.'
