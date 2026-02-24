@@ -61,9 +61,12 @@ export function useVaultApyData(vault: TKongVaultInput): TVaultApyData {
   const { katanaAprs } = useYearn()
   const shouldUseKatanaAPRs = getVaultChainID(vault) === KATANA_CHAIN_ID
 
-  const apr = getVaultAPR(vault)
   const staking = getVaultStaking(vault)
+  const apr = getVaultAPR(vault)
+
   const baseForwardApr = apr.forwardAPR.netAPR
+  const hasForwardAprSource = apr.forwardAPR.type === 'oracle' || apr.forwardAPR.type === 'estimated'
+  const hasForwardApr = hasForwardAprSource || !isZero(baseForwardApr)
   const netApr = apr.netAPR
   const rewardsAprSum = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
   const isBoosted =
@@ -112,7 +115,7 @@ export function useVaultApyData(vault: TKongVaultInput): TVaultApyData {
       }
       return { mode: 'rewards' }
     }
-    if (!isZero(baseForwardApr)) {
+    if (hasForwardApr) {
       return { mode: 'spot' }
     }
     return { mode: 'historical' }

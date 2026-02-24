@@ -33,12 +33,13 @@ export function calculateVaultEstimatedAPY(
   }
 
   const sumOfRewardsAPY = (apr.extra?.stakingRewardsAPR || 0) + (apr.extra?.gammaRewardAPR || 0)
-  const hasCurrentAPY = !isZero(apr.forwardAPR?.netAPR || 0)
+  const hasForwardAPYSource = apr.forwardAPR?.type === 'oracle' || apr?.forwardAPR?.type === 'estimated'
+  const hasForwardAPY = hasForwardAPYSource || !isZero(apr?.forwardAPR?.netAPR || 0)
 
   if (sumOfRewardsAPY > 0) {
     return sumOfRewardsAPY + (apr.forwardAPR?.netAPR || 0)
   }
-  if (hasCurrentAPY) {
+  if (hasForwardAPY) {
     return apr.forwardAPR?.netAPR || 0
   }
   return apr?.netAPR || 0
