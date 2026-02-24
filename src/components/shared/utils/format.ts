@@ -80,7 +80,27 @@ export const exactToSimple = (bn?: bigint | string | number, scale?: number) => 
  ** to correctly format bigNumbers, currency and date
  **************************************************************************/
 export const toBigInt = (amount?: TNumberish): bigint => {
-  return BigInt(amount || 0)
+  if (amount === undefined || amount === null) {
+    return 0n
+  }
+
+  if (typeof amount === 'bigint') {
+    return amount
+  }
+
+  const asString = String(amount).trim()
+  if (asString === '') {
+    return 0n
+  }
+
+  const normalized = asString.includes('e') || asString.includes('E') ? eToNumber(asString) : asString
+  const integerPart = normalized.includes('.') ? normalized.split('.')[0] : normalized
+
+  if (integerPart === '' || integerPart === '-' || integerPart === '+') {
+    return 0n
+  }
+
+  return BigInt(integerPart)
 }
 
 export function toBigNumberAsAmount(bnAmount = 0n, decimals = 18, decimalsToDisplay = 2, symbol = ''): string {

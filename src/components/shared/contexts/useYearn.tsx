@@ -1,3 +1,4 @@
+import type { TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { Solver, type TSolver } from '@pages/vaults/types/solvers'
 import { useLocalStorageValue } from '@react-hookz/web'
 import { useFetchYearnPrices } from '@shared/hooks/useFetchYearnPrices'
@@ -5,7 +6,7 @@ import { useFetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
 import { type TKatanaAprs, useKatanaAprs } from '@shared/hooks/useKatanaAprs'
 import type { TAddress, TDict, TNormalizedBN } from '@shared/types'
 import { toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
-import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
+import type { TKongVaultList } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
 import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
 import type { QueryObserverResult } from '@tanstack/react-query'
@@ -22,7 +23,9 @@ export type TYearnContext = {
   currentPartner: TAddress
   earned?: TYDaemonEarned
   prices?: TYDaemonPricesChain
-  vaults: TDict<TKongVaultListItem>
+  vaults: TDict<TKongVault>
+  inclusionYearnVaults: TDict<TKongVault>
+  allVaults: TDict<TKongVault>
   isLoadingVaultList: boolean
   katanaAprs: Partial<TKatanaAprs>
   isLoadingKatanaAprs: boolean
@@ -50,6 +53,8 @@ const YearnContext = createContext<TYearnContext>({
   },
   prices: {},
   vaults: {},
+  inclusionYearnVaults: {},
+  allVaults: {},
   isLoadingVaultList: false,
   katanaAprs: {},
   isLoadingKatanaAprs: false,
@@ -107,7 +112,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
 
   const prices = useFetchYearnPrices()
   //RG this endpoint returns empty objects for retired and migrations
-  const { vaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
+  const { vaults, inclusionYearnVaults, allVaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
     enabled: isVaultListEnabled
   })
   const { data: katanaAprs, isLoading: isLoadingKatanaAprs } = useKatanaAprs()
@@ -133,6 +138,8 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
         setZapProvider,
         setIsAutoStakingEnabled,
         vaults,
+        inclusionYearnVaults,
+        allVaults,
         isLoadingVaultList: isLoading,
         katanaAprs,
         isLoadingKatanaAprs,

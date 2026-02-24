@@ -1,10 +1,11 @@
-import { getVaultStaking, getVaultVersion, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
+import type { TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
 import { useBalancesCombined } from '../hooks/useBalancesCombined'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
+import { getVaultHoldingsUsdValue } from '../hooks/useVaultFilterUtils'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
 import { DEFAULT_ERC20, isZeroAddress, toAddress, zeroNormalizedBN } from '../utils'
 import { useWeb3 } from './useWeb3'
@@ -48,11 +49,11 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   children: ReactElement
   shouldWorkOnTestnet?: boolean
 }): ReactElement {
-  const { vaults, isLoadingVaultList } = useYearn()
+  const { allVaults, isLoadingVaultList, getPrice } = useYearn()
   const { address: userAddress } = useWeb3()
 
   const allTokens = useYearnTokens({
-    vaults,
+    vaults: allVaults,
     isLoadingVaultList,
     isEnabled: Boolean(userAddress)
   })
@@ -125,43 +126,43 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   )
 
   const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
-    // Build staking address → vault address lookup
-    const stakingToVault = new Map<string, string>()
-    for (const [vaultAddress, vault] of Object.entries(vaults)) {
-      const staking = getVaultStaking(vault as TKongVault)
-      if (staking?.address && !isZeroAddress(toAddress(staking.address))) {
-        stakingToVault.set(toAddress(staking.address), vaultAddress)
+    const stakingToVault = Object.entries(allVaults).reduce((acc, [vaultAddress, vault]) => {
+      if (vault.staking?.address && !isZeroAddress(toAddress(vault.staking.address))) {
+        acc.set(toAddress(vault.staking.address), vaultAddress)
       }
-    }
+      return acc
+    }, new Map<string, string>())
 
-    let cumulatedValueInV2Vaults = 0
-    let cumulatedValueInV3Vaults = 0
-
-    for (const [_chainId, perChain] of Object.entries(balances)) {
-      for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
+    const uniqueHoldingsVaults = Object.entries(balances)
+      .flatMap(([, perChain]) => Object.keys(perChain))
+      .map((tokenAddress) => {
         const normalizedAddress = toAddress(tokenAddress)
-
-        // Resolve vault details (direct vault or via staking lookup)
-        let vaultDetails = vaults?.[normalizedAddress]
-        if (!vaultDetails && stakingToVault.has(normalizedAddress)) {
-          vaultDetails = vaults?.[stakingToVault.get(normalizedAddress)!]
+        const directVault = allVaults?.[normalizedAddress]
+        if (directVault) {
+          return directVault
         }
-
-        if (!vaultDetails) continue
-
-        const tokenValue = tokenData.value || 0
-        const version = getVaultVersion(vaultDetails as TKongVault)
-        const isV3 = version.split('.')?.[0] === '3' || version.split('.')?.[0] === '~3'
-
-        if (isV3) {
-          cumulatedValueInV3Vaults += tokenValue
-        } else {
-          cumulatedValueInV2Vaults += tokenValue
+        const stakingVaultAddress = stakingToVault.get(normalizedAddress)
+        if (!stakingVaultAddress) {
+          return undefined
         }
-      }
-    }
-    return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults]
-  }, [balances, vaults])
+        return allVaults?.[stakingVaultAddress]
+      })
+      .filter((vault): vault is TKongVault => Boolean(vault))
+      .reduce((acc, vault) => {
+        const key = `${vault.chainID}/${toAddress(vault.address)}`
+        acc.set(key, vault)
+        return acc
+      }, new Map<string, TKongVault>())
+
+    return Array.from(uniqueHoldingsVaults.values()).reduce(
+      (acc, vault) => {
+        const tokenValue = getVaultHoldingsUsdValue(vault, getToken, getBalance, getPrice)
+        const isV3 = vault.version?.split('.')?.[0] === '3' || vault.version?.split('.')?.[0] === '~3'
+        return isV3 ? [acc[0], acc[1] + tokenValue] : [acc[0] + tokenValue, acc[1]]
+      },
+      [0, 0] as [number, number]
+    )
+  }, [allVaults, balances, getBalance, getPrice, getToken])
 
   /***************************************************************************
    **	Setup and render the Context provider to use in the app.
