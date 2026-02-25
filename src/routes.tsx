@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes as RouterRoutes } from 'react-router'
+import { Navigate, Route, Routes as RouterRoutes, useParams } from 'react-router'
 
 // Lazy load all page components
 const HomePage = lazy(() => import('@pages/landing'))
@@ -8,6 +8,9 @@ const PortfolioPage = lazy(() => import('@pages/portfolio/index'))
 const VaultsPage = lazy(() => import('@pages/vaults/index'))
 const VaultsDetailPage = lazy(() => import('@pages/vaults/[chainID]/[address]'))
 const IconListPage = lazy(() => import('@pages/icon-list/index'))
+const CurationPage = lazy(() => import('@pages/curation/index'))
+const CurationReportPage = lazy(() => import('@pages/curation/report/[slug]'))
+const CurationTestPage = lazy(() => import('@pages/curation/test-1'))
 
 // Loading component
 const PageLoader = (): ReactElement => (
@@ -24,6 +27,14 @@ const ExternalRedirect = ({ to }: { to: string }): ReactElement => {
   return <PageLoader />
 }
 
+const CurationReportRedirect = (): ReactElement => {
+  const { slug } = useParams()
+  if (!slug) {
+    return <Navigate to="/curation" replace />
+  }
+  return <Navigate to={`/curation/report/${slug}`} replace />
+}
+
 // Main routes component
 export function Routes(): ReactElement {
   return (
@@ -38,6 +49,13 @@ export function Routes(): ReactElement {
         {/* Icon inventory page */}
         <Route path="/icon-list" element={<IconListPage />} />
 
+        {/* Curation pages */}
+        <Route path="/curation">
+          <Route index element={<CurationPage />} />
+          <Route path="report/:slug" element={<CurationReportPage />} />
+        </Route>
+        <Route path="/curation-test-1" element={<CurationTestPage />} />
+
         {/* Unified Vaults routes */}
         <Route path="/vaults">
           <Route index element={<VaultsPage />} />
@@ -51,6 +69,9 @@ export function Routes(): ReactElement {
         {/* Legacy v3 vault detail alias */}
         <Route path="/v3/:chainID/:address" element={<VaultsDetailPage />} />
         <Route path="/v3/*" element={<Navigate to="/vaults" replace />} />
+
+        {/* Legacy risk-score path */}
+        <Route path="/report/:slug" element={<CurationReportRedirect />} />
 
         {/* External redirects */}
         <Route path="/ybribe/*" element={<ExternalRedirect to="https://ybribe.yearn.fi" />} />

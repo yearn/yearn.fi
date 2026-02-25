@@ -108,7 +108,10 @@ function AppHeader(): ReactElement {
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
 
-  const isHomePage = normalizePathname(pathname) === '/'
+  const normalizedPathname = normalizePathname(pathname)
+  const isHomePage = normalizedPathname === '/'
+  const isCurationPage = normalizedPathname.startsWith('/curation') || normalizedPathname.startsWith('/curation-test')
+  const usesLandingHeaderShell = isHomePage || isCurationPage
 
   const walletIdentity = useMemo((): string | undefined => {
     if (ens) return ens
@@ -120,7 +123,10 @@ function AppHeader(): ReactElement {
   return (
     <div
       id={'head'}
-      className={cl('sticky inset-x-0 top-0 z-50 w-full backdrop-blur-md', isHomePage ? 'bg-transparent' : 'bg-app')}
+      className={cl(
+        'sticky inset-x-0 top-0 z-50 w-full backdrop-blur-md',
+        usesLandingHeaderShell ? 'bg-transparent' : 'bg-app'
+      )}
     >
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         <header className={'flex h-[var(--header-height)] w-full items-center justify-between px-0'}>
@@ -133,7 +139,19 @@ function AppHeader(): ReactElement {
             </div>
           </div>
           <div className={'flex items-center justify-end gap-2'}>
-            {!isHomePage && (
+            {isCurationPage && (
+              <button
+                className={
+                  'min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary'
+                }
+                onClick={() => setThemePreference(isDarkTheme ? 'light' : 'soft-dark')}
+                title={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDarkTheme ? <IconSun className={'size-5'} /> : <IconMoon className={'size-5'} />}
+              </button>
+            )}
+
+            {!isHomePage && !isCurationPage && (
               <>
                 <div className={'hidden items-center justify-end md:flex gap-2'} data-tour="vaults-header-user">
                   <Link href={'/portfolio'}>
