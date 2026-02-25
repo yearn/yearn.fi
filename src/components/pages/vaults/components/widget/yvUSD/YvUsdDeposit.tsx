@@ -10,6 +10,7 @@ import {
 import { Button } from '@shared/components/Button'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
+import type { TToken } from '@shared/types'
 import { cl, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
@@ -36,6 +37,30 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
     chainId,
     account
   })
+  const lockedDepositExtraTokens: TToken[] =
+    variant !== 'locked'
+      ? []
+      : (() => {
+          const token = selectedVaultUserData.assetToken
+          if (!token?.address || !token.chainID || !token.symbol || !token.name || !token.decimals) {
+            return []
+          }
+          if (token.balance.raw <= 0n) {
+            return []
+          }
+
+          return [
+            {
+              address: token.address,
+              name: token.name,
+              symbol: token.symbol,
+              decimals: token.decimals,
+              chainID: token.chainID,
+              value: 0,
+              balance: token.balance
+            }
+          ]
+        })()
 
   if (isLoading || !unlockedVault || !lockedVault) {
     return (
@@ -135,6 +160,7 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
         headerActions={variant ? headerToggle : undefined}
         contentBelowInput={depositTypeSection}
         prefill={variant === 'locked' ? { address: unlockedAssetAddress, chainId } : undefined}
+        tokenSelectorExtraTokens={lockedDepositExtraTokens}
         vaultSharesLabel={
           variant === 'locked' ? 'Locked Vault Shares' : variant === 'unlocked' ? 'Unlocked Vault Shares' : undefined
         }

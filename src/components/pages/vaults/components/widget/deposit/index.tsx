@@ -10,6 +10,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
+import type { TToken } from '@shared/types'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
@@ -59,6 +60,7 @@ interface Props {
   hideActionButton?: boolean
   hideContainerBorder?: boolean
   headerActions?: ReactNode
+  tokenSelectorExtraTokens?: TToken[]
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -85,7 +87,8 @@ export const WidgetDeposit: FC<Props> = ({
   hideDetails = false,
   hideActionButton = false,
   hideContainerBorder = false,
-  headerActions
+  headerActions,
+  tokenSelectorExtraTokens
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -670,6 +673,7 @@ export const WidgetDeposit: FC<Props> = ({
         value={selectedToken}
         priorityTokens={{ [chainId]: [assetAddress] }}
         excludeTokens={stakingAddress ? [stakingAddress] : [vaultAddress]}
+        extraTokens={tokenSelectorExtraTokens}
         assetAddress={assetAddress}
         vaultAddress={vaultAddress}
         stakingAddress={stakingAddress}

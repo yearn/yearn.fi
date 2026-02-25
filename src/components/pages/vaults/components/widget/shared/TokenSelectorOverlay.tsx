@@ -1,4 +1,5 @@
 import { TokenSelector } from '@pages/vaults/components/widget/TokenSelector'
+import type { TToken } from '@shared/types'
 import { cl } from '@shared/utils'
 import type { FC } from 'react'
 import type { Address } from 'viem'
@@ -11,6 +12,7 @@ interface TokenSelectorOverlayProps {
   value?: Address
   excludeTokens?: Address[]
   priorityTokens?: Record<number, Address[]>
+  extraTokens?: TToken[]
   assetAddress?: Address
   vaultAddress?: Address
   stakingAddress?: Address
@@ -24,6 +26,7 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
   value,
   excludeTokens,
   priorityTokens,
+  extraTokens,
   assetAddress,
   vaultAddress,
   stakingAddress
@@ -60,6 +63,7 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
           chainId={chainId}
           excludeTokens={excludeTokens}
           priorityTokens={priorityTokens}
+          extraTokens={extraTokens}
           onClose={onClose}
           assetAddress={assetAddress}
           vaultAddress={vaultAddress}
