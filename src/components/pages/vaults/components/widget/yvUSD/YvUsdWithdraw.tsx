@@ -9,15 +9,14 @@ import {
 } from '@pages/vaults/utils/yvUsd'
 import { Button } from '@shared/components/Button'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
-import { IconLock } from '@shared/icons/IconLock'
-import { IconLockOpen } from '@shared/icons/IconLockOpen'
-import { cl, formatTAmount, toAddress } from '@shared/utils'
+import { formatTAmount, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { UseSimulateContractReturnType } from 'wagmi'
 import { useAccount, useReadContract, useSimulateContract } from 'wagmi'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { WidgetWithdraw } from '../withdraw'
+import { YvUsdVariantToggle } from './YvUsdVariantToggle'
 
 type Props = {
   chainId: number
@@ -404,38 +403,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
   const effectiveLockedActionDisabledReason =
     activeVariant === 'locked' && !hideLockedWithdrawAction ? lockedActionDisabledReason : undefined
   const headerToggle = showToggle ? (
-    <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
-      <button
-        type="button"
-        onClick={() => setVariant('locked')}
-        className={cl(
-          'rounded-sm px-2 py-1 text-xs font-semibold transition-all',
-          activeVariant === 'locked'
-            ? 'bg-surface text-text-primary'
-            : 'bg-transparent text-text-secondary hover:text-text-primary'
-        )}
-      >
-        <span className="inline-flex items-center gap-1">
-          <IconLock className="size-4" />
-          {'Locked'}
-        </span>
-      </button>
-      <button
-        type="button"
-        onClick={() => setVariant('unlocked')}
-        className={cl(
-          'rounded-sm px-2 py-1 text-xs font-semibold transition-all',
-          activeVariant === 'unlocked'
-            ? 'bg-surface text-text-primary'
-            : 'bg-transparent text-text-secondary hover:text-text-primary'
-        )}
-      >
-        <span className="inline-flex items-center gap-1">
-          <IconLockOpen className="size-4" />
-          {'Unlocked'}
-        </span>
-      </button>
-    </div>
+    <YvUsdVariantToggle activeVariant={activeVariant} onChange={setVariant} />
   ) : undefined
   const withdrawTypeSection =
     activeVariant === 'locked' ? (

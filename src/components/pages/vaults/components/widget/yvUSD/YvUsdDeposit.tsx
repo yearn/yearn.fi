@@ -11,11 +11,12 @@ import { Button } from '@shared/components/Button'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import type { TToken } from '@shared/types'
-import { cl, toAddress } from '@shared/utils'
+import { toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { WidgetDeposit } from '../deposit'
+import { YvUsdVariantToggle } from './YvUsdVariantToggle'
 
 type Props = {
   chainId: number
@@ -74,40 +75,8 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
   const lockedApr = metrics?.locked.apy ?? lockedVault.apr?.netAPR ?? 0
   const selectedVault = variant === 'locked' ? lockedVault : unlockedVault
 
-  const headerToggle = (
-    <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
-      <button
-        type="button"
-        onClick={() => setVariant('locked')}
-        className={cl(
-          'rounded-sm px-2 py-1 text-xs font-semibold transition-all',
-          variant === 'locked'
-            ? 'bg-surface text-text-primary'
-            : 'bg-transparent text-text-secondary hover:text-text-primary'
-        )}
-      >
-        <span className="inline-flex items-center gap-1">
-          <IconLock className="size-4" />
-          {'Locked'}
-        </span>
-      </button>
-      <button
-        type="button"
-        onClick={() => setVariant('unlocked')}
-        className={cl(
-          'rounded-sm px-2 py-1 text-xs font-semibold transition-all',
-          variant === 'unlocked'
-            ? 'bg-surface text-text-primary'
-            : 'bg-transparent text-text-secondary hover:text-text-primary'
-        )}
-      >
-        <span className="inline-flex items-center gap-1">
-          <IconLockOpen className="size-4" />
-          {'Unlocked'}
-        </span>
-      </button>
-    </div>
-  )
+  const headerToggle =
+    variant === null ? undefined : <YvUsdVariantToggle activeVariant={variant} onChange={setVariant} />
 
   const depositTypeSection = variant ? (
     <div className="rounded-lg border border-border bg-surface-secondary p-4 text-sm text-text-secondary">
@@ -157,7 +126,7 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
         hideDetails={!variant}
         hideActionButton={!variant}
         hideContainerBorder
-        headerActions={variant ? headerToggle : undefined}
+        headerActions={headerToggle}
         contentBelowInput={depositTypeSection}
         prefill={variant === 'locked' ? { address: unlockedAssetAddress, chainId } : undefined}
         tokenSelectorExtraTokens={lockedDepositExtraTokens}
