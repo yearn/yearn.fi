@@ -114,6 +114,20 @@ const splitFirstSentence = (message: string): { title: string; body?: string } =
   return body ? { title, body } : { title }
 }
 
+const isSnapshotLikelyV3Vault = (snapshot: TKongVaultSnapshot): boolean => {
+  const apiVersion = snapshot.apiVersion ?? ''
+  if (apiVersion.startsWith('3') || apiVersion.startsWith('~3')) {
+    return true
+  }
+
+  const normalizedKind = snapshot.meta?.kind?.toLowerCase() ?? ''
+  if (normalizedKind === 'single strategy' || normalizedKind === 'multi strategy') {
+    return true
+  }
+
+  return (snapshot.composition?.length ?? 0) > 0 || (snapshot.strategies?.length ?? 0) > 0
+}
+
 const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
   const token = snapshot.meta?.token
   const asset = snapshot.asset
@@ -146,7 +160,7 @@ const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
     category: snapshot.meta?.category ?? null,
     type: snapshot.meta?.type ?? null,
     kind: snapshot.meta?.kind ?? null,
-    v3: snapshot.apiVersion?.startsWith('3') ?? false,
+    v3: isSnapshotLikelyV3Vault(snapshot),
     yearn: true,
     isRetired: snapshot.meta?.isRetired ?? false,
     isHidden: snapshot.meta?.isHidden ?? false,
