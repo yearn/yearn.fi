@@ -12,7 +12,6 @@ import {
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useWallet } from '@shared/contexts/useWallet'
-import { useYearn } from '@shared/contexts/useYearn'
 import type { TSortDirection } from '@shared/types'
 import { isZeroAddress, normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@shared/utils/constants'
@@ -38,7 +37,6 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
   sortDirection: TSortDirection
 ): TVault[] {
   const { getBalance, getToken } = useWallet()
-  const { katanaAprs } = useYearn()
 
   const isFeaturingScoreSortedDesc = useMemo((): boolean => {
     if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
@@ -86,10 +84,10 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       case 'estAPY':
         return vaultList.toSorted((a, b): number =>
           sortWithFallback(
-            normalizeApyDisplayValue(calculateVaultEstimatedAPY(a, katanaAprs)),
-            normalizeApyDisplayValue(calculateVaultEstimatedAPY(b, katanaAprs)),
-            calculateVaultEstimatedAPY(a, katanaAprs),
-            calculateVaultEstimatedAPY(b, katanaAprs),
+            normalizeApyDisplayValue(calculateVaultEstimatedAPY(a)),
+            normalizeApyDisplayValue(calculateVaultEstimatedAPY(b)),
+            calculateVaultEstimatedAPY(a),
+            calculateVaultEstimatedAPY(b),
             sortDirection
           )
         )
@@ -169,7 +167,7 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       default:
         return vaultList
     }
-  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, katanaAprs, getBalance, getToken])
+  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, getBalance, getToken])
 
   return sortedVaults
 }

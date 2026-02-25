@@ -1,6 +1,5 @@
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import {
-  getVaultAddress,
   getVaultAPR,
   getVaultChainID,
   getVaultStaking,
@@ -11,12 +10,10 @@ import {
   isKelpEigenVault,
   isKelpVault,
   isPendleArbVault,
-  projectVeYfiRange,
-  sumApr
+  projectVeYfiRange
 } from '@pages/vaults/utils/apy'
-import { useYearn } from '@shared/contexts/useYearn'
-import type { TKatanaAprData } from '@shared/hooks/useKatanaAprs'
-import { isZero, toAddress } from '@shared/utils'
+import { isZero } from '@shared/utils'
+import { calculateKatanaTotalApr, getKatanaAprData, type TKatanaAprData } from '@shared/utils/vaultApy'
 import { useMemo } from 'react'
 
 export type TVaultApyMode = 'katana' | 'noForward' | 'boosted' | 'rewards' | 'spot' | 'historical'
@@ -45,20 +42,17 @@ export function computeKatanaTotalApr(
   katanaExtras?: Partial<TKatanaAprData>,
   baseAprOverride?: number
 ): number | undefined {
-  if (!katanaExtras) return undefined
+  return calculateKatanaTotalApr(katanaExtras, baseAprOverride)
+}
 
-  const appRewardsApr = katanaExtras.katanaAppRewardsAPR ?? katanaExtras.katanaRewardsAPR
-  const baseApr = typeof baseAprOverride === 'number' ? baseAprOverride : katanaExtras.katanaNativeYield
-  const parts = [baseApr, katanaExtras.FixedRateKatanaRewards, appRewardsApr].filter(
-    (value): value is number => typeof value === 'number' && !Number.isNaN(value)
-  )
-
-  if (parts.length === 0) return undefined
-  return sumApr(parts)
+export function resolveKatanaExtras(vault: TKongVaultInput): TKatanaAprData | undefined {
+  if (getVaultChainID(vault) !== KATANA_CHAIN_ID) {
+    return undefined
+  }
+  return getKatanaAprData(vault)
 }
 
 export function useVaultApyData(vault: TKongVaultInput): TVaultApyData {
-  const { katanaAprs } = useYearn()
   const shouldUseKatanaAPRs = getVaultChainID(vault) === KATANA_CHAIN_ID
 
   const apr = getVaultAPR(vault)
@@ -72,8 +66,8 @@ export function useVaultApyData(vault: TKongVaultInput): TVaultApyData {
 
   const katanaExtras = useMemo(() => {
     if (!shouldUseKatanaAPRs) return undefined
-    return katanaAprs?.[toAddress(getVaultAddress(vault))]?.apr?.extra as TKatanaAprData | undefined
-  }, [shouldUseKatanaAPRs, katanaAprs, vault])
+    return resolveKatanaExtras(vault)
+  }, [shouldUseKatanaAPRs, vault])
 
   const katanaThirtyDayApr = useMemo(() => {
     return computeKatanaTotalApr(katanaExtras)

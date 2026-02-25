@@ -1,27 +1,99 @@
-import {
-  getVaultAddress,
-  getVaultAPR,
-  getVaultChainID,
-  type TKongVaultInput
-} from '@pages/vaults/domain/kongVaultSelectors'
-import type { TKatanaAprs } from '@shared/hooks/useKatanaAprs'
-import { isZero, toAddress } from '@shared/utils'
+import { getVaultAPR, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { isZero } from '@shared/utils'
 
-export function calculateVaultEstimatedAPY(
-  vault: TKongVaultInput,
-  katanaAprs: Partial<TKatanaAprs> | undefined
-): number {
+const KATANA_CHAIN_ID = 747474
+
+export type TKatanaAprData = {
+  katanaRewardsAPR?: number
+  katanaAppRewardsAPR?: number
+  FixedRateKatanaRewards?: number
+  katanaBonusAPY?: number
+  katanaNativeYield?: number
+  steerPointsPerDollar?: number
+}
+
+const normalizeFiniteNumber = (value: unknown): number | undefined => {
+  if (typeof value !== 'number') {
+    return undefined
+  }
+  if (!Number.isFinite(value)) {
+    return undefined
+  }
+  return value
+}
+
+export function calculateKatanaTotalApr(
+  katanaExtras?: Partial<TKatanaAprData>,
+  baseAprOverride?: number
+): number | undefined {
+  if (!katanaExtras) {
+    return undefined
+  }
+
+  const appRewardsApr = katanaExtras.katanaAppRewardsAPR ?? katanaExtras.katanaRewardsAPR
+  const baseApr = typeof baseAprOverride === 'number' ? baseAprOverride : katanaExtras.katanaNativeYield
+  const parts = [baseApr, katanaExtras.FixedRateKatanaRewards, appRewardsApr].filter(
+    (value): value is number => typeof value === 'number' && !Number.isNaN(value)
+  )
+
+  if (parts.length === 0) {
+    return undefined
+  }
+  return parts.reduce((acc, value) => acc + value, 0)
+}
+
+export function getKatanaAprData(vault: TKongVaultInput): TKatanaAprData | undefined {
+  if (getVaultChainID(vault) !== KATANA_CHAIN_ID) {
+    return undefined
+  }
+
+  const apr = getVaultAPR(vault)
+  const composite = apr.forwardAPR?.composite
+  if (!composite) {
+    return undefined
+  }
+
+  const fixedRateKatanaRewards = normalizeFiniteNumber(
+    composite.fixedRateKatanaRewards ?? composite.FixedRateKatanaRewards
+  )
+  const katanaAppRewardsAPR = normalizeFiniteNumber(composite.katanaAppRewardsAPR)
+  const katanaNativeYield = normalizeFiniteNumber(composite.katanaNativeYield)
+  const katanaBonusAPY = normalizeFiniteNumber(composite.katanaBonusAPY)
+  const steerPointsPerDollar = normalizeFiniteNumber(composite.steerPointsPerDollar)
+
+  const hasKatanaComponentData = [
+    fixedRateKatanaRewards,
+    katanaAppRewardsAPR,
+    katanaNativeYield,
+    katanaBonusAPY,
+    steerPointsPerDollar
+  ].some((value) => value !== undefined)
+
+  if (!hasKatanaComponentData) {
+    return undefined
+  }
+
+  return {
+    katanaRewardsAPR: katanaAppRewardsAPR,
+    katanaAppRewardsAPR,
+    FixedRateKatanaRewards: fixedRateKatanaRewards,
+    katanaBonusAPY,
+    katanaNativeYield,
+    steerPointsPerDollar
+  }
+}
+
+export function calculateVaultEstimatedAPY(vault: TKongVaultInput): number {
   const apr = getVaultAPR(vault)
   const chainID = getVaultChainID(vault)
-  const address = getVaultAddress(vault)
 
-  if (chainID === 747474) {
-    const katanaAprData = katanaAprs?.[toAddress(address)]?.apr?.extra
+  if (chainID === KATANA_CHAIN_ID) {
+    const katanaAprData = getKatanaAprData(vault)
     if (katanaAprData) {
-      const appRewardsApr = katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR ?? 0
-      return (apr.forwardAPR?.netAPR || 0) + (katanaAprData.FixedRateKatanaRewards || 0) + appRewardsApr
+      const katanaEstimatedApr = calculateKatanaTotalApr(katanaAprData, apr.forwardAPR?.netAPR || 0)
+      return katanaEstimatedApr ?? (apr.forwardAPR?.netAPR || 0)
     }
-    return 0
+    return apr.forwardAPR?.netAPR || 0
   }
 
   if (apr.forwardAPR?.type === '') {
@@ -44,32 +116,23 @@ export function calculateVaultEstimatedAPY(
   return apr?.netAPR || 0
 }
 
-export function calculateKatanaThirtyDayAPY(
-  vault: TKongVaultInput,
-  katanaAprs: Partial<TKatanaAprs> | undefined
-): number | undefined {
-  if (getVaultChainID(vault) !== 747474) return undefined
-
-  const katanaAprData = katanaAprs?.[toAddress(getVaultAddress(vault))]?.apr?.extra
-  if (!katanaAprData) return undefined
-
-  const appRewardsApr = katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR
-  const parts = [katanaAprData.katanaNativeYield, katanaAprData.FixedRateKatanaRewards, appRewardsApr].filter(
-    (value): value is number => typeof value === 'number' && !Number.isNaN(value)
-  )
-
-  if (parts.length === 0) return undefined
-  return parts.reduce((acc, value) => acc + value, 0)
+export function calculateKatanaThirtyDayAPY(vault: TKongVaultInput): number | undefined {
+  if (getVaultChainID(vault) !== KATANA_CHAIN_ID) {
+    return undefined
+  }
+  const katanaAprData = getKatanaAprData(vault)
+  if (!katanaAprData) {
+    return undefined
+  }
+  return calculateKatanaTotalApr(katanaAprData)
 }
 
-export function calculateVaultHistoricalAPY(
-  vault: TKongVaultInput,
-  katanaAprs: Partial<TKatanaAprs> | undefined
-): number | null {
+export function calculateVaultHistoricalAPY(vault: TKongVaultInput): number | null {
   const apr = getVaultAPR(vault)
-  const katanaAPY = calculateKatanaThirtyDayAPY(vault, katanaAprs)
-  if (getVaultChainID(vault) === 747474) {
-    return typeof katanaAPY === 'number' ? katanaAPY : null
+  const katanaAPY = calculateKatanaThirtyDayAPY(vault)
+
+  if (getVaultChainID(vault) === KATANA_CHAIN_ID && typeof katanaAPY === 'number') {
+    return katanaAPY
   }
   if (typeof katanaAPY === 'number') {
     return katanaAPY
