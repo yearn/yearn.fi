@@ -44,6 +44,11 @@ export const WidgetWithdraw: FC<
   vaultSymbol,
   vaultVersion,
   vaultUserData,
+  maxWithdrawAssets,
+  isActionDisabled = false,
+  actionDisabledReason,
+  disableTokenSelector = false,
+  onAmountChange,
   handleWithdrawSuccess: onWithdrawSuccess,
   onOpenSettings,
   isSettingsOpen,
@@ -139,13 +144,28 @@ export const WidgetWithdraw: FC<
 
   const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
+
+  useEffect(() => {
+    onAmountChange?.(withdrawAmount.bn)
+  }, [withdrawAmount.bn, onAmountChange])
+
   const usesErc4626 = Boolean(vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3'))
+  const effectiveMaxWithdrawAssets = useMemo(
+    () =>
+      maxWithdrawAssets !== undefined && maxWithdrawAssets < totalBalanceInUnderlying.raw
+        ? maxWithdrawAssets
+        : totalBalanceInUnderlying.raw,
+    [maxWithdrawAssets, totalBalanceInUnderlying.raw]
+  )
 
   const isMaxWithdraw = useMemo(() => {
     return (
-      withdrawAmount.bn > 0n && totalBalanceInUnderlying.raw > 0n && withdrawAmount.bn === totalBalanceInUnderlying.raw
+      withdrawAmount.bn > 0n &&
+      totalBalanceInUnderlying.raw > 0n &&
+      withdrawAmount.bn === effectiveMaxWithdrawAssets &&
+      effectiveMaxWithdrawAssets === totalBalanceInUnderlying.raw
     )
-  }, [withdrawAmount.bn, totalBalanceInUnderlying.raw])
+  }, [withdrawAmount.bn, effectiveMaxWithdrawAssets, totalBalanceInUnderlying.raw])
 
   // ============================================================================
   // Required Shares Calculation
@@ -221,6 +241,11 @@ export const WidgetWithdraw: FC<
     hasBothBalances: !!hasBothBalances,
     withdrawalSource
   })
+  const exceedsExternalWithdrawLimit = maxWithdrawAssets !== undefined && withdrawAmount.bn > effectiveMaxWithdrawAssets
+  const effectiveWithdrawError =
+    actionDisabledReason ||
+    (exceedsExternalWithdrawLimit ? 'Amount exceeds currently available withdraw limit.' : undefined) ||
+    withdrawError
 
   const actionLabel = isUnstake
     ? 'You will unstake'
@@ -459,9 +484,11 @@ export const WidgetWithdraw: FC<
             variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
             isBusy={activeFlow.periphery.isLoadingRoute}
             disabled={
-              !!withdrawError ||
+              !!effectiveWithdrawError ||
               withdrawAmount.bn === 0n ||
+              !currentStep?.prepare?.isSuccess ||
               activeFlow.periphery.isLoadingRoute ||
+              isActionDisabled ||
               withdrawAmount.isDebouncing ||
               (showApprove &&
                 !activeFlow.periphery.isAllowanceSufficient &&
@@ -520,20 +547,20 @@ export const WidgetWithdraw: FC<
               input={withdrawInput}
               title="Amount"
               placeholder="0.00"
-              balance={totalBalanceInUnderlying.raw}
+              balance={effectiveMaxWithdrawAssets}
               decimals={assetToken?.decimals ?? 18}
               symbol={assetToken?.symbol || 'tokens'}
               disabled={!!hasBothBalances && !withdrawalSource}
-              errorMessage={withdrawError || undefined}
+              errorMessage={effectiveWithdrawError || undefined}
               inputTokenUsdPrice={assetTokenPrice}
               outputTokenUsdPrice={outputTokenPrice}
               tokenAddress={assetToken?.address}
               tokenChainId={assetToken?.chainID}
-              showTokenSelector={ensoEnabled && withdrawToken === assetAddress}
+              showTokenSelector={ensoEnabled && !disableTokenSelector && withdrawToken === assetAddress}
               onTokenSelectorClick={() => setShowTokenSelector(true)}
               onInputChange={(value: bigint) => {
-                if (value === totalBalanceInUnderlying.raw) {
-                  const exactAmount = formatUnits(totalBalanceInUnderlying.raw, assetToken?.decimals ?? 18)
+                if (value === effectiveMaxWithdrawAssets) {
+                  const exactAmount = formatUnits(effectiveMaxWithdrawAssets, assetToken?.decimals ?? 18)
                   withdrawInput[2](exactAmount)
                 }
               }}

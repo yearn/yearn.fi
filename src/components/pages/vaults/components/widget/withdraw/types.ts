@@ -13,6 +13,11 @@ export interface WithdrawWidgetProps {
   vaultVersion?: string
   isVaultRetired?: boolean
   vaultUserData: VaultUserData
+  maxWithdrawAssets?: bigint
+  isActionDisabled?: boolean
+  actionDisabledReason?: string
+  disableTokenSelector?: boolean
+  onAmountChange?: (amount: bigint) => void
   handleWithdrawSuccess?: () => void
   onOpenSettings?: () => void
   isSettingsOpen?: boolean

@@ -7,12 +7,16 @@ import {
   YVUSD_UNLOCKED_ADDRESS,
   YVUSD_WITHDRAW_WINDOW_DAYS
 } from '@pages/vaults/utils/yvUsd'
+import { Button } from '@shared/components/Button'
+import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
-import { cl, toAddress } from '@shared/utils'
+import { cl, formatTAmount, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
-import { useEffect, useState } from 'react'
-import { useAccount } from 'wagmi'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { UseSimulateContractReturnType } from 'wagmi'
+import { useAccount, useReadContract, useSimulateContract } from 'wagmi'
+import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { WidgetWithdraw } from '../withdraw'
 
 type Props = {
@@ -21,12 +25,73 @@ type Props = {
   onWithdrawSuccess?: () => void
 }
 
+type TCooldownStatus = {
+  cooldownEnd: number
+  windowEnd: number
+  shares: bigint
+}
+
+const EMPTY_COOLDOWN_STATUS: TCooldownStatus = {
+  cooldownEnd: 0,
+  windowEnd: 0,
+  shares: 0n
+}
+
+const parseCooldownStatus = (status: unknown): TCooldownStatus => {
+  if (!status) return EMPTY_COOLDOWN_STATUS
+
+  if (Array.isArray(status)) {
+    const [cooldownEnd, windowEnd, shares] = status
+    return {
+      cooldownEnd: typeof cooldownEnd === 'bigint' ? Number(cooldownEnd) : 0,
+      windowEnd: typeof windowEnd === 'bigint' ? Number(windowEnd) : 0,
+      shares: typeof shares === 'bigint' ? shares : 0n
+    }
+  }
+
+  if (typeof status === 'object') {
+    const parsed = status as { cooldownEnd?: unknown; windowEnd?: unknown; shares?: unknown }
+    return {
+      cooldownEnd: typeof parsed.cooldownEnd === 'bigint' ? Number(parsed.cooldownEnd) : 0,
+      windowEnd: typeof parsed.windowEnd === 'bigint' ? Number(parsed.windowEnd) : 0,
+      shares: typeof parsed.shares === 'bigint' ? parsed.shares : 0n
+    }
+  }
+
+  return EMPTY_COOLDOWN_STATUS
+}
+
+const formatDuration = (seconds: number): string => {
+  if (!Number.isFinite(seconds) || seconds <= 0) return '0m'
+  const days = Math.floor(seconds / 86_400)
+  const hours = Math.floor((seconds % 86_400) / 3_600)
+  const minutes = Math.floor((seconds % 3_600) / 60)
+
+  const parts: string[] = []
+  if (days > 0) parts.push(`${days}d`)
+  if (hours > 0 || days > 0) parts.push(`${hours}h`)
+  if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`)
+  return parts.slice(0, 2).join(' ')
+}
+
+const formatDays = (seconds: number, fallbackDays: number): string => {
+  if (!Number.isFinite(seconds) || seconds <= 0) return `${fallbackDays} days`
+  const days = seconds / 86_400
+  const rounded = Math.round(days * 100) / 100
+  return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded} days`
+}
+
 export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Props): ReactElement {
   const { address: account } = useAccount()
   const { unlockedVault, lockedVault, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
+  const [showCooldownOverlay, setShowCooldownOverlay] = useState(false)
+  const [lockedRequestedAssets, setLockedRequestedAssets] = useState<bigint>(0n)
+  const [nowTimestamp, setNowTimestamp] = useState(() => Math.floor(Date.now() / 1000))
+  const activeVariant = variant ?? 'unlocked'
+
   const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? assetAddress)
-  const lockedAssetAddress = toAddress(lockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
+  const lockedAssetAddress = YVUSD_UNLOCKED_ADDRESS
 
   const unlockedUserData = useVaultUserData({
     vaultAddress: unlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS,
@@ -41,8 +106,186 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
     account
   })
 
+  const lockedWalletShares = lockedUserData.vaultToken?.balance.raw ?? 0n
   const hasUnlocked = unlockedUserData.depositedShares > 0n
-  const hasLocked = lockedUserData.depositedShares > 0n
+  const hasLocked = lockedWalletShares > 0n
+
+  const { data: rawCooldownDuration } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'cooldownDuration',
+    chainId,
+    query: {
+      enabled: activeVariant === 'locked',
+      refetchInterval: activeVariant === 'locked' ? 60_000 : false
+    }
+  })
+  const { data: rawWithdrawalWindow } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'withdrawalWindow',
+    chainId,
+    query: {
+      enabled: activeVariant === 'locked',
+      refetchInterval: activeVariant === 'locked' ? 60_000 : false
+    }
+  })
+  const {
+    data: rawCooldownStatus,
+    isLoading: isLoadingCooldownStatus,
+    refetch: refetchCooldownStatus
+  } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'getCooldownStatus',
+    args: account ? [toAddress(account)] : undefined,
+    chainId,
+    query: {
+      enabled: !!account && activeVariant === 'locked',
+      refetchInterval: activeVariant === 'locked' ? 30_000 : false
+    }
+  })
+  const {
+    data: rawAvailableWithdrawLimit,
+    isLoading: isLoadingAvailableWithdrawLimit,
+    refetch: refetchAvailableWithdrawLimit
+  } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'availableWithdrawLimit',
+    args: account ? [toAddress(account)] : undefined,
+    chainId,
+    query: {
+      enabled: !!account && activeVariant === 'locked',
+      refetchInterval: activeVariant === 'locked' ? 30_000 : false
+    }
+  })
+  const cooldownStatus = useMemo(() => parseCooldownStatus(rawCooldownStatus), [rawCooldownStatus])
+  const cooldownDurationSeconds =
+    typeof rawCooldownDuration === 'bigint' ? Number(rawCooldownDuration) : YVUSD_LOCKED_COOLDOWN_DAYS * 86_400
+  const withdrawalWindowSeconds =
+    typeof rawWithdrawalWindow === 'bigint' ? Number(rawWithdrawalWindow) : YVUSD_WITHDRAW_WINDOW_DAYS * 86_400
+  const cooldownDurationLabel = useMemo(
+    () => formatDays(cooldownDurationSeconds, YVUSD_LOCKED_COOLDOWN_DAYS),
+    [cooldownDurationSeconds]
+  )
+  const withdrawalWindowLabel = useMemo(
+    () => formatDays(withdrawalWindowSeconds, YVUSD_WITHDRAW_WINDOW_DAYS),
+    [withdrawalWindowSeconds]
+  )
+  const availableWithdrawLimit = typeof rawAvailableWithdrawLimit === 'bigint' ? rawAvailableWithdrawLimit : 0n
+
+  const hasActiveCooldown = cooldownStatus.shares > 0n
+  const isCooldownActive = hasActiveCooldown && nowTimestamp < cooldownStatus.cooldownEnd
+  const isWithdrawalWindowOpen =
+    hasActiveCooldown && nowTimestamp >= cooldownStatus.cooldownEnd && nowTimestamp <= cooldownStatus.windowEnd
+  const isCooldownWindowExpired = hasActiveCooldown && nowTimestamp > cooldownStatus.windowEnd
+  const needsCooldownStart = hasLocked && (!hasActiveCooldown || isCooldownWindowExpired)
+
+  const cooldownRemainingSeconds = isCooldownActive ? cooldownStatus.cooldownEnd - nowTimestamp : 0
+  const windowRemainingSeconds = isWithdrawalWindowOpen ? cooldownStatus.windowEnd - nowTimestamp : 0
+  const sharesUnderCooldown = hasActiveCooldown ? cooldownStatus.shares : 0n
+  const formattedSharesUnderCooldown = formatTAmount({
+    value: sharesUnderCooldown,
+    decimals: lockedUserData.vaultToken?.decimals ?? 18
+  })
+  const formattedAvailableWithdrawLimit = formatTAmount({
+    value: availableWithdrawLimit,
+    decimals: lockedUserData.assetToken?.decimals ?? 18
+  })
+  const canWithdrawNow = availableWithdrawLimit > 0n
+  const cooldownSharesToStart = useMemo(() => {
+    if (!needsCooldownStart || lockedRequestedAssets <= 0n) return 0n
+    if (lockedUserData.pricePerShare <= 0n) return 0n
+
+    const vaultDecimals = lockedUserData.vaultToken?.decimals ?? 18
+    const numerator = lockedRequestedAssets * 10n ** BigInt(vaultDecimals)
+    const requiredShares = (numerator + lockedUserData.pricePerShare - 1n) / lockedUserData.pricePerShare
+    return requiredShares > lockedWalletShares ? lockedWalletShares : requiredShares
+  }, [
+    needsCooldownStart,
+    lockedRequestedAssets,
+    lockedUserData.pricePerShare,
+    lockedUserData.vaultToken?.decimals,
+    lockedWalletShares
+  ])
+  const formattedSelectedCooldownAmount = formatTAmount({
+    value: lockedRequestedAssets,
+    decimals: lockedUserData.assetToken?.decimals ?? 18
+  })
+
+  const prepareStartCooldown: UseSimulateContractReturnType = useSimulateContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'startCooldown',
+    args: cooldownSharesToStart > 0n ? [cooldownSharesToStart] : undefined,
+    account: account ? toAddress(account) : undefined,
+    chainId,
+    query: {
+      enabled: !!account && activeVariant === 'locked' && needsCooldownStart && cooldownSharesToStart > 0n
+    }
+  })
+
+  const cooldownStep = useMemo((): TransactionStep | undefined => {
+    if (!prepareStartCooldown.isSuccess || !prepareStartCooldown.data?.request) return undefined
+
+    return {
+      prepare: prepareStartCooldown as unknown as UseSimulateContractReturnType,
+      label: 'Start Cooldown',
+      confirmMessage: `Starting cooldown for ${formatTAmount({
+        value: cooldownSharesToStart,
+        decimals: lockedUserData.vaultToken?.decimals ?? 18
+      })} locked shares`,
+      successTitle: 'Cooldown started',
+      successMessage: `Cooldown has started. Withdrawals become available in ${cooldownDurationLabel}.`
+    }
+  }, [prepareStartCooldown, cooldownSharesToStart, lockedUserData.vaultToken?.decimals, cooldownDurationLabel])
+
+  const handleCooldownSuccess = useCallback(() => {
+    setShowCooldownOverlay(false)
+    void refetchCooldownStatus()
+    void refetchAvailableWithdrawLimit()
+    lockedUserData.refetch()
+  }, [lockedUserData, refetchCooldownStatus, refetchAvailableWithdrawLimit])
+
+  const handleLockedWithdrawSuccess = useCallback(() => {
+    void refetchCooldownStatus()
+    void refetchAvailableWithdrawLimit()
+    onWithdrawSuccess?.()
+  }, [onWithdrawSuccess, refetchCooldownStatus, refetchAvailableWithdrawLimit])
+
+  const lockedActionDisabledReason = useMemo(() => {
+    if (activeVariant !== 'locked') return undefined
+    if (!account) return undefined
+    if (isLoadingCooldownStatus || isLoadingAvailableWithdrawLimit) return 'Loading cooldown status...'
+    if (canWithdrawNow) return undefined
+    if (!hasLocked) return 'No locked yvUSD shares available to withdraw.'
+    if (needsCooldownStart) {
+      if (lockedRequestedAssets <= 0n) return 'Enter withdraw amount before starting cooldown.'
+      if (cooldownSharesToStart <= 0n) return 'Enter a valid amount to start cooldown.'
+      return 'Start cooldown before withdrawing from the locked vault.'
+    }
+    if (isCooldownActive) {
+      return `Cooldown active. Withdrawals open in ${formatDuration(cooldownRemainingSeconds)}.`
+    }
+    if (!isWithdrawalWindowOpen) {
+      return 'Withdrawal window closed. Start a new cooldown to withdraw.'
+    }
+    return undefined
+  }, [
+    activeVariant,
+    account,
+    hasLocked,
+    isLoadingCooldownStatus,
+    isLoadingAvailableWithdrawLimit,
+    canWithdrawNow,
+    needsCooldownStart,
+    lockedRequestedAssets,
+    cooldownSharesToStart,
+    isCooldownActive,
+    cooldownRemainingSeconds,
+    isWithdrawalWindowOpen
+  ])
 
   useEffect(() => {
     if (variant) return
@@ -57,6 +300,17 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
     }
   }, [hasLocked, hasUnlocked, variant])
 
+  useEffect(() => {
+    if (activeVariant !== 'locked') return
+
+    setNowTimestamp(Math.floor(Date.now() / 1000))
+    const interval = window.setInterval(() => {
+      setNowTimestamp(Math.floor(Date.now() / 1000))
+    }, 1_000)
+
+    return () => window.clearInterval(interval)
+  }, [activeVariant])
+
   if (isLoading || !unlockedVault || !lockedVault) {
     return (
       <div className="p-6 flex items-center justify-center h-[317px]">
@@ -65,7 +319,6 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
     )
   }
 
-  const activeVariant = variant ?? 'unlocked'
   const selectedVault = activeVariant === 'locked' ? lockedVault : unlockedVault
   const selectedAssetAddress = activeVariant === 'locked' ? lockedAssetAddress : unlockedAssetAddress
   const selectedVaultUserData = activeVariant === 'locked' ? lockedUserData : unlockedUserData
@@ -116,30 +369,92 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
             <div className="flex flex-col gap-1">
               <p className="font-semibold text-text-primary">{'Locked withdrawal cooldown'}</p>
               <p className="text-xs text-text-secondary">
-                {`Cooldown: ${YVUSD_LOCKED_COOLDOWN_DAYS} days | Withdrawal window: ${YVUSD_WITHDRAW_WINDOW_DAYS} days`}
+                {`Cooldown: ${cooldownDurationLabel} | Withdrawal window: ${withdrawalWindowLabel}`}
               </p>
             </div>
             <div className="mt-3 flex flex-col gap-1 text-xs text-text-secondary">
-              <p>{'Cooldown remaining: --'}</p>
-              <p>{'Withdrawal window remaining: --'}</p>
+              {!account ? (
+                <p>{'Connect wallet to view cooldown status.'}</p>
+              ) : !hasLocked ? (
+                <p>{'No locked shares found in this wallet.'}</p>
+              ) : isLoadingCooldownStatus || isLoadingAvailableWithdrawLimit ? (
+                <p>{'Loading cooldown status...'}</p>
+              ) : (
+                <>
+                  <p>{`Available to withdraw now: ${formattedAvailableWithdrawLimit}`}</p>
+                  <p>{`Shares in cooldown: ${formattedSharesUnderCooldown}`}</p>
+                  {needsCooldownStart ? <p>{`Selected cooldown amount: ${formattedSelectedCooldownAmount}`}</p> : null}
+                  <p>
+                    {`Cooldown remaining: ${
+                      isCooldownActive
+                        ? formatDuration(cooldownRemainingSeconds)
+                        : needsCooldownStart
+                          ? 'Not started'
+                          : 'Complete'
+                    }`}
+                  </p>
+                  <p>
+                    {`Withdrawal window remaining: ${
+                      isWithdrawalWindowOpen
+                        ? formatDuration(windowRemainingSeconds)
+                        : isCooldownActive
+                          ? 'Not open yet'
+                          : hasActiveCooldown
+                            ? 'Closed'
+                            : 'Not started'
+                    }`}
+                  </p>
+                </>
+              )}
             </div>
+            {account &&
+            hasLocked &&
+            !isLoadingCooldownStatus &&
+            !isLoadingAvailableWithdrawLimit &&
+            needsCooldownStart &&
+            !canWithdrawNow ? (
+              <div className="mt-3">
+                <Button
+                  variant={prepareStartCooldown.isLoading || prepareStartCooldown.isFetching ? 'busy' : 'filled'}
+                  isBusy={prepareStartCooldown.isLoading || prepareStartCooldown.isFetching}
+                  disabled={!cooldownStep}
+                  classNameOverride="yearn--button--nextgen w-full"
+                  onClick={() => setShowCooldownOverlay(true)}
+                >
+                  {'Start Cooldown'}
+                </Button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
     ) : undefined
 
   return (
-    <div className="flex flex-col gap-0">
+    <div className="relative flex flex-col gap-0">
       <WidgetWithdraw
         key={selectedVault.address}
         vaultAddress={toAddress(selectedVault.address)}
         assetAddress={selectedAssetAddress}
         chainId={chainId}
         vaultSymbol={activeVariant === 'locked' ? 'yvUSD (Locked)' : 'yvUSD (Unlocked)'}
+        vaultVersion={selectedVault.version}
         vaultUserData={selectedVaultUserData}
-        handleWithdrawSuccess={onWithdrawSuccess}
+        maxWithdrawAssets={activeVariant === 'locked' && account && canWithdrawNow ? availableWithdrawLimit : undefined}
+        isActionDisabled={activeVariant === 'locked' && !!lockedActionDisabledReason}
+        actionDisabledReason={activeVariant === 'locked' ? lockedActionDisabledReason : undefined}
+        disableTokenSelector={activeVariant === 'locked'}
+        onAmountChange={activeVariant === 'locked' ? (amount) => setLockedRequestedAssets(amount) : undefined}
+        handleWithdrawSuccess={activeVariant === 'locked' ? handleLockedWithdrawSuccess : onWithdrawSuccess}
         hideContainerBorder
         contentBelowInput={withdrawTypeSection}
+      />
+      <TransactionOverlay
+        isOpen={showCooldownOverlay}
+        onClose={() => setShowCooldownOverlay(false)}
+        step={cooldownStep}
+        isLastStep
+        onAllComplete={handleCooldownSuccess}
       />
     </div>
   )
