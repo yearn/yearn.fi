@@ -439,7 +439,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
   ) : undefined
   const withdrawTypeSection =
     activeVariant === 'locked' ? (
-      <div className="rounded-lg border border-border bg-surface-secondary p-4 text-sm">
+      <div className="rounded-lg border border-border bg-surface-secondary mt-6 p-4 text-sm">
         <div className="flex flex-col gap-1">
           <p className="font-semibold text-text-primary">{'Locked withdrawal cooldown'}</p>
           <p className="text-sm text-text-secondary">
