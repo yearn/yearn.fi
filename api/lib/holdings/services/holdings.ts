@@ -100,13 +100,19 @@ export function getUniqueVaults(timeline: TimelineEvent[]): Array<{ vaultAddress
 export function generateDailyTimestamps(days: number): number[] {
   const timestamps: number[] = []
   const now = new Date()
+  const currentTimestamp = Math.floor(now.getTime() / 1000)
 
   now.setUTCHours(0, 0, 0, 0)
 
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now)
     date.setUTCDate(date.getUTCDate() - i)
-    timestamps.push(Math.floor(date.getTime() / 1000))
+    // Use current time for today, midnight for past days
+    if (i === 0) {
+      timestamps.push(currentTimestamp)
+    } else {
+      timestamps.push(Math.floor(date.getTime() / 1000))
+    }
   }
 
   return timestamps

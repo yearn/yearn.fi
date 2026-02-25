@@ -27,10 +27,14 @@ export async function getHistoricalHoldings(
   const timestamps = generateDailyTimestamps(days)
   const startDate = timestampToDateString(timestamps[0])
   const endDate = timestampToDateString(timestamps[timestamps.length - 1])
+  const todayDate = timestampToDateString(Math.floor(Date.now() / 1000))
 
   const cachedTotals = await getCachedTotals(userAddress, startDate, endDate)
   const cachedByDate = new Map(cachedTotals.map((t) => [t.date, t.usdValue]))
-  const missingTimestamps = timestamps.filter((ts) => !cachedByDate.has(timestampToDateString(ts)))
+  // Always recalculate today (don't trust cache - value changes throughout the day)
+  const missingTimestamps = timestamps.filter(
+    (ts) => !cachedByDate.has(timestampToDateString(ts)) || timestampToDateString(ts) === todayDate
+  )
 
   const newTotals: CachedTotal[] = []
 
@@ -93,8 +97,10 @@ export async function getHistoricalHoldings(
       }
     }
 
-    if (newTotals.length > 0) {
-      await saveCachedTotals(userAddress, newTotals)
+    // Cache all totals except today (today's value changes throughout the day)
+    const totalsToCache = newTotals.filter((t) => t.date !== todayDate)
+    if (totalsToCache.length > 0) {
+      await saveCachedTotals(userAddress, totalsToCache)
     }
   }
 
