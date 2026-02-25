@@ -1,3 +1,4 @@
+import curationManifest from '@shared/data/curation-manifest.json'
 import landingManifest from '@shared/data/landing-manifest.json'
 import vaultsManifest from '@shared/data/vaults-manifest.json'
 import type { TDict } from '@shared/types'
@@ -5,7 +6,7 @@ import { useMemo } from 'react'
 import { useLocation } from 'react-router'
 
 type TCurrentApp = {
-  name: 'Home' | 'Vaults' | string
+  name: 'Home' | 'Vaults' | 'Curation' | string
   manifest: TManifest
 }
 
@@ -37,6 +38,14 @@ export function useCurrentApp(): TCurrentApp {
       '/vaults': {
         name: 'Vaults',
         manifest: vaultsManifest
+      },
+      '/curation': {
+        name: 'Curation',
+        manifest: curationManifest
+      },
+      '/curation-test-1': {
+        name: 'Curation',
+        manifest: curationManifest
       },
       '/landing': {
         name: 'Home',
