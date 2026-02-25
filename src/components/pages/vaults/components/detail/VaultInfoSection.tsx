@@ -1,10 +1,20 @@
+import {
+  getVaultAddress,
+  getVaultAPR,
+  getVaultCategory,
+  getVaultChainID,
+  getVaultInfo,
+  getVaultStaking,
+  getVaultToken,
+  isAutomatedVault,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
+import { isYvUsdAddress, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { baseFetcher, isCurveHostUrl, isZeroAddress, normalizeCurveUrl, toAddress, truncateHex } from '@shared/utils'
 import { copyToClipboard } from '@shared/utils/helpers'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import { isAutomatedVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
@@ -24,6 +34,7 @@ type TCurvePoolsApiResponse = {
 const CURVE_POOLS_CACHE_TTL_MS = 30 * 60 * 1000
 const CURVE_POOLS_CACHE_GC_MS = 60 * 60 * 1000
 const CURVE_POOLS_ENDPOINT = 'https://api.curve.finance/v1/getPools/all'
+const INFO_LABEL_CLASS = 'w-full text-sm text-text-secondary md:w-auto md:pr-4'
 
 export const extractCurvePools = (payload: unknown): TCurvePoolEntry[] => {
   const poolData = (payload as TCurvePoolsApiResponse | null)?.data?.poolData
@@ -63,7 +74,7 @@ function AddressLink({
 }): ReactElement {
   return (
     <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-      <p className={'w-full text-sm text-text-secondary md:w-44'}>{label}</p>
+      <p className={INFO_LABEL_CLASS}>{label}</p>
       <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
         <a
           href={`${explorerUrl}/address/${address}`}
@@ -92,28 +103,33 @@ export function VaultInfoSection({
   currentVault,
   inceptTime
 }: {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   inceptTime?: number | null
 }): ReactElement {
+  const chainID = getVaultChainID(currentVault)
+  const vaultAddress = getVaultAddress(currentVault)
+  const isYvUsd = isYvUsdAddress(vaultAddress)
+  const token = getVaultToken(currentVault)
+  const staking = getVaultStaking(currentVault)
+  const info = getVaultInfo(currentVault)
+  const apr = getVaultAPR(currentVault)
+  const category = getVaultCategory(currentVault)
   const blockExplorer =
-    getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
-    getNetwork(currentVault.chainID).blockExplorers?.default.url
-  const sourceUrl = String(currentVault.info?.sourceURL || '')
+    getNetwork(chainID).blockExplorers?.etherscan?.url || getNetwork(chainID).blockExplorers?.default.url
+  const sourceUrl = String(info?.sourceURL || '')
   const sourceUrlLower = sourceUrl.toLowerCase()
-  const isVelodrome =
-    currentVault.category?.toLowerCase() === 'velodrome' || sourceUrlLower.includes('velodrome.finance')
-  const isAerodrome =
-    currentVault.category?.toLowerCase() === 'aerodrome' || sourceUrlLower.includes('aerodrome.finance')
-  const isCurveCategory = currentVault.category?.toLowerCase() === 'curve'
+  const isVelodrome = category?.toLowerCase() === 'velodrome' || sourceUrlLower.includes('velodrome.finance')
+  const isAerodrome = category?.toLowerCase() === 'aerodrome' || sourceUrlLower.includes('aerodrome.finance')
+  const isCurveCategory = category?.toLowerCase() === 'curve'
   const isCurveFactory = isCurveCategory && isAutomatedVault(currentVault)
-  const shouldFetchCurvePools = isCurveFactory && !isZeroAddress(toAddress(currentVault.token.address))
+  const shouldFetchCurvePools = isCurveFactory && !isZeroAddress(toAddress(token.address))
   const { data: curvePoolUrl = '' } = useQuery({
     queryKey: ['curve-pools'],
     queryFn: async (): Promise<TCurvePoolEntry[]> => {
       const response = await baseFetcher<unknown>(CURVE_POOLS_ENDPOINT)
       return extractCurvePools(response)
     },
-    select: (pools) => resolveCurveDepositUrl(pools, currentVault.token.address),
+    select: (pools) => resolveCurveDepositUrl(pools, token.address),
     enabled: shouldFetchCurvePools,
     staleTime: CURVE_POOLS_CACHE_TTL_MS,
     gcTime: CURVE_POOLS_CACHE_GC_MS,
@@ -122,11 +138,11 @@ export function VaultInfoSection({
   const curveSourceUrl = isCurveCategory && isCurveHostUrl(sourceUrl) ? normalizeCurveUrl(sourceUrl) : ''
   const resolvedCurvePoolUrl = curvePoolUrl || curveSourceUrl
   const liquidityUrl = isVelodrome
-    ? `https://velodrome.finance/liquidity?query=${currentVault.token.address}`
+    ? `https://velodrome.finance/liquidity?query=${token.address}`
     : isAerodrome
-      ? `https://aerodrome.finance/liquidity?query=${currentVault.token.address}`
+      ? `https://aerodrome.finance/liquidity?query=${token.address}`
       : ''
-  const powergloveUrl = `https://powerglove.yearn.fi/vaults/${currentVault.chainID}/${currentVault.address}`
+  const powergloveUrl = `https://powerglove.yearn.fi/vaults/${chainID}/${vaultAddress}`
   const deployedLabel = (() => {
     if (typeof inceptTime !== 'number' || !Number.isFinite(inceptTime) || inceptTime <= 0) {
       return null
@@ -142,29 +158,32 @@ export function VaultInfoSection({
   return (
     <div className={'grid w-full grid-cols-1 gap-10 p-4 md:p-6 md:pt-0'}>
       <div className={'col-span-1 grid w-full gap-1'}>
-        <AddressLink
-          address={currentVault.address}
-          explorerUrl={blockExplorer || ''}
-          label={'Vault Contract Address'}
-        />
+        {isYvUsd ? (
+          <>
+            <AddressLink
+              address={YVUSD_UNLOCKED_ADDRESS}
+              explorerUrl={blockExplorer || ''}
+              label={'Unlocked Vault Contract Address'}
+            />
+            <AddressLink
+              address={YVUSD_LOCKED_ADDRESS}
+              explorerUrl={blockExplorer || ''}
+              label={'Locked Vault Contract Address'}
+            />
+          </>
+        ) : (
+          <AddressLink address={vaultAddress} explorerUrl={blockExplorer || ''} label={'Vault Contract Address'} />
+        )}
 
-        <AddressLink
-          address={currentVault.token.address}
-          explorerUrl={blockExplorer || ''}
-          label={'Token Contract Address'}
-        />
+        <AddressLink address={token.address} explorerUrl={blockExplorer || ''} label={'Token Contract Address'} />
 
-        {currentVault.staking.available ? (
-          <AddressLink
-            address={currentVault.staking.address}
-            explorerUrl={blockExplorer || ''}
-            label={'Staking Contract Address'}
-          />
+        {staking.available ? (
+          <AddressLink address={staking.address} explorerUrl={blockExplorer || ''} label={'Staking Contract Address'} />
         ) : null}
 
         {resolvedCurvePoolUrl ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-            <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Curve Pool URL'}</p>
+            <p className={INFO_LABEL_CLASS}>{'Curve Pool URL'}</p>
             <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
               <a
                 href={resolvedCurvePoolUrl}
@@ -182,18 +201,18 @@ export function VaultInfoSection({
           </div>
         ) : null}
 
-        {(currentVault.info?.sourceURL || '')?.includes('gamma') ? (
+        {(info?.sourceURL || '')?.includes('gamma') ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-            <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Gamma Pair'}</p>
+            <p className={INFO_LABEL_CLASS}>{'Gamma Pair'}</p>
             <div className={'flex md:flex-1 md:justify-end'}>
               <a
-                href={currentVault.info.sourceURL}
+                href={info.sourceURL}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 className={'whitespace-nowrap md:text-sm text-text-primary hover:underline'}
                 suppressHydrationWarning
               >
-                {currentVault.info.sourceURL}
+                {info.sourceURL}
               </a>
             </div>
           </div>
@@ -201,9 +220,7 @@ export function VaultInfoSection({
 
         {liquidityUrl ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-            <p className={'w-full text-sm text-text-secondary md:w-44'}>
-              {isVelodrome ? 'Velodrome Pool URL' : 'Aerodrome Pool URL'}
-            </p>
+            <p className={INFO_LABEL_CLASS}>{isVelodrome ? 'Velodrome Pool URL' : 'Aerodrome Pool URL'}</p>
             <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
               <a
                 href={liquidityUrl}
@@ -223,15 +240,15 @@ export function VaultInfoSection({
         ) : null}
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Current Price Per Share'}</p>
+          <p className={INFO_LABEL_CLASS}>{'Current Price Per Share'}</p>
           <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
-            {currentVault.apr.pricePerShare.today}
+            {apr.pricePerShare.today}
           </p>
         </div>
 
         {deployedLabel ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-            <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Deployed on'}</p>
+            <p className={INFO_LABEL_CLASS}>{'Deployed on'}</p>
             <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
               {deployedLabel}
             </p>
@@ -239,7 +256,7 @@ export function VaultInfoSection({
         ) : null}
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Powerglove Analytics Page'}</p>
+          <p className={INFO_LABEL_CLASS}>{'Powerglove Analytics Page'}</p>
           <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
             <a
               href={powergloveUrl}
@@ -257,10 +274,10 @@ export function VaultInfoSection({
         </div>
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
-          <p className={'w-full text-sm text-text-secondary md:w-44'}>{'Vault Snapshot Data'}</p>
+          <p className={INFO_LABEL_CLASS}>{'Vault Snapshot Data'}</p>
           <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
             <a
-              href={`${KONG_REST_BASE}/snapshot/${currentVault.chainID}/${currentVault.address}`}
+              href={`${KONG_REST_BASE}/snapshot/${chainID}/${vaultAddress}`}
               target={'_blank'}
               rel={'noopener noreferrer'}
               className={

@@ -1,5 +1,6 @@
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { Button } from '@shared/components/Button'
-import type { TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import { EmptyState } from '@shared/components/EmptyState'
 import type { ReactElement } from 'react'
 
 type TVaultListEmpty = {
@@ -12,7 +13,7 @@ type TVaultListEmpty = {
   defaultCategories?: string[]
   potentialResultsCount?: number
   // @deprecated: retained for compatibility with existing usages in worktrees being cleaned up
-  sortedVaultsToDisplay?: TYDaemonVaults
+  sortedVaultsToDisplay?: TKongVaultInput[]
 }
 export function VaultsListEmpty({
   currentSearch,
@@ -41,12 +42,13 @@ export function VaultsListEmpty({
 
   if (currentCategories?.length === 1 && currentCategories.includes('holdings')) {
     return (
-      <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
-        <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
-        <p className={'text-center text-sm text-neutral-600'}>
-          {"You don't appear to have any Yearn Vaults deposits."}
-        </p>
-      </div>
+      <EmptyState
+        title="No vaults found"
+        description="You don't appear to have any Yearn Vaults deposits."
+        size="lg"
+        unstyled
+        className="mx-auto h-96 w-full md:w-3/4"
+      />
     )
   }
 
@@ -56,50 +58,67 @@ export function VaultsListEmpty({
 
   if (hasSearch && isFullCategorySelection) {
     return (
-      <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
-        <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
-        <p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist`}</p>
-      </div>
+      <EmptyState
+        title="No vaults found"
+        description={`The vault "${currentSearch}" does not exist`}
+        size="lg"
+        unstyled
+        className="mx-auto h-96 w-full md:w-3/4"
+      />
     )
   }
 
   if (hasSearch && !isFullCategorySelection) {
+    const showAllAction =
+      potentialResultsCount > 0 ? (
+        <>
+          <p className={'text-center font-normal text-neutral-600'}>
+            {`Found ${potentialResultsCount} vault${potentialResultsCount > 1 ? 's' : ''} when searching all categories.`}
+          </p>
+          <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
+            {'Show all results'}
+          </Button>
+        </>
+      ) : (
+        <p className={'text-center font-normal text-neutral-600'}>{`The vault "${currentSearch}" does not exist.`}</p>
+      )
+
     return (
-      <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
-        <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
-        <p className={'text-center text-neutral-600'}>{`No results for "${currentSearch}" with current filters.`}</p>
-        {potentialResultsCount > 0 ? (
-          <>
-            <p className={'text-center font-normal text-neutral-600'}>
-              {`Found ${potentialResultsCount} vault${potentialResultsCount > 1 ? 's' : ''} when searching all categories.`}
-            </p>
-            <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
-              {'Show all results'}
-            </Button>
-          </>
-        ) : (
-          <p className={'text-center font-normal text-neutral-600'}>{`The vault "${currentSearch}" does not exist.`}</p>
-        )}
-      </div>
+      <EmptyState
+        title="No vaults found"
+        description={`No results for "${currentSearch}" with current filters.`}
+        action={showAllAction}
+        size="lg"
+        unstyled
+        className="mx-auto h-96 w-full md:w-3/4"
+      />
     )
   }
 
   return (
-    <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
-      <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
-      <p className={'text-center font-normal text-neutral-600'}>{'No vaults found that match your filters.'}</p>
-      <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
-        {'Search all vaults'}
-      </Button>
-    </div>
+    <EmptyState
+      title="No vaults found"
+      description="No vaults found that match your filters."
+      action={
+        <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
+          {'Search all vaults'}
+        </Button>
+      }
+      size="lg"
+      unstyled
+      className="mx-auto h-96 w-full md:w-3/4"
+    />
   )
 }
 
 export function VaultListEmptyExternalMigration(): ReactElement {
   return (
-    <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
-      <b className={'text-center text-lg'}>{'We looked under the cushions...'}</b>
-      <p className={'text-center text-neutral-600'}>{"Looks like you don't have any tokens to migrate."}</p>
-    </div>
+    <EmptyState
+      title="We looked under the cushions..."
+      description="Looks like you don't have any tokens to migrate."
+      size="lg"
+      unstyled
+      className="mx-auto h-96 w-full md:w-3/4"
+    />
   )
 }

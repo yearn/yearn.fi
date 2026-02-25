@@ -6,6 +6,7 @@ import type {
   TVaultsFiltersPanelSection
 } from '@pages/vaults/components/filters/VaultsFiltersPanel'
 import type { TListHead } from '@pages/vaults/components/list/VaultsListHead'
+import { getVaultChainID, getVaultToken, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import {
   AGGRESSIVENESS_OPTIONS,
@@ -33,7 +34,6 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { usePrefetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
 import type { TSortDirection } from '@shared/types'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { RefObject } from 'react'
 import {
   type ChangeEvent,
@@ -55,7 +55,7 @@ const VAULTS_FILTERS_STORAGE_KEY = 'yearn.fi/vaults-filters@1'
 
 type TVaultsPinnedSection = {
   key: string
-  vaults: TYDaemonVault[]
+  vaults: TKongVaultInput[]
 }
 
 type TVaultsFiltersBarModel = {
@@ -85,8 +85,8 @@ type TVaultsFiltersBarModel = {
 type TVaultsListData = {
   isLoading: boolean
   pinnedSections: TVaultsPinnedSection[]
-  pinnedVaults: TYDaemonVault[]
-  mainVaults: TYDaemonVault[]
+  pinnedVaults: TKongVaultInput[]
+  mainVaults: TKongVaultInput[]
   vaultFlags: Record<string, { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }>
   listCategoriesSanitized: string[]
   listChains: number[] | null
@@ -113,7 +113,7 @@ type TVaultsListModel = {
     onToggleVaultType: (type: 'v3' | 'lp') => void
   }
   onResetFilters: () => void
-  resolveApyDisplayVariant: (vault: TYDaemonVault) => 'default' | 'factory-list'
+  resolveApyDisplayVariant: (vault: TKongVaultInput) => 'default' | 'factory-list'
 }
 
 export type TVaultsPageModel = {
@@ -123,7 +123,7 @@ export type TVaultsPageModel = {
   }
   header: {
     vaultType: TVaultType
-    suggestedVaults: TYDaemonVault[]
+    suggestedVaults: TKongVaultInput[]
   }
   filtersBar: TVaultsFiltersBarModel
   list: TVaultsListModel
@@ -434,7 +434,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     () => (displayedVaultType === 'factory' ? 'lp' : displayedVaultType),
     [displayedVaultType]
   )
-  const resolveApyDisplayVariant = useCallback((vault: TYDaemonVault): 'default' | 'factory-list' => {
+  const resolveApyDisplayVariant = useCallback((vault: TKongVaultInput): 'default' | 'factory-list' => {
     const listKind = deriveListKind(vault)
     return listKind === 'allocator' || listKind === 'strategy' ? 'default' : 'factory-list'
   }, [])
@@ -537,15 +537,16 @@ export function useVaultsPageModel(): TVaultsPageModel {
     const selectedAssets = new Set(displayedUnderlyingAssetsSanitized)
     const options: TMultiSelectOptionProps[] = Object.entries(underlyingAssetVaults).map(([assetKey, vault]) => {
       const label = getUnderlyingAssetLabel(assetKey)
-      const tokenAddress = vault.token.address.toLowerCase()
-      const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainID}/${tokenAddress}/logo-32.png`
+      const token = getVaultToken(vault)
+      const tokenAddress = token.address.toLowerCase()
+      const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${getVaultChainID(vault)}/${tokenAddress}/logo-32.png`
       return {
         label,
         value: assetKey,
         isSelected: selectedAssets.has(assetKey),
         icon: createElement(TokenLogo, {
           src: tokenLogoSrc,
-          tokenSymbol: vault.token.symbol,
+          tokenSymbol: token.symbol,
           width: 20,
           height: 20
         })
@@ -838,13 +839,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
         sortable: true,
         className: hasWalletAddress ? 'col-span-4' : 'col-span-5'
       },
-      // {
-      //   type: 'toggle',
-      //   label: 'Available',
-      //   value: AVAILABLE_TOGGLE_VALUE,
-      //   className: 'col-span-3',
-      //   disabled: availableVaults.length === 0
-      // },
       ...(hasWalletAddress
         ? ([
             {

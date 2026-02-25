@@ -8,17 +8,26 @@ import { VaultDetailsHeader } from '@pages/vaults/components/detail/VaultDetails
 import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSection'
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
+import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
 import { VaultDetailsWelcomeTour } from '@pages/vaults/components/tour/VaultDetailsWelcomeTour'
 import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
-import { mergeYBoldVault, YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
+import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
+import { getVaultView, type TKongVault, type TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
+import {
+  mergeYBoldSnapshot,
+  mergeYBoldVault,
+  YBOLD_STAKING_ADDRESS,
+  YBOLD_VAULT_ADDRESS
+} from '@pages/vaults/domain/normalizeVault'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
-import { mergeVaultSnapshot } from '@pages/vaults/utils/normalizeVaultSnapshot'
+import { isYvUsdAddress, YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { useWallet } from '@shared/contexts/useWallet'
@@ -27,10 +36,10 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import type { TToken } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router'
 import { isAddressEqual } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
 import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
@@ -67,7 +76,7 @@ const RETIRED_VAULT_ALERT_MESSAGES = {
     'This vault is retired but still earning yield. Deposits are no longer allowed, but withdrawals will remain open indefinitely.'
 } as const
 
-const isSoftRetiredVault = (vault: TYDaemonVault): boolean => {
+const isSoftRetiredVault = (vault: TKongVaultView): boolean => {
   const hasActiveRouterStrategy = (vault.strategies ?? []).some(
     (strategy) => strategy.status === 'active' && strategy.name.toLowerCase().includes('router')
   )
@@ -79,7 +88,7 @@ const getRetiredVaultAlertMessage = ({
   vault,
   hasUserFundsInVault
 }: {
-  vault: TYDaemonVault
+  vault: TKongVaultView
   hasUserFundsInVault: boolean
 }): string => {
   if (!hasUserFundsInVault) {
@@ -107,6 +116,58 @@ const splitFirstSentence = (message: string): { title: string; body?: string } =
   const title = message.slice(0, firstPeriodIndex + 1).trim()
   const body = message.slice(firstPeriodIndex + 1).trim()
   return body ? { title, body } : { title }
+}
+
+const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
+  const token = snapshot.meta?.token
+  const asset = snapshot.asset
+    ? {
+        address: snapshot.asset.address,
+        name: snapshot.asset.name,
+        symbol: snapshot.asset.symbol,
+        decimals: snapshot.asset.decimals
+      }
+    : token
+      ? {
+          address: token.address,
+          name: token.name,
+          symbol: token.symbol,
+          decimals: token.decimals
+        }
+      : null
+
+  return {
+    chainId: snapshot.chainId,
+    address: snapshot.address,
+    name: snapshot.name || snapshot.meta?.name || snapshot.meta?.displayName || '',
+    symbol: snapshot.symbol || snapshot.meta?.displaySymbol || null,
+    apiVersion: snapshot.apiVersion ?? null,
+    decimals: snapshot.decimals ?? token?.decimals ?? asset?.decimals ?? null,
+    asset,
+    tvl: snapshot.tvl?.close ?? null,
+    performance: null,
+    fees: null,
+    category: snapshot.meta?.category ?? null,
+    type: snapshot.meta?.type ?? null,
+    kind: snapshot.meta?.kind ?? null,
+    v3: snapshot.apiVersion?.startsWith('3') ?? false,
+    yearn: true,
+    isRetired: snapshot.meta?.isRetired ?? false,
+    isHidden: snapshot.meta?.isHidden ?? false,
+    isBoosted: snapshot.meta?.isBoosted ?? false,
+    isHighlighted: snapshot.meta?.isHighlighted ?? false,
+    inclusion: snapshot.inclusion,
+    migration: snapshot.meta?.migration?.available,
+    origin: null,
+    strategiesCount: snapshot.composition?.length ?? snapshot.debts?.length ?? 0,
+    riskLevel: snapshot.risk?.riskLevel ?? null,
+    staking: snapshot.staking
+      ? {
+          address: snapshot.staking.address ?? null,
+          available: snapshot.staking.available
+        }
+      : null
+  }
 }
 
 function RetiredVaultAlert({ message, className }: { message: string; className: string }): ReactElement {
@@ -148,10 +209,22 @@ function Index(): ReactElement | null {
   const mobileDetailsSectionId = useId()
 
   const params = useParams()
+  const location = useLocation()
+  const navigate = useNavigate()
   const chainId = Number(params.chainID)
   const { getBalance, onRefresh } = useWallet()
   const { address } = useWeb3()
   const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
+  const {
+    listVault: yvUsdVault,
+    unlockedVault: yvUsdUnlockedVault,
+    lockedVault: yvUsdLockedVault,
+    isLoading: isLoadingYvUsd
+  } = useYvUsdVaults()
+  const isYvUsd = isYvUsdAddress(params.address)
+  const isLockedYvUsdRoute =
+    chainId === YVUSD_CHAIN_ID && params.address ? toAddress(params.address) === YVUSD_LOCKED_ADDRESS : false
+  const unlockedYvUsdPath = `/vaults/${YVUSD_CHAIN_ID}/${YVUSD_UNLOCKED_ADDRESS}${location.search}${location.hash}`
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [mobileDrawerAction, setMobileDrawerAction] = useState<WidgetActionType>(WidgetActionType.Deposit)
@@ -225,6 +298,13 @@ function Index(): ReactElement | null {
   }, [vaultKey])
 
   useEffect(() => {
+    if (!isLockedYvUsdRoute) {
+      return
+    }
+    navigate(unlockedYvUsdPath, { replace: true })
+  }, [isLockedYvUsdRoute, navigate, unlockedYvUsdPath])
+
+  useEffect(() => {
     if (typeof window === 'undefined') return
     void vaultKey
     let frame = 0
@@ -267,12 +347,56 @@ function Index(): ReactElement | null {
   })
   const isSnapshotNotFound = (snapshotError as any)?.response?.status === 404
 
-  const baseMergedVault = useMemo(() => mergeVaultSnapshot(baseVault, snapshotVault), [baseVault, snapshotVault])
+  const isYBold = useMemo(() => {
+    if (isYvUsd) return false
+    if (!baseVault?.address && !params.address) return false
+    const resolvedAddress = toAddress(baseVault?.address ?? params.address ?? '0x')
+    return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
+  }, [isYvUsd, baseVault?.address, params.address])
+
+  const yBoldStakingVault = useMemo(() => {
+    if (!isYBold) return undefined
+    return vaults[toAddress(YBOLD_STAKING_ADDRESS)]
+  }, [isYBold, vaults])
+
+  const mergedBaseVault = useMemo(() => {
+    if (!baseVault) return undefined
+    if (isYBold && yBoldStakingVault) {
+      return mergeYBoldVault(baseVault, yBoldStakingVault)
+    }
+    return baseVault
+  }, [baseVault, isYBold, yBoldStakingVault])
+
+  const { data: yBoldSnapshot, refetch: refetchYBoldSnapshot } = useVaultSnapshot({
+    chainId: isYBold ? chainId : undefined,
+    address: isYBold ? YBOLD_STAKING_ADDRESS : undefined
+  })
+
+  const mergedSnapshot = useMemo(() => {
+    if (!snapshotVault) return undefined
+    if (isYBold && yBoldSnapshot) {
+      return mergeYBoldSnapshot(snapshotVault, yBoldSnapshot)
+    }
+    return snapshotVault
+  }, [isYBold, snapshotVault, yBoldSnapshot])
+
+  const snapshotBackedVault = useMemo(() => {
+    if (!mergedSnapshot) return undefined
+    return buildSnapshotBackedVault(mergedSnapshot)
+  }, [mergedSnapshot])
+
+  const vaultViewInput = useMemo(() => {
+    if (!mergedBaseVault) return snapshotBackedVault
+    if (!snapshotBackedVault) return mergedBaseVault
+    return mergedBaseVault.chainId === snapshotBackedVault.chainId ? mergedBaseVault : snapshotBackedVault
+  }, [mergedBaseVault, snapshotBackedVault])
+
   const isFactoryVault = useMemo(() => {
-    if (!baseMergedVault) return false
-    return deriveListKind(baseMergedVault) === 'factory'
-  }, [baseMergedVault])
-  const snapshotShouldDisableStaking = snapshotVault?.meta?.shouldDisableStaking
+    if (!vaultViewInput) return false
+    return deriveListKind(vaultViewInput) === 'factory'
+  }, [vaultViewInput])
+
+  const snapshotShouldDisableStaking = mergedSnapshot?.meta?.shouldDisableStaking
   const shouldDisableStakingForDeposit = useMemo(() => {
     if (isFactoryVault) {
       return true
@@ -280,32 +404,30 @@ function Index(): ReactElement | null {
     return snapshotShouldDisableStaking === true
   }, [snapshotShouldDisableStaking, isFactoryVault])
 
-  const isYBold = useMemo(() => {
-    if (!baseMergedVault?.address && !params.address) return false
-    const resolvedAddress = baseMergedVault?.address ?? toAddress(params.address ?? '')
-    return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
-  }, [baseMergedVault?.address, params.address])
-
-  const { data: yBoldSnapshot, refetch: refetchYBoldSnapshot } = useVaultSnapshot({
-    chainId: isYBold ? chainId : undefined,
-    address: isYBold ? YBOLD_STAKING_ADDRESS : undefined
-  })
-
-  const yBoldStakingVault = useMemo(() => {
-    if (!isYBold) return undefined
-    const baseStakingVault = vaults[toAddress(YBOLD_STAKING_ADDRESS)]
-    return mergeVaultSnapshot(baseStakingVault, yBoldSnapshot)
-  }, [isYBold, vaults, yBoldSnapshot])
-
   const currentVault = useMemo(() => {
-    if (!baseMergedVault) return undefined
-    if (isYBold && yBoldStakingVault) {
-      return mergeYBoldVault(baseMergedVault, yBoldStakingVault)
-    }
-    return baseMergedVault
-  }, [baseMergedVault, isYBold, yBoldStakingVault])
+    if (isYvUsd) {
+      const normalizedAddress = params.address ? toAddress(params.address) : undefined
+      const isLockedAddress = normalizedAddress === YVUSD_LOCKED_ADDRESS
 
-  const isLoadingVault = !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
+      if (isLockedAddress) {
+        return yvUsdLockedVault ?? yvUsdVault ?? yvUsdUnlockedVault
+      }
+
+      const isUnlockedAddress = normalizedAddress === YVUSD_UNLOCKED_ADDRESS
+      if (isUnlockedAddress) {
+        return yvUsdUnlockedVault ?? yvUsdVault ?? yvUsdLockedVault
+      }
+
+      return yvUsdVault ?? yvUsdUnlockedVault ?? yvUsdLockedVault
+    }
+    if (!vaultViewInput) return undefined
+    return getVaultView(vaultViewInput, mergedSnapshot)
+  }, [isYvUsd, yvUsdLockedVault, yvUsdUnlockedVault, yvUsdVault, vaultViewInput, mergedSnapshot, params.address])
+
+  const shouldBootstrapYvUsdVaultList = isYvUsd && !hasVaultList && !hasTriggeredVaultListFetch
+  const isLoadingVault = isYvUsd
+    ? !currentVault && (isLoadingYvUsd || isLoadingVaultList || shouldBootstrapYvUsdVaultList)
+    : !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
 
   const vaultUserData = useVaultUserData({
     vaultAddress: toAddress(currentVault?.address ?? '0x'),
@@ -316,13 +438,16 @@ function Index(): ReactElement | null {
   })
 
   useEffect(() => {
-    if (hasTriggeredVaultListFetch || hasVaultList || !snapshotVault) {
+    if (hasTriggeredVaultListFetch || hasVaultList) {
+      return
+    }
+    if (!isYvUsd && !snapshotVault) {
       return
     }
     setHasTriggeredVaultListFetch(true)
     const frame = requestAnimationFrame(() => enableVaultListFetch())
     return () => cancelAnimationFrame(frame)
-  }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, snapshotVault])
+  }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, isYvUsd, snapshotVault])
 
   const vaultShareBalance =
     !!address && currentVault?.address && Number.isInteger(currentVault?.chainID)
@@ -603,7 +728,9 @@ function Index(): ReactElement | null {
         key: 'charts' as const,
         shouldRender: Number.isInteger(chainId),
         ref: sectionRefs.charts,
-        content: (
+        content: isYvUsd ? (
+          <YvUsdChartsSection chartHeightPx={180} chartHeightMdPx={230} />
+        ) : (
           <VaultChartsSection
             chainId={chainId}
             vaultAddress={currentVault.address}
@@ -637,7 +764,7 @@ function Index(): ReactElement | null {
         content: <VaultInfoSection currentVault={currentVault} inceptTime={snapshotVault?.inceptTime ?? null} />
       }
     ]
-  }, [chainId, currentVault, sectionRefs, snapshotVault?.inceptTime])
+  }, [chainId, currentVault, isYvUsd, sectionRefs, snapshotVault?.inceptTime])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const sectionTabs = renderableSections.map((section) => ({
@@ -848,12 +975,13 @@ function Index(): ReactElement | null {
   }, [isMobileDrawerOpen, mobileDrawerAction, hideMobileDrawerTabs])
 
   useEffect(() => {
+    if (isYvUsd) return
     if (isMobileDrawerOpen && mobileWidgetRef.current) {
       mobileWidgetRef.current.setMode(mobileDrawerAction)
     }
-  }, [isMobileDrawerOpen, mobileDrawerAction])
+  }, [isMobileDrawerOpen, mobileDrawerAction, isYvUsd])
 
-  if (isLoadingVault || !params.address) {
+  if (isLockedYvUsdRoute || isLoadingVault || !params.address) {
     return (
       <div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
         <div className={'mt-[20%] flex h-10 items-center justify-center'}>
@@ -999,12 +1127,16 @@ function Index(): ReactElement | null {
 
           {Number.isInteger(chainId) && (
             <div className="border border-border rounded-lg bg-surface overflow-hidden">
-              <VaultChartsSection
-                chainId={chainId}
-                vaultAddress={currentVault.address}
-                chartHeightPx={180}
-                chartHeightMdPx={230}
-              />
+              {isYvUsd ? (
+                <YvUsdChartsSection chartHeightPx={180} chartHeightMdPx={230} />
+              ) : (
+                <VaultChartsSection
+                  chainId={chainId}
+                  vaultAddress={currentVault.address}
+                  chartHeightPx={180}
+                  chartHeightMdPx={230}
+                />
+              )}
             </div>
           )}
 
@@ -1085,24 +1217,34 @@ function Index(): ReactElement | null {
                     className={cl('flex flex-col min-h-0', isWidgetPanelActive ? 'flex' : 'hidden')}
                     aria-hidden={!isWidgetPanelActive}
                   >
-                    <Widget
-                      ref={widgetRef}
-                      vaultAddress={currentVault.address}
-                      currentVault={currentVault}
-                      gaugeAddress={currentVault.staking.address}
-                      disableDepositStaking={shouldDisableStakingForDeposit}
-                      actions={widgetActions}
-                      chainId={chainId}
-                      vaultUserData={vaultUserData}
-                      mode={resolvedWidgetMode}
-                      onModeChange={setWidgetMode}
-                      showTabs={false}
-                      onOpenSettings={toggleWidgetSettings}
-                      isSettingsOpen={isWidgetSettingsOpen}
-                      depositPrefill={depositPrefill}
-                      onDepositPrefillConsumed={() => setDepositPrefill(null)}
-                      collapseDetails={shouldCollapseWidgetDetails}
-                    />
+                    {isYvUsd ? (
+                      <YvUsdWidget
+                        currentVault={currentVault}
+                        chainId={chainId}
+                        mode={resolvedWidgetMode}
+                        onModeChange={setWidgetMode}
+                        showTabs={false}
+                      />
+                    ) : (
+                      <Widget
+                        ref={widgetRef}
+                        vaultAddress={currentVault.address}
+                        currentVault={currentVault}
+                        gaugeAddress={currentVault.staking.address}
+                        disableDepositStaking={shouldDisableStakingForDeposit}
+                        actions={widgetActions}
+                        chainId={chainId}
+                        vaultUserData={vaultUserData}
+                        mode={resolvedWidgetMode}
+                        onModeChange={setWidgetMode}
+                        showTabs={false}
+                        onOpenSettings={toggleWidgetSettings}
+                        isSettingsOpen={isWidgetSettingsOpen}
+                        depositPrefill={depositPrefill}
+                        onDepositPrefillConsumed={() => setDepositPrefill(null)}
+                        collapseDetails={shouldCollapseWidgetDetails}
+                      />
+                    )}
                   </div>
                 )}
                 <WalletPanel
@@ -1237,25 +1379,29 @@ function Index(): ReactElement | null {
         isOpen={isMobileDrawerOpen}
         onClose={() => setIsMobileDrawerOpen(false)}
         title={currentVault.name}
-        headerActions={<MobileDrawerSettingsButton />}
+        headerActions={isYvUsd ? undefined : <MobileDrawerSettingsButton />}
         panelRef={mobileDrawerPanelRef}
       >
-        <Widget
-          ref={mobileWidgetRef}
-          vaultAddress={currentVault.address}
-          currentVault={currentVault}
-          gaugeAddress={currentVault.staking.address}
-          disableDepositStaking={shouldDisableStakingForDeposit}
-          actions={widgetActions}
-          chainId={chainId}
-          vaultUserData={vaultUserData}
-          mode={mobileDrawerAction}
-          onModeChange={setMobileDrawerAction}
-          onOpenSettings={toggleWidgetSettings}
-          isSettingsOpen={isWidgetSettingsOpen}
-          hideTabSelector={hideMobileDrawerTabs}
-          disableBorderRadius
-        />
+        {isYvUsd ? (
+          <YvUsdWidget currentVault={currentVault} chainId={chainId} mode={mobileDrawerAction} showTabs={false} />
+        ) : (
+          <Widget
+            ref={mobileWidgetRef}
+            vaultAddress={currentVault.address}
+            currentVault={currentVault}
+            gaugeAddress={currentVault.staking.address}
+            disableDepositStaking={shouldDisableStakingForDeposit}
+            actions={widgetActions}
+            chainId={chainId}
+            vaultUserData={vaultUserData}
+            mode={mobileDrawerAction}
+            onModeChange={setMobileDrawerAction}
+            onOpenSettings={toggleWidgetSettings}
+            isSettingsOpen={isWidgetSettingsOpen}
+            hideTabSelector={hideMobileDrawerTabs}
+            disableBorderRadius
+          />
+        )}
       </BottomDrawer>
       <VaultDetailsWelcomeTour onTourStateChange={setVaultTourState} />
     </div>

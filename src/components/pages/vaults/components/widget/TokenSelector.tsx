@@ -16,6 +16,7 @@ interface TokenSelectorProps {
   limitTokens?: `0x${string}`[]
   excludeTokens?: `0x${string}`[]
   priorityTokens?: Record<number, `0x${string}`[]> // chainId -> addresses to always show
+  extraTokens?: TToken[]
   onClose?: () => void
   assetAddress?: `0x${string}`
   vaultAddress?: `0x${string}`
@@ -85,6 +86,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   limitTokens,
   excludeTokens,
   priorityTokens,
+  extraTokens,
   onClose,
   assetAddress,
   vaultAddress,
@@ -155,8 +157,16 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       }
     }
 
+    // Include explicit extra tokens (used by custom widget flows)
+    const chainExtraTokens = (extraTokens || []).filter((token) => token.chainID === selectedChainId)
+    for (const extraToken of chainExtraTokens) {
+      if (!tokenList.some((t) => t.address?.toLowerCase() === extraToken.address?.toLowerCase())) {
+        tokenList.push(extraToken)
+      }
+    }
+
     return tokenList
-  }, [balances, selectedChainId, value, customAddress, getToken, priorityTokens])
+  }, [balances, selectedChainId, value, customAddress, getToken, priorityTokens, extraTokens])
 
   // Filter tokens based on search and limits
   const filteredTokens = useMemo(() => {
