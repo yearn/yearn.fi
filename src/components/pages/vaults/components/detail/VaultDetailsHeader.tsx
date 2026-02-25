@@ -6,6 +6,7 @@ import { WidgetTabs } from '@pages/vaults/components/widget'
 import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
+import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import type { WidgetActionType } from '@pages/vaults/types'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
@@ -17,7 +18,7 @@ import {
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
-import { isYvUsdVault } from '@pages/vaults/utils/yvUsd'
+import { isYvUsdVault, YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import {
   METRIC_FOOTNOTE_CLASS,
   METRIC_VALUE_CLASS,
@@ -28,9 +29,11 @@ import {
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
+import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconLock } from '@shared/icons/IconLock'
-import { cl, formatUSD, isZero, SELECTOR_BAR_STYLES, toNormalizedBN } from '@shared/utils'
+import { IconLockOpen } from '@shared/icons/IconLockOpen'
+import { cl, formatUSD, isZero, SELECTOR_BAR_STYLES, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement, Ref } from 'react'
@@ -455,6 +458,102 @@ function VaultOverviewCard({
   )
 }
 
+function YvUsdUserHoldingsCard({
+  tokenPrice,
+  isCompressed
+}: {
+  tokenPrice: number
+  isCompressed: boolean
+}): ReactElement {
+  const { address } = useWeb3()
+  const { unlockedVault, lockedVault } = useYvUsdVaults()
+  const account = address ? toAddress(address) : undefined
+  const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
+
+  const unlockedUserData = useVaultUserData({
+    vaultAddress: toAddress(unlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS),
+    assetAddress: unlockedAssetAddress,
+    chainId: YVUSD_CHAIN_ID,
+    account
+  })
+  const lockedUserData = useVaultUserData({
+    vaultAddress: toAddress(lockedVault?.address ?? YVUSD_LOCKED_ADDRESS),
+    assetAddress: YVUSD_UNLOCKED_ADDRESS,
+    chainId: YVUSD_CHAIN_ID,
+    account
+  })
+
+  const unlockedAmount = toNormalizedBN(
+    unlockedUserData.depositedValue,
+    unlockedUserData.assetToken?.decimals ?? 6
+  ).normalized
+  const lockedAmount = toNormalizedBN(
+    lockedUserData.depositedValue,
+    lockedUserData.assetToken?.decimals ?? 18
+  ).normalized
+  const unlockedValueUsd = unlockedAmount * tokenPrice
+  const lockedValueUsd = lockedAmount * tokenPrice
+  const totalValueUsd = unlockedValueUsd + lockedValueUsd
+
+  const sections: TMetricBlock[] = [
+    {
+      key: 'deposited',
+      header: (
+        <MetricHeader
+          label={'Your Deposits'}
+          tooltip={'Review the USD value of everything you have supplied to this vault so far.'}
+        />
+      ),
+      value: (
+        <span className={METRIC_VALUE_CLASS} suppressHydrationWarning>
+          {formatUSD(totalValueUsd)}
+        </span>
+      ),
+      footnote: (
+        <div className={cl(METRIC_FOOTNOTE_CLASS, 'flex flex-col gap-1')} suppressHydrationWarning>
+          <div className="flex items-center justify-between gap-4">
+            <span className="inline-flex items-center gap-2 text-text-secondary">
+              <IconLock className="size-3" />
+              {'Locked Deposits'}
+            </span>
+            <RenderAmount
+              value={lockedValueUsd}
+              symbol={'USD'}
+              decimals={0}
+              options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="inline-flex items-center gap-2 text-text-secondary">
+              <IconLockOpen className="size-3" />
+              {'Unlocked Deposits'}
+            </span>
+            <RenderAmount
+              value={unlockedValueUsd}
+              symbol={'USD'}
+              decimals={0}
+              options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
+            />
+          </div>
+        </div>
+      )
+    }
+  ]
+
+  return (
+    <div data-tour="vault-detail-user-holdings">
+      <MetricsCard
+        items={sections}
+        className={cl(
+          'rounded-b-none',
+          isCompressed ? 'rounded-tl-lg border-t border-x border-border' : 'border-t border-x border-border'
+        )}
+        footnoteDisplay={'tooltip'}
+      />
+    </div>
+  )
+}
+
 function UserHoldingsCard({
   currentVault: currentVaultInput,
   depositedValue,
@@ -467,6 +566,10 @@ function UserHoldingsCard({
   isCompressed: boolean
 }): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
+  if (isYvUsdVault(currentVault)) {
+    return <YvUsdUserHoldingsCard tokenPrice={tokenPrice} isCompressed={isCompressed} />
+  }
+
   const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
   const depositedValueUSD = depositedAmount.normalized * tokenPrice
   const sections: TMetricBlock[] = [

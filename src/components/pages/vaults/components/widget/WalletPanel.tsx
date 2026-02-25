@@ -4,7 +4,9 @@ import {
   getVaultTVL,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
-import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useVaultUserData, type VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import { isYvUsdVault, YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWallet } from '@shared/contexts/useWallet'
@@ -58,6 +60,70 @@ const STATUS_STYLES: Record<TNotificationStatus, { label: string; className: str
   error: { label: 'Error', className: 'bg-[#C73203] text-white', icon: <IconCross className="size-3" /> }
 }
 
+function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElement {
+  const { getPrice } = useYearn()
+  const { unlockedVault, lockedVault, isLoading: isLoadingYvUsd } = useYvUsdVaults()
+
+  const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
+  const unlockedUserData = useVaultUserData({
+    vaultAddress: toAddress(unlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS),
+    assetAddress: unlockedAssetAddress,
+    chainId: YVUSD_CHAIN_ID,
+    account
+  })
+  const lockedUserData = useVaultUserData({
+    vaultAddress: toAddress(lockedVault?.address ?? YVUSD_LOCKED_ADDRESS),
+    assetAddress: YVUSD_UNLOCKED_ADDRESS,
+    chainId: YVUSD_CHAIN_ID,
+    account
+  })
+
+  const unlockedSymbol = unlockedUserData.assetToken?.symbol ?? 'USDC'
+  const lockedSymbol = lockedUserData.assetToken?.symbol ?? 'yvUSD'
+  const unlockedDecimals = unlockedUserData.assetToken?.decimals ?? 6
+  const lockedDecimals = lockedUserData.assetToken?.decimals ?? 18
+  const unlockedPrice =
+    unlockedUserData.assetToken?.address && unlockedUserData.assetToken?.chainID
+      ? getPrice({
+          address: toAddress(unlockedUserData.assetToken.address),
+          chainID: unlockedUserData.assetToken.chainID
+        }).normalized
+      : 0
+  const lockedPrice = getPrice({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized || unlockedPrice
+  const unlockedNormalized = toNormalizedBN(unlockedUserData.depositedValue, unlockedDecimals).normalized
+  const lockedNormalized = toNormalizedBN(lockedUserData.depositedValue, lockedDecimals).normalized
+  const unlockedUsd = unlockedNormalized * unlockedPrice
+  const lockedUsd = lockedNormalized * lockedPrice
+  const totalUsd = unlockedUsd + lockedUsd
+
+  if (isLoadingYvUsd || unlockedUserData.isLoading || lockedUserData.isLoading) {
+    return <p className="text-text-secondary">{'Loading yvUSD position data...'}</p>
+  }
+
+  return (
+    <>
+      <div className="flex items-start justify-between gap-4">
+        <span className="text-text-secondary">Deposited value</span>
+        <span className="text-text-primary text-base font-semibold">{formatUSD(totalUsd)}</span>
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-text-secondary">Unlocked position</span>
+        <span className="text-text-primary text-base font-semibold">
+          {`${formatTAmount({ value: unlockedUserData.depositedValue, decimals: unlockedDecimals })} ${unlockedSymbol}`}
+          <span className="ml-1 text-xs text-text-secondary font-medium">({formatUSD(unlockedUsd)})</span>
+        </span>
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-text-secondary">Locked position</span>
+        <span className="text-text-primary text-base font-semibold">
+          {`${formatTAmount({ value: lockedUserData.depositedValue, decimals: lockedDecimals })} ${lockedSymbol}`}
+          <span className="ml-1 text-xs text-text-secondary font-medium">({formatUSD(lockedUsd)})</span>
+        </span>
+      </div>
+    </>
+  )
+}
+
 export const WalletPanel: FC<WalletPanelProps> = ({
   isActive: isPanelActive,
   currentVault,
@@ -75,6 +141,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   const [activeTab, setActiveTab] = useState<WalletTabKey>('balances')
   const { assetToken, vaultToken, stakingToken, depositedValue, depositedShares, pricePerShare, isLoading } =
     vaultUserData
+  const isYvUsd = isYvUsdVault(currentVault)
   const vaultDecimals = getVaultDecimals(currentVault)
   const vaultTVL = getVaultTVL(currentVault)
 
@@ -251,48 +318,54 @@ export const WalletPanel: FC<WalletPanelProps> = ({
                     <section className="space-y-3">
                       <h4 className="text-sm font-semibold text-text-primary">Your Vault balances</h4>
                       <div className="space-y-2 text-sm">
-                        <div className="flex items-start justify-between gap-4">
-                          <span className="text-text-secondary">Deposited value</span>
-                          <div className="text-right">
-                            <span className="text-text-primary text-base font-semibold">{depositedLabel}</span>
-                            <span className="text-xs text-text-secondary ml-1 font-medium">
-                              ({formatUSD(depositedUsd)})
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-text-secondary ">
-                            {hasStakedShares && !showTotalShares ? 'Staked shares' : 'Deposited shares'}
-                          </span>
-                          <span className="text-text-primary text-base font-semibold">
-                            {hasStakedShares && !showTotalShares ? stakingBalanceLabel : vaultBalanceLabel}
-                            <span className="ml-1 text-xs text-text-secondary font-medium">
-                              ({formatUSD(hasStakedShares && !showTotalShares ? stakedSharesUsd : vaultSharesUsd)})
-                            </span>
-                          </span>
-                        </div>
-                        {showTotalShares ? (
+                        {isYvUsd ? (
+                          <YvUsdVaultBalances account={address ? toAddress(address) : undefined} />
+                        ) : (
                           <>
+                            <div className="flex items-start justify-between gap-4">
+                              <span className="text-text-secondary">Deposited value</span>
+                              <div className="text-right">
+                                <span className="text-text-primary text-base font-semibold">{depositedLabel}</span>
+                                <span className="text-xs text-text-secondary ml-1 font-medium">
+                                  ({formatUSD(depositedUsd)})
+                                </span>
+                              </div>
+                            </div>
                             <div className="flex items-center justify-between gap-4">
-                              <span className="text-text-secondary">Staked shares</span>
+                              <span className="text-text-secondary ">
+                                {hasStakedShares && !showTotalShares ? 'Staked shares' : 'Deposited shares'}
+                              </span>
                               <span className="text-text-primary text-base font-semibold">
-                                {stakingBalanceLabel}
+                                {hasStakedShares && !showTotalShares ? stakingBalanceLabel : vaultBalanceLabel}
                                 <span className="ml-1 text-xs text-text-secondary font-medium">
-                                  ({formatUSD(stakedSharesUsd)})
+                                  ({formatUSD(hasStakedShares && !showTotalShares ? stakedSharesUsd : vaultSharesUsd)})
                                 </span>
                               </span>
                             </div>
-                            <div className="flex items-center justify-between gap-4">
-                              <span className="text-text-secondary">Total shares</span>
-                              <span className="text-text-primary font-semibold">
-                                {totalSharesLabel}
-                                <span className="ml-1 text-xs text-text-secondary font-medium">
-                                  ({formatUSD(totalSharesUsd)})
-                                </span>
-                              </span>
-                            </div>
+                            {showTotalShares ? (
+                              <>
+                                <div className="flex items-center justify-between gap-4">
+                                  <span className="text-text-secondary">Staked shares</span>
+                                  <span className="text-text-primary text-base font-semibold">
+                                    {stakingBalanceLabel}
+                                    <span className="ml-1 text-xs text-text-secondary font-medium">
+                                      ({formatUSD(stakedSharesUsd)})
+                                    </span>
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between gap-4">
+                                  <span className="text-text-secondary">Total shares</span>
+                                  <span className="text-text-primary font-semibold">
+                                    {totalSharesLabel}
+                                    <span className="ml-1 text-xs text-text-secondary font-medium">
+                                      ({formatUSD(totalSharesUsd)})
+                                    </span>
+                                  </span>
+                                </div>
+                              </>
+                            ) : null}
                           </>
-                        ) : null}
+                        )}
                       </div>
                     </section>
 

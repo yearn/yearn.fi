@@ -58,6 +58,7 @@ interface Props {
   hideDetails?: boolean
   hideActionButton?: boolean
   hideContainerBorder?: boolean
+  headerActions?: ReactNode
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -83,7 +84,8 @@ export const WidgetDeposit: FC<Props> = ({
   vaultSharesLabel,
   hideDetails = false,
   hideActionButton = false,
-  hideContainerBorder = false
+  hideContainerBorder = false,
+  headerActions
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -393,7 +395,7 @@ export const WidgetDeposit: FC<Props> = ({
   if (isLoadingVaultData) {
     return (
       <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
-        <WidgetHeader title="Deposit" />
+        <WidgetHeader title="Deposit" actions={headerActions} />
         <div className="flex items-center justify-center flex-1 p-6">
           <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
         </div>
@@ -509,7 +511,7 @@ export const WidgetDeposit: FC<Props> = ({
       })}
       data-tour="vault-detail-deposit-widget"
     >
-      <WidgetHeader title="Deposit" />
+      <WidgetHeader title="Deposit" actions={headerActions} />
       <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         {/* Amount Section */}
         <InputTokenAmount

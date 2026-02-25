@@ -50,7 +50,11 @@ const parseCooldownStatus = (status: unknown): TCooldownStatus => {
   }
 
   if (typeof status === 'object') {
-    const parsed = status as { cooldownEnd?: unknown; windowEnd?: unknown; shares?: unknown }
+    const parsed = status as {
+      cooldownEnd?: unknown
+      windowEnd?: unknown
+      shares?: unknown
+    }
     return {
       cooldownEnd: typeof parsed.cooldownEnd === 'bigint' ? Number(parsed.cooldownEnd) : 0,
       windowEnd: typeof parsed.windowEnd === 'bigint' ? Number(parsed.windowEnd) : 0,
@@ -62,16 +66,17 @@ const parseCooldownStatus = (status: unknown): TCooldownStatus => {
 }
 
 const formatDuration = (seconds: number): string => {
-  if (!Number.isFinite(seconds) || seconds <= 0) return '0m'
-  const days = Math.floor(seconds / 86_400)
-  const hours = Math.floor((seconds % 86_400) / 3_600)
-  const minutes = Math.floor((seconds % 3_600) / 60)
+  if (!Number.isFinite(seconds) || seconds <= 0) return '0s'
+  const totalSeconds = Math.floor(seconds)
+  const days = Math.floor(totalSeconds / 86_400)
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600)
+  const minutes = Math.floor((totalSeconds % 3_600) / 60)
+  const secs = totalSeconds % 60
 
-  const parts: string[] = []
-  if (days > 0) parts.push(`${days}d`)
-  if (hours > 0 || days > 0) parts.push(`${hours}h`)
-  if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`)
-  return parts.slice(0, 2).join(' ')
+  if (days > 0) return `${days}d ${hours}h ${minutes}m ${secs}s`
+  if (hours > 0) return `${hours}h ${minutes}m ${secs}s`
+  if (minutes > 0) return `${minutes}m ${secs}s`
+  return `${secs}s`
 }
 
 const formatDays = (seconds: number, fallbackDays: number): string => {
@@ -81,11 +86,20 @@ const formatDays = (seconds: number, fallbackDays: number): string => {
   return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded} days`
 }
 
+const scaleAmountDecimals = (value: bigint, fromDecimals: number, toDecimals: number): bigint => {
+  if (value === 0n || fromDecimals === toDecimals) return value
+  if (fromDecimals > toDecimals) {
+    return value / 10n ** BigInt(fromDecimals - toDecimals)
+  }
+  return value * 10n ** BigInt(toDecimals - fromDecimals)
+}
+
 export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Props): ReactElement {
   const { address: account } = useAccount()
   const { unlockedVault, lockedVault, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
   const [showCooldownOverlay, setShowCooldownOverlay] = useState(false)
+  const [showCancelCooldownOverlay, setShowCancelCooldownOverlay] = useState(false)
   const [lockedRequestedAssets, setLockedRequestedAssets] = useState<bigint>(0n)
   const [nowTimestamp, setNowTimestamp] = useState(() => Math.floor(Date.now() / 1000))
   const activeVariant = variant ?? 'unlocked'
@@ -105,6 +119,33 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
     chainId,
     account
   })
+  const lockedUnderlyingAssetDecimals = lockedUserData.assetToken?.decimals ?? 18
+  const lockedInputAssetToken = unlockedUserData.assetToken ?? lockedUserData.assetToken
+  const lockedInputAssetDecimals = lockedInputAssetToken?.decimals ?? lockedUnderlyingAssetDecimals
+  const lockedInputPricePerShare = useMemo(
+    () => scaleAmountDecimals(lockedUserData.pricePerShare, lockedUnderlyingAssetDecimals, lockedInputAssetDecimals),
+    [lockedUserData.pricePerShare, lockedUnderlyingAssetDecimals, lockedInputAssetDecimals]
+  )
+  const lockedWithdrawUserData = useMemo(
+    () => ({
+      ...lockedUserData,
+      assetToken: lockedInputAssetToken,
+      pricePerShare: lockedInputPricePerShare,
+      availableToDeposit: lockedInputAssetToken?.balance.raw ?? 0n,
+      depositedValue: scaleAmountDecimals(
+        lockedUserData.depositedValue,
+        lockedUnderlyingAssetDecimals,
+        lockedInputAssetDecimals
+      )
+    }),
+    [
+      lockedUserData,
+      lockedInputAssetToken,
+      lockedInputPricePerShare,
+      lockedUnderlyingAssetDecimals,
+      lockedInputAssetDecimals
+    ]
+  )
 
   const lockedWalletShares = lockedUserData.vaultToken?.balance.raw ?? 0n
   const hasUnlocked = unlockedUserData.depositedShares > 0n
@@ -174,6 +215,11 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
     [withdrawalWindowSeconds]
   )
   const availableWithdrawLimit = typeof rawAvailableWithdrawLimit === 'bigint' ? rawAvailableWithdrawLimit : 0n
+  const availableWithdrawLimitForInput = scaleAmountDecimals(
+    availableWithdrawLimit,
+    lockedUnderlyingAssetDecimals,
+    lockedInputAssetDecimals
+  )
 
   const hasActiveCooldown = cooldownStatus.shares > 0n
   const isCooldownActive = hasActiveCooldown && nowTimestamp < cooldownStatus.cooldownEnd
@@ -190,28 +236,35 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
     decimals: lockedUserData.vaultToken?.decimals ?? 18
   })
   const formattedAvailableWithdrawLimit = formatTAmount({
-    value: availableWithdrawLimit,
-    decimals: lockedUserData.assetToken?.decimals ?? 18
+    value: availableWithdrawLimitForInput,
+    decimals: lockedInputAssetDecimals
   })
-  const canWithdrawNow = availableWithdrawLimit > 0n
+  const canWithdrawNow = availableWithdrawLimitForInput > 0n
   const cooldownSharesToStart = useMemo(() => {
     if (!needsCooldownStart || lockedRequestedAssets <= 0n) return 0n
-    if (lockedUserData.pricePerShare <= 0n) return 0n
+    if (lockedInputPricePerShare <= 0n) return 0n
 
     const vaultDecimals = lockedUserData.vaultToken?.decimals ?? 18
     const numerator = lockedRequestedAssets * 10n ** BigInt(vaultDecimals)
-    const requiredShares = (numerator + lockedUserData.pricePerShare - 1n) / lockedUserData.pricePerShare
+    const requiredShares = (numerator + lockedInputPricePerShare - 1n) / lockedInputPricePerShare
     return requiredShares > lockedWalletShares ? lockedWalletShares : requiredShares
   }, [
     needsCooldownStart,
     lockedRequestedAssets,
-    lockedUserData.pricePerShare,
+    lockedInputPricePerShare,
     lockedUserData.vaultToken?.decimals,
     lockedWalletShares
   ])
+  const selectedCooldownAssets = useMemo(() => {
+    if (cooldownSharesToStart <= 0n || lockedInputPricePerShare <= 0n) {
+      return 0n
+    }
+    const vaultDecimals = lockedUserData.vaultToken?.decimals ?? 18
+    return (cooldownSharesToStart * lockedInputPricePerShare) / 10n ** BigInt(vaultDecimals)
+  }, [cooldownSharesToStart, lockedInputPricePerShare, lockedUserData.vaultToken?.decimals])
   const formattedSelectedCooldownAmount = formatTAmount({
-    value: lockedRequestedAssets,
-    decimals: lockedUserData.assetToken?.decimals ?? 18
+    value: selectedCooldownAssets,
+    decimals: lockedInputAssetDecimals
   })
 
   const prepareStartCooldown: UseSimulateContractReturnType = useSimulateContract({
@@ -223,6 +276,16 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
     chainId,
     query: {
       enabled: !!account && activeVariant === 'locked' && needsCooldownStart && cooldownSharesToStart > 0n
+    }
+  })
+  const prepareCancelCooldown: UseSimulateContractReturnType = useSimulateContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'cancelCooldown',
+    account: account ? toAddress(account) : undefined,
+    chainId,
+    query: {
+      enabled: !!account && activeVariant === 'locked' && hasActiveCooldown
     }
   })
 
@@ -247,6 +310,23 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
     void refetchAvailableWithdrawLimit()
     lockedUserData.refetch()
   }, [lockedUserData, refetchCooldownStatus, refetchAvailableWithdrawLimit])
+  const cancelCooldownStep = useMemo((): TransactionStep | undefined => {
+    if (!prepareCancelCooldown.isSuccess || !prepareCancelCooldown.data?.request) return undefined
+
+    return {
+      prepare: prepareCancelCooldown as unknown as UseSimulateContractReturnType,
+      label: 'Cancel Cooldown',
+      confirmMessage: 'Canceling active cooldown for locked yvUSD shares',
+      successTitle: 'Cooldown canceled',
+      successMessage: 'Cooldown canceled. Start a new cooldown to withdraw from the locked vault.'
+    }
+  }, [prepareCancelCooldown])
+  const handleCancelCooldownSuccess = useCallback(() => {
+    setShowCancelCooldownOverlay(false)
+    void refetchCooldownStatus()
+    void refetchAvailableWithdrawLimit()
+    lockedUserData.refetch()
+  }, [lockedUserData, refetchCooldownStatus, refetchAvailableWithdrawLimit])
 
   const handleLockedWithdrawSuccess = useCallback(() => {
     void refetchCooldownStatus()
@@ -261,9 +341,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
     if (canWithdrawNow) return undefined
     if (!hasLocked) return 'No locked yvUSD shares available to withdraw.'
     if (needsCooldownStart) {
-      if (lockedRequestedAssets <= 0n) return 'Enter withdraw amount before starting cooldown.'
-      if (cooldownSharesToStart <= 0n) return 'Enter a valid amount to start cooldown.'
-      return 'Start cooldown before withdrawing from the locked vault.'
+      return undefined
     }
     if (isCooldownActive) {
       return `Cooldown active. Withdrawals open in ${formatDuration(cooldownRemainingSeconds)}.`
@@ -280,8 +358,6 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
     isLoadingAvailableWithdrawLimit,
     canWithdrawNow,
     needsCooldownStart,
-    lockedRequestedAssets,
-    cooldownSharesToStart,
     isCooldownActive,
     cooldownRemainingSeconds,
     isWithdrawalWindowOpen
@@ -321,110 +397,135 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
 
   const selectedVault = activeVariant === 'locked' ? lockedVault : unlockedVault
   const selectedAssetAddress = activeVariant === 'locked' ? lockedAssetAddress : unlockedAssetAddress
-  const selectedVaultUserData = activeVariant === 'locked' ? lockedUserData : unlockedUserData
+  const selectedVaultUserData = activeVariant === 'locked' ? lockedWithdrawUserData : unlockedUserData
   const showToggle = hasUnlocked && hasLocked
+  const disableLockedAmountInput = activeVariant === 'locked' && isCooldownActive
+  const hideLockedWithdrawAction = activeVariant === 'locked' && !!account && !canWithdrawNow
+  const effectiveLockedActionDisabledReason =
+    activeVariant === 'locked' && !hideLockedWithdrawAction ? lockedActionDisabledReason : undefined
+  const headerToggle = showToggle ? (
+    <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
+      <button
+        type="button"
+        onClick={() => setVariant('locked')}
+        className={cl(
+          'rounded-sm px-2 py-1 text-xs font-semibold transition-all',
+          activeVariant === 'locked'
+            ? 'bg-surface text-text-primary'
+            : 'bg-transparent text-text-secondary hover:text-text-primary'
+        )}
+      >
+        <span className="inline-flex items-center gap-1">
+          <IconLock className="size-4" />
+          {'Locked'}
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setVariant('unlocked')}
+        className={cl(
+          'rounded-sm px-2 py-1 text-xs font-semibold transition-all',
+          activeVariant === 'unlocked'
+            ? 'bg-surface text-text-primary'
+            : 'bg-transparent text-text-secondary hover:text-text-primary'
+        )}
+      >
+        <span className="inline-flex items-center gap-1">
+          <IconLockOpen className="size-4" />
+          {'Unlocked'}
+        </span>
+      </button>
+    </div>
+  ) : undefined
   const withdrawTypeSection =
-    showToggle || activeVariant === 'locked' ? (
-      <div className="flex flex-col gap-4">
-        {showToggle ? (
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{'Withdraw From'}</p>
-            <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
-              <button
-                type="button"
-                onClick={() => setVariant('locked')}
-                className={cl(
-                  'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
-                  activeVariant === 'locked'
-                    ? 'bg-surface text-text-primary'
-                    : 'bg-transparent text-text-secondary hover:text-text-secondary'
-                )}
+    activeVariant === 'locked' ? (
+      <div className="rounded-lg border border-border bg-surface-secondary p-4 text-sm">
+        <div className="flex flex-col gap-1">
+          <p className="font-semibold text-text-primary">{'Locked withdrawal cooldown'}</p>
+          <p className="text-sm text-text-secondary">
+            {`Cooldown: ${cooldownDurationLabel} | Withdrawal window: ${withdrawalWindowLabel}`}
+          </p>
+        </div>
+        <div className="mt-3 flex flex-col gap-1 text-sm text-text-secondary">
+          {!account ? (
+            <p>{'Connect wallet to view cooldown status.'}</p>
+          ) : !hasLocked ? (
+            <p>{'No locked shares found in this wallet.'}</p>
+          ) : isLoadingCooldownStatus || isLoadingAvailableWithdrawLimit ? (
+            <p>{'Loading cooldown status...'}</p>
+          ) : (
+            <>
+              <p>{`Available to withdraw now: ${formattedAvailableWithdrawLimit}`}</p>
+              <p>{`Shares in cooldown: ${formattedSharesUnderCooldown}`}</p>
+              {needsCooldownStart ? <p>{`Selected cooldown amount: ${formattedSelectedCooldownAmount}`}</p> : null}
+              <p>
+                {`Cooldown remaining: ${
+                  isCooldownActive
+                    ? formatDuration(cooldownRemainingSeconds)
+                    : needsCooldownStart
+                      ? 'Not started'
+                      : 'Complete'
+                }`}
+              </p>
+              <p>
+                {`Withdrawal window remaining: ${
+                  isWithdrawalWindowOpen
+                    ? formatDuration(windowRemainingSeconds)
+                    : isCooldownActive
+                      ? 'Not open yet'
+                      : hasActiveCooldown
+                        ? 'Closed'
+                        : 'Not started'
+                }`}
+              </p>
+            </>
+          )}
+        </div>
+        {account &&
+        hasLocked &&
+        !isLoadingCooldownStatus &&
+        !isLoadingAvailableWithdrawLimit &&
+        needsCooldownStart &&
+        !canWithdrawNow ? (
+          <div className="mt-3 space-y-2">
+            <Button
+              variant={prepareStartCooldown.isLoading || prepareStartCooldown.isFetching ? 'busy' : 'filled'}
+              isBusy={prepareStartCooldown.isLoading || prepareStartCooldown.isFetching}
+              disabled={!cooldownStep}
+              classNameOverride="yearn--button--nextgen w-full"
+              onClick={() => setShowCooldownOverlay(true)}
+            >
+              {'Start Cooldown'}
+            </Button>
+            {hasActiveCooldown ? (
+              <Button
+                variant={prepareCancelCooldown.isLoading || prepareCancelCooldown.isFetching ? 'busy' : 'outlined'}
+                isBusy={prepareCancelCooldown.isLoading || prepareCancelCooldown.isFetching}
+                disabled={!cancelCooldownStep}
+                classNameOverride="yearn--button--nextgen w-full"
+                onClick={() => setShowCancelCooldownOverlay(true)}
               >
-                <span className="inline-flex items-center gap-1">
-                  <IconLock className="size-6" />
-                  {'Locked'}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setVariant('unlocked')}
-                className={cl(
-                  'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
-                  activeVariant === 'unlocked'
-                    ? 'bg-surface text-text-primary'
-                    : 'bg-transparent text-text-secondary hover:text-text-secondary'
-                )}
-              >
-                <span className="inline-flex items-center gap-1">
-                  <IconLockOpen className="size-6" />
-                  {'Unlocked'}
-                </span>
-              </button>
-            </div>
+                {'Cancel Cooldown'}
+              </Button>
+            ) : null}
           </div>
         ) : null}
-
-        {activeVariant === 'locked' ? (
-          <div className="rounded-lg border border-border bg-surface-secondary p-4 text-sm">
-            <div className="flex flex-col gap-1">
-              <p className="font-semibold text-text-primary">{'Locked withdrawal cooldown'}</p>
-              <p className="text-xs text-text-secondary">
-                {`Cooldown: ${cooldownDurationLabel} | Withdrawal window: ${withdrawalWindowLabel}`}
-              </p>
-            </div>
-            <div className="mt-3 flex flex-col gap-1 text-xs text-text-secondary">
-              {!account ? (
-                <p>{'Connect wallet to view cooldown status.'}</p>
-              ) : !hasLocked ? (
-                <p>{'No locked shares found in this wallet.'}</p>
-              ) : isLoadingCooldownStatus || isLoadingAvailableWithdrawLimit ? (
-                <p>{'Loading cooldown status...'}</p>
-              ) : (
-                <>
-                  <p>{`Available to withdraw now: ${formattedAvailableWithdrawLimit}`}</p>
-                  <p>{`Shares in cooldown: ${formattedSharesUnderCooldown}`}</p>
-                  {needsCooldownStart ? <p>{`Selected cooldown amount: ${formattedSelectedCooldownAmount}`}</p> : null}
-                  <p>
-                    {`Cooldown remaining: ${
-                      isCooldownActive
-                        ? formatDuration(cooldownRemainingSeconds)
-                        : needsCooldownStart
-                          ? 'Not started'
-                          : 'Complete'
-                    }`}
-                  </p>
-                  <p>
-                    {`Withdrawal window remaining: ${
-                      isWithdrawalWindowOpen
-                        ? formatDuration(windowRemainingSeconds)
-                        : isCooldownActive
-                          ? 'Not open yet'
-                          : hasActiveCooldown
-                            ? 'Closed'
-                            : 'Not started'
-                    }`}
-                  </p>
-                </>
-              )}
-            </div>
-            {account &&
-            hasLocked &&
-            !isLoadingCooldownStatus &&
-            !isLoadingAvailableWithdrawLimit &&
-            needsCooldownStart &&
-            !canWithdrawNow ? (
-              <div className="mt-3">
-                <Button
-                  variant={prepareStartCooldown.isLoading || prepareStartCooldown.isFetching ? 'busy' : 'filled'}
-                  isBusy={prepareStartCooldown.isLoading || prepareStartCooldown.isFetching}
-                  disabled={!cooldownStep}
-                  classNameOverride="yearn--button--nextgen w-full"
-                  onClick={() => setShowCooldownOverlay(true)}
-                >
-                  {'Start Cooldown'}
-                </Button>
-              </div>
-            ) : null}
+        {account &&
+        hasLocked &&
+        hasActiveCooldown &&
+        !isLoadingCooldownStatus &&
+        !isLoadingAvailableWithdrawLimit &&
+        !needsCooldownStart ? (
+          <div className="mt-3">
+            <Button
+              variant={prepareCancelCooldown.isLoading || prepareCancelCooldown.isFetching ? 'busy' : 'outlined'}
+              isBusy={prepareCancelCooldown.isLoading || prepareCancelCooldown.isFetching}
+              disabled={!cancelCooldownStep}
+              classNameOverride="yearn--button--nextgen w-full"
+              onClick={() => setShowCancelCooldownOverlay(true)}
+            >
+              {'Cancel Cooldown'}
+            </Button>
           </div>
         ) : null}
       </div>
@@ -440,14 +541,21 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
         vaultSymbol={activeVariant === 'locked' ? 'yvUSD (Locked)' : 'yvUSD (Unlocked)'}
         vaultVersion={selectedVault.version}
         vaultUserData={selectedVaultUserData}
-        maxWithdrawAssets={activeVariant === 'locked' && account && canWithdrawNow ? availableWithdrawLimit : undefined}
-        isActionDisabled={activeVariant === 'locked' && !!lockedActionDisabledReason}
-        actionDisabledReason={activeVariant === 'locked' ? lockedActionDisabledReason : undefined}
+        maxWithdrawAssets={
+          activeVariant === 'locked' && account && canWithdrawNow ? availableWithdrawLimitForInput : undefined
+        }
+        isActionDisabled={!!effectiveLockedActionDisabledReason}
+        actionDisabledReason={effectiveLockedActionDisabledReason}
         disableTokenSelector={activeVariant === 'locked'}
+        hideZapForTokens={activeVariant === 'locked' ? [unlockedAssetAddress, lockedAssetAddress] : undefined}
+        disableAmountInput={disableLockedAmountInput}
+        hideActionButton={hideLockedWithdrawAction}
+        headerActions={headerToggle}
         onAmountChange={activeVariant === 'locked' ? (amount) => setLockedRequestedAssets(amount) : undefined}
         handleWithdrawSuccess={activeVariant === 'locked' ? handleLockedWithdrawSuccess : onWithdrawSuccess}
         hideContainerBorder
         contentBelowInput={withdrawTypeSection}
+        prefill={activeVariant === 'locked' ? { address: unlockedAssetAddress, chainId } : undefined}
       />
       <TransactionOverlay
         isOpen={showCooldownOverlay}
@@ -455,6 +563,13 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
         step={cooldownStep}
         isLastStep
         onAllComplete={handleCooldownSuccess}
+      />
+      <TransactionOverlay
+        isOpen={showCancelCooldownOverlay}
+        onClose={() => setShowCancelCooldownOverlay(false)}
+        step={cancelCooldownStep}
+        isLastStep
+        onAllComplete={handleCancelCooldownSuccess}
       />
     </div>
   )

@@ -47,51 +47,49 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
 
   const unlockedApr = metrics?.unlocked.apy ?? unlockedVault.apr?.netAPR ?? 0
   const lockedApr = metrics?.locked.apy ?? lockedVault.apr?.netAPR ?? 0
-  const unlockedAprPercent = unlockedApr * 100
-  const lockedAprPercent = lockedApr * 100
   const selectedVault = variant === 'locked' ? lockedVault : unlockedVault
 
+  const headerToggle = (
+    <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
+      <button
+        type="button"
+        onClick={() => setVariant('locked')}
+        className={cl(
+          'rounded-sm px-2 py-1 text-xs font-semibold transition-all',
+          variant === 'locked'
+            ? 'bg-surface text-text-primary'
+            : 'bg-transparent text-text-secondary hover:text-text-primary'
+        )}
+      >
+        <span className="inline-flex items-center gap-1">
+          <IconLock className="size-4" />
+          {'Locked'}
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setVariant('unlocked')}
+        className={cl(
+          'rounded-sm px-2 py-1 text-xs font-semibold transition-all',
+          variant === 'unlocked'
+            ? 'bg-surface text-text-primary'
+            : 'bg-transparent text-text-secondary hover:text-text-primary'
+        )}
+      >
+        <span className="inline-flex items-center gap-1">
+          <IconLockOpen className="size-4" />
+          {'Unlocked'}
+        </span>
+      </button>
+    </div>
+  )
+
   const depositTypeSection = variant ? (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{'Deposit Type'}</p>
-        <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
-          <button
-            type="button"
-            onClick={() => setVariant('locked')}
-            className={cl(
-              'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
-              variant === 'locked'
-                ? 'bg-surface text-text-primary'
-                : 'bg-transparent text-text-secondary hover:text-text-secondary'
-            )}
-          >
-            <span className="inline-flex items-center gap-1">
-              <IconLock className="size-6" />
-              {'Locked'}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setVariant('unlocked')}
-            className={cl(
-              'rounded-sm px-3 py-1 text-xs font-semibold transition-all',
-              variant === 'unlocked'
-                ? 'bg-surface text-text-primary'
-                : 'bg-transparent text-text-secondary hover:text-text-secondary'
-            )}
-          >
-            <span className="inline-flex items-center gap-1">
-              <IconLockOpen className="size-6" />
-              {'Unlocked'}
-            </span>
-          </button>
-        </div>
-      </div>
-      <p className="text-xs text-text-secondary">
+    <div className="rounded-lg border border-border bg-surface-secondary p-4 text-sm text-text-secondary">
+      <p className="text-sm text-text-secondary">
         {variant === 'locked'
-          ? `Locked deposits earn additional yield (~${lockedAprPercent.toFixed(2)}% est. APY). USDC is selected by default and will be zapped into the required yvUSD input. Your position will be locked with a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and a ${YVUSD_WITHDRAW_WINDOW_DAYS} day withdrawal window.`
-          : `Unlocked deposits stay liquid (~${unlockedAprPercent.toFixed(2)}% est. APY).`}
+          ? `Locked deposits earn additional yield from unlocked positions. Your position will be locked with a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and a ${YVUSD_WITHDRAW_WINDOW_DAYS} day withdrawal window.`
+          : `Unlocked deposits stay liquid but pay some yield to locked positions.`}
       </p>
     </div>
   ) : (
@@ -134,6 +132,7 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
         hideDetails={!variant}
         hideActionButton={!variant}
         hideContainerBorder
+        headerActions={variant ? headerToggle : undefined}
         contentBelowInput={depositTypeSection}
         prefill={variant === 'locked' ? { address: unlockedAssetAddress, chainId } : undefined}
         vaultSharesLabel={
