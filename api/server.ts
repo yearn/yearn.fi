@@ -153,9 +153,18 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
   }
 }
 
+function handleEnsoStatus(): Response {
+  const apiKey = process.env.ENSO_API_KEY
+  return Response.json({ configured: !!apiKey })
+}
+
 serve({
   async fetch(req) {
     const url = new URL(req.url)
+
+    if (url.pathname === '/api/enso/status') {
+      return handleEnsoStatus()
+    }
 
     if (url.pathname === '/api/enso/balances') {
       return handleEnsoBalances(req)

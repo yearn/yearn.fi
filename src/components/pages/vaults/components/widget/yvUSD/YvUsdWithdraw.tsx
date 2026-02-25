@@ -25,16 +25,18 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
   const { address: account } = useAccount()
   const { unlockedVault, lockedVault, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
+  const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? assetAddress)
+  const lockedAssetAddress = toAddress(lockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
 
   const unlockedUserData = useVaultUserData({
     vaultAddress: unlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS,
-    assetAddress,
+    assetAddress: unlockedAssetAddress,
     chainId,
     account
   })
   const lockedUserData = useVaultUserData({
     vaultAddress: lockedVault?.address ?? YVUSD_LOCKED_ADDRESS,
-    assetAddress,
+    assetAddress: lockedAssetAddress,
     chainId,
     account
   })
@@ -65,6 +67,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
 
   const activeVariant = variant ?? 'unlocked'
   const selectedVault = activeVariant === 'locked' ? lockedVault : unlockedVault
+  const selectedAssetAddress = activeVariant === 'locked' ? lockedAssetAddress : unlockedAssetAddress
   const selectedVaultUserData = activeVariant === 'locked' ? lockedUserData : unlockedUserData
   const showToggle = hasUnlocked && hasLocked
   const withdrawTypeSection =
@@ -130,7 +133,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
       <WidgetWithdraw
         key={selectedVault.address}
         vaultAddress={toAddress(selectedVault.address)}
-        assetAddress={assetAddress}
+        assetAddress={selectedAssetAddress}
         chainId={chainId}
         vaultSymbol={activeVariant === 'locked' ? 'yvUSD (Locked)' : 'yvUSD (Unlocked)'}
         vaultUserData={selectedVaultUserData}

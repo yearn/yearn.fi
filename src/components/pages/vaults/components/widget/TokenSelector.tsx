@@ -1,8 +1,9 @@
+import { YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import type { TToken } from '@shared/types'
-import { cl, formatTAmount, toAddress } from '@shared/utils'
+import { cl, formatTAmount, toAddress, toNormalizedBN } from '@shared/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { isAddress } from 'viem'
 import { CloseIcon } from './shared/Icons'
@@ -20,6 +21,23 @@ interface TokenSelectorProps {
   assetAddress?: `0x${string}`
   vaultAddress?: `0x${string}`
   stakingAddress?: `0x${string}`
+}
+
+const getKnownPriorityTokenFallback = (address: `0x${string}`, chainId: number): TToken | undefined => {
+  const normalizedAddress = toAddress(address)
+  if (chainId === YVUSD_CHAIN_ID && normalizedAddress === YVUSD_UNLOCKED_ADDRESS) {
+    return {
+      address: normalizedAddress,
+      name: 'yvUSD',
+      symbol: 'yvUSD',
+      decimals: 18,
+      chainID: chainId,
+      value: 0,
+      balance: toNormalizedBN(0n, 18)
+    }
+  }
+
+  return undefined
 }
 
 const TokenTypeChip: FC<{ type: TTokenType }> = ({ type }) => {
@@ -139,6 +157,11 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
         const priorityToken = getToken({ address: toAddress(priorityAddress), chainID: selectedChainId })
         if (priorityToken.symbol) {
           tokenList.push(priorityToken)
+        } else {
+          const fallbackToken = getKnownPriorityTokenFallback(priorityAddress, selectedChainId)
+          if (fallbackToken) {
+            tokenList.push(fallbackToken)
+          }
         }
       }
     }

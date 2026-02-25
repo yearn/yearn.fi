@@ -92,8 +92,8 @@ export const WidgetDeposit: FC<Props> = ({
   const trackEvent = usePlausible()
   const ensoEnabled = useEnsoEnabled()
 
-  const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(assetAddress)
-  const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
+  const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(prefill?.address ?? assetAddress)
+  const [selectedChainId, setSelectedChainId] = useState<number | undefined>(prefill?.chainId)
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
   const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)

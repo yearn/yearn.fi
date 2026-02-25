@@ -27,9 +27,12 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
   const { unlockedVault, lockedVault, metrics, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
   const selectedVaultAddress = variant === 'locked' ? lockedVault?.address : unlockedVault?.address
+  const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? assetAddress)
+  const lockedAssetAddress = YVUSD_UNLOCKED_ADDRESS
+  const selectedAssetAddress = variant === 'locked' ? lockedAssetAddress : unlockedAssetAddress
   const selectedVaultUserData = useVaultUserData({
     vaultAddress: selectedVaultAddress ?? (variant === 'locked' ? YVUSD_LOCKED_ADDRESS : YVUSD_UNLOCKED_ADDRESS),
-    assetAddress,
+    assetAddress: selectedAssetAddress,
     chainId,
     account
   })
@@ -87,7 +90,7 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
       </div>
       <p className="text-xs text-text-secondary">
         {variant === 'locked'
-          ? `Locked deposits earn additional yield (~${lockedAprPercent.toFixed(2)}% est. APY). Your position will be locked with a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and a ${YVUSD_WITHDRAW_WINDOW_DAYS} day withdrawal window.`
+          ? `Locked deposits earn additional yield (~${lockedAprPercent.toFixed(2)}% est. APY). USDC is selected by default and will be zapped into the required yvUSD input. Your position will be locked with a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and a ${YVUSD_WITHDRAW_WINDOW_DAYS} day withdrawal window.`
           : `Unlocked deposits stay liquid (~${unlockedAprPercent.toFixed(2)}% est. APY).`}
       </p>
     </div>
@@ -120,8 +123,9 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
   return (
     <div className="flex flex-col gap-0">
       <WidgetDeposit
+        key={`${selectedVault.address}-${selectedAssetAddress}`}
         vaultAddress={toAddress(selectedVault.address)}
-        assetAddress={assetAddress}
+        assetAddress={selectedAssetAddress}
         chainId={chainId}
         vaultAPR={variant === 'locked' ? lockedApr : unlockedApr}
         vaultSymbol={variant === 'locked' ? 'yvUSD (Locked)' : variant === 'unlocked' ? 'yvUSD (Unlocked)' : 'yvUSD'}
@@ -131,6 +135,7 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess }: Props)
         hideActionButton={!variant}
         hideContainerBorder
         contentBelowInput={depositTypeSection}
+        prefill={variant === 'locked' ? { address: unlockedAssetAddress, chainId } : undefined}
         vaultSharesLabel={
           variant === 'locked' ? 'Locked Vault Shares' : variant === 'unlocked' ? 'Unlocked Vault Shares' : undefined
         }

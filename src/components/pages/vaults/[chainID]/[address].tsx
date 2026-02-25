@@ -27,7 +27,7 @@ import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
-import { isYvUsdAddress, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
+import { isYvUsdAddress, YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { useWallet } from '@shared/contexts/useWallet'
@@ -39,7 +39,7 @@ import { getVaultName } from '@shared/utils/helpers'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router'
 import { isAddressEqual } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
 import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
@@ -209,6 +209,8 @@ function Index(): ReactElement | null {
   const mobileDetailsSectionId = useId()
 
   const params = useParams()
+  const location = useLocation()
+  const navigate = useNavigate()
   const chainId = Number(params.chainID)
   const { getBalance, onRefresh } = useWallet()
   const { address } = useWeb3()
@@ -220,6 +222,9 @@ function Index(): ReactElement | null {
     isLoading: isLoadingYvUsd
   } = useYvUsdVaults()
   const isYvUsd = isYvUsdAddress(params.address)
+  const isLockedYvUsdRoute =
+    chainId === YVUSD_CHAIN_ID && params.address ? toAddress(params.address) === YVUSD_LOCKED_ADDRESS : false
+  const unlockedYvUsdPath = `/vaults/${YVUSD_CHAIN_ID}/${YVUSD_UNLOCKED_ADDRESS}${location.search}${location.hash}`
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [mobileDrawerAction, setMobileDrawerAction] = useState<WidgetActionType>(WidgetActionType.Deposit)
@@ -291,6 +296,13 @@ function Index(): ReactElement | null {
       document.documentElement.style.removeProperty('--vault-header-initial-offset')
     }
   }, [vaultKey])
+
+  useEffect(() => {
+    if (!isLockedYvUsdRoute) {
+      return
+    }
+    navigate(unlockedYvUsdPath, { replace: true })
+  }, [isLockedYvUsdRoute, navigate, unlockedYvUsdPath])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -969,7 +981,7 @@ function Index(): ReactElement | null {
     }
   }, [isMobileDrawerOpen, mobileDrawerAction, isYvUsd])
 
-  if (isLoadingVault || !params.address) {
+  if (isLockedYvUsdRoute || isLoadingVault || !params.address) {
     return (
       <div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
         <div className={'mt-[20%] flex h-10 items-center justify-center'}>
