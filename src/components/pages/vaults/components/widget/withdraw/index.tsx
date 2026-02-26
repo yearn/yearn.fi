@@ -9,7 +9,7 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
 import type { TNormalizedBN } from '@shared/types'
-import { cl, formatAmount, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import { cl, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
@@ -18,6 +18,8 @@ import { InputTokenAmount } from '../InputTokenAmount'
 import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
+import { formatWidgetValue } from '../shared/valueDisplay'
+import { WidgetHeader } from '../shared/WidgetHeader'
 import { getPriorityTokens } from './constants'
 import { SourceSelector } from './SourceSelector'
 import type { WithdrawalSource, WithdrawWidgetProps } from './types'
@@ -245,12 +247,10 @@ export const WidgetWithdraw: FC<
 
     const getExpectedAmount = () => {
       if (isUnstake) {
-        return requiredShares > 0n
-          ? formatAmount(Number(formatUnits(requiredShares, vault?.decimals ?? 18)), 6, 6)
-          : '0'
+        return requiredShares > 0n ? formatWidgetValue(requiredShares, vault?.decimals ?? 18) : '0'
       }
       return activeFlow.periphery.expectedOut && activeFlow.periphery.expectedOut > 0n
-        ? formatAmount(Number(formatUnits(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)), 6, 6)
+        ? formatWidgetValue(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)
         : '0'
     }
 
@@ -388,8 +388,11 @@ export const WidgetWithdraw: FC<
 
   if (isLoadingVaultData) {
     return (
-      <div className="flex items-center justify-center h-[317px]">
-        <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+      <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
+        <WidgetHeader title="Withdraw" />
+        <div className="flex items-center justify-center flex-1 p-6">
+          <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+        </div>
       </div>
     )
   }
@@ -409,7 +412,9 @@ export const WidgetWithdraw: FC<
       outputDecimals={outputToken?.decimals ?? 18}
       outputSymbol={outputToken?.symbol}
       showSwapRow={withdrawToken !== assetAddress && !isUnstake}
-      withdrawAmountSimple={withdrawAmount.formValue}
+      withdrawAmountSimple={
+        withdrawAmount.bn > 0n ? formatWidgetValue(withdrawAmount.bn, assetToken?.decimals ?? 18) : '0'
+      }
       assetSymbol={assetToken?.symbol}
       routeType={routeType}
       onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
@@ -493,9 +498,7 @@ export const WidgetWithdraw: FC<
       className={cl('flex flex-col relative border border-border h-full', { 'rounded-lg': !disableBorderRadius })}
       data-tour="vault-detail-withdraw-widget"
     >
-      <div className="flex items-center justify-between gap-3 px-6 pt-4 ">
-        <h3 className="text-base font-semibold text-text-primary">Withdraw</h3>
-      </div>
+      <WidgetHeader title="Withdraw" />
       <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         <div>
           {/* Withdraw From Selector */}
@@ -592,6 +595,8 @@ export const WidgetWithdraw: FC<
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
         isLastStep={!needsApproval}
+        autoContinueToNextStep
+        autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleWithdrawSuccess}
       />
 
@@ -602,17 +607,10 @@ export const WidgetWithdraw: FC<
         sourceTokenSymbol={withdrawalSource === 'staking' ? stakingToken?.symbol || vaultSymbol : vaultSymbol}
         vaultAssetSymbol={assetToken?.symbol || ''}
         outputTokenSymbol={outputToken?.symbol || ''}
-        withdrawAmount={
-          requiredShares > 0n
-            ? formatTAmount({
-                value: requiredShares,
-                decimals: sharesDecimals
-              })
-            : '0'
-        }
+        withdrawAmount={requiredShares > 0n ? formatWidgetValue(requiredShares, sharesDecimals) : '0'}
         expectedOutput={
           activeFlow.periphery.expectedOut > 0n
-            ? formatTAmount({ value: activeFlow.periphery.expectedOut, decimals: outputToken?.decimals ?? 18 })
+            ? formatWidgetValue(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)
             : undefined
         }
         hasInputValue={withdrawAmount.bn > 0n}

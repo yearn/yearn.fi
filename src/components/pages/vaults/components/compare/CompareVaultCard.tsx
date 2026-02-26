@@ -3,6 +3,20 @@ import { usePlausible } from '@hooks/usePlausible'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
+import {
+  getVaultAddress,
+  getVaultAPR,
+  getVaultChainID,
+  getVaultInfo,
+  getVaultKind,
+  getVaultName,
+  getVaultStrategies,
+  getVaultSymbol,
+  getVaultToken,
+  getVaultTVL,
+  type TKongVaultInput,
+  type TKongVaultStrategy
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
@@ -10,16 +24,15 @@ import { IconClose } from '@shared/icons/IconClose'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { cl, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement, ReactNode } from 'react'
 
 type TCompareVaultCardProps = {
-  vault: TYDaemonVault
+  vault: TKongVaultInput
   onRemove: (vaultKey: string) => void
 }
 
-type TVaultStrategyItem = NonNullable<TYDaemonVault['strategies']>[number]
+type TVaultStrategyItem = TKongVaultStrategy
 
 const listKindLabels = {
   allocator: 'Allocator',
@@ -63,15 +76,24 @@ function normalizeRiskLevel(riskLevel: number): number {
 
 export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): ReactElement {
   const trackEvent = usePlausible()
-  const network = getNetwork(vault.chainID)
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${vault.chainID}/logo-32.png`
+  const chainID = getVaultChainID(vault)
+  const vaultAddress = getVaultAddress(vault)
+  const vaultName = getVaultName(vault)
+  const vaultSymbol = getVaultSymbol(vault)
+  const vaultToken = getVaultToken(vault)
+  const vaultAPR = getVaultAPR(vault)
+  const vaultTVL = getVaultTVL(vault)
+  const vaultKind = getVaultKind(vault)
+  const vaultInfo = getVaultInfo(vault)
+  const network = getNetwork(chainID)
+  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const vaultKey = getVaultKey(vault)
-  const vaultHref = `/vaults/${vault.chainID}/${toAddress(vault.address)}`
+  const vaultHref = `/vaults/${chainID}/${toAddress(vaultAddress)}`
   const listKind = deriveListKind(vault)
   const label = listKindLabels[listKind]
-  const riskLevel = vault.info?.riskLevel ?? -1
+  const riskLevel = vaultInfo.riskLevel ?? -1
   const normalizedRisk = normalizeRiskLevel(riskLevel)
-  const strategies = (vault.strategies ?? [])
+  const strategies = getVaultStrategies(vault)
     .filter((strategy) => strategy.status !== 'not_active' && hasAllocatedFunds(strategy))
     .sort((left, right) => (right.details?.debtRatio ?? 0) - (left.details?.debtRatio ?? 0))
 
@@ -88,7 +110,7 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
             'md:group-focus-within:opacity-100 md:group-focus-within:pointer-events-auto',
             'hover:border-border hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
           )}
-          aria-label={`Remove ${vault.name} from comparison`}
+          aria-label={`Remove ${vaultName} from comparison`}
         >
           <IconClose className={'size-4'} />
         </button>
@@ -101,13 +123,13 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
             'transition-colors hover:bg-surface-secondary/60',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
           )}
-          aria-label={`Open ${vault.name} vault in a new tab`}
+          aria-label={`Open ${vaultName} vault in a new tab`}
           onClick={(): void => {
             trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_COMPARE, {
               props: {
-                vaultAddress: toAddress(vault.address),
-                vaultSymbol: vault.symbol,
-                chainID: String(vault.chainID)
+                vaultAddress: toAddress(vaultAddress),
+                vaultSymbol,
+                chainID: String(chainID)
               }
             })
           }}
@@ -115,13 +137,13 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
           <div className={'min-w-0 flex-1'}>
             <div className={'flex items-center gap-3'}>
               <TokenLogo
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainID}/${vault.token.address.toLowerCase()}/logo-128.png`}
-                tokenSymbol={vault.token.symbol || ''}
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${vaultToken.address.toLowerCase()}/logo-128.png`}
+                tokenSymbol={vaultToken.symbol}
                 width={36}
                 height={36}
               />
               <div className={'min-w-0'}>
-                <p className={'truncate text-sm font-semibold text-text-primary'}>{vault.name}</p>
+                <p className={'truncate text-sm font-semibold text-text-primary'}>{vaultName}</p>
                 <div className={'mt-1 flex items-center gap-2 text-xs text-text-secondary'}>
                   <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />
                   <span>{network.name}</span>
@@ -148,18 +170,18 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
         </MetricRow>
 
         <MetricRow label={'TVL'} sublabel={'Total value locked'}>
-          <span className={'font-semibold'}>{formatTvlDisplay(vault.tvl?.tvl ?? 0)}</span>
+          <span className={'font-semibold'}>{formatTvlDisplay(vaultTVL.tvl)}</span>
         </MetricRow>
 
         <MetricRow label={'Fees'} sublabel={'Mgmt / Perf'}>
           <div className={'flex flex-col gap-0.5 text-xs'}>
             <span>
               <span className={'text-text-secondary'}>{'Management:'}</span>{' '}
-              <span>{formatFee(vault.apr?.fees?.management)}</span>
+              <span>{formatFee(vaultAPR.fees.management)}</span>
             </span>
             <span>
               <span className={'text-text-secondary'}>{'Performance:'}</span>{' '}
-              <span>{formatFee(vault.apr?.fees?.performance)}</span>
+              <span>{formatFee(vaultAPR.fees.performance)}</span>
             </span>
           </div>
         </MetricRow>
@@ -174,7 +196,7 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
         <MetricRow label={'Type'} sublabel={'Vault structure'}>
           <div className={'flex flex-col items-start'}>
             <span className={'text-sm font-semibold text-text-primary'}>{label}</span>
-            <span className={'text-xs text-text-secondary'}>{vault.kind}</span>
+            <span className={'text-xs text-text-secondary'}>{vaultKind}</span>
           </div>
         </MetricRow>
 
@@ -189,7 +211,7 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
             <div className={'flex flex-col gap-2'}>
               {strategies.map((strategy) => {
                 const debtRatio = strategy.details?.debtRatio
-                const allocation = debtRatio ? formatPercent(debtRatio / 100, 0) : null
+                const allocation = debtRatio ? formatPercent(debtRatio / 100) : null
                 return (
                   <div key={strategy.address} className={'flex items-start gap-2 text-xs'}>
                     <span className={'text-text-primary'}>{strategy.name}</span>

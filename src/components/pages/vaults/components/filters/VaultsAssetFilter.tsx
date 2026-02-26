@@ -1,9 +1,11 @@
+import { useThrottledState } from '@react-hookz/web'
+import { EmptyState } from '@shared/components/EmptyState'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSearch } from '@shared/icons/IconSearch'
 import { cl } from '@shared/utils'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useMemo, useState } from 'react'
 
 type TVaultsAssetFilterProps = {
@@ -12,12 +14,60 @@ type TVaultsAssetFilterProps = {
   buttonLabel?: string
 }
 
+function renderAssetOption(
+  option: TMultiSelectOptionProps,
+  onSelectSingle: (option: TMultiSelectOptionProps) => void,
+  onToggle: (option: TMultiSelectOptionProps) => void
+): ReactNode {
+  return (
+    <div
+      key={option.value}
+      className={cl(
+        'flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors',
+        option.isSelected ? 'border-border bg-surface-tertiary/80' : 'border-border hover:bg-surface-tertiary/40'
+      )}
+    >
+      <button
+        type={'button'}
+        className={'flex min-w-0 flex-1 items-center gap-2 text-left'}
+        onClick={(): void => onSelectSingle(option)}
+      >
+        {option.icon ? (
+          <div className={cl('size-8 overflow-hidden rounded-full', option.label === 'Sonic' ? 'bg-white' : '')}>
+            {option.icon}
+          </div>
+        ) : null}
+        <span className={'truncate text-sm font-medium text-text-primary'}>{option.label}</span>
+      </button>
+      <input
+        type={'checkbox'}
+        className={'checkbox accent-blue-500'}
+        checked={option.isSelected}
+        onChange={(): void => onToggle(option)}
+        readOnly
+      />
+    </div>
+  )
+}
+
+function renderAssetFilterSelected(buttonTitle: string, isOpen: boolean): ReactNode {
+  return (
+    <>
+      <p className={'truncate text-sm font-medium text-text-primary'}>{buttonTitle}</p>
+      <IconChevron
+        aria-hidden={'true'}
+        className={`size-4 text-text-secondary transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
+      />
+    </>
+  )
+}
+
 export function VaultsAssetFilter({
   options,
   onSelect,
   buttonLabel = 'Filter by assets'
 }: TVaultsAssetFilterProps): ReactElement {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useThrottledState(false, 400)
   const [query, setQuery] = useState('')
 
   const selectedOptions = useMemo(() => options.filter((option) => option.isSelected), [options])
@@ -35,7 +85,7 @@ export function VaultsAssetFilter({
   const handleClose = useCallback((): void => {
     setIsOpen(false)
     setQuery('')
-  }, [])
+  }, [setIsOpen])
 
   const handleSelectSingle = useCallback(
     (option: TMultiSelectOptionProps): void => {
@@ -73,11 +123,7 @@ export function VaultsAssetFilter({
           'flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2 text-left'
         }
       >
-        <p className={'truncate text-sm font-medium text-text-primary'}>{buttonTitle}</p>
-        <IconChevron
-          aria-hidden={'true'}
-          className={`size-4 text-text-secondary transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
-        />
+        {renderAssetFilterSelected(buttonTitle, isOpen)}
       </button>
 
       {isOpen ? (
@@ -140,46 +186,15 @@ export function VaultsAssetFilter({
           <div className={'mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden'}>
             <div className={'flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1'}>
               {filteredOptions.length === 0 ? (
-                <div className={'rounded-lg border border-dashed border-border px-3 py-6 text-center'}>
-                  <p className={'text-sm text-text-secondary'}>{'No assets found.'}</p>
-                </div>
-              ) : null}
-              {filteredOptions.map((option) => (
-                <div
-                  key={option.value}
-                  className={cl(
-                    'flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors',
-                    option.isSelected
-                      ? 'border-border bg-surface-tertiary/80'
-                      : 'border-border hover:bg-surface-tertiary/40'
-                  )}
-                >
-                  <button
-                    type={'button'}
-                    className={'flex min-w-0 flex-1 items-center gap-2 text-left'}
-                    onClick={(): void => handleSelectSingle(option)}
-                  >
-                    {option.icon ? (
-                      <div
-                        className={cl(
-                          'size-8 overflow-hidden rounded-full',
-                          option.label === 'Sonic' ? 'bg-white' : ''
-                        )}
-                      >
-                        {option.icon}
-                      </div>
-                    ) : null}
-                    <span className={'truncate text-sm font-medium text-text-primary'}>{option.label}</span>
-                  </button>
-                  <input
-                    type={'checkbox'}
-                    className={'checkbox accent-blue-500'}
-                    checked={option.isSelected}
-                    onChange={(): void => handleToggleOption(option)}
-                    readOnly
-                  />
-                </div>
-              ))}
+                <EmptyState
+                  title={'No assets found.'}
+                  size={'sm'}
+                  unstyled
+                  className={'rounded-lg border border-dashed border-border px-3 py-6'}
+                />
+              ) : (
+                filteredOptions.map((option) => renderAssetOption(option, handleSelectSingle, handleToggleOption))
+              )}
             </div>
           </div>
         </div>

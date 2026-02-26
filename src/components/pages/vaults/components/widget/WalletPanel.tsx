@@ -1,3 +1,9 @@
+import {
+  getVaultDecimals,
+  getVaultSymbol,
+  getVaultTVL,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useNotifications } from '@shared/contexts/useNotifications'
@@ -20,14 +26,13 @@ import {
   truncateHex
 } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 type WalletPanelProps = {
   isActive: boolean
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   vaultAddress: `0x${string}`
   stakingAddress?: `0x${string}`
   chainId: number
@@ -70,12 +75,14 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   const [activeTab, setActiveTab] = useState<WalletTabKey>('balances')
   const { assetToken, vaultToken, stakingToken, depositedValue, depositedShares, pricePerShare, isLoading } =
     vaultUserData
+  const vaultDecimals = getVaultDecimals(currentVault)
+  const vaultTVL = getVaultTVL(currentVault)
 
-  const assetSymbol = assetToken?.symbol || currentVault.token.symbol
-  const vaultSymbol = vaultToken?.symbol || currentVault.symbol || assetSymbol
+  const assetSymbol = assetToken?.symbol || getVaultSymbol(currentVault)
+  const vaultSymbol = vaultToken?.symbol || getVaultSymbol(currentVault) || assetSymbol
   const stakingSymbol = stakingToken?.symbol
-  const depositedUnderlying = toNormalizedBN(depositedValue, assetToken?.decimals ?? currentVault.decimals).normalized
-  const depositedUsd = depositedUnderlying * (currentVault.tvl.price || 0)
+  const depositedUnderlying = toNormalizedBN(depositedValue, assetToken?.decimals ?? vaultDecimals).normalized
+  const depositedUsd = depositedUnderlying * (vaultTVL.price || 0)
   const availableBalance = assetToken?.balance.raw ?? 0n
   const vaultBalance = vaultToken?.balance.raw ?? 0n
   const stakingBalance = stakingToken?.balance.raw ?? 0n
@@ -86,8 +93,8 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   const assetPrice = assetToken?.address
     ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID ?? chainId }).normalized
     : 0
-  const assetDecimals = assetToken?.decimals ?? currentVault.decimals
-  const vaultDecimals = vaultToken?.decimals ?? 18
+  const assetDecimals = assetToken?.decimals ?? vaultDecimals
+  const shareTokenDecimals = vaultToken?.decimals ?? 18
   const maxShareLabelLength = 'vault shares'.length
   const baseVaultSharesLabel = vaultSymbol || 'vault shares'
   const baseStakedSharesLabel = stakingSymbol || baseVaultSharesLabel
@@ -119,30 +126,30 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   )
 
   const depositedLabel = formatTokenAmount(depositedValue, assetDecimals, assetSymbol)
-  const vaultBalanceLabel = formatTokenAmount(vaultBalance, vaultDecimals, vaultSharesLabel, {
+  const vaultBalanceLabel = formatTokenAmount(vaultBalance, shareTokenDecimals, vaultSharesLabel, {
     shouldCompactValue: true
   })
-  const stakingBalanceLabel = formatTokenAmount(stakingBalance, vaultDecimals, stakedSharesLabel, {
+  const stakingBalanceLabel = formatTokenAmount(stakingBalance, shareTokenDecimals, stakedSharesLabel, {
     shouldCompactValue: true
   })
-  const totalSharesLabel = formatTokenAmount(depositedShares, vaultDecimals, vaultSharesLabel, {
+  const totalSharesLabel = formatTokenAmount(depositedShares, shareTokenDecimals, vaultSharesLabel, {
     shouldCompactValue: true
   })
   const availableLabel = formatTokenAmount(availableBalance, assetDecimals, assetSymbol, { shouldCompactValue: true })
 
   const vaultSharesUsd = useMemo(() => {
     if (!pricePerShare || vaultBalance === 0n || assetPrice === 0) return 0
-    const underlying = (vaultBalance * pricePerShare) / 10n ** BigInt(vaultDecimals)
+    const underlying = (vaultBalance * pricePerShare) / 10n ** BigInt(shareTokenDecimals)
     const normalized = toNormalizedBN(underlying, assetDecimals).normalized
     return normalized * assetPrice
-  }, [pricePerShare, vaultBalance, vaultDecimals, assetDecimals, assetPrice])
+  }, [pricePerShare, vaultBalance, shareTokenDecimals, assetDecimals, assetPrice])
 
   const stakedSharesUsd = useMemo(() => {
     if (!pricePerShare || stakingBalance === 0n || assetPrice === 0) return 0
-    const underlying = (stakingBalance * pricePerShare) / 10n ** BigInt(vaultDecimals)
+    const underlying = (stakingBalance * pricePerShare) / 10n ** BigInt(shareTokenDecimals)
     const normalized = toNormalizedBN(underlying, assetDecimals).normalized
     return normalized * assetPrice
-  }, [pricePerShare, stakingBalance, vaultDecimals, assetDecimals, assetPrice])
+  }, [pricePerShare, stakingBalance, shareTokenDecimals, assetDecimals, assetPrice])
 
   const totalSharesUsd = vaultSharesUsd + stakedSharesUsd
   const availableUsd = (assetToken?.balance.normalized ?? 0) * assetPrice

@@ -44,8 +44,7 @@ function isValidAddress(address: string): boolean {
 
 function handleEnsoStatus(): Response {
   const apiKey = process.env.ENSO_API_KEY
-  const isConfigured = !!apiKey
-  return Response.json({ configured: isConfigured })
+  return Response.json({ configured: !!apiKey })
 }
 
 async function handleEnsoRoute(req: Request): Promise<Response> {

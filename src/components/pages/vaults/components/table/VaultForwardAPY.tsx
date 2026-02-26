@@ -1,7 +1,12 @@
 import { KATANA_CHAIN_ID, SPECTRA_MARKET_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultStaking,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { cl, formatAmount, formatApyDisplay } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import type { ReactElement, ReactNode } from 'react'
 import { Fragment, forwardRef, useCallback, useImperativeHandle, useState } from 'react'
 import { APYDetailsModal } from './APYDetailsModal'
@@ -22,7 +27,7 @@ const INLINE_DETAILS_LINK_CLASS =
   'transition-opacity hover:decoration-neutral-600'
 
 type TVaultForwardAPYProps = {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   onMobileToggle?: (e: React.MouseEvent) => void
   className?: string
   valueClassName?: string
@@ -36,7 +41,7 @@ type TVaultForwardAPYProps = {
 }
 
 type TVaultForwardAPYInlineDetailsProps = {
-  currentVault: TYDaemonVault
+  currentVault: TKongVaultInput
   showBoostDetails?: boolean
 }
 
@@ -167,13 +172,15 @@ export function VaultForwardAPYInlineDetails({
 }: TVaultForwardAPYInlineDetailsProps): ReactElement | null {
   const data = useVaultApyData(currentVault)
   const katanaExtras = data.katanaExtras
+  const chainID = getVaultChainID(currentVault)
+  const vaultAddress = getVaultAddress(currentVault)
+  const staking = getVaultStaking(currentVault)
 
   // Check if vault is eligible for Spectra boost (Katana chain only)
   const isEligibleForSpectraBoost =
-    currentVault.chainID === KATANA_CHAIN_ID &&
-    SPECTRA_MARKET_VAULT_ADDRESSES.includes(currentVault.address.toLowerCase())
+    chainID === KATANA_CHAIN_ID && SPECTRA_MARKET_VAULT_ADDRESSES.includes(vaultAddress.toLowerCase())
 
-  const hasKatanaDetails = currentVault.chainID === KATANA_CHAIN_ID && katanaExtras && data.katanaEstApr !== undefined
+  const hasKatanaDetails = chainID === KATANA_CHAIN_ID && katanaExtras && data.katanaEstApr !== undefined
 
   if (hasKatanaDetails && katanaExtras) {
     const steerPointsPerDollar = katanaExtras.steerPointsPerDollar ?? 0
@@ -243,7 +250,7 @@ export function VaultForwardAPYInlineDetails({
     )
   }
 
-  if (data.mode === 'noForward' || currentVault.chainID === KATANA_CHAIN_ID) {
+  if (data.mode === 'noForward' || chainID === KATANA_CHAIN_ID) {
     if (data.rewardsAprSum > 0) {
       return (
         <div className={INLINE_DETAILS_CONTAINER_CLASS}>
@@ -270,7 +277,7 @@ export function VaultForwardAPYInlineDetails({
   }
 
   if (data.mode === 'rewards') {
-    const isSourceVeYFI = currentVault.staking.source === 'VeYFI'
+    const isSourceVeYFI = staking.source === 'VeYFI'
     const veYFIRange = data.veYfiRange
     return (
       <div className={INLINE_DETAILS_CONTAINER_CLASS}>
