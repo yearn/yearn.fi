@@ -28,10 +28,10 @@ export async function getHistoricalHoldings(
   const startDate = timestampToDateString(timestamps[0])
   const endDate = timestampToDateString(timestamps[timestamps.length - 1])
   const todayDate = timestampToDateString(Math.floor(Date.now() / 1000))
-
+  console.log(timestamps)
   const cachedTotals = await getCachedTotals(userAddress, startDate, endDate)
   const cachedByDate = new Map(cachedTotals.map((t) => [t.date, t.usdValue]))
-  // Always recalculate today (don't trust cache - value changes throughout the day)
+  // Always recalculate today (Kong/DefiLlama may not have today's data early in the day)
   const missingTimestamps = timestamps.filter(
     (ts) => !cachedByDate.has(timestampToDateString(ts)) || timestampToDateString(ts) === todayDate
   )
@@ -97,7 +97,7 @@ export async function getHistoricalHoldings(
       }
     }
 
-    // Cache all totals except today (today's value changes throughout the day)
+    // Cache all totals except today (recalculate daily until Kong/DefiLlama data stabilizes)
     const totalsToCache = newTotals.filter((t) => t.date !== todayDate)
     if (totalsToCache.length > 0) {
       await saveCachedTotals(userAddress, totalsToCache)

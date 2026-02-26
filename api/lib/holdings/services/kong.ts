@@ -8,7 +8,34 @@ export function buildPPSTimeline(response: KongPPSDataPoint[]): PPSTimeline {
 }
 
 export function getPPS(timeline: PPSTimeline, timestamp: number): number {
-  return timeline.get(timestamp) ?? 1.0
+  // Exact match
+  if (timeline.has(timestamp)) {
+    return timeline.get(timestamp)!
+  }
+
+  // Find closest timestamp (Kong only has midnight timestamps)
+  if (timeline.size === 0) {
+    return 1.0
+  }
+
+  const timestamps = Array.from(timeline.keys()).sort((a, b) => a - b)
+
+  // If target is before all data, use earliest
+  if (timestamp < timestamps[0]) {
+    return timeline.get(timestamps[0])!
+  }
+
+  // Find the latest timestamp that's <= target (most recent PPS before/at this time)
+  let closest = timestamps[0]
+  for (const ts of timestamps) {
+    if (ts <= timestamp) {
+      closest = ts
+    } else {
+      break
+    }
+  }
+
+  return timeline.get(closest) ?? 1.0
 }
 
 export async function fetchVaultPPS(chainId: number, vaultAddress: string): Promise<PPSTimeline> {
