@@ -1,6 +1,7 @@
 import {
   getVaultAddress,
   getVaultChainID,
+  getVaultDecimals,
   getVaultName,
   getVaultStaking,
   getVaultSymbol,
@@ -9,10 +10,11 @@ import {
   type TKongVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { getVaultSharePriceUsd } from '@pages/vaults/utils/holdingsValue'
 import { getNativeTokenWrapperContract } from '@pages/vaults/utils/nativeTokens'
 import type { TAddress } from '@shared/types/address'
 import type { TNormalizedBN } from '@shared/types/mixed'
-import { isZeroAddress, toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 
 export type TVaultWithMetadata = {
@@ -43,18 +45,12 @@ export function createCheckHasHoldings(
   return function checkHasHoldings(vault: TKongVaultInput): boolean {
     const address = getVaultAddress(vault)
     const chainID = getVaultChainID(vault)
+    const vaultDecimals = getVaultDecimals(vault)
     const staking = getVaultStaking(vault)
 
     const vaultBalance = getBalance({ address, chainID })
     const hasVaultBalance = vaultBalance.raw > 0n
-    let vaultPrice: { normalized: number } | null = null
-
-    const getVaultPrice = (): { normalized: number } => {
-      if (!vaultPrice) {
-        vaultPrice = getPrice({ address, chainID })
-      }
-      return vaultPrice
-    }
+    const sharePriceUsd = getVaultSharePriceUsd(vault, getPrice)
 
     if (!isZeroAddress(staking.address)) {
       const stakingBalance = getBalance({
@@ -63,11 +59,11 @@ export function createCheckHasHoldings(
       })
       const hasValidStakedBalance = stakingBalance.raw > 0n
       if (hasValidStakedBalance) {
-        const price = getVaultPrice()
-        if (price.normalized <= 0) {
+        if (sharePriceUsd <= 0) {
           return true
         }
-        const stakedBalanceValue = Number(stakingBalance.normalized) * price.normalized
+        const stakedBalance = toNormalizedBN(stakingBalance.raw, vaultDecimals).normalized
+        const stakedBalanceValue = stakedBalance * sharePriceUsd
         if (!(shouldHideDust && stakedBalanceValue < 0.01)) {
           return true
         }
@@ -78,11 +74,10 @@ export function createCheckHasHoldings(
       return false
     }
 
-    const price = getVaultPrice()
-    if (price.normalized <= 0) {
+    if (sharePriceUsd <= 0) {
       return true
     }
-    const balanceValue = Number(vaultBalance.normalized) * price.normalized
+    const balanceValue = toNormalizedBN(vaultBalance.raw, vaultDecimals).normalized * sharePriceUsd
 
     return !(shouldHideDust && balanceValue < 0.01)
   }

@@ -125,8 +125,7 @@ export const WidgetWithdraw: FC<
 
   const isUnstake = withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(vaultAddress)
 
-  const sharesDecimals =
-    withdrawalSource === 'staking' ? (stakingToken?.decimals ?? vault?.decimals ?? 18) : (vault?.decimals ?? 18)
+  const sharesDecimals = vault?.decimals ?? stakingToken?.decimals ?? 18
   const vaultDecimals = vault?.decimals ?? 18
 
   const totalBalanceInUnderlying: TNormalizedBN = useMemo(() => {
@@ -229,6 +228,7 @@ export const WidgetWithdraw: FC<
     hasBothBalances: !!hasBothBalances,
     withdrawalSource
   })
+  const isFetchingQuote = routeType === 'ENSO' && activeFlow.periphery.isLoadingRoute
 
   const actionLabel = isUnstake
     ? 'You will unstake'
@@ -243,7 +243,7 @@ export const WidgetWithdraw: FC<
         ? 'Unstake'
         : routeType === 'DIRECT_UNSTAKE_WITHDRAW'
           ? 'Unstake & Withdraw'
-          : activeFlow.periphery.isLoadingRoute
+          : isFetchingQuote
             ? 'Fetching quote'
             : 'Withdraw'
 
@@ -276,7 +276,7 @@ export const WidgetWithdraw: FC<
       address: outputToken?.address || '',
       chainId: outputToken?.chainID || chainId,
       expectedAmount: getExpectedAmount(),
-      isLoading: isUnstake ? false : activeFlow.periphery.isLoadingRoute
+      isLoading: isUnstake ? false : isFetchingQuote
     }
   }, [
     withdrawToken,
@@ -285,7 +285,7 @@ export const WidgetWithdraw: FC<
     requiredShares,
     vault?.decimals,
     activeFlow.periphery.expectedOut,
-    activeFlow.periphery.isLoadingRoute,
+    isFetchingQuote,
     outputToken?.symbol,
     outputToken?.address,
     outputToken?.chainID,
@@ -298,7 +298,7 @@ export const WidgetWithdraw: FC<
   const needsApproval = showApprove && !activeFlow.periphery.isAllowanceSufficient
 
   const approvalToken = withdrawalSource === 'staking' ? stakingToken : vault
-  const formattedApprovalAmount = formatTAmount({ value: requiredShares, decimals: approvalToken?.decimals ?? 18 })
+  const formattedApprovalAmount = formatTAmount({ value: requiredShares, decimals: sharesDecimals })
 
   const currentStep: TransactionStep | undefined = useMemo(() => {
     if (needsApproval && activeFlow.actions.prepareApprove) {
@@ -474,7 +474,7 @@ export const WidgetWithdraw: FC<
       actionLabel={actionLabel}
       requiredShares={requiredShares}
       sharesDecimals={sharesDecimals}
-      isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+      isLoadingQuote={isFetchingQuote}
       expectedOut={activeFlow.periphery.expectedOut}
       outputDecimals={outputToken?.decimals ?? 18}
       outputSymbol={outputToken?.symbol}
@@ -516,12 +516,12 @@ export const WidgetWithdraw: FC<
         ) : (
           <Button
             onClick={() => setShowTransactionOverlay(true)}
-            variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-            isBusy={activeFlow.periphery.isLoadingRoute}
+            variant={isFetchingQuote ? 'busy' : 'filled'}
+            isBusy={isFetchingQuote}
             disabled={
               !!withdrawError ||
               withdrawAmount.bn === 0n ||
-              activeFlow.periphery.isLoadingRoute ||
+              isFetchingQuote ||
               withdrawAmount.isDebouncing ||
               (showApprove &&
                 !activeFlow.periphery.isAllowanceSufficient &&
@@ -532,7 +532,7 @@ export const WidgetWithdraw: FC<
             className="w-full"
             classNameOverride="yearn--button--nextgen w-full"
           >
-            {activeFlow.periphery.isLoadingRoute
+            {isFetchingQuote
               ? 'Fetching quote'
               : showApprove && !activeFlow.periphery.isAllowanceSufficient
                 ? `Approve & ${transactionName}`
@@ -686,7 +686,7 @@ export const WidgetWithdraw: FC<
         withdrawalSource={withdrawalSource}
         routeType={routeType}
         isZap={routeType === 'ENSO' && selectedToken !== assetAddress}
-        isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+        isLoadingQuote={isFetchingQuote}
       />
 
       {/* Full-screen Token Selector Overlay */}

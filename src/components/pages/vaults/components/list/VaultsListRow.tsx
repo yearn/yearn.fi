@@ -10,12 +10,11 @@ import {
   getVaultChainID,
   getVaultName as getVaultDisplayName,
   getVaultKind,
-  getVaultStaking,
   getVaultSymbol,
   getVaultToken,
-  getVaultTVL,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { getVaultHoldingsUsd } from '@pages/vaults/utils/holdingsValue'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
@@ -35,15 +34,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
-import {
-  cl,
-  formatAmount,
-  formatTvlDisplay,
-  getVaultName,
-  isZeroAddress,
-  toAddress,
-  zeroNormalizedBN
-} from '@shared/utils'
+import { cl, formatAmount, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -132,7 +123,6 @@ export function VaultsListRow({
   const vaultSymbol = getVaultSymbol(currentVault)
   const vaultName = getVaultDisplayName(currentVault)
   const vaultToken = getVaultToken(currentVault)
-  const staking = getVaultStaking(currentVault)
   const apr = getVaultAPR(currentVault)
   const vaultKind = getVaultKind(currentVault)
   const vaultCategory = getVaultCategory(currentVault)
@@ -274,33 +264,8 @@ export function VaultsListRow({
     if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
       return 0
     }
-    const vaultBalance = getBalance({
-      chainID,
-      address: vaultAddress
-    })
-    const stakingBalance = !isZeroAddress(staking?.address)
-      ? getBalance({
-          chainID,
-          address: staking.address
-        })
-      : zeroNormalizedBN
-    const vaultPrice =
-      getPrice({
-        chainID,
-        address: vaultAddress
-      }).normalized || getVaultTVL(currentVault).price
-
-    return (vaultBalance.normalized + stakingBalance.normalized) * vaultPrice
-  }, [
-    showHoldingsChip,
-    mobileSecondaryMetric,
-    getBalance,
-    chainID,
-    vaultAddress,
-    staking?.address,
-    getPrice,
-    currentVault
-  ])
+    return getVaultHoldingsUsd(currentVault, getBalance, getPrice)
+  }, [showHoldingsChip, mobileSecondaryMetric, currentVault, getBalance, getPrice])
 
   useEffect(() => {
     if (isExpanded) {

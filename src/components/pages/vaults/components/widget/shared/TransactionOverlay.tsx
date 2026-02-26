@@ -108,7 +108,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const { signTypedDataAsync } = useSignTypedData()
   const currentChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
-  const [ensoTxHash, setEnsoTxHash] = useState<`0x${string}` | undefined>()
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>()
   const client = usePublicClient()
   const { address: account } = useAccount()
 
@@ -122,8 +122,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   // Track the step that was just executed (for showing success messages)
   const executedStepRef = useRef<TransactionStep | null>(null)
 
-  const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash, confirmations })
-  const txHash = (writeContract.data || ensoTxHash) as `0x${string}` | undefined
+  const receipt = useWaitForTransactionReceipt({ hash: txHash, confirmations })
   const explorerChainId =
     ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? currentChainId
   const blockExplorer = explorerChainId ? getNetwork(explorerChainId).defaultBlockExplorer : ''
@@ -155,7 +154,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     if (!isOpen) {
       setOverlayState('idle')
       setErrorMessage('')
-      setEnsoTxHash(undefined)
+      setTxHash(undefined)
       hasStartedRef.current = false
       hasAutoContinuedFromStepRef.current = null
       hasReportedStepSuccessRef.current = false
@@ -328,7 +327,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
             }
           } else {
             // Same-chain Enso: wait for receipt
-            setEnsoTxHash(result.hash)
+            setTxHash(result.hash)
             setOverlayState('pending')
             await handleCreateNotification(result.hash, step.notification)
           }
@@ -355,6 +354,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           ...step.prepare.data.request,
           ...gasOverrides
         })
+        setTxHash(hash)
         setOverlayState('pending')
         await handleCreateNotification(hash, step.notification)
       }
@@ -391,7 +391,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const advanceToNextStep = useCallback(() => {
     // Reset for next step - parent will provide the new step
     writeContract.reset()
-    setEnsoTxHash(undefined)
+    setTxHash(undefined)
     executeStep()
   }, [writeContract, executeStep])
 
@@ -411,7 +411,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   const handleRetry = useCallback(() => {
     writeContract.reset()
-    setEnsoTxHash(undefined)
+    setTxHash(undefined)
     executeStep()
   }, [writeContract, executeStep])
 
@@ -466,7 +466,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     if (receipt.isSuccess && receipt.data?.transactionHash && overlayState === 'pending' && canShowSuccess) {
       setOverlayState('success')
       writeContract.reset()
-      setEnsoTxHash(undefined)
+      setTxHash(undefined)
 
       // Update notification to success
       handleUpdateNotification({ receipt: receipt.data, status: 'success' })
@@ -500,13 +500,35 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       setOverlayState('error')
       setErrorMessage('Transaction failed. Please try again.')
       writeContract.reset()
-      setEnsoTxHash(undefined)
+      setTxHash(undefined)
 
       // Update notification to error
       handleUpdateNotification({ status: 'error' })
       setNotificationId(undefined)
     }
   }, [receipt.isError, receipt.error, overlayState, handleUpdateNotification])
+
+  // When step 1 succeeds in a multi-step flow, the next step simulation may need a refetch
+  // to pick up post-transaction state (e.g. unstake -> withdraw).
+  useEffect(() => {
+    if (!isOpen || overlayState !== 'pending') return
+    if (!receipt.isSuccess || !receipt.data?.transactionHash) return
+    if (wasLastStepRef.current) return
+    if (!step?.label || step.label === executedStepRef.current?.label) return
+    if (isStepReady) return
+
+    const refetch = step.prepare.refetch
+    if (!refetch) return
+
+    void refetch()
+    const intervalId = window.setInterval(() => {
+      void refetch()
+    }, 1500)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [isOpen, overlayState, receipt.isSuccess, receipt.data?.transactionHash, step?.label, isStepReady, step?.prepare])
 
   return (
     <div

@@ -108,7 +108,8 @@ export function useYearnTokens({
           chainID,
           symbol,
           decimals,
-          name
+          name,
+          for: 'vault'
         }
       } else {
         const existingToken = tokens[`${chainID}/${toAddress(address)}`]
@@ -122,6 +123,9 @@ export function useYearnTokens({
           }
           if (!existingToken?.decimals && decimals) {
             tokens[`${chainID}/${toAddress(address)}`].decimals = decimals
+          }
+          if (!existingToken?.for) {
+            tokens[`${chainID}/${toAddress(address)}`].for = 'vault'
           }
         }
       }
@@ -140,7 +144,8 @@ export function useYearnTokens({
           chainID,
           symbol,
           decimals,
-          name
+          name,
+          for: 'staking'
         }
       } else {
         const existingToken = tokens[`${chainID}/${toAddress(staking.address)}`]
@@ -153,6 +158,9 @@ export function useYearnTokens({
           }
           if (!existingToken?.decimals && decimals) {
             tokens[`${chainID}/${toAddress(staking.address)}`].decimals = decimals
+          }
+          if (!existingToken?.for) {
+            tokens[`${chainID}/${toAddress(staking.address)}`].for = 'staking'
           }
         }
       }

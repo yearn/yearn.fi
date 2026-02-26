@@ -8,6 +8,7 @@ import {
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
+import { getVaultHoldingsUsd } from '@pages/vaults/utils/holdingsValue'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -216,29 +217,7 @@ export function usePortfolioModel(): TPortfolioModel {
   const getVaultValue = useMemo(
     () =>
       (vault: (typeof holdingsVaults)[number]): number => {
-        const chainID = getVaultChainID(vault)
-        const address = getVaultAddress(vault)
-        const staking = getVaultStaking(vault)
-
-        const shareBalance = getBalance({
-          address,
-          chainID
-        })
-        const price = getPrice({
-          address,
-          chainID
-        })
-        const baseValue = shareBalance.normalized * price.normalized
-
-        const stakingValue =
-          staking?.address && !isZeroAddress(staking.address)
-            ? getBalance({
-                address: staking.address,
-                chainID
-              }).normalized * price.normalized
-            : 0
-
-        return baseValue + stakingValue
+        return getVaultHoldingsUsd(vault, getBalance, getPrice)
       },
     [getBalance, getPrice]
   )

@@ -31,7 +31,8 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     const multicall: TUseBalancesTokens[] = []
 
     for (const token of tokens) {
-      if (ENSO_UNSUPPORTED_NETWORKS.includes(token.chainID)) {
+      const isStakingPositionToken = token.for === 'staking'
+      if (isStakingPositionToken || ENSO_UNSUPPORTED_NETWORKS.includes(token.chainID)) {
         multicall.push(token)
       } else {
         enso.push(token)

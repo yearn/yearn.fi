@@ -57,20 +57,21 @@ export const useWithdrawNotifications = ({
   const isZap = toAddress(withdrawToken) !== toAddress(assetAddress)
   const isUnstakeAndWithdraw =
     withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(assetAddress) && !isZap
+  const shareDecimals = vault?.decimals ?? stakingToken?.decimals ?? 18
 
   // Determine source token info based on withdrawal source
   const sourceTokenInfo = useMemo(() => {
     if (withdrawalSource === 'staking' && stakingToken) {
       return {
         symbol: stakingToken.symbol || '',
-        decimals: stakingToken.decimals ?? 18
+        decimals: shareDecimals
       }
     }
     return {
       symbol: vault?.symbol || '',
-      decimals: vault?.decimals ?? 18
+      decimals: shareDecimals
     }
-  }, [withdrawalSource, stakingToken, vault])
+  }, [withdrawalSource, stakingToken, vault, shareDecimals])
 
   // Approve notification: approving source token (vault/staking shares) to Enso router
   const approveNotificationParams = useMemo((): TCreateNotificationParams | undefined => {

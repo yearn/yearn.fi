@@ -1,20 +1,19 @@
 import {
-  getVaultAddress,
   getVaultAPR,
   getVaultChainID,
   getVaultFeaturingScore,
   getVaultInfo,
   getVaultName,
-  getVaultStaking,
   getVaultToken,
   getVaultTVL,
   type TKongVaultInput,
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { getVaultHoldingsUsd } from '@pages/vaults/utils/holdingsValue'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import type { TSortDirection } from '@shared/types'
-import { isZeroAddress, normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
+import { normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { numberSort, stringSort } from '@shared/utils/helpers'
 import { calculateVaultEstimatedAPY } from '@shared/utils/vaultApy'
@@ -60,17 +59,7 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
     }
 
     const getDepositedValue = (vault: TKongVaultInput): number => {
-      const chainID = getVaultChainID(vault)
-      const address = getVaultAddress(vault)
-      const staking = getVaultStaking(vault)
-
-      const vaultBalance = getBalance({ address, chainID })
-      const stakingBalance = !isZeroAddress(toAddress(staking?.address))
-        ? getBalance({ address: staking.address, chainID })
-        : toNormalizedBN(0n, 18)
-      const sharePrice = getPrice({ address, chainID }).normalized || getVaultTVL(vault).price
-
-      return (vaultBalance.normalized + stakingBalance.normalized) * sharePrice
+      return getVaultHoldingsUsd(vault, getBalance, getPrice)
     }
 
     switch (sortBy) {
