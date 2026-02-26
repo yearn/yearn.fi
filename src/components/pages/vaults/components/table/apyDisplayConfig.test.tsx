@@ -6,7 +6,6 @@ import { describe, expect, it } from 'vitest'
 import { resolveHistoricalApyDisplayConfig } from './apyDisplayConfig'
 
 const KATANA_SPECTRA_VAULT = {
-  version: '3.0.0',
   chainID: KATANA_CHAIN_ID,
   address: SPECTRA_MARKET_VAULT_ADDRESSES[0],
   token: {
