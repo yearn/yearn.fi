@@ -42,6 +42,8 @@ interface UseWithdrawFlowProps {
 export interface WithdrawFlowResult {
   routeType: WithdrawRouteType
   activeFlow: UseWidgetWithdrawFlowReturn
+  directWithdrawFlow: UseWidgetWithdrawFlowReturn
+  directUnstakeFlow: UseWidgetWithdrawFlowReturn
 }
 
 export const useWithdrawFlow = ({
@@ -91,7 +93,7 @@ export const useWithdrawFlow = ({
     chainId,
     decimals: assetDecimals,
     vaultDecimals,
-    enabled: routeType === 'DIRECT_WITHDRAW' && amount > 0n,
+    enabled: (routeType === 'DIRECT_WITHDRAW' || routeType === 'DIRECT_UNSTAKE_WITHDRAW') && amount > 0n,
     useErc4626
   })
 
@@ -101,7 +103,7 @@ export const useWithdrawFlow = ({
     amount: requiredShares,
     account,
     chainId,
-    enabled: routeType === 'DIRECT_UNSTAKE' && currentAmount > 0n
+    enabled: (routeType === 'DIRECT_UNSTAKE' || routeType === 'DIRECT_UNSTAKE_WITHDRAW') && currentAmount > 0n
   })
 
   // Enso flow (zaps, cross-chain, etc.)
@@ -123,11 +125,34 @@ export const useWithdrawFlow = ({
   const activeFlow = useMemo((): UseWidgetWithdrawFlowReturn => {
     if (routeType === 'DIRECT_WITHDRAW') return directWithdraw
     if (routeType === 'DIRECT_UNSTAKE') return directUnstake
+    if (routeType === 'DIRECT_UNSTAKE_WITHDRAW') {
+      return {
+        actions: {
+          prepareWithdraw: directUnstake.actions.prepareWithdraw
+        },
+        periphery: {
+          prepareApproveEnabled: false,
+          prepareWithdrawEnabled: directUnstake.periphery.prepareWithdrawEnabled,
+          isAllowanceSufficient: true,
+          allowance: directWithdraw.periphery.allowance,
+          expectedOut: directWithdraw.periphery.expectedOut,
+          isLoadingRoute:
+            directUnstake.actions.prepareWithdraw.isLoading ||
+            directUnstake.actions.prepareWithdraw.isFetching ||
+            directWithdraw.actions.prepareWithdraw.isLoading ||
+            directWithdraw.actions.prepareWithdraw.isFetching,
+          isCrossChain: false,
+          error: undefined
+        }
+      }
+    }
     return ensoFlow
   }, [routeType, directWithdraw, directUnstake, ensoFlow])
 
   return {
     routeType,
-    activeFlow
+    activeFlow,
+    directWithdrawFlow: directWithdraw,
+    directUnstakeFlow: directUnstake
   }
 }

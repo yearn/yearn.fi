@@ -83,6 +83,7 @@ type TransactionOverlayProps = {
   step?: TransactionStep
   isLastStep?: boolean
   onAllComplete?: () => void
+  onStepSuccess?: (label: string) => void
   topOffset?: string
   contentAlign?: 'center' | 'start'
   autoContinueToNextStep?: boolean
@@ -95,6 +96,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   step,
   isLastStep = true,
   onAllComplete,
+  onStepSuccess,
   contentAlign = 'center',
   autoContinueToNextStep = false,
   autoContinueStepLabels = []
@@ -146,6 +148,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   // Track if we've started execution to prevent re-triggering
   const hasStartedRef = useRef(false)
   const hasAutoContinuedFromStepRef = useRef<string | null>(null)
+  const hasReportedStepSuccessRef = useRef(false)
 
   // Reset state when overlay closes
   useEffect(() => {
@@ -155,6 +158,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       setEnsoTxHash(undefined)
       hasStartedRef.current = false
       hasAutoContinuedFromStepRef.current = null
+      hasReportedStepSuccessRef.current = false
       executedStepRef.current = null
       wasLastStepRef.current = false
       setNotificationId(undefined)
@@ -213,6 +217,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       // Handle permit signing flow
       executedStepRef.current = step
       wasLastStepRef.current = isLastStep
+      hasReportedStepSuccessRef.current = false
 
       setOverlayState('confirming')
       setErrorMessage('')
@@ -272,6 +277,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     // Capture step info for success messages
     executedStepRef.current = step
     wasLastStepRef.current = isLastStep
+    hasReportedStepSuccessRef.current = false
 
     setOverlayState('confirming')
     setErrorMessage('')
@@ -447,6 +453,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   useEffect(() => {
     // For multi-step flows, wait until next step is ready before showing success
     // Check that step has changed (different label) and is ready
+    if (receipt.isSuccess && receipt.data?.transactionHash && overlayState === 'pending') {
+      const executedStepLabel = executedStepRef.current?.label
+      if (!hasReportedStepSuccessRef.current && executedStepLabel) {
+        hasReportedStepSuccessRef.current = true
+        onStepSuccess?.(executedStepLabel)
+      }
+    }
+
     const isNextStepReady = step?.label !== executedStepRef.current?.label && isStepReady
     const canShowSuccess = wasLastStepRef.current || isNextStepReady
     if (receipt.isSuccess && receipt.data?.transactionHash && overlayState === 'pending' && canShowSuccess) {
@@ -475,6 +489,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     reward,
     handleUpdateNotification,
     onAllComplete,
+    onStepSuccess,
     isStepReady,
     step?.label
   ])

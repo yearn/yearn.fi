@@ -14,7 +14,7 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress } from '@shared/utils'
 import { calculateVaultEstimatedAPY, calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { useMemo, useState } from 'react'
 
@@ -84,7 +84,7 @@ export function usePortfolioModel(): TPortfolioModel {
       map.set(vaultKey, vault)
 
       const staking = getVaultStaking(vault)
-      if (staking?.available && staking.address) {
+      if (staking?.address && !isZeroAddress(staking.address)) {
         const stakingKey = getChainAddressKey(getVaultChainID(vault), staking.address)
         map.set(stakingKey, vault)
       }
@@ -231,7 +231,7 @@ export function usePortfolioModel(): TPortfolioModel {
         const baseValue = shareBalance.normalized * price.normalized
 
         const stakingValue =
-          staking?.available && staking.address
+          staking?.address && !isZeroAddress(staking.address)
             ? getBalance({
                 address: staking.address,
                 chainID

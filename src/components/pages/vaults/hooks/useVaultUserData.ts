@@ -1,4 +1,5 @@
 import { VAULT_V3_ABI } from '@shared/contracts/abi/vaultV3.abi'
+import { toNormalizedBN } from '@shared/utils'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import { type Address, getContract } from 'viem'
@@ -83,7 +84,27 @@ export const useVaultUserData = ({
   }, [refetchTokens, refetchPPS])
 
   // Derive tokens
-  const [assetToken, vaultToken, stakingToken] = tokens
+  const [assetToken, vaultToken, rawStakingToken] = tokens
+
+  const stakingToken = useMemo(() => {
+    if (!rawStakingToken) {
+      return undefined
+    }
+
+    const metadataMissing = rawStakingToken.symbol === '???' || rawStakingToken.name === 'Unknown'
+    if (!metadataMissing) {
+      return rawStakingToken
+    }
+
+    const fallbackDecimals = vaultToken?.decimals ?? rawStakingToken.decimals ?? 18
+    return {
+      ...rawStakingToken,
+      decimals: fallbackDecimals,
+      symbol: vaultToken?.symbol ?? rawStakingToken.symbol,
+      name: vaultToken?.name ?? rawStakingToken.name,
+      balance: toNormalizedBN(rawStakingToken.balance.raw, fallbackDecimals)
+    }
+  }, [rawStakingToken, vaultToken?.decimals, vaultToken?.symbol, vaultToken?.name])
 
   const depositedShares = useMemo(() => {
     const vaultBalance = vaultToken?.balance.raw ?? 0n

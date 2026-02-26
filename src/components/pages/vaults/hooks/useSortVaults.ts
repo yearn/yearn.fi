@@ -37,8 +37,8 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
   sortBy: TPossibleSortBy,
   sortDirection: TSortDirection
 ): TVault[] {
-  const { getBalance, getToken } = useWallet()
-  const { katanaAprs } = useYearn()
+  const { getBalance } = useWallet()
+  const { katanaAprs, getPrice } = useYearn()
 
   const isFeaturingScoreSortedDesc = useMemo((): boolean => {
     if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
@@ -64,14 +64,13 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       const address = getVaultAddress(vault)
       const staking = getVaultStaking(vault)
 
-      const vaultToken = getToken({ address, chainID })
-      const vaultValue = vaultToken.value || 0
+      const vaultBalance = getBalance({ address, chainID })
+      const stakingBalance = !isZeroAddress(toAddress(staking?.address))
+        ? getBalance({ address: staking.address, chainID })
+        : toNormalizedBN(0n, 18)
+      const sharePrice = getPrice({ address, chainID }).normalized || getVaultTVL(vault).price
 
-      const stakingValue = !isZeroAddress(toAddress(staking?.address))
-        ? getToken({ address: staking.address, chainID }).value || 0
-        : 0
-
-      return vaultValue + stakingValue
+      return (vaultBalance.normalized + stakingBalance.normalized) * sharePrice
     }
 
     switch (sortBy) {
@@ -169,7 +168,7 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       default:
         return vaultList
     }
-  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, katanaAprs, getBalance, getToken])
+  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, katanaAprs, getBalance, getPrice])
 
   return sortedVaults
 }

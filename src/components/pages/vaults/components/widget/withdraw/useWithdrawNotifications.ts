@@ -32,6 +32,7 @@ interface UseWithdrawNotificationsProps {
 
 interface WithdrawNotificationsResult {
   approveNotificationParams?: TCreateNotificationParams
+  unstakeNotificationParams?: TCreateNotificationParams
   withdrawNotificationParams?: TCreateNotificationParams
 }
 
@@ -86,9 +87,35 @@ export const useWithdrawNotifications = ({
     }
   }, [vault, account, routeType, routerAddress, requiredShares, sourceTokenInfo, sourceToken, chainId])
 
-  // Withdraw notification: swapping shares for output token
+  // Unstake notification: first step of the fallback flow
+  const unstakeNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
+    if (!vault || !account || routeType !== 'DIRECT_UNSTAKE_WITHDRAW' || withdrawAmount === 0n) return undefined
+
+    return {
+      type: 'unstake',
+      amount: formatTAmount({ value: requiredShares, decimals: sourceTokenInfo.decimals }),
+      fromAddress: toAddress(sourceToken),
+      fromSymbol: sourceTokenInfo.symbol,
+      fromChainId: chainId,
+      toAddress: toAddress(vault.address),
+      toSymbol: vault.symbol || ''
+    }
+  }, [vault, account, routeType, withdrawAmount, requiredShares, sourceTokenInfo, sourceToken, chainId])
+
+  // Withdraw notification: final withdrawal step
   const withdrawNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!vault || !outputToken || !account || withdrawAmount === 0n) return undefined
+
+    const withdrawFromTokenInfo =
+      routeType === 'DIRECT_UNSTAKE_WITHDRAW'
+        ? {
+            symbol: vault.symbol || '',
+            decimals: vault.decimals ?? 18
+          }
+        : sourceTokenInfo
+
+    const withdrawFromAddress =
+      routeType === 'DIRECT_UNSTAKE_WITHDRAW' ? toAddress(vault.address) : toAddress(sourceToken)
 
     let notificationType: 'withdraw' | 'withdraw zap' | 'crosschain withdraw zap' | 'unstake' | 'unstake and withdraw' =
       'withdraw'
@@ -104,13 +131,15 @@ export const useWithdrawNotifications = ({
       }
     } else if (routeType === 'DIRECT_UNSTAKE') {
       notificationType = 'unstake'
+    } else if (routeType === 'DIRECT_UNSTAKE_WITHDRAW') {
+      notificationType = 'withdraw'
     }
 
     return {
       type: notificationType,
-      amount: formatTAmount({ value: requiredShares, decimals: sourceTokenInfo.decimals }),
-      fromAddress: toAddress(sourceToken),
-      fromSymbol: sourceTokenInfo.symbol,
+      amount: formatTAmount({ value: requiredShares, decimals: withdrawFromTokenInfo.decimals }),
+      fromAddress: withdrawFromAddress,
+      fromSymbol: withdrawFromTokenInfo.symbol,
       fromChainId: chainId,
       toAddress: toAddress(withdrawToken),
       toSymbol: outputToken.symbol || '',
@@ -137,6 +166,7 @@ export const useWithdrawNotifications = ({
 
   return {
     approveNotificationParams,
+    unstakeNotificationParams,
     withdrawNotificationParams
   }
 }

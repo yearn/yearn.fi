@@ -400,11 +400,15 @@ function Index(): ReactElement | null {
   }, [vaultViewInput, mergedSnapshot])
 
   const isLoadingVault = !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
+  const stakingAddress = !isZeroAddress(currentVault?.staking?.address)
+    ? toAddress(currentVault?.staking?.address)
+    : undefined
+  const disableDepositStaking = shouldDisableStakingForDeposit || !currentVault?.staking?.available
 
   const vaultUserData = useVaultUserData({
     vaultAddress: toAddress(currentVault?.address ?? '0x'),
     assetAddress: toAddress(currentVault?.token?.address ?? '0x'),
-    stakingAddress: currentVault?.staking?.available ? toAddress(currentVault.staking.address) : undefined,
+    stakingAddress,
     chainId,
     account: address
   })
@@ -424,11 +428,8 @@ function Index(): ReactElement | null {
       : 0n
 
   const stakingShareBalance =
-    !!address &&
-    currentVault?.staking.available &&
-    !isZeroAddress(currentVault?.staking.address) &&
-    Number.isInteger(currentVault?.chainID)
-      ? getBalance({ address: toAddress(currentVault.staking.address), chainID: currentVault.chainID }).raw
+    !!address && !!stakingAddress && Number.isInteger(currentVault?.chainID) && !!currentVault
+      ? getBalance({ address: stakingAddress, chainID: currentVault.chainID }).raw
       : 0n
 
   const isMigratable = Boolean(currentVault?.migration?.available)
@@ -1184,7 +1185,7 @@ function Index(): ReactElement | null {
                       vaultAddress={currentVault.address}
                       currentVault={currentVault}
                       gaugeAddress={currentVault.staking.address}
-                      disableDepositStaking={shouldDisableStakingForDeposit}
+                      disableDepositStaking={disableDepositStaking}
                       actions={widgetActions}
                       chainId={chainId}
                       vaultUserData={vaultUserData}
@@ -1203,9 +1204,7 @@ function Index(): ReactElement | null {
                   isActive={isWidgetWalletOpen && !isWidgetRewardsOpen}
                   currentVault={currentVault}
                   vaultAddress={toAddress(currentVault.address)}
-                  stakingAddress={
-                    isZeroAddress(currentVault.staking.address) ? undefined : toAddress(currentVault.staking.address)
-                  }
+                  stakingAddress={stakingAddress}
                   chainId={chainId}
                   vaultUserData={vaultUserData}
                   onSelectZapToken={handleZapTokenSelect}
@@ -1214,7 +1213,7 @@ function Index(): ReactElement | null {
               {shouldShowWidgetRewards ? (
                 <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
                   <WidgetRewards
-                    stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
+                    stakingAddress={stakingAddress}
                     stakingSource={currentVault.staking.source}
                     rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
                       address: r.address,
@@ -1339,7 +1338,7 @@ function Index(): ReactElement | null {
           vaultAddress={currentVault.address}
           currentVault={currentVault}
           gaugeAddress={currentVault.staking.address}
-          disableDepositStaking={shouldDisableStakingForDeposit}
+          disableDepositStaking={disableDepositStaking}
           actions={widgetActions}
           chainId={chainId}
           vaultUserData={vaultUserData}

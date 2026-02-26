@@ -13,7 +13,7 @@ import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
 import { useChainID } from '@shared/hooks/useChainID'
 import type { TDict } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useMemo } from 'react'
@@ -134,7 +134,7 @@ export function useYearnTokens({
         }
       }
 
-      if (staking.available && !tokens[`${chainID}/${toAddress(staking.address)}`]) {
+      if (!isZeroAddress(staking.address) && !tokens[`${chainID}/${toAddress(staking.address)}`]) {
         tokens[`${chainID}/${toAddress(staking.address)}`] = {
           address: toAddress(staking.address),
           chainID,

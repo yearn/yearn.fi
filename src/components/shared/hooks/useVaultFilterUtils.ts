@@ -12,7 +12,7 @@ import {
 import { getNativeTokenWrapperContract } from '@pages/vaults/utils/nativeTokens'
 import type { TAddress } from '@shared/types/address'
 import type { TNormalizedBN } from '@shared/types/mixed'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 
 export type TVaultWithMetadata = {
@@ -56,7 +56,7 @@ export function createCheckHasHoldings(
       return vaultPrice
     }
 
-    if (staking.available) {
+    if (!isZeroAddress(staking.address)) {
       const stakingBalance = getBalance({
         address: staking.address,
         chainID
@@ -64,6 +64,9 @@ export function createCheckHasHoldings(
       const hasValidStakedBalance = stakingBalance.raw > 0n
       if (hasValidStakedBalance) {
         const price = getVaultPrice()
+        if (price.normalized <= 0) {
+          return true
+        }
         const stakedBalanceValue = Number(stakingBalance.normalized) * price.normalized
         if (!(shouldHideDust && stakedBalanceValue < 0.01)) {
           return true
@@ -76,6 +79,9 @@ export function createCheckHasHoldings(
     }
 
     const price = getVaultPrice()
+    if (price.normalized <= 0) {
+      return true
+    }
     const balanceValue = Number(vaultBalance.normalized) * price.normalized
 
     return !(shouldHideDust && balanceValue < 0.01)

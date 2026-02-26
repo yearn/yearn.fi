@@ -1,6 +1,6 @@
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 
-export type WithdrawRouteType = 'DIRECT_WITHDRAW' | 'DIRECT_UNSTAKE' | 'ENSO'
+export type WithdrawRouteType = 'DIRECT_WITHDRAW' | 'DIRECT_UNSTAKE' | 'DIRECT_UNSTAKE_WITHDRAW' | 'ENSO'
 
 export type WithdrawalSource = 'vault' | 'staking' | null
 
