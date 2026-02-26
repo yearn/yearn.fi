@@ -1,5 +1,12 @@
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import {
+  getVaultAddress,
+  getVaultAPR,
+  getVaultChainID,
+  getVaultStaking,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
+import {
   calcBoostedApr,
   isKelpEigenVault,
   isKelpVault,
@@ -10,7 +17,6 @@ import {
 import { useYearn } from '@shared/contexts/useYearn'
 import type { TKatanaAprData } from '@shared/hooks/useKatanaAprs'
 import { isZero, toAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { useMemo } from 'react'
 
 export type TVaultApyMode = 'katana' | 'noForward' | 'boosted' | 'rewards' | 'spot' | 'historical'
@@ -51,23 +57,23 @@ export function computeKatanaTotalApr(
   return sumApr(parts)
 }
 
-export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
+export function useVaultApyData(vault: TKongVaultInput): TVaultApyData {
   const { katanaAprs } = useYearn()
-  const shouldUseKatanaAPRs = vault.chainID === KATANA_CHAIN_ID
+  const shouldUseKatanaAPRs = getVaultChainID(vault) === KATANA_CHAIN_ID
 
-  const baseForwardApr = vault.apr.forwardAPR.netAPR
-  const hasForwardAprSource = vault.apr.forwardAPR.type === 'oracle' || vault.apr.forwardAPR.type === 'estimated'
-  const hasForwardApr = hasForwardAprSource || !isZero(baseForwardApr)
-  const netApr = vault.apr.netAPR
-  const rewardsAprSum = vault.apr.extra.stakingRewardsAPR + vault.apr.extra.gammaRewardAPR
+  const apr = getVaultAPR(vault)
+  const staking = getVaultStaking(vault)
+  const baseForwardApr = apr.forwardAPR.netAPR
+  const netApr = apr.netAPR
+  const rewardsAprSum = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
   const isBoosted =
-    vault.chainID === 1 && (vault.apr.forwardAPR.composite?.boost || 0) > 0 && !vault.apr.extra.stakingRewardsAPR
+    getVaultChainID(vault) === 1 && (apr.forwardAPR.composite?.boost || 0) > 0 && !apr.extra.stakingRewardsAPR
   const { boost, unboosted } = calcBoostedApr(vault)
 
   const katanaExtras = useMemo(() => {
     if (!shouldUseKatanaAPRs) return undefined
-    return katanaAprs?.[toAddress(vault.address)]?.apr?.extra as TKatanaAprData | undefined
-  }, [shouldUseKatanaAPRs, katanaAprs, vault.address])
+    return katanaAprs?.[toAddress(getVaultAddress(vault))]?.apr?.extra as TKatanaAprData | undefined
+  }, [shouldUseKatanaAPRs, katanaAprs, vault])
 
   const katanaThirtyDayApr = useMemo(() => {
     return computeKatanaTotalApr(katanaExtras)
@@ -89,14 +95,14 @@ export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
     if (katanaExtras && katanaEstApr !== undefined) {
       return { mode: 'katana' }
     }
-    if (vault.apr.forwardAPR.type === '') {
+    if (apr.forwardAPR.type === '') {
       return { mode: 'noForward' }
     }
     if (isBoosted) {
       return { mode: 'boosted' }
     }
     if (rewardsAprSum > 0) {
-      if (vault.staking.source === 'VeYFI') {
+      if (staking.source === 'VeYFI') {
         const veYfiRange = projectVeYfiRange(vault)
         return {
           mode: 'rewards',
@@ -106,7 +112,7 @@ export function useVaultApyData(vault: TYDaemonVault): TVaultApyData {
       }
       return { mode: 'rewards' }
     }
-    if (hasForwardApr) {
+    if (!isZero(baseForwardApr)) {
       return { mode: 'spot' }
     }
     return { mode: 'historical' }

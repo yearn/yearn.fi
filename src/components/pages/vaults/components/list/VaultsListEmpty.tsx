@@ -1,32 +1,72 @@
+import { Switch as HeadlessSwitch } from '@headlessui/react'
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { Button } from '@shared/components/Button'
-import type { TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
-import type { ReactElement } from 'react'
+import { EmptyState } from '@shared/components/EmptyState'
+import { cl } from '@shared/utils'
+import { type ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
+
+type TVaultsBlockingFilterAction = {
+  key: string
+  label: string
+  additionalResults: number
+  onApply: () => void
+}
 
 type TVaultListEmpty = {
   currentSearch: string
-  currentCategories: string[] | null
-  currentChains: number[] | null
+  currentCategories?: string[] | null
   onReset: () => void
+  hiddenByFiltersCount?: number
+  blockingFilterActions?: TVaultsBlockingFilterAction[]
   isLoading: boolean
   loadingLabel?: string
-  defaultCategories?: string[]
-  potentialResultsCount?: number
   // @deprecated: retained for compatibility with existing usages in worktrees being cleaned up
-  sortedVaultsToDisplay?: TYDaemonVaults
+  sortedVaultsToDisplay?: TKongVaultInput[]
 }
 export function VaultsListEmpty({
   currentSearch,
-  currentCategories,
+  currentCategories = null,
   onReset,
+  hiddenByFiltersCount = 0,
+  blockingFilterActions = [],
   isLoading,
-  loadingLabel,
-  defaultCategories = [],
-  potentialResultsCount = 0
+  loadingLabel
 }: TVaultListEmpty): ReactElement {
+  const hasSearch = currentSearch !== ''
+  const hasBlockingFilterActions = blockingFilterActions.length > 0
+  const hasHiddenByFiltersResults = hiddenByFiltersCount > 0
+  const [selectedBlockingFilters, setSelectedBlockingFilters] = useState<string[]>([])
+  const blockingActionsByKey = useMemo(
+    () => new Map(blockingFilterActions.map((action) => [action.key, action])),
+    [blockingFilterActions]
+  )
+  const availableBlockingFilterKeys = useMemo(
+    () => new Set(blockingFilterActions.map((action) => action.key)),
+    [blockingFilterActions]
+  )
+  const selectedBlockingFilterKeys = useMemo(() => new Set(selectedBlockingFilters), [selectedBlockingFilters])
+
+  useEffect(() => {
+    setSelectedBlockingFilters((prev) => prev.filter((key) => availableBlockingFilterKeys.has(key)))
+  }, [availableBlockingFilterKeys])
+
+  const toggleBlockingFilter = useCallback((key: string): void => {
+    setSelectedBlockingFilters((prev) => (prev.includes(key) ? prev.filter((entry) => entry !== key) : [...prev, key]))
+  }, [])
+
+  const applySelectedBlockingFilters = useCallback((): void => {
+    for (const key of selectedBlockingFilterKeys) {
+      blockingActionsByKey.get(key)?.onApply()
+    }
+  }, [blockingActionsByKey, selectedBlockingFilterKeys])
+
+  const hasSelectedBlockingFilters = selectedBlockingFilterKeys.size > 0
+
   if (isLoading) {
     const label = loadingLabel ?? 'Fetching Vaults…'
     return (
-      <div
+      <output
+        aria-live={'polite'}
         className={
           'mt-2 flex h-96 w-full animate-pulse flex-col items-center justify-center gap-2 rounded-[12px] bg-white/5 px-10 py-2'
         }
@@ -35,26 +75,84 @@ export function VaultsListEmpty({
         <div className={'flex h-10 items-center justify-center'}>
           <span className={'loader'} />
         </div>
-      </div>
+      </output>
     )
   }
 
   if (currentCategories?.length === 1 && currentCategories.includes('holdings')) {
     return (
+      <EmptyState
+        title="No vaults found"
+        description="You don't appear to have any Yearn Vaults deposits."
+        size="lg"
+        unstyled
+        className="mx-auto h-96 w-full md:w-3/4"
+      />
+    )
+  }
+
+  if (hasSearch && (hasBlockingFilterActions || hasHiddenByFiltersResults)) {
+    const hiddenByFiltersLabel = `${hiddenByFiltersCount} vault${hiddenByFiltersCount > 1 ? 's' : ''}`
+    return (
       <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
         <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
-        <p className={'text-center text-sm text-neutral-600'}>
-          {"You don't appear to have any Yearn Vaults deposits."}
-        </p>
+        <p className={'text-center text-neutral-600'}>{`No results for "${currentSearch}" with current filters.`}</p>
+        {hiddenByFiltersCount > 0 ? (
+          <p
+            className={'text-center font-normal text-neutral-600'}
+          >{`${hiddenByFiltersLabel} found that are hidden by filters. Enable them below.`}</p>
+        ) : null}
+        {hasBlockingFilterActions ? (
+          <div className={'mt-2 flex w-full flex-col gap-2 md:w-96'}>
+            {blockingFilterActions.map((action) => {
+              const isSelected = selectedBlockingFilterKeys.has(action.key)
+              return (
+                <div
+                  key={action.key}
+                  className={
+                    'flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2'
+                  }
+                >
+                  <p className={'text-sm text-text-primary'}>
+                    {`${action.label}${action.additionalResults > 0 ? ` (+${action.additionalResults})` : ''}`}
+                  </p>
+                  <HeadlessSwitch
+                    checked={isSelected}
+                    onChange={(): void => toggleBlockingFilter(action.key)}
+                    className={cl(
+                      'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200',
+                      isSelected ? 'border-blue-500 bg-blue-500' : 'border-neutral-300 bg-white'
+                    )}
+                  >
+                    <span className={'sr-only'}>{`Enable ${action.label}`}</span>
+                    <span
+                      aria-hidden={'true'}
+                      className={cl(
+                        'inline-block size-4 transform rounded-full shadow transition-transform duration-200',
+                        isSelected ? 'translate-x-6 bg-white' : 'translate-x-1 bg-neutral-500'
+                      )}
+                    />
+                  </HeadlessSwitch>
+                </div>
+              )
+            })}
+            <Button
+              type={'button'}
+              className={'mt-2 w-full'}
+              onClick={applySelectedBlockingFilters}
+              isDisabled={!hasSelectedBlockingFilters}
+            >
+              {'Search'}
+            </Button>
+          </div>
+        ) : (
+          <p className={'text-center font-normal text-neutral-600'}>{'Try adjusting your selected filters.'}</p>
+        )}
       </div>
     )
   }
 
-  const selectedCategoryCount = currentCategories?.length ?? 0
-  const hasSearch = currentSearch !== ''
-  const isFullCategorySelection = selectedCategoryCount >= defaultCategories.length
-
-  if (hasSearch && isFullCategorySelection) {
+  if (hasSearch) {
     return (
       <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
         <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
@@ -63,43 +161,30 @@ export function VaultsListEmpty({
     )
   }
 
-  if (hasSearch && !isFullCategorySelection) {
-    return (
-      <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
-        <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
-        <p className={'text-center text-neutral-600'}>{`No results for "${currentSearch}" with current filters.`}</p>
-        {potentialResultsCount > 0 ? (
-          <>
-            <p className={'text-center font-normal text-neutral-600'}>
-              {`Found ${potentialResultsCount} vault${potentialResultsCount > 1 ? 's' : ''} when searching all categories.`}
-            </p>
-            <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
-              {'Show all results'}
-            </Button>
-          </>
-        ) : (
-          <p className={'text-center font-normal text-neutral-600'}>{`The vault "${currentSearch}" does not exist.`}</p>
-        )}
-      </div>
-    )
-  }
-
   return (
-    <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
-      <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
-      <p className={'text-center font-normal text-neutral-600'}>{'No vaults found that match your filters.'}</p>
-      <Button className={'mt-4 w-full md:w-48'} onClick={onReset}>
-        {'Search all vaults'}
-      </Button>
-    </div>
+    <EmptyState
+      title="No vaults found"
+      description="No vaults found that match your filters."
+      action={
+        <Button type={'button'} className={'mt-4 w-full md:w-48'} onClick={onReset}>
+          {'Search all vaults'}
+        </Button>
+      }
+      size="lg"
+      unstyled
+      className="mx-auto h-96 w-full md:w-3/4"
+    />
   )
 }
 
 export function VaultListEmptyExternalMigration(): ReactElement {
   return (
-    <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
-      <b className={'text-center text-lg'}>{'We looked under the cushions...'}</b>
-      <p className={'text-center text-neutral-600'}>{"Looks like you don't have any tokens to migrate."}</p>
-    </div>
+    <EmptyState
+      title="We looked under the cushions..."
+      description="Looks like you don't have any tokens to migrate."
+      size="lg"
+      unstyled
+      className="mx-auto h-96 w-full md:w-3/4"
+    />
   )
 }

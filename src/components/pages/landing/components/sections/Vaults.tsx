@@ -1,4 +1,5 @@
 import { usePlausible } from '@hooks/usePlausible'
+import { getVaultAPR, getVaultChainID } from '@pages/vaults/domain/kongVaultSelectors'
 import { SectionHeader } from '@shared/components/SectionHeader'
 import { useYearn } from '@shared/contexts/useYearn'
 import { formatPercent } from '@shared/utils/format'
@@ -126,8 +127,9 @@ export const Vaults: FC = () => {
           }
         }
         // safely pull out APR parts
-        const forward = vaultData.apr.forwardAPR?.netAPR ?? 0
-        const extra = vaultData.apr.extra?.stakingRewardsAPR ?? 0
+        const aprData = getVaultAPR(vaultData)
+        const forward = aprData.forwardAPR?.netAPR ?? 0
+        const extra = aprData.extra?.stakingRewardsAPR ?? 0
         const apr = extra > 0 ? forward + extra : forward
 
         return {
@@ -137,7 +139,7 @@ export const Vaults: FC = () => {
           href: vault.href,
           address: vault.address,
           symbol: vault.symbol,
-          chainID: vaultData.chainID.toString()
+          chainID: getVaultChainID(vaultData).toString()
         }
       }),
       appRows.map((app, index) => {
@@ -160,7 +162,7 @@ export const Vaults: FC = () => {
       setActiveSlide((prev) => (prev + 1) % totalSlides)
       setTimeout(() => setIsAnimating(false), 500)
     }
-  }, [isAnimating, totalSlides])
+  }, [isAnimating])
 
   const goToSlide = useCallback(
     (index: number) => {

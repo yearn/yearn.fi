@@ -13,13 +13,16 @@ export function Markdown({ content, className }: TMarkdownProps): ReactElement {
       <ReactMarkdown
         skipHtml
         components={{
-          a: ({ node: _node, className: linkClassName, ...props }) => (
+          a: ({ node: _node, className: linkClassName, children, ...props }) => (
             <a
               {...props}
               className={cl('text-text-primary underline', linkClassName)}
               target="_blank"
               rel="noopener noreferrer"
-            />
+            >
+              {children}
+              <span className={'sr-only'}>{' (opens in new tab)'}</span>
+            </a>
           ),
           strong: ({ node: _node, className: strongClassName, ...props }) => (
             <strong {...props} className={cl('font-bold', strongClassName)} />

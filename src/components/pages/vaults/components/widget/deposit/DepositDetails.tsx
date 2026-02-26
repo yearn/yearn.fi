@@ -1,6 +1,6 @@
-import { formatTAmount } from '@shared/utils'
 import type { FC } from 'react'
-import { formatUnits, maxUint256 } from 'viem'
+import { formatUnits } from 'viem'
+import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import type { DepositRouteType } from './types'
 
 interface DepositDetailsProps {
@@ -25,7 +25,7 @@ interface DepositDetailsProps {
   onShowVaultSharesModal: () => void
   onShowVaultShareValueModal: () => void
   // Annual return info
-  estimatedAnnualReturn: string
+  estimatedAnnualReturn: number
   onShowAnnualReturnModal: () => void
   // Approval info
   allowance?: bigint
@@ -72,27 +72,16 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
     if (isSwap) return 'Swap'
     return 'Deposit'
   }
-  // Format allowance display
-  const formatAllowance = () => {
-    if (allowance === undefined || allowanceTokenDecimals === undefined) return null
-    if (allowance >= maxUint256 / 2n) return 'Unlimited'
-    return `${formatTAmount({ value: allowance, decimals: allowanceTokenDecimals })}`
-  }
-
-  const allowanceDisplay = formatAllowance()
+  const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
 
   // Calculate vault share value in underlying asset terms (use vault decimals for pricePerShare)
   const vaultShareValueInAsset =
     expectedVaultShares > 0n && pricePerShare > 0n
       ? (expectedVaultShares * pricePerShare) / 10n ** BigInt(vaultDecimals)
       : 0n
-  const vaultShareValueFormatted = formatTAmount({
-    value: vaultShareValueInAsset,
-    decimals: assetTokenDecimals,
-    options: { maximumFractionDigits: 6 }
-  })
-  const vaultShareValueUsd = (Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice).toFixed(
-    2
+  const vaultShareValueDisplay = formatWidgetValue(vaultShareValueInAsset, assetTokenDecimals)
+  const vaultShareValueUsd = formatWidgetValue(
+    Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
   )
   return (
     <div>
@@ -102,13 +91,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
           <p className="text-sm text-text-secondary">{'You Will ' + getActionVerb()}</p>
           <p className="text-sm text-text-primary">
             <span className="font-semibold">
-              {depositAmountBn > 0n
-                ? formatTAmount({
-                    value: depositAmountBn,
-                    decimals: inputTokenDecimals,
-                    options: { maximumFractionDigits: 6 }
-                  })
-                : '0'}
+              {depositAmountBn > 0n ? formatWidgetValue(depositAmountBn, inputTokenDecimals) : '0'}
             </span>{' '}
             <span className="font-normal">{inputTokenSymbol}</span>
           </p>
@@ -123,12 +106,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : expectedOutInAsset > 0n ? (
                 <>
-                  <span className="font-semibold">
-                    {formatTAmount({
-                      value: expectedOutInAsset,
-                      decimals: assetTokenDecimals
-                    })}
-                  </span>{' '}
+                  <span className="font-semibold">{formatWidgetValue(expectedOutInAsset, assetTokenDecimals)}</span>{' '}
                   <span className="font-normal">{assetTokenSymbol || 'tokens'}</span>
                 </>
               ) : (
@@ -157,11 +135,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
               <>
                 <span className="font-semibold">
                   {depositAmountBn > 0n && expectedVaultShares > 0n
-                    ? formatTAmount({
-                        value: expectedVaultShares,
-                        decimals: sharesDisplayDecimals,
-                        options: { maximumFractionDigits: 4 }
-                      })
+                    ? formatWidgetValue(expectedVaultShares, sharesDisplayDecimals)
                     : '0'}
                 </span>{' '}
                 <span className="font-normal">{sharesLabel}</span>
@@ -184,7 +158,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
               <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
             ) : (
               <>
-                <span className="font-semibold">{vaultShareValueFormatted}</span>{' '}
+                <span className="font-semibold">{vaultShareValueDisplay}</span>{' '}
                 <span className="font-normal">{`${assetTokenSymbol || ''} (`}</span>
                 <span className="font-normal">{`$${vaultShareValueUsd}`}</span>
                 <span className="font-normal">{')'}</span>
@@ -204,7 +178,9 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
           </button>
           <p className="text-sm text-text-primary">
             <span className="font-normal">{depositAmountBn > 0n ? '~' : ''}</span>
-            <span className="font-semibold">{depositAmountBn > 0n ? estimatedAnnualReturn : '0'}</span>{' '}
+            <span className="font-semibold">
+              {depositAmountBn > 0n ? formatWidgetValue(estimatedAnnualReturn) : '0'}
+            </span>{' '}
             <span className="font-normal">{inputTokenSymbol}</span>
           </p>
         </div>

@@ -1,45 +1,56 @@
+import {
+  getVaultAddress,
+  getVaultAPR,
+  getVaultChainID,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import type { TKatanaAprs } from '@shared/hooks/useKatanaAprs'
 import { isZero, toAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 
-export function calculateVaultEstimatedAPY(vault: TYDaemonVault, katanaAprs: Partial<TKatanaAprs> | undefined): number {
-  if (vault.chainID === 747474) {
-    const katanaAprData = katanaAprs?.[toAddress(vault.address)]?.apr?.extra
+export function calculateVaultEstimatedAPY(
+  vault: TKongVaultInput,
+  katanaAprs: Partial<TKatanaAprs> | undefined
+): number {
+  const apr = getVaultAPR(vault)
+  const chainID = getVaultChainID(vault)
+  const address = getVaultAddress(vault)
+
+  if (chainID === 747474) {
+    const katanaAprData = katanaAprs?.[toAddress(address)]?.apr?.extra
     if (katanaAprData) {
       const appRewardsApr = katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR ?? 0
-      return (vault.apr?.forwardAPR?.netAPR || 0) + (katanaAprData.FixedRateKatanaRewards || 0) + appRewardsApr
+      return (apr.forwardAPR?.netAPR || 0) + (katanaAprData.FixedRateKatanaRewards || 0) + appRewardsApr
     }
     return 0
   }
 
-  if (vault.apr?.forwardAPR?.type === '') {
-    return (vault.apr?.extra?.stakingRewardsAPR || 0) + (vault.apr?.netAPR || 0)
+  if (apr.forwardAPR?.type === '') {
+    return (apr.extra?.stakingRewardsAPR || 0) + (apr?.netAPR || 0)
   }
 
-  if (vault.chainID === 1 && vault.apr?.forwardAPR?.composite?.boost > 0 && !vault.apr?.extra?.stakingRewardsAPR) {
-    return vault.apr?.forwardAPR?.netAPR || 0
+  if (chainID === 1 && apr.forwardAPR?.composite?.boost > 0 && !apr.extra?.stakingRewardsAPR) {
+    return apr.forwardAPR?.netAPR || 0
   }
 
-  const sumOfRewardsAPY = (vault.apr?.extra?.stakingRewardsAPR || 0) + (vault.apr?.extra?.gammaRewardAPR || 0)
-  const hasForwardAPYSource = vault.apr?.forwardAPR?.type === 'oracle' || vault.apr?.forwardAPR?.type === 'estimated'
-  const hasForwardAPY = hasForwardAPYSource || !isZero(vault?.apr?.forwardAPR?.netAPR || 0)
+  const sumOfRewardsAPY = (apr.extra?.stakingRewardsAPR || 0) + (apr.extra?.gammaRewardAPR || 0)
+  const hasCurrentAPY = !isZero(apr.forwardAPR?.netAPR || 0)
 
   if (sumOfRewardsAPY > 0) {
-    return sumOfRewardsAPY + (vault.apr?.forwardAPR?.netAPR || 0)
+    return sumOfRewardsAPY + (apr.forwardAPR?.netAPR || 0)
   }
-  if (hasForwardAPY) {
-    return vault.apr?.forwardAPR?.netAPR || 0
+  if (hasCurrentAPY) {
+    return apr.forwardAPR?.netAPR || 0
   }
-  return vault.apr?.netAPR || 0
+  return apr?.netAPR || 0
 }
 
 export function calculateKatanaThirtyDayAPY(
-  vault: TYDaemonVault,
+  vault: TKongVaultInput,
   katanaAprs: Partial<TKatanaAprs> | undefined
 ): number | undefined {
-  if (vault.chainID !== 747474) return undefined
+  if (getVaultChainID(vault) !== 747474) return undefined
 
-  const katanaAprData = katanaAprs?.[toAddress(vault.address)]?.apr?.extra
+  const katanaAprData = katanaAprs?.[toAddress(getVaultAddress(vault))]?.apr?.extra
   if (!katanaAprData) return undefined
 
   const appRewardsApr = katanaAprData.katanaAppRewardsAPR ?? katanaAprData.katanaRewardsAPR
@@ -52,19 +63,20 @@ export function calculateKatanaThirtyDayAPY(
 }
 
 export function calculateVaultHistoricalAPY(
-  vault: TYDaemonVault,
+  vault: TKongVaultInput,
   katanaAprs: Partial<TKatanaAprs> | undefined
 ): number | null {
+  const apr = getVaultAPR(vault)
   const katanaAPY = calculateKatanaThirtyDayAPY(vault, katanaAprs)
-  if (vault.chainID === 747474) {
+  if (getVaultChainID(vault) === 747474) {
     return typeof katanaAPY === 'number' ? katanaAPY : null
   }
   if (typeof katanaAPY === 'number') {
     return katanaAPY
   }
 
-  const monthlyAPY = vault.apr?.points?.monthAgo
-  const weeklyAPY = vault.apr?.points?.weekAgo
+  const monthlyAPY = apr.points?.monthAgo
+  const weeklyAPY = apr.points?.weekAgo
   const chosenAPY = !isZero(monthlyAPY || 0) ? monthlyAPY : weeklyAPY
   return typeof chosenAPY === 'number' ? chosenAPY : null
 }

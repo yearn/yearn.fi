@@ -6,13 +6,15 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { formatCounterValue, formatTAmount, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
+import { formatTAmount, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { hexToNumber, slice } from 'viem'
 import { useAccount, usePublicClient } from 'wagmi'
 import { useYearn } from '@/components/shared/contexts/useYearn'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
+import { formatWidgetValue } from '../shared/valueDisplay'
+import { WidgetHeader } from '../shared/WidgetHeader'
 import { useMigrateError } from './useMigrateError'
 import { useMigrateFlow } from './useMigrateFlow'
 
@@ -90,14 +92,15 @@ export const WidgetMigrate: FC<Props> = ({
     decimals: vaultToken?.decimals ?? 18,
     options: { maximumFractionDigits: 6 }
   })
+  const displayBalance = formatWidgetValue(migrateBalance, vaultToken?.decimals ?? 18)
 
   const balanceUsd = useMemo(() => {
-    if (migrateBalance === 0n) return '$0.00'
+    if (migrateBalance === 0n) return '$0'
 
-    return formatCounterValue(
-      toNormalizedBN(migrateBalance, vaultToken?.decimals ?? 18).display,
+    const usdValue =
+      Number(toNormalizedBN(migrateBalance, vaultToken?.decimals ?? 18).display) *
       getPrice({ address: vaultAddress, chainID: chainId }).normalized
-    )
+    return `$${formatWidgetValue(usdValue)}`
   }, [migrateBalance, vaultAddress, chainId, getPrice, vaultToken?.decimals])
 
   // Determine flow based on routeType
@@ -411,17 +414,18 @@ export const WidgetMigrate: FC<Props> = ({
   // Loading state
   if (isLoadingVaultData) {
     return (
-      <div className="flex items-center justify-center h-[317px]">
-        <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+      <div className="flex flex-col border border-border rounded-lg relative h-full">
+        <WidgetHeader title="Migrate" />
+        <div className="flex items-center justify-center flex-1 p-6">
+          <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+        </div>
       </div>
     )
   }
 
   return (
     <div className="flex flex-col border border-border rounded-lg relative h-full">
-      <div className="flex items-center justify-between gap-3 px-6 pt-4 ">
-        <h3 className="text-base font-semibold text-text-primary">Migrate</h3>
-      </div>
+      <WidgetHeader title="Migrate" />
       <div className="flex flex-col flex-1 p-6 gap-6">
         {/* Balance Section */}
         <div>
@@ -430,7 +434,7 @@ export const WidgetMigrate: FC<Props> = ({
           </div>
           <div className="flex flex-col items-start">
             <span className="text-xl font-semibold text-text-primary">
-              {formattedBalance} {vaultToken?.symbol || vaultSymbol}
+              {displayBalance} {vaultToken?.symbol || vaultSymbol}
             </span>
             <span className="text-sm text-text-secondary">{balanceUsd}</span>
           </div>
@@ -505,6 +509,8 @@ export const WidgetMigrate: FC<Props> = ({
         onClose={handleOverlayClose}
         step={currentStep}
         isLastStep={isLastStep}
+        autoContinueToNextStep
+        autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleMigrateSuccess}
       />
     </div>

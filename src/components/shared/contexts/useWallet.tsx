@@ -1,3 +1,4 @@
+import { getVaultStaking, getVaultVersion, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
@@ -9,6 +10,7 @@ import { DEFAULT_ERC20, isZeroAddress, toAddress, zeroNormalizedBN } from '../ut
 import { useWeb3 } from './useWeb3'
 import { useYearn } from './useYearn'
 import { useYearnTokens } from './useYearn.helper'
+import { useTokenList } from './WithTokenList'
 
 const USE_ENSO_BALANCES = import.meta.env.VITE_BALANCE_SOURCE !== 'multicall'
 
@@ -54,6 +56,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     isLoadingVaultList,
     isEnabled: Boolean(userAddress)
   })
+
+  const { getToken: getTokenListToken } = useTokenList()
+
   const useBalancesHook = USE_ENSO_BALANCES ? useBalancesCombined : useBalancesWithQuery
   const {
     data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
@@ -105,7 +110,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         return token
       }
       // If balances is empty (during refetch), return cached token if available
-      return tokenCache.current[cacheKey] || DEFAULT_ERC20
+      return tokenCache.current[cacheKey] || getTokenListToken({ address, chainID })
     },
     [balances, userAddress]
   )
@@ -123,8 +128,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     // Build staking address → vault address lookup
     const stakingToVault = new Map<string, string>()
     for (const [vaultAddress, vault] of Object.entries(vaults)) {
-      if (vault.staking?.address && !isZeroAddress(toAddress(vault.staking.address))) {
-        stakingToVault.set(toAddress(vault.staking.address), vaultAddress)
+      const staking = getVaultStaking(vault as TKongVault)
+      if (staking?.address && !isZeroAddress(toAddress(staking.address))) {
+        stakingToVault.set(toAddress(staking.address), vaultAddress)
       }
     }
 
@@ -144,7 +150,8 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         if (!vaultDetails) continue
 
         const tokenValue = tokenData.value || 0
-        const isV3 = vaultDetails.version?.split('.')?.[0] === '3' || vaultDetails.version?.split('.')?.[0] === '~3'
+        const version = getVaultVersion(vaultDetails as TKongVault)
+        const isV3 = version.split('.')?.[0] === '3' || version.split('.')?.[0] === '~3'
 
         if (isV3) {
           cumulatedValueInV3Vaults += tokenValue
