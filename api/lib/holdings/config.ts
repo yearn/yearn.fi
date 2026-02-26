@@ -19,7 +19,7 @@ export const config: HoldingsConfig = {
   },
   kongBaseUrl: 'https://kong.yearn.fi',
   defillamaBaseUrl: 'https://coins.llama.fi',
-  historyDays: 90
+  historyDays: 365
 }
 
 export function validateConfig(): void {

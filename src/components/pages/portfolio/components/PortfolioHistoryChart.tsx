@@ -21,7 +21,7 @@ import { useId, useMemo, useState } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 import type { TPortfolioHistoryChartData } from '../types/api'
 
-type TTimeframe = '7d' | '30d' | '90d'
+type TTimeframe = '30d' | '90d' | '1y'
 
 type TPortfolioHistoryChartProps = {
   data: TPortfolioHistoryChartData | null
@@ -30,7 +30,7 @@ type TPortfolioHistoryChartProps = {
 }
 
 export function PortfolioHistoryChart({ data, isLoading, mergeWithHeader }: TPortfolioHistoryChartProps): ReactElement {
-  const [timeframe, setTimeframe] = useState<TTimeframe>('90d')
+  const [timeframe, setTimeframe] = useState<TTimeframe>('1y')
   const gradientId = useId().replace(/:/g, '')
 
   const sectionClassName = mergeWithHeader
@@ -48,7 +48,7 @@ export function PortfolioHistoryChart({ data, isLoading, mergeWithHeader }: TPor
     return data.slice(-limit)
   }, [data, timeframe])
 
-  const isShortTimeframe = timeframe === '7d' || timeframe === '30d'
+  const isShortTimeframe = timeframe === '30d'
   const ticks = useMemo(
     () => (isShortTimeframe ? getChartWeeklyTicks(filteredData) : getChartMonthlyTicks(filteredData)),
     [filteredData, isShortTimeframe]
@@ -109,7 +109,7 @@ export function PortfolioHistoryChart({ data, isLoading, mergeWithHeader }: TPor
       <div className={'flex items-center justify-between'}>
         <h2 className={'text-xl font-semibold text-text-primary'}>Holdings History</h2>
         <div className={'flex gap-2'}>
-          {(['7d', '30d', '90d'] as const).map((tf) => (
+          {(['30d', '90d', '1y'] as const).map((tf) => (
             <button
               key={tf}
               type={'button'}
