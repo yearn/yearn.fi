@@ -287,22 +287,21 @@ async function fetchEventLogs(params: {
   const logs: THolderLog[] = []
   const startedAt = Date.now()
   let requests = 0n
+  let cursor = fromBlock
+  let chunkSize = initialChunk
 
   progress.pushEvent(`[${eventName}] scan start ${fromBlock}-${toBlock} chunk=${initialChunk}`)
 
-  async function fetchRange(start: bigint, chunkSize: bigint): Promise<void> {
-    if (start > toBlock) {
-      return
-    }
-
-    const end = minBigInt(start + chunkSize - 1n, toBlock)
+  progress.updatePhase(phaseId, 0n, `req=0 logs=0 chunk=${initialChunk}`)
+  while (cursor <= toBlock) {
+    const end = minBigInt(cursor + chunkSize - 1n, toBlock)
 
     try {
       requests += 1n
       const batch = await client.getLogs({
         address,
         event,
-        fromBlock: start,
+        fromBlock: cursor,
         toBlock: end
       })
 
@@ -315,22 +314,19 @@ async function fetchEventLogs(params: {
         processedBlocks,
         `req=${requests.toString()} logs=${logs.length} chunk=${chunkSize}`
       )
-
-      await fetchRange(end + 1n, chunkSize)
+      cursor = end + 1n
     } catch (error) {
       if (chunkSize <= minChunk) {
-        progress.pushEvent(`[${eventName}] failed at ${start}-${end} chunk=${chunkSize}`)
-        throw new Error(`[${eventName}] failed at ${start}-${end} with chunk=${chunkSize}: ${String(error)}`)
+        progress.pushEvent(`[${eventName}] failed at ${cursor}-${end} chunk=${chunkSize}`)
+        throw new Error(`[${eventName}] failed at ${cursor}-${end} with chunk=${chunkSize}: ${String(error)}`)
       }
       const reducedChunk = minBigInt(chunkSize / 2n, chunkSize - 1n)
       const nextChunk = reducedChunk < minChunk ? minChunk : reducedChunk
-      progress.pushEvent(`[${eventName}] reduce chunk ${chunkSize}->${nextChunk} at ${start}-${end}`)
-      await fetchRange(start, nextChunk)
+      progress.pushEvent(`[${eventName}] reduce chunk ${chunkSize}->${nextChunk} at ${cursor}-${end}`)
+      chunkSize = nextChunk
     }
   }
 
-  progress.updatePhase(phaseId, 0n, `req=0 logs=0 chunk=${initialChunk}`)
-  await fetchRange(fromBlock, initialChunk)
   const totalElapsedSec = Math.max(1, Math.round((Date.now() - startedAt) / 1000))
   progress.completePhase(phaseId, `req=${requests.toString()} logs=${logs.length} elapsed=${totalElapsedSec}s`)
   progress.pushEvent(`[${eventName}] done req=${requests.toString()} logs=${logs.length} elapsed=${totalElapsedSec}s`)
@@ -350,58 +346,47 @@ async function verifyHolders(params: {
   client: ReturnType<typeof createPublicClient>
   contract: Address
   candidates: Array<[Address, THolderState]>
-  cursor?: number
   pageSize: number
-  acc?: TVerifiedHolder[]
   phaseId: string
   progress: CompactProgressUI
 }): Promise<TVerifiedHolder[]> {
   const { client, contract, candidates, pageSize, phaseId, progress } = params
-  const cursor = params.cursor ?? 0
-  const acc = params.acc ?? []
+  const verifiedHolders: TVerifiedHolder[] = []
+  let cursor = 0
 
-  if (cursor >= candidates.length) {
-    progress.completePhase(phaseId, `non_zero=${acc.length}`)
-    progress.pushEvent(`[verify] done candidates=${candidates.length} non_zero=${acc.length}`)
-    return acc
+  while (cursor < candidates.length) {
+    const page = candidates.slice(cursor, cursor + pageSize)
+    const verified = await Promise.all(
+      page.map(async ([address, state]): Promise<TVerifiedHolder | undefined> => {
+        const balanceOf = await client.readContract({
+          address: contract,
+          abi: BALANCE_OF_ABI,
+          functionName: 'balanceOf',
+          args: [address]
+        })
+
+        if (balanceOf <= 0n) {
+          return undefined
+        }
+
+        return {
+          address,
+          netStaked: state.netStaked,
+          lastActivityBlock: state.lastActivityBlock,
+          balanceOf
+        }
+      })
+    )
+
+    verifiedHolders.push(...verified.filter((item): item is TVerifiedHolder => Boolean(item)))
+    cursor += pageSize
+    const processed = minBigInt(BigInt(cursor), BigInt(candidates.length))
+    progress.updatePhase(phaseId, processed, `non_zero=${verifiedHolders.length} page=${page.length}`)
   }
 
-  const page = candidates.slice(cursor, cursor + pageSize)
-  const verified = await Promise.all(
-    page.map(async ([address, state]): Promise<TVerifiedHolder | undefined> => {
-      const balanceOf = await client.readContract({
-        address: contract,
-        abi: BALANCE_OF_ABI,
-        functionName: 'balanceOf',
-        args: [address]
-      })
-
-      if (balanceOf <= 0n) {
-        return undefined
-      }
-
-      return {
-        address,
-        netStaked: state.netStaked,
-        lastActivityBlock: state.lastActivityBlock,
-        balanceOf
-      }
-    })
-  )
-
-  const next = [...acc, ...verified.filter((item): item is TVerifiedHolder => Boolean(item))]
-  const processed = minBigInt(BigInt(cursor + page.length), BigInt(candidates.length))
-  progress.updatePhase(phaseId, processed, `non_zero=${next.length} page=${page.length}`)
-  return verifyHolders({
-    client,
-    contract,
-    candidates,
-    cursor: cursor + pageSize,
-    pageSize,
-    acc: next,
-    phaseId,
-    progress
-  })
+  progress.completePhase(phaseId, `non_zero=${verifiedHolders.length}`)
+  progress.pushEvent(`[verify] done candidates=${candidates.length} non_zero=${verifiedHolders.length}`)
+  return verifiedHolders
 }
 
 async function main(): Promise<void> {

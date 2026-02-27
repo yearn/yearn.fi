@@ -18,6 +18,28 @@ import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useMemo } from 'react'
 
+function mergeTokenMetadata(existing: TUseBalancesTokens, incoming: TUseBalancesTokens): TUseBalancesTokens {
+  return {
+    address: existing.address || incoming.address,
+    chainID: existing.chainID || incoming.chainID,
+    decimals: existing.decimals || incoming.decimals,
+    name: existing.name || incoming.name,
+    symbol: existing.symbol || incoming.symbol,
+    for: existing.for || incoming.for,
+    isVaultToken: Boolean(existing.isVaultToken || incoming.isVaultToken) || undefined,
+    isStakingToken: Boolean(existing.isStakingToken || incoming.isStakingToken) || undefined,
+    isStakingOnlyPair: Boolean(existing.isStakingOnlyPair || incoming.isStakingOnlyPair) || undefined,
+    isVaultBackedStaking: Boolean(existing.isVaultBackedStaking || incoming.isVaultBackedStaking) || undefined,
+    pairedVaultAddress: existing.pairedVaultAddress || incoming.pairedVaultAddress,
+    pairedStakingAddress: existing.pairedStakingAddress || incoming.pairedStakingAddress
+  }
+}
+
+function upsertToken(tokens: TDict<TUseBalancesTokens>, key: string, incoming: TUseBalancesTokens): void {
+  const existing = tokens[key]
+  tokens[key] = existing ? mergeTokenMetadata(existing, incoming) : incoming
+}
+
 export function useYearnTokens({
   vaults,
   isLoadingVaultList,
@@ -89,6 +111,10 @@ export function useYearnTokens({
       tokens[key] = token
     }
 
+    const tokenListAddressSet = new Set(
+      availableTokenListTokens.map((token) => `${token.chainID}/${toAddress(token.address)}`)
+    )
+
     const vaultAddressKeys = new Set(
       allVaults.map((vault) => `${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`)
     )
@@ -111,58 +137,33 @@ export function useYearnTokens({
       const isVaultBackedStaking = hasStaking ? vaultAddressKeys.has(`${chainID}/${stakingAddress}`) : false
       const isStakingOnlyPair = hasStaking && !isVaultBackedStaking
 
-      if (!tokens[vaultKey]) {
-        tokens[vaultKey] = {
-          address,
-          chainID,
-          symbol,
-          decimals,
-          name,
-          for: 'vault-share',
-          isVaultToken: true,
-          isStakingOnlyPair: hasStaking ? isStakingOnlyPair : undefined,
-          isVaultBackedStaking: hasStaking ? isVaultBackedStaking : undefined,
-          pairedStakingAddress: stakingAddress
-        }
-      } else {
-        const existingToken = tokens[vaultKey]
+      upsertToken(tokens, vaultKey, {
+        address,
+        chainID,
+        symbol,
+        decimals,
+        name,
+        for: 'vault-share',
+        isVaultToken: true,
+        isStakingOnlyPair: hasStaking ? isStakingOnlyPair : undefined,
+        isVaultBackedStaking: hasStaking ? isVaultBackedStaking : undefined,
+        pairedStakingAddress: stakingAddress
+      })
 
-        if (existingToken) {
-          if (!existingToken?.name && name) {
-            tokens[vaultKey].name = name
-          }
-          if (!existingToken?.symbol && symbol) {
-            tokens[vaultKey].symbol = symbol
-          }
-          if (!existingToken?.decimals && decimals) {
-            tokens[vaultKey].decimals = decimals
-          }
-          if (!existingToken?.for) {
-            tokens[vaultKey].for = 'vault-share'
-          }
-          tokens[vaultKey].isVaultToken = true
-          if (!existingToken?.pairedStakingAddress && stakingAddress) {
-            tokens[vaultKey].pairedStakingAddress = stakingAddress
-          }
-          if (isStakingOnlyPair) {
-            tokens[vaultKey].isStakingOnlyPair = true
-          }
-          if (isVaultBackedStaking) {
-            tokens[vaultKey].isVaultBackedStaking = true
-          }
+      if (token.address) {
+        const vaultAssetTokenKey = `${chainID}/${toAddress(token.address)}`
+        if (!tokenListAddressSet.has(vaultAssetTokenKey)) {
+          upsertToken(tokens, vaultAssetTokenKey, {
+            address: token.address,
+            chainID,
+            decimals: token.decimals
+          })
         }
       }
 
-      if (token.address && !availableTokenListTokens.some((item) => item.address === token.address)) {
-        tokens[`${chainID}/${toAddress(token.address)}`] = {
-          address: token.address,
-          chainID,
-          decimals: token.decimals
-        }
-      }
-
-      if (stakingAddress && !tokens[`${chainID}/${stakingAddress}`]) {
-        tokens[`${chainID}/${stakingAddress}`] = {
+      if (stakingAddress) {
+        const stakingKey = `${chainID}/${stakingAddress}`
+        upsertToken(tokens, stakingKey, {
           address: stakingAddress,
           chainID,
           symbol,
@@ -173,33 +174,7 @@ export function useYearnTokens({
           isStakingOnlyPair,
           isVaultBackedStaking,
           pairedVaultAddress: address
-        }
-      } else if (stakingAddress) {
-        const existingToken = tokens[`${chainID}/${stakingAddress}`]
-        if (existingToken) {
-          if (!existingToken?.name && name) {
-            tokens[`${chainID}/${stakingAddress}`].name = name
-          }
-          if (!existingToken?.symbol && symbol) {
-            tokens[`${chainID}/${stakingAddress}`].symbol = symbol
-          }
-          if (!existingToken?.decimals && decimals) {
-            tokens[`${chainID}/${stakingAddress}`].decimals = decimals
-          }
-          if (!existingToken?.for) {
-            tokens[`${chainID}/${stakingAddress}`].for = 'vault-staking'
-          }
-          tokens[`${chainID}/${stakingAddress}`].isStakingToken = true
-          if (!existingToken?.pairedVaultAddress) {
-            tokens[`${chainID}/${stakingAddress}`].pairedVaultAddress = address
-          }
-          if (isStakingOnlyPair) {
-            tokens[`${chainID}/${stakingAddress}`].isStakingOnlyPair = true
-          }
-          if (isVaultBackedStaking) {
-            tokens[`${chainID}/${stakingAddress}`].isVaultBackedStaking = true
-          }
-        }
+        })
       }
     })
 

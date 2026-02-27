@@ -28,6 +28,13 @@ import { useWithdrawFlow } from './useWithdrawFlow'
 import { useWithdrawNotifications } from './useWithdrawNotifications'
 import { WithdrawDetails } from './WithdrawDetails'
 import { WithdrawDetailsOverlay } from './WithdrawDetailsOverlay'
+import {
+  buildWithdrawTransactionStep,
+  getWithdrawCtaLabel,
+  getWithdrawTransactionName,
+  isWithdrawCtaDisabled,
+  isWithdrawLastStep
+} from './withdrawStepHelpers'
 
 export const WidgetWithdraw: FC<
   WithdrawWidgetProps & { hideSettings?: boolean; disableBorderRadius?: boolean; collapseDetails?: boolean }
@@ -228,7 +235,7 @@ export const WidgetWithdraw: FC<
     hasBothBalances: !!hasBothBalances,
     withdrawalSource
   })
-  const isFetchingQuote = routeType === 'ENSO' && activeFlow.periphery.isLoadingRoute
+  const isFetchingQuote = routeType === 'ENSO' && Boolean(activeFlow.periphery.isLoadingRoute)
 
   const actionLabel = isUnstake
     ? 'You will unstake'
@@ -236,16 +243,7 @@ export const WidgetWithdraw: FC<
       ? 'You will unstake and redeem'
       : 'You will redeem'
 
-  const transactionName =
-    routeType === 'DIRECT_WITHDRAW'
-      ? 'Withdraw'
-      : routeType === 'DIRECT_UNSTAKE'
-        ? 'Unstake'
-        : routeType === 'DIRECT_UNSTAKE_WITHDRAW'
-          ? 'Unstake & Withdraw'
-          : isFetchingQuote
-            ? 'Fetching quote'
-            : 'Withdraw'
+  const transactionName = getWithdrawTransactionName(routeType, isFetchingQuote)
 
   const showApprove = routeType === 'ENSO'
 
@@ -300,93 +298,59 @@ export const WidgetWithdraw: FC<
   const approvalToken = withdrawalSource === 'staking' ? stakingToken : vault
   const formattedApprovalAmount = formatTAmount({ value: requiredShares, decimals: sharesDecimals })
 
-  const currentStep: TransactionStep | undefined = useMemo(() => {
-    if (needsApproval && activeFlow.actions.prepareApprove) {
-      return {
-        prepare: activeFlow.actions.prepareApprove,
-        label: 'Approve',
-        confirmMessage: `Approving ${formattedApprovalAmount} ${approvalToken?.symbol || ''}`,
-        successTitle: 'Approval successful',
-        successMessage: `Approved ${formattedApprovalAmount} ${approvalToken?.symbol || ''}.\nReady to withdraw.`,
-        notification: approveNotificationParams
-      }
-    }
+  const currentStep: TransactionStep | undefined = useMemo(
+    () =>
+      buildWithdrawTransactionStep({
+        needsApproval,
+        approvePrepare: activeFlow.actions.prepareApprove,
+        activeWithdrawPrepare: activeFlow.actions.prepareWithdraw,
+        directUnstakePrepare: directUnstakeFlow.actions.prepareWithdraw,
+        directWithdrawPrepare: directWithdrawFlow.actions.prepareWithdraw,
+        fallbackStep,
+        routeType,
+        isCrossChain,
+        formattedApprovalAmount,
+        approvalTokenSymbol: approvalToken?.symbol,
+        formattedRequiredShares,
+        formattedWithdrawAmount,
+        assetTokenSymbol: assetToken?.symbol,
+        vaultSymbol: vault?.symbol,
+        stakingTokenSymbol: stakingToken?.symbol,
+        approveNotificationParams,
+        unstakeNotificationParams,
+        withdrawNotificationParams
+      }),
+    [
+      needsApproval,
+      activeFlow.actions.prepareApprove,
+      activeFlow.actions.prepareWithdraw,
+      directUnstakeFlow.actions.prepareWithdraw,
+      directWithdrawFlow.actions.prepareWithdraw,
+      fallbackStep,
+      routeType,
+      isCrossChain,
+      formattedApprovalAmount,
+      approvalToken?.symbol,
+      formattedRequiredShares,
+      formattedWithdrawAmount,
+      assetToken?.symbol,
+      vault?.symbol,
+      stakingToken?.symbol,
+      approveNotificationParams,
+      unstakeNotificationParams,
+      withdrawNotificationParams
+    ]
+  )
 
-    if (routeType === 'DIRECT_UNSTAKE_WITHDRAW') {
-      const unstakeSymbol = stakingToken?.symbol || vault?.symbol || 'shares'
-
-      if (fallbackStep === 'unstake') {
-        return {
-          prepare: directUnstakeFlow.actions.prepareWithdraw,
-          label: 'Unstake',
-          confirmMessage: `Unstaking ${formattedRequiredShares} ${unstakeSymbol}`,
-          successTitle: 'Unstake successful!',
-          successMessage: `You have unstaked ${formattedRequiredShares} ${unstakeSymbol}.\nPreparing your withdraw.`,
-          notification: unstakeNotificationParams
-        }
-      }
-
-      return {
-        prepare: directWithdrawFlow.actions.prepareWithdraw,
-        label: 'Withdraw',
-        confirmMessage: `Withdrawing ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
-        successTitle: 'Withdraw successful!',
-        successMessage: `You have withdrawn ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
-        notification: withdrawNotificationParams
-      }
-    }
-
-    const withdrawLabel = routeType === 'DIRECT_UNSTAKE' ? 'Unstake' : 'Withdraw'
-
-    // Cross-chain transactions show different success messages
-    if (isCrossChain) {
-      return {
-        prepare: activeFlow.actions.prepareWithdraw,
-        label: withdrawLabel,
-        confirmMessage: `${routeType === 'DIRECT_UNSTAKE' ? 'Unstaking' : 'Withdrawing'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
-        successTitle: 'Transaction Submitted',
-        successMessage: `Your cross-chain ${withdrawLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
-        notification: withdrawNotificationParams
-      }
-    }
-
-    return {
-      prepare: activeFlow.actions.prepareWithdraw,
-      label: withdrawLabel,
-      confirmMessage: `${routeType === 'DIRECT_UNSTAKE' ? 'Unstaking' : 'Withdrawing'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
-      successTitle: `${withdrawLabel} successful!`,
-      successMessage: `You have ${routeType === 'DIRECT_UNSTAKE' ? 'unstaked' : 'withdrawn'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
-      notification: withdrawNotificationParams
-    }
-  }, [
-    needsApproval,
-    activeFlow.actions.prepareApprove,
-    activeFlow.actions.prepareWithdraw,
-    directWithdrawFlow.actions.prepareWithdraw,
-    directUnstakeFlow.actions.prepareWithdraw,
-    fallbackStep,
-    formattedWithdrawAmount,
-    formattedRequiredShares,
-    formattedApprovalAmount,
-    assetToken?.symbol,
-    approvalToken?.symbol,
-    stakingToken?.symbol,
-    vault?.symbol,
-    routeType,
-    approveNotificationParams,
-    unstakeNotificationParams,
-    withdrawNotificationParams,
-    isCrossChain
-  ])
-
-  const isLastStep = useMemo(() => {
-    if (!currentStep) return true
-    if (needsApproval) return false
-    if (routeType === 'DIRECT_UNSTAKE_WITHDRAW') {
-      return currentStep.label === 'Withdraw'
-    }
-    return true
-  }, [currentStep, needsApproval, routeType])
+  const isLastStep = useMemo(
+    () =>
+      isWithdrawLastStep({
+        currentStep,
+        needsApproval,
+        routeType
+      }),
+    [currentStep, needsApproval, routeType]
+  )
 
   const handleTransactionStepSuccess = useCallback(
     (label: string) => {
@@ -518,25 +482,25 @@ export const WidgetWithdraw: FC<
             onClick={() => setShowTransactionOverlay(true)}
             variant={isFetchingQuote ? 'busy' : 'filled'}
             isBusy={isFetchingQuote}
-            disabled={
-              !!withdrawError ||
-              withdrawAmount.bn === 0n ||
-              isFetchingQuote ||
-              withdrawAmount.isDebouncing ||
-              (showApprove &&
-                !activeFlow.periphery.isAllowanceSufficient &&
-                !activeFlow.periphery.prepareApproveEnabled) ||
-              ((!showApprove || activeFlow.periphery.isAllowanceSufficient) &&
-                !activeFlow.periphery.prepareWithdrawEnabled)
-            }
+            disabled={isWithdrawCtaDisabled({
+              hasError: !!withdrawError,
+              withdrawAmountRaw: withdrawAmount.bn,
+              isFetchingQuote,
+              isDebouncing: withdrawAmount.isDebouncing,
+              showApprove,
+              isAllowanceSufficient: activeFlow.periphery.isAllowanceSufficient,
+              prepareApproveEnabled: Boolean(activeFlow.periphery.prepareApproveEnabled),
+              prepareWithdrawEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
+            })}
             className="w-full"
             classNameOverride="yearn--button--nextgen w-full"
           >
-            {isFetchingQuote
-              ? 'Fetching quote'
-              : showApprove && !activeFlow.periphery.isAllowanceSufficient
-                ? `Approve & ${transactionName}`
-                : transactionName}
+            {getWithdrawCtaLabel({
+              isFetchingQuote,
+              showApprove,
+              isAllowanceSufficient: activeFlow.periphery.isAllowanceSufficient,
+              transactionName
+            })}
           </Button>
         )}
       </div>

@@ -61,6 +61,30 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       return getVaultHoldingsUsdValue(vault, getToken, getBalance, getPrice)
     }
 
+    const getAvailableValue = (vault: TKongVaultInput): number => {
+      const token = getVaultToken(vault)
+      const chainID = getVaultChainID(vault)
+      const baseBalance = Number(getBalance({ address: token.address, chainID }).normalized || 0)
+      const nativeBalance = [WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(token.address))
+        ? Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID }).normalized || 0)
+        : 0
+      return baseBalance + nativeBalance
+    }
+
+    const depositedValueByVault = new Map<TVault, number>()
+    if (sortBy === 'deposited') {
+      vaultList.forEach((vault) => {
+        depositedValueByVault.set(vault, getDepositedValue(vault))
+      })
+    }
+
+    const availableValueByVault = new Map<TVault, number>()
+    if (sortBy === 'available') {
+      vaultList.forEach((vault) => {
+        availableValueByVault.set(vault, getAvailableValue(vault))
+      })
+    }
+
     switch (sortBy) {
       case 'name':
         return vaultList.toSorted((a, b): number =>
@@ -113,31 +137,16 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       case 'deposited':
         return vaultList.toSorted((a, b): number =>
           numberSort({
-            a: getDepositedValue(a),
-            b: getDepositedValue(b),
+            a: depositedValueByVault.get(a) || 0,
+            b: depositedValueByVault.get(b) || 0,
             sortDirection
           })
         )
       case 'available':
         return vaultList.toSorted((a, b): number => {
-          const tokenA = getVaultToken(a)
-          const tokenB = getVaultToken(b)
-          const chainA = getVaultChainID(a)
-          const chainB = getVaultChainID(b)
-
-          const aBaseBalance = Number(getBalance({ address: tokenA.address, chainID: chainA })?.normalized || 0)
-          const bBaseBalance = Number(getBalance({ address: tokenB.address, chainID: chainB })?.normalized || 0)
-          const aEthBalance = [WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(tokenA.address))
-            ? Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: chainA })?.normalized || 0)
-            : 0
-          const bEthBalance = [WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(tokenB.address))
-            ? Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: chainB })?.normalized || 0)
-            : 0
-          const aBalance = aBaseBalance + aEthBalance
-          const bBalance = bBaseBalance + bEthBalance
-
-          const direction = sortDirection === 'asc' ? 1 : -1
-          return direction * (aBalance - bBalance)
+          const aValue = availableValueByVault.get(a) || 0
+          const bValue = availableValueByVault.get(b) || 0
+          return numberSort({ a: aValue, b: bValue, sortDirection })
         })
       case 'featuringScore':
         return vaultList.toSorted((a, b): number =>

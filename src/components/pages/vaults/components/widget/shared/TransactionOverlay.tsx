@@ -77,6 +77,19 @@ const getStepDebugInfo = (step?: TransactionStep) => {
   }
 }
 
+function isUserRejectionError(error: any): boolean {
+  return (
+    error?.message?.toLowerCase().includes('rejected') ||
+    error?.message?.toLowerCase().includes('denied') ||
+    error?.code === 4001
+  )
+}
+
+function getTransactionErrorMessage(error: any): string {
+  const errorMsg = error?.shortMessage || error?.message || 'Transaction failed. Please try again.'
+  return errorMsg.length > 100 ? 'Transaction failed. Please try again.' : errorMsg
+}
+
 type TransactionOverlayProps = {
   isOpen: boolean
   onClose: () => void
@@ -148,22 +161,39 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const hasStartedRef = useRef(false)
   const hasAutoContinuedFromStepRef = useRef<string | null>(null)
   const hasReportedStepSuccessRef = useRef(false)
+  const writeContractResetRef = useRef(writeContract.reset)
+
+  useEffect(() => {
+    writeContractResetRef.current = writeContract.reset
+  }, [writeContract.reset])
+
+  const setStepExecutionContext = useCallback((nextStep: TransactionStep, nextIsLastStep: boolean) => {
+    executedStepRef.current = nextStep
+    wasLastStepRef.current = nextIsLastStep
+    hasReportedStepSuccessRef.current = false
+  }, [])
+
+  const resetTxState = useCallback((clearNotification = false) => {
+    writeContractResetRef.current()
+    setTxHash(undefined)
+    if (clearNotification) {
+      setNotificationId(undefined)
+    }
+  }, [])
 
   // Reset state when overlay closes
   useEffect(() => {
     if (!isOpen) {
       setOverlayState('idle')
       setErrorMessage('')
-      setTxHash(undefined)
+      resetTxState(true)
       hasStartedRef.current = false
       hasAutoContinuedFromStepRef.current = null
       hasReportedStepSuccessRef.current = false
       executedStepRef.current = null
       wasLastStepRef.current = false
-      setNotificationId(undefined)
-      writeContract.reset()
     }
-  }, [isOpen])
+  }, [isOpen, resetTxState])
 
   // Create notification with txHash (called after signing succeeds)
   const handleCreateNotification = useCallback(
@@ -205,195 +235,181 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     [notificationId, updateNotification]
   )
 
+  const executePermitStep = useCallback(
+    async (currentStep: TransactionStep) => {
+      setStepExecutionContext(currentStep, isLastStep)
+      setOverlayState('confirming')
+      setErrorMessage('')
+
+      try {
+        const permitData =
+          currentStep.permitData && 'getPermitData' in currentStep.permitData
+            ? await currentStep.permitData.getPermitData()
+            : currentStep.permitData
+
+        if (!permitData) {
+          console.error('[TransactionOverlay] Missing permit data', getStepDebugInfo(currentStep))
+          throw new Error('Failed to get permit data')
+        }
+
+        const signature = await signTypedDataAsync({
+          domain: permitData.domain,
+          types: permitData.types,
+          primaryType: permitData.primaryType,
+          message: permitData.message
+        })
+
+        currentStep.onPermitSigned?.(signature)
+        setOverlayState('success')
+
+        if (currentStep.showConfetti) {
+          setTimeout(() => reward(), 100)
+        }
+      } catch (error: any) {
+        if (isUserRejectionError(error)) {
+          onClose()
+          return
+        }
+        console.error('Permit signing failed:', error)
+        setOverlayState('error')
+        setErrorMessage('Failed to sign permit. Please try again.')
+      }
+    },
+    [isLastStep, onClose, reward, setStepExecutionContext, signTypedDataAsync]
+  )
+
+  const executeContractStep = useCallback(
+    async (currentStep: TransactionStep) => {
+      if (!currentStep.prepare.isSuccess || !currentStep.prepare.data?.request) {
+        console.warn('[TransactionOverlay] Transaction not ready', getStepDebugInfo(currentStep))
+        setOverlayState('error')
+        setErrorMessage('Transaction not ready. Please try again.')
+        return
+      }
+
+      setStepExecutionContext(currentStep, isLastStep)
+      setOverlayState('confirming')
+      setErrorMessage('')
+
+      const request = currentStep.prepare.data.request as any
+      const txChainId = request.chainId
+      const wrongNetwork = txChainId && currentChainId !== txChainId
+
+      if (wrongNetwork && txChainId) {
+        try {
+          console.info('[TransactionOverlay] Switching chain', {
+            from: currentChainId,
+            to: txChainId,
+            step: currentStep.label
+          })
+          await switchChainAsync({ chainId: txChainId })
+        } catch {
+          console.warn('[TransactionOverlay] Chain switch rejected', { to: txChainId, step: currentStep.label })
+          onClose()
+          return
+        }
+      }
+
+      const isEnsoOrder = Boolean(request.__isEnsoOrder)
+      const isCrossChain = currentStep.notification?.type === 'crosschain zap'
+
+      try {
+        if (isEnsoOrder) {
+          console.info('[TransactionOverlay] Executing Enso order', {
+            step: currentStep.label,
+            isCrossChain
+          })
+
+          const customWriteAsync = request.writeContractAsync
+          const result = await customWriteAsync()
+          if (!result.hash) {
+            return
+          }
+
+          if (isCrossChain) {
+            await handleCreateNotification(result.hash, currentStep.notification, 'submitted')
+            setOverlayState('success')
+            if (currentStep.showConfetti) {
+              setTimeout(() => reward(), 100)
+            }
+            setNotificationId(undefined)
+            if (wasLastStepRef.current) {
+              onAllComplete?.()
+            }
+            return
+          }
+
+          setTxHash(result.hash)
+          setOverlayState('pending')
+          await handleCreateNotification(result.hash, currentStep.notification)
+          return
+        }
+
+        const gasOverrides: { gas?: bigint } = client
+          ? await client
+              .estimateContractGas(request)
+              .then((gasEstimate) => ({
+                gas: (gasEstimate * BigInt(110)) / BigInt(100)
+              }))
+              .catch((error) => {
+                console.warn('[TransactionOverlay] Gas estimation failed', {
+                  step: currentStep.label,
+                  error: (error as Error)?.message || error
+                })
+                return {}
+              })
+          : {}
+
+        const hash = await writeContract.writeContractAsync({
+          ...request,
+          ...gasOverrides
+        })
+        setTxHash(hash)
+        setOverlayState('pending')
+        await handleCreateNotification(hash, currentStep.notification)
+      } catch (error: any) {
+        if (isUserRejectionError(error)) {
+          onClose()
+          return
+        }
+        console.error('Transaction failed:', error)
+        setOverlayState('error')
+        setErrorMessage(getTransactionErrorMessage(error))
+      }
+    },
+    [
+      client,
+      currentChainId,
+      handleCreateNotification,
+      isLastStep,
+      onAllComplete,
+      onClose,
+      reward,
+      setStepExecutionContext,
+      switchChainAsync,
+      writeContract
+    ]
+  )
+
   const executeStep = useCallback(async () => {
     if (!step) {
       console.warn('[TransactionOverlay] Execute called without step')
       return
     }
 
-    // For permit steps, we don't need prepare.isSuccess - we need permitData
-    if (step?.isPermit && step?.permitData) {
-      // Handle permit signing flow
-      executedStepRef.current = step
-      wasLastStepRef.current = isLastStep
-      hasReportedStepSuccessRef.current = false
-
-      setOverlayState('confirming')
-      setErrorMessage('')
-
-      try {
-        // Get permit data - either direct or via async getter
-        let permitDataDirect: PermitDataDirect | undefined
-        if ('getPermitData' in step.permitData) {
-          permitDataDirect = await step.permitData.getPermitData()
-        } else {
-          permitDataDirect = step.permitData
-        }
-
-        if (!permitDataDirect) {
-          console.error('[TransactionOverlay] Missing permit data', getStepDebugInfo(step))
-          throw new Error('Failed to get permit data')
-        }
-
-        const signature = await signTypedDataAsync({
-          domain: permitDataDirect.domain,
-          types: permitDataDirect.types,
-          primaryType: permitDataDirect.primaryType,
-          message: permitDataDirect.message
-        })
-
-        // Pass signature back to the flow
-        step.onPermitSigned?.(signature)
-        setOverlayState('success')
-
-        if (step.showConfetti) {
-          setTimeout(() => reward(), 100)
-        }
-      } catch (error: any) {
-        const isUserRejection =
-          error?.message?.toLowerCase().includes('rejected') ||
-          error?.message?.toLowerCase().includes('denied') ||
-          error?.code === 4001
-
-        if (isUserRejection) {
-          onClose()
-        } else {
-          console.error('Permit signing failed:', error)
-          setOverlayState('error')
-          setErrorMessage('Failed to sign permit. Please try again.')
-        }
-      }
+    if (step.isPermit && step.permitData) {
+      await executePermitStep(step)
       return
     }
 
-    if (!step?.prepare.isSuccess || !step?.prepare.data?.request) {
-      console.warn('[TransactionOverlay] Transaction not ready', getStepDebugInfo(step))
-      setOverlayState('error')
-      setErrorMessage('Transaction not ready. Please try again.')
-      return
-    }
-
-    // Capture step info for success messages
-    executedStepRef.current = step
-    wasLastStepRef.current = isLastStep
-    hasReportedStepSuccessRef.current = false
-
-    setOverlayState('confirming')
-    setErrorMessage('')
-
-    const txChainId = step.prepare.data.request.chainId
-    const wrongNetwork = txChainId && currentChainId !== txChainId
-
-    // Handle chain switch if needed
-    if (wrongNetwork && txChainId) {
-      try {
-        console.info('[TransactionOverlay] Switching chain', {
-          from: currentChainId,
-          to: txChainId,
-          step: step.label
-        })
-        await switchChainAsync({ chainId: txChainId })
-      } catch {
-        // User rejected chain switch - silent close
-        console.warn('[TransactionOverlay] Chain switch rejected', { to: txChainId, step: step.label })
-        onClose()
-        return
-      }
-    }
-
-    const isEnsoOrder = !!(step.prepare.data.request as any)?.__isEnsoOrder
-    const isCrossChain = step.notification?.type === 'crosschain zap'
-
-    try {
-      if (isEnsoOrder) {
-        console.info('[TransactionOverlay] Executing Enso order', {
-          step: step.label,
-          isCrossChain
-        })
-        const customWriteAsync = (step.prepare.data.request as any).writeContractAsync
-        const result = await customWriteAsync()
-        if (result.hash) {
-          // For cross-chain: use 'submitted' status and show success immediately
-          if (isCrossChain) {
-            await handleCreateNotification(result.hash, step.notification, 'submitted')
-            setOverlayState('success')
-            if (step.showConfetti) {
-              setTimeout(() => reward(), 100)
-            }
-            setNotificationId(undefined)
-            // Trigger onAllComplete immediately for cross-chain success
-            if (wasLastStepRef.current) {
-              onAllComplete?.()
-            }
-          } else {
-            // Same-chain Enso: wait for receipt
-            setTxHash(result.hash)
-            setOverlayState('pending')
-            await handleCreateNotification(result.hash, step.notification)
-          }
-        }
-      } else {
-        // Estimate gas with buffer
-        let gasOverrides: { gas?: bigint } = {}
-        if (client) {
-          try {
-            const gasEstimate = await client.estimateContractGas(step.prepare.data.request as any)
-            if (gasEstimate) {
-              gasOverrides = { gas: (gasEstimate * BigInt(110)) / BigInt(100) }
-            }
-          } catch (error) {
-            console.warn('[TransactionOverlay] Gas estimation failed', {
-              step: step.label,
-              error: (error as Error)?.message || error
-            })
-            // Gas estimation failed, proceed without override
-          }
-        }
-
-        const hash = await writeContract.writeContractAsync({
-          ...step.prepare.data.request,
-          ...gasOverrides
-        })
-        setTxHash(hash)
-        setOverlayState('pending')
-        await handleCreateNotification(hash, step.notification)
-      }
-    } catch (error: any) {
-      const isUserRejection =
-        error?.message?.toLowerCase().includes('rejected') ||
-        error?.message?.toLowerCase().includes('denied') ||
-        error?.code === 4001
-
-      if (isUserRejection) {
-        onClose()
-      } else {
-        console.error('Transaction failed:', error)
-        setOverlayState('error')
-        // Show more specific error if available
-        const errorMsg = error?.shortMessage || error?.message || 'Transaction failed. Please try again.'
-        setErrorMessage(errorMsg.length > 100 ? 'Transaction failed. Please try again.' : errorMsg)
-      }
-    }
-  }, [
-    step,
-    currentChainId,
-    switchChainAsync,
-    client,
-    writeContract,
-    signTypedDataAsync,
-    onClose,
-    handleCreateNotification,
-    isLastStep,
-    reward,
-    onAllComplete
-  ])
+    await executeContractStep(step)
+  }, [executeContractStep, executePermitStep, step])
 
   const advanceToNextStep = useCallback(() => {
     // Reset for next step - parent will provide the new step
-    writeContract.reset()
-    setTxHash(undefined)
+    resetTxState()
     executeStep()
-  }, [writeContract, executeStep])
+  }, [resetTxState, executeStep])
 
   useEffect(() => {
     if (step?.prepare.isError) {
@@ -410,10 +426,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   }, [onClose, advanceToNextStep])
 
   const handleRetry = useCallback(() => {
-    writeContract.reset()
-    setTxHash(undefined)
+    resetTxState()
     executeStep()
-  }, [writeContract, executeStep])
+  }, [resetTxState, executeStep])
 
   const handleClose = useCallback(() => {
     onClose()
@@ -447,7 +462,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       hasStartedRef.current = true
       executeStep()
     }
-  }, [isOpen, overlayState])
+  }, [isOpen, overlayState, step, executeStep])
 
   // Handle transaction success
   useEffect(() => {
@@ -465,8 +480,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     const canShowSuccess = wasLastStepRef.current || isNextStepReady
     if (receipt.isSuccess && receipt.data?.transactionHash && overlayState === 'pending' && canShowSuccess) {
       setOverlayState('success')
-      writeContract.reset()
-      setTxHash(undefined)
+      resetTxState()
 
       // Update notification to success
       handleUpdateNotification({ receipt: receipt.data, status: 'success' })
@@ -491,7 +505,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     onAllComplete,
     onStepSuccess,
     isStepReady,
-    step?.label
+    step?.label,
+    resetTxState
   ])
 
   // Handle transaction error
@@ -499,14 +514,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     if (receipt.isError && receipt.error && overlayState === 'pending') {
       setOverlayState('error')
       setErrorMessage('Transaction failed. Please try again.')
-      writeContract.reset()
-      setTxHash(undefined)
+      resetTxState()
 
       // Update notification to error
       handleUpdateNotification({ status: 'error' })
       setNotificationId(undefined)
     }
-  }, [receipt.isError, receipt.error, overlayState, handleUpdateNotification])
+  }, [receipt.isError, receipt.error, overlayState, handleUpdateNotification, resetTxState])
 
   // When step 1 succeeds in a multi-step flow, the next step simulation may need a refetch
   // to pick up post-transaction state (e.g. unstake -> withdraw).
@@ -528,7 +542,15 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     return () => {
       window.clearInterval(intervalId)
     }
-  }, [isOpen, overlayState, receipt.isSuccess, receipt.data?.transactionHash, step?.label, isStepReady, step?.prepare])
+  }, [
+    isOpen,
+    overlayState,
+    receipt.isSuccess,
+    receipt.data?.transactionHash,
+    step?.label,
+    step?.prepare.refetch,
+    isStepReady
+  ])
 
   return (
     <div
