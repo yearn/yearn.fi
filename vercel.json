@@ -56,8 +56,12 @@
           "value": "strict-origin-when-cross-origin"
         },
         {
+          "key": "Reporting-Endpoints",
+          "value": "default=\"https://5w7uj43k.uriports.com/reports\""
+        },
+        {
           "key": "Content-Security-Policy-Report-Only",
-          "value": "frame-ancestors 'self'; report-uri https://5w7uj43k.uriports.com/reports/report"
+          "value": "frame-ancestors 'self'; report-to default;"
         }
       ]
     }
