@@ -57,7 +57,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'self' https://app.safe.global https://*.safe.global https://app.gnosis-safe.io https://*.gnosis-safe.io; object-src 'none'; base-uri 'self'"
+          "value": "frame-ancestors 'self' https://app.safe.global; object-src 'none'; base-uri 'self'"
         }
       ]
     }
