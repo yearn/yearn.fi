@@ -551,7 +551,7 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
   const oracle = snapshot?.performance?.oracle ?? vault.performance?.oracle
   const estimated = snapshot?.performance?.estimated ?? vault.performance?.estimated
 
-  const forwardNet = pickNumber(
+  const rawForwardNet = pickNumber(
     snapshot?.performance?.estimated?.apy,
     snapshot?.performance?.estimated?.apr,
     snapshot?.performance?.oracle?.apy,
@@ -561,6 +561,12 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
     vault.performance?.historical?.net,
     historical?.net
   )
+
+  // When TVL < $1,000 the API's forward APY is unreliable (yield ÷ tiny TVL = astronomical numbers).
+  // Zero it out so consumers fall back to historical data, which accurately reflects actual performance.
+  const MIN_TVL_FOR_APY = 1000
+  const tvlValue = getVaultTVL(vault, snapshot).tvl
+  const forwardNet = tvlValue >= 0 && tvlValue < MIN_TVL_FOR_APY ? 0 : rawForwardNet
 
   const forwardType = snapshot?.performance?.estimated
     ? 'estimated'
