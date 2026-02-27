@@ -57,7 +57,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'self' https://app.safe.global; object-src 'none'; base-uri 'self'"
+          "value": "frame-ancestors 'self' https://app.safe.global https://eth.blockscout.com https://explorer.optimism.io https://polygon.blockscout.com https://base.blockscout.com https://arbitrum.blockscout.com; object-src 'none'; base-uri 'self'"
         }
       ]
     }
