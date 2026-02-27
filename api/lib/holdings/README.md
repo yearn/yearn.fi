@@ -1,6 +1,6 @@
 # Holdings History API
 
-Calculates historical USD values of a user's Yearn vault positions over the past 90 days.
+Calculates historical USD values of a user's Yearn vault positions over the past 365 days (1 year).
 
 ## Architecture
 
@@ -49,7 +49,7 @@ User Request → API Server → Aggregator → Response
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     For 90-day period:                          │
+│                     For 365-day period:                         │
 │                                                                  │
 │  1. Check Cache ──────────────────────────────────────────────► │
 │     │                                                            │
@@ -111,7 +111,7 @@ USD Value = 100 × 1.05 × 1.00 = $105.00
 | `kong.ts` | Kong API | Fetch historical Price Per Share timeseries |
 | `vaults.ts` | Kong API | Fetch vault metadata (token info, decimals) |
 | `defillama.ts` | DefiLlama API | Fetch historical token prices |
-| `cache.ts` | PostgreSQL | Cache daily USD totals per user |
+| `cache.ts` | PostgreSQL | Cache daily USD totals per user + token prices |
 | `holdings.ts` | Local | Build position timeline, calculate share balances |
 | `aggregator.ts` | Local | Orchestrate all services, main entry point |
 
@@ -233,7 +233,7 @@ The cache stores **daily USD totals per user** (not per-vault breakdowns).
 ┌─────────────────────────────────────────────────────────────┐
 │                    Cache Lookup Flow                         │
 │                                                              │
-│  Request for 90 days of data                                │
+│  Request for 365 days of data                               │
 │         │                                                    │
 │         ▼                                                    │
 │  ┌─────────────────┐                                        │
@@ -242,34 +242,37 @@ The cache stores **daily USD totals per user** (not per-vault breakdowns).
 │  └────────┬────────┘                                        │
 │           │                                                  │
 │           ▼                                                  │
-│  ┌─────────────────────────────────────┐                    │
-│  │ Found: Days 1-85 cached             │                    │
-│  │ Missing: Days 86-90                 │                    │
-│  └────────┬────────────────────────────┘                    │
+│  ┌───────────────────────────────────────┐                  │
+│  │ Found: Days 1-360 cached              │                  │
+│  │ Missing: Days 361-365                 │                  │
+│  └────────┬──────────────────────────────┘                  │
 │           │                                                  │
 │           ▼                                                  │
-│  ┌─────────────────────────────────────┐                    │
-│  │ Only calculate missing days (86-90) │                    │
-│  │ Save new daily totals to cache      │                    │
-│  └────────┬────────────────────────────┘                    │
+│  ┌───────────────────────────────────────┐                  │
+│  │ Only calculate missing days (361-365) │                  │
+│  │ Save new daily totals to cache        │                  │
+│  └────────┬──────────────────────────────┘                  │
 │           │                                                  │
 │           ▼                                                  │
-│  ┌─────────────────────────────────────┐                    │
-│  │ Merge cached + new data             │                    │
-│  │ Return complete 90-day response     │                    │
-│  └─────────────────────────────────────┘                    │
+│  ┌───────────────────────────────────────┐                  │
+│  │ Merge cached + new data               │                  │
+│  │ Return complete 365-day response      │                  │
+│  └───────────────────────────────────────┘                  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Cache Layers
 
-1. **PostgreSQL** (server): Daily totals cached permanently per user
+1. **PostgreSQL** (server):
+   - Daily totals cached per user (today recalculated on each request)
+   - Token prices cached globally (shared across all users)
 2. **HTTP Cache-Control** (CDN): `s-maxage=300, stale-while-revalidate=600`
 3. **TanStack Query** (client): 5-minute stale time
 
 ## Database Schema
 
 ```sql
+-- User daily totals (one row per user per day)
 CREATE TABLE IF NOT EXISTS holdings_totals (
   user_address VARCHAR(42) NOT NULL,
   date         DATE NOT NULL,
@@ -277,6 +280,18 @@ CREATE TABLE IF NOT EXISTS holdings_totals (
   updated_at   TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (user_address, date)
 );
+
+-- Token price cache (shared across all users)
+CREATE TABLE IF NOT EXISTS token_prices (
+  token_key  VARCHAR(100) NOT NULL,  -- e.g., "ethereum:0xa0b8..."
+  timestamp  INTEGER NOT NULL,        -- Unix timestamp (midnight UTC)
+  price      NUMERIC NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  PRIMARY KEY (token_key, timestamp)
+);
+
+CREATE INDEX IF NOT EXISTS idx_token_prices_token_key ON token_prices(token_key);
 ```
 
-One row per user per day = ~90 rows per user for full history.
+- `holdings_totals`: ~365 rows per user for full history
+- `token_prices`: Shared cache, reduces DefiLlama API calls from ~45s to ~100ms for repeat requests
