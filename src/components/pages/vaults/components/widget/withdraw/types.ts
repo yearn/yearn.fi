@@ -10,6 +10,7 @@ export interface WithdrawWidgetProps {
   stakingAddress?: `0x${string}`
   chainId: number
   vaultSymbol: string
+  stakingSource?: string
   vaultVersion?: string
   isVaultRetired?: boolean
   vaultUserData: VaultUserData

@@ -14,6 +14,7 @@ interface UseWithdrawFlowProps {
   vaultAddress: Address
   sourceToken: Address
   stakingAddress?: Address
+  stakingSource?: string
   // Amounts
   amount: bigint
   currentAmount: bigint
@@ -52,6 +53,7 @@ export const useWithdrawFlow = ({
   vaultAddress,
   sourceToken,
   stakingAddress,
+  stakingSource,
   amount,
   currentAmount,
   requiredShares,
@@ -100,6 +102,7 @@ export const useWithdrawFlow = ({
   // Direct unstake flow (staking → vault)
   const directUnstake = useDirectUnstake({
     stakingAddress,
+    stakingSource,
     amount: requiredShares,
     account,
     chainId,

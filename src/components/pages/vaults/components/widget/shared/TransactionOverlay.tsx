@@ -411,6 +411,35 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     executeStep()
   }, [resetTxState, executeStep])
 
+  const waitForAutoContinueBlock = useCallback(async () => {
+    const executedBlockNumber = receipt.data?.blockNumber
+    if (!client || executedBlockNumber === undefined) return
+
+    const targetBlock = executedBlockNumber + 1n
+    const timeoutMs = 20_000
+    const pollIntervalMs = 1_000
+    const startedAt = Date.now()
+
+    while (Date.now() - startedAt < timeoutMs) {
+      try {
+        const latestBlock = await client.getBlockNumber()
+        if (latestBlock >= targetBlock) {
+          return
+        }
+      } catch (error) {
+        console.warn('[TransactionOverlay] Auto-continue block polling failed', {
+          step: executedStepRef.current?.label,
+          error: (error as Error)?.message || error
+        })
+        return
+      }
+
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, pollIntervalMs)
+      })
+    }
+  }, [client, receipt.data?.blockNumber])
+
   useEffect(() => {
     if (step?.prepare.isError) {
       console.error('[TransactionOverlay] Prepare failed', getStepDebugInfo(step))
@@ -445,7 +474,17 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     if (hasAutoContinuedFromStepRef.current === executedStepLabel) return
 
     hasAutoContinuedFromStepRef.current = executedStepLabel
-    advanceToNextStep()
+    let cancelled = false
+    const advance = async () => {
+      await waitForAutoContinueBlock()
+      if (cancelled) return
+      advanceToNextStep()
+    }
+    void advance()
+
+    return () => {
+      cancelled = true
+    }
   }, [
     isOpen,
     overlayState,
@@ -453,7 +492,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     autoContinueStepLabels,
     isStepReady,
     step?.label,
-    advanceToNextStep
+    advanceToNextStep,
+    waitForAutoContinueBlock
   ])
 
   // Start step when overlay opens

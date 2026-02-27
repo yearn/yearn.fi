@@ -5,6 +5,7 @@ import { useCallback, useMemo } from 'react'
 import { type Address, getContract } from 'viem'
 import { useConfig } from 'wagmi'
 import { getClient } from 'wagmi/actions'
+import { getStakingWithdrawableAssets } from './actions/stakingAdapter'
 import { type Token, useTokens } from './useTokens'
 
 export interface VaultUserData {
@@ -20,6 +21,7 @@ export interface VaultUserData {
   availableToDeposit: bigint
   depositedShares: bigint
   depositedValue: bigint
+  stakingWithdrawableAssets: bigint
 
   // State
   isLoading: boolean
@@ -30,6 +32,7 @@ interface UseVaultUserDataParams {
   vaultAddress: Address
   assetAddress: Address
   stakingAddress?: Address
+  stakingSource?: string
   chainId: number
   account?: Address
 }
@@ -38,6 +41,7 @@ export const useVaultUserData = ({
   vaultAddress,
   assetAddress,
   stakingAddress,
+  stakingSource,
   chainId,
   account
 }: UseVaultUserDataParams): VaultUserData => {
@@ -77,12 +81,6 @@ export const useVaultUserData = ({
     refetchOnReconnect: false
   })
 
-  // Combined refetch
-  const refetch = useCallback(() => {
-    refetchTokens()
-    refetchPPS()
-  }, [refetchTokens, refetchPPS])
-
   // Derive tokens
   const [assetToken, vaultToken, rawStakingToken] = tokens
 
@@ -106,11 +104,54 @@ export const useVaultUserData = ({
     }
   }, [rawStakingToken, vaultToken?.decimals, vaultToken?.symbol, vaultToken?.name])
 
+  const stakingShareBalance = stakingToken?.balance.raw ?? 0n
+
+  const {
+    data: stakingWithdrawableAssets,
+    isLoading: isLoadingStakingWithdrawableAssets,
+    refetch: refetchStakingWithdrawableAssets
+  } = useQuery({
+    queryKey: [
+      'stakingWithdrawableAssets',
+      stakingAddress?.toLowerCase(),
+      account?.toLowerCase(),
+      chainId,
+      stakingSource || '',
+      stakingShareBalance.toString()
+    ],
+    queryFn: async () => {
+      const client = getClient(config, { chainId })
+      if (!client || !stakingAddress || !account) {
+        return stakingShareBalance
+      }
+
+      return getStakingWithdrawableAssets({
+        client: client as any,
+        stakingAddress,
+        account,
+        stakingSource,
+        stakingShareBalance
+      })
+    },
+    enabled: !!stakingAddress && !!account && !!chainId,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false
+  })
+
+  // Combined refetch
+  const refetch = useCallback(() => {
+    refetchTokens()
+    refetchPPS()
+    refetchStakingWithdrawableAssets()
+  }, [refetchTokens, refetchPPS, refetchStakingWithdrawableAssets])
+
+  const effectiveStakingShares = stakingWithdrawableAssets ?? stakingShareBalance
+
   const depositedShares = useMemo(() => {
     const vaultBalance = vaultToken?.balance.raw ?? 0n
-    const stakingBalance = stakingToken?.balance.raw ?? 0n
-    return vaultBalance + stakingBalance
-  }, [vaultToken, stakingToken])
+    return vaultBalance + effectiveStakingShares
+  }, [vaultToken, effectiveStakingShares])
 
   const depositedValue = useMemo(() => {
     if (!pricePerShare || depositedShares === 0n) return 0n
@@ -126,7 +167,8 @@ export const useVaultUserData = ({
     availableToDeposit: assetToken?.balance.raw ?? 0n,
     depositedShares,
     depositedValue,
-    isLoading: isLoadingTokens || isLoadingPPS,
+    stakingWithdrawableAssets: effectiveStakingShares,
+    isLoading: isLoadingTokens || isLoadingPPS || isLoadingStakingWithdrawableAssets,
     refetch
   }
 }

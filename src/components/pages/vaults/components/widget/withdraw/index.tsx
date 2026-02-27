@@ -8,8 +8,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
-import type { TNormalizedBN } from '@shared/types'
-import { cl, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import { cl, formatTAmount, toAddress, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
@@ -44,6 +43,7 @@ export const WidgetWithdraw: FC<
   stakingAddress,
   chainId,
   vaultSymbol,
+  stakingSource,
   vaultVersion,
   vaultUserData,
   handleWithdrawSuccess: onWithdrawSuccess,
@@ -72,6 +72,7 @@ export const WidgetWithdraw: FC<
     assetToken,
     vaultToken: vault,
     stakingToken,
+    stakingWithdrawableAssets,
     pricePerShare,
     isLoading: isLoadingVaultData,
     refetch: refetchVaultUserData
@@ -91,7 +92,7 @@ export const WidgetWithdraw: FC<
   }, [getToken, withdrawToken, destinationChainId, chainId, assetAddress, assetToken])
 
   const hasVaultBalance = (vault?.balance.raw ?? 0n) > 0n
-  const hasStakingBalance = (stakingToken?.balance.raw ?? 0n) > 0n
+  const hasStakingBalance = stakingWithdrawableAssets > 0n
   const hasBothBalances = hasVaultBalance && hasStakingBalance
 
   useEffect(() => {
@@ -116,12 +117,11 @@ export const WidgetWithdraw: FC<
     }
   }, [showTransactionOverlay])
 
-  const totalVaultBalance: TNormalizedBN =
-    withdrawalSource === 'vault' && vault
-      ? vault.balance
-      : withdrawalSource === 'staking' && stakingToken
-        ? stakingToken.balance
-        : zeroNormalizedBN
+  const sourceVaultSharesRaw = useMemo(() => {
+    if (withdrawalSource === 'vault') return vault?.balance.raw ?? 0n
+    if (withdrawalSource === 'staking') return stakingWithdrawableAssets
+    return 0n
+  }, [withdrawalSource, vault?.balance.raw, stakingWithdrawableAssets])
 
   const sourceToken =
     withdrawalSource === 'vault'
@@ -135,13 +135,13 @@ export const WidgetWithdraw: FC<
   const sharesDecimals = vault?.decimals ?? stakingToken?.decimals ?? 18
   const vaultDecimals = vault?.decimals ?? 18
 
-  const totalBalanceInUnderlying: TNormalizedBN = useMemo(() => {
-    if (pricePerShare === 0n || totalVaultBalance.raw === 0n || !assetToken) {
-      return zeroNormalizedBN
+  const totalBalanceInUnderlying = useMemo(() => {
+    if (pricePerShare === 0n || sourceVaultSharesRaw === 0n || !assetToken) {
+      return toNormalizedBN(0n, assetToken?.decimals ?? 18)
     }
-    const underlyingAmount = (totalVaultBalance.raw * pricePerShare) / 10n ** BigInt(vaultDecimals)
+    const underlyingAmount = (sourceVaultSharesRaw * pricePerShare) / 10n ** BigInt(vaultDecimals)
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
-  }, [totalVaultBalance.raw, pricePerShare, vaultDecimals, assetToken])
+  }, [sourceVaultSharesRaw, pricePerShare, vaultDecimals, assetToken])
 
   const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
@@ -158,7 +158,7 @@ export const WidgetWithdraw: FC<
   // ============================================================================
   const requiredShares = useMemo(() => {
     if (!withdrawAmount.bn || withdrawAmount.bn === 0n) return 0n
-    if (isMaxWithdraw && totalVaultBalance.raw > 0n) return totalVaultBalance.raw
+    if (isMaxWithdraw && sourceVaultSharesRaw > 0n) return sourceVaultSharesRaw
 
     if (pricePerShare > 0n) {
       const numerator = withdrawAmount.bn * 10n ** BigInt(vaultDecimals)
@@ -166,7 +166,7 @@ export const WidgetWithdraw: FC<
     }
 
     return 0n
-  }, [withdrawAmount.bn, isMaxWithdraw, totalVaultBalance.raw, pricePerShare, vaultDecimals])
+  }, [withdrawAmount.bn, isMaxWithdraw, sourceVaultSharesRaw, pricePerShare, vaultDecimals])
 
   const { routeType, activeFlow, directWithdrawFlow, directUnstakeFlow } = useWithdrawFlow({
     withdrawToken,
@@ -174,10 +174,11 @@ export const WidgetWithdraw: FC<
     vaultAddress,
     sourceToken,
     stakingAddress,
+    stakingSource,
     amount: withdrawAmount.debouncedBn,
     currentAmount: withdrawAmount.bn,
     requiredShares,
-    maxShares: totalVaultBalance.raw,
+    maxShares: sourceVaultSharesRaw,
     isMaxWithdraw,
     account,
     chainId,
@@ -227,7 +228,7 @@ export const WidgetWithdraw: FC<
     debouncedAmount: withdrawAmount.debouncedBn,
     isDebouncing: withdrawAmount.isDebouncing,
     requiredShares,
-    totalBalance: totalVaultBalance.raw,
+    totalBalance: sourceVaultSharesRaw,
     account,
     isLoadingRoute: activeFlow.periphery.isLoadingRoute,
     flowError: activeFlow.periphery.error,

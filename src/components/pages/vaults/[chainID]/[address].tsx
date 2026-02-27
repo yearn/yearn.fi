@@ -416,6 +416,7 @@ function Index(): ReactElement | null {
     vaultAddress: toAddress(currentVault?.address ?? '0x'),
     assetAddress: toAddress(currentVault?.token?.address ?? '0x'),
     stakingAddress,
+    stakingSource: currentVault?.staking?.source,
     chainId,
     account: address
   })
