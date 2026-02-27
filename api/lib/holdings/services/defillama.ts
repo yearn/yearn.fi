@@ -1,5 +1,6 @@
 import { config } from '../config'
 import { type DefiLlamaBatchResponse, SUPPORTED_CHAINS } from '../types'
+import { type CachedPrice, getCachedPrices, saveCachedPrices } from './cache'
 
 export function getChainPrefix(chainId: number): string {
   const chain = SUPPORTED_CHAINS.find((c) => c.id === chainId)
@@ -21,14 +22,21 @@ export function buildBatchHistoricalUrl(
   return `${config.defillamaBaseUrl}/batchHistorical?coins=${encodedCoins}`
 }
 
-export function parseDefiLlamaResponse(response: DefiLlamaBatchResponse): Map<string, Map<number, number>> {
+export function parseDefiLlamaResponse(
+  response: DefiLlamaBatchResponse,
+  requestedTimestamps: number[]
+): Map<string, Map<number, number>> {
   const result = new Map<string, Map<number, number>>()
 
   for (const [coinKey, coinData] of Object.entries(response.coins)) {
     const priceMap = new Map<number, number>()
 
-    for (const pricePoint of coinData.prices) {
-      priceMap.set(pricePoint.timestamp, pricePoint.price)
+    // DefiLlama returns prices in order of requested timestamps
+    // Map each returned price to the corresponding requested timestamp
+    for (let i = 0; i < coinData.prices.length && i < requestedTimestamps.length; i++) {
+      const requestedTs = requestedTimestamps[i]
+      const price = coinData.prices[i].price
+      priceMap.set(requestedTs, price)
     }
 
     result.set(coinKey.toLowerCase(), priceMap)
@@ -39,8 +47,7 @@ export function parseDefiLlamaResponse(response: DefiLlamaBatchResponse): Map<st
 
 async function fetchBatch(
   coinBatch: Array<{ chain: string; address: string }>,
-  timestampBatch: number[],
-  batchLabel: string
+  timestampBatch: number[]
 ): Promise<Map<string, Map<number, number>>> {
   const url = buildBatchHistoricalUrl(coinBatch, timestampBatch)
   const result = new Map<string, Map<number, number>>()
@@ -49,14 +56,12 @@ async function fetchBatch(
     const response = await fetch(url)
 
     if (!response.ok) {
-      console.error(`[DefiLlama] ${batchLabel} failed: ${response.status}`)
       return result
     }
 
     const data = (await response.json()) as DefiLlamaBatchResponse
-    return parseDefiLlamaResponse(data)
-  } catch (error) {
-    console.error(`[DefiLlama] ${batchLabel} error:`, error)
+    return parseDefiLlamaResponse(data, timestampBatch)
+  } catch {
     return result
   }
 }
@@ -70,30 +75,62 @@ export async function fetchHistoricalPrices(
     address: token.address
   }))
 
-  const TIMESTAMP_BATCH_SIZE = 10
-  const TOKEN_BATCH_SIZE = 15
-  const PARALLEL_REQUESTS = 5
+  const tokenKeys = coins.map((c) => `${c.chain}:${c.address.toLowerCase()}`)
   const result = new Map<string, Map<number, number>>()
+
+  // Check cache first
+  const cachedPrices = await getCachedPrices(tokenKeys, timestamps)
+
+  // Find which token/timestamp combinations we still need
+  const missingByToken = new Map<string, number[]>()
+
+  for (const tokenKey of tokenKeys) {
+    const cachedForToken = cachedPrices.get(tokenKey)
+    if (!result.has(tokenKey)) {
+      result.set(tokenKey, new Map())
+    }
+
+    for (const ts of timestamps) {
+      if (cachedForToken?.has(ts)) {
+        result.get(tokenKey)!.set(ts, cachedForToken.get(ts)!)
+      } else {
+        if (!missingByToken.has(tokenKey)) {
+          missingByToken.set(tokenKey, [])
+        }
+        missingByToken.get(tokenKey)!.push(ts)
+      }
+    }
+  }
+
+  // If everything is cached, return early
+  if (missingByToken.size === 0) {
+    return result
+  }
+
+  // Build list of tokens that need fetching and all their missing timestamps
+  const tokensToFetch = coins.filter((c) => missingByToken.has(`${c.chain}:${c.address.toLowerCase()}`))
+  const allMissingTimestamps = [...new Set([...missingByToken.values()].flat())].sort((a, b) => a - b)
+
+  const TIMESTAMP_BATCH_SIZE = 20
+  const TOKEN_BATCH_SIZE = 10
+  const PARALLEL_REQUESTS = 10
+  const newPrices: CachedPrice[] = []
 
   // Build all batch combinations
   const batches: Array<{
     coinBatch: Array<{ chain: string; address: string }>
     timestampBatch: number[]
-    label: string
   }> = []
 
-  for (let coinIdx = 0; coinIdx < coins.length; coinIdx += TOKEN_BATCH_SIZE) {
-    const coinBatch = coins.slice(coinIdx, coinIdx + TOKEN_BATCH_SIZE)
-    const coinBatchNum = Math.floor(coinIdx / TOKEN_BATCH_SIZE) + 1
+  for (let coinIdx = 0; coinIdx < tokensToFetch.length; coinIdx += TOKEN_BATCH_SIZE) {
+    const coinBatch = tokensToFetch.slice(coinIdx, coinIdx + TOKEN_BATCH_SIZE)
 
-    for (let tsIdx = 0; tsIdx < timestamps.length; tsIdx += TIMESTAMP_BATCH_SIZE) {
-      const timestampBatch = timestamps.slice(tsIdx, tsIdx + TIMESTAMP_BATCH_SIZE)
-      const tsBatchNum = Math.floor(tsIdx / TIMESTAMP_BATCH_SIZE) + 1
+    for (let tsIdx = 0; tsIdx < allMissingTimestamps.length; tsIdx += TIMESTAMP_BATCH_SIZE) {
+      const timestampBatch = allMissingTimestamps.slice(tsIdx, tsIdx + TIMESTAMP_BATCH_SIZE)
 
       batches.push({
         coinBatch,
-        timestampBatch,
-        label: `coins=${coinBatchNum} ts=${tsBatchNum}`
+        timestampBatch
       })
     }
   }
@@ -101,7 +138,7 @@ export async function fetchHistoricalPrices(
   // Process batches in parallel groups
   for (let i = 0; i < batches.length; i += PARALLEL_REQUESTS) {
     const batchGroup = batches.slice(i, i + PARALLEL_REQUESTS)
-    const promises = batchGroup.map((b) => fetchBatch(b.coinBatch, b.timestampBatch, b.label))
+    const promises = batchGroup.map((b) => fetchBatch(b.coinBatch, b.timestampBatch))
 
     const results = await Promise.all(promises)
 
@@ -113,14 +150,20 @@ export async function fetchHistoricalPrices(
         const existingMap = result.get(coinKey)!
         for (const [ts, price] of priceMap) {
           existingMap.set(ts, price)
+          newPrices.push({ tokenKey: coinKey, timestamp: ts, price })
         }
       }
     }
 
     // Small delay between groups to avoid rate limiting
     if (i + PARALLEL_REQUESTS < batches.length) {
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 50))
     }
+  }
+
+  // Save new prices to cache (don't await - fire and forget)
+  if (newPrices.length > 0) {
+    saveCachedPrices(newPrices).catch(() => {})
   }
 
   return result

@@ -62,6 +62,16 @@ export async function initializeSchema(): Promise<void> {
       updated_at TIMESTAMP DEFAULT NOW(),
       PRIMARY KEY (user_address, date)
     );
+
+    CREATE TABLE IF NOT EXISTS token_prices (
+      token_key VARCHAR(100) NOT NULL,
+      timestamp INTEGER NOT NULL,
+      price NUMERIC NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      PRIMARY KEY (token_key, timestamp)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_token_prices_token_key ON token_prices(token_key);
   `
 
   try {
