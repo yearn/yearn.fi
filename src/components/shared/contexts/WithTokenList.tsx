@@ -5,6 +5,7 @@ import { isAddressEqual } from 'viem'
 import { useAsyncTrigger } from '../hooks/useAsyncTrigger'
 import type { TAddress } from '../types/address'
 import type { TDict, TNDict, TToken, TTokenList } from '../types/mixed'
+import { DEFAULT_ERC20 } from '../utils'
 import { zeroNormalizedBN } from '../utils/format'
 import { toAddress } from '../utils/tools.address'
 import { useWeb3 } from './useWeb3'
@@ -321,7 +322,7 @@ export const WithTokenList = ({
       if (fromTokenList) {
         return fromTokenList
       }
-      return {} as TToken
+      return DEFAULT_ERC20
     },
     [aggregatedTokenList]
   )

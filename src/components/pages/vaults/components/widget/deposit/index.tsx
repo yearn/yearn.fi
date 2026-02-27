@@ -19,6 +19,8 @@ import { useAccount } from 'wagmi'
 import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
+import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
+import { WidgetHeader } from '../shared/WidgetHeader'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
 import { DepositDetails } from './DepositDetails'
@@ -195,9 +197,8 @@ export const WidgetDeposit: FC<Props> = ({
   const vaultDecimals = vault?.decimals ?? 18
 
   const estimatedAnnualReturn = useMemo(() => {
-    if (depositAmount.debouncedBn === 0n || vaultAPR === 0) return '0'
-    const annualReturn = Number(formatUnits(depositAmount.debouncedBn, inputToken?.decimals ?? 18)) * vaultAPR
-    return annualReturn.toFixed(2)
+    if (depositAmount.debouncedBn === 0n || vaultAPR === 0) return 0
+    return Number(formatUnits(depositAmount.debouncedBn, inputToken?.decimals ?? 18)) * vaultAPR
   }, [depositAmount.debouncedBn, inputToken?.decimals, vaultAPR])
 
   const expectedOutInAsset = useMemo(() => {
@@ -230,13 +231,9 @@ export const WidgetDeposit: FC<Props> = ({
         ? (expectedOut * pricePerShare) / 10n ** BigInt(vaultDecimals)
         : 0n
 
-    const formatted = formatTAmount({
-      value: valueInAsset,
-      decimals: assetDecimals,
-      options: { maximumFractionDigits: 6 }
-    })
+    const formatted = formatWidgetValue(valueInAsset, assetDecimals)
 
-    const usd = (Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice).toFixed(2)
+    const usd = formatWidgetValue(Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice)
 
     return { formatted, usd }
   }, [activeFlow.periphery.expectedOut, vaultDecimals, assetToken?.decimals, pricePerShare, assetTokenPrice])
@@ -373,8 +370,11 @@ export const WidgetDeposit: FC<Props> = ({
 
   if (isLoadingVaultData) {
     return (
-      <div className="flex items-center justify-center h-[317px]">
-        <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+      <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
+        <WidgetHeader title="Deposit" />
+        <div className="flex items-center justify-center flex-1 p-6">
+          <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+        </div>
       </div>
     )
   }
@@ -481,9 +481,7 @@ export const WidgetDeposit: FC<Props> = ({
       className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}
       data-tour="vault-detail-deposit-widget"
     >
-      <div className="flex items-center justify-between gap-3 px-6 pt-4">
-        <h3 className="text-base font-semibold text-text-primary">Deposit</h3>
-      </div>
+      <WidgetHeader title="Deposit" />
       <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         {/* Amount Section */}
         <InputTokenAmount
@@ -557,6 +555,8 @@ export const WidgetDeposit: FC<Props> = ({
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
         isLastStep={!needsApproval}
+        autoContinueToNextStep
+        autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleDepositSuccess}
       />
 
@@ -570,10 +570,7 @@ export const WidgetDeposit: FC<Props> = ({
         stakingTokenSymbol={stakingToken?.symbol}
         expectedShares={
           activeFlow.periphery.expectedOut > 0n
-            ? formatTAmount({
-                value: activeFlow.periphery.expectedOut,
-                decimals: sharesDecimals
-              })
+            ? formatWidgetValue(activeFlow.periphery.expectedOut, sharesDecimals)
             : '0'
         }
         stakingAddress={stakingAddress}
@@ -585,23 +582,16 @@ export const WidgetDeposit: FC<Props> = ({
       <AnnualReturnOverlay
         isOpen={showAnnualReturnModal}
         onClose={() => setShowAnnualReturnModal(false)}
-        depositAmount={formatTAmount({
-          value: depositAmount.debouncedBn,
-          decimals: inputToken?.decimals ?? 18
-        })}
+        depositAmount={formatWidgetValue(depositAmount.debouncedBn, inputToken?.decimals ?? 18)}
         tokenSymbol={inputToken?.symbol}
-        estimatedReturn={estimatedAnnualReturn}
+        estimatedReturn={formatWidgetValue(estimatedAnnualReturn)}
         currentAPR={vaultAPR}
       />
 
       <VaultShareValueOverlay
         isOpen={showVaultShareValueModal}
         onClose={() => setShowVaultShareValueModal(false)}
-        sharesAmount={formatTAmount({
-          value: activeFlow.periphery.expectedOut,
-          decimals: sharesDecimals,
-          options: { maximumFractionDigits: 4 }
-        })}
+        sharesAmount={formatWidgetValue(activeFlow.periphery.expectedOut, sharesDecimals)}
         shareValue={vaultShareValue.formatted}
         assetSymbol={assetToken?.symbol || ''}
         usdValue={vaultShareValue.usd}
@@ -622,11 +612,7 @@ export const WidgetDeposit: FC<Props> = ({
         )}
         spenderName={routeType === 'ENSO' ? 'Enso Router' : 'Vault'}
         chainId={sourceChainId}
-        currentAllowance={
-          activeFlow.periphery.allowance >= BigInt(2) ** BigInt(255)
-            ? 'Unlimited'
-            : formatTAmount({ value: activeFlow.periphery.allowance, decimals: inputToken?.decimals ?? 18 })
-        }
+        currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, inputToken?.decimals ?? 18) || '0'}
       />
 
       {/* Token Selector Overlay */}

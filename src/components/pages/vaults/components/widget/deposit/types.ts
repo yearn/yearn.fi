@@ -1,4 +1,4 @@
-export type DepositRouteType = 'DIRECT_DEPOSIT' | 'DIRECT_STAKE' | 'ENSO'
+export type DepositRouteType = 'DIRECT_DEPOSIT' | 'DIRECT_STAKE' | 'ENSO' | 'NO_ROUTE'
 
 export interface DepositWidgetProps {
   vaultAddress: `0x${string}`
