@@ -29,13 +29,20 @@ async function fetchTokenData(config: any, addresses: Address[], chainId: number
           abi: erc20Abi,
           client
         })
-
-        const [decimals, symbol, name, balance] = await Promise.all([
-          contract.read.decimals(),
-          contract.read.symbol(),
-          contract.read.name(),
-          account ? contract.read.balanceOf([account]) : Promise.resolve(0n)
-        ])
+        const balance = account
+          ? await contract.read.balanceOf([account]).catch(() => {
+              return 0n
+            })
+          : 0n
+        const decimals = await contract.read.decimals().catch(() => {
+          return 18
+        })
+        const symbol = await contract.read.symbol().catch(() => {
+          return '???'
+        })
+        const name = await contract.read.name().catch(() => {
+          return 'Unknown'
+        })
 
         return {
           address,

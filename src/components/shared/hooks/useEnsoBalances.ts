@@ -39,7 +39,14 @@ async function fetchEnsoBalances(address: TAddress): Promise<TEnsoBalanceRespons
   const response = await fetch(url)
 
   if (!response.ok) {
-    return []
+    let details = ''
+    try {
+      details = await response.text()
+    } catch {
+      // ignore body parsing errors
+    }
+    const suffix = details ? `: ${details}` : ''
+    throw new Error(`Enso balances request failed (${response.status})${suffix}`)
   }
 
   const balances: TEnsoBalanceResponse[] = await response.json()

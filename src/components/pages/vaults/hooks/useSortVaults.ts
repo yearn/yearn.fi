@@ -1,20 +1,19 @@
 import {
-  getVaultAddress,
   getVaultAPR,
   getVaultChainID,
   getVaultFeaturingScore,
   getVaultInfo,
   getVaultName,
-  getVaultStaking,
   getVaultToken,
   getVaultTVL,
   type TKongVaultInput,
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { getVaultHoldingsUsd } from '@pages/vaults/utils/holdingsValue'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import type { TSortDirection } from '@shared/types'
-import { isZeroAddress, normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
+import { normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { numberSort, stringSort } from '@shared/utils/helpers'
 import { calculateVaultEstimatedAPY } from '@shared/utils/vaultApy'
@@ -37,8 +36,8 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
   sortBy: TPossibleSortBy,
   sortDirection: TSortDirection
 ): TVault[] {
-  const { getBalance, getToken } = useWallet()
-  const { katanaAprs } = useYearn()
+  const { getBalance } = useWallet()
+  const { katanaAprs, getPrice } = useYearn()
 
   const isFeaturingScoreSortedDesc = useMemo((): boolean => {
     if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
@@ -60,18 +59,7 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
     }
 
     const getDepositedValue = (vault: TKongVaultInput): number => {
-      const chainID = getVaultChainID(vault)
-      const address = getVaultAddress(vault)
-      const staking = getVaultStaking(vault)
-
-      const vaultToken = getToken({ address, chainID })
-      const vaultValue = vaultToken.value || 0
-
-      const stakingValue = !isZeroAddress(toAddress(staking?.address))
-        ? getToken({ address: staking.address, chainID }).value || 0
-        : 0
-
-      return vaultValue + stakingValue
+      return getVaultHoldingsUsd(vault, getBalance, getPrice)
     }
 
     switch (sortBy) {
@@ -169,7 +157,7 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       default:
         return vaultList
     }
-  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, katanaAprs, getBalance, getToken])
+  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, katanaAprs, getBalance, getPrice])
 
   return sortedVaults
 }

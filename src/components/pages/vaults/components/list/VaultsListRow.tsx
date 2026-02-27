@@ -10,11 +10,11 @@ import {
   getVaultChainID,
   getVaultName as getVaultDisplayName,
   getVaultKind,
-  getVaultStaking,
   getVaultSymbol,
   getVaultToken,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { getVaultHoldingsUsd } from '@pages/vaults/utils/holdingsValue'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import {
@@ -30,10 +30,11 @@ import { useMediaQuery } from '@react-hookz/web'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
-import { cl, formatAmount, formatTvlDisplay, getVaultName, isZeroAddress, toAddress } from '@shared/utils'
+import { cl, formatAmount, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -122,7 +123,6 @@ export function VaultsListRow({
   const vaultSymbol = getVaultSymbol(currentVault)
   const vaultName = getVaultDisplayName(currentVault)
   const vaultToken = getVaultToken(currentVault)
-  const staking = getVaultStaking(currentVault)
   const apr = getVaultAPR(currentVault)
   const vaultKind = getVaultKind(currentVault)
   const vaultCategory = getVaultCategory(currentVault)
@@ -130,7 +130,8 @@ export function VaultsListRow({
   const network = getNetwork(chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const { address } = useWeb3()
-  const { getToken } = useWallet()
+  const { getBalance } = useWallet()
+  const { getPrice } = useYearn()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const [isExpandedState, setIsExpandedState] = useState(false)
   const isExpanded = isExpandedProp ?? isExpandedState
@@ -263,21 +264,8 @@ export function VaultsListRow({
     if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
       return 0
     }
-    const vaultToken = getToken({
-      chainID,
-      address: vaultAddress
-    })
-    const vaultValue = vaultToken.value || 0
-
-    const stakingValue = !isZeroAddress(staking?.address)
-      ? getToken({
-          chainID,
-          address: staking.address
-        }).value || 0
-      : 0
-
-    return vaultValue + stakingValue
-  }, [showHoldingsChip, vaultAddress, chainID, staking?.address, getToken, mobileSecondaryMetric, showHoldingsChip])
+    return getVaultHoldingsUsd(currentVault, getBalance, getPrice)
+  }, [showHoldingsChip, mobileSecondaryMetric, currentVault, getBalance, getPrice])
 
   useEffect(() => {
     if (isExpanded) {

@@ -8,13 +8,14 @@ import {
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
+import { getVaultHoldingsUsd } from '@pages/vaults/utils/holdingsValue'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress } from '@shared/utils'
 import { calculateVaultEstimatedAPY, calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { useMemo, useState } from 'react'
 
@@ -84,7 +85,7 @@ export function usePortfolioModel(): TPortfolioModel {
       map.set(vaultKey, vault)
 
       const staking = getVaultStaking(vault)
-      if (staking?.available && staking.address) {
+      if (staking?.address && !isZeroAddress(staking.address)) {
         const stakingKey = getChainAddressKey(getVaultChainID(vault), staking.address)
         map.set(stakingKey, vault)
       }
@@ -216,29 +217,7 @@ export function usePortfolioModel(): TPortfolioModel {
   const getVaultValue = useMemo(
     () =>
       (vault: (typeof holdingsVaults)[number]): number => {
-        const chainID = getVaultChainID(vault)
-        const address = getVaultAddress(vault)
-        const staking = getVaultStaking(vault)
-
-        const shareBalance = getBalance({
-          address,
-          chainID
-        })
-        const price = getPrice({
-          address,
-          chainID
-        })
-        const baseValue = shareBalance.normalized * price.normalized
-
-        const stakingValue =
-          staking?.available && staking.address
-            ? getBalance({
-                address: staking.address,
-                chainID
-              }).normalized * price.normalized
-            : 0
-
-        return baseValue + stakingValue
+        return getVaultHoldingsUsd(vault, getBalance, getPrice)
       },
     [getBalance, getPrice]
   )

@@ -17,6 +17,7 @@ interface UseWithdrawRouteProps {
  * Determines the routing type for a withdraw transaction.
  * - DIRECT_WITHDRAW: vault → asset (simple redeem)
  * - DIRECT_UNSTAKE: staking → vault (unstake)
+ * - DIRECT_UNSTAKE_WITHDRAW: staking → vault → asset (two-step fallback)
  * - ENSO: all other cases (zaps, cross-chain, etc.)
  */
 export const useWithdrawRoute = ({
@@ -35,12 +36,22 @@ export const useWithdrawRoute = ({
       return 'DIRECT_UNSTAKE'
     }
 
+    const isUnstakeAndWithdrawFallback =
+      withdrawalSource === 'staking' &&
+      toAddress(withdrawToken) === toAddress(assetAddress) &&
+      chainId === outputChainId
+
+    // Case 2: Staked shares → asset fallback (unstake then withdraw)
+    if (isUnstakeAndWithdrawFallback) {
+      return 'DIRECT_UNSTAKE_WITHDRAW'
+    }
+
     // When Enso disabled, always use direct withdraw
     if (!ensoEnabled) {
       return 'DIRECT_WITHDRAW'
     }
 
-    // Case 2: Direct withdraw (vault → asset, same token, from vault source)
+    // Case 3: Direct withdraw (vault → asset, same token, from vault source)
     if (
       toAddress(withdrawToken) === toAddress(assetAddress) &&
       withdrawalSource === 'vault' &&
@@ -49,7 +60,7 @@ export const useWithdrawRoute = ({
       return 'DIRECT_WITHDRAW'
     }
 
-    // Case 3: Everything else uses Enso
+    // Case 4: Everything else uses Enso
     return 'ENSO'
   }, [ensoEnabled, isUnstake, withdrawToken, chainId, outputChainId, assetAddress, withdrawalSource])
 }
