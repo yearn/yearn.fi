@@ -7,6 +7,7 @@ import { isZeroAddress } from '../utils/tools.is'
 import type { TChainStatus, TUseBalancesReq, TUseBalancesRes, TUseBalancesTokens } from './useBalances.multichains'
 import { fetchTokenBalances, useBalancesQueries } from './useBalancesQueries'
 import { balanceQueryKeys } from './useBalancesQuery'
+import { partitionTokensByBalanceSource } from './useBalancesRouting'
 import { ENSO_UNSUPPORTED_NETWORKS, useEnsoBalances } from './useEnsoBalances'
 
 /*******************************************************************************
@@ -27,19 +28,7 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
 
   // Split tokens into Enso-supported and multicall-required groups
   const { ensoTokens, multicallTokens } = useMemo(() => {
-    const enso: TUseBalancesTokens[] = []
-    const multicall: TUseBalancesTokens[] = []
-
-    for (const token of tokens) {
-      const isStakingPositionToken = token.for === 'staking'
-      if (isStakingPositionToken || ENSO_UNSUPPORTED_NETWORKS.includes(token.chainID)) {
-        multicall.push(token)
-      } else {
-        enso.push(token)
-      }
-    }
-
-    return { ensoTokens: enso, multicallTokens: multicall }
+    return partitionTokensByBalanceSource(tokens, ENSO_UNSUPPORTED_NETWORKS)
   }, [tokens])
 
   // Fetch from Enso for supported chains
@@ -57,29 +46,17 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     enabled: ensoTokens.length > 0
   })
 
-  // Fallback to multicall for unsupported chains and tokens missing from Enso results.
+  // Fallback to multicall for unsupported chains and explicit Enso failures.
+  // Enso responses are sparse (typically non-zero balances only), so absence is not a miss signal.
   const fallbackTokens = useMemo(() => {
     const fallback: TUseBalancesTokens[] = [...multicallTokens]
 
     if (ensoError) {
       fallback.push(...ensoTokens)
-      return fallback
-    }
-
-    if (!ensoBalances) {
-      return fallback
-    }
-
-    for (const token of ensoTokens) {
-      const chainId = token.chainID
-      const tokenAddress = toAddress(token.address)
-      if (!ensoBalances[chainId]?.[tokenAddress]) {
-        fallback.push(token)
-      }
     }
 
     return fallback
-  }, [multicallTokens, ensoError, ensoTokens, ensoBalances])
+  }, [multicallTokens, ensoError, ensoTokens])
 
   // Fetch fallback balances via multicall RPC.
   const {

@@ -22,7 +22,17 @@ export type TUseBalancesTokens = {
   decimals?: number
   name?: string
   symbol?: string
+  // Legacy token hint kept for backward compatibility.
   for?: string
+  isVaultToken?: boolean
+  isStakingToken?: boolean
+  // A staking-only pair is a classic rewards contract token (not itself a vault token).
+  // These pairs should be fully sourced from multicall for deterministic accounting.
+  isStakingOnlyPair?: boolean
+  // A vault-backed staking pair means the staking token is also a vault token (e.g. yBOLD style).
+  isVaultBackedStaking?: boolean
+  pairedVaultAddress?: TAddress
+  pairedStakingAddress?: TAddress
 }
 export type TUseBalancesReq = {
   key?: string | number
