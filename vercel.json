@@ -56,8 +56,12 @@
           "value": "strict-origin-when-cross-origin"
         },
         {
-          "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'self' https://app.safe.global https://eth.blockscout.com https://explorer.optimism.io https://polygon.blockscout.com https://base.blockscout.com https://arbitrum.blockscout.com; object-src 'none'; base-uri 'self'"
+          "key": "Reporting-Endpoints",
+          "value": "default='https://5w7uj43k.uriports.com/reports'"
+        },
+        {
+          "key": "Content-Security-Policy-Report-Only",
+          "value": "default-src 'self'; font-src 'self'; img-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'self'; report-uri https://5w7uj43k.uriports.com/reports/report; report-to default"
         }
       ]
     }
