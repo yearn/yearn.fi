@@ -110,7 +110,7 @@ export function KatanaApyTooltipContent({
 
         <div className={'mt-2 p-3 pb-0 text-text-secondary md:text-xs text-bold'}>
           <li className={'-mt-1 mb-2 w-full text-left wrap-break-word'}>
-            {'KAT tokens are locked until no later than Feb. 20 2026.'}
+            {'KAT tokens are locked until TGE, which is now targeted to occur on or before the end of March 2026.'}
           </li>
           <li className={'-mt-1 mb-2 w-full text-left wrap-break-word'}>
             {'KAT APR is calculated using an assumed $1B Fully Diluted Valuation.'}

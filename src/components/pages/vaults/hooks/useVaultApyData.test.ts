@@ -11,7 +11,11 @@ const DETAIL_VAULT_WITH_COMPONENTS = {
     netAPR: 0.03,
     extra: {
       stakingRewardsAPR: 0,
-      gammaRewardAPR: 0
+      gammaRewardAPR: 0,
+      katanaBonusAPY: 0.068,
+      katanaAppRewardsAPR: 0.0916,
+      steerPointsPerDollar: 0.1883,
+      fixedRateKatanaRewards: 0.35
     },
     points: {
       weekAgo: 0.03,
@@ -32,12 +36,7 @@ const DETAIL_VAULT_WITH_COMPONENTS = {
         v3OracleStratRatioAPR: 0,
         keepCRV: 0,
         keepVELO: 0,
-        cvxKeepCRV: 0,
-        katanaBonusAPY: 0.068,
-        katanaNativeYield: 0.027,
-        katanaAppRewardsAPR: 0.0916,
-        steerPointsPerDollar: 0.1883,
-        fixedRateKatanaRewards: 0.35
+        cvxKeepCRV: 0
       }
     }
   }
@@ -47,6 +46,10 @@ const DETAIL_VAULT_WITHOUT_COMPONENTS = {
   ...DETAIL_VAULT_WITH_COMPONENTS,
   apr: {
     ...DETAIL_VAULT_WITH_COMPONENTS.apr,
+    extra: {
+      stakingRewardsAPR: 0,
+      gammaRewardAPR: 0
+    },
     forwardAPR: {
       ...DETAIL_VAULT_WITH_COMPONENTS.apr.forwardAPR,
       composite: {
@@ -67,15 +70,13 @@ const DETAIL_VAULT_WITHOUT_COMPONENTS = {
 }
 
 describe('useVaultApyData helpers', () => {
-  it('resolves Katana extras from snapshot-backed vault composite fields', () => {
+  it('resolves Katana extras from snapshot-backed vault extra fields', () => {
     const katanaExtras = resolveKatanaExtras(DETAIL_VAULT_WITH_COMPONENTS as unknown as TKongVaultInput)
 
     expect(katanaExtras).toEqual({
-      katanaRewardsAPR: 0.0916,
       katanaAppRewardsAPR: 0.0916,
-      FixedRateKatanaRewards: 0.35,
+      fixedRateKatanaRewards: 0.35,
       katanaBonusAPY: 0.068,
-      katanaNativeYield: 0.027,
       steerPointsPerDollar: 0.1883
     })
   })
@@ -87,7 +88,7 @@ describe('useVaultApyData helpers', () => {
     expect(total).toBeCloseTo(0.5096, 6)
   })
 
-  it('returns no Katana extras when Kong composite has no Katana fields', () => {
+  it('returns no Katana extras when APR extra has no Katana fields', () => {
     const katanaExtras = resolveKatanaExtras(DETAIL_VAULT_WITHOUT_COMPONENTS as unknown as TKongVaultInput)
     expect(katanaExtras).toBeUndefined()
   })

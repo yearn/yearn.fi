@@ -185,14 +185,14 @@ export function VaultForwardAPYInlineDetails({
   if (hasKatanaDetails && katanaExtras) {
     const steerPointsPerDollar = katanaExtras.steerPointsPerDollar ?? 0
     const hasSteerPoints = steerPointsPerDollar > 0
-    const katanaAppRewardsAPR = katanaExtras.katanaAppRewardsAPR ?? katanaExtras.katanaRewardsAPR ?? 0
+    const katanaAppRewardsAPR = katanaExtras.katanaAppRewardsAPR ?? 0
     return (
       <div className={INLINE_DETAILS_CONTAINER_CLASS}>
         <div className={INLINE_DETAILS_STACK_CLASS}>
           <InlineDetailRow label={'Est. Native APY'} value={formatApyDisplay(data.baseForwardApr)} />
           <InlineDetailRow
             label={'Base Rewards APR'}
-            value={formatApyDisplay(katanaExtras.FixedRateKatanaRewards ?? 0)}
+            value={formatApyDisplay(katanaExtras.fixedRateKatanaRewards ?? 0)}
           />
           <InlineDetailRow label={'App Rewards APR'} value={formatApyDisplay(katanaAppRewardsAPR)} />
           <InlineDetailRow label={'Deposit Bonus APR'} value={formatApyDisplay(katanaExtras.katanaBonusAPY ?? 0)} />
@@ -201,7 +201,7 @@ export function VaultForwardAPYInlineDetails({
           ) : null}
           <div className={'mt-2 p-3 pb-0 text-text-secondary md:text-xs text-bold'}>
             <li className={'-mt-1 mb-2 w-full text-left text-xs break-words'}>
-              {'KAT tokens are locked until no later than Feb. 20 2026.'}
+              {'KAT tokens are locked until TGE, which is now targeted to occur on or before the end of March 2026.'}
             </li>
             <li className={'-mt-1 mb-2 w-full text-left text-xs break-words'}>
               {'KAT APR is calculated using an assumed $1B Fully Diluted Valuation.'}

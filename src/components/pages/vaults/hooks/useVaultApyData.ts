@@ -69,9 +69,18 @@ export function useVaultApyData(vault: TKongVaultInput): TVaultApyData {
     return resolveKatanaExtras(vault)
   }, [shouldUseKatanaAPRs, vault])
 
+  const standardThirtyDayApr = useMemo(() => {
+    const monthlyAPY = apr.points.monthAgo
+    const weeklyAPY = apr.points.weekAgo
+    return !isZero(monthlyAPY || 0) ? monthlyAPY : weeklyAPY
+  }, [apr.points.monthAgo, apr.points.weekAgo])
+
   const katanaThirtyDayApr = useMemo(() => {
-    return computeKatanaTotalApr(katanaExtras)
-  }, [katanaExtras])
+    if (typeof standardThirtyDayApr !== 'number') {
+      return undefined
+    }
+    return computeKatanaTotalApr(katanaExtras, standardThirtyDayApr)
+  }, [katanaExtras, standardThirtyDayApr])
 
   const katanaEstApr = useMemo(() => {
     return computeKatanaTotalApr(katanaExtras, baseForwardApr)

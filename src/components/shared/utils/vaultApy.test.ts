@@ -66,10 +66,7 @@ const withComponents = (vault: TKongVault): TKongVault => ({
       apr: vault.performance?.estimated?.apr ?? 0,
       type: vault.performance?.estimated?.type ?? 'katana-estimated-apr',
       components: {
-        netAPR: 0.4687,
-        netAPY: 0.068,
         katanaBonusAPY: 0.068,
-        katanaNativeYield: 0.027,
         katanaAppRewardsAPR: 0.0916,
         steerPointsPerDollar: 0.1883,
         fixedRateKatanaRewards: 0.35
@@ -87,7 +84,11 @@ const DETAIL_VAULT_WITH_COMPONENTS = {
     netAPR: 0.03,
     extra: {
       stakingRewardsAPR: 0,
-      gammaRewardAPR: 0
+      gammaRewardAPR: 0,
+      katanaBonusAPY: 0.068,
+      katanaAppRewardsAPR: 0.0916,
+      steerPointsPerDollar: 0.1883,
+      fixedRateKatanaRewards: 0.35
     },
     points: {
       weekAgo: 0.03,
@@ -108,12 +109,7 @@ const DETAIL_VAULT_WITH_COMPONENTS = {
         v3OracleStratRatioAPR: 0,
         keepCRV: 0,
         keepVELO: 0,
-        cvxKeepCRV: 0,
-        katanaBonusAPY: 0.068,
-        katanaNativeYield: 0.027,
-        katanaAppRewardsAPR: 0.0916,
-        steerPointsPerDollar: 0.1883,
-        fixedRateKatanaRewards: 0.35
+        cvxKeepCRV: 0
       }
     }
   }
@@ -124,11 +120,9 @@ describe('vaultApy Katana calculations', () => {
     const katanaData = getKatanaAprData(withComponents(BASE_VAULT))
 
     expect(katanaData).toEqual({
-      katanaRewardsAPR: 0.0916,
       katanaAppRewardsAPR: 0.0916,
-      FixedRateKatanaRewards: 0.35,
+      fixedRateKatanaRewards: 0.35,
       katanaBonusAPY: 0.068,
-      katanaNativeYield: 0.027,
       steerPointsPerDollar: 0.1883
     })
   })
@@ -148,9 +142,9 @@ describe('vaultApy Katana calculations', () => {
     expect(apy).toBeCloseTo(0.04, 6)
   })
 
-  it('calculates Katana 30 day APY from native + fixed + app rewards', () => {
+  it('calculates Katana 30 day APY from historical base + fixed + app rewards', () => {
     const apy = calculateKatanaThirtyDayAPY(withComponents(BASE_VAULT))
-    expect(apy).toBeCloseTo(0.4686, 6)
+    expect(apy).toBeCloseTo(0.4616, 6)
   })
 
   it('falls back to monthly historical APY for Katana vaults when components are absent', () => {
