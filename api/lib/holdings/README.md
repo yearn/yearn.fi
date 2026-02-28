@@ -57,10 +57,12 @@ User Request → API Server → Aggregator → Response
 │     └─► If not cached:                                          │
 │                                                                  │
 │  2. Fetch Events from Envio ─────────────────────────────────► │
-│     • Deposits                                                   │
-│     • Withdrawals                                                │
-│     • Transfers In                                               │
-│     • Transfers Out                                              │
+│     • V3 Deposits (owner = user)                                │
+│     • V3 Withdrawals (owner = user)                             │
+│     • V2 Deposits (recipient = user)                            │
+│     • V2 Withdrawals (recipient = user)                         │
+│     • Transfers In (receiver = user)                            │
+│     • Transfers Out (sender = user)                             │
 │                                                                  │
 │  3. Build Position Timeline ─────────────────────────────────► │
 │     • Calculate share balance at each point in time             │
@@ -107,9 +109,9 @@ USD Value = 100 × 1.05 × 1.00 = $105.00
 
 | Service | Source | Purpose |
 |---------|--------|---------|
-| `graphql.ts` | Envio Indexer | Fetch deposit/withdraw/transfer events |
+| `graphql.ts` | Envio Indexer | Fetch deposit/withdraw/transfer events with pagination |
 | `kong.ts` | Kong API | Fetch historical Price Per Share timeseries |
-| `vaults.ts` | Kong API | Fetch vault metadata (token info, decimals) |
+| `vaults.ts` | Kong API | Fetch vault metadata (token info, decimals, staking) |
 | `defillama.ts` | DefiLlama API | Fetch historical token prices |
 | `cache.ts` | PostgreSQL | Cache daily USD totals per user + token prices |
 | `holdings.ts` | Local | Build position timeline, calculate share balances |
@@ -118,7 +120,7 @@ USD Value = 100 × 1.05 × 1.00 = $105.00
 ### Data Types
 
 ```typescript
-// API Response
+// API Response (internal)
 interface HoldingsHistoryResponse {
   address: string
   periodDays: number
@@ -139,6 +141,34 @@ interface HoldingsHistoryResponse {
   }>
 }
 ```
+
+## Vault Versions
+
+The API supports both V2 and V3 Yearn vaults:
+
+| Version | Deposit Event | Withdraw Event | User Field |
+|---------|---------------|----------------|------------|
+| V3 | `Deposit` | `Withdraw` | `owner` |
+| V2 | `V2Deposit` | `V2Withdraw` | `recipient` |
+
+Events are normalized internally to a common format for timeline processing.
+
+## Transfer Events
+
+Transfer events track vault shares moving between addresses (not through deposit/withdraw):
+
+- **Transfers In**: Shares received from another address
+- **Transfers Out**: Shares sent to another address
+
+### Special Cases
+
+1. **Mint filtering**: For vaults with indexed deposit events, transfers from `0x000...` (mints) are excluded (already tracked via Deposit events)
+2. **Burn filtering**: For vaults with indexed withdraw events, transfers to `0x000...` (burns) are excluded (already tracked via Withdraw events)
+3. **Transfer-only vaults**: Some vaults (e.g., staking contracts) don't have indexed Deposit events. For these, mint events ARE included to properly track deposits
+
+### Staking Vaults
+
+Staking vault positions are tracked via the `stakingToVaultMap` in `vaults.ts`. When a user deposits into a staking contract, the system maps the staking address to its underlying vault metadata for proper valuation.
 
 ## API Endpoints
 
@@ -222,8 +252,57 @@ curl "http://localhost:3001/api/holdings/debug?address=0x...&vault=0x..."
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
-| `ENVIO_PASSWORD` | No | `testing` | Envio Hasura admin secret |
+| `ENVIO_PASSWORD` | No | `''` (empty) | Envio Hasura admin secret (header skipped if empty or 'testing') |
 | `DATABASE_URL` | No | `null` | PostgreSQL connection string (caching disabled if not set) |
+
+**Note**: Kong and DefiLlama base URLs are hardcoded:
+- Kong: `https://kong.yearn.fi`
+- DefiLlama: `https://coins.llama.fi`
+
+## Pagination & Performance
+
+### The 1000 Result Limit Problem
+
+Deployed Hasura/Envio indexers often have a 1000 result limit per query. Users with extensive transaction history can exceed this limit.
+
+### Solution: Parallel Batch Fetching
+
+The GraphQL service uses a two-step approach:
+
+1. **Count Query**: Get total count via `_aggregate` query
+2. **Parallel Fetches**: Calculate batches and fetch all in parallel
+
+```
+Query: User has 3,500 deposits
+  │
+  ├─► Count query: Deposit_aggregate → 3,500
+  │
+  └─► Parallel batch fetches (BATCH_SIZE = 1000):
+      ├─► Batch 1: offset=0, limit=1000
+      ├─► Batch 2: offset=1000, limit=1000
+      ├─► Batch 3: offset=2000, limit=1000
+      └─► Batch 4: offset=3000, limit=1000
+```
+
+### maxTimestamp Optimization
+
+When only calculating a few missing days, we don't need ALL historical events. The `maxTimestamp` parameter limits event fetching:
+
+```typescript
+// Only fetch events up to end of last missing day
+const maxTimestamp = Math.max(...missingTimestamps) + 86400
+const events = await fetchUserEvents(userAddress, version, maxTimestamp)
+```
+
+### Hasura Configuration
+
+For `_aggregate` queries to work, enable aggregations in Hasura console:
+
+1. Go to Data → [table] → Permissions
+2. Select the role's "select" permission
+3. Enable "allow_aggregations"
+
+Required for tables: `Deposit`, `Withdraw`, `Transfer`, `V2Deposit`, `V2Withdraw`
 
 ## Caching Strategy
 
@@ -245,11 +324,13 @@ The cache stores **daily USD totals per user** (not per-vault breakdowns).
 │  ┌───────────────────────────────────────┐                  │
 │  │ Found: Days 1-360 cached              │                  │
 │  │ Missing: Days 361-365                 │                  │
+│  │ Today: Always recalculated            │                  │
 │  └────────┬──────────────────────────────┘                  │
 │           │                                                  │
 │           ▼                                                  │
 │  ┌───────────────────────────────────────┐                  │
 │  │ Only calculate missing days (361-365) │                  │
+│  │ Fetch events with maxTimestamp filter │                  │
 │  │ Save new daily totals to cache        │                  │
 │  └────────┬──────────────────────────────┘                  │
 │           │                                                  │
@@ -260,6 +341,10 @@ The cache stores **daily USD totals per user** (not per-vault breakdowns).
 │  └───────────────────────────────────────┘                  │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### Why Today is Always Recalculated
+
+Today's value uses the latest available Price Per Share from Kong, which may update throughout the day. Recalculating ensures users see current values.
 
 ### Cache Layers
 
