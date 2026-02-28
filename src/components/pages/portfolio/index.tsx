@@ -34,6 +34,8 @@ import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useChainId, useSwitchChain } from 'wagmi'
+import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
+import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { type TPortfolioModel, usePortfolioModel } from './hooks/usePortfolioModel'
 import { useVaultWithStakingRewards } from './hooks/useVaultWithStakingRewards'
 
@@ -938,6 +940,7 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
 
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
+  const { data: historyData, isLoading: historyLoading } = usePortfolioHistory()
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
@@ -1051,6 +1054,7 @@ function PortfolioPage(): ReactElement {
             hasKatanaHoldings={model.hasKatanaHoldings}
             totalPortfolioValue={model.totalPortfolioValue}
           />
+          <PortfolioHistoryChart data={historyData} isLoading={historyLoading} mergeWithHeader={model.isActive} />
           <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} mergeWithHeader={model.isActive} />
         </div>
         <div className={'pt-4'} key={activeTab}>

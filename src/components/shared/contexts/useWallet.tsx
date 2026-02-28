@@ -1,7 +1,7 @@
 import { getVaultStaking, getVaultVersion, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
-import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
+import { createContext, memo, useCallback, useContext, useMemo, useRef } from 'react'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
 import { useBalancesCombined } from '../hooks/useBalancesCombined'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
@@ -74,12 +74,6 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 
     return _tokens as TYChainTokens
   }, [tokensRaw])
-
-  useEffect(() => {
-    if (Object.keys(balances).length > 0) {
-      console.log({ balances, source: USE_ENSO_BALANCES ? 'enso' : 'multicall' })
-    }
-  }, [balances])
 
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {

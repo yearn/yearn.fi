@@ -1,6 +1,46 @@
 import { serve } from 'bun'
+import {
+  fetchUserEvents,
+  getHistoricalHoldings,
+  initializeSchema,
+  type VaultVersion,
+  validateConfig
+} from './lib/holdings'
+import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './lib/holdings/services/defillama'
+import { buildPositionTimeline, getShareBalanceAtTimestamp, getUniqueVaults } from './lib/holdings/services/holdings'
+import { fetchMultipleVaultsPPS, getPPS } from './lib/holdings/services/kong'
+import { fetchMultipleVaultsMetadata } from './lib/holdings/services/vaults'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type'
+}
+
+function withCors(response: Response): Response {
+  const newHeaders = new Headers(response.headers)
+  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+    newHeaders.set(key, value)
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders
+  })
+}
+
+function handleCorsPrelight(): Response {
+  return new Response(null, {
+    status: 204,
+    headers: CORS_HEADERS
+  })
+}
+
+function isValidAddress(address: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(address)
+}
 
 function handleEnsoStatus(): Response {
   const apiKey = process.env.ENSO_API_KEY
@@ -70,6 +110,7 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
 async function handleEnsoBalances(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const eoaAddress = url.searchParams.get('eoaAddress')
+  const chainId = url.searchParams.get('chainId')
 
   if (!eoaAddress) {
     return Response.json({ error: 'Missing eoaAddress' }, { status: 400 })
@@ -84,7 +125,7 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
   const params = new URLSearchParams({
     eoaAddress,
     useEoa: 'true',
-    chainId: 'all'
+    chainId: chainId || 'all'
   })
 
   const ensoUrl = `${ENSO_API_BASE}/api/v1/wallet/balances?${params}`
@@ -117,25 +158,299 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
   }
 }
 
-serve({
-  async fetch(req) {
-    const url = new URL(req.url)
+async function handleHoldingsHistory(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const versionParam = url.searchParams.get('version')
 
-    if (url.pathname === '/api/enso/status') {
-      return handleEnsoStatus()
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const holdings = await getHistoricalHoldings(address, version)
+
+    const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
+    if (!hasHoldings) {
+      return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
 
-    if (url.pathname === '/api/enso/balances') {
-      return handleEnsoBalances(req)
+    return Response.json(
+      {
+        address: holdings.address,
+        version,
+        dataPoints: holdings.dataPoints.map((dp) => ({
+          date: dp.date,
+          value: dp.totalUsdValue
+        }))
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+        }
+      }
+    )
+  } catch (error) {
+    console.error('Error fetching holdings history:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json({ error: 'Failed to fetch historical holdings', message, stack, status: 502 }, { status: 502 })
+  }
+}
+
+async function handleHoldingsDebug(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const vault = url.searchParams.get('vault')
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address' }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address' }, { status: 400 })
+  }
+
+  try {
+    const events = await fetchUserEvents(address, 'all')
+
+    const vaultLower = vault?.toLowerCase()
+
+    // Find all events for the specific vault (if provided)
+    const vaultDeposits = vaultLower
+      ? events.deposits.filter((d) => d.vaultAddress.toLowerCase() === vaultLower)
+      : events.deposits
+    const vaultWithdrawals = vaultLower
+      ? events.withdrawals.filter((w) => w.vaultAddress.toLowerCase() === vaultLower)
+      : events.withdrawals
+    const vaultTransfersIn = vaultLower
+      ? events.transfersIn.filter((t) => t.vaultAddress.toLowerCase() === vaultLower)
+      : events.transfersIn
+    const vaultTransfersOut = vaultLower
+      ? events.transfersOut.filter((t) => t.vaultAddress.toLowerCase() === vaultLower)
+      : events.transfersOut
+
+    // Get unique vaults
+    const allVaults = new Set<string>()
+    events.deposits.forEach((d) => {
+      allVaults.add(d.vaultAddress.toLowerCase())
+    })
+    events.withdrawals.forEach((w) => {
+      allVaults.add(w.vaultAddress.toLowerCase())
+    })
+    events.transfersIn.forEach((t) => {
+      allVaults.add(t.vaultAddress.toLowerCase())
+    })
+    events.transfersOut.forEach((t) => {
+      allVaults.add(t.vaultAddress.toLowerCase())
+    })
+
+    return Response.json({
+      address,
+      vault: vaultLower || 'all',
+      summary: {
+        totalDeposits: events.deposits.length,
+        totalWithdrawals: events.withdrawals.length,
+        totalTransfersIn: events.transfersIn.length,
+        totalTransfersOut: events.transfersOut.length,
+        uniqueVaults: Array.from(allVaults)
+      },
+      vaultEvents: {
+        deposits: vaultDeposits,
+        withdrawals: vaultWithdrawals,
+        transfersIn: vaultTransfersIn,
+        transfersOut: vaultTransfersOut
+      }
+    })
+  } catch (error) {
+    console.error('Error in debug:', error)
+    return Response.json(
+      { error: 'Debug failed', message: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    )
+  }
+}
+
+async function handleHoldingsBreakdown(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address' }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address' }, { status: 400 })
+  }
+
+  try {
+    const events = await fetchUserEvents(address, 'all')
+    const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
+
+    if (timeline.length === 0) {
+      return Response.json({ address, vaults: [], message: 'No events found' })
     }
 
-    if (url.pathname === '/api/enso/route') {
-      return handleEnsoRoute(req)
+    const vaults = getUniqueVaults(timeline)
+    const vaultMetadata = await fetchMultipleVaultsMetadata(vaults)
+    const ppsData = await fetchMultipleVaultsPPS(vaults)
+
+    const now = Math.floor(Date.now() / 1000)
+
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    const midnightTimestamp = Math.floor(today.getTime() / 1000)
+
+    const underlyingTokens: Array<{ chainId: number; address: string }> = []
+    for (const [_key, metadata] of vaultMetadata) {
+      underlyingTokens.push({ chainId: metadata.chainId, address: metadata.token.address })
     }
 
-    return new Response('Not found', { status: 404 })
-  },
-  port: 3001
+    const priceData = await fetchHistoricalPrices(underlyingTokens, [midnightTimestamp])
+
+    const results: Array<{
+      chainId: number
+      vaultAddress: string
+      shares: string
+      sharesFormatted: number
+      pricePerShare: number | null
+      tokenPrice: number | null
+      usdValue: number | null
+      metadata: { symbol: string; decimals: number; tokenAddress: string } | null
+      status: string
+    }> = []
+
+    for (const vault of vaults) {
+      const key = `${vault.chainId}:${vault.vaultAddress.toLowerCase()}`
+      const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, now)
+      const metadata = vaultMetadata.get(key)
+      const ppsMap = ppsData.get(key)
+      const pps = ppsMap ? getPPS(ppsMap, midnightTimestamp) : null
+
+      const decimals = metadata?.decimals ?? 18
+      const sharesFormatted = Number(shares) / 10 ** decimals
+
+      let tokenPrice: number | null = null
+      let usdValue: number | null = null
+
+      if (metadata) {
+        const priceKey = `${getChainPrefix(metadata.chainId)}:${metadata.token.address.toLowerCase()}`
+        const tokenPriceMap = priceData.get(priceKey)
+        tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, midnightTimestamp) : 0
+        usdValue = pps ? sharesFormatted * pps * tokenPrice : 0
+      }
+
+      let status = 'ok'
+      if (!metadata) status = 'missing_metadata'
+      else if (!pps) status = 'missing_pps'
+      else if (tokenPrice === 0) status = 'missing_price'
+
+      results.push({
+        chainId: vault.chainId,
+        vaultAddress: vault.vaultAddress,
+        shares: shares.toString(),
+        sharesFormatted,
+        pricePerShare: pps,
+        tokenPrice,
+        usdValue,
+        metadata: metadata
+          ? { symbol: metadata.token.symbol, decimals: metadata.decimals, tokenAddress: metadata.token.address }
+          : null,
+        status
+      })
+    }
+
+    results.sort((a, b) => (b.usdValue ?? 0) - (a.usdValue ?? 0))
+
+    const withShares = results.filter((r) => r.sharesFormatted > 0)
+    const totalUsdValue = withShares.reduce((sum, v) => sum + (v.usdValue ?? 0), 0)
+
+    return Response.json({
+      address,
+      summary: {
+        totalVaults: vaults.length,
+        vaultsWithShares: withShares.length,
+        totalUsdValue
+      },
+      vaults: withShares
+    })
+  } catch (error) {
+    console.error('Error in breakdown:', error)
+    return Response.json(
+      { error: 'Breakdown failed', message: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    )
+  }
+}
+
+async function main() {
+  // Catch uncaught exceptions
+  process.on('uncaughtException', (error) => {
+    console.error('💥 Uncaught Exception:', error)
+  })
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason)
+  })
+
+  validateConfig()
+
+  await initializeSchema()
+
+  serve({
+    async fetch(req) {
+      const url = new URL(req.url)
+      console.log(`[Server] ${req.method} ${url.pathname}`)
+
+      try {
+        if (req.method === 'OPTIONS') {
+          return handleCorsPrelight()
+        }
+
+        let response: Response
+
+        if (url.pathname === '/api/enso/status') {
+          response = handleEnsoStatus()
+        } else if (url.pathname === '/api/enso/balances') {
+          response = await handleEnsoBalances(req)
+        } else if (url.pathname === '/api/enso/route') {
+          response = await handleEnsoRoute(req)
+        } else if (url.pathname === '/api/holdings/history') {
+          response = await handleHoldingsHistory(req)
+        } else if (url.pathname === '/api/holdings/debug') {
+          response = await handleHoldingsDebug(req)
+        } else if (url.pathname === '/api/holdings/breakdown') {
+          response = await handleHoldingsBreakdown(req)
+        } else {
+          response = new Response('Not found', { status: 404 })
+        }
+
+        return withCors(response)
+      } catch (error) {
+        console.error('💥 Request handler error:', error)
+        return withCors(
+          Response.json(
+            { error: 'Internal server error', message: error instanceof Error ? error.message : String(error) },
+            { status: 500 }
+          )
+        )
+      }
+    },
+    port: 3001,
+    idleTimeout: 120 // 2 minutes for long-running requests like historical holdings
+  })
+
+  console.log('🚀 API server running on http://localhost:3001')
+  console.log('📊 Holdings API: http://localhost:3001/api/holdings/history?address=0x...')
+}
+
+main().catch((error) => {
+  console.error('Failed to start server:', error)
+  process.exit(1)
 })
-
-console.log('🚀 API server running on http://localhost:3001')
