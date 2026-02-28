@@ -56,12 +56,8 @@
           "value": "strict-origin-when-cross-origin"
         },
         {
-          "key": "Reporting-Endpoints",
-          "value": "default=\"https://o4510960324837376.ingest.us.sentry.io/api/4510960614375424/security/?sentry_key=6b1b2932f1532eff2227d01a122adbb4\""
-        },
-        {
           "key": "Content-Security-Policy-Report-Only",
-          "value": "frame-ancestors 'self'; report-uri https://o4510960324837376.ingest.us.sentry.io/api/4510960614375424/security/?sentry_key=6b1b2932f1532eff2227d01a122adbb4; report-to default;"
+          "value": "frame-ancestors 'self'; report-uri https://o4510960324837376.ingest.us.sentry.io/api/4510960614375424/security/?sentry_key=6b1b2932f1532eff2227d01a122adbb4;"
         }
       ]
     }
