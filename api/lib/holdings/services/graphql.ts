@@ -1,10 +1,10 @@
 import { config } from '../config'
 import type { DepositEvent, TransferEvent, UserEvents, V2DepositEvent, V2WithdrawEvent, WithdrawEvent } from '../types'
 
-// V3 Vault Queries
+// V3 Vault Queries (with optional maxTimestamp filter)
 const DEPOSITS_QUERY = `
-  query GetDeposits($owner: String!) {
-    Deposit(where: { owner: { _eq: $owner } }, order_by: { blockTimestamp: asc }) {
+  query GetDeposits($owner: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Deposit(where: { owner: { _eq: $owner }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: { blockTimestamp: asc }, limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -18,8 +18,8 @@ const DEPOSITS_QUERY = `
 `
 
 const WITHDRAWALS_QUERY = `
-  query GetWithdrawals($owner: String!) {
-    Withdraw(where: { owner: { _eq: $owner } }, order_by: { blockTimestamp: asc }) {
+  query GetWithdrawals($owner: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Withdraw(where: { owner: { _eq: $owner }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: { blockTimestamp: asc }, limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -33,8 +33,8 @@ const WITHDRAWALS_QUERY = `
 `
 
 const TRANSFERS_IN_QUERY = `
-  query GetTransfersIn($receiver: String!) {
-    Transfer(where: { receiver: { _eq: $receiver } }, order_by: { blockTimestamp: asc }, limit: 100000) {
+  query GetTransfersIn($receiver: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Transfer(where: { receiver: { _eq: $receiver }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: { blockTimestamp: asc }, limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -48,8 +48,8 @@ const TRANSFERS_IN_QUERY = `
 `
 
 const TRANSFERS_OUT_QUERY = `
-  query GetTransfersOut($sender: String!) {
-    Transfer(where: { sender: { _eq: $sender } }, order_by: { blockTimestamp: asc }, limit: 100000) {
+  query GetTransfersOut($sender: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Transfer(where: { sender: { _eq: $sender }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: { blockTimestamp: asc }, limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -62,10 +62,12 @@ const TRANSFERS_OUT_QUERY = `
   }
 `
 
-// V2 Vault Queries
+const BATCH_SIZE = 1000
+
+// V2 Vault Queries (with optional maxTimestamp filter)
 const V2_DEPOSITS_QUERY = `
-  query GetV2Deposits($recipient: String!) {
-    V2Deposit(where: { recipient: { _eq: $recipient } }, order_by: { blockTimestamp: asc }) {
+  query GetV2Deposits($recipient: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    V2Deposit(where: { recipient: { _eq: $recipient }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: { blockTimestamp: asc }, limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -79,8 +81,8 @@ const V2_DEPOSITS_QUERY = `
 `
 
 const V2_WITHDRAWALS_QUERY = `
-  query GetV2Withdrawals($recipient: String!) {
-    V2Withdraw(where: { recipient: { _eq: $recipient } }, order_by: { blockTimestamp: asc }) {
+  query GetV2Withdrawals($recipient: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    V2Withdraw(where: { recipient: { _eq: $recipient }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: { blockTimestamp: asc }, limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -123,12 +125,57 @@ async function executeQuery<T>(query: string, variables: Record<string, unknown>
   return json.data
 }
 
-async function executeQueryOptional<T>(query: string, variables: Record<string, unknown>): Promise<T | null> {
+async function fetchCount(
+  tableName: string,
+  variableKey: string,
+  address: string,
+  maxTimestamp?: number
+): Promise<number> {
+  const timestampFilter = maxTimestamp ? `, blockTimestamp: { _lte: ${maxTimestamp} }` : ''
+  const query = `query($${variableKey}: String!) { ${tableName}_aggregate(where: { ${variableKey}: { _eq: $${variableKey} }${timestampFilter} }) { aggregate { count } } }`
+  const data = await executeQuery<Record<string, { aggregate: { count: number } }>>(query, { [variableKey]: address })
+  return data[tableName + '_aggregate']?.aggregate?.count ?? 0
+}
+
+async function fetchAllPaginated<T>(
+  query: string,
+  variableKey: string,
+  address: string,
+  resultKey: string,
+  maxTimestamp?: number
+): Promise<T[]> {
+  const count = await fetchCount(resultKey, variableKey, address, maxTimestamp)
+
+  if (count === 0) {
+    return []
+  }
+
+  const batchCount = Math.ceil(count / BATCH_SIZE)
+  const offsets = Array.from({ length: batchCount }, (_, i) => i * BATCH_SIZE)
+
+  const batchResults = await Promise.all(
+    offsets.map(async (offset) => {
+      const variables: Record<string, unknown> = { [variableKey]: address, limit: BATCH_SIZE, offset }
+      if (maxTimestamp) variables.maxTimestamp = maxTimestamp
+      const data = await executeQuery<Record<string, T[]>>(query, variables)
+      return data[resultKey] || []
+    })
+  )
+
+  return batchResults.flat()
+}
+
+async function fetchAllPaginatedOptional<T>(
+  query: string,
+  variableKey: string,
+  address: string,
+  resultKey: string,
+  maxTimestamp?: number
+): Promise<T[]> {
   try {
-    return await executeQuery<T>(query, variables)
-  } catch (error) {
-    console.warn('[GraphQL] Optional query failed (table may not exist):', error)
-    return null
+    return await fetchAllPaginated<T>(query, variableKey, address, resultKey, maxTimestamp)
+  } catch {
+    return []
   }
 }
 
@@ -160,24 +207,32 @@ function normalizeV2Withdraw(v2: V2WithdrawEvent): WithdrawEvent {
 
 export type VaultVersion = 'v2' | 'v3' | 'all'
 
-export async function fetchUserEvents(userAddress: string, version: VaultVersion = 'all'): Promise<UserEvents> {
+export async function fetchUserEvents(
+  userAddress: string,
+  version: VaultVersion = 'all',
+  maxTimestamp?: number
+): Promise<UserEvents> {
   const addressLower = userAddress.toLowerCase()
 
-  // Always fetch all deposit/withdraw events to determine vault versions
-  const [depositsData, withdrawalsData, transfersInData, transfersOutData, v2DepositsData, v2WithdrawalsData] =
-    await Promise.all([
-      executeQuery<{ Deposit: DepositEvent[] }>(DEPOSITS_QUERY, { owner: addressLower }),
-      executeQuery<{ Withdraw: WithdrawEvent[] }>(WITHDRAWALS_QUERY, { owner: addressLower }),
-      executeQuery<{ Transfer: TransferEvent[] }>(TRANSFERS_IN_QUERY, { receiver: addressLower }),
-      executeQuery<{ Transfer: TransferEvent[] }>(TRANSFERS_OUT_QUERY, { sender: addressLower }),
-      executeQueryOptional<{ V2Deposit: V2DepositEvent[] }>(V2_DEPOSITS_QUERY, { recipient: addressLower }),
-      executeQueryOptional<{ V2Withdraw: V2WithdrawEvent[] }>(V2_WITHDRAWALS_QUERY, { recipient: addressLower })
-    ])
+  // Fetch events with pagination (deployed indexers often have 1000 result limit)
+  // If maxTimestamp provided, only fetch events up to that point
+  const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] = await Promise.all([
+    fetchAllPaginated<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', maxTimestamp),
+    fetchAllPaginated<WithdrawEvent>(WITHDRAWALS_QUERY, 'owner', addressLower, 'Withdraw', maxTimestamp),
+    fetchAllPaginatedOptional<V2DepositEvent>(V2_DEPOSITS_QUERY, 'recipient', addressLower, 'V2Deposit', maxTimestamp),
+    fetchAllPaginatedOptional<V2WithdrawEvent>(
+      V2_WITHDRAWALS_QUERY,
+      'recipient',
+      addressLower,
+      'V2Withdraw',
+      maxTimestamp
+    ),
+    fetchAllPaginated<TransferEvent>(TRANSFERS_IN_QUERY, 'receiver', addressLower, 'Transfer', maxTimestamp),
+    fetchAllPaginated<TransferEvent>(TRANSFERS_OUT_QUERY, 'sender', addressLower, 'Transfer', maxTimestamp)
+  ])
 
-  const v3Deposits = depositsData.Deposit || []
-  const v3Withdrawals = withdrawalsData.Withdraw || []
-  const v2Deposits = (v2DepositsData?.V2Deposit || []).map(normalizeV2Deposit)
-  const v2Withdrawals = (v2WithdrawalsData?.V2Withdraw || []).map(normalizeV2Withdraw)
+  const v2Deposits = v2DepositsRaw.map(normalizeV2Deposit)
+  const v2Withdrawals = v2WithdrawalsRaw.map(normalizeV2Withdraw)
 
   // Build sets of vault addresses by version
   const v3VaultAddresses = new Set<string>()
@@ -188,9 +243,6 @@ export async function fetchUserEvents(userAddress: string, version: VaultVersion
   for (const w of v3Withdrawals) v3VaultAddresses.add(w.vaultAddress.toLowerCase())
   for (const d of v2Deposits) v2VaultAddresses.add(d.vaultAddress.toLowerCase())
   for (const w of v2Withdrawals) v2VaultAddresses.add(w.vaultAddress.toLowerCase())
-
-  const transfersIn = transfersInData.Transfer || []
-  const transfersOut = transfersOutData.Transfer || []
 
   // Track vaults that only appear in transfers (no deposit/withdraw events indexed)
   // These include vaults where deposit events aren't indexed (e.g., staking vaults)

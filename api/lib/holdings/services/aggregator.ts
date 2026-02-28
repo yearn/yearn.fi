@@ -40,11 +40,12 @@ export async function getHistoricalHoldings(
   const newTotals: CachedTotal[] = []
 
   if (missingTimestamps.length > 0) {
-    const events = await fetchUserEvents(userAddress, version)
+    // Only fetch events up to the latest timestamp we need (end of last missing day)
+    const maxTimestamp = Math.max(...missingTimestamps) + 86400
+    const events = await fetchUserEvents(userAddress, version, maxTimestamp)
     const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
 
     if (timeline.length === 0) {
-      // No holdings - cache zeros for missing dates
       for (const ts of missingTimestamps) {
         newTotals.push({ date: timestampToDateString(ts), usdValue: 0 })
       }
@@ -98,7 +99,6 @@ export async function getHistoricalHoldings(
       }
     }
 
-    // Cache all totals (today will be recalculated and overwritten on next request)
     if (newTotals.length > 0) {
       await saveCachedTotals(userAddress, newTotals)
     }
