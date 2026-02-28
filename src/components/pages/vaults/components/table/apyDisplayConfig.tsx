@@ -280,8 +280,8 @@ export function resolveForwardApyDisplayConfig({
     const katanaDetails = (
       <KatanaApyTooltipContent
         katanaNativeYield={katanaBreakdownBaseApr}
-        fixedRateKatanRewardsAPR={katanaExtras?.FixedRateKatanaRewards ?? 0}
-        katanaAppRewardsAPR={katanaExtras?.katanaAppRewardsAPR ?? katanaExtras?.katanaRewardsAPR ?? 0}
+        fixedRateKatanRewardsAPR={katanaExtras?.fixedRateKatanaRewards ?? 0}
+        katanaAppRewardsAPR={katanaExtras?.katanaAppRewardsAPR ?? 0}
         katanaBonusAPR={katanaExtras?.katanaBonusAPY ?? 0}
         steerPointsPerDollar={katanaExtras?.steerPointsPerDollar}
         isEligibleForSpectraBoost={isEligibleForSpectraBoost}
@@ -628,9 +628,9 @@ export function resolveHistoricalApyDisplayConfig({
   const modalContent =
     shouldUseKatanaAPRs && katanaExtras ? (
       <KatanaApyTooltipContent
-        katanaNativeYield={katanaExtras.katanaNativeYield ?? 0}
-        fixedRateKatanRewardsAPR={katanaExtras.FixedRateKatanaRewards ?? 0}
-        katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR ?? katanaExtras.katanaRewardsAPR ?? 0}
+        katanaNativeYield={standardThirtyDayApr}
+        fixedRateKatanRewardsAPR={katanaExtras.fixedRateKatanaRewards ?? 0}
+        katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR ?? 0}
         katanaBonusAPR={katanaExtras.katanaBonusAPY ?? 0}
         steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
         isEligibleForSpectraBoost={isEligibleForSpectraBoost}

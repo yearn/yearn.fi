@@ -101,7 +101,15 @@ const estimatedAprSchema = z.object({
       rewardsAPY: nullableNumberSchema.nullish(),
       cvxAPR: nullableNumberSchema.nullish(),
       keepCRV: nullableNumberSchema.nullish(),
-      keepVelo: nullableNumberSchema.nullish()
+      keepVelo: nullableNumberSchema.nullish(),
+      netAPR: nullableNumberSchema.nullish(),
+      netAPY: nullableNumberSchema.nullish(),
+      katanaBonusAPY: nullableNumberSchema.nullish(),
+      katanaNativeYield: nullableNumberSchema.nullish(),
+      katanaAppRewardsAPR: nullableNumberSchema.nullish(),
+      steerPointsPerDollar: nullableNumberSchema.nullish(),
+      fixedRateKatanaRewards: nullableNumberSchema.nullish(),
+      FixedRateKatanaRewards: nullableNumberSchema.nullish()
     })
     .partial()
     .optional()
