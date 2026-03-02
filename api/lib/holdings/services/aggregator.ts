@@ -46,8 +46,15 @@ export async function getHistoricalHoldings(
     const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
 
     if (timeline.length === 0) {
-      for (const ts of missingTimestamps) {
-        newTotals.push({ date: timestampToDateString(ts), usdValue: 0 })
+      // No holdings - return zeros without caching to prevent DB spam
+      return {
+        address: userAddress,
+        periodDays: days,
+        dataPoints: timestamps.map((ts) => ({
+          date: timestampToDateString(ts),
+          timestamp: ts,
+          totalUsdValue: 0
+        }))
       }
     } else {
       const vaults = getUniqueVaults(timeline)
