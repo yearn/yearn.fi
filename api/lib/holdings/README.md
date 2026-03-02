@@ -261,9 +261,9 @@ curl "http://localhost:3001/api/holdings/debug?address=0x...&vault=0x..."
 
 ## Pagination & Performance
 
-### The 1000 Result Limit Problem
+### The 1000 Result Limit
 
-Deployed Hasura/Envio indexers often have a 1000 result limit per query. Users with extensive transaction history can exceed this limit.
+Envio's hosted service enforces a **hard limit of 1000 results per query**. This is server-side and cannot be increased by requesting a larger `limit` parameter. Users with extensive transaction history require pagination to fetch all events.
 
 ### Current Solution: Sequential Pagination
 
