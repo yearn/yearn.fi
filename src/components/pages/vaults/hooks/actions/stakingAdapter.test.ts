@@ -7,6 +7,7 @@ import {
   getDirectStakeCall,
   getDirectUnstakeCalls,
   getStakePreviewCall,
+  getStakingWithdrawableAssets,
   normalizeStakingSource
 } from './stakingAdapter'
 
@@ -82,5 +83,106 @@ describe('stakingAdapter', () => {
       functionName: 'withdraw',
       args: [amount, account, account]
     })
+  })
+
+  it('falls back to maxWithdraw when maxRedeem conversion is unavailable', async () => {
+    const account = '0x1111111111111111111111111111111111111111'
+    const stakingAddress = '0x2222222222222222222222222222222222222222'
+    const read = async ({
+      functionName
+    }: {
+      functionName: string
+      address: `0x${string}`
+      abi: readonly unknown[]
+      args?: readonly unknown[]
+    }) => {
+      if (functionName === 'maxRedeem') throw new Error('missing')
+      if (functionName === 'maxWithdraw') return 123n
+      return 0n
+    }
+
+    const result = await getStakingWithdrawableAssets({
+      read,
+      stakingAddress,
+      account,
+      stakingSource: 'yBOLD',
+      stakingShareBalance: 99n
+    })
+
+    expect(result).toBe(123n)
+  })
+
+  it('prefers maxRedeem + convertToAssets for ERC4626 wrappers', async () => {
+    const account = '0x1111111111111111111111111111111111111111'
+    const stakingAddress = '0x2222222222222222222222222222222222222222'
+    const read = async ({
+      functionName
+    }: {
+      functionName: string
+      address: `0x${string}`
+      abi: readonly unknown[]
+      args?: readonly unknown[]
+    }) => {
+      if (functionName === 'maxRedeem') return 99n
+      if (functionName === 'convertToAssets') return 150n
+      if (functionName === 'maxWithdraw') return 123n
+      return 0n
+    }
+
+    const result = await getStakingWithdrawableAssets({
+      read,
+      stakingAddress,
+      account,
+      stakingSource: 'yBOLD',
+      stakingShareBalance: 99n
+    })
+
+    expect(result).toBe(150n)
+  })
+
+  it('falls back to convertToAssets and then raw balance for withdrawable assets', async () => {
+    const account = '0x1111111111111111111111111111111111111111'
+    const stakingAddress = '0x2222222222222222222222222222222222222222'
+
+    const convertRead = async ({
+      functionName
+    }: {
+      functionName: string
+      address: `0x${string}`
+      abi: readonly unknown[]
+      args?: readonly unknown[]
+    }) => {
+      if (functionName === 'maxRedeem') {
+        throw new Error('missing')
+      }
+      if (functionName === 'maxWithdraw') {
+        throw new Error('missing')
+      }
+      if (functionName === 'convertToAssets') {
+        return 456n
+      }
+      return 0n
+    }
+
+    const converted = await getStakingWithdrawableAssets({
+      read: convertRead,
+      stakingAddress,
+      account,
+      stakingSource: 'yBOLD',
+      stakingShareBalance: 99n
+    })
+    expect(converted).toBe(456n)
+
+    const failingRead = async () => {
+      throw new Error('missing')
+    }
+    const fallback = await getStakingWithdrawableAssets({
+      read: failingRead,
+      stakingAddress,
+      account,
+      stakingSource: 'yBOLD',
+      stakingShareBalance: 99n
+    })
+    expect(fallback).toBe(99n)
   })
 })

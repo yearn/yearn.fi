@@ -21,6 +21,7 @@ interface UseWithdrawFlowProps {
   requiredShares: bigint
   maxShares: bigint
   isMaxWithdraw: boolean
+  unstakeMaxRedeemShares: bigint
   // Account & chain
   account?: Address
   chainId: number
@@ -59,6 +60,7 @@ export const useWithdrawFlow = ({
   requiredShares,
   maxShares,
   isMaxWithdraw,
+  unstakeMaxRedeemShares,
   account,
   chainId,
   destinationChainId,
@@ -104,6 +106,8 @@ export const useWithdrawFlow = ({
     stakingAddress,
     stakingSource,
     amount: requiredShares,
+    redeemAll: isMaxWithdraw,
+    maxRedeemShares: unstakeMaxRedeemShares,
     account,
     chainId,
     enabled: (routeType === 'DIRECT_UNSTAKE' || routeType === 'DIRECT_UNSTAKE_WITHDRAW') && currentAmount > 0n

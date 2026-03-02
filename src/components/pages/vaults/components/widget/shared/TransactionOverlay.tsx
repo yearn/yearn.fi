@@ -143,6 +143,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Track if the executed step was the last step (captured at execution time)
   const wasLastStepRef = useRef(false)
+  const executedStepBlockRef = useRef<bigint | undefined>(undefined)
 
   // Check if current step is ready to execute
   const isStepReady = step?.prepare.isSuccess && !!step?.prepare.data?.request
@@ -161,7 +162,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const hasStartedRef = useRef(false)
   const hasAutoContinuedFromStepRef = useRef<string | null>(null)
   const hasReportedStepSuccessRef = useRef(false)
+  const hasAdvancedFromStepRef = useRef<string | null>(null)
+  const autoContinueNonceRef = useRef(0)
   const writeContractResetRef = useRef(writeContract.reset)
+  const [isAutoContinuing, setIsAutoContinuing] = useState(false)
 
   useEffect(() => {
     writeContractResetRef.current = writeContract.reset
@@ -171,6 +175,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     executedStepRef.current = nextStep
     wasLastStepRef.current = nextIsLastStep
     hasReportedStepSuccessRef.current = false
+    hasAdvancedFromStepRef.current = null
   }, [])
 
   const resetTxState = useCallback((clearNotification = false) => {
@@ -190,8 +195,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       hasStartedRef.current = false
       hasAutoContinuedFromStepRef.current = null
       hasReportedStepSuccessRef.current = false
+      hasAdvancedFromStepRef.current = null
       executedStepRef.current = null
       wasLastStepRef.current = false
+      executedStepBlockRef.current = undefined
+      autoContinueNonceRef.current += 1
+      setIsAutoContinuing(false)
     }
   }, [isOpen, resetTxState])
 
@@ -406,39 +415,54 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   }, [executeContractStep, executePermitStep, step])
 
   const advanceToNextStep = useCallback(() => {
+    const executedStepLabel = executedStepRef.current?.label
+    if (!executedStepLabel) return
+    if (hasAdvancedFromStepRef.current === executedStepLabel) return
+
+    hasAdvancedFromStepRef.current = executedStepLabel
+    autoContinueNonceRef.current += 1
+    setIsAutoContinuing(false)
+
     // Reset for next step - parent will provide the new step
     resetTxState()
     executeStep()
   }, [resetTxState, executeStep])
 
-  const waitForAutoContinueBlock = useCallback(async () => {
-    const executedBlockNumber = receipt.data?.blockNumber
-    if (!client || executedBlockNumber === undefined) return
+  const waitForAutoContinueBlock = useCallback(
+    async (executedStepLabel?: string) => {
+      // Most flows can continue immediately once the next simulation is ready.
+      // Unstake -> withdraw can race state propagation, so wait one block there.
+      if (executedStepLabel !== 'Unstake') return
 
-    const targetBlock = executedBlockNumber + 1n
-    const timeoutMs = 20_000
-    const pollIntervalMs = 1_000
-    const startedAt = Date.now()
+      const executedBlockNumber = executedStepBlockRef.current
+      if (!client || executedBlockNumber === undefined) return
 
-    while (Date.now() - startedAt < timeoutMs) {
-      try {
-        const latestBlock = await client.getBlockNumber()
-        if (latestBlock >= targetBlock) {
+      const targetBlock = executedBlockNumber + 1n
+      const timeoutMs = 20_000
+      const pollIntervalMs = 1_000
+      const startedAt = Date.now()
+
+      while (Date.now() - startedAt < timeoutMs) {
+        try {
+          const latestBlock = await client.getBlockNumber()
+          if (latestBlock >= targetBlock) {
+            return
+          }
+        } catch (error) {
+          console.warn('[TransactionOverlay] Auto-continue block polling failed', {
+            step: executedStepRef.current?.label,
+            error: (error as Error)?.message || error
+          })
           return
         }
-      } catch (error) {
-        console.warn('[TransactionOverlay] Auto-continue block polling failed', {
-          step: executedStepRef.current?.label,
-          error: (error as Error)?.message || error
-        })
-        return
-      }
 
-      await new Promise((resolve) => {
-        window.setTimeout(resolve, pollIntervalMs)
-      })
-    }
-  }, [client, receipt.data?.blockNumber])
+        await new Promise((resolve) => {
+          window.setTimeout(resolve, pollIntervalMs)
+        })
+      }
+    },
+    [client]
+  )
 
   useEffect(() => {
     if (step?.prepare.isError) {
@@ -446,13 +470,17 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     }
   }, [step?.prepare.isError, step?.prepare.error, step?.label])
 
+  const isEffectiveLastStep = wasLastStepRef.current || step?.label === executedStepRef.current?.label || !step?.label
+
   const handleNextStep = useCallback(() => {
-    if (wasLastStepRef.current) {
+    if (isAutoContinuing) return
+
+    if (isEffectiveLastStep) {
       onClose()
     } else {
       advanceToNextStep()
     }
-  }, [onClose, advanceToNextStep])
+  }, [isAutoContinuing, isEffectiveLastStep, onClose, advanceToNextStep])
 
   const handleRetry = useCallback(() => {
     resetTxState()
@@ -465,31 +493,33 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   useEffect(() => {
     if (!isOpen || overlayState !== 'success') return
-    if (!autoContinueToNextStep || wasLastStepRef.current || !isStepReady) return
+    if (!autoContinueToNextStep || isEffectiveLastStep || !isStepReady) return
 
     const executedStepLabel = executedStepRef.current?.label
     if (!executedStepLabel) return
     if (!step?.label || step.label === executedStepLabel) return
     if (autoContinueStepLabels.length > 0 && !autoContinueStepLabels.includes(executedStepLabel)) return
+    if (hasAdvancedFromStepRef.current === executedStepLabel) return
     if (hasAutoContinuedFromStepRef.current === executedStepLabel) return
 
     hasAutoContinuedFromStepRef.current = executedStepLabel
-    let cancelled = false
+    const nonceAtSchedule = autoContinueNonceRef.current
+    setIsAutoContinuing(true)
     const advance = async () => {
-      await waitForAutoContinueBlock()
-      if (cancelled) return
+      await waitForAutoContinueBlock(executedStepLabel)
+      if (autoContinueNonceRef.current !== nonceAtSchedule) {
+        setIsAutoContinuing(false)
+        return
+      }
       advanceToNextStep()
     }
     void advance()
-
-    return () => {
-      cancelled = true
-    }
   }, [
     isOpen,
     overlayState,
     autoContinueToNextStep,
     autoContinueStepLabels,
+    isEffectiveLastStep,
     isStepReady,
     step?.label,
     advanceToNextStep,
@@ -509,6 +539,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     // For multi-step flows, wait until next step is ready before showing success
     // Check that step has changed (different label) and is ready
     if (receipt.isSuccess && receipt.data?.transactionHash && overlayState === 'pending') {
+      executedStepBlockRef.current = receipt.data.blockNumber
       const executedStepLabel = executedStepRef.current?.label
       if (!hasReportedStepSuccessRef.current && executedStepLabel) {
         hasReportedStepSuccessRef.current = true
@@ -682,17 +713,19 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
               </p>
               <Button
                 onClick={handleNextStep}
-                variant={!wasLastStepRef.current && !isStepReady ? 'busy' : 'filled'}
-                isBusy={!wasLastStepRef.current && !isStepReady}
-                disabled={!wasLastStepRef.current && !isStepReady}
+                variant={!isEffectiveLastStep && (!isStepReady || isAutoContinuing) ? 'busy' : 'filled'}
+                isBusy={!isEffectiveLastStep && (!isStepReady || isAutoContinuing)}
+                disabled={!isEffectiveLastStep && (!isStepReady || isAutoContinuing)}
                 className="w-full max-w-xs"
                 classNameOverride="yearn--button--nextgen w-full"
               >
                 {executedStepRef.current?.notification?.type === 'crosschain zap'
                   ? 'Got it'
-                  : wasLastStepRef.current
+                  : isEffectiveLastStep
                     ? 'Nice'
-                    : step?.label || 'Continue'}
+                    : isAutoContinuing
+                      ? 'Continuing...'
+                      : step?.label || 'Continue'}
               </Button>
             </>
           )}

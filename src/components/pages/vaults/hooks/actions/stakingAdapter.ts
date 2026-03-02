@@ -22,12 +22,17 @@ type DirectUnstakeCallInput = {
   stakingSource?: string
   amount: bigint
   account?: Address
+  redeemAll?: boolean
+  maxRedeemShares?: bigint
 }
 
 type StakingWithdrawableAssetsInput = {
-  client: {
-    readContract: (request: unknown) => Promise<unknown>
-  }
+  read: (request: {
+    address: Address
+    abi: readonly unknown[]
+    functionName: string
+    args?: readonly unknown[]
+  }) => Promise<unknown>
   stakingAddress: Address
   account: Address
   stakingSource?: string
@@ -85,7 +90,13 @@ export function getDirectStakeCall({ stakingSource, amount, account }: DirectSta
   }
 }
 
-export function getDirectUnstakeCalls({ stakingSource, amount, account }: DirectUnstakeCallInput): {
+export function getDirectUnstakeCalls({
+  stakingSource,
+  amount,
+  account,
+  redeemAll,
+  maxRedeemShares
+}: DirectUnstakeCallInput): {
   primary: StakingCall
   fallback?: StakingCall
 } {
@@ -105,28 +116,43 @@ export function getDirectUnstakeCalls({ stakingSource, amount, account }: Direct
     args: [amount]
   }
 
+  const shouldRedeemAll = !!account && !!redeemAll && (maxRedeemShares ?? 0n) > 0n
+  const redeemShares = maxRedeemShares ?? 0n
+
   if (source === 'VeYFI') {
     return {
-      primary: account
+      primary: shouldRedeemAll
         ? {
             abi: VEYFI_GAUGE_ABI,
-            functionName: 'withdraw',
-            args: [amount, account, account]
+            functionName: 'redeem',
+            args: [redeemShares, account, account]
           }
-        : rewardsCall,
+        : account
+          ? {
+              abi: VEYFI_GAUGE_ABI,
+              functionName: 'withdraw',
+              args: [amount, account, account]
+            }
+          : rewardsCall,
       fallback: rewardsCall
     }
   }
 
   if (source === 'yBOLD') {
     return {
-      primary: account
+      primary: shouldRedeemAll
         ? {
             abi: TOKENIZED_STRATEGY_ABI,
-            functionName: 'withdraw',
-            args: [amount, account, account]
+            functionName: 'redeem',
+            args: [redeemShares, account, account]
           }
-        : rewardsCall,
+        : account
+          ? {
+              abi: TOKENIZED_STRATEGY_ABI,
+              functionName: 'withdraw',
+              args: [amount, account, account]
+            }
+          : rewardsCall,
       fallback: rewardsCall
     }
   }
@@ -138,26 +164,29 @@ export function getDirectUnstakeCalls({ stakingSource, amount, account }: Direct
 }
 
 async function readBigInt({
-  client,
+  read,
   address,
   abi,
   functionName,
   args
 }: {
-  client: {
-    readContract: (request: unknown) => Promise<unknown>
-  }
+  read: (request: {
+    address: Address
+    abi: readonly unknown[]
+    functionName: string
+    args?: readonly unknown[]
+  }) => Promise<unknown>
   address: Address
   abi: readonly unknown[]
   functionName: string
   args?: readonly unknown[]
 }): Promise<bigint | undefined> {
   try {
-    const value = await client.readContract({
+    const value = await read({
       address,
-      abi: abi as any,
-      functionName: functionName as any,
-      args: args as any
+      abi,
+      functionName,
+      args
     })
     return BigInt(value as bigint)
   } catch {
@@ -165,8 +194,44 @@ async function readBigInt({
   }
 }
 
+async function readMaxRedeemConvertedAssets({
+  read,
+  address,
+  abi,
+  account
+}: {
+  read: (request: {
+    address: Address
+    abi: readonly unknown[]
+    functionName: string
+    args?: readonly unknown[]
+  }) => Promise<unknown>
+  address: Address
+  abi: readonly unknown[]
+  account: Address
+}): Promise<bigint | undefined> {
+  const maxRedeem = await readBigInt({
+    read,
+    address,
+    abi,
+    functionName: 'maxRedeem',
+    args: [account]
+  })
+  if (maxRedeem === undefined) {
+    return undefined
+  }
+
+  return readBigInt({
+    read,
+    address,
+    abi,
+    functionName: 'convertToAssets',
+    args: [maxRedeem]
+  })
+}
+
 export async function getStakingWithdrawableAssets({
-  client,
+  read,
   stakingAddress,
   account,
   stakingSource,
@@ -177,8 +242,18 @@ export async function getStakingWithdrawableAssets({
   const mappedAbi = source === 'VeYFI' ? VEYFI_GAUGE_ABI : source === 'yBOLD' ? TOKENIZED_STRATEGY_ABI : undefined
 
   if (mappedAbi) {
+    const mappedRedeemableAssets = await readMaxRedeemConvertedAssets({
+      read,
+      address: stakingAddress,
+      abi: mappedAbi,
+      account
+    })
+    if (mappedRedeemableAssets !== undefined) {
+      return mappedRedeemableAssets
+    }
+
     const mappedMaxWithdraw = await readBigInt({
-      client,
+      read,
       address: stakingAddress,
       abi: mappedAbi,
       functionName: 'maxWithdraw',
@@ -189,7 +264,7 @@ export async function getStakingWithdrawableAssets({
     }
 
     const mappedConvertedAssets = await readBigInt({
-      client,
+      read,
       address: stakingAddress,
       abi: mappedAbi,
       functionName: 'convertToAssets',
@@ -200,8 +275,18 @@ export async function getStakingWithdrawableAssets({
     }
   }
 
+  const genericRedeemableAssets = await readMaxRedeemConvertedAssets({
+    read,
+    address: stakingAddress,
+    abi: erc4626Abi,
+    account
+  })
+  if (genericRedeemableAssets !== undefined) {
+    return genericRedeemableAssets
+  }
+
   const genericMaxWithdraw = await readBigInt({
-    client,
+    read,
     address: stakingAddress,
     abi: erc4626Abi,
     functionName: 'maxWithdraw',
@@ -212,7 +297,7 @@ export async function getStakingWithdrawableAssets({
   }
 
   const genericConvertedAssets = await readBigInt({
-    client,
+    read,
     address: stakingAddress,
     abi: erc4626Abi,
     functionName: 'convertToAssets',
@@ -220,6 +305,44 @@ export async function getStakingWithdrawableAssets({
   })
   if (genericConvertedAssets !== undefined) {
     return genericConvertedAssets
+  }
+
+  return stakingShareBalance
+}
+
+export async function getStakingRedeemableShares({
+  read,
+  stakingAddress,
+  account,
+  stakingSource,
+  stakingShareBalance
+}: StakingWithdrawableAssetsInput): Promise<bigint> {
+  const source = normalizeStakingSource(stakingSource)
+
+  const mappedAbi = source === 'VeYFI' ? VEYFI_GAUGE_ABI : source === 'yBOLD' ? TOKENIZED_STRATEGY_ABI : undefined
+
+  if (mappedAbi) {
+    const mappedMaxRedeem = await readBigInt({
+      read,
+      address: stakingAddress,
+      abi: mappedAbi,
+      functionName: 'maxRedeem',
+      args: [account]
+    })
+    if (mappedMaxRedeem !== undefined) {
+      return mappedMaxRedeem
+    }
+  }
+
+  const genericMaxRedeem = await readBigInt({
+    read,
+    address: stakingAddress,
+    abi: erc4626Abi,
+    functionName: 'maxRedeem',
+    args: [account]
+  })
+  if (genericMaxRedeem !== undefined) {
+    return genericMaxRedeem
   }
 
   return stakingShareBalance

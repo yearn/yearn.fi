@@ -73,6 +73,7 @@ export const WidgetWithdraw: FC<
     vaultToken: vault,
     stakingToken,
     stakingWithdrawableAssets,
+    stakingRedeemableShares,
     pricePerShare,
     isLoading: isLoadingVaultData,
     refetch: refetchVaultUserData
@@ -180,6 +181,7 @@ export const WidgetWithdraw: FC<
     requiredShares,
     maxShares: sourceVaultSharesRaw,
     isMaxWithdraw,
+    unstakeMaxRedeemShares: withdrawalSource === 'staking' ? stakingRedeemableShares : 0n,
     account,
     chainId,
     destinationChainId,

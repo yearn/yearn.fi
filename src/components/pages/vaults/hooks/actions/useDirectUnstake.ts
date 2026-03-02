@@ -7,6 +7,8 @@ import { getDirectUnstakeCalls } from './stakingAdapter'
 interface UseDirectUnstakeParams {
   stakingAddress?: Address
   amount: bigint // vault token amount to unstake
+  redeemAll?: boolean
+  maxRedeemShares?: bigint
   account?: Address
   chainId: number
   stakingSource?: string
@@ -20,7 +22,9 @@ export function useDirectUnstake(params: UseDirectUnstakeParams): UseWidgetWithd
   const unstakeCalls = getDirectUnstakeCalls({
     stakingSource: params.stakingSource,
     amount: params.amount,
-    account: params.account
+    account: params.account,
+    redeemAll: params.redeemAll,
+    maxRedeemShares: params.maxRedeemShares
   })
 
   const preparePrimaryWithdraw: UseSimulateContractReturnType = useSimulateContract({
