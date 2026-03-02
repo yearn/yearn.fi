@@ -265,44 +265,41 @@ curl "http://localhost:3001/api/holdings/debug?address=0x...&vault=0x..."
 
 Deployed Hasura/Envio indexers often have a 1000 result limit per query. Users with extensive transaction history can exceed this limit.
 
-### Solution: Parallel Batch Fetching
+### Current Solution: Sequential Pagination
 
-The GraphQL service uses a two-step approach:
-
-1. **Count Query**: Get total count via `_aggregate` query
-2. **Parallel Fetches**: Calculate batches and fetch all in parallel
+Each event type is fetched with sequential pagination - pages are fetched one after another until fewer than `BATCH_SIZE` (1000) results are returned:
 
 ```
-Query: User has 3,500 deposits
+Query: User has 3,500 transfers
   │
-  ├─► Count query: Deposit_aggregate → 3,500
-  │
-  └─► Parallel batch fetches (BATCH_SIZE = 1000):
-      ├─► Batch 1: offset=0, limit=1000
-      ├─► Batch 2: offset=1000, limit=1000
-      ├─► Batch 3: offset=2000, limit=1000
-      └─► Batch 4: offset=3000, limit=1000
+  ├─► Fetch offset=0, limit=1000 → 1000 results (continue)
+  ├─► Fetch offset=1000, limit=1000 → 1000 results (continue)
+  ├─► Fetch offset=2000, limit=1000 → 1000 results (continue)
+  └─► Fetch offset=3000, limit=1000 → 500 results (done!)
 ```
+
+All 6 event types (V3 deposits/withdrawals, V2 deposits/withdrawals, transfers in/out) are fetched in parallel, but each type paginates sequentially within itself.
+
+### Future Option: Parallel Batch Fetching
+
+The codebase includes `fetchUserEventsParallel()` which uses pre-computed counts from the indexer to fetch all batches in parallel. This requires:
+- `UserEventCounts` entity in the indexer schema
+- Event handlers that increment counts as events are processed
+
+To enable, the indexer must expose `UserEventCounts_by_pk` with fields:
+- `depositCount`, `withdrawCount` (V3 events)
+- `v2DepositCount`, `v2WithdrawCount` (V2 events)
+- `transferInCount`, `transferOutCount` (Transfer events)
 
 ### maxTimestamp Optimization
 
-When only calculating a few missing days, we don't need ALL historical events. The `maxTimestamp` parameter limits event fetching:
+When only calculating a few missing days, the `maxTimestamp` parameter limits event fetching:
 
 ```typescript
 // Only fetch events up to end of last missing day
 const maxTimestamp = Math.max(...missingTimestamps) + 86400
 const events = await fetchUserEvents(userAddress, version, maxTimestamp)
 ```
-
-### Hasura Configuration
-
-For `_aggregate` queries to work, enable aggregations in Hasura console:
-
-1. Go to Data → [table] → Permissions
-2. Select the role's "select" permission
-3. Enable "allow_aggregations"
-
-Required for tables: `Deposit`, `Withdraw`, `Transfer`, `V2Deposit`, `V2Withdraw`
 
 ## Caching Strategy
 

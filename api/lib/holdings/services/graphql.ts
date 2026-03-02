@@ -95,6 +95,29 @@ const V2_WITHDRAWALS_QUERY = `
   }
 `
 
+// Query to fetch pre-computed counts from indexer
+const USER_EVENT_COUNTS_QUERY = `
+  query GetUserEventCounts($id: String!) {
+    UserEventCounts_by_pk(id: $id) {
+      depositCount
+      withdrawCount
+      transferInCount
+      transferOutCount
+      v2DepositCount
+      v2WithdrawCount
+    }
+  }
+`
+
+interface UserCounts {
+  depositCount: number
+  withdrawCount: number
+  transferInCount: number
+  transferOutCount: number
+  v2DepositCount: number
+  v2WithdrawCount: number
+}
+
 async function executeQuery<T>(query: string, variables: Record<string, unknown>): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
@@ -125,58 +148,82 @@ async function executeQuery<T>(query: string, variables: Record<string, unknown>
   return json.data
 }
 
-async function fetchCount(
-  tableName: string,
-  variableKey: string,
-  address: string,
-  maxTimestamp?: number
-): Promise<number> {
-  const timestampFilter = maxTimestamp ? `, blockTimestamp: { _lte: ${maxTimestamp} }` : ''
-  const query = `query($${variableKey}: String!) { ${tableName}_aggregate(where: { ${variableKey}: { _eq: $${variableKey} }${timestampFilter} }) { aggregate { count } } }`
-  const data = await executeQuery<Record<string, { aggregate: { count: number } }>>(query, { [variableKey]: address })
-  return data[tableName + '_aggregate']?.aggregate?.count ?? 0
+async function fetchUserCounts(userAddress: string): Promise<UserCounts> {
+  const data = await executeQuery<{ UserEventCounts_by_pk: UserCounts | null }>(USER_EVENT_COUNTS_QUERY, {
+    id: userAddress.toLowerCase()
+  })
+  return (
+    data.UserEventCounts_by_pk ?? {
+      depositCount: 0,
+      withdrawCount: 0,
+      transferInCount: 0,
+      transferOutCount: 0,
+      v2DepositCount: 0,
+      v2WithdrawCount: 0
+    }
+  )
 }
 
-async function fetchAllPaginated<T>(
+// Default maxTimestamp: 10 years from now (queries require a value, can't be null)
+// Using a smaller value to avoid integer overflow in GraphQL
+const DEFAULT_MAX_TIMESTAMP = 2000000000 // ~year 2033, safe 32-bit integer
+
+// Sequential pagination - fetch pages until we get fewer results than BATCH_SIZE
+async function fetchAllSequential<T>(
   query: string,
   variableKey: string,
   address: string,
   resultKey: string,
   maxTimestamp?: number
 ): Promise<T[]> {
-  const count = await fetchCount(resultKey, variableKey, address, maxTimestamp)
+  const allResults: T[] = []
+  let offset = 0
+  const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
 
+  while (true) {
+    const variables: Record<string, unknown> = { [variableKey]: address, limit: BATCH_SIZE, offset, maxTimestamp: ts }
+
+    const data = await executeQuery<Record<string, T[]>>(query, variables)
+    const batch = data[resultKey] || []
+
+    allResults.push(...batch)
+
+    if (batch.length < BATCH_SIZE) {
+      break
+    }
+
+    offset += BATCH_SIZE
+  }
+
+  return allResults
+}
+
+// Parallel batch fetching using pre-computed counts from indexer
+async function fetchAllParallel<T>(
+  query: string,
+  variableKey: string,
+  address: string,
+  resultKey: string,
+  count: number,
+  maxTimestamp?: number
+): Promise<T[]> {
   if (count === 0) {
     return []
   }
 
+  const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
   const batchCount = Math.ceil(count / BATCH_SIZE)
   const offsets = Array.from({ length: batchCount }, (_, i) => i * BATCH_SIZE)
 
   const batchResults = await Promise.all(
     offsets.map(async (offset) => {
-      const variables: Record<string, unknown> = { [variableKey]: address, limit: BATCH_SIZE, offset }
-      if (maxTimestamp) variables.maxTimestamp = maxTimestamp
+      const variables: Record<string, unknown> = { [variableKey]: address, limit: BATCH_SIZE, offset, maxTimestamp: ts }
       const data = await executeQuery<Record<string, T[]>>(query, variables)
       return data[resultKey] || []
     })
   )
 
   return batchResults.flat()
-}
-
-async function fetchAllPaginatedOptional<T>(
-  query: string,
-  variableKey: string,
-  address: string,
-  resultKey: string,
-  maxTimestamp?: number
-): Promise<T[]> {
-  try {
-    return await fetchAllPaginated<T>(query, variableKey, address, resultKey, maxTimestamp)
-  } catch {
-    return []
-  }
 }
 
 function normalizeV2Deposit(v2: V2DepositEvent): DepositEvent {
@@ -207,6 +254,7 @@ function normalizeV2Withdraw(v2: V2WithdrawEvent): WithdrawEvent {
 
 export type VaultVersion = 'v2' | 'v3' | 'all'
 
+// Main export - uses sequential fetching (simpler, no indexer dependency)
 export async function fetchUserEvents(
   userAddress: string,
   version: VaultVersion = 'all',
@@ -214,23 +262,90 @@ export async function fetchUserEvents(
 ): Promise<UserEvents> {
   const addressLower = userAddress.toLowerCase()
 
-  // Fetch events with pagination (deployed indexers often have 1000 result limit)
-  // If maxTimestamp provided, only fetch events up to that point
+  // All 6 event types fetched in parallel, but each type paginates sequentially
   const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] = await Promise.all([
-    fetchAllPaginated<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', maxTimestamp),
-    fetchAllPaginated<WithdrawEvent>(WITHDRAWALS_QUERY, 'owner', addressLower, 'Withdraw', maxTimestamp),
-    fetchAllPaginatedOptional<V2DepositEvent>(V2_DEPOSITS_QUERY, 'recipient', addressLower, 'V2Deposit', maxTimestamp),
-    fetchAllPaginatedOptional<V2WithdrawEvent>(
+    fetchAllSequential<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', maxTimestamp),
+    fetchAllSequential<WithdrawEvent>(WITHDRAWALS_QUERY, 'owner', addressLower, 'Withdraw', maxTimestamp),
+    fetchAllSequential<V2DepositEvent>(V2_DEPOSITS_QUERY, 'recipient', addressLower, 'V2Deposit', maxTimestamp),
+    fetchAllSequential<V2WithdrawEvent>(V2_WITHDRAWALS_QUERY, 'recipient', addressLower, 'V2Withdraw', maxTimestamp),
+    fetchAllSequential<TransferEvent>(TRANSFERS_IN_QUERY, 'receiver', addressLower, 'Transfer', maxTimestamp),
+    fetchAllSequential<TransferEvent>(TRANSFERS_OUT_QUERY, 'sender', addressLower, 'Transfer', maxTimestamp)
+  ])
+
+  return processEvents(v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut, version)
+}
+
+// Parallel fetching - uses pre-computed counts for parallel batch fetching
+// Requires UserEventCounts entity in indexer. Kept for future use.
+export async function fetchUserEventsParallel(
+  userAddress: string,
+  version: VaultVersion = 'all',
+  maxTimestamp?: number
+): Promise<UserEvents> {
+  const addressLower = userAddress.toLowerCase()
+
+  // Fetch pre-computed counts first (indexed at event time, not runtime aggregation)
+  const counts = await fetchUserCounts(addressLower)
+
+  // Parallel fetch using pre-computed counts
+  // Note: counts are total counts, not filtered by maxTimestamp - may overfetch slightly but that's fine
+  const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] = await Promise.all([
+    fetchAllParallel<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', counts.depositCount, maxTimestamp),
+    fetchAllParallel<WithdrawEvent>(
+      WITHDRAWALS_QUERY,
+      'owner',
+      addressLower,
+      'Withdraw',
+      counts.withdrawCount,
+      maxTimestamp
+    ),
+    fetchAllParallel<V2DepositEvent>(
+      V2_DEPOSITS_QUERY,
+      'recipient',
+      addressLower,
+      'V2Deposit',
+      counts.v2DepositCount,
+      maxTimestamp
+    ),
+    fetchAllParallel<V2WithdrawEvent>(
       V2_WITHDRAWALS_QUERY,
       'recipient',
       addressLower,
       'V2Withdraw',
+      counts.v2WithdrawCount,
       maxTimestamp
     ),
-    fetchAllPaginated<TransferEvent>(TRANSFERS_IN_QUERY, 'receiver', addressLower, 'Transfer', maxTimestamp),
-    fetchAllPaginated<TransferEvent>(TRANSFERS_OUT_QUERY, 'sender', addressLower, 'Transfer', maxTimestamp)
+    fetchAllParallel<TransferEvent>(
+      TRANSFERS_IN_QUERY,
+      'receiver',
+      addressLower,
+      'Transfer',
+      counts.transferInCount,
+      maxTimestamp
+    ),
+    fetchAllParallel<TransferEvent>(
+      TRANSFERS_OUT_QUERY,
+      'sender',
+      addressLower,
+      'Transfer',
+      counts.transferOutCount,
+      maxTimestamp
+    )
   ])
 
+  return processEvents(v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut, version)
+}
+
+// Shared processing logic for both fetch strategies
+function processEvents(
+  v3Deposits: DepositEvent[],
+  v3Withdrawals: WithdrawEvent[],
+  v2DepositsRaw: V2DepositEvent[],
+  v2WithdrawalsRaw: V2WithdrawEvent[],
+  transfersIn: TransferEvent[],
+  transfersOut: TransferEvent[],
+  version: VaultVersion
+): UserEvents {
   const v2Deposits = v2DepositsRaw.map(normalizeV2Deposit)
   const v2Withdrawals = v2WithdrawalsRaw.map(normalizeV2Withdraw)
 
