@@ -61,6 +61,8 @@ type TVaultRowFlags = {
   isMigratable?: boolean
   isRetired?: boolean
   isHidden?: boolean
+  isSplitterPosition?: boolean
+  splitterWantSymbol?: string
 }
 
 const prefetchedSnapshotEndpoints = new Set<string>()
@@ -523,6 +525,14 @@ export function VaultsListRow({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={HIDDEN_TAG_DESCRIPTION}
+                    onHoverChange={handleInteractiveHoverChange}
+                  />
+                ) : null}
+                {flags?.isSplitterPosition ? (
+                  <VaultsListChip
+                    label={`Yield Splitter: ${flags.splitterWantSymbol || ''}`}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
                     onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}

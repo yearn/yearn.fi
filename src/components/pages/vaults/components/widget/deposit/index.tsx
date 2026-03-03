@@ -1,5 +1,7 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
+import { getSplitterStrategyAddress, isSplitterVault } from '@pages/vaults/constants/addresses'
+import { useSplitterRoutes } from '@pages/vaults/hooks/splitter/useSplitterRoutes'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
@@ -24,6 +26,7 @@ import { WidgetHeader } from '../shared/WidgetHeader'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
 import { DepositDetails } from './DepositDetails'
+import { SplitYieldToggle } from './SplitYieldToggle'
 import { useDepositError } from './useDepositError'
 import { useDepositFlow } from './useDepositFlow'
 import { useDepositNotifications } from './useDepositNotifications'
@@ -88,7 +91,16 @@ export const WidgetDeposit: FC<Props> = ({
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
+  const [isSplitYieldEnabled, setIsSplitYieldEnabled] = useState(false)
+  const [selectedWantToken, setSelectedWantToken] = useState<`0x${string}` | undefined>()
   const appliedPrefillRef = useRef<string | null>(null)
+
+  const showSplitterToggle = isSplitterVault(vaultAddress)
+  const { wantTokens } = useSplitterRoutes(vaultAddress as `0x${string}`)
+  const strategyAddress =
+    isSplitYieldEnabled && selectedWantToken
+      ? (getSplitterStrategyAddress(vaultAddress, selectedWantToken) as `0x${string}` | undefined)
+      : undefined
 
   const {
     assetToken,
@@ -155,7 +167,9 @@ export const WidgetDeposit: FC<Props> = ({
     inputDecimals: inputToken?.decimals ?? 18,
     vaultDecimals: vault?.decimals ?? 18,
     slippage: zapSlippage,
-    stakingSource
+    stakingSource,
+    isSplitYieldEnabled,
+    strategyAddress
   })
 
   const isCrossChain = sourceChainId !== chainId
@@ -502,6 +516,17 @@ export const WidgetDeposit: FC<Props> = ({
           tokenChainId={inputToken?.chainID}
           onTokenSelectorClick={() => setShowTokenSelector(true)}
         />
+
+        {showSplitterToggle ? (
+          <SplitYieldToggle
+            vaultAddress={vaultAddress as `0x${string}`}
+            enabled={isSplitYieldEnabled}
+            onToggle={setIsSplitYieldEnabled}
+            selectedWant={selectedWantToken}
+            onSelectWant={setSelectedWantToken}
+            wantTokens={wantTokens}
+          />
+        ) : null}
 
         {collapseDetails ? (
           <>
