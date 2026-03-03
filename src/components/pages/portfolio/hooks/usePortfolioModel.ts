@@ -1,4 +1,12 @@
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultInfo,
+  getVaultMigration,
+  getVaultStaking,
+  type TKongVault
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import { useWallet } from '@shared/contexts/useWallet'
@@ -7,19 +15,18 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultHoldingsUsdValue, getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { calculateVaultEstimatedAPY, calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { useMemo, useState } from 'react'
 
 type THoldingsRow = {
   key: string
-  vault: TYDaemonVault
+  vault: TKongVault
   hrefOverride?: string
 }
 
 type TSuggestedVaultRow = {
   key: string
-  vault: TYDaemonVault
+  vault: TKongVault
 }
 
 export type TPortfolioBlendedMetrics = {
@@ -52,7 +59,7 @@ function getChainAddressKey(chainID: number | undefined, address: string): strin
   return `${chainID}_${toAddress(address)}`
 }
 
-function isPortfolioV3Vault(vault: TYDaemonVault): boolean {
+function isPortfolioV3Vault(vault: TKongVault): boolean {
   return isV3Vault(vault, isAllocatorVaultOverride(vault))
 }
 
@@ -66,19 +73,20 @@ export function usePortfolioModel(): TPortfolioModel {
     balances
   } = useWallet()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
-  const { getPrice, katanaAprs, vaults, allVaults, isLoadingVaultList } = useYearn()
+  const { getPrice, vaults, allVaults, isLoadingVaultList } = useYearn()
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
 
   const vaultLookup = useMemo(() => {
-    const map = new Map<string, TYDaemonVault>()
+    const map = new Map<string, TKongVault>()
 
     Object.values(allVaults).forEach((vault) => {
       const vaultKey = getVaultKey(vault)
       map.set(vaultKey, vault)
 
-      if (vault.staking?.address && !isZeroAddress(vault.staking.address)) {
-        const stakingKey = getChainAddressKey(vault.chainID, vault.staking.address)
+      const staking = getVaultStaking(vault)
+      if (!isZeroAddress(staking.address)) {
+        const stakingKey = getChainAddressKey(getVaultChainID(vault), staking.address)
         map.set(stakingKey, vault)
       }
     })
@@ -87,7 +95,7 @@ export function usePortfolioModel(): TPortfolioModel {
   }, [allVaults])
 
   const holdingsVaults = useMemo(() => {
-    const result: TYDaemonVault[] = []
+    const result: TKongVault[] = []
     const seen = new Set<string>()
 
     Object.entries(balances || {}).forEach(([chainIDKey, perChain]) => {
@@ -122,9 +130,9 @@ export function usePortfolioModel(): TPortfolioModel {
       const key = getVaultKey(vault)
       flags[key] = {
         hasHoldings: true,
-        isMigratable: Boolean(vault.migration?.available),
-        isRetired: Boolean(vault.info?.isRetired),
-        isHidden: Boolean(vault.info?.isHidden)
+        isMigratable: Boolean(getVaultMigration(vault)?.available),
+        isRetired: Boolean(getVaultInfo(vault)?.isRetired),
+        isHidden: Boolean(getVaultInfo(vault)?.isHidden)
       }
     })
 
@@ -139,14 +147,14 @@ export function usePortfolioModel(): TPortfolioModel {
   const suggestedVaultCandidates = useMemo(
     () =>
       Object.values(vaults).filter((vault) => {
-        if (vault.chainID !== KATANA_CHAIN_ID || deriveListKind(vault) !== 'allocator') {
+        if (getVaultChainID(vault) !== KATANA_CHAIN_ID || deriveListKind(vault) !== 'allocator') {
           return false
         }
 
-        const isHidden = Boolean(vault.info?.isHidden)
-        const isRetired = Boolean(vault.info?.isRetired)
-        const isMigratable = Boolean(vault.migration?.available)
-        const isHighlighted = Boolean(vault.info?.isHighlighted)
+        const isHidden = Boolean(getVaultInfo(vault)?.isHidden)
+        const isRetired = Boolean(getVaultInfo(vault)?.isRetired)
+        const isMigratable = Boolean(getVaultMigration(vault)?.available)
+        const isHighlighted = Boolean(getVaultInfo(vault)?.isHighlighted)
 
         return !isHidden && !isRetired && !isMigratable && isHighlighted
       }),
@@ -168,7 +176,7 @@ export function usePortfolioModel(): TPortfolioModel {
       const key = getVaultKey(vault)
       const hrefOverride = isPortfolioV3Vault(vault)
         ? undefined
-        : `/vaults/${vault.chainID}/${toAddress(vault.address)}`
+        : `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
       return { key, vault, hrefOverride }
     })
   }, [sortedHoldings])
@@ -180,7 +188,7 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const hasHoldings = sortedHoldings.length > 0
   const hasKatanaHoldings = useMemo(
-    () => holdingsVaults.some((vault) => vault.chainID === KATANA_CHAIN_ID),
+    () => holdingsVaults.some((vault) => getVaultChainID(vault) === KATANA_CHAIN_ID),
     [holdingsVaults]
   )
   const totalPortfolioValue = (cumulatedValueInV2Vaults || 0) + (cumulatedValueInV3Vaults || 0)
@@ -188,18 +196,18 @@ export function usePortfolioModel(): TPortfolioModel {
   const getVaultEstimatedAPY = useMemo(
     () =>
       (vault: (typeof holdingsVaults)[number]): number | null => {
-        const apy = calculateVaultEstimatedAPY(vault, katanaAprs)
-        return apy === 0 && !vault.apr?.netAPR ? null : apy
+        const apy = calculateVaultEstimatedAPY(vault)
+        return apy === 0 && !vault.performance?.historical?.net ? null : apy
       },
-    [katanaAprs]
+    []
   )
 
   const getVaultHistoricalAPY = useMemo(
     () =>
       (vault: (typeof holdingsVaults)[number]): number | null => {
-        return calculateVaultHistoricalAPY(vault, katanaAprs)
+        return calculateVaultHistoricalAPY(vault)
       },
-    [katanaAprs]
+    []
   )
 
   const getVaultValue = useMemo(

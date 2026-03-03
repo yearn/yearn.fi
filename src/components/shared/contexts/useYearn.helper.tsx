@@ -1,3 +1,13 @@
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultDecimals,
+  getVaultName,
+  getVaultStaking,
+  getVaultSymbol,
+  getVaultToken,
+  type TKongVault
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
@@ -5,7 +15,6 @@ import { useChainID } from '@shared/hooks/useChainID'
 import type { TDict } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useMemo } from 'react'
 
@@ -14,25 +23,20 @@ export function useYearnTokens({
   isLoadingVaultList,
   isEnabled = true
 }: {
-  vaults: TDict<TYDaemonVault>
+  vaults: TDict<TKongVault>
   isLoadingVaultList: boolean
   isEnabled?: boolean
 }): TUseBalancesTokens[] {
   const { currentNetworkTokenList } = useTokenList()
 
   const { safeChainID } = useChainID()
-  const allVaults = useMemo((): TYDaemonVault[] => {
+  const allVaults = useMemo((): TKongVault[] => {
     if (!isEnabled) {
       return []
     }
     return [...Object.values(vaults)]
   }, [isEnabled, vaults])
 
-  /**************************************************************************
-   ** Define the list of available tokens. This list is retrieved from the
-   ** tokenList context and filtered to only keep the tokens of the current
-   ** network.
-   **************************************************************************/
   const availableTokenListTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
     if (!isEnabled) {
       return []
@@ -62,7 +66,6 @@ export function useYearnTokens({
     return tokens
   }, [isEnabled, safeChainID, currentNetworkTokenList])
 
-  //List available tokens
   const availableTokens = useMemo((): TDict<TUseBalancesTokens> => {
     if (!isEnabled || isLoadingVaultList) {
       return {}
@@ -86,26 +89,30 @@ export function useYearnTokens({
       tokens[key] = token
     }
 
-    const vaultAddressKeys = new Set(allVaults.map((vault) => `${vault.chainID}/${toAddress(vault.address)}`))
+    const vaultAddressKeys = new Set(
+      allVaults.map((vault) => `${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`)
+    )
 
-    allVaults.forEach((vault?: TYDaemonVault): void => {
+    allVaults.forEach((vault?: TKongVault): void => {
       if (!vault) {
         return
       }
 
-      const chainID = vault.chainID
-      const address = toAddress(vault.address)
-      const name = vault.name
-      const symbol = vault.symbol
-      const decimals = vault.decimals
+      const chainID = getVaultChainID(vault)
+      const address = toAddress(getVaultAddress(vault))
+      const name = getVaultName(vault)
+      const symbol = getVaultSymbol(vault)
+      const decimals = getVaultDecimals(vault)
+      const token = getVaultToken(vault)
+      const staking = getVaultStaking(vault)
       const vaultKey = `${chainID}/${address}`
-      const stakingAddress = !isZeroAddress(toAddress(vault.staking.address)) ? toAddress(vault.staking.address) : undefined
+      const stakingAddress = !isZeroAddress(toAddress(staking.address)) ? toAddress(staking.address) : undefined
       const hasStaking = Boolean(stakingAddress)
       const isVaultBackedStaking = hasStaking ? vaultAddressKeys.has(`${chainID}/${stakingAddress}`) : false
       const isStakingOnlyPair = hasStaking && !isVaultBackedStaking
 
       if (!tokens[vaultKey]) {
-        const newToken = {
+        tokens[vaultKey] = {
           address,
           chainID,
           symbol,
@@ -117,8 +124,6 @@ export function useYearnTokens({
           isVaultBackedStaking: hasStaking ? isVaultBackedStaking : undefined,
           pairedStakingAddress: stakingAddress
         }
-
-        tokens[vaultKey] = newToken
       } else {
         const existingToken = tokens[vaultKey]
 
@@ -148,20 +153,16 @@ export function useYearnTokens({
         }
       }
 
-      // Add vaults tokens
-      if (vault?.token?.address && !availableTokenListTokens.some((token) => token.address === vault.token.address)) {
-        const newToken = {
-          address: vault.token.address,
-          chainID: vault.chainID,
-          decimals: vault.token.decimals
+      if (token.address && !availableTokenListTokens.some((item) => item.address === token.address)) {
+        tokens[`${chainID}/${toAddress(token.address)}`] = {
+          address: token.address,
+          chainID,
+          decimals: token.decimals
         }
-
-        tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`] = newToken
       }
 
-      // Add staking token
       if (stakingAddress && !tokens[`${chainID}/${stakingAddress}`]) {
-        const newToken = {
+        tokens[`${chainID}/${stakingAddress}`] = {
           address: stakingAddress,
           chainID,
           symbol,
@@ -173,7 +174,6 @@ export function useYearnTokens({
           isVaultBackedStaking,
           pairedVaultAddress: address
         }
-        tokens[`${chainID}/${stakingAddress}`] = newToken
       } else if (stakingAddress) {
         const existingToken = tokens[`${chainID}/${stakingAddress}`]
         if (existingToken) {
@@ -215,10 +215,6 @@ export function useYearnTokens({
     return tokens
   }, [isEnabled, isLoadingVaultList, availableTokens, availableTokenListTokens])
 
-  /**************************************************************************************************
-   ** The following function can be used to clone the tokens list for the forknet. This is useful
-   ** for debuging purpose and should not be used in production.
-   *************************************************************************************************/
   function cloneForForknet(tokens: TUseBalancesTokens[]): TUseBalancesTokens[] {
     const clonedTokens: TUseBalancesTokens[] = []
     tokens.forEach((token): void => {
@@ -230,13 +226,11 @@ export function useYearnTokens({
     return clonedTokens
   }
 
-  // Use deep compare memo for the final result to ensure stability
   const finalTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
     const shouldEnableForknet = false
     if (shouldEnableForknet) {
       return cloneForForknet(allTokens)
     }
-    // console.log('useYearnTokens returning tokens, count:', allTokens.length)
     return allTokens
   }, [allTokens])
 

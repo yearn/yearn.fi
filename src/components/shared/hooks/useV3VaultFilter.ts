@@ -1,4 +1,16 @@
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultInfo,
+  getVaultMigration,
+  getVaultName,
+  getVaultStaking,
+  getVaultSymbol,
+  getVaultToken,
+  getVaultTVL,
+  type TKongVault
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
 import {
   deriveAssetCategory,
@@ -13,7 +25,6 @@ import { useDeepCompareMemo } from '@react-hookz/web'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { isZeroAddress } from '@shared/utils'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 import { useMemo } from 'react'
 import {
   createCheckHasAvailableBalance,
@@ -25,7 +36,7 @@ import {
 
 type TVaultIndexEntry = {
   key: string
-  vault: TYDaemonVault
+  vault: TKongVault
   searchableText: string
   kind: ReturnType<typeof deriveListKind>
   category: string
@@ -44,12 +55,12 @@ type TVaultWalletFlags = {
 }
 
 type TV3VaultFilterResult = {
-  filteredVaults: TYDaemonVault[]
-  holdingsVaults: TYDaemonVault[]
-  availableVaults: TYDaemonVault[]
+  filteredVaults: TKongVault[]
+  holdingsVaults: TKongVault[]
+  availableVaults: TKongVault[]
   vaultFlags: Record<string, TVaultFlags>
   availableUnderlyingAssets: string[]
-  underlyingAssetVaults: Record<string, TYDaemonVault>
+  underlyingAssetVaults: Record<string, TKongVault>
   totalMatchingVaults: number
   totalHoldingsMatching: number
   totalAvailableMatching: number
@@ -111,20 +122,24 @@ export function useV3VaultFilter(
   const checkHasAvailableBalance = useMemo(() => createCheckHasAvailableBalance(getBalance), [getBalance])
   const checkHasRawHoldings = useMemo(
     () =>
-      (vault: TYDaemonVault): boolean => {
+      (vault: TKongVault): boolean => {
+        const chainID = getVaultChainID(vault)
         const vaultBalance = getBalance({
-          address: vault.address,
-          chainID: vault.chainID
+          address: getVaultAddress(vault),
+          chainID
         })
         if (vaultBalance.raw > 0n) {
           return true
         }
-        if (isZeroAddress(vault.staking.address)) {
+
+        const staking = getVaultStaking(vault)
+        if (isZeroAddress(staking.address)) {
           return false
         }
+
         const stakingBalance = getBalance({
-          address: vault.staking.address,
-          chainID: vault.chainID
+          address: staking.address,
+          chainID
         })
         return stakingBalance.raw > 0n
       },
@@ -137,10 +152,10 @@ export function useV3VaultFilter(
     }
     const vaultMap = new Map<string, TVaultIndexEntry>()
 
-    const shouldIncludeVault = (vault: TYDaemonVault): boolean => isV3Vault(vault, isAllocatorVaultOverride(vault))
+    const shouldIncludeVault = (vault: TKongVault): boolean => isV3Vault(vault, isAllocatorVaultOverride(vault))
 
     const upsertVault = (
-      vault: TYDaemonVault,
+      vault: TKongVault,
       updates: Partial<Pick<TVaultIndexEntry, 'isActive' | 'isMigratable' | 'isRetired' | 'isBypassedHolding'>>
     ): void => {
       const key = getVaultKey(vault)
@@ -150,17 +165,19 @@ export function useV3VaultFilter(
         return
       }
 
+      const token = getVaultToken(vault)
+      const info = getVaultInfo(vault)
       const kind = deriveListKind(vault)
       vaultMap.set(key, {
         key,
         vault,
         searchableText:
-          `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`.toLowerCase(),
+          `${getVaultName(vault)} ${getVaultSymbol(vault)} ${token.name} ${token.symbol} ${getVaultAddress(vault)} ${token.address}`.toLowerCase(),
         kind,
         category: deriveAssetCategory(vault),
         aggressiveness: deriveV3Aggressiveness(vault),
-        isHidden: Boolean(vault.info?.isHidden),
-        isFeatured: Boolean(vault.info?.isHighlighted),
+        isHidden: Boolean(info?.isHidden),
+        isFeatured: Boolean(info?.isHighlighted),
         isActive: Boolean(updates.isActive),
         isMigratable: Boolean(updates.isMigratable),
         isRetired: Boolean(updates.isRetired),
@@ -172,8 +189,12 @@ export function useV3VaultFilter(
       if (!shouldIncludeVault(vault)) {
         return
       }
-      const isRetired = Boolean(vault.info?.isRetired)
-      upsertVault(vault, { isActive: !isRetired, isRetired, isMigratable: Boolean(vault.migration?.available) })
+      const isRetired = Boolean(getVaultInfo(vault)?.isRetired)
+      upsertVault(vault, {
+        isActive: !isRetired,
+        isRetired,
+        isMigratable: Boolean(getVaultMigration(vault)?.available)
+      })
     })
 
     Object.values(allVaults).forEach((vault) => {
@@ -187,11 +208,11 @@ export function useV3VaultFilter(
       if (!checkHasRawHoldings(vault)) {
         return
       }
-      const isRetired = Boolean(vault.info?.isRetired)
+      const isRetired = Boolean(getVaultInfo(vault)?.isRetired)
       upsertVault(vault, {
         isActive: !isRetired,
         isRetired,
-        isMigratable: Boolean(vault.migration?.available),
+        isMigratable: Boolean(getVaultMigration(vault)?.available),
         isBypassedHolding: true
       })
     })
@@ -227,7 +248,7 @@ export function useV3VaultFilter(
   }, [vaultIndex, walletFlags])
 
   const filteredResults = useMemo(() => {
-    const filteredVaults: TYDaemonVault[] = []
+    const filteredVaults: TKongVault[] = []
     const vaultFlags: Record<string, TVaultFlags> = {}
 
     let totalMatchingVaults = 0
@@ -236,7 +257,7 @@ export function useV3VaultFilter(
     let totalMigratableMatching = 0
     let totalRetiredMatching = 0
     const availableUnderlyingAssets = new Set<string>()
-    const underlyingAssetVaults: Record<string, TYDaemonVault> = {}
+    const underlyingAssetVaults: Record<string, TKongVault> = {}
     const hasChainFilter = Boolean(chains?.length)
     const hasCategoryFilter = Boolean(categories?.length)
     const hasAggressivenessFilter = Boolean(aggressiveness?.length)
@@ -284,11 +305,11 @@ export function useV3VaultFilter(
         return
       }
 
-      if (!hasUserHoldings && hasChainFilter && !chains?.includes(vault.chainID)) {
+      if (!hasUserHoldings && hasChainFilter && !chains?.includes(getVaultChainID(vault))) {
         return
       }
 
-      const vaultTvl = vault.tvl?.tvl || 0
+      const vaultTvl = getVaultTVL(vault)?.tvl || 0
       if (!hasUserHoldings && vaultTvl < minTvlValue) {
         return
       }
@@ -334,7 +355,7 @@ export function useV3VaultFilter(
         shouldIncludeByKind &&
         shouldIncludeByAggressiveness
       ) {
-        const assetKey = normalizeUnderlyingAssetSymbol(vault.token?.symbol)
+        const assetKey = normalizeUnderlyingAssetSymbol(getVaultToken(vault)?.symbol)
         if (assetKey && !underlyingAssetVaults[assetKey]) {
           availableUnderlyingAssets.add(assetKey)
           underlyingAssetVaults[assetKey] = vault

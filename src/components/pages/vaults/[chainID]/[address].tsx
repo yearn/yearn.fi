@@ -14,7 +14,12 @@ import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
-import { getVaultView, type TKongVault, type TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
+import {
+  getVaultChainID,
+  getVaultView,
+  type TKongVault,
+  type TKongVaultView
+} from '@pages/vaults/domain/kongVaultSelectors'
 import {
   mergeYBoldSnapshot,
   mergeYBoldVault,
@@ -378,7 +383,9 @@ function Index(): ReactElement | null {
   const vaultViewInput = useMemo(() => {
     if (!mergedBaseVault) return snapshotBackedVault
     if (!snapshotBackedVault) return mergedBaseVault
-    return mergedBaseVault.chainId === snapshotBackedVault.chainId ? mergedBaseVault : snapshotBackedVault
+    return getVaultChainID(mergedBaseVault) === getVaultChainID(snapshotBackedVault)
+      ? mergedBaseVault
+      : snapshotBackedVault
   }, [mergedBaseVault, snapshotBackedVault])
 
   const isFactoryVault = useMemo(() => {

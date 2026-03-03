@@ -1,11 +1,21 @@
+import {
+  getVaultAPR,
+  getVaultChainID,
+  getVaultFeaturingScore,
+  getVaultInfo,
+  getVaultName,
+  getVaultToken,
+  getVaultTVL,
+  type TKongVaultInput,
+  type TKongVaultStrategy
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultHoldingsUsdValue } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
 import { normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@shared/utils/constants'
-import { getVaultName, numberSort, stringSort } from '@shared/utils/helpers'
-import type { TYDaemonVault, TYDaemonVaultStrategy, TYDaemonVaults } from '@shared/utils/schemas/yDaemonVaultsSchemas'
+import { numberSort, stringSort } from '@shared/utils/helpers'
 import { calculateVaultEstimatedAPY } from '@shared/utils/vaultApy'
 import { useMemo } from 'react'
 
@@ -21,31 +31,33 @@ export type TPossibleSortBy =
   | 'allocation'
   | 'score'
 
-export function useSortVaults(
-  vaultList: (TYDaemonVault & { details?: TYDaemonVaultStrategy['details'] })[],
+export function useSortVaults<TVault extends TKongVaultInput & { details?: TKongVaultStrategy['details'] }>(
+  vaultList: TVault[],
   sortBy: TPossibleSortBy,
   sortDirection: TSortDirection
-): TYDaemonVaults {
+): TVault[] {
   const { getBalance, getToken } = useWallet()
-  const { katanaAprs, getPrice } = useYearn()
+  const { getPrice } = useYearn()
   const isFeaturingScoreSortedDesc = useMemo((): boolean => {
     if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
       return false
     }
     return vaultList.every((vault, index, arr) => {
       if (index === 0) return true
-      const prevScore = Number.isFinite(arr[index - 1].featuringScore) ? arr[index - 1].featuringScore : 0
-      const currentScore = Number.isFinite(vault.featuringScore) ? vault.featuringScore : 0
+      const prevScore = Number.isFinite(getVaultFeaturingScore(arr[index - 1]))
+        ? getVaultFeaturingScore(arr[index - 1])
+        : 0
+      const currentScore = Number.isFinite(getVaultFeaturingScore(vault)) ? getVaultFeaturingScore(vault) : 0
       return currentScore <= prevScore
     })
   }, [vaultList, sortBy, sortDirection])
 
-  const sortedVaults = useMemo((): TYDaemonVaults => {
+  const sortedVaults = useMemo((): TVault[] => {
     if (sortDirection === '' || isFeaturingScoreSortedDesc) {
       return vaultList
     }
 
-    const getDepositedValue = (vault: TYDaemonVault): number => {
+    const getDepositedValue = (vault: TKongVaultInput): number => {
       return getVaultHoldingsUsdValue(vault, getToken, getBalance, getPrice)
     }
 
@@ -61,33 +73,39 @@ export function useSortVaults(
       case 'estAPY':
         return vaultList.toSorted((a, b): number =>
           sortWithFallback(
-            normalizeApyDisplayValue(calculateVaultEstimatedAPY(a, katanaAprs)),
-            normalizeApyDisplayValue(calculateVaultEstimatedAPY(b, katanaAprs)),
-            calculateVaultEstimatedAPY(a, katanaAprs),
-            calculateVaultEstimatedAPY(b, katanaAprs),
+            normalizeApyDisplayValue(calculateVaultEstimatedAPY(a)),
+            normalizeApyDisplayValue(calculateVaultEstimatedAPY(b)),
+            calculateVaultEstimatedAPY(a),
+            calculateVaultEstimatedAPY(b),
             sortDirection
           )
         )
       case 'APY':
-        return vaultList.toSorted((a, b): number =>
-          sortWithFallback(
-            normalizeApyDisplayValue(a.apr?.netAPR || 0),
-            normalizeApyDisplayValue(b.apr?.netAPR || 0),
-            a.apr?.netAPR || 0,
-            b.apr?.netAPR || 0,
+        return vaultList.toSorted((a, b): number => {
+          const aprA = getVaultAPR(a).netAPR || 0
+          const aprB = getVaultAPR(b).netAPR || 0
+          return sortWithFallback(
+            normalizeApyDisplayValue(aprA),
+            normalizeApyDisplayValue(aprB),
+            aprA,
+            aprB,
             sortDirection
           )
-        )
+        })
       case 'tvl':
-        return vaultList.toSorted((a, b): number => numberSort({ a: a.tvl.tvl, b: b.tvl.tvl, sortDirection }))
-      case 'allocation':
         return vaultList.toSorted((a, b): number =>
-          numberSort({
-            a: toNormalizedBN(a.details?.totalDebt || 0, a.token?.decimals).normalized,
-            b: toNormalizedBN(b.details?.totalDebt || 0, b.token?.decimals).normalized,
+          numberSort({ a: getVaultTVL(a).tvl, b: getVaultTVL(b).tvl, sortDirection })
+        )
+      case 'allocation':
+        return vaultList.toSorted((a, b): number => {
+          const aDecimals = getVaultToken(a).decimals
+          const bDecimals = getVaultToken(b).decimals
+          return numberSort({
+            a: toNormalizedBN(a.details?.totalDebt || 0, aDecimals).normalized,
+            b: toNormalizedBN(b.details?.totalDebt || 0, bDecimals).normalized,
             sortDirection
           })
-        )
+        })
       case 'allocationPercentage':
         return vaultList.toSorted((a, b): number =>
           numberSort({ a: a.details?.debtRatio, b: b.details?.debtRatio, sortDirection })
@@ -102,13 +120,18 @@ export function useSortVaults(
         )
       case 'available':
         return vaultList.toSorted((a, b): number => {
-          const aBaseBalance = Number(getBalance({ address: a.token.address, chainID: a.chainID })?.normalized || 0)
-          const bBaseBalance = Number(getBalance({ address: b.token.address, chainID: b.chainID })?.normalized || 0)
-          const aEthBalance = [WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(a.token.address))
-            ? Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: a.chainID })?.normalized || 0)
+          const tokenA = getVaultToken(a)
+          const tokenB = getVaultToken(b)
+          const chainA = getVaultChainID(a)
+          const chainB = getVaultChainID(b)
+
+          const aBaseBalance = Number(getBalance({ address: tokenA.address, chainID: chainA })?.normalized || 0)
+          const bBaseBalance = Number(getBalance({ address: tokenB.address, chainID: chainB })?.normalized || 0)
+          const aEthBalance = [WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(tokenA.address))
+            ? Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: chainA })?.normalized || 0)
             : 0
-          const bEthBalance = [WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(b.token.address))
-            ? Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: b.chainID })?.normalized || 0)
+          const bEthBalance = [WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(tokenB.address))
+            ? Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: chainB })?.normalized || 0)
             : 0
           const aBalance = aBaseBalance + aEthBalance
           const bBalance = bBaseBalance + bEthBalance
@@ -118,12 +141,12 @@ export function useSortVaults(
         })
       case 'featuringScore':
         return vaultList.toSorted((a, b): number =>
-          numberSort({ a: a.featuringScore, b: b.featuringScore, sortDirection })
+          numberSort({ a: getVaultFeaturingScore(a), b: getVaultFeaturingScore(b), sortDirection })
         )
       case 'score':
         return vaultList.toSorted((a, b): number => {
-          const aScore = a.info.riskLevel
-          const bScore = b.info.riskLevel
+          const aScore = getVaultInfo(a).riskLevel
+          const bScore = getVaultInfo(b).riskLevel
           if (sortDirection === 'asc') {
             return aScore - bScore
           }
@@ -132,7 +155,7 @@ export function useSortVaults(
       default:
         return vaultList
     }
-  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, katanaAprs, getBalance, getPrice, getToken])
+  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, getBalance, getPrice, getToken])
 
   return sortedVaults
 }

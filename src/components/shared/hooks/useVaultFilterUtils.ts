@@ -17,9 +17,8 @@ import type { TAddress } from '@shared/types/address'
 import type { TNormalizedBN } from '@shared/types/mixed'
 import { isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
-import type { TYDaemonVault } from '@shared/utils/schemas/yDaemonVaultsSchemas'
 
-type TVaultLike = TKongVaultInput | TYDaemonVault
+type TVaultLike = TKongVaultInput
 
 export type TVaultWithMetadata = {
   vault: TVaultLike

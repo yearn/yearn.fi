@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { resolveHistoricalApyDisplayConfig } from './apyDisplayConfig'
 
 const KATANA_SPECTRA_VAULT = {
+  version: '3.0.0',
   chainID: KATANA_CHAIN_ID,
   address: SPECTRA_MARKET_VAULT_ADDRESSES[0],
   token: {
@@ -30,8 +31,7 @@ const KATANA_APY_DATA = {
   hasKelp: false,
   hasKelpNEngenlayer: false,
   katanaExtras: {
-    katanaNativeYield: 5,
-    FixedRateKatanaRewards: 4,
+    fixedRateKatanaRewards: 4,
     katanaAppRewardsAPR: 3,
     katanaBonusAPY: 2,
     steerPointsPerDollar: 0
