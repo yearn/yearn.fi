@@ -8,7 +8,7 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconSettings } from '@shared/icons/IconSettings'
-import { cl, formatTAmount, formatUSD, toAddress } from '@shared/utils'
+import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -392,7 +392,7 @@ export const WidgetDeposit: FC<Props> = ({
       willReceiveStakedShares={willReceiveStakedShares}
       onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
       onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
-      estimatedAnnualReturn={estimatedAnnualReturn}
+      estimatedAnnualReturn={formatWidgetValue(estimatedAnnualReturn)}
       onShowAnnualReturnModal={() => setShowAnnualReturnModal(true)}
       allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
       allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
