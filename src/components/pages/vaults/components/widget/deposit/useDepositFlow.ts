@@ -1,6 +1,7 @@
 import { useDirectDeposit } from '@pages/vaults/hooks/actions/useDirectDeposit'
 import { useDirectStake } from '@pages/vaults/hooks/actions/useDirectStake'
 import { useEnsoDeposit } from '@pages/vaults/hooks/actions/useEnsoDeposit'
+import { useSplitterDeposit } from '@pages/vaults/hooks/actions/useSplitterDeposit'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
 import type { DepositRouteType } from './types'
@@ -27,6 +28,9 @@ interface UseDepositFlowProps {
   // Settings
   slippage: number
   stakingSource?: string
+  // Splitter
+  isSplitYieldEnabled?: boolean
+  strategyAddress?: Address
 }
 
 export interface DepositFlowResult {
@@ -65,7 +69,9 @@ export const useDepositFlow = ({
   inputDecimals,
   vaultDecimals,
   slippage,
-  stakingSource
+  stakingSource,
+  isSplitYieldEnabled,
+  strategyAddress
 }: UseDepositFlowProps): DepositFlowResult => {
   // Determine routing type
   const routeType = useDepositRoute({
@@ -73,7 +79,8 @@ export const useDepositFlow = ({
     assetAddress,
     destinationToken,
     vaultAddress,
-    stakingAddress
+    stakingAddress,
+    isSplitYieldEnabled
   })
 
   // Direct deposit flow (asset → vault)
@@ -99,6 +106,15 @@ export const useDepositFlow = ({
     enabled: routeType === 'DIRECT_STAKE' && amount > 0n
   })
 
+  // Splitter deposit flow (asset → splitter strategy)
+  const splitterDeposit = useSplitterDeposit({
+    strategyAddress,
+    assetAddress,
+    amount,
+    account,
+    enabled: routeType === 'SPLITTER_DEPOSIT' && amount > 0n
+  })
+
   // Enso flow (zaps, cross-chain, etc.)
   const ensoFlow = useEnsoDeposit({
     vaultAddress: destinationToken,
@@ -117,8 +133,9 @@ export const useDepositFlow = ({
   const activeFlow = useMemo(() => {
     if (routeType === 'DIRECT_DEPOSIT') return directDeposit
     if (routeType === 'DIRECT_STAKE') return directStake
+    if (routeType === 'SPLITTER_DEPOSIT') return splitterDeposit
     return ensoFlow
-  }, [routeType, directDeposit, directStake, ensoFlow])
+  }, [routeType, directDeposit, directStake, splitterDeposit, ensoFlow])
 
   return {
     routeType,

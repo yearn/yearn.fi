@@ -10,6 +10,7 @@ interface UseDepositRouteProps {
   destinationToken: Address
   vaultAddress: Address
   stakingAddress?: Address
+  isSplitYieldEnabled?: boolean
 }
 
 /**
@@ -23,11 +24,21 @@ export const useDepositRoute = ({
   assetAddress,
   destinationToken,
   vaultAddress,
-  stakingAddress
+  stakingAddress,
+  isSplitYieldEnabled
 }: UseDepositRouteProps): DepositRouteType => {
   const ensoEnabled = useEnsoEnabled()
 
   return useMemo(() => {
+    // Case 0: Splitter deposit (asset → splitter strategy)
+    if (
+      isSplitYieldEnabled &&
+      toAddress(depositToken) === toAddress(assetAddress) &&
+      toAddress(destinationToken) === toAddress(vaultAddress)
+    ) {
+      return 'SPLITTER_DEPOSIT'
+    }
+
     // Case 1: Direct vault deposit (asset → vault)
     if (
       toAddress(depositToken) === toAddress(assetAddress) &&
@@ -50,5 +61,5 @@ export const useDepositRoute = ({
       return 'ENSO'
     }
     return 'NO_ROUTE'
-  }, [ensoEnabled, depositToken, assetAddress, destinationToken, vaultAddress, stakingAddress])
+  }, [ensoEnabled, isSplitYieldEnabled, depositToken, assetAddress, destinationToken, vaultAddress, stakingAddress])
 }

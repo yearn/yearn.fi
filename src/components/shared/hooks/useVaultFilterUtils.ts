@@ -29,6 +29,8 @@ export type TVaultFlags = {
   isMigratable: boolean
   isRetired: boolean
   isHidden: boolean
+  isSplitterPosition?: boolean
+  splitterWantSymbol?: string
 }
 
 type TTokenAndChain = { address: TAddress; chainID: number }

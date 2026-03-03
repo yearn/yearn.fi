@@ -1,4 +1,6 @@
 import { usePlausible } from '@hooks/usePlausible'
+import { isSplitterVault } from '@pages/vaults/constants/addresses'
+import { useSplitterPositions } from '@pages/vaults/hooks/splitter/useSplitterPositions'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import { Button } from '@shared/components/Button'
@@ -59,6 +61,23 @@ export const WidgetWithdraw: FC<
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
+  const [selectedSplitterStrategy, setSelectedSplitterStrategy] = useState<`0x${string}` | undefined>()
+
+  const hasSplitter = isSplitterVault(vaultAddress)
+  const { positions: allSplitterPositions } = useSplitterPositions()
+  const vaultSplitterPositions = useMemo(
+    () =>
+      hasSplitter
+        ? Object.fromEntries(
+            Object.entries(allSplitterPositions).filter(
+              ([, p]) => p.vaultAddress.toLowerCase() === vaultAddress.toLowerCase()
+            )
+          )
+        : {},
+    [allSplitterPositions, hasSplitter, vaultAddress]
+  )
+  const hasSplitterPositions = Object.keys(vaultSplitterPositions).length > 0
+  const activeSplitterPosition = selectedSplitterStrategy ? allSplitterPositions[selectedSplitterStrategy] : undefined
 
   const {
     assetToken,
@@ -103,11 +122,13 @@ export const WidgetWithdraw: FC<
   }, [collapseDetails, isDetailsPanelOpen])
 
   const totalVaultBalance: TNormalizedBN =
-    withdrawalSource === 'vault' && vault
-      ? vault.balance
-      : withdrawalSource === 'staking' && stakingToken
-        ? stakingToken.balance
-        : zeroNormalizedBN
+    withdrawalSource === 'splitter' && activeSplitterPosition
+      ? toNormalizedBN(activeSplitterPosition.balance, assetToken?.decimals ?? 18)
+      : withdrawalSource === 'vault' && vault
+        ? vault.balance
+        : withdrawalSource === 'staking' && stakingToken
+          ? stakingToken.balance
+          : zeroNormalizedBN
 
   const sourceToken =
     withdrawalSource === 'vault'
@@ -178,7 +199,9 @@ export const WidgetWithdraw: FC<
     withdrawalSource,
     isUnstake,
     isDebouncing: withdrawAmount.isDebouncing,
-    useErc4626: usesErc4626
+    useErc4626: usesErc4626,
+    splitterStrategyAddress: selectedSplitterStrategy,
+    splitterMaxWithdraw: activeSplitterPosition?.balance
   })
 
   const isCrossChain = destinationChainId !== chainId
@@ -502,7 +525,14 @@ export const WidgetWithdraw: FC<
       <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
         <div>
           {/* Withdraw From Selector */}
-          {hasBothBalances && <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />}
+          {(hasBothBalances || hasSplitterPositions) && (
+            <SourceSelector
+              value={withdrawalSource}
+              onChange={setWithdrawalSource}
+              splitterPositions={vaultSplitterPositions}
+              onSelectSplitterStrategy={setSelectedSplitterStrategy}
+            />
+          )}
 
           {/* Amount Section */}
           <div className="flex flex-col gap-4">

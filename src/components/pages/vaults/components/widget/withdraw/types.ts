@@ -1,8 +1,8 @@
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 
-export type WithdrawRouteType = 'DIRECT_WITHDRAW' | 'DIRECT_UNSTAKE' | 'ENSO'
+export type WithdrawRouteType = 'DIRECT_WITHDRAW' | 'DIRECT_UNSTAKE' | 'SPLITTER_WITHDRAW' | 'ENSO'
 
-export type WithdrawalSource = 'vault' | 'staking' | null
+export type WithdrawalSource = 'vault' | 'staking' | 'splitter' | null
 
 export interface WithdrawWidgetProps {
   vaultAddress: `0x${string}`

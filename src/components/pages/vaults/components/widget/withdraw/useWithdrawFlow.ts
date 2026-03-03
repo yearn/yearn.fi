@@ -1,6 +1,7 @@
 import { useDirectUnstake } from '@pages/vaults/hooks/actions/useDirectUnstake'
 import { useDirectWithdraw } from '@pages/vaults/hooks/actions/useDirectWithdraw'
 import { useEnsoWithdraw } from '@pages/vaults/hooks/actions/useEnsoWithdraw'
+import { useSplitterWithdraw } from '@pages/vaults/hooks/actions/useSplitterWithdraw'
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
@@ -37,6 +38,9 @@ interface UseWithdrawFlowProps {
   isUnstake: boolean
   isDebouncing: boolean
   useErc4626: boolean
+  // Splitter
+  splitterStrategyAddress?: Address
+  splitterMaxWithdraw?: bigint
 }
 
 export interface WithdrawFlowResult {
@@ -67,7 +71,9 @@ export const useWithdrawFlow = ({
   withdrawalSource,
   isUnstake,
   isDebouncing,
-  useErc4626
+  useErc4626,
+  splitterStrategyAddress,
+  splitterMaxWithdraw
 }: UseWithdrawFlowProps): WithdrawFlowResult => {
   // Determine routing type
   const routeType = useWithdrawRoute({
@@ -104,6 +110,15 @@ export const useWithdrawFlow = ({
     enabled: routeType === 'DIRECT_UNSTAKE' && currentAmount > 0n
   })
 
+  // Splitter withdraw flow (splitter → underlying)
+  const splitterWithdraw = useSplitterWithdraw({
+    strategyAddress: splitterStrategyAddress,
+    amount,
+    isMaxWithdraw: isMaxWithdraw && amount === (splitterMaxWithdraw || 0n),
+    account,
+    enabled: routeType === 'SPLITTER_WITHDRAW' && amount > 0n
+  })
+
   // Enso flow (zaps, cross-chain, etc.)
   const ensoFlow = useEnsoWithdraw({
     vaultAddress: sourceToken,
@@ -123,8 +138,9 @@ export const useWithdrawFlow = ({
   const activeFlow = useMemo((): UseWidgetWithdrawFlowReturn => {
     if (routeType === 'DIRECT_WITHDRAW') return directWithdraw
     if (routeType === 'DIRECT_UNSTAKE') return directUnstake
+    if (routeType === 'SPLITTER_WITHDRAW') return splitterWithdraw
     return ensoFlow
-  }, [routeType, directWithdraw, directUnstake, ensoFlow])
+  }, [routeType, directWithdraw, directUnstake, splitterWithdraw, ensoFlow])
 
   return {
     routeType,

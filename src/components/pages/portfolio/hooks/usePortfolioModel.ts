@@ -9,6 +9,7 @@ import {
   getVaultStaking,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { useSplitterPositions } from '@pages/vaults/hooks/splitter/useSplitterPositions'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import { useWallet } from '@shared/contexts/useWallet'
@@ -114,25 +115,53 @@ export function usePortfolioModel(): TPortfolioModel {
     })
   }, [balances, vaultLookup])
 
-  const vaultFlags = useMemo(
-    () =>
-      Object.fromEntries(
-        holdingsVaults.map((vault) => {
-          const info = getVaultInfo(vault)
-          const migration = getVaultMigration(vault)
-          return [
-            getVaultKey(vault),
-            {
-              hasHoldings: true,
-              isMigratable: Boolean(migration?.available),
-              isRetired: Boolean(info?.isRetired),
-              isHidden: Boolean(info?.isHidden)
-            }
-          ]
+  const { positions: splitterPositions } = useSplitterPositions()
+
+  const splitterHoldings = useMemo(() => {
+    const entries: { vault: TKongVault; strategyAddress: string; wantSymbol: string }[] = []
+    for (const position of Object.values(splitterPositions)) {
+      const vault = vaultLookup.get(getChainAddressKey(KATANA_CHAIN_ID, position.vaultAddress))
+      if (vault) {
+        entries.push({
+          vault,
+          strategyAddress: position.strategyAddress,
+          wantSymbol: position.wantToken.symbol
         })
-      ) as Record<string, TVaultFlags>,
-    [holdingsVaults]
-  )
+      }
+    }
+    return entries
+  }, [splitterPositions, vaultLookup])
+
+  const vaultFlags = useMemo(() => {
+    const flags = Object.fromEntries(
+      holdingsVaults.map((vault) => {
+        const info = getVaultInfo(vault)
+        const migration = getVaultMigration(vault)
+        return [
+          getVaultKey(vault),
+          {
+            hasHoldings: true,
+            isMigratable: Boolean(migration?.available),
+            isRetired: Boolean(info?.isRetired),
+            isHidden: Boolean(info?.isHidden)
+          }
+        ]
+      })
+    ) as Record<string, TVaultFlags>
+
+    for (const { strategyAddress, wantSymbol } of splitterHoldings) {
+      flags[`splitter_${strategyAddress}`] = {
+        hasHoldings: true,
+        isMigratable: false,
+        isRetired: false,
+        isHidden: false,
+        isSplitterPosition: true,
+        splitterWantSymbol: wantSymbol
+      }
+    }
+
+    return flags
+  }, [holdingsVaults, splitterHoldings])
 
   const isSearchingBalances =
     (isActive || isUserConnecting) && (isWalletLoading || isUserConnecting || isIdentityLoading)
@@ -170,17 +199,23 @@ export function usePortfolioModel(): TPortfolioModel {
   const tokenSuggestions = useTokenSuggestions(holdingsKeySet)
   const { suggestions: vaultSuggestions } = useVaultSuggestions(holdingsKeySet)
 
-  const holdingsRows = useMemo(
-    () =>
-      sortedHoldings.map((vault) => ({
-        key: getVaultKey(vault),
-        vault,
-        hrefOverride: isPortfolioV3Vault(vault)
-          ? undefined
-          : `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
-      })),
-    [sortedHoldings]
-  )
+  const holdingsRows = useMemo(() => {
+    const vaultRows = sortedHoldings.map((vault) => ({
+      key: getVaultKey(vault),
+      vault,
+      hrefOverride: isPortfolioV3Vault(vault)
+        ? undefined
+        : `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
+    }))
+
+    const splitterRows = splitterHoldings.map(({ vault, strategyAddress }) => ({
+      key: `splitter_${strategyAddress}`,
+      vault,
+      hrefOverride: `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
+    }))
+
+    return [...vaultRows, ...splitterRows]
+  }, [sortedHoldings, splitterHoldings])
 
   const suggestedRows = useMemo((): TSuggestedItem[] => {
     const candidates: { item: TSuggestedItem; vaultKey: string }[] = [
@@ -220,7 +255,7 @@ export function usePortfolioModel(): TPortfolioModel {
       .map(({ item }) => item)
   }, [vaultSuggestions, tokenSuggestions, genericVaults])
 
-  const hasHoldings = sortedHoldings.length > 0
+  const hasHoldings = sortedHoldings.length > 0 || splitterHoldings.length > 0
   const hasKatanaHoldings = useMemo(
     () => holdingsVaults.some((vault) => getVaultChainID(vault) === KATANA_CHAIN_ID),
     [holdingsVaults]

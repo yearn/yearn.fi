@@ -30,6 +30,11 @@ export const useWithdrawRoute = ({
   const ensoEnabled = useEnsoEnabled()
 
   return useMemo(() => {
+    // Case 0: Splitter withdraw
+    if (withdrawalSource === 'splitter') {
+      return 'SPLITTER_WITHDRAW'
+    }
+
     // Case 1: Unstake (staking → vault tokens) - always allowed, doesn't need Enso
     if (isUnstake) {
       return 'DIRECT_UNSTAKE'
