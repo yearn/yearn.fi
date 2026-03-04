@@ -32,12 +32,17 @@ function isValidAddress(address: string): boolean {
 
 async function checkRateLimit(ip: string): Promise<{ allowed: boolean; retryAfter?: number }> {
   const databaseUrl = process.env.DATABASE_URL
+  console.log('[RateLimit] Checking for IP:', ip)
+  console.log('[RateLimit] DATABASE_URL configured:', !!databaseUrl)
+
   if (!databaseUrl) {
+    console.log('[RateLimit] No DATABASE_URL, skipping')
     return { allowed: true }
   }
 
   try {
     const sql = neon(databaseUrl)
+    console.log('[RateLimit] Executing query...')
 
     const result = await sql`
       INSERT INTO rate_limits (ip, request_count, window_start)
@@ -56,14 +61,19 @@ async function checkRateLimit(ip: string): Promise<{ allowed: boolean; retryAfte
       RETURNING request_count, window_start
     `
 
+    console.log('[RateLimit] Query result:', JSON.stringify(result))
+
     const { request_count, window_start } = result[0]
+    console.log('[RateLimit] Count:', request_count, 'Window:', window_start)
 
     if (request_count > MAX_REQUESTS) {
       const windowEnd = new Date(window_start).getTime() + 60 * 1000
       const retryAfter = Math.max(1, Math.ceil((windowEnd - Date.now()) / 1000))
+      console.log('[RateLimit] BLOCKED - count exceeds max')
       return { allowed: false, retryAfter }
     }
 
+    console.log('[RateLimit] ALLOWED')
     return { allowed: true }
   } catch (error) {
     console.error('[RateLimit] Check failed:', error)
@@ -87,6 +97,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Rate limiting
   const clientId = getClientIdentifier(req)
+  console.log('[Handler] Client ID:', clientId)
+  console.log('[Handler] x-forwarded-for:', req.headers['x-forwarded-for'])
   const rateCheck = await checkRateLimit(clientId)
   if (!rateCheck.allowed) {
     res.setHeader('Retry-After', String(rateCheck.retryAfter))
