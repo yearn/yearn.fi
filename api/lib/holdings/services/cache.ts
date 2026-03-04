@@ -166,7 +166,7 @@ export async function deleteStaleCache(): Promise<number> {
   }
 
   try {
-    const result = await pool.query(`DELETE FROM holdings_cache WHERE date < NOW() - INTERVAL '366 days'`)
+    const result = await pool.query(`DELETE FROM holdings_totals WHERE date < NOW() - INTERVAL '366 days'`)
     const deletedCount = result.rowCount ?? 0
     console.log(`[Cache] Deleted ${deletedCount} stale cache rows`)
     return deletedCount
