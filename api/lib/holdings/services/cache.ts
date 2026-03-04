@@ -154,3 +154,24 @@ export async function saveCachedPrices(prices: CachedPrice[]): Promise<void> {
     console.error('[Cache] Failed to save prices:', error)
   }
 }
+
+export async function deleteStaleCache(): Promise<number> {
+  if (!isDatabaseEnabled()) {
+    return 0
+  }
+
+  const pool = await getPool()
+  if (!pool) {
+    return 0
+  }
+
+  try {
+    const result = await pool.query(`DELETE FROM holdings_cache WHERE date < NOW() - INTERVAL '366 days'`)
+    const deletedCount = result.rowCount ?? 0
+    console.log(`[Cache] Deleted ${deletedCount} stale cache rows`)
+    return deletedCount
+  } catch (error) {
+    console.error('[Cache] Failed to delete stale cache:', error)
+    return 0
+  }
+}

@@ -1,3 +1,4 @@
+import { Pool } from '@neondatabase/serverless'
 import { config } from '../config'
 
 interface QueryResult<T> {
@@ -18,21 +19,14 @@ async function createPool(): Promise<DatabasePool | null> {
   }
 
   try {
-    const { Pool } = await import('pg')
-    const pgPool = new Pool({
-      connectionString: config.databaseUrl,
-      ssl: config.databaseUrl.includes('neon') ? { rejectUnauthorized: false } : undefined,
-      max: 5,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000
-    })
+    const neonPool = new Pool({ connectionString: config.databaseUrl })
 
     return {
       query: async <T>(text: string, params?: unknown[]) => {
-        const result = await pgPool.query(text, params)
+        const result = await neonPool.query(text, params)
         return { rows: result.rows as T[], rowCount: result.rowCount ?? 0 }
       },
-      end: () => pgPool.end()
+      end: () => neonPool.end()
     }
   } catch (error) {
     console.error('[Holdings DB] Failed to create pool:', error)
@@ -71,7 +65,14 @@ export async function initializeSchema(): Promise<void> {
       PRIMARY KEY (token_key, timestamp)
     );
 
+    CREATE TABLE IF NOT EXISTS rate_limits (
+      ip VARCHAR(45) PRIMARY KEY,
+      request_count INTEGER DEFAULT 1,
+      window_start TIMESTAMP DEFAULT NOW()
+    );
+
     CREATE INDEX IF NOT EXISTS idx_token_prices_token_key ON token_prices(token_key);
+    CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
   `
 
   try {
