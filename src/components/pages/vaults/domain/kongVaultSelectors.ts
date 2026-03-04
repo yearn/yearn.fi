@@ -53,6 +53,17 @@ const normalizeNumber = (value: number | string | null | undefined, fallback = 0
   return normalized
 }
 
+const normalizeOptionalNumber = (value: number | string | null | undefined): number | undefined => {
+  if (value === null || value === undefined) {
+    return undefined
+  }
+  const normalized = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(normalized)) {
+    return undefined
+  }
+  return normalized
+}
+
 const normalizeFee = (value: number | null | undefined): number => {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return 0
@@ -239,6 +250,10 @@ export type TKongVaultApr = {
   extra: {
     stakingRewardsAPR: number
     gammaRewardAPR: number
+    katanaBonusAPY?: number
+    katanaAppRewardsAPR?: number
+    steerPointsPerDollar?: number
+    fixedRateKatanaRewards?: number
   }
   points: {
     weekAgo: number
@@ -525,20 +540,49 @@ export const getVaultTVL = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
   }
 }
 
-const mapEstimatedComposite = (snapshot?: TKongVaultSnapshot): TKongVaultApr['forwardAPR']['composite'] => {
-  const estimated = snapshot?.performance?.estimated
+const mapEstimatedComposite = (
+  vault: TKongVault,
+  snapshot?: TKongVaultSnapshot
+): TKongVaultApr['forwardAPR']['composite'] => {
+  const snapshotComponents = snapshot?.performance?.estimated?.components
+  const vaultComponents = vault.performance?.estimated?.components
   return {
-    boost: normalizeNumber(estimated?.components?.boost),
-    poolAPY: normalizeNumber(estimated?.components?.poolAPY),
-    boostedAPR: normalizeNumber(estimated?.components?.boostedAPR),
-    baseAPR: normalizeNumber(estimated?.components?.baseAPR),
-    cvxAPR: normalizeNumber(estimated?.components?.cvxAPR),
-    rewardsAPR: normalizeNumber(estimated?.components?.rewardsAPR),
+    boost: normalizeNumber(snapshotComponents?.boost, normalizeNumber(vaultComponents?.boost)),
+    poolAPY: normalizeNumber(snapshotComponents?.poolAPY, normalizeNumber(vaultComponents?.poolAPY)),
+    boostedAPR: normalizeNumber(snapshotComponents?.boostedAPR, normalizeNumber(vaultComponents?.boostedAPR)),
+    baseAPR: normalizeNumber(snapshotComponents?.baseAPR, normalizeNumber(vaultComponents?.baseAPR)),
+    cvxAPR: normalizeNumber(snapshotComponents?.cvxAPR, normalizeNumber(vaultComponents?.cvxAPR)),
+    rewardsAPR: normalizeNumber(snapshotComponents?.rewardsAPR, normalizeNumber(vaultComponents?.rewardsAPR)),
     v3OracleCurrentAPR: 0,
     v3OracleStratRatioAPR: 0,
-    keepCRV: normalizeNumber(estimated?.components?.keepCRV),
-    keepVELO: normalizeNumber(estimated?.components?.keepVelo),
+    keepCRV: normalizeNumber(snapshotComponents?.keepCRV, normalizeNumber(vaultComponents?.keepCRV)),
+    keepVELO: normalizeNumber(snapshotComponents?.keepVelo, normalizeNumber(vaultComponents?.keepVelo)),
     cvxKeepCRV: 0
+  }
+}
+
+const mapExtraAPR = (vault: TKongVault, snapshot?: TKongVaultSnapshot): TKongVaultApr['extra'] => {
+  const snapshotComponents = snapshot?.performance?.estimated?.components
+  const vaultComponents = vault.performance?.estimated?.components
+  const fixedRateKatanaRewards =
+    normalizeOptionalNumber(snapshotComponents?.fixedRateKatanaRewards) ??
+    normalizeOptionalNumber(snapshotComponents?.FixedRateKatanaRewards) ??
+    normalizeOptionalNumber(vaultComponents?.fixedRateKatanaRewards) ??
+    normalizeOptionalNumber(vaultComponents?.FixedRateKatanaRewards)
+
+  return {
+    stakingRewardsAPR: 0,
+    gammaRewardAPR: 0,
+    katanaBonusAPY:
+      normalizeOptionalNumber(snapshotComponents?.katanaBonusAPY) ??
+      normalizeOptionalNumber(vaultComponents?.katanaBonusAPY),
+    katanaAppRewardsAPR:
+      normalizeOptionalNumber(snapshotComponents?.katanaAppRewardsAPR) ??
+      normalizeOptionalNumber(vaultComponents?.katanaAppRewardsAPR),
+    steerPointsPerDollar:
+      normalizeOptionalNumber(snapshotComponents?.steerPointsPerDollar) ??
+      normalizeOptionalNumber(vaultComponents?.steerPointsPerDollar),
+    fixedRateKatanaRewards
   }
 }
 
@@ -550,17 +594,29 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
   const historical = snapshot?.performance?.historical ?? vault.performance?.historical
   const oracle = snapshot?.performance?.oracle ?? vault.performance?.oracle
   const estimated = snapshot?.performance?.estimated ?? vault.performance?.estimated
+  const isKatanaVault = getVaultChainID(vault) === 747474
 
-  const forwardNet = pickNumber(
-    snapshot?.performance?.estimated?.apy,
-    snapshot?.performance?.estimated?.apr,
-    snapshot?.performance?.oracle?.apy,
-    snapshot?.performance?.oracle?.apr,
-    vault.performance?.oracle?.apy,
-    vault.performance?.estimated?.apy,
-    vault.performance?.historical?.net,
-    historical?.net
-  )
+  const forwardNet = isKatanaVault
+    ? pickNumber(
+        snapshot?.performance?.oracle?.apy,
+        snapshot?.performance?.oracle?.apr,
+        vault.performance?.oracle?.apy,
+        snapshot?.performance?.estimated?.apy,
+        snapshot?.performance?.estimated?.apr,
+        vault.performance?.estimated?.apy,
+        vault.performance?.historical?.net,
+        historical?.net
+      )
+    : pickNumber(
+        snapshot?.performance?.estimated?.apy,
+        snapshot?.performance?.estimated?.apr,
+        snapshot?.performance?.oracle?.apy,
+        snapshot?.performance?.oracle?.apr,
+        vault.performance?.oracle?.apy,
+        vault.performance?.estimated?.apy,
+        vault.performance?.historical?.net,
+        historical?.net
+      )
 
   const forwardType = snapshot?.performance?.estimated
     ? 'estimated'
@@ -581,10 +637,7 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
       withdrawal: 0,
       management: normalizeFee(snapshot?.fees?.managementFee ?? vault.fees?.managementFee)
     },
-    extra: {
-      stakingRewardsAPR: 0,
-      gammaRewardAPR: 0
-    },
+    extra: mapExtraAPR(vault, snapshot),
     points: {
       weekAgo: pickNumber(snapshot?.apy?.weeklyNet ?? null, historical?.weeklyNet),
       monthAgo: pickNumber(snapshot?.apy?.monthlyNet ?? null, historical?.monthlyNet),
@@ -598,7 +651,7 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
     forwardAPR: {
       type: forwardType,
       netAPR: forwardNet,
-      composite: mapEstimatedComposite(snapshot)
+      composite: mapEstimatedComposite(vault, snapshot)
     }
   }
 }

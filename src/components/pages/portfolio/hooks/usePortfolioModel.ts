@@ -72,7 +72,7 @@ export function usePortfolioModel(): TPortfolioModel {
     balances
   } = useWallet()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
-  const { getPrice, katanaAprs, vaults, isLoadingVaultList } = useYearn()
+  const { getPrice, vaults, isLoadingVaultList } = useYearn()
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
 
@@ -199,18 +199,18 @@ export function usePortfolioModel(): TPortfolioModel {
   const getVaultEstimatedAPY = useMemo(
     () =>
       (vault: (typeof holdingsVaults)[number]): number | null => {
-        const apy = calculateVaultEstimatedAPY(vault, katanaAprs)
+        const apy = calculateVaultEstimatedAPY(vault)
         return apy === 0 ? null : apy
       },
-    [katanaAprs]
+    []
   )
 
   const getVaultHistoricalAPY = useMemo(
     () =>
       (vault: (typeof holdingsVaults)[number]): number | null => {
-        return calculateVaultHistoricalAPY(vault, katanaAprs)
+        return calculateVaultHistoricalAPY(vault)
       },
-    [katanaAprs]
+    []
   )
 
   const getVaultValue = useMemo(
