@@ -85,7 +85,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   const vaultShareValueUsdRaw = Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
   const vaultShareValueUsd = formatWidgetValue(vaultShareValueUsdRaw)
 
-  // Calculate deposited USD value and check if vault share value is down >20%
+  // Calculate amount USD to be deposited and check if expected amount is down >20%
   const depositedUsdValue = Number(formatUnits(depositAmountBn, inputTokenDecimals)) * inputTokenUsdPrice
   const isSignificantLoss =
     depositedUsdValue > 0 && vaultShareValueUsdRaw > 0 && vaultShareValueUsdRaw < depositedUsdValue * 0.8
