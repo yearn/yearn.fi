@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { formatUnits } from 'viem'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import type { WithdrawRouteType } from './types'
 
@@ -16,7 +17,12 @@ interface WithdrawDetailsProps {
   // Optional swap info
   showSwapRow: boolean
   withdrawAmountSimple: string
+  withdrawAmountBn: bigint
+  assetDecimals: number
+  assetUsdPrice: number
   assetSymbol?: string
+  // Output USD price for slippage calculation
+  outputUsdPrice: number
   // Route type for "at least" text
   routeType: WithdrawRouteType
   // Modal trigger
@@ -38,7 +44,11 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
   outputSymbol,
   showSwapRow,
   withdrawAmountSimple,
+  withdrawAmountBn,
+  assetDecimals,
+  assetUsdPrice,
   assetSymbol,
+  outputUsdPrice,
   routeType,
   onShowDetailsModal,
   allowance,
@@ -47,6 +57,12 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
   onAllowanceClick
 }) => {
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
+
+  // Calculate if expected output is significantly less than withdraw amount (>20% loss)
+  const withdrawUsdValue = Number(formatUnits(withdrawAmountBn, assetDecimals)) * assetUsdPrice
+  const expectedOutUsdValue = Number(formatUnits(expectedOut, outputDecimals)) * outputUsdPrice
+  const isSignificantLoss =
+    withdrawUsdValue > 0 && expectedOutUsdValue > 0 && expectedOutUsdValue < withdrawUsdValue * 0.8
   return (
     <div>
       <div className="flex flex-col gap-2">
@@ -88,7 +104,7 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
         <div className="flex items-center justify-between h-5">
           <p className="text-sm text-text-secondary">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
           <div className="flex items-center gap-1">
-            <p className="text-sm text-text-primary">
+            <p className={`text-sm ${isSignificantLoss ? 'text-red-500' : 'text-text-primary'}`}>
               {isLoadingQuote ? (
                 <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : expectedOut > 0n ? (

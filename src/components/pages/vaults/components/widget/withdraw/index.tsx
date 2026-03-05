@@ -415,7 +415,11 @@ export const WidgetWithdraw: FC<
       withdrawAmountSimple={
         withdrawAmount.bn > 0n ? formatWidgetValue(withdrawAmount.bn, assetToken?.decimals ?? 18) : '0'
       }
+      withdrawAmountBn={withdrawAmount.bn}
+      assetDecimals={assetToken?.decimals ?? 18}
+      assetUsdPrice={assetTokenPrice}
       assetSymbol={assetToken?.symbol}
+      outputUsdPrice={outputTokenPrice}
       routeType={routeType}
       onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
       allowance={showApprove ? activeFlow.periphery.allowance : undefined}

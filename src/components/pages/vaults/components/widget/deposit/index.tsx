@@ -389,6 +389,7 @@ export const WidgetDeposit: FC<Props> = ({
       depositAmountBn={depositAmount.bn}
       inputTokenSymbol={inputToken?.symbol}
       inputTokenDecimals={inputToken?.decimals ?? 18}
+      inputTokenUsdPrice={inputTokenPrice}
       routeType={routeType}
       isSwap={selectedToken !== assetAddress}
       isLoadingQuote={activeFlow.periphery.isLoadingRoute}

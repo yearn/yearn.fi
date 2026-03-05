@@ -8,6 +8,7 @@ interface DepositDetailsProps {
   depositAmountBn: bigint
   inputTokenSymbol?: string
   inputTokenDecimals: number
+  inputTokenUsdPrice: number
   // Route info
   routeType: DepositRouteType
   isSwap: boolean
@@ -40,6 +41,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   depositAmountBn,
   inputTokenSymbol,
   inputTokenDecimals,
+  inputTokenUsdPrice,
   routeType,
   isSwap,
   isLoadingQuote,
@@ -80,9 +82,14 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
       ? (expectedVaultShares * pricePerShare) / 10n ** BigInt(vaultDecimals)
       : 0n
   const vaultShareValueDisplay = formatWidgetValue(vaultShareValueInAsset, assetTokenDecimals)
-  const vaultShareValueUsd = formatWidgetValue(
-    Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
-  )
+  const vaultShareValueUsdRaw = Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
+  const vaultShareValueUsd = formatWidgetValue(vaultShareValueUsdRaw)
+
+  // Calculate deposited USD value and check if vault share value is down >20%
+  const depositedUsdValue = Number(formatUnits(depositAmountBn, inputTokenDecimals)) * inputTokenUsdPrice
+  const isSignificantLoss =
+    depositedUsdValue > 0 && vaultShareValueUsdRaw > 0 && vaultShareValueUsdRaw < depositedUsdValue * 0.8
+
   return (
     <div>
       <div className="flex flex-col gap-2">
@@ -153,7 +160,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
           >
             Vault share value
           </button>
-          <p className="text-sm text-text-primary">
+          <p className={`text-sm ${isSignificantLoss ? 'text-red-500' : 'text-text-primary'}`}>
             {isLoadingQuote ? (
               <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
             ) : (
