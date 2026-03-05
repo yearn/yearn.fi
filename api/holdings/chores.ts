@@ -8,7 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!cronSecret) {
     console.error('[Chores] CRON_SECRET not configured')
-    return res.status(500).json({ error: 'CRON_SECRET not configured' })
+    return res.status(500).json({ error: 'Server misconfigured' })
   }
 
   if (authHeader !== `Bearer ${cronSecret}`) {
@@ -26,9 +26,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   } catch (error) {
     console.error('[Chores] Failed to run cleanup:', error)
-    return res.status(500).json({
-      error: 'Cleanup failed',
-      message: error instanceof Error ? error.message : String(error)
-    })
+    return res.status(500).json({ error: 'Cleanup failed' })
   }
 }
