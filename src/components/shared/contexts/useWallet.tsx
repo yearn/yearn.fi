@@ -136,7 +136,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       if (!isZeroAddress(toAddress(staking.address))) {
         stakingToVault.set(toAddress(staking.address), vaultAddress)
       }
-    })
+    }
 
     let cumulatedValueInV2Vaults = 0
     let cumulatedValueInV3Vaults = 0
