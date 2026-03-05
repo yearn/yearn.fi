@@ -11,6 +11,7 @@ interface UseDirectWithdrawParams {
   assetAddress: Address
   amount: bigint // desired underlying asset amount
   maxShares?: bigint // full share balance for redeem-all
+  redeemSharesOverride?: bigint // exact vault shares to redeem in fallback unstake->withdraw flows
   redeemAll?: boolean
   pricePerShare: bigint // pre-fetched from component
   account?: Address
@@ -29,20 +30,23 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
       ? (params.amount * 10n ** BigInt(params.vaultDecimals) + params.pricePerShare - 1n) / params.pricePerShare
       : 0n
 
+  const redeemSharesOverride = params.redeemSharesOverride ?? 0n
+  const shouldRedeemExactShares = redeemSharesOverride > 0n
   const redeemAll = !!params.redeemAll && (params.maxShares ?? 0n) > 0n
-  const redeemShares = redeemAll ? (params.maxShares ?? 0n) : 0n
+  const redeemShares = shouldRedeemExactShares ? redeemSharesOverride : redeemAll ? (params.maxShares ?? 0n) : 0n
 
-  const isValidInput = redeemAll ? redeemShares > 0n : params.amount > 0n && requiredShares > 0n
+  const isValidInput =
+    shouldRedeemExactShares || redeemAll ? redeemShares > 0n : params.amount > 0n && requiredShares > 0n
   const prepareWithdrawEnabled = isValidInput && !!params.account && params.enabled
 
   // Prepare withdraw transaction using ERC4626 withdraw function
   // withdraw(assets, receiver, owner) - no approval needed when owner == msg.sender
   const prepareWithdrawErc4626: UseSimulateContractReturnType = useSimulateContract({
     abi: erc4626Abi,
-    functionName: redeemAll ? 'redeem' : 'withdraw',
+    functionName: redeemShares > 0n ? 'redeem' : 'withdraw',
     address: params.vaultAddress,
     args: params.account
-      ? redeemAll
+      ? redeemShares > 0n
         ? [redeemShares, toAddress(params.account), toAddress(params.account)]
         : [params.amount, toAddress(params.account), toAddress(params.account)]
       : undefined,
@@ -55,7 +59,7 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
     abi: vaultAbi,
     functionName: 'withdraw',
     address: params.vaultAddress,
-    args: params.account ? [redeemAll ? redeemShares : requiredShares, toAddress(params.account)] : undefined,
+    args: params.account ? [redeemShares > 0n ? redeemShares : requiredShares, toAddress(params.account)] : undefined,
     account: params.account ? toAddress(params.account) : undefined,
     chainId: params.chainId,
     query: { enabled: prepareWithdrawEnabled && !params.useErc4626 }
@@ -67,7 +71,11 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
     ? params.pricePerShare > 0n
       ? (redeemShares * params.pricePerShare) / 10n ** BigInt(params.vaultDecimals)
       : 0n
-    : params.amount
+    : shouldRedeemExactShares
+      ? params.pricePerShare > 0n
+        ? (redeemShares * params.pricePerShare) / 10n ** BigInt(params.vaultDecimals)
+        : 0n
+      : params.amount
 
   return {
     actions: {

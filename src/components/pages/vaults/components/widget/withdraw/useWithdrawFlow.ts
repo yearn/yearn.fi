@@ -20,8 +20,10 @@ interface UseWithdrawFlowProps {
   currentAmount: bigint
   requiredShares: bigint
   maxShares: bigint
+  redeemSharesOverride?: bigint
   isMaxWithdraw: boolean
   unstakeMaxRedeemShares: bigint
+  allowDirectWithdrawStep?: boolean
   // Account & chain
   account?: Address
   chainId: number
@@ -59,8 +61,10 @@ export const useWithdrawFlow = ({
   currentAmount,
   requiredShares,
   maxShares,
+  redeemSharesOverride,
   isMaxWithdraw,
   unstakeMaxRedeemShares,
+  allowDirectWithdrawStep = true,
   account,
   chainId,
   destinationChainId,
@@ -91,13 +95,17 @@ export const useWithdrawFlow = ({
     assetAddress,
     amount,
     maxShares,
+    redeemSharesOverride,
     redeemAll: isMaxWithdraw,
     pricePerShare,
     account,
     chainId,
     decimals: assetDecimals,
     vaultDecimals,
-    enabled: (routeType === 'DIRECT_WITHDRAW' || routeType === 'DIRECT_UNSTAKE_WITHDRAW') && amount > 0n,
+    enabled:
+      allowDirectWithdrawStep &&
+      (routeType === 'DIRECT_WITHDRAW' || routeType === 'DIRECT_UNSTAKE_WITHDRAW') &&
+      amount > 0n,
     useErc4626
   })
 

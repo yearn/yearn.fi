@@ -74,6 +74,7 @@ export function buildWithdrawTransactionStep({
       confirmMessage: `Approving ${formattedApprovalAmount} ${approvalTokenSymbol || ''}`,
       successTitle: 'Approval successful',
       successMessage: `Approved ${formattedApprovalAmount} ${approvalTokenSymbol || ''}.\nReady to withdraw.`,
+      completesFlow: false,
       notification: approveNotificationParams
     }
   }
@@ -88,6 +89,7 @@ export function buildWithdrawTransactionStep({
         confirmMessage: `Unstaking ${formattedRequiredShares} ${unstakeSymbol}`,
         successTitle: 'Unstake successful!',
         successMessage: `You have unstaked ${formattedRequiredShares} ${unstakeSymbol}.\nPreparing your withdraw.`,
+        completesFlow: false,
         notification: unstakeNotificationParams
       }
     }
@@ -102,6 +104,7 @@ export function buildWithdrawTransactionStep({
       confirmMessage: `Withdrawing ${formattedWithdrawAmount} ${assetTokenSymbol || ''}`,
       successTitle: 'Withdraw successful!',
       successMessage: `You have withdrawn ${formattedWithdrawAmount} ${assetTokenSymbol || ''}.`,
+      completesFlow: true,
       notification: withdrawNotificationParams
     }
   }
@@ -120,6 +123,7 @@ export function buildWithdrawTransactionStep({
       confirmMessage: `${actionVerb} ${formattedWithdrawAmount} ${assetTokenSymbol || ''}`,
       successTitle: 'Transaction Submitted',
       successMessage: `Your cross-chain ${withdrawLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
+      completesFlow: true,
       notification: withdrawNotificationParams
     }
   }
@@ -131,6 +135,7 @@ export function buildWithdrawTransactionStep({
     confirmMessage: `${actionVerb} ${formattedWithdrawAmount} ${assetTokenSymbol || ''}`,
     successTitle: `${withdrawLabel} successful!`,
     successMessage: `You have ${successAction} ${formattedWithdrawAmount} ${assetTokenSymbol || ''}.`,
+    completesFlow: true,
     notification: withdrawNotificationParams
   }
 }
