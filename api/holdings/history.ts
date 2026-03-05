@@ -143,15 +143,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   } catch (error) {
     console.error('Holdings history error:', error)
-    const message = error instanceof Error ? error.message : String(error)
-    const stack = error instanceof Error ? error.stack : undefined
-    const hasAuth = !!process.env.ENVIO_PASSWORD && process.env.ENVIO_PASSWORD !== 'testing'
-    return res.status(502).json({
-      error: 'Failed to fetch historical holdings',
-      message,
-      envioUrl: envioUrl ? 'configured' : 'not configured',
-      authEnabled: hasAuth,
-      stack: process.env.NODE_ENV === 'development' ? stack : undefined
-    })
+
+    if (process.env.NODE_ENV === 'development') {
+      const message = error instanceof Error ? error.message : String(error)
+      const stack = error instanceof Error ? error.stack : undefined
+      return res.status(502).json({
+        error: 'Failed to fetch historical holdings',
+        message,
+        stack
+      })
+    }
+
+    return res.status(502).json({ error: 'Failed to fetch historical holdings' })
   }
 }
