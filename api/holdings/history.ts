@@ -1,7 +1,5 @@
-import { neon } from '@neondatabase/serverless'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-
-const MAX_REQUESTS = 10
+import { checkRateLimit } from '../lib/holdings'
 
 function simpleHash(str: string): string {
   let hash = 0
@@ -28,47 +26,6 @@ function getClientIdentifier(req: VercelRequest): string {
 
 function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
-}
-
-async function checkRateLimit(ip: string): Promise<{ allowed: boolean; retryAfter?: number }> {
-  const databaseUrl = process.env.DATABASE_URL
-  if (!databaseUrl) {
-    return { allowed: true }
-  }
-
-  try {
-    const sql = neon(databaseUrl)
-
-    const result = await sql`
-      INSERT INTO rate_limits (ip, request_count, window_start)
-      VALUES (${ip}, 1, NOW())
-      ON CONFLICT (ip) DO UPDATE SET
-        request_count = CASE
-          WHEN rate_limits.window_start < NOW() - INTERVAL '1 minute'
-          THEN 1
-          ELSE rate_limits.request_count + 1
-        END,
-        window_start = CASE
-          WHEN rate_limits.window_start < NOW() - INTERVAL '1 minute'
-          THEN NOW()
-          ELSE rate_limits.window_start
-        END
-      RETURNING request_count, window_start
-    `
-
-    const { request_count, window_start } = result[0]
-
-    if (request_count > MAX_REQUESTS) {
-      const windowEnd = new Date(window_start).getTime() + 60 * 1000
-      const retryAfter = Math.max(1, Math.ceil((windowEnd - Date.now()) / 1000))
-      return { allowed: false, retryAfter }
-    }
-
-    return { allowed: true }
-  } catch (error) {
-    console.error('[RateLimit] Check failed:', error)
-    return { allowed: true }
-  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
