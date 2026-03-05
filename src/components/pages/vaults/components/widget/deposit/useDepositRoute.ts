@@ -1,7 +1,6 @@
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
-import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
-import type { Address } from 'viem'
+import { type Address, isAddressEqual } from 'viem'
 import type { DepositRouteType } from './types'
 
 interface UseDepositRouteProps {
@@ -17,24 +16,24 @@ interface ResolveDepositRouteTypeProps extends Omit<UseDepositRouteProps, 'chain
   ensoEnabled: boolean
 }
 
-export const resolveDepositRouteType = ({
+export function resolveDepositRouteType({
   depositToken,
   assetAddress,
   destinationToken,
   vaultAddress,
   stakingAddress,
   ensoEnabled
-}: ResolveDepositRouteTypeProps): DepositRouteType => {
+}: ResolveDepositRouteTypeProps): DepositRouteType {
   // Case 1: Direct vault deposit (asset → vault)
-  if (toAddress(depositToken) === toAddress(assetAddress) && toAddress(destinationToken) === toAddress(vaultAddress)) {
+  if (isAddressEqual(depositToken, assetAddress) && isAddressEqual(destinationToken, vaultAddress)) {
     return 'DIRECT_DEPOSIT'
   }
 
   // Case 2: Direct staking (vault → staking)
   if (
-    toAddress(depositToken) === toAddress(vaultAddress) &&
     stakingAddress &&
-    toAddress(destinationToken) === toAddress(stakingAddress)
+    isAddressEqual(depositToken, vaultAddress) &&
+    isAddressEqual(destinationToken, stakingAddress)
   ) {
     return 'DIRECT_STAKE'
   }
@@ -52,24 +51,26 @@ export const resolveDepositRouteType = ({
  * - DIRECT_STAKE: vault → staking (stake vault tokens)
  * - ENSO: all other cases (zaps, cross-chain, etc.)
  */
-export const useDepositRoute = ({
+export function useDepositRoute({
   chainId,
   depositToken,
   assetAddress,
   destinationToken,
   vaultAddress,
   stakingAddress
-}: UseDepositRouteProps): DepositRouteType => {
+}: UseDepositRouteProps): DepositRouteType {
   const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
 
-  return useMemo(() => {
-    return resolveDepositRouteType({
-      depositToken,
-      assetAddress,
-      destinationToken,
-      vaultAddress,
-      stakingAddress,
-      ensoEnabled
-    })
-  }, [ensoEnabled, depositToken, assetAddress, destinationToken, vaultAddress, stakingAddress])
+  return useMemo(
+    () =>
+      resolveDepositRouteType({
+        depositToken,
+        assetAddress,
+        destinationToken,
+        vaultAddress,
+        stakingAddress,
+        ensoEnabled
+      }),
+    [ensoEnabled, depositToken, assetAddress, destinationToken, vaultAddress, stakingAddress]
+  )
 }

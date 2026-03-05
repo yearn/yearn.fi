@@ -19,6 +19,7 @@ import { useAccount } from 'wagmi'
 import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
+import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
@@ -138,27 +139,17 @@ export const WidgetDeposit: FC<Props> = ({
     onPrefillApplied?.()
   }, [prefill, ensoEnabled, assetAddress, chainId, setDepositInput, onPrefillApplied])
 
-  useEffect(() => {
-    if (ensoEnabled) {
-      return
-    }
-
-    const hasNonAssetTokenSelected = selectedToken && toAddress(selectedToken) !== toAddress(assetAddress)
-    const hasCrossChainSelection = selectedChainId !== undefined && selectedChainId !== chainId
-    if (!hasNonAssetTokenSelected && !hasCrossChainSelection && !showTokenSelector) {
-      return
-    }
-
-    if (hasNonAssetTokenSelected) {
-      setSelectedToken(assetAddress)
-    }
-    if (hasCrossChainSelection) {
-      setSelectedChainId(undefined)
-    }
-    if (showTokenSelector) {
-      setShowTokenSelector(false)
-    }
-  }, [ensoEnabled, selectedToken, selectedChainId, showTokenSelector, assetAddress, chainId])
+  useResetEnsoSelection({
+    ensoEnabled,
+    selectedToken,
+    selectedChainId,
+    assetAddress,
+    chainId,
+    showTokenSelector,
+    setSelectedToken,
+    setSelectedChainId,
+    setShowTokenSelector
+  })
 
   useEffect(() => {
     if (!collapseDetails && isDetailsPanelOpen) {
