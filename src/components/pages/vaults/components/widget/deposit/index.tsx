@@ -7,8 +7,6 @@ import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
-import { IconChevron } from '@shared/icons/IconChevron'
-import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
@@ -51,7 +49,6 @@ interface Props {
   onPrefillApplied?: () => void
   hideSettings?: boolean
   disableBorderRadius?: boolean
-  collapseDetails?: boolean
 }
 
 export const WidgetDeposit: FC<Props> = ({
@@ -69,8 +66,7 @@ export const WidgetDeposit: FC<Props> = ({
   prefill,
   onPrefillApplied,
   hideSettings: _hideSettings,
-  disableBorderRadius,
-  collapseDetails
+  disableBorderRadius
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -87,7 +83,6 @@ export const WidgetDeposit: FC<Props> = ({
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
-  const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
   const appliedPrefillRef = useRef<string | null>(null)
 
   const {
@@ -133,12 +128,6 @@ export const WidgetDeposit: FC<Props> = ({
     }
     onPrefillApplied?.()
   }, [prefill, setDepositInput, onPrefillApplied])
-
-  useEffect(() => {
-    if (!collapseDetails && isDetailsPanelOpen) {
-      setIsDetailsPanelOpen(false)
-    }
-  }, [collapseDetails, isDetailsPanelOpen])
 
   const { routeType, activeFlow } = useDepositFlow({
     depositToken,
@@ -403,7 +392,7 @@ export const WidgetDeposit: FC<Props> = ({
       willReceiveStakedShares={willReceiveStakedShares}
       onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
       onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
-      estimatedAnnualReturn={estimatedAnnualReturn}
+      estimatedAnnualReturn={formatWidgetValue(estimatedAnnualReturn)}
       onShowAnnualReturnModal={() => setShowAnnualReturnModal(true)}
       allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
       allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
@@ -483,67 +472,31 @@ export const WidgetDeposit: FC<Props> = ({
     >
       <WidgetHeader title="Deposit" />
       <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
-        {/* Amount Section */}
-        <InputTokenAmount
-          input={depositInput}
-          title="Amount"
-          placeholder="0.00"
-          balance={inputToken?.balance.raw}
-          decimals={inputToken?.decimals}
-          symbol={inputToken?.symbol}
-          disabled={isFetchingMaxQuote}
-          isMaxButtonLoading={isFetchingMaxQuote}
-          onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
-          errorMessage={depositError || undefined}
-          showTokenSelector={ensoEnabled}
-          inputTokenUsdPrice={inputTokenPrice}
-          outputTokenUsdPrice={outputTokenPrice}
-          tokenAddress={inputToken?.address}
-          tokenChainId={inputToken?.chainID}
-          onTokenSelectorClick={() => setShowTokenSelector(true)}
-        />
-
-        {collapseDetails ? (
-          <>
-            <button
-              type="button"
-              onClick={() => setIsDetailsPanelOpen(true)}
-              aria-expanded={isDetailsPanelOpen}
-              className="flex w-full items-center justify-between gap-3 border border-border rounded-lg bg-surface-secondary px-4 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-surface"
-            >
-              <span>Your Transaction Details</span>
-              <IconChevron className="size-4 text-text-secondary" direction="right" />
-            </button>
-            {actionRow}
-          </>
-        ) : (
-          <>
-            {/* Details Section */}
-            {detailsSection}
-
-            {/* Action Button */}
-            {actionRow}
-          </>
-        )}
-      </div>
-
-      {collapseDetails && isDetailsPanelOpen ? (
-        <div className="absolute inset-0 z-10 bg-surface rounded-lg flex flex-col">
-          <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
-            <span className="text-base font-semibold text-text-primary">Your Transaction Details</span>
-            <button
-              type="button"
-              onClick={() => setIsDetailsPanelOpen(false)}
-              aria-label="Close transaction details"
-              className="flex size-7 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
-            >
-              <IconCross className="size-3.5" />
-            </button>
-          </div>
-          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">{detailsSection}</div>
-          <div className="border-t border-border px-6 py-6">{actionRow}</div>
+        {/* Amount + Details Stack */}
+        <div className="flex flex-col gap-3">
+          <InputTokenAmount
+            input={depositInput}
+            title="Amount"
+            placeholder="0.00"
+            balance={inputToken?.balance.raw}
+            decimals={inputToken?.decimals}
+            symbol={inputToken?.symbol}
+            disabled={isFetchingMaxQuote}
+            isMaxButtonLoading={isFetchingMaxQuote}
+            onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
+            errorMessage={depositError || undefined}
+            showTokenSelector={ensoEnabled}
+            inputTokenUsdPrice={inputTokenPrice}
+            outputTokenUsdPrice={outputTokenPrice}
+            tokenAddress={inputToken?.address}
+            tokenChainId={inputToken?.chainID}
+            onTokenSelectorClick={() => setShowTokenSelector(true)}
+          />
+          {detailsSection}
         </div>
-      ) : null}
+
+        {actionRow}
+      </div>
 
       {onOpenSettings ? (
         <SettingsPanel isActive={isSettingsVisible} onClose={onOpenSettings} variant="overlay" />

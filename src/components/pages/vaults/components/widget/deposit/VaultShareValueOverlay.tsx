@@ -31,17 +31,20 @@ export const VaultShareValueOverlay: FC<VaultShareValueOverlayProps> = ({
           </p>
         </div>
 
-        {/* Current value */}
-        <div className="space-y-2">
-          <p className="font-medium text-sm text-text-primary">In your case:</p>
-          <p className="text-sm text-text-secondary">
-            <span className="font-semibold text-text-primary">{sharesAmount} Vault shares</span> will be convertible to{' '}
-            <span className="font-semibold text-text-primary">
-              {shareValue} {assetSymbol}
-            </span>{' '}
-            (${usdValue})
-          </p>
-        </div>
+        {/* Current value - hidden when no deposit amount */}
+        {sharesAmount !== '0' && (
+          <div className="space-y-2">
+            <p className="font-medium text-sm text-text-primary">In your case:</p>
+            <p className="text-sm text-text-secondary">
+              <span className="font-semibold text-text-primary">{sharesAmount} Vault shares</span> will be convertible
+              to{' '}
+              <span className="font-semibold text-text-primary">
+                {shareValue} {assetSymbol}
+              </span>{' '}
+              ({usdValue})
+            </p>
+          </div>
+        )}
       </div>
     </InfoOverlay>
   )
