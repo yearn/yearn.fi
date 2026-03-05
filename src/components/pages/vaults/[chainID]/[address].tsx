@@ -21,6 +21,7 @@ import {
   YBOLD_STAKING_ADDRESS,
   YBOLD_VAULT_ADDRESS
 } from '@pages/vaults/domain/normalizeVault'
+import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType } from '@pages/vaults/types'
@@ -398,6 +399,7 @@ function Index(): ReactElement | null {
     if (!vaultViewInput) return undefined
     return getVaultView(vaultViewInput, mergedSnapshot)
   }, [vaultViewInput, mergedSnapshot])
+  const ensoEnabledForVault = useEnsoEnabled({ chainId, vaultAddress: currentVault?.address })
 
   const isLoadingVault = !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
 
@@ -1209,6 +1211,7 @@ function Index(): ReactElement | null {
                   chainId={chainId}
                   vaultUserData={vaultUserData}
                   onSelectZapToken={handleZapTokenSelect}
+                  showZapTokens={ensoEnabledForVault}
                 />
               </div>
               {shouldShowWidgetRewards ? (

@@ -69,6 +69,7 @@ export const useDepositFlow = ({
 }: UseDepositFlowProps): DepositFlowResult => {
   // Determine routing type
   const routeType = useDepositRoute({
+    chainId,
     depositToken,
     assetAddress,
     destinationToken,

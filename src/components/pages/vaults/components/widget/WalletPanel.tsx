@@ -38,6 +38,7 @@ type WalletPanelProps = {
   chainId: number
   vaultUserData: VaultUserData
   onSelectZapToken?: (token: TToken) => void
+  showZapTokens?: boolean
 }
 
 const WALLET_TABS = [
@@ -65,7 +66,8 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   stakingAddress,
   chainId,
   vaultUserData,
-  onSelectZapToken
+  onSelectZapToken,
+  showZapTokens = true
 }) => {
   const { address, isActive: isWalletActive, openLoginModal } = useWeb3()
   const { cachedEntries } = useNotifications()
@@ -174,6 +176,10 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   }, [address, cachedEntries, relatedAddresses, chainId])
 
   const zapTokens = useMemo(() => {
+    if (!showZapTokens) {
+      return []
+    }
+
     const chainBalances = balances[chainId] || {}
     const excluded = [vaultAddress, stakingAddress].filter(Boolean).map((addr) => toAddress(addr).toLowerCase())
     const tokens = Object.values(chainBalances).filter((token) => {
@@ -196,7 +202,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
         usdLabel: formatUSD(tokenUsd)
       }
     })
-  }, [balances, chainId, vaultAddress, stakingAddress, getPrice, formatTokenAmount])
+  }, [showZapTokens, balances, chainId, vaultAddress, stakingAddress, getPrice, formatTokenAmount])
 
   return (
     <div
@@ -311,45 +317,47 @@ export const WalletPanel: FC<WalletPanelProps> = ({
                       </div>
                     </section>
 
-                    <section className="space-y-3">
-                      <h4 className="text-sm font-semibold text-text-primary">Zap-ready tokens</h4>
-                      {zapTokens.length === 0 ? (
-                        <div className="text-xs text-text-secondary">No wallet tokens available to zap.</div>
-                      ) : (
-                        <div className="space-y-2">
-                          {zapTokens.map(({ token, amountLabel, usdLabel }) => (
-                            <button
-                              key={`${token.chainID}-${token.address}`}
-                              type="button"
-                              onClick={() => onSelectZapToken?.(token)}
-                              className="group relative flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface-secondary px-3 py-2 transition-colors hover:bg-surface"
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <TokenLogo
-                                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${token.chainID}/${token.address.toLowerCase()}/logo-32.png`}
-                                  tokenSymbol={token.symbol}
-                                  tokenName={token.name}
-                                  width={20}
-                                  height={20}
-                                  className="rounded-full"
-                                />
-                                <div className="min-w-0 text-left">
-                                  <div className="text-sm font-semibold text-text-primary">{token.symbol}</div>
-                                  <div className="text-[10px] text-text-secondary truncate">{token.name}</div>
+                    {showZapTokens ? (
+                      <section className="space-y-3">
+                        <h4 className="text-sm font-semibold text-text-primary">Zap-ready tokens</h4>
+                        {zapTokens.length === 0 ? (
+                          <div className="text-xs text-text-secondary">No wallet tokens available to zap.</div>
+                        ) : (
+                          <div className="space-y-2">
+                            {zapTokens.map(({ token, amountLabel, usdLabel }) => (
+                              <button
+                                key={`${token.chainID}-${token.address}`}
+                                type="button"
+                                onClick={() => onSelectZapToken?.(token)}
+                                className="group relative flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface-secondary px-3 py-2 transition-colors hover:bg-surface"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <TokenLogo
+                                    src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${token.chainID}/${token.address.toLowerCase()}/logo-32.png`}
+                                    tokenSymbol={token.symbol}
+                                    tokenName={token.name}
+                                    width={20}
+                                    height={20}
+                                    className="rounded-full"
+                                  />
+                                  <div className="min-w-0 text-left">
+                                    <div className="text-sm font-semibold text-text-primary">{token.symbol}</div>
+                                    <div className="text-[10px] text-text-secondary truncate">{token.name}</div>
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-semibold text-text-primary">{amountLabel}</div>
-                                <div className="text-[10px] text-text-secondary font-medium">({usdLabel})</div>
-                              </div>
-                              <span className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100">
-                                deposit into {vaultName}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </section>
+                                <div className="text-right">
+                                  <div className="text-sm font-semibold text-text-primary">{amountLabel}</div>
+                                  <div className="text-[10px] text-text-secondary font-medium">({usdLabel})</div>
+                                </div>
+                                <span className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100">
+                                  deposit into {vaultName}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </section>
+                    ) : null}
                   </>
                 ) : null}
 

@@ -77,7 +77,7 @@ export const WidgetDeposit: FC<Props> = ({
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, isAutoStakingEnabled, getPrice } = useYearn()
   const trackEvent = usePlausible()
-  const ensoEnabled = useEnsoEnabled()
+  const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
 
   const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
@@ -126,13 +126,39 @@ export const WidgetDeposit: FC<Props> = ({
     const key = `${prefill.address}-${prefill.chainId}-${prefill.amount}`
     if (appliedPrefillRef.current === key) return
     appliedPrefillRef.current = key
-    setSelectedToken(prefill.address)
-    setSelectedChainId(prefill.chainId)
+
+    const canApplyPrefilledToken =
+      ensoEnabled || (toAddress(prefill.address) === toAddress(assetAddress) && prefill.chainId === chainId)
+
+    setSelectedToken(canApplyPrefilledToken ? prefill.address : assetAddress)
+    setSelectedChainId(canApplyPrefilledToken ? prefill.chainId : undefined)
     if (prefill.amount !== undefined) {
       setDepositInput(prefill.amount)
     }
     onPrefillApplied?.()
-  }, [prefill, setDepositInput, onPrefillApplied])
+  }, [prefill, ensoEnabled, assetAddress, chainId, setDepositInput, onPrefillApplied])
+
+  useEffect(() => {
+    if (ensoEnabled) {
+      return
+    }
+
+    const hasNonAssetTokenSelected = selectedToken && toAddress(selectedToken) !== toAddress(assetAddress)
+    const hasCrossChainSelection = selectedChainId !== undefined && selectedChainId !== chainId
+    if (!hasNonAssetTokenSelected && !hasCrossChainSelection && !showTokenSelector) {
+      return
+    }
+
+    if (hasNonAssetTokenSelected) {
+      setSelectedToken(assetAddress)
+    }
+    if (hasCrossChainSelection) {
+      setSelectedChainId(undefined)
+    }
+    if (showTokenSelector) {
+      setShowTokenSelector(false)
+    }
+  }, [ensoEnabled, selectedToken, selectedChainId, showTokenSelector, assetAddress, chainId])
 
   useEffect(() => {
     if (!collapseDetails && isDetailsPanelOpen) {

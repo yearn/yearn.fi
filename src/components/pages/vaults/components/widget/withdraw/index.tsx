@@ -50,7 +50,7 @@ export const WidgetWithdraw: FC<
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, getPrice } = useYearn()
   const trackEvent = usePlausible()
-  const ensoEnabled = useEnsoEnabled()
+  const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
 
   const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
@@ -101,6 +101,28 @@ export const WidgetWithdraw: FC<
       setIsDetailsPanelOpen(false)
     }
   }, [collapseDetails, isDetailsPanelOpen])
+
+  useEffect(() => {
+    if (ensoEnabled) {
+      return
+    }
+
+    const hasNonAssetTokenSelected = selectedToken && toAddress(selectedToken) !== toAddress(assetAddress)
+    const hasCrossChainSelection = selectedChainId !== undefined && selectedChainId !== chainId
+    if (!hasNonAssetTokenSelected && !hasCrossChainSelection && !showTokenSelector) {
+      return
+    }
+
+    if (hasNonAssetTokenSelected) {
+      setSelectedToken(assetAddress)
+    }
+    if (hasCrossChainSelection) {
+      setSelectedChainId(undefined)
+    }
+    if (showTokenSelector) {
+      setShowTokenSelector(false)
+    }
+  }, [ensoEnabled, selectedToken, selectedChainId, showTokenSelector, assetAddress, chainId])
 
   const totalVaultBalance: TNormalizedBN =
     withdrawalSource === 'vault' && vault
@@ -535,7 +557,7 @@ export const WidgetWithdraw: FC<
               zapNotificationText={
                 isUnstake
                   ? 'This transaction will unstake'
-                  : withdrawToken !== assetAddress
+                  : ensoEnabled && withdrawToken !== assetAddress
                     ? '⚡ This transaction will use Enso to Zap to:'
                     : undefined
               }
