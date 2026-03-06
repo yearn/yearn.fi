@@ -10,6 +10,7 @@ const DEPOSITS_QUERY = `
       chainId
       blockNumber
       blockTimestamp
+      transactionHash
       owner
       assets
       shares
@@ -25,6 +26,7 @@ const WITHDRAWALS_QUERY = `
       chainId
       blockNumber
       blockTimestamp
+      transactionHash
       owner
       assets
       shares
@@ -40,6 +42,7 @@ const TRANSFERS_IN_QUERY = `
       chainId
       blockNumber
       blockTimestamp
+      transactionHash
       sender
       receiver
       value
@@ -55,6 +58,7 @@ const TRANSFERS_OUT_QUERY = `
       chainId
       blockNumber
       blockTimestamp
+      transactionHash
       sender
       receiver
       value
@@ -73,6 +77,7 @@ const V2_DEPOSITS_QUERY = `
       chainId
       blockNumber
       blockTimestamp
+      transactionHash
       recipient
       amount
       shares
@@ -88,6 +93,7 @@ const V2_WITHDRAWALS_QUERY = `
       chainId
       blockNumber
       blockTimestamp
+      transactionHash
       recipient
       amount
       shares
@@ -233,6 +239,7 @@ function normalizeV2Deposit(v2: V2DepositEvent): DepositEvent {
     chainId: v2.chainId,
     blockNumber: v2.blockNumber,
     blockTimestamp: v2.blockTimestamp,
+    transactionHash: v2.transactionHash,
     owner: v2.recipient,
     assets: v2.amount,
     shares: v2.shares
@@ -246,6 +253,7 @@ function normalizeV2Withdraw(v2: V2WithdrawEvent): WithdrawEvent {
     chainId: v2.chainId,
     blockNumber: v2.blockNumber,
     blockTimestamp: v2.blockTimestamp,
+    transactionHash: v2.transactionHash,
     owner: v2.recipient,
     assets: v2.amount,
     shares: v2.shares

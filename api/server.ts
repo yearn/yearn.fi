@@ -148,6 +148,42 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
   }
 }
 
+async function handleHoldingsPnl(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const versionParam = url.searchParams.get('version')
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address' }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address' }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const { calculatePnL } = await import('./lib/holdings/services/pnl')
+    const pnl = await calculatePnL(address, version)
+
+    if (pnl.vaults.length === 0) {
+      return Response.json({ error: 'No vault positions found for address' }, { status: 404 })
+    }
+
+    return Response.json(pnl, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120'
+      }
+    })
+  } catch (error) {
+    console.error('Error calculating PnL:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json({ error: 'Failed to calculate PnL', message, stack }, { status: 502 })
+  }
+}
+
 async function handleHoldingsHistory(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
@@ -229,6 +265,8 @@ async function main() {
           response = await handleEnsoRoute(req)
         } else if (url.pathname === '/api/holdings/history') {
           response = await handleHoldingsHistory(req)
+        } else if (url.pathname === '/api/holdings/pnl') {
+          response = await handleHoldingsPnl(req)
         } else {
           response = new Response('Not found', { status: 404 })
         }
@@ -250,6 +288,7 @@ async function main() {
 
   console.log('🚀 API server running on http://localhost:3001')
   console.log('📊 Holdings API: http://localhost:3001/api/holdings/history?address=0x...')
+  console.log('💰 PnL API: http://localhost:3001/api/holdings/pnl?address=0x...')
 }
 
 main().catch((error) => {
