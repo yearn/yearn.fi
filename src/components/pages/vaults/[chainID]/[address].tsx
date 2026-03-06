@@ -26,6 +26,7 @@ import {
   YBOLD_STAKING_ADDRESS,
   YBOLD_VAULT_ADDRESS
 } from '@pages/vaults/domain/normalizeVault'
+import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from '@pages/vaults/domain/vaultWarnings'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType } from '@pages/vaults/types'
@@ -191,7 +192,7 @@ const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
   }
 }
 
-function RetiredVaultAlert({ message, className }: { message: string; className: string }): ReactElement {
+function VaultWarningAlert({ message, className }: { message: string; className: string }): ReactElement {
   const { title, body } = splitFirstSentence(message)
 
   return (
@@ -233,7 +234,7 @@ function Index(): ReactElement | null {
   const chainId = Number(params.chainID)
   const { getBalance, onRefresh } = useWallet()
   const { address } = useWeb3()
-  const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
+  const { vaults, allVaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [mobileDrawerAction, setMobileDrawerAction] = useState<WidgetActionType>(WidgetActionType.Deposit)
@@ -335,6 +336,11 @@ function Index(): ReactElement | null {
     const resolvedAddress = toAddress(params.address)
     return vaults[resolvedAddress]
   }, [params.address, vaults])
+
+  const metadataVault = useMemo(() => {
+    if (!params.address) return undefined
+    return allVaults[toAddress(params.address)]
+  }, [allVaults, params.address])
 
   const hasVaultList = Object.keys(vaults).length > 0
 
@@ -454,6 +460,12 @@ function Index(): ReactElement | null {
     if (!isRetired || !currentVault) return null
     return getRetiredVaultAlertMessage({ vault: currentVault, hasUserFundsInVault })
   }, [currentVault, hasUserFundsInVault, isRetired])
+  const shouldShowNonYearnVaultAlert = useMemo(() => {
+    return isNonYearnErc4626Vault({
+      vault: metadataVault,
+      snapshot: mergedSnapshot
+    })
+  }, [metadataVault, mergedSnapshot])
   const widgetActions = useMemo(() => {
     if (isRetired || isMigratable) {
       return canShowMigrateAction ? [WidgetActionType.Migrate, WidgetActionType.Withdraw] : [WidgetActionType.Withdraw]
@@ -1103,7 +1115,11 @@ function Index(): ReactElement | null {
           />
 
           {isRetired && retiredVaultAlertMessage ? (
-            <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-4 py-3" />
+            <VaultWarningAlert message={retiredVaultAlertMessage} className="px-4 py-3" />
+          ) : null}
+
+          {shouldShowNonYearnVaultAlert ? (
+            <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-4 py-3" />
           ) : null}
 
           {Number.isInteger(chainId) && (
@@ -1249,7 +1265,11 @@ function Index(): ReactElement | null {
 
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
             {isRetired && retiredVaultAlertMessage ? (
-              <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
+              <VaultWarningAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
+            ) : null}
+
+            {shouldShowNonYearnVaultAlert ? (
+              <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-6 py-4" />
             ) : null}
 
             {renderableSections.map((section) => {
