@@ -36,7 +36,7 @@ const scaleAmountDecimals = (value: bigint, fromDecimals: number, toDecimals: nu
 
 export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Props): ReactElement {
   const { address: account } = useAccount()
-  const { unlockedVault, lockedVault, isLoading } = useYvUsdVaults()
+  const { unlockedVault, lockedVault, assetAddress: yvUsdAssetAddress, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
   const [showCooldownOverlay, setShowCooldownOverlay] = useState(false)
   const [showCancelCooldownOverlay, setShowCancelCooldownOverlay] = useState(false)
@@ -45,7 +45,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
   const [nowTimestamp, setNowTimestamp] = useState(() => Math.floor(Date.now() / 1000))
   const activeVariant = variant ?? 'unlocked'
 
-  const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? assetAddress)
+  const unlockedAssetAddress = toAddress(yvUsdAssetAddress ?? unlockedVault?.token.address ?? assetAddress)
   const lockedAssetAddress = YVUSD_UNLOCKED_ADDRESS
 
   const unlockedUserData = useVaultUserData({

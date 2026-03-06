@@ -21,6 +21,7 @@ type TYvUsdMetrics = {
 }
 
 type TYvUsdVaults = {
+  assetAddress: `0x${string}`
   baseVault?: TKongVaultView
   listVault?: TKongVaultView
   unlockedVault?: TKongVaultView
@@ -169,6 +170,15 @@ const buildAprOverlay = (vault?: TYvUsdAprServiceVault): TYvUsdAprOverlay | unde
 
 const hasInfinifiPoints = (vault?: TYvUsdAprServiceVault): boolean =>
   (vault?.meta?.strategies || []).some((strategy) => strategy.points === true)
+
+const resolveAddress = (value?: string): `0x${string}` | undefined => {
+  if (!value) return undefined
+  try {
+    return toAddress(value)
+  } catch {
+    return undefined
+  }
+}
 
 const FALLBACK_ASSET = {
   address: toAddress('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
@@ -357,6 +367,12 @@ export function useYvUsdVaults(): TYvUsdVaults {
 
   const unlockedAprOverlay = useMemo(() => buildAprOverlay(unlockedAprServiceVault), [unlockedAprServiceVault])
   const lockedAprOverlay = useMemo(() => buildAprOverlay(lockedAprServiceVault), [lockedAprServiceVault])
+  const baseAssetAddress = 'asset' in baseVault ? baseVault.asset?.address : undefined
+  const assetAddress =
+    resolveAddress(unlockedAprServiceVault?.meta?.asset) ||
+    resolveAddress(lockedAprServiceVault?.meta?.asset) ||
+    resolveAddress(baseAssetAddress) ||
+    FALLBACK_ASSET.address
 
   const unlockedVault = useMemo(() => {
     if (!baseVault) return undefined
@@ -408,6 +424,7 @@ export function useYvUsdVaults(): TYvUsdVaults {
   }, [unlockedVault, lockedVault, unlockedAprServiceVault, lockedAprServiceVault])
 
   return {
+    assetAddress,
     baseVault: getVaultView(baseVault),
     listVault,
     unlockedVault,
