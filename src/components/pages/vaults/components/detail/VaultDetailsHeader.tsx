@@ -339,9 +339,9 @@ function VaultOverviewCard({
   const isLockedApyVariant = yvusdApyVariant === 'locked'
   const selectedForwardApy = isLockedApyVariant ? lockedForwardApy : unlockedForwardApy
   const selectedHistoricalApy = isLockedApyVariant ? lockedHistorical : unlockedHistorical
-  const selectedHasInfinifiPoints = isLockedApyVariant
-    ? Boolean(yvUsdMetrics?.locked.hasInfinifiPoints)
-    : Boolean(yvUsdMetrics?.unlocked.hasInfinifiPoints)
+  const showInfinifiPointsNote = Boolean(
+    yvUsdMetrics?.locked.hasInfinifiPoints || yvUsdMetrics?.unlocked.hasInfinifiPoints
+  )
   const selectedApyIcon = isLockedApyVariant ? (
     <IconLock className="size-4 text-text-secondary" />
   ) : (
@@ -374,7 +374,7 @@ function VaultOverviewCard({
       lockedValue={lockedForwardApy}
       unlockedValue={unlockedForwardApy}
       iconClassName="size-4"
-      hasInfinifiPointsNote={selectedHasInfinifiPoints}
+      hasInfinifiPointsNote={showInfinifiPointsNote}
     />
   ) : undefined
   const yvUsdHistoricalApyTooltip = isYvUsd ? (
@@ -382,7 +382,7 @@ function VaultOverviewCard({
       lockedValue={lockedHistorical}
       unlockedValue={unlockedHistorical}
       iconClassName="size-4"
-      hasInfinifiPointsNote={selectedHasInfinifiPoints}
+      hasInfinifiPointsNote={showInfinifiPointsNote}
     />
   ) : undefined
   const yvUsdTvlTooltip = isYvUsd ? (
