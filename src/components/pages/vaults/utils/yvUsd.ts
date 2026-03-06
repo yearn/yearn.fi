@@ -7,7 +7,7 @@ export const YVUSD_UNLOCKED_ADDRESS = toAddress('0x696d02Db93291651ED510704c9b28
 export const YVUSD_LOCKED_ADDRESS = toAddress('0xAaaFEa48472f77563961Cdb53291DEDfB46F9040') as Address
 
 export const YVUSD_LOCKED_COOLDOWN_DAYS = 14
-export const YVUSD_WITHDRAW_WINDOW_DAYS = 5
+export const YVUSD_WITHDRAW_WINDOW_DAYS = 7
 const configuredYvUsdAprEndpoint = import.meta.env.VITE_YVUSD_APR_SERVICE_API?.trim().replace(/\/$/, '')
 export const YVUSD_APR_SERVICE_ENDPOINT = configuredYvUsdAprEndpoint?.startsWith('/')
   ? configuredYvUsdAprEndpoint
