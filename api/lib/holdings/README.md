@@ -115,7 +115,8 @@ USD Value = 100 × 1.05 × 1.00 = $105.00
 | `defillama.ts` | DefiLlama API | Fetch historical token prices |
 | `cache.ts` | PostgreSQL | Cache daily USD totals per user + token prices |
 | `holdings.ts` | Local | Build position timeline, calculate share balances |
-| `aggregator.ts` | Local | Orchestrate all services, main entry point |
+| `aggregator.ts` | Local | Orchestrate history services, main entry point |
+| `pnl.ts` | Local | FIFO cost basis tracking, PnL calculation |
 
 ### Data Types
 
@@ -226,6 +227,52 @@ Response:
         "tokenAddress": "0x..."
       },
       "status": "ok"
+    }
+  ]
+}
+```
+
+### GET `/api/holdings/pnl`
+Calculate profit and loss using FIFO cost basis accounting.
+
+```bash
+curl "http://localhost:3001/api/holdings/pnl?address=0x..."
+```
+
+Query params:
+- `address` (required): Ethereum address
+- `version` (optional): `v2`, `v3`, or `all` (default: `all`)
+
+Response:
+```json
+{
+  "address": "0x...",
+  "summary": {
+    "totalDepositedUsd": 10000.00,
+    "totalWithdrawnUsd": 0,
+    "currentValueUsd": 10500.00,
+    "realizedPnLUsd": 0,
+    "unrealizedPnLUsd": 500.00,
+    "totalPnLUsd": 500.00,
+    "totalPnLPercent": 5.0
+  },
+  "vaults": [
+    {
+      "vaultAddress": "0x...",
+      "chainId": 1,
+      "tokenSymbol": "USDC",
+      "tokenDecimals": 6,
+      "totalDeposited": 10000.0,
+      "totalWithdrawn": 0,
+      "currentShares": 9523.81,
+      "currentValue": 10500.0,
+      "realizedPnL": 0,
+      "unrealizedPnL": 500.0,
+      "totalPnL": 500.0,
+      "currentValueUsd": 10500.00,
+      "realizedPnLUsd": 0,
+      "unrealizedPnLUsd": 500.00,
+      "totalPnLUsd": 500.00
     }
   ]
 }
@@ -377,3 +424,72 @@ CREATE INDEX IF NOT EXISTS idx_token_prices_token_key ON token_prices(token_key)
 
 - `holdings_totals`: ~365 rows per user for full history
 - `token_prices`: Shared cache, reduces DefiLlama API calls from ~45s to ~100ms for repeat requests
+
+## PnL Calculation
+
+The `/api/holdings/pnl` endpoint calculates profit and loss using FIFO (First In, First Out) cost basis accounting.
+
+### Algorithm
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    FIFO Cost Basis Flow                      │
+│                                                              │
+│  1. Fetch all user events (deposits, withdrawals, transfers)│
+│                                                              │
+│  2. For each vault, process events chronologically:         │
+│                                                              │
+│     DEPOSIT:                                                 │
+│     └─► Create new FIFO lot with cost basis                 │
+│         costPerShare = assets / shares                       │
+│                                                              │
+│     WITHDRAWAL:                                              │
+│     └─► Consume shares from oldest lots (FIFO)              │
+│     └─► realizedPnL += tokensReceived - costBasis           │
+│                                                              │
+│     TRANSFER IN:                                             │
+│     └─► Create lot with zero cost basis (all gains)         │
+│                                                              │
+│     TRANSFER OUT:                                            │
+│     └─► Remove shares from FIFO (no realized PnL)           │
+│                                                              │
+│  3. Calculate unrealized PnL from remaining shares:         │
+│     unrealizedPnL = (shares × PPS) - remainingCostBasis     │
+│                                                              │
+│  4. totalPnL = realizedPnL + unrealizedPnL                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Formulas
+
+```
+Realized PnL (per withdrawal):
+  = Tokens Received - Cost Basis of Burned Shares
+
+Unrealized PnL:
+  = Current Value - Remaining Cost Basis
+  = (Remaining Shares × Current PPS) - Σ(lot.shares × lot.costPerShare)
+
+Total PnL:
+  = Realized PnL + Unrealized PnL
+```
+
+### Example
+
+```
+User deposits:
+  1. 1000 USDC → 952.38 shares (PPS = 1.05) → costPerShare = 1.05
+  2. 500 USDC → 476.19 shares (PPS = 1.05) → costPerShare = 1.05
+
+User withdraws:
+  - 500 shares → receives 550 USDC (PPS = 1.10)
+  - Cost basis (FIFO): 500 × 1.05 = 525 USDC
+  - Realized PnL: 550 - 525 = 25 USDC
+
+Remaining position:
+  - 928.57 shares × 1.10 PPS = 1021.43 USDC
+  - Cost basis: 928.57 × 1.05 = 975 USDC
+  - Unrealized PnL: 1021.43 - 975 = 46.43 USDC
+
+Total PnL: 25 + 46.43 = 71.43 USDC
+```

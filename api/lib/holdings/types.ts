@@ -17,6 +17,7 @@ export interface DepositEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  transactionHash: string
   owner: string
   assets: string
   shares: string
@@ -28,6 +29,7 @@ export interface WithdrawEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  transactionHash: string
   owner: string
   assets: string
   shares: string
@@ -39,6 +41,7 @@ export interface V2DepositEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  transactionHash: string
   recipient: string
   amount: string
   shares: string
@@ -50,6 +53,7 @@ export interface V2WithdrawEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  transactionHash: string
   recipient: string
   amount: string
   shares: string
@@ -61,6 +65,7 @@ export interface TransferEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  transactionHash: string
   sender: string
   receiver: string
   value: string
@@ -111,4 +116,46 @@ export interface TimelineEvent {
   blockNumber: number
   blockTimestamp: number
   sharesChange: bigint
+}
+
+// PnL Types
+
+export interface FifoLot {
+  shares: bigint
+  assets: bigint // total assets for this lot (keeps BigInt precision)
+  timestamp: number
+}
+
+export interface VaultPnL {
+  vaultAddress: string
+  chainId: number
+  tokenSymbol: string
+  tokenDecimals: number
+  // In underlying token terms
+  totalDeposited: number
+  totalWithdrawn: number
+  currentShares: number
+  currentValue: number // shares * PPS
+  realizedPnL: number
+  unrealizedPnL: number
+  totalPnL: number
+  // In USD terms
+  currentValueUsd: number
+  realizedPnLUsd: number
+  unrealizedPnLUsd: number
+  totalPnLUsd: number
+}
+
+export interface PnLResponse {
+  address: string
+  summary: {
+    totalDepositedUsd: number
+    totalWithdrawnUsd: number
+    currentValueUsd: number
+    realizedPnLUsd: number
+    unrealizedPnLUsd: number
+    totalPnLUsd: number
+    totalPnLPercent: number
+  }
+  vaults: VaultPnL[]
 }
