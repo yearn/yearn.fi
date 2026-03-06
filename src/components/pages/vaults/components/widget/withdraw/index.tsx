@@ -216,6 +216,9 @@ export const WidgetWithdraw: FC<
     isDebouncing: withdrawAmount.isDebouncing,
     useErc4626: usesErc4626
   })
+  const effectiveDirectWithdrawPrepare = blockDirectWithdrawStep
+    ? undefined
+    : directWithdrawFlow.actions.prepareWithdraw
 
   const isCrossChain = destinationChainId !== chainId
   const { approveNotificationParams, unstakeNotificationParams, withdrawNotificationParams } = useWithdrawNotifications(
@@ -322,7 +325,7 @@ export const WidgetWithdraw: FC<
         approvePrepare: activeFlow.actions.prepareApprove,
         activeWithdrawPrepare: activeFlow.actions.prepareWithdraw,
         directUnstakePrepare: directUnstakeFlow.actions.prepareWithdraw,
-        directWithdrawPrepare: directWithdrawFlow.actions.prepareWithdraw,
+        directWithdrawPrepare: effectiveDirectWithdrawPrepare,
         fallbackStep,
         routeType,
         isCrossChain,
@@ -342,7 +345,7 @@ export const WidgetWithdraw: FC<
       activeFlow.actions.prepareApprove,
       activeFlow.actions.prepareWithdraw,
       directUnstakeFlow.actions.prepareWithdraw,
-      directWithdrawFlow.actions.prepareWithdraw,
+      effectiveDirectWithdrawPrepare,
       fallbackStep,
       routeType,
       isCrossChain,
@@ -372,11 +375,8 @@ export const WidgetWithdraw: FC<
   const handleTransactionStepSuccess = useCallback(
     (label: string) => {
       if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && label === 'Unstake') {
-        const currentVaultShares = vault?.balance.raw ?? 0n
-
         setFallbackStep('withdraw')
         setWithdrawalSource('vault')
-        setVaultSharesBeforeUnstake(currentVaultShares)
         setAwaitingPostUnstakeShares(isMaxWithdraw)
         setRedeemSharesOverride(isMaxWithdraw ? 0n : requiredShares)
 
@@ -391,7 +391,6 @@ export const WidgetWithdraw: FC<
     [
       routeType,
       isMaxWithdraw,
-      vault?.balance.raw,
       requiredShares,
       vaultAddress,
       chainId,
@@ -400,6 +399,13 @@ export const WidgetWithdraw: FC<
       refetchVaultUserData
     ]
   )
+
+  const handleOpenTransactionOverlay = useCallback(() => {
+    if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && fallbackStep === 'unstake' && isMaxWithdraw) {
+      setVaultSharesBeforeUnstake(vault?.balance.raw ?? 0n)
+    }
+    setShowTransactionOverlay(true)
+  }, [routeType, fallbackStep, isMaxWithdraw, vault?.balance.raw])
 
   const handleWithdrawSuccess = useCallback(() => {
     const sharesToWithdraw = formatUnits(withdrawAmount.bn, assetToken?.decimals ?? 18)
@@ -519,7 +525,7 @@ export const WidgetWithdraw: FC<
           </Button>
         ) : (
           <Button
-            onClick={() => setShowTransactionOverlay(true)}
+            onClick={handleOpenTransactionOverlay}
             variant={isFetchingQuote ? 'busy' : 'filled'}
             isBusy={isFetchingQuote}
             disabled={isWithdrawCtaDisabled({

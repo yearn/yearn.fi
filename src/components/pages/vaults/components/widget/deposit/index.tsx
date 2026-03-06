@@ -558,6 +558,7 @@ export const WidgetDeposit: FC<Props> = ({
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
         isLastStep={!needsApproval}
+        deferOnAllCompleteUntilClose={routeType === 'ENSO'}
         autoContinueToNextStep
         autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleDepositSuccess}

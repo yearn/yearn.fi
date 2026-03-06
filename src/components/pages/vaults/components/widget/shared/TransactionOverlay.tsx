@@ -96,6 +96,7 @@ type TransactionOverlayProps = {
   step?: TransactionStep
   isLastStep?: boolean
   onAllComplete?: () => void
+  deferOnAllCompleteUntilClose?: boolean
   onStepSuccess?: (label: string) => void
   topOffset?: string
   contentAlign?: 'center' | 'start'
@@ -109,6 +110,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   step,
   isLastStep = true,
   onAllComplete,
+  deferOnAllCompleteUntilClose = false,
   onStepSuccess,
   contentAlign = 'center',
   autoContinueToNextStep = false,
@@ -117,6 +119,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const [overlayState, setOverlayState] = useState<OverlayState>('success')
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [hasCompletedFlow, setHasCompletedFlow] = useState(false)
+  const [completedStepSnapshot, setCompletedStepSnapshot] = useState<TransactionStep | null>(null)
 
   const writeContract = useWriteContract()
   const { signTypedDataAsync } = useSignTypedData()
@@ -172,17 +175,47 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const hasAdvancedFromStepRef = useRef<string | null>(null)
   const autoContinueNonceRef = useRef(0)
   const writeContractResetRef = useRef(writeContract.reset)
+  const hasPendingCompletionRef = useRef(false)
   const [isAutoContinuing, setIsAutoContinuing] = useState(false)
 
   useEffect(() => {
     writeContractResetRef.current = writeContract.reset
   }, [writeContract.reset])
 
+  const runAllCompleteIfPending = useCallback(() => {
+    if (!hasPendingCompletionRef.current) return
+    hasPendingCompletionRef.current = false
+    onAllComplete?.()
+  }, [onAllComplete])
+
+  const finalizeSuccessState = useCallback(
+    (completedAllSteps: boolean, completedStep?: TransactionStep | null) => {
+      setOverlayState('success')
+      setHasCompletedFlow(completedAllSteps)
+      setCompletedStepSnapshot(completedAllSteps ? (completedStep ?? executedStepRef.current ?? null) : null)
+
+      if (!completedAllSteps) {
+        hasPendingCompletionRef.current = false
+        return
+      }
+
+      if (deferOnAllCompleteUntilClose) {
+        hasPendingCompletionRef.current = true
+        return
+      }
+
+      hasPendingCompletionRef.current = false
+      onAllComplete?.()
+    },
+    [deferOnAllCompleteUntilClose, onAllComplete]
+  )
+
   const setStepExecutionContext = useCallback((nextStep: TransactionStep, nextIsLastStep: boolean) => {
     executedStepRef.current = nextStep
     wasLastStepRef.current = nextStep.completesFlow ?? nextIsLastStep
     hasReportedStepSuccessRef.current = false
     hasAdvancedFromStepRef.current = null
+    setCompletedStepSnapshot(null)
   }, [])
 
   const resetTxState = useCallback((clearNotification = false) => {
@@ -196,9 +229,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   // Reset state when overlay closes
   useEffect(() => {
     if (!isOpen) {
+      runAllCompleteIfPending()
       setOverlayState('idle')
       setErrorMessage('')
       setHasCompletedFlow(false)
+      setCompletedStepSnapshot(null)
       resetTxState(true)
       hasStartedRef.current = false
       hasAutoContinuedFromStepRef.current = null
@@ -207,10 +242,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       executedStepRef.current = null
       wasLastStepRef.current = false
       executedStepBlockRef.current = undefined
+      hasPendingCompletionRef.current = false
       autoContinueNonceRef.current += 1
       setIsAutoContinuing(false)
     }
-  }, [isOpen, resetTxState])
+  }, [isOpen, resetTxState, runAllCompleteIfPending])
 
   // Create notification with txHash (called after signing succeeds)
   const handleCreateNotification = useCallback(
@@ -282,12 +318,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           hasReportedStepSuccessRef.current = true
           onStepSuccess?.(currentStep.label)
         }
-        setOverlayState('success')
-        setHasCompletedFlow(completedAllSteps)
-
-        if (completedAllSteps) {
-          onAllComplete?.()
-        }
+        finalizeSuccessState(completedAllSteps, currentStep)
 
         if (currentStep.showConfetti) {
           setTimeout(() => reward(), 100)
@@ -302,7 +333,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         setErrorMessage('Failed to sign permit. Please try again.')
       }
     },
-    [isLastStep, onAllComplete, onClose, onStepSuccess, reward, setStepExecutionContext, signTypedDataAsync]
+    [finalizeSuccessState, isLastStep, onClose, onStepSuccess, reward, setStepExecutionContext, signTypedDataAsync]
   )
 
   const executeContractStep = useCallback(
@@ -362,8 +393,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
             setNotificationId(undefined)
             const completedAllSteps = executedStepRef.current?.completesFlow ?? wasLastStepRef.current
             if (completedAllSteps) {
-              setHasCompletedFlow(true)
-              onAllComplete?.()
+              finalizeSuccessState(true, currentStep)
             }
             return
           }
@@ -409,9 +439,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     [
       client,
       currentChainId,
+      finalizeSuccessState,
       handleCreateNotification,
       isLastStep,
-      onAllComplete,
       onClose,
       reward,
       setStepExecutionContext,
@@ -490,7 +520,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     }
   }, [step?.prepare.isError, step?.prepare.error, step?.label])
 
-  const executedStepCompletesFlow = executedStepRef.current?.completesFlow ?? wasLastStepRef.current
+  const successStep = completedStepSnapshot ?? executedStepRef.current
+  const executedStepCompletesFlow = successStep?.completesFlow ?? wasLastStepRef.current
   const isTerminalSuccess = overlayState === 'success' && (hasCompletedFlow || executedStepCompletesFlow)
   const isPreparingNextStep =
     overlayState === 'pending' && receipt.isSuccess && !wasLastStepRef.current && executedStepAutoContinues
@@ -565,8 +596,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       }
 
       const completedAllSteps = executedStepRef.current?.completesFlow ?? wasLastStepRef.current
-      setOverlayState('success')
-      setHasCompletedFlow(completedAllSteps)
+      finalizeSuccessState(completedAllSteps, executedStepRef.current)
       resetTxState()
 
       // Update notification to success
@@ -577,11 +607,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       if (executedStepRef.current?.showConfetti) {
         setTimeout(() => reward(), 100)
       }
-
-      // Trigger onAllComplete immediately when last step succeeds
-      if (completedAllSteps) {
-        onAllComplete?.()
-      }
     }
   }, [
     receipt.isSuccess,
@@ -589,7 +614,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     overlayState,
     reward,
     handleUpdateNotification,
-    onAllComplete,
     onStepSuccess,
     isStepReady,
     step?.label,
@@ -598,6 +622,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     executedStepAutoContinues,
     executedStepLabel,
     advanceToNextStep,
+    finalizeSuccessState,
     waitForAutoContinueBlock
   ])
 
@@ -760,12 +785,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
                 <span id={confettiId} className="absolute top-1/2 left-1/2" />
                 <AnimatedCheckmark isVisible />
               </div>
-              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">
-                {executedStepRef.current?.successTitle}
-              </h3>
-              <p className="text-sm text-text-secondary whitespace-pre-line mb-6">
-                {executedStepRef.current?.successMessage}
-              </p>
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{successStep?.successTitle}</h3>
+              <p className="text-sm text-text-secondary whitespace-pre-line mb-6">{successStep?.successMessage}</p>
               <Button
                 onClick={handleNextStep}
                 variant={!isTerminalSuccess && (!isStepReady || isAutoContinuing) ? 'busy' : 'filled'}
@@ -774,7 +795,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
                 className="w-full max-w-xs"
                 classNameOverride="yearn--button--nextgen w-full"
               >
-                {executedStepRef.current?.notification?.type === 'crosschain zap'
+                {successStep?.notification?.type === 'crosschain zap'
                   ? 'Got it'
                   : isTerminalSuccess
                     ? 'Nice'

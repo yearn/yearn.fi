@@ -2,6 +2,7 @@ import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
 import { erc4626Abi } from '@shared/contracts/abi/4626.abi'
 import { vaultAbi } from '@shared/contracts/abi/vaultV2.abi'
 import { toAddress } from '@shared/utils'
+import { useMemo } from 'react'
 import type { Address } from 'viem'
 import { maxUint256 } from 'viem'
 import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
@@ -22,6 +23,22 @@ interface UseDirectWithdrawParams {
   useErc4626: boolean
 }
 
+function areContractArgsEqual(actual?: readonly unknown[], expected?: readonly unknown[]): boolean {
+  if (!actual && !expected) return true
+  if (!actual || !expected || actual.length !== expected.length) return false
+
+  return actual.every((value, index) => {
+    const nextValue = expected[index]
+    if (typeof value === 'bigint' || typeof nextValue === 'bigint') {
+      return value === nextValue
+    }
+    if (typeof value === 'string' && typeof nextValue === 'string') {
+      return value.toLowerCase() === nextValue.toLowerCase()
+    }
+    return value === nextValue
+  })
+}
+
 export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWithdrawFlowReturn {
   // Calculate required vault shares from desired underlying amount
   // Formula: requiredShares = (desiredUnderlying * 10^vaultDecimals) / pricePerShare
@@ -38,19 +55,26 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
   const isValidInput =
     shouldRedeemExactShares || redeemAll ? redeemShares > 0n : params.amount > 0n && requiredShares > 0n
   const prepareWithdrawEnabled = isValidInput && !!params.account && params.enabled
+  const erc4626FunctionName = redeemShares > 0n ? 'redeem' : 'withdraw'
+  const erc4626Args: readonly [bigint, Address, Address] | undefined =
+    prepareWithdrawEnabled && params.account
+      ? redeemShares > 0n
+        ? [redeemShares, toAddress(params.account), toAddress(params.account)]
+        : [params.amount, toAddress(params.account), toAddress(params.account)]
+      : undefined
+  const withdrawV2Args: readonly [bigint, Address] | undefined =
+    prepareWithdrawEnabled && params.account
+      ? [redeemShares > 0n ? redeemShares : requiredShares, toAddress(params.account)]
+      : undefined
 
   // Prepare withdraw transaction using ERC4626 withdraw function
   // withdraw(assets, receiver, owner) - no approval needed when owner == msg.sender
   const prepareWithdrawErc4626: UseSimulateContractReturnType = useSimulateContract({
     abi: erc4626Abi,
-    functionName: redeemShares > 0n ? 'redeem' : 'withdraw',
+    functionName: erc4626FunctionName,
     address: params.vaultAddress,
-    args: params.account
-      ? redeemShares > 0n
-        ? [redeemShares, toAddress(params.account), toAddress(params.account)]
-        : [params.amount, toAddress(params.account), toAddress(params.account)]
-      : undefined,
-    account: params.account ? toAddress(params.account) : undefined,
+    args: erc4626Args,
+    account: prepareWithdrawEnabled && params.account ? toAddress(params.account) : undefined,
     chainId: params.chainId,
     query: { enabled: prepareWithdrawEnabled && params.useErc4626 }
   })
@@ -59,13 +83,45 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
     abi: vaultAbi,
     functionName: 'withdraw',
     address: params.vaultAddress,
-    args: params.account ? [redeemShares > 0n ? redeemShares : requiredShares, toAddress(params.account)] : undefined,
-    account: params.account ? toAddress(params.account) : undefined,
+    args: withdrawV2Args,
+    account: prepareWithdrawEnabled && params.account ? toAddress(params.account) : undefined,
     chainId: params.chainId,
     query: { enabled: prepareWithdrawEnabled && !params.useErc4626 }
   })
 
-  const prepareWithdraw = params.useErc4626 ? prepareWithdrawErc4626 : prepareWithdrawV2
+  const prepareWithdraw = useMemo((): UseSimulateContractReturnType => {
+    const livePrepare = params.useErc4626 ? prepareWithdrawErc4626 : prepareWithdrawV2
+    const expectedArgs = params.useErc4626 ? erc4626Args : withdrawV2Args
+    const expectedFunctionName = params.useErc4626 ? erc4626FunctionName : 'withdraw'
+    const request = livePrepare.data?.request as
+      | {
+          args?: readonly unknown[]
+          functionName?: string
+        }
+      | undefined
+    const hasCurrentRequest =
+      prepareWithdrawEnabled &&
+      request?.functionName === expectedFunctionName &&
+      areContractArgsEqual(request.args, expectedArgs)
+
+    if (hasCurrentRequest) {
+      return livePrepare
+    }
+
+    return {
+      ...livePrepare,
+      data: undefined,
+      isSuccess: false
+    } as UseSimulateContractReturnType
+  }, [
+    prepareWithdrawEnabled,
+    params.useErc4626,
+    prepareWithdrawErc4626,
+    prepareWithdrawV2,
+    erc4626Args,
+    withdrawV2Args,
+    erc4626FunctionName
+  ])
 
   const expectedOut = redeemAll
     ? params.pricePerShare > 0n
