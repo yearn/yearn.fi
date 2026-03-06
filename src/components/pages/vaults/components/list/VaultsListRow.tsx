@@ -211,6 +211,7 @@ export function VaultsListRow({
     <YvUsdApyTooltipContent
       lockedValue={resolvedYvUsdMetrics.lockedApy}
       unlockedValue={resolvedYvUsdMetrics.unlockedApy}
+      hasInfinifiPointsNote={Boolean(yvUsdMetrics?.locked.hasInfinifiPoints)}
     />
   ) : undefined
 

@@ -10,6 +10,7 @@ type TYvUsdTooltipProps = {
   unlockedValue: number
   className?: string
   iconClassName?: string
+  hasInfinifiPointsNote?: boolean
 }
 
 const YvUsdTooltipRow = ({
@@ -45,7 +46,8 @@ export function YvUsdApyTooltipContent({
   lockedValue,
   unlockedValue,
   className,
-  iconClassName = 'size-3'
+  iconClassName = 'size-3',
+  hasInfinifiPointsNote = false
 }: TYvUsdTooltipProps): ReactElement {
   return (
     <div
@@ -66,6 +68,11 @@ export function YvUsdApyTooltipContent({
           symbol="percent"
           options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
         />
+        {hasInfinifiPointsNote ? (
+          <p className="border-t border-border pt-2 text-text-secondary">
+            {'This vault earns Infinifi points through the sIUSD looper strategy.'}
+          </p>
+        ) : null}
       </div>
     </div>
   )

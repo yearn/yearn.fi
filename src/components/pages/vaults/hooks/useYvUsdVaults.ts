@@ -17,6 +17,7 @@ import { useYvUsdAprService } from './useYvUsdAprService'
 type TYvUsdMetrics = {
   apy: number
   tvl: number
+  hasInfinifiPoints: boolean
 }
 
 type TYvUsdVaults = {
@@ -165,6 +166,9 @@ const buildAprOverlay = (vault?: TYvUsdAprServiceVault): TYvUsdAprOverlay | unde
 
   return overlay
 }
+
+const hasInfinifiPoints = (vault?: TYvUsdAprServiceVault): boolean =>
+  (vault?.meta?.strategies || []).some((strategy) => strategy.points === true)
 
 const FALLBACK_ASSET = {
   address: toAddress('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
@@ -392,14 +396,16 @@ export function useYvUsdVaults(): TYvUsdVaults {
     return {
       unlocked: {
         apy: getVaultApy(unlockedVault),
-        tvl: getVaultTvl(unlockedVault)
+        tvl: getVaultTvl(unlockedVault),
+        hasInfinifiPoints: hasInfinifiPoints(unlockedAprServiceVault)
       },
       locked: {
         apy: getVaultApy(lockedVault),
-        tvl: getVaultTvl(lockedVault)
+        tvl: getVaultTvl(lockedVault),
+        hasInfinifiPoints: hasInfinifiPoints(lockedAprServiceVault)
       }
     }
-  }, [unlockedVault, lockedVault])
+  }, [unlockedVault, lockedVault, unlockedAprServiceVault, lockedAprServiceVault])
 
   return {
     baseVault: getVaultView(baseVault),
