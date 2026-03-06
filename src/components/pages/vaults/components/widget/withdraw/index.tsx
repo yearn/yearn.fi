@@ -206,7 +206,6 @@ export const WidgetWithdraw: FC<
     chainId,
     destinationChainId,
     outputChainId: outputToken?.chainID ?? chainId,
-    assetDecimals: assetToken?.decimals ?? 18,
     vaultDecimals: vault?.decimals ?? 18,
     outputDecimals: outputToken?.decimals ?? 18,
     pricePerShare,

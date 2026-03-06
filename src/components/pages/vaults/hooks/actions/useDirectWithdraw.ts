@@ -9,7 +9,6 @@ import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
 
 interface UseDirectWithdrawParams {
   vaultAddress: Address
-  assetAddress: Address
   amount: bigint // desired underlying asset amount
   maxShares?: bigint // full share balance for redeem-all
   redeemSharesOverride?: bigint // exact vault shares to redeem in fallback unstake->withdraw flows
@@ -17,10 +16,28 @@ interface UseDirectWithdrawParams {
   pricePerShare: bigint // pre-fetched from component
   account?: Address
   chainId: number
-  decimals: number // asset decimals
   vaultDecimals: number // vault decimals
   enabled: boolean
   useErc4626: boolean
+}
+
+function computeExpectedOut(params: {
+  amount: bigint
+  pricePerShare: bigint
+  redeemAll: boolean
+  shouldRedeemExactShares: boolean
+  redeemShares: bigint
+  vaultDecimals: number
+}): bigint {
+  if (!params.redeemAll && !params.shouldRedeemExactShares) {
+    return params.amount
+  }
+
+  if (params.pricePerShare === 0n) {
+    return 0n
+  }
+
+  return (params.redeemShares * params.pricePerShare) / 10n ** BigInt(params.vaultDecimals)
 }
 
 function areContractArgsEqual(actual?: readonly unknown[], expected?: readonly unknown[]): boolean {
@@ -55,17 +72,16 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
   const isValidInput =
     shouldRedeemExactShares || redeemAll ? redeemShares > 0n : params.amount > 0n && requiredShares > 0n
   const prepareWithdrawEnabled = isValidInput && !!params.account && params.enabled
+  const accountAddress = prepareWithdrawEnabled && params.account ? toAddress(params.account) : undefined
   const erc4626FunctionName = redeemShares > 0n ? 'redeem' : 'withdraw'
-  const erc4626Args: readonly [bigint, Address, Address] | undefined =
-    prepareWithdrawEnabled && params.account
-      ? redeemShares > 0n
-        ? [redeemShares, toAddress(params.account), toAddress(params.account)]
-        : [params.amount, toAddress(params.account), toAddress(params.account)]
-      : undefined
-  const withdrawV2Args: readonly [bigint, Address] | undefined =
-    prepareWithdrawEnabled && params.account
-      ? [redeemShares > 0n ? redeemShares : requiredShares, toAddress(params.account)]
-      : undefined
+  const erc4626Args: readonly [bigint, Address, Address] | undefined = accountAddress
+    ? redeemShares > 0n
+      ? [redeemShares, accountAddress, accountAddress]
+      : [params.amount, accountAddress, accountAddress]
+    : undefined
+  const withdrawV2Args: readonly [bigint, Address] | undefined = accountAddress
+    ? [redeemShares > 0n ? redeemShares : requiredShares, accountAddress]
+    : undefined
 
   // Prepare withdraw transaction using ERC4626 withdraw function
   // withdraw(assets, receiver, owner) - no approval needed when owner == msg.sender
@@ -74,7 +90,7 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
     functionName: erc4626FunctionName,
     address: params.vaultAddress,
     args: erc4626Args,
-    account: prepareWithdrawEnabled && params.account ? toAddress(params.account) : undefined,
+    account: accountAddress,
     chainId: params.chainId,
     query: { enabled: prepareWithdrawEnabled && params.useErc4626 }
   })
@@ -84,7 +100,7 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
     functionName: 'withdraw',
     address: params.vaultAddress,
     args: withdrawV2Args,
-    account: prepareWithdrawEnabled && params.account ? toAddress(params.account) : undefined,
+    account: accountAddress,
     chainId: params.chainId,
     query: { enabled: prepareWithdrawEnabled && !params.useErc4626 }
   })
@@ -123,15 +139,14 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
     erc4626FunctionName
   ])
 
-  const expectedOut = redeemAll
-    ? params.pricePerShare > 0n
-      ? (redeemShares * params.pricePerShare) / 10n ** BigInt(params.vaultDecimals)
-      : 0n
-    : shouldRedeemExactShares
-      ? params.pricePerShare > 0n
-        ? (redeemShares * params.pricePerShare) / 10n ** BigInt(params.vaultDecimals)
-        : 0n
-      : params.amount
+  const expectedOut = computeExpectedOut({
+    amount: params.amount,
+    pricePerShare: params.pricePerShare,
+    redeemAll,
+    shouldRedeemExactShares,
+    redeemShares,
+    vaultDecimals: params.vaultDecimals
+  })
 
   return {
     actions: {

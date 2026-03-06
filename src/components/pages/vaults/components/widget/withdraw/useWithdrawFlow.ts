@@ -29,8 +29,6 @@ interface UseWithdrawFlowProps {
   chainId: number
   destinationChainId: number
   outputChainId: number
-  // Decimals
-  assetDecimals: number
   vaultDecimals: number
   outputDecimals: number
   // Price per share
@@ -69,7 +67,6 @@ export const useWithdrawFlow = ({
   chainId,
   destinationChainId,
   outputChainId,
-  assetDecimals,
   vaultDecimals,
   outputDecimals,
   pricePerShare,
@@ -92,7 +89,6 @@ export const useWithdrawFlow = ({
   // Direct withdraw flow (vault → asset)
   const directWithdraw = useDirectWithdraw({
     vaultAddress,
-    assetAddress,
     amount,
     maxShares,
     redeemSharesOverride,
@@ -100,7 +96,6 @@ export const useWithdrawFlow = ({
     pricePerShare,
     account,
     chainId,
-    decimals: assetDecimals,
     vaultDecimals,
     enabled:
       allowDirectWithdrawStep &&

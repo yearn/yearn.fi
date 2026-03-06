@@ -47,7 +47,21 @@ export type TransactionStep = {
   onPermitSigned?: (signature: `0x${string}`) => void
 }
 
-const getPrepareDebugInfo = (prepare?: UseSimulateContractReturnType) => {
+type TPrepareDebugInfo = {
+  isSuccess: boolean
+  isError: boolean
+  isLoading: boolean
+  isFetching: boolean
+  status: UseSimulateContractReturnType['status']
+  error?: string
+  request?: {
+    chainId?: number
+    address?: unknown
+    functionName?: unknown
+  }
+}
+
+function getPrepareDebugInfo(prepare?: UseSimulateContractReturnType): TPrepareDebugInfo | undefined {
   if (!prepare) return undefined
   const request = prepare.data?.request as any
 
@@ -68,13 +82,37 @@ const getPrepareDebugInfo = (prepare?: UseSimulateContractReturnType) => {
   }
 }
 
-const getStepDebugInfo = (step?: TransactionStep) => {
+function getStepDebugInfo(
+  step?: TransactionStep
+): { step: 'missing' } | { label: string; isPermit?: boolean; prepare?: TPrepareDebugInfo } {
   if (!step) return { step: 'missing' }
   return {
     label: step.label,
     isPermit: step.isPermit,
     prepare: getPrepareDebugInfo(step.prepare)
   }
+}
+
+function getSuccessButtonLabel(params: {
+  isCrossChainNotification: boolean
+  isTerminalSuccess: boolean
+  isAutoContinuing: boolean
+  executedStepAutoContinues: boolean
+  currentStepLabel?: string
+}): string {
+  if (params.isCrossChainNotification) {
+    return 'Got it'
+  }
+
+  if (params.isTerminalSuccess) {
+    return 'Nice'
+  }
+
+  if (params.executedStepAutoContinues || params.isAutoContinuing) {
+    return 'Continuing...'
+  }
+
+  return params.currentStepLabel || 'Continue'
 }
 
 function isUserRejectionError(error: any): boolean {
@@ -386,15 +424,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
           if (isCrossChain) {
             await handleCreateNotification(result.hash, currentStep.notification, 'submitted')
-            setOverlayState('success')
             if (currentStep.showConfetti) {
               setTimeout(() => reward(), 100)
             }
             setNotificationId(undefined)
             const completedAllSteps = executedStepRef.current?.completesFlow ?? wasLastStepRef.current
-            if (completedAllSteps) {
-              finalizeSuccessState(true, currentStep)
-            }
+            finalizeSuccessState(completedAllSteps, currentStep)
             return
           }
 
@@ -525,6 +560,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const isTerminalSuccess = overlayState === 'success' && (hasCompletedFlow || executedStepCompletesFlow)
   const isPreparingNextStep =
     overlayState === 'pending' && receipt.isSuccess && !wasLastStepRef.current && executedStepAutoContinues
+  const isSuccessButtonBusy = !isTerminalSuccess && (!isStepReady || isAutoContinuing)
+  const successButtonLabel = getSuccessButtonLabel({
+    isCrossChainNotification: successStep?.notification?.type === 'crosschain zap',
+    isTerminalSuccess,
+    isAutoContinuing,
+    executedStepAutoContinues,
+    currentStepLabel: step?.label
+  })
 
   const handleNextStep = useCallback(() => {
     if (isAutoContinuing) return
@@ -789,19 +832,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
               <p className="text-sm text-text-secondary whitespace-pre-line mb-6">{successStep?.successMessage}</p>
               <Button
                 onClick={handleNextStep}
-                variant={!isTerminalSuccess && (!isStepReady || isAutoContinuing) ? 'busy' : 'filled'}
-                isBusy={!isTerminalSuccess && (!isStepReady || isAutoContinuing)}
-                disabled={!isTerminalSuccess && (!isStepReady || isAutoContinuing)}
+                variant={isSuccessButtonBusy ? 'busy' : 'filled'}
+                isBusy={isSuccessButtonBusy}
+                disabled={isSuccessButtonBusy}
                 className="w-full max-w-xs"
                 classNameOverride="yearn--button--nextgen w-full"
               >
-                {successStep?.notification?.type === 'crosschain zap'
-                  ? 'Got it'
-                  : isTerminalSuccess
-                    ? 'Nice'
-                    : executedStepAutoContinues || isAutoContinuing
-                      ? 'Continuing...'
-                      : step?.label || 'Continue'}
+                {successButtonLabel}
               </Button>
             </>
           )}
