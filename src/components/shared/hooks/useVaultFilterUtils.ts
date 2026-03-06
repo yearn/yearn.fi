@@ -13,6 +13,7 @@ import {
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { getNativeTokenWrapperContract } from '@pages/vaults/utils/nativeTokens'
+import type { TDict } from '@shared/types'
 import type { TAddress } from '@shared/types/address'
 import type { TNormalizedBN } from '@shared/types/mixed'
 import { isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
@@ -40,6 +41,14 @@ type TTokenAndChain = { address: TAddress; chainID: number }
 type TBalanceGetter = (params: TTokenAndChain) => TNormalizedBN
 type TPriceGetter = (params: TTokenAndChain) => { normalized: number }
 type TTokenGetter = (params: TTokenAndChain) => { value?: number }
+type TStakingConversionMap = Record<string, bigint>
+
+type TVaultHoldingsUsdOptions = {
+  allVaults?: TDict<TVaultLike>
+  stakingConvertedAssets?: TStakingConversionMap
+}
+
+const zeroNormalizedBalance = toNormalizedBN(0n, 18)
 
 const getVaultSharePriceUsd = (vault: TVaultLike, getPrice: TPriceGetter): number => {
   const chainID = getVaultChainID(vault)
@@ -130,34 +139,46 @@ export function getVaultHoldingsUsdValue(
   vault: TVaultLike,
   getToken: TTokenGetter,
   getBalance: TBalanceGetter,
-  getPrice: TPriceGetter
+  getPrice: TPriceGetter,
+  options?: TVaultHoldingsUsdOptions
 ): number {
   const chainID = getVaultChainID(vault)
   const address = getVaultAddress(vault)
   const staking = getVaultStaking(vault)
-  const token = getVaultToken(vault)
+  const allVaults = options?.allVaults ?? {}
+  const stakingConvertedAssets = options?.stakingConvertedAssets ?? {}
 
   const vaultToken = getToken({ address, chainID })
   const vaultDirectValue = Number(vaultToken.value || 0)
-  const vaultShares = Number(getBalance({ address, chainID }).normalized || 0)
+  const vaultShareBalance = getBalance({ address, chainID })
+  const vaultShares = Number(vaultShareBalance.normalized || 0)
 
   const canUseStaking = !isZeroAddress(staking.address)
   const stakingToken = canUseStaking ? getToken({ address: staking.address, chainID }) : null
   const stakingDirectValue = Number(stakingToken?.value || 0)
-  const stakingShares = canUseStaking ? Number(getBalance({ address: staking.address, chainID }).normalized || 0) : 0
+  const stakingShareBalance = canUseStaking ? getBalance({ address: staking.address, chainID }) : zeroNormalizedBalance
+  const stakingShares = Number(stakingShareBalance.normalized || 0)
+  const stakingConversionKey = `${chainID}/${toAddress(staking.address)}`
+  const convertedStakingAssets = stakingConvertedAssets[stakingConversionKey]
+  const stakingVault = canUseStaking ? allVaults[toAddress(staking.address)] : undefined
 
-  const vaultSharePrice = Number(getPrice({ address, chainID }).normalized || 0)
-  const pricePerShare = Number(getVaultAPR(vault).pricePerShare.today || 0)
-  const resolvedAssetPrice = Number(getPrice({ address: token.address, chainID }).normalized || 0)
-  const assetPrice = resolvedAssetPrice > 0 ? resolvedAssetPrice : Number(getVaultTVL(vault).price || 0)
-
-  const resolvePositionValue = (directValue: number, shares: number): number => {
+  const resolvePositionValue = (positionVault: TVaultLike, directValue: number, shares: number): number => {
     if (Number.isFinite(directValue) && directValue > 0) {
       return directValue
     }
     if (!Number.isFinite(shares) || shares <= 0) {
       return 0
     }
+    const positionChainID = getVaultChainID(positionVault)
+    const positionAddress = getVaultAddress(positionVault)
+    const positionToken = getVaultToken(positionVault)
+    const vaultSharePrice = Number(getPrice({ address: positionAddress, chainID: positionChainID }).normalized || 0)
+    const pricePerShare = Number(getVaultAPR(positionVault).pricePerShare.today || 0)
+    const resolvedAssetPrice = Number(
+      getPrice({ address: positionToken.address, chainID: positionChainID }).normalized || 0
+    )
+    const assetPrice = resolvedAssetPrice > 0 ? resolvedAssetPrice : Number(getVaultTVL(positionVault).price || 0)
+
     if (Number.isFinite(vaultSharePrice) && vaultSharePrice > 0) {
       const viaVaultPrice = shares * vaultSharePrice
       if (Number.isFinite(viaVaultPrice)) {
@@ -173,8 +194,28 @@ export function getVaultHoldingsUsdValue(
     return 0
   }
 
-  const totalValue =
-    resolvePositionValue(vaultDirectValue, vaultShares) + resolvePositionValue(stakingDirectValue, stakingShares)
+  const resolveStakingValue = (): number => {
+    if (!canUseStaking) {
+      return 0
+    }
+
+    if (Number.isFinite(stakingDirectValue) && stakingDirectValue > 0) {
+      return stakingDirectValue
+    }
+
+    if (stakingVault) {
+      return resolvePositionValue(stakingVault, 0, stakingShares)
+    }
+
+    if (convertedStakingAssets !== undefined && convertedStakingAssets > 0n) {
+      const convertedShares = toNormalizedBN(convertedStakingAssets, getVaultDecimals(vault)).normalized
+      return resolvePositionValue(vault, 0, convertedShares)
+    }
+
+    return resolvePositionValue(vault, 0, stakingShares)
+  }
+
+  const totalValue = resolvePositionValue(vault, vaultDirectValue, vaultShares) + resolveStakingValue()
   if (!Number.isFinite(totalValue)) {
     return 0
   }

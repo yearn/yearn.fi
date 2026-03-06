@@ -27,8 +27,13 @@ function mergeBalanceTokenMetadata(current: TUseBalancesTokens, next: TUseBalanc
     isStakingToken: Boolean(
       current.isStakingToken || next.isStakingToken || current.for === 'staking' || next.for === 'staking'
     ),
+    isCatalogVault:
+      current.isCatalogVault === false || next.isCatalogVault === false
+        ? false
+        : (current.isCatalogVault ?? next.isCatalogVault),
     isStakingOnlyPair: Boolean(current.isStakingOnlyPair || next.isStakingOnlyPair),
     isVaultBackedStaking: Boolean(current.isVaultBackedStaking || next.isVaultBackedStaking),
+    holdingsAliasVaultAddress: current.holdingsAliasVaultAddress || next.holdingsAliasVaultAddress,
     pairedVaultAddress: current.pairedVaultAddress || next.pairedVaultAddress,
     pairedStakingAddress: current.pairedStakingAddress || next.pairedStakingAddress
   }

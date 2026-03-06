@@ -29,9 +29,7 @@ import { useMediaQuery } from '@react-hookz/web'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { useYearn } from '@shared/contexts/useYearn'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
-import { getVaultHoldingsUsdValue } from '@shared/hooks/useVaultFilterUtils'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { cl, formatAmount, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
@@ -130,8 +128,7 @@ export function VaultsListRow({
   const network = getNetwork(chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const { address } = useWeb3()
-  const { getToken, getBalance } = useWallet()
-  const { getPrice } = useYearn()
+  const { getVaultHoldingsUsd } = useWallet()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const [isExpandedState, setIsExpandedState] = useState(false)
   const isExpanded = isExpandedProp ?? isExpandedState
@@ -264,8 +261,8 @@ export function VaultsListRow({
     if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
       return 0
     }
-    return getVaultHoldingsUsdValue(currentVault, getToken, getBalance, getPrice)
-  }, [showHoldingsChip, mobileSecondaryMetric, currentVault, getToken, getBalance, getPrice])
+    return getVaultHoldingsUsd(currentVault)
+  }, [showHoldingsChip, mobileSecondaryMetric, currentVault, getVaultHoldingsUsd])
 
   useEffect(() => {
     if (isExpanded) {

@@ -10,6 +10,20 @@ const coerceNullableBigNumberish = z
   .union([z.number(), z.string(), z.null()])
   .transform((value) => (value === null ? null : String(value)))
 
+const stakingRewardSchema = z
+  .object({
+    address: addressSchema.optional().catch('0x0000000000000000000000000000000000000000'),
+    name: z.string().optional().default('').catch(''),
+    symbol: z.string().optional().default('').catch(''),
+    decimals: z.number().optional().default(18).catch(18),
+    price: coerceNullableNumber.optional().catch(null),
+    isFinished: z.boolean().optional().default(false).catch(false),
+    finishedAt: coerceNullableNumber.optional().catch(null),
+    apr: coerceNullableNumber.optional().catch(null),
+    perWeek: coerceNullableNumber.optional().catch(null)
+  })
+  .passthrough()
+
 export const kongVaultListItemSchema = z.object({
   chainId: z.number(),
   address: addressSchema,
@@ -105,7 +119,9 @@ export const kongVaultListItemSchema = z.object({
   staking: z
     .object({
       address: addressSchema.nullable(),
-      available: z.boolean()
+      available: z.boolean(),
+      source: z.string().optional().default('').catch(''),
+      rewards: z.array(stakingRewardSchema).optional().default([]).catch([])
     })
     .nullish(),
 
@@ -116,3 +132,4 @@ export const kongVaultListSchema = z.array(kongVaultListItemSchema)
 
 export type TKongVaultListItem = z.infer<typeof kongVaultListItemSchema>
 export type TKongVaultList = z.infer<typeof kongVaultListSchema>
+export type TKongVaultListItemStakingReward = z.infer<typeof stakingRewardSchema>

@@ -11,6 +11,7 @@ import {
   getVaultTVL,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { getHoldingsAliasVaultAddress } from '@pages/vaults/domain/normalizeVault'
 import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
 import {
   deriveAssetCategory,
@@ -186,6 +187,9 @@ export function useV3VaultFilter(
     }
 
     Object.values(vaults).forEach((vault) => {
+      if (getHoldingsAliasVaultAddress(getVaultAddress(vault))) {
+        return
+      }
       if (!shouldIncludeVault(vault)) {
         return
       }
@@ -198,6 +202,9 @@ export function useV3VaultFilter(
     })
 
     Object.values(allVaults).forEach((vault) => {
+      if (getHoldingsAliasVaultAddress(getVaultAddress(vault))) {
+        return
+      }
       if (!shouldIncludeVault(vault)) {
         return
       }

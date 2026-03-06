@@ -179,7 +179,13 @@ const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
     staking: snapshot.staking
       ? {
           address: snapshot.staking.address ?? null,
-          available: snapshot.staking.available
+          available: snapshot.staking.available,
+          source: snapshot.staking.source ?? '',
+          rewards: (snapshot.staking.rewards ?? []).map((reward) => ({
+            ...reward,
+            decimals: reward.decimals ?? 18,
+            isFinished: reward.isFinished ?? false
+          }))
         }
       : null
   }

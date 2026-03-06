@@ -13,8 +13,8 @@ import { useEffect, useMemo } from 'react'
 const DEFAULT_CHAIN_IDS = [1, 10, 137, 146, 250, 8453, 42161, 747474]
 const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/list/vaults`
 
-const isCatalogYearnVault = (item: TKongVaultListItem): boolean =>
-  item.origin === 'yearn' || item.inclusion?.isYearn === true
+export const isCatalogYearnVault = (item: TKongVaultListItem): boolean =>
+  item.origin === 'yearn' && item.inclusion?.isYearn !== false
 
 function useFetchYearnVaults(
   chainIDs?: number[] | undefined,

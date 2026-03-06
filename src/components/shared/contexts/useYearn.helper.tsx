@@ -8,6 +8,7 @@ import {
   getVaultToken,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { getHoldingsAliasVaultAddress } from '@pages/vaults/domain/normalizeVault'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
@@ -28,8 +29,13 @@ function mergeTokenMetadata(existing: TUseBalancesTokens, incoming: TUseBalances
     for: existing.for || incoming.for,
     isVaultToken: Boolean(existing.isVaultToken || incoming.isVaultToken) || undefined,
     isStakingToken: Boolean(existing.isStakingToken || incoming.isStakingToken) || undefined,
+    isCatalogVault:
+      existing.isCatalogVault === false || incoming.isCatalogVault === false
+        ? false
+        : (existing.isCatalogVault ?? incoming.isCatalogVault),
     isStakingOnlyPair: Boolean(existing.isStakingOnlyPair || incoming.isStakingOnlyPair) || undefined,
     isVaultBackedStaking: Boolean(existing.isVaultBackedStaking || incoming.isVaultBackedStaking) || undefined,
+    holdingsAliasVaultAddress: existing.holdingsAliasVaultAddress || incoming.holdingsAliasVaultAddress,
     pairedVaultAddress: existing.pairedVaultAddress || incoming.pairedVaultAddress,
     pairedStakingAddress: existing.pairedStakingAddress || incoming.pairedStakingAddress
   }
@@ -42,10 +48,12 @@ function upsertToken(tokens: TDict<TUseBalancesTokens>, key: string, incoming: T
 
 export function useYearnTokens({
   vaults,
+  catalogVaults,
   isLoadingVaultList,
   isEnabled = true
 }: {
   vaults: TDict<TKongVault>
+  catalogVaults?: TDict<TKongVault>
   isLoadingVaultList: boolean
   isEnabled?: boolean
 }): TUseBalancesTokens[] {
@@ -118,6 +126,11 @@ export function useYearnTokens({
     const vaultAddressKeys = new Set(
       allVaults.map((vault) => `${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`)
     )
+    const catalogVaultKeys = new Set(
+      Object.values(catalogVaults ?? {}).map(
+        (vault) => `${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
+      )
+    )
 
     allVaults.forEach((vault?: TKongVault): void => {
       if (!vault) {
@@ -132,6 +145,7 @@ export function useYearnTokens({
       const token = getVaultToken(vault)
       const staking = getVaultStaking(vault)
       const vaultKey = `${chainID}/${address}`
+      const holdingsAliasVaultAddress = getHoldingsAliasVaultAddress(address)
       const stakingAddress = !isZeroAddress(toAddress(staking.address)) ? toAddress(staking.address) : undefined
       const hasStaking = Boolean(stakingAddress)
       const isVaultBackedStaking = hasStaking ? vaultAddressKeys.has(`${chainID}/${stakingAddress}`) : false
@@ -145,8 +159,10 @@ export function useYearnTokens({
         name,
         for: 'vault-share',
         isVaultToken: true,
+        isCatalogVault: catalogVaultKeys.has(vaultKey),
         isStakingOnlyPair: hasStaking ? isStakingOnlyPair : undefined,
         isVaultBackedStaking: hasStaking ? isVaultBackedStaking : undefined,
+        holdingsAliasVaultAddress,
         pairedStakingAddress: stakingAddress
       })
 
@@ -171,15 +187,17 @@ export function useYearnTokens({
           name,
           for: 'vault-staking',
           isStakingToken: true,
+          isCatalogVault: catalogVaultKeys.has(stakingKey),
           isStakingOnlyPair,
           isVaultBackedStaking,
+          holdingsAliasVaultAddress: getHoldingsAliasVaultAddress(stakingAddress),
           pairedVaultAddress: address
         })
       }
     })
 
     return tokens
-  }, [isEnabled, isLoadingVaultList, allVaults, availableTokenListTokens])
+  }, [isEnabled, isLoadingVaultList, allVaults, availableTokenListTokens, catalogVaults])
 
   const allTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
     if (!isEnabled || isLoadingVaultList) {

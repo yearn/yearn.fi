@@ -2,14 +2,17 @@ import {
   getVaultAddress,
   getVaultChainID,
   getVaultStaking,
-  getVaultVersion
+  getVaultVersion,
+  type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { getCanonicalHoldingsVaultAddress } from '@pages/vaults/domain/normalizeVault'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
-import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
+import { createContext, memo, useCallback, useContext, useMemo, useRef } from 'react'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
 import { useBalancesCombined } from '../hooks/useBalancesCombined'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
+import { useStakingAssetConversions } from '../hooks/useStakingAssetConversions'
 import { getVaultHoldingsUsdValue } from '../hooks/useVaultFilterUtils'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
 import { DEFAULT_ERC20, isZeroAddress, toAddress, zeroNormalizedBN } from '../utils'
@@ -24,6 +27,7 @@ type TTokenAndChain = { address: TAddress; chainID: number }
 type TWalletContext = {
   getToken: ({ address, chainID }: TTokenAndChain) => TToken
   getBalance: ({ address, chainID }: TTokenAndChain) => TNormalizedBN
+  getVaultHoldingsUsd: (vault: TKongVaultInput) => number
   balances: TChainTokens
   isLoading: boolean
   cumulatedValueInV2Vaults: number
@@ -38,6 +42,7 @@ type TWalletContext = {
 const defaultProps = {
   getToken: (): TToken => DEFAULT_ERC20,
   getBalance: (): TNormalizedBN => zeroNormalizedBN,
+  getVaultHoldingsUsd: (): number => 0,
   balances: {},
   isLoading: true,
   cumulatedValueInV2Vaults: 0,
@@ -54,11 +59,12 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   children: ReactElement
   shouldWorkOnTestnet?: boolean
 }): ReactElement {
-  const { allVaults, isLoadingVaultList, getPrice } = useYearn()
+  const { vaults, allVaults, isLoadingVaultList, getPrice } = useYearn()
   const { address: userAddress } = useWeb3()
 
   const allTokens = useYearnTokens({
     vaults: allVaults,
+    catalogVaults: vaults,
     isLoadingVaultList,
     isEnabled: Boolean(userAddress)
   })
@@ -78,12 +84,6 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 
     return _tokens as TYChainTokens
   }, [tokensRaw])
-
-  useEffect(() => {
-    if (Object.keys(balances).length > 0) {
-      console.log({ balances, source: USE_ENSO_BALANCES ? 'enso' : 'multicall' })
-    }
-  }, [balances])
 
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
@@ -128,6 +128,21 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     [balances]
   )
 
+  const stakingConvertedAssets = useStakingAssetConversions({
+    allVaults,
+    getBalance,
+    userAddress
+  })
+
+  const getVaultHoldingsUsd = useCallback(
+    (vault: TKongVaultInput): number =>
+      getVaultHoldingsUsdValue(vault, getToken, getBalance, getPrice, {
+        allVaults,
+        stakingConvertedAssets
+      }),
+    [allVaults, getBalance, getPrice, getToken, stakingConvertedAssets]
+  )
+
   const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
     // Build staking address → vault address lookup
     const stakingToVault = new Map<string, string>()
@@ -145,9 +160,13 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     for (const [_chainId, perChain] of Object.entries(balances)) {
       for (const [tokenAddress] of Object.entries(perChain)) {
         const normalizedAddress = toAddress(tokenAddress)
+        const canonicalAddress = getCanonicalHoldingsVaultAddress(normalizedAddress)
 
         // Resolve vault details (direct vault or via staking lookup)
-        let vaultDetails = allVaults?.[normalizedAddress]
+        let vaultDetails = allVaults?.[canonicalAddress]
+        if (!vaultDetails && stakingToVault.has(canonicalAddress)) {
+          vaultDetails = allVaults?.[stakingToVault.get(canonicalAddress)!]
+        }
         if (!vaultDetails && stakingToVault.has(normalizedAddress)) {
           vaultDetails = allVaults?.[stakingToVault.get(normalizedAddress)!]
         }
@@ -157,7 +176,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         if (countedVaults.has(vaultKey)) continue
         countedVaults.add(vaultKey)
 
-        const tokenValue = getVaultHoldingsUsdValue(vaultDetails, getToken, getBalance, getPrice)
+        const tokenValue = getVaultHoldingsUsd(vaultDetails)
         const vaultVersion = getVaultVersion(vaultDetails)
         const isV3 = vaultVersion.startsWith('3') || vaultVersion.startsWith('~3')
 
@@ -178,13 +197,23 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     (): TWalletContext => ({
       getToken,
       getBalance,
+      getVaultHoldingsUsd,
       balances,
       isLoading: isLoading || false,
       onRefresh,
       cumulatedValueInV2Vaults,
       cumulatedValueInV3Vaults
     }),
-    [getToken, getBalance, balances, isLoading, onRefresh, cumulatedValueInV2Vaults, cumulatedValueInV3Vaults]
+    [
+      getToken,
+      getBalance,
+      getVaultHoldingsUsd,
+      balances,
+      isLoading,
+      onRefresh,
+      cumulatedValueInV2Vaults,
+      cumulatedValueInV3Vaults
+    ]
   )
 
   return <WalletContext.Provider value={contextValue}>{props.children}</WalletContext.Provider>

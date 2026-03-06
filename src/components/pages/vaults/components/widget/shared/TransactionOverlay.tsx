@@ -17,8 +17,7 @@ import {
   useWriteContract
 } from 'wagmi'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
-
-type OverlayState = 'idle' | 'confirming' | 'pending' | 'success' | 'error'
+import { type OverlayState, shouldAutoContinuePermitSuccess } from './transactionOverlay.helpers'
 
 export type PermitDataDirect = {
   domain: TypedDataDomain
@@ -148,7 +147,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const executedStepBlockRef = useRef<bigint | undefined>(undefined)
 
   // Check if current step is ready to execute
-  const isStepReady = step?.prepare.isSuccess && !!step?.prepare.data?.request
+  const isStepReady = Boolean(step?.prepare.isSuccess && step?.prepare.data?.request)
   const executedStepLabel = executedStepRef.current?.label
   const executedStepAutoContinues = Boolean(
     executedStepLabel &&
@@ -278,7 +277,17 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         })
 
         currentStep.onPermitSigned?.(signature)
+        const completedAllSteps = currentStep.completesFlow ?? isLastStep
+        if (!hasReportedStepSuccessRef.current && currentStep.label) {
+          hasReportedStepSuccessRef.current = true
+          onStepSuccess?.(currentStep.label)
+        }
         setOverlayState('success')
+        setHasCompletedFlow(completedAllSteps)
+
+        if (completedAllSteps) {
+          onAllComplete?.()
+        }
 
         if (currentStep.showConfetti) {
           setTimeout(() => reward(), 100)
@@ -293,7 +302,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         setErrorMessage('Failed to sign permit. Please try again.')
       }
     },
-    [isLastStep, onClose, reward, setStepExecutionContext, signTypedDataAsync]
+    [isLastStep, onAllComplete, onClose, onStepSuccess, reward, setStepExecutionContext, signTypedDataAsync]
   )
 
   const executeContractStep = useCallback(
@@ -590,6 +599,36 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     executedStepLabel,
     advanceToNextStep,
     waitForAutoContinueBlock
+  ])
+
+  useEffect(() => {
+    if (
+      !shouldAutoContinuePermitSuccess({
+        overlayState,
+        executedStepIsPermit: executedStepRef.current?.isPermit,
+        executedStepAutoContinues,
+        executedStepCompletesFlow,
+        currentStepLabel: step?.label,
+        executedStepLabel,
+        isStepReady,
+        hasAdvancedFromStep: hasAdvancedFromStepRef.current,
+        hasAutoContinuedFromStep: hasAutoContinuedFromStepRef.current
+      })
+    ) {
+      return
+    }
+
+    hasAutoContinuedFromStepRef.current = executedStepLabel ?? null
+    setIsAutoContinuing(true)
+    advanceToNextStep()
+  }, [
+    advanceToNextStep,
+    executedStepAutoContinues,
+    executedStepCompletesFlow,
+    executedStepLabel,
+    isStepReady,
+    overlayState,
+    step?.label
   ])
 
   // Handle transaction error

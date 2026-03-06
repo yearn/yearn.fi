@@ -99,4 +99,29 @@ describe('partitionTokensByBalanceSource', () => {
     expect([...ensoKeys]).toEqual([`1:${getAddress(VAULT_A)}`])
     expect([...multicallKeys]).toEqual([`1:${getAddress(VAULT_C)}`, `1:${getAddress(STAKING_A)}`])
   })
+
+  it('preserves discovery metadata when duplicate token entries are merged', () => {
+    const aliasVault = getAddress(VAULT_B)
+    const tokens: TUseBalancesTokens[] = [
+      {
+        address: VAULT_A,
+        chainID: 1,
+        for: 'vault',
+        isCatalogVault: true
+      },
+      {
+        address: VAULT_A,
+        chainID: 1,
+        isCatalogVault: false,
+        holdingsAliasVaultAddress: aliasVault
+      }
+    ]
+
+    const { ensoTokens, multicallTokens } = partitionTokensByBalanceSource(tokens, [])
+
+    expect(multicallTokens).toHaveLength(0)
+    expect(ensoTokens).toHaveLength(1)
+    expect(ensoTokens[0].isCatalogVault).toBe(false)
+    expect(ensoTokens[0].holdingsAliasVaultAddress).toBe(aliasVault)
+  })
 })

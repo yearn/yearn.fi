@@ -10,8 +10,6 @@ import {
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useWallet } from '@shared/contexts/useWallet'
-import { useYearn } from '@shared/contexts/useYearn'
-import { getVaultHoldingsUsdValue } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
 import { normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@shared/utils/constants'
@@ -36,8 +34,7 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
   sortBy: TPossibleSortBy,
   sortDirection: TSortDirection
 ): TVault[] {
-  const { getBalance, getToken } = useWallet()
-  const { getPrice } = useYearn()
+  const { getBalance, getVaultHoldingsUsd } = useWallet()
   const isFeaturingScoreSortedDesc = useMemo((): boolean => {
     if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
       return false
@@ -58,7 +55,7 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
     }
 
     const getDepositedValue = (vault: TKongVaultInput): number => {
-      return getVaultHoldingsUsdValue(vault, getToken, getBalance, getPrice)
+      return getVaultHoldingsUsd(vault)
     }
 
     const getAvailableValue = (vault: TKongVaultInput): number => {
@@ -164,7 +161,7 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       default:
         return vaultList
     }
-  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, getBalance, getPrice, getToken])
+  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, getBalance, getVaultHoldingsUsd])
 
   return sortedVaults
 }

@@ -26,11 +26,13 @@ export type TUseBalancesTokens = {
   for?: string
   isVaultToken?: boolean
   isStakingToken?: boolean
+  isCatalogVault?: boolean
   // A staking-only pair is a classic rewards contract token (not itself a vault token).
   // These pairs should be fully sourced from multicall for deterministic accounting.
   isStakingOnlyPair?: boolean
   // A vault-backed staking pair means the staking token is also a vault token (e.g. yBOLD style).
   isVaultBackedStaking?: boolean
+  holdingsAliasVaultAddress?: TAddress
   pairedVaultAddress?: TAddress
   pairedStakingAddress?: TAddress
 }
@@ -59,6 +61,19 @@ export type TUseBalancesRes = {
 
 type TUpdates = TDict<TToken & { lastUpdate: number; owner: TAddress }>
 const TOKEN_UPDATE: TUpdates = {}
+
+export function hasPositiveCachedBalance(chainID: number, address: TAddress, ownerAddress?: TAddress): boolean {
+  if (!ownerAddress || isZeroAddress(ownerAddress)) {
+    return false
+  }
+
+  const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(address)}`]
+  if (!tokenUpdateInfo) {
+    return false
+  }
+
+  return toAddress(tokenUpdateInfo.owner) === toAddress(ownerAddress) && tokenUpdateInfo.balance.raw > 0n
+}
 
 export async function performCall(
   chainID: number,
