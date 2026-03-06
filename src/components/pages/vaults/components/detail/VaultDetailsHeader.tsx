@@ -322,6 +322,7 @@ function VaultOverviewCard({
   const listKind = deriveListKind(currentVault)
   const isFactoryVault = listKind === 'factory'
   const isYvUsd = isYvUsdVault(currentVault)
+  const [yvusdApyVariant, setYvUsdApyVariant] = useState<'locked' | 'unlocked'>('locked')
   const { metrics: yvUsdMetrics, unlockedVault, lockedVault } = useYvUsdVaults()
   const unlockedForwardApy =
     yvUsdMetrics?.unlocked.apy ?? (currentVault.apr?.forwardAPR?.netAPR || currentVault.apr?.netAPR || 0)
@@ -335,6 +336,36 @@ function VaultOverviewCard({
   const unlockedTvl = unlockedVault?.tvl?.tvl ?? yvUsdMetrics?.unlocked.tvl ?? 0
   const lockedTvl = lockedVault?.tvl?.tvl ?? yvUsdMetrics?.locked.tvl ?? 0
   const combinedTvl = currentVault.tvl?.tvl ?? unlockedTvl + lockedTvl
+  const isLockedApyVariant = yvusdApyVariant === 'locked'
+  const selectedForwardApy = isLockedApyVariant ? lockedForwardApy : unlockedForwardApy
+  const selectedHistoricalApy = isLockedApyVariant ? lockedHistorical : unlockedHistorical
+  const selectedApyIcon = isLockedApyVariant ? (
+    <IconLock className="size-4 text-text-secondary" />
+  ) : (
+    <IconLockOpen className="size-4 text-text-secondary" />
+  )
+  const apyToggleLabel = isLockedApyVariant ? 'Switch to unlocked APY display' : 'Switch to locked APY display'
+  const toggleApyVariant = (): void => {
+    setYvUsdApyVariant((previous) => (previous === 'locked' ? 'unlocked' : 'locked'))
+  }
+  const renderYvUsdApyValue = (value: number): ReactElement => (
+    <span className={cl('inline-flex items-center gap-2', METRIC_VALUE_CLASS)}>
+      <button
+        type="button"
+        onClick={toggleApyVariant}
+        aria-label={apyToggleLabel}
+        className="inline-flex items-center rounded-sm text-text-secondary transition-colors hover:text-text-primary"
+      >
+        {selectedApyIcon}
+      </button>
+      <RenderAmount
+        value={value}
+        symbol={'percent'}
+        decimals={6}
+        options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
+      />
+    </span>
+  )
   const yvUsdEstApyTooltip = isYvUsd ? (
     <YvUsdApyTooltipContent lockedValue={lockedForwardApy} unlockedValue={unlockedForwardApy} iconClassName="size-4" />
   ) : undefined
@@ -355,15 +386,7 @@ function VaultOverviewCard({
       header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY for the next period'} />,
       value: isYvUsd ? (
         <Tooltip className={'gap-0 h-auto'} openDelayMs={150} tooltip={yvUsdEstApyTooltip ?? ''} align={'center'}>
-          <span className={cl('inline-flex items-center gap-2', METRIC_VALUE_CLASS)}>
-            <IconLock className="size-4 text-text-secondary" />
-            <RenderAmount
-              value={lockedForwardApy}
-              symbol={'percent'}
-              decimals={6}
-              options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
-            />
-          </span>
+          {renderYvUsdApyValue(selectedForwardApy)}
         </Tooltip>
       ) : (
         <VaultForwardAPY
@@ -385,15 +408,7 @@ function VaultOverviewCard({
           tooltip={yvUsdHistoricalApyTooltip ?? ''}
           align={'center'}
         >
-          <span className={cl('inline-flex items-center gap-2', METRIC_VALUE_CLASS)}>
-            <IconLock className="size-4 text-text-secondary" />
-            <RenderAmount
-              value={lockedHistorical}
-              symbol={'percent'}
-              decimals={6}
-              options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
-            />
-          </span>
+          {renderYvUsdApyValue(selectedHistoricalApy)}
         </Tooltip>
       ) : (
         <VaultHistoricalAPY
