@@ -1,7 +1,8 @@
 import type { DepositEvent, FifoLot, PnLResponse, TransferEvent, VaultPnL, WithdrawEvent } from '../types'
+import { getUnderlyingVault } from '../constants'
 import { fetchHistoricalPrices, getChainPrefix } from './defillama'
 import { fetchUserEvents, type VaultVersion } from './graphql'
-import { fetchMultipleVaultsPPS, getPPS } from './kong'
+import { fetchMultipleVaultsPPS, getPPS, type PPSTimeline } from './kong'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
 interface VaultEvents {
@@ -59,9 +60,26 @@ function groupEventsByVault(events: {
   return vaultMap
 }
 
-function processVaultPnL(vaultAddress: string, chainId: number, events: VaultEvents): ProcessedVault {
-  const DEBUG_VAULT = '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204'
-  const debug = vaultAddress.toLowerCase() === DEBUG_VAULT
+interface ProcessVaultOptions {
+  // PPS timeline for cost basis estimation on transfer_in events
+  // For staking vaults: use underlying vault PPS
+  // For regular vaults: use the vault's own PPS
+  ppsForCostBasis?: PPSTimeline
+}
+
+function processVaultPnL(
+  vaultAddress: string,
+  chainId: number,
+  events: VaultEvents,
+  options: ProcessVaultOptions = {}
+): ProcessedVault {
+  // Debug both the underlying vault and the staking vault
+  const DEBUG_VAULTS = [
+    '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204', // yvUSDC-1
+    '0x622fa41799406b120f9a40da843d358b7b2cfee3' // yG-yvUSDC-1 (staking)
+  ]
+  const debug = DEBUG_VAULTS.includes(vaultAddress.toLowerCase())
+  const { ppsForCostBasis } = options
 
   // Combine all events that affect share balance, sorted by timestamp
   type ShareEvent = {
@@ -156,16 +174,37 @@ function processVaultPnL(vaultAddress: string, chainId: number, events: VaultEve
         console.log(`     → totalDeposited now: ${totalDeposited}`)
       }
     } else if (event.type === 'transfer_in') {
-      // Transfers in - use zero cost basis (conservative: all gains)
+      // Estimate cost basis using PPS at transfer time
+      // For staking vaults: uses underlying vault PPS (staking shares are 1:1 with underlying)
+      // For regular vaults: uses the vault's own PPS
+      // Cost basis = shares × PPS at transfer time
+      let estimatedAssets = BigInt(0)
+
+      if (ppsForCostBasis && ppsForCostBasis.size > 0) {
+        const ppsAtTime = getPPS(ppsForCostBasis, event.timestamp)
+        // shares × PPS gives us the value in underlying tokens
+        estimatedAssets = BigInt(Math.floor(Number(event.shares) * ppsAtTime))
+        totalDeposited += estimatedAssets
+      }
+
       fifoLots.push({
         shares: event.shares,
-        assets: BigInt(0),
+        assets: estimatedAssets,
         timestamp: event.timestamp
       })
 
       if (debug) {
-        console.log(`\n  📥 TRANSFER_IN: ${event.shares} shares (cost basis = 0)`)
-        console.log(`     → Created Lot #${lotCounter++}: shares=${event.shares}, assets=0`)
+        if (ppsForCostBasis && ppsForCostBasis.size > 0) {
+          const ppsAtTime = getPPS(ppsForCostBasis, event.timestamp)
+          console.log(`\n  📥 TRANSFER_IN: ${event.shares} shares`)
+          console.log(`     → PPS at time: ${ppsAtTime.toFixed(6)}`)
+          console.log(`     → Estimated cost basis: ${event.shares} × ${ppsAtTime.toFixed(6)} = ${estimatedAssets}`)
+          console.log(`     → Created Lot #${lotCounter++}: shares=${event.shares}, assets=${estimatedAssets}`)
+          console.log(`     → totalDeposited now: ${totalDeposited}`)
+        } else {
+          console.log(`\n  📥 TRANSFER_IN: ${event.shares} shares (no PPS data, cost basis = 0)`)
+          console.log(`     → Created Lot #${lotCounter++}: shares=${event.shares}, assets=0`)
+        }
       }
     } else if (event.type === 'withdrawal') {
       // Process withdrawal using FIFO
@@ -298,10 +337,28 @@ export async function calculatePnL(userAddress: string, version: VaultVersion = 
     return { chainId: parseInt(chainId, 10), vaultAddress }
   })
 
-  // Fetch metadata, PPS, and current token prices
+  // Identify staking vaults and collect their underlying vaults
+  const underlyingVaultsToFetch: Array<{ chainId: number; vaultAddress: string }> = []
+  const stakingToUnderlyingMap = new Map<string, string>() // staking key -> underlying key
+
+  for (const vault of vaults) {
+    const underlying = getUnderlyingVault(vault.vaultAddress)
+    if (underlying) {
+      const stakingKey = `${vault.chainId}:${vault.vaultAddress.toLowerCase()}`
+      const underlyingKey = `${underlying.chainId}:${underlying.underlying.toLowerCase()}`
+      stakingToUnderlyingMap.set(stakingKey, underlyingKey)
+      underlyingVaultsToFetch.push({
+        chainId: underlying.chainId,
+        vaultAddress: underlying.underlying
+      })
+    }
+  }
+
+  // Fetch metadata and PPS for both user's vaults AND underlying vaults of staking positions
+  const allVaultsToFetch = [...vaults, ...underlyingVaultsToFetch]
   const [vaultMetadata, ppsData] = await Promise.all([
-    fetchMultipleVaultsMetadata(vaults),
-    fetchMultipleVaultsPPS(vaults)
+    fetchMultipleVaultsMetadata(allVaultsToFetch),
+    fetchMultipleVaultsPPS(allVaultsToFetch)
   ])
 
   // Get current timestamp for price lookup
@@ -340,8 +397,16 @@ export async function calculatePnL(userAddress: string, version: VaultVersion = 
     const decimals = metadata.decimals
     const tokenDecimals = metadata.token.decimals
 
+    // Get PPS for cost basis estimation on transfer_in events
+    // For staking vaults: use underlying vault PPS (staking shares are 1:1 with underlying)
+    // For regular vaults: use the vault's own PPS
+    const underlyingKey = stakingToUnderlyingMap.get(key)
+    const ppsForCostBasis = underlyingKey ? ppsData.get(underlyingKey) : ppsData.get(key)
+
     // Process FIFO and calculate PnL
-    const processed = processVaultPnL(vaultAddress, chainId, vaultEvents)
+    const processed = processVaultPnL(vaultAddress, chainId, vaultEvents, {
+      ppsForCostBasis
+    })
     if (vaultAddress === '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204'.toLowerCase()) {
       console.log(processed)
     }
