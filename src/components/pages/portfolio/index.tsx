@@ -37,6 +37,7 @@ import { useChainId, useSwitchChain } from 'wagmi'
 import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { type TPortfolioModel, usePortfolioModel } from './hooks/usePortfolioModel'
+import { usePortfolioPnL } from './hooks/usePortfolioPnL'
 import { useVaultWithStakingRewards } from './hooks/useVaultWithStakingRewards'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
@@ -64,7 +65,11 @@ type TPortfolioHeaderProps = Pick<
   | 'isHoldingsLoading'
   | 'isSearchingBalances'
   | 'totalPortfolioValue'
->
+> & {
+  totalPnLUsd: number | null
+  totalPnLPercent: number | null
+  isPnLLoading: boolean
+}
 
 type TPortfolioHoldingsProps = Pick<
   TPortfolioModel,
@@ -100,7 +105,10 @@ function PortfolioHeaderSection({
   isActive,
   isHoldingsLoading,
   isSearchingBalances,
-  totalPortfolioValue
+  totalPortfolioValue,
+  totalPnLUsd,
+  totalPnLPercent,
+  isPnLLoading
 }: TPortfolioHeaderProps): ReactElement {
   const katanaTooltipContent = (
     <div className={headingTooltipClassName}>
@@ -140,10 +148,25 @@ function PortfolioHeaderSection({
     return renderApyValue(formatPercent(apyValue, 2, 2), hasKatanaHoldings)
   }
 
-  function renderCurrencyMetric(value: number | null): ReactElement {
-    if (isHoldingsLoading) return metricSpinner
+  function renderCurrencyMetric(value: number | null, loading = isHoldingsLoading): ReactElement {
+    if (loading) return metricSpinner
     if (value === null) return <span>{'—'}</span>
     return <span>{currencyFormatter.format(value)}</span>
+  }
+
+  function renderPnLMetric(): ReactElement {
+    if (isPnLLoading) return metricSpinner
+    if (totalPnLUsd === null) return <span>{'—'}</span>
+    const isPositive = totalPnLUsd >= 0
+    const percentStr =
+      totalPnLPercent !== null ? ` (${totalPnLPercent >= 0 ? '+' : ''}${totalPnLPercent.toFixed(2)}%)` : ''
+    return (
+      <span>
+        {isPositive ? '+' : ''}
+        {currencyFormatter.format(totalPnLUsd)}
+        {percentStr}
+      </span>
+    )
   }
 
   const metrics: TMetricBlock[] = [
@@ -175,6 +198,16 @@ function PortfolioHeaderSection({
       key: '30-day-apy',
       header: <MetricHeader label="30-day APY" tooltip="Blended 30-day performance using your current positions." />,
       value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedHistoricalAPY)}</span>
+    },
+    {
+      key: 'total-pnl',
+      header: (
+        <MetricHeader
+          label="Total PnL"
+          tooltip="Realized + unrealized profit/loss across all vault positions, calculated using FIFO cost basis."
+        />
+      ),
+      value: <span className={METRIC_VALUE_CLASS}>{renderPnLMetric()}</span>
     }
   ]
 
@@ -941,6 +974,7 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
   const { data: historyData, isLoading: historyLoading } = usePortfolioHistory()
+  const { summary: pnlSummary, isLoading: pnlLoading } = usePortfolioPnL()
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
@@ -1053,6 +1087,9 @@ function PortfolioPage(): ReactElement {
             isSearchingBalances={model.isSearchingBalances}
             hasKatanaHoldings={model.hasKatanaHoldings}
             totalPortfolioValue={model.totalPortfolioValue}
+            totalPnLUsd={pnlSummary?.totalPnLUsd ?? null}
+            totalPnLPercent={pnlSummary?.totalPnLPercent ?? null}
+            isPnLLoading={pnlLoading}
           />
           <PortfolioHistoryChart data={historyData} isLoading={historyLoading} mergeWithHeader={model.isActive} />
           <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} mergeWithHeader={model.isActive} />
