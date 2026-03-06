@@ -12,6 +12,7 @@ import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconLoader } from '@shared/icons/IconLoader'
@@ -29,8 +30,10 @@ import {
 } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
-import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
+import { type FC, type ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useReadContract } from 'wagmi'
+import { formatDuration, parseCooldownStatus } from './yvUSD/cooldownUtils'
 
 type WalletPanelProps = {
   isActive: boolean
@@ -63,6 +66,7 @@ const STATUS_STYLES: Record<TNotificationStatus, { label: string; className: str
 function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElement {
   const { getPrice } = useYearn()
   const { unlockedVault, lockedVault, isLoading: isLoadingYvUsd } = useYvUsdVaults()
+  const [nowTimestamp, setNowTimestamp] = useState(() => Math.floor(Date.now() / 1000))
 
   const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
   const unlockedUserData = useVaultUserData({
@@ -77,6 +81,42 @@ function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElem
     chainId: YVUSD_CHAIN_ID,
     account
   })
+  const { data: rawCooldownStatus, isLoading: isLoadingCooldownStatus } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'getCooldownStatus',
+    args: account ? [toAddress(account)] : undefined,
+    chainId: YVUSD_CHAIN_ID,
+    query: {
+      enabled: !!account,
+      refetchInterval: account ? 30_000 : false
+    }
+  })
+  const { data: rawAvailableWithdrawLimit, isLoading: isLoadingAvailableWithdrawLimit } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'availableWithdrawLimit',
+    args: account ? [toAddress(account)] : undefined,
+    chainId: YVUSD_CHAIN_ID,
+    query: {
+      enabled: !!account,
+      refetchInterval: account ? 30_000 : false
+    }
+  })
+  const cooldownStatus = useMemo(() => parseCooldownStatus(rawCooldownStatus), [rawCooldownStatus])
+  const hasActiveCooldown = cooldownStatus.shares > 0n
+  const isCooldownActive = hasActiveCooldown && nowTimestamp < cooldownStatus.cooldownEnd
+  const isWithdrawalWindowOpen =
+    hasActiveCooldown && nowTimestamp >= cooldownStatus.cooldownEnd && nowTimestamp <= cooldownStatus.windowEnd
+  const cooldownRemainingSeconds = isCooldownActive ? cooldownStatus.cooldownEnd - nowTimestamp : 0
+  const windowRemainingSeconds = isWithdrawalWindowOpen ? cooldownStatus.windowEnd - nowTimestamp : 0
+  const availableWithdrawLimit = typeof rawAvailableWithdrawLimit === 'bigint' ? rawAvailableWithdrawLimit : 0n
+  const sharesUnderCooldown = hasActiveCooldown ? cooldownStatus.shares : 0n
+  const assetsUnderCooldown = useMemo(() => {
+    if (!hasActiveCooldown || lockedUserData.pricePerShare <= 0n) return 0n
+    const vaultDecimals = lockedUserData.vaultToken?.decimals ?? 18
+    return (sharesUnderCooldown * lockedUserData.pricePerShare) / 10n ** BigInt(vaultDecimals)
+  }, [hasActiveCooldown, lockedUserData.pricePerShare, lockedUserData.vaultToken?.decimals, sharesUnderCooldown])
 
   const unlockedSymbol = unlockedUserData.assetToken?.symbol ?? 'USDC'
   const lockedSymbol = lockedUserData.assetToken?.symbol ?? 'yvUSD'
@@ -95,6 +135,15 @@ function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElem
   const unlockedUsd = unlockedNormalized * unlockedPrice
   const lockedUsd = lockedNormalized * lockedPrice
   const totalUsd = unlockedUsd + lockedUsd
+
+  useEffect(() => {
+    if (!account) return
+    setNowTimestamp(Math.floor(Date.now() / 1000))
+    const interval = window.setInterval(() => {
+      setNowTimestamp(Math.floor(Date.now() / 1000))
+    }, 1_000)
+    return () => window.clearInterval(interval)
+  }, [account])
 
   if (isLoadingYvUsd || unlockedUserData.isLoading || lockedUserData.isLoading) {
     return <p className="text-text-secondary">{'Loading yvUSD position data...'}</p>
@@ -120,6 +169,42 @@ function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElem
           <span className="ml-1 text-xs text-text-secondary font-medium">({formatUSD(lockedUsd)})</span>
         </span>
       </div>
+      {account && hasActiveCooldown ? (
+        <div className="rounded-lg border border-border bg-surface-secondary p-3 space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{'Cooldown status'}</p>
+          {isLoadingCooldownStatus || isLoadingAvailableWithdrawLimit ? (
+            <p className="text-xs text-text-secondary">{'Loading cooldown status...'}</p>
+          ) : (
+            <>
+              <p className="text-xs text-text-secondary">
+                {`Shares in cooldown: ${formatTAmount({
+                  value: sharesUnderCooldown,
+                  decimals: lockedUserData.vaultToken?.decimals ?? 18
+                })}`}
+              </p>
+              <p className="text-xs text-text-secondary">
+                {`Estimated assets in cooldown: ${formatTAmount({
+                  value: assetsUnderCooldown,
+                  decimals: lockedUserData.assetToken?.decimals ?? 18
+                })} ${lockedUserData.assetToken?.symbol ?? 'USDC'}`}
+              </p>
+              <p className="text-xs text-text-secondary">
+                {`Available to withdraw now: ${formatTAmount({
+                  value: availableWithdrawLimit,
+                  decimals: lockedUserData.assetToken?.decimals ?? 18
+                })} ${lockedUserData.assetToken?.symbol ?? 'USDC'}`}
+              </p>
+              <p className="text-xs text-text-secondary">
+                {isCooldownActive
+                  ? `Cooldown remaining: ${formatDuration(cooldownRemainingSeconds)}`
+                  : isWithdrawalWindowOpen
+                    ? `Withdrawal window remaining: ${formatDuration(windowRemainingSeconds)}`
+                    : 'Withdrawal window closed. Start a new cooldown to withdraw.'}
+              </p>
+            </>
+          )}
+        </div>
+      ) : null}
     </>
   )
 }

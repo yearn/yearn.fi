@@ -14,75 +14,16 @@ import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { UseSimulateContractReturnType } from 'wagmi'
 import { useAccount, useReadContract, useSimulateContract } from 'wagmi'
+import { InfoOverlay } from '../shared/InfoOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { WidgetWithdraw } from '../withdraw'
+import { formatDays, formatDuration, parseCooldownStatus } from './cooldownUtils'
 import { YvUsdVariantToggle } from './YvUsdVariantToggle'
 
 type Props = {
   chainId: number
   assetAddress: `0x${string}`
   onWithdrawSuccess?: () => void
-}
-
-type TCooldownStatus = {
-  cooldownEnd: number
-  windowEnd: number
-  shares: bigint
-}
-
-const EMPTY_COOLDOWN_STATUS: TCooldownStatus = {
-  cooldownEnd: 0,
-  windowEnd: 0,
-  shares: 0n
-}
-
-const parseCooldownStatus = (status: unknown): TCooldownStatus => {
-  if (!status) return EMPTY_COOLDOWN_STATUS
-
-  if (Array.isArray(status)) {
-    const [cooldownEnd, windowEnd, shares] = status
-    return {
-      cooldownEnd: typeof cooldownEnd === 'bigint' ? Number(cooldownEnd) : 0,
-      windowEnd: typeof windowEnd === 'bigint' ? Number(windowEnd) : 0,
-      shares: typeof shares === 'bigint' ? shares : 0n
-    }
-  }
-
-  if (typeof status === 'object') {
-    const parsed = status as {
-      cooldownEnd?: unknown
-      windowEnd?: unknown
-      shares?: unknown
-    }
-    return {
-      cooldownEnd: typeof parsed.cooldownEnd === 'bigint' ? Number(parsed.cooldownEnd) : 0,
-      windowEnd: typeof parsed.windowEnd === 'bigint' ? Number(parsed.windowEnd) : 0,
-      shares: typeof parsed.shares === 'bigint' ? parsed.shares : 0n
-    }
-  }
-
-  return EMPTY_COOLDOWN_STATUS
-}
-
-const formatDuration = (seconds: number): string => {
-  if (!Number.isFinite(seconds) || seconds <= 0) return '0s'
-  const totalSeconds = Math.floor(seconds)
-  const days = Math.floor(totalSeconds / 86_400)
-  const hours = Math.floor((totalSeconds % 86_400) / 3_600)
-  const minutes = Math.floor((totalSeconds % 3_600) / 60)
-  const secs = totalSeconds % 60
-
-  if (days > 0) return `${days}d ${hours}h ${minutes}m ${secs}s`
-  if (hours > 0) return `${hours}h ${minutes}m ${secs}s`
-  if (minutes > 0) return `${minutes}m ${secs}s`
-  return `${secs}s`
-}
-
-const formatDays = (seconds: number, fallbackDays: number): string => {
-  if (!Number.isFinite(seconds) || seconds <= 0) return `${fallbackDays} days`
-  const days = seconds / 86_400
-  const rounded = Math.round(days * 100) / 100
-  return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded} days`
 }
 
 const scaleAmountDecimals = (value: bigint, fromDecimals: number, toDecimals: number): bigint => {
@@ -99,6 +40,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
   const [showCooldownOverlay, setShowCooldownOverlay] = useState(false)
   const [showCancelCooldownOverlay, setShowCancelCooldownOverlay] = useState(false)
+  const [showCooldownInfoOverlay, setShowCooldownInfoOverlay] = useState(false)
   const [lockedRequestedAssets, setLockedRequestedAssets] = useState<bigint>(0n)
   const [nowTimestamp, setNowTimestamp] = useState(() => Math.floor(Date.now() / 1000))
   const activeVariant = variant ?? 'unlocked'
@@ -230,9 +172,18 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
   const cooldownRemainingSeconds = isCooldownActive ? cooldownStatus.cooldownEnd - nowTimestamp : 0
   const windowRemainingSeconds = isWithdrawalWindowOpen ? cooldownStatus.windowEnd - nowTimestamp : 0
   const sharesUnderCooldown = hasActiveCooldown ? cooldownStatus.shares : 0n
+  const assetsUnderCooldown = useMemo(() => {
+    if (sharesUnderCooldown <= 0n || lockedInputPricePerShare <= 0n) return 0n
+    const vaultDecimals = lockedUserData.vaultToken?.decimals ?? 18
+    return (sharesUnderCooldown * lockedInputPricePerShare) / 10n ** BigInt(vaultDecimals)
+  }, [sharesUnderCooldown, lockedInputPricePerShare, lockedUserData.vaultToken?.decimals])
   const formattedSharesUnderCooldown = formatTAmount({
     value: sharesUnderCooldown,
     decimals: lockedUserData.vaultToken?.decimals ?? 18
+  })
+  const formattedAssetsUnderCooldown = formatTAmount({
+    value: assetsUnderCooldown,
+    decimals: lockedInputAssetDecimals
   })
   const formattedAvailableWithdrawLimit = formatTAmount({
     value: availableWithdrawLimitForInput,
@@ -409,7 +360,16 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
     activeVariant === 'locked' ? (
       <div className="rounded-lg border border-border bg-surface-secondary mt-6 p-4 text-sm">
         <div className="flex flex-col gap-1">
-          <p className="font-semibold text-text-primary">{'Locked withdrawal cooldown'}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-text-primary">{'Locked withdrawal cooldown'}</p>
+            <button
+              type="button"
+              onClick={() => setShowCooldownInfoOverlay(true)}
+              className="text-xs font-medium text-text-secondary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:text-text-primary hover:decoration-neutral-600"
+            >
+              {'more info'}
+            </button>
+          </div>
           <p className="text-sm text-text-secondary">
             {`Cooldown: ${cooldownDurationLabel} | Withdrawal window: ${withdrawalWindowLabel}`}
           </p>
@@ -425,6 +385,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
             <>
               <p>{`Available to withdraw now: ${formattedAvailableWithdrawLimit}`}</p>
               <p>{`Shares in cooldown: ${formattedSharesUnderCooldown}`}</p>
+              <p>{`Estimated assets in cooldown: ${formattedAssetsUnderCooldown}`}</p>
               {needsCooldownStart ? <p>{`Selected cooldown amount: ${formattedSelectedCooldownAmount}`}</p> : null}
               <p>
                 {`Cooldown remaining: ${
@@ -539,6 +500,22 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess }: Prop
         isLastStep
         onAllComplete={handleCancelCooldownSuccess}
       />
+      <InfoOverlay
+        isOpen={showCooldownInfoOverlay}
+        onClose={() => setShowCooldownInfoOverlay(false)}
+        title="Cooldown info"
+      >
+        <div className="space-y-3 text-sm text-text-secondary">
+          <p>{'Locked yvUSD withdrawals use a cooldown period before the withdrawal window opens.'}</p>
+          <p>{'Interest continues to accrue while your position is in cooldown.'}</p>
+          <p>
+            {
+              'If only part of your deposited amount is in cooldown and you want to include more funds, cancel the current cooldown and restart it with the larger amount.'
+            }
+          </p>
+          <p>{`Cooldown period: ${cooldownDurationLabel}. Withdrawal window: ${withdrawalWindowLabel}.`}</p>
+        </div>
+      </InfoOverlay>
     </div>
   )
 }
