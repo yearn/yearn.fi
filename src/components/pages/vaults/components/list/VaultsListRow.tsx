@@ -23,6 +23,7 @@ import {
   getProductTypeDescription,
   HIDDEN_TAG_DESCRIPTION,
   MIGRATABLE_TAG_DESCRIPTION,
+  NOT_YEARN_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import { useMediaQuery } from '@react-hookz/web'
@@ -60,6 +61,7 @@ type TVaultRowFlags = {
   isMigratable?: boolean
   isRetired?: boolean
   isHidden?: boolean
+  isNotYearn?: boolean
 }
 
 const prefetchedSnapshotEndpoints = new Set<string>()
@@ -508,6 +510,15 @@ export function VaultsListRow({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={HIDDEN_TAG_DESCRIPTION}
+                    onHoverChange={handleInteractiveHoverChange}
+                  />
+                ) : null}
+                {flags?.isNotYearn ? (
+                  <VaultsListChip
+                    label={'Not Yearn'}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={NOT_YEARN_TAG_DESCRIPTION}
                     onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}

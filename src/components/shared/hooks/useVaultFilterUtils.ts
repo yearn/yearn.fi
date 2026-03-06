@@ -35,6 +35,7 @@ export type TVaultFlags = {
   isMigratable: boolean
   isRetired: boolean
   isHidden: boolean
+  isNotYearn?: boolean
 }
 
 type TTokenAndChain = { address: TAddress; chainID: number }

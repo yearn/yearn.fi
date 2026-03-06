@@ -8,6 +8,7 @@ import {
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { getCanonicalHoldingsVaultAddress } from '@pages/vaults/domain/normalizeVault'
+import { isNonYearnErc4626Vault } from '@pages/vaults/domain/vaultWarnings'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
 import { usePersistedShowHiddenVaults } from '@pages/vaults/hooks/vaultsFiltersStorage'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
@@ -151,7 +152,8 @@ export function usePortfolioModel(): TPortfolioModel {
         hasHoldings: true,
         isMigratable: Boolean(getVaultMigration(vault)?.available),
         isRetired: Boolean(getVaultInfo(vault)?.isRetired),
-        isHidden: Boolean(getVaultInfo(vault)?.isHidden)
+        isHidden: Boolean(getVaultInfo(vault)?.isHidden),
+        isNotYearn: isNonYearnErc4626Vault({ vault })
       }
     })
 

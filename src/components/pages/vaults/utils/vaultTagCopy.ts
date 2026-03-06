@@ -27,6 +27,7 @@ const CHAIN_WEBSITES: Record<number, string> = {
 export const RETIRED_TAG_DESCRIPTION = 'Deposits are disabled; withdrawals remain available.'
 export const MIGRATABLE_TAG_DESCRIPTION = 'A retired vault with a migration path available to a newer vault.'
 export const HIDDEN_TAG_DESCRIPTION = 'Hidden from the default list. Enable hidden vaults to view.'
+export const NOT_YEARN_TAG_DESCRIPTION = 'This vault is not managed by Yearn. Review the issuer and risks carefully.'
 
 export function getChainDescription(chainId: number): string {
   return CHAIN_DESCRIPTIONS[chainId] || `${getNetwork(chainId).name} network.`
