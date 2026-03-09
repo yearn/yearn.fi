@@ -71,8 +71,16 @@ export async function initializeSchema(): Promise<void> {
       window_start TIMESTAMP DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS vault_invalidations (
+      vault_address VARCHAR(42) NOT NULL,
+      chain_id INTEGER NOT NULL,
+      invalidated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      PRIMARY KEY (vault_address, chain_id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_token_prices_token_key ON token_prices(token_key);
     CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
+    CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
   `
 
   try {

@@ -1,6 +1,6 @@
 import { config } from '../config'
 import type { CachedTotal } from './cache'
-import { getCachedTotals, saveCachedTotals } from './cache'
+import { checkCacheStaleness, clearUserCache, getCachedTotalsWithTimestamp, saveCachedTotals } from './cache'
 import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
 import { fetchUserEvents, type VaultVersion } from './graphql'
 import {
@@ -29,7 +29,28 @@ export async function getHistoricalHoldings(
   const endDate = timestampToDateString(timestamps[timestamps.length - 1])
   const todayDate = timestampToDateString(Math.floor(Date.now() / 1000))
 
-  const cachedTotals = await getCachedTotals(userAddress, startDate, endDate)
+  // Fetch cached totals with timestamp info for staleness check
+  let { totals: cachedTotals, oldestUpdatedAt } = await getCachedTotalsWithTimestamp(userAddress, startDate, endDate)
+
+  // Always fetch user events (needed for staleness check)
+  const maxTimestamp = Math.max(...timestamps) + 86400
+  const events = await fetchUserEvents(userAddress, version, maxTimestamp)
+  const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
+
+  // Check if any vaults have been invalidated since cache was written
+  if (cachedTotals.length > 0 && timeline.length > 0) {
+    const vaults = getUniqueVaults(timeline)
+    const vaultIdentifiers = vaults.map((v) => ({ address: v.vaultAddress, chainId: v.chainId }))
+    const isStale = await checkCacheStaleness(vaultIdentifiers, oldestUpdatedAt)
+
+    if (isStale) {
+      console.log(`[Aggregator] Cache stale for ${userAddress}, clearing and recalculating`)
+      await clearUserCache(userAddress)
+      cachedTotals = []
+      oldestUpdatedAt = null
+    }
+  }
+
   const cachedByDate = new Map(cachedTotals.map((t) => [t.date, t.usdValue]))
 
   // Always recalculate today (Kong/DefiLlama may not have today's data early in the day)
@@ -40,10 +61,7 @@ export async function getHistoricalHoldings(
   const newTotals: CachedTotal[] = []
 
   if (missingTimestamps.length > 0) {
-    // Only fetch events up to the latest timestamp we need (end of last missing day)
-    const maxTimestamp = Math.max(...missingTimestamps) + 86400
-    const events = await fetchUserEvents(userAddress, version, maxTimestamp)
-    const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
+    // Events already fetched above
 
     if (timeline.length === 0) {
       // No holdings - return zeros without caching to prevent DB spam

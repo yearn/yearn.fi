@@ -182,6 +182,7 @@ curl "http://localhost:3001/api/holdings/history?address=0x..."
 Query params:
 - `address` (required): Ethereum address
 - `version` (optional): `v2`, `v3`, or `all` (default: `all`)
+- `refresh` (optional): `true` or `1` to force cache refresh
 
 Response:
 ```json
@@ -238,6 +239,36 @@ Debug endpoint for inspecting raw events.
 curl "http://localhost:3001/api/holdings/debug?address=0x...&vault=0x..."
 ```
 
+### POST `/api/admin/invalidate-cache`
+Protected endpoint to invalidate cache when new vaults are indexed.
+
+```bash
+curl -X POST "http://localhost:3001/api/admin/invalidate-cache" \
+  -H "x-admin-secret: $ADMIN_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"vaults": [{"address": "0x...", "chainId": 1}]}'
+```
+
+Request body:
+```json
+{
+  "vaults": [
+    { "address": "0xac37729b76db6438ce62042ae1270ee574ca7571", "chainId": 1 },
+    { "address": "0x7fd8af959b54a677a1d8f92265bd0714274c56a3", "chainId": 8453 }
+  ]
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "invalidated": 2,
+  "vaults": ["1:0xac37729b...", "8453:0x7fd8af9..."],
+  "timestamp": "2026-03-07T12:00:00Z"
+}
+```
+
 ## Supported Chains
 
 | Chain | ID | DefiLlama Prefix |
@@ -254,6 +285,7 @@ curl "http://localhost:3001/api/holdings/debug?address=0x...&vault=0x..."
 | `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
 | `ENVIO_PASSWORD` | No | `''` (empty) | Envio Hasura admin secret (header skipped if empty or 'testing') |
 | `DATABASE_URL` | No | `null` | PostgreSQL connection string (caching disabled if not set) |
+| `ADMIN_SECRET` | No | `null` | Secret for admin endpoints (cache invalidation). Use 32+ char random string. |
 
 **Note**: Kong and DefiLlama base URLs are hardcoded:
 - Kong: `https://kong.yearn.fi`
@@ -349,7 +381,7 @@ Today's value uses the latest available Price Per Share from Kong, which may upd
    - Daily totals cached per user (today recalculated on each request)
    - Token prices cached globally (shared across all users)
 2. **HTTP Cache-Control** (CDN): `s-maxage=300, stale-while-revalidate=600`
-3. **TanStack Query** (client): 5-minute stale time
+3. **TanStack Query** (client): 4-hour cache duration
 
 ## Database Schema
 
@@ -372,8 +404,32 @@ CREATE TABLE IF NOT EXISTS token_prices (
   PRIMARY KEY (token_key, timestamp)
 );
 
+-- Vault invalidation timestamps (for cache invalidation)
+CREATE TABLE IF NOT EXISTS vault_invalidations (
+  vault_address  VARCHAR(42) NOT NULL,
+  chain_id       INTEGER NOT NULL,
+  invalidated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY (vault_address, chain_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_token_prices_token_key ON token_prices(token_key);
+CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
 ```
 
 - `holdings_totals`: ~365 rows per user for full history
 - `token_prices`: Shared cache, reduces DefiLlama API calls from ~45s to ~100ms for repeat requests
+- `vault_invalidations`: Tracks when vaults were invalidated for lazy cache refresh
+
+## Cache Invalidation
+
+When new vaults are added to the indexer, cached data becomes stale. The system uses **lazy per-vault invalidation**:
+
+1. After deploying indexer with new vault, call `POST /api/admin/invalidate-cache` with the vault addresses
+2. This records invalidation timestamps in `vault_invalidations` table
+3. On user requests, the system checks if any of the user's vaults were invalidated after their cache was written
+4. If stale, the user's cache is cleared and recalculated
+
+This approach:
+- Only refreshes cache for users who hold the newly-indexed vault
+- Refresh happens lazily on next request (after client cache expires)
+- No need to know affected users upfront
