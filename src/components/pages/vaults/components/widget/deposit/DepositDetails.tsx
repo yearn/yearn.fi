@@ -85,11 +85,13 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   const vaultShareValueUsdRaw = Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
   const vaultShareValueUsd = formatWidgetValue(vaultShareValueUsdRaw)
 
-  // Calculate amount USD to be deposited and check if expected amount is down >20%
-  const depositedUsdValue = Number(formatUnits(depositAmountBn, inputTokenDecimals)) * inputTokenUsdPrice
-  const isSignificantLoss =
-    depositedUsdValue > 0 && vaultShareValueUsdRaw > 0 && vaultShareValueUsdRaw < depositedUsdValue * 0.8
-
+  // Calculate price impact (USD to deposit vs vault share value USD)
+  const usdValueToDeposit = Number(formatUnits(depositAmountBn, inputTokenDecimals)) * inputTokenUsdPrice
+  const priceImpact =
+    usdValueToDeposit > 0 && vaultShareValueUsdRaw > 0
+      ? ((usdValueToDeposit - vaultShareValueUsdRaw) / usdValueToDeposit) * 100
+      : 0
+  const hasHighPriceImpact = priceImpact > 5
   return (
     <div>
       <div className="flex flex-col gap-2">
@@ -160,7 +162,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
           >
             Vault share value
           </button>
-          <p className={`text-sm ${isSignificantLoss ? 'text-red-500' : 'text-text-primary'}`}>
+          <p className={`text-sm ${hasHighPriceImpact ? 'text-red-500' : 'text-text-primary'}`}>
             {isLoadingQuote ? (
               <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
             ) : (
@@ -169,6 +171,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 <span className="font-normal">{`${assetTokenSymbol || ''} (`}</span>
                 <span className="font-normal">{`$${vaultShareValueUsd}`}</span>
                 <span className="font-normal">{')'}</span>
+                {hasHighPriceImpact && <span className="font-semibold">{` (-${priceImpact.toFixed(2)}%)`}</span>}
               </>
             )}
           </p>

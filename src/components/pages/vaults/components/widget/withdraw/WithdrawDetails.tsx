@@ -58,11 +58,14 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
 }) => {
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
 
-  // Calculate if expected output is significantly less than withdraw amount (>20% loss)
+  // Calculate price impact (withdraw amount USD vs expected output USD)
   const withdrawUsdValue = Number(formatUnits(withdrawAmountBn, assetDecimals)) * assetUsdPrice
   const expectedOutUsdValue = Number(formatUnits(expectedOut, outputDecimals)) * outputUsdPrice
-  const isSignificantLoss =
-    withdrawUsdValue > 0 && expectedOutUsdValue > 0 && expectedOutUsdValue < withdrawUsdValue * 0.8
+  const priceImpact =
+    withdrawUsdValue > 0 && expectedOutUsdValue > 0
+      ? ((withdrawUsdValue - expectedOutUsdValue) / withdrawUsdValue) * 100
+      : 0
+  const hasHighPriceImpact = priceImpact > 5
   return (
     <div>
       <div className="flex flex-col gap-2">
@@ -104,13 +107,14 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
         <div className="flex items-center justify-between h-5">
           <p className="text-sm text-text-secondary">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
           <div className="flex items-center gap-1">
-            <p className={`text-sm ${isSignificantLoss ? 'text-red-500' : 'text-text-primary'}`}>
+            <p className={`text-sm ${hasHighPriceImpact ? 'text-red-500' : 'text-text-primary'}`}>
               {isLoadingQuote ? (
                 <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : expectedOut > 0n ? (
                 <>
                   <span className="font-semibold">{formatWidgetValue(expectedOut, outputDecimals)}</span>{' '}
                   <span className="font-normal">{outputSymbol}</span>
+                  {hasHighPriceImpact && <span className="font-semibold">{` (-${priceImpact.toFixed(2)}%)`}</span>}
                 </>
               ) : (
                 <>
