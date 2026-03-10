@@ -53,7 +53,7 @@ function VaultHeaderIdentity({
   const chainName = getNetwork(currentVault.chainID).name
   const isYvUsd = isYvUsdVault(currentVault)
   const tokenLogoSrc = isYvUsd
-    ? `${import.meta.env.BASE_URL}yvUSD.png`
+    ? `${import.meta.env.BASE_URL}yvUSD-C-seal.png`
     : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
@@ -131,14 +131,14 @@ function VaultHeaderIdentity({
         <div
           className={cl(
             'relative flex items-center justify-start rounded-full bg-surface/70',
-            isCompressed ? 'size-8' : 'size-10'
+            isYvUsd ? 'size-10' : isCompressed ? 'size-8' : 'size-10'
           )}
         >
           <TokenLogo
             src={tokenLogoSrc}
             tokenSymbol={currentVault.token.symbol || ''}
-            width={isCompressed ? 32 : 40}
-            height={isCompressed ? 32 : 40}
+            width={isYvUsd ? 40 : isCompressed ? 32 : 40}
+            height={isYvUsd ? 40 : isCompressed ? 32 : 40}
           />
           {isCompressed ? (
             <div

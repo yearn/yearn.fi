@@ -141,7 +141,7 @@ export function VaultsListRow({
   const network = getNetwork(chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const isYvUsd = isYvUsdAddress(vaultAddress)
-  const yvUsdLogoSrc = `${import.meta.env.BASE_URL}yvUSD.png`
+  const yvUsdLogoSrc = `${import.meta.env.BASE_URL}yvUSD-C-seal.png`
   const tokenLogoSrc = isYvUsd
     ? yvUsdLogoSrc
     : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${vaultToken.address.toLowerCase()}/logo-128.png`
@@ -426,10 +426,17 @@ export function VaultsListRow({
           className={cl(
             leftColumnSpan,
             'z-10',
+            isYvUsd ? '-ml-2' : '',
             'flex flex-col items-start sm:pt-0 md:flex-row md:items-center md:justify-between'
           )}
         >
-          <div className={'flex w-full gap-6 overflow-visible border-b border-border pb-2 md:border-none md:pb-0'}>
+          <div
+            className={cl(
+              'flex w-full overflow-visible border-b border-border pb-2',
+              isYvUsd ? 'gap-4' : 'gap-6',
+              'md:border-none md:pb-0'
+            )}
+          >
             {showCompareToggle ? (
               // biome-ignore lint/a11y/useSemanticElements: native checkbox has double-firing issues with parent Link's onClickCapture
               <div
@@ -439,7 +446,7 @@ export function VaultsListRow({
                   isCompareSelected ? `Remove ${vaultName} from comparison` : `Add ${vaultName} to comparison`
                 }
                 tabIndex={0}
-                className={'flex cursor-pointer items-center justify-center'}
+                className={cl('flex cursor-pointer items-center justify-center', isYvUsd ? 'ml-2' : '')}
                 onClick={(event): void => {
                   event.stopPropagation()
                   event.preventDefault()
@@ -469,8 +476,18 @@ export function VaultsListRow({
                 </div>
               </div>
             ) : null}
-            <div className={'relative flex items-center justify-center self-center size-8 min-h-8 min-w-8'}>
-              <TokenLogo src={tokenLogoSrc} tokenSymbol={vaultToken.symbol || ''} width={32} height={32} />
+            <div
+              className={cl(
+                'relative flex items-center justify-center self-center',
+                isYvUsd ? 'size-12' : 'size-8',
+                'min-h-8 min-w-8'
+              )}
+            >
+              {isYvUsd ? (
+                <TokenLogo src={yvUsdLogoSrc} tokenSymbol={'yvUSD'} width={48} height={48} />
+              ) : (
+                <TokenLogo src={tokenLogoSrc} tokenSymbol={vaultToken.symbol || ''} width={32} height={32} />
+              )}
               <div
                 className={
                   'absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface'
