@@ -6,6 +6,7 @@ import { cl } from '@shared/utils'
 
 import type { ReactElement } from 'react'
 import { useCallback, useMemo } from 'react'
+import { STRATEGY_PANEL_HEAD_DESKTOP_LAYOUT } from './strategiesLayout'
 
 type TSortableListHeadItem = {
   type?: 'sort'
@@ -178,7 +179,7 @@ export function VaultsListHead({
       >
         <div
           className={cl(
-            'col-span-9',
+            STRATEGY_PANEL_HEAD_DESKTOP_LAYOUT.nameColumnSpanClass,
             'flex flex-row items-center justify-start!',
             'mb-2 py-4 md:mb-0 md:py-0',
             token.className
@@ -187,10 +188,16 @@ export function VaultsListHead({
           {renderItem(token, !isToggleItem(token) && sortBy === token.value, false)}
         </div>
 
-        <div className={cl('col-span-14 z-10', 'grid grid-cols-1 md:grid-cols-15 md:gap-4', 'mt-4 md:mt-0')}>
+        <div
+          className={cl(
+            `${STRATEGY_PANEL_HEAD_DESKTOP_LAYOUT.valuesColumnSpanClass} z-10`,
+            `grid grid-cols-1 ${STRATEGY_PANEL_HEAD_DESKTOP_LAYOUT.valuesGridClass}`,
+            'mt-4 md:mt-0'
+          )}
+        >
           {rest.map(
             (item): ReactElement => (
-              <div key={item.value} className="md:col-span-5">
+              <div key={item.value} className={STRATEGY_PANEL_HEAD_DESKTOP_LAYOUT.valueColumnSpanClass}>
                 {renderItem(item, !isToggleItem(item) && sortBy === item.value, true)}
               </div>
             )
