@@ -95,10 +95,10 @@ export default function Index(): ReactElement {
     pinnedVaults,
     mainVaults,
     vaultFlags,
-    listCategoriesSanitized,
     listChains,
-    defaultCategories,
-    totalMatchingVaults
+    totalMatchingVaults,
+    hiddenByFiltersCount,
+    blockingFilterActions
   } = data
   const { activeChains, activeCategories, activeProductType } = activeFilters
   const { onToggleChain, onToggleCategory, onToggleType, onToggleVaultType } = handlers
@@ -343,11 +343,9 @@ export default function Index(): ReactElement {
         <VaultsListEmpty
           isLoading={false}
           currentSearch={search.value}
-          currentCategories={listCategoriesSanitized}
-          currentChains={listChains}
           onReset={onResetFilters}
-          defaultCategories={defaultCategories}
-          potentialResultsCount={totalMatchingVaults}
+          hiddenByFiltersCount={hiddenByFiltersCount}
+          blockingFilterActions={blockingFilterActions}
         />
       )
     }
@@ -413,15 +411,15 @@ export default function Index(): ReactElement {
     activeCategories,
     activeChains,
     activeProductType,
+    blockingFilterActions,
     compareVaultKeys,
-    defaultCategories,
     displayedShowStrategies,
     expandedVaultKeys,
     handleExpandedChange,
     handleToggleCompare,
+    hiddenByFiltersCount,
     isCompareMode,
     isLoading,
-    listCategoriesSanitized,
     listChains,
     listVaultType,
     mainVaults,
@@ -435,7 +433,6 @@ export default function Index(): ReactElement {
     resolveApyDisplayVariant,
     search.value,
     shouldCollapseChips,
-    totalMatchingVaults,
     vaultFlags
   ])
 
@@ -492,7 +489,7 @@ export default function Index(): ReactElement {
               style={{ top: 'var(--header-height)' }}
             >
               <Breadcrumbs
-                className={'mb-3 mt-2'}
+                className={'mb-3 px-1'}
                 items={[
                   { label: 'Home', href: '/' },
                   { label: 'Vaults', href: '/vaults', isCurrent: true }

@@ -36,8 +36,31 @@ export const kongVaultListItemSchema = z.object({
         .nullish(),
       estimated: z
         .object({
+          apr: coerceNullableNumber.optional(),
           apy: coerceNullableNumber,
-          type: z.string().nullable().optional()
+          type: z.string().nullable().optional(),
+          components: z
+            .object({
+              boost: coerceNullableNumber.optional(),
+              poolAPY: coerceNullableNumber.optional(),
+              boostedAPR: coerceNullableNumber.optional(),
+              baseAPR: coerceNullableNumber.optional(),
+              rewardsAPR: coerceNullableNumber.optional(),
+              rewardsAPY: coerceNullableNumber.optional(),
+              cvxAPR: coerceNullableNumber.optional(),
+              keepCRV: coerceNullableNumber.optional(),
+              keepVelo: coerceNullableNumber.optional(),
+              netAPR: coerceNullableNumber.optional(),
+              netAPY: coerceNullableNumber.optional(),
+              katanaBonusAPY: coerceNullableNumber.optional(),
+              katanaNativeYield: coerceNullableNumber.optional(),
+              katanaAppRewardsAPR: coerceNullableNumber.optional(),
+              steerPointsPerDollar: coerceNullableNumber.optional(),
+              fixedRateKatanaRewards: coerceNullableNumber.optional(),
+              FixedRateKatanaRewards: coerceNullableNumber.optional()
+            })
+            .partial()
+            .optional()
         })
         .nullish(),
       historical: z

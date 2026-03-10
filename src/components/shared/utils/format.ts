@@ -503,12 +503,27 @@ export function formatUSDWithThreshold(n: number, min = 2, max = 2): string {
   return formatUSD(n, min, max)
 }
 
-export function formatPercent(n: number, min = 2, max = 2, upperLimit = 500): string {
-  const safeN = n || 0
+function formatToSignificantDigits(value: number, significantDigits = 3): string {
+  return new Intl.NumberFormat(resolveLocales(), {
+    minimumSignificantDigits: 1,
+    maximumSignificantDigits: significantDigits
+  }).format(value)
+}
+
+export function formatPercent(n: number, min?: number, max?: number, upperLimit = 500): string {
+  const safeN = Number.isFinite(n) ? n : 0
+  const hasFixedPrecisionOverride = min !== undefined || max !== undefined
+  const resolvedMin = min ?? 2
+  const resolvedMax = max ?? 2
+
   if (safeN >= upperLimit) {
-    return `≥ ${formatAmount(upperLimit, min, max)}%`
+    return hasFixedPrecisionOverride
+      ? `≥ ${formatAmount(upperLimit, resolvedMin, resolvedMax)}%`
+      : `≥ ${formatToSignificantDigits(upperLimit)}%`
   }
-  return `${formatAmount(safeN || 0, min, max)}%`
+  return hasFixedPrecisionOverride
+    ? `${formatAmount(safeN, resolvedMin, resolvedMax)}%`
+    : `${formatToSignificantDigits(safeN)}%`
 }
 
 export function formatAllocationPercent(value: number, options?: { locales?: string[] }): string {

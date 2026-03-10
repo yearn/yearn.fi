@@ -10,6 +10,7 @@ import { DEFAULT_ERC20, isZeroAddress, toAddress, zeroNormalizedBN } from '../ut
 import { useWeb3 } from './useWeb3'
 import { useYearn } from './useYearn'
 import { useYearnTokens } from './useYearn.helper'
+import { useTokenList } from './WithTokenList'
 
 const USE_ENSO_BALANCES = import.meta.env.VITE_BALANCE_SOURCE !== 'multicall'
 
@@ -55,6 +56,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     isLoadingVaultList,
     isEnabled: Boolean(userAddress)
   })
+
+  const { getToken: getTokenListToken } = useTokenList()
+
   const useBalancesHook = USE_ENSO_BALANCES ? useBalancesCombined : useBalancesWithQuery
   const {
     data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
@@ -106,7 +110,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         return token
       }
       // If balances is empty (during refetch), return cached token if available
-      return tokenCache.current[cacheKey] || DEFAULT_ERC20
+      return tokenCache.current[cacheKey] || getTokenListToken({ address, chainID })
     },
     [balances, userAddress]
   )

@@ -6,7 +6,6 @@ import {
   AVAILABLE_TOGGLE_VALUE,
   HOLDINGS_TOGGLE_VALUE,
   selectVaultsByType,
-  V2_ASSET_CATEGORIES,
   V3_ASSET_CATEGORIES
 } from '@pages/vaults/utils/constants'
 import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
@@ -23,6 +22,7 @@ type TVaultsPinnedSection = {
 }
 
 type TVaultsListModelArgs = {
+  enabled?: boolean
   listVaultType: TVaultType
   listChains: number[] | null
   listV3Types: string[]
@@ -35,12 +35,12 @@ type TVaultsListModelArgs = {
   searchValue: string
   sortBy: TPossibleSortBy
   sortDirection: TSortDirection
+  holdingsPinnedSortDirection: TSortDirection
   isHoldingsPinned: boolean
   isAvailablePinned: boolean
 }
 
 type TVaultsListModel = {
-  defaultCategories: string[]
   listCategoriesSanitized: string[]
   holdingsVaults: TKongVault[]
   availableVaults: TKongVault[]
@@ -48,14 +48,15 @@ type TVaultsListModel = {
   underlyingAssetVaults: Record<string, TKongVault>
   pinnedSections: TVaultsPinnedSection[]
   pinnedVaults: TKongVaultInput[]
-  mainVaults: TKongVaultInput[]
-  suggestedVaults: TKongVaultInput[]
+  mainVaults: TKongVault[]
+  suggestedVaults: TKongVault[]
   totalMatchingVaults: number
   totalHoldingsMatching: number
   isLoadingVaultList: boolean
 }
 
 export function useVaultsListModel({
+  enabled = true,
   listVaultType,
   listChains,
   listV3Types,
@@ -68,12 +69,14 @@ export function useVaultsListModel({
   searchValue,
   sortBy,
   sortDirection,
+  holdingsPinnedSortDirection,
   isHoldingsPinned,
   isAvailablePinned
 }: TVaultsListModelArgs): TVaultsListModel {
   const isAllVaults = listVaultType === 'all'
-  const isV3View = listVaultType === 'v3' || isAllVaults
-  const isV2View = listVaultType === 'factory' || isAllVaults
+
+  const isV3View = enabled && (listVaultType === 'v3' || isAllVaults)
+  const isV2View = enabled && (listVaultType === 'factory' || isAllVaults)
   const { listVault: yvUsdVault } = useYvUsdVaults()
 
   const listV2Types = useMemo(
@@ -234,6 +237,12 @@ export function useVaultsListModel({
     [sortedVaults, holdingsKeySet]
   )
 
+  const sortedHoldingsVaultsByDeposited = useSortVaults(
+    sortedHoldingsVaults,
+    'deposited',
+    holdingsPinnedSortDirection || 'desc'
+  )
+
   const sortedAvailableVaults = useMemo(
     () => sortedVaults.filter((vault) => availableKeySet.has(getVaultKey(vault))),
     [sortedVaults, availableKeySet]
@@ -276,7 +285,9 @@ export function useVaultsListModel({
     }
 
     if (isHoldingsPinned) {
-      const holdingsSectionVaults = sortedHoldingsVaults.filter((vault) => {
+      const holdingsSourceVaults =
+        holdingsPinnedSortDirection === '' ? sortedHoldingsVaults : sortedHoldingsVaultsByDeposited
+      const holdingsSectionVaults = holdingsSourceVaults.filter((vault) => {
         const key = getVaultKey(vault)
         if (seen.has(key)) {
           return false
@@ -294,7 +305,14 @@ export function useVaultsListModel({
     }
 
     return sections
-  }, [isAvailablePinned, sortedAvailableVaults, isHoldingsPinned, sortedHoldingsVaults, shouldShowYvUsd, yvUsdVault])
+  }, [
+    isAvailablePinned,
+    sortedAvailableVaults,
+    isHoldingsPinned,
+    holdingsPinnedSortDirection,
+    sortedHoldingsVaults,
+    sortedHoldingsVaultsByDeposited
+  ])
 
   const pinnedVaults = useMemo(() => pinnedSections.flatMap((section) => section.vaults), [pinnedSections])
 
@@ -327,7 +345,6 @@ export function useVaultsListModel({
     return suggestedV2Vaults
   }, [listVaultType, suggestedV3Vaults, suggestedV2Vaults])
 
-  const defaultCategories = isV3View ? V3_ASSET_CATEGORIES : V2_ASSET_CATEGORIES
   const underlyingAssetVaults = useMemo(() => {
     if (listVaultType === 'all') {
       return { ...v3FilterResult.underlyingAssetVaults, ...v2FilterResult.underlyingAssetVaults }
@@ -339,7 +356,6 @@ export function useVaultsListModel({
   }, [listVaultType, v2FilterResult.underlyingAssetVaults, v3FilterResult.underlyingAssetVaults])
 
   return {
-    defaultCategories,
     listCategoriesSanitized,
     holdingsVaults,
     availableVaults,

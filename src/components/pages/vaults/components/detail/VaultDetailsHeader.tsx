@@ -396,7 +396,7 @@ function VaultOverviewCard({
   const metrics: TMetricBlock[] = [
     {
       key: 'est-apy',
-      header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY for the next period'} />,
+      header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY based on underlying markets'} />,
       value: isYvUsd ? (
         <Tooltip className={'gap-0 h-auto'} openDelayMs={150} tooltip={yvUsdEstApyTooltip ?? ''} align={'center'}>
           {renderYvUsdApyValue(selectedForwardApy)}

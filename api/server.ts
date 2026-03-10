@@ -43,6 +43,11 @@ async function handleYvUsdAprs(req: Request): Promise<Response> {
   }
 }
 
+function handleEnsoStatus(): Response {
+  const apiKey = process.env.ENSO_API_KEY
+  return Response.json({ configured: !!apiKey })
+}
+
 async function handleEnsoRoute(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const fromAddress = url.searchParams.get('fromAddress')
@@ -151,11 +156,6 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
     console.error('Error proxying Enso request:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
-
-function handleEnsoStatus(): Response {
-  const apiKey = process.env.ENSO_API_KEY
-  return Response.json({ configured: !!apiKey })
 }
 
 serve({

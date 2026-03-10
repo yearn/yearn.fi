@@ -81,7 +81,7 @@ const createUseInputHook =
         touched: formValue !== '',
         activity
       }
-    }, [decimals, formValue, activity[0], formatter])
+    }, [decimals, formValue, activity[0]])
 
     return [state, handleChange, setFormValue]
   }

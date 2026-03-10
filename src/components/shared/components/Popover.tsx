@@ -33,7 +33,7 @@ export const Popover: FC<PopoverProps> = ({ trigger, children, className, align 
             padding: '16px'
           }}
           className={cl(
-            'z-50 w-80 bg-white rounded-lg shadow-lg border border-gray-200',
+            'z-50 w-80 rounded-lg shadow-lg border border-border bg-surface',
             align === 'start' ? '[--anchor-align:start]' : '',
             align === 'center' ? '[--anchor-align:center]' : '',
             align === 'end' ? '[--anchor-align:end]' : '',

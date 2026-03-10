@@ -46,6 +46,10 @@ export const useDepositError = ({
     }
 
     // Route-dependent validation - wait for debounce and route fetch
+    if (routeType === 'NO_ROUTE' && debouncedAmount > 0n && !isDebouncing) {
+      return 'No route available for selected token'
+    }
+
     if (routeType === 'ENSO' && flowError && !isLoadingRoute && debouncedAmount > 0n && !isDebouncing) {
       return 'Unable to find route'
     }

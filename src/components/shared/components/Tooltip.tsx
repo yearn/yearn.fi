@@ -6,6 +6,15 @@ import { createPortal } from 'react-dom'
 // Created as .tooltip & .tooltiptext can be lower in DOM and not render on top of other elements.
 // Use this when tooltip is not in the same component as the trigger.
 
+const HOVER_MEDIA_QUERY = '(hover: hover) and (pointer: fine)'
+
+function getCanHover(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return true
+  }
+  return window.matchMedia(HOVER_MEDIA_QUERY).matches
+}
+
 export const Tooltip: FC<{
   className?: string
   children: ReactElement
@@ -25,6 +34,7 @@ export const Tooltip: FC<{
   side = 'top',
   zIndex = 9999
 }) => {
+  const [canHover, setCanHover] = useState<boolean>(() => getCanHover())
   const [isTooltipVisible, setIsTooltipVisible] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   const triggerRef = useRef<HTMLDivElement>(null)
@@ -128,33 +138,45 @@ export const Tooltip: FC<{
   }, [cancelScheduledClose, cancelScheduledOpen, openDelayMs, showTooltip])
 
   const handleMouseEnter = useCallback((): void => {
+    if (!canHover) {
+      return
+    }
     scheduleOpen()
-  }, [scheduleOpen])
+  }, [canHover, scheduleOpen])
 
   const handleMouseLeave = useCallback(
     (event: MouseEvent<HTMLDivElement>): void => {
+      if (!canHover) {
+        return
+      }
       const nextTarget = event.relatedTarget as Node | null
       if (tooltipRef.current && nextTarget && tooltipRef.current.contains(nextTarget)) {
         return
       }
       scheduleClose()
     },
-    [scheduleClose]
+    [canHover, scheduleClose]
   )
 
   const handleTooltipMouseEnter = useCallback((): void => {
+    if (!canHover) {
+      return
+    }
     cancelScheduledClose()
-  }, [cancelScheduledClose])
+  }, [canHover, cancelScheduledClose])
 
   const handleTooltipMouseLeave = useCallback(
     (event: MouseEvent<HTMLDivElement>): void => {
+      if (!canHover) {
+        return
+      }
       const nextTarget = event.relatedTarget as Node | null
       if (triggerRef.current && nextTarget && triggerRef.current.contains(nextTarget)) {
         return
       }
       scheduleClose()
     },
-    [scheduleClose]
+    [canHover, scheduleClose]
   )
 
   const handleClick = useCallback(
@@ -173,6 +195,27 @@ export const Tooltip: FC<{
     },
     [cancelScheduledClose, cancelScheduledOpen, isTooltipVisible, showTooltip, toggleOnClick]
   )
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return
+    }
+    const mediaQuery = window.matchMedia(HOVER_MEDIA_QUERY)
+    const updateCanHover = (): void => {
+      setCanHover(mediaQuery.matches)
+    }
+    updateCanHover()
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', updateCanHover)
+      return () => mediaQuery.removeEventListener('change', updateCanHover)
+    }
+    if (typeof mediaQuery.addListener === 'function') {
+      mediaQuery.addListener(updateCanHover)
+      return () => mediaQuery.removeListener(updateCanHover)
+    }
+    return undefined
+  }, [])
 
   useEffect(() => {
     if (!isTooltipVisible) {

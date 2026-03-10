@@ -146,10 +146,11 @@ function AppHeader(): ReactElement {
 
                   <button
                     className={
-                      'min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary'
+                      'min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
                     }
                     onClick={() => setThemePreference(isDarkTheme ? 'light' : 'soft-dark')}
                     title={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
+                    aria-label={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
                   >
                     {isDarkTheme ? <IconSun className={'size-5'} /> : <IconMoon className={'size-5'} />}
                   </button>

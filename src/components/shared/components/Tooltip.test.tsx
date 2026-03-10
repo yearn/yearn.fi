@@ -37,4 +37,40 @@ describe('Tooltip', () => {
     fireEvent.click(trigger)
     expect(queryByText('Tip')).toBeNull()
   })
+
+  it('does not open on hover on devices without hover support', () => {
+    const originalMatchMedia = window.matchMedia
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      configurable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn()
+      }))
+    })
+
+    try {
+      const { container, queryByText } = render(
+        <Tooltip tooltip={<div>Tip</div>}>
+          <button type="button">Trigger</button>
+        </Tooltip>
+      )
+
+      const trigger = container.firstChild as HTMLElement
+      fireEvent.mouseEnter(trigger)
+      expect(queryByText('Tip')).toBeNull()
+    } finally {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        configurable: true,
+        value: originalMatchMedia
+      })
+    }
+  })
 })

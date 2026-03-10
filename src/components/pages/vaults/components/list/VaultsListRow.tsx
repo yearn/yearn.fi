@@ -133,7 +133,6 @@ export function VaultsListRow({
   const vaultSymbol = getVaultSymbol(currentVault)
   const vaultName = getVaultDisplayName(currentVault)
   const vaultToken = getVaultToken(currentVault)
-  const vaultTvl = getVaultTVL(currentVault)
   const staking = getVaultStaking(currentVault)
   const apr = getVaultAPR(currentVault)
   const vaultKind = getVaultKind(currentVault)
@@ -194,6 +193,7 @@ export function VaultsListRow({
   const { metrics: yvUsdMetrics } = useYvUsdVaults()
   const resolvedYvUsdMetrics = useMemo(() => {
     if (!isYvUsd) return null
+    const vaultTvl = getVaultTVL(currentVault)
     const unlockedApy = yvUsdMetrics?.unlocked.apy ?? (apr?.forwardAPR?.netAPR || apr?.netAPR || 0)
     const unlockedTvl = yvUsdMetrics?.unlocked.tvl ?? vaultTvl.tvl ?? 0
     const lockedApy = yvUsdMetrics?.locked.apy ?? 0
@@ -205,7 +205,7 @@ export function VaultsListRow({
       lockedTvl,
       combinedTvl: vaultTvl.tvl ?? unlockedTvl + lockedTvl
     }
-  }, [apr, isYvUsd, vaultTvl.tvl, yvUsdMetrics])
+  }, [apr, isYvUsd, yvUsdMetrics])
 
   const yvUsdApyTooltip = resolvedYvUsdMetrics ? (
     <YvUsdApyTooltipContent
@@ -349,7 +349,7 @@ export function VaultsListRow({
     >
       <button
         type={'button'}
-        aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+        aria-label={isExpanded ? 'Collapse vault details' : 'Expand vault details'}
         aria-expanded={isExpanded}
         data-tour="vaults-row-expand"
         onClick={(event): void => {

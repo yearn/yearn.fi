@@ -162,7 +162,7 @@ export const Vaults: FC = () => {
       setActiveSlide((prev) => (prev + 1) % totalSlides)
       setTimeout(() => setIsAnimating(false), 500)
     }
-  }, [isAnimating, totalSlides])
+  }, [isAnimating])
 
   const goToSlide = useCallback(
     (index: number) => {
