@@ -141,7 +141,7 @@ export function VaultsListRow({
   const network = getNetwork(chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const isYvUsd = isYvUsdAddress(vaultAddress)
-  const yvUsdLogoSrc = `${import.meta.env.BASE_URL}yvUSD-C-seal.png`
+  const yvUsdLogoSrc = `${import.meta.env.BASE_URL}yvUSD-seal.png`
   const tokenLogoSrc = isYvUsd
     ? yvUsdLogoSrc
     : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${vaultToken.address.toLowerCase()}/logo-128.png`

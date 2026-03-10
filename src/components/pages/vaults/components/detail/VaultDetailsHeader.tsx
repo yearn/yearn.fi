@@ -53,7 +53,7 @@ function VaultHeaderIdentity({
   const chainName = getNetwork(currentVault.chainID).name
   const isYvUsd = isYvUsdVault(currentVault)
   const tokenLogoSrc = isYvUsd
-    ? `${import.meta.env.BASE_URL}yvUSD-C-seal.png`
+    ? `${import.meta.env.BASE_URL}yvUSD-seal.png`
     : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${currentVault.chainID}/${currentVault.token.address.toLowerCase()}/logo-128.png`
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
