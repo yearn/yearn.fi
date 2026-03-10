@@ -413,6 +413,7 @@ export const WidgetDeposit: FC<Props> = ({
       routeType={routeType}
       isSwap={selectedToken !== assetAddress}
       isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+      isQuoteStale={depositAmount.isDebouncing || depositAmount.bn !== depositAmount.debouncedBn}
       expectedOutInAsset={expectedOutInAsset}
       assetTokenSymbol={assetToken?.symbol}
       assetTokenDecimals={assetToken?.decimals ?? 18}
@@ -441,6 +442,8 @@ export const WidgetDeposit: FC<Props> = ({
 
   const priceImpactWarning = priceImpactInfo.isHigh &&
     !activeFlow.periphery.isLoadingRoute &&
+    !depositAmount.isDebouncing &&
+    depositAmount.bn === depositAmount.debouncedBn &&
     depositAmount.bn > 0n && (
       <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 space-y-3">
         <p className="text-sm text-red-500">

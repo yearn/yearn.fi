@@ -13,6 +13,7 @@ interface DepositDetailsProps {
   routeType: DepositRouteType
   isSwap: boolean
   isLoadingQuote: boolean
+  isQuoteStale: boolean
   expectedOutInAsset: bigint
   assetTokenSymbol?: string
   assetTokenDecimals: number
@@ -45,6 +46,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   routeType,
   isSwap,
   isLoadingQuote,
+  isQuoteStale,
   expectedOutInAsset,
   assetTokenSymbol,
   assetTokenDecimals,
@@ -91,7 +93,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
     usdValueToDeposit > 0 && vaultShareValueUsdRaw > 0
       ? ((usdValueToDeposit - vaultShareValueUsdRaw) / usdValueToDeposit) * 100
       : 0
-  const hasHighPriceImpact = priceImpact > 5
+  const hasHighPriceImpact = !isQuoteStale && !isLoadingQuote && priceImpact > 5
   return (
     <div>
       <div className="flex flex-col gap-2">

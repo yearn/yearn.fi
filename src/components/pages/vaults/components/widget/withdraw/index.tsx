@@ -436,6 +436,7 @@ export const WidgetWithdraw: FC<
       requiredShares={requiredShares}
       sharesDecimals={sharesDecimals}
       isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+      isQuoteStale={withdrawAmount.isDebouncing || withdrawAmount.bn !== withdrawAmount.debouncedBn}
       expectedOut={activeFlow.periphery.expectedOut}
       outputDecimals={outputToken?.decimals ?? 18}
       outputSymbol={outputToken?.symbol}
@@ -468,6 +469,8 @@ export const WidgetWithdraw: FC<
 
   const priceImpactWarning = priceImpactInfo.isHigh &&
     !activeFlow.periphery.isLoadingRoute &&
+    !withdrawAmount.isDebouncing &&
+    withdrawAmount.bn === withdrawAmount.debouncedBn &&
     withdrawAmount.bn > 0n && (
       <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 space-y-3">
         <p className="text-sm text-red-500">

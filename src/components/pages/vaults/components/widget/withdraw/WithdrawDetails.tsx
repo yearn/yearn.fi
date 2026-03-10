@@ -10,6 +10,7 @@ interface WithdrawDetailsProps {
   requiredShares: bigint
   sharesDecimals: number
   isLoadingQuote: boolean
+  isQuoteStale: boolean
   // Output info
   expectedOut: bigint
   outputDecimals: number
@@ -39,6 +40,7 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
   requiredShares,
   sharesDecimals,
   isLoadingQuote,
+  isQuoteStale,
   expectedOut,
   outputDecimals,
   outputSymbol,
@@ -65,7 +67,7 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
     withdrawUsdValue > 0 && expectedOutUsdValue > 0
       ? ((withdrawUsdValue - expectedOutUsdValue) / withdrawUsdValue) * 100
       : 0
-  const hasHighPriceImpact = priceImpact > 5
+  const hasHighPriceImpact = !isQuoteStale && !isLoadingQuote && priceImpact > 5
   return (
     <div>
       <div className="flex flex-col gap-2">
