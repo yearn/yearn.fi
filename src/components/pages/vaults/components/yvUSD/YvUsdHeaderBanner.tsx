@@ -18,12 +18,8 @@ export function YvUsdHeaderBanner({ className }: { className?: string }): ReactE
     >
       <div className={'flex w-full items-center px-8 py-4'}>
         <div className={'min-w-0'}>
-          <p
-            className={
-              'max-w-[48rem] text-4xl font-bold leading-none tracking-[-0.04em] text-white lg:text-4xl lg:leading-[0.95]'
-            }
-          >
-            {'The anti black box vault'}
+          <p className={'max-w-[48rem] text-4xl font-bold leading-none text-white lg:text-4xl lg:leading-[0.95]'}>
+            {'Transparent, Verifiable, Real Yield'}
           </p>
           <p className={'mt-0 text-sm font-bold leading-tight text-white lg:text-[1.05rem]'}>
             <a
@@ -32,7 +28,7 @@ export function YvUsdHeaderBanner({ className }: { className?: string }): ReactE
             >
               {'Learn more'}
             </a>
-            {" about Yearn's new cross-chain, cross-asset stable coin vault."}
+            {" about Yearn's new cross-chain, cross-asset, delta-neutral vault."}
           </p>
         </div>
       </div>
