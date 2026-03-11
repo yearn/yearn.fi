@@ -36,6 +36,7 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
 }) => {
   const isFromStaking = withdrawalSource === 'staking'
   const isUnstake = routeType === 'DIRECT_UNSTAKE'
+  const isUnstakeAndWithdrawFallback = routeType === 'DIRECT_UNSTAKE_WITHDRAW'
 
   const renderReceiveValue = () => {
     // No input value - just show symbol
@@ -85,6 +86,12 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
                 Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> will be unstaked.
                 You'll receive <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
               </>
+            ) : isUnstakeAndWithdrawFallback ? (
+              <>
+                Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> staked shares will be
+                unstaked, then redeemed for <span className="font-semibold text-text-primary">{vaultAssetSymbol}</span>.
+                You'll receive <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
+              </>
             ) : isFromStaking ? (
               <>
                 Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> staked shares will be
@@ -113,6 +120,11 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
               <>
                 Unstaking converts your staked position back to vault shares. Your vault shares continue to earn yield
                 and can be redeemed for the underlying asset anytime.
+              </>
+            ) : isUnstakeAndWithdrawFallback ? (
+              <>
+                This withdraw uses two transactions: first your staked shares are unstaked to vault shares, then those
+                vault shares are redeemed for the underlying asset plus any earned yield.
               </>
             ) : isFromStaking ? (
               <>

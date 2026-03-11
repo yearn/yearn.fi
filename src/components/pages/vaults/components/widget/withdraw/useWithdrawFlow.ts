@@ -14,19 +14,21 @@ interface UseWithdrawFlowProps {
   vaultAddress: Address
   sourceToken: Address
   stakingAddress?: Address
+  stakingSource?: string
   // Amounts
   amount: bigint
   currentAmount: bigint
   requiredShares: bigint
   maxShares: bigint
+  redeemSharesOverride?: bigint
   isMaxWithdraw: boolean
+  unstakeMaxRedeemShares: bigint
+  allowDirectWithdrawStep?: boolean
   // Account & chain
   account?: Address
   chainId: number
   destinationChainId: number
   outputChainId: number
-  // Decimals
-  assetDecimals: number
   vaultDecimals: number
   outputDecimals: number
   // Price per share
@@ -42,6 +44,8 @@ interface UseWithdrawFlowProps {
 export interface WithdrawFlowResult {
   routeType: WithdrawRouteType
   activeFlow: UseWidgetWithdrawFlowReturn
+  directWithdrawFlow: UseWidgetWithdrawFlowReturn
+  directUnstakeFlow: UseWidgetWithdrawFlowReturn
 }
 
 export const useWithdrawFlow = ({
@@ -50,16 +54,19 @@ export const useWithdrawFlow = ({
   vaultAddress,
   sourceToken,
   stakingAddress,
+  stakingSource,
   amount,
   currentAmount,
   requiredShares,
   maxShares,
+  redeemSharesOverride,
   isMaxWithdraw,
+  unstakeMaxRedeemShares,
+  allowDirectWithdrawStep = true,
   account,
   chainId,
   destinationChainId,
   outputChainId,
-  assetDecimals,
   vaultDecimals,
   outputDecimals,
   pricePerShare,
@@ -83,26 +90,31 @@ export const useWithdrawFlow = ({
   // Direct withdraw flow (vault → asset)
   const directWithdraw = useDirectWithdraw({
     vaultAddress,
-    assetAddress,
     amount,
     maxShares,
+    redeemSharesOverride,
     redeemAll: isMaxWithdraw,
     pricePerShare,
     account,
     chainId,
-    decimals: assetDecimals,
     vaultDecimals,
-    enabled: routeType === 'DIRECT_WITHDRAW' && amount > 0n,
+    enabled:
+      allowDirectWithdrawStep &&
+      (routeType === 'DIRECT_WITHDRAW' || routeType === 'DIRECT_UNSTAKE_WITHDRAW') &&
+      amount > 0n,
     useErc4626
   })
 
   // Direct unstake flow (staking → vault)
   const directUnstake = useDirectUnstake({
     stakingAddress,
+    stakingSource,
     amount: requiredShares,
+    redeemAll: isMaxWithdraw,
+    maxRedeemShares: unstakeMaxRedeemShares,
     account,
     chainId,
-    enabled: routeType === 'DIRECT_UNSTAKE' && currentAmount > 0n
+    enabled: (routeType === 'DIRECT_UNSTAKE' || routeType === 'DIRECT_UNSTAKE_WITHDRAW') && currentAmount > 0n
   })
 
   // Enso flow (zaps, cross-chain, etc.)
@@ -124,11 +136,34 @@ export const useWithdrawFlow = ({
   const activeFlow = useMemo((): UseWidgetWithdrawFlowReturn => {
     if (routeType === 'DIRECT_WITHDRAW') return directWithdraw
     if (routeType === 'DIRECT_UNSTAKE') return directUnstake
+    if (routeType === 'DIRECT_UNSTAKE_WITHDRAW') {
+      return {
+        actions: {
+          prepareWithdraw: directUnstake.actions.prepareWithdraw
+        },
+        periphery: {
+          prepareApproveEnabled: false,
+          prepareWithdrawEnabled: directUnstake.periphery.prepareWithdrawEnabled,
+          isAllowanceSufficient: true,
+          allowance: directWithdraw.periphery.allowance,
+          expectedOut: directWithdraw.periphery.expectedOut,
+          isLoadingRoute:
+            directUnstake.actions.prepareWithdraw.isLoading ||
+            directUnstake.actions.prepareWithdraw.isFetching ||
+            directWithdraw.actions.prepareWithdraw.isLoading ||
+            directWithdraw.actions.prepareWithdraw.isFetching,
+          isCrossChain: false,
+          error: undefined
+        }
+      }
+    }
     return ensoFlow
   }, [routeType, directWithdraw, directUnstake, ensoFlow])
 
   return {
     routeType,
-    activeFlow
+    activeFlow,
+    directWithdrawFlow: directWithdraw,
+    directUnstakeFlow: directUnstake
   }
 }

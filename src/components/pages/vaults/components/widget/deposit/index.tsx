@@ -266,6 +266,7 @@ export const WidgetDeposit: FC<Props> = ({
         confirmMessage: `Approving ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Approval successful',
         successMessage: `Approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nReady to deposit.`,
+        completesFlow: false,
         notification: approveNotificationParams
       }
     }
@@ -280,6 +281,7 @@ export const WidgetDeposit: FC<Props> = ({
         confirmMessage: `${routeType === 'DIRECT_STAKE' ? 'Staking' : 'Depositing'} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Transaction Submitted',
         successMessage: `Your cross-chain ${actionVerb.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
+        completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams
       }
@@ -291,6 +293,7 @@ export const WidgetDeposit: FC<Props> = ({
       confirmMessage: `${routeType === 'DIRECT_STAKE' ? 'Staking' : 'Depositing'} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
       successTitle: `${actionVerb} successful!`,
       successMessage: `You have ${actionVerbPast} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+      completesFlow: true,
       showConfetti: true,
       notification: depositNotificationParams
     }
@@ -572,6 +575,7 @@ export const WidgetDeposit: FC<Props> = ({
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
         isLastStep={!needsApproval}
+        deferOnAllCompleteUntilClose={routeType === 'ENSO'}
         autoContinueToNextStep
         autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleDepositSuccess}

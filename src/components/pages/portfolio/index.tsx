@@ -29,7 +29,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
-import { cl, formatPercent, SUPPORTED_NETWORKS } from '@shared/utils'
+import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { CSSProperties, ReactElement } from 'react'
@@ -337,7 +337,7 @@ function ChainStakingRewardsFetcher({
 }): null {
   const { vault, staking, isLoading: isLoadingVault } = useVaultWithStakingRewards(originalVault, isActive)
 
-  const stakingAddress = staking.available ? staking.address : undefined
+  const stakingAddress = !isZeroAddress(staking.address) ? staking.address : undefined
   const rewardTokens = useMemo(
     () =>
       (staking.rewards ?? []).map((reward) => ({
@@ -420,7 +420,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   const { vaults } = useYearn()
   const trackEvent = usePlausible()
   const stakingVaults = useMemo(
-    () => Object.values(vaults).filter((vault) => getVaultStaking(vault).available),
+    () => Object.values(vaults).filter((vault) => !isZeroAddress(getVaultStaking(vault).address)),
     [vaults]
   )
   const [selectedChainId, setSelectedChainId] = useState<number | null>(null)

@@ -10,7 +10,6 @@ import {
   getVaultChainID,
   getVaultName as getVaultDisplayName,
   getVaultKind,
-  getVaultStaking,
   getVaultSymbol,
   getVaultToken,
   type TKongVaultInput
@@ -24,6 +23,7 @@ import {
   getProductTypeDescription,
   HIDDEN_TAG_DESCRIPTION,
   MIGRATABLE_TAG_DESCRIPTION,
+  NOT_YEARN_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import { useMediaQuery } from '@react-hookz/web'
@@ -33,7 +33,7 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
-import { cl, formatAmount, formatTvlDisplay, getVaultName, isZeroAddress, toAddress } from '@shared/utils'
+import { cl, formatAmount, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -61,6 +61,7 @@ type TVaultRowFlags = {
   isMigratable?: boolean
   isRetired?: boolean
   isHidden?: boolean
+  isNotYearn?: boolean
 }
 
 const prefetchedSnapshotEndpoints = new Set<string>()
@@ -122,7 +123,6 @@ export function VaultsListRow({
   const vaultSymbol = getVaultSymbol(currentVault)
   const vaultName = getVaultDisplayName(currentVault)
   const vaultToken = getVaultToken(currentVault)
-  const staking = getVaultStaking(currentVault)
   const apr = getVaultAPR(currentVault)
   const vaultKind = getVaultKind(currentVault)
   const vaultCategory = getVaultCategory(currentVault)
@@ -130,7 +130,7 @@ export function VaultsListRow({
   const network = getNetwork(chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const { address } = useWeb3()
-  const { getToken } = useWallet()
+  const { getVaultHoldingsUsd } = useWallet()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const [isExpandedState, setIsExpandedState] = useState(false)
   const isExpanded = isExpandedProp ?? isExpandedState
@@ -263,21 +263,8 @@ export function VaultsListRow({
     if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
       return 0
     }
-    const vaultToken = getToken({
-      chainID,
-      address: vaultAddress
-    })
-    const vaultValue = vaultToken.value || 0
-
-    const stakingValue = !isZeroAddress(staking?.address)
-      ? getToken({
-          chainID,
-          address: staking.address
-        }).value || 0
-      : 0
-
-    return vaultValue + stakingValue
-  }, [showHoldingsChip, vaultAddress, chainID, staking?.address, getToken, mobileSecondaryMetric, showHoldingsChip])
+    return getVaultHoldingsUsd(currentVault)
+  }, [showHoldingsChip, mobileSecondaryMetric, currentVault, getVaultHoldingsUsd])
 
   useEffect(() => {
     if (isExpanded) {
@@ -293,7 +280,7 @@ export function VaultsListRow({
     >
       <button
         type={'button'}
-        aria-label={isExpanded ? 'Collapse vault details' : 'Expand vault details'}
+        aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
         aria-expanded={isExpanded}
         data-tour="vaults-row-expand"
         onClick={(event): void => {
@@ -523,6 +510,15 @@ export function VaultsListRow({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={HIDDEN_TAG_DESCRIPTION}
+                    onHoverChange={handleInteractiveHoverChange}
+                  />
+                ) : null}
+                {flags?.isNotYearn ? (
+                  <VaultsListChip
+                    label={'Not Yearn'}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={NOT_YEARN_TAG_DESCRIPTION}
                     onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}

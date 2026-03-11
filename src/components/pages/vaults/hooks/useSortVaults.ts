@@ -1,11 +1,9 @@
 import {
-  getVaultAddress,
   getVaultAPR,
   getVaultChainID,
   getVaultFeaturingScore,
   getVaultInfo,
   getVaultName,
-  getVaultStaking,
   getVaultToken,
   getVaultTVL,
   type TKongVaultInput,
@@ -13,7 +11,7 @@ import {
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useWallet } from '@shared/contexts/useWallet'
 import type { TSortDirection } from '@shared/types'
-import { isZeroAddress, normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
+import { normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { numberSort, stringSort } from '@shared/utils/helpers'
 import { calculateVaultEstimatedAPY } from '@shared/utils/vaultApy'
@@ -36,8 +34,7 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
   sortBy: TPossibleSortBy,
   sortDirection: TSortDirection
 ): TVault[] {
-  const { getBalance, getToken } = useWallet()
-
+  const { getBalance, getVaultHoldingsUsd } = useWallet()
   const isFeaturingScoreSortedDesc = useMemo((): boolean => {
     if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
       return false
@@ -52,24 +49,37 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
     })
   }, [vaultList, sortBy, sortDirection])
 
-  const sortedVaults = useMemo(() => {
+  const sortedVaults = useMemo((): TVault[] => {
     if (sortDirection === '' || isFeaturingScoreSortedDesc) {
       return vaultList
     }
 
     const getDepositedValue = (vault: TKongVaultInput): number => {
+      return getVaultHoldingsUsd(vault)
+    }
+
+    const getAvailableValue = (vault: TKongVaultInput): number => {
+      const token = getVaultToken(vault)
       const chainID = getVaultChainID(vault)
-      const address = getVaultAddress(vault)
-      const staking = getVaultStaking(vault)
-
-      const vaultToken = getToken({ address, chainID })
-      const vaultValue = vaultToken.value || 0
-
-      const stakingValue = !isZeroAddress(toAddress(staking?.address))
-        ? getToken({ address: staking.address, chainID }).value || 0
+      const baseBalance = Number(getBalance({ address: token.address, chainID }).normalized || 0)
+      const nativeBalance = [WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(token.address))
+        ? Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID }).normalized || 0)
         : 0
+      return baseBalance + nativeBalance
+    }
 
-      return vaultValue + stakingValue
+    const depositedValueByVault = new Map<TVault, number>()
+    if (sortBy === 'deposited') {
+      vaultList.forEach((vault) => {
+        depositedValueByVault.set(vault, getDepositedValue(vault))
+      })
+    }
+
+    const availableValueByVault = new Map<TVault, number>()
+    if (sortBy === 'available') {
+      vaultList.forEach((vault) => {
+        availableValueByVault.set(vault, getAvailableValue(vault))
+      })
     }
 
     switch (sortBy) {
@@ -91,7 +101,7 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
             sortDirection
           )
         )
-      case 'APY': {
+      case 'APY':
         return vaultList.toSorted((a, b): number => {
           const aprA = getVaultAPR(a).netAPR || 0
           const aprB = getVaultAPR(b).netAPR || 0
@@ -103,7 +113,6 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
             sortDirection
           )
         })
-      }
       case 'tvl':
         return vaultList.toSorted((a, b): number =>
           numberSort({ a: getVaultTVL(a).tvl, b: getVaultTVL(b).tvl, sortDirection })
@@ -125,31 +134,16 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       case 'deposited':
         return vaultList.toSorted((a, b): number =>
           numberSort({
-            a: getDepositedValue(a),
-            b: getDepositedValue(b),
+            a: depositedValueByVault.get(a) || 0,
+            b: depositedValueByVault.get(b) || 0,
             sortDirection
           })
         )
       case 'available':
         return vaultList.toSorted((a, b): number => {
-          const tokenA = getVaultToken(a)
-          const tokenB = getVaultToken(b)
-          const chainA = getVaultChainID(a)
-          const chainB = getVaultChainID(b)
-
-          const aBaseBalance = Number(getBalance({ address: tokenA.address, chainID: chainA })?.normalized || 0)
-          const bBaseBalance = Number(getBalance({ address: tokenB.address, chainID: chainB })?.normalized || 0)
-          const aEthBalance = [WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(tokenA.address))
-            ? Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: chainA })?.normalized || 0)
-            : 0
-          const bEthBalance = [WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(tokenB.address))
-            ? Number(getBalance({ address: ETH_TOKEN_ADDRESS, chainID: chainB })?.normalized || 0)
-            : 0
-          const aBalance = aBaseBalance + aEthBalance
-          const bBalance = bBaseBalance + bEthBalance
-
-          const direction = sortDirection === 'asc' ? 1 : -1
-          return direction * (aBalance - bBalance)
+          const aValue = availableValueByVault.get(a) || 0
+          const bValue = availableValueByVault.get(b) || 0
+          return numberSort({ a: aValue, b: bValue, sortDirection })
         })
       case 'featuringScore':
         return vaultList.toSorted((a, b): number =>
@@ -167,7 +161,7 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       default:
         return vaultList
     }
-  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, getBalance, getToken])
+  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, getBalance, getVaultHoldingsUsd])
 
   return sortedVaults
 }

@@ -78,10 +78,11 @@ export const useEnsoOrder = ({
 
   const ensoTx = getEnsoTransaction()
   useEffect(() => {
+    if (isExecuting || waitingForTx) return
     setError(null)
     setTxHash(undefined)
     setWaitingForTx(false)
-  }, [ensoTx?.data, ensoTx?.to, ensoTx?.value])
+  }, [ensoTx?.data, ensoTx?.to, ensoTx?.value, isExecuting, waitingForTx])
 
   // Handle receipt
   useEffect(() => {
