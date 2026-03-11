@@ -743,9 +743,9 @@ export function VaultsListRow({
                       aria-label={'View yvUSD APY details'}
                     >
                       <span className={'text-[10px] uppercase tracking-wide text-text-secondary'}>{'Up to'}</span>
-                      <span className={'text-lg font-semibold text-text-primary font-number'}>
+                      <b className={'yearn--table-data-section-item-value text-lg font-semibold text-text-primary'}>
                         {formatApyDisplay(resolvedYvUsdMetrics.lockedApy)}
-                      </span>
+                      </b>
                     </button>
                   </Tooltip>
                 ) : (
@@ -821,9 +821,9 @@ export function VaultsListRow({
                     aria-label={'View yvUSD APY details'}
                   >
                     <span className={'text-[10px] uppercase tracking-wide text-text-secondary'}>{'Up to'}</span>
-                    <span className={'yearn--table-data-section-item-value text-text-primary'}>
+                    <b className={'yearn--table-data-section-item-value font-semibold text-text-primary'}>
                       {formatApyDisplay(resolvedYvUsdMetrics.lockedApy)}
-                    </span>
+                    </b>
                   </button>
                 </Tooltip>
               </div>
