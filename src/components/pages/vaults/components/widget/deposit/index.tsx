@@ -447,8 +447,8 @@ export const WidgetDeposit: FC<Props> = ({
     depositAmount.bn > 0n && (
       <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 space-y-3">
         <p className="text-sm text-red-500">
-          Price impact is high ({priceImpactInfo.percentage.toFixed(2)}%). Consider depositing a smaller amount or
-          waiting for better liquidity conditions.
+          Price impact is high ({priceImpactInfo.percentage.toFixed(2)}%). Consider depositing less or waiting for
+          better liquidity conditions.
         </p>
         <label className="flex items-center gap-2 cursor-pointer">
           <input
