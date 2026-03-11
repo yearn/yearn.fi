@@ -196,6 +196,55 @@ Response:
 }
 ```
 
+### GET `/api/holdings/pnl`
+FIFO-based realized and unrealized PnL for the user’s vault activity.
+
+```bash
+curl "http://localhost:3001/api/holdings/pnl?address=0x..."
+```
+
+Query params:
+- `address` (required): Ethereum address
+- `version` (optional): `v2`, `v3`, or `all` (default: `all`)
+
+Response:
+```json
+{
+  "address": "0x...",
+  "version": "all",
+  "summary": {
+    "totalVaults": 5,
+    "totalCurrentValueUsd": 1500.0,
+    "totalRealizedPnlUsd": 120.5,
+    "totalUnrealizedPnlUsd": 45.25,
+    "totalPnlUsd": 165.75,
+    "isComplete": true
+  },
+  "vaults": [
+    {
+      "chainId": 1,
+      "vaultAddress": "0x...",
+      "status": "ok",
+      "costBasisStatus": "complete",
+      "realizedPnlUsd": 12.5,
+      "unrealizedPnlUsd": 4.25,
+      "currentValueUsd": 105.0,
+      "metadata": {
+        "symbol": "USDC",
+        "decimals": 6,
+        "tokenAddress": "0x..."
+      }
+    }
+  ]
+}
+```
+
+Notes:
+- Deposits create FIFO lots using the indexed `assets` and `shares` values.
+- Withdrawals realize PnL from the oldest remaining lots first.
+- Same-transaction migrations can carry basis into a new vault lot when the transfer-in can be matched to an indexed withdrawal source.
+- Plain share transfers may leave some lots with unknown cost basis. Those vaults are returned with `costBasisStatus: "partial"` and the unmatched portion is reported in `unknownCostBasisValueUsd`.
+
 ### GET `/api/holdings/breakdown`
 Current vault positions with detailed breakdown (not cached).
 

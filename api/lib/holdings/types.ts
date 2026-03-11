@@ -17,7 +17,10 @@ export interface DepositEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  logIndex: number
+  transactionHash: string
   owner: string
+  sender: string
   assets: string
   shares: string
 }
@@ -28,6 +31,8 @@ export interface WithdrawEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  logIndex: number
+  transactionHash: string
   owner: string
   assets: string
   shares: string
@@ -39,6 +44,8 @@ export interface V2DepositEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  logIndex: number
+  transactionHash: string
   recipient: string
   amount: string
   shares: string
@@ -50,6 +57,8 @@ export interface V2WithdrawEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  logIndex: number
+  transactionHash: string
   recipient: string
   amount: string
   shares: string
@@ -61,6 +70,8 @@ export interface TransferEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  logIndex: number
+  transactionHash: string
   sender: string
   receiver: string
   value: string

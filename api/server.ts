@@ -1,5 +1,11 @@
 import { serve } from 'bun'
-import { getHistoricalHoldings, initializeSchema, type VaultVersion, validateConfig } from './lib/holdings'
+import {
+  getHistoricalHoldings,
+  getHoldingsPnL,
+  initializeSchema,
+  type VaultVersion,
+  validateConfig
+} from './lib/holdings'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 
@@ -195,6 +201,41 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   }
 }
 
+async function handleHoldingsPnL(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const versionParam = url.searchParams.get('version')
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const pnl = await getHoldingsPnL(address, version)
+
+    if (pnl.summary.totalVaults === 0) {
+      return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
+    }
+
+    return Response.json(pnl, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching holdings PnL:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json({ error: 'Failed to fetch holdings PnL', message, stack, status: 502 }, { status: 502 })
+  }
+}
+
 async function main() {
   // Catch uncaught exceptions
   process.on('uncaughtException', (error) => {
@@ -229,6 +270,8 @@ async function main() {
           response = await handleEnsoRoute(req)
         } else if (url.pathname === '/api/holdings/history') {
           response = await handleHoldingsHistory(req)
+        } else if (url.pathname === '/api/holdings/pnl') {
+          response = await handleHoldingsPnL(req)
         } else {
           response = new Response('Not found', { status: 404 })
         }
@@ -250,6 +293,7 @@ async function main() {
 
   console.log('🚀 API server running on http://localhost:3001')
   console.log('📊 Holdings API: http://localhost:3001/api/holdings/history?address=0x...')
+  console.log('💹 PnL API: http://localhost:3001/api/holdings/pnl?address=0x...')
 }
 
 main().catch((error) => {

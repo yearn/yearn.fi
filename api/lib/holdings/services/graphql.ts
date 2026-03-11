@@ -4,13 +4,16 @@ import type { DepositEvent, TransferEvent, UserEvents, V2DepositEvent, V2Withdra
 // V3 Vault Queries (with optional maxTimestamp filter)
 const DEPOSITS_QUERY = `
   query GetDeposits($owner: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Deposit(where: { owner: { _eq: $owner }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: { blockTimestamp: asc }, limit: $limit, offset: $offset) {
+    Deposit(where: { owner: { _eq: $owner }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
       blockNumber
       blockTimestamp
+      logIndex
+      transactionHash
       owner
+      sender
       assets
       shares
     }
@@ -19,12 +22,14 @@ const DEPOSITS_QUERY = `
 
 const WITHDRAWALS_QUERY = `
   query GetWithdrawals($owner: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Withdraw(where: { owner: { _eq: $owner }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: { blockTimestamp: asc }, limit: $limit, offset: $offset) {
+    Withdraw(where: { owner: { _eq: $owner }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
       blockNumber
       blockTimestamp
+      logIndex
+      transactionHash
       owner
       assets
       shares
@@ -34,12 +39,14 @@ const WITHDRAWALS_QUERY = `
 
 const TRANSFERS_IN_QUERY = `
   query GetTransfersIn($receiver: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Transfer(where: { receiver: { _eq: $receiver }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: { blockTimestamp: asc }, limit: $limit, offset: $offset) {
+    Transfer(where: { receiver: { _eq: $receiver }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
       blockNumber
       blockTimestamp
+      logIndex
+      transactionHash
       sender
       receiver
       value
@@ -49,12 +56,14 @@ const TRANSFERS_IN_QUERY = `
 
 const TRANSFERS_OUT_QUERY = `
   query GetTransfersOut($sender: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Transfer(where: { sender: { _eq: $sender }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: { blockTimestamp: asc }, limit: $limit, offset: $offset) {
+    Transfer(where: { sender: { _eq: $sender }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
       blockNumber
       blockTimestamp
+      logIndex
+      transactionHash
       sender
       receiver
       value
@@ -67,12 +76,14 @@ const BATCH_SIZE = 1000
 // V2 Vault Queries (with optional maxTimestamp filter)
 const V2_DEPOSITS_QUERY = `
   query GetV2Deposits($recipient: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    V2Deposit(where: { recipient: { _eq: $recipient }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: { blockTimestamp: asc }, limit: $limit, offset: $offset) {
+    V2Deposit(where: { recipient: { _eq: $recipient }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
       blockNumber
       blockTimestamp
+      logIndex
+      transactionHash
       recipient
       amount
       shares
@@ -82,12 +93,14 @@ const V2_DEPOSITS_QUERY = `
 
 const V2_WITHDRAWALS_QUERY = `
   query GetV2Withdrawals($recipient: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    V2Withdraw(where: { recipient: { _eq: $recipient }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: { blockTimestamp: asc }, limit: $limit, offset: $offset) {
+    V2Withdraw(where: { recipient: { _eq: $recipient }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
       blockNumber
       blockTimestamp
+      logIndex
+      transactionHash
       recipient
       amount
       shares
@@ -233,7 +246,10 @@ function normalizeV2Deposit(v2: V2DepositEvent): DepositEvent {
     chainId: v2.chainId,
     blockNumber: v2.blockNumber,
     blockTimestamp: v2.blockTimestamp,
+    logIndex: v2.logIndex,
+    transactionHash: v2.transactionHash,
     owner: v2.recipient,
+    sender: v2.recipient,
     assets: v2.amount,
     shares: v2.shares
   }
@@ -246,6 +262,8 @@ function normalizeV2Withdraw(v2: V2WithdrawEvent): WithdrawEvent {
     chainId: v2.chainId,
     blockNumber: v2.blockNumber,
     blockTimestamp: v2.blockTimestamp,
+    logIndex: v2.logIndex,
+    transactionHash: v2.transactionHash,
     owner: v2.recipient,
     assets: v2.amount,
     shares: v2.shares
@@ -380,14 +398,18 @@ function processEvents(
       ? v3Deposits
       : version === 'v2'
         ? v2Deposits
-        : [...v3Deposits, ...v2Deposits].sort((a, b) => a.blockTimestamp - b.blockTimestamp)
+        : [...v3Deposits, ...v2Deposits].sort(
+            (a, b) => a.blockTimestamp - b.blockTimestamp || a.blockNumber - b.blockNumber || a.logIndex - b.logIndex
+          )
 
   const withdrawals =
     version === 'v3'
       ? v3Withdrawals
       : version === 'v2'
         ? v2Withdrawals
-        : [...v3Withdrawals, ...v2Withdrawals].sort((a, b) => a.blockTimestamp - b.blockTimestamp)
+        : [...v3Withdrawals, ...v2Withdrawals].sort(
+            (a, b) => a.blockTimestamp - b.blockTimestamp || a.blockNumber - b.blockNumber || a.logIndex - b.logIndex
+          )
 
   // Filter transfers by vault version
   // For "all" version, include transfer-only vaults (vaults where user has no deposits/withdrawals but received shares via transfer)
