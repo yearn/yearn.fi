@@ -23,7 +23,7 @@ import { useAccount, useReadContract, useSimulateContract } from 'wagmi'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { WidgetWithdraw } from '../withdraw'
-import { formatDays, formatDuration, parseCooldownStatus } from './cooldownUtils'
+import { formatDays, formatDuration, parseCooldownStatus, resolveDurationSeconds } from './cooldownUtils'
 import { YvUsdVariantToggle } from './YvUsdVariantToggle'
 
 type Props = {
@@ -290,10 +290,8 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   })
 
   const cooldownStatus = useMemo(() => parseCooldownStatus(rawCooldownStatus), [rawCooldownStatus])
-  const cooldownDurationSeconds =
-    typeof rawCooldownDuration === 'bigint' ? Number(rawCooldownDuration) : YVUSD_LOCKED_COOLDOWN_DAYS * 86_400
-  const withdrawalWindowSeconds =
-    typeof rawWithdrawalWindow === 'bigint' ? Number(rawWithdrawalWindow) : YVUSD_WITHDRAW_WINDOW_DAYS * 86_400
+  const cooldownDurationSeconds = resolveDurationSeconds(rawCooldownDuration, YVUSD_LOCKED_COOLDOWN_DAYS)
+  const withdrawalWindowSeconds = resolveDurationSeconds(rawWithdrawalWindow, YVUSD_WITHDRAW_WINDOW_DAYS)
   const cooldownDurationLabel = useMemo(
     () => formatDays(cooldownDurationSeconds, YVUSD_LOCKED_COOLDOWN_DAYS),
     [cooldownDurationSeconds]

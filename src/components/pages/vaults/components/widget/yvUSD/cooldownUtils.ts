@@ -66,3 +66,11 @@ export const formatDays = (seconds: number, fallbackDays: number): string => {
   const rounded = Math.round(days * 100) / 100
   return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded} days`
 }
+
+export const resolveDurationSeconds = (rawDuration: unknown, fallbackDays: number): number => {
+  if (typeof rawDuration === 'bigint') {
+    return Number(rawDuration)
+  }
+
+  return fallbackDays * 86_400
+}
