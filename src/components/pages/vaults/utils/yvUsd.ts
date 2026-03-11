@@ -22,7 +22,7 @@ function getYvUsdAprServiceEndpoint(): string {
 export const YVUSD_APR_SERVICE_ENDPOINT = getYvUsdAprServiceEndpoint()
 
 export const YVUSD_DESCRIPTION =
-  'USDC-based, cross-chain allocating vault with locked and unlocked options; locked deposits earn a share of unlocked yield.'
+  'USD denominated, cross-chain, cross asset vault. Optionally lock shares to earn a higher yield by allowing the vault to take on longer duration positions.'
 
 export type TYvUsdVariant = 'locked' | 'unlocked'
 export type TYvUsdLockedWithdrawDisplayMode = 'underlying' | 'shares'
@@ -39,12 +39,12 @@ export const YVUSD_RISK_SCORE_ITEMS: TYvUsdRiskScoreItem[] = [
     score: YVUSD_CUSTOM_RISK_SCORE,
     isOverall: true,
     explanation:
-      'This is a provisional yvUSD-specific score while the vault is assessed outside the standard Yearn 1 to 5 methodology. yvUSD combines leverage looping, fixed-term and principal-token strategies, cross-chain capital routing, and a locked-share wrapper, so its risks are better described as a strategy stack rather than a single standard vault profile.'
+      'yvUSD combines leverage looping, fixed-term and principal-token strategies, cross-chain capital routing, and a locked-share wrapper, so its risks are better described as a strategy stack rather than a single standard vault profile.'
   },
   {
     label: 'Leverage Looping',
     explanation:
-      'Some yvUSD strategies use Morpho-based leverage loops to amplify supply yield. That adds borrow-rate risk, deleveraging and liquidation-path risk, and dependence on collateral efficiency, market depth, and the health of the underlying lending venue.'
+      'Some yvUSD strategies use leverage loops to amplify supply yield. That adds borrow-rate risk, deleveraging and liquidation-path risk, and dependence on collateral efficiency, market depth, and the health of the underlying lending venue.'
   },
   {
     label: 'Duration and PT Strategies',
@@ -54,7 +54,7 @@ export const YVUSD_RISK_SCORE_ITEMS: TYvUsdRiskScoreItem[] = [
   {
     label: 'Cross-Chain Routing',
     explanation:
-      'Capital may be deployed to remote vaults and bridged back through CCTP-based flows. That introduces bridge availability risk, remote chain execution risk, settlement delays, and additional operational dependencies beyond a single-chain vault.'
+      'Capital may be deployed to remote vaults and bridged back through native bridges such as CCTP. That introduces bridge availability risk, remote chain execution risk, settlement delays, and additional operational dependencies beyond a single-chain vault.'
   }
   // {
   //   label: 'Locked / Unlocked Dynamics',
