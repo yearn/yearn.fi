@@ -12,7 +12,7 @@ import { Button } from '@shared/components/Button'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import type { TToken } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { toAddress, zeroNormalizedBN } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
@@ -44,10 +44,7 @@ type LockedDepositExtraTokenCandidate = {
 type TYvUsdAmountUnit = 'underlying' | 'shares' | 'other'
 
 function getLockedDepositExtraTokens(token?: LockedDepositExtraTokenCandidate): TToken[] {
-  if (!token?.address || !token.chainID || !token.symbol || !token.name || !token.decimals || !token.balance) {
-    return []
-  }
-  if (token.balance.raw <= 0n) {
+  if (!token?.address || !token.chainID || !token.symbol || !token.name || !token.decimals) {
     return []
   }
 
@@ -59,7 +56,7 @@ function getLockedDepositExtraTokens(token?: LockedDepositExtraTokenCandidate): 
       decimals: token.decimals,
       chainID: token.chainID,
       value: 0,
-      balance: token.balance
+      balance: token.balance ?? zeroNormalizedBN
     }
   ]
 }
@@ -143,7 +140,17 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess, collapse
   const isLockedVariant = variant === 'locked'
   const selectedAssetAddress = isLockedVariant ? lockedAssetAddress : unlockedAssetAddress
   const selectedVaultUserData = isLockedVariant ? lockedUserData : unlockedUserData
-  const lockedDepositExtraTokens = isLockedVariant ? getLockedDepositExtraTokens(selectedVaultUserData.assetToken) : []
+  const lockedDepositInputToken = isLockedVariant
+    ? {
+        address: unlockedUserData.assetToken?.address ?? unlockedAssetAddress,
+        name: unlockedUserData.assetToken?.name ?? unlockedVault.token.name ?? 'USD Coin',
+        symbol: unlockedUserData.assetToken?.symbol ?? unlockedVault.token.symbol ?? 'USDC',
+        decimals: unlockedUserData.assetToken?.decimals ?? unlockedVault.token.decimals ?? 6,
+        chainID: unlockedUserData.assetToken?.chainID ?? chainId,
+        balance: unlockedUserData.assetToken?.balance
+      }
+    : undefined
+  const lockedDepositExtraTokens = getLockedDepositExtraTokens(lockedDepositInputToken)
 
   if (isLoading || !unlockedVault || !lockedVault) {
     return (

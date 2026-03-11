@@ -164,13 +164,23 @@ export function WidgetDeposit({
   const depositToken = selectedToken || assetAddress
   const sourceChainId = selectedChainId || chainId
   const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
+  const selectedExtraToken = useMemo(
+    () =>
+      tokenSelectorExtraTokens?.find(
+        (token) => token.chainID === sourceChainId && toAddress(token.address) === toAddress(depositToken)
+      ),
+    [tokenSelectorExtraTokens, sourceChainId, depositToken]
+  )
 
   const inputToken = useMemo(() => {
     if (sourceChainId === chainId && depositToken === assetAddress) {
       return assetToken
     }
+    if (selectedExtraToken) {
+      return selectedExtraToken
+    }
     return getToken({ address: depositToken, chainID: sourceChainId })
-  }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken])
+  }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken, selectedExtraToken])
 
   const destinationToken = useMemo(() => {
     if (isAutoStakingEnabled && stakingAddress) return stakingAddress
