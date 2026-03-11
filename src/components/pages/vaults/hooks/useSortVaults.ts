@@ -11,6 +11,14 @@ import {
   type TKongVaultInput,
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import {
+  getYvUsdSharePrice,
+  isYvUsdVault,
+  YVUSD_CHAIN_ID,
+  YVUSD_LOCKED_ADDRESS,
+  YVUSD_UNLOCKED_ADDRESS
+} from '@pages/vaults/utils/yvUsd'
 import { useWallet } from '@shared/contexts/useWallet'
 import type { TSortDirection } from '@shared/types'
 import { isZeroAddress, normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
@@ -37,6 +45,22 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
   sortDirection: TSortDirection
 ): TVault[] {
   const { getBalance, getToken } = useWallet()
+  const { unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault, metrics: yvUsdMetrics } = useYvUsdVaults()
+  const yvUsdDepositedValue = useMemo((): number => {
+    const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
+    const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
+    const unlockedSharePrice = getYvUsdSharePrice(yvUsdUnlockedVault)
+    const lockedSharePrice = getYvUsdSharePrice(yvUsdLockedVault)
+    return unlockedBalance * unlockedSharePrice + lockedBalance * lockedSharePrice
+  }, [getBalance, yvUsdLockedVault, yvUsdUnlockedVault])
+
+  const yvUsdDisplayedApy = useMemo((): number => {
+    const lockedApy = yvUsdMetrics.locked.apy
+    if (lockedApy > 0 || yvUsdMetrics.unlocked.apy === 0) {
+      return lockedApy
+    }
+    return yvUsdMetrics.unlocked.apy
+  }, [yvUsdMetrics.locked.apy, yvUsdMetrics.unlocked.apy])
 
   const isFeaturingScoreSortedDesc = useMemo((): boolean => {
     if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
@@ -58,6 +82,10 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
     }
 
     const getDepositedValue = (vault: TKongVaultInput): number => {
+      if (isYvUsdVault(vault)) {
+        return yvUsdDepositedValue
+      }
+
       const chainID = getVaultChainID(vault)
       const address = getVaultAddress(vault)
       const staking = getVaultStaking(vault)
@@ -72,6 +100,20 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       return vaultValue + stakingValue
     }
 
+    const getApySortValue = (vault: TKongVaultInput): number => {
+      if (isYvUsdVault(vault)) {
+        return yvUsdDisplayedApy
+      }
+      return getVaultAPR(vault).netAPR || 0
+    }
+
+    const getEstimatedApySortValue = (vault: TKongVaultInput): number => {
+      if (isYvUsdVault(vault)) {
+        return yvUsdDisplayedApy
+      }
+      return calculateVaultEstimatedAPY(vault)
+    }
+
     switch (sortBy) {
       case 'name':
         return vaultList.toSorted((a, b): number =>
@@ -84,17 +126,17 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       case 'estAPY':
         return vaultList.toSorted((a, b): number =>
           sortWithFallback(
-            normalizeApyDisplayValue(calculateVaultEstimatedAPY(a)),
-            normalizeApyDisplayValue(calculateVaultEstimatedAPY(b)),
-            calculateVaultEstimatedAPY(a),
-            calculateVaultEstimatedAPY(b),
+            normalizeApyDisplayValue(getEstimatedApySortValue(a)),
+            normalizeApyDisplayValue(getEstimatedApySortValue(b)),
+            getEstimatedApySortValue(a),
+            getEstimatedApySortValue(b),
             sortDirection
           )
         )
       case 'APY': {
         return vaultList.toSorted((a, b): number => {
-          const aprA = getVaultAPR(a).netAPR || 0
-          const aprB = getVaultAPR(b).netAPR || 0
+          const aprA = getApySortValue(a)
+          const aprB = getApySortValue(b)
           return sortWithFallback(
             normalizeApyDisplayValue(aprA),
             normalizeApyDisplayValue(aprB),
@@ -167,7 +209,16 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
       default:
         return vaultList
     }
-  }, [vaultList, sortDirection, sortBy, isFeaturingScoreSortedDesc, getBalance, getToken])
+  }, [
+    vaultList,
+    sortDirection,
+    sortBy,
+    isFeaturingScoreSortedDesc,
+    getBalance,
+    getToken,
+    yvUsdDepositedValue,
+    yvUsdDisplayedApy
+  ])
 
   return sortedVaults
 }

@@ -78,7 +78,7 @@ export const InputTokenAmount: FC<Props> = ({
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     handleChangeInput(event)
-    onInputChange?.(simpleToExact(event.target.value))
+    onInputChange?.(simpleToExact(event.target.value, decimals ?? input[0].decimals))
   }
 
   const handleTokenButtonClick = () => {
@@ -122,7 +122,7 @@ export const InputTokenAmount: FC<Props> = ({
   }
 
   return (
-    <div className={cl('flex flex-col w-full relative border border-border rounded-md mt-4 group', className)}>
+    <div className={cl('flex flex-col w-full relative border border-border rounded-md group', className)}>
       <div className="py-2 px-3 flex flex-col gap-1">
         {/* Top row - Title and percentage buttons */}
         <div className="flex items-center justify-between">

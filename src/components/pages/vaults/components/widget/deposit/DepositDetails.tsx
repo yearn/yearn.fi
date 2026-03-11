@@ -24,6 +24,7 @@ interface DepositDetailsProps {
   pricePerShare: bigint
   assetUsdPrice: number
   willReceiveStakedShares: boolean
+  vaultSharesLabel?: string
   onShowVaultSharesModal: () => void
   onShowVaultShareValueModal: () => void
   // Annual return info
@@ -56,6 +57,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   pricePerShare,
   assetUsdPrice,
   willReceiveStakedShares,
+  vaultSharesLabel,
   onShowVaultSharesModal,
   onShowVaultShareValueModal,
   estimatedAnnualReturn,
@@ -68,7 +70,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   onShowApprovalOverlay
 }) => {
   const isStake = routeType === 'DIRECT_STAKE'
-  const sharesLabel = willReceiveStakedShares ? 'Staked shares' : 'Vault shares'
+  const sharesLabel = willReceiveStakedShares ? 'Staked shares' : (vaultSharesLabel ?? 'Vault shares')
 
   // Determine action verb based on route type
   const getActionVerb = () => {
@@ -95,7 +97,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
       : 0
   const hasHighPriceImpact = !isQuoteStale && !isLoadingQuote && priceImpact > 5
   return (
-    <div>
+    <div className="">
       <div className="flex flex-col gap-2">
         {/* You will deposit/swap/stake */}
         <div className="flex items-center justify-between h-5">
