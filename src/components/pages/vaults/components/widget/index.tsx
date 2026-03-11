@@ -65,7 +65,7 @@ const getActionLabel = (action: ActionType): string => {
   }
 }
 
-function WidgetComponent(
+export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
   {
     currentVault,
     vaultAddress,
@@ -209,9 +209,7 @@ function WidgetComponent(
       </div>
     </div>
   )
-}
-
-export const Widget = forwardRef<TWidgetRef, Props>(WidgetComponent)
+})
 
 type WidgetTabsProps = {
   actions: ActionType[]
