@@ -1,5 +1,6 @@
 import type { TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
+import type { TYvUsdVariant } from '@pages/vaults/utils/yvUsd'
 import { cl } from '@shared/utils'
 import type { ReactElement, ReactNode } from 'react'
 import { useState } from 'react'
@@ -14,6 +15,7 @@ interface Props {
   onModeChange?: (mode: ActionType) => void
   showTabs?: boolean
   collapseDetails?: boolean
+  onDepositVariantChange?: (variant: TYvUsdVariant) => void
 }
 
 export function YvUsdWidget({
@@ -23,7 +25,8 @@ export function YvUsdWidget({
   mode: controlledMode,
   onModeChange,
   showTabs = true,
-  collapseDetails
+  collapseDetails,
+  onDepositVariantChange
 }: Props): ReactElement {
   const [internalMode, setInternalMode] = useState<ActionType>(ActionType.Deposit)
   const mode = controlledMode ?? internalMode
@@ -33,7 +36,8 @@ export function YvUsdWidget({
     chainId,
     assetAddress: currentVault.token.address,
     handleSuccess,
-    collapseDetails
+    collapseDetails,
+    onDepositVariantChange
   })
 
   return (
@@ -60,6 +64,7 @@ type RenderSelectedComponentParams = {
   assetAddress: `0x${string}`
   handleSuccess?: () => void
   collapseDetails?: boolean
+  onDepositVariantChange?: (variant: TYvUsdVariant) => void
 }
 
 function renderSelectedComponent({
@@ -67,7 +72,8 @@ function renderSelectedComponent({
   chainId,
   assetAddress,
   handleSuccess,
-  collapseDetails
+  collapseDetails,
+  onDepositVariantChange
 }: RenderSelectedComponentParams): ReactElement | null {
   switch (mode) {
     case ActionType.Deposit:
@@ -77,6 +83,7 @@ function renderSelectedComponent({
           assetAddress={assetAddress}
           onDepositSuccess={handleSuccess}
           collapseDetails={collapseDetails}
+          onVariantChange={onDepositVariantChange}
         />
       )
     case ActionType.Withdraw:

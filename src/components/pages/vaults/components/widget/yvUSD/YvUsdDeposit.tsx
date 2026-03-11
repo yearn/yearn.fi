@@ -24,6 +24,7 @@ type Props = {
   assetAddress: `0x${string}`
   onDepositSuccess?: () => void
   collapseDetails?: boolean
+  onVariantChange?: (variant: TYvUsdVariant) => void
 }
 
 type DepositPrefill = {
@@ -116,7 +117,13 @@ function getVaultSharesLabel(variant: TYvUsdVariant | null): string | undefined 
   }
 }
 
-export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess, collapseDetails }: Props): ReactElement {
+export function YvUsdDeposit({
+  chainId,
+  assetAddress,
+  onDepositSuccess,
+  collapseDetails,
+  onVariantChange
+}: Props): ReactElement {
   const { address: account } = useAccount()
   const { unlockedVault, lockedVault, metrics, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
@@ -193,6 +200,7 @@ export function YvUsdDeposit({ chainId, assetAddress, onDepositSuccess, collapse
     setDraftDepositAmount(nextAmount ?? '')
     setPendingPrefillAmount(nextAmount)
     setVariant(nextVariant)
+    onVariantChange?.(nextVariant)
   }
   const depositPrefill = getDepositPrefill(variant, unlockedAssetAddress, chainId, pendingPrefillAmount)
 

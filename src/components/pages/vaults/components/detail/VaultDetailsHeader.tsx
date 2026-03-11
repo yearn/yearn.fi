@@ -20,8 +20,10 @@ import {
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import {
+  getYvUsdInfinifiPointsNote,
   getYvUsdSharePrice,
   isYvUsdVault,
+  type TYvUsdVariant,
   YVUSD_CHAIN_ID,
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
@@ -38,6 +40,7 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
@@ -387,19 +390,25 @@ function SectionSelectorBar({
 function VaultOverviewCard({
   currentVault: currentVaultInput,
   isCompressed,
-  includeTourAttributes = true
+  includeTourAttributes = true,
+  yvUsdApyVariant: controlledYvUsdApyVariant,
+  onYvUsdApyVariantChange
 }: {
   currentVault: TKongVaultInput
   isCompressed: boolean
   includeTourAttributes?: boolean
+  yvUsdApyVariant?: TYvUsdVariant
+  onYvUsdApyVariantChange?: (variant: TYvUsdVariant) => void
 }): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
   const listKind = deriveListKind(currentVault)
   const isFactoryVault = listKind === 'factory'
   const isYvUsd = isYvUsdVault(currentVault)
-  const [yvusdApyVariant, setYvUsdApyVariant] = useState<'locked' | 'unlocked'>('locked')
+  const [internalYvUsdApyVariant, setInternalYvUsdApyVariant] = useState<TYvUsdVariant>('locked')
   const { metrics: yvUsdMetrics, unlockedVault, lockedVault } = useYvUsdVaults()
+  const isControlledYvUsdApyVariant = controlledYvUsdApyVariant !== undefined
+  const yvUsdApyVariant = isControlledYvUsdApyVariant ? controlledYvUsdApyVariant : internalYvUsdApyVariant
   const unlockedForwardApy =
     yvUsdMetrics?.unlocked.apy ?? (currentVault.apr?.forwardAPR?.netAPR || currentVault.apr?.netAPR || 0)
   const lockedForwardApy = yvUsdMetrics?.locked.apy ?? lockedVault?.apr?.forwardAPR?.netAPR ?? 0
@@ -412,12 +421,11 @@ function VaultOverviewCard({
   const unlockedTvl = unlockedVault?.tvl?.tvl ?? yvUsdMetrics?.unlocked.tvl ?? 0
   const lockedTvl = lockedVault?.tvl?.tvl ?? yvUsdMetrics?.locked.tvl ?? 0
   const combinedTvl = currentVault.tvl?.tvl ?? unlockedTvl + lockedTvl
-  const isLockedApyVariant = yvusdApyVariant === 'locked'
+  const isLockedApyVariant = yvUsdApyVariant === 'locked'
   const selectedForwardApy = isLockedApyVariant ? lockedForwardApy : unlockedForwardApy
   const selectedHistoricalApy = isLockedApyVariant ? lockedHistorical : unlockedHistorical
-  const showInfinifiPointsNote = Boolean(
-    yvUsdMetrics?.locked.hasInfinifiPoints || yvUsdMetrics?.unlocked.hasInfinifiPoints
-  )
+  const hasInfinifiPoints = Boolean(yvUsdMetrics?.locked.hasInfinifiPoints || yvUsdMetrics?.unlocked.hasInfinifiPoints)
+  const infinifiPointsNote = hasInfinifiPoints ? getYvUsdInfinifiPointsNote() : undefined
   const selectedApyIcon = isLockedApyVariant ? (
     <IconLock className="size-4 text-text-secondary" />
   ) : (
@@ -425,7 +433,12 @@ function VaultOverviewCard({
   )
   const apyToggleLabel = isLockedApyVariant ? 'Switch to unlocked APY display' : 'Switch to locked APY display'
   const toggleApyVariant = (): void => {
-    setYvUsdApyVariant((previous) => (previous === 'locked' ? 'unlocked' : 'locked'))
+    const nextVariant = yvUsdApyVariant === 'locked' ? 'unlocked' : 'locked'
+    if (isControlledYvUsdApyVariant) {
+      onYvUsdApyVariantChange?.(nextVariant)
+      return
+    }
+    setInternalYvUsdApyVariant(nextVariant)
   }
   const renderYvUsdApyValue = (value: number): ReactElement => (
     <span className={cl('inline-flex items-center gap-2', METRIC_VALUE_CLASS)}>
@@ -437,6 +450,7 @@ function VaultOverviewCard({
       >
         {selectedApyIcon}
       </button>
+      {hasInfinifiPoints ? <IconInfinifiPoints className="size-3.5 shrink-0" aria-label="Infinifi points" /> : null}
       {formatApyDisplay(value)}
     </span>
   )
@@ -445,7 +459,7 @@ function VaultOverviewCard({
       lockedValue={lockedForwardApy}
       unlockedValue={unlockedForwardApy}
       iconClassName="size-4"
-      hasInfinifiPointsNote={showInfinifiPointsNote}
+      infinifiPointsNote={infinifiPointsNote}
     />
   ) : undefined
   const yvUsdHistoricalApyTooltip = isYvUsd ? (
@@ -453,7 +467,7 @@ function VaultOverviewCard({
       lockedValue={lockedHistorical}
       unlockedValue={unlockedHistorical}
       iconClassName="size-4"
-      hasInfinifiPointsNote={showInfinifiPointsNote}
+      infinifiPointsNote={infinifiPointsNote}
     />
   ) : undefined
   const yvUsdTvlTooltip = isYvUsd ? (
@@ -726,6 +740,7 @@ function UserHoldingsCard({
 type TVaultDetailsHeaderBaseProps = {
   currentVault: TKongVaultInput
   depositedValue: bigint
+  yvUsdApyVariant?: TYvUsdVariant
   sectionTabs?: { key: string; label: string }[]
   activeSectionKey?: string
   onSelectSection?: (key: string) => void
@@ -733,6 +748,7 @@ type TVaultDetailsHeaderBaseProps = {
   widgetActions?: WidgetActionType[]
   widgetMode?: WidgetActionType
   onWidgetModeChange?: (mode: WidgetActionType) => void
+  onYvUsdApyVariantChange?: (variant: TYvUsdVariant) => void
   onWidgetWalletOpen?: () => void
   isWidgetWalletOpen?: boolean
   onWidgetCloseOverlays?: () => void
@@ -746,6 +762,7 @@ type TVaultDetailsHeaderPresentationProps = TVaultDetailsHeaderBaseProps & {
 export function VaultDetailsHeaderPresentation({
   currentVault: currentVaultInput,
   depositedValue,
+  yvUsdApyVariant,
   sectionTabs = [],
   activeSectionKey,
   onSelectSection,
@@ -753,6 +770,7 @@ export function VaultDetailsHeaderPresentation({
   widgetActions = [],
   widgetMode,
   onWidgetModeChange,
+  onYvUsdApyVariantChange,
   onWidgetWalletOpen,
   isWidgetWalletOpen,
   onWidgetCloseOverlays,
@@ -801,6 +819,8 @@ export function VaultDetailsHeaderPresentation({
                   currentVault={currentVault}
                   isCompressed={isCompressed}
                   includeTourAttributes={includeTourAttributes}
+                  yvUsdApyVariant={yvUsdApyVariant}
+                  onYvUsdApyVariantChange={onYvUsdApyVariantChange}
                 />
               </div>
               {sectionTabs.length > 0 ? (
@@ -835,6 +855,8 @@ export function VaultDetailsHeaderPresentation({
                   currentVault={currentVault}
                   isCompressed={isCompressed}
                   includeTourAttributes={includeTourAttributes}
+                  yvUsdApyVariant={yvUsdApyVariant}
+                  onYvUsdApyVariantChange={onYvUsdApyVariantChange}
                 />
               </div>
               {sectionTabs.length > 0 ? (

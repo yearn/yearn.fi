@@ -36,6 +36,7 @@ import {
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import {
+  getYvUsdInfinifiPointsNote,
   getYvUsdSharePrice,
   isYvUsdAddress,
   YVUSD_CHAIN_ID,
@@ -51,6 +52,7 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
+import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import {
   cl,
   formatAmount,
@@ -323,9 +325,18 @@ export function VaultsListRow({
     <YvUsdApyTooltipContent
       lockedValue={resolvedYvUsdMetrics.lockedApy}
       unlockedValue={resolvedYvUsdMetrics.unlockedApy}
-      hasInfinifiPointsNote={resolvedYvUsdMetrics.hasInfinifiPointsNote}
+      infinifiPointsNote={resolvedYvUsdMetrics.hasInfinifiPointsNote ? getYvUsdInfinifiPointsNote() : undefined}
     />
   ) : undefined
+
+  const yvUsdApyValue = resolvedYvUsdMetrics ? (
+    <>
+      {resolvedYvUsdMetrics.hasInfinifiPointsNote ? (
+        <IconInfinifiPoints className={'size-3.5 shrink-0'} aria-label={'Infinifi points'} />
+      ) : null}
+      {formatApyDisplay(resolvedYvUsdMetrics.lockedApy)}
+    </>
+  ) : null
 
   const yvUsdTvlTooltip = resolvedYvUsdMetrics ? (
     <YvUsdTvlTooltipContent
@@ -743,8 +754,12 @@ export function VaultsListRow({
                       aria-label={'View yvUSD APY details'}
                     >
                       <span className={'text-[10px] uppercase tracking-wide text-text-secondary'}>{'Up to'}</span>
-                      <b className={'yearn--table-data-section-item-value text-lg font-semibold text-text-primary'}>
-                        {formatApyDisplay(resolvedYvUsdMetrics.lockedApy)}
+                      <b
+                        className={
+                          'yearn--table-data-section-item-value inline-flex items-center gap-2 text-lg font-semibold text-text-primary'
+                        }
+                      >
+                        {yvUsdApyValue}
                       </b>
                     </button>
                   </Tooltip>
@@ -817,13 +832,24 @@ export function VaultsListRow({
                   <button
                     type={'button'}
                     onClick={handleYvUsdApyClick}
-                    className={'inline-flex items-center gap-1 text-right'}
+                    className={'inline-flex items-center gap-2 text-right'}
                     aria-label={'View yvUSD APY details'}
                   >
-                    <span className={'text-[10px] uppercase tracking-wide text-text-secondary'}>{'Up to'}</span>
-                    <b className={'yearn--table-data-section-item-value font-semibold text-text-primary'}>
-                      {formatApyDisplay(resolvedYvUsdMetrics.lockedApy)}
-                    </b>
+                    {resolvedYvUsdMetrics.hasInfinifiPointsNote ? (
+                      <IconInfinifiPoints className={'size-3.5 shrink-0'} aria-label={'Infinifi points'} />
+                    ) : null}
+                    <span className={'relative inline-flex'}>
+                      <span
+                        className={
+                          'pointer-events-none absolute bottom-full left-0 mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-text-secondary'
+                        }
+                      >
+                        {'Up to'}
+                      </span>
+                      <b className={'yearn--table-data-section-item-value font-semibold text-text-primary'}>
+                        {formatApyDisplay(resolvedYvUsdMetrics.lockedApy)}
+                      </b>
+                    </span>
                   </button>
                 </Tooltip>
               </div>

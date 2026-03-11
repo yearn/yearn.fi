@@ -205,4 +205,181 @@ describe('VaultsListRow', () => {
     expect(html).not.toContain('117.77%')
     expect(html).toContain('flex items-center justify-center gap-2 whitespace-nowrap')
   })
+
+  it('positions the desktop yvUSD up-to label above the APY value without changing row flow', () => {
+    mockUseMediaQuery.mockReturnValue(false)
+    mockUseYvUsdVaults.mockReturnValue({
+      metrics: {
+        unlocked: { apy: 0.05, tvl: 100, hasInfinifiPoints: false },
+        locked: { apy: 0.09, tvl: 250, hasInfinifiPoints: false }
+      },
+      unlockedVault: undefined,
+      lockedVault: undefined
+    })
+
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: YVUSD_UNLOCKED_ADDRESS,
+      name: 'yvUSD',
+      symbol: 'yvUSD',
+      category: 'Stablecoin',
+      kind: 'Multi Strategy',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'USDC',
+        decimals: 6
+      },
+      apr: {
+        forwardAPR: {
+          netAPR: 0.05
+        },
+        netAPR: 0.05
+      },
+      tvl: {
+        tvl: 350,
+        totalAssets: 350_000_000
+      },
+      info: {
+        riskLevel: 2
+      },
+      staking: {
+        address: '0x0000000000000000000000000000000000000000'
+      }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault)
+
+    expect(html).toContain('inline-flex items-center gap-2 text-right')
+    expect(html).toContain('relative inline-flex')
+    expect(html).toContain('absolute bottom-full left-0 mb-0.5')
+  })
+
+  it('shows the Infinifi points icon for yvUSD when either variant has points', () => {
+    mockUseYvUsdVaults.mockReturnValue({
+      metrics: {
+        unlocked: { apy: 0.05, tvl: 100, hasInfinifiPoints: false },
+        locked: { apy: 0.09, tvl: 250, hasInfinifiPoints: true }
+      },
+      unlockedVault: undefined,
+      lockedVault: undefined
+    })
+
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: YVUSD_UNLOCKED_ADDRESS,
+      name: 'yvUSD',
+      symbol: 'yvUSD',
+      category: 'Stablecoin',
+      kind: 'Multi Strategy',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'USDC',
+        decimals: 6
+      },
+      apr: {
+        forwardAPR: {
+          netAPR: 0.05
+        },
+        netAPR: 0.05
+      },
+      tvl: {
+        tvl: 350,
+        totalAssets: 350_000_000
+      },
+      info: {
+        riskLevel: 2
+      },
+      staking: {
+        address: '0x0000000000000000000000000000000000000000'
+      }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault)
+
+    expect(html).toContain('aria-label="Infinifi points"')
+  })
+
+  it('does not show the Infinifi points icon for yvUSD without points', () => {
+    mockUseYvUsdVaults.mockReturnValue({
+      metrics: {
+        unlocked: { apy: 0.05, tvl: 100, hasInfinifiPoints: false },
+        locked: { apy: 0.09, tvl: 250, hasInfinifiPoints: false }
+      },
+      unlockedVault: undefined,
+      lockedVault: undefined
+    })
+
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: YVUSD_UNLOCKED_ADDRESS,
+      name: 'yvUSD',
+      symbol: 'yvUSD',
+      category: 'Stablecoin',
+      kind: 'Multi Strategy',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'USDC',
+        decimals: 6
+      },
+      apr: {
+        forwardAPR: {
+          netAPR: 0.05
+        },
+        netAPR: 0.05
+      },
+      tvl: {
+        tvl: 350,
+        totalAssets: 350_000_000
+      },
+      info: {
+        riskLevel: 2
+      },
+      staking: {
+        address: '0x0000000000000000000000000000000000000000'
+      }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault)
+
+    expect(html).not.toContain('aria-label="Infinifi points"')
+  })
+
+  it('does not show the Infinifi points icon for non-yvUSD rows', () => {
+    mockUseYvUsdVaults.mockReturnValue({
+      metrics: {
+        unlocked: { apy: 0.05, tvl: 100, hasInfinifiPoints: true },
+        locked: { apy: 0.09, tvl: 250, hasInfinifiPoints: true }
+      },
+      unlockedVault: undefined,
+      lockedVault: undefined
+    })
+
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: '0x0000000000000000000000000000000000000001',
+      name: 'Test Vault',
+      category: 'Test Category',
+      kind: 'Multi Strategy',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'TKN',
+        decimals: 6
+      },
+      tvl: {
+        tvl: 1234,
+        totalAssets: 1234567
+      },
+      info: {
+        riskLevel: 3
+      }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault)
+
+    expect(html).not.toContain('aria-label="Infinifi points"')
+  })
 })

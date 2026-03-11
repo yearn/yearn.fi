@@ -8,7 +8,7 @@ export const YVUSD_LOCKED_ADDRESS = toAddress('0xAaaFEa48472f77563961Cdb53291DED
 export const YVUSD_LOCKED_ZAP_ADDRESS = toAddress('0x7ba61c8e19414dcB8fe769a7Be63B508C8062bbA') as Address
 
 export const YVUSD_LOCKED_COOLDOWN_DAYS = 14
-export const YVUSD_WITHDRAW_WINDOW_DAYS = 7
+export const YVUSD_WITHDRAW_WINDOW_DAYS = 5
 export const YVUSD_CUSTOM_RISK_SCORE = '3/5'
 
 function getYvUsdAprServiceEndpoint(): string {
@@ -66,6 +66,14 @@ export const YVUSD_RISK_SCORE_ITEMS: TYvUsdRiskScoreItem[] = [
   //     'The strategy set relies on external protocols, bridge rails, pricing assumptions, and active management across multiple venues. Smart contract failures, governance actions, liquidity shocks, or oracle issues in any of those layers can reduce returns or impair withdrawals.'
   // }
 ]
+
+export function getYvUsdInfinifiPointsNote(variant?: TYvUsdVariant): string {
+  if (!variant) {
+    return 'This vault earns Infinifi points through the sIUSD looper strategy.'
+  }
+
+  return `This ${variant} variant earns Infinifi points through the sIUSD looper strategy.`
+}
 
 export function isYvUsdAddress(address?: string | null): boolean {
   if (!address) return false

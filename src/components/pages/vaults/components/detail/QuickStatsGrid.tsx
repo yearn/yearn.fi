@@ -4,8 +4,9 @@ import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { YvUsdApyDetailsContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { getVaultAPR, getVaultToken, getVaultTVL, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import type { TYvUsdVariant } from '@pages/vaults/utils/yvUsd'
+import { getYvUsdInfinifiPointsNote, type TYvUsdVariant } from '@pages/vaults/utils/yvUsd'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import { cl, formatApyDisplay, toNormalizedBN } from '@shared/utils'
@@ -203,18 +204,41 @@ export function MobileKeyMetrics({
   )
 }
 
-export function YvUsdApyStatBox({ lockedApy, unlockedApy }: { lockedApy: number; unlockedApy: number }): ReactElement {
-  const [apyVariant, setApyVariant] = useState<TYvUsdVariant>('locked')
+export function YvUsdApyStatBox({
+  lockedApy,
+  unlockedApy,
+  activeVariant,
+  onVariantChange,
+  lockedHasInfinifiPoints = false,
+  unlockedHasInfinifiPoints = false
+}: {
+  lockedApy: number
+  unlockedApy: number
+  activeVariant?: TYvUsdVariant
+  onVariantChange?: (variant: TYvUsdVariant) => void
+  lockedHasInfinifiPoints?: boolean
+  unlockedHasInfinifiPoints?: boolean
+}): ReactElement {
+  const [internalVariant, setInternalVariant] = useState<TYvUsdVariant>('locked')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const isControlledVariant = activeVariant !== undefined
+  const apyVariant = isControlledVariant ? activeVariant : internalVariant
   const isLockedVariant = apyVariant === 'locked'
   const selectedApy = isLockedVariant ? lockedApy : unlockedApy
   const selectedLabel = isLockedVariant ? 'Locked' : 'Unlocked'
   const toggleLabel = isLockedVariant ? 'Switch to unlocked APY display' : 'Switch to locked APY display'
+  const hasInfinifiPoints = lockedHasInfinifiPoints || unlockedHasInfinifiPoints
+  const infinifiPointsNote = hasInfinifiPoints ? getYvUsdInfinifiPointsNote() : undefined
 
   const handleToggle = (event: MouseEvent<HTMLButtonElement>): void => {
     event.preventDefault()
     event.stopPropagation()
-    setApyVariant((previous) => (previous === 'locked' ? 'unlocked' : 'locked'))
+    const nextVariant = apyVariant === 'locked' ? 'unlocked' : 'locked'
+    if (isControlledVariant) {
+      onVariantChange?.(nextVariant)
+      return
+    }
+    setInternalVariant(nextVariant)
   }
 
   const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
@@ -252,7 +276,12 @@ export function YvUsdApyStatBox({ lockedApy, unlockedApy }: { lockedApy: number;
             {isLockedVariant ? <IconLock className={'size-3.5'} /> : <IconLockOpen className={'size-3.5'} />}
           </button>
           <div className={'flex min-w-0 flex-col'}>
-            <span className={'text-xs min-[375px]:text-sm font-semibold text-text-primary'}>
+            <span
+              className={'inline-flex items-center gap-1.5 text-xs min-[375px]:text-sm font-semibold text-text-primary'}
+            >
+              {hasInfinifiPoints ? (
+                <IconInfinifiPoints className={'size-3.5 shrink-0'} aria-label={'Infinifi points'} />
+              ) : null}
               {formatApyDisplay(selectedApy)}
             </span>
             <span className={'text-[10px] min-[375px]:text-xs text-text-secondary'}>{selectedLabel}</span>
@@ -260,7 +289,11 @@ export function YvUsdApyStatBox({ lockedApy, unlockedApy }: { lockedApy: number;
         </div>
       </div>
       <APYDetailsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={'yvUSD APY'}>
-        <YvUsdApyDetailsContent lockedValue={lockedApy} unlockedValue={unlockedApy} />
+        <YvUsdApyDetailsContent
+          lockedValue={lockedApy}
+          unlockedValue={unlockedApy}
+          infinifiPointsNote={infinifiPointsNote}
+        />
       </APYDetailsModal>
     </>
   )

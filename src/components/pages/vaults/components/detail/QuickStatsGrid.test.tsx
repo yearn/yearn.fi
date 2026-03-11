@@ -70,4 +70,38 @@ describe('YvUsdApyStatBox', () => {
     expect(html).toContain('118%')
     expect(html).not.toContain('117.77%')
   })
+
+  it('renders the controlled variant when provided', () => {
+    const html = renderToStaticMarkup(
+      <YvUsdApyStatBox lockedApy={0.09} unlockedApy={0.05} activeVariant={'unlocked'} />
+    )
+
+    expect(html).toContain('Unlocked')
+    expect(html).toContain('5.00%')
+    expect(html).toContain('Switch to locked APY display')
+  })
+
+  it('shows the Infinifi points icon whenever yvUSD has points', () => {
+    const lockedHtml = renderToStaticMarkup(
+      <YvUsdApyStatBox
+        lockedApy={0.09}
+        unlockedApy={0.05}
+        activeVariant={'locked'}
+        lockedHasInfinifiPoints
+        unlockedHasInfinifiPoints={false}
+      />
+    )
+    const unlockedHtml = renderToStaticMarkup(
+      <YvUsdApyStatBox
+        lockedApy={0.09}
+        unlockedApy={0.05}
+        activeVariant={'unlocked'}
+        lockedHasInfinifiPoints
+        unlockedHasInfinifiPoints={false}
+      />
+    )
+
+    expect(lockedHtml).toContain('aria-label="Infinifi points"')
+    expect(unlockedHtml).toContain('aria-label="Infinifi points"')
+  })
 })

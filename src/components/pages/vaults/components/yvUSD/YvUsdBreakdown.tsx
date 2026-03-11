@@ -1,5 +1,6 @@
 import { YVUSD_DESCRIPTION, YVUSD_LOCKED_COOLDOWN_DAYS, YVUSD_WITHDRAW_WINDOW_DAYS } from '@pages/vaults/utils/yvUsd'
 import { RenderAmount } from '@shared/components/RenderAmount'
+import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import { cl, formatAmount } from '@shared/utils'
@@ -10,7 +11,7 @@ type TYvUsdTooltipProps = {
   unlockedValue: number
   className?: string
   iconClassName?: string
-  hasInfinifiPointsNote?: boolean
+  infinifiPointsNote?: string
 }
 
 const YvUsdTooltipRow = ({
@@ -47,7 +48,7 @@ export function YvUsdApyTooltipContent({
   unlockedValue,
   className,
   iconClassName = 'size-3',
-  hasInfinifiPointsNote = false
+  infinifiPointsNote
 }: TYvUsdTooltipProps): ReactElement {
   return (
     <div
@@ -68,10 +69,13 @@ export function YvUsdApyTooltipContent({
           symbol="percent"
           options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
         />
-        {hasInfinifiPointsNote ? (
-          <p className="border-t border-border pt-2 text-text-secondary">
-            {'This vault earns Infinifi points through the sIUSD looper strategy.'}
-          </p>
+        {infinifiPointsNote ? (
+          <div className="border-t border-border pt-2">
+            <p className="flex items-start gap-2 text-text-secondary">
+              <IconInfinifiPoints className="mt-0.5 size-3.5 shrink-0" aria-label="Infinifi points" />
+              <span>{infinifiPointsNote}</span>
+            </p>
+          </div>
         ) : null}
       </div>
     </div>
@@ -110,10 +114,12 @@ export function YvUsdTvlTooltipContent({
 
 export function YvUsdApyDetailsContent({
   lockedValue,
-  unlockedValue
+  unlockedValue,
+  infinifiPointsNote
 }: {
   lockedValue: number
   unlockedValue: number
+  infinifiPointsNote?: string
 }): ReactElement {
   const upliftPercent = formatAmount(Math.max(0, (lockedValue - unlockedValue) * 100), 0, 2)
 
@@ -127,6 +133,7 @@ export function YvUsdApyDetailsContent({
             lockedValue={lockedValue}
             unlockedValue={unlockedValue}
             className="border-0 bg-transparent p-0"
+            infinifiPointsNote={infinifiPointsNote}
           />
         </div>
       </div>

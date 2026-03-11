@@ -36,6 +36,7 @@ import { WidgetActionType } from '@pages/vaults/types'
 import {
   getYvUsdSharePrice,
   isYvUsdAddress,
+  type TYvUsdVariant,
   YVUSD_CHAIN_ID,
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
@@ -231,7 +232,15 @@ function RetiredVaultAlert({ message, className }: { message: string; className:
   )
 }
 
-function YvUsdMobileKeyMetrics({ currentVault }: { currentVault: TKongVaultView }): ReactElement {
+function YvUsdMobileKeyMetrics({
+  currentVault,
+  apyVariant,
+  onApyVariantChange
+}: {
+  currentVault: TKongVaultView
+  apyVariant: TYvUsdVariant
+  onApyVariantChange: (variant: TYvUsdVariant) => void
+}): ReactElement {
   const { address } = useWeb3()
   const { getPrice } = useYearn()
   const { metrics, unlockedVault, lockedVault } = useYvUsdVaults()
@@ -272,7 +281,16 @@ function YvUsdMobileKeyMetrics({ currentVault }: { currentVault: TKongVaultView 
       depositedValue={unlockedUserData.depositedValue}
       depositedUsdValue={depositedUsdValue}
       tokenPrice={currentVault.tvl.price || 0}
-      apyBox={<YvUsdApyStatBox lockedApy={lockedApy} unlockedApy={unlockedApy} />}
+      apyBox={
+        <YvUsdApyStatBox
+          lockedApy={lockedApy}
+          unlockedApy={unlockedApy}
+          activeVariant={apyVariant}
+          onVariantChange={onApyVariantChange}
+          lockedHasInfinifiPoints={Boolean(metrics?.locked.hasInfinifiPoints)}
+          unlockedHasInfinifiPoints={Boolean(metrics?.unlocked.hasInfinifiPoints)}
+        />
+      }
     />
   )
 }
@@ -346,6 +364,7 @@ function Index(): ReactElement | null {
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
   const [sectionScrollOffset, setSectionScrollOffset] = useState(0)
   const [isHeaderCompressed, setIsHeaderCompressed] = useState(false)
+  const [yvUsdApyVariant, setYvUsdApyVariant] = useState<TYvUsdVariant>('locked')
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const scrollPadding = 16
   const updateSectionScrollOffset = useCallback((): number => {
@@ -1121,6 +1140,7 @@ function Index(): ReactElement | null {
           chainId={chainId}
           mode={resolvedWidgetMode}
           onModeChange={setWidgetMode}
+          onDepositVariantChange={setYvUsdApyVariant}
           showTabs={false}
           collapseDetails={shouldCollapseWidgetDetails}
         />
@@ -1150,7 +1170,13 @@ function Index(): ReactElement | null {
   function renderMobileWidget(): ReactElement {
     if (isYvUsd) {
       return (
-        <YvUsdWidget currentVault={resolvedCurrentVault} chainId={chainId} mode={mobileDrawerAction} showTabs={false} />
+        <YvUsdWidget
+          currentVault={resolvedCurrentVault}
+          chainId={chainId}
+          mode={mobileDrawerAction}
+          onDepositVariantChange={setYvUsdApyVariant}
+          showTabs={false}
+        />
       )
     }
 
@@ -1193,6 +1219,7 @@ function Index(): ReactElement | null {
                 <VaultDetailsHeaderPresentation
                   currentVault={currentVault}
                   depositedValue={vaultUserData.depositedValue}
+                  yvUsdApyVariant={yvUsdApyVariant}
                   isCompressed={true}
                   sectionTabs={sectionTabs}
                   activeSectionKey={activeSection}
@@ -1200,6 +1227,7 @@ function Index(): ReactElement | null {
                   widgetActions={widgetActions}
                   widgetMode={resolvedWidgetMode}
                   onWidgetModeChange={(): void => undefined}
+                  onYvUsdApyVariantChange={(): void => undefined}
                   isWidgetWalletOpen={isWidgetWalletOpen}
                   onWidgetWalletOpen={(): void => undefined}
                   onWidgetCloseOverlays={(): void => undefined}
@@ -1223,6 +1251,7 @@ function Index(): ReactElement | null {
           <VaultDetailsHeader
             currentVault={currentVault}
             depositedValue={vaultUserData.depositedValue}
+            yvUsdApyVariant={yvUsdApyVariant}
             isCollapsibleMode={isCollapsibleMode}
             sectionTabs={sectionTabs}
             activeSectionKey={activeSection}
@@ -1231,6 +1260,7 @@ function Index(): ReactElement | null {
             widgetActions={widgetActions}
             widgetMode={resolvedWidgetMode}
             onWidgetModeChange={setWidgetMode}
+            onYvUsdApyVariantChange={setYvUsdApyVariant}
             isWidgetWalletOpen={isWidgetWalletOpen}
             onWidgetWalletOpen={openWidgetWallet}
             onWidgetCloseOverlays={closeWidgetOverlays}
@@ -1278,7 +1308,11 @@ function Index(): ReactElement | null {
 
         <div className="md:hidden space-y-4">
           {isYvUsd ? (
-            <YvUsdMobileKeyMetrics currentVault={currentVault} />
+            <YvUsdMobileKeyMetrics
+              currentVault={currentVault}
+              apyVariant={yvUsdApyVariant}
+              onApyVariantChange={setYvUsdApyVariant}
+            />
           ) : (
             <MobileKeyMetrics
               currentVault={currentVault}
