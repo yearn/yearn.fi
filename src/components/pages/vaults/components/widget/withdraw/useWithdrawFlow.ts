@@ -71,6 +71,7 @@ export const useWithdrawFlow = ({
 }: UseWithdrawFlowProps): WithdrawFlowResult => {
   // Determine routing type
   const routeType = useWithdrawRoute({
+    vaultAddress,
     withdrawToken,
     assetAddress,
     withdrawalSource,

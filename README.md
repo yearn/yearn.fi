@@ -41,6 +41,32 @@
 2. Run `bun run dev`
 3. Open the browser and navigate to `http://localhost:3000`
 
+### Per-vault Enso denylist (disable zaps)
+
+To disable Enso routing for specific vaults, edit:
+
+`src/components/pages/vaults/constants/ensoDisabledVaults.ts`
+
+Add vault addresses under their chain ID:
+
+```ts
+const ENSO_DISABLED_VAULTS_BY_CHAIN: Partial<Record<number, readonly Address[]>> = {
+  1: [
+    '0x1111111111111111111111111111111111111111'
+  ],
+  42161: [
+    '0x2222222222222222222222222222222222222222',
+    '0x3333333333333333333333333333333333333333'
+  ]
+}
+```
+
+Notes:
+- Keys are EVM chain IDs (`1`, `10`, `137`, `42161`, etc.).
+- Values are vault addresses for that chain.
+- Address casing does not matter (addresses are normalized internally).
+- Denylisted vaults disable Enso for both deposit and withdraw flows and hide zap UI on vault pages.
+
 ### Making Changes
 
 - Create a new local branch from upstream/main for each PR that you will submit

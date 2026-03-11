@@ -19,6 +19,7 @@ import { useAccount } from 'wagmi'
 import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
+import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
@@ -77,7 +78,7 @@ export const WidgetDeposit: FC<Props> = ({
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, isAutoStakingEnabled, getPrice } = useYearn()
   const trackEvent = usePlausible()
-  const ensoEnabled = useEnsoEnabled()
+  const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
 
   const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
@@ -126,13 +127,29 @@ export const WidgetDeposit: FC<Props> = ({
     const key = `${prefill.address}-${prefill.chainId}-${prefill.amount}`
     if (appliedPrefillRef.current === key) return
     appliedPrefillRef.current = key
-    setSelectedToken(prefill.address)
-    setSelectedChainId(prefill.chainId)
+
+    const canApplyPrefilledToken =
+      ensoEnabled || (toAddress(prefill.address) === toAddress(assetAddress) && prefill.chainId === chainId)
+
+    setSelectedToken(canApplyPrefilledToken ? prefill.address : assetAddress)
+    setSelectedChainId(canApplyPrefilledToken ? prefill.chainId : undefined)
     if (prefill.amount !== undefined) {
       setDepositInput(prefill.amount)
     }
     onPrefillApplied?.()
-  }, [prefill, setDepositInput, onPrefillApplied])
+  }, [prefill, ensoEnabled, assetAddress, chainId, setDepositInput, onPrefillApplied])
+
+  useResetEnsoSelection({
+    ensoEnabled,
+    selectedToken,
+    selectedChainId,
+    assetAddress,
+    chainId,
+    showTokenSelector,
+    setSelectedToken,
+    setSelectedChainId,
+    setShowTokenSelector
+  })
 
   useEffect(() => {
     if (!collapseDetails && isDetailsPanelOpen) {

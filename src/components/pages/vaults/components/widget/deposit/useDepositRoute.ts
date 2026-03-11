@@ -1,15 +1,48 @@
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
-import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
-import type { Address } from 'viem'
+import { type Address, isAddressEqual } from 'viem'
 import type { DepositRouteType } from './types'
 
 interface UseDepositRouteProps {
+  chainId: number
   depositToken: Address
   assetAddress: Address
   destinationToken: Address
   vaultAddress: Address
   stakingAddress?: Address
+}
+
+interface ResolveDepositRouteTypeProps extends Omit<UseDepositRouteProps, 'chainId'> {
+  ensoEnabled: boolean
+}
+
+export function resolveDepositRouteType({
+  depositToken,
+  assetAddress,
+  destinationToken,
+  vaultAddress,
+  stakingAddress,
+  ensoEnabled
+}: ResolveDepositRouteTypeProps): DepositRouteType {
+  // Case 1: Direct vault deposit (asset → vault)
+  if (isAddressEqual(depositToken, assetAddress) && isAddressEqual(destinationToken, vaultAddress)) {
+    return 'DIRECT_DEPOSIT'
+  }
+
+  // Case 2: Direct staking (vault → staking)
+  if (
+    stakingAddress &&
+    isAddressEqual(depositToken, vaultAddress) &&
+    isAddressEqual(destinationToken, stakingAddress)
+  ) {
+    return 'DIRECT_STAKE'
+  }
+
+  // Case 3: All other cases use Enso (if available)
+  if (ensoEnabled) {
+    return 'ENSO'
+  }
+  return 'NO_ROUTE'
 }
 
 /**
@@ -18,37 +51,26 @@ interface UseDepositRouteProps {
  * - DIRECT_STAKE: vault → staking (stake vault tokens)
  * - ENSO: all other cases (zaps, cross-chain, etc.)
  */
-export const useDepositRoute = ({
+export function useDepositRoute({
+  chainId,
   depositToken,
   assetAddress,
   destinationToken,
   vaultAddress,
   stakingAddress
-}: UseDepositRouteProps): DepositRouteType => {
-  const ensoEnabled = useEnsoEnabled()
+}: UseDepositRouteProps): DepositRouteType {
+  const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
 
-  return useMemo(() => {
-    // Case 1: Direct vault deposit (asset → vault)
-    if (
-      toAddress(depositToken) === toAddress(assetAddress) &&
-      toAddress(destinationToken) === toAddress(vaultAddress)
-    ) {
-      return 'DIRECT_DEPOSIT'
-    }
-
-    // Case 2: Direct staking (vault → staking)
-    if (
-      toAddress(depositToken) === toAddress(vaultAddress) &&
-      stakingAddress &&
-      toAddress(destinationToken) === toAddress(stakingAddress)
-    ) {
-      return 'DIRECT_STAKE'
-    }
-
-    // Case 3: All other cases use Enso
-    if (ensoEnabled) {
-      return 'ENSO'
-    }
-    return 'NO_ROUTE'
-  }, [ensoEnabled, depositToken, assetAddress, destinationToken, vaultAddress, stakingAddress])
+  return useMemo(
+    () =>
+      resolveDepositRouteType({
+        depositToken,
+        assetAddress,
+        destinationToken,
+        vaultAddress,
+        stakingAddress,
+        ensoEnabled
+      }),
+    [ensoEnabled, depositToken, assetAddress, destinationToken, vaultAddress, stakingAddress]
+  )
 }
