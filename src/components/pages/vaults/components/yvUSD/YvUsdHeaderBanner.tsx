@@ -16,12 +16,12 @@ export function YvUsdHeaderBanner({ className }: { className?: string }): ReactE
       style={BANNER_BACKGROUND_STYLE}
       aria-label={'yvUSD announcement banner'}
     >
-      <div className={'flex w-full items-center px-8 py-4'}>
+      <div className={'flex w-full items-center px-5 py-2 md:px-8'}>
         <div className={'min-w-0'}>
-          <p className={'max-w-[48rem] text-4xl font-bold leading-none text-white lg:text-4xl lg:leading-[0.95]'}>
+          <p className={'max-w-[28rem] text-xl font-bold leading-none text-white md:max-w-[48rem] md:text-4xl'}>
             {'Transparent, Verifiable, Real Yield'}
           </p>
-          <p className={'mt-0 text-sm font-bold leading-tight text-white lg:text-[1.05rem]'}>
+          <p className={'mt-2 text-[12pt] font-bold leading-tight text-white md:text-sm md:mt-0 lg:text-[1.05rem]'}>
             <a
               href={YVUSD_LEARN_MORE_URL}
               className={'underline underline-offset-2 transition-opacity hover:opacity-85'}

@@ -22,6 +22,7 @@ import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/Mobi
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
+import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import { getVaultView, type TKongVault, type TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
 import {
   mergeYBoldSnapshot,
@@ -1277,6 +1278,7 @@ function Index(): ReactElement | null {
               { label: `${getVaultName(currentVault)}`, isCurrent: true }
             ]}
           />
+          {isYvUsd ? <YvUsdHeaderBanner className={'mb-3 md:min-h-26'} /> : null}
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
               <TokenLogo
