@@ -265,10 +265,33 @@ export const WidgetWithdraw: FC<
     outputTokenPrice
   ])
 
-  // Reset price impact acceptance when amount changes
+  const priceImpactAcceptanceKey = useMemo(() => {
+    return [
+      withdrawAmount.bn.toString(),
+      requiredShares.toString(),
+      routeType,
+      withdrawalSource ?? '',
+      sourceToken,
+      withdrawToken,
+      destinationChainId,
+      activeFlow.periphery.routerAddress ?? '',
+      activeFlow.periphery.expectedOut.toString()
+    ].join(':')
+  }, [
+    withdrawAmount.bn,
+    requiredShares,
+    routeType,
+    withdrawalSource,
+    sourceToken,
+    withdrawToken,
+    destinationChainId,
+    activeFlow.periphery.routerAddress,
+    activeFlow.periphery.expectedOut
+  ])
+
   useEffect(() => {
     setHasAcceptedPriceImpact(false)
-  }, [withdrawAmount.bn])
+  }, [priceImpactAcceptanceKey])
 
   const zapToken = useMemo(() => {
     if (withdrawToken === assetAddress) return undefined

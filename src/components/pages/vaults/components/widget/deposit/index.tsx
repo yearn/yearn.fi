@@ -253,10 +253,29 @@ export const WidgetDeposit: FC<Props> = ({
     }
   }, [depositAmount.bn, inputToken?.decimals, inputTokenPrice, vaultShareValue.usdRaw])
 
-  // Reset price impact acceptance when amount changes
+  const priceImpactAcceptanceKey = useMemo(() => {
+    return [
+      depositAmount.bn.toString(),
+      routeType,
+      sourceChainId,
+      depositToken,
+      destinationToken,
+      activeFlow.periphery.routerAddress ?? '',
+      activeFlow.periphery.expectedOut.toString()
+    ].join(':')
+  }, [
+    depositAmount.bn,
+    routeType,
+    sourceChainId,
+    depositToken,
+    destinationToken,
+    activeFlow.periphery.routerAddress,
+    activeFlow.periphery.expectedOut
+  ])
+
   useEffect(() => {
     setHasAcceptedPriceImpact(false)
-  }, [depositAmount.bn])
+  }, [priceImpactAcceptanceKey])
 
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
