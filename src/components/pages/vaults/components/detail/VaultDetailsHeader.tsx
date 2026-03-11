@@ -4,6 +4,7 @@ import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoric
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
 import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
+import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
@@ -779,6 +780,7 @@ export function VaultDetailsHeaderPresentation({
 }: TVaultDetailsHeaderPresentationProps): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
   const tokenPrice = currentVault.tvl.price || 0
+  const isYvUsd = isYvUsdVault(currentVault)
   const handleSelectSection = onSelectSection ?? noopSelectSection
   const handleWidgetModeChange = onWidgetModeChange ?? noopWidgetModeChange
   const handleWidgetWalletOpen = onWidgetWalletOpen ?? noop
@@ -840,12 +842,26 @@ export function VaultDetailsHeaderPresentation({
         </div>
       ) : (
         <>
-          <VaultHeaderIdentity
-            currentVault={currentVault}
-            isCompressed={isCompressed}
-            className={'md:col-span-20 md:row-start-2'}
-            includeTourAttributes={includeTourAttributes}
-          />
+          {isYvUsd ? (
+            <div className={'md:col-span-20 md:row-start-2 md:flex md:items-stretch md:gap-6'}>
+              <VaultHeaderIdentity
+                currentVault={currentVault}
+                isCompressed={isCompressed}
+                className={'md:w-[20%] md:min-w-[300px] md:max-w-[420px] md:flex-none'}
+                includeTourAttributes={includeTourAttributes}
+              />
+              <div className={'hidden md:flex md:min-w-0 md:flex-1 self-stretch'}>
+                <YvUsdHeaderBanner className={'w-full max-h-[85px] self-stretch'} />
+              </div>
+            </div>
+          ) : (
+            <VaultHeaderIdentity
+              currentVault={currentVault}
+              isCompressed={isCompressed}
+              className={'md:col-span-20 md:row-start-2'}
+              includeTourAttributes={includeTourAttributes}
+            />
+          )}
           <div className={cl('md:col-span-13 md:row-start-3')}>
             {' '}
             {/* step 2 should be here*/}
