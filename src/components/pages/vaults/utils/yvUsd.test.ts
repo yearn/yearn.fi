@@ -70,8 +70,8 @@ describe('getWeightedYvUsdApy', () => {
 
 describe('yvUSD risk override', () => {
   it('uses the provisional custom score for the detail risk section', () => {
-    expect(YVUSD_CUSTOM_RISK_SCORE).toBe('2/5')
-    expect(YVUSD_RISK_SCORE_ITEMS[0]?.score).toBe('2/5')
+    expect(YVUSD_CUSTOM_RISK_SCORE).toBe('3/5')
+    expect(YVUSD_RISK_SCORE_ITEMS[0]?.score).toBe('3/5')
   })
 
   it('keeps the current published risk sections intact', () => {
