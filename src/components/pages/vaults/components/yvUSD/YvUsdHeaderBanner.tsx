@@ -24,6 +24,8 @@ export function YvUsdHeaderBanner({ className }: { className?: string }): ReactE
           <p className={'mt-2 text-[12pt] font-bold leading-tight text-white md:text-sm md:mt-0 lg:text-[1.05rem]'}>
             <a
               href={YVUSD_LEARN_MORE_URL}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
               className={'underline underline-offset-2 transition-opacity hover:opacity-85'}
             >
               {'Learn more'}
