@@ -22,6 +22,7 @@ export type TYearnContext = {
   earned?: TYDaemonEarned
   prices?: TYDaemonPricesChain
   vaults: TDict<TKongVaultListItem>
+  allVaults: TDict<TKongVaultListItem>
   isLoadingVaultList: boolean
   zapSlippage: number
   maxLoss: bigint
@@ -47,6 +48,7 @@ const YearnContext = createContext<TYearnContext>({
   },
   prices: {},
   vaults: {},
+  allVaults: {},
   isLoadingVaultList: false,
   maxLoss: DEFAULT_MAX_LOSS,
   zapSlippage: 0.1,
@@ -102,7 +104,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
 
   const prices = useFetchYearnPrices()
   //RG this endpoint returns empty objects for retired and migrations
-  const { vaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
+  const { vaults, allVaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
     enabled: isVaultListEnabled
   })
 
@@ -127,6 +129,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
         setZapProvider,
         setIsAutoStakingEnabled,
         vaults,
+        allVaults,
         isLoadingVaultList: isLoading,
         mutateVaultList: refetch,
         enableVaultListFetch,

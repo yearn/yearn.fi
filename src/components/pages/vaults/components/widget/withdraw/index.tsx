@@ -8,28 +8,35 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
-import type { TNormalizedBN } from '@shared/types'
-import { cl, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import { cl, formatTAmount, toAddress, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
+import { ApprovalOverlay } from '../deposit/ApprovalOverlay'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
-import { formatWidgetValue } from '../shared/valueDisplay'
+import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
 import { getPriorityTokens } from './constants'
 import { SourceSelector } from './SourceSelector'
-import type { WithdrawalSource, WithdrawRouteType, WithdrawWidgetProps } from './types'
+import type { WithdrawalSource, WithdrawWidgetProps } from './types'
 import { useWithdrawError } from './useWithdrawError'
 import { useWithdrawFlow } from './useWithdrawFlow'
 import { useWithdrawNotifications } from './useWithdrawNotifications'
 import { WithdrawDetails } from './WithdrawDetails'
 import { WithdrawDetailsOverlay } from './WithdrawDetailsOverlay'
+import {
+  buildWithdrawTransactionStep,
+  getWithdrawCtaLabel,
+  getWithdrawTransactionName,
+  isWithdrawCtaDisabled,
+  isWithdrawLastStep
+} from './withdrawStepHelpers'
 
 type WidgetWithdrawProps = WithdrawWidgetProps & {
   hideSettings?: boolean
@@ -38,12 +45,6 @@ type WidgetWithdrawProps = WithdrawWidgetProps & {
   contentBelowInput?: ReactNode
   hideContainerBorder?: boolean
   onTokenSelectionChange?: (address: `0x${string}`, chainId: number) => void
-}
-
-type WithdrawActionCopy = {
-  actionLabel: string
-  progressLabel: string
-  pastTenseLabel: string
 }
 
 function resolveWithdrawalSource(hasVaultBalance: boolean, hasStakingBalance: boolean): WithdrawalSource | undefined {
@@ -56,47 +57,6 @@ function resolveWithdrawalSource(hasVaultBalance: boolean, hasStakingBalance: bo
   return undefined
 }
 
-function getWithdrawBalance(
-  withdrawalSource: WithdrawalSource,
-  vault: WithdrawWidgetProps['vaultUserData']['vaultToken'],
-  stakingToken: WithdrawWidgetProps['vaultUserData']['stakingToken']
-): TNormalizedBN {
-  if (withdrawalSource === 'vault' && vault) {
-    return vault.balance
-  }
-  if (withdrawalSource === 'staking' && stakingToken) {
-    return stakingToken.balance
-  }
-  return zeroNormalizedBN
-}
-
-function getSourceTokenAddress(
-  withdrawalSource: WithdrawalSource,
-  vaultAddress: `0x${string}`,
-  stakingAddress?: `0x${string}`
-): `0x${string}` {
-  if (withdrawalSource === 'staking' && stakingAddress) {
-    return stakingAddress
-  }
-  return vaultAddress
-}
-
-function getWithdrawActionCopy(routeType: WithdrawRouteType): WithdrawActionCopy {
-  if (routeType === 'DIRECT_UNSTAKE') {
-    return {
-      actionLabel: 'Unstake',
-      progressLabel: 'Unstaking',
-      pastTenseLabel: 'unstaked'
-    }
-  }
-
-  return {
-    actionLabel: 'Withdraw',
-    progressLabel: 'Withdrawing',
-    pastTenseLabel: 'withdrawn'
-  }
-}
-
 function getWithdrawActionLabel(isUnstake: boolean, withdrawalSource: WithdrawalSource): string {
   if (isUnstake) {
     return 'You will unstake'
@@ -105,29 +65,6 @@ function getWithdrawActionLabel(isUnstake: boolean, withdrawalSource: Withdrawal
     return 'You will unstake and redeem'
   }
   return 'You will redeem'
-}
-
-function getTransactionName(routeType: WithdrawRouteType, isLoadingRoute: boolean): string {
-  if (routeType === 'DIRECT_WITHDRAW') {
-    return 'Withdraw'
-  }
-  if (routeType === 'DIRECT_UNSTAKE') {
-    return 'Unstake'
-  }
-  if (isLoadingRoute) {
-    return 'Fetching quote'
-  }
-  return 'Withdraw'
-}
-
-function getWithdrawButtonLabel(isLoadingRoute: boolean, needsApproval: boolean, transactionName: string): string {
-  if (isLoadingRoute) {
-    return 'Fetching quote'
-  }
-  if (needsApproval) {
-    return `Approve & ${transactionName}`
-  }
-  return transactionName
 }
 
 function getZapNotificationText(isUnstake: boolean, shouldShowZapUi: boolean): string | undefined {
@@ -140,6 +77,16 @@ function getZapNotificationText(isUnstake: boolean, shouldShowZapUi: boolean): s
   return undefined
 }
 
+type ApprovalState = {
+  hasApprovalStep: boolean
+  isAllowanceSufficient: boolean
+  needsApproval: boolean
+  tokenSymbol?: string
+  tokenDecimals: number
+  spenderAddress: `0x${string}`
+  spenderName?: string
+}
+
 export function WidgetWithdraw({
   vaultAddress,
   assetAddress,
@@ -147,9 +94,12 @@ export function WidgetWithdraw({
   stakingAddress,
   chainId,
   vaultSymbol,
+  stakingSource,
   vaultVersion,
   vaultUserData,
   maxWithdrawAssets,
+  requiredSharesOverride,
+  expectedOutOverride,
   isActionDisabled = false,
   actionDisabledReason,
   disableTokenSelector = false,
@@ -183,17 +133,25 @@ export function WidgetWithdraw({
   )
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>(prefill?.chainId)
   const [showWithdrawDetailsModal, setShowWithdrawDetailsModal] = useState(false)
+  const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
   const [hasAcceptedPriceImpact, setHasAcceptedPriceImpact] = useState(false)
   const appliedPrefillRef = useRef<string | null>(null)
+  const [fallbackStep, setFallbackStep] = useState<'unstake' | 'withdraw'>('unstake')
+  const [redeemSharesOverride, setRedeemSharesOverride] = useState<bigint>(0n)
+  const [awaitingPostUnstakeShares, setAwaitingPostUnstakeShares] = useState(false)
+  const [vaultSharesBeforeUnstake, setVaultSharesBeforeUnstake] = useState<bigint>(0n)
+  const [optimisticApprovedShares, setOptimisticApprovedShares] = useState<bigint | null>(null)
 
   const {
     assetToken,
     vaultToken: vault,
     stakingToken,
+    stakingWithdrawableAssets,
+    stakingRedeemableShares,
     pricePerShare,
     isLoading: isLoadingVaultData,
     refetch: refetchVaultUserData
@@ -225,7 +183,7 @@ export function WidgetWithdraw({
   }, [withdrawToken, resolvedDisplayAssetAddress, hideZapTokenSet])
 
   const hasVaultBalance = (vault?.balance.raw ?? 0n) > 0n
-  const hasStakingBalance = (stakingToken?.balance.raw ?? 0n) > 0n
+  const hasStakingBalance = stakingWithdrawableAssets > 0n
   const hasBothBalances = hasVaultBalance && hasStakingBalance
   const singleSource = resolveWithdrawalSource(hasVaultBalance, hasStakingBalance)
 
@@ -253,21 +211,40 @@ export function WidgetWithdraw({
     setShowTokenSelector
   })
 
-  const totalVaultBalance = getWithdrawBalance(withdrawalSource, vault, stakingToken)
-  const sourceToken = getSourceTokenAddress(withdrawalSource, vaultAddress, stakingAddress)
+  useEffect(() => {
+    if (!showTransactionOverlay) {
+      setFallbackStep('unstake')
+      setRedeemSharesOverride(0n)
+      setAwaitingPostUnstakeShares(false)
+      setVaultSharesBeforeUnstake(0n)
+    }
+  }, [showTransactionOverlay])
+
+  const sourceVaultSharesRaw = useMemo(() => {
+    if (withdrawalSource === 'vault') return vault?.balance.raw ?? 0n
+    if (withdrawalSource === 'staking') return stakingWithdrawableAssets
+    return 0n
+  }, [withdrawalSource, vault?.balance.raw, stakingWithdrawableAssets])
+
+  const sourceToken =
+    withdrawalSource === 'vault'
+      ? vaultAddress
+      : withdrawalSource === 'staking' && stakingAddress
+        ? stakingAddress
+        : vaultAddress
 
   const isUnstake = withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(vaultAddress)
-  const sharesDecimals =
-    withdrawalSource === 'staking' ? (stakingToken?.decimals ?? vault?.decimals ?? 18) : (vault?.decimals ?? 18)
+
+  const sharesDecimals = vault?.decimals ?? stakingToken?.decimals ?? 18
   const vaultDecimals = vault?.decimals ?? 18
 
-  const totalBalanceInUnderlying: TNormalizedBN = useMemo(() => {
-    if (pricePerShare === 0n || totalVaultBalance.raw === 0n || !assetToken) {
-      return zeroNormalizedBN
+  const totalBalanceInUnderlying = useMemo(() => {
+    if (pricePerShare === 0n || sourceVaultSharesRaw === 0n || !assetToken) {
+      return toNormalizedBN(0n, assetToken?.decimals ?? 18)
     }
-    const underlyingAmount = (totalVaultBalance.raw * pricePerShare) / 10n ** BigInt(vaultDecimals)
+    const underlyingAmount = (sourceVaultSharesRaw * pricePerShare) / 10n ** BigInt(vaultDecimals)
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
-  }, [totalVaultBalance.raw, pricePerShare, vaultDecimals, assetToken])
+  }, [sourceVaultSharesRaw, pricePerShare, vaultDecimals, assetToken])
 
   const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
@@ -316,7 +293,7 @@ export function WidgetWithdraw({
   // ============================================================================
   const requiredShares = useMemo(() => {
     if (!withdrawAmount.bn || withdrawAmount.bn === 0n) return 0n
-    if (isMaxWithdraw && totalVaultBalance.raw > 0n) return totalVaultBalance.raw
+    if (isMaxWithdraw && sourceVaultSharesRaw > 0n) return sourceVaultSharesRaw
 
     if (pricePerShare > 0n) {
       const numerator = withdrawAmount.bn * 10n ** BigInt(vaultDecimals)
@@ -324,24 +301,41 @@ export function WidgetWithdraw({
     }
 
     return 0n
-  }, [withdrawAmount.bn, isMaxWithdraw, totalVaultBalance.raw, pricePerShare, vaultDecimals])
+  }, [withdrawAmount.bn, isMaxWithdraw, sourceVaultSharesRaw, pricePerShare, vaultDecimals])
+  const effectiveRequiredShares = requiredSharesOverride ?? requiredShares
 
-  const { routeType, activeFlow } = useWithdrawFlow({
+  useEffect(() => {
+    if (!awaitingPostUnstakeShares || fallbackStep !== 'withdraw') return
+
+    const currentVaultShares = vault?.balance.raw ?? 0n
+    if (currentVaultShares <= vaultSharesBeforeUnstake) return
+
+    setRedeemSharesOverride(currentVaultShares - vaultSharesBeforeUnstake)
+    setAwaitingPostUnstakeShares(false)
+  }, [awaitingPostUnstakeShares, fallbackStep, vault?.balance.raw, vaultSharesBeforeUnstake])
+
+  const blockDirectWithdrawStep = fallbackStep === 'withdraw' && awaitingPostUnstakeShares
+
+  const { routeType, activeFlow, directWithdrawFlow, directUnstakeFlow } = useWithdrawFlow({
     withdrawToken,
     assetAddress,
     vaultAddress,
     sourceToken,
     stakingAddress,
+    stakingSource,
     amount: withdrawAmount.debouncedBn,
     currentAmount: withdrawAmount.bn,
-    requiredShares,
-    maxShares: totalVaultBalance.raw,
+    requiredShares: effectiveRequiredShares,
+    maxShares: sourceVaultSharesRaw,
+    redeemSharesOverride,
     isMaxWithdraw,
+    unstakeMaxRedeemShares: withdrawalSource === 'staking' ? stakingRedeemableShares : 0n,
+    allowDirectWithdrawStep: !blockDirectWithdrawStep,
+    optimisticApprovedShares,
     account,
     chainId,
     destinationChainId,
     outputChainId: outputToken?.chainID ?? chainId,
-    assetDecimals: assetToken?.decimals ?? 18,
     vaultDecimals: vault?.decimals ?? 18,
     outputDecimals: outputToken?.decimals ?? 18,
     pricePerShare,
@@ -351,33 +345,56 @@ export function WidgetWithdraw({
     isDebouncing: withdrawAmount.isDebouncing,
     useErc4626: usesErc4626
   })
+  const effectiveDirectWithdrawPrepare = blockDirectWithdrawStep
+    ? undefined
+    : directWithdrawFlow.actions.prepareWithdraw
+  const effectiveWithdrawAmountRaw = expectedOutOverride ?? withdrawAmount.bn
+
+  useEffect(() => {
+    if (optimisticApprovedShares !== null && activeFlow.periphery.allowance >= optimisticApprovedShares) {
+      setOptimisticApprovedShares(null)
+    }
+  }, [activeFlow.periphery.allowance, optimisticApprovedShares])
+
+  useEffect(() => {
+    if (optimisticApprovedShares === null) return
+    if (activeFlow.actions.prepareWithdraw.isSuccess) return
+    void activeFlow.actions.prepareWithdraw.refetch?.()
+  }, [
+    optimisticApprovedShares,
+    activeFlow.actions.prepareWithdraw.isSuccess,
+    activeFlow.actions.prepareWithdraw.refetch
+  ])
 
   const isCrossChain = destinationChainId !== chainId
-  const { approveNotificationParams, withdrawNotificationParams } = useWithdrawNotifications({
-    vault,
-    outputToken,
-    stakingToken,
-    sourceToken,
-    assetAddress,
-    withdrawToken,
-    account,
-    chainId,
-    destinationChainId,
-    withdrawAmount: withdrawAmount.debouncedBn,
-    requiredShares,
-    expectedOut: activeFlow.periphery.expectedOut,
-    routeType,
-    routerAddress: activeFlow.periphery.routerAddress,
-    isCrossChain,
-    withdrawalSource: withdrawalSource || 'vault'
-  })
+  const effectiveExpectedOut = expectedOutOverride ?? activeFlow.periphery.expectedOut
+  const { approveNotificationParams, unstakeNotificationParams, withdrawNotificationParams } = useWithdrawNotifications(
+    {
+      vault,
+      outputToken,
+      stakingToken,
+      sourceToken,
+      assetAddress,
+      withdrawToken,
+      account,
+      chainId,
+      destinationChainId,
+      withdrawAmount: withdrawAmount.debouncedBn,
+      requiredShares: effectiveRequiredShares,
+      expectedOut: effectiveExpectedOut,
+      routeType,
+      routerAddress: activeFlow.periphery.routerAddress,
+      isCrossChain,
+      withdrawalSource: withdrawalSource || 'vault'
+    }
+  )
 
   const withdrawError = useWithdrawError({
     amount: withdrawAmount.bn,
     debouncedAmount: withdrawAmount.debouncedBn,
     isDebouncing: withdrawAmount.isDebouncing,
-    requiredShares,
-    totalBalance: totalVaultBalance.raw,
+    requiredShares: effectiveRequiredShares,
+    totalBalance: sourceVaultSharesRaw,
     account,
     isLoadingRoute: activeFlow.periphery.isLoadingRoute,
     flowError: activeFlow.periphery.error,
@@ -390,11 +407,39 @@ export function WidgetWithdraw({
     actionDisabledReason ||
     (exceedsExternalWithdrawLimit ? 'Amount exceeds currently available withdraw limit.' : undefined) ||
     withdrawError
+  const isFetchingQuote = routeType === 'ENSO' && Boolean(activeFlow.periphery.isLoadingRoute)
 
   const actionLabel = getWithdrawActionLabel(isUnstake, withdrawalSource)
-  const transactionName = getTransactionName(routeType, activeFlow.periphery.isLoadingRoute)
+  const transactionName = getWithdrawTransactionName(routeType, isFetchingQuote)
 
-  const showApprove = !!activeFlow.actions.prepareApprove && !activeFlow.periphery.isAllowanceSufficient
+  const approvalState = useMemo((): ApprovalState => {
+    const hasApprovalStep = Boolean(activeFlow.actions.prepareApprove)
+    const isAllowanceSufficient =
+      activeFlow.periphery.isAllowanceSufficient ||
+      (optimisticApprovedShares !== null && optimisticApprovedShares >= effectiveRequiredShares)
+    const approvalToken = withdrawalSource === 'staking' ? stakingToken : vault
+
+    return {
+      hasApprovalStep,
+      isAllowanceSufficient,
+      needsApproval: hasApprovalStep && !isAllowanceSufficient,
+      tokenSymbol: approvalToken?.symbol,
+      tokenDecimals: approvalToken?.decimals ?? 18,
+      spenderAddress: toAddress(activeFlow.periphery.routerAddress || sourceToken),
+      spenderName: routeType === 'ENSO' ? 'Enso Router' : activeFlow.periphery.routerAddress ? 'Vault Zap' : undefined
+    }
+  }, [
+    activeFlow.actions.prepareApprove,
+    activeFlow.periphery.isAllowanceSufficient,
+    activeFlow.periphery.routerAddress,
+    optimisticApprovedShares,
+    effectiveRequiredShares,
+    withdrawalSource,
+    stakingToken,
+    vault,
+    sourceToken,
+    routeType
+  ])
 
   const assetTokenPrice =
     assetToken?.address && assetToken?.chainID
@@ -410,7 +455,7 @@ export function WidgetWithdraw({
   const priceImpactInfo = useMemo(() => {
     const withdrawUsdValue = Number(formatUnits(withdrawAmount.bn, assetToken?.decimals ?? 18)) * assetTokenPrice
     const expectedOutUsdValue =
-      Number(formatUnits(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)) * outputTokenPrice
+      Number(formatUnits(effectiveExpectedOut, outputToken?.decimals ?? 18)) * outputTokenPrice
     const impact =
       withdrawUsdValue > 0 && expectedOutUsdValue > 0
         ? ((withdrawUsdValue - expectedOutUsdValue) / withdrawUsdValue) * 100
@@ -423,7 +468,7 @@ export function WidgetWithdraw({
     withdrawAmount.bn,
     assetToken?.decimals,
     assetTokenPrice,
-    activeFlow.periphery.expectedOut,
+    effectiveExpectedOut,
     outputToken?.decimals,
     outputTokenPrice
   ])
@@ -431,25 +476,25 @@ export function WidgetWithdraw({
   const priceImpactAcceptanceKey = useMemo(() => {
     return [
       withdrawAmount.bn.toString(),
-      requiredShares.toString(),
+      effectiveRequiredShares.toString(),
       routeType,
       withdrawalSource ?? '',
       sourceToken,
       withdrawToken,
       destinationChainId,
       activeFlow.periphery.routerAddress ?? '',
-      activeFlow.periphery.expectedOut.toString()
+      effectiveExpectedOut.toString()
     ].join(':')
   }, [
     withdrawAmount.bn,
-    requiredShares,
+    effectiveRequiredShares,
     routeType,
     withdrawalSource,
     sourceToken,
     withdrawToken,
     destinationChainId,
     activeFlow.periphery.routerAddress,
-    activeFlow.periphery.expectedOut
+    effectiveExpectedOut
   ])
 
   useEffect(() => {
@@ -465,11 +510,9 @@ export function WidgetWithdraw({
 
     const getExpectedAmount = () => {
       if (isUnstake) {
-        return requiredShares > 0n ? formatWidgetValue(requiredShares, vault?.decimals ?? 18) : '0'
+        return effectiveRequiredShares > 0n ? formatWidgetValue(effectiveRequiredShares, vault?.decimals ?? 18) : '0'
       }
-      return activeFlow.periphery.expectedOut && activeFlow.periphery.expectedOut > 0n
-        ? formatWidgetValue(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)
-        : '0'
+      return effectiveExpectedOut > 0n ? formatWidgetValue(effectiveExpectedOut, outputToken?.decimals ?? 18) : '0'
     }
 
     return {
@@ -477,15 +520,15 @@ export function WidgetWithdraw({
       address: outputToken?.address || '',
       chainId: outputToken?.chainID || chainId,
       expectedAmount: getExpectedAmount(),
-      isLoading: isUnstake ? false : activeFlow.periphery.isLoadingRoute
+      isLoading: isUnstake ? false : isFetchingQuote
     }
   }, [
     shouldShowZapUi,
     isUnstake,
-    requiredShares,
+    effectiveRequiredShares,
     vault?.decimals,
-    activeFlow.periphery.expectedOut,
-    activeFlow.periphery.isLoadingRoute,
+    effectiveExpectedOut,
+    isFetchingQuote,
     outputToken?.symbol,
     outputToken?.address,
     outputToken?.chainID,
@@ -493,61 +536,105 @@ export function WidgetWithdraw({
     chainId
   ])
 
-  const formattedWithdrawAmount = formatTAmount({ value: withdrawAmount.bn, decimals: assetToken?.decimals ?? 18 })
-  const needsApproval = showApprove
+  const formattedWithdrawAmount = formatTAmount({
+    value: effectiveWithdrawAmountRaw,
+    decimals: assetToken?.decimals ?? 18
+  })
+  const formattedRequiredShares = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
+  const formattedApprovalAmount = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
 
-  const approvalToken = withdrawalSource === 'staking' ? stakingToken : vault
-  const formattedApprovalAmount = formatTAmount({ value: requiredShares, decimals: approvalToken?.decimals ?? 18 })
+  const currentStep: TransactionStep | undefined = useMemo(
+    () =>
+      buildWithdrawTransactionStep({
+        needsApproval: approvalState.needsApproval,
+        approvePrepare: activeFlow.actions.prepareApprove,
+        activeWithdrawPrepare: activeFlow.actions.prepareWithdraw,
+        directUnstakePrepare: directUnstakeFlow.actions.prepareWithdraw,
+        directWithdrawPrepare: effectiveDirectWithdrawPrepare,
+        fallbackStep,
+        routeType,
+        isCrossChain,
+        formattedApprovalAmount,
+        approvalTokenSymbol: approvalState.tokenSymbol,
+        formattedRequiredShares,
+        formattedWithdrawAmount,
+        assetTokenSymbol: assetToken?.symbol,
+        vaultSymbol: vault?.symbol,
+        stakingTokenSymbol: stakingToken?.symbol,
+        approveNotificationParams,
+        unstakeNotificationParams,
+        withdrawNotificationParams
+      }),
+    [
+      approvalState.needsApproval,
+      activeFlow.actions.prepareApprove,
+      activeFlow.actions.prepareWithdraw,
+      directUnstakeFlow.actions.prepareWithdraw,
+      effectiveDirectWithdrawPrepare,
+      fallbackStep,
+      routeType,
+      isCrossChain,
+      formattedApprovalAmount,
+      approvalState.tokenSymbol,
+      formattedRequiredShares,
+      formattedWithdrawAmount,
+      assetToken?.symbol,
+      vault?.symbol,
+      stakingToken?.symbol,
+      approveNotificationParams,
+      unstakeNotificationParams,
+      withdrawNotificationParams
+    ]
+  )
 
-  const currentStep: TransactionStep | undefined = useMemo(() => {
-    if (needsApproval && activeFlow.actions.prepareApprove) {
-      return {
-        prepare: activeFlow.actions.prepareApprove,
-        label: 'Approve',
-        confirmMessage: `Approving ${formattedApprovalAmount} ${approvalToken?.symbol || ''}`,
-        successTitle: 'Approval successful',
-        successMessage: `Approved ${formattedApprovalAmount} ${approvalToken?.symbol || ''}.\nReady to withdraw.`,
-        notification: approveNotificationParams
+  const isLastStep = useMemo(
+    () =>
+      isWithdrawLastStep({
+        currentStep,
+        needsApproval: approvalState.needsApproval,
+        routeType
+      }),
+    [currentStep, approvalState.needsApproval, routeType]
+  )
+
+  const handleTransactionStepSuccess = useCallback(
+    (label: string) => {
+      if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && label === 'Unstake') {
+        setFallbackStep('withdraw')
+        setWithdrawalSource('vault')
+        setAwaitingPostUnstakeShares(isMaxWithdraw)
+        setRedeemSharesOverride(isMaxWithdraw ? 0n : effectiveRequiredShares)
+        const tokensToRefresh = [{ address: vaultAddress, chainID: chainId }]
+        if (stakingAddress) {
+          tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
+        }
+        void refreshWalletBalances(tokensToRefresh)
+        refetchVaultUserData()
+      } else if (label === 'Approve') {
+        setOptimisticApprovedShares(effectiveRequiredShares)
       }
-    }
+    },
+    [
+      routeType,
+      isMaxWithdraw,
+      effectiveRequiredShares,
+      vaultAddress,
+      chainId,
+      stakingAddress,
+      refreshWalletBalances,
+      refetchVaultUserData
+    ]
+  )
 
-    const { actionLabel, progressLabel, pastTenseLabel } = getWithdrawActionCopy(routeType)
-
-    if (isCrossChain) {
-      return {
-        prepare: activeFlow.actions.prepareWithdraw,
-        label: actionLabel,
-        confirmMessage: `${progressLabel} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
-        successTitle: 'Transaction Submitted',
-        successMessage: `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
-        notification: withdrawNotificationParams
-      }
+  const handleOpenTransactionOverlay = useCallback(() => {
+    if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && fallbackStep === 'unstake' && isMaxWithdraw) {
+      setVaultSharesBeforeUnstake(vault?.balance.raw ?? 0n)
     }
-
-    return {
-      prepare: activeFlow.actions.prepareWithdraw,
-      label: actionLabel,
-      confirmMessage: `${progressLabel} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
-      successTitle: `${actionLabel} successful!`,
-      successMessage: `You have ${pastTenseLabel} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
-      notification: withdrawNotificationParams
-    }
-  }, [
-    needsApproval,
-    activeFlow.actions.prepareApprove,
-    activeFlow.actions.prepareWithdraw,
-    formattedWithdrawAmount,
-    formattedApprovalAmount,
-    assetToken?.symbol,
-    approvalToken?.symbol,
-    routeType,
-    approveNotificationParams,
-    withdrawNotificationParams,
-    isCrossChain
-  ])
+    setShowTransactionOverlay(true)
+  }, [routeType, fallbackStep, isMaxWithdraw, vault?.balance.raw])
 
   const handleWithdrawSuccess = useCallback(() => {
-    const sharesToWithdraw = formatUnits(withdrawAmount.bn, assetToken?.decimals ?? 18)
+    const sharesToWithdraw = formatUnits(effectiveWithdrawAmountRaw, assetToken?.decimals ?? 18)
     const priceUsd = assetTokenPrice
     const valueUsd = Number(sharesToWithdraw) * assetTokenPrice
 
@@ -579,7 +666,7 @@ export function WidgetWithdraw({
     refetchVaultUserData()
     onWithdrawSuccess?.()
   }, [
-    withdrawAmount.bn,
+    effectiveWithdrawAmountRaw,
     assetToken?.decimals,
     outputToken?.symbol,
     assetTokenPrice,
@@ -613,27 +700,13 @@ export function WidgetWithdraw({
   // ============================================================================
   const isSettingsVisible = !!account && !!isSettingsOpen
   const onAllowanceClick =
-    needsApproval && activeFlow.periphery.allowance > 0n && pricePerShare > 0n
+    approvalState.hasApprovalStep && activeFlow.periphery.allowance > 0n && pricePerShare > 0n
       ? (): void => {
           const underlyingAmount =
             (activeFlow.periphery.allowance * pricePerShare) / 10n ** BigInt(vault?.decimals ?? 18)
           setWithdrawInput(formatUnits(underlyingAmount, assetToken?.decimals ?? 18))
         }
       : undefined
-  const withdrawButtonLabel = getWithdrawButtonLabel(
-    activeFlow.periphery.isLoadingRoute,
-    needsApproval,
-    transactionName
-  )
-  const isWithdrawButtonDisabled =
-    !!effectiveWithdrawError ||
-    withdrawAmount.bn === 0n ||
-    !currentStep?.prepare?.isSuccess ||
-    activeFlow.periphery.isLoadingRoute ||
-    isActionDisabled ||
-    withdrawAmount.isDebouncing ||
-    (needsApproval && !activeFlow.periphery.prepareApproveEnabled) ||
-    (!needsApproval && !activeFlow.periphery.prepareWithdrawEnabled)
   const showSettingsButton = !!account && !!onOpenSettings
   const zapNotificationText = getZapNotificationText(isUnstake, shouldShowZapUi)
   const onRemoveZap = canOpenTokenSelector
@@ -646,11 +719,11 @@ export function WidgetWithdraw({
   const detailsSection = (
     <WithdrawDetails
       actionLabel={actionLabel}
-      requiredShares={requiredShares}
+      requiredShares={effectiveRequiredShares}
       sharesDecimals={sharesDecimals}
-      isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+      isLoadingQuote={isFetchingQuote}
       isQuoteStale={withdrawAmount.isDebouncing || withdrawAmount.bn !== withdrawAmount.debouncedBn}
-      expectedOut={activeFlow.periphery.expectedOut}
+      expectedOut={effectiveExpectedOut}
       outputDecimals={outputToken?.decimals ?? 18}
       outputSymbol={outputToken?.symbol}
       showSwapRow={withdrawToken !== resolvedDisplayAssetAddress && !isUnstake}
@@ -664,15 +737,17 @@ export function WidgetWithdraw({
       outputUsdPrice={outputTokenPrice}
       routeType={routeType}
       onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
-      allowance={needsApproval ? activeFlow.periphery.allowance : undefined}
-      allowanceTokenDecimals={needsApproval ? (vault?.decimals ?? 18) : undefined}
-      allowanceTokenSymbol={needsApproval ? vault?.symbol : undefined}
+      allowance={approvalState.hasApprovalStep ? activeFlow.periphery.allowance : undefined}
+      allowanceTokenDecimals={approvalState.hasApprovalStep ? approvalState.tokenDecimals : undefined}
+      allowanceTokenSymbol={approvalState.hasApprovalStep ? approvalState.tokenSymbol : undefined}
+      approvalSpenderName={approvalState.hasApprovalStep ? approvalState.spenderName : undefined}
       onAllowanceClick={onAllowanceClick}
+      onShowApprovalOverlay={approvalState.hasApprovalStep ? () => setShowApprovalOverlay(true) : undefined}
     />
   )
 
   const priceImpactWarning = priceImpactInfo.isHigh &&
-    !activeFlow.periphery.isLoadingRoute &&
+    !isFetchingQuote &&
     !withdrawAmount.isDebouncing &&
     withdrawAmount.bn === withdrawAmount.debouncedBn &&
     withdrawAmount.bn > 0n && (
@@ -709,14 +784,31 @@ export function WidgetWithdraw({
             </Button>
           ) : (
             <Button
-              onClick={() => setShowTransactionOverlay(true)}
-              variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-              isBusy={activeFlow.periphery.isLoadingRoute}
-              disabled={isWithdrawButtonDisabled || (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)}
+              onClick={handleOpenTransactionOverlay}
+              variant={isFetchingQuote ? 'busy' : 'filled'}
+              isBusy={isFetchingQuote}
+              disabled={
+                isWithdrawCtaDisabled({
+                  hasError: !!effectiveWithdrawError || isActionDisabled,
+                  withdrawAmountRaw: withdrawAmount.bn,
+                  isFetchingQuote,
+                  isDebouncing: withdrawAmount.isDebouncing,
+                  showApprove: approvalState.hasApprovalStep,
+                  isAllowanceSufficient: approvalState.isAllowanceSufficient,
+                  prepareApproveEnabled: Boolean(activeFlow.periphery.prepareApproveEnabled),
+                  prepareWithdrawEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
+                }) ||
+                (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
+              }
               className="w-full"
               classNameOverride="yearn--button--nextgen w-full"
             >
-              {withdrawButtonLabel}
+              {getWithdrawCtaLabel({
+                isFetchingQuote,
+                showApprove: approvalState.hasApprovalStep,
+                isAllowanceSufficient: approvalState.isAllowanceSufficient,
+                transactionName
+              })}
             </Button>
           )}
         </div>
@@ -840,9 +932,10 @@ export function WidgetWithdraw({
         isOpen={showTransactionOverlay}
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
-        isLastStep={!needsApproval}
+        isLastStep={isLastStep}
         autoContinueToNextStep
-        autoContinueStepLabels={['Approve', 'Sign Permit']}
+        autoContinueStepLabels={['Approve', 'Sign Permit', 'Unstake']}
+        onStepSuccess={handleTransactionStepSuccess}
         onAllComplete={handleWithdrawSuccess}
       />
 
@@ -853,18 +946,31 @@ export function WidgetWithdraw({
         sourceTokenSymbol={withdrawalSource === 'staking' ? stakingToken?.symbol || vaultSymbol : vaultSymbol}
         vaultAssetSymbol={assetToken?.symbol || ''}
         outputTokenSymbol={outputToken?.symbol || ''}
-        withdrawAmount={requiredShares > 0n ? formatWidgetValue(requiredShares, sharesDecimals) : '0'}
+        withdrawAmount={effectiveRequiredShares > 0n ? formatWidgetValue(effectiveRequiredShares, sharesDecimals) : '0'}
         expectedOutput={
-          activeFlow.periphery.expectedOut > 0n
-            ? formatWidgetValue(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)
-            : undefined
+          effectiveExpectedOut > 0n ? formatWidgetValue(effectiveExpectedOut, outputToken?.decimals ?? 18) : undefined
         }
         hasInputValue={withdrawAmount.bn > 0n}
         stakingAddress={stakingAddress}
         withdrawalSource={withdrawalSource}
         routeType={routeType}
         isZap={routeType === 'ENSO' && shouldShowZapUi}
-        isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+        isLoadingQuote={isFetchingQuote}
+      />
+
+      <ApprovalOverlay
+        isOpen={showApprovalOverlay}
+        onClose={() => {
+          setShowApprovalOverlay(false)
+          setOptimisticApprovedShares(null)
+        }}
+        tokenSymbol={approvalState.tokenSymbol || ''}
+        tokenAddress={toAddress(sourceToken)}
+        tokenDecimals={approvalState.tokenDecimals}
+        spenderAddress={approvalState.spenderAddress}
+        spenderName={approvalState.spenderName || 'Vault'}
+        chainId={chainId}
+        currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, approvalState.tokenDecimals) || '0'}
       />
 
       {/* Full-screen Token Selector Overlay */}

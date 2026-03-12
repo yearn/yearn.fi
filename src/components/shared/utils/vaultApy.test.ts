@@ -53,7 +53,9 @@ const BASE_VAULT: TKongVault = {
   riskLevel: 1,
   staking: {
     address: null,
-    available: false
+    available: false,
+    source: '',
+    rewards: []
   }
 }
 

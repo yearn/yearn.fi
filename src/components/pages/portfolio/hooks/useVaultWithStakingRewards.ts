@@ -6,6 +6,7 @@ import {
   type TKongVaultStaking
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
+import { isZeroAddress } from '@shared/utils'
 
 type UseVaultWithStakingRewardsReturn = {
   vault: TKongVault
@@ -20,7 +21,7 @@ export function useVaultWithStakingRewards(
   const baseStaking = getVaultStaking(originalVault)
   const chainId = getVaultChainID(originalVault)
   const address = getVaultAddress(originalVault)
-  const needsFetch = enabled && baseStaking.available
+  const needsFetch = enabled && !isZeroAddress(baseStaking.address)
 
   const { data: snapshot, isLoading } = useVaultSnapshot({
     chainId: needsFetch ? chainId : undefined,

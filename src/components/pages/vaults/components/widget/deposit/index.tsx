@@ -385,6 +385,7 @@ export function WidgetDeposit({
         confirmMessage: `Approving ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Approval successful',
         successMessage: `Approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nReady to deposit.`,
+        completesFlow: false,
         notification: approveNotificationParams
       }
     }
@@ -398,6 +399,7 @@ export function WidgetDeposit({
         confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Transaction Submitted',
         successMessage: `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
+        completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams
       }
@@ -409,6 +411,7 @@ export function WidgetDeposit({
       confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
       successTitle: `${actionLabel} successful!`,
       successMessage: `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+      completesFlow: true,
       showConfetti: true,
       notification: depositNotificationParams
     }
@@ -722,6 +725,7 @@ export function WidgetDeposit({
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
         isLastStep={!needsApproval}
+        deferOnAllCompleteUntilClose={routeType === 'ENSO'}
         autoContinueToNextStep
         autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleDepositSuccess}

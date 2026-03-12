@@ -23,13 +23,19 @@ import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
-import { getVaultView, type TKongVault, type TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
+import {
+  getVaultChainID,
+  getVaultView,
+  type TKongVault,
+  type TKongVaultView
+} from '@pages/vaults/domain/kongVaultSelectors'
 import {
   mergeYBoldSnapshot,
   mergeYBoldVault,
   YBOLD_STAKING_ADDRESS,
   YBOLD_VAULT_ADDRESS
 } from '@pages/vaults/domain/normalizeVault'
+import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from '@pages/vaults/domain/vaultWarnings'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
@@ -194,13 +200,19 @@ const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
     staking: snapshot.staking
       ? {
           address: snapshot.staking.address ?? null,
-          available: snapshot.staking.available
+          available: snapshot.staking.available,
+          source: snapshot.staking.source ?? '',
+          rewards: (snapshot.staking.rewards ?? []).map((reward) => ({
+            ...reward,
+            decimals: reward.decimals ?? 18,
+            isFinished: reward.isFinished ?? false
+          }))
         }
       : null
   }
 }
 
-function RetiredVaultAlert({ message, className }: { message: string; className: string }): ReactElement {
+function VaultWarningAlert({ message, className }: { message: string; className: string }): ReactElement {
   const { title, body } = splitFirstSentence(message)
 
   return (
@@ -307,7 +319,7 @@ function Index(): ReactElement | null {
   const chainId = Number(params.chainID)
   const { getBalance, onRefresh } = useWallet()
   const { address } = useWeb3()
-  const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
+  const { vaults, allVaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const {
     listVault: yvUsdVault,
     unlockedVault: yvUsdUnlockedVault,
@@ -396,6 +408,11 @@ function Index(): ReactElement | null {
     return vaults[resolvedAddress]
   }, [params.address, vaults])
 
+  const metadataVault = useMemo(() => {
+    if (!params.address) return undefined
+    return allVaults[toAddress(params.address)]
+  }, [allVaults, params.address])
+
   const hasVaultList = Object.keys(vaults).length > 0
 
   const {
@@ -450,7 +467,9 @@ function Index(): ReactElement | null {
   const vaultViewInput = useMemo(() => {
     if (!mergedBaseVault) return snapshotBackedVault
     if (!snapshotBackedVault) return mergedBaseVault
-    return mergedBaseVault.chainId === snapshotBackedVault.chainId ? mergedBaseVault : snapshotBackedVault
+    return getVaultChainID(mergedBaseVault) === getVaultChainID(snapshotBackedVault)
+      ? mergedBaseVault
+      : snapshotBackedVault
   }, [mergedBaseVault, snapshotBackedVault])
 
   const isFactoryVault = useMemo(() => {
@@ -478,11 +497,16 @@ function Index(): ReactElement | null {
   const isLoadingVault = isYvUsd
     ? isLoadingYvUsd || shouldBootstrapYvUsdVaultList
     : !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
+  const stakingAddress = !isZeroAddress(currentVault?.staking?.address)
+    ? toAddress(currentVault?.staking?.address)
+    : undefined
+  const disableDepositStaking = shouldDisableStakingForDeposit || !currentVault?.staking?.available
 
   const vaultUserData = useVaultUserData({
     vaultAddress: toAddress(currentVault?.address ?? '0x'),
     assetAddress: toAddress(currentVault?.token?.address ?? '0x'),
-    stakingAddress: currentVault?.staking?.available ? toAddress(currentVault.staking.address) : undefined,
+    stakingAddress,
+    stakingSource: currentVault?.staking?.source,
     chainId,
     account: address
   })
@@ -505,11 +529,8 @@ function Index(): ReactElement | null {
       : 0n
 
   const stakingShareBalance =
-    !!address &&
-    currentVault?.staking.available &&
-    !isZeroAddress(currentVault?.staking.address) &&
-    Number.isInteger(currentVault?.chainID)
-      ? getBalance({ address: toAddress(currentVault.staking.address), chainID: currentVault.chainID }).raw
+    !!address && !!stakingAddress && Number.isInteger(currentVault?.chainID) && !!currentVault
+      ? getBalance({ address: stakingAddress, chainID: currentVault.chainID }).raw
       : 0n
 
   const isMigratable = Boolean(currentVault?.migration?.available)
@@ -520,6 +541,12 @@ function Index(): ReactElement | null {
     if (!isRetired || !currentVault) return null
     return getRetiredVaultAlertMessage({ vault: currentVault, hasUserFundsInVault })
   }, [currentVault, hasUserFundsInVault, isRetired])
+  const shouldShowNonYearnVaultAlert = useMemo(() => {
+    return isNonYearnErc4626Vault({
+      vault: metadataVault,
+      snapshot: mergedSnapshot
+    })
+  }, [metadataVault, mergedSnapshot])
   const widgetActions = useMemo(() => {
     if (isRetired || isMigratable) {
       return canShowMigrateAction ? [WidgetActionType.Migrate, WidgetActionType.Withdraw] : [WidgetActionType.Withdraw]
@@ -1154,7 +1181,7 @@ function Index(): ReactElement | null {
         vaultAddress={resolvedCurrentVault.address}
         currentVault={resolvedCurrentVault}
         gaugeAddress={resolvedCurrentVault.staking.address}
-        disableDepositStaking={shouldDisableStakingForDeposit}
+        disableDepositStaking={disableDepositStaking}
         actions={widgetActions}
         chainId={chainId}
         vaultUserData={vaultUserData}
@@ -1187,7 +1214,7 @@ function Index(): ReactElement | null {
         vaultAddress={resolvedCurrentVault.address}
         currentVault={resolvedCurrentVault}
         gaugeAddress={resolvedCurrentVault.staking.address}
-        disableDepositStaking={shouldDisableStakingForDeposit}
+        disableDepositStaking={disableDepositStaking}
         actions={widgetActions}
         chainId={chainId}
         vaultUserData={vaultUserData}
@@ -1324,7 +1351,11 @@ function Index(): ReactElement | null {
           )}
 
           {isRetired && retiredVaultAlertMessage ? (
-            <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-4 py-3" />
+            <VaultWarningAlert message={retiredVaultAlertMessage} className="px-4 py-3" />
+          ) : null}
+
+          {shouldShowNonYearnVaultAlert ? (
+            <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-4 py-3" />
           ) : null}
 
           {Number.isInteger(chainId) && (
@@ -1413,9 +1444,7 @@ function Index(): ReactElement | null {
                   isActive={isWidgetWalletOpen && !isWidgetRewardsOpen}
                   currentVault={currentVault}
                   vaultAddress={toAddress(currentVault.address)}
-                  stakingAddress={
-                    isZeroAddress(currentVault.staking.address) ? undefined : toAddress(currentVault.staking.address)
-                  }
+                  stakingAddress={stakingAddress}
                   chainId={chainId}
                   vaultUserData={vaultUserData}
                 />
@@ -1423,7 +1452,7 @@ function Index(): ReactElement | null {
               {shouldShowWidgetRewards ? (
                 <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
                   <WidgetRewards
-                    stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
+                    stakingAddress={stakingAddress}
                     stakingSource={currentVault.staking.source}
                     rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
                       address: r.address,
@@ -1445,7 +1474,11 @@ function Index(): ReactElement | null {
 
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
             {isRetired && retiredVaultAlertMessage ? (
-              <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
+              <VaultWarningAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
+            ) : null}
+
+            {shouldShowNonYearnVaultAlert ? (
+              <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-6 py-4" />
             ) : null}
 
             {renderableSections.map((section) => {

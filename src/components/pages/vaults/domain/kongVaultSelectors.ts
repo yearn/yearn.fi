@@ -1,6 +1,6 @@
 import { normalizeVaultCategory } from '@pages/vaults/utils/normalizeVaultCategory'
 import { toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
-import type { TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
+import type { TKongVaultListItem, TKongVaultListItemStakingReward } from '@shared/utils/schemas/kongVaultListSchema'
 import type {
   TKongVaultSnapshot,
   TKongVaultSnapshotComposition,
@@ -306,7 +306,7 @@ export type TKongVaultStaking = {
   address: `0x${string}`
   available: boolean
   source: string
-  rewards: TKongVaultStakingReward[]
+  rewards: TKongVaultStakingReward[] | null
 }
 
 export type TKongVaultMigration = {
@@ -332,7 +332,7 @@ export type TKongVaultStrategy = {
   name: string
   description: string
   netAPR: number | null
-  estimatedAPY?: number
+  estimatedAPY?: number | null
   status: 'active' | 'not_active' | 'unallocated'
   details?: {
     totalDebt: string
@@ -644,7 +644,7 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
       inception: pickNumber(snapshot?.apy?.inceptionNet ?? null, historical?.inceptionNet)
     },
     pricePerShare: {
-      today: normalizePricePerShare(snapshot?.apy?.pricePerShare, token.decimals),
+      today: normalizePricePerShare(snapshot?.apy?.pricePerShare ?? vault.pricePerShare, token.decimals),
       weekAgo: normalizePricePerShare(snapshot?.apy?.weeklyPricePerShare, token.decimals),
       monthAgo: normalizePricePerShare(snapshot?.apy?.monthlyPricePerShare, token.decimals)
     },
@@ -656,8 +656,8 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
   }
 }
 
-const mapSnapshotStakingRewards = (
-  rewards: TKongVaultSnapshotStakingReward[] | undefined
+const mapStakingRewards = (
+  rewards: TKongVaultSnapshotStakingReward[] | TKongVaultListItemStakingReward[] | undefined
 ): TKongVaultStakingReward[] => {
   if (!rewards || rewards.length === 0) {
     return []
@@ -686,8 +686,8 @@ export const getVaultStaking = (vault: TKongVaultInput, snapshot?: TKongVaultSna
   return {
     address: toAddress(snapshotStaking?.address ?? listStaking?.address ?? zeroAddress),
     available: Boolean(snapshotStaking?.available ?? listStaking?.available ?? false),
-    source: snapshotStaking?.source ?? '',
-    rewards: mapSnapshotStakingRewards(snapshotStaking?.rewards)
+    source: snapshotStaking?.source ?? listStaking?.source ?? '',
+    rewards: mapStakingRewards(snapshotStaking?.rewards ?? listStaking?.rewards)
   }
 }
 

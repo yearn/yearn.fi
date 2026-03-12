@@ -16,7 +16,6 @@ import {
   getVaultChainID,
   getVaultName as getVaultDisplayName,
   getVaultKind,
-  getVaultStaking,
   getVaultSymbol,
   getVaultToken,
   getVaultTVL,
@@ -33,6 +32,7 @@ import {
   getProductTypeDescription,
   HIDDEN_TAG_DESCRIPTION,
   MIGRATABLE_TAG_DESCRIPTION,
+  NOT_YEARN_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import {
@@ -53,15 +53,7 @@ import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
-import {
-  cl,
-  formatAmount,
-  formatApyDisplay,
-  formatTvlDisplay,
-  getVaultName,
-  isZeroAddress,
-  toAddress
-} from '@shared/utils'
+import { cl, formatAmount, formatApyDisplay, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -91,6 +83,7 @@ type TVaultRowFlags = {
   isMigratable?: boolean
   isRetired?: boolean
   isHidden?: boolean
+  isNotYearn?: boolean
 }
 
 type TVaultKindType = 'multi' | 'single' | undefined
@@ -269,7 +262,6 @@ export function VaultsListRow({
   const vaultSymbol = getVaultSymbol(currentVault)
   const vaultName = getVaultDisplayName(currentVault)
   const vaultToken = getVaultToken(currentVault)
-  const staking = getVaultStaking(currentVault)
   const apr = getVaultAPR(currentVault)
   const vaultKind = getVaultKind(currentVault)
   const vaultCategory = getVaultCategory(currentVault)
@@ -279,7 +271,8 @@ export function VaultsListRow({
   const isYvUsd = isYvUsdAddress(vaultAddress)
   const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
   const { address } = useWeb3()
-  const { getBalance, getToken } = useWallet()
+  const { getVaultHoldingsUsd } = useWallet()
+  const { getBalance } = useWallet()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const [isExpandedState, setIsExpandedState] = useState(false)
   const isExpanded = isExpandedProp ?? isExpandedState
@@ -432,32 +425,16 @@ export function VaultsListRow({
       const lockedSharePrice = getYvUsdSharePrice(yvUsdLockedVault)
       return unlockedBalance * unlockedSharePrice + lockedBalance * lockedSharePrice
     }
-
-    const vaultToken = getToken({
-      chainID,
-      address: vaultAddress
-    })
-    const vaultValue = vaultToken.value || 0
-
-    const stakingValue = !isZeroAddress(staking?.address)
-      ? getToken({
-          chainID,
-          address: staking.address
-        }).value || 0
-      : 0
-
-    return vaultValue + stakingValue
+    return getVaultHoldingsUsd(currentVault)
   }, [
-    chainID,
-    getBalance,
-    getToken,
-    isYvUsd,
-    mobileSecondaryMetric,
     showHoldingsChip,
-    staking?.address,
-    vaultAddress,
+    mobileSecondaryMetric,
+    isYvUsd,
+    getBalance,
     yvUsdLockedVault,
-    yvUsdUnlockedVault
+    yvUsdUnlockedVault,
+    currentVault,
+    getVaultHoldingsUsd
   ])
 
   useEffect(() => {
@@ -474,7 +451,7 @@ export function VaultsListRow({
     >
       <button
         type={'button'}
-        aria-label={isExpanded ? 'Collapse vault details' : 'Expand vault details'}
+        aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
         aria-expanded={isExpanded}
         data-tour="vaults-row-expand"
         onClick={(event): void => {
@@ -716,6 +693,15 @@ export function VaultsListRow({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={HIDDEN_TAG_DESCRIPTION}
+                    onHoverChange={handleInteractiveHoverChange}
+                  />
+                ) : null}
+                {flags?.isNotYearn ? (
+                  <VaultsListChip
+                    label={'Not Yearn'}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={NOT_YEARN_TAG_DESCRIPTION}
                     onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
