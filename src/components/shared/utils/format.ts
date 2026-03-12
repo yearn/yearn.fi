@@ -80,7 +80,27 @@ export const exactToSimple = (bn?: bigint | string | number, scale?: number) => 
  ** to correctly format bigNumbers, currency and date
  **************************************************************************/
 export const toBigInt = (amount?: TNumberish): bigint => {
-  return BigInt(amount || 0)
+  if (amount === undefined || amount === null) {
+    return 0n
+  }
+
+  if (typeof amount === 'bigint') {
+    return amount
+  }
+
+  const asString = String(amount).trim()
+  if (asString === '') {
+    return 0n
+  }
+
+  const normalized = asString.includes('e') || asString.includes('E') ? eToNumber(asString) : asString
+  const integerPart = normalized.includes('.') ? normalized.split('.')[0] : normalized
+
+  if (integerPart === '' || integerPart === '-' || integerPart === '+') {
+    return 0n
+  }
+
+  return BigInt(integerPart)
 }
 
 export function toBigNumberAsAmount(bnAmount = 0n, decimals = 18, decimalsToDisplay = 2, symbol = ''): string {
@@ -586,7 +606,14 @@ function resolveApyFractionDigits(value: number): number {
   return resolveSignificantFractionDigits(value)
 }
 
-export function formatTvlDisplay(value: number, options?: { locales?: string[] }): string {
+export function formatTvlDisplay(
+  value: number,
+  options?: {
+    locales?: string[]
+    minimumFractionDigits?: number
+    maximumFractionDigits?: number
+  }
+): string {
   if (value === Infinity || value === -Infinity) {
     return '$∞'
   }
@@ -603,18 +630,23 @@ export function formatTvlDisplay(value: number, options?: { locales?: string[] }
     return `$${formatter.format(safeValue)}`
   }
 
-  let minimumFractionDigits = 0
-  let maximumFractionDigits = 0
+  let minimumFractionDigits = options?.minimumFractionDigits
+  let maximumFractionDigits = options?.maximumFractionDigits
 
-  if (absValue < 1) {
-    minimumFractionDigits = 2
-    maximumFractionDigits = 2
-  } else if (absValue < 10) {
-    minimumFractionDigits = 2
-    maximumFractionDigits = 2
-  } else if (absValue < 100) {
-    minimumFractionDigits = 1
-    maximumFractionDigits = 2
+  if (minimumFractionDigits === undefined || maximumFractionDigits === undefined) {
+    minimumFractionDigits = 0
+    maximumFractionDigits = 0
+
+    if (absValue < 1) {
+      minimumFractionDigits = 2
+      maximumFractionDigits = 2
+    } else if (absValue < 10) {
+      minimumFractionDigits = 2
+      maximumFractionDigits = 2
+    } else if (absValue < 100) {
+      minimumFractionDigits = 1
+      maximumFractionDigits = 2
+    }
   }
 
   const formatter = new Intl.NumberFormat(locales, {

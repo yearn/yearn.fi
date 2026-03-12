@@ -10,20 +10,24 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
+import type { TToken } from '@shared/types'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactElement, ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
+import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
 import { DepositDetails } from './DepositDetails'
+import type { DepositRouteType } from './types'
 import { useDepositError } from './useDepositError'
 import { useDepositFlow } from './useDepositFlow'
 import { useDepositNotifications } from './useDepositNotifications'
@@ -34,6 +38,7 @@ import { VaultShareValueOverlay } from './VaultShareValueOverlay'
 interface Props {
   vaultAddress: `0x${string}`
   assetAddress: `0x${string}`
+  directDepositTokenAddress?: `0x${string}`
   stakingAddress?: `0x${string}`
   chainId: number
   vaultAPR: number
@@ -43,6 +48,8 @@ interface Props {
   handleDepositSuccess?: () => void
   onOpenSettings?: () => void
   isSettingsOpen?: boolean
+  onAmountChange?: (value: string) => void
+  onTokenSelectionChange?: (address: `0x${string}`, chainId: number) => void
   prefill?: {
     address: `0x${string}`
     chainId: number
@@ -52,11 +59,55 @@ interface Props {
   hideSettings?: boolean
   disableBorderRadius?: boolean
   collapseDetails?: boolean
+  detailsContent?: ReactNode
+  contentBelowInput?: ReactNode
+  vaultSharesLabel?: string
+  hideDetails?: boolean
+  hideActionButton?: boolean
+  hideContainerBorder?: boolean
+  headerActions?: ReactNode
+  tokenSelectorExtraTokens?: TToken[]
 }
 
-export const WidgetDeposit: FC<Props> = ({
+type DepositActionCopy = {
+  actionLabel: string
+  progressLabel: string
+  pastTenseLabel: string
+}
+
+function getDepositActionCopy(routeType: DepositRouteType): DepositActionCopy {
+  if (routeType === 'DIRECT_STAKE') {
+    return {
+      actionLabel: 'Stake',
+      progressLabel: 'Staking',
+      pastTenseLabel: 'staked'
+    }
+  }
+
+  return {
+    actionLabel: 'Deposit',
+    progressLabel: 'Depositing',
+    pastTenseLabel: 'deposited'
+  }
+}
+
+function getDepositButtonLabel(isLoadingRoute: boolean, needsApproval: boolean, routeType: DepositRouteType): string {
+  if (isLoadingRoute) {
+    return 'Fetching quote'
+  }
+
+  const { actionLabel } = getDepositActionCopy(routeType)
+  if (needsApproval) {
+    return `Approve & ${actionLabel}`
+  }
+
+  return actionLabel
+}
+
+export function WidgetDeposit({
   vaultAddress,
   assetAddress,
+  directDepositTokenAddress,
   stakingAddress,
   chainId,
   vaultAPR,
@@ -66,21 +117,31 @@ export const WidgetDeposit: FC<Props> = ({
   handleDepositSuccess: onDepositSuccess,
   onOpenSettings,
   isSettingsOpen,
+  onAmountChange,
+  onTokenSelectionChange,
   prefill,
   onPrefillApplied,
   hideSettings: _hideSettings,
   disableBorderRadius,
-  collapseDetails
-}) => {
+  collapseDetails,
+  detailsContent,
+  contentBelowInput,
+  vaultSharesLabel,
+  hideDetails = false,
+  hideActionButton = false,
+  hideContainerBorder = false,
+  headerActions,
+  tokenSelectorExtraTokens
+}: Props): ReactElement {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, isAutoStakingEnabled, getPrice } = useYearn()
   const trackEvent = usePlausible()
-  const ensoEnabled = useEnsoEnabled()
+  const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
 
-  const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(assetAddress)
-  const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
+  const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(prefill?.address ?? assetAddress)
+  const [selectedChainId, setSelectedChainId] = useState<number | undefined>(prefill?.chainId)
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
   const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)
@@ -88,6 +149,7 @@ export const WidgetDeposit: FC<Props> = ({
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
+  const [hasAcceptedPriceImpact, setHasAcceptedPriceImpact] = useState(false)
   const appliedPrefillRef = useRef<string | null>(null)
 
   const {
@@ -102,13 +164,23 @@ export const WidgetDeposit: FC<Props> = ({
   const depositToken = selectedToken || assetAddress
   const sourceChainId = selectedChainId || chainId
   const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
+  const selectedExtraToken = useMemo(
+    () =>
+      tokenSelectorExtraTokens?.find(
+        (token) => token.chainID === sourceChainId && toAddress(token.address) === toAddress(depositToken)
+      ),
+    [tokenSelectorExtraTokens, sourceChainId, depositToken]
+  )
 
   const inputToken = useMemo(() => {
     if (sourceChainId === chainId && depositToken === assetAddress) {
       return assetToken
     }
+    if (selectedExtraToken) {
+      return selectedExtraToken
+    }
     return getToken({ address: depositToken, chainID: sourceChainId })
-  }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken])
+  }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken, selectedExtraToken])
 
   const destinationToken = useMemo(() => {
     if (isAutoStakingEnabled && stakingAddress) return stakingAddress
@@ -120,29 +192,55 @@ export const WidgetDeposit: FC<Props> = ({
   // ============================================================================
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
+  const shouldCollapseDetails = Boolean(collapseDetails && !hideDetails && !hideActionButton)
+
+  useEffect(() => {
+    onAmountChange?.(depositAmount.formValue)
+  }, [depositAmount.formValue, onAmountChange])
+
+  useEffect(() => {
+    onTokenSelectionChange?.(depositToken, sourceChainId)
+  }, [depositToken, onTokenSelectionChange, sourceChainId])
 
   useEffect(() => {
     if (!prefill) return
     const key = `${prefill.address}-${prefill.chainId}-${prefill.amount}`
     if (appliedPrefillRef.current === key) return
     appliedPrefillRef.current = key
-    setSelectedToken(prefill.address)
-    setSelectedChainId(prefill.chainId)
+
+    const canApplyPrefilledToken =
+      ensoEnabled || (toAddress(prefill.address) === toAddress(assetAddress) && prefill.chainId === chainId)
+
+    setSelectedToken(canApplyPrefilledToken ? prefill.address : assetAddress)
+    setSelectedChainId(canApplyPrefilledToken ? prefill.chainId : undefined)
     if (prefill.amount !== undefined) {
       setDepositInput(prefill.amount)
     }
     onPrefillApplied?.()
-  }, [prefill, setDepositInput, onPrefillApplied])
+  }, [prefill, ensoEnabled, assetAddress, chainId, setDepositInput, onPrefillApplied])
+
+  useResetEnsoSelection({
+    ensoEnabled,
+    selectedToken,
+    selectedChainId,
+    assetAddress,
+    chainId,
+    showTokenSelector,
+    setSelectedToken,
+    setSelectedChainId,
+    setShowTokenSelector
+  })
 
   useEffect(() => {
-    if (!collapseDetails && isDetailsPanelOpen) {
+    if (!shouldCollapseDetails && isDetailsPanelOpen) {
       setIsDetailsPanelOpen(false)
     }
-  }, [collapseDetails, isDetailsPanelOpen])
+  }, [isDetailsPanelOpen, shouldCollapseDetails])
 
   const { routeType, activeFlow } = useDepositFlow({
     depositToken,
     assetAddress,
+    directDepositTokenAddress,
     destinationToken,
     vaultAddress,
     stakingAddress,
@@ -232,11 +330,49 @@ export const WidgetDeposit: FC<Props> = ({
         : 0n
 
     const formatted = formatWidgetValue(valueInAsset, assetDecimals)
+    const usdRaw = Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice
+    const usd = formatWidgetValue(usdRaw)
 
-    const usd = formatWidgetValue(Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice)
-
-    return { formatted, usd }
+    return { formatted, usd, usdRaw }
   }, [activeFlow.periphery.expectedOut, vaultDecimals, assetToken?.decimals, pricePerShare, assetTokenPrice])
+
+  // Calculate price impact for high slippage warning
+  const priceImpactInfo = useMemo(() => {
+    const usdValueToDeposit = Number(formatUnits(depositAmount.bn, inputToken?.decimals ?? 18)) * inputTokenPrice
+    const vaultShareUsdValue = vaultShareValue.usdRaw
+    const impact =
+      usdValueToDeposit > 0 && vaultShareUsdValue > 0
+        ? ((usdValueToDeposit - vaultShareUsdValue) / usdValueToDeposit) * 100
+        : 0
+    return {
+      percentage: impact,
+      isHigh: impact > 5
+    }
+  }, [depositAmount.bn, inputToken?.decimals, inputTokenPrice, vaultShareValue.usdRaw])
+
+  const priceImpactAcceptanceKey = useMemo(() => {
+    return [
+      depositAmount.bn.toString(),
+      routeType,
+      sourceChainId,
+      depositToken,
+      destinationToken,
+      activeFlow.periphery.routerAddress ?? '',
+      activeFlow.periphery.expectedOut.toString()
+    ].join(':')
+  }, [
+    depositAmount.bn,
+    routeType,
+    sourceChainId,
+    depositToken,
+    destinationToken,
+    activeFlow.periphery.routerAddress,
+    activeFlow.periphery.expectedOut
+  ])
+
+  useEffect(() => {
+    setHasAcceptedPriceImpact(false)
+  }, [priceImpactAcceptanceKey])
 
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
@@ -249,20 +385,21 @@ export const WidgetDeposit: FC<Props> = ({
         confirmMessage: `Approving ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Approval successful',
         successMessage: `Approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nReady to deposit.`,
+        completesFlow: false,
         notification: approveNotificationParams
       }
     }
 
-    const actionVerb = routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'
-    const actionVerbPast = routeType === 'DIRECT_STAKE' ? 'staked' : 'deposited'
+    const { actionLabel, progressLabel, pastTenseLabel } = getDepositActionCopy(routeType)
 
     if (isCrossChain) {
       return {
         prepare: activeFlow.actions.prepareDeposit,
-        label: actionVerb,
-        confirmMessage: `${routeType === 'DIRECT_STAKE' ? 'Staking' : 'Depositing'} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
+        label: actionLabel,
+        confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Transaction Submitted',
-        successMessage: `Your cross-chain ${actionVerb.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
+        successMessage: `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
+        completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams
       }
@@ -270,10 +407,11 @@ export const WidgetDeposit: FC<Props> = ({
 
     return {
       prepare: activeFlow.actions.prepareDeposit,
-      label: actionVerb,
-      confirmMessage: `${routeType === 'DIRECT_STAKE' ? 'Staking' : 'Depositing'} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
-      successTitle: `${actionVerb} successful!`,
-      successMessage: `You have ${actionVerbPast} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+      label: actionLabel,
+      confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
+      successTitle: `${actionLabel} successful!`,
+      successMessage: `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+      completesFlow: true,
       showConfetti: true,
       notification: depositNotificationParams
     }
@@ -305,11 +443,8 @@ export const WidgetDeposit: FC<Props> = ({
 
   const handleDepositSuccess = useCallback(() => {
     const amountToDeposit = formatUnits(depositAmount.bn, inputToken?.decimals ?? 18)
-    const priceUsd =
-      inputToken?.address && inputToken?.chainID
-        ? getPrice({ address: toAddress(inputToken.address), chainID: inputToken.chainID }).normalized
-        : 0
-    const valueUsd = Number(amountToDeposit) * priceUsd
+    const priceUsd = inputTokenPrice
+    const valueUsd = Number(amountToDeposit) * inputTokenPrice
 
     trackEvent(PLAUSIBLE_EVENTS.DEPOSIT, {
       props: {
@@ -340,10 +475,8 @@ export const WidgetDeposit: FC<Props> = ({
   }, [
     depositAmount.bn,
     inputToken?.decimals,
-    inputToken?.address,
-    inputToken?.chainID,
     inputToken?.symbol,
-    getPrice,
+    inputTokenPrice,
     trackEvent,
     chainId,
     vaultAddress,
@@ -371,7 +504,7 @@ export const WidgetDeposit: FC<Props> = ({
   if (isLoadingVaultData) {
     return (
       <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
-        <WidgetHeader title="Deposit" />
+        <WidgetHeader title="Deposit" actions={headerActions} />
         <div className="flex items-center justify-center flex-1 p-6">
           <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
         </div>
@@ -383,15 +516,26 @@ export const WidgetDeposit: FC<Props> = ({
   // Render
   // ============================================================================
   const isSettingsVisible = !!account && !!isSettingsOpen
+  const approvalSpenderName = !isNativeToken ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined
+  const onAllowanceClick =
+    !isNativeToken && activeFlow.periphery.allowance > 0n
+      ? (): void => {
+          setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
+        }
+      : undefined
 
-  const detailsSection = (
+  const detailsSection = detailsContent ? (
+    detailsContent
+  ) : hideDetails ? null : (
     <DepositDetails
       depositAmountBn={depositAmount.bn}
       inputTokenSymbol={inputToken?.symbol}
       inputTokenDecimals={inputToken?.decimals ?? 18}
+      inputTokenUsdPrice={inputTokenPrice}
       routeType={routeType}
       isSwap={selectedToken !== assetAddress}
       isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+      isQuoteStale={depositAmount.isDebouncing || depositAmount.bn !== depositAmount.debouncedBn}
       expectedOutInAsset={expectedOutInAsset}
       assetTokenSymbol={assetToken?.symbol}
       assetTokenDecimals={assetToken?.decimals ?? 18}
@@ -401,6 +545,7 @@ export const WidgetDeposit: FC<Props> = ({
       pricePerShare={pricePerShare || 0n}
       assetUsdPrice={assetTokenPrice}
       willReceiveStakedShares={willReceiveStakedShares}
+      vaultSharesLabel={vaultSharesLabel}
       onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
       onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
       estimatedAnnualReturn={estimatedAnnualReturn}
@@ -408,81 +553,104 @@ export const WidgetDeposit: FC<Props> = ({
       allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
       allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
       allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
-      approvalSpenderName={!isNativeToken ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined}
-      onAllowanceClick={
-        !isNativeToken && activeFlow.periphery.allowance > 0n
-          ? () => setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
-          : undefined
-      }
+      approvalSpenderName={approvalSpenderName}
+      onAllowanceClick={onAllowanceClick}
       onShowApprovalOverlay={!isNativeToken ? () => setShowApprovalOverlay(true) : undefined}
     />
   )
 
-  const actionRow = (
-    <div className="flex items-center gap-2">
-      <div className="flex-1">
-        {!account ? (
-          <Button
-            onClick={openLoginModal}
-            variant="filled"
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            Connect Wallet
-          </Button>
-        ) : (
-          <Button
-            onClick={() => setShowTransactionOverlay(true)}
-            variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-            isBusy={activeFlow.periphery.isLoadingRoute}
-            disabled={
-              !!depositError ||
-              depositAmount.bn === 0n ||
-              activeFlow.periphery.isLoadingRoute ||
-              depositAmount.isDebouncing ||
-              (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
-              (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled)
-            }
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            {activeFlow.periphery.isLoadingRoute
-              ? 'Fetching quote'
-              : !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
-                ? `Approve & ${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'}`
-                : routeType === 'DIRECT_STAKE'
-                  ? 'Stake'
-                  : 'Deposit'}
-          </Button>
-        )}
+  const priceImpactWarning = priceImpactInfo.isHigh &&
+    !activeFlow.periphery.isLoadingRoute &&
+    !depositAmount.isDebouncing &&
+    depositAmount.bn === depositAmount.debouncedBn &&
+    depositAmount.bn > 0n && (
+      <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 space-y-3">
+        <p className="text-sm text-red-500">
+          Price impact is high ({priceImpactInfo.percentage.toFixed(2)}%). Consider depositing less or waiting for
+          better liquidity conditions.
+        </p>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={hasAcceptedPriceImpact}
+            onChange={(e) => setHasAcceptedPriceImpact(e.target.checked)}
+            className="size-4 rounded border-red-500/50 bg-transparent text-red-500 focus:ring-red-500/50"
+          />
+          <span className="text-sm text-red-500">I understand and wish to continue</span>
+        </label>
       </div>
-      {account && onOpenSettings ? (
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          aria-label="Open transaction settings"
-          aria-pressed={isSettingsOpen}
-          className={cl(
-            'flex items-center justify-center rounded-md border border-transparent px-3 py-2 text-text-secondary transition-all duration-200',
-            'min-h-11',
-            isSettingsOpen
-              ? 'bg-surface text-text-primary !border-border'
-              : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
+    )
+
+  const showActionRow = !hideActionButton || !!onOpenSettings
+  const depositButtonLabel = getDepositButtonLabel(activeFlow.periphery.isLoadingRoute, needsApproval, routeType)
+  const isDepositButtonDisabled =
+    !!depositError ||
+    depositAmount.bn === 0n ||
+    activeFlow.periphery.isLoadingRoute ||
+    depositAmount.isDebouncing ||
+    (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
+    (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled) ||
+    (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
+  const showSettingsButton = !!account && !!onOpenSettings
+
+  const actionRow = showActionRow ? (
+    <div className="flex flex-col gap-3">
+      {priceImpactWarning}
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          {hideActionButton ? null : !account ? (
+            <Button
+              onClick={openLoginModal}
+              variant="filled"
+              className="w-full"
+              classNameOverride="yearn--button--nextgen w-full"
+            >
+              Connect Wallet
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setShowTransactionOverlay(true)}
+              variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
+              isBusy={activeFlow.periphery.isLoadingRoute}
+              disabled={isDepositButtonDisabled}
+              className="w-full"
+              classNameOverride="yearn--button--nextgen w-full"
+            >
+              {depositButtonLabel}
+            </Button>
           )}
-        >
-          <IconSettings className="h-4 w-4" />
-        </button>
-      ) : null}
+        </div>
+        {showSettingsButton ? (
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Open transaction settings"
+            aria-pressed={isSettingsOpen}
+            className={cl(
+              'flex items-center justify-center rounded-md border border-transparent px-3 py-2 text-text-secondary transition-all duration-200',
+              'min-h-11',
+              isSettingsOpen
+                ? 'bg-surface text-text-primary !border-border'
+                : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
+            )}
+          >
+            <IconSettings className="h-4 w-4" />
+          </button>
+        ) : null}
+      </div>
     </div>
-  )
+  ) : null
 
   return (
     <div
-      className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}
+      className={cl('flex flex-col relative h-full', {
+        'border border-border': !hideContainerBorder,
+        'rounded-lg': !hideContainerBorder && !disableBorderRadius
+      })}
       data-tour="vault-detail-deposit-widget"
     >
-      <WidgetHeader title="Deposit" />
-      <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
+      <WidgetHeader title="Deposit" actions={headerActions} />
+      <div className="flex flex-col flex-1 p-6 pt-2 gap-3">
         {/* Amount Section */}
         <InputTokenAmount
           input={depositInput}
@@ -503,7 +671,9 @@ export const WidgetDeposit: FC<Props> = ({
           onTokenSelectorClick={() => setShowTokenSelector(true)}
         />
 
-        {collapseDetails ? (
+        {contentBelowInput}
+
+        {shouldCollapseDetails ? (
           <>
             <button
               type="button"
@@ -527,7 +697,7 @@ export const WidgetDeposit: FC<Props> = ({
         )}
       </div>
 
-      {collapseDetails && isDetailsPanelOpen ? (
+      {shouldCollapseDetails && isDetailsPanelOpen ? (
         <div className="absolute inset-0 z-10 bg-surface rounded-lg flex flex-col">
           <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
             <span className="text-base font-semibold text-text-primary">Your Transaction Details</span>
@@ -555,6 +725,7 @@ export const WidgetDeposit: FC<Props> = ({
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
         isLastStep={!needsApproval}
+        deferOnAllCompleteUntilClose={routeType === 'ENSO'}
         autoContinueToNextStep
         autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleDepositSuccess}
@@ -624,6 +795,7 @@ export const WidgetDeposit: FC<Props> = ({
         value={selectedToken}
         priorityTokens={{ [chainId]: [assetAddress] }}
         excludeTokens={stakingAddress ? [stakingAddress] : [vaultAddress]}
+        extraTokens={tokenSelectorExtraTokens}
         assetAddress={assetAddress}
         vaultAddress={vaultAddress}
         stakingAddress={stakingAddress}

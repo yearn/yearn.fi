@@ -67,7 +67,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
       },
       periphery: {
         prepareApproveEnabled: ensoFlow.periphery.prepareApproveEnabled,
-        prepareDepositEnabled: !!ensoFlow.periphery.route && params.amount > 0n,
+        prepareDepositEnabled: Boolean(canDeposit && !ensoFlow.periphery.isLoadingRoute),
         isAllowanceSufficient: isEnsoAllowanceSufficient,
         allowance: ensoFlow.periphery.allowance,
         expectedOut: ensoFlow.periphery.expectedOut.raw,

@@ -7,12 +7,18 @@ import { type Address, zeroAddress } from 'viem'
 export const YBOLD_VAULT_ADDRESS: Address = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8'
 export const YBOLD_STAKING_ADDRESS: Address = '0x23346B04a7f55b8760E5860AA5A77383D63491cD'
 
+const HOLDINGS_ALIAS_BY_ADDRESS: Record<string, Address> = {
+  [toAddress(YBOLD_STAKING_ADDRESS)]: YBOLD_VAULT_ADDRESS
+}
+
 export function mergeYBoldVault(baseVault: TKongVaultListItem, stakedVault: TKongVaultListItem): TKongVaultListItem {
   return {
     ...baseVault,
     staking: {
       address: YBOLD_STAKING_ADDRESS,
-      available: true
+      available: true,
+      source: 'yBOLD',
+      rewards: stakedVault.staking?.rewards ?? baseVault.staking?.rewards ?? []
     },
     performance: {
       ...(baseVault.performance ?? {}),
@@ -92,4 +98,16 @@ export function patchYBoldVaults(vaults: TDict<TKongVaultListItem>): TDict<TKong
   vaultsWithWorkaround[toAddress(YBOLD_VAULT_ADDRESS)] = mergeYBoldVault(yBoldVault, stakedVault)
 
   return vaultsWithWorkaround
+}
+
+export function getHoldingsAliasVaultAddress(address: Address | string | undefined): Address | undefined {
+  if (!address) {
+    return undefined
+  }
+
+  return HOLDINGS_ALIAS_BY_ADDRESS[toAddress(address)]
+}
+
+export function getCanonicalHoldingsVaultAddress(address: Address | string | undefined): Address {
+  return getHoldingsAliasVaultAddress(address) ?? toAddress(address ?? zeroAddress)
 }

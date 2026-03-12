@@ -1,7 +1,9 @@
 import type React from 'react'
-import type { ReactElement } from 'react'
+import { type ReactElement, useId } from 'react'
 
 export function IconSpectra(props: React.SVGProps<SVGSVGElement>): ReactElement {
+  const clipPathId = `spectra-clip-${useId().replace(/:/g, '')}`
+
   return (
     <svg width={30} height={31} viewBox={'0 0 30 31'} fill={'none'} xmlns={'http://www.w3.org/2000/svg'} {...props}>
       <path
@@ -10,7 +12,7 @@ export function IconSpectra(props: React.SVGProps<SVGSVGElement>): ReactElement 
         }
         fill={'#00F99B'}
       />
-      <g clipPath={'url(#spectra-clip)'}>
+      <g clipPath={`url(#${clipPathId})`}>
         <path
           d={
             'M20.4842 8.23511H15.6032C11.7075 8.23511 8.54936 11.3932 8.54932 15.2889V17.1399C8.54932 17.1627 8.55838 17.1846 8.57452 17.2007C8.59066 17.2169 8.61255 17.2259 8.63537 17.2259H9.61959C9.66715 17.2259 9.70564 17.1874 9.70564 17.1399L9.70568 15.2889C9.70577 12.0319 12.3461 9.39147 15.6033 9.39147H22.191C22.2569 9.39147 22.298 9.32056 22.263 9.26477C21.888 8.66815 21.3266 8.23558 20.4857 8.23511H20.4842Z'
@@ -31,7 +33,7 @@ export function IconSpectra(props: React.SVGProps<SVGSVGElement>): ReactElement 
         />
       </g>
       <defs>
-        <clipPath id={'spectra-clip'}>
+        <clipPath id={clipPathId}>
           <rect width={16} height={16} fill={'white'} transform={'translate(7 7.5)'} />
         </clipPath>
       </defs>

@@ -63,14 +63,14 @@ import {
 } from 'react'
 import { useVaultsListModel } from './useVaultsListModel'
 import { useVaultsQueryState } from './useVaultsQueryState'
+import { VAULTS_FILTERS_STORAGE_KEY } from './vaultsFiltersStorage'
 
 const DEFAULT_VAULT_TYPES = ['multi', 'single']
 const DEFAULT_SORT_BY: TPossibleSortBy = 'tvl'
-const VAULTS_FILTERS_STORAGE_KEY = 'yearn.fi/vaults-filters@1'
 
 type TVaultsPinnedSection = {
   key: string
-  vaults: TKongVault[]
+  vaults: TKongVaultInput[]
 }
 
 type TVaultsBlockingFilterActionKey =
@@ -162,8 +162,8 @@ type TVaultsFiltersBarModel = {
 type TVaultsListData = {
   isLoading: boolean
   pinnedSections: TVaultsPinnedSection[]
-  pinnedVaults: TKongVault[]
-  mainVaults: TKongVault[]
+  pinnedVaults: TKongVaultInput[]
+  mainVaults: TKongVaultInput[]
   vaultFlags: Record<string, { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }>
   listChains: number[] | null
   totalMatchingVaults: number

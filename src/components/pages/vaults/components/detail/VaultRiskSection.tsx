@@ -1,12 +1,14 @@
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
 import { getVaultInfo, getVaultKind, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
+import { isYvUsdVault, YVUSD_RISK_SCORE_ITEMS } from '@pages/vaults/utils/yvUsd'
 import { cl } from '@shared/utils'
-import { type ReactElement, useMemo, useState } from 'react'
+import { type ReactElement, useState } from 'react'
 
 type TRiskScoreItem = {
   label: string
-  score: number
+  score?: number | string | null
+  scoreSuffix?: string | null
   explanation: string
   isOpen: boolean
   onToggle: () => void
@@ -17,12 +19,15 @@ type TRiskScoreItem = {
 function RiskScoreItem({
   label,
   score,
+  scoreSuffix = ' / 5',
   explanation,
   isOpen,
   onToggle,
   isOverall = false,
   rightContent = null
 }: TRiskScoreItem): ReactElement {
+  const hasScore = score !== undefined && score !== null && score !== ''
+
   return (
     <div className={'w-full'}>
       <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
@@ -35,10 +40,12 @@ function RiskScoreItem({
           </span>
           <p className={cl('font-medium', isOverall ? 'text-xl font-bold' : '')}>{label}</p>
         </button>
-        <div className={'flex items-end font-bold'}>
-          <p className={cl('mr-2', isOverall ? 'text-xl' : 'text-lg')}>{score}</p>
-          <span className={'text-text-tertiary'}>{' / 5'}</span>
-        </div>
+        {hasScore ? (
+          <div className={'flex items-end font-bold'}>
+            <p className={cl(scoreSuffix ? 'mr-2' : '', isOverall ? 'text-xl' : 'text-lg')}>{score}</p>
+            {scoreSuffix ? <span className={'text-text-tertiary'}>{scoreSuffix}</span> : null}
+          </div>
+        ) : null}
         {rightContent ? <div className={'flex items-end'}>{rightContent}</div> : null}
       </div>
       {isOpen && (
@@ -52,9 +59,40 @@ function RiskScoreItem({
 
 export function VaultRiskSection({ currentVault }: { currentVault: TKongVaultInput }): ReactElement {
   const info = getVaultInfo(currentVault)
-  const hasRiskScore = useMemo(() => (info.riskScore || []).reduce((sum, score) => sum + score, 0), [info.riskScore])
+  const hasRiskScore = (info.riskScore || []).reduce((sum, score) => sum + score, 0)
+
+  if (isYvUsdVault(currentVault)) {
+    return <YvUsdRiskScore />
+  }
 
   return <SimpleRiskScore hasRiskScore={hasRiskScore} currentVault={currentVault} />
+}
+
+function YvUsdRiskScore(): ReactElement {
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
+
+  const toggleItem = (index: number): void => {
+    setOpenIndex((current) => (current === index ? null : index))
+  }
+
+  return (
+    <div className={'grid grid-cols-1 gap-4 p-4 pt-0 md:grid-cols-12 md:gap-10 md:p-6 md:pt-0'}>
+      <div className={'col-span-12 w-full space-y-1'}>
+        {YVUSD_RISK_SCORE_ITEMS.map((item, index) => (
+          <RiskScoreItem
+            key={item.label}
+            label={item.label}
+            score={item.score}
+            scoreSuffix={item.isOverall ? null : undefined}
+            explanation={item.explanation}
+            isOpen={openIndex === index}
+            onToggle={(): void => toggleItem(index)}
+            isOverall={item.isOverall}
+          />
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function SimpleRiskScore({

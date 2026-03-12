@@ -4,10 +4,15 @@ import type { ReactElement } from 'react'
 
 export function VaultHoldingsAmount({
   value,
-  valueClassName
+  valueClassName,
+  formatOptions
 }: {
   value: number
   valueClassName?: string
+  formatOptions?: {
+    minimumFractionDigits?: number
+    maximumFractionDigits?: number
+  }
 }): ReactElement {
   const { address } = useWeb3()
   const isWalletActive = !!address
@@ -24,7 +29,7 @@ export function VaultHoldingsAmount({
           valueClassName
         )}
       >
-        {shouldShowDash ? '-' : formatTvlDisplay(isDusty ? 0 : value)}
+        {shouldShowDash ? '-' : formatTvlDisplay(isDusty ? 0 : value, formatOptions)}
       </p>
     </div>
   )

@@ -8,10 +8,12 @@ interface DepositDetailsProps {
   depositAmountBn: bigint
   inputTokenSymbol?: string
   inputTokenDecimals: number
+  inputTokenUsdPrice: number
   // Route info
   routeType: DepositRouteType
   isSwap: boolean
   isLoadingQuote: boolean
+  isQuoteStale: boolean
   expectedOutInAsset: bigint
   assetTokenSymbol?: string
   assetTokenDecimals: number
@@ -22,6 +24,7 @@ interface DepositDetailsProps {
   pricePerShare: bigint
   assetUsdPrice: number
   willReceiveStakedShares: boolean
+  vaultSharesLabel?: string
   onShowVaultSharesModal: () => void
   onShowVaultShareValueModal: () => void
   // Annual return info
@@ -40,9 +43,11 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   depositAmountBn,
   inputTokenSymbol,
   inputTokenDecimals,
+  inputTokenUsdPrice,
   routeType,
   isSwap,
   isLoadingQuote,
+  isQuoteStale,
   expectedOutInAsset,
   assetTokenSymbol,
   assetTokenDecimals,
@@ -52,6 +57,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   pricePerShare,
   assetUsdPrice,
   willReceiveStakedShares,
+  vaultSharesLabel,
   onShowVaultSharesModal,
   onShowVaultShareValueModal,
   estimatedAnnualReturn,
@@ -64,7 +70,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   onShowApprovalOverlay
 }) => {
   const isStake = routeType === 'DIRECT_STAKE'
-  const sharesLabel = willReceiveStakedShares ? 'Staked shares' : 'Vault shares'
+  const sharesLabel = willReceiveStakedShares ? 'Staked shares' : (vaultSharesLabel ?? 'Vault shares')
 
   // Determine action verb based on route type
   const getActionVerb = () => {
@@ -80,11 +86,18 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
       ? (expectedVaultShares * pricePerShare) / 10n ** BigInt(vaultDecimals)
       : 0n
   const vaultShareValueDisplay = formatWidgetValue(vaultShareValueInAsset, assetTokenDecimals)
-  const vaultShareValueUsd = formatWidgetValue(
-    Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
-  )
+  const vaultShareValueUsdRaw = Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
+  const vaultShareValueUsd = formatWidgetValue(vaultShareValueUsdRaw)
+
+  // Calculate price impact (USD to deposit vs vault share value USD)
+  const usdValueToDeposit = Number(formatUnits(depositAmountBn, inputTokenDecimals)) * inputTokenUsdPrice
+  const priceImpact =
+    usdValueToDeposit > 0 && vaultShareValueUsdRaw > 0
+      ? ((usdValueToDeposit - vaultShareValueUsdRaw) / usdValueToDeposit) * 100
+      : 0
+  const hasHighPriceImpact = !isQuoteStale && !isLoadingQuote && priceImpact > 5
   return (
-    <div>
+    <div className="">
       <div className="flex flex-col gap-2">
         {/* You will deposit/swap/stake */}
         <div className="flex items-center justify-between h-5">
@@ -153,7 +166,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
           >
             Vault share value
           </button>
-          <p className="text-sm text-text-primary">
+          <p className={`text-sm ${hasHighPriceImpact ? 'text-red-500' : 'text-text-primary'}`}>
             {isLoadingQuote ? (
               <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
             ) : (
@@ -162,6 +175,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 <span className="font-normal">{`${assetTokenSymbol || ''} (`}</span>
                 <span className="font-normal">{`$${vaultShareValueUsd}`}</span>
                 <span className="font-normal">{')'}</span>
+                {hasHighPriceImpact && <span className="font-semibold">{` (-${priceImpact.toFixed(2)}%)`}</span>}
               </>
             )}
           </p>

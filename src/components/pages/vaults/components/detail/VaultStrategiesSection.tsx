@@ -16,9 +16,10 @@ import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode } from '@shared/compon
 import { useYearn } from '@shared/contexts/useYearn'
 import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
 import type { TSortDirection } from '@shared/types'
-import { cl, formatPercent, formatTvlDisplay, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
+import { cl, formatTvlDisplay, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { lazy, Suspense, useCallback, useMemo } from 'react'
+import { formatStrategiesPercent } from './strategiesPercentFormat'
 import { VaultsListHead } from './VaultsListHead'
 import { VaultsListStrategy } from './VaultsListStrategy'
 
@@ -248,7 +249,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
             {unallocatedPercentage > 0 && unallocatedValue > 0n ? (
               <div className={'w-full rounded-lg text-text-primary opacity-50'}>
                 <div className={'grid w-full grid-cols-1 items-center gap-4 px-4 py-3 md:grid-cols-24 md:px-8'}>
-                  <div className={'flex w-full items-center gap-2 md:col-span-9 md:w-auto'}>
+                  <div className={'flex w-full items-center gap-2 md:col-span-11 md:w-auto'}>
                     <div className={'flex size-6 items-center justify-center'}>
                       <div className={'size-2 rounded-full bg-text-secondary'} />
                     </div>
@@ -256,12 +257,12 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
                       Unallocated
                     </strong>
                   </div>
-                  <div className={'grid w-full grid-cols-3 gap-2 md:col-span-14 md:grid-cols-15 md:gap-4'}>
-                    <div className={'flex flex-col items-center md:items-end md:col-span-5'} datatype={'number'}>
+                  <div className={'grid w-full grid-cols-3 gap-2 md:col-span-12 md:grid-cols-12 md:gap-2'}>
+                    <div className={'flex flex-col items-center md:items-end md:col-span-4'} datatype={'number'}>
                       <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>Allocation %</p>
-                      <p className={'font-semibold'}>{formatPercent(unallocatedPercentage / 100)}</p>
+                      <p className={'font-semibold'}>{formatStrategiesPercent(unallocatedPercentage / 100)}</p>
                     </div>
-                    <div className={'flex flex-col items-center md:items-end md:col-span-5'} datatype={'number'}>
+                    <div className={'flex flex-col items-center md:items-end md:col-span-4'} datatype={'number'}>
                       <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>Amount</p>
                       <p className={'font-semibold'}>
                         {formatTvlDisplay(
@@ -269,7 +270,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
                         )}
                       </p>
                     </div>
-                    <div className={'flex flex-col items-center md:items-end md:col-span-5'} datatype={'number'}>
+                    <div className={'flex flex-col items-center md:items-end md:col-span-4'} datatype={'number'}>
                       <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>APY</p>
                       <p className={'font-semibold'}>-</p>
                     </div>

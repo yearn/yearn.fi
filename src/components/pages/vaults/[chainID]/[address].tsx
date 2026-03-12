@@ -1,44 +1,68 @@
 import Link from '@components/Link'
 import { useScrollSpy } from '@hooks/useScrollSpy'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
-import { MobileKeyMetrics } from '@pages/vaults/components/detail/QuickStatsGrid'
+import {
+  DESKTOP_WIDGET_BOTTOM_PADDING_PX,
+  DESKTOP_WIDGET_OFFSET_CSS_VAR,
+  getDesktopWidgetHeightClassNames,
+  resolveDesktopWidgetHeaderOffset
+} from '@pages/vaults/components/detail/desktopWidgetSizing'
+import { MobileKeyMetrics, YvUsdApyStatBox } from '@pages/vaults/components/detail/QuickStatsGrid'
 import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
 import { VaultChartsSection } from '@pages/vaults/components/detail/VaultChartsSection'
-import { VaultDetailsHeader } from '@pages/vaults/components/detail/VaultDetailsHeader'
+import { VaultDetailsHeader, VaultDetailsHeaderPresentation } from '@pages/vaults/components/detail/VaultDetailsHeader'
 import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSection'
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
+import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
 import { VaultDetailsWelcomeTour } from '@pages/vaults/components/tour/VaultDetailsWelcomeTour'
 import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
-import { getVaultView, type TKongVault, type TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
+import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
+import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
+import {
+  getVaultChainID,
+  getVaultView,
+  type TKongVault,
+  type TKongVaultView
+} from '@pages/vaults/domain/kongVaultSelectors'
 import {
   mergeYBoldSnapshot,
   mergeYBoldVault,
   YBOLD_STAKING_ADDRESS,
   YBOLD_VAULT_ADDRESS
 } from '@pages/vaults/domain/normalizeVault'
+import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from '@pages/vaults/domain/vaultWarnings'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
+import {
+  getYvUsdSharePrice,
+  isYvUsdAddress,
+  type TYvUsdVariant,
+  YVUSD_CHAIN_ID,
+  YVUSD_LOCKED_ADDRESS,
+  YVUSD_UNLOCKED_ADDRESS
+} from '@pages/vaults/utils/yvUsd'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
-import { ImageWithFallback } from '@shared/components/ImageWithFallback'
+import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
-import type { TToken } from '@shared/types'
-import { cl, isZeroAddress, toAddress } from '@shared/utils'
+import { cl, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router'
 import { isAddressEqual } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
 import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
+import { getVaultPrimaryLogoSrc } from '@/components/pages/vaults/utils/vaultLogo'
 import { getCategoryDescription, getProductTypeDescription } from '@/components/pages/vaults/utils/vaultTagCopy'
 import { useWeb3 } from '@/components/shared/contexts/useWeb3'
 import { useDevFlags } from '@/contexts/useDevFlags'
@@ -61,6 +85,8 @@ const resolveHeaderOffset = (): number => {
 
   return Number.isNaN(nextOffset) ? 0 : nextOffset
 }
+
+const desktopWidgetHeightClassNames = getDesktopWidgetHeightClassNames()
 
 const RETIRED_VAULT_ALERT_MESSAGES = {
   noFunds: 'This vault is retired.',
@@ -174,13 +200,19 @@ const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
     staking: snapshot.staking
       ? {
           address: snapshot.staking.address ?? null,
-          available: snapshot.staking.available
+          available: snapshot.staking.available,
+          source: snapshot.staking.source ?? '',
+          rewards: (snapshot.staking.rewards ?? []).map((reward) => ({
+            ...reward,
+            decimals: reward.decimals ?? 18,
+            isFinished: reward.isFinished ?? false
+          }))
         }
       : null
   }
 }
 
-function RetiredVaultAlert({ message, className }: { message: string; className: string }): ReactElement {
+function VaultWarningAlert({ message, className }: { message: string; className: string }): ReactElement {
   const { title, body } = splitFirstSentence(message)
 
   return (
@@ -213,16 +245,91 @@ function RetiredVaultAlert({ message, className }: { message: string; className:
   )
 }
 
+function YvUsdMobileKeyMetrics({
+  currentVault,
+  apyVariant,
+  onApyVariantChange
+}: {
+  currentVault: TKongVaultView
+  apyVariant: TYvUsdVariant
+  onApyVariantChange: (variant: TYvUsdVariant) => void
+}): ReactElement {
+  const { address } = useWeb3()
+  const { getPrice } = useYearn()
+  const { metrics, unlockedVault, lockedVault } = useYvUsdVaults()
+  const account = address ? toAddress(address) : undefined
+  const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
+
+  const unlockedUserData = useVaultUserData({
+    vaultAddress: toAddress(unlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS),
+    assetAddress: unlockedAssetAddress,
+    chainId: YVUSD_CHAIN_ID,
+    account
+  })
+  const lockedUserData = useVaultUserData({
+    vaultAddress: toAddress(lockedVault?.address ?? YVUSD_LOCKED_ADDRESS),
+    assetAddress: YVUSD_UNLOCKED_ADDRESS,
+    chainId: YVUSD_CHAIN_ID,
+    account
+  })
+
+  const unlockedNormalized = toNormalizedBN(
+    unlockedUserData.depositedValue,
+    unlockedUserData.assetToken?.decimals ?? 6
+  ).normalized
+  const lockedNormalized = toNormalizedBN(
+    lockedUserData.depositedValue,
+    lockedUserData.assetToken?.decimals ?? 18
+  ).normalized
+  const unlockedAssetPrice =
+    getPrice({ address: unlockedAssetAddress, chainID: YVUSD_CHAIN_ID }).normalized || unlockedVault?.tvl.price || 0
+  const unlockedSharePrice = getYvUsdSharePrice(unlockedVault, unlockedAssetPrice)
+  const depositedUsdValue = unlockedNormalized * unlockedAssetPrice + lockedNormalized * unlockedSharePrice
+  const unlockedApy = metrics?.unlocked.apy ?? currentVault.apr.forwardAPR.netAPR ?? currentVault.apr.netAPR ?? 0
+  const lockedApy = metrics?.locked.apy ?? lockedVault?.apr.forwardAPR.netAPR ?? lockedVault?.apr.netAPR ?? 0
+
+  return (
+    <MobileKeyMetrics
+      currentVault={currentVault}
+      depositedValue={unlockedUserData.depositedValue}
+      depositedUsdValue={depositedUsdValue}
+      tokenPrice={currentVault.tvl.price || 0}
+      apyBox={
+        <YvUsdApyStatBox
+          lockedApy={lockedApy}
+          unlockedApy={unlockedApy}
+          activeVariant={apyVariant}
+          onVariantChange={onApyVariantChange}
+          lockedHasInfinifiPoints={Boolean(metrics?.locked.hasInfinifiPoints)}
+          unlockedHasInfinifiPoints={Boolean(metrics?.unlocked.hasInfinifiPoints)}
+        />
+      }
+    />
+  )
+}
+
 function Index(): ReactElement | null {
   type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
   const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
 
   const params = useParams()
+  const location = useLocation()
+  const navigate = useNavigate()
   const chainId = Number(params.chainID)
   const { getBalance, onRefresh } = useWallet()
   const { address } = useWeb3()
-  const { vaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
+  const { vaults, allVaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
+  const {
+    listVault: yvUsdVault,
+    unlockedVault: yvUsdUnlockedVault,
+    lockedVault: yvUsdLockedVault,
+    isLoading: isLoadingYvUsd
+  } = useYvUsdVaults()
+  const isYvUsd = isYvUsdAddress(params.address)
+  const isLockedYvUsdRoute =
+    chainId === YVUSD_CHAIN_ID && params.address ? toAddress(params.address) === YVUSD_LOCKED_ADDRESS : false
+  const unlockedYvUsdPath = `/vaults/${YVUSD_CHAIN_ID}/${YVUSD_UNLOCKED_ADDRESS}${location.search}${location.hash}`
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [mobileDrawerAction, setMobileDrawerAction] = useState<WidgetActionType>(WidgetActionType.Deposit)
@@ -231,6 +338,7 @@ function Index(): ReactElement | null {
   const mobileDrawerPanelRef = useRef<HTMLDivElement>(null)
   const detailsRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement | null>(null)
+  const compressedHeaderMeasureRef = useRef<HTMLDivElement>(null)
   const sectionSelectorRef = useRef<HTMLDivElement>(null)
   const widgetRef = useRef<TWidgetRef>(null)
   const widgetContainerRef = useRef<HTMLDivElement>(null)
@@ -269,9 +377,9 @@ function Index(): ReactElement | null {
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
   const [sectionScrollOffset, setSectionScrollOffset] = useState(0)
   const [isHeaderCompressed, setIsHeaderCompressed] = useState(false)
-  const initialHeaderOffsetRef = useRef<number | null>(null)
+  const [yvUsdApyVariant, setYvUsdApyVariant] = useState<TYvUsdVariant>('locked')
+  const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const scrollPadding = 16
-  const widgetBottomPadding = 16
   const updateSectionScrollOffset = useCallback((): number => {
     if (typeof window === 'undefined') return 0
     const baseOffset = resolveHeaderOffset()
@@ -288,42 +396,22 @@ function Index(): ReactElement | null {
   const [hasTriggeredVaultListFetch, setHasTriggeredVaultListFetch] = useState(false)
 
   useEffect(() => {
-    void vaultKey
-    initialHeaderOffsetRef.current = null
-    if (typeof window !== 'undefined') {
-      document.documentElement.style.removeProperty('--vault-header-initial-offset')
+    if (!isLockedYvUsdRoute) {
+      return
     }
-  }, [vaultKey])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    void vaultKey
-    let frame = 0
-    const captureInitialOffset = (): void => {
-      if (initialHeaderOffsetRef.current !== null) return
-      if (window.scrollY > 0) return
-      const baseOffset = resolveHeaderOffset()
-      const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0
-      if (headerHeight <= 0) {
-        frame = requestAnimationFrame(captureInitialOffset)
-        return
-      }
-      const paddedOffset = Math.round(baseOffset + headerHeight + widgetBottomPadding)
-      initialHeaderOffsetRef.current = paddedOffset
-      document.documentElement.style.setProperty('--vault-header-initial-offset', `${paddedOffset}px`)
-    }
-
-    frame = requestAnimationFrame(captureInitialOffset)
-    return (): void => {
-      if (frame) cancelAnimationFrame(frame)
-    }
-  }, [vaultKey])
+    navigate(unlockedYvUsdPath, { replace: true })
+  }, [isLockedYvUsdRoute, navigate, unlockedYvUsdPath])
 
   const baseVault = useMemo(() => {
     if (!params.address) return undefined
     const resolvedAddress = toAddress(params.address)
     return vaults[resolvedAddress]
   }, [params.address, vaults])
+
+  const metadataVault = useMemo(() => {
+    if (!params.address) return undefined
+    return allVaults[toAddress(params.address)]
+  }, [allVaults, params.address])
 
   const hasVaultList = Object.keys(vaults).length > 0
 
@@ -339,10 +427,11 @@ function Index(): ReactElement | null {
   const isSnapshotNotFound = (snapshotError as any)?.response?.status === 404
 
   const isYBold = useMemo(() => {
+    if (isYvUsd) return false
     if (!baseVault?.address && !params.address) return false
     const resolvedAddress = toAddress(baseVault?.address ?? params.address ?? '0x')
     return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
-  }, [baseVault?.address, params.address])
+  }, [isYvUsd, baseVault?.address, params.address])
 
   const yBoldStakingVault = useMemo(() => {
     if (!isYBold) return undefined
@@ -378,7 +467,9 @@ function Index(): ReactElement | null {
   const vaultViewInput = useMemo(() => {
     if (!mergedBaseVault) return snapshotBackedVault
     if (!snapshotBackedVault) return mergedBaseVault
-    return mergedBaseVault.chainId === snapshotBackedVault.chainId ? mergedBaseVault : snapshotBackedVault
+    return getVaultChainID(mergedBaseVault) === getVaultChainID(snapshotBackedVault)
+      ? mergedBaseVault
+      : snapshotBackedVault
   }, [mergedBaseVault, snapshotBackedVault])
 
   const isFactoryVault = useMemo(() => {
@@ -395,28 +486,42 @@ function Index(): ReactElement | null {
   }, [snapshotShouldDisableStaking, isFactoryVault])
 
   const currentVault = useMemo(() => {
+    if (isYvUsd) {
+      return yvUsdVault ?? yvUsdUnlockedVault ?? yvUsdLockedVault
+    }
     if (!vaultViewInput) return undefined
     return getVaultView(vaultViewInput, mergedSnapshot)
-  }, [vaultViewInput, mergedSnapshot])
+  }, [isYvUsd, yvUsdVault, yvUsdUnlockedVault, yvUsdLockedVault, vaultViewInput, mergedSnapshot])
 
-  const isLoadingVault = !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
+  const shouldBootstrapYvUsdVaultList = isYvUsd && !hasVaultList && !hasTriggeredVaultListFetch
+  const isLoadingVault = isYvUsd
+    ? isLoadingYvUsd || shouldBootstrapYvUsdVaultList
+    : !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
+  const stakingAddress = !isZeroAddress(currentVault?.staking?.address)
+    ? toAddress(currentVault?.staking?.address)
+    : undefined
+  const disableDepositStaking = shouldDisableStakingForDeposit || !currentVault?.staking?.available
 
   const vaultUserData = useVaultUserData({
     vaultAddress: toAddress(currentVault?.address ?? '0x'),
     assetAddress: toAddress(currentVault?.token?.address ?? '0x'),
-    stakingAddress: currentVault?.staking?.available ? toAddress(currentVault.staking.address) : undefined,
+    stakingAddress,
+    stakingSource: currentVault?.staking?.source,
     chainId,
     account: address
   })
 
   useEffect(() => {
-    if (hasTriggeredVaultListFetch || hasVaultList || !snapshotVault) {
+    if (hasTriggeredVaultListFetch || hasVaultList) {
+      return
+    }
+    if (!isYvUsd && !snapshotVault) {
       return
     }
     setHasTriggeredVaultListFetch(true)
     const frame = requestAnimationFrame(() => enableVaultListFetch())
     return () => cancelAnimationFrame(frame)
-  }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, snapshotVault])
+  }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, isYvUsd, snapshotVault])
 
   const vaultShareBalance =
     !!address && currentVault?.address && Number.isInteger(currentVault?.chainID)
@@ -424,11 +529,8 @@ function Index(): ReactElement | null {
       : 0n
 
   const stakingShareBalance =
-    !!address &&
-    currentVault?.staking.available &&
-    !isZeroAddress(currentVault?.staking.address) &&
-    Number.isInteger(currentVault?.chainID)
-      ? getBalance({ address: toAddress(currentVault.staking.address), chainID: currentVault.chainID }).raw
+    !!address && !!stakingAddress && Number.isInteger(currentVault?.chainID) && !!currentVault
+      ? getBalance({ address: stakingAddress, chainID: currentVault.chainID }).raw
       : 0n
 
   const isMigratable = Boolean(currentVault?.migration?.available)
@@ -439,6 +541,12 @@ function Index(): ReactElement | null {
     if (!isRetired || !currentVault) return null
     return getRetiredVaultAlertMessage({ vault: currentVault, hasUserFundsInVault })
   }, [currentVault, hasUserFundsInVault, isRetired])
+  const shouldShowNonYearnVaultAlert = useMemo(() => {
+    return isNonYearnErc4626Vault({
+      vault: metadataVault,
+      snapshot: mergedSnapshot
+    })
+  }, [metadataVault, mergedSnapshot])
   const widgetActions = useMemo(() => {
     if (isRetired || isMigratable) {
       return canShowMigrateAction ? [WidgetActionType.Migrate, WidgetActionType.Withdraw] : [WidgetActionType.Withdraw]
@@ -450,7 +558,6 @@ function Index(): ReactElement | null {
   const [isWidgetWalletOpen, setIsWidgetWalletOpen] = useState(false)
   const [isWidgetRewardsOpen, setIsWidgetRewardsOpen] = useState(false)
   const [collapsedWidgetHeight, setCollapsedWidgetHeight] = useState<number | null>(null)
-  const [isShortViewport, setIsShortViewport] = useState(false)
   const [isCompactWidget, setIsCompactWidget] = useState(false)
   const [shouldShowWidgetRewards, setShouldShowWidgetRewards] = useState(true)
   const [vaultTourState, setVaultTourState] = useState<{ isOpen: boolean; stepId?: string }>({ isOpen: false })
@@ -461,11 +568,6 @@ function Index(): ReactElement | null {
     isRewardsOpen: boolean
   } | null>(null)
   const tourSectionsRef = useRef<Record<SectionKey, boolean> | null>(null)
-  const [depositPrefill, setDepositPrefill] = useState<{
-    address: `0x${string}`
-    chainId: number
-    amount?: string
-  } | null>(null)
 
   useEffect(() => {
     setWidgetMode((previous) => (widgetActions.includes(previous) ? previous : widgetActions[0]))
@@ -476,16 +578,6 @@ function Index(): ReactElement | null {
       setMobileDrawerAction(widgetActions[0])
     }
   }, [mobileDrawerAction, widgetActions])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const updateViewport = (): void => {
-      setIsShortViewport(window.innerHeight < 890)
-    }
-    updateViewport()
-    window.addEventListener('resize', updateViewport)
-    return (): void => window.removeEventListener('resize', updateViewport)
-  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -641,23 +733,6 @@ function Index(): ReactElement | null {
     setIsWidgetSettingsOpen(false)
   }
 
-  const handleZapTokenSelect = useCallback(
-    (token: TToken): void => {
-      if (!widgetActions.includes(WidgetActionType.Deposit)) {
-        return
-      }
-      setIsWidgetSettingsOpen(false)
-      setIsWidgetWalletOpen(false)
-      setIsWidgetRewardsOpen(false)
-      setWidgetMode(WidgetActionType.Deposit)
-      setDepositPrefill({
-        address: toAddress(token.address),
-        chainId: token.chainID
-      })
-    },
-    [widgetActions]
-  )
-
   const handleRewardsClaimSuccess = useCallback(() => {
     if (!currentVault) {
       return
@@ -697,7 +772,9 @@ function Index(): ReactElement | null {
         key: 'charts' as const,
         shouldRender: Number.isInteger(chainId),
         ref: sectionRefs.charts,
-        content: (
+        content: isYvUsd ? (
+          <YvUsdChartsSection chartHeightPx={180} chartHeightMdPx={230} />
+        ) : (
           <VaultChartsSection
             chainId={chainId}
             vaultAddress={currentVault.address}
@@ -731,7 +808,7 @@ function Index(): ReactElement | null {
         content: <VaultInfoSection currentVault={currentVault} inceptTime={snapshotVault?.inceptTime ?? null} />
       }
     ]
-  }, [chainId, currentVault, sectionRefs, snapshotVault?.inceptTime])
+  }, [chainId, currentVault, isYvUsd, sectionRefs, snapshotVault?.inceptTime])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const sectionTabs = renderableSections.map((section) => ({
@@ -862,6 +939,67 @@ function Index(): ReactElement | null {
     }
   }, [updateSectionScrollOffset])
 
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const measuredElement = isCollapsibleMode ? compressedHeaderMeasureRef.current : headerRef.current
+    const fallbackElement = headerRef.current
+    let frame = 0
+
+    const updateCompressedOffset = (): void => {
+      const baseOffset = resolveHeaderOffset()
+      const primaryHeight = measuredElement?.getBoundingClientRect().height ?? 0
+      const fallbackHeight = fallbackElement?.getBoundingClientRect().height ?? 0
+      const nextOffset = resolveDesktopWidgetHeaderOffset({
+        baseOffset,
+        headerHeight: primaryHeight > 0 ? primaryHeight : fallbackHeight,
+        bottomPadding: DESKTOP_WIDGET_BOTTOM_PADDING_PX
+      })
+
+      if (nextOffset === null) {
+        return
+      }
+
+      document.documentElement.style.setProperty(DESKTOP_WIDGET_OFFSET_CSS_VAR, `${nextOffset}px`)
+    }
+
+    const scheduleUpdate = (): void => {
+      if (frame) cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(updateCompressedOffset)
+    }
+
+    updateCompressedOffset()
+    window.addEventListener('resize', scheduleUpdate)
+
+    if (typeof ResizeObserver === 'undefined') {
+      return (): void => {
+        if (frame) cancelAnimationFrame(frame)
+        window.removeEventListener('resize', scheduleUpdate)
+      }
+    }
+
+    const observer = new ResizeObserver(scheduleUpdate)
+    if (measuredElement) {
+      observer.observe(measuredElement)
+    }
+    if (fallbackElement && fallbackElement !== measuredElement) {
+      observer.observe(fallbackElement)
+    }
+
+    return (): void => {
+      if (frame) cancelAnimationFrame(frame)
+      observer.disconnect()
+      window.removeEventListener('resize', scheduleUpdate)
+    }
+  }, [currentVault?.address, isCollapsibleMode, vaultKey])
+
+  useEffect(() => {
+    return (): void => {
+      if (typeof window === 'undefined') return
+      document.documentElement.style.removeProperty(DESKTOP_WIDGET_OFFSET_CSS_VAR)
+    }
+  }, [])
+
   const handleSelectSection = useCallback(
     (key: SectionKey): void => {
       setActiveSection(key)
@@ -942,12 +1080,13 @@ function Index(): ReactElement | null {
   }, [isMobileDrawerOpen, mobileDrawerAction, hideMobileDrawerTabs])
 
   useEffect(() => {
+    if (isYvUsd) return
     if (isMobileDrawerOpen && mobileWidgetRef.current) {
       mobileWidgetRef.current.setMode(mobileDrawerAction)
     }
-  }, [isMobileDrawerOpen, mobileDrawerAction])
+  }, [isMobileDrawerOpen, mobileDrawerAction, isYvUsd])
 
-  if (isLoadingVault || !params.address) {
+  if (isLockedYvUsdRoute || isLoadingVault || !params.address) {
     return (
       <div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
         <div className={'mt-[20%] flex h-10 items-center justify-center'}>
@@ -980,6 +1119,8 @@ function Index(): ReactElement | null {
     )
   }
 
+  const resolvedCurrentVault = currentVault
+
   function getMobileProductTypeLabel(): string {
     if (mobileListKind === 'allocator' || mobileListKind === 'strategy') return 'Single Asset'
     if (mobileListKind === 'legacy') return 'Legacy'
@@ -996,14 +1137,96 @@ function Index(): ReactElement | null {
     }
   }
 
-  const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const headerStickyTop = 'var(--header-height)'
   const resolvedWidgetMode = widgetActions.includes(widgetMode) ? widgetMode : widgetActions[0]
   const shouldCollapseWidgetDetails = isCompactWidget
-  const mobileListKind = deriveListKind(currentVault)
+  const mobileListKind = deriveListKind(resolvedCurrentVault)
   const mobileProductTypeLabel = getMobileProductTypeLabel()
   const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
+
+  function renderDetailCharts(chartHeightPx: number, chartHeightMdPx: number): ReactElement {
+    if (isYvUsd) {
+      return <YvUsdChartsSection chartHeightPx={chartHeightPx} chartHeightMdPx={chartHeightMdPx} />
+    }
+
+    return (
+      <VaultChartsSection
+        chainId={chainId}
+        vaultAddress={resolvedCurrentVault.address}
+        chartHeightPx={chartHeightPx}
+        chartHeightMdPx={chartHeightMdPx}
+      />
+    )
+  }
+
+  function renderDesktopWidget(): ReactElement {
+    if (isYvUsd) {
+      return (
+        <YvUsdWidget
+          currentVault={resolvedCurrentVault}
+          chainId={chainId}
+          mode={resolvedWidgetMode}
+          onModeChange={setWidgetMode}
+          onDepositVariantChange={setYvUsdApyVariant}
+          showTabs={false}
+          collapseDetails={shouldCollapseWidgetDetails}
+        />
+      )
+    }
+
+    return (
+      <Widget
+        ref={widgetRef}
+        vaultAddress={resolvedCurrentVault.address}
+        currentVault={resolvedCurrentVault}
+        gaugeAddress={resolvedCurrentVault.staking.address}
+        disableDepositStaking={disableDepositStaking}
+        actions={widgetActions}
+        chainId={chainId}
+        vaultUserData={vaultUserData}
+        mode={resolvedWidgetMode}
+        onModeChange={setWidgetMode}
+        showTabs={false}
+        onOpenSettings={toggleWidgetSettings}
+        isSettingsOpen={isWidgetSettingsOpen}
+        collapseDetails={shouldCollapseWidgetDetails}
+      />
+    )
+  }
+
+  function renderMobileWidget(): ReactElement {
+    if (isYvUsd) {
+      return (
+        <YvUsdWidget
+          currentVault={resolvedCurrentVault}
+          chainId={chainId}
+          mode={mobileDrawerAction}
+          onDepositVariantChange={setYvUsdApyVariant}
+          showTabs={false}
+        />
+      )
+    }
+
+    return (
+      <Widget
+        ref={mobileWidgetRef}
+        vaultAddress={resolvedCurrentVault.address}
+        currentVault={resolvedCurrentVault}
+        gaugeAddress={resolvedCurrentVault.staking.address}
+        disableDepositStaking={disableDepositStaking}
+        actions={widgetActions}
+        chainId={chainId}
+        vaultUserData={vaultUserData}
+        mode={mobileDrawerAction}
+        onModeChange={setMobileDrawerAction}
+        onOpenSettings={toggleWidgetSettings}
+        isSettingsOpen={isWidgetSettingsOpen}
+        hideTabSelector={hideMobileDrawerTabs}
+        disableBorderRadius
+      />
+    )
+  }
 
   return (
     <div
@@ -1012,6 +1235,37 @@ function Index(): ReactElement | null {
       }
     >
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
+        {isCollapsibleMode ? (
+          <div
+            aria-hidden="true"
+            className={'pointer-events-none invisible fixed inset-x-0 top-0 -z-10 hidden md:block'}
+            inert={true}
+            tabIndex={-1}
+          >
+            <div className={'mx-auto w-full max-w-[1232px] px-4'}>
+              <div ref={compressedHeaderMeasureRef}>
+                <VaultDetailsHeaderPresentation
+                  currentVault={currentVault}
+                  depositedValue={vaultUserData.depositedValue}
+                  yvUsdApyVariant={yvUsdApyVariant}
+                  isCompressed={true}
+                  sectionTabs={sectionTabs}
+                  activeSectionKey={activeSection}
+                  onSelectSection={(): void => undefined}
+                  widgetActions={widgetActions}
+                  widgetMode={resolvedWidgetMode}
+                  onWidgetModeChange={(): void => undefined}
+                  onYvUsdApyVariantChange={(): void => undefined}
+                  isWidgetWalletOpen={isWidgetWalletOpen}
+                  onWidgetWalletOpen={(): void => undefined}
+                  onWidgetCloseOverlays={(): void => undefined}
+                  includeTourAttributes={false}
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <header
           className={cl(
             'h-full rounded-3xl',
@@ -1025,6 +1279,7 @@ function Index(): ReactElement | null {
           <VaultDetailsHeader
             currentVault={currentVault}
             depositedValue={vaultUserData.depositedValue}
+            yvUsdApyVariant={yvUsdApyVariant}
             isCollapsibleMode={isCollapsibleMode}
             sectionTabs={sectionTabs}
             activeSectionKey={activeSection}
@@ -1033,6 +1288,7 @@ function Index(): ReactElement | null {
             widgetActions={widgetActions}
             widgetMode={resolvedWidgetMode}
             onWidgetModeChange={setWidgetMode}
+            onYvUsdApyVariantChange={setYvUsdApyVariant}
             isWidgetWalletOpen={isWidgetWalletOpen}
             onWidgetWalletOpen={openWidgetWallet}
             onWidgetCloseOverlays={closeWidgetOverlays}
@@ -1049,13 +1305,12 @@ function Index(): ReactElement | null {
               { label: `${getVaultName(currentVault)}`, isCurrent: true }
             ]}
           />
+          {isYvUsd ? <YvUsdHeaderBanner className={'mb-3 md:min-h-26'} /> : null}
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
-              <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-                  currentVault.chainID
-                }/${currentVault.token.address.toLowerCase()}/logo-128.png`}
-                alt={currentVault.token.symbol || ''}
+              <TokenLogo
+                src={getVaultPrimaryLogoSrc(currentVault)}
+                tokenSymbol={currentVault.token.symbol || ''}
                 width={40}
                 height={40}
               />
@@ -1081,24 +1336,31 @@ function Index(): ReactElement | null {
         </div>
 
         <div className="md:hidden space-y-4">
-          <MobileKeyMetrics
-            currentVault={currentVault}
-            depositedValue={vaultUserData.depositedValue}
-            tokenPrice={currentVault.tvl.price || 0}
-          />
+          {isYvUsd ? (
+            <YvUsdMobileKeyMetrics
+              currentVault={currentVault}
+              apyVariant={yvUsdApyVariant}
+              onApyVariantChange={setYvUsdApyVariant}
+            />
+          ) : (
+            <MobileKeyMetrics
+              currentVault={currentVault}
+              depositedValue={vaultUserData.depositedValue}
+              tokenPrice={currentVault.tvl.price || 0}
+            />
+          )}
 
           {isRetired && retiredVaultAlertMessage ? (
-            <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-4 py-3" />
+            <VaultWarningAlert message={retiredVaultAlertMessage} className="px-4 py-3" />
+          ) : null}
+
+          {shouldShowNonYearnVaultAlert ? (
+            <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-4 py-3" />
           ) : null}
 
           {Number.isInteger(chainId) && (
             <div className="border border-border rounded-lg bg-surface overflow-hidden">
-              <VaultChartsSection
-                chainId={chainId}
-                vaultAddress={currentVault.address}
-                chartHeightPx={180}
-                chartHeightMdPx={230}
-              />
+              {renderDetailCharts(180, 230)}
             </div>
           )}
 
@@ -1147,9 +1409,7 @@ function Index(): ReactElement | null {
               'order-1 md:order-2',
               'md:col-span-7 md:col-start-14 md:sticky pt-4',
               'flex flex-col overflow-hidden',
-              isShortViewport
-                ? 'md:h-[calc(100vh-0.75rem-(var(--vault-header-height)+20px))] max-h-[calc(100vh-0.75rem-(var(--vault-header-height)+20px))]'
-                : 'md:h-[calc(100vh-var(--vault-header-initial-offset)-16px)] max-h-[calc(100vh-var(--vault-header-initial-offset)-16px)]'
+              desktopWidgetHeightClassNames.container
             )}
             style={{ top: 'var(--vault-header-height, var(--header-height))' }}
           >
@@ -1157,9 +1417,7 @@ function Index(): ReactElement | null {
               ref={widgetStackRef}
               className={cl(
                 'relative grid w-full min-w-0 flex-1 min-h-0 overflow-hidden',
-                isShortViewport
-                  ? 'max-h-[calc(100vh-16px-(var(--vault-header-height,var(--header-height))-16px))]'
-                  : 'max-h-[calc(100vh-16px-var(--vault-header-initial-offset))]',
+                desktopWidgetHeightClassNames.stack,
                 isWidgetRewardsOpen ? 'grid-rows-[auto_minmax(0,1fr)]' : 'grid-rows-[minmax(0,1fr)_auto]'
               )}
               style={isWidgetRewardsOpen && collapsedWidgetHeight ? { height: collapsedWidgetHeight } : undefined}
@@ -1179,42 +1437,22 @@ function Index(): ReactElement | null {
                     className={cl('flex flex-col min-h-0', isWidgetPanelActive ? 'flex' : 'hidden')}
                     aria-hidden={!isWidgetPanelActive}
                   >
-                    <Widget
-                      ref={widgetRef}
-                      vaultAddress={currentVault.address}
-                      currentVault={currentVault}
-                      gaugeAddress={currentVault.staking.address}
-                      disableDepositStaking={shouldDisableStakingForDeposit}
-                      actions={widgetActions}
-                      chainId={chainId}
-                      vaultUserData={vaultUserData}
-                      mode={resolvedWidgetMode}
-                      onModeChange={setWidgetMode}
-                      showTabs={false}
-                      onOpenSettings={toggleWidgetSettings}
-                      isSettingsOpen={isWidgetSettingsOpen}
-                      depositPrefill={depositPrefill}
-                      onDepositPrefillConsumed={() => setDepositPrefill(null)}
-                      collapseDetails={shouldCollapseWidgetDetails}
-                    />
+                    {renderDesktopWidget()}
                   </div>
                 )}
                 <WalletPanel
                   isActive={isWidgetWalletOpen && !isWidgetRewardsOpen}
                   currentVault={currentVault}
                   vaultAddress={toAddress(currentVault.address)}
-                  stakingAddress={
-                    isZeroAddress(currentVault.staking.address) ? undefined : toAddress(currentVault.staking.address)
-                  }
+                  stakingAddress={stakingAddress}
                   chainId={chainId}
                   vaultUserData={vaultUserData}
-                  onSelectZapToken={handleZapTokenSelect}
                 />
               </div>
               {shouldShowWidgetRewards ? (
                 <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
                   <WidgetRewards
-                    stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
+                    stakingAddress={stakingAddress}
                     stakingSource={currentVault.staking.source}
                     rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
                       address: r.address,
@@ -1236,7 +1474,11 @@ function Index(): ReactElement | null {
 
           <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
             {isRetired && retiredVaultAlertMessage ? (
-              <RetiredVaultAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
+              <VaultWarningAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
+            ) : null}
+
+            {shouldShowNonYearnVaultAlert ? (
+              <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-6 py-4" />
             ) : null}
 
             {renderableSections.map((section) => {
@@ -1331,25 +1573,10 @@ function Index(): ReactElement | null {
         isOpen={isMobileDrawerOpen}
         onClose={() => setIsMobileDrawerOpen(false)}
         title={currentVault.name}
-        headerActions={<MobileDrawerSettingsButton />}
+        headerActions={isYvUsd ? undefined : <MobileDrawerSettingsButton />}
         panelRef={mobileDrawerPanelRef}
       >
-        <Widget
-          ref={mobileWidgetRef}
-          vaultAddress={currentVault.address}
-          currentVault={currentVault}
-          gaugeAddress={currentVault.staking.address}
-          disableDepositStaking={shouldDisableStakingForDeposit}
-          actions={widgetActions}
-          chainId={chainId}
-          vaultUserData={vaultUserData}
-          mode={mobileDrawerAction}
-          onModeChange={setMobileDrawerAction}
-          onOpenSettings={toggleWidgetSettings}
-          isSettingsOpen={isWidgetSettingsOpen}
-          hideTabSelector={hideMobileDrawerTabs}
-          disableBorderRadius
-        />
+        {renderMobileWidget()}
       </BottomDrawer>
       <VaultDetailsWelcomeTour onTourStateChange={setVaultTourState} />
     </div>

@@ -1,5 +1,7 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
+import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
+import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { Notification } from '@pages/vaults/components/notifications/Notification'
@@ -27,15 +29,13 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
-import { cl, formatPercent, SUPPORTED_NETWORKS } from '@shared/utils'
+import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { useChainId, useSwitchChain } from 'wagmi'
-import { type TPortfolioModel, usePortfolioModel } from './hooks/usePortfolioModel'
-import { useVaultWithStakingRewards } from './hooks/useVaultWithStakingRewards'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -108,7 +108,7 @@ function PortfolioHeaderSection({
   )
 
   const metricSpinner = (
-    <span className="inline-flex h-6 w-20 animate-spin items-center justify-center">
+    <span className="inline-flex h-6 w-20 items-center justify-center">
       <IconSpinner className="size-4 text-text-secondary" />
     </span>
   )
@@ -337,7 +337,7 @@ function ChainStakingRewardsFetcher({
 }): null {
   const { vault, staking, isLoading: isLoadingVault } = useVaultWithStakingRewards(originalVault, isActive)
 
-  const stakingAddress = staking.available ? staking.address : undefined
+  const stakingAddress = !isZeroAddress(staking.address) ? staking.address : undefined
   const rewardTokens = useMemo(
     () =>
       (staking.rewards ?? []).map((reward) => ({
@@ -420,7 +420,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   const { vaults } = useYearn()
   const trackEvent = usePlausible()
   const stakingVaults = useMemo(
-    () => Object.values(vaults).filter((vault) => getVaultStaking(vault).available),
+    () => Object.values(vaults).filter((vault) => !isZeroAddress(getVaultStaking(vault).address)),
     [vaults]
   )
   const [selectedChainId, setSelectedChainId] = useState<number | null>(null)
@@ -915,22 +915,38 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
     return null
   }
 
+  const hasPersonalized = suggestedRows.some((r) => r.type === 'personalized' || r.type === 'external')
+  const tooltipText = hasPersonalized
+    ? 'Suggestions based on tokens in your wallet and vault performance.'
+    : 'Vaults picked for you based on performance and popularity.'
+
   return (
     <section className="flex flex-col gap-2">
       <Tooltip
         className="h-auto justify-start gap-0"
         openDelayMs={150}
         side="top"
-        tooltip={
-          <div className={headingTooltipClassName}>{'Vaults picked for you based on performance and popularity.'}</div>
-        }
+        tooltip={<div className={headingTooltipClassName}>{tooltipText}</div>}
       >
         <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">{'You might like'}</h2>
       </Tooltip>
       <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
-        {suggestedRows.map((row) => (
-          <SuggestedVaultCard key={row.key} vault={row.vault} />
-        ))}
+        {suggestedRows.map((row) => {
+          if (row.type === 'external') {
+            return (
+              <SuggestedVaultCard
+                key={row.key}
+                vault={row.vault}
+                matchedSymbol={row.underlyingSymbol}
+                externalProtocol={row.externalProtocol}
+              />
+            )
+          }
+          if (row.type === 'personalized') {
+            return <SuggestedVaultCard key={row.key} vault={row.vault} matchedSymbol={row.matchedSymbol} />
+          }
+          return <SuggestedVaultCard key={row.key} vault={row.vault} />
+        })}
       </div>
     </section>
   )
