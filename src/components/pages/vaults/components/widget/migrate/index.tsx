@@ -245,6 +245,7 @@ export const WidgetMigrate: FC<Props> = ({
           confirmMessage: `Sign permit for ${formattedBalance} ${vaultSymbol}`,
           successTitle: 'Permit signed',
           successMessage: 'Ready to migrate.',
+          completesFlow: false,
           isPermit: true,
           permitData: { getPermitData } as any,
           onPermitSigned: handlePermitSigned,
@@ -265,6 +266,7 @@ export const WidgetMigrate: FC<Props> = ({
         confirmMessage: `Migrating ${formattedBalance} ${vaultSymbol}`,
         successTitle: 'Migration successful!',
         successMessage: 'Your funds have been migrated to the new vault.',
+        completesFlow: true,
         showConfetti: true,
         notification: {
           type: 'migrate' as const,
@@ -287,6 +289,7 @@ export const WidgetMigrate: FC<Props> = ({
         confirmMessage: `Approving ${formattedBalance} ${vaultSymbol} for migration`,
         successTitle: 'Approval successful',
         successMessage: `Approved ${formattedBalance} ${vaultSymbol}.\nReady to migrate.`,
+        completesFlow: false,
         notification: {
           type: 'approve' as const,
           amount: formattedBalance,
@@ -304,6 +307,7 @@ export const WidgetMigrate: FC<Props> = ({
       confirmMessage: `Migrating ${formattedBalance} ${vaultSymbol}`,
       successTitle: 'Migration successful!',
       successMessage: 'Your funds have been migrated to the new vault.',
+      completesFlow: true,
       showConfetti: true,
       notification: {
         type: 'migrate' as const,

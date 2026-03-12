@@ -23,26 +23,42 @@ async function fetchTokenData(config: any, addresses: Address[], chainId: number
 
   const results = await Promise.all(
     addresses.map(async (address) => {
-      const contract = getContract({
-        address,
-        abi: erc20Abi,
-        client
-      })
+      try {
+        const contract = getContract({
+          address,
+          abi: erc20Abi,
+          client
+        })
+        const [balanceResult, decimalsResult, symbolResult, nameResult] = await Promise.allSettled([
+          account ? contract.read.balanceOf([account]) : Promise.resolve(0n),
+          contract.read.decimals(),
+          contract.read.symbol(),
+          contract.read.name()
+        ])
 
-      const [decimals, symbol, name, balance] = await Promise.all([
-        contract.read.decimals(),
-        contract.read.symbol(),
-        contract.read.name(),
-        account ? contract.read.balanceOf([account]) : Promise.resolve(0n)
-      ])
+        const balance = balanceResult.status === 'fulfilled' ? balanceResult.value : 0n
+        const decimals = decimalsResult.status === 'fulfilled' ? Number(decimalsResult.value) : 18
+        const symbol = symbolResult.status === 'fulfilled' ? String(symbolResult.value) : '???'
+        const name = nameResult.status === 'fulfilled' ? String(nameResult.value) : 'Unknown'
 
-      return {
-        address,
-        decimals: Number(decimals),
-        symbol: String(symbol),
-        name: String(name),
-        chainID: chainId,
-        balance: toNormalizedBN(balance, Number(decimals))
+        return {
+          address,
+          decimals,
+          symbol,
+          name,
+          chainID: chainId,
+          balance: toNormalizedBN(balance, decimals)
+        }
+      } catch (error) {
+        console.error(`Failed to fetch token ${address}:`, error)
+        return {
+          address,
+          decimals: 18,
+          symbol: '???',
+          name: 'Unknown',
+          chainID: chainId,
+          balance: toNormalizedBN(0n, 18)
+        }
       }
     })
   )

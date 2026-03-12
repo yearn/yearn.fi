@@ -1,7 +1,7 @@
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import type { ReactNode } from 'react'
 
-export type WithdrawRouteType = 'DIRECT_WITHDRAW' | 'DIRECT_UNSTAKE' | 'ENSO'
+export type WithdrawRouteType = 'DIRECT_WITHDRAW' | 'DIRECT_UNSTAKE' | 'DIRECT_UNSTAKE_WITHDRAW' | 'ENSO'
 
 export type WithdrawalSource = 'vault' | 'staking' | null
 
@@ -12,6 +12,7 @@ export interface WithdrawWidgetProps {
   stakingAddress?: `0x${string}`
   chainId: number
   vaultSymbol: string
+  stakingSource?: string
   vaultVersion?: string
   isVaultRetired?: boolean
   vaultUserData: VaultUserData
