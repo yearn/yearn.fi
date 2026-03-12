@@ -11,7 +11,7 @@ export const YVUSD_LOCKED_COOLDOWN_DAYS = 14
 export const YVUSD_WITHDRAW_WINDOW_DAYS = 5
 export const YVUSD_CUSTOM_RISK_SCORE = '3/5'
 export const YVUSD_ANNOUNCEMENT_URL = '#'
-export const YVUSD_LEARN_MORE_URL = '#'
+export const YVUSD_LEARN_MORE_URL = 'https://x.com/Schlagonia/status/2032147643334582487'
 
 function getYvUsdAprServiceEndpoint(): string {
   const configuredEndpoint = import.meta.env.VITE_YVUSD_APR_SERVICE_API?.trim().replace(/\/$/, '')
