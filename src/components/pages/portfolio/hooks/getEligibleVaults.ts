@@ -32,7 +32,7 @@ export function selectPreferredVault(candidates: TKongVault[]): TKongVault | und
 
   if (qualifying.length > 0) {
     return qualifying.reduce((best, vault) =>
-      (getVaultTVL(vault).tvl ?? 0) < (getVaultTVL(best).tvl ?? 0) ? vault : best
+      (getVaultTVL(vault).tvl ?? 0) > (getVaultTVL(best).tvl ?? 0) ? vault : best
     )
   }
 
