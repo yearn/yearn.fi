@@ -60,6 +60,7 @@ export const WidgetWithdraw: FC<
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
+  const [hasAcceptedPriceImpact, setHasAcceptedPriceImpact] = useState(false)
 
   const {
     assetToken,
@@ -255,6 +256,56 @@ export const WidgetWithdraw: FC<
       ? getPrice({ address: toAddress(outputToken.address), chainID: outputToken.chainID }).normalized
       : 0
 
+  // Calculate price impact for high slippage warning
+  const priceImpactInfo = useMemo(() => {
+    const withdrawUsdValue = Number(formatUnits(withdrawAmount.bn, assetToken?.decimals ?? 18)) * assetTokenPrice
+    const expectedOutUsdValue =
+      Number(formatUnits(activeFlow.periphery.expectedOut, outputToken?.decimals ?? 18)) * outputTokenPrice
+    const impact =
+      withdrawUsdValue > 0 && expectedOutUsdValue > 0
+        ? ((withdrawUsdValue - expectedOutUsdValue) / withdrawUsdValue) * 100
+        : 0
+    return {
+      percentage: impact,
+      isHigh: impact > 5
+    }
+  }, [
+    withdrawAmount.bn,
+    assetToken?.decimals,
+    assetTokenPrice,
+    activeFlow.periphery.expectedOut,
+    outputToken?.decimals,
+    outputTokenPrice
+  ])
+
+  const priceImpactAcceptanceKey = useMemo(() => {
+    return [
+      withdrawAmount.bn.toString(),
+      requiredShares.toString(),
+      routeType,
+      withdrawalSource ?? '',
+      sourceToken,
+      withdrawToken,
+      destinationChainId,
+      activeFlow.periphery.routerAddress ?? '',
+      activeFlow.periphery.expectedOut.toString()
+    ].join(':')
+  }, [
+    withdrawAmount.bn,
+    requiredShares,
+    routeType,
+    withdrawalSource,
+    sourceToken,
+    withdrawToken,
+    destinationChainId,
+    activeFlow.periphery.routerAddress,
+    activeFlow.periphery.expectedOut
+  ])
+
+  useEffect(() => {
+    setHasAcceptedPriceImpact(false)
+  }, [priceImpactAcceptanceKey])
+
   const zapToken = useMemo(() => {
     if (withdrawToken === assetAddress) return undefined
 
@@ -421,6 +472,7 @@ export const WidgetWithdraw: FC<
       requiredShares={requiredShares}
       sharesDecimals={sharesDecimals}
       isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+      isQuoteStale={withdrawAmount.isDebouncing || withdrawAmount.bn !== withdrawAmount.debouncedBn}
       expectedOut={activeFlow.periphery.expectedOut}
       outputDecimals={outputToken?.decimals ?? 18}
       outputSymbol={outputToken?.symbol}
@@ -428,7 +480,11 @@ export const WidgetWithdraw: FC<
       withdrawAmountSimple={
         withdrawAmount.bn > 0n ? formatWidgetValue(withdrawAmount.bn, assetToken?.decimals ?? 18) : '0'
       }
+      withdrawAmountBn={withdrawAmount.bn}
+      assetDecimals={assetToken?.decimals ?? 18}
+      assetUsdPrice={assetTokenPrice}
       assetSymbol={assetToken?.symbol}
+      outputUsdPrice={outputTokenPrice}
       routeType={routeType}
       onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
       allowance={showApprove ? activeFlow.periphery.allowance : undefined}
@@ -447,62 +503,88 @@ export const WidgetWithdraw: FC<
     />
   )
 
-  const actionRow = (
-    <div className="flex items-center gap-2">
-      <div className="flex-1">
-        {!account ? (
-          <Button
-            onClick={openLoginModal}
-            variant="filled"
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            Connect Wallet
-          </Button>
-        ) : (
-          <Button
-            onClick={() => setShowTransactionOverlay(true)}
-            variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-            isBusy={activeFlow.periphery.isLoadingRoute}
-            disabled={
-              !!withdrawError ||
-              withdrawAmount.bn === 0n ||
-              activeFlow.periphery.isLoadingRoute ||
-              withdrawAmount.isDebouncing ||
-              (showApprove &&
-                !activeFlow.periphery.isAllowanceSufficient &&
-                !activeFlow.periphery.prepareApproveEnabled) ||
-              ((!showApprove || activeFlow.periphery.isAllowanceSufficient) &&
-                !activeFlow.periphery.prepareWithdrawEnabled)
-            }
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            {activeFlow.periphery.isLoadingRoute
-              ? 'Fetching quote'
-              : showApprove && !activeFlow.periphery.isAllowanceSufficient
-                ? `Approve & ${transactionName}`
-                : transactionName}
-          </Button>
-        )}
+  const priceImpactWarning = priceImpactInfo.isHigh &&
+    !activeFlow.periphery.isLoadingRoute &&
+    !withdrawAmount.isDebouncing &&
+    withdrawAmount.bn === withdrawAmount.debouncedBn &&
+    withdrawAmount.bn > 0n && (
+      <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 space-y-3">
+        <p className="text-sm text-red-500">
+          Price impact is high ({priceImpactInfo.percentage.toFixed(2)}%). Consider withdrawing less or waiting for
+          better liquidity conditions.
+        </p>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={hasAcceptedPriceImpact}
+            onChange={(e) => setHasAcceptedPriceImpact(e.target.checked)}
+            className="size-4 rounded border-red-500/50 bg-transparent text-red-500 focus:ring-red-500/50"
+          />
+          <span className="text-sm text-red-500">I understand and wish to continue</span>
+        </label>
       </div>
-      {account && onOpenSettings ? (
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          aria-label="Open transaction settings"
-          aria-pressed={isSettingsOpen}
-          className={cl(
-            'flex items-center justify-center rounded-md border border-transparent px-3 py-2 text-text-secondary transition-all duration-200',
-            'min-h-11',
-            isSettingsOpen
-              ? 'bg-surface text-text-primary !border-border'
-              : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
+    )
+
+  const actionRow = (
+    <div className="flex flex-col gap-3">
+      {priceImpactWarning}
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          {!account ? (
+            <Button
+              onClick={openLoginModal}
+              variant="filled"
+              className="w-full"
+              classNameOverride="yearn--button--nextgen w-full"
+            >
+              Connect Wallet
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setShowTransactionOverlay(true)}
+              variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
+              isBusy={activeFlow.periphery.isLoadingRoute}
+              disabled={
+                !!withdrawError ||
+                withdrawAmount.bn === 0n ||
+                activeFlow.periphery.isLoadingRoute ||
+                withdrawAmount.isDebouncing ||
+                (showApprove &&
+                  !activeFlow.periphery.isAllowanceSufficient &&
+                  !activeFlow.periphery.prepareApproveEnabled) ||
+                ((!showApprove || activeFlow.periphery.isAllowanceSufficient) &&
+                  !activeFlow.periphery.prepareWithdrawEnabled) ||
+                (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
+              }
+              className="w-full"
+              classNameOverride="yearn--button--nextgen w-full"
+            >
+              {activeFlow.periphery.isLoadingRoute
+                ? 'Fetching quote'
+                : showApprove && !activeFlow.periphery.isAllowanceSufficient
+                  ? `Approve & ${transactionName}`
+                  : transactionName}
+            </Button>
           )}
-        >
-          <IconSettings className="h-4 w-4" />
-        </button>
-      ) : null}
+        </div>
+        {account && onOpenSettings ? (
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Open transaction settings"
+            aria-pressed={isSettingsOpen}
+            className={cl(
+              'flex items-center justify-center rounded-md border border-transparent px-3 py-2 text-text-secondary transition-all duration-200',
+              'min-h-11',
+              isSettingsOpen
+                ? 'bg-surface text-text-primary !border-border'
+                : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
+            )}
+          >
+            <IconSettings className="h-4 w-4" />
+          </button>
+        ) : null}
+      </div>
     </div>
   )
 

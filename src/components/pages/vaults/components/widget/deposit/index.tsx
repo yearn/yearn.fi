@@ -89,6 +89,7 @@ export const WidgetDeposit: FC<Props> = ({
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
+  const [hasAcceptedPriceImpact, setHasAcceptedPriceImpact] = useState(false)
   const appliedPrefillRef = useRef<string | null>(null)
 
   const {
@@ -249,11 +250,49 @@ export const WidgetDeposit: FC<Props> = ({
         : 0n
 
     const formatted = formatWidgetValue(valueInAsset, assetDecimals)
+    const usdRaw = Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice
+    const usd = formatWidgetValue(usdRaw)
 
-    const usd = formatWidgetValue(Number(formatUnits(valueInAsset, assetDecimals)) * assetTokenPrice)
-
-    return { formatted, usd }
+    return { formatted, usd, usdRaw }
   }, [activeFlow.periphery.expectedOut, vaultDecimals, assetToken?.decimals, pricePerShare, assetTokenPrice])
+
+  // Calculate price impact for high slippage warning
+  const priceImpactInfo = useMemo(() => {
+    const usdValueToDeposit = Number(formatUnits(depositAmount.bn, inputToken?.decimals ?? 18)) * inputTokenPrice
+    const vaultShareUsdValue = vaultShareValue.usdRaw
+    const impact =
+      usdValueToDeposit > 0 && vaultShareUsdValue > 0
+        ? ((usdValueToDeposit - vaultShareUsdValue) / usdValueToDeposit) * 100
+        : 0
+    return {
+      percentage: impact,
+      isHigh: impact > 5
+    }
+  }, [depositAmount.bn, inputToken?.decimals, inputTokenPrice, vaultShareValue.usdRaw])
+
+  const priceImpactAcceptanceKey = useMemo(() => {
+    return [
+      depositAmount.bn.toString(),
+      routeType,
+      sourceChainId,
+      depositToken,
+      destinationToken,
+      activeFlow.periphery.routerAddress ?? '',
+      activeFlow.periphery.expectedOut.toString()
+    ].join(':')
+  }, [
+    depositAmount.bn,
+    routeType,
+    sourceChainId,
+    depositToken,
+    destinationToken,
+    activeFlow.periphery.routerAddress,
+    activeFlow.periphery.expectedOut
+  ])
+
+  useEffect(() => {
+    setHasAcceptedPriceImpact(false)
+  }, [priceImpactAcceptanceKey])
 
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
@@ -406,9 +445,11 @@ export const WidgetDeposit: FC<Props> = ({
       depositAmountBn={depositAmount.bn}
       inputTokenSymbol={inputToken?.symbol}
       inputTokenDecimals={inputToken?.decimals ?? 18}
+      inputTokenUsdPrice={inputTokenPrice}
       routeType={routeType}
       isSwap={selectedToken !== assetAddress}
       isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+      isQuoteStale={depositAmount.isDebouncing || depositAmount.bn !== depositAmount.debouncedBn}
       expectedOutInAsset={expectedOutInAsset}
       assetTokenSymbol={assetToken?.symbol}
       assetTokenDecimals={assetToken?.decimals ?? 18}
@@ -435,61 +476,87 @@ export const WidgetDeposit: FC<Props> = ({
     />
   )
 
-  const actionRow = (
-    <div className="flex items-center gap-2">
-      <div className="flex-1">
-        {!account ? (
-          <Button
-            onClick={openLoginModal}
-            variant="filled"
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            Connect Wallet
-          </Button>
-        ) : (
-          <Button
-            onClick={() => setShowTransactionOverlay(true)}
-            variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-            isBusy={activeFlow.periphery.isLoadingRoute}
-            disabled={
-              !!depositError ||
-              depositAmount.bn === 0n ||
-              activeFlow.periphery.isLoadingRoute ||
-              depositAmount.isDebouncing ||
-              (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
-              (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled)
-            }
-            className="w-full"
-            classNameOverride="yearn--button--nextgen w-full"
-          >
-            {activeFlow.periphery.isLoadingRoute
-              ? 'Fetching quote'
-              : !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
-                ? `Approve & ${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'}`
-                : routeType === 'DIRECT_STAKE'
-                  ? 'Stake'
-                  : 'Deposit'}
-          </Button>
-        )}
+  const priceImpactWarning = priceImpactInfo.isHigh &&
+    !activeFlow.periphery.isLoadingRoute &&
+    !depositAmount.isDebouncing &&
+    depositAmount.bn === depositAmount.debouncedBn &&
+    depositAmount.bn > 0n && (
+      <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 space-y-3">
+        <p className="text-sm text-red-500">
+          Price impact is high ({priceImpactInfo.percentage.toFixed(2)}%). Consider depositing less or waiting for
+          better liquidity conditions.
+        </p>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={hasAcceptedPriceImpact}
+            onChange={(e) => setHasAcceptedPriceImpact(e.target.checked)}
+            className="size-4 rounded border-red-500/50 bg-transparent text-red-500 focus:ring-red-500/50"
+          />
+          <span className="text-sm text-red-500">I understand and wish to continue</span>
+        </label>
       </div>
-      {account && onOpenSettings ? (
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          aria-label="Open transaction settings"
-          aria-pressed={isSettingsOpen}
-          className={cl(
-            'flex items-center justify-center rounded-md border border-transparent px-3 py-2 text-text-secondary transition-all duration-200',
-            'min-h-11',
-            isSettingsOpen
-              ? 'bg-surface text-text-primary !border-border'
-              : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
+    )
+
+  const actionRow = (
+    <div className="flex flex-col gap-3">
+      {priceImpactWarning}
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          {!account ? (
+            <Button
+              onClick={openLoginModal}
+              variant="filled"
+              className="w-full"
+              classNameOverride="yearn--button--nextgen w-full"
+            >
+              Connect Wallet
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setShowTransactionOverlay(true)}
+              variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
+              isBusy={activeFlow.periphery.isLoadingRoute}
+              disabled={
+                !!depositError ||
+                depositAmount.bn === 0n ||
+                activeFlow.periphery.isLoadingRoute ||
+                depositAmount.isDebouncing ||
+                (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
+                (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled) ||
+                (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
+              }
+              className="w-full"
+              classNameOverride="yearn--button--nextgen w-full"
+            >
+              {activeFlow.periphery.isLoadingRoute
+                ? 'Fetching quote'
+                : !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
+                  ? `Approve & ${routeType === 'DIRECT_STAKE' ? 'Stake' : 'Deposit'}`
+                  : routeType === 'DIRECT_STAKE'
+                    ? 'Stake'
+                    : 'Deposit'}
+            </Button>
           )}
-        >
-          <IconSettings className="h-4 w-4" />
-        </button>
-      ) : null}
+        </div>
+        {account && onOpenSettings ? (
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Open transaction settings"
+            aria-pressed={isSettingsOpen}
+            className={cl(
+              'flex items-center justify-center rounded-md border border-transparent px-3 py-2 text-text-secondary transition-all duration-200',
+              'min-h-11',
+              isSettingsOpen
+                ? 'bg-surface text-text-primary !border-border'
+                : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
+            )}
+          >
+            <IconSettings className="h-4 w-4" />
+          </button>
+        ) : null}
+      </div>
     </div>
   )
 
