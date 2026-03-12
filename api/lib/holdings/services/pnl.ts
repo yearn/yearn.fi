@@ -895,6 +895,32 @@ function addAcquisitionLots(
   addLotsToLocation(ledger, 'wallet', [{ shares: walletShares, costBasis: walletAssets }])
 }
 
+function redistributeLotsToTargetShares(lots: TLot[], targetShares: bigint): TLot[] {
+  const totalShares = sumShares(lots)
+
+  if (totalShares === ZERO || targetShares === ZERO) {
+    return []
+  }
+
+  let allocatedShares = ZERO
+
+  return lots.reduce<TLot[]>((redistributed, lot, index) => {
+    const shares =
+      index === lots.length - 1 ? targetShares - allocatedShares : (targetShares * lot.shares) / totalShares
+
+    allocatedShares += shares
+
+    if (shares > ZERO) {
+      redistributed.push({
+        shares,
+        costBasis: lot.costBasis
+      })
+    }
+
+    return redistributed
+  }, [])
+}
+
 function handleUnknownTransferIn(ledger: FamilyPnlLedger, location: TLocation, shares: bigint): void {
   if (shares === ZERO) {
     return
@@ -919,6 +945,26 @@ function handleExternalTransferOut(ledger: FamilyPnlLedger, location: TLocation,
     ledger.unmatchedTransferOutCount += 1
     ledger.unmatchedTransferOutShares += shares - consumed.consumedShares
   }
+}
+
+function isSameVaultRolloverTransaction(parts: {
+  txFamilyEvents: TRawPnlEvent[]
+  txUnderlyingDeposits: Array<Extract<TRawPnlEvent, { kind: 'deposit' }>>
+  txUnderlyingWithdrawals: Array<Extract<TRawPnlEvent, { kind: 'withdrawal' }>>
+  familyVaultAddress: string
+  totalUnderlyingDepositAssets: bigint
+  totalUnderlyingWithdrawAssets: bigint
+  stakingDelta: bigint
+}): boolean {
+  return (
+    parts.txFamilyEvents.length >= 4 &&
+    parts.txFamilyEvents.every((event) => event.vaultAddress === parts.familyVaultAddress) &&
+    parts.txUnderlyingDeposits.length === 1 &&
+    parts.txUnderlyingWithdrawals.length === 1 &&
+    parts.totalUnderlyingDepositAssets > ZERO &&
+    parts.totalUnderlyingDepositAssets === parts.totalUnderlyingWithdrawAssets &&
+    parts.stakingDelta === ZERO
+  )
 }
 
 function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawPnlEvent[], userAddress: string): void {
@@ -953,6 +999,82 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
   const totalUnderlyingDepositAssets = sumEventAssets(txUnderlyingDeposits)
   const totalUnderlyingWithdrawShares = sumEventShares(txUnderlyingWithdrawals)
   const totalUnderlyingWithdrawAssets = sumEventAssets(txUnderlyingWithdrawals)
+
+  if (
+    isSameVaultRolloverTransaction({
+      txFamilyEvents,
+      txUnderlyingDeposits,
+      txUnderlyingWithdrawals,
+      familyVaultAddress,
+      totalUnderlyingDepositAssets,
+      totalUnderlyingWithdrawAssets,
+      stakingDelta
+    })
+  ) {
+    const walletConsumed = consumeLots(ledger.walletLots, totalUnderlyingWithdrawShares)
+    const stakedConsumed = consumeLots(ledger.stakedLots, ZERO)
+    const consumedShares = walletConsumed.consumedShares + stakedConsumed.consumedShares
+
+    if (consumedShares === totalUnderlyingWithdrawShares) {
+      const rolledLots = redistributeLotsToTargetShares(walletConsumed.consumedLots, totalUnderlyingDepositShares)
+
+      ledger.walletLots = [...walletConsumed.nextLots, ...rolledLots]
+
+      ledger.debugJournal.push({
+        timestamp: txFamilyEvents[0]?.blockTimestamp ?? 0,
+        txHash: transactionHash,
+        familyVaultAddress,
+        stakingVaultAddress,
+        view: 'same_vault_rollover->wallet',
+        hasAddressActivity: familyHasAddressActivity,
+        rawEvents: countTxEventsByKind(txFamilyEvents),
+        depositShares: totalUnderlyingDepositShares.toString(),
+        depositAssets: totalUnderlyingDepositAssets.toString(),
+        withdrawShares: totalUnderlyingWithdrawShares.toString(),
+        withdrawAssets: totalUnderlyingWithdrawAssets.toString(),
+        wrapShares: ZERO.toString(),
+        unwrapShares: ZERO.toString(),
+        unknownInWalletShares: ZERO.toString(),
+        unknownInStakedShares: ZERO.toString(),
+        transferOutWalletShares: ZERO.toString(),
+        transferOutStakedShares: ZERO.toString(),
+        realizedKnownShares: ZERO.toString(),
+        realizedProceedsAssets: ZERO.toString(),
+        realizedBasisAssets: ZERO.toString(),
+        realizedPnlAssets: ZERO.toString()
+      })
+
+      if (shouldLogTransactionLots) {
+        debugLog('pnl-lots', 'processed family transaction', {
+          chainId: ledger.chainId,
+          familyVaultAddress,
+          stakingVaultAddress,
+          transactionHash,
+          blockTimestamp: txFamilyEvents[0]?.blockTimestamp ?? null,
+          familyHasAddressActivity,
+          eventCount: txFamilyEvents.length,
+          view: 'same_vault_rollover->wallet',
+          totalUnderlyingDepositShares: totalUnderlyingDepositShares.toString(),
+          totalUnderlyingDepositAssets: totalUnderlyingDepositAssets.toString(),
+          totalUnderlyingWithdrawShares: totalUnderlyingWithdrawShares.toString(),
+          totalUnderlyingWithdrawAssets: totalUnderlyingWithdrawAssets.toString(),
+          rolledLotCount: rolledLots.length,
+          rolledKnownCostBasisAssets: sumKnownCostBasis(rolledLots.filter((lot) => lot.costBasis !== null)).toString(),
+          walletLotsBefore: summarizeLots(walletLotsBefore),
+          stakedLotsBefore: summarizeLots(stakedLotsBefore),
+          walletLotsAfter: summarizeLots(ledger.walletLots),
+          stakedLotsAfter: summarizeLots(ledger.stakedLots),
+          events: includeDetailedLotLogs ? txFamilyEvents.map(serializeRawEvent) : undefined,
+          walletLotEntriesBefore: includeDetailedLotLogs ? serializeLots(walletLotsBefore) : undefined,
+          stakedLotEntriesBefore: includeDetailedLotLogs ? serializeLots(stakedLotsBefore) : undefined,
+          walletLotEntriesAfter: includeDetailedLotLogs ? serializeLots(ledger.walletLots) : undefined,
+          stakedLotEntriesAfter: includeDetailedLotLogs ? serializeLots(ledger.stakedLots) : undefined
+        })
+      }
+
+      return
+    }
+  }
 
   ledger.totalDepositedAssets += totalUnderlyingDepositAssets
   ledger.totalWithdrawnAssets += totalUnderlyingWithdrawAssets

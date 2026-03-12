@@ -384,4 +384,83 @@ describe('processRawPnlEvents', () => {
     expect(transferOnlyLedger.get(FAMILY_KEY)).toBeDefined()
     expect(filteredLedgers.get(FAMILY_KEY)).toBeUndefined()
   })
+
+  it('treats same-vault withdraw and redeposit in the same tx as a basis rollover', () => {
+    const initialDeposit = createDepositEvent({
+      id: 'initial-deposit',
+      transactionHash: '0xinitial',
+      assets: '1000',
+      shares: '100'
+    })
+    const rolloverTransferOut = createTransferEvent({
+      id: 'rollover-transfer-out',
+      transactionHash: '0xrollover',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 1,
+      sender: USER,
+      receiver: '0x0000000000000000000000000000000000000000',
+      value: '100'
+    })
+    const rolloverWithdraw = createWithdrawEvent({
+      id: 'rollover-withdraw',
+      transactionHash: '0xrollover',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 2,
+      owner: USER,
+      assets: '1100',
+      shares: '100'
+    })
+    const rolloverTransferIn = createTransferEvent({
+      id: 'rollover-transfer-in',
+      transactionHash: '0xrollover',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 3,
+      sender: '0x0000000000000000000000000000000000000000',
+      receiver: USER,
+      value: '99'
+    })
+    const rolloverDeposit = createDepositEvent({
+      id: 'rollover-deposit',
+      transactionHash: '0xrollover',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 4,
+      owner: USER,
+      sender: ROUTER,
+      assets: '1100',
+      shares: '99'
+    })
+
+    const ledger = processRawPnlEvents(
+      buildRawPnlEvents({
+        addressEvents: {
+          deposits: [initialDeposit, rolloverDeposit],
+          withdrawals: [rolloverWithdraw],
+          transfersIn: [rolloverTransferIn],
+          transfersOut: [rolloverTransferOut]
+        },
+        transactionEvents: {
+          deposits: [initialDeposit, rolloverDeposit],
+          withdrawals: [rolloverWithdraw],
+          transfers: [rolloverTransferOut, rolloverTransferIn]
+        }
+      }),
+      USER
+    ).get(FAMILY_KEY)
+
+    expect(ledger).toBeDefined()
+    expect(ledger?.walletLots).toEqual([{ shares: 99n, costBasis: 1000n }])
+    expect(ledger?.stakedLots).toEqual([])
+    expect(ledger?.realizedEntries).toEqual([])
+    expect(ledger?.unknownCostBasisTransferInCount).toBe(0)
+    expect(ledger?.withdrawalsWithUnknownCostBasis).toBe(0)
+    expect(ledger?.totalDepositedAssets).toBe(1000n)
+    expect(ledger?.totalWithdrawnAssets).toBe(0n)
+    expect(ledger?.eventCounts.underlyingDeposits).toBe(1)
+    expect(ledger?.eventCounts.underlyingWithdrawals).toBe(0)
+    expect(ledger?.debugJournal.at(-1)?.view).toBe('same_vault_rollover->wallet')
+  })
 })
