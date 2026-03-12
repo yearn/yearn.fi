@@ -242,7 +242,9 @@ Response:
 Notes:
 - Deposits create FIFO lots using the indexed `assets` and `shares` values.
 - Withdrawals realize PnL from the oldest remaining lots first.
-- Same-transaction migrations can carry basis into a new vault lot when the transfer-in can be matched to an indexed withdrawal source.
+- Staking wrappers are collapsed into the underlying vault family. Staked shares and wallet-held shares share the same FIFO lots and only change location.
+- Underlying vault `Deposit` and `Withdraw` events define cost basis and realized proceeds. Staking `Deposit` and `Withdraw` events are treated as wrap or unwrap moves, not as economic entries.
+- Same-transaction router flows can carry basis into or out of a staking vault family when the transfer can be matched to an indexed underlying vault deposit or withdrawal in the same transaction.
 - Plain share transfers may leave some lots with unknown cost basis. Those vaults are returned with `costBasisStatus: "partial"` and the unmatched portion is reported in `unknownCostBasisValueUsd`.
 
 ### GET `/api/holdings/breakdown`

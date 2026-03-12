@@ -1,5 +1,6 @@
 import { config } from '../config'
 import type { DepositEvent, TransferEvent, UserEvents, V2DepositEvent, V2WithdrawEvent, WithdrawEvent } from '../types'
+import { debugError, debugLog } from './debug'
 
 // V3 Vault Queries (with optional maxTimestamp filter)
 const DEPOSITS_QUERY = `
@@ -12,6 +13,7 @@ const DEPOSITS_QUERY = `
       blockTimestamp
       logIndex
       transactionHash
+      transactionFrom
       owner
       sender
       assets
@@ -30,6 +32,7 @@ const WITHDRAWALS_QUERY = `
       blockTimestamp
       logIndex
       transactionHash
+      transactionFrom
       owner
       assets
       shares
@@ -47,6 +50,7 @@ const TRANSFERS_IN_QUERY = `
       blockTimestamp
       logIndex
       transactionHash
+      transactionFrom
       sender
       receiver
       value
@@ -64,6 +68,7 @@ const TRANSFERS_OUT_QUERY = `
       blockTimestamp
       logIndex
       transactionHash
+      transactionFrom
       sender
       receiver
       value
@@ -84,6 +89,7 @@ const V2_DEPOSITS_QUERY = `
       blockTimestamp
       logIndex
       transactionHash
+      transactionFrom
       recipient
       amount
       shares
@@ -101,9 +107,101 @@ const V2_WITHDRAWALS_QUERY = `
       blockTimestamp
       logIndex
       transactionHash
+      transactionFrom
       recipient
       amount
       shares
+    }
+  }
+`
+
+const DEPOSITS_BY_TX_FROM_QUERY = `
+  query GetDepositsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Deposit(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      owner
+      sender
+      assets
+      shares
+    }
+  }
+`
+
+const WITHDRAWALS_BY_TX_FROM_QUERY = `
+  query GetWithdrawalsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Withdraw(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      owner
+      assets
+      shares
+    }
+  }
+`
+
+const V2_DEPOSITS_BY_TX_FROM_QUERY = `
+  query GetV2DepositsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    V2Deposit(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      recipient
+      amount
+      shares
+    }
+  }
+`
+
+const V2_WITHDRAWALS_BY_TX_FROM_QUERY = `
+  query GetV2WithdrawalsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    V2Withdraw(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      recipient
+      amount
+      shares
+    }
+  }
+`
+
+const TRANSFERS_BY_TX_FROM_QUERY = `
+  query GetTransfersByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Transfer(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      sender
+      receiver
+      value
     }
   }
 `
@@ -192,12 +290,26 @@ async function fetchAllSequential<T>(
   const allResults: T[] = []
   let offset = 0
   const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
+  let pages = 0
 
   while (true) {
     const variables: Record<string, unknown> = { [variableKey]: address, limit: BATCH_SIZE, offset, maxTimestamp: ts }
+    let data: Record<string, T[]>
 
-    const data = await executeQuery<Record<string, T[]>>(query, variables)
+    try {
+      data = await executeQuery<Record<string, T[]>>(query, variables)
+    } catch (error) {
+      debugError('graphql', 'sequential event fetch failed', error, {
+        resultKey,
+        variableKey,
+        address,
+        offset,
+        maxTimestamp: ts
+      })
+      throw error
+    }
     const batch = data[resultKey] || []
+    pages += 1
 
     allResults.push(...batch)
 
@@ -208,6 +320,14 @@ async function fetchAllSequential<T>(
     offset += BATCH_SIZE
   }
 
+  debugLog('graphql', 'fetched sequential event set', {
+    resultKey,
+    variableKey,
+    address,
+    count: allResults.length,
+    pages,
+    maxTimestamp: ts
+  })
   return allResults
 }
 
@@ -221,6 +341,11 @@ async function fetchAllParallel<T>(
   maxTimestamp?: number
 ): Promise<T[]> {
   if (count === 0) {
+    debugLog('graphql', 'skipping parallel event fetch because expected count is zero', {
+      resultKey,
+      variableKey,
+      address
+    })
     return []
   }
 
@@ -231,12 +356,33 @@ async function fetchAllParallel<T>(
   const batchResults = await Promise.all(
     offsets.map(async (offset) => {
       const variables: Record<string, unknown> = { [variableKey]: address, limit: BATCH_SIZE, offset, maxTimestamp: ts }
-      const data = await executeQuery<Record<string, T[]>>(query, variables)
-      return data[resultKey] || []
+
+      try {
+        const data = await executeQuery<Record<string, T[]>>(query, variables)
+        return data[resultKey] || []
+      } catch (error) {
+        debugError('graphql', 'parallel event fetch failed', error, {
+          resultKey,
+          variableKey,
+          address,
+          offset,
+          maxTimestamp: ts
+        })
+        throw error
+      }
     })
   )
 
-  return batchResults.flat()
+  const results = batchResults.flat()
+  debugLog('graphql', 'fetched parallel event set', {
+    resultKey,
+    variableKey,
+    address,
+    count: results.length,
+    batches: batchCount,
+    maxTimestamp: ts
+  })
+  return results
 }
 
 function normalizeV2Deposit(v2: V2DepositEvent): DepositEvent {
@@ -248,6 +394,7 @@ function normalizeV2Deposit(v2: V2DepositEvent): DepositEvent {
     blockTimestamp: v2.blockTimestamp,
     logIndex: v2.logIndex,
     transactionHash: v2.transactionHash,
+    transactionFrom: v2.transactionFrom,
     owner: v2.recipient,
     sender: v2.recipient,
     assets: v2.amount,
@@ -264,6 +411,7 @@ function normalizeV2Withdraw(v2: V2WithdrawEvent): WithdrawEvent {
     blockTimestamp: v2.blockTimestamp,
     logIndex: v2.logIndex,
     transactionHash: v2.transactionHash,
+    transactionFrom: v2.transactionFrom,
     owner: v2.recipient,
     assets: v2.amount,
     shares: v2.shares
@@ -271,6 +419,45 @@ function normalizeV2Withdraw(v2: V2WithdrawEvent): WithdrawEvent {
 }
 
 export type VaultVersion = 'v2' | 'v3' | 'all'
+
+export interface RawPnlEventContext {
+  addressEvents: UserEvents
+  transactionEvents: {
+    deposits: DepositEvent[]
+    withdrawals: WithdrawEvent[]
+    transfers: TransferEvent[]
+  }
+}
+
+function sortByBlock<T extends { blockTimestamp: number; blockNumber: number; logIndex: number }>(events: T[]): T[] {
+  return [...events].sort(
+    (a, b) => a.blockTimestamp - b.blockTimestamp || a.blockNumber - b.blockNumber || a.logIndex - b.logIndex
+  )
+}
+
+function getDepositsByVersion(
+  v3Deposits: DepositEvent[],
+  v2DepositsRaw: V2DepositEvent[],
+  version: VaultVersion
+): DepositEvent[] {
+  const v2Deposits = v2DepositsRaw.map(normalizeV2Deposit)
+
+  return version === 'v3' ? v3Deposits : version === 'v2' ? v2Deposits : sortByBlock([...v3Deposits, ...v2Deposits])
+}
+
+function getWithdrawalsByVersion(
+  v3Withdrawals: WithdrawEvent[],
+  v2WithdrawalsRaw: V2WithdrawEvent[],
+  version: VaultVersion
+): WithdrawEvent[] {
+  const v2Withdrawals = v2WithdrawalsRaw.map(normalizeV2Withdraw)
+
+  return version === 'v3'
+    ? v3Withdrawals
+    : version === 'v2'
+      ? v2Withdrawals
+      : sortByBlock([...v3Withdrawals, ...v2Withdrawals])
+}
 
 // Main export - uses sequential fetching (simpler, no indexer dependency)
 export async function fetchUserEvents(
@@ -290,7 +477,116 @@ export async function fetchUserEvents(
     fetchAllSequential<TransferEvent>(TRANSFERS_OUT_QUERY, 'sender', addressLower, 'Transfer', maxTimestamp)
   ])
 
-  return processEvents(v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut, version)
+  const processed = processEvents(
+    v3Deposits,
+    v3Withdrawals,
+    v2DepositsRaw,
+    v2WithdrawalsRaw,
+    transfersIn,
+    transfersOut,
+    version
+  )
+  debugLog('graphql', 'fetched user events', {
+    address: addressLower,
+    version,
+    deposits: processed.deposits.length,
+    withdrawals: processed.withdrawals.length,
+    transfersIn: processed.transfersIn.length,
+    transfersOut: processed.transfersOut.length,
+    maxTimestamp: maxTimestamp ?? null
+  })
+  return processed
+}
+
+export async function fetchRawUserPnlEvents(
+  userAddress: string,
+  version: VaultVersion = 'all',
+  maxTimestamp?: number
+): Promise<RawPnlEventContext> {
+  const addressLower = userAddress.toLowerCase()
+
+  const [
+    addressV3Deposits,
+    addressV3Withdrawals,
+    addressV2DepositsRaw,
+    addressV2WithdrawalsRaw,
+    addressTransfersIn,
+    addressTransfersOut,
+    txV3Deposits,
+    txV3Withdrawals,
+    txV2DepositsRaw,
+    txV2WithdrawalsRaw,
+    txTransfers
+  ] = await Promise.all([
+    fetchAllSequential<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', maxTimestamp),
+    fetchAllSequential<WithdrawEvent>(WITHDRAWALS_QUERY, 'owner', addressLower, 'Withdraw', maxTimestamp),
+    fetchAllSequential<V2DepositEvent>(V2_DEPOSITS_QUERY, 'recipient', addressLower, 'V2Deposit', maxTimestamp),
+    fetchAllSequential<V2WithdrawEvent>(V2_WITHDRAWALS_QUERY, 'recipient', addressLower, 'V2Withdraw', maxTimestamp),
+    fetchAllSequential<TransferEvent>(TRANSFERS_IN_QUERY, 'receiver', addressLower, 'Transfer', maxTimestamp),
+    fetchAllSequential<TransferEvent>(TRANSFERS_OUT_QUERY, 'sender', addressLower, 'Transfer', maxTimestamp),
+    fetchAllSequential<DepositEvent>(
+      DEPOSITS_BY_TX_FROM_QUERY,
+      'transactionFrom',
+      addressLower,
+      'Deposit',
+      maxTimestamp
+    ),
+    fetchAllSequential<WithdrawEvent>(
+      WITHDRAWALS_BY_TX_FROM_QUERY,
+      'transactionFrom',
+      addressLower,
+      'Withdraw',
+      maxTimestamp
+    ),
+    fetchAllSequential<V2DepositEvent>(
+      V2_DEPOSITS_BY_TX_FROM_QUERY,
+      'transactionFrom',
+      addressLower,
+      'V2Deposit',
+      maxTimestamp
+    ),
+    fetchAllSequential<V2WithdrawEvent>(
+      V2_WITHDRAWALS_BY_TX_FROM_QUERY,
+      'transactionFrom',
+      addressLower,
+      'V2Withdraw',
+      maxTimestamp
+    ),
+    fetchAllSequential<TransferEvent>(
+      TRANSFERS_BY_TX_FROM_QUERY,
+      'transactionFrom',
+      addressLower,
+      'Transfer',
+      maxTimestamp
+    )
+  ])
+
+  const context = {
+    addressEvents: {
+      deposits: getDepositsByVersion(addressV3Deposits, addressV2DepositsRaw, version),
+      withdrawals: getWithdrawalsByVersion(addressV3Withdrawals, addressV2WithdrawalsRaw, version),
+      transfersIn: sortByBlock(addressTransfersIn),
+      transfersOut: sortByBlock(addressTransfersOut)
+    },
+    transactionEvents: {
+      deposits: getDepositsByVersion(txV3Deposits, txV2DepositsRaw, version),
+      withdrawals: getWithdrawalsByVersion(txV3Withdrawals, txV2WithdrawalsRaw, version),
+      transfers: sortByBlock(txTransfers)
+    }
+  }
+  debugLog('graphql', 'fetched raw user pnl events', {
+    address: addressLower,
+    version,
+    addressDeposits: context.addressEvents.deposits.length,
+    addressWithdrawals: context.addressEvents.withdrawals.length,
+    addressTransfersIn: context.addressEvents.transfersIn.length,
+    addressTransfersOut: context.addressEvents.transfersOut.length,
+    txDeposits: context.transactionEvents.deposits.length,
+    txWithdrawals: context.transactionEvents.withdrawals.length,
+    txTransfers: context.transactionEvents.transfers.length,
+    maxTimestamp: maxTimestamp ?? null
+  })
+  return context
 }
 
 // Parallel fetching - uses pre-computed counts for parallel batch fetching
@@ -351,7 +647,25 @@ export async function fetchUserEventsParallel(
     )
   ])
 
-  return processEvents(v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut, version)
+  const processed = processEvents(
+    v3Deposits,
+    v3Withdrawals,
+    v2DepositsRaw,
+    v2WithdrawalsRaw,
+    transfersIn,
+    transfersOut,
+    version
+  )
+  debugLog('graphql', 'fetched user events in parallel', {
+    address: addressLower,
+    version,
+    deposits: processed.deposits.length,
+    withdrawals: processed.withdrawals.length,
+    transfersIn: processed.transfersIn.length,
+    transfersOut: processed.transfersOut.length,
+    maxTimestamp: maxTimestamp ?? null
+  })
+  return processed
 }
 
 // Shared processing logic for both fetch strategies
@@ -393,23 +707,9 @@ function processEvents(
   }
 
   // Filter deposits/withdrawals by version
-  const deposits =
-    version === 'v3'
-      ? v3Deposits
-      : version === 'v2'
-        ? v2Deposits
-        : [...v3Deposits, ...v2Deposits].sort(
-            (a, b) => a.blockTimestamp - b.blockTimestamp || a.blockNumber - b.blockNumber || a.logIndex - b.logIndex
-          )
+  const deposits = getDepositsByVersion(v3Deposits, v2DepositsRaw, version)
 
-  const withdrawals =
-    version === 'v3'
-      ? v3Withdrawals
-      : version === 'v2'
-        ? v2Withdrawals
-        : [...v3Withdrawals, ...v2Withdrawals].sort(
-            (a, b) => a.blockTimestamp - b.blockTimestamp || a.blockNumber - b.blockNumber || a.logIndex - b.logIndex
-          )
+  const withdrawals = getWithdrawalsByVersion(v3Withdrawals, v2WithdrawalsRaw, version)
 
   // Filter transfers by vault version
   // For "all" version, include transfer-only vaults (vaults where user has no deposits/withdrawals but received shares via transfer)

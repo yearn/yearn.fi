@@ -6,6 +6,13 @@ import {
   type VaultVersion,
   validateConfig
 } from './lib/holdings'
+import {
+  createHoldingsDebugContext,
+  debugError,
+  debugLog,
+  isHoldingsDebugRequested,
+  withHoldingsDebugContext
+} from './lib/holdings/services/debug'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 
@@ -158,6 +165,11 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
   const versionParam = url.searchParams.get('version')
+  const debugEnabled =
+    isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
+  const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
+  const debugVault = url.searchParams.get('debugVault')
+  const debugTx = url.searchParams.get('debugTx')
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -170,7 +182,34 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const holdings = await getHistoricalHoldings(address, version)
+    const holdings = await withHoldingsDebugContext(
+      createHoldingsDebugContext('history', address, debugEnabled, {
+        lotsEnabled: debugLotsEnabled,
+        vaultFilter: debugVault,
+        txFilter: debugTx
+      }),
+      async () => {
+        debugLog('route', 'started holdings history request', {
+          version,
+          debugLotsEnabled,
+          debugVault: debugVault?.toLowerCase() ?? null,
+          debugTx: debugTx?.toLowerCase() ?? null
+        })
+
+        try {
+          const response = await getHistoricalHoldings(address, version)
+          debugLog('route', 'completed holdings history request', {
+            version,
+            points: response.dataPoints.length,
+            nonZeroPoints: response.dataPoints.filter((point) => point.totalUsdValue > 0).length
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings history request failed', error, { version })
+          throw error
+        }
+      }
+    )
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
     if (!hasHoldings) {
@@ -205,6 +244,11 @@ async function handleHoldingsPnL(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
   const versionParam = url.searchParams.get('version')
+  const debugEnabled =
+    isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
+  const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
+  const debugVault = url.searchParams.get('debugVault')
+  const debugTx = url.searchParams.get('debugTx')
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -217,7 +261,35 @@ async function handleHoldingsPnL(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const pnl = await getHoldingsPnL(address, version)
+    const pnl = await withHoldingsDebugContext(
+      createHoldingsDebugContext('pnl', address, debugEnabled, {
+        lotsEnabled: debugLotsEnabled,
+        vaultFilter: debugVault,
+        txFilter: debugTx
+      }),
+      async () => {
+        debugLog('route', 'started holdings pnl request', {
+          version,
+          debugLotsEnabled,
+          debugVault: debugVault?.toLowerCase() ?? null,
+          debugTx: debugTx?.toLowerCase() ?? null
+        })
+
+        try {
+          const response = await getHoldingsPnL(address, version)
+          debugLog('route', 'completed holdings pnl request', {
+            version,
+            totalVaults: response.summary.totalVaults,
+            totalCurrentValueUsd: response.summary.totalCurrentValueUsd,
+            totalPnlUsd: response.summary.totalPnlUsd
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings pnl request failed', error, { version })
+          throw error
+        }
+      }
+    )
 
     if (pnl.summary.totalVaults === 0) {
       return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
