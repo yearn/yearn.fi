@@ -11,6 +11,6 @@ describe('YvUsdHeaderBanner', () => {
     expect(html).toContain(`href="${YVUSD_LEARN_MORE_URL}"`)
     expect(html).toContain('yvusd-banner-bg.png')
     expect(html).toContain('Learn more')
-    expect(html).toContain("about Yearn&#x27;s new cross-chain, cross-asset, delta-neutral vault.")
+    expect(html).toContain('about Yearn&#x27;s new cross-chain, cross-asset, delta-neutral vault.')
   })
 })

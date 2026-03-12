@@ -17,6 +17,8 @@ export interface WithdrawWidgetProps {
   isVaultRetired?: boolean
   vaultUserData: VaultUserData
   maxWithdrawAssets?: bigint
+  requiredSharesOverride?: bigint
+  expectedOutOverride?: bigint
   isActionDisabled?: boolean
   actionDisabledReason?: string
   disableTokenSelector?: boolean

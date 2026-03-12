@@ -3,7 +3,7 @@ import { YVUSD_LOCKED_ADDRESS, YVUSD_LOCKED_ZAP_ADDRESS } from '@pages/vaults/ut
 import { yvUsdLockedZapAbi } from '@shared/contracts/abi/yvUsdLockedZap.abi'
 import { toAddress } from '@shared/utils'
 import type { Address } from 'viem'
-import { erc20Abi, maxUint256 } from 'viem'
+import { erc20Abi } from 'viem'
 import type { UseSimulateContractReturnType } from 'wagmi'
 import { useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
@@ -11,9 +11,18 @@ import { useTokenAllowance } from '../useTokenAllowance'
 interface UseYvUsdLockedZapWithdrawParams {
   amount: bigint
   requiredShares: bigint
+  optimisticApprovedShares?: bigint | null
   account?: Address
   chainId: number
   enabled: boolean
+}
+
+function getEffectiveApprovedShares(allowance: bigint, optimisticApprovedShares?: bigint | null): bigint {
+  if (optimisticApprovedShares && optimisticApprovedShares > allowance) {
+    return optimisticApprovedShares
+  }
+
+  return allowance
 }
 
 export function useYvUsdLockedZapWithdraw(params: UseYvUsdLockedZapWithdrawParams): UseWidgetWithdrawFlowReturn {
@@ -25,7 +34,8 @@ export function useYvUsdLockedZapWithdraw(params: UseYvUsdLockedZapWithdrawParam
     chainId: params.chainId
   })
 
-  const isAllowanceSufficient = allowance >= params.requiredShares
+  const effectiveApprovedShares = getEffectiveApprovedShares(allowance, params.optimisticApprovedShares)
+  const isAllowanceSufficient = effectiveApprovedShares >= params.requiredShares
   const prepareApproveEnabled =
     !!params.account && params.enabled && params.amount > 0n && params.requiredShares > 0n && !isAllowanceSufficient
   const prepareWithdrawEnabled =
@@ -59,7 +69,7 @@ export function useYvUsdLockedZapWithdraw(params: UseYvUsdLockedZapWithdrawParam
       prepareApproveEnabled,
       prepareWithdrawEnabled,
       isAllowanceSufficient,
-      allowance: isAllowanceSufficient ? maxUint256 : allowance,
+      allowance,
       expectedOut: params.amount,
       isLoadingRoute: false,
       isCrossChain: false,

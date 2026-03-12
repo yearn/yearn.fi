@@ -393,11 +393,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
       if (wrongNetwork && txChainId) {
         try {
-          console.info('[TransactionOverlay] Switching chain', {
-            from: currentChainId,
-            to: txChainId,
-            step: currentStep.label
-          })
           await switchChainAsync({ chainId: txChainId })
         } catch {
           console.warn('[TransactionOverlay] Chain switch rejected', { to: txChainId, step: currentStep.label })
@@ -411,11 +406,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
       try {
         if (isEnsoOrder) {
-          console.info('[TransactionOverlay] Executing Enso order', {
-            step: currentStep.label,
-            isCrossChain
-          })
-
           const customWriteAsync = request.writeContractAsync
           const result = await customWriteAsync()
           if (!result.hash) {

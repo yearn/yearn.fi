@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import type { ReactElement } from 'react'
 import { formatUnits } from 'viem'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import type { WithdrawRouteType } from './types'
@@ -32,10 +32,16 @@ interface WithdrawDetailsProps {
   allowance?: bigint
   allowanceTokenDecimals?: number
   allowanceTokenSymbol?: string
+  approvalSpenderName?: string
   onAllowanceClick?: () => void
+  onShowApprovalOverlay?: () => void
 }
 
-export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
+function getApprovalLabel(approvalSpenderName?: string): string {
+  return approvalSpenderName ? `Existing Approval (${approvalSpenderName})` : 'Existing Approval'
+}
+
+export function WithdrawDetails({
   actionLabel,
   requiredShares,
   sharesDecimals,
@@ -56,11 +62,12 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
   allowance,
   allowanceTokenDecimals,
   allowanceTokenSymbol,
-  onAllowanceClick
-}) => {
+  approvalSpenderName,
+  onAllowanceClick,
+  onShowApprovalOverlay
+}: WithdrawDetailsProps): ReactElement {
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
-
-  // Calculate price impact (withdraw amount USD vs expected output USD)
+  const approvalLabel = getApprovalLabel(approvalSpenderName)
   const withdrawUsdValue = Number(formatUnits(withdrawAmountBn, assetDecimals)) * assetUsdPrice
   const expectedOutUsdValue = Number(formatUnits(expectedOut, outputDecimals)) * outputUsdPrice
   const priceImpact =
@@ -131,7 +138,17 @@ export const WithdrawDetails: FC<WithdrawDetailsProps> = ({
         {/* Approved allowance (for zap withdrawals) */}
         {allowanceDisplay && (
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-text-secondary">Existing Approval</p>
+            {onShowApprovalOverlay ? (
+              <button
+                type="button"
+                onClick={onShowApprovalOverlay}
+                className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
+              >
+                {approvalLabel}
+              </button>
+            ) : (
+              <p className="text-sm text-text-secondary">{approvalLabel}</p>
+            )}
             {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
               <button
                 type="button"
