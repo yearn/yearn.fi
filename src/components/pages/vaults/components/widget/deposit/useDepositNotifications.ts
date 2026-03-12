@@ -64,8 +64,8 @@ export const useDepositNotifications = ({
       spenderAddress = stakingAddress || destinationToken
       spenderName = stakingToken?.symbol || 'Staking Contract'
     } else if (routeType === 'DIRECT_DEPOSIT') {
-      spenderAddress = destinationToken
-      spenderName = vault.symbol || 'Vault'
+      spenderAddress = (routerAddress as Address) || destinationToken
+      spenderName = routerAddress ? 'Vault Zap' : vault.symbol || 'Vault'
     } else {
       return undefined
     }

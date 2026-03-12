@@ -119,6 +119,64 @@ function ApproveNotificationContent({ notification }: { notification: TNotificat
   )
 }
 
+function CooldownNotificationContent({ notification }: { notification: TNotification }): ReactElement {
+  const chainName = NETWORK_BY_CHAIN_ID.get(notification.chainId)?.name || 'Unknown'
+
+  const explorerBaseURI = useMemo(() => {
+    const chain = NETWORK_BY_CHAIN_ID.get(notification.chainId)
+    return chain?.blockExplorers?.default?.url || 'https://etherscan.io'
+  }, [notification.chainId])
+
+  return (
+    <div className={'flex gap-4'}>
+      <div className={'flex flex-col items-center gap-3'}>
+        <TokenLogo
+          src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          tokenSymbol={notification.fromTokenName}
+          chainId={notification.chainId}
+          width={32}
+          height={32}
+          className="rounded-full"
+          loading="eager"
+        />
+      </div>
+      <div className={'flex-1'}>
+        <div className={'grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-text-primary'}>
+          <p>{'Address:'}</p>
+          <p className={'text-right font-bold'}>
+            <Link
+              href={`${explorerBaseURI}/address/${notification.address}`}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              aria-label={`View address ${notification.address} on explorer`}
+              className={'text-text-primary hover:text-text-secondary'}
+            >
+              <button className={'text-xs font-medium underline'}>{truncateHex(notification.address, 5)}</button>
+            </Link>
+          </p>
+          <p>{'Locked shares:'}</p>
+          <p className={'text-right font-bold'}>
+            <Link
+              href={`${explorerBaseURI}/address/${notification.fromAddress || '0x0'}`}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              aria-label={`View vault ${notification.fromTokenName || 'Unknown'} on explorer`}
+              className={'text-text-primary hover:text-text-secondary'}
+            >
+              <button className={'text-xs font-medium underline'}>
+                {notification.amount} {notification.fromTokenName || 'Unknown'}
+              </button>
+            </Link>
+          </p>
+          <p>{'Chain:'}</p>
+          <p className={'text-right font-bold'}>{chainName}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function DepositNotificationContent({ notification }: { notification: TNotification }): ReactElement {
   const fromChainName = NETWORK_BY_CHAIN_ID.get(notification.chainId)?.name || 'Unknown'
   const toChainName = notification.toChainId
@@ -441,6 +499,10 @@ function NotificationContent({ notification }: { notification: TNotification }):
     return <ApproveNotificationContent notification={notification} />
   }
 
+  if (['start cooldown', 'cancel cooldown'].includes(notification.type)) {
+    return <CooldownNotificationContent notification={notification} />
+  }
+
   if (['deposit', 'stake', 'zap', 'crosschain zap', 'deposit and stake'].includes(notification.type)) {
     return <DepositNotificationContent notification={notification} />
   }
@@ -500,6 +562,10 @@ export const Notification = memo(function Notification({
         return 'Deposit'
       case 'withdraw':
         return 'Withdraw'
+      case 'start cooldown':
+        return 'Start Cooldown'
+      case 'cancel cooldown':
+        return 'Cancel Cooldown'
       case 'zap':
         return 'Zap'
       case 'crosschain zap':

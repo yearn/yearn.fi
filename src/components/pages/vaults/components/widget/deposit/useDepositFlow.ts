@@ -1,6 +1,9 @@
 import { useDirectDeposit } from '@pages/vaults/hooks/actions/useDirectDeposit'
 import { useDirectStake } from '@pages/vaults/hooks/actions/useDirectStake'
 import { useEnsoDeposit } from '@pages/vaults/hooks/actions/useEnsoDeposit'
+import { useYvUsdLockedZapDeposit } from '@pages/vaults/hooks/actions/useYvUsdLockedZapDeposit'
+import { YVUSD_LOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
+import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
 import type { DepositRouteType } from './types'
@@ -10,6 +13,7 @@ interface UseDepositFlowProps {
   // Token addresses
   depositToken: Address
   assetAddress: Address
+  directDepositTokenAddress?: Address
   destinationToken: Address
   vaultAddress: Address
   stakingAddress?: Address
@@ -53,6 +57,7 @@ export interface DepositFlowResult {
 export const useDepositFlow = ({
   depositToken,
   assetAddress,
+  directDepositTokenAddress,
   destinationToken,
   vaultAddress,
   stakingAddress,
@@ -72,10 +77,20 @@ export const useDepositFlow = ({
     chainId,
     depositToken,
     assetAddress,
+    directDepositTokenAddress,
     destinationToken,
     vaultAddress,
     stakingAddress
   })
+
+  const isYvUsdLockedZapDeposit = useMemo(
+    () =>
+      routeType === 'DIRECT_DEPOSIT' &&
+      !!directDepositTokenAddress &&
+      toAddress(vaultAddress) === YVUSD_LOCKED_ADDRESS &&
+      toAddress(depositToken) === toAddress(directDepositTokenAddress),
+    [routeType, directDepositTokenAddress, vaultAddress, depositToken]
+  )
 
   // Direct deposit flow (asset → vault)
   const directDeposit = useDirectDeposit({
@@ -85,7 +100,15 @@ export const useDepositFlow = ({
     account,
     chainId,
     decimals: inputDecimals,
-    enabled: routeType === 'DIRECT_DEPOSIT' && amount > 0n
+    enabled: routeType === 'DIRECT_DEPOSIT' && amount > 0n && !isYvUsdLockedZapDeposit
+  })
+
+  const yvUsdLockedZapDeposit = useYvUsdLockedZapDeposit({
+    depositToken,
+    amount,
+    account,
+    chainId,
+    enabled: isYvUsdLockedZapDeposit && amount > 0n
   })
 
   // Direct stake flow (vault → staking)
@@ -116,10 +139,12 @@ export const useDepositFlow = ({
 
   // Select active flow based on routing type
   const activeFlow = useMemo(() => {
-    if (routeType === 'DIRECT_DEPOSIT') return directDeposit
+    if (routeType === 'DIRECT_DEPOSIT') {
+      return isYvUsdLockedZapDeposit ? yvUsdLockedZapDeposit : directDeposit
+    }
     if (routeType === 'DIRECT_STAKE') return directStake
     return ensoFlow
-  }, [routeType, directDeposit, directStake, ensoFlow])
+  }, [routeType, isYvUsdLockedZapDeposit, yvUsdLockedZapDeposit, directDeposit, directStake, ensoFlow])
 
   return {
     routeType,

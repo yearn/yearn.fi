@@ -7,6 +7,7 @@ interface UseDepositRouteProps {
   chainId: number
   depositToken: Address
   assetAddress: Address
+  directDepositTokenAddress?: Address
   destinationToken: Address
   vaultAddress: Address
   stakingAddress?: Address
@@ -19,13 +20,18 @@ interface ResolveDepositRouteTypeProps extends Omit<UseDepositRouteProps, 'chain
 export function resolveDepositRouteType({
   depositToken,
   assetAddress,
+  directDepositTokenAddress,
   destinationToken,
   vaultAddress,
   stakingAddress,
   ensoEnabled
 }: ResolveDepositRouteTypeProps): DepositRouteType {
   // Case 1: Direct vault deposit (asset → vault)
-  if (isAddressEqual(depositToken, assetAddress) && isAddressEqual(destinationToken, vaultAddress)) {
+  if (
+    (isAddressEqual(depositToken, assetAddress) ||
+      (!!directDepositTokenAddress && isAddressEqual(depositToken, directDepositTokenAddress))) &&
+    isAddressEqual(destinationToken, vaultAddress)
+  ) {
     return 'DIRECT_DEPOSIT'
   }
 
@@ -55,6 +61,7 @@ export function useDepositRoute({
   chainId,
   depositToken,
   assetAddress,
+  directDepositTokenAddress,
   destinationToken,
   vaultAddress,
   stakingAddress
@@ -66,11 +73,12 @@ export function useDepositRoute({
       resolveDepositRouteType({
         depositToken,
         assetAddress,
+        directDepositTokenAddress,
         destinationToken,
         vaultAddress,
         stakingAddress,
         ensoEnabled
       }),
-    [ensoEnabled, depositToken, assetAddress, destinationToken, vaultAddress, stakingAddress]
+    [ensoEnabled, depositToken, assetAddress, directDepositTokenAddress, destinationToken, vaultAddress, stakingAddress]
   )
 }

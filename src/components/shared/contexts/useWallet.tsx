@@ -1,4 +1,6 @@
 import { getVaultStaking, getVaultVersion, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import { getYvUsdSharePrice, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
@@ -49,6 +51,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   shouldWorkOnTestnet?: boolean
 }): ReactElement {
   const { vaults, isLoadingVaultList } = useYearn()
+  const { unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
   const { address: userAddress } = useWeb3()
 
   const allTokens = useYearnTokens({
@@ -124,6 +127,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     [balances]
   )
 
+  const yvUsdUnlockedSharePrice = getYvUsdSharePrice(yvUsdUnlockedVault)
+  const yvUsdLockedSharePrice = getYvUsdSharePrice(yvUsdLockedVault)
+
   const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
     // Build staking address → vault address lookup
     const stakingToVault = new Map<string, string>()
@@ -140,6 +146,14 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     for (const [_chainId, perChain] of Object.entries(balances)) {
       for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
         const normalizedAddress = toAddress(tokenAddress)
+
+        if (normalizedAddress === YVUSD_UNLOCKED_ADDRESS || normalizedAddress === YVUSD_LOCKED_ADDRESS) {
+          const sharePrice =
+            normalizedAddress === YVUSD_UNLOCKED_ADDRESS ? yvUsdUnlockedSharePrice : yvUsdLockedSharePrice
+          const tokenValue = tokenData.value || tokenData.balance.normalized * sharePrice
+          cumulatedValueInV3Vaults += tokenValue
+          continue
+        }
 
         // Resolve vault details (direct vault or via staking lookup)
         let vaultDetails = vaults?.[normalizedAddress]
@@ -161,7 +175,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       }
     }
     return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults]
-  }, [balances, vaults])
+  }, [balances, vaults, yvUsdLockedSharePrice, yvUsdUnlockedSharePrice])
 
   /***************************************************************************
    **	Setup and render the Context provider to use in the app.

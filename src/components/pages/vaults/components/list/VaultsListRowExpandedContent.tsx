@@ -5,6 +5,7 @@ import {
   type TVaultChartTimeframe,
   VaultChartsSection
 } from '@pages/vaults/components/detail/VaultChartsSection'
+import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
 import {
   getVaultAddress,
   getVaultChainID,
@@ -18,6 +19,7 @@ import {
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
+import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import {
   AllocationChart,
   DARK_MODE_COLORS,
@@ -30,7 +32,7 @@ import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
 import { formatCounterValue, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
-import type { ReactElement } from 'react'
+import type { MouseEvent, ReactElement } from 'react'
 import { useMemo } from 'react'
 import { type TVaultsExpandedView, VaultsExpandedSelector } from './VaultsExpandedSelector'
 
@@ -41,6 +43,13 @@ const EXPANDED_VIEW_TO_CHART_TAB: Record<
   apy: 'historical-apy',
   performance: 'historical-pps',
   tvl: 'historical-tvl'
+}
+
+type TExpandedChartView = keyof typeof EXPANDED_VIEW_TO_CHART_TAB
+type TMergedStrategy = TKongVaultStrategy & { name: string }
+
+function isExpandedChartView(view: TVaultsExpandedView): view is TExpandedChartView {
+  return view in EXPANDED_VIEW_TO_CHART_TAB
 }
 
 type TVaultsListRowExpandedContentProps = {
@@ -66,13 +75,15 @@ export default function VaultsListRowExpandedContent({
   const chartTimeframe: TVaultChartTimeframe = '1y'
   const chainID = getVaultChainID(currentVault)
   const vaultAddress = getVaultAddress(currentVault)
+  const isYvUsd = isYvUsdAddress(vaultAddress)
   const { data: snapshotVault } = useVaultSnapshot({
     chainId: chainID,
     address: vaultAddress
   })
   const snapshotMergedVault = useMemo(() => getVaultView(currentVault, snapshotVault), [currentVault, snapshotVault])
+  const chartTab = isExpandedChartView(expandedView) ? EXPANDED_VIEW_TO_CHART_TAB[expandedView] : undefined
 
-  const handleGoToVault = (event: React.MouseEvent): void => {
+  const handleGoToVault = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation()
     trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW_EXPANDED, {
       props: {
@@ -114,16 +125,26 @@ export default function VaultsListRowExpandedContent({
                 </button>
               }
             />
-            {expandedView in EXPANDED_VIEW_TO_CHART_TAB ? (
-              <VaultChartsSection
-                chainId={chainID}
-                vaultAddress={vaultAddress}
-                shouldRenderSelectors={false}
-                chartTab={EXPANDED_VIEW_TO_CHART_TAB[expandedView as keyof typeof EXPANDED_VIEW_TO_CHART_TAB]}
-                timeframe={chartTimeframe}
-                chartHeightPx={200}
-                chartHeightMdPx={200}
-              />
+            {chartTab ? (
+              isYvUsd ? (
+                <YvUsdChartsSection
+                  shouldRenderSelectors={false}
+                  chartTab={chartTab}
+                  timeframe={chartTimeframe}
+                  chartHeightPx={200}
+                  chartHeightMdPx={200}
+                />
+              ) : (
+                <VaultChartsSection
+                  chainId={chainID}
+                  vaultAddress={vaultAddress}
+                  shouldRenderSelectors={false}
+                  chartTab={chartTab}
+                  timeframe={chartTimeframe}
+                  chartHeightPx={200}
+                  chartHeightMdPx={200}
+                />
+              )
             ) : (
               <VaultStrategyAllocationPreview currentVault={currentVault} snapshotVault={snapshotVault} />
             )}
@@ -150,18 +171,17 @@ function VaultStrategyAllocationPreview({
   })
   const isDark = useDarkMode()
 
-  type TMergedStrategy = TKongVaultStrategy & { name: string }
-  const mergedList = useMemo(() => {
-    const list: TMergedStrategy[] = []
-    for (const strategy of strategies) {
-      const linkedVault = vaults[toAddress(strategy.address)]
-      list.push({
-        ...strategy,
-        name: strategy.name || (linkedVault ? getVaultName(linkedVault) : `Strategy ${list.length + 1}`)
-      })
-    }
-    return list
-  }, [strategies, vaults])
+  const mergedList = useMemo(
+    () =>
+      strategies.map((strategy, index): TMergedStrategy => {
+        const linkedVault = vaults[toAddress(strategy.address)]
+        return {
+          ...strategy,
+          name: strategy.name || (linkedVault ? getVaultName(linkedVault) : `Strategy ${index + 1}`)
+        }
+      }),
+    [strategies, vaults]
+  )
 
   const filteredVaultList = useMemo(
     () => mergedList.filter((strategy) => strategy.status !== 'not_active'),

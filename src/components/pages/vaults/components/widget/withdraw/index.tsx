@@ -11,7 +11,8 @@ import { IconSettings } from '@shared/icons/IconSettings'
 import type { TNormalizedBN } from '@shared/types'
 import { cl, formatTAmount, toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
+import type { ReactElement, ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { InputTokenAmount } from '../InputTokenAmount'
@@ -23,44 +24,171 @@ import { formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
 import { getPriorityTokens } from './constants'
 import { SourceSelector } from './SourceSelector'
-import type { WithdrawalSource, WithdrawWidgetProps } from './types'
+import type { WithdrawalSource, WithdrawRouteType, WithdrawWidgetProps } from './types'
 import { useWithdrawError } from './useWithdrawError'
 import { useWithdrawFlow } from './useWithdrawFlow'
 import { useWithdrawNotifications } from './useWithdrawNotifications'
 import { WithdrawDetails } from './WithdrawDetails'
 import { WithdrawDetailsOverlay } from './WithdrawDetailsOverlay'
 
-export const WidgetWithdraw: FC<
-  WithdrawWidgetProps & { hideSettings?: boolean; disableBorderRadius?: boolean; collapseDetails?: boolean }
-> = ({
+type WidgetWithdrawProps = WithdrawWidgetProps & {
+  hideSettings?: boolean
+  disableBorderRadius?: boolean
+  collapseDetails?: boolean
+  contentBelowInput?: ReactNode
+  hideContainerBorder?: boolean
+  onTokenSelectionChange?: (address: `0x${string}`, chainId: number) => void
+}
+
+type WithdrawActionCopy = {
+  actionLabel: string
+  progressLabel: string
+  pastTenseLabel: string
+}
+
+function resolveWithdrawalSource(hasVaultBalance: boolean, hasStakingBalance: boolean): WithdrawalSource | undefined {
+  if (hasVaultBalance && !hasStakingBalance) {
+    return 'vault'
+  }
+  if (!hasVaultBalance && hasStakingBalance) {
+    return 'staking'
+  }
+  return undefined
+}
+
+function getWithdrawBalance(
+  withdrawalSource: WithdrawalSource,
+  vault: WithdrawWidgetProps['vaultUserData']['vaultToken'],
+  stakingToken: WithdrawWidgetProps['vaultUserData']['stakingToken']
+): TNormalizedBN {
+  if (withdrawalSource === 'vault' && vault) {
+    return vault.balance
+  }
+  if (withdrawalSource === 'staking' && stakingToken) {
+    return stakingToken.balance
+  }
+  return zeroNormalizedBN
+}
+
+function getSourceTokenAddress(
+  withdrawalSource: WithdrawalSource,
+  vaultAddress: `0x${string}`,
+  stakingAddress?: `0x${string}`
+): `0x${string}` {
+  if (withdrawalSource === 'staking' && stakingAddress) {
+    return stakingAddress
+  }
+  return vaultAddress
+}
+
+function getWithdrawActionCopy(routeType: WithdrawRouteType): WithdrawActionCopy {
+  if (routeType === 'DIRECT_UNSTAKE') {
+    return {
+      actionLabel: 'Unstake',
+      progressLabel: 'Unstaking',
+      pastTenseLabel: 'unstaked'
+    }
+  }
+
+  return {
+    actionLabel: 'Withdraw',
+    progressLabel: 'Withdrawing',
+    pastTenseLabel: 'withdrawn'
+  }
+}
+
+function getWithdrawActionLabel(isUnstake: boolean, withdrawalSource: WithdrawalSource): string {
+  if (isUnstake) {
+    return 'You will unstake'
+  }
+  if (withdrawalSource === 'staking') {
+    return 'You will unstake and redeem'
+  }
+  return 'You will redeem'
+}
+
+function getTransactionName(routeType: WithdrawRouteType, isLoadingRoute: boolean): string {
+  if (routeType === 'DIRECT_WITHDRAW') {
+    return 'Withdraw'
+  }
+  if (routeType === 'DIRECT_UNSTAKE') {
+    return 'Unstake'
+  }
+  if (isLoadingRoute) {
+    return 'Fetching quote'
+  }
+  return 'Withdraw'
+}
+
+function getWithdrawButtonLabel(isLoadingRoute: boolean, needsApproval: boolean, transactionName: string): string {
+  if (isLoadingRoute) {
+    return 'Fetching quote'
+  }
+  if (needsApproval) {
+    return `Approve & ${transactionName}`
+  }
+  return transactionName
+}
+
+function getZapNotificationText(isUnstake: boolean, shouldShowZapUi: boolean): string | undefined {
+  if (isUnstake) {
+    return 'This transaction will unstake'
+  }
+  if (shouldShowZapUi) {
+    return '⚡ This transaction will use Enso to Zap to:'
+  }
+  return undefined
+}
+
+export function WidgetWithdraw({
   vaultAddress,
   assetAddress,
+  displayAssetAddress,
   stakingAddress,
   chainId,
   vaultSymbol,
   vaultVersion,
   vaultUserData,
+  maxWithdrawAssets,
+  isActionDisabled = false,
+  actionDisabledReason,
+  disableTokenSelector = false,
+  hideZapForTokens,
+  disableAmountInput = false,
+  hideActionButton = false,
+  prefill,
+  prefillRequestKey,
+  onPrefillApplied,
+  headerActions,
+  onAmountChange,
+  onTokenSelectionChange,
   handleWithdrawSuccess: onWithdrawSuccess,
   onOpenSettings,
   isSettingsOpen,
   disableBorderRadius,
-  collapseDetails
-}) => {
+  collapseDetails,
+  contentBelowInput,
+  hideContainerBorder = false
+}: WidgetWithdrawProps): ReactElement {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, getPrice } = useYearn()
   const trackEvent = usePlausible()
   const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
+  const resolvedDisplayAssetAddress = displayAssetAddress ?? assetAddress
 
-  const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(assetAddress)
-  const [selectedChainId, setSelectedChainId] = useState<number | undefined>()
+  const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(
+    prefill?.address ?? resolvedDisplayAssetAddress
+  )
+  const [selectedChainId, setSelectedChainId] = useState<number | undefined>(prefill?.chainId)
   const [showWithdrawDetailsModal, setShowWithdrawDetailsModal] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
   const [hasAcceptedPriceImpact, setHasAcceptedPriceImpact] = useState(false)
+  const appliedPrefillRef = useRef<string | null>(null)
 
   const {
     assetToken,
@@ -74,29 +202,38 @@ export const WidgetWithdraw: FC<
   const priorityTokens = getPriorityTokens(chainId, vaultAddress, stakingAddress)
 
   // Derived token values
-  const withdrawToken = selectedToken || assetAddress
+  const withdrawToken = selectedToken || resolvedDisplayAssetAddress
   const destinationChainId = selectedChainId || chainId
 
   const outputToken = useMemo(() => {
-    if (destinationChainId === chainId && withdrawToken === assetAddress) {
+    if (destinationChainId === chainId && withdrawToken === resolvedDisplayAssetAddress) {
       return assetToken
     }
     return getToken({ address: withdrawToken, chainID: destinationChainId })
-  }, [getToken, withdrawToken, destinationChainId, chainId, assetAddress, assetToken])
+  }, [getToken, withdrawToken, destinationChainId, chainId, resolvedDisplayAssetAddress, assetToken])
+
+  const hideZapTokenSet = useMemo(
+    () => new Set((hideZapForTokens || []).map((address) => toAddress(address))),
+    [hideZapForTokens]
+  )
+
+  const isBaseWithdrawToken = useMemo(() => {
+    const normalizedWithdrawToken = toAddress(withdrawToken)
+    return (
+      normalizedWithdrawToken === toAddress(resolvedDisplayAssetAddress) || hideZapTokenSet.has(normalizedWithdrawToken)
+    )
+  }, [withdrawToken, resolvedDisplayAssetAddress, hideZapTokenSet])
 
   const hasVaultBalance = (vault?.balance.raw ?? 0n) > 0n
   const hasStakingBalance = (stakingToken?.balance.raw ?? 0n) > 0n
   const hasBothBalances = hasVaultBalance && hasStakingBalance
+  const singleSource = resolveWithdrawalSource(hasVaultBalance, hasStakingBalance)
 
   useEffect(() => {
-    if (!hasBothBalances && (hasVaultBalance || hasStakingBalance)) {
-      if (hasVaultBalance && !hasStakingBalance) {
-        setWithdrawalSource('vault')
-      } else if (!hasVaultBalance && hasStakingBalance) {
-        setWithdrawalSource('staking')
-      }
+    if (singleSource) {
+      setWithdrawalSource(singleSource)
     }
-  }, [hasVaultBalance, hasStakingBalance, hasBothBalances])
+  }, [singleSource])
 
   useEffect(() => {
     if (!collapseDetails && isDetailsPanelOpen) {
@@ -108,7 +245,7 @@ export const WidgetWithdraw: FC<
     ensoEnabled,
     selectedToken,
     selectedChainId,
-    assetAddress,
+    assetAddress: resolvedDisplayAssetAddress,
     chainId,
     showTokenSelector,
     setSelectedToken,
@@ -116,22 +253,10 @@ export const WidgetWithdraw: FC<
     setShowTokenSelector
   })
 
-  const totalVaultBalance: TNormalizedBN =
-    withdrawalSource === 'vault' && vault
-      ? vault.balance
-      : withdrawalSource === 'staking' && stakingToken
-        ? stakingToken.balance
-        : zeroNormalizedBN
-
-  const sourceToken =
-    withdrawalSource === 'vault'
-      ? vaultAddress
-      : withdrawalSource === 'staking' && stakingAddress
-        ? stakingAddress
-        : vaultAddress
+  const totalVaultBalance = getWithdrawBalance(withdrawalSource, vault, stakingToken)
+  const sourceToken = getSourceTokenAddress(withdrawalSource, vaultAddress, stakingAddress)
 
   const isUnstake = withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(vaultAddress)
-
   const sharesDecimals =
     withdrawalSource === 'staking' ? (stakingToken?.decimals ?? vault?.decimals ?? 18) : (vault?.decimals ?? 18)
   const vaultDecimals = vault?.decimals ?? 18
@@ -146,13 +271,45 @@ export const WidgetWithdraw: FC<
 
   const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
+
+  useEffect(() => {
+    if (!prefill) return
+    const key = `${prefillRequestKey ?? ''}-${prefill.address}-${prefill.chainId}-${prefill.amount}`
+    if (appliedPrefillRef.current === key) return
+    appliedPrefillRef.current = key
+    setSelectedToken(prefill.address)
+    setSelectedChainId(prefill.chainId)
+    if (prefill.amount !== undefined) {
+      setWithdrawInput(prefill.amount)
+    }
+    onPrefillApplied?.()
+  }, [prefill, prefillRequestKey, setWithdrawInput, onPrefillApplied])
+
+  useEffect(() => {
+    onAmountChange?.(withdrawAmount.bn)
+  }, [withdrawAmount.bn, onAmountChange])
+
+  useEffect(() => {
+    onTokenSelectionChange?.(withdrawToken, destinationChainId)
+  }, [destinationChainId, onTokenSelectionChange, withdrawToken])
+
   const usesErc4626 = Boolean(vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3'))
+  const effectiveMaxWithdrawAssets = useMemo(
+    () =>
+      maxWithdrawAssets !== undefined && maxWithdrawAssets < totalBalanceInUnderlying.raw
+        ? maxWithdrawAssets
+        : totalBalanceInUnderlying.raw,
+    [maxWithdrawAssets, totalBalanceInUnderlying.raw]
+  )
 
   const isMaxWithdraw = useMemo(() => {
     return (
-      withdrawAmount.bn > 0n && totalBalanceInUnderlying.raw > 0n && withdrawAmount.bn === totalBalanceInUnderlying.raw
+      withdrawAmount.bn > 0n &&
+      totalBalanceInUnderlying.raw > 0n &&
+      withdrawAmount.bn === effectiveMaxWithdrawAssets &&
+      effectiveMaxWithdrawAssets === totalBalanceInUnderlying.raw
     )
-  }, [withdrawAmount.bn, totalBalanceInUnderlying.raw])
+  }, [withdrawAmount.bn, effectiveMaxWithdrawAssets, totalBalanceInUnderlying.raw])
 
   // ============================================================================
   // Required Shares Calculation
@@ -228,23 +385,16 @@ export const WidgetWithdraw: FC<
     hasBothBalances: !!hasBothBalances,
     withdrawalSource
   })
+  const exceedsExternalWithdrawLimit = maxWithdrawAssets !== undefined && withdrawAmount.bn > effectiveMaxWithdrawAssets
+  const effectiveWithdrawError =
+    actionDisabledReason ||
+    (exceedsExternalWithdrawLimit ? 'Amount exceeds currently available withdraw limit.' : undefined) ||
+    withdrawError
 
-  const actionLabel = isUnstake
-    ? 'You will unstake'
-    : withdrawalSource === 'staking'
-      ? 'You will unstake and redeem'
-      : 'You will redeem'
+  const actionLabel = getWithdrawActionLabel(isUnstake, withdrawalSource)
+  const transactionName = getTransactionName(routeType, activeFlow.periphery.isLoadingRoute)
 
-  const transactionName =
-    routeType === 'DIRECT_WITHDRAW'
-      ? 'Withdraw'
-      : routeType === 'DIRECT_UNSTAKE'
-        ? 'Unstake'
-        : activeFlow.periphery.isLoadingRoute
-          ? 'Fetching quote'
-          : 'Withdraw'
-
-  const showApprove = routeType === 'ENSO'
+  const showApprove = !!activeFlow.actions.prepareApprove && !activeFlow.periphery.isAllowanceSufficient
 
   const assetTokenPrice =
     assetToken?.address && assetToken?.chainID
@@ -306,8 +456,12 @@ export const WidgetWithdraw: FC<
     setHasAcceptedPriceImpact(false)
   }, [priceImpactAcceptanceKey])
 
+  const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
+  const shouldShowZapUi = !isBaseWithdrawToken
+  const canShowAssetTokenSelector = canOpenTokenSelector && !shouldShowZapUi
+
   const zapToken = useMemo(() => {
-    if (withdrawToken === assetAddress) return undefined
+    if (!shouldShowZapUi) return undefined
 
     const getExpectedAmount = () => {
       if (isUnstake) {
@@ -326,8 +480,7 @@ export const WidgetWithdraw: FC<
       isLoading: isUnstake ? false : activeFlow.periphery.isLoadingRoute
     }
   }, [
-    withdrawToken,
-    assetAddress,
+    shouldShowZapUi,
     isUnstake,
     requiredShares,
     vault?.decimals,
@@ -341,7 +494,7 @@ export const WidgetWithdraw: FC<
   ])
 
   const formattedWithdrawAmount = formatTAmount({ value: withdrawAmount.bn, decimals: assetToken?.decimals ?? 18 })
-  const needsApproval = showApprove && !activeFlow.periphery.isAllowanceSufficient
+  const needsApproval = showApprove
 
   const approvalToken = withdrawalSource === 'staking' ? stakingToken : vault
   const formattedApprovalAmount = formatTAmount({ value: requiredShares, decimals: approvalToken?.decimals ?? 18 })
@@ -358,26 +511,25 @@ export const WidgetWithdraw: FC<
       }
     }
 
-    const withdrawLabel = routeType === 'DIRECT_UNSTAKE' ? 'Unstake' : 'Withdraw'
+    const { actionLabel, progressLabel, pastTenseLabel } = getWithdrawActionCopy(routeType)
 
-    // Cross-chain transactions show different success messages
     if (isCrossChain) {
       return {
         prepare: activeFlow.actions.prepareWithdraw,
-        label: withdrawLabel,
-        confirmMessage: `${routeType === 'DIRECT_UNSTAKE' ? 'Unstaking' : 'Withdrawing'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
+        label: actionLabel,
+        confirmMessage: `${progressLabel} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
         successTitle: 'Transaction Submitted',
-        successMessage: `Your cross-chain ${withdrawLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
+        successMessage: `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
         notification: withdrawNotificationParams
       }
     }
 
     return {
       prepare: activeFlow.actions.prepareWithdraw,
-      label: withdrawLabel,
-      confirmMessage: `${routeType === 'DIRECT_UNSTAKE' ? 'Unstaking' : 'Withdrawing'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
-      successTitle: `${withdrawLabel} successful!`,
-      successMessage: `You have ${routeType === 'DIRECT_UNSTAKE' ? 'unstaked' : 'withdrawn'} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
+      label: actionLabel,
+      confirmMessage: `${progressLabel} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}`,
+      successTitle: `${actionLabel} successful!`,
+      successMessage: `You have ${pastTenseLabel} ${formattedWithdrawAmount} ${assetToken?.symbol || ''}.`,
       notification: withdrawNotificationParams
     }
   }, [
@@ -396,11 +548,8 @@ export const WidgetWithdraw: FC<
 
   const handleWithdrawSuccess = useCallback(() => {
     const sharesToWithdraw = formatUnits(withdrawAmount.bn, assetToken?.decimals ?? 18)
-    const priceUsd =
-      assetToken?.address && assetToken?.chainID
-        ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
-        : 0
-    const valueUsd = Number(sharesToWithdraw) * priceUsd
+    const priceUsd = assetTokenPrice
+    const valueUsd = Number(sharesToWithdraw) * assetTokenPrice
 
     trackEvent(PLAUSIBLE_EVENTS.WITHDRAW, {
       props: {
@@ -432,10 +581,8 @@ export const WidgetWithdraw: FC<
   }, [
     withdrawAmount.bn,
     assetToken?.decimals,
-    assetToken?.address,
-    assetToken?.chainID,
     outputToken?.symbol,
-    getPrice,
+    assetTokenPrice,
     trackEvent,
     chainId,
     vaultAddress,
@@ -453,7 +600,7 @@ export const WidgetWithdraw: FC<
   if (isLoadingVaultData) {
     return (
       <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
-        <WidgetHeader title="Withdraw" />
+        <WidgetHeader title="Withdraw" actions={headerActions} />
         <div className="flex items-center justify-center flex-1 p-6">
           <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
         </div>
@@ -465,6 +612,36 @@ export const WidgetWithdraw: FC<
   // Render
   // ============================================================================
   const isSettingsVisible = !!account && !!isSettingsOpen
+  const onAllowanceClick =
+    needsApproval && activeFlow.periphery.allowance > 0n && pricePerShare > 0n
+      ? (): void => {
+          const underlyingAmount =
+            (activeFlow.periphery.allowance * pricePerShare) / 10n ** BigInt(vault?.decimals ?? 18)
+          setWithdrawInput(formatUnits(underlyingAmount, assetToken?.decimals ?? 18))
+        }
+      : undefined
+  const withdrawButtonLabel = getWithdrawButtonLabel(
+    activeFlow.periphery.isLoadingRoute,
+    needsApproval,
+    transactionName
+  )
+  const isWithdrawButtonDisabled =
+    !!effectiveWithdrawError ||
+    withdrawAmount.bn === 0n ||
+    !currentStep?.prepare?.isSuccess ||
+    activeFlow.periphery.isLoadingRoute ||
+    isActionDisabled ||
+    withdrawAmount.isDebouncing ||
+    (needsApproval && !activeFlow.periphery.prepareApproveEnabled) ||
+    (!needsApproval && !activeFlow.periphery.prepareWithdrawEnabled)
+  const showSettingsButton = !!account && !!onOpenSettings
+  const zapNotificationText = getZapNotificationText(isUnstake, shouldShowZapUi)
+  const onRemoveZap = canOpenTokenSelector
+    ? (): void => {
+        setSelectedToken(resolvedDisplayAssetAddress)
+        setSelectedChainId(chainId)
+      }
+    : undefined
 
   const detailsSection = (
     <WithdrawDetails
@@ -476,7 +653,7 @@ export const WidgetWithdraw: FC<
       expectedOut={activeFlow.periphery.expectedOut}
       outputDecimals={outputToken?.decimals ?? 18}
       outputSymbol={outputToken?.symbol}
-      showSwapRow={withdrawToken !== assetAddress && !isUnstake}
+      showSwapRow={withdrawToken !== resolvedDisplayAssetAddress && !isUnstake}
       withdrawAmountSimple={
         withdrawAmount.bn > 0n ? formatWidgetValue(withdrawAmount.bn, assetToken?.decimals ?? 18) : '0'
       }
@@ -487,19 +664,10 @@ export const WidgetWithdraw: FC<
       outputUsdPrice={outputTokenPrice}
       routeType={routeType}
       onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
-      allowance={showApprove ? activeFlow.periphery.allowance : undefined}
-      allowanceTokenDecimals={showApprove ? (vault?.decimals ?? 18) : undefined}
-      allowanceTokenSymbol={showApprove ? vault?.symbol : undefined}
-      onAllowanceClick={
-        showApprove && activeFlow.periphery.allowance > 0n && pricePerShare > 0n
-          ? () => {
-              // Convert vault shares allowance to underlying asset amount
-              const underlyingAmount =
-                (activeFlow.periphery.allowance * pricePerShare) / 10n ** BigInt(vault?.decimals ?? 18)
-              setWithdrawInput(formatUnits(underlyingAmount, assetToken?.decimals ?? 18))
-            }
-          : undefined
-      }
+      allowance={needsApproval ? activeFlow.periphery.allowance : undefined}
+      allowanceTokenDecimals={needsApproval ? (vault?.decimals ?? 18) : undefined}
+      allowanceTokenSymbol={needsApproval ? vault?.symbol : undefined}
+      onAllowanceClick={onAllowanceClick}
     />
   )
 
@@ -544,30 +712,15 @@ export const WidgetWithdraw: FC<
               onClick={() => setShowTransactionOverlay(true)}
               variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
               isBusy={activeFlow.periphery.isLoadingRoute}
-              disabled={
-                !!withdrawError ||
-                withdrawAmount.bn === 0n ||
-                activeFlow.periphery.isLoadingRoute ||
-                withdrawAmount.isDebouncing ||
-                (showApprove &&
-                  !activeFlow.periphery.isAllowanceSufficient &&
-                  !activeFlow.periphery.prepareApproveEnabled) ||
-                ((!showApprove || activeFlow.periphery.isAllowanceSufficient) &&
-                  !activeFlow.periphery.prepareWithdrawEnabled) ||
-                (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
-              }
+              disabled={isWithdrawButtonDisabled || (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)}
               className="w-full"
               classNameOverride="yearn--button--nextgen w-full"
             >
-              {activeFlow.periphery.isLoadingRoute
-                ? 'Fetching quote'
-                : showApprove && !activeFlow.periphery.isAllowanceSufficient
-                  ? `Approve & ${transactionName}`
-                  : transactionName}
+              {withdrawButtonLabel}
             </Button>
           )}
         </div>
-        {account && onOpenSettings ? (
+        {showSettingsButton ? (
           <button
             type="button"
             onClick={onOpenSettings}
@@ -590,11 +743,14 @@ export const WidgetWithdraw: FC<
 
   return (
     <div
-      className={cl('flex flex-col relative border border-border h-full', { 'rounded-lg': !disableBorderRadius })}
+      className={cl('flex flex-col relative h-full', {
+        'border border-border': !hideContainerBorder,
+        'rounded-lg': !hideContainerBorder && !disableBorderRadius
+      })}
       data-tour="vault-detail-withdraw-widget"
     >
-      <WidgetHeader title="Withdraw" />
-      <div className="flex flex-col flex-1 p-6 pt-2 gap-6">
+      <WidgetHeader title="Withdraw" actions={headerActions} />
+      <div className="flex flex-col flex-1 p-6 pt-2 gap-3">
         <div>
           {/* Withdraw From Selector */}
           {hasBothBalances && <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />}
@@ -605,64 +761,59 @@ export const WidgetWithdraw: FC<
               input={withdrawInput}
               title="Amount"
               placeholder="0.00"
-              balance={totalBalanceInUnderlying.raw}
+              balance={effectiveMaxWithdrawAssets}
               decimals={assetToken?.decimals ?? 18}
               symbol={assetToken?.symbol || 'tokens'}
-              disabled={!!hasBothBalances && !withdrawalSource}
-              errorMessage={withdrawError || undefined}
+              disabled={disableAmountInput || (!!hasBothBalances && !withdrawalSource)}
+              errorMessage={effectiveWithdrawError || undefined}
               inputTokenUsdPrice={assetTokenPrice}
               outputTokenUsdPrice={outputTokenPrice}
               tokenAddress={assetToken?.address}
               tokenChainId={assetToken?.chainID}
-              showTokenSelector={ensoEnabled && withdrawToken === assetAddress}
-              onTokenSelectorClick={() => setShowTokenSelector(true)}
+              showTokenSelector={canShowAssetTokenSelector}
+              onTokenSelectorClick={canOpenTokenSelector ? () => setShowTokenSelector(true) : undefined}
               onInputChange={(value: bigint) => {
-                if (value === totalBalanceInUnderlying.raw) {
-                  const exactAmount = formatUnits(totalBalanceInUnderlying.raw, assetToken?.decimals ?? 18)
+                if (value === effectiveMaxWithdrawAssets) {
+                  const exactAmount = formatUnits(effectiveMaxWithdrawAssets, assetToken?.decimals ?? 18)
                   withdrawInput[2](exactAmount)
                 }
               }}
               zapToken={zapToken}
-              onRemoveZap={() => {
-                setSelectedToken(assetAddress)
-                setSelectedChainId(chainId)
-              }}
-              zapNotificationText={
-                isUnstake
-                  ? 'This transaction will unstake'
-                  : ensoEnabled && withdrawToken !== assetAddress
-                    ? '⚡ This transaction will use Enso to Zap to:'
-                    : undefined
-              }
+              onRemoveZap={onRemoveZap}
+              zapNotificationText={zapNotificationText}
             />
           </div>
+
+          {contentBelowInput}
         </div>
 
-        {collapseDetails ? (
-          <>
-            <button
-              type="button"
-              onClick={() => setIsDetailsPanelOpen(true)}
-              aria-expanded={isDetailsPanelOpen}
-              className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-surface"
-            >
-              <span>Your Transaction Details</span>
-              <IconChevron className="size-4 text-text-secondary" direction="right" />
-            </button>
-            {actionRow}
-          </>
-        ) : (
-          <>
-            {/* Details Section */}
-            {detailsSection}
+        {!hideActionButton ? (
+          collapseDetails ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsDetailsPanelOpen(true)}
+                aria-expanded={isDetailsPanelOpen}
+                className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-surface"
+              >
+                <span>Your Transaction Details</span>
+                <IconChevron className="size-4 text-text-secondary" direction="right" />
+              </button>
+              {!hideActionButton ? actionRow : null}
+            </>
+          ) : (
+            <>
+              {/* Details Section */}
+              {detailsSection}
 
-            {/* Action Button */}
-            {actionRow}
-          </>
-        )}
+              {/* Action Button */}
+              {!hideActionButton ? actionRow : null}
+            </>
+          )
+        ) : null}
       </div>
 
-      {collapseDetails && isDetailsPanelOpen ? (
+      {collapseDetails && isDetailsPanelOpen && !hideActionButton ? (
         <div className="absolute inset-0 z-10 bg-surface rounded-lg flex flex-col">
           <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
             <span className="text-base font-semibold text-text-primary">Your Transaction Details</span>
@@ -676,7 +827,7 @@ export const WidgetWithdraw: FC<
             </button>
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">{detailsSection}</div>
-          <div className="border-t border-border px-6 py-4">{actionRow}</div>
+          {!hideActionButton ? <div className="border-t border-border px-6 py-4">{actionRow}</div> : null}
         </div>
       ) : null}
 
@@ -712,7 +863,7 @@ export const WidgetWithdraw: FC<
         stakingAddress={stakingAddress}
         withdrawalSource={withdrawalSource}
         routeType={routeType}
-        isZap={routeType === 'ENSO' && selectedToken !== assetAddress}
+        isZap={routeType === 'ENSO' && shouldShowZapUi}
         isLoadingQuote={activeFlow.periphery.isLoadingRoute}
       />
 
@@ -731,7 +882,7 @@ export const WidgetWithdraw: FC<
         value={selectedToken}
         excludeTokens={stakingAddress ? [stakingAddress] : undefined}
         priorityTokens={priorityTokens}
-        assetAddress={assetAddress}
+        assetAddress={resolvedDisplayAssetAddress}
         vaultAddress={vaultAddress}
         stakingAddress={stakingAddress}
       />

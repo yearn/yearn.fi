@@ -7,6 +7,8 @@ export type TNotificationType =
   | 'approve'
   | 'deposit'
   | 'withdraw'
+  | 'start cooldown'
+  | 'cancel cooldown'
   | 'zap'
   | 'crosschain zap'
   | 'withdraw zap'
