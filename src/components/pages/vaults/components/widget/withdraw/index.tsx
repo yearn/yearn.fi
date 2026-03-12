@@ -797,7 +797,8 @@ export function WidgetWithdraw({
                   isAllowanceSufficient: approvalState.isAllowanceSufficient,
                   prepareApproveEnabled: Boolean(activeFlow.periphery.prepareApproveEnabled),
                   prepareWithdrawEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
-                }) || (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
+                }) ||
+                (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
               }
               className="w-full"
               classNameOverride="yearn--button--nextgen w-full"
