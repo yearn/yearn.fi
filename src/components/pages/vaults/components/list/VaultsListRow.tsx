@@ -22,6 +22,7 @@ import {
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { getVaultPrimaryLogoSrc } from '@pages/vaults/utils/vaultLogo'
@@ -194,16 +195,17 @@ function getYvUsdListMetrics({
 
   const vaultTvl = getVaultTVL(currentVault)
   const unlockedApy = yvUsdMetrics?.unlocked.apy ?? (apr?.forwardAPR?.netAPR || apr?.netAPR || 0)
-  const unlockedTvl = yvUsdMetrics?.unlocked.tvl ?? vaultTvl.tvl ?? 0
   const lockedApy = yvUsdMetrics?.locked.apy ?? 0
   const lockedTvl = yvUsdMetrics?.locked.tvl ?? 0
+  const totalTvl = vaultTvl.tvl ?? yvUsdMetrics?.unlocked.tvl ?? 0
+  const tvlBreakdown = getYvUsdTvlBreakdown({ totalTvl, lockedTvl })
 
   return {
     unlockedApy,
     lockedApy,
-    unlockedTvl,
-    lockedTvl,
-    combinedTvl: vaultTvl.tvl ?? unlockedTvl + lockedTvl,
+    unlockedTvl: tvlBreakdown.unlockedTvl,
+    lockedTvl: tvlBreakdown.lockedTvl,
+    combinedTvl: tvlBreakdown.totalTvl,
     hasInfinifiPointsNote: Boolean(yvUsdMetrics?.locked.hasInfinifiPoints || yvUsdMetrics?.unlocked.hasInfinifiPoints)
   }
 }
