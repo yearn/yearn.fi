@@ -1,30 +1,33 @@
 import { useFetch } from '@shared/hooks/useFetch'
 import { toAddress } from '@shared/utils'
 import {
-  type TYvUsdAprServiceResponse,
-  type TYvUsdAprServiceVault,
-  yvUsdAprServiceSchema
+  type TYvUsdAprServicePointsResponse,
+  type TYvUsdAprServicePointsVault,
+  yvUsdAprServicePointsSchema
 } from '@shared/utils/schemas/yvUsdAprServiceSchema'
 import { YVUSD_APR_SERVICE_ENDPOINT, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '../utils/yvUsd'
 
-type TYvUsdAprServiceData = {
-  unlocked?: TYvUsdAprServiceVault
-  locked?: TYvUsdAprServiceVault
+type TYvUsdPointsData = {
+  unlocked: boolean
+  locked: boolean
   isLoading: boolean
-  error?: Error
 }
 
 function getAprServiceVault(
-  data: TYvUsdAprServiceResponse | undefined,
+  data: TYvUsdAprServicePointsResponse | undefined,
   address: string
-): TYvUsdAprServiceVault | undefined {
+): TYvUsdAprServicePointsVault | undefined {
   return Object.values(data ?? {}).find((vault) => toAddress(vault.address) === address)
 }
 
-export function useYvUsdAprService(): TYvUsdAprServiceData {
-  const { data, isLoading, error } = useFetch<TYvUsdAprServiceResponse>({
+function hasInfinifiPoints(vault?: TYvUsdAprServicePointsVault): boolean {
+  return (vault?.meta?.strategies || []).some((strategy) => strategy.points === true)
+}
+
+export function useYvUsdPoints(): TYvUsdPointsData {
+  const { data, isLoading } = useFetch<TYvUsdAprServicePointsResponse>({
     endpoint: YVUSD_APR_SERVICE_ENDPOINT,
-    schema: yvUsdAprServiceSchema,
+    schema: yvUsdAprServicePointsSchema,
     config: {
       cacheDuration: 30 * 1000,
       shouldEnableRefreshInterval: true,
@@ -36,9 +39,8 @@ export function useYvUsdAprService(): TYvUsdAprServiceData {
   const locked = getAprServiceVault(data, YVUSD_LOCKED_ADDRESS)
 
   return {
-    unlocked,
-    locked,
-    isLoading,
-    error: error ?? undefined
+    unlocked: hasInfinifiPoints(unlocked),
+    locked: hasInfinifiPoints(locked),
+    isLoading
   }
 }

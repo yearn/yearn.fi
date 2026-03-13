@@ -9,6 +9,7 @@ import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVau
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
 import type { WidgetActionType } from '@pages/vaults/types'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { getVaultPrimaryLogoSrc } from '@pages/vaults/utils/vaultLogo'
@@ -419,9 +420,11 @@ function VaultOverviewCard({
   const lockedMonthly = lockedVault?.apr?.points?.monthAgo ?? 0
   const lockedWeekly = lockedVault?.apr?.points?.weekAgo ?? 0
   const lockedHistorical = getYvUsdHistoricalValue(lockedMonthly, lockedWeekly)
-  const unlockedTvl = unlockedVault?.tvl?.tvl ?? yvUsdMetrics?.unlocked.tvl ?? 0
+  const totalTvl = currentVault.tvl?.tvl ?? unlockedVault?.tvl?.tvl ?? yvUsdMetrics?.unlocked.tvl ?? 0
   const lockedTvl = lockedVault?.tvl?.tvl ?? yvUsdMetrics?.locked.tvl ?? 0
-  const combinedTvl = currentVault.tvl?.tvl ?? unlockedTvl + lockedTvl
+  const tvlBreakdown = getYvUsdTvlBreakdown({ totalTvl, lockedTvl })
+  const unlockedTvl = tvlBreakdown.unlockedTvl
+  const combinedTvl = tvlBreakdown.totalTvl
   const isLockedApyVariant = yvUsdApyVariant === 'locked'
   const selectedForwardApy = isLockedApyVariant ? lockedForwardApy : unlockedForwardApy
   const selectedHistoricalApy = isLockedApyVariant ? lockedHistorical : unlockedHistorical
