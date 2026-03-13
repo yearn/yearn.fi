@@ -1,8 +1,8 @@
 import type { TNormalizedBN } from '@shared/types'
 import { isZeroAddress, toNormalizedBN } from '@shared/utils'
+import { getApproveAbi } from '@shared/utils/approve'
 import { useCallback, useState } from 'react'
 import type { Address, Hex } from 'viem'
-import { erc20Abi } from 'viem'
 import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
 
@@ -171,7 +171,7 @@ export const useSolverEnso = ({
   const isAllowanceSufficient = !allowanceSpender || allowance >= amountIn
   const prepareApproveEnabled = routerAddress && !isAllowanceSufficient && isValidInput && enabled
   const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
-    abi: erc20Abi,
+    abi: getApproveAbi(tokenIn),
     functionName: 'approve',
     address: tokenIn,
     args: routerAddress ? [routerAddress, amountIn] : undefined,

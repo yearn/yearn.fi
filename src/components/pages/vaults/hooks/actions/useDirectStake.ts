@@ -1,6 +1,6 @@
 import type { UseWidgetDepositFlowReturn } from '@pages/vaults/types'
+import { getApproveAbi } from '@shared/utils/approve'
 import type { Address } from 'viem'
-import { erc20Abi } from 'viem'
 import { type UseSimulateContractReturnType, useReadContract, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
 import { getDirectStakeCall, getStakePreviewCall, normalizeStakingSource } from './stakingAdapter'
@@ -50,7 +50,7 @@ export function useDirectStake(params: UseDirectStakeParams): UseWidgetDepositFl
 
   // Prepare approve transaction
   const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
-    abi: erc20Abi,
+    abi: getApproveAbi(params.vaultAddress),
     functionName: 'approve',
     address: params.vaultAddress,
     args: params.amount > 0n && params.stakingAddress ? [params.stakingAddress, params.amount] : undefined,
