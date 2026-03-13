@@ -177,7 +177,7 @@ type TFormatCurrencyWithPrecision = {
   amount: number
   maxFractionDigits: number
   intlOptions: Intl.NumberFormatOptions
-  locale: string
+  locales: string[]
   symbol: string
 }
 
@@ -256,10 +256,10 @@ function formatCurrencyWithPrecision({
   amount,
   maxFractionDigits,
   intlOptions,
-  locale,
+  locales,
   symbol
 }: TFormatCurrencyWithPrecision): string {
-  return new Intl.NumberFormat([locale, 'en-US'], {
+  return new Intl.NumberFormat(locales, {
     ...intlOptions,
     maximumFractionDigits: Math.max(maxFractionDigits, intlOptions.maximumFractionDigits || maxFractionDigits)
   })
@@ -277,13 +277,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
    ** - If smbol is percent, then we will display as `12 %` or `12%` (US)
    ** - If symbol is any other token, we will display as `123,79 USDC` or `USDC 123.79` (US)
    **********************************************************************************************/
-  let locale = 'en-US'
-  if (typeof navigator !== 'undefined') {
-    locale = navigator.language || 'fr-FR'
-  }
-  const locales = []
-  locales.push('en-US')
-  locales.push(locale)
+  const locales = resolveLocales()
 
   const { shouldDisplaySymbol, shouldCompactValue, ...rest } = options
   const intlOptions: Intl.NumberFormatOptions = rest
@@ -298,7 +292,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
   }
 
   if (isPercent && amount > 5 && shouldCompactValue) {
-    return `> ${new Intl.NumberFormat([locale, 'en-US'], intlOptions).format(5).replace('EUR', symbol)}`
+    return `> ${new Intl.NumberFormat(locales, intlOptions).format(5).replace('EUR', symbol)}`
   }
 
   /**********************************************************************************************
@@ -307,7 +301,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
    ** - 267839372 would be `267,84 M` or  `267.84M` (US)
    **********************************************************************************************/
   if (amount > 10_000 && shouldCompactValue) {
-    return new Intl.NumberFormat([locale, 'en-US'], {
+    return new Intl.NumberFormat(locales, {
       ...intlOptions,
       notation: 'compact',
       compactDisplay: 'short'
@@ -327,7 +321,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
         amount,
         maxFractionDigits: 2,
         intlOptions,
-        locale,
+        locales,
         symbol
       })
     }
@@ -345,7 +339,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
         amount,
         maxFractionDigits: 8,
         intlOptions,
-        locale,
+        locales,
         symbol
       })
     }
@@ -354,7 +348,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
         amount,
         maxFractionDigits: 12,
         intlOptions,
-        locale,
+        locales,
         symbol
       })
     }
@@ -362,11 +356,11 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
       amount,
       maxFractionDigits: decimals,
       intlOptions,
-      locale,
+      locales,
       symbol
     })
   }
-  return new Intl.NumberFormat([locale, 'en-US'], intlOptions).format(amount).replace('EUR', symbol)
+  return new Intl.NumberFormat(locales, intlOptions).format(amount).replace('EUR', symbol)
 }
 
 export function formatTAmount(props: TAmount): string {
