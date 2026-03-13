@@ -60,7 +60,7 @@ import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshot
 import { getNetwork } from '@shared/utils/wagmi'
 import { useQueryClient } from '@tanstack/react-query'
 import type { MouseEvent, ReactElement } from 'react'
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
 import { VaultsListChip } from './VaultsListChip'
@@ -210,7 +210,32 @@ function getYvUsdListMetrics({
   }
 }
 
-export function VaultsListRow({
+type TVaultsListRowProps = {
+  currentVault: TKongVaultInput
+  flags?: TVaultRowFlags
+  hrefOverride?: string
+  apyDisplayVariant?: TVaultForwardAPYVariant
+  showBoostDetails?: boolean
+  compareVaultKeys?: string[]
+  onToggleCompare?: (vault: TKongVaultInput) => void
+  activeChains?: number[]
+  activeCategories?: string[]
+  onToggleChain?: (chainId: number) => void
+  onToggleCategory?: (category: string) => void
+  onToggleType?: (type: string) => void
+  activeProductType?: 'v3' | 'lp' | 'all'
+  onToggleVaultType?: (type: 'v3' | 'lp') => void
+  showStrategies?: boolean
+  shouldCollapseChips?: boolean
+  isExpanded?: boolean
+  onExpandedChange?: (vaultKey: string, next: boolean) => void
+  showAllocatorChip?: boolean
+  showHoldingsChipOverride?: boolean
+  showProductTypeChipOverride?: boolean
+  mobileSecondaryMetric?: 'tvl' | 'holdings'
+}
+
+function VaultsListRowComponent({
   currentVault,
   flags,
   hrefOverride,
@@ -233,30 +258,7 @@ export function VaultsListRow({
   showProductTypeChipOverride,
   mobileSecondaryMetric = 'tvl',
   showAllocatorChip = true
-}: {
-  currentVault: TKongVaultInput
-  flags?: TVaultRowFlags
-  hrefOverride?: string
-  apyDisplayVariant?: TVaultForwardAPYVariant
-  showBoostDetails?: boolean
-  compareVaultKeys?: string[]
-  onToggleCompare?: (vault: TKongVaultInput) => void
-  activeChains?: number[]
-  activeCategories?: string[]
-  onToggleChain?: (chainId: number) => void
-  onToggleCategory?: (category: string) => void
-  onToggleType?: (type: string) => void
-  activeProductType?: 'v3' | 'lp' | 'all'
-  onToggleVaultType?: (type: 'v3' | 'lp') => void
-  showStrategies?: boolean
-  shouldCollapseChips?: boolean
-  isExpanded?: boolean
-  onExpandedChange?: (next: boolean) => void
-  showAllocatorChip?: boolean
-  showHoldingsChipOverride?: boolean
-  showProductTypeChipOverride?: boolean
-  mobileSecondaryMetric?: 'tvl' | 'holdings'
-}): ReactElement {
+}: TVaultsListRowProps): ReactElement {
   const navigate = useNavigate()
   const trackEvent = usePlausible()
   const chainID = getVaultChainID(currentVault)
@@ -347,7 +349,7 @@ export function VaultsListRow({
   }
   const handleExpandedChange = (next: boolean): void => {
     if (onExpandedChange) {
-      onExpandedChange(next)
+      onExpandedChange(vaultKey, next)
       return
     }
     setIsExpandedState(next)
@@ -510,7 +512,7 @@ export function VaultsListRow({
         <div
           className={cl(
             'absolute inset-0',
-            'opacity-0 transition-opacity duration-300 pointer-events-none',
+            'opacity-0 transition-opacity duration-100 pointer-events-none',
             !isHoveringInteractive ? 'group-hover:opacity-20 group-focus-visible:opacity-20' : '',
             'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
           )}
@@ -519,7 +521,7 @@ export function VaultsListRow({
           <div
             className={cl(
               'absolute inset-0',
-              'opacity-0 transition-opacity duration-300 pointer-events-none',
+              'opacity-0 transition-opacity duration-100 pointer-events-none',
               !isHoveringInteractive ? 'group-hover:opacity-100 group-focus-visible:opacity-100' : '',
               'bg-[linear-gradient(180deg,transparent,var(--color-surface))]'
             )}
@@ -919,3 +921,6 @@ export function VaultsListRow({
     </div>
   )
 }
+
+export const VaultsListRow = memo(VaultsListRowComponent)
+VaultsListRow.displayName = 'VaultsListRow'

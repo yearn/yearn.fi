@@ -79,9 +79,6 @@ export function VaultsAuxiliaryList({
           const key = getVaultListKey(vault)
           const rowApyDisplayVariant = resolveApyDisplayVariant?.(vault) ?? apyDisplayVariant
           const isExpanded = expandedVaultKeys ? Boolean(expandedVaultKeys[key]) : undefined
-          const handleExpandedChange = onExpandedChange
-            ? (next: boolean): void => onExpandedChange(key, next)
-            : undefined
           return (
             <VaultsListRow
               currentVault={vault}
@@ -99,7 +96,7 @@ export function VaultsAuxiliaryList({
               shouldCollapseChips={shouldCollapseChips}
               showStrategies={showStrategies}
               isExpanded={isExpanded}
-              onExpandedChange={handleExpandedChange}
+              onExpandedChange={onExpandedChange}
             />
           )
         }}

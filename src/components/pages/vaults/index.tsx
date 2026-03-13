@@ -399,7 +399,7 @@ export default function Index(): ReactElement {
                   shouldCollapseChips={shouldCollapseChips}
                   showStrategies={displayedShowStrategies}
                   isExpanded={Boolean(expandedVaultKeys[key])}
-                  onExpandedChange={(next): void => handleExpandedChange(key, next)}
+                  onExpandedChange={handleExpandedChange}
                 />
               )
             }}
