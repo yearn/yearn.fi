@@ -35,6 +35,7 @@ type TCurvePoolsApiResponse = {
 const CURVE_POOLS_CACHE_TTL_MS = 30 * 60 * 1000
 const CURVE_POOLS_CACHE_GC_MS = 60 * 60 * 1000
 const CURVE_POOLS_ENDPOINT = 'https://api.curve.finance/v1/getPools/all'
+const YVUSD_API_URL = 'https://yvusd-api.yearn.fi/api/aprs'
 const INFO_LABEL_CLASS = 'w-full text-sm text-text-secondary md:w-auto md:pr-4'
 
 export function extractCurvePools(payload: unknown): TCurvePoolEntry[] {
@@ -325,6 +326,26 @@ export function VaultInfoSection({
             </a>
           </div>
         </div>
+
+        {isYvUsd ? (
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+            <p className={INFO_LABEL_CLASS}>{'yvUSD API'}</p>
+            <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+              <a
+                href={YVUSD_API_URL}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+                }
+                suppressHydrationWarning
+              >
+                {'View API Data'}
+                <IconLinkOut className={'size-3'} />
+              </a>
+            </div>
+          </div>
+        ) : null}
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
           <p className={INFO_LABEL_CLASS}>{'Vault Snapshot Data'}</p>
