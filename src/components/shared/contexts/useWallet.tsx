@@ -121,17 +121,27 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     priorityChainID: 1
   })
   /**************************************************************************
-   ** Balance queries stream updates across multiple chains. Deferring the
-   ** rendered snapshot keeps vault-list interactions responsive while the
-   ** wallet settles.
+   ** Balance queries stream updates across multiple chains. Hold the last
+   ** settled snapshot while the wallet is loading so list consumers do not
+   ** rerender on every intermediate balance update during connect.
    **************************************************************************/
-  const deferredTokensRaw = useDeferredValue(tokensRaw)
+  const settledTokensRawRef = useRef<TYChainTokens>({})
+  const settledOwnerRef = useRef(userAddress)
+  if (settledOwnerRef.current !== userAddress) {
+    settledOwnerRef.current = userAddress
+    settledTokensRawRef.current = {}
+  }
+  if (!isLoading) {
+    settledTokensRawRef.current = tokensRaw as TYChainTokens
+  }
+  const visibleTokensRaw = isLoading ? settledTokensRawRef.current : (tokensRaw as TYChainTokens)
+  const deferredTokensRaw = useDeferredValue(visibleTokensRaw)
   const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
     const _tokens = { ...deferredTokensRaw }
 
     return _tokens as TYChainTokens
   }, [deferredTokensRaw])
-  const isBalancesPending = deferredTokensRaw !== tokensRaw
+  const isBalancesPending = deferredTokensRaw !== visibleTokensRaw
 
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
@@ -178,11 +188,12 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 
   const yvUsdUnlockedSharePrice = getYvUsdSharePrice(yvUsdUnlockedVault)
   const yvUsdLockedSharePrice = getYvUsdSharePrice(yvUsdLockedVault)
+  const shouldResolveStakingConversions = Boolean(userAddress && !isLoading && !isBalancesPending)
 
   const stakingConvertedAssets = useStakingAssetConversions({
     allVaults,
     getBalance,
-    userAddress
+    userAddress: shouldResolveStakingConversions ? userAddress : undefined
   })
 
   const getVaultHoldingsUsd = useCallback(

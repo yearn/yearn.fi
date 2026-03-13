@@ -5,5 +5,5 @@ export function shouldUseDiscoveryFallbackToken(params: {
   hasPositiveBalanceCache: boolean
 }): boolean {
   const { token, hasPositiveBalanceCache } = params
-  return Boolean(token.isStakingToken || token.isCatalogVault === false || hasPositiveBalanceCache)
+  return Boolean(token.isStakingToken || hasPositiveBalanceCache)
 }

@@ -275,8 +275,7 @@ function VaultsListRowComponent({
   const isYvUsd = isYvUsdAddress(vaultAddress)
   const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
   const { address } = useWeb3()
-  const { getVaultHoldingsUsd } = useWallet()
-  const { getBalance } = useWallet()
+  const { getVaultHoldingsUsd, getBalance, isLoading: isWalletLoading } = useWallet()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const [isExpandedState, setIsExpandedState] = useState(false)
   const isExpanded = isExpandedProp ?? isExpandedState
@@ -419,6 +418,9 @@ function VaultsListRowComponent({
   const showHoldingsValue = hasHoldings
   const holdingsFormatOptions = isYvUsd ? YVUSD_HOLDINGS_FORMAT_OPTIONS : undefined
   const holdingsValue = useMemo(() => {
+    if (isWalletLoading) {
+      return 0
+    }
     if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
       return 0
     }
@@ -434,6 +436,7 @@ function VaultsListRowComponent({
     showHoldingsChip,
     mobileSecondaryMetric,
     isYvUsd,
+    isWalletLoading,
     getBalance,
     yvUsdLockedVault,
     yvUsdUnlockedVault,

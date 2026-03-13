@@ -181,7 +181,9 @@ export function useYearnTokens({
           upsertToken(tokens, vaultAssetTokenKey, {
             address: token.address,
             chainID,
-            decimals: token.decimals
+            decimals: token.decimals,
+            name: token.name,
+            symbol: token.symbol
           })
         }
       }

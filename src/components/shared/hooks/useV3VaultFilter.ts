@@ -82,7 +82,7 @@ export function useV3VaultFilter(
   enabled?: boolean
 ): TV3VaultFilterResult {
   const { vaults, allVaults, getPrice, isLoadingVaultList } = useYearn()
-  const { getBalance } = useWallet()
+  const { getBalance, isLoading: isWalletLoading } = useWallet()
   const { shouldHideDust } = useAppSettings()
   const isEnabled = enabled ?? true
   const searchValue = search ?? ''
@@ -124,6 +124,9 @@ export function useV3VaultFilter(
   const checkHasRawHoldings = useMemo(
     () =>
       (vault: TKongVault): boolean => {
+        if (isWalletLoading) {
+          return false
+        }
         const chainID = getVaultChainID(vault)
         const vaultBalance = getBalance({
           address: getVaultAddress(vault),
@@ -144,7 +147,7 @@ export function useV3VaultFilter(
         })
         return stakingBalance.raw > 0n
       },
-    [getBalance]
+    [getBalance, isWalletLoading]
   )
 
   const vaultIndex = useDeepCompareMemo(() => {
@@ -201,33 +204,38 @@ export function useV3VaultFilter(
       })
     })
 
-    Object.values(allVaults).forEach((vault) => {
-      if (getHoldingsAliasVaultAddress(getVaultAddress(vault))) {
-        return
-      }
-      if (!shouldIncludeVault(vault)) {
-        return
-      }
-      const key = getVaultKey(vault)
-      if (vaultMap.has(key)) {
-        return
-      }
-      if (!checkHasRawHoldings(vault)) {
-        return
-      }
-      const isRetired = Boolean(getVaultInfo(vault)?.isRetired)
-      upsertVault(vault, {
-        isActive: !isRetired,
-        isRetired,
-        isMigratable: Boolean(getVaultMigration(vault)?.available),
-        isBypassedHolding: true
+    if (!isWalletLoading) {
+      Object.values(allVaults).forEach((vault) => {
+        if (getHoldingsAliasVaultAddress(getVaultAddress(vault))) {
+          return
+        }
+        if (!shouldIncludeVault(vault)) {
+          return
+        }
+        const key = getVaultKey(vault)
+        if (vaultMap.has(key)) {
+          return
+        }
+        if (!checkHasRawHoldings(vault)) {
+          return
+        }
+        const isRetired = Boolean(getVaultInfo(vault)?.isRetired)
+        upsertVault(vault, {
+          isActive: !isRetired,
+          isRetired,
+          isMigratable: Boolean(getVaultMigration(vault)?.available),
+          isBypassedHolding: true
+        })
       })
-    })
+    }
 
     return vaultMap
-  }, [isEnabled, isEnabled ? vaults : null, isEnabled ? allVaults : null, checkHasRawHoldings])
+  }, [isEnabled, isEnabled ? vaults : null, isEnabled ? allVaults : null, checkHasRawHoldings, isWalletLoading])
 
   const walletFlags = useMemo(() => {
+    if (isWalletLoading) {
+      return new Map<string, TVaultWalletFlags>()
+    }
     const flags = new Map<string, TVaultWalletFlags>()
     vaultIndex.forEach((entry, key) => {
       const hasRawHoldings = entry.isBypassedHolding ? checkHasRawHoldings(entry.vault) : false
@@ -237,7 +245,7 @@ export function useV3VaultFilter(
       })
     })
     return flags
-  }, [vaultIndex, checkHasHoldings, checkHasAvailableBalance, checkHasRawHoldings])
+  }, [vaultIndex, checkHasHoldings, checkHasAvailableBalance, checkHasRawHoldings, isWalletLoading])
 
   const holdingsVaults = useMemo(() => {
     return Array.from(vaultIndex.values())

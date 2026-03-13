@@ -3,11 +3,58 @@ import { type UseQueryOptions, useQueries } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import type { TAddress } from '../types/address'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
-import { toAddress } from '../utils/tools.address'
 import { isZeroAddress } from '../utils/tools.is'
 import { getChainConfig } from './balanceQueryConfig'
 import { getBalances, type TUseBalancesTokens } from './useBalances.multichains'
+import { partitionTokensByQueryStage } from './useBalancesQueries.helpers'
 import { balanceQueryKeys } from './useBalancesQuery'
+
+type TBalanceQueryOptions = UseQueryOptions<
+  TDict<TToken>,
+  Error,
+  TDict<TToken>,
+  ReturnType<typeof balanceQueryKeys.byTokens>
+>
+
+function buildBalanceQueryOptions(
+  tokensByChain: TNDict<TUseBalancesTokens[]>,
+  userAddress: TAddress | undefined,
+  enabled: boolean
+): TBalanceQueryOptions[] {
+  return Object.entries(tokensByChain).map(([chainIdStr, chainTokens]) => {
+    const chainId = Number(chainIdStr)
+    const config = getChainConfig(chainId)
+    const tokenAddresses = chainTokens.map((t) => t.address)
+    const queryKey = balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses)
+
+    return {
+      queryKey,
+      queryFn: () => fetchTokenBalances(chainId, userAddress, chainTokens),
+      enabled: Boolean(enabled && userAddress && !isZeroAddress(userAddress) && chainTokens.length > 0),
+      staleTime: config.cache.staleTime,
+      gcTime: config.cache.gcTime,
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
+    }
+  })
+}
+
+function mergeQueryData(chainIds: number[], queries: Array<{ data?: TDict<TToken> }>): TChainTokens {
+  const combined: TChainTokens = {}
+
+  queries.forEach((query, index) => {
+    const chainId = chainIds[index]
+    if (chainId !== undefined && query.data) {
+      combined[chainId] = query.data
+    }
+  })
+
+  return combined
+}
 
 /*******************************************************************************
  ** Fetch token balances for a chain
@@ -57,79 +104,41 @@ export function useBalancesQueries(
   chainSuccessStatus: TNDict<boolean>
   chainErrorStatus: TNDict<boolean>
 } {
-  // Group tokens by chainId - use deep comparison to prevent unnecessary recalculation
-  const tokensByChain = useDeepCompareMemo(() => {
-    const grouped: TNDict<TUseBalancesTokens[]> = {}
-    const uniqueTokens: TNDict<Set<TAddress>> = {}
+  const { priorityTokensByChain, secondaryTokensByChain } = useDeepCompareMemo(
+    () => partitionTokensByQueryStage(tokens, options?.priorityChainId),
+    [tokens, options?.priorityChainId]
+  )
+  const isBaseEnabled = Boolean(options?.enabled !== false && userAddress && !isZeroAddress(userAddress))
+  const priorityChainIds = useMemo(() => Object.keys(priorityTokensByChain).map(Number), [priorityTokensByChain])
+  const secondaryChainIds = useMemo(() => Object.keys(secondaryTokensByChain).map(Number), [secondaryTokensByChain])
 
-    for (const token of tokens) {
-      if (!grouped[token.chainID]) {
-        grouped[token.chainID] = []
-        uniqueTokens[token.chainID] = new Set()
-      }
+  const priorityQueryOptions = useDeepCompareMemo(
+    () => buildBalanceQueryOptions(priorityTokensByChain, userAddress, isBaseEnabled),
+    [priorityTokensByChain, userAddress, isBaseEnabled]
+  )
+  const priorityQueries = useQueries({
+    queries: priorityQueryOptions
+  })
+  const hasPriorityQueries = priorityQueryOptions.length > 0
+  const areSecondaryChainsEnabled =
+    !hasPriorityQueries || priorityQueries.every((query) => query.isSuccess || query.isError)
 
-      const tokenAddress = toAddress(token.address)
-      if (!uniqueTokens[token.chainID].has(tokenAddress)) {
-        uniqueTokens[token.chainID].add(tokenAddress)
-        grouped[token.chainID].push(token)
-      }
-    }
-
-    return grouped
-  }, [tokens])
-
-  // Memoize the queries array to prevent recreation
-  const queryOptions = useDeepCompareMemo(() => {
-    return Object.entries(tokensByChain).map(([chainIdStr, chainTokens]) => {
-      const chainId = Number(chainIdStr)
-      const config = getChainConfig(chainId)
-      const tokenAddresses = chainTokens.map((t) => t.address)
-      const queryKey = balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses)
-
-      const queryOption: UseQueryOptions<
-        TDict<TToken>,
-        Error,
-        TDict<TToken>,
-        ReturnType<typeof balanceQueryKeys.byTokens>
-      > = {
-        queryKey,
-        queryFn: () => fetchTokenBalances(chainId, userAddress, chainTokens),
-        enabled: Boolean(
-          options?.enabled !== false && userAddress && !isZeroAddress(userAddress) && chainTokens.length > 0
-        ),
-        staleTime: config.cache.staleTime,
-        gcTime: config.cache.gcTime,
-        refetchInterval: false,
-        refetchOnWindowFocus: false,
-        refetchOnMount: false, // Don't refetch on mount if data exists
-        refetchOnReconnect: false, // Don't refetch on reconnect
-        retry: 3,
-        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
-      }
-
-      return queryOption
-    })
-  }, [tokensByChain, userAddress, options?.enabled])
-
-  // Create queries for each chain
-  const queries = useQueries({
-    queries: queryOptions
+  const secondaryQueryOptions = useDeepCompareMemo(
+    () => buildBalanceQueryOptions(secondaryTokensByChain, userAddress, isBaseEnabled && areSecondaryChainsEnabled),
+    [secondaryTokensByChain, userAddress, isBaseEnabled, areSecondaryChainsEnabled]
+  )
+  const secondaryQueries = useQueries({
+    queries: secondaryQueryOptions
   })
 
-  // Combine results
   const data = useMemo(() => {
-    const combined: TChainTokens = {}
-    const chainIds = Object.keys(tokensByChain).map(Number)
+    const priorityData = mergeQueryData(priorityChainIds, priorityQueries)
+    const secondaryData = mergeQueryData(secondaryChainIds, secondaryQueries)
+    return { ...priorityData, ...secondaryData }
+  }, [priorityChainIds, priorityQueries, secondaryChainIds, secondaryQueries])
 
-    queries.forEach((query, index) => {
-      const chainId = chainIds[index]
-      if (query.data) {
-        combined[chainId] = query.data
-      }
-    })
-
-    return combined
-  }, [queries, tokensByChain])
+  const queries = useMemo(() => [...priorityQueries, ...secondaryQueries], [priorityQueries, secondaryQueries])
+  const chainIds = useMemo(() => [...priorityChainIds, ...secondaryChainIds], [priorityChainIds, secondaryChainIds])
 
   // Aggregate status
   const isLoading = queries.some((q) => q.isLoading)
@@ -139,7 +148,6 @@ export function useBalancesQueries(
 
   // Chain-specific status - consolidated into single memo
   const { chainLoadingStatus, chainSuccessStatus, chainErrorStatus } = useMemo(() => {
-    const chainIds = Object.keys(tokensByChain).map(Number)
     const loading: TNDict<boolean> = {}
     const success: TNDict<boolean> = {}
     const error: TNDict<boolean> = {}
@@ -152,7 +160,7 @@ export function useBalancesQueries(
     })
 
     return { chainLoadingStatus: loading, chainSuccessStatus: success, chainErrorStatus: error }
-  }, [queries, tokensByChain])
+  }, [chainIds, queries])
 
   const refetch = useCallback(() => {
     queries.forEach((q) => {

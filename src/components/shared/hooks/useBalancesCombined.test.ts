@@ -11,13 +11,13 @@ describe('shouldUseDiscoveryFallbackToken', () => {
     ).toBe(true)
   })
 
-  it('uses discovery fallback for non-catalog vault shares', () => {
+  it('skips discovery fallback for non-catalog vault shares without other signals', () => {
     expect(
       shouldUseDiscoveryFallbackToken({
         token: { address: '0x1111111111111111111111111111111111111111', chainID: 1, isCatalogVault: false },
         hasPositiveBalanceCache: false
       })
-    ).toBe(true)
+    ).toBe(false)
   })
 
   it('uses discovery fallback for previously positive cached balances', () => {
