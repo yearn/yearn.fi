@@ -22,7 +22,11 @@ type TYvUsdVaults = {
 
 export function useYvUsdVaults(): TYvUsdVaults {
   const { vaults, isLoadingVaultList } = useYearn()
-  const points = useYvUsdPoints()
+  const {
+    unlocked: unlockedHasInfinifiPoints,
+    locked: lockedHasInfinifiPoints,
+    isLoading: isLoadingPoints
+  } = useYvUsdPoints()
 
   const { data: unlockedSnapshot, isLoading: isLoadingUnlocked } = useVaultSnapshot({
     chainId: YVUSD_CHAIN_ID,
@@ -53,11 +57,11 @@ export function useYvUsdVaults(): TYvUsdVaults {
         unlockedSnapshot,
         lockedSnapshot,
         points: {
-          unlocked: points.unlocked,
-          locked: points.locked
+          unlocked: unlockedHasInfinifiPoints,
+          locked: lockedHasInfinifiPoints
         }
       }),
-    [baseVault, lockedSnapshot, points.locked, points.unlocked, unlockedSnapshot]
+    [baseVault, lockedHasInfinifiPoints, lockedSnapshot, unlockedHasInfinifiPoints, unlockedSnapshot]
   )
 
   return {
@@ -67,6 +71,6 @@ export function useYvUsdVaults(): TYvUsdVaults {
     unlockedVault: model.unlockedVault,
     lockedVault: model.lockedVault,
     metrics: model.metrics,
-    isLoading: isLoadingVaultList || isLoadingUnlocked || isLoadingLocked || points.isLoading
+    isLoading: isLoadingVaultList || isLoadingUnlocked || isLoadingLocked || isLoadingPoints
   }
 }

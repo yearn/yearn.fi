@@ -11,7 +11,6 @@ type TYvUsdPointsData = {
   unlocked: boolean
   locked: boolean
   isLoading: boolean
-  error?: Error
 }
 
 function getAprServiceVault(
@@ -26,7 +25,7 @@ function hasInfinifiPoints(vault?: TYvUsdAprServicePointsVault): boolean {
 }
 
 export function useYvUsdPoints(): TYvUsdPointsData {
-  const { data, isLoading, error } = useFetch<TYvUsdAprServicePointsResponse>({
+  const { data, isLoading } = useFetch<TYvUsdAprServicePointsResponse>({
     endpoint: YVUSD_APR_SERVICE_ENDPOINT,
     schema: yvUsdAprServicePointsSchema,
     config: {
@@ -42,7 +41,6 @@ export function useYvUsdPoints(): TYvUsdPointsData {
   return {
     unlocked: hasInfinifiPoints(unlocked),
     locked: hasInfinifiPoints(locked),
-    isLoading,
-    error: error ?? undefined
+    isLoading
   }
 }
