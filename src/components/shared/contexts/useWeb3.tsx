@@ -1,6 +1,5 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
-import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import type { TAddress } from '@shared/types/address'
 import { fetchClusterName, getClusterImageUrl, isAddress } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
@@ -133,29 +132,83 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     openConnectModal
   ])
 
-  useAsyncTrigger(async (): Promise<void> => {
+  useEffect(() => {
     if (!isConnected || !isAddress(address)) {
       setClusters(undefined)
       setIsFetchingClusters(false)
-      return
+      return undefined
     }
-    setIsFetchingClusters(true)
-    try {
-      const clustersTag = await fetchClusterName(address)
-      if (clustersTag) {
-        const [clustersName] = clustersTag.split('/')
-        const profileImage = getClusterImageUrl(clustersName)
-        setClusters({ name: `${clustersTag}`, avatar: profileImage })
-        return
-      }
+
+    if (ensName) {
       setClusters(undefined)
-    } catch (error) {
-      console.error(error)
-      setClusters(undefined)
-    } finally {
       setIsFetchingClusters(false)
+      return undefined
     }
-  }, [address, isConnected])
+
+    let isCancelled = false
+    let timeoutId: number | undefined
+    let idleId: number | undefined
+    const supportsIdleCallback =
+      typeof window !== 'undefined' && 'requestIdleCallback' in window && 'cancelIdleCallback' in window
+
+    const run = async (): Promise<void> => {
+      setIsFetchingClusters(true)
+      try {
+        const clustersTag = await fetchClusterName(address)
+        if (isCancelled) {
+          return
+        }
+
+        if (clustersTag) {
+          const [clustersName] = clustersTag.split('/')
+          const profileImage = getClusterImageUrl(clustersName)
+          setClusters({ name: `${clustersTag}`, avatar: profileImage })
+          return
+        }
+
+        setClusters(undefined)
+      } catch (error) {
+        console.error(error)
+        if (!isCancelled) {
+          setClusters(undefined)
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsFetchingClusters(false)
+        }
+      }
+    }
+
+    if (supportsIdleCallback) {
+      const idleWindow = window as Window & {
+        requestIdleCallback: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number
+        cancelIdleCallback: (handle: number) => void
+      }
+      idleId = idleWindow.requestIdleCallback(
+        () => {
+          void run()
+        },
+        { timeout: 2000 }
+      )
+    } else {
+      timeoutId = window.setTimeout(() => {
+        void run()
+      }, 400)
+    }
+
+    return () => {
+      isCancelled = true
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId)
+      }
+      if (idleId !== undefined && supportsIdleCallback) {
+        const idleWindow = window as Window & {
+          cancelIdleCallback: (handle: number) => void
+        }
+        idleWindow.cancelIdleCallback(idleId)
+      }
+    }
+  }, [address, ensName, isConnected])
 
   useEffect(() => {
     if (isConnecting) {

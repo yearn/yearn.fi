@@ -29,6 +29,22 @@ function mergeChainStatusMaps(...maps: TNDict<boolean>[]): TNDict<boolean> {
   return merged
 }
 
+function mergeBalanceSources(...sources: TChainTokens[]): TChainTokens {
+  const merged: TChainTokens = {}
+
+  sources.forEach((source) => {
+    Object.entries(source).forEach(([chainIdStr, tokens]) => {
+      const chainId = Number(chainIdStr)
+      merged[chainId] = {
+        ...(merged[chainId] || {}),
+        ...tokens
+      }
+    })
+  })
+
+  return merged
+}
+
 /*******************************************************************************
  ** Combined balance hook that uses Enso API for supported chains
  ** and falls back to multicall (RPC) for unsupported chains like Fantom
@@ -101,6 +117,7 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     chainSuccessStatus: requiredMulticallChainSuccess,
     chainErrorStatus: requiredMulticallChainError
   } = useBalancesQueries(userAddress, requiredMulticallTokens, {
+    priorityChainId: props?.priorityChainID,
     enabled: requiredMulticallTokens.length > 0
   })
 
@@ -115,75 +132,14 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     chainSuccessStatus: discoveryFallbackChainSuccess,
     chainErrorStatus: discoveryFallbackChainError
   } = useBalancesQueries(userAddress, discoveryFallbackTokens, {
+    priorityChainId: props?.priorityChainID,
     enabled: discoveryFallbackTokens.length > 0
   })
 
   // Merge balances from both sources
   const balances = useMemo(() => {
-    const hasEnsoData = ensoTokens.length > 0
-    const hasRequiredMulticallData = requiredMulticallTokens.length > 0
-    const hasDiscoveryFallbackData = discoveryFallbackTokens.length > 0
-
-    const result: TChainTokens = {}
-
-    // Process Enso-supported tokens
-    if (hasEnsoData && ensoBalances) {
-      for (const token of ensoTokens) {
-        const chainId = token.chainID
-        const tokenAddress = toAddress(token.address)
-
-        if (!result[chainId]) {
-          result[chainId] = {}
-        }
-
-        const ensoToken = ensoBalances[chainId]?.[tokenAddress]
-        if (ensoToken) {
-          result[chainId][tokenAddress] = ensoToken
-        }
-      }
-    }
-
-    if (hasRequiredMulticallData && requiredMulticallBalances) {
-      for (const token of requiredMulticallTokens) {
-        const chainId = token.chainID
-        const tokenAddress = toAddress(token.address)
-
-        if (!result[chainId]) {
-          result[chainId] = {}
-        }
-
-        const multicallToken = requiredMulticallBalances[chainId]?.[tokenAddress]
-        if (multicallToken) {
-          result[chainId][tokenAddress] = multicallToken
-        }
-      }
-    }
-
-    if (hasDiscoveryFallbackData && discoveryFallbackBalances) {
-      for (const token of discoveryFallbackTokens) {
-        const chainId = token.chainID
-        const tokenAddress = toAddress(token.address)
-
-        if (!result[chainId]) {
-          result[chainId] = {}
-        }
-
-        const multicallToken = discoveryFallbackBalances[chainId]?.[tokenAddress]
-        if (multicallToken) {
-          result[chainId][tokenAddress] = multicallToken
-        }
-      }
-    }
-
-    return result
-  }, [
-    discoveryFallbackBalances,
-    discoveryFallbackTokens,
-    ensoBalances,
-    ensoTokens,
-    requiredMulticallBalances,
-    requiredMulticallTokens
-  ])
+    return mergeBalanceSources(ensoBalances, requiredMulticallBalances, discoveryFallbackBalances)
+  }, [discoveryFallbackBalances, ensoBalances, requiredMulticallBalances])
 
   // Combine loading/error/success states
   const isLoading = useMemo(() => {
