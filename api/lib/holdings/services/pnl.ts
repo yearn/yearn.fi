@@ -9,6 +9,11 @@ import { fetchMultipleVaultsMetadata } from './vaults'
 
 const ZERO = 0n
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+const KNOWN_VAULT_MIGRATORS = new Set([
+  '0x9327e2fdc57c7d70782f29ab46f6385afaf4503c',
+  '0x1824df8d751704fa10fa371d62a37f9b8772ab90',
+  '0x1112dbcf805682e828606f74ab717abf4b4fd8de'
+])
 
 type TLocation = 'wallet' | 'staked'
 
@@ -127,6 +132,8 @@ export interface FamilyPnlLedger {
     stakingUnwraps: number
     externalTransfersIn: number
     externalTransfersOut: number
+    migrationsIn: number
+    migrationsOut: number
   }
 }
 
@@ -164,6 +171,8 @@ export interface HoldingsPnLVault {
     stakingUnwraps: number
     externalTransfersIn: number
     externalTransfersOut: number
+    migrationsIn: number
+    migrationsOut: number
     unknownCostBasisTransfersIn: number
     withdrawalsWithUnknownCostBasis: number
   }
@@ -605,7 +614,9 @@ function createFamilyLedger(chainId: number, familyVaultAddress: string): Family
       stakingWraps: 0,
       stakingUnwraps: 0,
       externalTransfersIn: 0,
-      externalTransfersOut: 0
+      externalTransfersOut: 0,
+      migrationsIn: 0,
+      migrationsOut: 0
     }
   }
 }
@@ -784,7 +795,23 @@ function isLedgerEmpty(ledger: FamilyPnlLedger): boolean {
 }
 
 function isDirectInteractionLedger(ledger: FamilyPnlLedger): boolean {
-  return ledger.totalDepositedAssets > ZERO || ledger.totalWithdrawnAssets > ZERO || ledger.realizedEntries.length > 0
+  return (
+    ledger.totalDepositedAssets > ZERO ||
+    ledger.totalWithdrawnAssets > ZERO ||
+    ledger.realizedEntries.length > 0 ||
+    ledger.eventCounts.migrationsIn > 0
+  )
+}
+
+type TDetectedKnownMigration = {
+  chainId: number
+  sourceFamilyVaultAddress: string
+  destinationFamilyVaultAddress: string
+  transactionHash: string
+  blockTimestamp: number
+  sourceTransferShares: bigint
+  destinationDepositShares: bigint
+  destinationDepositAssets: bigint
 }
 
 export function filterDirectInteractionLedgers(ledgers: Map<string, FamilyPnlLedger>): Map<string, FamilyPnlLedger> {
@@ -945,6 +972,276 @@ function handleExternalTransferOut(ledger: FamilyPnlLedger, location: TLocation,
     ledger.unmatchedTransferOutCount += 1
     ledger.unmatchedTransferOutShares += shares - consumed.consumedShares
   }
+}
+
+function detectKnownMigratorCrossFamilyRollover(
+  txEvents: TRawPnlEvent[],
+  userAddress: string
+): TDetectedKnownMigration | null {
+  const txFamilyGroups = groupTransactionEventsByFamily(txEvents)
+
+  if (txFamilyGroups.length !== 2) {
+    return null
+  }
+
+  const sourceFamilyEvents = txFamilyGroups.find((familyEvents) => {
+    const addressTransfersToMigrator = familyEvents.filter(
+      (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+        event.kind === 'transfer' &&
+        event.scopes.address &&
+        event.sender === userAddress &&
+        KNOWN_VAULT_MIGRATORS.has(event.receiver)
+    )
+
+    if (addressTransfersToMigrator.length === 0) {
+      return false
+    }
+
+    if (familyEvents.some((event) => event.kind === 'deposit' || event.kind === 'withdrawal')) {
+      return false
+    }
+
+    const migratorAddress = addressTransfersToMigrator[0]?.receiver ?? null
+
+    if (migratorAddress === null) {
+      return false
+    }
+
+    const burnedShares = sumEventShares(
+      familyEvents.filter(
+        (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+          event.kind === 'transfer' && event.sender === migratorAddress && event.receiver === ZERO_ADDRESS
+      )
+    )
+
+    return burnedShares > ZERO && burnedShares === sumEventShares(addressTransfersToMigrator)
+  })
+  const destinationFamilyEvents = txFamilyGroups.find((familyEvents) => {
+    const addressDeposits = familyEvents.filter(
+      (event): event is Extract<TRawPnlEvent, { kind: 'deposit' }> =>
+        event.kind === 'deposit' && event.scopes.address && event.owner === userAddress
+    )
+
+    if (addressDeposits.length === 0) {
+      return false
+    }
+
+    const mintedShares = sumEventShares(
+      familyEvents.filter(
+        (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+          event.kind === 'transfer' &&
+          event.scopes.address &&
+          event.sender === ZERO_ADDRESS &&
+          event.receiver === userAddress
+      )
+    )
+
+    return mintedShares > ZERO && mintedShares === sumEventShares(addressDeposits)
+  })
+
+  if (!sourceFamilyEvents || !destinationFamilyEvents) {
+    return null
+  }
+
+  const sourceFamilyVaultAddress = sourceFamilyEvents[0]?.familyVaultAddress
+  const destinationFamilyVaultAddress = destinationFamilyEvents[0]?.familyVaultAddress
+  const chainId = sourceFamilyEvents[0]?.chainId
+
+  if (
+    !sourceFamilyVaultAddress ||
+    !destinationFamilyVaultAddress ||
+    chainId === undefined ||
+    destinationFamilyEvents[0]?.chainId !== chainId ||
+    sourceFamilyVaultAddress === destinationFamilyVaultAddress
+  ) {
+    return null
+  }
+
+  const sourceTransfersToMigrator = sourceFamilyEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+      event.kind === 'transfer' &&
+      event.scopes.address &&
+      event.sender === userAddress &&
+      KNOWN_VAULT_MIGRATORS.has(event.receiver)
+  )
+  const destinationDeposits = destinationFamilyEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'deposit' }> =>
+      event.kind === 'deposit' && event.scopes.address && event.owner === userAddress
+  )
+  const sourceTransferShares = sumEventShares(sourceTransfersToMigrator)
+  const destinationDepositShares = sumEventShares(destinationDeposits)
+  const destinationDepositAssets = sumEventAssets(destinationDeposits)
+
+  if (sourceTransferShares === ZERO || destinationDepositShares === ZERO || destinationDepositAssets === ZERO) {
+    return null
+  }
+
+  return {
+    chainId,
+    sourceFamilyVaultAddress,
+    destinationFamilyVaultAddress,
+    transactionHash: sourceFamilyEvents[0]?.transactionHash ?? destinationFamilyEvents[0]?.transactionHash ?? '',
+    blockTimestamp: sourceFamilyEvents[0]?.blockTimestamp ?? destinationFamilyEvents[0]?.blockTimestamp ?? 0,
+    sourceTransferShares,
+    destinationDepositShares,
+    destinationDepositAssets
+  }
+}
+
+function processKnownMigratorCrossFamilyRollover(
+  ledgers: Map<string, FamilyPnlLedger>,
+  txEvents: TRawPnlEvent[],
+  userAddress: string
+): Set<string> {
+  const migration = detectKnownMigratorCrossFamilyRollover(txEvents, userAddress)
+
+  if (!migration) {
+    return new Set()
+  }
+
+  const sourceLedger = getOrCreateLedger(ledgers, migration.chainId, migration.sourceFamilyVaultAddress)
+  const destinationLedger = getOrCreateLedger(ledgers, migration.chainId, migration.destinationFamilyVaultAddress)
+  const sourceFamilyEvents = txEvents.filter((event) => event.familyVaultAddress === migration.sourceFamilyVaultAddress)
+  const destinationFamilyEvents = txEvents.filter(
+    (event) => event.familyVaultAddress === migration.destinationFamilyVaultAddress
+  )
+  const sourceShouldLog = shouldLogLotTransactions(sourceLedger, migration.transactionHash)
+  const destinationShouldLog = shouldLogLotTransactions(destinationLedger, migration.transactionHash)
+  const includeDetailedLotLogs = shouldIncludeDetailedLotLogs()
+  const sourceWalletLotsBefore = sourceShouldLog ? cloneLots(sourceLedger.walletLots) : []
+  const sourceStakedLotsBefore = sourceShouldLog ? cloneLots(sourceLedger.stakedLots) : []
+  const destinationWalletLotsBefore = destinationShouldLog ? cloneLots(destinationLedger.walletLots) : []
+  const destinationStakedLotsBefore = destinationShouldLog ? cloneLots(destinationLedger.stakedLots) : []
+
+  sourceLedger.eventCounts.migrationsOut += 1
+  destinationLedger.eventCounts.migrationsIn += 1
+
+  const sourceConsumed = consumeFromLocation(sourceLedger, 'wallet', migration.sourceTransferShares)
+  const knownSourceLots = sourceConsumed.consumedLots.filter((lot) => lot.costBasis !== null)
+  const knownSourceShares = sumShares(knownSourceLots)
+  const knownDestinationShares =
+    migration.sourceTransferShares === ZERO
+      ? ZERO
+      : (migration.destinationDepositShares * knownSourceShares) / migration.sourceTransferShares
+  const rolledLots = redistributeLotsToTargetShares(knownSourceLots, knownDestinationShares)
+  const rolledShares = sumShares(rolledLots)
+  const unknownDestinationShares = migration.destinationDepositShares - rolledShares
+  const unmatchedSourceShares = migration.sourceTransferShares - sourceConsumed.consumedShares
+
+  addLotsToLocation(destinationLedger, 'wallet', rolledLots)
+
+  if (unknownDestinationShares > ZERO) {
+    destinationLedger.unknownCostBasisTransferInCount += 1
+    destinationLedger.unknownCostBasisTransferInShares += unknownDestinationShares
+    addLotsToLocation(destinationLedger, 'wallet', [{ shares: unknownDestinationShares, costBasis: null }])
+  }
+
+  if (unmatchedSourceShares > ZERO) {
+    sourceLedger.unmatchedTransferOutCount += 1
+    sourceLedger.unmatchedTransferOutShares += unmatchedSourceShares
+  }
+
+  sourceLedger.debugJournal.push({
+    timestamp: migration.blockTimestamp,
+    txHash: migration.transactionHash,
+    familyVaultAddress: migration.sourceFamilyVaultAddress,
+    stakingVaultAddress: sourceLedger.stakingVaultAddress,
+    view: 'migrate_out',
+    hasAddressActivity: true,
+    rawEvents: countTxEventsByKind(sourceFamilyEvents),
+    depositShares: ZERO.toString(),
+    depositAssets: ZERO.toString(),
+    withdrawShares: ZERO.toString(),
+    withdrawAssets: ZERO.toString(),
+    wrapShares: ZERO.toString(),
+    unwrapShares: ZERO.toString(),
+    unknownInWalletShares: ZERO.toString(),
+    unknownInStakedShares: ZERO.toString(),
+    transferOutWalletShares: migration.sourceTransferShares.toString(),
+    transferOutStakedShares: ZERO.toString(),
+    realizedKnownShares: ZERO.toString(),
+    realizedProceedsAssets: ZERO.toString(),
+    realizedBasisAssets: ZERO.toString(),
+    realizedPnlAssets: ZERO.toString()
+  })
+
+  destinationLedger.debugJournal.push({
+    timestamp: migration.blockTimestamp,
+    txHash: migration.transactionHash,
+    familyVaultAddress: migration.destinationFamilyVaultAddress,
+    stakingVaultAddress: destinationLedger.stakingVaultAddress,
+    view: 'migrate_in->wallet',
+    hasAddressActivity: true,
+    rawEvents: countTxEventsByKind(destinationFamilyEvents),
+    depositShares: migration.destinationDepositShares.toString(),
+    depositAssets: migration.destinationDepositAssets.toString(),
+    withdrawShares: ZERO.toString(),
+    withdrawAssets: ZERO.toString(),
+    wrapShares: ZERO.toString(),
+    unwrapShares: ZERO.toString(),
+    unknownInWalletShares: unknownDestinationShares.toString(),
+    unknownInStakedShares: ZERO.toString(),
+    transferOutWalletShares: ZERO.toString(),
+    transferOutStakedShares: ZERO.toString(),
+    realizedKnownShares: ZERO.toString(),
+    realizedProceedsAssets: ZERO.toString(),
+    realizedBasisAssets: ZERO.toString(),
+    realizedPnlAssets: ZERO.toString()
+  })
+
+  if (sourceShouldLog) {
+    debugLog('pnl-lots', 'processed family transaction', {
+      chainId: migration.chainId,
+      familyVaultAddress: migration.sourceFamilyVaultAddress,
+      stakingVaultAddress: sourceLedger.stakingVaultAddress,
+      transactionHash: migration.transactionHash,
+      blockTimestamp: migration.blockTimestamp,
+      view: 'migrate_out',
+      sourceTransferShares: migration.sourceTransferShares.toString(),
+      knownRolledSourceShares: knownSourceShares.toString(),
+      unmatchedSourceShares: unmatchedSourceShares.toString(),
+      walletLotsBefore: summarizeLots(sourceWalletLotsBefore),
+      stakedLotsBefore: summarizeLots(sourceStakedLotsBefore),
+      walletLotsAfter: summarizeLots(sourceLedger.walletLots),
+      stakedLotsAfter: summarizeLots(sourceLedger.stakedLots),
+      events: includeDetailedLotLogs ? sourceFamilyEvents.map(serializeRawEvent) : undefined,
+      walletLotEntriesBefore: includeDetailedLotLogs ? serializeLots(sourceWalletLotsBefore) : undefined,
+      stakedLotEntriesBefore: includeDetailedLotLogs ? serializeLots(sourceStakedLotsBefore) : undefined,
+      walletLotEntriesAfter: includeDetailedLotLogs ? serializeLots(sourceLedger.walletLots) : undefined,
+      stakedLotEntriesAfter: includeDetailedLotLogs ? serializeLots(sourceLedger.stakedLots) : undefined
+    })
+  }
+
+  if (destinationShouldLog) {
+    debugLog('pnl-lots', 'processed family transaction', {
+      chainId: migration.chainId,
+      familyVaultAddress: migration.destinationFamilyVaultAddress,
+      stakingVaultAddress: destinationLedger.stakingVaultAddress,
+      transactionHash: migration.transactionHash,
+      blockTimestamp: migration.blockTimestamp,
+      view: 'migrate_in->wallet',
+      sourceFamilyVaultAddress: migration.sourceFamilyVaultAddress,
+      destinationDepositShares: migration.destinationDepositShares.toString(),
+      destinationDepositAssets: migration.destinationDepositAssets.toString(),
+      rolledKnownShares: rolledShares.toString(),
+      rolledKnownCostBasisAssets: sumKnownCostBasis(rolledLots).toString(),
+      unknownDestinationShares: unknownDestinationShares.toString(),
+      walletLotsBefore: summarizeLots(destinationWalletLotsBefore),
+      stakedLotsBefore: summarizeLots(destinationStakedLotsBefore),
+      walletLotsAfter: summarizeLots(destinationLedger.walletLots),
+      stakedLotsAfter: summarizeLots(destinationLedger.stakedLots),
+      events: includeDetailedLotLogs ? destinationFamilyEvents.map(serializeRawEvent) : undefined,
+      walletLotEntriesBefore: includeDetailedLotLogs ? serializeLots(destinationWalletLotsBefore) : undefined,
+      stakedLotEntriesBefore: includeDetailedLotLogs ? serializeLots(destinationStakedLotsBefore) : undefined,
+      walletLotEntriesAfter: includeDetailedLotLogs ? serializeLots(destinationLedger.walletLots) : undefined,
+      stakedLotEntriesAfter: includeDetailedLotLogs ? serializeLots(destinationLedger.stakedLots) : undefined
+    })
+  }
+
+  return new Set([
+    toVaultKey(migration.chainId, migration.sourceFamilyVaultAddress),
+    toVaultKey(migration.chainId, migration.destinationFamilyVaultAddress)
+  ])
 }
 
 function isSameVaultRolloverTransaction(parts: {
@@ -1215,11 +1512,17 @@ export function processRawPnlEvents(events: TRawPnlEvent[], userAddress: string)
   const userAddressLower = userAddress.toLowerCase()
 
   groupEventsByTransaction(events).forEach((txEvents) => {
+    const handledFamilyKeys = processKnownMigratorCrossFamilyRollover(ledgers, txEvents, userAddressLower)
+
     groupTransactionEventsByFamily(txEvents).forEach((txFamilyEvents) => {
       const familyVaultAddress = txFamilyEvents[0]?.familyVaultAddress
       const chainId = txFamilyEvents[0]?.chainId
 
       if (!familyVaultAddress || chainId === undefined) {
+        return
+      }
+
+      if (handledFamilyKeys.has(toVaultKey(chainId, familyVaultAddress))) {
         return
       }
 
@@ -1403,6 +1706,8 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
             stakingUnwraps: vault.eventCounts.stakingUnwraps,
             externalTransfersIn: vault.eventCounts.externalTransfersIn,
             externalTransfersOut: vault.eventCounts.externalTransfersOut,
+            migrationsIn: vault.eventCounts.migrationsIn,
+            migrationsOut: vault.eventCounts.migrationsOut,
             unknownCostBasisTransfersIn: vault.unknownCostBasisTransferInCount,
             withdrawalsWithUnknownCostBasis: vault.withdrawalsWithUnknownCostBasis
           },
@@ -1507,6 +1812,8 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
           stakingUnwraps: vault.eventCounts.stakingUnwraps,
           externalTransfersIn: vault.eventCounts.externalTransfersIn,
           externalTransfersOut: vault.eventCounts.externalTransfersOut,
+          migrationsIn: vault.eventCounts.migrationsIn,
+          migrationsOut: vault.eventCounts.migrationsOut,
           unknownCostBasisTransfersIn: vault.unknownCostBasisTransferInCount,
           withdrawalsWithUnknownCostBasis: vault.withdrawalsWithUnknownCostBasis
         },

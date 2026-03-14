@@ -4,9 +4,14 @@ import { buildRawPnlEvents, filterDirectInteractionLedgers, processRawPnlEvents 
 
 const USER = '0x96a489a533ba0913dd8e507e6d985a45bc783566'
 const ROUTER = '0x1111111111111111111111111111111111111111'
+const MIGRATOR = '0x9327e2fdc57c7d70782f29ab46f6385afaf4503c'
+const YEARN_4626_ROUTER = '0x1112dbcf805682e828606f74ab717abf4b4fd8de'
 const STAKING_VAULT = '0x622fa41799406b120f9a40da843d358b7b2cfee3'
 const UNDERLYING_VAULT = '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204'
+const SOURCE_MIGRATION_VAULT = '0x1635b506a88fbf428465ad65d00e8d6b6e5846c3'
+const DESTINATION_MIGRATION_VAULT = '0x75a291f0232add37d72dd1dcff55b715755ecdee'
 const FAMILY_KEY = `1:${UNDERLYING_VAULT}`
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 function createDepositEvent(overrides: Partial<DepositEvent>): DepositEvent {
   return {
@@ -462,5 +467,255 @@ describe('processRawPnlEvents', () => {
     expect(ledger?.eventCounts.underlyingDeposits).toBe(1)
     expect(ledger?.eventCounts.underlyingWithdrawals).toBe(0)
     expect(ledger?.debugJournal.at(-1)?.view).toBe('same_vault_rollover->wallet')
+  })
+
+  it('rolls known source basis into the destination vault on a known migrator tx', () => {
+    const sourceFamilyKey = `1:${SOURCE_MIGRATION_VAULT}`
+    const destinationFamilyKey = `1:${DESTINATION_MIGRATION_VAULT}`
+    const sourceDeposit = createDepositEvent({
+      id: 'source-deposit',
+      transactionHash: '0xsource-deposit',
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      assets: '1000',
+      shares: '100'
+    })
+    const migrateOut = createTransferEvent({
+      id: 'migrate-out',
+      transactionHash: '0xmigrate',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 1,
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      sender: USER,
+      receiver: MIGRATOR,
+      value: '100'
+    })
+    const migrateBurn = createTransferEvent({
+      id: 'migrate-burn',
+      transactionHash: '0xmigrate',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 2,
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      sender: MIGRATOR,
+      receiver: ZERO_ADDRESS,
+      value: '100'
+    })
+    const destinationMint = createTransferEvent({
+      id: 'destination-mint',
+      transactionHash: '0xmigrate',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 3,
+      vaultAddress: DESTINATION_MIGRATION_VAULT,
+      sender: ZERO_ADDRESS,
+      receiver: USER,
+      value: '80'
+    })
+    const destinationDeposit = createDepositEvent({
+      id: 'destination-deposit',
+      transactionHash: '0xmigrate',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 4,
+      vaultAddress: DESTINATION_MIGRATION_VAULT,
+      owner: USER,
+      sender: USER,
+      assets: '1100',
+      shares: '80'
+    })
+
+    const ledgers = processRawPnlEvents(
+      buildRawPnlEvents({
+        addressEvents: {
+          deposits: [sourceDeposit, destinationDeposit],
+          withdrawals: [],
+          transfersIn: [destinationMint],
+          transfersOut: [migrateOut]
+        },
+        transactionEvents: {
+          deposits: [sourceDeposit, destinationDeposit],
+          withdrawals: [],
+          transfers: [migrateOut, migrateBurn, destinationMint]
+        }
+      }),
+      USER
+    )
+    const filteredLedgers = filterDirectInteractionLedgers(ledgers)
+    const sourceLedger = ledgers.get(sourceFamilyKey)
+    const destinationLedger = ledgers.get(destinationFamilyKey)
+
+    expect(sourceLedger?.walletLots).toEqual([])
+    expect(sourceLedger?.realizedEntries).toEqual([])
+    expect(sourceLedger?.eventCounts.migrationsOut).toBe(1)
+    expect(destinationLedger?.walletLots).toEqual([{ shares: 80n, costBasis: 1000n }])
+    expect(destinationLedger?.totalDepositedAssets).toBe(0n)
+    expect(destinationLedger?.realizedEntries).toEqual([])
+    expect(destinationLedger?.eventCounts.migrationsIn).toBe(1)
+    expect(destinationLedger?.debugJournal.at(-1)?.view).toBe('migrate_in->wallet')
+    expect(filteredLedgers.get(destinationFamilyKey)).toBeDefined()
+  })
+
+  it('marks migrated destination shares as unknown when the source vault only had a mint transfer', () => {
+    const sourceFamilyKey = `1:${SOURCE_MIGRATION_VAULT}`
+    const destinationFamilyKey = `1:${DESTINATION_MIGRATION_VAULT}`
+    const sourceMint = createTransferEvent({
+      id: 'source-mint',
+      transactionHash: '0xsource-mint',
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      sender: ZERO_ADDRESS,
+      receiver: USER,
+      value: '158'
+    })
+    const migrateOut = createTransferEvent({
+      id: 'migrate-out',
+      transactionHash: '0xmigrate-unknown',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 1,
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      sender: USER,
+      receiver: MIGRATOR,
+      value: '158'
+    })
+    const migrateBurn = createTransferEvent({
+      id: 'migrate-burn',
+      transactionHash: '0xmigrate-unknown',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 2,
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      sender: MIGRATOR,
+      receiver: ZERO_ADDRESS,
+      value: '158'
+    })
+    const destinationMint = createTransferEvent({
+      id: 'destination-mint',
+      transactionHash: '0xmigrate-unknown',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 3,
+      vaultAddress: DESTINATION_MIGRATION_VAULT,
+      sender: ZERO_ADDRESS,
+      receiver: USER,
+      value: '175'
+    })
+    const destinationDeposit = createDepositEvent({
+      id: 'destination-deposit',
+      transactionHash: '0xmigrate-unknown',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 4,
+      vaultAddress: DESTINATION_MIGRATION_VAULT,
+      owner: USER,
+      sender: USER,
+      assets: '304',
+      shares: '175'
+    })
+
+    const ledgers = processRawPnlEvents(
+      buildRawPnlEvents({
+        addressEvents: {
+          deposits: [destinationDeposit],
+          withdrawals: [],
+          transfersIn: [sourceMint, destinationMint],
+          transfersOut: [migrateOut]
+        },
+        transactionEvents: {
+          deposits: [destinationDeposit],
+          withdrawals: [],
+          transfers: [sourceMint, migrateOut, migrateBurn, destinationMint]
+        }
+      }),
+      USER
+    )
+    const filteredLedgers = filterDirectInteractionLedgers(ledgers)
+    const sourceLedger = ledgers.get(sourceFamilyKey)
+    const destinationLedger = ledgers.get(destinationFamilyKey)
+
+    expect(sourceLedger?.unmatchedTransferOutShares).toBe(158n)
+    expect(destinationLedger?.walletLots).toEqual([{ shares: 175n, costBasis: null }])
+    expect(destinationLedger?.unknownCostBasisTransferInCount).toBe(1)
+    expect(destinationLedger?.unknownCostBasisTransferInShares).toBe(175n)
+    expect(destinationLedger?.totalDepositedAssets).toBe(0n)
+    expect(destinationLedger?.eventCounts.migrationsIn).toBe(1)
+    expect(filteredLedgers.get(sourceFamilyKey)).toBeUndefined()
+    expect(filteredLedgers.get(destinationFamilyKey)).toBeDefined()
+  })
+
+  it('treats the Yearn 4626 router as a valid migration router', () => {
+    const destinationFamilyKey = `1:${DESTINATION_MIGRATION_VAULT}`
+    const sourceDeposit = createDepositEvent({
+      id: 'source-deposit-router',
+      transactionHash: '0xsource-deposit-router',
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      assets: '1000',
+      shares: '100'
+    })
+    const migrateOut = createTransferEvent({
+      id: 'migrate-out-router',
+      transactionHash: '0xmigrate-router',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 1,
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      sender: USER,
+      receiver: YEARN_4626_ROUTER,
+      value: '100'
+    })
+    const migrateBurn = createTransferEvent({
+      id: 'migrate-burn-router',
+      transactionHash: '0xmigrate-router',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 2,
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      sender: YEARN_4626_ROUTER,
+      receiver: ZERO_ADDRESS,
+      value: '100'
+    })
+    const destinationMint = createTransferEvent({
+      id: 'destination-mint-router',
+      transactionHash: '0xmigrate-router',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 3,
+      vaultAddress: DESTINATION_MIGRATION_VAULT,
+      sender: ZERO_ADDRESS,
+      receiver: USER,
+      value: '80'
+    })
+    const destinationDeposit = createDepositEvent({
+      id: 'destination-deposit-router',
+      transactionHash: '0xmigrate-router',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 4,
+      vaultAddress: DESTINATION_MIGRATION_VAULT,
+      owner: USER,
+      sender: USER,
+      assets: '1100',
+      shares: '80'
+    })
+
+    const ledgers = processRawPnlEvents(
+      buildRawPnlEvents({
+        addressEvents: {
+          deposits: [sourceDeposit, destinationDeposit],
+          withdrawals: [],
+          transfersIn: [destinationMint],
+          transfersOut: [migrateOut]
+        },
+        transactionEvents: {
+          deposits: [sourceDeposit, destinationDeposit],
+          withdrawals: [],
+          transfers: [migrateOut, migrateBurn, destinationMint]
+        }
+      }),
+      USER
+    )
+
+    expect(ledgers.get(destinationFamilyKey)?.walletLots).toEqual([{ shares: 80n, costBasis: 1000n }])
+    expect(ledgers.get(destinationFamilyKey)?.eventCounts.migrationsIn).toBe(1)
   })
 })

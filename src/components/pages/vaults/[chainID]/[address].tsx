@@ -408,7 +408,7 @@ function Index(): ReactElement | null {
     chainId,
     account: address
   })
-
+  console.log('vaultUserData', vaultUserData)
   useEffect(() => {
     if (hasTriggeredVaultListFetch || hasVaultList || !snapshotVault) {
       return

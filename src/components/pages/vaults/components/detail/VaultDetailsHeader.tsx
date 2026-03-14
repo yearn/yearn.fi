@@ -386,9 +386,14 @@ function UserHoldingsCard({
   tokenPrice: number
   isCompressed: boolean
 }): ReactElement {
+  console.log('depositedValue', depositedValue)
+  console.log('tokenPrice', tokenPrice)
   const currentVault = getVaultView(currentVaultInput)
+  console.log('currentVault', currentVault)
   const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
+  console.log('depositedAmount', depositedAmount)
   const depositedValueUSD = depositedAmount.normalized * tokenPrice
+  console.log('depositedValueUSD', depositedValueUSD)
   const sections: TMetricBlock[] = [
     {
       key: 'deposited',
