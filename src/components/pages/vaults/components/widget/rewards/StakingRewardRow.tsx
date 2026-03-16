@@ -1,9 +1,9 @@
 import { useClaimStakingRewards } from '@pages/vaults/hooks/rewards/useClaimStakingRewards'
+import { useChainId } from '@shared/hooks/useAppWagmi'
 import { toNormalizedValue } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useCallback, useMemo } from 'react'
-import type { UseSimulateContractReturnType } from 'wagmi'
-import { useChainId, useWriteContract } from 'wagmi'
+import { useWriteContract } from 'wagmi'
 import type { TransactionStep } from '../shared/TransactionOverlay'
 import { RewardRow } from './RewardRow'
 import type { TStakingReward } from './types'
@@ -41,7 +41,7 @@ export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
       return undefined
     }
     return {
-      prepare: prepare as unknown as UseSimulateContractReturnType,
+      prepare,
       label: 'Claim',
       confirmMessage: `Claim ${formattedAmount} ${reward.symbol}`,
       successTitle: 'Rewards Claimed',

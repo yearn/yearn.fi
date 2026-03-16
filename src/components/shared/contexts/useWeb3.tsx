@@ -9,6 +9,7 @@ import type { ReactElement } from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { mainnet } from 'viem/chains'
 import { useAccount, useConnect, useDisconnect, useEnsName } from 'wagmi'
+import { resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/tenderly'
 
 type TWeb3Context = {
   address: TAddress | undefined
@@ -59,7 +60,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   const previousChainIDRef = useRef<number | undefined>(undefined)
   const hasUserRequestedConnectionRef = useRef(false)
 
-  const chainID = chain?.id ?? 1
+  const chainID = resolveConnectedCanonicalChainId(chain?.id) ?? (isConnected ? 0 : 1)
 
   useEffect(() => {
     if (!wasConnectedRef.current && isConnected && hasUserRequestedConnectionRef.current) {
@@ -106,7 +107,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
         hasUserRequestedConnectionRef.current = true
         await connectAsync({
           connector: ledgerConnector,
-          chainId: chainID
+          chainId: resolveExecutionChainId(chainID) ?? chainID
         })
         return
       }

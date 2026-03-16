@@ -1,11 +1,10 @@
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_LOCKED_ZAP_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { yvUsdLockedZapAbi } from '@shared/contracts/abi/yvUsdLockedZap.abi'
+import { type AppUseSimulateContractReturnType, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { toAddress } from '@shared/utils'
 import type { Address } from 'viem'
 import { erc20Abi } from 'viem'
-import type { UseSimulateContractReturnType } from 'wagmi'
-import { useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
 
 interface UseYvUsdLockedZapWithdrawParams {
@@ -41,7 +40,7 @@ export function useYvUsdLockedZapWithdraw(params: UseYvUsdLockedZapWithdrawParam
   const prepareWithdrawEnabled =
     !!params.account && params.enabled && params.amount > 0n && params.requiredShares > 0n && isAllowanceSufficient
 
-  const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
+  const prepareApprove: AppUseSimulateContractReturnType = useSimulateContract({
     abi: erc20Abi,
     functionName: 'approve',
     address: YVUSD_LOCKED_ADDRESS,
@@ -50,7 +49,7 @@ export function useYvUsdLockedZapWithdraw(params: UseYvUsdLockedZapWithdrawParam
     query: { enabled: prepareApproveEnabled }
   })
 
-  const prepareWithdraw: UseSimulateContractReturnType = useSimulateContract({
+  const prepareWithdraw: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ZAP_ADDRESS,
     abi: yvUsdLockedZapAbi,
     functionName: 'zapOut',

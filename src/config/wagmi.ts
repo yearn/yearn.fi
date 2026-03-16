@@ -11,7 +11,8 @@ import {
 } from '@rainbow-me/rainbowkit/wallets'
 import type { Transport } from 'viem'
 import { cookieStorage, createConfig, createStorage, fallback, http } from 'wagmi'
-import { supportedChains, type TSupportedChainId } from './supportedChains'
+import type { Chain } from 'viem'
+import { supportedChains } from './supportedChains'
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string
 const appName = (import.meta.env.VITE_WALLETCONNECT_PROJECT_NAME as string) || 'Yearn Finance'
@@ -34,8 +35,8 @@ const connectors = connectorsForWallets(
   { projectId, appName }
 )
 
-function buildTransports(): Record<TSupportedChainId, Transport> {
-  const transports = {} as Record<TSupportedChainId, Transport>
+function buildTransports(): Record<number, Transport> {
+  const transports: Record<number, Transport> = {}
 
   for (const chain of supportedChains) {
     const network = getNetwork(chain.id)
@@ -57,14 +58,14 @@ function buildTransports(): Record<TSupportedChainId, Transport> {
 
     availableTransports.push(http())
 
-    transports[chain.id as TSupportedChainId] = fallback(availableTransports)
+    transports[chain.id] = fallback(availableTransports)
   }
 
   return transports
 }
 
 export const wagmiConfig = createConfig({
-  chains: supportedChains,
+  chains: supportedChains as [Chain, ...Chain[]],
   connectors,
   transports: buildTransports(),
   storage: createStorage({ storage: cookieStorage }),

@@ -1,8 +1,9 @@
 import { Button } from '@shared/components/Button'
+import { useChainId, useSwitchChain, useWaitForTransactionReceipt } from '@shared/hooks/useAppWagmi'
 import { getApproveAbi } from '@shared/utils/approve'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { maxUint256 } from 'viem'
-import { useAccount, useChainId, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from 'wagmi'
+import { useAccount, useWriteContract } from 'wagmi'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from '../shared/TransactionStateIndicators'
 

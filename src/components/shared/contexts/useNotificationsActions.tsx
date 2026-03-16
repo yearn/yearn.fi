@@ -30,6 +30,7 @@ export const WithNotificationsActions = ({ children }: { children: React.ReactEl
         fromAddress: toAddress(params.fromAddress),
         fromTokenName: params.fromSymbol,
         chainId: params.fromChainId,
+        executionChainId: params.executionChainId ?? params.fromChainId,
         toAddress: params.toAddress ? toAddress(params.toAddress) : undefined,
         toTokenName: params.toSymbol,
         toAmount: params.toAmount,
