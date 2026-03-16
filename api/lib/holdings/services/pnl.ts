@@ -181,6 +181,7 @@ export interface HoldingsPnLVault {
   unrealizedPnlUnderlying: number
   unrealizedPnlUsd: number
   totalPnlUsd: number
+  totalEconomicGainUsd: number
   totalDepositedUnderlying: number
   totalWithdrawnUnderlying: number
   eventCounts: {
@@ -217,6 +218,7 @@ export interface HoldingsPnLResponse {
     totalRealizedPnlUsd: number
     totalUnrealizedPnlUsd: number
     totalPnlUsd: number
+    totalEconomicGainUsd: number
     isComplete: boolean
   }
   vaults: HoldingsPnLVault[]
@@ -1654,6 +1656,7 @@ export async function getHoldingsPnL(
         totalRealizedPnlUsd: 0,
         totalUnrealizedPnlUsd: 0,
         totalPnlUsd: 0,
+        totalEconomicGainUsd: 0,
         isComplete: true
       },
       vaults: []
@@ -1786,6 +1789,7 @@ export async function getHoldingsPnL(
           unrealizedPnlUnderlying: 0,
           unrealizedPnlUsd: 0,
           totalPnlUsd: 0,
+          totalEconomicGainUsd: 0,
           totalDepositedUnderlying: 0,
           totalWithdrawnUnderlying: 0,
           eventCounts: {
@@ -1959,7 +1963,8 @@ export async function getHoldingsPnL(
         realizedPnlUsd,
         unrealizedPnlUnderlying,
         unrealizedPnlUsd,
-        totalPnlUsd: realizedPnlUsd + unrealizedPnlUsd + windfallPnlUsd,
+        totalPnlUsd: realizedPnlUsd + unrealizedPnlUsd,
+        totalEconomicGainUsd: realizedPnlUsd + unrealizedPnlUsd + windfallPnlUsd,
         totalDepositedUnderlying: formatAmount(vault.totalDepositedAssets, metadata.token.decimals),
         totalWithdrawnUnderlying: formatAmount(vault.totalWithdrawnAssets, metadata.token.decimals),
         eventCounts: {
@@ -2001,6 +2006,7 @@ export async function getHoldingsPnL(
       totalRealizedPnlUsd: totals.totalRealizedPnlUsd + vault.realizedPnlUsd,
       totalUnrealizedPnlUsd: totals.totalUnrealizedPnlUsd + vault.unrealizedPnlUsd,
       totalPnlUsd: totals.totalPnlUsd + vault.totalPnlUsd,
+      totalEconomicGainUsd: totals.totalEconomicGainUsd + vault.totalEconomicGainUsd,
       isComplete: totals.isComplete && vault.costBasisStatus === 'complete'
     }),
     {
@@ -2013,6 +2019,7 @@ export async function getHoldingsPnL(
       totalRealizedPnlUsd: 0,
       totalUnrealizedPnlUsd: 0,
       totalPnlUsd: 0,
+      totalEconomicGainUsd: 0,
       isComplete: true
     }
   )
@@ -2024,6 +2031,7 @@ export async function getHoldingsPnL(
     totalRealizedPnlUsd: summary.totalRealizedPnlUsd,
     totalUnrealizedPnlUsd: summary.totalUnrealizedPnlUsd,
     totalPnlUsd: summary.totalPnlUsd,
+    totalEconomicGainUsd: summary.totalEconomicGainUsd,
     isComplete: summary.isComplete
   })
 

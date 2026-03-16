@@ -227,10 +227,12 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(response.summary.totalUnknownCostBasisValueUsd).toBe(0)
     expect(response.summary.totalWindfallPnlUsd).toBeCloseTo(200)
     expect(response.summary.totalUnrealizedPnlUsd).toBeCloseTo(130)
-    expect(response.summary.totalPnlUsd).toBeCloseTo(330)
+    expect(response.summary.totalPnlUsd).toBeCloseTo(130)
+    expect(response.summary.totalEconomicGainUsd).toBeCloseTo(330)
     expect(vault.windfallPnlUsd).toBeCloseTo(200)
     expect(vault.unrealizedPnlUsd).toBeCloseTo(130)
-    expect(vault.totalPnlUsd).toBeCloseTo(330)
+    expect(vault.totalPnlUsd).toBeCloseTo(130)
+    expect(vault.totalEconomicGainUsd).toBeCloseTo(330)
   })
 
   it('treats unknown transfer-ins as full unrealized pnl in zero-basis mode', async () => {
@@ -243,9 +245,11 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(response.summary.totalWindfallPnlUsd).toBe(0)
     expect(response.summary.totalUnrealizedPnlUsd).toBeCloseTo(330)
     expect(response.summary.totalPnlUsd).toBeCloseTo(330)
+    expect(response.summary.totalEconomicGainUsd).toBeCloseTo(330)
     expect(vault.windfallPnlUsd).toBe(0)
     expect(vault.unrealizedPnlUsd).toBeCloseTo(330)
     expect(vault.totalPnlUsd).toBeCloseTo(330)
+    expect(vault.totalEconomicGainUsd).toBeCloseTo(330)
   })
 
   it('preserves strict-mode unknown cost basis behavior', async () => {
@@ -258,8 +262,10 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(response.summary.totalWindfallPnlUsd).toBe(0)
     expect(response.summary.totalUnrealizedPnlUsd).toBe(0)
     expect(response.summary.totalPnlUsd).toBe(0)
+    expect(response.summary.totalEconomicGainUsd).toBe(0)
     expect(vault.unknownCostBasisValueUsd).toBeCloseTo(330)
     expect(vault.totalPnlUsd).toBe(0)
+    expect(vault.totalEconomicGainUsd).toBe(0)
   })
 
   it('computes realized pnl for unknown withdrawals in zero-basis and windfall modes', async () => {
@@ -271,10 +277,12 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(zeroBasisResponse.summary.totalRealizedPnlUsd).toBeCloseTo(360)
     expect(zeroBasisResponse.summary.totalWindfallPnlUsd).toBe(0)
     expect(zeroBasisResponse.summary.totalPnlUsd).toBeCloseTo(360)
+    expect(zeroBasisResponse.summary.totalEconomicGainUsd).toBeCloseTo(360)
 
     expect(windfallResponse.summary.totalWindfallPnlUsd).toBeCloseTo(200)
     expect(windfallResponse.summary.totalRealizedPnlUsd).toBeCloseTo(160)
-    expect(windfallResponse.summary.totalPnlUsd).toBeCloseTo(360)
+    expect(windfallResponse.summary.totalPnlUsd).toBeCloseTo(160)
+    expect(windfallResponse.summary.totalEconomicGainUsd).toBeCloseTo(360)
   })
 
   it('does not keep windfall on unknown shares that later leave through external transfers', async () => {
@@ -284,7 +292,9 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     const windfallResponse = await getSingleVaultResponse(createTransferOutContext(), 'windfall')
 
     expect(zeroBasisResponse.summary.totalPnlUsd).toBe(0)
+    expect(zeroBasisResponse.summary.totalEconomicGainUsd).toBe(0)
     expect(windfallResponse.summary.totalWindfallPnlUsd).toBe(0)
     expect(windfallResponse.summary.totalPnlUsd).toBe(0)
+    expect(windfallResponse.summary.totalEconomicGainUsd).toBe(0)
   })
 })

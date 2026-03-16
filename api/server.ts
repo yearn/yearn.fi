@@ -289,7 +289,8 @@ async function handleHoldingsPnL(req: Request): Promise<Response> {
             unknownTransferInPnlMode,
             totalVaults: response.summary.totalVaults,
             totalCurrentValueUsd: response.summary.totalCurrentValueUsd,
-            totalPnlUsd: response.summary.totalPnlUsd
+            totalPnlUsd: response.summary.totalPnlUsd,
+            totalEconomicGainUsd: response.summary.totalEconomicGainUsd
           })
           return response
         } catch (error) {
