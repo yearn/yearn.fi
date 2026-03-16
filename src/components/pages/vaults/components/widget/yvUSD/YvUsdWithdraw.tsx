@@ -14,6 +14,7 @@ import {
 import { Button } from '@shared/components/Button'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
 import { type AppUseSimulateContractReturnType, useReadContract, useSimulateContract } from '@shared/hooks/useAppWagmi'
+import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { formatTAmount, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
@@ -23,7 +24,13 @@ import { useAccount } from 'wagmi'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { WidgetWithdraw } from '../withdraw'
-import { formatDays, formatDuration, parseCooldownStatus, resolveDurationSeconds } from './cooldownUtils'
+import {
+  formatDays,
+  formatDuration,
+  parseCooldownStatus,
+  resolveCooldownWindowState,
+  resolveDurationSeconds
+} from './cooldownUtils'
 import { YvUsdVariantToggle } from './YvUsdVariantToggle'
 
 type Props = {
@@ -268,7 +275,6 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const [prefillRequestKey, setPrefillRequestKey] = useState(0)
   const [lockedRequestedAmountRaw, setLockedRequestedAmountRaw] = useState<bigint>(0n)
   const [selectedWithdrawTokenAddress, setSelectedWithdrawTokenAddress] = useState<`0x${string}` | undefined>(undefined)
-  const [nowTimestamp, setNowTimestamp] = useState(() => Math.floor(Date.now() / 1000))
   const activeVariant = variant ?? 'unlocked'
   const isLockedVariant = activeVariant === 'locked'
 
@@ -363,10 +369,17 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const availableWithdrawLimit = typeof rawAvailableWithdrawLimit === 'bigint' ? rawAvailableWithdrawLimit : 0n
 
   const hasActiveCooldown = cooldownStatus.shares > 0n
-  const isCooldownActive = hasActiveCooldown && nowTimestamp < cooldownStatus.cooldownEnd
-  const isWithdrawalWindowOpen =
-    hasActiveCooldown && nowTimestamp >= cooldownStatus.cooldownEnd && nowTimestamp <= cooldownStatus.windowEnd
-  const isCooldownWindowExpired = hasActiveCooldown && nowTimestamp > cooldownStatus.windowEnd
+  const { timestamp: nowTimestamp } = useChainTimestamp({
+    chainId,
+    enabled: isLockedVariant
+  })
+  const { isCooldownActive, isWithdrawalWindowOpen, isCooldownWindowExpired } = resolveCooldownWindowState({
+    hasActiveCooldown,
+    nowTimestamp,
+    cooldownEnd: cooldownStatus.cooldownEnd,
+    windowEnd: cooldownStatus.windowEnd,
+    availableWithdrawLimit
+  })
   const needsCooldownStart = hasLocked && (!hasActiveCooldown || isCooldownWindowExpired)
 
   const cooldownRemainingSeconds = isCooldownActive ? cooldownStatus.cooldownEnd - nowTimestamp : 0
@@ -635,17 +648,6 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     }
   }, [hasLockedWithdrawPath, hasUnlocked, variant])
 
-  useEffect(() => {
-    if (!isLockedVariant) return
-
-    setNowTimestamp(Math.floor(Date.now() / 1000))
-    const interval = window.setInterval(() => {
-      setNowTimestamp(Math.floor(Date.now() / 1000))
-    }, 1_000)
-
-    return () => window.clearInterval(interval)
-  }, [isLockedVariant])
-
   const lockedDisplayUserData = useMemo(() => {
     if (!isLockedUnderlyingDisplay) {
       return lockedUserData
@@ -815,7 +817,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
         ? lockedAssetAddress
         : unlockedAssetAddress
   const selectedVaultUserData = isLockedVariant ? lockedDisplayUserData : unlockedUserData
-  const disableLockedAmountInput = isLockedVariant && isCooldownActive
+  const disableLockedAmountInput = isLockedVariant && isCooldownActive && !canWithdrawNow
   const hideLockedWithdrawAction = isLockedVariant && !!account && !canWithdrawNow
   const effectiveLockedActionDisabledReason =
     isLockedVariant && !hideLockedWithdrawAction ? lockedActionDisabledReason : undefined
