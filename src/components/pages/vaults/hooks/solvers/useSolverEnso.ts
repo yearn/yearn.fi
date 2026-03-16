@@ -1,9 +1,9 @@
+import { type AppUseSimulateContractReturnType, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import type { TNormalizedBN } from '@shared/types'
 import { isZeroAddress, toNormalizedBN } from '@shared/utils'
 import { getApproveAbi } from '@shared/utils/approve'
 import { useCallback, useState } from 'react'
 import type { Address, Hex } from 'viem'
-import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
@@ -53,7 +53,7 @@ interface UseSolverEnsoProps {
 
 interface UseSolverEnsoReturn {
   actions: {
-    prepareApprove: UseSimulateContractReturnType
+    prepareApprove: AppUseSimulateContractReturnType
   }
   periphery: {
     prepareApproveEnabled: boolean
@@ -170,7 +170,7 @@ export const useSolverEnso = ({
   const isValidInput = amountIn > 0n
   const isAllowanceSufficient = !allowanceSpender || allowance >= amountIn
   const prepareApproveEnabled = routerAddress && !isAllowanceSufficient && isValidInput && enabled
-  const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
+  const prepareApprove: AppUseSimulateContractReturnType = useSimulateContract({
     abi: getApproveAbi(tokenIn),
     functionName: 'approve',
     address: tokenIn,

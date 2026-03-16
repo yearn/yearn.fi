@@ -3,6 +3,7 @@ import type { DependencyList } from 'react'
 import { erc20Abi, type MulticallParameters } from 'viem'
 import type { Connector } from 'wagmi'
 import { multicall } from 'wagmi/actions'
+import { resolveExecutionChainId } from '@/config/tenderly'
 import type { TAddress } from '../types/address'
 import type { TChainTokens, TDefaultStatus, TDict, TNDict, TToken } from '../types/mixed'
 import { ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS } from '../utils/constants'
@@ -81,6 +82,11 @@ export async function performCall(
   tokens: TUseBalancesTokens[],
   ownerAddress: TAddress
 ): Promise<[TDict<TToken>, Error | undefined]> {
+  const executionChainId = resolveExecutionChainId(chainID)
+  if (executionChainId === undefined) {
+    return [{}, new Error(`Chain ${chainID} is not enabled for execution`)]
+  }
+
   type TMulticallResult =
     | { error?: undefined; result: never; status: 'success' }
     | { error: Error; result?: undefined; status: 'failure' }
@@ -89,11 +95,11 @@ export async function performCall(
     try {
       const results = await multicall(retrieveConfig(), {
         contracts: chunckCalls as never[],
-        chainId: chainID
+        chainId: executionChainId
       })
       return { results }
     } catch (error) {
-      console.error(`Failed to trigger multicall on chain ${chainID}`, error)
+      console.error(`Failed to trigger multicall on chain ${executionChainId}`, error)
       return { results: [], error: error as Error }
     }
   })()

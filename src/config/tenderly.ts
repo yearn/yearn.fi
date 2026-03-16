@@ -1,0 +1,292 @@
+import type { Chain } from 'viem'
+import { canonicalChains, type TCanonicalChainId } from './chainDefinitions'
+
+type TEnvValue = boolean | string | undefined
+
+type TTenderlyEnv = Record<string, TEnvValue>
+
+export type TTenderlyChainConfig = {
+  canonicalChainId: TCanonicalChainId
+  executionChainId: number
+  rpcUri: string
+  explorerUri?: string
+}
+
+export type TTenderlyRuntime = {
+  isEnabled: boolean
+  configuredByCanonicalId: Readonly<Record<number, TTenderlyChainConfig>>
+  configuredCanonicalChainIds: readonly TCanonicalChainId[]
+  canonicalToExecutionChainId: ReadonlyMap<number, number>
+  executionToCanonicalChainId: ReadonlyMap<number, TCanonicalChainId>
+}
+
+function readEnvString(value: TEnvValue): string {
+  if (typeof value === 'string') {
+    return value.trim()
+  }
+
+  if (typeof value === 'boolean') {
+    return value ? 'true' : 'false'
+  }
+
+  return ''
+}
+
+function isTruthyEnvValue(value: TEnvValue): boolean {
+  return ['1', 'on', 'true', 'yes'].includes(readEnvString(value).toLowerCase())
+}
+
+function withTenderlyOverrides(chain: Chain, config?: TTenderlyChainConfig): Chain {
+  if (!config) {
+    return chain
+  }
+
+  const defaultHttp = [config.rpcUri, ...(chain.rpcUrls.default?.http || [])].filter(Boolean)
+  const publicHttp = [config.rpcUri, ...(chain.rpcUrls.public?.http || chain.rpcUrls.default?.http || [])].filter(
+    Boolean
+  )
+
+  return {
+    ...chain,
+    rpcUrls: {
+      ...chain.rpcUrls,
+      default: {
+        ...chain.rpcUrls.default,
+        http: [...new Set(defaultHttp)]
+      },
+      public: {
+        ...chain.rpcUrls.public,
+        http: [...new Set(publicHttp)]
+      }
+    },
+    blockExplorers: chain.blockExplorers
+      ? {
+          ...chain.blockExplorers,
+          default: {
+            ...chain.blockExplorers.default,
+            url: config.explorerUri || chain.blockExplorers.default.url
+          }
+        }
+      : undefined
+  }
+}
+
+function buildExecutionChain(chain: Chain, config: TTenderlyChainConfig): Chain {
+  const explorerUrl = config.explorerUri || chain.blockExplorers?.default?.url || ''
+
+  return {
+    ...withTenderlyOverrides(chain, config),
+    id: config.executionChainId,
+    name: `${chain.name} Tenderly`,
+    blockExplorers: explorerUrl
+      ? {
+          ...chain.blockExplorers,
+          default: {
+            name: `${chain.name} Tenderly Explorer`,
+            url: explorerUrl
+          }
+        }
+      : chain.blockExplorers,
+    testnet: true
+  }
+}
+
+export function parseTenderlyRuntime(env: TTenderlyEnv): TTenderlyRuntime {
+  const isEnabled = isTruthyEnvValue(env.VITE_TENDERLY_MODE)
+
+  if (!isEnabled) {
+    return {
+      isEnabled: false,
+      configuredByCanonicalId: {},
+      configuredCanonicalChainIds: [],
+      canonicalToExecutionChainId: new Map(),
+      executionToCanonicalChainId: new Map()
+    }
+  }
+
+  const configuredChains = canonicalChains.reduce<TTenderlyChainConfig[]>((accumulator, chain) => {
+    const rawExecutionChainId = readEnvString(env[`VITE_TENDERLY_CHAIN_ID_FOR_${chain.id}`])
+    const rawRpcUri = readEnvString(env[`VITE_TENDERLY_RPC_URI_FOR_${chain.id}`])
+    const rawExplorerUri = readEnvString(env[`VITE_TENDERLY_EXPLORER_URI_FOR_${chain.id}`])
+    const hasAnyConfig = Boolean(rawExecutionChainId || rawRpcUri || rawExplorerUri)
+
+    if (!hasAnyConfig) {
+      return accumulator
+    }
+
+    if (!rawExecutionChainId || !rawRpcUri) {
+      throw new Error(
+        `Tenderly chain ${chain.id} requires both VITE_TENDERLY_CHAIN_ID_FOR_${chain.id} and VITE_TENDERLY_RPC_URI_FOR_${chain.id}`
+      )
+    }
+
+    const executionChainId = Number(rawExecutionChainId)
+    if (!Number.isInteger(executionChainId) || executionChainId <= 0) {
+      throw new Error(`Invalid Tenderly execution chain ID for canonical chain ${chain.id}: ${rawExecutionChainId}`)
+    }
+
+    accumulator.push({
+      canonicalChainId: chain.id,
+      executionChainId,
+      rpcUri: rawRpcUri,
+      explorerUri: rawExplorerUri || undefined
+    })
+
+    return accumulator
+  }, [])
+
+  if (configuredChains.length === 0) {
+    throw new Error('Tenderly mode is enabled but no Tenderly execution chains are configured')
+  }
+
+  const configuredByCanonicalId = configuredChains.reduce<Record<number, TTenderlyChainConfig>>(
+    (accumulator, chain) => {
+      accumulator[chain.canonicalChainId] = chain
+      return accumulator
+    },
+    {}
+  )
+
+  return {
+    isEnabled: true,
+    configuredByCanonicalId,
+    configuredCanonicalChainIds: configuredChains.map((chain) => chain.canonicalChainId),
+    canonicalToExecutionChainId: new Map(
+      configuredChains.map((chain) => [chain.canonicalChainId, chain.executionChainId])
+    ),
+    executionToCanonicalChainId: new Map(
+      configuredChains.map((chain) => [chain.executionChainId, chain.canonicalChainId])
+    )
+  }
+}
+
+export const tenderlyRuntime = parseTenderlyRuntime(import.meta.env)
+
+export function getSupportedCanonicalChainsForRuntime(runtime: TTenderlyRuntime): readonly Chain[] {
+  return runtime.isEnabled
+    ? canonicalChains
+        .filter((chain) => chain.id in runtime.configuredByCanonicalId)
+        .map((chain) => withTenderlyOverrides(chain, runtime.configuredByCanonicalId[chain.id]))
+    : canonicalChains
+}
+
+export function getSupportedExecutionChainsForRuntime(
+  runtime: TTenderlyRuntime,
+  canonicalChainSet: readonly Chain[] = getSupportedCanonicalChainsForRuntime(runtime)
+): readonly Chain[] {
+  return runtime.isEnabled
+    ? canonicalChainSet.map((chain) =>
+        buildExecutionChain(chain, runtime.configuredByCanonicalId[chain.id] as TTenderlyChainConfig)
+      )
+    : canonicalChainSet
+}
+
+export function getSupportedChainLookupForRuntime(
+  runtime: TTenderlyRuntime,
+  canonicalChainSet: readonly Chain[] = getSupportedCanonicalChainsForRuntime(runtime),
+  executionChainSet: readonly Chain[] = getSupportedExecutionChainsForRuntime(runtime, canonicalChainSet)
+): readonly Chain[] {
+  return [
+    ...canonicalChainSet,
+    ...executionChainSet.filter((chain) => !canonicalChainSet.some((canonicalChain) => canonicalChain.id === chain.id))
+  ]
+}
+
+export const supportedCanonicalChains: readonly Chain[] = getSupportedCanonicalChainsForRuntime(tenderlyRuntime)
+
+export const supportedExecutionChains: readonly Chain[] = getSupportedExecutionChainsForRuntime(
+  tenderlyRuntime,
+  supportedCanonicalChains
+)
+
+export const supportedChainLookup: readonly Chain[] = getSupportedChainLookupForRuntime(
+  tenderlyRuntime,
+  supportedCanonicalChains,
+  supportedExecutionChains
+)
+
+export function isTenderlyModeEnabled(): boolean {
+  return tenderlyRuntime.isEnabled
+}
+
+export function getTenderlyBackedCanonicalChainIds(): readonly TCanonicalChainId[] {
+  return tenderlyRuntime.configuredCanonicalChainIds
+}
+
+export function isCanonicalChainEnabled(chainId: number): chainId is TCanonicalChainId {
+  return supportedCanonicalChains.some((chain) => chain.id === chainId)
+}
+
+export function getCanonicalChain(chainId: number): Chain | undefined {
+  return supportedCanonicalChains.find((chain) => chain.id === chainId)
+}
+
+function isCanonicalChainEnabledForRuntime(runtime: TTenderlyRuntime, chainId: number): chainId is TCanonicalChainId {
+  return getSupportedCanonicalChainsForRuntime(runtime).some((chain) => chain.id === chainId)
+}
+
+export function resolveCanonicalChainIdForRuntime(
+  runtime: TTenderlyRuntime,
+  chainId: number | undefined
+): TCanonicalChainId | undefined {
+  if (!Number.isInteger(chainId)) {
+    return undefined
+  }
+
+  const executionChainId = runtime.executionToCanonicalChainId.get(chainId as number)
+  if (executionChainId !== undefined) {
+    return executionChainId
+  }
+
+  if (isCanonicalChainEnabledForRuntime(runtime, chainId as number)) {
+    return chainId as TCanonicalChainId
+  }
+
+  return undefined
+}
+
+export function resolveCanonicalChainId(chainId: number | undefined): TCanonicalChainId | undefined {
+  return resolveCanonicalChainIdForRuntime(tenderlyRuntime, chainId)
+}
+
+export function resolveConnectedCanonicalChainIdForRuntime(
+  runtime: TTenderlyRuntime,
+  chainId: number | undefined
+): TCanonicalChainId | undefined {
+  if (!Number.isInteger(chainId)) {
+    return undefined
+  }
+
+  if (runtime.isEnabled) {
+    return runtime.executionToCanonicalChainId.get(chainId as number)
+  }
+
+  return isCanonicalChainEnabledForRuntime(runtime, chainId as number) ? (chainId as TCanonicalChainId) : undefined
+}
+
+export function resolveConnectedCanonicalChainId(chainId: number | undefined): TCanonicalChainId | undefined {
+  return resolveConnectedCanonicalChainIdForRuntime(tenderlyRuntime, chainId)
+}
+
+export function resolveExecutionChainIdForRuntime(
+  runtime: TTenderlyRuntime,
+  chainId: number | undefined
+): number | undefined {
+  if (!Number.isInteger(chainId)) {
+    return undefined
+  }
+
+  if (runtime.executionToCanonicalChainId.has(chainId as number)) {
+    return chainId as number
+  }
+
+  if (runtime.isEnabled) {
+    return runtime.canonicalToExecutionChainId.get(chainId as number)
+  }
+
+  return isCanonicalChainEnabledForRuntime(runtime, chainId as number) ? (chainId as number) : undefined
+}
+
+export function resolveExecutionChainId(chainId: number | undefined): number | undefined {
+  return resolveExecutionChainIdForRuntime(tenderlyRuntime, chainId)
+}

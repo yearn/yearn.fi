@@ -14,6 +14,7 @@ import { truncateHex } from '@shared/utils/tools.address'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
+import { isTenderlyModeEnabled, tenderlyRuntime } from '@/config/tenderly'
 import Link from '/src/components/Link'
 import { AccountDropdown } from './AccountDropdown'
 import { HeaderNavMenu } from './HeaderNavMenu'
@@ -98,6 +99,30 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
   )
 }
 
+function TenderlyIndicator(): ReactElement | null {
+  if (!isTenderlyModeEnabled()) {
+    return null
+  }
+
+  const configuredMappings = tenderlyRuntime.configuredCanonicalChainIds
+    .map((canonicalChainId) => {
+      const executionChainId = tenderlyRuntime.configuredByCanonicalId[canonicalChainId]?.executionChainId
+      return executionChainId ? `${canonicalChainId} -> ${executionChainId}` : String(canonicalChainId)
+    })
+    .join(', ')
+
+  return (
+    <span
+      title={`Tenderly mode enabled${configuredMappings ? ` (${configuredMappings})` : ''}`}
+      className={
+        'inline-flex items-center rounded-full border border-border bg-surface-secondary px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary'
+      }
+    >
+      {'Tenderly'}
+    </span>
+  )
+}
+
 function AppHeader(): ReactElement {
   const location = useLocation()
   const pathname = location.pathname
@@ -143,6 +168,8 @@ function AppHeader(): ReactElement {
                       {'Portfolio'}
                     </span>
                   </Link>
+
+                  <TenderlyIndicator />
 
                   <button
                     className={

@@ -13,13 +13,13 @@ import {
 } from '@pages/vaults/utils/yvUsd'
 import { Button } from '@shared/components/Button'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
+import { type AppUseSimulateContractReturnType, useReadContract, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { formatTAmount, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
-import type { UseSimulateContractReturnType } from 'wagmi'
-import { useAccount, useReadContract, useSimulateContract } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { WidgetWithdraw } from '../withdraw'
@@ -500,7 +500,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     windowRemainingSeconds
   )
 
-  const prepareStartCooldown: UseSimulateContractReturnType = useSimulateContract({
+  const prepareStartCooldown: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: yvUsdLockedVaultAbi,
     functionName: 'startCooldown',
@@ -511,7 +511,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
       enabled: !!account && isLockedVariant && needsCooldownStart && cooldownSharesToStart > 0n
     }
   })
-  const prepareCancelCooldown: UseSimulateContractReturnType = useSimulateContract({
+  const prepareCancelCooldown: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: yvUsdLockedVaultAbi,
     functionName: 'cancelCooldown',
@@ -534,7 +534,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
       : `Starting cooldown for ${formattedCooldownShares} locked shares`
 
     return {
-      prepare: prepareStartCooldown as unknown as UseSimulateContractReturnType,
+      prepare: prepareStartCooldown,
       label: 'Start Cooldown',
       confirmMessage: cooldownConfirmMessage,
       successTitle: 'Cooldown started',
@@ -574,7 +574,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     if (!prepareCancelCooldown.isSuccess || !prepareCancelCooldown.data?.request) return undefined
 
     return {
-      prepare: prepareCancelCooldown as unknown as UseSimulateContractReturnType,
+      prepare: prepareCancelCooldown,
       label: 'Cancel Cooldown',
       confirmMessage: 'Canceling active cooldown for locked yvUSD shares',
       successTitle: 'Cooldown canceled',

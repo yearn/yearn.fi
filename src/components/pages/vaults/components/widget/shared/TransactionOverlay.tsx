@@ -1,21 +1,19 @@
 import { Button } from '@shared/components/Button'
 import { useNotificationsActions } from '@shared/contexts/useNotificationsActions'
+import {
+  type AppUseSimulateContractReturnType,
+  useChainId,
+  usePublicClient,
+  useSwitchChain,
+  useWaitForTransactionReceipt
+} from '@shared/hooks/useAppWagmi'
 import type { TCreateNotificationParams } from '@shared/types/notifications'
 import { cl } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useReward } from 'react-rewards'
 import type { TypedData, TypedDataDomain } from 'viem'
-import {
-  type UseSimulateContractReturnType,
-  useAccount,
-  useChainId,
-  usePublicClient,
-  useSignTypedData,
-  useSwitchChain,
-  useWaitForTransactionReceipt,
-  useWriteContract
-} from 'wagmi'
+import { useAccount, useSignTypedData, useWriteContract } from 'wagmi'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
 import { type OverlayState, shouldAutoContinuePermitSuccess } from './transactionOverlay.helpers'
 
@@ -33,7 +31,7 @@ export type PermitDataAsync = {
 export type PermitData = PermitDataDirect | PermitDataAsync
 
 export type TransactionStep = {
-  prepare: UseSimulateContractReturnType
+  prepare: AppUseSimulateContractReturnType
   label: string
   confirmMessage: string
   successTitle: string
@@ -52,7 +50,7 @@ type TPrepareDebugInfo = {
   isError: boolean
   isLoading: boolean
   isFetching: boolean
-  status: UseSimulateContractReturnType['status']
+  status: AppUseSimulateContractReturnType['status']
   error?: string
   request?: {
     chainId?: number
@@ -61,7 +59,7 @@ type TPrepareDebugInfo = {
   }
 }
 
-function getPrepareDebugInfo(prepare?: UseSimulateContractReturnType): TPrepareDebugInfo | undefined {
+function getPrepareDebugInfo(prepare?: AppUseSimulateContractReturnType): TPrepareDebugInfo | undefined {
   if (!prepare) return undefined
   const request = prepare.data?.request as any
 
@@ -177,10 +175,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   // Track the step that was just executed (for showing success messages)
   const executedStepRef = useRef<TransactionStep | null>(null)
 
-  const receipt = useWaitForTransactionReceipt({ hash: txHash, confirmations })
   const explorerChainId =
-    ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? currentChainId
-  const blockExplorer = explorerChainId ? getNetwork(explorerChainId).defaultBlockExplorer : ''
+    ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? undefined
+  const receipt = useWaitForTransactionReceipt({ hash: txHash, chainId: explorerChainId, confirmations })
+  const blockExplorer = getNetwork(explorerChainId ?? currentChainId).defaultBlockExplorer
   const explorerTxUrl = txHash && blockExplorer ? `${blockExplorer}/tx/${txHash}` : ''
 
   // Track if the executed step was the last step (captured at execution time)
@@ -291,12 +289,16 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     async (
       txHash: `0x${string}`,
       notification?: TCreateNotificationParams,
+      executionChainId?: number,
       status: 'pending' | 'submitted' = 'pending'
     ): Promise<number | undefined> => {
       if (!notification || !account) return undefined
 
       try {
-        const id = await createNotification(notification)
+        const id = await createNotification({
+          ...notification,
+          executionChainId: executionChainId ?? notification.executionChainId
+        })
         setNotificationId(id)
         await updateNotification({ id, txHash, status })
         return id
@@ -413,7 +415,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           }
 
           if (isCrossChain) {
-            await handleCreateNotification(result.hash, currentStep.notification, 'submitted')
+            await handleCreateNotification(result.hash, currentStep.notification, txChainId, 'submitted')
             if (currentStep.showConfetti) {
               setTimeout(() => reward(), 100)
             }
@@ -425,7 +427,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
           setTxHash(result.hash)
           setOverlayState('pending')
-          await handleCreateNotification(result.hash, currentStep.notification)
+          await handleCreateNotification(result.hash, currentStep.notification, txChainId)
           return
         }
 
@@ -450,7 +452,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         })
         setTxHash(hash)
         setOverlayState('pending')
-        await handleCreateNotification(hash, currentStep.notification)
+        await handleCreateNotification(hash, currentStep.notification, txChainId)
       } catch (error: any) {
         if (isUserRejectionError(error)) {
           onClose()

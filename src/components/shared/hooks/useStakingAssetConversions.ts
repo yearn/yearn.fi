@@ -8,6 +8,7 @@ import { useMemo } from 'react'
 import type { Address } from 'viem'
 import { useConfig } from 'wagmi'
 import { readContract } from 'wagmi/actions'
+import { resolveExecutionChainId } from '@/config/tenderly'
 
 type TTokenAndChain = { address: TAddress; chainID: number }
 type TBalanceGetter = (params: TTokenAndChain) => TNormalizedBN
@@ -88,14 +89,20 @@ export function useStakingAssetConversions({
           abi: readonly unknown[]
           functionName: string
           args?: readonly unknown[]
-        }) =>
-          readContract(config, {
-            chainId: position.chainID,
+        }) => {
+          const executionChainId = resolveExecutionChainId(position.chainID)
+          if (!executionChainId) {
+            throw new Error(`No execution chain found for chainId ${position.chainID}`)
+          }
+
+          return readContract(config, {
+            chainId: executionChainId,
             address: request.address,
             abi: request.abi as any,
             functionName: request.functionName as any,
             args: request.args as any
           })
+        }
 
         return getStakingWithdrawableAssets({
           read,
@@ -105,7 +112,7 @@ export function useStakingAssetConversions({
           stakingShareBalance: position.stakingShareBalance
         })
       },
-      enabled: Boolean(userAddress && position.stakingShareBalance > 0n),
+      enabled: Boolean(userAddress && position.stakingShareBalance > 0n && resolveExecutionChainId(position.chainID)),
       staleTime: 60_000,
       gcTime: 5 * 60_000,
       retry: 1,
