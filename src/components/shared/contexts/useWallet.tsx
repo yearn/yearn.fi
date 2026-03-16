@@ -120,10 +120,14 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     tokens: allTokens,
     priorityChainID: 1
   })
+  const stableTokensRaw = useDeepCompareMemo((): TYChainTokens => {
+    return { ...(tokensRaw as TYChainTokens) }
+  }, [tokensRaw])
   /**************************************************************************
    ** Balance queries stream updates across multiple chains. Hold the last
-   ** settled snapshot while the wallet is loading so list consumers do not
-   ** rerender on every intermediate balance update during connect.
+   ** deep-stable settled snapshot while the wallet is loading so list
+   ** consumers do not rerender on every intermediate balance update during
+   ** connect or get stuck on transient reference churn.
    **************************************************************************/
   const settledTokensRawRef = useRef<TYChainTokens>({})
   const settledOwnerRef = useRef(userAddress)
@@ -132,9 +136,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     settledTokensRawRef.current = {}
   }
   if (!isLoading) {
-    settledTokensRawRef.current = tokensRaw as TYChainTokens
+    settledTokensRawRef.current = stableTokensRaw
   }
-  const visibleTokensRaw = isLoading ? settledTokensRawRef.current : (tokensRaw as TYChainTokens)
+  const visibleTokensRaw = isLoading ? settledTokensRawRef.current : stableTokensRaw
   const deferredTokensRaw = useDeferredValue(visibleTokensRaw)
   const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
     const _tokens = { ...deferredTokensRaw }

@@ -1,12 +1,12 @@
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { type UseQueryOptions, useQueries } from '@tanstack/react-query'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import type { TAddress } from '../types/address'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { isZeroAddress } from '../utils/tools.is'
 import { getChainConfig } from './balanceQueryConfig'
 import { getBalances, type TUseBalancesTokens } from './useBalances.multichains'
-import { partitionTokensByQueryStage } from './useBalancesQueries.helpers'
+import { mergeStagedQueryData, partitionTokensByQueryStage } from './useBalancesQueries.helpers'
 import { balanceQueryKeys } from './useBalancesQuery'
 
 type TBalanceQueryOptions = UseQueryOptions<
@@ -41,19 +41,6 @@ function buildBalanceQueryOptions(
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
     }
   })
-}
-
-function mergeQueryData(chainIds: number[], queries: Array<{ data?: TDict<TToken> }>): TChainTokens {
-  const combined: TChainTokens = {}
-
-  queries.forEach((query, index) => {
-    const chainId = chainIds[index]
-    if (chainId !== undefined && query.data) {
-      combined[chainId] = query.data
-    }
-  })
-
-  return combined
 }
 
 /*******************************************************************************
@@ -130,12 +117,21 @@ export function useBalancesQueries(
   const secondaryQueries = useQueries({
     queries: secondaryQueryOptions
   })
+  const priorityQueryData = priorityQueries.map((query) => query.data)
+  const secondaryQueryData = secondaryQueries.map((query) => query.data)
+  const dataRef = useRef<TChainTokens>({})
 
   const data = useMemo(() => {
-    const priorityData = mergeQueryData(priorityChainIds, priorityQueries)
-    const secondaryData = mergeQueryData(secondaryChainIds, secondaryQueries)
-    return { ...priorityData, ...secondaryData }
-  }, [priorityChainIds, priorityQueries, secondaryChainIds, secondaryQueries])
+    dataRef.current = mergeStagedQueryData({
+      previousData: dataRef.current,
+      priorityChainIds,
+      priorityQueryData,
+      secondaryChainIds,
+      secondaryQueryData
+    })
+
+    return dataRef.current
+  }, [priorityChainIds, priorityQueryData, secondaryChainIds, secondaryQueryData])
 
   const queries = useMemo(() => [...priorityQueries, ...secondaryQueries], [priorityQueries, secondaryQueries])
   const chainIds = useMemo(() => [...priorityChainIds, ...secondaryChainIds], [priorityChainIds, secondaryChainIds])

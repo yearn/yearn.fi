@@ -1,6 +1,7 @@
+import { replaceEqualDeep } from '@tanstack/query-core'
 import { getAddress } from 'viem'
 import type { TAddress } from '../types/address'
-import type { TNDict } from '../types/mixed'
+import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import type { TUseBalancesTokens } from './useBalances.multichains'
 
 type TStagedTokensByChain = {
@@ -52,4 +53,33 @@ export function partitionTokensByQueryStage(
     priorityTokensByChain,
     secondaryTokensByChain
   }
+}
+
+function mergeQueryDataByChain(chainIds: number[], queryData: Array<TDict<TToken> | undefined>): TChainTokens {
+  const combined: TChainTokens = {}
+
+  queryData.forEach((data, index) => {
+    const chainId = chainIds[index]
+    if (chainId !== undefined && data) {
+      combined[chainId] = data
+    }
+  })
+
+  return combined
+}
+
+export function mergeStagedQueryData(params: {
+  previousData: TChainTokens
+  priorityChainIds: number[]
+  priorityQueryData: Array<TDict<TToken> | undefined>
+  secondaryChainIds: number[]
+  secondaryQueryData: Array<TDict<TToken> | undefined>
+}): TChainTokens {
+  const { previousData, priorityChainIds, priorityQueryData, secondaryChainIds, secondaryQueryData } = params
+  const nextData = {
+    ...mergeQueryDataByChain(priorityChainIds, priorityQueryData),
+    ...mergeQueryDataByChain(secondaryChainIds, secondaryQueryData)
+  }
+
+  return replaceEqualDeep(previousData, nextData)
 }
