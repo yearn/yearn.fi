@@ -18,6 +18,7 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
 import { useReadContract } from '@shared/hooks/useAppWagmi'
+import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconLoader } from '@shared/icons/IconLoader'
@@ -33,9 +34,9 @@ import {
   truncateHex
 } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi/utils'
-import { type FC, type ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { formatDuration, parseCooldownStatus } from './yvUSD/cooldownUtils'
+import { formatDuration, parseCooldownStatus, resolveCooldownWindowState } from './yvUSD/cooldownUtils'
 
 type WalletPanelProps = {
   isActive: boolean
@@ -67,7 +68,6 @@ const STATUS_STYLES: Record<TNotificationStatus, { label: string; className: str
 function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElement {
   const { getPrice } = useYearn()
   const { unlockedVault, lockedVault, isLoading: isLoadingYvUsd } = useYvUsdVaults()
-  const [nowTimestamp, setNowTimestamp] = useState(() => Math.floor(Date.now() / 1000))
 
   const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
   const unlockedUserData = useVaultUserData({
@@ -106,12 +106,20 @@ function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElem
   })
   const cooldownStatus = useMemo(() => parseCooldownStatus(rawCooldownStatus), [rawCooldownStatus])
   const hasActiveCooldown = cooldownStatus.shares > 0n
-  const isCooldownActive = hasActiveCooldown && nowTimestamp < cooldownStatus.cooldownEnd
-  const isWithdrawalWindowOpen =
-    hasActiveCooldown && nowTimestamp >= cooldownStatus.cooldownEnd && nowTimestamp <= cooldownStatus.windowEnd
+  const availableWithdrawLimit = typeof rawAvailableWithdrawLimit === 'bigint' ? rawAvailableWithdrawLimit : 0n
+  const { timestamp: nowTimestamp } = useChainTimestamp({
+    chainId: YVUSD_CHAIN_ID,
+    enabled: Boolean(account && hasActiveCooldown)
+  })
+  const { isCooldownActive, isWithdrawalWindowOpen } = resolveCooldownWindowState({
+    hasActiveCooldown,
+    nowTimestamp,
+    cooldownEnd: cooldownStatus.cooldownEnd,
+    windowEnd: cooldownStatus.windowEnd,
+    availableWithdrawLimit
+  })
   const cooldownRemainingSeconds = isCooldownActive ? cooldownStatus.cooldownEnd - nowTimestamp : 0
   const windowRemainingSeconds = isWithdrawalWindowOpen ? cooldownStatus.windowEnd - nowTimestamp : 0
-  const availableWithdrawLimit = typeof rawAvailableWithdrawLimit === 'bigint' ? rawAvailableWithdrawLimit : 0n
   const sharesUnderCooldown = hasActiveCooldown ? cooldownStatus.shares : 0n
   const assetsUnderCooldown = useMemo(() => {
     if (!hasActiveCooldown || lockedUserData.pricePerShare <= 0n) return 0n
@@ -136,15 +144,6 @@ function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElem
   const unlockedUsd = unlockedNormalized * unlockedAssetPrice
   const lockedUsd = lockedNormalized * unlockedSharePrice
   const totalUsd = unlockedUsd + lockedUsd
-
-  useEffect(() => {
-    if (!account) return
-    setNowTimestamp(Math.floor(Date.now() / 1000))
-    const interval = window.setInterval(() => {
-      setNowTimestamp(Math.floor(Date.now() / 1000))
-    }, 1_000)
-    return () => window.clearInterval(interval)
-  }, [account])
 
   if (isLoadingYvUsd || unlockedUserData.isLoading || lockedUserData.isLoading) {
     return <p className="text-text-secondary">{'Loading yvUSD position data...'}</p>
