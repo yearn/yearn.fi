@@ -206,6 +206,97 @@ const TRANSFERS_BY_TX_FROM_QUERY = `
   }
 `
 
+const DEPOSITS_BY_TX_HASHES_QUERY = `
+  query GetDepositsByTransactionHashes($chainId: Int!, $transactionHashes: [String!]!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Deposit(where: { chainId: { _eq: $chainId }, transactionHash: { _in: $transactionHashes }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      owner
+      sender
+      assets
+      shares
+    }
+  }
+`
+
+const WITHDRAWALS_BY_TX_HASHES_QUERY = `
+  query GetWithdrawalsByTransactionHashes($chainId: Int!, $transactionHashes: [String!]!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Withdraw(where: { chainId: { _eq: $chainId }, transactionHash: { _in: $transactionHashes }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      owner
+      assets
+      shares
+    }
+  }
+`
+
+const V2_DEPOSITS_BY_TX_HASHES_QUERY = `
+  query GetV2DepositsByTransactionHashes($chainId: Int!, $transactionHashes: [String!]!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    V2Deposit(where: { chainId: { _eq: $chainId }, transactionHash: { _in: $transactionHashes }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      recipient
+      amount
+      shares
+    }
+  }
+`
+
+const V2_WITHDRAWALS_BY_TX_HASHES_QUERY = `
+  query GetV2WithdrawalsByTransactionHashes($chainId: Int!, $transactionHashes: [String!]!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    V2Withdraw(where: { chainId: { _eq: $chainId }, transactionHash: { _in: $transactionHashes }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      recipient
+      amount
+      shares
+    }
+  }
+`
+
+const TRANSFERS_BY_TX_HASHES_QUERY = `
+  query GetTransfersByTransactionHashes($chainId: Int!, $transactionHashes: [String!]!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Transfer(where: { chainId: { _eq: $chainId }, transactionHash: { _in: $transactionHashes }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      sender
+      receiver
+      value
+    }
+  }
+`
+
 // Query to fetch pre-computed counts from indexer
 const USER_EVENT_COUNTS_QUERY = `
   query GetUserEventCounts($id: String!) {
@@ -278,6 +369,8 @@ async function fetchUserCounts(userAddress: string): Promise<UserCounts> {
 // Default maxTimestamp: 10 years from now (queries require a value, can't be null)
 // Using a smaller value to avoid integer overflow in GraphQL
 const DEFAULT_MAX_TIMESTAMP = 2000000000 // ~year 2033, safe 32-bit integer
+const TX_HASH_BATCH_SIZE = 200
+const TX_HASH_QUERY_CONCURRENCY = 5
 
 // Sequential pagination - fetch pages until we get fewer results than BATCH_SIZE
 async function fetchAllSequential<T>(
@@ -328,6 +421,147 @@ async function fetchAllSequential<T>(
     pages,
     maxTimestamp: ts
   })
+  return allResults
+}
+
+function chunkArray<T>(items: T[], chunkSize: number): T[][] {
+  const chunks: T[][] = []
+
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize))
+  }
+
+  return chunks
+}
+
+function dedupeById<T extends { id: string }>(events: T[]): T[] {
+  return Array.from(
+    events
+      .reduce<Map<string, T>>((deduped, event) => {
+        if (!deduped.has(event.id)) {
+          deduped.set(event.id, event)
+        }
+
+        return deduped
+      }, new Map<string, T>())
+      .values()
+  )
+}
+
+function collectAddressTransactionHashes(events: UserEvents): Map<number, string[]> {
+  const groupedHashes = new Map<number, Set<string>>()
+  const allAddressEvents = [...events.deposits, ...events.withdrawals, ...events.transfersIn, ...events.transfersOut]
+
+  allAddressEvents.forEach((event) => {
+    if (!event.transactionHash) {
+      return
+    }
+
+    const txHashes = groupedHashes.get(event.chainId) ?? new Set<string>()
+    txHashes.add(event.transactionHash.toLowerCase())
+    groupedHashes.set(event.chainId, txHashes)
+  })
+
+  return Array.from(groupedHashes.entries()).reduce<Map<number, string[]>>((grouped, [chainId, hashes]) => {
+    grouped.set(chainId, Array.from(hashes.values()))
+    return grouped
+  }, new Map<number, string[]>())
+}
+
+async function fetchTransactionHashBatch<T>(
+  query: string,
+  chainId: number,
+  transactionHashes: string[],
+  resultKey: string,
+  maxTimestamp?: number
+): Promise<T[]> {
+  const allResults: T[] = []
+  let offset = 0
+  const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
+
+  while (true) {
+    const variables = {
+      chainId,
+      transactionHashes,
+      limit: BATCH_SIZE,
+      offset,
+      maxTimestamp: ts
+    }
+    let data: Record<string, T[]>
+
+    try {
+      data = await executeQuery<Record<string, T[]>>(query, variables)
+    } catch (error) {
+      debugError('graphql', 'transaction hash event fetch failed', error, {
+        resultKey,
+        chainId,
+        transactionHashCount: transactionHashes.length,
+        offset,
+        maxTimestamp: ts
+      })
+      throw error
+    }
+
+    const batch = data[resultKey] || []
+    allResults.push(...batch)
+
+    if (batch.length < BATCH_SIZE) {
+      break
+    }
+
+    offset += BATCH_SIZE
+  }
+
+  return allResults
+}
+
+async function fetchAllByTransactionHashes<T>(
+  query: string,
+  transactionHashesByChain: Map<number, string[]>,
+  resultKey: string,
+  maxTimestamp?: number
+): Promise<T[]> {
+  const batchSpecs = Array.from(transactionHashesByChain.entries()).flatMap(([chainId, transactionHashes]) =>
+    chunkArray(transactionHashes, TX_HASH_BATCH_SIZE).map((txHashBatch) => ({
+      chainId,
+      transactionHashes: txHashBatch
+    }))
+  )
+
+  if (batchSpecs.length === 0) {
+    debugLog('graphql', 'skipping transaction hash event fetch because there are no address tx hashes', {
+      resultKey
+    })
+    return []
+  }
+
+  const allResults: T[] = []
+
+  for (let index = 0; index < batchSpecs.length; index += TX_HASH_QUERY_CONCURRENCY) {
+    const batchGroup = batchSpecs.slice(index, index + TX_HASH_QUERY_CONCURRENCY)
+    const groupResults = await Promise.all(
+      batchGroup.map(({ chainId, transactionHashes }) =>
+        fetchTransactionHashBatch<T>(query, chainId, transactionHashes, resultKey, maxTimestamp)
+      )
+    )
+
+    groupResults.forEach((results) => {
+      allResults.push(...results)
+    })
+  }
+
+  debugLog('graphql', 'fetched transaction hash event set', {
+    resultKey,
+    chains: transactionHashesByChain.size,
+    transactionHashes: Array.from(transactionHashesByChain.values()).reduce(
+      (total, hashes) => total + hashes.length,
+      0
+    ),
+    batches: batchSpecs.length,
+    count: allResults.length,
+    maxTimestamp: maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
+  })
+
   return allResults
 }
 
@@ -561,17 +795,63 @@ export async function fetchRawUserPnlEvents(
     )
   ])
 
+  const addressEvents = {
+    deposits: getDepositsByVersion(addressV3Deposits, addressV2DepositsRaw, version),
+    withdrawals: getWithdrawalsByVersion(addressV3Withdrawals, addressV2WithdrawalsRaw, version),
+    transfersIn: sortByBlock(addressTransfersIn),
+    transfersOut: sortByBlock(addressTransfersOut)
+  }
+  const addressTransactionHashes = collectAddressTransactionHashes(addressEvents)
+  const [txHashV3Deposits, txHashV3Withdrawals, txHashV2DepositsRaw, txHashV2WithdrawalsRaw, txHashTransfers] =
+    await Promise.all([
+      fetchAllByTransactionHashes<DepositEvent>(
+        DEPOSITS_BY_TX_HASHES_QUERY,
+        addressTransactionHashes,
+        'Deposit',
+        maxTimestamp
+      ),
+      fetchAllByTransactionHashes<WithdrawEvent>(
+        WITHDRAWALS_BY_TX_HASHES_QUERY,
+        addressTransactionHashes,
+        'Withdraw',
+        maxTimestamp
+      ),
+      fetchAllByTransactionHashes<V2DepositEvent>(
+        V2_DEPOSITS_BY_TX_HASHES_QUERY,
+        addressTransactionHashes,
+        'V2Deposit',
+        maxTimestamp
+      ),
+      fetchAllByTransactionHashes<V2WithdrawEvent>(
+        V2_WITHDRAWALS_BY_TX_HASHES_QUERY,
+        addressTransactionHashes,
+        'V2Withdraw',
+        maxTimestamp
+      ),
+      fetchAllByTransactionHashes<TransferEvent>(
+        TRANSFERS_BY_TX_HASHES_QUERY,
+        addressTransactionHashes,
+        'Transfer',
+        maxTimestamp
+      )
+    ])
+
   const context = {
-    addressEvents: {
-      deposits: getDepositsByVersion(addressV3Deposits, addressV2DepositsRaw, version),
-      withdrawals: getWithdrawalsByVersion(addressV3Withdrawals, addressV2WithdrawalsRaw, version),
-      transfersIn: sortByBlock(addressTransfersIn),
-      transfersOut: sortByBlock(addressTransfersOut)
-    },
+    addressEvents,
     transactionEvents: {
-      deposits: getDepositsByVersion(txV3Deposits, txV2DepositsRaw, version),
-      withdrawals: getWithdrawalsByVersion(txV3Withdrawals, txV2WithdrawalsRaw, version),
-      transfers: sortByBlock(txTransfers)
+      deposits: sortByBlock(
+        dedupeById([
+          ...getDepositsByVersion(txV3Deposits, txV2DepositsRaw, version),
+          ...getDepositsByVersion(txHashV3Deposits, txHashV2DepositsRaw, version)
+        ])
+      ),
+      withdrawals: sortByBlock(
+        dedupeById([
+          ...getWithdrawalsByVersion(txV3Withdrawals, txV2WithdrawalsRaw, version),
+          ...getWithdrawalsByVersion(txHashV3Withdrawals, txHashV2WithdrawalsRaw, version)
+        ])
+      ),
+      transfers: sortByBlock(dedupeById([...txTransfers, ...txHashTransfers]))
     }
   }
   debugLog('graphql', 'fetched raw user pnl events', {

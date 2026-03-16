@@ -3,6 +3,7 @@ import {
   getHistoricalHoldings,
   getHoldingsPnL,
   initializeSchema,
+  type UnknownTransferInPnlMode,
   type VaultVersion,
   validateConfig
 } from './lib/holdings'
@@ -43,6 +44,10 @@ function handleCorsPrelight(): Response {
 
 function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
+}
+
+function parseUnknownTransferInPnlMode(value: string | null): UnknownTransferInPnlMode {
+  return value === 'strict' || value === 'zero_basis' || value === 'windfall' ? value : 'windfall'
 }
 
 function handleEnsoStatus(): Response {
@@ -249,6 +254,7 @@ async function handleHoldingsPnL(req: Request): Promise<Response> {
   const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
   const debugVault = url.searchParams.get('debugVault')
   const debugTx = url.searchParams.get('debugTx')
+  const unknownTransferInPnlMode = parseUnknownTransferInPnlMode(url.searchParams.get('unknownMode'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -270,22 +276,24 @@ async function handleHoldingsPnL(req: Request): Promise<Response> {
       async () => {
         debugLog('route', 'started holdings pnl request', {
           version,
+          unknownTransferInPnlMode,
           debugLotsEnabled,
           debugVault: debugVault?.toLowerCase() ?? null,
           debugTx: debugTx?.toLowerCase() ?? null
         })
 
         try {
-          const response = await getHoldingsPnL(address, version)
+          const response = await getHoldingsPnL(address, version, unknownTransferInPnlMode)
           debugLog('route', 'completed holdings pnl request', {
             version,
+            unknownTransferInPnlMode,
             totalVaults: response.summary.totalVaults,
             totalCurrentValueUsd: response.summary.totalCurrentValueUsd,
             totalPnlUsd: response.summary.totalPnlUsd
           })
           return response
         } catch (error) {
-          debugError('route', 'holdings pnl request failed', error, { version })
+          debugError('route', 'holdings pnl request failed', error, { version, unknownTransferInPnlMode })
           throw error
         }
       }

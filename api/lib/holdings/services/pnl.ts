@@ -20,12 +20,27 @@ type TLocation = 'wallet' | 'staked'
 type TLot = {
   shares: bigint
   costBasis: bigint | null
+  acquiredAt?: number
 }
 
 type TRealizedEntry = {
   timestamp: number
   pnlAssets: bigint
 }
+
+type TUnknownTransferInEntry = {
+  timestamp: number
+  shares: bigint
+}
+
+type TUnknownWithdrawalEntry = {
+  timestamp: number
+  shares: bigint
+  proceedsAssets: bigint
+  consumedLots: TLot[]
+}
+
+export type UnknownTransferInPnlMode = 'strict' | 'zero_basis' | 'windfall'
 
 type TPnlDebugJournalRow = {
   timestamp: number
@@ -124,6 +139,8 @@ export interface FamilyPnlLedger {
   unmatchedTransferOutCount: number
   unmatchedTransferOutShares: bigint
   realizedEntries: TRealizedEntry[]
+  unknownTransferInEntries: TUnknownTransferInEntry[]
+  unknownWithdrawalEntries: TUnknownWithdrawalEntry[]
   debugJournal: TPnlDebugJournalRow[]
   eventCounts: {
     underlyingDeposits: number
@@ -143,6 +160,7 @@ export interface HoldingsPnLVault {
   stakingVaultAddress: string | null
   status: 'ok' | 'missing_metadata' | 'missing_price' | 'missing_pps'
   costBasisStatus: 'complete' | 'partial'
+  unknownTransferInPnlMode: UnknownTransferInPnlMode
   shares: string
   sharesFormatted: number
   walletShares: string
@@ -157,6 +175,7 @@ export interface HoldingsPnLVault {
   walletValueUsd: number
   stakedValueUsd: number
   unknownCostBasisValueUsd: number
+  windfallPnlUsd: number
   realizedPnlUnderlying: number
   realizedPnlUsd: number
   unrealizedPnlUnderlying: number
@@ -186,6 +205,7 @@ export interface HoldingsPnLVault {
 export interface HoldingsPnLResponse {
   address: string
   version: VaultVersion
+  unknownTransferInPnlMode: UnknownTransferInPnlMode
   generatedAt: string
   summary: {
     totalVaults: number
@@ -193,6 +213,7 @@ export interface HoldingsPnLResponse {
     partialVaults: number
     totalCurrentValueUsd: number
     totalUnknownCostBasisValueUsd: number
+    totalWindfallPnlUsd: number
     totalRealizedPnlUsd: number
     totalUnrealizedPnlUsd: number
     totalPnlUsd: number
@@ -235,11 +256,12 @@ function sumKnownCostBasis(lots: TLot[]): bigint {
   return lots.reduce((total, lot) => total + (lot.costBasis ?? ZERO), ZERO)
 }
 
+function createLot(shares: bigint, costBasis: bigint | null, acquiredAt?: number): TLot {
+  return acquiredAt === undefined ? { shares, costBasis } : { shares, costBasis, acquiredAt }
+}
+
 function cloneLots(lots: TLot[]): TLot[] {
-  return lots.map((lot) => ({
-    shares: lot.shares,
-    costBasis: lot.costBasis
-  }))
+  return lots.map((lot) => createLot(lot.shares, lot.costBasis, lot.acquiredAt))
 }
 
 function summarizeLots(lots: TLot[]): {
@@ -271,6 +293,7 @@ function serializeLots(
   sharesFormatted?: number
   costBasis: string | null
   costBasisFormatted?: number | null
+  acquiredAt?: number
 }> {
   return lots.map((lot, index) => ({
     index,
@@ -278,7 +301,8 @@ function serializeLots(
     sharesFormatted: shareDecimals === undefined ? undefined : formatAmount(lot.shares, shareDecimals),
     costBasis: lot.costBasis?.toString() ?? null,
     costBasisFormatted:
-      lot.costBasis === null || assetDecimals === undefined ? null : formatAmount(lot.costBasis, assetDecimals)
+      lot.costBasis === null || assetDecimals === undefined ? null : formatAmount(lot.costBasis, assetDecimals),
+    acquiredAt: lot.acquiredAt
   }))
 }
 
@@ -607,6 +631,8 @@ function createFamilyLedger(chainId: number, familyVaultAddress: string): Family
     unmatchedTransferOutCount: 0,
     unmatchedTransferOutShares: ZERO,
     realizedEntries: [],
+    unknownTransferInEntries: [],
+    unknownWithdrawalEntries: [],
     debugJournal: [],
     eventCounts: {
       underlyingDeposits: 0,
@@ -687,16 +713,10 @@ function consumeLots(
     const consumedCostBasis = lot.costBasis === null ? null : (lot.costBasis * consumedShares) / lot.shares
     const remainingCostBasis = lot.costBasis === null ? null : lot.costBasis - (consumedCostBasis ?? ZERO)
 
-    consumedLots.push({
-      shares: consumedShares,
-      costBasis: consumedCostBasis
-    })
+    consumedLots.push(createLot(consumedShares, consumedCostBasis, lot.acquiredAt))
 
     if (remainingShares > ZERO) {
-      nextLots.push({
-        shares: remainingShares,
-        costBasis: remainingCostBasis
-      })
+      nextLots.push(createLot(remainingShares, remainingCostBasis, lot.acquiredAt))
     }
 
     remaining.value -= consumedShares
@@ -844,10 +864,12 @@ function applyRealization(
   const consumedWallet = consumeFromLocation(ledger, 'wallet', walletShares)
   const consumedLots = [...consumedStaked.consumedLots, ...consumedWallet.consumedLots]
   const knownLots = consumedLots.filter((lot) => lot.costBasis !== null)
+  const unknownLots = consumedLots.filter((lot) => lot.costBasis === null)
   const knownShares = sumShares(knownLots)
   const knownCostBasis = sumKnownCostBasis(knownLots)
   const knownProceeds = totalShares === ZERO ? ZERO : (totalAssets * knownShares) / totalShares
   const unknownShares = consumedStaked.consumedShares + consumedWallet.consumedShares - knownShares
+  const unknownProceeds = totalShares === ZERO ? ZERO : (totalAssets * unknownShares) / totalShares
 
   if (knownShares > ZERO) {
     ledger.realizedEntries.push({
@@ -858,6 +880,12 @@ function applyRealization(
 
   if (unknownShares > ZERO) {
     ledger.withdrawalsWithUnknownCostBasis += 1
+    ledger.unknownWithdrawalEntries.push({
+      timestamp,
+      shares: unknownShares,
+      proceedsAssets: unknownProceeds,
+      consumedLots: unknownLots
+    })
   }
 
   if (consumedStaked.consumedShares + consumedWallet.consumedShares < totalShares) {
@@ -918,8 +946,8 @@ function addAcquisitionLots(
   const stakedAssets = (totalAssets * stakedShares) / totalShares
   const walletAssets = (totalAssets * walletShares) / totalShares
 
-  addLotsToLocation(ledger, 'staked', [{ shares: stakedShares, costBasis: stakedAssets }])
-  addLotsToLocation(ledger, 'wallet', [{ shares: walletShares, costBasis: walletAssets }])
+  addLotsToLocation(ledger, 'staked', [createLot(stakedShares, stakedAssets)])
+  addLotsToLocation(ledger, 'wallet', [createLot(walletShares, walletAssets)])
 }
 
 function redistributeLotsToTargetShares(lots: TLot[], targetShares: bigint): TLot[] {
@@ -938,17 +966,19 @@ function redistributeLotsToTargetShares(lots: TLot[], targetShares: bigint): TLo
     allocatedShares += shares
 
     if (shares > ZERO) {
-      redistributed.push({
-        shares,
-        costBasis: lot.costBasis
-      })
+      redistributed.push(createLot(shares, lot.costBasis, lot.acquiredAt))
     }
 
     return redistributed
   }, [])
 }
 
-function handleUnknownTransferIn(ledger: FamilyPnlLedger, location: TLocation, shares: bigint): void {
+function handleUnknownTransferIn(
+  ledger: FamilyPnlLedger,
+  location: TLocation,
+  shares: bigint,
+  timestamp: number
+): void {
   if (shares === ZERO) {
     return
   }
@@ -956,7 +986,11 @@ function handleUnknownTransferIn(ledger: FamilyPnlLedger, location: TLocation, s
   ledger.eventCounts.externalTransfersIn += 1
   ledger.unknownCostBasisTransferInCount += 1
   ledger.unknownCostBasisTransferInShares += shares
-  addLotsToLocation(ledger, location, [{ shares, costBasis: null }])
+  ledger.unknownTransferInEntries.push({
+    timestamp,
+    shares
+  })
+  addLotsToLocation(ledger, location, [createLot(shares, null, timestamp)])
 }
 
 function handleExternalTransferOut(ledger: FamilyPnlLedger, location: TLocation, shares: bigint): void {
@@ -1133,7 +1167,13 @@ function processKnownMigratorCrossFamilyRollover(
   if (unknownDestinationShares > ZERO) {
     destinationLedger.unknownCostBasisTransferInCount += 1
     destinationLedger.unknownCostBasisTransferInShares += unknownDestinationShares
-    addLotsToLocation(destinationLedger, 'wallet', [{ shares: unknownDestinationShares, costBasis: null }])
+    destinationLedger.unknownTransferInEntries.push({
+      timestamp: migration.blockTimestamp,
+      shares: unknownDestinationShares
+    })
+    addLotsToLocation(destinationLedger, 'wallet', [
+      createLot(unknownDestinationShares, null, migration.blockTimestamp)
+    ])
   }
 
   if (unmatchedSourceShares > ZERO) {
@@ -1427,8 +1467,8 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
     moveBetweenLocations(ledger, 'staked', 'wallet', unwrapShares)
   }
 
-  handleUnknownTransferIn(ledger, 'wallet', unknownInWalletShares)
-  handleUnknownTransferIn(ledger, 'staked', unknownInStakedShares)
+  handleUnknownTransferIn(ledger, 'wallet', unknownInWalletShares, txFamilyEvents[0]?.blockTimestamp ?? 0)
+  handleUnknownTransferIn(ledger, 'staked', unknownInStakedShares, txFamilyEvents[0]?.blockTimestamp ?? 0)
   handleExternalTransferOut(ledger, 'wallet', transferOutWalletShares)
   handleExternalTransferOut(ledger, 'staked', transferOutStakedShares)
 
@@ -1540,8 +1580,41 @@ export function processRawPnlEvents(events: TRawPnlEvent[], userAddress: string)
   }, new Map<string, FamilyPnlLedger>())
 }
 
-export async function getHoldingsPnL(userAddress: string, version: VaultVersion = 'all'): Promise<HoldingsPnLResponse> {
-  debugLog('pnl', 'starting holdings pnl calculation', { version })
+function getEstimatedUnknownUnderlyingAtReceipt(
+  shares: bigint,
+  timestamp: number,
+  shareDecimals: number,
+  ppsMap: Map<number, number> | undefined,
+  fallbackPricePerShare: number
+): number {
+  const receiptPricePerShare =
+    timestamp > 0
+      ? ppsMap
+        ? (getPPS(ppsMap, timestamp) ?? fallbackPricePerShare)
+        : fallbackPricePerShare
+      : fallbackPricePerShare
+
+  return formatAmount(shares, shareDecimals) * receiptPricePerShare
+}
+
+function getTokenPriceForTimestamp(
+  tokenPriceMap: Map<number, number> | null,
+  timestamp: number,
+  fallbackTokenPrice: number
+): number {
+  return timestamp > 0
+    ? tokenPriceMap
+      ? getPriceAtTimestamp(tokenPriceMap, timestamp)
+      : fallbackTokenPrice
+    : fallbackTokenPrice
+}
+
+export async function getHoldingsPnL(
+  userAddress: string,
+  version: VaultVersion = 'all',
+  unknownTransferInPnlMode: UnknownTransferInPnlMode = 'windfall'
+): Promise<HoldingsPnLResponse> {
+  debugLog('pnl', 'starting holdings pnl calculation', { version, unknownTransferInPnlMode })
   const rawContext = await fetchRawUserPnlEvents(userAddress, version)
   debugLog('pnl', 'loaded raw pnl event context', {
     addressDeposits: rawContext.addressEvents.deposits.length,
@@ -1569,6 +1642,7 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
     return {
       address: userAddress,
       version,
+      unknownTransferInPnlMode,
       generatedAt: new Date().toISOString(),
       summary: {
         totalVaults: 0,
@@ -1576,6 +1650,7 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
         partialVaults: 0,
         totalCurrentValueUsd: 0,
         totalUnknownCostBasisValueUsd: 0,
+        totalWindfallPnlUsd: 0,
         totalRealizedPnlUsd: 0,
         totalUnrealizedPnlUsd: 0,
         totalPnlUsd: 0,
@@ -1598,7 +1673,19 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
     emptyPpsTimelines: Array.from(ppsData.values()).filter((timeline) => timeline.size === 0).length
   })
   const timestamps = [
-    ...new Set([currentTimestamp, ...vaults.flatMap((vault) => vault.realizedEntries.map((entry) => entry.timestamp))])
+    ...new Set([
+      currentTimestamp,
+      ...vaults.flatMap((vault) => vault.realizedEntries.map((entry) => entry.timestamp)),
+      ...vaults.flatMap((vault) => vault.unknownTransferInEntries.map((entry) => entry.timestamp)),
+      ...vaults.flatMap((vault) => vault.unknownWithdrawalEntries.map((entry) => entry.timestamp)),
+      ...vaults.flatMap((vault) =>
+        vault.unknownWithdrawalEntries.flatMap((entry) =>
+          entry.consumedLots
+            .map((lot) => lot.acquiredAt)
+            .filter((timestamp): timestamp is number => timestamp !== undefined)
+        )
+      )
+    ])
   ].sort((a, b) => a - b)
   const seenTokens = new Set<string>()
   const tokens = vaultIdentifiers.reduce<Array<{ chainId: number; address: string }>>((allTokens, vault) => {
@@ -1678,6 +1765,7 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
           stakingVaultAddress: vault.stakingVaultAddress,
           status: 'missing_metadata',
           costBasisStatus: 'partial',
+          unknownTransferInPnlMode,
           shares: totalSharesRaw.toString(),
           sharesFormatted: 0,
           walletShares: walletSharesRaw.toString(),
@@ -1692,6 +1780,7 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
           walletValueUsd: 0,
           stakedValueUsd: 0,
           unknownCostBasisValueUsd: 0,
+          windfallPnlUsd: 0,
           realizedPnlUnderlying: 0,
           realizedPnlUsd: 0,
           unrealizedPnlUnderlying: 0,
@@ -1725,17 +1814,83 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
       const currentUnknownUnderlying = formatAmount(unknownSharesRaw, metadata.decimals) * resolvedPricePerShare
       const walletValueUsd = currentWalletUnderlying * tokenPrice
       const stakedValueUsd = currentStakedUnderlying * tokenPrice
-      const unknownCostBasisValueUsd = currentUnknownUnderlying * tokenPrice
-      const realizedPnlUnderlying = vault.realizedEntries.reduce(
+      const strictUnknownCostBasisValueUsd = currentUnknownUnderlying * tokenPrice
+      let windfallPnlUsd = 0
+      let realizedPnlUnderlying = vault.realizedEntries.reduce(
         (total, entry) => total + formatAmount(entry.pnlAssets, metadata.token.decimals),
         0
       )
-      const realizedPnlUsd = vault.realizedEntries.reduce((total, entry) => {
+      let realizedPnlUsd = vault.realizedEntries.reduce((total, entry) => {
         const realizedTokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, entry.timestamp) : 0
         return total + formatAmount(entry.pnlAssets, metadata.token.decimals) * realizedTokenPrice
       }, 0)
-      const unrealizedPnlUnderlying = pricePerShare === null ? 0 : currentKnownUnderlying - knownCostBasisUnderlying
-      const unrealizedPnlUsd = unrealizedPnlUnderlying * tokenPrice
+      let unrealizedPnlUnderlying = pricePerShare === null ? 0 : currentKnownUnderlying - knownCostBasisUnderlying
+      let unrealizedPnlUsd = unrealizedPnlUnderlying * tokenPrice
+      const unknownCostBasisValueUsd = unknownTransferInPnlMode === 'strict' ? strictUnknownCostBasisValueUsd : 0
+
+      if (unknownTransferInPnlMode !== 'strict') {
+        const unknownRealizedProceedsUnderlying = vault.unknownWithdrawalEntries.reduce(
+          (total, entry) => total + formatAmount(entry.proceedsAssets, metadata.token.decimals),
+          0
+        )
+        const unknownRealizedProceedsUsd = vault.unknownWithdrawalEntries.reduce((total, entry) => {
+          const realizedTokenPrice = getTokenPriceForTimestamp(tokenPriceMap, entry.timestamp, tokenPrice)
+          return total + formatAmount(entry.proceedsAssets, metadata.token.decimals) * realizedTokenPrice
+        }, 0)
+
+        if (unknownTransferInPnlMode === 'zero_basis') {
+          realizedPnlUnderlying += unknownRealizedProceedsUnderlying
+          realizedPnlUsd += unknownRealizedProceedsUsd
+          unrealizedPnlUnderlying += currentUnknownUnderlying
+          unrealizedPnlUsd += currentUnknownUnderlying * tokenPrice
+        }
+
+        if (unknownTransferInPnlMode === 'windfall') {
+          const currentUnknownReceiptValueUsd = unknownLots.reduce((total, lot) => {
+            const receiptUnderlying = getEstimatedUnknownUnderlyingAtReceipt(
+              lot.shares,
+              lot.acquiredAt ?? currentTimestamp,
+              metadata.decimals,
+              ppsMap,
+              resolvedPricePerShare
+            )
+            const receiptTokenPrice = getTokenPriceForTimestamp(
+              tokenPriceMap,
+              lot.acquiredAt ?? currentTimestamp,
+              tokenPrice
+            )
+            return total + receiptUnderlying * receiptTokenPrice
+          }, 0)
+          const realizedUnknownReceiptValueUsd = vault.unknownWithdrawalEntries.reduce((total, entry) => {
+            return (
+              total +
+              entry.consumedLots.reduce((entryTotal, lot) => {
+                const receiptUnderlying = getEstimatedUnknownUnderlyingAtReceipt(
+                  lot.shares,
+                  lot.acquiredAt ?? entry.timestamp,
+                  metadata.decimals,
+                  ppsMap,
+                  resolvedPricePerShare
+                )
+                const receiptTokenPrice = getTokenPriceForTimestamp(
+                  tokenPriceMap,
+                  lot.acquiredAt ?? entry.timestamp,
+                  tokenPrice
+                )
+                return entryTotal + receiptUnderlying * receiptTokenPrice
+              }, 0)
+            )
+          }, 0)
+          const unknownRealizedMarketPnlUsd = unknownRealizedProceedsUsd - realizedUnknownReceiptValueUsd
+          const unknownCurrentMarketPnlUsd = currentUnknownUnderlying * tokenPrice - currentUnknownReceiptValueUsd
+
+          windfallPnlUsd = currentUnknownReceiptValueUsd + realizedUnknownReceiptValueUsd
+          realizedPnlUsd += unknownRealizedMarketPnlUsd
+          unrealizedPnlUsd += unknownCurrentMarketPnlUsd
+          realizedPnlUnderlying += tokenPrice > 0 ? unknownRealizedMarketPnlUsd / tokenPrice : 0
+          unrealizedPnlUnderlying += tokenPrice > 0 ? unknownCurrentMarketPnlUsd / tokenPrice : 0
+        }
+      }
       const costBasisStatus =
         vault.unknownCostBasisTransferInCount === 0 &&
         vault.withdrawalsWithUnknownCostBasis === 0 &&
@@ -1784,6 +1939,7 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
         stakingVaultAddress: vault.stakingVaultAddress,
         status,
         costBasisStatus,
+        unknownTransferInPnlMode,
         shares: totalSharesRaw.toString(),
         sharesFormatted,
         walletShares: walletSharesRaw.toString(),
@@ -1798,11 +1954,12 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
         walletValueUsd,
         stakedValueUsd,
         unknownCostBasisValueUsd,
+        windfallPnlUsd,
         realizedPnlUnderlying,
         realizedPnlUsd,
         unrealizedPnlUnderlying,
         unrealizedPnlUsd,
-        totalPnlUsd: realizedPnlUsd + unrealizedPnlUsd,
+        totalPnlUsd: realizedPnlUsd + unrealizedPnlUsd + windfallPnlUsd,
         totalDepositedUnderlying: formatAmount(vault.totalDepositedAssets, metadata.token.decimals),
         totalWithdrawnUnderlying: formatAmount(vault.totalWithdrawnAssets, metadata.token.decimals),
         eventCounts: {
@@ -1840,6 +1997,7 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
       partialVaults: totals.partialVaults + (vault.costBasisStatus === 'partial' ? 1 : 0),
       totalCurrentValueUsd: totals.totalCurrentValueUsd + vault.currentValueUsd,
       totalUnknownCostBasisValueUsd: totals.totalUnknownCostBasisValueUsd + vault.unknownCostBasisValueUsd,
+      totalWindfallPnlUsd: totals.totalWindfallPnlUsd + vault.windfallPnlUsd,
       totalRealizedPnlUsd: totals.totalRealizedPnlUsd + vault.realizedPnlUsd,
       totalUnrealizedPnlUsd: totals.totalUnrealizedPnlUsd + vault.unrealizedPnlUsd,
       totalPnlUsd: totals.totalPnlUsd + vault.totalPnlUsd,
@@ -1851,6 +2009,7 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
       partialVaults: 0,
       totalCurrentValueUsd: 0,
       totalUnknownCostBasisValueUsd: 0,
+      totalWindfallPnlUsd: 0,
       totalRealizedPnlUsd: 0,
       totalUnrealizedPnlUsd: 0,
       totalPnlUsd: 0,
@@ -1858,8 +2017,10 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
     }
   )
   debugLog('pnl', 'completed holdings pnl calculation', {
+    unknownTransferInPnlMode,
     totalVaults: summary.totalVaults,
     totalCurrentValueUsd: summary.totalCurrentValueUsd,
+    totalWindfallPnlUsd: summary.totalWindfallPnlUsd,
     totalRealizedPnlUsd: summary.totalRealizedPnlUsd,
     totalUnrealizedPnlUsd: summary.totalUnrealizedPnlUsd,
     totalPnlUsd: summary.totalPnlUsd,
@@ -1869,6 +2030,7 @@ export async function getHoldingsPnL(userAddress: string, version: VaultVersion 
   return {
     address: userAddress,
     version,
+    unknownTransferInPnlMode,
     generatedAt: new Date().toISOString(),
     summary,
     vaults: pnlVaults

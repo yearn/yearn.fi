@@ -25,6 +25,10 @@ function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
 
+function parseUnknownTransferInPnlMode(value: unknown): 'strict' | 'zero_basis' | 'windfall' {
+  return value === 'strict' || value === 'zero_basis' || value === 'windfall' ? value : 'windfall'
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -53,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  const { address, version } = req.query
+  const { address, version, unknownMode } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -65,7 +69,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { getHoldingsPnL } = await import('../lib/holdings')
-    const pnl = await getHoldingsPnL(address, version === 'v2' || version === 'v3' ? version : 'all')
+    const pnl = await getHoldingsPnL(
+      address,
+      version === 'v2' || version === 'v3' ? version : 'all',
+      parseUnknownTransferInPnlMode(Array.isArray(unknownMode) ? unknownMode[0] : unknownMode)
+    )
 
     if (pnl.summary.totalVaults === 0) {
       return res.status(404).json({ error: 'No holdings found for address' })

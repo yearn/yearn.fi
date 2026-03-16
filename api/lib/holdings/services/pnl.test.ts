@@ -634,7 +634,7 @@ describe('processRawPnlEvents', () => {
     const destinationLedger = ledgers.get(destinationFamilyKey)
 
     expect(sourceLedger?.unmatchedTransferOutShares).toBe(158n)
-    expect(destinationLedger?.walletLots).toEqual([{ shares: 175n, costBasis: null }])
+    expect(destinationLedger?.walletLots).toEqual([{ shares: 175n, costBasis: null, acquiredAt: 200 }])
     expect(destinationLedger?.unknownCostBasisTransferInCount).toBe(1)
     expect(destinationLedger?.unknownCostBasisTransferInShares).toBe(175n)
     expect(destinationLedger?.totalDepositedAssets).toBe(0n)
