@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getVaultAPR, getVaultStaking } from './kongVaultSelectors'
+import { getVaultAPR, getVaultStaking, getVaultStrategies } from './kongVaultSelectors'
 
 const LIST_REWARD = {
   address: '0x3333333333333333333333333333333333333333',
@@ -113,5 +113,96 @@ describe('getVaultAPR', () => {
     } as any)
 
     expect(apr.pricePerShare.today).toBeCloseTo(1.05, 8)
+  })
+})
+
+describe('getVaultStrategies', () => {
+  const vault = {
+    chainId: 1,
+    address: '0x1111111111111111111111111111111111111111'
+  } as any
+
+  it('prefers composition estimated apy over oracle apy', () => {
+    const strategies = getVaultStrategies(vault, {
+      totalAssets: '1000000',
+      composition: [
+        {
+          address: '0x5555555555555555555555555555555555555555',
+          name: 'Strategy A',
+          status: 'active',
+          totalDebt: '500000',
+          currentDebt: '500000',
+          performance: {
+            estimated: {
+              apr: 0.07,
+              apy: 0.12,
+              type: 'yvusd-estimated-apr',
+              components: {}
+            },
+            oracle: {
+              apr: 0.08,
+              apy: 0.09
+            }
+          }
+        }
+      ]
+    } as any)
+
+    expect(strategies[0]?.estimatedAPY).toBe(0.12)
+  })
+
+  it('falls back to composition oracle apy when estimated apy is missing', () => {
+    const strategies = getVaultStrategies(vault, {
+      totalAssets: '1000000',
+      composition: [
+        {
+          address: '0x6666666666666666666666666666666666666666',
+          name: 'Strategy B',
+          status: 'active',
+          totalDebt: '500000',
+          currentDebt: '500000',
+          performance: {
+            estimated: {
+              apr: 0.11,
+              type: 'yvusd-estimated-apr',
+              components: {}
+            },
+            oracle: {
+              apr: 0.08,
+              apy: 0.09
+            }
+          }
+        }
+      ]
+    } as any)
+
+    expect(strategies[0]?.estimatedAPY).toBe(0.09)
+  })
+
+  it('leaves estimated apy unset when neither estimated nor oracle apy exists', () => {
+    const strategies = getVaultStrategies(vault, {
+      totalAssets: '1000000',
+      composition: [
+        {
+          address: '0x7777777777777777777777777777777777777777',
+          name: 'Strategy C',
+          status: 'active',
+          totalDebt: '500000',
+          currentDebt: '500000',
+          performance: {
+            estimated: {
+              apr: 0.11,
+              type: 'yvusd-estimated-apr',
+              components: {}
+            },
+            oracle: {
+              apr: 0.08
+            }
+          }
+        }
+      ]
+    } as any)
+
+    expect(strategies[0]?.estimatedAPY).toBeUndefined()
   })
 })
