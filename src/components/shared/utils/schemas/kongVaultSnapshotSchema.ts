@@ -88,8 +88,18 @@ const snapshotRiskSchema = z
   .default(null)
 
 const estimatedAprSchema = z.object({
-  apr: z.union([z.number(), z.string()]).transform((value) => Number(value)),
-  apy: z.union([z.number(), z.string()]).transform((value) => Number(value)),
+  apr: z
+    .union([z.number(), z.string()])
+    .transform((value) => Number(value))
+    .optional()
+    .nullable()
+    .catch(null),
+  apy: z
+    .union([z.number(), z.string()])
+    .transform((value) => Number(value))
+    .optional()
+    .nullable()
+    .catch(null),
   type: z.string().optional().default('').catch(''),
   components: z
     .object({
@@ -107,6 +117,7 @@ const estimatedAprSchema = z.object({
       katanaBonusAPY: nullableNumberSchema.nullish(),
       katanaNativeYield: nullableNumberSchema.nullish(),
       katanaAppRewardsAPR: nullableNumberSchema.nullish(),
+      katRewardsAPR: nullableNumberSchema.nullish(),
       steerPointsPerDollar: nullableNumberSchema.nullish(),
       fixedRateKatanaRewards: nullableNumberSchema.nullish(),
       FixedRateKatanaRewards: nullableNumberSchema.nullish()

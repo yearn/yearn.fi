@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  calculateHistoricalAprFromPricePerShares,
+  calculateHistoricalApyFromPricePerShares,
+  calculateLockedYvUsdHistoricalApy,
   convertYvUsdLockedAssetRawAmountToUnderlying,
   convertYvUsdLockedPricePerShareToUnderlying,
   convertYvUsdUnderlyingRawAmountToLockedAsset,
@@ -7,6 +10,7 @@ import {
   convertYvUsdVariantRawAmount,
   getWeightedYvUsdApy,
   getYvUsdLockedWithdrawDisplayMode,
+  getYvUsdUnderlyingPricePerShare,
   YVUSD_CUSTOM_RISK_SCORE,
   YVUSD_RISK_SCORE_ITEMS
 } from './yvUsd'
@@ -154,6 +158,86 @@ describe('yvUSD variant amount conversion', () => {
         unlockedVaultDecimals
       })
     ).toBe(1_155_000n)
+  })
+})
+
+describe('yvUSD historical PPS normalization', () => {
+  it('multiplies locked PPS by unlocked PPS to get underlying-denominated locked PPS', () => {
+    expect(
+      getYvUsdUnderlyingPricePerShare({
+        lockedPricePerShare: 1.038008,
+        unlockedPricePerShare: 1.005734
+      })
+    ).toBeCloseTo(1.043959937872, 12)
+  })
+
+  it('annualizes PPS changes into APR and APY using the shared helper formulas', () => {
+    expect(
+      calculateHistoricalAprFromPricePerShares({
+        currentPricePerShare: 1.005734,
+        previousPricePerShare: 1.002071,
+        periodDays: 30
+      })
+    ).toBeCloseTo(0.0444743935, 10)
+
+    expect(
+      calculateHistoricalApyFromPricePerShares({
+        currentPricePerShare: 1.005734,
+        previousPricePerShare: 1.002071,
+        periodDays: 30
+      })
+    ).toBeCloseTo(0.0454753728, 10)
+  })
+
+  it('derives locked historical APY in underlying terms instead of raw yvUSD-share terms', () => {
+    expect(
+      calculateLockedYvUsdHistoricalApy({
+        lockedPricePerShare: {
+          today: 1.038008,
+          weekAgo: 1.037836,
+          monthAgo: 1.014987
+        },
+        unlockedPricePerShare: {
+          today: 1.005734,
+          weekAgo: 1.00489,
+          monthAgo: 1.002071
+        }
+      })
+    ).toBeCloseTo(0.3789120128, 10)
+  })
+
+  it('falls back from 30d to 7d when the locked monthly PPS lookback is unavailable', () => {
+    expect(
+      calculateLockedYvUsdHistoricalApy({
+        lockedPricePerShare: {
+          today: 1.038008,
+          weekAgo: 1.037836,
+          monthAgo: null
+        },
+        unlockedPricePerShare: {
+          today: 1.005734,
+          weekAgo: 1.00489,
+          monthAgo: 1.002071
+        }
+      })
+    ).toBeCloseTo(0.0538388189, 10)
+  })
+
+  it('preserves a valid 0 percent 30d APY instead of falling back to 7d', () => {
+    expect(
+      calculateLockedYvUsdHistoricalApy({
+        lockedPricePerShare: {
+          today: 1.02,
+          weekAgo: 1.03,
+          monthAgo: 1.02
+        },
+        unlockedPricePerShare: {
+          today: 1.01,
+          weekAgo: 1,
+          monthAgo: 1.01
+        }
+      })
+    ).toBe(0)
   })
 })
 
