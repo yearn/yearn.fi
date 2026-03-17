@@ -39,7 +39,7 @@ Commands:
   fund-erc20 --wallet <address> --token <address> --amount <amount> [--decimals 18] [--unit token|raw] [--chain 1]
   snapshot [--chain 1]
   revert --id <snapshotId> [--chain 1]
-  increase-time --seconds <seconds> [--chain 1]
+  increase-time --seconds <seconds> [--mine-block] [--chain 1]
   set-next-timestamp --timestamp <unixSeconds> [--chain 1]
   increase-blocks --count <count> [--chain 1]
   raw --method <rpcMethod> [--params '<json-array>'] [--chain 1]
@@ -50,7 +50,7 @@ Examples:
   bun run tenderly fund-erc20 --wallet 0xabc... --token 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 --amount 50000 --decimals 6
   bun run tenderly snapshot
   bun run tenderly revert --id 0x1
-  bun run tenderly increase-time --seconds 86400
+  bun run tenderly increase-time --seconds 86400 --mine-block
   bun run tenderly raw --method tenderly_setBalance --params '[["0xabc..."], "0x3635C9ADC5DEA00000"]'
 `
 
@@ -140,6 +140,11 @@ function requireFlag(flags: Record<string, string>, ...keys: string[]): string {
 function optionalFlag(flags: Record<string, string>, key: string): string | undefined {
   const value = flags[key]?.trim()
   return value ? value : undefined
+}
+
+function hasFlag(flags: Record<string, string>, key: string): boolean {
+  const value = optionalFlag(flags, key)
+  return value === 'true' || value === '1'
 }
 
 function getCanonicalChainId(flags: Record<string, string>): number {
@@ -288,9 +293,15 @@ async function runCommand(parsedArgs: TParsedCliArgs): Promise<void> {
     }
     case 'increase-time': {
       const seconds = parsePositiveInteger(requireFlag(flags, 'seconds'), 'seconds')
+      const shouldMineBlock = hasFlag(flags, 'mine-block')
       const result = await callAdminRpc(canonicalChainId, 'evm_increaseTime', [toHexQuantity(BigInt(seconds))])
       console.log(`Advanced time by ${seconds} seconds on canonical chain ${canonicalChainId}`)
       console.log(formatResult(result))
+      if (shouldMineBlock) {
+        const minedBlockResult = await callAdminRpc(canonicalChainId, 'evm_mine', [])
+        console.log(`Mined 1 block on canonical chain ${canonicalChainId}`)
+        console.log(formatResult(minedBlockResult))
+      }
       return
     }
     case 'set-next-timestamp': {
