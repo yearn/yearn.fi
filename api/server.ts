@@ -1,9 +1,37 @@
 import { serve } from 'bun'
+import type {
+  TTenderlyFundRequest,
+  TTenderlyIncreaseTimeRequest,
+  TTenderlyRevertRequest,
+  TTenderlySnapshotRequest
+} from '../src/components/shared/types/tenderly'
+import {
+  buildTenderlyPanelStatus,
+  buildTenderlySnapshotRecord,
+  requireTenderlyServerChain,
+  resolveTenderlyFundRpcRequest
+} from './tenderly.helpers'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
+
+type TTenderlyJsonRpcSuccess = {
+  id: string | number | null
+  jsonrpc: '2.0'
+  result: unknown
+}
+
+type TTenderlyJsonRpcError = {
+  id: string | number | null
+  jsonrpc: '2.0'
+  error: {
+    code: number
+    message: string
+    data?: unknown
+  }
+}
 
 async function handleYvUsdAprs(req: Request): Promise<Response> {
   if (req.method !== 'GET') {
@@ -40,6 +68,157 @@ async function handleYvUsdAprs(req: Request): Promise<Response> {
   } catch (error) {
     console.error('Error proxying yvUSD APR request:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+async function parseJsonBody<T>(req: Request): Promise<T> {
+  try {
+    return (await req.json()) as T
+  } catch (_error) {
+    throw new Error('Invalid JSON body')
+  }
+}
+
+async function callTenderlyAdminRpc(canonicalChainId: number, method: string, params: unknown[]): Promise<unknown> {
+  const configuredChain = requireTenderlyServerChain(process.env, canonicalChainId)
+  const response = await fetch(configuredChain.adminRpcUri as string, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      id: 1,
+      jsonrpc: '2.0',
+      method,
+      params
+    })
+  })
+
+  if (!response.ok) {
+    const details = await response.text()
+    throw new Error(`Tenderly RPC request failed with status ${response.status}: ${details}`)
+  }
+
+  const payload = (await response.json()) as TTenderlyJsonRpcSuccess | TTenderlyJsonRpcError
+  if ('error' in payload) {
+    throw new Error(`${payload.error.message} (code ${payload.error.code})`)
+  }
+
+  return payload.result
+}
+
+function handleTenderlyStatus(req: Request): Response {
+  if (req.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  try {
+    return Response.json(buildTenderlyPanelStatus(process.env))
+  } catch (error) {
+    console.error('Error building Tenderly status:', error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to build Tenderly status' },
+      { status: 500 }
+    )
+  }
+}
+
+async function handleTenderlySnapshot(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  try {
+    const body = await parseJsonBody<TTenderlySnapshotRequest>(req)
+    const configuredChain = requireTenderlyServerChain(process.env, body.canonicalChainId)
+    const snapshotId = await callTenderlyAdminRpc(body.canonicalChainId, 'evm_snapshot', [])
+    const snapshotRecord = buildTenderlySnapshotRecord({
+      canonicalChainId: body.canonicalChainId,
+      executionChainId: configuredChain.executionChainId,
+      snapshotId: String(snapshotId),
+      label: body.label,
+      isBaseline: body.isBaseline
+    })
+
+    return Response.json(snapshotRecord)
+  } catch (error) {
+    console.error('Error creating Tenderly snapshot:', error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to create Tenderly snapshot' },
+      { status: 400 }
+    )
+  }
+}
+
+async function handleTenderlyRevert(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  try {
+    const body = await parseJsonBody<TTenderlyRevertRequest>(req)
+    const result = await callTenderlyAdminRpc(body.canonicalChainId, 'evm_revert', [body.snapshotId])
+
+    return Response.json({
+      success: Boolean(result),
+      revertedSnapshotId: body.snapshotId
+    })
+  } catch (error) {
+    console.error('Error reverting Tenderly snapshot:', error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to revert Tenderly snapshot' },
+      { status: 400 }
+    )
+  }
+}
+
+async function handleTenderlyIncreaseTime(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  try {
+    const body = await parseJsonBody<TTenderlyIncreaseTimeRequest>(req)
+    if (!Number.isInteger(body.seconds) || body.seconds <= 0) {
+      throw new Error('seconds must be a positive integer')
+    }
+
+    const timeResult = await callTenderlyAdminRpc(body.canonicalChainId, 'evm_increaseTime', [
+      `0x${BigInt(body.seconds).toString(16)}`
+    ])
+    const mineResult = body.mineBlock ? await callTenderlyAdminRpc(body.canonicalChainId, 'evm_mine', []) : undefined
+
+    return Response.json({
+      timeResult,
+      mineResult
+    })
+  } catch (error) {
+    console.error('Error increasing Tenderly time:', error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to increase Tenderly time' },
+      { status: 400 }
+    )
+  }
+}
+
+async function handleTenderlyFund(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  try {
+    const body = await parseJsonBody<TTenderlyFundRequest>(req)
+    const { method, params } = resolveTenderlyFundRpcRequest(body)
+    const result = await callTenderlyAdminRpc(body.canonicalChainId, method, params)
+
+    return Response.json({
+      method,
+      result
+    })
+  } catch (error) {
+    console.error('Error funding Tenderly wallet:', error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to fund wallet on Tenderly' },
+      { status: 400 }
+    )
   }
 }
 
@@ -176,6 +355,26 @@ serve({
 
     if (url.pathname === '/api/yvusd/aprs') {
       return handleYvUsdAprs(req)
+    }
+
+    if (url.pathname === '/api/tenderly/status') {
+      return handleTenderlyStatus(req)
+    }
+
+    if (url.pathname === '/api/tenderly/snapshot') {
+      return handleTenderlySnapshot(req)
+    }
+
+    if (url.pathname === '/api/tenderly/revert') {
+      return handleTenderlyRevert(req)
+    }
+
+    if (url.pathname === '/api/tenderly/increase-time') {
+      return handleTenderlyIncreaseTime(req)
+    }
+
+    if (url.pathname === '/api/tenderly/fund') {
+      return handleTenderlyFund(req)
     }
 
     return new Response('Not found', { status: 404 })
