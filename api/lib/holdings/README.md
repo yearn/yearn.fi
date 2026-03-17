@@ -1,6 +1,6 @@
-# Holdings History API
+# Holdings APIs
 
-Calculates historical USD values of a user's Yearn vault positions over the past 365 days (1 year).
+Calculates historical USD values and portfolio PnL for a user's Yearn vault positions.
 
 ## Architecture
 
@@ -116,6 +116,7 @@ USD Value = 100 × 1.05 × 1.00 = $105.00
 | `cache.ts` | PostgreSQL | Cache daily USD totals per user + token prices |
 | `holdings.ts` | Local | Build position timeline, calculate share balances |
 | `aggregator.ts` | Local | Orchestrate all services, main entry point |
+| `pnl.ts` | Local | Build family ledgers, FIFO lots, and PnL summaries |
 
 ### Data Types
 
@@ -170,6 +171,15 @@ Transfer events track vault shares moving between addresses (not through deposit
 
 Staking vault positions are tracked via the `stakingToVaultMap` in `vaults.ts`. When a user deposits into a staking contract, the system maps the staking address to its underlying vault metadata for proper valuation.
 
+### PnL-Specific Event Enrichment
+
+The PnL endpoint fetches more context than the history endpoint:
+
+1. Address-scoped events for the user
+2. Additional transaction-scoped events for the same transaction hashes
+
+That transaction-hash enrichment lets the PnL engine match same-transaction router flows, staking wraps/unwraps, and known migration rollovers even when the economically relevant event was not emitted directly on the user's address filter.
+
 ## API Endpoints
 
 ### GET `/api/holdings/history`
@@ -201,33 +211,47 @@ FIFO-based realized and unrealized PnL for the user’s vault activity.
 
 ```bash
 curl "http://localhost:3001/api/holdings/pnl?address=0x..."
+curl "http://localhost:3001/api/holdings/pnl?address=0x...&unknownMode=windfall"
 ```
 
 Query params:
 - `address` (required): Ethereum address
 - `version` (optional): `v2`, `v3`, or `all` (default: `all`)
+- `unknownMode` (optional): `strict`, `zero_basis`, or `windfall` (default: `windfall`)
 
-Response:
+Response (abridged):
 ```json
 {
   "address": "0x...",
   "version": "all",
+  "unknownTransferInPnlMode": "windfall",
+  "generatedAt": "2026-03-16T12:00:00.000Z",
   "summary": {
     "totalVaults": 5,
+    "completeVaults": 4,
+    "partialVaults": 1,
     "totalCurrentValueUsd": 1500.0,
-    "totalRealizedPnlUsd": 120.5,
+    "totalUnknownCostBasisValueUsd": 0,
+    "totalWindfallPnlUsd": 100.0,
+    "totalRealizedPnlUsd": 20.5,
     "totalUnrealizedPnlUsd": 45.25,
-    "totalPnlUsd": 165.75,
-    "isComplete": true
+    "totalPnlUsd": 65.75,
+    "totalEconomicGainUsd": 165.75,
+    "isComplete": false
   },
   "vaults": [
     {
       "chainId": 1,
       "vaultAddress": "0x...",
       "status": "ok",
-      "costBasisStatus": "complete",
+      "costBasisStatus": "partial",
+      "unknownTransferInPnlMode": "windfall",
+      "unknownCostBasisValueUsd": 0,
+      "windfallPnlUsd": 100.0,
       "realizedPnlUsd": 12.5,
       "unrealizedPnlUsd": 4.25,
+      "totalPnlUsd": 16.75,
+      "totalEconomicGainUsd": 116.75,
       "currentValueUsd": 105.0,
       "metadata": {
         "symbol": "USDC",
@@ -239,13 +263,60 @@ Response:
 }
 ```
 
+The live response also includes share balances, wallet vs staked splits, and per-vault event counts.
+
 Notes:
 - Deposits create FIFO lots using the indexed `assets` and `shares` values.
 - Withdrawals realize PnL from the oldest remaining lots first.
+- `totalPnlUsd = totalRealizedPnlUsd + totalUnrealizedPnlUsd`.
+- `totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd`.
 - Staking wrappers are collapsed into the underlying vault family. Staked shares and wallet-held shares share the same FIFO lots and only change location.
 - Underlying vault `Deposit` and `Withdraw` events define cost basis and realized proceeds. Staking `Deposit` and `Withdraw` events are treated as wrap or unwrap moves, not as economic entries.
 - Same-transaction router flows can carry basis into or out of a staking vault family when the transfer can be matched to an indexed underlying vault deposit or withdrawal in the same transaction.
-- Plain share transfers may leave some lots with unknown cost basis. Those vaults are returned with `costBasisStatus: "partial"` and the unmatched portion is reported in `unknownCostBasisValueUsd`.
+- Known migrator transactions can roll basis from a source family into a destination family. When source basis cannot be reconstructed, the destination shares stay partial / unknown-basis.
+- Plain share transfers may leave some lots with unknown cost basis. Those vaults are returned with `costBasisStatus: "partial"`. In `strict` mode, the unmatched current portion is reported in `unknownCostBasisValueUsd`; in `zero_basis` and `windfall`, that value is zeroed and the economics are attributed according to `unknownTransferInPnlMode`.
+- The endpoint currently filters to direct-interaction families. Pure transfer-only families may be omitted unless they also have direct deposit / withdraw history, realized PnL, or recognized migration activity.
+- `isComplete` becomes `false` when at least one returned vault still has partial / unknown basis.
+
+### Unknown Transfer-In Modes
+
+Unknown share transfers can be interpreted three ways:
+
+- `strict`
+  - Unknown shares do not contribute to PnL.
+  - Their current value is reported in `unknownCostBasisValueUsd`.
+- `zero_basis`
+  - Unknown shares are treated as if they were acquired for zero cost.
+  - Receipt-time value and any later market move both end up inside realized / unrealized PnL.
+- `windfall` (default)
+  - Unknown shares are still treated as free economically, but the gain is split into two parts.
+  - Receipt-time fair value is isolated in `windfallPnlUsd`.
+  - `totalPnlUsd` only tracks market movement after receipt.
+  - `totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd`.
+
+`zero_basis` and `windfall` can report the same `totalEconomicGainUsd`. The difference is attribution:
+
+- `zero_basis` books the full gain as market PnL.
+- `windfall` books receipt-time value as windfall and only the post-receipt move as market PnL.
+
+Example:
+
+```text
+Unknown shares received at $1,000 value and later worth $1,150
+
+strict:
+  totalPnlUsd = 0
+  unknownCostBasisValueUsd = 1,150
+
+zero_basis:
+  totalPnlUsd = 1,150
+  totalEconomicGainUsd = 1,150
+
+windfall:
+  totalWindfallPnlUsd = 1,000
+  totalPnlUsd = 150
+  totalEconomicGainUsd = 1,150
+```
 
 ### GET `/api/holdings/breakdown`
 Current vault positions with detailed breakdown (not cached).
