@@ -36,6 +36,7 @@ import {
   YBOLD_VAULT_ADDRESS
 } from '@pages/vaults/domain/normalizeVault'
 import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from '@pages/vaults/domain/vaultWarnings'
+import { useEnsureVaultListFetch } from '@pages/vaults/hooks/useEnsureVaultListFetch'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
@@ -393,7 +394,6 @@ function Index(): ReactElement | null {
   const scrollTargetRef = useRef<number | null>(null)
   const scrollTimeoutRef = useRef<number | null>(null)
   const [pendingSectionKey, setPendingSectionKey] = useState<SectionKey | null>(null)
-  const [hasTriggeredVaultListFetch, setHasTriggeredVaultListFetch] = useState(false)
 
   useEffect(() => {
     if (!isLockedYvUsdRoute) {
@@ -478,6 +478,12 @@ function Index(): ReactElement | null {
   }, [vaultViewInput])
 
   const snapshotShouldDisableStaking = mergedSnapshot?.meta?.shouldDisableStaking
+  const hasTriggeredVaultListFetch = useEnsureVaultListFetch({
+    hasVaultList,
+    isYvUsd,
+    snapshotVault,
+    enableVaultListFetch
+  })
   const shouldDisableStakingForDeposit = useMemo(() => {
     if (isFactoryVault) {
       return true
@@ -510,18 +516,6 @@ function Index(): ReactElement | null {
     chainId,
     account: address
   })
-
-  useEffect(() => {
-    if (hasTriggeredVaultListFetch || hasVaultList) {
-      return
-    }
-    if (!isYvUsd && !snapshotVault) {
-      return
-    }
-    setHasTriggeredVaultListFetch(true)
-    const frame = requestAnimationFrame(() => enableVaultListFetch())
-    return () => cancelAnimationFrame(frame)
-  }, [enableVaultListFetch, hasTriggeredVaultListFetch, hasVaultList, isYvUsd, snapshotVault])
 
   const vaultShareBalance =
     !!address && currentVault?.address && Number.isInteger(currentVault?.chainID)
