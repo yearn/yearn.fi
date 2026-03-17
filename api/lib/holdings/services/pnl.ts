@@ -1,262 +1,44 @@
-import { formatUnits } from 'viem'
 import type { DepositEvent, TransferEvent, WithdrawEvent } from '../types'
 import { debugLog, debugTable, getHoldingsDebugFilters } from './debug'
 import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
 import { fetchRawUserPnlEvents, type RawPnlEventContext, type VaultVersion } from './graphql'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
+import {
+  formatAmount,
+  KNOWN_VAULT_MIGRATORS,
+  lowerCaseAddress,
+  minBigInt,
+  negativeBigIntMagnitude,
+  positiveBigInt,
+  sumKnownCostBasis,
+  sumShares,
+  toVaultKey,
+  ZERO,
+  ZERO_ADDRESS
+} from './pnlShared'
+
+export type { HoldingsPnLResponse, HoldingsPnLVault, UnknownTransferInPnlMode } from './pnlTypes'
+
+import type {
+  FamilyPnlLedger,
+  HoldingsPnLResponse,
+  HoldingsPnLVault,
+  TLocation,
+  TLot,
+  TPnlDebugJournalRow,
+  TRawPnlEvent,
+  TRawScopes,
+  UnknownTransferInPnlMode
+} from './pnlTypes'
+import {
+  applyUnknownTransferInModeAdjustment,
+  createEmptyHoldingsPnlResponse,
+  createMissingMetadataPnlVault,
+  summarizePnlVaults,
+  toHoldingsPnlEventCounts
+} from './pnlValuation'
 import { getFamilyVaultAddress, getStakingVaultAddress, isStakingVault } from './staking'
 import { fetchMultipleVaultsMetadata } from './vaults'
-
-const ZERO = 0n
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
-const KNOWN_VAULT_MIGRATORS = new Set([
-  '0x9327e2fdc57c7d70782f29ab46f6385afaf4503c',
-  '0x1824df8d751704fa10fa371d62a37f9b8772ab90',
-  '0x1112dbcf805682e828606f74ab717abf4b4fd8de'
-])
-
-type TLocation = 'wallet' | 'staked'
-
-type TLot = {
-  shares: bigint
-  costBasis: bigint | null
-  acquiredAt?: number
-}
-
-type TRealizedEntry = {
-  timestamp: number
-  pnlAssets: bigint
-}
-
-type TUnknownTransferInEntry = {
-  timestamp: number
-  shares: bigint
-}
-
-type TUnknownWithdrawalEntry = {
-  timestamp: number
-  shares: bigint
-  proceedsAssets: bigint
-  consumedLots: TLot[]
-}
-
-export type UnknownTransferInPnlMode = 'strict' | 'zero_basis' | 'windfall'
-
-type TPnlDebugJournalRow = {
-  timestamp: number
-  txHash: string
-  familyVaultAddress: string
-  stakingVaultAddress: string | null
-  view: string
-  hasAddressActivity: boolean
-  rawEvents: string
-  depositShares: string
-  depositAssets: string
-  withdrawShares: string
-  withdrawAssets: string
-  wrapShares: string
-  unwrapShares: string
-  unknownInWalletShares: string
-  unknownInStakedShares: string
-  transferOutWalletShares: string
-  transferOutStakedShares: string
-  realizedKnownShares: string
-  realizedProceedsAssets: string
-  realizedBasisAssets: string
-  realizedPnlAssets: string
-}
-
-type TRawScopes = {
-  address: boolean
-  tx: boolean
-}
-
-type TRawPnlEvent =
-  | {
-      kind: 'deposit'
-      id: string
-      chainId: number
-      vaultAddress: string
-      familyVaultAddress: string
-      isStakingVault: boolean
-      blockNumber: number
-      blockTimestamp: number
-      logIndex: number
-      transactionHash: string
-      transactionFrom: string
-      owner: string
-      sender: string
-      shares: bigint
-      assets: bigint
-      scopes: TRawScopes
-    }
-  | {
-      kind: 'withdrawal'
-      id: string
-      chainId: number
-      vaultAddress: string
-      familyVaultAddress: string
-      isStakingVault: boolean
-      blockNumber: number
-      blockTimestamp: number
-      logIndex: number
-      transactionHash: string
-      transactionFrom: string
-      owner: string
-      shares: bigint
-      assets: bigint
-      scopes: TRawScopes
-    }
-  | {
-      kind: 'transfer'
-      id: string
-      chainId: number
-      vaultAddress: string
-      familyVaultAddress: string
-      isStakingVault: boolean
-      blockNumber: number
-      blockTimestamp: number
-      logIndex: number
-      transactionHash: string
-      transactionFrom: string
-      sender: string
-      receiver: string
-      shares: bigint
-      scopes: TRawScopes
-    }
-
-export interface FamilyPnlLedger {
-  chainId: number
-  vaultAddress: string
-  stakingVaultAddress: string | null
-  walletLots: TLot[]
-  stakedLots: TLot[]
-  totalDepositedAssets: bigint
-  totalWithdrawnAssets: bigint
-  unknownCostBasisTransferInCount: number
-  unknownCostBasisTransferInShares: bigint
-  withdrawalsWithUnknownCostBasis: number
-  unmatchedTransferOutCount: number
-  unmatchedTransferOutShares: bigint
-  realizedEntries: TRealizedEntry[]
-  unknownTransferInEntries: TUnknownTransferInEntry[]
-  unknownWithdrawalEntries: TUnknownWithdrawalEntry[]
-  debugJournal: TPnlDebugJournalRow[]
-  eventCounts: {
-    underlyingDeposits: number
-    underlyingWithdrawals: number
-    stakingWraps: number
-    stakingUnwraps: number
-    externalTransfersIn: number
-    externalTransfersOut: number
-    migrationsIn: number
-    migrationsOut: number
-  }
-}
-
-export interface HoldingsPnLVault {
-  chainId: number
-  vaultAddress: string
-  stakingVaultAddress: string | null
-  status: 'ok' | 'missing_metadata' | 'missing_price' | 'missing_pps'
-  costBasisStatus: 'complete' | 'partial'
-  unknownTransferInPnlMode: UnknownTransferInPnlMode
-  shares: string
-  sharesFormatted: number
-  walletShares: string
-  walletSharesFormatted: number
-  stakedShares: string
-  stakedSharesFormatted: number
-  knownCostBasisShares: string
-  unknownCostBasisShares: string
-  pricePerShare: number
-  tokenPrice: number
-  currentValueUsd: number
-  walletValueUsd: number
-  stakedValueUsd: number
-  unknownCostBasisValueUsd: number
-  windfallPnlUsd: number
-  realizedPnlUnderlying: number
-  realizedPnlUsd: number
-  unrealizedPnlUnderlying: number
-  unrealizedPnlUsd: number
-  totalPnlUsd: number
-  totalEconomicGainUsd: number
-  totalDepositedUnderlying: number
-  totalWithdrawnUnderlying: number
-  eventCounts: {
-    underlyingDeposits: number
-    underlyingWithdrawals: number
-    stakingWraps: number
-    stakingUnwraps: number
-    externalTransfersIn: number
-    externalTransfersOut: number
-    migrationsIn: number
-    migrationsOut: number
-    unknownCostBasisTransfersIn: number
-    withdrawalsWithUnknownCostBasis: number
-  }
-  metadata: {
-    symbol: string
-    decimals: number
-    tokenAddress: string
-  } | null
-}
-
-export interface HoldingsPnLResponse {
-  address: string
-  version: VaultVersion
-  unknownTransferInPnlMode: UnknownTransferInPnlMode
-  generatedAt: string
-  summary: {
-    totalVaults: number
-    completeVaults: number
-    partialVaults: number
-    totalCurrentValueUsd: number
-    totalUnknownCostBasisValueUsd: number
-    totalWindfallPnlUsd: number
-    totalRealizedPnlUsd: number
-    totalUnrealizedPnlUsd: number
-    totalPnlUsd: number
-    totalEconomicGainUsd: number
-    isComplete: boolean
-  }
-  vaults: HoldingsPnLVault[]
-}
-
-function lowerCaseAddress(address: string): string {
-  return address.toLowerCase()
-}
-
-function toVaultKey(chainId: number, vaultAddress: string): string {
-  return `${chainId}:${vaultAddress.toLowerCase()}`
-}
-
-function minBigInt(a: bigint, b: bigint): bigint {
-  return a < b ? a : b
-}
-
-function positiveBigInt(value: bigint): bigint {
-  return value > ZERO ? value : ZERO
-}
-
-function negativeBigIntMagnitude(value: bigint): bigint {
-  return value < ZERO ? -value : ZERO
-}
-
-function formatAmount(value: bigint, decimals: number): number {
-  const absoluteValue = value < ZERO ? -value : value
-  const sign = value < ZERO ? -1 : 1
-  return sign * parseFloat(formatUnits(absoluteValue, decimals))
-}
-
-function sumShares(lots: TLot[]): bigint {
-  return lots.reduce((total, lot) => total + lot.shares, ZERO)
-}
-
-function sumKnownCostBasis(lots: TLot[]): bigint {
-  return lots.reduce((total, lot) => total + (lot.costBasis ?? ZERO), ZERO)
-}
 
 function createLot(shares: bigint, costBasis: bigint | null, acquiredAt?: number): TLot {
   return acquiredAt === undefined ? { shares, costBasis } : { shares, costBasis, acquiredAt }
@@ -1553,6 +1335,9 @@ export function processRawPnlEvents(events: TRawPnlEvent[], userAddress: string)
   const ledgers = new Map<string, FamilyPnlLedger>()
   const userAddressLower = userAddress.toLowerCase()
 
+  // Process transactions in two passes:
+  // 1. detect cross-family migrations that should carry basis across vaults
+  // 2. interpret the remaining per-family activity as deposits, withdrawals, wraps, unwraps, or transfers
   groupEventsByTransaction(events).forEach((txEvents) => {
     const handledFamilyKeys = processKnownMigratorCrossFamilyRollover(ledgers, txEvents, userAddressLower)
 
@@ -1580,35 +1365,6 @@ export function processRawPnlEvents(events: TRawPnlEvent[], userAddress: string)
 
     return filtered
   }, new Map<string, FamilyPnlLedger>())
-}
-
-function getEstimatedUnknownUnderlyingAtReceipt(
-  shares: bigint,
-  timestamp: number,
-  shareDecimals: number,
-  ppsMap: Map<number, number> | undefined,
-  fallbackPricePerShare: number
-): number {
-  const receiptPricePerShare =
-    timestamp > 0
-      ? ppsMap
-        ? (getPPS(ppsMap, timestamp) ?? fallbackPricePerShare)
-        : fallbackPricePerShare
-      : fallbackPricePerShare
-
-  return formatAmount(shares, shareDecimals) * receiptPricePerShare
-}
-
-function getTokenPriceForTimestamp(
-  tokenPriceMap: Map<number, number> | null,
-  timestamp: number,
-  fallbackTokenPrice: number
-): number {
-  return timestamp > 0
-    ? tokenPriceMap
-      ? getPriceAtTimestamp(tokenPriceMap, timestamp)
-      : fallbackTokenPrice
-    : fallbackTokenPrice
 }
 
 export async function getHoldingsPnL(
@@ -1641,26 +1397,7 @@ export async function getHoldingsPnL(
 
   if (vaults.length === 0) {
     debugLog('pnl', 'no pnl ledgers produced for address')
-    return {
-      address: userAddress,
-      version,
-      unknownTransferInPnlMode,
-      generatedAt: new Date().toISOString(),
-      summary: {
-        totalVaults: 0,
-        completeVaults: 0,
-        partialVaults: 0,
-        totalCurrentValueUsd: 0,
-        totalUnknownCostBasisValueUsd: 0,
-        totalWindfallPnlUsd: 0,
-        totalRealizedPnlUsd: 0,
-        totalUnrealizedPnlUsd: 0,
-        totalPnlUsd: 0,
-        totalEconomicGainUsd: 0,
-        isComplete: true
-      },
-      vaults: []
-    }
+    return createEmptyHoldingsPnlResponse(userAddress, version, unknownTransferInPnlMode)
   }
 
   const vaultIdentifiers = vaults.map((vault) => ({
@@ -1762,50 +1499,7 @@ export async function getHoldingsPnL(
           })
         }
 
-        return {
-          chainId: vault.chainId,
-          vaultAddress: vault.vaultAddress,
-          stakingVaultAddress: vault.stakingVaultAddress,
-          status: 'missing_metadata',
-          costBasisStatus: 'partial',
-          unknownTransferInPnlMode,
-          shares: totalSharesRaw.toString(),
-          sharesFormatted: 0,
-          walletShares: walletSharesRaw.toString(),
-          walletSharesFormatted: 0,
-          stakedShares: stakedSharesRaw.toString(),
-          stakedSharesFormatted: 0,
-          knownCostBasisShares: knownSharesRaw.toString(),
-          unknownCostBasisShares: unknownSharesRaw.toString(),
-          pricePerShare: resolvedPricePerShare,
-          tokenPrice,
-          currentValueUsd: 0,
-          walletValueUsd: 0,
-          stakedValueUsd: 0,
-          unknownCostBasisValueUsd: 0,
-          windfallPnlUsd: 0,
-          realizedPnlUnderlying: 0,
-          realizedPnlUsd: 0,
-          unrealizedPnlUnderlying: 0,
-          unrealizedPnlUsd: 0,
-          totalPnlUsd: 0,
-          totalEconomicGainUsd: 0,
-          totalDepositedUnderlying: 0,
-          totalWithdrawnUnderlying: 0,
-          eventCounts: {
-            underlyingDeposits: vault.eventCounts.underlyingDeposits,
-            underlyingWithdrawals: vault.eventCounts.underlyingWithdrawals,
-            stakingWraps: vault.eventCounts.stakingWraps,
-            stakingUnwraps: vault.eventCounts.stakingUnwraps,
-            externalTransfersIn: vault.eventCounts.externalTransfersIn,
-            externalTransfersOut: vault.eventCounts.externalTransfersOut,
-            migrationsIn: vault.eventCounts.migrationsIn,
-            migrationsOut: vault.eventCounts.migrationsOut,
-            unknownCostBasisTransfersIn: vault.unknownCostBasisTransferInCount,
-            withdrawalsWithUnknownCostBasis: vault.withdrawalsWithUnknownCostBasis
-          },
-          metadata: null
-        }
+        return createMissingMetadataPnlVault(vault, unknownTransferInPnlMode, tokenPrice, resolvedPricePerShare)
       }
 
       const walletSharesFormatted = formatAmount(walletSharesRaw, metadata.decimals)
@@ -1818,83 +1512,32 @@ export async function getHoldingsPnL(
       const currentUnknownUnderlying = formatAmount(unknownSharesRaw, metadata.decimals) * resolvedPricePerShare
       const walletValueUsd = currentWalletUnderlying * tokenPrice
       const stakedValueUsd = currentStakedUnderlying * tokenPrice
-      const strictUnknownCostBasisValueUsd = currentUnknownUnderlying * tokenPrice
-      let windfallPnlUsd = 0
-      let realizedPnlUnderlying = vault.realizedEntries.reduce(
+      const baseRealizedPnlUnderlying = vault.realizedEntries.reduce(
         (total, entry) => total + formatAmount(entry.pnlAssets, metadata.token.decimals),
         0
       )
-      let realizedPnlUsd = vault.realizedEntries.reduce((total, entry) => {
+      const baseRealizedPnlUsd = vault.realizedEntries.reduce((total, entry) => {
         const realizedTokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, entry.timestamp) : 0
         return total + formatAmount(entry.pnlAssets, metadata.token.decimals) * realizedTokenPrice
       }, 0)
-      let unrealizedPnlUnderlying = pricePerShare === null ? 0 : currentKnownUnderlying - knownCostBasisUnderlying
-      let unrealizedPnlUsd = unrealizedPnlUnderlying * tokenPrice
-      const unknownCostBasisValueUsd = unknownTransferInPnlMode === 'strict' ? strictUnknownCostBasisValueUsd : 0
-
-      if (unknownTransferInPnlMode !== 'strict') {
-        const unknownRealizedProceedsUnderlying = vault.unknownWithdrawalEntries.reduce(
-          (total, entry) => total + formatAmount(entry.proceedsAssets, metadata.token.decimals),
-          0
-        )
-        const unknownRealizedProceedsUsd = vault.unknownWithdrawalEntries.reduce((total, entry) => {
-          const realizedTokenPrice = getTokenPriceForTimestamp(tokenPriceMap, entry.timestamp, tokenPrice)
-          return total + formatAmount(entry.proceedsAssets, metadata.token.decimals) * realizedTokenPrice
-        }, 0)
-
-        if (unknownTransferInPnlMode === 'zero_basis') {
-          realizedPnlUnderlying += unknownRealizedProceedsUnderlying
-          realizedPnlUsd += unknownRealizedProceedsUsd
-          unrealizedPnlUnderlying += currentUnknownUnderlying
-          unrealizedPnlUsd += currentUnknownUnderlying * tokenPrice
-        }
-
-        if (unknownTransferInPnlMode === 'windfall') {
-          const currentUnknownReceiptValueUsd = unknownLots.reduce((total, lot) => {
-            const receiptUnderlying = getEstimatedUnknownUnderlyingAtReceipt(
-              lot.shares,
-              lot.acquiredAt ?? currentTimestamp,
-              metadata.decimals,
-              ppsMap,
-              resolvedPricePerShare
-            )
-            const receiptTokenPrice = getTokenPriceForTimestamp(
-              tokenPriceMap,
-              lot.acquiredAt ?? currentTimestamp,
-              tokenPrice
-            )
-            return total + receiptUnderlying * receiptTokenPrice
-          }, 0)
-          const realizedUnknownReceiptValueUsd = vault.unknownWithdrawalEntries.reduce((total, entry) => {
-            return (
-              total +
-              entry.consumedLots.reduce((entryTotal, lot) => {
-                const receiptUnderlying = getEstimatedUnknownUnderlyingAtReceipt(
-                  lot.shares,
-                  lot.acquiredAt ?? entry.timestamp,
-                  metadata.decimals,
-                  ppsMap,
-                  resolvedPricePerShare
-                )
-                const receiptTokenPrice = getTokenPriceForTimestamp(
-                  tokenPriceMap,
-                  lot.acquiredAt ?? entry.timestamp,
-                  tokenPrice
-                )
-                return entryTotal + receiptUnderlying * receiptTokenPrice
-              }, 0)
-            )
-          }, 0)
-          const unknownRealizedMarketPnlUsd = unknownRealizedProceedsUsd - realizedUnknownReceiptValueUsd
-          const unknownCurrentMarketPnlUsd = currentUnknownUnderlying * tokenPrice - currentUnknownReceiptValueUsd
-
-          windfallPnlUsd = currentUnknownReceiptValueUsd + realizedUnknownReceiptValueUsd
-          realizedPnlUsd += unknownRealizedMarketPnlUsd
-          unrealizedPnlUsd += unknownCurrentMarketPnlUsd
-          realizedPnlUnderlying += tokenPrice > 0 ? unknownRealizedMarketPnlUsd / tokenPrice : 0
-          unrealizedPnlUnderlying += tokenPrice > 0 ? unknownCurrentMarketPnlUsd / tokenPrice : 0
-        }
-      }
+      const baseUnrealizedPnlUnderlying = pricePerShare === null ? 0 : currentKnownUnderlying - knownCostBasisUnderlying
+      const baseUnrealizedPnlUsd = baseUnrealizedPnlUnderlying * tokenPrice
+      const valuationState = applyUnknownTransferInModeAdjustment({
+        unknownTransferInPnlMode,
+        vault,
+        unknownLots,
+        metadata,
+        ppsMap,
+        tokenPriceMap,
+        tokenPrice,
+        currentTimestamp,
+        resolvedPricePerShare,
+        currentUnknownUnderlying,
+        baseRealizedPnlUnderlying,
+        baseRealizedPnlUsd,
+        baseUnrealizedPnlUnderlying,
+        baseUnrealizedPnlUsd
+      })
       const costBasisStatus =
         vault.unknownCostBasisTransferInCount === 0 &&
         vault.withdrawalsWithUnknownCostBasis === 0 &&
@@ -1957,28 +1600,18 @@ export async function getHoldingsPnL(
         currentValueUsd: walletValueUsd + stakedValueUsd,
         walletValueUsd,
         stakedValueUsd,
-        unknownCostBasisValueUsd,
-        windfallPnlUsd,
-        realizedPnlUnderlying,
-        realizedPnlUsd,
-        unrealizedPnlUnderlying,
-        unrealizedPnlUsd,
-        totalPnlUsd: realizedPnlUsd + unrealizedPnlUsd,
-        totalEconomicGainUsd: realizedPnlUsd + unrealizedPnlUsd + windfallPnlUsd,
+        unknownCostBasisValueUsd: valuationState.unknownCostBasisValueUsd,
+        windfallPnlUsd: valuationState.windfallPnlUsd,
+        realizedPnlUnderlying: valuationState.realizedPnlUnderlying,
+        realizedPnlUsd: valuationState.realizedPnlUsd,
+        unrealizedPnlUnderlying: valuationState.unrealizedPnlUnderlying,
+        unrealizedPnlUsd: valuationState.unrealizedPnlUsd,
+        totalPnlUsd: valuationState.realizedPnlUsd + valuationState.unrealizedPnlUsd,
+        totalEconomicGainUsd:
+          valuationState.realizedPnlUsd + valuationState.unrealizedPnlUsd + valuationState.windfallPnlUsd,
         totalDepositedUnderlying: formatAmount(vault.totalDepositedAssets, metadata.token.decimals),
         totalWithdrawnUnderlying: formatAmount(vault.totalWithdrawnAssets, metadata.token.decimals),
-        eventCounts: {
-          underlyingDeposits: vault.eventCounts.underlyingDeposits,
-          underlyingWithdrawals: vault.eventCounts.underlyingWithdrawals,
-          stakingWraps: vault.eventCounts.stakingWraps,
-          stakingUnwraps: vault.eventCounts.stakingUnwraps,
-          externalTransfersIn: vault.eventCounts.externalTransfersIn,
-          externalTransfersOut: vault.eventCounts.externalTransfersOut,
-          migrationsIn: vault.eventCounts.migrationsIn,
-          migrationsOut: vault.eventCounts.migrationsOut,
-          unknownCostBasisTransfersIn: vault.unknownCostBasisTransferInCount,
-          withdrawalsWithUnknownCostBasis: vault.withdrawalsWithUnknownCostBasis
-        },
+        eventCounts: toHoldingsPnlEventCounts(vault),
         metadata: {
           symbol: metadata.token.symbol,
           decimals: metadata.decimals,
@@ -1995,34 +1628,7 @@ export async function getHoldingsPnL(
     partialCostBasis: pnlVaults.filter((vault) => vault.costBasisStatus === 'partial').length
   })
 
-  const summary = pnlVaults.reduce(
-    (totals, vault) => ({
-      totalVaults: totals.totalVaults + 1,
-      completeVaults: totals.completeVaults + (vault.costBasisStatus === 'complete' ? 1 : 0),
-      partialVaults: totals.partialVaults + (vault.costBasisStatus === 'partial' ? 1 : 0),
-      totalCurrentValueUsd: totals.totalCurrentValueUsd + vault.currentValueUsd,
-      totalUnknownCostBasisValueUsd: totals.totalUnknownCostBasisValueUsd + vault.unknownCostBasisValueUsd,
-      totalWindfallPnlUsd: totals.totalWindfallPnlUsd + vault.windfallPnlUsd,
-      totalRealizedPnlUsd: totals.totalRealizedPnlUsd + vault.realizedPnlUsd,
-      totalUnrealizedPnlUsd: totals.totalUnrealizedPnlUsd + vault.unrealizedPnlUsd,
-      totalPnlUsd: totals.totalPnlUsd + vault.totalPnlUsd,
-      totalEconomicGainUsd: totals.totalEconomicGainUsd + vault.totalEconomicGainUsd,
-      isComplete: totals.isComplete && vault.costBasisStatus === 'complete'
-    }),
-    {
-      totalVaults: 0,
-      completeVaults: 0,
-      partialVaults: 0,
-      totalCurrentValueUsd: 0,
-      totalUnknownCostBasisValueUsd: 0,
-      totalWindfallPnlUsd: 0,
-      totalRealizedPnlUsd: 0,
-      totalUnrealizedPnlUsd: 0,
-      totalPnlUsd: 0,
-      totalEconomicGainUsd: 0,
-      isComplete: true
-    }
-  )
+  const summary = summarizePnlVaults(pnlVaults)
   debugLog('pnl', 'completed holdings pnl calculation', {
     unknownTransferInPnlMode,
     totalVaults: summary.totalVaults,

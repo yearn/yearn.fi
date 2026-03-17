@@ -209,6 +209,8 @@ Response:
 ### GET `/api/holdings/pnl`
 FIFO-based realized and unrealized PnL for the user’s vault activity.
 
+For the dedicated accounting-model walkthrough, see [`PNL.md`](./PNL.md).
+
 ```bash
 curl "http://localhost:3001/api/holdings/pnl?address=0x..."
 curl "http://localhost:3001/api/holdings/pnl?address=0x...&unknownMode=windfall"
