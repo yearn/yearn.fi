@@ -21,6 +21,8 @@ export interface WithdrawWidgetProps {
   expectedOutOverride?: bigint
   isActionDisabled?: boolean
   actionDisabledReason?: string
+  customErrorMessage?: string
+  disableFlow?: boolean
   disableTokenSelector?: boolean
   hideZapForTokens?: `0x${string}`[]
   disableAmountInput?: boolean
