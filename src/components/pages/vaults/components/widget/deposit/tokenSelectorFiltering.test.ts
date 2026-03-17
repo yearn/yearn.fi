@@ -7,6 +7,7 @@ const DESTINATION_VAULT = '0x0000000000000000000000000000000000000001' as Addres
 const CANDIDATE_VAULT = '0x0000000000000000000000000000000000000002' as Address
 const IRRELEVANT_VAULT = '0x0000000000000000000000000000000000000003' as Address
 const OTHER_ASSET = '0x0000000000000000000000000000000000000004' as Address
+const HIDDEN_STAKING = '0x0000000000000000000000000000000000000005' as Address
 
 describe('getStructurallyExcludedDepositTokenAddresses', () => {
   it('excludes vault share tokens whose underlying asset is the destination vault', () => {
@@ -44,13 +45,53 @@ describe('getStructurallyExcludedDepositTokenAddresses', () => {
     expect(excluded).not.toContain(IRRELEVANT_VAULT)
   })
 
-  it('excludes locked yvUSD for unlocked yvUSD deposits even when the vault list is missing it', () => {
+  it('excludes locked yvUSD for deposits even when the destination vault is unrelated', () => {
     const excluded = getStructurallyExcludedDepositTokenAddresses({
       allVaults: {},
-      destinationVaultAddress: YVUSD_UNLOCKED_ADDRESS
+      destinationVaultAddress: OTHER_ASSET
     })
 
     expect(excluded).toContain(YVUSD_LOCKED_ADDRESS)
+  })
+
+  it('excludes hidden vault share and staking tokens from deposit selectors', () => {
+    const excluded = getStructurallyExcludedDepositTokenAddresses({
+      allVaults: {
+        [IRRELEVANT_VAULT]: {
+          chainID: 1,
+          version: '3.0.0',
+          address: IRRELEVANT_VAULT,
+          token: {
+            address: OTHER_ASSET,
+            symbol: 'OTHER',
+            name: 'Other Asset',
+            description: '',
+            decimals: 18
+          },
+          staking: {
+            address: HIDDEN_STAKING,
+            available: true,
+            source: '',
+            rewards: null
+          },
+          info: {
+            sourceURL: '',
+            riskLevel: 0,
+            riskScore: [],
+            riskScoreComment: '',
+            uiNotice: '',
+            isRetired: false,
+            isBoosted: false,
+            isHighlighted: false,
+            isHidden: true
+          }
+        } as never
+      },
+      destinationVaultAddress: DESTINATION_VAULT
+    })
+
+    expect(excluded).toContain(IRRELEVANT_VAULT)
+    expect(excluded).toContain(HIDDEN_STAKING)
   })
 
   it('does not exclude unlocked yvUSD for locked yvUSD deposits', () => {

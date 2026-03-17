@@ -1,7 +1,12 @@
-import { getVaultAddress, getVaultToken, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
-import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
+import {
+  getVaultAddress,
+  getVaultStaking,
+  getVaultToken,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
+import { YVUSD_LOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import type { TDict } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress } from '@shared/utils'
 import type { Address } from 'viem'
 
 export function getStructurallyExcludedDepositTokenAddresses({
@@ -21,11 +26,25 @@ export function getStructurallyExcludedDepositTokenAddresses({
     if (candidateUnderlyingAddress === normalizedDestinationVaultAddress) {
       excluded.add(candidateVaultAddress)
     }
+
+    const isHidden = 'info' in vault ? Boolean(vault.info?.isHidden) : Boolean(vault.isHidden)
+    if (isHidden) {
+      excluded.add(candidateVaultAddress)
+
+      const stakingAddress = toAddress(getVaultStaking(vault).address) as Address
+      if (!isZeroAddress(stakingAddress)) {
+        excluded.add(stakingAddress)
+      }
+    }
   })
 
-  if (normalizedDestinationVaultAddress === YVUSD_UNLOCKED_ADDRESS) {
-    excluded.add(YVUSD_LOCKED_ADDRESS)
-  }
+  /**************************************************************************
+   ** Locked yvUSD shares are not transferable until cooldown completes, so
+   ** they should never be offered as zap-from inputs. Once Kong exposes a
+   ** locked/non-transferable vault flag, replace this hard-coded exclusion
+   ** with metadata-driven filtering.
+   **************************************************************************/
+  excluded.add(YVUSD_LOCKED_ADDRESS)
 
   return [...excluded]
 }

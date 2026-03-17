@@ -1,12 +1,21 @@
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
+import { useYearn } from '@shared/contexts/useYearn'
+import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TToken } from '@shared/types'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { isAddress } from 'viem'
 import { CloseIcon } from './shared/Icons'
 import { getTokenLogoSources } from './tokenLogo.utils'
+import {
+  filterAndSortTokenSelectorTokens,
+  getDerivedTokenUsdValue,
+  getExplicitTokenAddresses,
+  getYearnKnownTokenAddresses,
+  type TTokenSelectorMode
+} from './tokenSelectorList.utils'
 
 type TTokenType = 'asset' | 'vault' | 'staking' | undefined
 
@@ -17,11 +26,13 @@ interface TokenSelectorProps {
   limitTokens?: `0x${string}`[]
   excludeTokens?: `0x${string}`[]
   priorityTokens?: Record<number, `0x${string}`[]> // chainId -> addresses to always show
+  topTokens?: Record<number, `0x${string}`[]>
   extraTokens?: TToken[]
   onClose?: () => void
   assetAddress?: `0x${string}`
   vaultAddress?: `0x${string}`
   stakingAddress?: `0x${string}`
+  mode?: TTokenSelectorMode
 }
 
 const TokenTypeChip: FC<{ type: TTokenType }> = ({ type }) => {
@@ -95,16 +106,20 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   limitTokens,
   excludeTokens,
   priorityTokens,
+  topTokens,
   extraTokens,
   onClose,
   assetAddress,
   vaultAddress,
-  stakingAddress
+  stakingAddress,
+  mode = 'default'
 }) => {
   const [searchText, setSearchText] = useState('')
   const [customAddress, setCustomAddress] = useState<`0x${string}` | undefined>()
   const [selectedChainId, setSelectedChainId] = useState(chainId)
   const { getToken, isLoading, balances } = useWallet()
+  const { tokenLists } = useTokenList()
+  const { allVaults, getPrice } = useYearn()
 
   // Available chains - you can expand this list as needed
   const availableChains = useMemo(
@@ -117,6 +132,20 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       { id: 747474, name: 'Katana' }
     ],
     []
+  )
+
+  const priorityTokenAddresses = useMemo(
+    () => (priorityTokens?.[selectedChainId] || []).map((address) => toAddress(address) as `0x${string}`),
+    [priorityTokens, selectedChainId]
+  )
+  const topTokenAddresses = useMemo(
+    () => (topTokens?.[selectedChainId] || []).map((address) => toAddress(address) as `0x${string}`),
+    [selectedChainId, topTokens]
+  )
+
+  const chainExtraTokens = useMemo(
+    () => (extraTokens || []).filter((token) => token.chainID === selectedChainId),
+    [extraTokens, selectedChainId]
   )
 
   // Get all tokens with balances from wallet context
@@ -175,8 +204,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     }
 
     // Include priority tokens even if they have no balance
-    const chainPriorityTokens = priorityTokens?.[selectedChainId] || []
-    for (const priorityAddress of chainPriorityTokens) {
+    for (const priorityAddress of priorityTokenAddresses) {
       if (!tokenMap.has(priorityAddress.toLowerCase())) {
         const priorityToken = getToken({ address: toAddress(priorityAddress), chainID: selectedChainId })
         if (priorityToken.symbol) {
@@ -194,36 +222,78 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     }
 
     // Explicit extra tokens should override selector metadata for matching addresses.
-    const chainExtraTokens = (extraTokens || []).filter((token) => token.chainID === selectedChainId)
     for (const extraToken of chainExtraTokens) {
       setOverride(extraToken)
     }
 
     return [...tokenMap.values()]
-  }, [balances, selectedChainId, value, customAddress, getToken, priorityTokens, extraTokens])
+  }, [balances, selectedChainId, value, customAddress, getToken, priorityTokenAddresses, chainExtraTokens])
+
+  const yearnKnownTokenAddresses = useMemo(
+    () =>
+      getYearnKnownTokenAddresses({
+        chainId: selectedChainId,
+        chainTokenList: tokenLists[selectedChainId],
+        allVaults
+      }),
+    [allVaults, selectedChainId, tokenLists]
+  )
+
+  const explicitTokenAddresses = useMemo(
+    () =>
+      getExplicitTokenAddresses({
+        value,
+        priorityTokenAddresses,
+        chainExtraTokens,
+        currentTokenAddresses: selectedChainId === chainId ? [assetAddress, vaultAddress, stakingAddress] : [],
+        customAddress
+      }),
+    [
+      assetAddress,
+      chainExtraTokens,
+      chainId,
+      customAddress,
+      priorityTokenAddresses,
+      selectedChainId,
+      stakingAddress,
+      value,
+      vaultAddress
+    ]
+  )
+
+  const getTokenUsdValue = useCallback(
+    (token: TToken) =>
+      getDerivedTokenUsdValue({
+        token,
+        getPrice
+      }),
+    [getPrice]
+  )
 
   // Filter tokens based on search and limits
   const filteredTokens = useMemo(() => {
-    const filtered = tokens
-      .filter((token) => !limitTokens?.length || limitTokens.includes(token.address as `0x${string}`))
-      .filter((token) => !excludeTokens?.length || !excludeTokens.includes(token.address as `0x${string}`))
-      .filter((token) => {
-        if (!searchText) return true
-        const search = searchText.toLowerCase()
-        return (
-          token.symbol?.toLowerCase().includes(search) ||
-          token.name?.toLowerCase().includes(search) ||
-          token.address?.toLowerCase().includes(search)
-        )
-      })
-
-    // Sort by balance (highest first)
-    return filtered.toSorted((a, b) => {
-      const aBalance = a.balance?.raw || 0n
-      const bBalance = b.balance?.raw || 0n
-      return bBalance > aBalance ? 1 : -1
+    return filterAndSortTokenSelectorTokens({
+      tokens,
+      mode,
+      limitTokens,
+      excludeTokens,
+      searchText,
+      yearnKnownTokenAddresses,
+      explicitTokenAddresses,
+      topTokenAddresses,
+      getTokenUsdValue
     })
-  }, [tokens, limitTokens, excludeTokens, searchText])
+  }, [
+    tokens,
+    mode,
+    limitTokens,
+    excludeTokens,
+    searchText,
+    yearnKnownTokenAddresses,
+    explicitTokenAddresses,
+    topTokenAddresses,
+    getTokenUsdValue
+  ])
 
   // Check if search text is a valid address
   useEffect(() => {
