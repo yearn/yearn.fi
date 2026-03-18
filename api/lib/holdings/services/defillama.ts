@@ -23,9 +23,11 @@ const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504])
 const DEFAULT_TIMEOUT_MS = 4_000
 const DEFAULT_MAX_RETRIES = 2
 const DEFAULT_RETRY_DELAY_MS = 200
-const TIMESTAMP_BATCH_SIZE = 10
-const TOKEN_BATCH_SIZE = 5
+const MAX_BATCH_URL_LENGTH = 12_000
+const MAX_BATCH_PRICE_POINTS = 1_000
 const PARALLEL_REQUESTS = 2
+
+type TCoinRequest = { chain: string; address: string; timestamps: number[] }
 
 export function getChainPrefix(chainId: number): string {
   const chain = SUPPORTED_CHAINS.find((c) => c.id === chainId)
@@ -62,10 +64,8 @@ function countPricePoints(priceData: Map<string, Map<number, number>>): number {
   return Array.from(priceData.values()).reduce((total, priceMap) => total + priceMap.size, 0)
 }
 
-function mergeCoinRequests(
-  coins: Array<{ chain: string; address: string; timestamps: number[] }>
-): Array<{ chain: string; address: string; timestamps: number[] }> {
-  const merged = coins.reduce<Map<string, { chain: string; address: string; timestamps: number[] }>>((result, coin) => {
+function mergeCoinRequests(coins: TCoinRequest[]): TCoinRequest[] {
+  const merged = coins.reduce<Map<string, TCoinRequest>>((result, coin) => {
     const coinKey = `${coin.chain}:${coin.address.toLowerCase()}`
     const existing = result.get(coinKey)
 
@@ -86,8 +86,48 @@ function mergeCoinRequests(
   return Array.from(merged.values())
 }
 
+function countRequestedPricePoints(coins: TCoinRequest[]): number {
+  return coins.reduce((total, coin) => total + coin.timestamps.length, 0)
+}
+
+function isBatchWithinLimits(coins: TCoinRequest[]): boolean {
+  return (
+    countRequestedPricePoints(coins) <= MAX_BATCH_PRICE_POINTS &&
+    buildBatchHistoricalUrl(coins).length <= MAX_BATCH_URL_LENGTH
+  )
+}
+
+function splitCoinRequest(coin: TCoinRequest): TCoinRequest[] {
+  const midpoint = Math.ceil(coin.timestamps.length / 2)
+
+  return [
+    { chain: coin.chain, address: coin.address, timestamps: coin.timestamps.slice(0, midpoint) },
+    { chain: coin.chain, address: coin.address, timestamps: coin.timestamps.slice(midpoint) }
+  ].filter((splitCoin) => splitCoin.timestamps.length > 0)
+}
+
+function normalizeCoinRequests(coins: TCoinRequest[]): TCoinRequest[] {
+  const expandedCoins = coins.flatMap((coin) =>
+    isBatchWithinLimits([coin]) || coin.timestamps.length === 1 ? [coin] : normalizeCoinRequests(splitCoinRequest(coin))
+  )
+
+  return expandedCoins.sort((left, right) => right.timestamps.length - left.timestamps.length)
+}
+
+function packCoinRequests(coins: TCoinRequest[]): TCoinRequest[][] {
+  return coins.reduce<TCoinRequest[][]>((batches, coin) => {
+    const targetBatchIndex = batches.findIndex((batch) => isBatchWithinLimits(mergeCoinRequests([...batch, coin])))
+
+    if (targetBatchIndex === -1) {
+      return batches.concat([[coin]])
+    }
+
+    return batches.map((batch, index) => (index === targetBatchIndex ? mergeCoinRequests([...batch, coin]) : batch))
+  }, [])
+}
+
 function materializeRequestedPrices(
-  coins: Array<{ chain: string; address: string; timestamps: number[] }>,
+  coins: TCoinRequest[],
   fetchedPrices: Map<string, Map<number, number>>
 ): CachedPrice[] {
   return coins.flatMap((coin) => {
@@ -104,9 +144,7 @@ function materializeRequestedPrices(
   })
 }
 
-export function buildBatchHistoricalUrl(
-  coins: Array<{ chain: string; address: string; timestamps: number[] }>
-): string {
+export function buildBatchHistoricalUrl(coins: TCoinRequest[]): string {
   const coinsParam = coins.reduce<Record<string, number[]>>((accumulator, coin) => {
     accumulator[`${coin.chain}:${coin.address.toLowerCase()}`] = coin.timestamps
     return accumulator
@@ -131,12 +169,9 @@ export function parseDefiLlamaResponse(
   }, new Map<string, Map<number, number>>())
 }
 
-async function fetchBatch(
-  coinBatch: Array<{ chain: string; address: string; timestamps: number[] }>,
-  attempt = 0
-): Promise<Map<string, Map<number, number>>> {
+async function fetchBatch(coinBatch: TCoinRequest[], attempt = 0): Promise<Map<string, Map<number, number>>> {
   const uniqueTimestamps = [...new Set(coinBatch.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
-  const requestedPricePoints = coinBatch.reduce((total, coin) => total + coin.timestamps.length, 0)
+  const requestedPricePoints = countRequestedPricePoints(coinBatch)
   const url = buildBatchHistoricalUrl(coinBatch)
   debugLog('defillama', 'fetching price batch', {
     attempt: attempt + 1,
@@ -243,19 +278,17 @@ export async function fetchHistoricalPrices(
     0
   )
   const newPrices: CachedPrice[] = []
-  const tokenRequests = tokensToFetch.flatMap((coin) => {
-    const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
-    const missingTimestamps = missingByToken.get(tokenKey) ?? []
-
-    return chunkItems(missingTimestamps, TIMESTAMP_BATCH_SIZE).map((timestampBatch) => ({
-      chain: coin.chain,
-      address: coin.address,
-      timestamps: timestampBatch
-    }))
-  })
-  const batches = chunkItems(tokenRequests, TOKEN_BATCH_SIZE).map((coinBatch) => ({
-    coinBatch: mergeCoinRequests(coinBatch)
-  }))
+  const tokenRequests = normalizeCoinRequests(
+    tokensToFetch.map((coin) => {
+      const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
+      return {
+        chain: coin.chain,
+        address: coin.address,
+        timestamps: missingByToken.get(tokenKey) ?? []
+      }
+    })
+  )
+  const batches = packCoinRequests(tokenRequests).map((coinBatch) => ({ coinBatch }))
   const batchGroups = chunkItems(batches, PARALLEL_REQUESTS)
   const fetchStats = { successfulBatches: 0 }
   debugLog('defillama', 'prepared price fetch batches', {
