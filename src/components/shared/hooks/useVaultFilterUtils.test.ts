@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getVaultHoldingsUsdValue } from './useVaultFilterUtils'
+import { getVaultHoldingsUsdValue, matchesSelectedChains } from './useVaultFilterUtils'
 
 const VAULT_ADDRESS = '0x8589462548984c5C0f2C0140FB276351B5a77fe1'
 const ASSET_ADDRESS = '0x0000000000000000000000000000000000000002'
@@ -67,5 +67,17 @@ describe('getVaultHoldingsUsdValue', () => {
     )
 
     expect(value).toBeCloseTo(2.1, 8)
+  })
+})
+
+describe('matchesSelectedChains', () => {
+  it('treats null or empty selections as all chains', () => {
+    expect(matchesSelectedChains(1, null)).toBe(true)
+    expect(matchesSelectedChains(1, [])).toBe(true)
+  })
+
+  it('only matches vaults from the selected chains', () => {
+    expect(matchesSelectedChains(1, [1])).toBe(true)
+    expect(matchesSelectedChains(10, [1])).toBe(false)
   })
 })
