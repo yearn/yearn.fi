@@ -5,6 +5,7 @@ const KATANA_CHAIN_ID = 747474
 
 export type TKatanaAprData = {
   katanaAppRewardsAPR?: number
+  fixedRateKatanaRewards?: number
   steerPointsPerDollar?: number
 }
 
@@ -27,7 +28,7 @@ export function calculateKatanaTotalApr(
   }
 
   const appRewardsApr = katanaExtras.katanaAppRewardsAPR
-  const parts = [baseAprOverride, appRewardsApr].filter(
+  const parts = [baseAprOverride, katanaExtras.fixedRateKatanaRewards, appRewardsApr].filter(
     (value): value is number => typeof value === 'number' && !Number.isNaN(value)
   )
 
@@ -44,9 +45,12 @@ export function getKatanaAprData(vault: TKongVaultInput): TKatanaAprData | undef
 
   const apr = getVaultAPR(vault)
   const katanaAppRewardsAPR = normalizeFiniteNumber(apr.extra.katanaAppRewardsAPR)
+  const fixedRateKatanaRewards = normalizeFiniteNumber(apr.extra.fixedRateKatanaRewards)
   const steerPointsPerDollar = normalizeFiniteNumber(apr.extra.steerPointsPerDollar)
 
-  const hasKatanaComponentData = [katanaAppRewardsAPR, steerPointsPerDollar].some((value) => value !== undefined)
+  const hasKatanaComponentData = [katanaAppRewardsAPR, fixedRateKatanaRewards, steerPointsPerDollar].some(
+    (value) => value !== undefined
+  )
 
   if (!hasKatanaComponentData) {
     return undefined
@@ -54,6 +58,7 @@ export function getKatanaAprData(vault: TKongVaultInput): TKatanaAprData | undef
 
   return {
     katanaAppRewardsAPR,
+    fixedRateKatanaRewards,
     steerPointsPerDollar
   }
 }

@@ -31,11 +31,12 @@ const KATANA_APY_DATA = {
   hasKelp: false,
   hasKelpNEngenlayer: false,
   katanaExtras: {
+    fixedRateKatanaRewards: 4,
     katanaAppRewardsAPR: 3,
     steerPointsPerDollar: 0
   },
-  katanaThirtyDayApr: 3.1,
-  katanaEstApr: 3
+  katanaThirtyDayApr: 7.1,
+  katanaEstApr: 7
 } as TVaultApyData
 
 describe('resolveHistoricalApyDisplayConfig', () => {

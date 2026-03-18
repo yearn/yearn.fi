@@ -6,6 +6,7 @@ import type { ReactElement } from 'react'
 
 type TKatanaTooltipProps = {
   katanaNativeYield: number
+  fixedRateKatanRewardsAPR: number
   katanaAppRewardsAPR: number
   steerPointsPerDollar?: number
   isEligibleForSpectraBoost?: boolean
@@ -50,6 +51,7 @@ function KatanaApyRow({ iconSrc, label, value }: TKatanaApyRowProps): ReactEleme
 
 export function KatanaApyTooltipContent({
   katanaNativeYield,
+  fixedRateKatanRewardsAPR,
   katanaAppRewardsAPR,
   steerPointsPerDollar,
   isEligibleForSpectraBoost,
@@ -64,6 +66,7 @@ export function KatanaApyTooltipContent({
   const tokenAddress = getVaultToken(currentVault).address.toLowerCase()
   const tokenLogoSrc = `${baseAssetsUrl}/tokens/${chainId}/${tokenAddress}/logo-32.png`
   const chainLogoSrc = `${baseAssetsUrl}/chains/${chainId}/logo-32.png`
+  const hasFixedRateRewards = fixedRateKatanRewardsAPR > 0
   const hasAppRewards = katanaAppRewardsAPR > 0
   const hasSteerPoints = (steerPointsPerDollar || 0) > 0
 
@@ -79,6 +82,25 @@ export function KatanaApyTooltipContent({
         <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
           {'Yield Earned on Katana'}
         </p>
+        {hasFixedRateRewards ? (
+          <>
+            <KatanaApyRow iconSrc={chainLogoSrc} label={'Base Rewards APR '} value={fixedRateKatanRewardsAPR} />
+            <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
+              {'Limited time fixed KAT rewards'}
+            </p>
+            <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words'}>
+              {'* claimable after 28 days, subject to '}
+              <a
+                href={'https://x.com/katana/status/1961475531188126178'}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={KATANA_LINK_CLASS}
+              >
+                {'haircut schedule.'}
+              </a>
+            </p>
+          </>
+        ) : null}
         {hasAppRewards ? (
           <>
             <KatanaApyRow iconSrc={chainLogoSrc} label={'App Rewards APR '} value={katanaAppRewardsAPR} />
@@ -87,11 +109,12 @@ export function KatanaApyTooltipContent({
             </p>
           </>
         ) : null}
-        <p className={'mt-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
+        {/* keeping the section below as we will probably need it soon */}
+        {/* <p className={'mt-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
           {
             'In order to claim all KAT rewards earned before TGE, users must remain in the vault for 30 days, until April 18th, 2026.'
           }
-        </p>
+        </p> */}
         <p className={'mt-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
           {'Read more about KAT tokenomics '}
           <a

@@ -185,12 +185,17 @@ export function VaultForwardAPYInlineDetails({
   if (hasKatanaDetails && katanaExtras) {
     const steerPointsPerDollar = katanaExtras.steerPointsPerDollar ?? 0
     const hasSteerPoints = steerPointsPerDollar > 0
+    const fixedRateKatanaRewards = katanaExtras.fixedRateKatanaRewards ?? 0
+    const hasFixedRateRewards = fixedRateKatanaRewards > 0
     const katanaAppRewardsAPR = katanaExtras.katanaAppRewardsAPR ?? 0
     const hasAppRewards = katanaAppRewardsAPR > 0
     return (
       <div className={INLINE_DETAILS_CONTAINER_CLASS}>
         <div className={INLINE_DETAILS_STACK_CLASS}>
           <InlineDetailRow label={'Est. Native APY'} value={formatApyDisplay(data.baseForwardApr)} />
+          {hasFixedRateRewards ? (
+            <InlineDetailRow label={'Base Rewards APR'} value={formatApyDisplay(fixedRateKatanaRewards)} />
+          ) : null}
           {hasAppRewards ? (
             <InlineDetailRow label={'App Rewards APR'} value={formatApyDisplay(katanaAppRewardsAPR)} />
           ) : null}
@@ -209,6 +214,20 @@ export function VaultForwardAPYInlineDetails({
                 {'here.'}
               </a>
             </p>
+            {hasFixedRateRewards ? (
+              <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words'}>
+                {'* claimable after 28 days, subject to the Katana '}
+                <a
+                  href={'https://x.com/katana/status/1961475531188126178'}
+                  target={'_blank'}
+                  rel={'noopener noreferrer'}
+                  className={INLINE_DETAILS_LINK_CLASS}
+                >
+                  {'haircut schedule'}
+                </a>
+                {'.'}
+              </p>
+            ) : null}
             {isEligibleForSpectraBoost && (
               <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words whitespace-normal'}>
                 {'Earn boosted yield on Spectra if you '}

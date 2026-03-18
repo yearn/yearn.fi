@@ -13,7 +13,8 @@ const DETAIL_VAULT_WITH_COMPONENTS = {
       stakingRewardsAPR: 0,
       gammaRewardAPR: 0,
       katanaAppRewardsAPR: 0.0916,
-      steerPointsPerDollar: 0.1883
+      steerPointsPerDollar: 0.1883,
+      fixedRateKatanaRewards: 0.35
     },
     points: {
       weekAgo: 0.03,
@@ -73,15 +74,16 @@ describe('useVaultApyData helpers', () => {
 
     expect(katanaExtras).toEqual({
       katanaAppRewardsAPR: 0.0916,
+      fixedRateKatanaRewards: 0.35,
       steerPointsPerDollar: 0.1883
     })
   })
 
-  it('computes the full Katana estimate using base + app rewards', () => {
+  it('computes the full Katana estimate using base + fixed + app rewards', () => {
     const katanaExtras = resolveKatanaExtras(DETAIL_VAULT_WITH_COMPONENTS as unknown as TKongVaultInput)
     const total = computeKatanaTotalApr(katanaExtras, DETAIL_VAULT_WITH_COMPONENTS.apr.forwardAPR.netAPR)
 
-    expect(total).toBeCloseTo(0.1596, 6)
+    expect(total).toBeCloseTo(0.5096, 6)
   })
 
   it('returns no Katana extras when APR extra has no Katana fields', () => {
