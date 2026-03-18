@@ -39,25 +39,34 @@ function buildTransports(): Record<TSupportedChainId, Transport> {
 
   for (const chain of supportedChains) {
     const network = getNetwork(chain.id)
+    const envRPC = getRpcUriFor(chain.id)
+    const seen = new Set<string>()
     const availableTransports: Transport[] = []
 
+    const addIfNew = (url: string): void => {
+      if (url && !seen.has(url)) {
+        seen.add(url)
+        availableTransports.push(http(url, { batch: true }))
+      }
+    }
+
     if (network?.defaultRPC) {
-      availableTransports.push(http(network.defaultRPC, { batch: true }))
+      addIfNew(network.defaultRPC)
     }
 
-    const envRPC = getRpcUriFor(chain.id)
     if (envRPC) {
-      availableTransports.push(http(envRPC, { batch: true }))
+      addIfNew(envRPC)
     }
 
-    const publicRPC = chain.rpcUrls?.default?.http?.[0]
-    if (publicRPC && !availableTransports.length) {
-      availableTransports.push(http(publicRPC, { batch: true }))
+    for (const rpc of chain.rpcUrls?.default?.http ?? []) {
+      addIfNew(rpc)
     }
 
     availableTransports.push(http())
 
-    transports[chain.id as TSupportedChainId] = fallback(availableTransports)
+    transports[chain.id as TSupportedChainId] = fallback(availableTransports, {
+      rank: { interval: 30_000, timeout: 3_000 }
+    })
   }
 
   return transports
