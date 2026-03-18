@@ -63,11 +63,10 @@ function countPricePoints(priceData: Map<string, Map<number, number>>): number {
 }
 
 export function buildBatchHistoricalUrl(
-  coins: Array<{ chain: string; address: string }>,
-  timestamps: number[]
+  coins: Array<{ chain: string; address: string; timestamps: number[] }>
 ): string {
   const coinsParam = coins.reduce<Record<string, number[]>>((accumulator, coin) => {
-    accumulator[`${coin.chain}:${coin.address}`] = timestamps
+    accumulator[`${coin.chain}:${coin.address.toLowerCase()}`] = coin.timestamps
     return accumulator
   }, {})
 
@@ -91,15 +90,17 @@ export function parseDefiLlamaResponse(
 }
 
 async function fetchBatch(
-  coinBatch: Array<{ chain: string; address: string }>,
-  timestampBatch: number[],
+  coinBatch: Array<{ chain: string; address: string; timestamps: number[] }>,
   attempt = 0
 ): Promise<Map<string, Map<number, number>>> {
-  const url = buildBatchHistoricalUrl(coinBatch, timestampBatch)
+  const uniqueTimestamps = [...new Set(coinBatch.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
+  const requestedPricePoints = coinBatch.reduce((total, coin) => total + coin.timestamps.length, 0)
+  const url = buildBatchHistoricalUrl(coinBatch)
   debugLog('defillama', 'fetching price batch', {
     attempt: attempt + 1,
     tokenCount: coinBatch.length,
-    timestampCount: timestampBatch.length
+    timestampCount: uniqueTimestamps.length,
+    pricePointCount: requestedPricePoints
   })
 
   try {
@@ -112,11 +113,12 @@ async function fetchBatch(
     }
 
     const data = (await response.json()) as DefiLlamaBatchResponse
-    const parsed = parseDefiLlamaResponse(data, timestampBatch)
+    const parsed = parseDefiLlamaResponse(data, uniqueTimestamps)
     debugLog('defillama', 'fetched price batch', {
       attempt: attempt + 1,
       tokenCount: coinBatch.length,
-      timestampCount: timestampBatch.length,
+      timestampCount: uniqueTimestamps.length,
+      pricePointCount: requestedPricePoints,
       pricePoints: countPricePoints(parsed)
     })
     return parsed
@@ -125,7 +127,8 @@ async function fetchBatch(
       debugError('defillama', 'price batch failed', error, {
         attempt: attempt + 1,
         tokenCount: coinBatch.length,
-        timestampCount: timestampBatch.length
+        timestampCount: uniqueTimestamps.length,
+        pricePointCount: requestedPricePoints
       })
       throw error
     }
@@ -133,10 +136,11 @@ async function fetchBatch(
     debugError('defillama', 'retrying price batch', error, {
       nextAttempt: attempt + 2,
       tokenCount: coinBatch.length,
-      timestampCount: timestampBatch.length
+      timestampCount: uniqueTimestamps.length,
+      pricePointCount: requestedPricePoints
     })
     await wait(DEFAULT_RETRY_DELAY_MS * 2 ** attempt)
-    return fetchBatch(coinBatch, timestampBatch, attempt + 1)
+    return fetchBatch(coinBatch, attempt + 1)
   }
 }
 
@@ -191,19 +195,29 @@ export async function fetchHistoricalPrices(
 
   const tokensToFetch = coins.filter((coin) => missingByToken.has(`${coin.chain}:${coin.address.toLowerCase()}`))
   const allMissingTimestamps = [...new Set([...missingByToken.values()].flat())].sort((a, b) => a - b)
-  const newPrices: CachedPrice[] = []
-  const batches = chunkItems(tokensToFetch, TOKEN_BATCH_SIZE).flatMap((coinBatch) =>
-    chunkItems(allMissingTimestamps, TIMESTAMP_BATCH_SIZE).map((timestampBatch) => ({
-      coinBatch,
-      timestampBatch
-    }))
+  const missingPricePoints = [...missingByToken.values()].reduce(
+    (total, missingTimestamps) => total + missingTimestamps.length,
+    0
   )
+  const newPrices: CachedPrice[] = []
+  const tokenRequests = tokensToFetch.flatMap((coin) => {
+    const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
+    const missingTimestamps = missingByToken.get(tokenKey) ?? []
+
+    return chunkItems(missingTimestamps, TIMESTAMP_BATCH_SIZE).map((timestampBatch) => ({
+      chain: coin.chain,
+      address: coin.address,
+      timestamps: timestampBatch
+    }))
+  })
+  const batches = chunkItems(tokenRequests, TOKEN_BATCH_SIZE).map((coinBatch) => ({ coinBatch }))
   const batchGroups = chunkItems(batches, PARALLEL_REQUESTS)
   const fetchStats = { successfulBatches: 0 }
   debugLog('defillama', 'prepared price fetch batches', {
     tokensToFetch: tokensToFetch.length,
     missingTokens: missingByToken.size,
     uniqueTimestamps: allMissingTimestamps.length,
+    missingPricePoints,
     batches: batches.length,
     batchGroups: batchGroups.length
   })
@@ -211,22 +225,23 @@ export async function fetchHistoricalPrices(
   await batchGroups.reduce<Promise<void>>(async (previousGroupPromise, batchGroup, groupIndex) => {
     await previousGroupPromise
 
-    const batchResults = await Promise.allSettled(
-      batchGroup.map((batch) => fetchBatch(batch.coinBatch, batch.timestampBatch))
-    )
+    const batchResults = await Promise.allSettled(batchGroup.map((batch) => fetchBatch(batch.coinBatch)))
 
     batchResults.forEach((batchResult, batchIndex) => {
       if (batchResult.status === 'rejected') {
         const batch = batchGroup[batchIndex]
+        const batchTimestamps = [...new Set(batch.coinBatch.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
+        const batchPricePoints = batch.coinBatch.reduce((total, coin) => total + coin.timestamps.length, 0)
         console.error(
-          `[DefiLlama] Failed to fetch prices for ${batch.coinBatch.length} tokens and ${batch.timestampBatch.length} timestamps:`,
+          `[DefiLlama] Failed to fetch prices for ${batch.coinBatch.length} tokens and ${batchPricePoints} token-timestamp pairs:`,
           batchResult.reason
         )
         debugError('defillama', 'price batch group member failed', batchResult.reason, {
           tokenCount: batch.coinBatch.length,
-          timestampCount: batch.timestampBatch.length,
-          firstTimestamp: batch.timestampBatch[0] ?? null,
-          lastTimestamp: batch.timestampBatch.at(-1) ?? null
+          timestampCount: batchTimestamps.length,
+          pricePointCount: batchPricePoints,
+          firstTimestamp: batchTimestamps[0] ?? null,
+          lastTimestamp: batchTimestamps.at(-1) ?? null
         })
         return
       }

@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { DefiLlamaBatchResponse } from '../types'
+import { getCachedPrices, saveCachedPrices } from './cache'
 import { fetchHistoricalPrices, getPriceAtTimestamp, parseDefiLlamaResponse } from './defillama'
+
+vi.mock('./cache', () => ({
+  getCachedPrices: vi.fn(async () => new Map()),
+  saveCachedPrices: vi.fn(async () => {})
+}))
 
 function createBatchResponse(response: DefiLlamaBatchResponse): Response {
   return new Response(JSON.stringify(response), {
@@ -12,6 +18,8 @@ function createBatchResponse(response: DefiLlamaBatchResponse): Response {
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  vi.mocked(getCachedPrices).mockResolvedValue(new Map())
+  vi.mocked(saveCachedPrices).mockResolvedValue()
 })
 
 describe('parseDefiLlamaResponse', () => {
@@ -73,5 +81,58 @@ describe('parseDefiLlamaResponse', () => {
     await expect(
       fetchHistoricalPrices([{ chainId: 1, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' }], [1700000000])
     ).rejects.toThrow('Failed to fetch token prices from DefiLlama')
+  })
+
+  it('fetches only missing token-timestamp pairs instead of the union across missing tokens', async () => {
+    const usdcKey = 'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    const daiKey = 'ethereum:0x6b175474e89094c44da98b954eedeac495271d0f'
+    vi.mocked(getCachedPrices).mockResolvedValue(
+      new Map([
+        [usdcKey, new Map([[1700000000, 1]])],
+        [daiKey, new Map([[1700003600, 1]])]
+      ])
+    )
+
+    const fetchStub = vi.fn().mockResolvedValue(
+      createBatchResponse({
+        coins: {
+          [usdcKey]: {
+            symbol: 'USDC',
+            prices: [{ timestamp: 1700003600, price: 1.001, confidence: 0.99 }]
+          },
+          [daiKey]: {
+            symbol: 'DAI',
+            prices: [{ timestamp: 1700000000, price: 0.999, confidence: 0.99 }]
+          }
+        }
+      })
+    )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPrices(
+      [
+        { chainId: 1, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
+        { chainId: 1, address: '0x6B175474E89094C44Da98b954EedeAC495271d0F' }
+      ],
+      [1700000000, 1700003600]
+    )
+
+    expect(fetchStub).toHaveBeenCalledTimes(1)
+
+    const requestUrl = new URL(fetchStub.mock.calls[0][0] as string)
+    const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+      string,
+      number[]
+    >
+
+    expect(coinsParam).toEqual({
+      [usdcKey]: [1700003600],
+      [daiKey]: [1700000000]
+    })
+    expect(prices.get(usdcKey)?.get(1700000000)).toBe(1)
+    expect(prices.get(usdcKey)?.get(1700003600)).toBe(1.001)
+    expect(prices.get(daiKey)?.get(1700000000)).toBe(0.999)
+    expect(prices.get(daiKey)?.get(1700003600)).toBe(1)
   })
 })
