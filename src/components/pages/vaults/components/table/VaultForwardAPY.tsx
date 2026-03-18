@@ -186,27 +186,19 @@ export function VaultForwardAPYInlineDetails({
     const steerPointsPerDollar = katanaExtras.steerPointsPerDollar ?? 0
     const hasSteerPoints = steerPointsPerDollar > 0
     const katanaAppRewardsAPR = katanaExtras.katanaAppRewardsAPR ?? 0
+    const hasAppRewards = katanaAppRewardsAPR > 0
     return (
       <div className={INLINE_DETAILS_CONTAINER_CLASS}>
         <div className={INLINE_DETAILS_STACK_CLASS}>
           <InlineDetailRow label={'Est. Native APY'} value={formatApyDisplay(data.baseForwardApr)} />
-          <InlineDetailRow
-            label={'Base Rewards APR'}
-            value={formatApyDisplay(katanaExtras.fixedRateKatanaRewards ?? 0)}
-          />
-          <InlineDetailRow label={'App Rewards APR'} value={formatApyDisplay(katanaAppRewardsAPR)} />
-          <InlineDetailRow label={'Deposit Bonus APR'} value={formatApyDisplay(katanaExtras.katanaBonusAPY ?? 0)} />
+          {hasAppRewards ? (
+            <InlineDetailRow label={'App Rewards APR'} value={formatApyDisplay(katanaAppRewardsAPR)} />
+          ) : null}
           {hasSteerPoints ? (
             <InlineDetailRow label={'Steer Points / $'} value={steerPointsPerDollar.toFixed(2)} />
           ) : null}
           <div className={'mt-2 p-3 pb-0 text-text-secondary md:text-xs text-bold'}>
-            <li className={'-mt-1 mb-2 w-full text-left text-xs break-words'}>
-              {'KAT tokens are locked until TGE, which is now targeted to occur on or before the end of March 2026.'}
-            </li>
-            <li className={'-mt-1 mb-2 w-full text-left text-xs break-words'}>
-              {'KAT APR is calculated using an assumed $1B Fully Diluted Valuation.'}
-            </li>
-            <li className={'-mt-1 mb-2 w-full text-left text-xs break-words'}>
+            <p className={'-mt-1 mb-2 w-full text-left text-xs break-words'}>
               {'Read more about KAT tokenomics '}
               <a
                 href={'https://katana.network/blog/the-network-is-katana-the-token-is-kat'}
@@ -216,9 +208,9 @@ export function VaultForwardAPYInlineDetails({
               >
                 {'here.'}
               </a>
-            </li>
+            </p>
             {isEligibleForSpectraBoost && (
-              <li className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words whitespace-normal'}>
+              <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words whitespace-normal'}>
                 {'Earn boosted yield on Spectra if you '}
                 <a
                   href={'https://app.spectra.finance/pools?networks=katana'}
@@ -229,10 +221,10 @@ export function VaultForwardAPYInlineDetails({
                   {'deposit to their protocol'}
                 </a>
                 {'.'}
-              </li>
+              </p>
             )}
             {hasSteerPoints ? (
-              <li className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words whitespace-normal'}>
+              <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words whitespace-normal'}>
                 {'This vault earns Steer Points, but you must '}
                 <a
                   href={'https://app.steer.finance/points'}
@@ -242,7 +234,7 @@ export function VaultForwardAPYInlineDetails({
                 >
                   {'register here to earn them.'}
                 </a>
-              </li>
+              </p>
             ) : null}
           </div>
         </div>

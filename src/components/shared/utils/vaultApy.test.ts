@@ -68,10 +68,8 @@ const withComponents = (vault: TKongVault): TKongVault => ({
       apr: vault.performance?.estimated?.apr ?? 0,
       type: vault.performance?.estimated?.type ?? 'katana-estimated-apr',
       components: {
-        katanaBonusAPY: 0.068,
         katanaAppRewardsAPR: 0.0916,
-        steerPointsPerDollar: 0.1883,
-        fixedRateKatanaRewards: 0.35
+        steerPointsPerDollar: 0.1883
       }
     }
   }
@@ -87,10 +85,8 @@ const DETAIL_VAULT_WITH_COMPONENTS = {
     extra: {
       stakingRewardsAPR: 0,
       gammaRewardAPR: 0,
-      katanaBonusAPY: 0.068,
       katanaAppRewardsAPR: 0.0916,
-      steerPointsPerDollar: 0.1883,
-      fixedRateKatanaRewards: 0.35
+      steerPointsPerDollar: 0.1883
     },
     points: {
       weekAgo: 0.03,
@@ -123,20 +119,18 @@ describe('vaultApy Katana calculations', () => {
 
     expect(katanaData).toEqual({
       katanaAppRewardsAPR: 0.0916,
-      fixedRateKatanaRewards: 0.35,
-      katanaBonusAPY: 0.068,
       steerPointsPerDollar: 0.1883
     })
   })
 
-  it('calculates Katana estimated APY from list data using available Kong components', () => {
+  it('calculates Katana estimated APY from list data using native plus app rewards', () => {
     const apy = calculateVaultEstimatedAPY(withComponents(BASE_VAULT))
-    expect(apy).toBeCloseTo(0.4816, 6)
+    expect(apy).toBeCloseTo(0.1316, 6)
   })
 
   it('calculates full Katana estimate on snapshot-backed vault details', () => {
     const apy = calculateVaultEstimatedAPY(DETAIL_VAULT_WITH_COMPONENTS)
-    expect(apy).toBeCloseTo(0.5096, 6)
+    expect(apy).toBeCloseTo(0.1596, 6)
   })
 
   it('falls back to Kong forward APY when list-level Katana components are absent', () => {
@@ -144,9 +138,9 @@ describe('vaultApy Katana calculations', () => {
     expect(apy).toBeCloseTo(0.04, 6)
   })
 
-  it('calculates Katana 30 day APY from historical base + fixed + app rewards', () => {
+  it('calculates Katana 30 day APY from historical base + app rewards', () => {
     const apy = calculateKatanaThirtyDayAPY(withComponents(BASE_VAULT))
-    expect(apy).toBeCloseTo(0.4616, 6)
+    expect(apy).toBeCloseTo(0.1116, 6)
   })
 
   it('falls back to monthly historical APY for Katana vaults when components are absent', () => {
