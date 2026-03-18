@@ -39,6 +39,24 @@ Naming:
 - Utilities: camelCase (`format.ts`)
 - Types: T-prefixed (`TSortDirection`, `TVaultType`)
 
+### useEffect — prefer alternatives
+
+Avoid `useEffect` when a better primitive exists. Most `useEffect` usage hides derived state, duplicates event handling, or re-implements what TanStack Query already provides.
+
+**Prefer these instead:**
+- **Derived state** — compute inline or with `useMemo` instead of `useEffect(() => setX(f(y)), [y])`
+- **Event handlers** — do work directly in `onClick`/`onChange` instead of setting a flag for an effect to pick up
+- **TanStack Query** — use `useQuery`/`useMutation` for data fetching, never `useEffect` + `fetch` + `setState`
+- **`key` prop for reset** — use `<Component key={id} />` to remount instead of `useEffect` that resets state when an ID changes
+- **Conditional rendering** — render children only when preconditions are met (e.g., `{!isLoading && <Player />}`) instead of guarding inside an effect
+
+**When `useEffect` is acceptable:**
+- One-time DOM/browser API setup on mount (IntersectionObserver, event listeners, focus)
+- Third-party library lifecycle (init/destroy)
+- Cases where no declarative alternative exists
+
+When writing a new `useEffect`, add a brief comment explaining why an alternative does not apply.
+
 ## Architecture
 
 **Tech stack:** React 19, Vite, React Router (lazy-loaded), Tailwind CSS 4, TanStack Query, Wagmi/Viem/RainbowKit
