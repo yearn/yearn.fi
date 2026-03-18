@@ -135,4 +135,80 @@ describe('parseDefiLlamaResponse', () => {
     expect(prices.get(daiKey)?.get(1700000000)).toBe(0.999)
     expect(prices.get(daiKey)?.get(1700003600)).toBe(1)
   })
+
+  it('merges multiple timestamp slices for the same token into a single batch request', async () => {
+    const usdcKey = 'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    const timestamps = [
+      1700000000, 1700000600, 1700001200, 1700001800, 1700002400, 1700003000, 1700003600, 1700004200, 1700004800,
+      1700005400, 1700006000, 1700006600
+    ]
+    const fetchStub = vi.fn().mockResolvedValue(
+      createBatchResponse({
+        coins: {
+          [usdcKey]: {
+            symbol: 'USDC',
+            prices: timestamps.map((timestamp, index) => ({
+              timestamp,
+              price: 1 + index / 1000,
+              confidence: 0.99
+            }))
+          }
+        }
+      })
+    )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPrices(
+      [{ chainId: 1, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' }],
+      timestamps
+    )
+
+    expect(fetchStub).toHaveBeenCalledTimes(1)
+
+    const requestUrl = new URL(fetchStub.mock.calls[0][0] as string)
+    const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+      string,
+      number[]
+    >
+
+    expect(coinsParam).toEqual({
+      [usdcKey]: timestamps
+    })
+    timestamps.forEach((timestamp, index) => {
+      expect(prices.get(usdcKey)?.get(timestamp)).toBe(1 + index / 1000)
+    })
+  })
+
+  it('caches prices under the requested timestamps even when DefiLlama returns shifted timestamps', async () => {
+    const usdcKey = 'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    const requestedTimestamps = [1700000000, 1700003600]
+    const fetchStub = vi.fn().mockResolvedValue(
+      createBatchResponse({
+        coins: {
+          [usdcKey]: {
+            symbol: 'USDC',
+            prices: [
+              { timestamp: 1700000102, price: 1.001, confidence: 0.99 },
+              { timestamp: 1700003520, price: 0.999, confidence: 0.99 }
+            ]
+          }
+        }
+      })
+    )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPrices(
+      [{ chainId: 1, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' }],
+      requestedTimestamps
+    )
+
+    expect(prices.get(usdcKey)?.get(1700000000)).toBe(1.001)
+    expect(prices.get(usdcKey)?.get(1700003600)).toBe(0.999)
+    expect(vi.mocked(saveCachedPrices)).toHaveBeenCalledWith([
+      { tokenKey: usdcKey, timestamp: 1700000000, price: 1.001 },
+      { tokenKey: usdcKey, timestamp: 1700003600, price: 0.999 }
+    ])
+  })
 })

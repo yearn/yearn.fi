@@ -62,6 +62,48 @@ function countPricePoints(priceData: Map<string, Map<number, number>>): number {
   return Array.from(priceData.values()).reduce((total, priceMap) => total + priceMap.size, 0)
 }
 
+function mergeCoinRequests(
+  coins: Array<{ chain: string; address: string; timestamps: number[] }>
+): Array<{ chain: string; address: string; timestamps: number[] }> {
+  const merged = coins.reduce<Map<string, { chain: string; address: string; timestamps: number[] }>>((result, coin) => {
+    const coinKey = `${coin.chain}:${coin.address.toLowerCase()}`
+    const existing = result.get(coinKey)
+
+    if (!existing) {
+      result.set(coinKey, {
+        chain: coin.chain,
+        address: coin.address,
+        timestamps: [...coin.timestamps]
+      })
+      return result
+    }
+
+    existing.timestamps.push(...coin.timestamps)
+    existing.timestamps = [...new Set(existing.timestamps)].sort((a, b) => a - b)
+    return result
+  }, new Map())
+
+  return Array.from(merged.values())
+}
+
+function materializeRequestedPrices(
+  coins: Array<{ chain: string; address: string; timestamps: number[] }>,
+  fetchedPrices: Map<string, Map<number, number>>
+): CachedPrice[] {
+  return coins.flatMap((coin) => {
+    const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
+    const fetchedPriceMap = fetchedPrices.get(tokenKey) ?? new Map<number, number>()
+
+    return coin.timestamps
+      .map((timestamp) => ({
+        tokenKey,
+        timestamp,
+        price: getPriceAtTimestamp(fetchedPriceMap, timestamp)
+      }))
+      .filter((entry) => entry.price > 0)
+  })
+}
+
 export function buildBatchHistoricalUrl(
   coins: Array<{ chain: string; address: string; timestamps: number[] }>
 ): string {
@@ -164,8 +206,9 @@ export async function fetchHistoricalPrices(
   }, new Map<string, Map<number, number>>())
 
   const cachedPrices = await getCachedPrices(tokenKeys, timestamps)
+  const cachedPricePoints = countPricePoints(cachedPrices)
   debugLog('defillama', 'loaded cached price points', {
-    cachedPoints: countPricePoints(cachedPrices)
+    cachedPoints: cachedPricePoints
   })
   const missingByToken = tokenKeys.reduce<Map<string, number[]>>((missing, tokenKey) => {
     const cachedForToken = cachedPrices.get(tokenKey)
@@ -210,7 +253,9 @@ export async function fetchHistoricalPrices(
       timestamps: timestampBatch
     }))
   })
-  const batches = chunkItems(tokenRequests, TOKEN_BATCH_SIZE).map((coinBatch) => ({ coinBatch }))
+  const batches = chunkItems(tokenRequests, TOKEN_BATCH_SIZE).map((coinBatch) => ({
+    coinBatch: mergeCoinRequests(coinBatch)
+  }))
   const batchGroups = chunkItems(batches, PARALLEL_REQUESTS)
   const fetchStats = { successfulBatches: 0 }
   debugLog('defillama', 'prepared price fetch batches', {
@@ -218,6 +263,7 @@ export async function fetchHistoricalPrices(
     missingTokens: missingByToken.size,
     uniqueTimestamps: allMissingTimestamps.length,
     missingPricePoints,
+    tokenRequests: tokenRequests.length,
     batches: batches.length,
     batchGroups: batchGroups.length
   })
@@ -228,8 +274,9 @@ export async function fetchHistoricalPrices(
     const batchResults = await Promise.allSettled(batchGroup.map((batch) => fetchBatch(batch.coinBatch)))
 
     batchResults.forEach((batchResult, batchIndex) => {
+      const batch = batchGroup[batchIndex]
+
       if (batchResult.status === 'rejected') {
-        const batch = batchGroup[batchIndex]
         const batchTimestamps = [...new Set(batch.coinBatch.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
         const batchPricePoints = batch.coinBatch.reduce((total, coin) => total + coin.timestamps.length, 0)
         console.error(
@@ -248,16 +295,15 @@ export async function fetchHistoricalPrices(
 
       fetchStats.successfulBatches += 1
 
-      batchResult.value.forEach((priceMap, coinKey) => {
-        if (!result.has(coinKey)) {
-          result.set(coinKey, new Map())
+      const materializedPrices = materializeRequestedPrices(batch.coinBatch, batchResult.value)
+      materializedPrices.forEach(({ tokenKey, timestamp, price }) => {
+        if (!result.has(tokenKey)) {
+          result.set(tokenKey, new Map())
         }
 
-        const existingMap = result.get(coinKey)!
-        priceMap.forEach((price, timestamp) => {
-          existingMap.set(timestamp, price)
-          newPrices.push({ tokenKey: coinKey, timestamp, price })
-        })
+        const existingMap = result.get(tokenKey)!
+        existingMap.set(timestamp, price)
+        newPrices.push({ tokenKey, timestamp, price })
       })
     })
 
