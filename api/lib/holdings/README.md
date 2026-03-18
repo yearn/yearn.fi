@@ -269,6 +269,7 @@ The live response also includes share balances, wallet vs staked splits, and per
 
 Notes:
 - Deposits create FIFO lots using the indexed `assets` and `shares` values.
+- Known-basis USD PnL is true mark-to-market PnL: deposit lots keep their acquisition timestamp, and USD basis is valued using the underlying token price at deposit time.
 - Withdrawals realize PnL from the oldest remaining lots first.
 - `totalPnlUsd = totalRealizedPnlUsd + totalUnrealizedPnlUsd`.
 - `totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd`.

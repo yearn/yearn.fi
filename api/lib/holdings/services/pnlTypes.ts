@@ -10,7 +10,10 @@ export type TLot = {
 
 export type TRealizedEntry = {
   timestamp: number
+  proceedsAssets: bigint
+  basisAssets: bigint
   pnlAssets: bigint
+  consumedLots: TLot[]
 }
 
 export type TUnknownTransferInEntry = {

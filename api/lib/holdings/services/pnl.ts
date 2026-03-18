@@ -90,6 +90,37 @@ function serializeLots(
   }))
 }
 
+function getTokenPriceForTimestamp(
+  tokenPriceMap: Map<number, number> | null,
+  timestamp: number | undefined,
+  fallbackTokenPrice: number
+): number {
+  if (!timestamp || timestamp <= 0) {
+    return fallbackTokenPrice
+  }
+
+  return tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, timestamp) : fallbackTokenPrice
+}
+
+function getKnownLotsCostBasisUsd(
+  lots: TLot[],
+  assetDecimals: number,
+  tokenPriceMap: Map<number, number> | null,
+  fallbackTokenPrice: number
+): number {
+  return lots.reduce((total, lot) => {
+    if (lot.costBasis === null) {
+      return total
+    }
+
+    return (
+      total +
+      formatAmount(lot.costBasis, assetDecimals) *
+        getTokenPriceForTimestamp(tokenPriceMap, lot.acquiredAt, fallbackTokenPrice)
+    )
+  }, 0)
+}
+
 function countTxEventsByKind(txFamilyEvents: TRawPnlEvent[]): string {
   const counts = txFamilyEvents.reduce(
     (totals, event) => {
@@ -658,7 +689,10 @@ function applyRealization(
   if (knownShares > ZERO) {
     ledger.realizedEntries.push({
       timestamp,
-      pnlAssets: knownProceeds - knownCostBasis
+      proceedsAssets: knownProceeds,
+      basisAssets: knownCostBasis,
+      pnlAssets: knownProceeds - knownCostBasis,
+      consumedLots: knownLots
     })
   }
 
@@ -721,7 +755,8 @@ function addAcquisitionLots(
   totalShares: bigint,
   totalAssets: bigint,
   stakedShares: bigint,
-  walletShares: bigint
+  walletShares: bigint,
+  timestamp: number
 ): void {
   if (totalShares === ZERO) {
     return
@@ -730,8 +765,8 @@ function addAcquisitionLots(
   const stakedAssets = (totalAssets * stakedShares) / totalShares
   const walletAssets = (totalAssets * walletShares) / totalShares
 
-  addLotsToLocation(ledger, 'staked', [createLot(stakedShares, stakedAssets)])
-  addLotsToLocation(ledger, 'wallet', [createLot(walletShares, walletAssets)])
+  addLotsToLocation(ledger, 'staked', [createLot(stakedShares, stakedAssets, timestamp)])
+  addLotsToLocation(ledger, 'wallet', [createLot(walletShares, walletAssets, timestamp)])
 }
 
 function redistributeLotsToTargetShares(lots: TLot[], targetShares: bigint): TLot[] {
@@ -1222,7 +1257,8 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
     totalUnderlyingDepositShares,
     totalUnderlyingDepositAssets,
     acquiredToStaked,
-    acquiredToWallet
+    acquiredToWallet,
+    txFamilyEvents[0]?.blockTimestamp ?? 0
   )
 
   const remainingUnderlyingDelta = underlyingDelta - acquiredToWallet + walletRealizeShares
@@ -1416,6 +1452,18 @@ export async function getHoldingsPnL(
     ...new Set([
       currentTimestamp,
       ...vaults.flatMap((vault) => vault.realizedEntries.map((entry) => entry.timestamp)),
+      ...vaults.flatMap((vault) =>
+        [...vault.walletLots, ...vault.stakedLots]
+          .map((lot) => lot.acquiredAt)
+          .filter((timestamp): timestamp is number => timestamp !== undefined)
+      ),
+      ...vaults.flatMap((vault) =>
+        vault.realizedEntries.flatMap((entry) =>
+          entry.consumedLots
+            .map((lot) => lot.acquiredAt)
+            .filter((timestamp): timestamp is number => timestamp !== undefined)
+        )
+      ),
       ...vaults.flatMap((vault) => vault.unknownTransferInEntries.map((entry) => entry.timestamp)),
       ...vaults.flatMap((vault) => vault.unknownWithdrawalEntries.map((entry) => entry.timestamp)),
       ...vaults.flatMap((vault) =>
@@ -1492,6 +1540,8 @@ export async function getHoldingsPnL(
             stakedLotEntries: includeDetailedLotLogs ? serializeLots(vault.stakedLots) : undefined,
             realizedEntries: vault.realizedEntries.map((entry) => ({
               timestamp: entry.timestamp,
+              proceedsAssets: entry.proceedsAssets.toString(),
+              basisAssets: entry.basisAssets.toString(),
               pnlAssets: entry.pnlAssets.toString()
             })),
             unknownCostBasisTransferInShares: vault.unknownCostBasisTransferInShares.toString(),
@@ -1512,16 +1562,24 @@ export async function getHoldingsPnL(
       const currentUnknownUnderlying = formatAmount(unknownSharesRaw, metadata.decimals) * resolvedPricePerShare
       const walletValueUsd = currentWalletUnderlying * tokenPrice
       const stakedValueUsd = currentStakedUnderlying * tokenPrice
+      const knownCostBasisUsd = getKnownLotsCostBasisUsd(knownLots, metadata.token.decimals, tokenPriceMap, tokenPrice)
       const baseRealizedPnlUnderlying = vault.realizedEntries.reduce(
         (total, entry) => total + formatAmount(entry.pnlAssets, metadata.token.decimals),
         0
       )
       const baseRealizedPnlUsd = vault.realizedEntries.reduce((total, entry) => {
         const realizedTokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, entry.timestamp) : 0
-        return total + formatAmount(entry.pnlAssets, metadata.token.decimals) * realizedTokenPrice
+        const proceedsUsd = formatAmount(entry.proceedsAssets, metadata.token.decimals) * realizedTokenPrice
+        const basisUsd = getKnownLotsCostBasisUsd(
+          entry.consumedLots,
+          metadata.token.decimals,
+          tokenPriceMap,
+          tokenPrice
+        )
+        return total + (proceedsUsd - basisUsd)
       }, 0)
       const baseUnrealizedPnlUnderlying = pricePerShare === null ? 0 : currentKnownUnderlying - knownCostBasisUnderlying
-      const baseUnrealizedPnlUsd = baseUnrealizedPnlUnderlying * tokenPrice
+      const baseUnrealizedPnlUsd = currentKnownUnderlying * tokenPrice - knownCostBasisUsd
       const valuationState = applyUnknownTransferInModeAdjustment({
         unknownTransferInPnlMode,
         vault,
@@ -1572,6 +1630,8 @@ export async function getHoldingsPnL(
             : undefined,
           realizedEntries: vault.realizedEntries.map((entry) => ({
             timestamp: entry.timestamp,
+            proceedsAssets: entry.proceedsAssets.toString(),
+            basisAssets: entry.basisAssets.toString(),
             pnlAssets: entry.pnlAssets.toString(),
             pnlAssetsFormatted: formatAmount(entry.pnlAssets, metadata.token.decimals)
           })),

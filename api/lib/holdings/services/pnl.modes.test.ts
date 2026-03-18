@@ -149,7 +149,42 @@ function createTransferOutContext(): RawPnlEventContext {
   }
 }
 
-function configureServiceMocks(rawContext: RawPnlEventContext): void {
+function configureServiceMocks(
+  rawContext: RawPnlEventContext,
+  overrides?: {
+    metadata?: {
+      tokenAddress: string
+      symbol: string
+      decimals: number
+      shareDecimals?: number
+    }
+    ppsTimeline?: Map<number, number>
+    priceKey?: string
+    prices?: Map<number, number>
+  }
+): void {
+  const metadata = overrides?.metadata ?? {
+    tokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    symbol: 'USDC',
+    decimals: 6,
+    shareDecimals: 6
+  }
+  const ppsTimeline =
+    overrides?.ppsTimeline ??
+    new Map([
+      [100, 1],
+      [200, 1.2],
+      [300, 1.1]
+    ])
+  const priceKey = overrides?.priceKey ?? PRICE_KEY
+  const prices =
+    overrides?.prices ??
+    new Map([
+      [100, 2],
+      [200, 3],
+      [300, 3]
+    ])
+
   fetchRawUserPnlEventsMock.mockResolvedValue(rawContext)
   fetchMultipleVaultsMetadataMock.mockResolvedValue(
     new Map([
@@ -159,39 +194,17 @@ function configureServiceMocks(rawContext: RawPnlEventContext): void {
           address: VAULT,
           chainId: 1,
           token: {
-            address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-            symbol: 'USDC',
-            decimals: 6
+            address: metadata.tokenAddress,
+            symbol: metadata.symbol,
+            decimals: metadata.decimals
           },
-          decimals: 6
+          decimals: metadata.shareDecimals ?? metadata.decimals
         }
       ]
     ])
   )
-  fetchMultipleVaultsPPSMock.mockResolvedValue(
-    new Map([
-      [
-        `1:${VAULT}`,
-        new Map([
-          [100, 1],
-          [200, 1.2],
-          [300, 1.1]
-        ])
-      ]
-    ])
-  )
-  fetchHistoricalPricesMock.mockResolvedValue(
-    new Map([
-      [
-        PRICE_KEY,
-        new Map([
-          [100, 2],
-          [200, 3],
-          [300, 3]
-        ])
-      ]
-    ])
-  )
+  fetchMultipleVaultsPPSMock.mockResolvedValue(new Map([[`1:${VAULT}`, ppsTimeline]]))
+  fetchHistoricalPricesMock.mockResolvedValue(new Map([[priceKey, prices]]))
 }
 
 async function importPnlModule() {
@@ -201,9 +214,10 @@ async function importPnlModule() {
 
 async function getSingleVaultResponse(
   rawContext: RawPnlEventContext,
-  unknownMode?: 'strict' | 'zero_basis' | 'windfall'
+  unknownMode?: 'strict' | 'zero_basis' | 'windfall',
+  overrides?: Parameters<typeof configureServiceMocks>[1]
 ): Promise<HoldingsPnLResponse> {
-  configureServiceMocks(rawContext)
+  configureServiceMocks(rawContext, overrides)
   const { getHoldingsPnL } = await importPnlModule()
   const response = await getHoldingsPnL(USER, 'all', unknownMode)
   expect(response.vaults).toHaveLength(1)
@@ -296,5 +310,65 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(windfallResponse.summary.totalWindfallPnlUsd).toBe(0)
     expect(windfallResponse.summary.totalPnlUsd).toBe(0)
     expect(windfallResponse.summary.totalEconomicGainUsd).toBe(0)
+  })
+
+  it('counts underlying token price appreciation for known-basis deposits in usd pnl', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+
+    const response = await getSingleVaultResponse(
+      {
+        addressEvents: {
+          deposits: [
+            {
+              id: 'known-deposit',
+              vaultAddress: VAULT,
+              chainId: 1,
+              blockNumber: 1,
+              blockTimestamp: 100,
+              logIndex: 1,
+              transactionHash: '0xknown-deposit',
+              transactionFrom: USER,
+              owner: USER,
+              sender: USER,
+              assets: '1000000000000000000',
+              shares: '1000000000000000000'
+            }
+          ],
+          withdrawals: [],
+          transfersIn: [],
+          transfersOut: []
+        },
+        transactionEvents: {
+          deposits: [],
+          withdrawals: [],
+          transfers: []
+        }
+      },
+      'windfall',
+      {
+        metadata: {
+          tokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+          symbol: 'WETH',
+          decimals: 18
+        },
+        ppsTimeline: new Map([
+          [100, 1],
+          [300, 1]
+        ]),
+        priceKey: 'ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+        prices: new Map([
+          [100, 2000],
+          [300, 3000]
+        ])
+      }
+    )
+
+    const vault = response.vaults[0]
+
+    expect(vault.unrealizedPnlUnderlying).toBeCloseTo(0)
+    expect(vault.unrealizedPnlUsd).toBeCloseTo(1000)
+    expect(vault.totalPnlUsd).toBeCloseTo(1000)
+    expect(vault.totalEconomicGainUsd).toBeCloseTo(1000)
+    expect(response.summary.totalUnrealizedPnlUsd).toBeCloseTo(1000)
   })
 })

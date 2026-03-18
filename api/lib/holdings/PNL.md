@@ -41,6 +41,12 @@ A lot has:
 - An acquisition timestamp
 - A cost basis in underlying assets, or `null` when basis is unknown
 
+For known-basis lots, USD basis is derived later from:
+
+- the lot's underlying asset basis
+- the lot's acquisition timestamp
+- the underlying token price at that acquisition timestamp
+
 Known-basis lots come from indexed deposit / withdrawal context.
 Unknown-basis lots usually come from share transfers where the economic source cannot be proven.
 
@@ -99,6 +105,13 @@ Historical and current price-per-share is used to translate vault shares into un
 
 Historical and current underlying token prices are used to express PnL in USD.
 
+That includes:
+
+- acquisition-time token prices for known lot USD basis
+- receipt-time token prices for unknown-lot windfall valuation
+- realization-time token prices for realized USD proceeds
+- current token prices for current market value
+
 ## Processing Flow
 
 The implementation has two major stages.
@@ -134,6 +147,7 @@ Each family ledger is then valued into a response row with:
 Underlying vault `Deposit` events create known-basis lots.
 
 The lot basis is the indexed `assets` amount.
+The lot also keeps its acquisition timestamp.
 
 ### Withdrawals
 
@@ -145,6 +159,11 @@ For known lots:
 - consumed basis comes from the oldest remaining lots
 - realized PnL is `proceeds - consumed_basis`
 
+In USD terms:
+
+- realized proceeds use the underlying token price at the withdrawal timestamp
+- consumed basis uses the underlying token price at each consumed lot's acquisition timestamp
+
 ### Unrealized PnL
 
 For known lots that still remain:
@@ -152,7 +171,16 @@ For known lots that still remain:
 - current underlying value = `shares * current PPS`
 - unrealized PnL = `current underlying value - remaining cost basis`
 
-USD values are then derived from the underlying token price.
+In USD terms:
+
+- current value uses the current underlying token price
+- remaining basis uses the acquisition-time token price of each remaining lot
+- unrealized USD PnL = `current value USD - remaining basis USD`
+
+This means the endpoint now captures both:
+
+- vault/share performance via PPS changes
+- underlying token price changes between deposit and withdrawal / current time
 
 ## How Staking Works
 
@@ -274,6 +302,24 @@ windfall:
   totalPnlUsd = 150
   totalEconomicGainUsd = 1,150
 ```
+
+## Known-Basis USD Example
+
+Assume:
+
+- a user deposits into a WETH vault
+- deposit receives shares representing `1 WETH`
+- WETH is `$2,000` at deposit time
+- PPS is unchanged
+- later those shares still represent `1 WETH`
+- WETH is now `$3,000`
+
+Then:
+
+- underlying unrealized PnL = `0 WETH`
+- unrealized USD PnL = `$1,000`
+
+That is intentional. The endpoint now reports full USD mark-to-market PnL for known-basis lots, not only asset-denominated vault performance.
 
 So:
 

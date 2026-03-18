@@ -109,7 +109,7 @@ describe('processRawPnlEvents', () => {
 
     expect(ledger).toBeDefined()
     expect(ledger?.walletLots).toEqual([])
-    expect(ledger?.stakedLots).toEqual([{ shares: 100n, costBasis: 1000n }])
+    expect(ledger?.stakedLots).toEqual([{ shares: 100n, costBasis: 1000n, acquiredAt: 100 }])
     expect(ledger?.realizedEntries).toEqual([])
     expect(ledger?.totalDepositedAssets).toBe(1000n)
     expect(ledger?.eventCounts.underlyingDeposits).toBe(1)
@@ -180,7 +180,7 @@ describe('processRawPnlEvents', () => {
     ).get(FAMILY_KEY)
 
     expect(ledger).toBeDefined()
-    expect(ledger?.walletLots).toEqual([{ shares: 100n, costBasis: 1000n }])
+    expect(ledger?.walletLots).toEqual([{ shares: 100n, costBasis: 1000n, acquiredAt: 100 }])
     expect(ledger?.stakedLots).toEqual([])
     expect(ledger?.realizedEntries).toEqual([])
     expect(ledger?.eventCounts.stakingWraps).toBe(1)
@@ -228,7 +228,7 @@ describe('processRawPnlEvents', () => {
 
     expect(ledger).toBeDefined()
     expect(ledger?.walletLots).toEqual([])
-    expect(ledger?.stakedLots).toEqual([{ shares: 900n, costBasis: 1000n }])
+    expect(ledger?.stakedLots).toEqual([{ shares: 900n, costBasis: 1000n, acquiredAt: 200 }])
     expect(ledger?.unknownCostBasisTransferInCount).toBe(0)
     expect(ledger?.eventCounts.underlyingDeposits).toBe(1)
     expect(ledger?.eventCounts.externalTransfersIn).toBe(0)
@@ -263,7 +263,7 @@ describe('processRawPnlEvents', () => {
     ).get(FAMILY_KEY)
 
     expect(ledger).toBeDefined()
-    expect(ledger?.walletLots).toEqual([{ shares: 900n, costBasis: 1000n }])
+    expect(ledger?.walletLots).toEqual([{ shares: 900n, costBasis: 1000n, acquiredAt: 100 }])
     expect(ledger?.stakedLots).toEqual([])
     expect(ledger?.totalDepositedAssets).toBe(1000n)
     expect(ledger?.eventCounts.underlyingDeposits).toBe(1)
@@ -330,7 +330,15 @@ describe('processRawPnlEvents', () => {
     expect(ledger).toBeDefined()
     expect(ledger?.walletLots).toEqual([])
     expect(ledger?.stakedLots).toEqual([])
-    expect(ledger?.realizedEntries).toEqual([{ timestamp: 300, pnlAssets: 100n }])
+    expect(ledger?.realizedEntries).toEqual([
+      {
+        timestamp: 300,
+        proceedsAssets: 1100n,
+        basisAssets: 1000n,
+        pnlAssets: 100n,
+        consumedLots: [{ shares: 900n, costBasis: 1000n, acquiredAt: 200 }]
+      }
+    ])
     expect(ledger?.totalWithdrawnAssets).toBe(1100n)
     expect(ledger?.eventCounts.underlyingWithdrawals).toBe(1)
     expect(ledger?.withdrawalsWithUnknownCostBasis).toBe(0)
@@ -457,7 +465,7 @@ describe('processRawPnlEvents', () => {
     ).get(FAMILY_KEY)
 
     expect(ledger).toBeDefined()
-    expect(ledger?.walletLots).toEqual([{ shares: 99n, costBasis: 1000n }])
+    expect(ledger?.walletLots).toEqual([{ shares: 99n, costBasis: 1000n, acquiredAt: 100 }])
     expect(ledger?.stakedLots).toEqual([])
     expect(ledger?.realizedEntries).toEqual([])
     expect(ledger?.unknownCostBasisTransferInCount).toBe(0)
@@ -548,7 +556,7 @@ describe('processRawPnlEvents', () => {
     expect(sourceLedger?.walletLots).toEqual([])
     expect(sourceLedger?.realizedEntries).toEqual([])
     expect(sourceLedger?.eventCounts.migrationsOut).toBe(1)
-    expect(destinationLedger?.walletLots).toEqual([{ shares: 80n, costBasis: 1000n }])
+    expect(destinationLedger?.walletLots).toEqual([{ shares: 80n, costBasis: 1000n, acquiredAt: 100 }])
     expect(destinationLedger?.totalDepositedAssets).toBe(0n)
     expect(destinationLedger?.realizedEntries).toEqual([])
     expect(destinationLedger?.eventCounts.migrationsIn).toBe(1)
@@ -715,7 +723,7 @@ describe('processRawPnlEvents', () => {
       USER
     )
 
-    expect(ledgers.get(destinationFamilyKey)?.walletLots).toEqual([{ shares: 80n, costBasis: 1000n }])
+    expect(ledgers.get(destinationFamilyKey)?.walletLots).toEqual([{ shares: 80n, costBasis: 1000n, acquiredAt: 100 }])
     expect(ledgers.get(destinationFamilyKey)?.eventCounts.migrationsIn).toBe(1)
   })
 })
