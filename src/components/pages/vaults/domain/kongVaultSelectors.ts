@@ -753,12 +753,12 @@ const mapSnapshotComposition = (
     const status = normalizeCompositionStatus(entry.status, hasAllocation)
     const name = entry.name?.trim() || `Strategy ${index + 1}`
     const estimatedAPY = (() => {
-      const oracleApy = pickNumberOrNull(entry.performance?.oracle?.apy)
-      if (oracleApy !== null) {
-        return oracleApy
-      }
       const estimatedApy = pickNumberOrNull(entry.performance?.estimated?.apy)
-      return estimatedApy === null ? undefined : estimatedApy
+      if (estimatedApy !== null) {
+        return estimatedApy
+      }
+      const oracleApy = pickNumberOrNull(entry.performance?.oracle?.apy)
+      return oracleApy === null ? undefined : oracleApy
     })()
     const resolvedApr = hasAllocation
       ? pickNumberOrNull(
