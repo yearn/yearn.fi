@@ -3,7 +3,7 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import type { TToken } from '@shared/types'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
-import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FC, useCallback, useMemo, useState } from 'react'
 import { isAddress } from 'viem'
 import { CloseIcon } from './shared/Icons'
 
@@ -93,9 +93,11 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   stakingAddress
 }) => {
   const [searchText, setSearchText] = useState('')
-  const [customAddress, setCustomAddress] = useState<`0x${string}` | undefined>()
   const [selectedChainId, setSelectedChainId] = useState(chainId)
   const { getToken, isLoading, balances } = useWallet()
+
+  // Derived: treat valid address input as custom token
+  const customAddress = searchText && isAddress(searchText) ? (searchText as `0x${string}`) : undefined
 
   // Available chains - you can expand this list as needed
   const availableChains = useMemo(
@@ -190,13 +192,6 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       return bBalance > aBalance ? 1 : -1
     })
   }, [tokens, limitTokens, excludeTokens, searchText])
-
-  // Check if search text is a valid address
-  useEffect(() => {
-    if (searchText && isAddress(searchText) && searchText !== customAddress) {
-      setCustomAddress(searchText as `0x${string}`)
-    }
-  }, [searchText, customAddress])
 
   const handleSelect = useCallback(
     (address: `0x${string}`) => {
