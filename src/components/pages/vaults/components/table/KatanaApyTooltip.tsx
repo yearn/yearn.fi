@@ -86,7 +86,7 @@ export function KatanaApyTooltipContent({
           <>
             <KatanaApyRow iconSrc={chainLogoSrc} label={'Base Rewards APR '} value={fixedRateKatanRewardsAPR} />
             <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
-              {'Limited time fixed KAT rewards'}
+              {'Limited time KAT rewards'}
             </p>
             <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words'}>
               {'* claimable after 28 days, subject to '}
