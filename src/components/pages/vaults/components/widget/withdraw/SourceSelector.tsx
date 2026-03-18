@@ -1,3 +1,4 @@
+import { getWantDisplayName } from '@pages/vaults/constants/addresses'
 import type { TSplitterPosition } from '@pages/vaults/types/splitter'
 import type { FC } from 'react'
 import type { Address } from 'viem'
@@ -7,6 +8,7 @@ interface SourceSelectorProps {
   value: WithdrawalSource
   onChange: (source: WithdrawalSource) => void
   splitterPositions?: Record<Address, TSplitterPosition>
+  selectedSplitterStrategy?: Address
   onSelectSplitterStrategy?: (strategy: Address) => void
 }
 
@@ -14,16 +16,19 @@ export const SourceSelector: FC<SourceSelectorProps> = ({
   value,
   onChange,
   splitterPositions,
+  selectedSplitterStrategy,
   onSelectSplitterStrategy
 }) => {
   const splitterEntries = Object.values(splitterPositions || {})
+  const selectValue =
+    value === 'splitter' && selectedSplitterStrategy ? `splitter:${selectedSplitterStrategy}` : value || ''
 
   return (
     <div className="">
       <div className="flex flex-col gap-2">
         <div className="relative">
           <select
-            value={value || ''}
+            value={selectValue}
             onChange={(e) => {
               const val = e.target.value
               if (val.startsWith('splitter:')) {
@@ -39,11 +44,14 @@ export const SourceSelector: FC<SourceSelectorProps> = ({
             <option value="">Select Withdrawal Source</option>
             <option value="vault">Vault shares</option>
             <option value="staking">Staking contract</option>
-            {splitterEntries.map((pos) => (
-              <option key={pos.strategyAddress} value={`splitter:${pos.strategyAddress}`}>
-                Yield Splitter → {pos.wantToken.symbol}
-              </option>
-            ))}
+            {splitterEntries.map((pos) => {
+              const displayName = getWantDisplayName(pos.wantToken.address) || pos.wantToken.symbol
+              return (
+                <option key={pos.strategyAddress} value={`splitter:${pos.strategyAddress}`}>
+                  Yield in {displayName}
+                </option>
+              )
+            })}
           </select>
           <svg
             className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary pointer-events-none"

@@ -64,6 +64,24 @@ export const getSplitterRoutesForVault = (vaultAddress: string) =>
 export const getSplitterStrategyAddress = (vaultAddress: string, wantAddress: string): string | undefined =>
   SPLITTER_ROUTES.find((r) => r.vault === vaultAddress.toLowerCase() && r.want === wantAddress.toLowerCase())?.strategy
 
+/**************************************************************************************************
+ ** Display metadata for splitter want vault addresses
+ *************************************************************************************************/
+const SPLITTER_VAULT_META: Record<string, { displayName: string; symbol: string }> = {
+  '0x80c34bd3a3569e126e7055831036aa7b212cb159': { displayName: 'USD', symbol: 'vbUSDC' },
+  '0xe007ca01894c863d7898045ed5a3b4abf0b18f37': { displayName: 'ETH', symbol: 'vbWETH' },
+  '0xaa0362ecc584b985056e47812931270b99c91f9d': { displayName: 'BTC', symbol: 'vbWBTC' }
+}
+
+export const getWantDisplayName = (wantAddress: string): string =>
+  SPLITTER_VAULT_META[wantAddress.toLowerCase()]?.displayName ?? ''
+
+export const getWantVaultSymbol = (wantAddress: string): string =>
+  SPLITTER_VAULT_META[wantAddress.toLowerCase()]?.symbol ?? ''
+
+export const getVaultAssetType = (vaultAddress: string): 'usd' | 'crypto' =>
+  vaultAddress.toLowerCase() === '0x80c34bd3a3569e126e7055831036aa7b212cb159' ? 'usd' : 'crypto'
+
 export const VAULT_ADDRESSES = {
   PENDLE_ARB_REWARDS: '0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544',
   KELP_N_ENGENLAYER: '0xDDa02A2FA0bb0ee45Ba9179a3fd7e65E5D3B2C90',

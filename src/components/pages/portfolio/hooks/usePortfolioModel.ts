@@ -1,6 +1,6 @@
 import { useTokenSuggestions } from '@pages/portfolio/hooks/useTokenSuggestions'
 import { useVaultSuggestions } from '@pages/portfolio/hooks/useVaultSuggestions'
-import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
+import { getWantDisplayName, KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import {
   getVaultAddress,
   getVaultChainID,
@@ -118,14 +118,15 @@ export function usePortfolioModel(): TPortfolioModel {
   const { positions: splitterPositions } = useSplitterPositions()
 
   const splitterHoldings = useMemo(() => {
-    const entries: { vault: TKongVault; strategyAddress: string; wantSymbol: string }[] = []
+    const entries: { vault: TKongVault; strategyAddress: string; wantSymbol: string; wantAddress: string }[] = []
     for (const position of Object.values(splitterPositions)) {
       const vault = vaultLookup.get(getChainAddressKey(KATANA_CHAIN_ID, position.vaultAddress))
       if (vault) {
         entries.push({
           vault,
           strategyAddress: position.strategyAddress,
-          wantSymbol: position.wantToken.symbol
+          wantSymbol: position.wantToken.symbol,
+          wantAddress: position.wantToken.address
         })
       }
     }
@@ -149,14 +150,15 @@ export function usePortfolioModel(): TPortfolioModel {
       })
     ) as Record<string, TVaultFlags>
 
-    for (const { strategyAddress, wantSymbol } of splitterHoldings) {
+    for (const { strategyAddress, wantSymbol, wantAddress } of splitterHoldings) {
       flags[`splitter_${strategyAddress}`] = {
         hasHoldings: true,
         isMigratable: false,
         isRetired: false,
         isHidden: false,
         isSplitterPosition: true,
-        splitterWantSymbol: wantSymbol
+        splitterWantSymbol: wantSymbol,
+        splitterWantDisplayName: getWantDisplayName(wantAddress) || wantSymbol
       }
     }
 

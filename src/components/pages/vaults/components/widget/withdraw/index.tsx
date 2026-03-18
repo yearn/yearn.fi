@@ -144,12 +144,19 @@ export const WidgetWithdraw: FC<
   const vaultDecimals = vault?.decimals ?? 18
 
   const totalBalanceInUnderlying: TNormalizedBN = useMemo(() => {
-    if (pricePerShare === 0n || totalVaultBalance.raw === 0n || !assetToken) {
+    if (totalVaultBalance.raw === 0n || !assetToken) {
+      return zeroNormalizedBN
+    }
+    // Splitter's maxWithdraw already returns underlying asset amount — no pricePerShare conversion needed
+    if (withdrawalSource === 'splitter') {
+      return totalVaultBalance
+    }
+    if (pricePerShare === 0n) {
       return zeroNormalizedBN
     }
     const underlyingAmount = (totalVaultBalance.raw * pricePerShare) / 10n ** BigInt(vaultDecimals)
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
-  }, [totalVaultBalance.raw, pricePerShare, vaultDecimals, assetToken])
+  }, [totalVaultBalance, pricePerShare, vaultDecimals, assetToken, withdrawalSource])
 
   const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
@@ -168,13 +175,16 @@ export const WidgetWithdraw: FC<
     if (!withdrawAmount.bn || withdrawAmount.bn === 0n) return 0n
     if (isMaxWithdraw && totalVaultBalance.raw > 0n) return totalVaultBalance.raw
 
+    // Splitter's withdraw takes assets directly — no shares conversion needed
+    if (withdrawalSource === 'splitter') return withdrawAmount.bn
+
     if (pricePerShare > 0n) {
       const numerator = withdrawAmount.bn * 10n ** BigInt(vaultDecimals)
       return (numerator + pricePerShare - 1n) / pricePerShare
     }
 
     return 0n
-  }, [withdrawAmount.bn, isMaxWithdraw, totalVaultBalance.raw, pricePerShare, vaultDecimals])
+  }, [withdrawAmount.bn, isMaxWithdraw, totalVaultBalance.raw, pricePerShare, vaultDecimals, withdrawalSource])
 
   const { routeType, activeFlow } = useWithdrawFlow({
     withdrawToken,
@@ -530,6 +540,7 @@ export const WidgetWithdraw: FC<
               value={withdrawalSource}
               onChange={setWithdrawalSource}
               splitterPositions={vaultSplitterPositions}
+              selectedSplitterStrategy={selectedSplitterStrategy}
               onSelectSplitterStrategy={setSelectedSplitterStrategy}
             />
           )}

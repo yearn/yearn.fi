@@ -1,7 +1,6 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
 import { getSplitterStrategyAddress, isSplitterVault } from '@pages/vaults/constants/addresses'
-import { useSplitterRoutes } from '@pages/vaults/hooks/splitter/useSplitterRoutes'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
@@ -91,12 +90,22 @@ export const WidgetDeposit: FC<Props> = ({
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
-  const [isSplitYieldEnabled, setIsSplitYieldEnabled] = useState(false)
   const [selectedWantToken, setSelectedWantToken] = useState<`0x${string}` | undefined>()
   const appliedPrefillRef = useRef<string | null>(null)
 
   const showSplitterToggle = isSplitterVault(vaultAddress)
-  const { wantTokens } = useSplitterRoutes(vaultAddress as `0x${string}`)
+  const isSplitYieldEnabled = Boolean(selectedWantToken)
+
+  const handleSelectWantToken = useCallback(
+    (want: `0x${string}` | undefined) => {
+      setSelectedWantToken(want)
+      if (want) {
+        setSelectedToken(assetAddress)
+        setSelectedChainId(undefined)
+      }
+    },
+    [assetAddress]
+  )
   const strategyAddress =
     isSplitYieldEnabled && selectedWantToken
       ? (getSplitterStrategyAddress(vaultAddress, selectedWantToken) as `0x${string}` | undefined)
@@ -397,6 +406,7 @@ export const WidgetDeposit: FC<Props> = ({
   // Render
   // ============================================================================
   const isSettingsVisible = !!account && !!isSettingsOpen
+  const showAllowanceRow = !isNativeToken && !isSplitYieldEnabled
 
   const detailsSection = (
     <DepositDetails
@@ -419,16 +429,16 @@ export const WidgetDeposit: FC<Props> = ({
       onShowVaultShareValueModal={() => setShowVaultShareValueModal(true)}
       estimatedAnnualReturn={estimatedAnnualReturn}
       onShowAnnualReturnModal={() => setShowAnnualReturnModal(true)}
-      allowance={!isNativeToken ? activeFlow.periphery.allowance : undefined}
-      allowanceTokenDecimals={!isNativeToken ? (inputToken?.decimals ?? 18) : undefined}
-      allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
-      approvalSpenderName={!isNativeToken ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined}
+      allowance={showAllowanceRow ? activeFlow.periphery.allowance : undefined}
+      allowanceTokenDecimals={showAllowanceRow ? (inputToken?.decimals ?? 18) : undefined}
+      allowanceTokenSymbol={showAllowanceRow ? inputToken?.symbol : undefined}
+      approvalSpenderName={showAllowanceRow ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined}
       onAllowanceClick={
-        !isNativeToken && activeFlow.periphery.allowance > 0n
+        showAllowanceRow && activeFlow.periphery.allowance > 0n
           ? () => setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
           : undefined
       }
-      onShowApprovalOverlay={!isNativeToken ? () => setShowApprovalOverlay(true) : undefined}
+      onShowApprovalOverlay={showAllowanceRow ? () => setShowApprovalOverlay(true) : undefined}
     />
   )
 
@@ -504,27 +514,24 @@ export const WidgetDeposit: FC<Props> = ({
           placeholder="0.00"
           balance={inputToken?.balance.raw}
           decimals={inputToken?.decimals}
-          symbol={inputToken?.symbol}
+          symbol={inputToken?.symbol || assetToken?.symbol}
           disabled={isFetchingMaxQuote}
           isMaxButtonLoading={isFetchingMaxQuote}
           onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
           errorMessage={depositError || undefined}
-          showTokenSelector={ensoEnabled}
+          showTokenSelector={ensoEnabled && !isSplitYieldEnabled}
           inputTokenUsdPrice={inputTokenPrice}
           outputTokenUsdPrice={outputTokenPrice}
           tokenAddress={inputToken?.address}
           tokenChainId={inputToken?.chainID}
-          onTokenSelectorClick={() => setShowTokenSelector(true)}
+          onTokenSelectorClick={isSplitYieldEnabled ? undefined : () => setShowTokenSelector(true)}
         />
 
         {showSplitterToggle ? (
           <SplitYieldToggle
             vaultAddress={vaultAddress as `0x${string}`}
-            enabled={isSplitYieldEnabled}
-            onToggle={setIsSplitYieldEnabled}
             selectedWant={selectedWantToken}
-            onSelectWant={setSelectedWantToken}
-            wantTokens={wantTokens}
+            onSelectWant={handleSelectWantToken}
           />
         ) : null}
 

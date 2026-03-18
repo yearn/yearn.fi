@@ -63,6 +63,7 @@ type TVaultRowFlags = {
   isHidden?: boolean
   isSplitterPosition?: boolean
   splitterWantSymbol?: string
+  splitterWantDisplayName?: string
 }
 
 const prefetchedSnapshotEndpoints = new Set<string>()
@@ -530,7 +531,7 @@ export function VaultsListRow({
                 ) : null}
                 {flags?.isSplitterPosition ? (
                   <VaultsListChip
-                    label={`Yield Splitter: ${flags.splitterWantSymbol || ''}`}
+                    label={`Earning yield in ${flags.splitterWantDisplayName || flags.splitterWantSymbol || ''}`}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     onHoverChange={handleInteractiveHoverChange}
