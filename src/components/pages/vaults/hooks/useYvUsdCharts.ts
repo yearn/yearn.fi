@@ -1,13 +1,10 @@
+import { useVaultChartTimeseries } from '@pages/vaults/hooks/useVaultChartTimeseries'
+import { mergeYvUsdTvlSeries, type TYvUsdSeriesPoint } from '@pages/vaults/hooks/useYvUsdCharts.helpers'
 import { transformVaultChartData } from '@pages/vaults/utils/charts'
+import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { useMemo } from 'react'
-import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '../utils/yvUsd'
-import { useVaultChartTimeseries } from './useVaultChartTimeseries'
 
-export type TYvUsdSeriesPoint = {
-  date: string
-  unlocked: number | null
-  locked: number | null
-}
+export type { TYvUsdSeriesPoint } from '@pages/vaults/hooks/useYvUsdCharts.helpers'
 
 type TYvUsdCharts = {
   apyData?: TYvUsdSeriesPoint[]
@@ -107,11 +104,9 @@ export function useYvUsdCharts(): TYvUsdCharts {
   }, [lockedTransformed.ppsData, unlockedTransformed.ppsData])
 
   const tvlData = useMemo<TYvUsdSeriesPoint[] | undefined>(() => {
-    return mergeByDate({
+    return mergeYvUsdTvlSeries({
       unlockedSeries: unlockedTransformed.tvlData,
-      lockedSeries: lockedTransformed.tvlData,
-      getUnlockedValue: (point) => getNullableSeriesValue(point?.TVL),
-      getLockedValue: (point) => getNullableSeriesValue(point?.TVL)
+      lockedSeries: lockedTransformed.tvlData
     })
   }, [lockedTransformed.tvlData, unlockedTransformed.tvlData])
 
