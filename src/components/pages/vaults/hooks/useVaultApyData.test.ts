@@ -12,7 +12,6 @@ const DETAIL_VAULT_WITH_COMPONENTS = {
     extra: {
       stakingRewardsAPR: 0,
       gammaRewardAPR: 0,
-      katanaBonusAPY: 0.068,
       katanaAppRewardsAPR: 0.0916,
       steerPointsPerDollar: 0.1883,
       fixedRateKatanaRewards: 0.35
@@ -76,7 +75,6 @@ describe('useVaultApyData helpers', () => {
     expect(katanaExtras).toEqual({
       katanaAppRewardsAPR: 0.0916,
       fixedRateKatanaRewards: 0.35,
-      katanaBonusAPY: 0.068,
       steerPointsPerDollar: 0.1883
     })
   })
