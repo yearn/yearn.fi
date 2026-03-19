@@ -40,6 +40,7 @@ function buildTransports(): Record<TSupportedChainId, Transport> {
   for (const chain of supportedChains) {
     const network = getNetwork(chain.id)
     const envRPC = getRpcUriFor(chain.id)
+    const hasExplicitRpcOverride = Boolean(envRPC)
     const seen = new Set<string>()
     const availableTransports: Transport[] = []
 
@@ -64,9 +65,16 @@ function buildTransports(): Record<TSupportedChainId, Transport> {
 
     availableTransports.push(http())
 
-    transports[chain.id as TSupportedChainId] = fallback(availableTransports, {
-      rank: { interval: 30_000, timeout: 3_000 }
-    })
+    transports[chain.id as TSupportedChainId] = fallback(
+      availableTransports,
+      hasExplicitRpcOverride
+        ? undefined
+        : {
+            // Keep explicit RPC overrides first instead of letting faster public
+            // endpoints outrank fork/custom backends.
+            rank: { interval: 30_000, timeout: 3_000 }
+          }
+    )
   }
 
   return transports
