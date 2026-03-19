@@ -1214,6 +1214,7 @@ function Index(): ReactElement | null {
               {shouldShowWidgetRewards ? (
                 <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
                   <WidgetRewards
+                    vaultAddress={toAddress(currentVault.address)}
                     stakingAddress={currentVault.staking.available ? currentVault.staking.address : undefined}
                     stakingSource={currentVault.staking.source}
                     rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({

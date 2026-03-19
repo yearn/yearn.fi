@@ -7,6 +7,7 @@ import {
   KATANA_CHAIN_ID
 } from '@pages/vaults/constants/addresses'
 import { useKatanaAprs } from '@pages/vaults/hooks/splitter/useKatanaAprs'
+import { Tooltip } from '@shared/components/Tooltip'
 import { cl, formatApyDisplay, toAddress } from '@shared/utils'
 import { type FC, useMemo } from 'react'
 import type { Address } from 'viem'
@@ -39,24 +40,53 @@ export const SplitYieldToggle: FC<SplitYieldToggleProps> = ({ vaultAddress, sele
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-text-primary">{'Optionally earn your yield in:'}</span>
-        <div className="flex items-center rounded-lg border border-border">
-          {wantOptions.map((option) => {
-            const isSelected = selectedWant === option.address
-            return (
-              <button
-                key={option.address}
-                type="button"
-                onClick={() => onSelectWant(isSelected ? undefined : option.address)}
-                className={cl(
-                  'px-3 py-1 text-xs font-semibold transition-colors first:rounded-l-[7px] last:rounded-r-[7px]',
-                  isSelected ? 'bg-surface-tertiary text-text-primary' : 'text-text-secondary hover:text-text-primary'
-                )}
-              >
-                {option.name}
-              </button>
-            )
-          })}
+        <Tooltip
+          tooltip={
+            <div className="max-w-[240px] rounded-lg border border-border bg-surface-secondary p-3 text-xs text-text-primary shadow-lg">
+              {'Choose an asset to auto-convert your vault yield into instead of compounding natively.'}
+            </div>
+          }
+        >
+          <span className="text-sm font-medium text-text-primary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600">
+            {'Optionally earn your yield in:'}
+          </span>
+        </Tooltip>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-lg border border-border">
+            {wantOptions.map((option) => {
+              const isSelected = selectedWant === option.address
+              return (
+                <button
+                  key={option.address}
+                  type="button"
+                  onClick={() => onSelectWant(isSelected ? undefined : option.address)}
+                  className={cl(
+                    'px-3 py-1 text-xs font-semibold transition-colors first:rounded-l-[7px] last:rounded-r-[7px]',
+                    isSelected ? 'bg-surface-tertiary text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                  )}
+                >
+                  {option.name}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={Boolean(selectedWant)}
+            onClick={() => onSelectWant(selectedWant ? undefined : wantOptions[0]?.address)}
+            className={cl(
+              'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200',
+              selectedWant ? 'bg-blue-600' : 'bg-surface-tertiary'
+            )}
+          >
+            <span
+              className={cl(
+                'pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-sm transition-transform duration-200',
+                selectedWant ? 'translate-x-4' : 'translate-x-0'
+              )}
+            />
+          </button>
         </div>
       </div>
 
