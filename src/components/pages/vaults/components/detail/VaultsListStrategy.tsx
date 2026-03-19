@@ -62,7 +62,7 @@ export function VaultsListStrategy({
     const tooltipContent = (
       <div className={'rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
         <div>{'Base APY: '}{formatStrategiesApy(baseApr)}</div>
-        <div className={'mt-1'}>{'⚔️ KAT Rewards APR: '}{formatStrategiesApy(katRewardsAPR)}</div>
+        <div className={'mt-1'}>{'KAT Rewards APR: '}{formatStrategiesApy(katRewardsAPR)}</div>
       </div>
     )
     apyContent = (
