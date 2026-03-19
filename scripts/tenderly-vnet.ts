@@ -9,6 +9,15 @@ type TParsedCliArgs = {
   positionals: string[]
 }
 
+type TTenderlyProfile = 'webops' | 'personal'
+
+type TResolvedTenderlyCredentials = {
+  apiKey: string
+  accountSlug: string
+  projectSlug: string
+  profile: TTenderlyProfile
+}
+
 type TTenderlyVnetResponse = {
   slug?: string
   display_name?: string
@@ -46,29 +55,51 @@ type TCreateVnetPayload = {
 
 const DEFAULT_ACCOUNT_SLUG = 'me'
 const DEFAULT_NETWORK_ID = 1
-const DEFAULT_CHAIN_ID = 73571
+const DEFAULT_CHAIN_ID_PREFIX = '69420'
 const TENDERLY_API_URL = 'https://api.tenderly.co/api/v1/account'
 
 const HELP_TEXT = `Tenderly Virtual TestNet bootstrap
 
 Usage:
-  bun run scripts/tenderly-vnet.ts --project <projectSlug> [options]
+  bun run scripts/tenderly-vnet.ts [options]
 
 Options:
+  --profile <name>       Credential profile: webops or personal (default: webops)
   --account <slug>        Tenderly account slug (defaults to TENDERLY_ACCOUNT_SLUG, then me)
-  --project <slug>        Tenderly project slug (required)
+  --project <slug>        Tenderly project slug (defaults from selected profile env vars)
+  --api-key <key>         Tenderly API key override
+  --api-key-env <name>    Env var name to read the API key from
+  --account-env <name>    Env var name to read the account slug from
+  --project-env <name>    Env var name to read the project slug from
   --slug <slug>           VNet slug (default: vnet-<timestamp>)
   --display-name <name>    VNet display name (default: Webops VNet)
   --network-id <id>       Parent network id (default: 1)
   --block-number <num>    Fork block number or latest (default: latest)
-  --chain-id <id>         Execution chain id (default: 73571)
+  --chain-id <id>         Execution chain id (default: 69420<network-id>)
   --enable-sync           Enable state sync (default: false)
   --enable-explorer       Enable public explorer (default: false)
   --json                  Print raw API JSON response
   --help                  Show this help text
 
-The script reads WEBOPS_TENDERLY_API_KEY and optional TENDERLY_ACCOUNT_SLUG from .env if not already in process.env.
+Profiles:
+  webops   -> WEBOPS_TENDERLY_API_KEY, TENDERLY_ACCOUNT_SLUG, TENDERLY_PROJECT_SLUG
+  personal -> PERSONAL_TENDERLY_API_KEY, PERSONAL_ACCOUNT_SLUG, PERSONAL_PROJECT_SLUG
+
+Explicit flags always win over profile defaults.
 `
+
+function parseProfile(value: string | undefined): TTenderlyProfile {
+  if (!value || value.trim().length === 0) {
+    return 'webops'
+  }
+
+  const normalized = value.trim().toLowerCase()
+  if (normalized === 'webops' || normalized === 'personal') {
+    return normalized
+  }
+
+  throw new Error(`Unsupported profile: ${value}. Expected "webops" or "personal".`)
+}
 
 function parseCliArgs(argv: readonly string[]): TParsedCliArgs {
   const recurse = (index: number, acc: TParsedCliArgs): TParsedCliArgs => {
@@ -153,6 +184,73 @@ function getArg(flags: Record<string, string>, ...keys: string[]): string | unde
   return keys.map((key) => flags[key]?.trim()).find((value) => Boolean(value))
 }
 
+function resolveDefaultChainId(networkId: number): number {
+  const derivedChainId = Number(`${DEFAULT_CHAIN_ID_PREFIX}${networkId}`)
+  if (!Number.isSafeInteger(derivedChainId) || derivedChainId <= 0) {
+    throw new Error(`Unable to derive default chain id for network ${networkId}`)
+  }
+  return derivedChainId
+}
+
+function getEnvValue(env: Record<string, string | undefined>, key?: string): string | undefined {
+  if (!key) return undefined
+  return env[key]?.trim()
+}
+
+function resolveTenderlyCredentials(
+  flags: Record<string, string>,
+  env: Record<string, string | undefined>
+): TResolvedTenderlyCredentials {
+  const profile = parseProfile(getArg(flags, 'profile'))
+  const profileDefaults =
+    profile === 'personal'
+      ? {
+          apiKeyEnv: 'PERSONAL_TENDERLY_API_KEY',
+          accountEnv: 'PERSONAL_ACCOUNT_SLUG',
+          projectEnv: 'PERSONAL_PROJECT_SLUG'
+        }
+      : {
+          apiKeyEnv: 'WEBOPS_TENDERLY_API_KEY',
+          accountEnv: 'TENDERLY_ACCOUNT_SLUG',
+          projectEnv: 'TENDERLY_PROJECT_SLUG'
+        }
+
+  const apiKeyEnv = getArg(flags, 'api-key-env') || profileDefaults.apiKeyEnv
+  const accountEnv = getArg(flags, 'account-env') || profileDefaults.accountEnv
+  const projectEnv = getArg(flags, 'project-env') || profileDefaults.projectEnv
+
+  const apiKey =
+    getArg(flags, 'api-key') ||
+    getEnvValue(env, apiKeyEnv) ||
+    env.TENDERLY_ACCESS_KEY?.trim() ||
+    env.TENDERLY_API_KEY?.trim()
+
+  if (!apiKey) {
+    throw new Error(
+      `Missing Tenderly API key. Checked --api-key, ${apiKeyEnv}, TENDERLY_ACCESS_KEY, and TENDERLY_API_KEY.`
+    )
+  }
+
+  const accountSlug =
+    getArg(flags, 'account') ||
+    getEnvValue(env, accountEnv) ||
+    (profile === 'personal' ? env.ACCOUNT_SLUG?.trim() : undefined) ||
+    DEFAULT_ACCOUNT_SLUG
+  const projectSlug = requireString(
+    getArg(flags, 'project') ||
+      getEnvValue(env, projectEnv) ||
+      (profile === 'personal' ? env.PROJECT_SLUG?.trim() : undefined),
+    `--project or ${projectEnv}`
+  )
+
+  return {
+    apiKey,
+    accountSlug,
+    projectSlug,
+    profile
+  }
+}
+
 async function createVirtualTestNet(
   apiKey: string,
   accountSlug: string,
@@ -207,22 +305,13 @@ async function main(): Promise<void> {
   const scriptDir = resolve(fileURLToPath(import.meta.url), '..')
   const envFromFile = readEnvFile(resolve(scriptDir, '../.env'))
   const env = { ...envFromFile, ...process.env }
-
-  const apiKey = env.WEBOPS_TENDERLY_API_KEY?.trim() || env.TENDERLY_ACCESS_KEY?.trim() || env.TENDERLY_API_KEY?.trim()
-
-  if (!apiKey) {
-    throw new Error(
-      'Missing WEBOPS_TENDERLY_API_KEY in environment. Set it in .env or export it before running this script.'
-    )
-  }
-
-  const accountSlug = getArg(flags, 'account') || env.TENDERLY_ACCOUNT_SLUG?.trim() || DEFAULT_ACCOUNT_SLUG
-  const projectSlug = requireString(getArg(flags, 'project'), '--project')
+  const { apiKey, accountSlug, projectSlug, profile } = resolveTenderlyCredentials(flags, env)
   const timestamp = Date.now().toString()
   const requestedSlug = getArg(flags, 'slug') || `vnet-${timestamp}`
-  const displayName = getArg(flags, 'display-name') || `Webops VNet ${timestamp}`
+  const defaultDisplayNamePrefix = profile === 'personal' ? 'Personal VNet' : 'Webops VNet'
+  const displayName = getArg(flags, 'display-name') || `${defaultDisplayNamePrefix} ${timestamp}`
   const networkId = parseOptionalInteger(getArg(flags, 'network-id'), 'network-id') || DEFAULT_NETWORK_ID
-  const chainId = parseOptionalInteger(getArg(flags, 'chain-id'), 'chain-id') || DEFAULT_CHAIN_ID
+  const chainId = parseOptionalInteger(getArg(flags, 'chain-id'), 'chain-id') || resolveDefaultChainId(networkId)
   const blockNumber = getArg(flags, 'block-number') || 'latest'
   const enableSync = parseBooleanFlag(flags, 'enable-sync', false)
   const enableExplorer = parseBooleanFlag(flags, 'enable-explorer', false)
@@ -260,6 +349,9 @@ async function main(): Promise<void> {
   const publicRpc = response.rpcs?.find((rpc) => rpc.name === 'Public RPC')?.url
 
   console.log(`Created Tenderly Virtual TestNet`)
+  console.log(`profile: ${profile}`)
+  console.log(`account: ${accountSlug}`)
+  console.log(`project: ${projectSlug}`)
   console.log(`slug: ${response.slug || requestedSlug}`)
   console.log(`display name: ${response.display_name || displayName}`)
   if (adminRpc) console.log(`admin rpc: ${adminRpc}`)
