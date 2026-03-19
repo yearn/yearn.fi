@@ -61,13 +61,23 @@ export function VaultsListStrategy({
   } else if (hasKatRewards) {
     const tooltipContent = (
       <div className={'rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
-        <div>{'Base APY: '}{formatStrategiesApy(baseApr)}</div>
-        <div className={'mt-1'}>{'KAT Rewards APR: '}{formatStrategiesApy(katRewardsAPR)}</div>
+        <div>
+          {'Base APY: '}
+          {formatStrategiesApy(baseApr)}
+        </div>
+        <div className={'mt-1'}>
+          {'KAT Rewards APR: '}
+          {formatStrategiesApy(katRewardsAPR)}
+        </div>
       </div>
     )
     apyContent = (
       <Tooltip tooltip={tooltipContent} openDelayMs={150} align={'center'}>
-        <span className={'flex items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'}>
+        <span
+          className={
+            'flex items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+          }
+        >
           <span aria-hidden>{'⚔️'}</span>
           {formatStrategiesApy(displayApr)}
         </span>
