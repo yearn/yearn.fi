@@ -205,4 +205,80 @@ describe('getVaultStrategies', () => {
 
     expect(strategies[0]?.estimatedAPY).toBeUndefined()
   })
+
+  it('falls back to estimated apr for katana strategies when estimated apy is missing', () => {
+    const strategies = getVaultStrategies(vault, {
+      totalAssets: '1000000',
+      composition: [
+        {
+          address: '0x8888888888888888888888888888888888888888',
+          name: 'Morpho Strategy',
+          status: 'active',
+          totalDebt: '500000',
+          currentDebt: '500000',
+          performance: {
+            estimated: {
+              apr: 0.0028,
+              type: 'katana-estimated-apr'
+            }
+          }
+        }
+      ]
+    } as any)
+
+    expect(strategies[0]?.estimatedAPY).toBe(0.0028)
+    expect(strategies[0]?.katRewardsAPR).toBe(0.0028)
+  })
+
+  it('does not set katRewardsAPR for non-katana strategies', () => {
+    const strategies = getVaultStrategies(vault, {
+      totalAssets: '1000000',
+      composition: [
+        {
+          address: '0x9999999999999999999999999999999999999999',
+          name: 'Regular Strategy',
+          status: 'active',
+          totalDebt: '500000',
+          currentDebt: '500000',
+          performance: {
+            estimated: {
+              apr: 0.05,
+              apy: 0.06,
+              type: 'yvusd-estimated-apr',
+              components: {}
+            }
+          }
+        }
+      ]
+    } as any)
+
+    expect(strategies[0]?.estimatedAPY).toBe(0.06)
+    expect(strategies[0]?.katRewardsAPR).toBeUndefined()
+  })
+
+  it('prefers estimated apy over estimated apr even for katana strategies', () => {
+    const strategies = getVaultStrategies(vault, {
+      totalAssets: '1000000',
+      composition: [
+        {
+          address: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          name: 'Katana Strategy with APY',
+          status: 'active',
+          totalDebt: '500000',
+          currentDebt: '500000',
+          performance: {
+            estimated: {
+              apr: 0.003,
+              apy: 0.05,
+              type: 'katana-estimated-apr',
+              components: {}
+            }
+          }
+        }
+      ]
+    } as any)
+
+    expect(strategies[0]?.estimatedAPY).toBe(0.05)
+    expect(strategies[0]?.katRewardsAPR).toBe(0.003)
+  })
 })

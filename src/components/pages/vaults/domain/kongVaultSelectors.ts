@@ -333,6 +333,7 @@ export type TKongVaultStrategy = {
   description: string
   netAPR: number | null
   estimatedAPY?: number | null
+  katRewardsAPR?: number | null
   status: 'active' | 'not_active' | 'unallocated'
   details?: {
     totalDebt: string
@@ -757,8 +758,24 @@ const mapSnapshotComposition = (
       if (estimatedApy !== null) {
         return estimatedApy
       }
+      // Katana strategy webhook emits APR-named components (e.g. katRewardsAPR),
+      // so Kong hydration sets estimated.apr without estimated.apy
+      const estimatedType = entry.performance?.estimated?.type ?? ''
+      if (estimatedType.includes('katana')) {
+        const estimatedApr = pickNumberOrNull(entry.performance?.estimated?.apr)
+        if (estimatedApr !== null) {
+          return estimatedApr
+        }
+      }
       const oracleApy = pickNumberOrNull(entry.performance?.oracle?.apy)
       return oracleApy === null ? undefined : oracleApy
+    })()
+    const katRewardsAPR = (() => {
+      const estimatedType = entry.performance?.estimated?.type ?? ''
+      if (!estimatedType.includes('katana')) {
+        return undefined
+      }
+      return pickNumberOrNull(entry.performance?.estimated?.apr) ?? undefined
     })()
     const resolvedApr = hasAllocation
       ? pickNumberOrNull(
@@ -773,6 +790,7 @@ const mapSnapshotComposition = (
       description: '',
       netAPR: resolvedApr,
       estimatedAPY,
+      katRewardsAPR,
       status,
       details: {
         totalDebt,

@@ -26,6 +26,7 @@ export function VaultsListStrategy({
   variant = 'v3',
   apr,
   netApr,
+  katRewardsAPR,
   fees,
   totalValueUsd
 }: {
@@ -40,6 +41,7 @@ export function VaultsListStrategy({
   variant: 'v2' | 'v3'
   apr: number | null | undefined
   netApr: number | null | undefined
+  katRewardsAPR?: number | null
   fees: TKongVaultApr['fees']
   totalValueUsd: number
 }): ReactElement {
@@ -47,12 +49,20 @@ export function VaultsListStrategy({
   const isInactive = status === 'not_active'
   const isUnallocated = status === 'unallocated'
   const shouldShowPlaceholders = isInactive || isUnallocated
+  const hasKatRewards = typeof katRewardsAPR === 'number' && katRewardsAPR > 0
   const displayApr = apr ?? netApr ?? 0
 
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
   let apyContent: ReactElement | string = '-'
   if (shouldShowPlaceholders) {
     apyContent = '-'
+  } else if (hasKatRewards) {
+    apyContent = (
+      <span className={'flex items-center gap-1'}>
+        <span aria-hidden>{'⚔️'}</span>
+        {formatStrategiesApy(displayApr)}
+      </span>
+    )
   } else {
     apyContent = formatStrategiesApy(displayApr)
   }
