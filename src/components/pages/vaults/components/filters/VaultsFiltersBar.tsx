@@ -8,6 +8,7 @@ import {
   TransitionChild
 } from '@headlessui/react'
 import { usePlausible } from '@hooks/usePlausible'
+import { resolveNextSingleChainSelection } from '@pages/vaults/utils/chainSelection'
 import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
 import { getChainDescription } from '@pages/vaults/utils/vaultTagCopy'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
@@ -197,11 +198,7 @@ export function VaultsFiltersBar({
   }
 
   const handleChainToggle = (chainId: number): void => {
-    if (chains.selected && chains.selected.length === 1 && chains.selected[0] === chainId) {
-      chains.onChange(null)
-      return
-    }
-    chains.onChange([chainId])
+    chains.onChange(resolveNextSingleChainSelection(chains.selected, chainId))
   }
 
   const handleApplyAdditionalChains = (ids: number[]): void => {

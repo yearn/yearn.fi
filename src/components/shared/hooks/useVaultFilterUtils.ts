@@ -241,6 +241,10 @@ export function matchesSearch(vault: TVaultLike, search: string): boolean {
   }
 }
 
+export function matchesSelectedChains(chainID: number, chains: number[] | null | undefined): boolean {
+  return !chains?.length || chains.includes(chainID)
+}
+
 export function isV3Vault(vault: TVaultLike, isAllocatorOverride: boolean): boolean {
   const version = getVaultVersion(vault)
   return version.startsWith('3') || version.startsWith('~3') || isAllocatorOverride

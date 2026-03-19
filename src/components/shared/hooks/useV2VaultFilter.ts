@@ -32,6 +32,7 @@ import {
   createCheckHasHoldings,
   getVaultKey,
   isV3Vault,
+  matchesSelectedChains,
   type TVaultFlags
 } from './useVaultFilterUtils'
 
@@ -307,7 +308,7 @@ export function useV2VaultFilter(
         return
       }
 
-      if (!hasUserHoldings && hasChainFilter && !chains?.includes(getVaultChainID(vault))) {
+      if (hasChainFilter && !matchesSelectedChains(getVaultChainID(vault), chains)) {
         return
       }
 
