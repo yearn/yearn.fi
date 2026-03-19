@@ -1,5 +1,6 @@
 import type { TKongVaultApr, TKongVaultStrategy } from '@pages/vaults/domain/kongVaultSelectors'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { Tooltip } from '@shared/components/Tooltip'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
@@ -50,18 +51,27 @@ export function VaultsListStrategy({
   const isUnallocated = status === 'unallocated'
   const shouldShowPlaceholders = isInactive || isUnallocated
   const hasKatRewards = typeof katRewardsAPR === 'number' && katRewardsAPR > 0
-  const displayApr = apr ?? netApr ?? 0
+  const baseApr = apr ?? netApr ?? 0
+  const displayApr = hasKatRewards ? baseApr + (katRewardsAPR ?? 0) : baseApr
 
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
   let apyContent: ReactElement | string = '-'
   if (shouldShowPlaceholders) {
     apyContent = '-'
   } else if (hasKatRewards) {
+    const tooltipContent = (
+      <div className={'rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+        <div>{'Base APY: '}{formatStrategiesApy(baseApr)}</div>
+        <div className={'mt-1'}>{'⚔️ KAT Rewards APR: '}{formatStrategiesApy(katRewardsAPR)}</div>
+      </div>
+    )
     apyContent = (
-      <span className={'flex items-center gap-1'}>
-        <span aria-hidden>{'⚔️'}</span>
-        {formatStrategiesApy(displayApr)}
-      </span>
+      <Tooltip tooltip={tooltipContent} openDelayMs={150} align={'center'}>
+        <span className={'flex items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'}>
+          <span aria-hidden>{'⚔️'}</span>
+          {formatStrategiesApy(displayApr)}
+        </span>
+      </Tooltip>
     )
   } else {
     apyContent = formatStrategiesApy(displayApr)

@@ -206,7 +206,36 @@ describe('getVaultStrategies', () => {
     expect(strategies[0]?.estimatedAPY).toBeUndefined()
   })
 
-  it('falls back to estimated apr for katana strategies when estimated apy is missing', () => {
+  it('uses oracle apy as base for katana strategies — estimated apr is KAT rewards only', () => {
+    const strategies = getVaultStrategies(vault, {
+      totalAssets: '1000000',
+      composition: [
+        {
+          address: '0x8888888888888888888888888888888888888888',
+          name: 'Morpho Strategy',
+          status: 'active',
+          totalDebt: '500000',
+          currentDebt: '500000',
+          performance: {
+            estimated: {
+              apr: 0.0028,
+              type: 'katana-estimated-apr'
+            },
+            oracle: {
+              apr: 0.03,
+              apy: 0.04
+            }
+          }
+        }
+      ]
+    } as any)
+
+    // estimatedAPY should be oracle.apy (base yield), not estimated.apr (KAT rewards)
+    expect(strategies[0]?.estimatedAPY).toBe(0.04)
+    expect(strategies[0]?.katRewardsAPR).toBe(0.0028)
+  })
+
+  it('leaves estimatedAPY undefined for katana strategies when neither estimated.apy nor oracle.apy exists', () => {
     const strategies = getVaultStrategies(vault, {
       totalAssets: '1000000',
       composition: [
@@ -226,7 +255,7 @@ describe('getVaultStrategies', () => {
       ]
     } as any)
 
-    expect(strategies[0]?.estimatedAPY).toBe(0.0028)
+    expect(strategies[0]?.estimatedAPY).toBeUndefined()
     expect(strategies[0]?.katRewardsAPR).toBe(0.0028)
   })
 
