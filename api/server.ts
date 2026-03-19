@@ -1,6 +1,9 @@
 import { serve } from 'bun'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+const KONG_REST_BASE = 'https://kong.yearn.fi/api/rest'
+const ENSO_PRICE_CONCURRENCY = 5
+const ENSO_PRICE_DELAY_MS = 200
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
@@ -158,12 +161,100 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
   }
 }
 
+const ENSO_SUPPORTED_CHAINS = [1, 8453, 747474, 10, 137, 42161, 100, 146, 80094]
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+async function fetchEnsoPrice(
+  chainId: number,
+  address: string,
+  apiKey: string,
+  retries = 2
+): Promise<{ address: string; price: number } | null> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(`${ENSO_API_BASE}/api/v1/prices/${chainId}/${address}`, {
+        headers: { Authorization: `Bearer ${apiKey}` }
+      })
+      if (res.status === 429) {
+        await sleep(1000 * (attempt + 1))
+        continue
+      }
+      if (!res.ok) return null
+      const data = (await res.json()) as { price: number }
+      return { address, price: data.price }
+    } catch {
+      if (attempt < retries) {
+        await sleep(500 * (attempt + 1))
+        continue
+      }
+      return null
+    }
+  }
+  return null
+}
+
+async function handleEnsoPrices(): Promise<Response> {
+  const apiKey = process.env.ENSO_API_KEY
+  if (!apiKey) {
+    console.error('ENSO_API_KEY not configured')
+    return Response.json({ error: 'Enso API not configured' }, { status: 500 })
+  }
+
+  try {
+    const vaults: { chainId: number; address: string; asset?: { address?: string } }[] = await fetch(
+      `${KONG_REST_BASE}/list/vaults`
+    ).then((r) => r.json())
+
+    const addressesByChain = new Map<number, Set<string>>()
+    for (const v of vaults) {
+      if (!ENSO_SUPPORTED_CHAINS.includes(v.chainId)) continue
+      if (!addressesByChain.has(v.chainId)) addressesByChain.set(v.chainId, new Set())
+      const set = addressesByChain.get(v.chainId)!
+      if (v.address) set.add(v.address.toLowerCase())
+      if (v.asset?.address) set.add(v.asset.address.toLowerCase())
+    }
+
+    const result: Record<string, Record<string, string>> = {}
+
+    for (const [chainId, addresses] of addressesByChain) {
+      const chainKey = String(chainId)
+      result[chainKey] = {}
+      const addressList = [...addresses]
+
+      for (let i = 0; i < addressList.length; i += ENSO_PRICE_CONCURRENCY) {
+        const batch = addressList.slice(i, i + ENSO_PRICE_CONCURRENCY)
+        const results = await Promise.all(batch.map((a) => fetchEnsoPrice(chainId, a, apiKey)))
+        for (const r of results) {
+          if (r && r.price != null) {
+            result[chainKey][r.address] = Math.round(r.price * 1e6).toString()
+          }
+        }
+        await sleep(ENSO_PRICE_DELAY_MS)
+      }
+    }
+
+    return Response.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching Enso prices:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 serve({
   async fetch(req) {
     const url = new URL(req.url)
 
     if (url.pathname === '/api/enso/status') {
       return handleEnsoStatus()
+    }
+
+    if (url.pathname === '/api/enso/prices') {
+      return handleEnsoPrices()
     }
 
     if (url.pathname === '/api/enso/balances') {
