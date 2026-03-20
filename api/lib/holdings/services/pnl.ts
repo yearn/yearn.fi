@@ -1,7 +1,13 @@
 import type { DepositEvent, TransferEvent, WithdrawEvent } from '../types'
 import { debugLog, debugTable, getHoldingsDebugFilters } from './debug'
 import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
-import { fetchRawUserPnlEvents, type RawPnlEventContext, type VaultVersion } from './graphql'
+import {
+  fetchRawUserPnlEvents,
+  type HoldingsEventFetchType,
+  type HoldingsEventPaginationMode,
+  type RawPnlEventContext,
+  type VaultVersion
+} from './graphql'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
 import {
   formatAmount,
@@ -1406,10 +1412,12 @@ export function processRawPnlEvents(events: TRawPnlEvent[], userAddress: string)
 export async function getHoldingsPnL(
   userAddress: string,
   version: VaultVersion = 'all',
-  unknownTransferInPnlMode: UnknownTransferInPnlMode = 'windfall'
+  unknownTransferInPnlMode: UnknownTransferInPnlMode = 'windfall',
+  fetchType: HoldingsEventFetchType = 'seq',
+  paginationMode: HoldingsEventPaginationMode = 'paged'
 ): Promise<HoldingsPnLResponse> {
-  debugLog('pnl', 'starting holdings pnl calculation', { version, unknownTransferInPnlMode })
-  const rawContext = await fetchRawUserPnlEvents(userAddress, version)
+  debugLog('pnl', 'starting holdings pnl calculation', { version, unknownTransferInPnlMode, fetchType, paginationMode })
+  const rawContext = await fetchRawUserPnlEvents(userAddress, version, undefined, fetchType, paginationMode)
   debugLog('pnl', 'loaded raw pnl event context', {
     addressDeposits: rawContext.addressEvents.deposits.length,
     addressWithdrawals: rawContext.addressEvents.withdrawals.length,

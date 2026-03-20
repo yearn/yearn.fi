@@ -214,12 +214,16 @@ For the dedicated accounting-model walkthrough, see [`PNL.md`](./PNL.md).
 ```bash
 curl "http://localhost:3001/api/holdings/pnl?address=0x..."
 curl "http://localhost:3001/api/holdings/pnl?address=0x...&unknownMode=windfall"
+curl "http://localhost:3001/api/holdings/pnl?address=0x...&fetchType=parallel"
+curl "http://localhost:3001/api/holdings/pnl?address=0x...&paginationMode=all"
 ```
 
 Query params:
 - `address` (required): Ethereum address
 - `version` (optional): `v2`, `v3`, or `all` (default: `all`)
 - `unknownMode` (optional): `strict`, `zero_basis`, or `windfall` (default: `windfall`)
+- `fetchType` (optional): `seq` or `parallel` (default: `seq`)
+- `paginationMode` (optional): `paged` or `all` (default: `paged`)
 
 Response (abridged):
 ```json
@@ -437,16 +441,24 @@ Query: User has 3,500 transfers
 
 All 6 event types (V3 deposits/withdrawals, V2 deposits/withdrawals, transfers in/out) are fetched in parallel, but each type paginates sequentially within itself.
 
-### Future Option: Parallel Batch Fetching
+### PnL Fetch Controls
 
-The codebase includes `fetchUserEventsParallel()` which uses pre-computed counts from the indexer to fetch all batches in parallel. This requires:
-- `UserEventCounts` entity in the indexer schema
-- Event handlers that increment counts as events are processed
+The PnL endpoint exposes request-time controls for benchmarking alternate address-scoped fetch strategies:
 
-To enable, the indexer must expose `UserEventCounts_by_pk` with fields:
-- `depositCount`, `withdrawCount` (V3 events)
-- `v2DepositCount`, `v2WithdrawCount` (V2 events)
-- `transferInCount`, `transferOutCount` (Transfer events)
+- `fetchType=seq|parallel`
+  - `seq`: normal `1000`-row sequential pagination
+  - `parallel`: try GraphQL aggregate counts first, then fetch address-scoped pages concurrently
+
+- `paginationMode=paged|all`
+  - `paged`: normal `limit/offset` pagination
+  - `all`: issue one large query per event family instead of paging
+
+`parallel` depends on these aggregate roots being available on the GraphQL schema:
+- `Deposit_aggregate`, `Withdraw_aggregate`
+- `V2Deposit_aggregate`, `V2Withdraw_aggregate`
+- `Transfer_aggregate`
+
+If aggregate roots are unavailable in a given environment, the code falls back to sequential pagination. `paginationMode=all` bypasses the aggregate preflight entirely and is meant for experimentation rather than as a production default.
 
 ### maxTimestamp Optimization
 

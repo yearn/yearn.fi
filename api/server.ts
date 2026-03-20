@@ -2,6 +2,8 @@ import { serve } from 'bun'
 import {
   getHistoricalHoldings,
   getHoldingsPnL,
+  type HoldingsEventFetchType,
+  type HoldingsEventPaginationMode,
   initializeSchema,
   type UnknownTransferInPnlMode,
   type VaultVersion,
@@ -48,6 +50,14 @@ function isValidAddress(address: string): boolean {
 
 function parseUnknownTransferInPnlMode(value: string | null): UnknownTransferInPnlMode {
   return value === 'strict' || value === 'zero_basis' || value === 'windfall' ? value : 'windfall'
+}
+
+function parseHoldingsEventFetchType(value: string | null): HoldingsEventFetchType {
+  return value === 'parallel' ? 'parallel' : 'seq'
+}
+
+function parseHoldingsEventPaginationMode(value: string | null): HoldingsEventPaginationMode {
+  return value === 'all' ? 'all' : 'paged'
 }
 
 function handleEnsoStatus(): Response {
@@ -255,6 +265,8 @@ async function handleHoldingsPnL(req: Request): Promise<Response> {
   const debugVault = url.searchParams.get('debugVault')
   const debugTx = url.searchParams.get('debugTx')
   const unknownTransferInPnlMode = parseUnknownTransferInPnlMode(url.searchParams.get('unknownMode'))
+  const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
+  const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -277,16 +289,20 @@ async function handleHoldingsPnL(req: Request): Promise<Response> {
         debugLog('route', 'started holdings pnl request', {
           version,
           unknownTransferInPnlMode,
+          fetchType,
+          paginationMode,
           debugLotsEnabled,
           debugVault: debugVault?.toLowerCase() ?? null,
           debugTx: debugTx?.toLowerCase() ?? null
         })
 
         try {
-          const response = await getHoldingsPnL(address, version, unknownTransferInPnlMode)
+          const response = await getHoldingsPnL(address, version, unknownTransferInPnlMode, fetchType, paginationMode)
           debugLog('route', 'completed holdings pnl request', {
             version,
             unknownTransferInPnlMode,
+            fetchType,
+            paginationMode,
             totalVaults: response.summary.totalVaults,
             totalCurrentValueUsd: response.summary.totalCurrentValueUsd,
             totalPnlUsd: response.summary.totalPnlUsd,
@@ -294,7 +310,12 @@ async function handleHoldingsPnL(req: Request): Promise<Response> {
           })
           return response
         } catch (error) {
-          debugError('route', 'holdings pnl request failed', error, { version, unknownTransferInPnlMode })
+          debugError('route', 'holdings pnl request failed', error, {
+            version,
+            unknownTransferInPnlMode,
+            fetchType,
+            paginationMode
+          })
           throw error
         }
       }

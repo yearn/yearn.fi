@@ -249,6 +249,19 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(vault.totalEconomicGainUsd).toBeCloseTo(330)
   })
 
+  it('uses paged sequential event fetching by default and allows explicit overrides', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+    configureServiceMocks(createTransferInContext())
+
+    const { getHoldingsPnL } = await importPnlModule()
+
+    await getHoldingsPnL(USER)
+    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'seq', 'paged')
+
+    await getHoldingsPnL(USER, 'all', 'windfall', 'parallel', 'all')
+    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'parallel', 'all')
+  })
+
   it('treats unknown transfer-ins as full unrealized pnl in zero-basis mode', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(300_000)
 

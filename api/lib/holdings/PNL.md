@@ -250,6 +250,40 @@ Default:
 windfall
 ```
 
+## Request Controls
+
+The PnL endpoint also exposes event-loading controls for debugging and benchmarking:
+
+```text
+fetchType=seq|parallel
+paginationMode=paged|all
+```
+
+Defaults:
+
+```text
+fetchType=seq
+paginationMode=paged
+```
+
+### `fetchType`
+
+- `seq`
+  - address-scoped event families paginate with the normal `1000`-row page walker
+- `parallel`
+  - address-scoped event families first try GraphQL aggregate counts, then request multiple `1000`-row pages in parallel
+
+This only affects the address-scoped family fetch path. Transaction-hash enrichment still happens afterwards.
+
+### `paginationMode`
+
+- `paged`
+  - use normal `limit/offset` pagination with `1000`-row pages
+- `all`
+  - request each address-scoped and `transactionFrom` event family in a single query using a large hard limit instead of paging
+
+`all` is intended for experimentation. It bypasses the aggregate count preflight, but it uses a fixed single-query limit internally, so it should be treated as a benchmarking/debug option rather than a universally safe default.
+
 ### `strict`
 
 Use this when you want the most conservative answer.
