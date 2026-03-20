@@ -10,10 +10,10 @@ import type { TDict, TToken } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import type { Address } from 'viem'
 
-export type TTokenSelectorMode = 'default' | 'deposit'
+export type TTokenSelectorMode = 'default' | 'deposit' | 'withdraw'
 
 type TGetPrice = (props: { address: Address; chainID: number }) => { normalized: number }
-const MIN_DEPOSIT_SELECTOR_USD_VALUE = 0.01
+const MIN_SELECTOR_USD_VALUE = 0.01
 
 function toAddressSet(addresses: Array<string | undefined>): Set<string> {
   return new Set(
@@ -112,6 +112,7 @@ export function filterAndSortTokenSelectorTokens({
   searchText,
   yearnKnownTokenAddresses,
   explicitTokenAddresses,
+  minValueExemptTokenAddresses,
   topTokenAddresses,
   getTokenUsdValue
 }: {
@@ -122,6 +123,7 @@ export function filterAndSortTokenSelectorTokens({
   searchText?: string
   yearnKnownTokenAddresses?: Set<string>
   explicitTokenAddresses?: Set<string>
+  minValueExemptTokenAddresses?: Set<string>
   topTokenAddresses?: Address[]
   getTokenUsdValue: (token: TToken) => number
 }): TToken[] {
@@ -130,6 +132,7 @@ export function filterAndSortTokenSelectorTokens({
   const normalizedSearchText = searchText?.trim().toLowerCase() || ''
   const knownAddresses = yearnKnownTokenAddresses || new Set<string>()
   const explicitAddresses = explicitTokenAddresses || new Set<string>()
+  const minValueExemptAddresses = minValueExemptTokenAddresses || explicitAddresses
   const topTokenIndex = new Map(
     (topTokenAddresses || []).map((address, index) => [toAddress(address).toLowerCase(), index] as const)
   )
@@ -151,7 +154,11 @@ export function filterAndSortTokenSelectorTokens({
         return false
       }
 
-      if (mode === 'deposit' && usdValue < MIN_DEPOSIT_SELECTOR_USD_VALUE && !explicitAddresses.has(address)) {
+      if (
+        (mode === 'deposit' || mode === 'withdraw') &&
+        usdValue < MIN_SELECTOR_USD_VALUE &&
+        !minValueExemptAddresses.has(address)
+      ) {
         return false
       }
 

@@ -141,4 +141,42 @@ describe('filterAndSortTokenSelectorTokens', () => {
 
     expect(filtered.map((token) => token.address)).toEqual([TOKEN_A])
   })
+
+  it('hides low-value withdraw tokens unless they are explicit common options', () => {
+    const filtered = filterAndSortTokenSelectorTokens({
+      tokens: [
+        buildToken({
+          address: TOKEN_A,
+          name: 'Dust Token',
+          symbol: 'DST',
+          normalizedBalance: 10,
+          rawBalance: 10n
+        }),
+        buildToken({
+          address: TOKEN_B,
+          name: 'Pinned Common Token',
+          symbol: 'PIN',
+          normalizedBalance: 1,
+          rawBalance: 1n
+        }),
+        buildToken({
+          address: TOKEN_C,
+          name: 'Visible Token',
+          symbol: 'VIS',
+          normalizedBalance: 2,
+          rawBalance: 2n
+        })
+      ],
+      mode: 'withdraw',
+      explicitTokenAddresses: new Set([TOKEN_B.toLowerCase()]),
+      getTokenUsdValue: (token) => {
+        if (token.address === TOKEN_C) {
+          return 0.02
+        }
+        return 0.009
+      }
+    })
+
+    expect(filtered.map((token) => token.address)).toEqual([TOKEN_C, TOKEN_B])
+  })
 })
