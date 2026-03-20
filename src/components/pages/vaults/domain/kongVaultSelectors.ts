@@ -333,6 +333,7 @@ export type TKongVaultStrategy = {
   description: string
   netAPR: number | null
   estimatedAPY?: number | null
+  katRewardsAPR?: number | null
   status: 'active' | 'not_active' | 'unallocated'
   details?: {
     totalDebt: string
@@ -757,8 +758,21 @@ const mapSnapshotComposition = (
       if (estimatedApy !== null) {
         return estimatedApy
       }
+      // For Katana strategies, estimated.apr is KAT rewards (additive incentive),
+      // NOT the base yield — so skip straight to oracle.apy for the base value.
+      // KAT rewards are captured separately in katRewardsAPR below.
       const oracleApy = pickNumberOrNull(entry.performance?.oracle?.apy)
       return oracleApy === null ? undefined : oracleApy
+    })()
+    const katRewardsAPR = (() => {
+      const estimatedType = entry.performance?.estimated?.type ?? ''
+      if (!estimatedType.includes('katana')) {
+        return undefined
+      }
+      return (
+        pickNumberOrNull(entry.performance?.estimated?.components?.katRewardsAPR, entry.performance?.estimated?.apr) ??
+        undefined
+      )
     })()
     const resolvedApr = hasAllocation
       ? pickNumberOrNull(
@@ -773,6 +787,7 @@ const mapSnapshotComposition = (
       description: '',
       netAPR: resolvedApr,
       estimatedAPY,
+      katRewardsAPR,
       status,
       details: {
         totalDebt,
