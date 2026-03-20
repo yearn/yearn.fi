@@ -1,10 +1,5 @@
-import { usePlausible } from '@hooks/usePlausible'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
-import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import { Button } from '@shared/components/Button'
-import { useWallet } from '@shared/contexts/useWallet'
-import { useWeb3 } from '@shared/contexts/useWeb3'
-import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
@@ -13,15 +8,18 @@ import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
-import { useAccount } from 'wagmi'
 import { ApprovalOverlay } from '../deposit/ApprovalOverlay'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { SettingsPanel } from '../SettingsPanel'
+import { PriceImpactWarning } from '../shared/PriceImpactWarning'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
+import { usePriceImpactAcceptance } from '../shared/usePriceImpactAcceptance'
 import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
+import { useWidgetContext } from '../shared/useWidgetContext'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
+import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
 import { getPriorityTokens } from './constants'
 import { SourceSelector } from './SourceSelector'
 import type { WithdrawalSource, WithdrawWidgetProps } from './types'
@@ -120,26 +118,16 @@ export function WidgetWithdraw({
   contentBelowInput,
   hideContainerBorder = false
 }: WidgetWithdrawProps): ReactElement {
-  const { address: account } = useAccount()
-  const { openLoginModal } = useWeb3()
-  const { onRefresh: refreshWalletBalances, getToken } = useWallet()
-  const { zapSlippage, getPrice } = useYearn()
-  const trackEvent = usePlausible()
-  const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
+  const { account, openLoginModal, refreshWalletBalances, getToken, zapSlippage, getPrice, trackEvent, ensoEnabled } =
+    useWidgetContext({ chainId, vaultAddress })
+
   const resolvedDisplayAssetAddress = displayAssetAddress ?? assetAddress
 
-  const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(
-    prefill?.address ?? resolvedDisplayAssetAddress
-  )
-  const [selectedChainId, setSelectedChainId] = useState<number | undefined>(prefill?.chainId)
   const [showWithdrawDetailsModal, setShowWithdrawDetailsModal] = useState(false)
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
-  const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
-  const [hasAcceptedPriceImpact, setHasAcceptedPriceImpact] = useState(false)
-  const appliedPrefillRef = useRef<string | null>(null)
   const [fallbackStep, setFallbackStep] = useState<'unstake' | 'withdraw'>('unstake')
   const [redeemSharesOverride, setRedeemSharesOverride] = useState<bigint>(0n)
   const [awaitingPostUnstakeShares, setAwaitingPostUnstakeShares] = useState(false)
@@ -158,6 +146,41 @@ export function WidgetWithdraw({
   } = vaultUserData
 
   const priorityTokens = getPriorityTokens(chainId, vaultAddress, stakingAddress)
+
+  const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(
+    prefill?.address ?? resolvedDisplayAssetAddress
+  )
+  const [selectedChainId, setSelectedChainId] = useState<number | undefined>(prefill?.chainId)
+  const [showTokenSelector, setShowTokenSelector] = useState(false)
+  const appliedPrefillRef = useRef<string | null>(null)
+
+  const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
+  const [withdrawAmount, , setWithdrawInput] = withdrawInput
+
+  useResetEnsoSelection({
+    ensoEnabled,
+    selectedToken,
+    selectedChainId,
+    assetAddress: resolvedDisplayAssetAddress,
+    chainId,
+    showTokenSelector,
+    setSelectedToken,
+    setSelectedChainId,
+    setShowTokenSelector
+  })
+
+  useEffect(() => {
+    if (!prefill) return
+    const key = `${prefillRequestKey ?? ''}-${prefill.address}-${prefill.chainId}-${prefill.amount}`
+    if (appliedPrefillRef.current === key) return
+    appliedPrefillRef.current = key
+    setSelectedToken(prefill.address)
+    setSelectedChainId(prefill.chainId)
+    if (prefill.amount !== undefined) {
+      setWithdrawInput(prefill.amount)
+    }
+    onPrefillApplied?.()
+  }, [prefill, prefillRequestKey, setWithdrawInput, onPrefillApplied])
 
   // Derived token values
   const withdrawToken = selectedToken || resolvedDisplayAssetAddress
@@ -193,23 +216,10 @@ export function WidgetWithdraw({
     }
   }, [singleSource])
 
-  useEffect(() => {
-    if (!collapseDetails && isDetailsPanelOpen) {
-      setIsDetailsPanelOpen(false)
-    }
-  }, [collapseDetails, isDetailsPanelOpen])
-
-  useResetEnsoSelection({
-    ensoEnabled,
-    selectedToken,
-    selectedChainId,
-    assetAddress: resolvedDisplayAssetAddress,
-    chainId,
-    showTokenSelector,
-    setSelectedToken,
-    setSelectedChainId,
-    setShowTokenSelector
-  })
+  // Render-time state adjustment: close panel when collapse is disabled
+  if (!collapseDetails && isDetailsPanelOpen) {
+    setIsDetailsPanelOpen(false)
+  }
 
   useEffect(() => {
     if (!showTransactionOverlay) {
@@ -245,22 +255,6 @@ export function WidgetWithdraw({
     const underlyingAmount = (sourceVaultSharesRaw * pricePerShare) / 10n ** BigInt(vaultDecimals)
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
   }, [sourceVaultSharesRaw, pricePerShare, vaultDecimals, assetToken])
-
-  const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
-  const [withdrawAmount, , setWithdrawInput] = withdrawInput
-
-  useEffect(() => {
-    if (!prefill) return
-    const key = `${prefillRequestKey ?? ''}-${prefill.address}-${prefill.chainId}-${prefill.amount}`
-    if (appliedPrefillRef.current === key) return
-    appliedPrefillRef.current = key
-    setSelectedToken(prefill.address)
-    setSelectedChainId(prefill.chainId)
-    if (prefill.amount !== undefined) {
-      setWithdrawInput(prefill.amount)
-    }
-    onPrefillApplied?.()
-  }, [prefill, prefillRequestKey, setWithdrawInput, onPrefillApplied])
 
   useEffect(() => {
     onAmountChange?.(withdrawAmount.bn)
@@ -473,33 +467,17 @@ export function WidgetWithdraw({
     outputTokenPrice
   ])
 
-  const priceImpactAcceptanceKey = useMemo(() => {
-    return [
-      withdrawAmount.bn.toString(),
-      effectiveRequiredShares.toString(),
-      routeType,
-      withdrawalSource ?? '',
-      sourceToken,
-      withdrawToken,
-      destinationChainId,
-      activeFlow.periphery.routerAddress ?? '',
-      effectiveExpectedOut.toString()
-    ].join(':')
-  }, [
+  const { hasAcceptedPriceImpact, priceImpactAcceptanceKey, setAcceptedPriceImpactKey } = usePriceImpactAcceptance([
     withdrawAmount.bn,
     effectiveRequiredShares,
     routeType,
-    withdrawalSource,
+    withdrawalSource ?? '',
     sourceToken,
     withdrawToken,
     destinationChainId,
-    activeFlow.periphery.routerAddress,
+    activeFlow.periphery.routerAddress ?? '',
     effectiveExpectedOut
   ])
-
-  useEffect(() => {
-    setHasAcceptedPriceImpact(false)
-  }, [priceImpactAcceptanceKey])
 
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
   const shouldShowZapUi = !isBaseWithdrawToken
@@ -685,14 +663,7 @@ export function WidgetWithdraw({
   ])
 
   if (isLoadingVaultData) {
-    return (
-      <div className={cl('flex flex-col border border-border relative h-full', { 'rounded-lg': !disableBorderRadius })}>
-        <WidgetHeader title="Withdraw" actions={headerActions} />
-        <div className="flex items-center justify-center flex-1 p-6">
-          <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
-        </div>
-      </div>
-    )
+    return <WidgetLoadingSkeleton title="Withdraw" actions={headerActions} disableBorderRadius={disableBorderRadius} />
   }
 
   // ============================================================================
@@ -707,7 +678,6 @@ export function WidgetWithdraw({
           setWithdrawInput(formatUnits(underlyingAmount, assetToken?.decimals ?? 18))
         }
       : undefined
-  const showSettingsButton = !!account && !!onOpenSettings
   const zapNotificationText = getZapNotificationText(isUnstake, shouldShowZapUi)
   const onRemoveZap = canOpenTokenSelector
     ? (): void => {
@@ -746,27 +716,40 @@ export function WidgetWithdraw({
     />
   )
 
-  const priceImpactWarning = priceImpactInfo.isHigh &&
-    !isFetchingQuote &&
-    !withdrawAmount.isDebouncing &&
-    withdrawAmount.bn === withdrawAmount.debouncedBn &&
-    withdrawAmount.bn > 0n && (
-      <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 space-y-3">
-        <p className="text-sm text-red-500">
-          Price impact is high ({priceImpactInfo.percentage.toFixed(2)}%). Consider withdrawing less or waiting for
-          better liquidity conditions.
-        </p>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={hasAcceptedPriceImpact}
-            onChange={(e) => setHasAcceptedPriceImpact(e.target.checked)}
-            className="size-4 rounded border-red-500/50 bg-transparent text-red-500 focus:ring-red-500/50"
-          />
-          <span className="text-sm text-red-500">I understand and wish to continue</span>
-        </label>
-      </div>
-    )
+  const priceImpactWarning = (
+    <PriceImpactWarning
+      percentage={priceImpactInfo.percentage}
+      isHigh={priceImpactInfo.isHigh}
+      isLoading={isFetchingQuote}
+      isDebouncing={withdrawAmount.isDebouncing}
+      isAmountSynced={withdrawAmount.bn === withdrawAmount.debouncedBn}
+      hasAmount={withdrawAmount.bn > 0n}
+      hasAcceptedPriceImpact={hasAcceptedPriceImpact}
+      priceImpactAcceptanceKey={priceImpactAcceptanceKey}
+      setAcceptedPriceImpactKey={setAcceptedPriceImpactKey}
+      actionVerb="withdrawing"
+    />
+  )
+
+  const showSettingsButton = !!account && !!onOpenSettings
+  const withdrawButtonLabel = getWithdrawCtaLabel({
+    isFetchingQuote,
+    showApprove: approvalState.hasApprovalStep,
+    isAllowanceSufficient: approvalState.isAllowanceSufficient,
+    transactionName
+  })
+  const isWithdrawButtonDisabled =
+    isWithdrawCtaDisabled({
+      hasError: !!effectiveWithdrawError || isActionDisabled,
+      withdrawAmountRaw: withdrawAmount.bn,
+      isFetchingQuote,
+      isDebouncing: withdrawAmount.isDebouncing,
+      showApprove: approvalState.hasApprovalStep,
+      isAllowanceSufficient: approvalState.isAllowanceSufficient,
+      prepareApproveEnabled: Boolean(activeFlow.periphery.prepareApproveEnabled),
+      prepareWithdrawEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
+    }) ||
+    (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
 
   const actionRow = (
     <div className="flex flex-col gap-3">
@@ -787,28 +770,11 @@ export function WidgetWithdraw({
               onClick={handleOpenTransactionOverlay}
               variant={isFetchingQuote ? 'busy' : 'filled'}
               isBusy={isFetchingQuote}
-              disabled={
-                isWithdrawCtaDisabled({
-                  hasError: !!effectiveWithdrawError || isActionDisabled,
-                  withdrawAmountRaw: withdrawAmount.bn,
-                  isFetchingQuote,
-                  isDebouncing: withdrawAmount.isDebouncing,
-                  showApprove: approvalState.hasApprovalStep,
-                  isAllowanceSufficient: approvalState.isAllowanceSufficient,
-                  prepareApproveEnabled: Boolean(activeFlow.periphery.prepareApproveEnabled),
-                  prepareWithdrawEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
-                }) ||
-                (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
-              }
+              disabled={isWithdrawButtonDisabled}
               className="w-full"
               classNameOverride="yearn--button--nextgen w-full"
             >
-              {getWithdrawCtaLabel({
-                isFetchingQuote,
-                showApprove: approvalState.hasApprovalStep,
-                isAllowanceSufficient: approvalState.isAllowanceSufficient,
-                transactionName
-              })}
+              {withdrawButtonLabel}
             </Button>
           )}
         </div>
@@ -978,9 +944,9 @@ export function WidgetWithdraw({
         isOpen={showTokenSelector}
         onClose={() => setShowTokenSelector(false)}
         onChange={(address, chainIdValue) => {
+          setWithdrawInput('')
           setSelectedToken(address)
           setSelectedChainId(chainIdValue)
-          setWithdrawInput('')
           setShowTokenSelector(false)
           activeFlow.periphery.resetQuote?.()
         }}
