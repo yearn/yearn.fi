@@ -19,6 +19,7 @@ async function createPool(): Promise<DatabasePool | null> {
   }
 
   try {
+    Pool.poolQueryViaFetch = true
     const neonPool = new Pool({ connectionString: config.databaseUrl })
 
     return {

@@ -6,6 +6,8 @@ export interface ChainConfig {
 
 export const SUPPORTED_CHAINS: ChainConfig[] = [
   { id: 1, name: 'ethereum', defillamaPrefix: 'ethereum' },
+  { id: 10, name: 'optimism', defillamaPrefix: 'optimism' },
+  { id: 250, name: 'fantom', defillamaPrefix: 'fantom' },
   { id: 8453, name: 'base', defillamaPrefix: 'base' },
   { id: 42161, name: 'arbitrum', defillamaPrefix: 'arbitrum' },
   { id: 137, name: 'polygon', defillamaPrefix: 'polygon' }
@@ -17,7 +19,11 @@ export interface DepositEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  logIndex: number
+  transactionHash: string
+  transactionFrom: string
   owner: string
+  sender: string
   assets: string
   shares: string
 }
@@ -28,6 +34,9 @@ export interface WithdrawEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  logIndex: number
+  transactionHash: string
+  transactionFrom: string
   owner: string
   assets: string
   shares: string
@@ -39,6 +48,9 @@ export interface V2DepositEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  logIndex: number
+  transactionHash: string
+  transactionFrom: string
   recipient: string
   amount: string
   shares: string
@@ -50,6 +62,9 @@ export interface V2WithdrawEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  logIndex: number
+  transactionHash: string
+  transactionFrom: string
   recipient: string
   amount: string
   shares: string
@@ -61,6 +76,9 @@ export interface TransferEvent {
   chainId: number
   blockNumber: number
   blockTimestamp: number
+  logIndex: number
+  transactionHash: string
+  transactionFrom: string
   sender: string
   receiver: string
   value: string
