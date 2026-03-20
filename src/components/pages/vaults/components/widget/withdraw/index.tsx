@@ -138,7 +138,6 @@ export function WidgetWithdraw({
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
-  const [acceptedPriceImpactKey, setAcceptedPriceImpactKey] = useState<string | null>(null)
   const appliedPrefillRef = useRef<string | null>(null)
   const [fallbackStep, setFallbackStep] = useState<'unstake' | 'withdraw'>('unstake')
   const [redeemSharesOverride, setRedeemSharesOverride] = useState<bigint>(0n)
@@ -492,8 +491,20 @@ export function WidgetWithdraw({
     effectiveExpectedOut
   ])
 
-  // Derived: acceptance is automatically invalidated when the route changes
-  const hasAcceptedPriceImpact = acceptedPriceImpactKey === priceImpactAcceptanceKey
+  const [priceImpactAcceptanceState, setPriceImpactAcceptanceState] = useState<{
+    key: string
+    isAccepted: boolean
+  }>({
+    key: priceImpactAcceptanceKey,
+    isAccepted: false
+  })
+  if (priceImpactAcceptanceState.key !== priceImpactAcceptanceKey) {
+    setPriceImpactAcceptanceState({
+      key: priceImpactAcceptanceKey,
+      isAccepted: false
+    })
+  }
+  const hasAcceptedPriceImpact = priceImpactAcceptanceState.isAccepted
 
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
   const shouldShowZapUi = !isBaseWithdrawToken
@@ -754,7 +765,12 @@ export function WidgetWithdraw({
           <input
             type="checkbox"
             checked={hasAcceptedPriceImpact}
-            onChange={(e) => setAcceptedPriceImpactKey(e.target.checked ? priceImpactAcceptanceKey : null)}
+            onChange={(e) =>
+              setPriceImpactAcceptanceState({
+                key: priceImpactAcceptanceKey,
+                isAccepted: e.target.checked
+              })
+            }
             className="size-4 rounded border-red-500/50 bg-transparent text-red-500 focus:ring-red-500/50"
           />
           <span className="text-sm text-red-500">I understand and wish to continue</span>
