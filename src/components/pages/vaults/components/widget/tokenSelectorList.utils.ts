@@ -84,6 +84,29 @@ export function getExplicitTokenAddresses({
   ])
 }
 
+export function getDepositMinValueExemptTokenAddresses({
+  value,
+  chainExtraTokens,
+  assetAddress,
+  selectedChainId,
+  assetChainId,
+  customAddress
+}: {
+  value?: Address
+  chainExtraTokens?: TToken[]
+  assetAddress?: Address
+  selectedChainId: number
+  assetChainId: number
+  customAddress?: Address
+}): Set<string> {
+  return getExplicitTokenAddresses({
+    value,
+    chainExtraTokens,
+    currentTokenAddresses: selectedChainId === assetChainId ? [assetAddress] : [],
+    customAddress
+  })
+}
+
 export function getDerivedTokenUsdValue({ token, getPrice }: { token: TToken; getPrice: TGetPrice }): number {
   if (Number.isFinite(token.value) && token.value > 0) {
     return token.value

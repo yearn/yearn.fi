@@ -1,6 +1,10 @@
 import type { TToken } from '@shared/types'
 import { describe, expect, it } from 'vitest'
-import { filterAndSortTokenSelectorTokens, getExplicitTokenAddresses } from './tokenSelectorList.utils'
+import {
+  filterAndSortTokenSelectorTokens,
+  getDepositMinValueExemptTokenAddresses,
+  getExplicitTokenAddresses
+} from './tokenSelectorList.utils'
 
 const TOKEN_A = '0x0000000000000000000000000000000000000001' as const
 const TOKEN_B = '0x0000000000000000000000000000000000000002' as const
@@ -140,6 +144,28 @@ describe('filterAndSortTokenSelectorTokens', () => {
     })
 
     expect(filtered.map((token) => token.address)).toEqual([TOKEN_A])
+  })
+
+  it('keeps the deposit asset exempt on its own chain even when the selector was opened from another chain', () => {
+    const minValueExemptTokenAddresses = getDepositMinValueExemptTokenAddresses({
+      value: TOKEN_B,
+      assetAddress: TOKEN_A,
+      selectedChainId: 1,
+      assetChainId: 1
+    })
+
+    expect(minValueExemptTokenAddresses.has(TOKEN_A.toLowerCase())).toBe(true)
+    expect(minValueExemptTokenAddresses.has(TOKEN_B.toLowerCase())).toBe(true)
+
+    const mismatchedChainExemptions = getDepositMinValueExemptTokenAddresses({
+      value: TOKEN_B,
+      assetAddress: TOKEN_A,
+      selectedChainId: 10,
+      assetChainId: 1
+    })
+
+    expect(mismatchedChainExemptions.has(TOKEN_A.toLowerCase())).toBe(false)
+    expect(mismatchedChainExemptions.has(TOKEN_B.toLowerCase())).toBe(true)
   })
 
   it('hides low-value withdraw tokens unless they are explicit common options', () => {

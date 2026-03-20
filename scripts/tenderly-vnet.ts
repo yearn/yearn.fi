@@ -1,7 +1,7 @@
 /// <reference types="node" />
 
-import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { accessSync, chmodSync, constants, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 type TParsedCliArgs = {
@@ -29,6 +29,12 @@ type TTenderlyVnetResponse = {
     url: string
   }>
   [key: string]: unknown
+}
+
+type TTenderlyVnetConnectionDetails = {
+  adminRpc?: string
+  publicRpc?: string
+  predictablePublicRpc?: string
 }
 
 type TCreateVnetPayload = {
@@ -60,6 +66,7 @@ const DEFAULT_ACCOUNT_SLUG = 'me'
 const DEFAULT_NETWORK_ID = 1
 const DEFAULT_CHAIN_ID_PREFIX = '69420'
 const TENDERLY_API_URL = 'https://api.tenderly.co/api/v1/account'
+const REDACTED_URL = '[redacted-url]'
 
 const HELP_TEXT = `Tenderly Virtual TestNet bootstrap
 
@@ -82,13 +89,16 @@ Options:
   --rpc-name <name>       Stable public RPC name for predictable endpoint reuse
   --enable-sync           Enable state sync (default: false)
   --enable-explorer       Enable public explorer (default: false)
-  --json                  Print raw API JSON response
+  --json                  Print a sanitized JSON summary
+  --write-env <path>      Write the generated Tenderly env fragment to a local file
+  --write-response <path> Write the raw Tenderly API response JSON to a local file
   --help                  Show this help text
 
 Profiles:
   webops   -> WEBOPS_TENDERLY_API_KEY, TENDERLY_ACCOUNT_SLUG, TENDERLY_PROJECT_SLUG, WEBOPS_TENDERLY_RPC_NAME
   personal -> PERSONAL_TENDERLY_API_KEY, PERSONAL_ACCOUNT_SLUG, PERSONAL_PROJECT_SLUG, PERSONAL_TENDERLY_RPC_NAME
 
+Sensitive RPC values are never printed to stdout. Use --write-env or --write-response when you need them locally.
 Explicit flags always win over profile defaults.
 `
 
@@ -201,6 +211,10 @@ function getEnvValue(env: Record<string, string | undefined>, key?: string): str
   return env[key]?.trim()
 }
 
+export function sanitizeConsoleText(value: string): string {
+  return value.replace(/https?:\/\/\S+/gi, REDACTED_URL)
+}
+
 function resolveTenderlyCredentials(
   flags: Record<string, string>,
   env: Record<string, string | undefined>
@@ -230,9 +244,7 @@ function resolveTenderlyCredentials(
     env.TENDERLY_API_KEY?.trim()
 
   if (!apiKey) {
-    throw new Error(
-      `Missing Tenderly API key. Checked --api-key, ${apiKeyEnv}, TENDERLY_ACCESS_KEY, and TENDERLY_API_KEY.`
-    )
+    throw new Error('Missing Tenderly API key. Provide --api-key or configure a supported Tenderly API key env var.')
   }
 
   const accountSlug =
@@ -244,7 +256,7 @@ function resolveTenderlyCredentials(
     getArg(flags, 'project') ||
       getEnvValue(env, projectEnv) ||
       (profile === 'personal' ? env.PROJECT_SLUG?.trim() : undefined),
-    `--project or ${projectEnv}`
+    '--project or a configured Tenderly project env var'
   )
 
   return {
@@ -268,6 +280,181 @@ function buildPredictablePublicRpcUrl(accountSlug: string, projectSlug: string, 
   return `https://virtual.rpc.tenderly.co/${encodeURIComponent(accountSlug)}/${encodeURIComponent(projectSlug)}/public/${encodeURIComponent(rpcName)}`
 }
 
+function getConnectionDetails(
+  response: TTenderlyVnetResponse,
+  accountSlug: string,
+  projectSlug: string,
+  rpcName: string | undefined
+): TTenderlyVnetConnectionDetails {
+  return {
+    adminRpc: response.rpcs?.find((rpc) => rpc.name === 'Admin RPC')?.url,
+    publicRpc: response.rpcs?.find((rpc) => rpc.name === 'Public RPC')?.url,
+    predictablePublicRpc: rpcName ? buildPredictablePublicRpcUrl(accountSlug, projectSlug, rpcName) : undefined
+  }
+}
+
+function selectPublicRpc(details: TTenderlyVnetConnectionDetails): string | undefined {
+  return details.predictablePublicRpc || details.publicRpc
+}
+
+function resolveOutputPath(value: string | undefined, flagName: string): string {
+  const trimmedValue = value?.trim()
+  if (!trimmedValue || trimmedValue === 'true') {
+    throw new Error(`--${flagName} requires a file path`)
+  }
+
+  return resolve(process.cwd(), trimmedValue)
+}
+
+export function validateWritableOutputPath(path: string): string {
+  const outputDir = dirname(path)
+
+  try {
+    mkdirSync(outputDir, { recursive: true, mode: 0o700 })
+
+    if (existsSync(path)) {
+      if (statSync(path).isDirectory()) {
+        throw new Error(`Output path is a directory: ${path}`)
+      }
+      accessSync(path, constants.W_OK)
+      return path
+    }
+
+    accessSync(outputDir, constants.W_OK)
+    return path
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Cannot write output file ${path}: ${message}`)
+  }
+}
+
+export function writeOutputFile(path: string, contents: string): string {
+  writeFileSync(path, contents, { encoding: 'utf8', mode: 0o600 })
+  chmodSync(path, 0o600)
+  return path
+}
+
+function resolveRequestedOutputPaths(flags: Record<string, string>): {
+  envFilePath?: string
+  responseFilePath?: string
+} {
+  const envFilePath =
+    'write-env' in flags
+      ? validateWritableOutputPath(resolveOutputPath(getArg(flags, 'write-env'), 'write-env'))
+      : undefined
+  const responseFilePath =
+    'write-response' in flags
+      ? validateWritableOutputPath(resolveOutputPath(getArg(flags, 'write-response'), 'write-response'))
+      : undefined
+
+  return {
+    envFilePath,
+    responseFilePath
+  }
+}
+
+export function buildTenderlyEnvFragment(params: {
+  canonicalChainId: number
+  executionChainId: number
+  details: TTenderlyVnetConnectionDetails
+}): string {
+  const publicRpc = selectPublicRpc(params.details) || ''
+
+  return [
+    '# Generated by scripts/tenderly-vnet.ts',
+    `VITE_TENDERLY_CHAIN_ID_FOR_${params.canonicalChainId}=${params.executionChainId}`,
+    `VITE_TENDERLY_RPC_URI_FOR_${params.canonicalChainId}=${publicRpc}`,
+    `TENDERLY_ADMIN_RPC_URI_FOR_${params.canonicalChainId}=${params.details.adminRpc || ''}`,
+    `VITE_TENDERLY_EXPLORER_URI_FOR_${params.canonicalChainId}=`
+  ].join('\n')
+}
+
+export function buildSanitizedVnetJson(params: {
+  profile: TTenderlyProfile
+  requestedSlug: string
+  displayName: string
+  chainId: number
+  networkId: number
+  response: TTenderlyVnetResponse
+  details: TTenderlyVnetConnectionDetails
+  envFilePath?: string
+  responseFilePath?: string
+}): Record<string, unknown> {
+  const sanitizedResponse = Object.fromEntries(
+    Object.entries(params.response).filter(([key]) => key !== 'rpcs')
+  ) as Record<string, unknown>
+  const hasSensitiveValues = Boolean(
+    params.details.adminRpc || params.details.publicRpc || params.details.predictablePublicRpc
+  )
+
+  return {
+    ...sanitizedResponse,
+    profile: params.profile,
+    slug: params.response.slug || params.requestedSlug,
+    display_name: params.response.display_name || params.displayName,
+    chain_id: params.chainId,
+    network_id: params.networkId,
+    has_admin_rpc: Boolean(params.details.adminRpc),
+    has_public_rpc: Boolean(selectPublicRpc(params.details)),
+    env_file_path: params.envFilePath || null,
+    response_file_path: params.responseFilePath || null,
+    note:
+      hasSensitiveValues && !params.envFilePath && !params.responseFilePath
+        ? 'Sensitive RPC values were returned but were not printed. Use --write-env or --write-response to persist them locally.'
+        : undefined
+  }
+}
+
+export function buildVnetConsoleSummary(params: {
+  profile: TTenderlyProfile
+  requestedSlug: string
+  displayName: string
+  chainId: number
+  networkId: number
+  response: TTenderlyVnetResponse
+  details: TTenderlyVnetConnectionDetails
+  envFilePath?: string
+  responseFilePath?: string
+}): string[] {
+  const hasSensitiveValues = Boolean(
+    params.details.adminRpc || params.details.publicRpc || params.details.predictablePublicRpc
+  )
+
+  return [
+    'Created Tenderly Virtual TestNet',
+    `profile: ${params.profile}`,
+    `slug: ${params.response.slug || params.requestedSlug}`,
+    `display name: ${params.response.display_name || params.displayName}`,
+    params.envFilePath ? `wrote env fragment: ${params.envFilePath}` : undefined,
+    params.responseFilePath ? `wrote raw response json: ${params.responseFilePath}` : undefined,
+    hasSensitiveValues && !params.envFilePath && !params.responseFilePath
+      ? 'Sensitive RPC values were returned but not printed. Use --write-env <path> or --write-response <path> to persist them locally.'
+      : undefined,
+    `chain-id: ${params.chainId}`,
+    `network-id: ${params.networkId}`
+  ].filter((line): line is string => Boolean(line))
+}
+
+function parseResponseBody(responseBody: string): TTenderlyVnetResponse {
+  try {
+    return JSON.parse(responseBody) as TTenderlyVnetResponse
+  } catch {
+    return {}
+  }
+}
+
+export function buildTenderlyApiErrorMessage(params: { status: number; parsedBody: TTenderlyVnetResponse }): string {
+  const record = params.parsedBody as Record<string, unknown>
+  const rawApiMessage = typeof record.message === 'string' ? record.message : undefined
+  const apiMessage = rawApiMessage ? `: ${sanitizeConsoleText(rawApiMessage)}` : ''
+  const accountHint =
+    params.status === 404
+      ? '\nHint: check --account and --project slugs. Use your team/org slug in --account for 404 cases, not a project id.'
+      : ''
+
+  return `Tenderly API request failed (${params.status})${apiMessage}${accountHint}`
+}
+
 async function createVirtualTestNet(
   apiKey: string,
   accountSlug: string,
@@ -288,23 +475,10 @@ async function createVirtualTestNet(
   )
 
   const responseBody = (await response.text()) || '{}'
-  let parsed = {} as TTenderlyVnetResponse
-
-  try {
-    parsed = JSON.parse(responseBody) as TTenderlyVnetResponse
-  } catch {
-    parsed = {}
-  }
+  const parsed = parseResponseBody(responseBody)
 
   if (!response.ok) {
-    const record = parsed as Record<string, unknown>
-    const apiMessage = record.message ? `: ${String(record.message)}` : ''
-    const responseText = `\nResponse: ${responseBody.trim() || 'empty'}`
-    const accountHint =
-      response.status === 404
-        ? '\nHint: check --account and --project slugs. Use your team/org slug in --account for 404 cases, not a project id.'
-        : ''
-    throw new Error(`Tenderly API request failed (${response.status})${apiMessage}${responseText}${accountHint}`)
+    throw new Error(buildTenderlyApiErrorMessage({ status: response.status, parsedBody: parsed }))
   }
 
   return parsed
@@ -333,6 +507,7 @@ async function main(): Promise<void> {
   const blockNumber = getArg(flags, 'block-number') || 'latest'
   const enableSync = parseBooleanFlag(flags, 'enable-sync', false)
   const enableExplorer = parseBooleanFlag(flags, 'enable-explorer', false)
+  const { envFilePath, responseFilePath } = resolveRequestedOutputPaths(flags)
 
   const payload: TCreateVnetPayload = {
     slug: requestedSlug,
@@ -358,33 +533,60 @@ async function main(): Promise<void> {
   }
 
   const response = await createVirtualTestNet(apiKey, accountSlug, projectSlug, payload)
+  const details = getConnectionDetails(response, accountSlug, projectSlug, rpcName)
+  if (envFilePath) {
+    writeOutputFile(
+      envFilePath,
+      `${buildTenderlyEnvFragment({
+        canonicalChainId: networkId,
+        executionChainId: chainId,
+        details
+      })}\n`
+    )
+  }
+  if (responseFilePath) {
+    writeOutputFile(responseFilePath, `${JSON.stringify(response, null, 2)}\n`)
+  }
 
   if ('json' in flags) {
-    console.log(JSON.stringify(response, null, 2))
+    console.log(
+      JSON.stringify(
+        buildSanitizedVnetJson({
+          profile,
+          requestedSlug,
+          displayName,
+          chainId,
+          networkId,
+          response,
+          details,
+          envFilePath,
+          responseFilePath
+        }),
+        null,
+        2
+      )
+    )
     return
   }
 
-  const adminRpc = response.rpcs?.find((rpc) => rpc.name === 'Admin RPC')?.url
-  const publicRpc = response.rpcs?.find((rpc) => rpc.name === 'Public RPC')?.url
-  const predictablePublicRpc = rpcName ? buildPredictablePublicRpcUrl(accountSlug, projectSlug, rpcName) : undefined
-
-  console.log(`Created Tenderly Virtual TestNet`)
-  console.log(`profile: ${profile}`)
-  console.log(`account: ${accountSlug}`)
-  console.log(`project: ${projectSlug}`)
-  console.log(`slug: ${response.slug || requestedSlug}`)
-  console.log(`display name: ${response.display_name || displayName}`)
-  if (rpcName) console.log(`rpc name: ${rpcName}`)
-  if (predictablePublicRpc) console.log(`predictable public rpc: ${predictablePublicRpc}`)
-  if (adminRpc) console.log(`admin rpc: ${adminRpc}`)
-  if (publicRpc) console.log(`public rpc: ${publicRpc}`)
-  console.log(`chain-id: ${chainId}`)
-  console.log(`network-id: ${networkId}`)
+  buildVnetConsoleSummary({
+    profile,
+    requestedSlug,
+    displayName,
+    chainId,
+    networkId,
+    response,
+    details,
+    envFilePath,
+    responseFilePath
+  }).forEach((line) => {
+    console.log(line)
+  })
 }
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
   void main().catch((error: unknown) => {
-    const message = error instanceof Error ? error.message : String(error)
+    const message = error instanceof Error ? sanitizeConsoleText(error.message) : 'Tenderly VNet bootstrap failed'
     console.error(message)
     process.exitCode = 1
   })
