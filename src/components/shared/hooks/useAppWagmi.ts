@@ -1,3 +1,4 @@
+import type { SimulateContractData } from '@wagmi/core/query'
 import { useCallback } from 'react'
 import type { Abi, ContractFunctionArgs, ContractFunctionName } from 'viem'
 import type {
@@ -139,20 +140,21 @@ export function useSimulateContract<
     'nonpayable' | 'payable',
     functionName
   >,
-  chainId extends Config['chains'][number]['id'] | undefined = undefined
+  chainId extends Config['chains'][number]['id'] | undefined = undefined,
+  selectData = SimulateContractData<abi, functionName, args, Config, chainId>
 >(
-  parameters: UseSimulateContractParameters<abi, functionName, args, Config, chainId>
-): UseSimulateContractReturnType<abi, functionName, args, Config, chainId> {
-  const unsupportedRequestedChain = isUnsupportedRequestedChain(parameters.chainId)
+  parameters?: UseSimulateContractParameters<abi, functionName, args, Config, chainId, selectData>
+): UseSimulateContractReturnType<abi, functionName, args, Config, chainId, selectData> {
+  const unsupportedRequestedChain = isUnsupportedRequestedChain(parameters?.chainId)
 
   return useWagmiSimulateContract({
-    ...parameters,
-    chainId: resolveHookChainId(parameters.chainId) as chainId,
+    ...(parameters || {}),
+    chainId: resolveHookChainId(parameters?.chainId) as chainId,
     query: {
-      ...(parameters.query || {}),
-      enabled: !unsupportedRequestedChain && (parameters.query?.enabled ?? true)
+      ...(parameters?.query || {}),
+      enabled: !unsupportedRequestedChain && (parameters?.query?.enabled ?? true)
     }
-  } as UseSimulateContractParameters<abi, functionName, args, Config, chainId>)
+  } as UseSimulateContractParameters<abi, functionName, args, Config, chainId, selectData>)
 }
 
 export function useBlockNumber<chainId extends Config['chains'][number]['id'] = Config['chains'][number]['id']>(

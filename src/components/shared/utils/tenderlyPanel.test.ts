@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import {
   addTenderlyTimeIncrement,
   buildTenderlyFundableAssets,
+  clearTenderlySnapshotBucket,
   convertTenderlyTimeAmountToSeconds,
   getDefaultTenderlyFundableAssets,
   getLastRestorableTenderlySnapshot,
@@ -80,6 +81,29 @@ describe('snapshot helpers', () => {
 
     expect(updatedStorage['1:694201']?.[0]?.lastKnownStatus).toBe('invalid')
     expect(getValidBaselineSnapshot(updatedStorage['1:694201'] || [])).toBeUndefined()
+  })
+
+  it('clears local snapshot history for one chain bucket without touching others', () => {
+    const snapshotStorage = {
+      '1:694201': [baselineSnapshot],
+      '8453:69428453': [
+        {
+          ...baselineSnapshot,
+          canonicalChainId: 8453,
+          executionChainId: 69428453,
+          snapshotId: '0xbase',
+          label: 'Base baseline'
+        }
+      ]
+    }
+
+    const updatedStorage = clearTenderlySnapshotBucket(snapshotStorage, {
+      canonicalChainId: 1,
+      executionChainId: 694201
+    })
+
+    expect(updatedStorage['1:694201']).toBeUndefined()
+    expect(updatedStorage['8453:69428453']).toEqual(snapshotStorage['8453:69428453'])
   })
 
   it('returns the latest valid snapshot before falling back to baseline', () => {

@@ -157,6 +157,21 @@ export function markTenderlySnapshotInvalid(
   }
 }
 
+export function clearTenderlySnapshotBucket(
+  snapshotStorage: TTenderlySnapshotStorage,
+  params: { canonicalChainId: number; executionChainId: number }
+): TTenderlySnapshotStorage {
+  const bucketKey = getTenderlySnapshotBucketKey(params.canonicalChainId, params.executionChainId)
+
+  if (!(bucketKey in snapshotStorage)) {
+    return snapshotStorage
+  }
+
+  const nextStorage = { ...snapshotStorage }
+  delete nextStorage[bucketKey]
+  return nextStorage
+}
+
 export function resolveDefaultTenderlyCanonicalChainId(
   configuredChains: TTenderlyConfiguredChainStatus[],
   preferredChainIds: Array<number | undefined>

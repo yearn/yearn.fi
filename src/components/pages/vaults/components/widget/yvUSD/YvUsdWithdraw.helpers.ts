@@ -31,6 +31,7 @@ type TResolveLockedRequestedAmountFromInputParams = {
   needsCooldownStart: boolean
   maxCooldownDisplayAmount: bigint
   maxCooldownAssetAmount: bigint
+  previewWithdrawLockedAssets?: bigint
   lockedDisplayPricePerShare: bigint
   lockedVaultTokenDecimals: number
   unlockedPricePerShare: bigint
@@ -44,10 +45,19 @@ type TResolveLockedWithdrawExpectedOutParams = {
   unlockedVaultDecimals: number
 }
 
+type TShouldNormalizeLockedWithdrawDisplayAmountParams = {
+  canWithdrawNow: boolean
+  currentDisplayAmount: bigint
+  maxDisplayAmount: bigint
+  requestedLockedAssets: bigint
+  maxWithdrawAssets: bigint
+}
+
 type TResolveCooldownSharesToStartParams = {
   needsCooldownStart: boolean
   lockedRequestedAmountRaw: bigint
   maxCooldownAssetAmount: bigint
+  previewWithdrawShares?: bigint
   lockedPricePerShare: bigint
   lockedVaultTokenDecimals: number
   lockedWalletShares: bigint
@@ -162,6 +172,7 @@ export function resolveLockedRequestedAmountFromInput({
   needsCooldownStart,
   maxCooldownDisplayAmount,
   maxCooldownAssetAmount,
+  previewWithdrawLockedAssets,
   lockedDisplayPricePerShare,
   lockedVaultTokenDecimals,
   unlockedPricePerShare,
@@ -173,6 +184,10 @@ export function resolveLockedRequestedAmountFromInput({
 
   if (inputUnit === 'shares') {
     return amount
+  }
+
+  if (!canWithdrawNow && typeof previewWithdrawLockedAssets === 'bigint' && previewWithdrawLockedAssets > 0n) {
+    return previewWithdrawLockedAssets > maxCooldownAssetAmount ? maxCooldownAssetAmount : previewWithdrawLockedAssets
   }
 
   if (canWithdrawNow) {
@@ -213,10 +228,28 @@ export function resolveLockedWithdrawExpectedOut({
   })
 }
 
+export function shouldNormalizeLockedWithdrawDisplayAmount({
+  canWithdrawNow,
+  currentDisplayAmount,
+  maxDisplayAmount,
+  requestedLockedAssets,
+  maxWithdrawAssets
+}: TShouldNormalizeLockedWithdrawDisplayAmountParams): boolean {
+  return (
+    canWithdrawNow &&
+    currentDisplayAmount > 0n &&
+    maxDisplayAmount > 0n &&
+    maxWithdrawAssets > 0n &&
+    requestedLockedAssets === maxWithdrawAssets &&
+    currentDisplayAmount !== maxDisplayAmount
+  )
+}
+
 export function resolveCooldownSharesToStart({
   needsCooldownStart,
   lockedRequestedAmountRaw,
   maxCooldownAssetAmount,
+  previewWithdrawShares,
   lockedPricePerShare,
   lockedVaultTokenDecimals,
   lockedWalletShares
@@ -227,6 +260,10 @@ export function resolveCooldownSharesToStart({
 
   if (maxCooldownAssetAmount > 0n && lockedRequestedAmountRaw >= maxCooldownAssetAmount) {
     return lockedWalletShares
+  }
+
+  if (typeof previewWithdrawShares === 'bigint' && previewWithdrawShares > 0n) {
+    return previewWithdrawShares > lockedWalletShares ? lockedWalletShares : previewWithdrawShares
   }
 
   if (lockedPricePerShare <= 0n) {

@@ -12,7 +12,7 @@ import {
 } from '@shared/utils'
 import type { TTenderlyFastForwardUnit } from '@shared/utils/tenderlyPanel'
 import type { ReactElement } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 type TDesktopPanelKey = 'snapshots' | 'faucet' | 'fast-forward'
 
@@ -216,6 +216,7 @@ function useTenderlyControlState() {
     setSelectedCanonicalChainId,
     createBaselineSnapshot,
     createSnapshot,
+    clearSnapshotHistory,
     revertToSnapshot,
     increaseTime,
     fundWallet
@@ -326,6 +327,7 @@ function useTenderlyControlState() {
     setSelectedCanonicalChainId,
     createBaselineSnapshot,
     createSnapshot,
+    clearSnapshotHistory,
     revertToSnapshot,
     handleResetToLast,
     customAmount,
@@ -377,12 +379,19 @@ function SnapshotPanel(props: { state: TTenderlyControlState; onClose?: () => vo
                   : 'Reset currently falls back to the baseline snapshot.'}
               </p>
             </div>
-            <ActionButton
-              label={state.pendingAction === 'create-snapshot' ? 'saving...' : 'new snapshot'}
-              onClick={() => void state.createSnapshot()}
-              disabled={state.pendingAction !== null}
-              variant="primary"
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <ActionButton
+                label={'clear local history'}
+                onClick={state.clearSnapshotHistory}
+                disabled={state.pendingAction !== null || state.snapshotRecords.length === 0}
+              />
+              <ActionButton
+                label={state.pendingAction === 'create-snapshot' ? 'saving...' : 'new snapshot'}
+                onClick={() => void state.createSnapshot()}
+                disabled={state.pendingAction !== null}
+                variant="primary"
+              />
+            </div>
           </div>
         )}
         <SnapshotList
@@ -605,6 +614,11 @@ function MobileTenderlyPanelContent(props: { state: TTenderlyControlState }): Re
                 onClick={() => void state.createSnapshot()}
                 disabled={state.pendingAction !== null}
               />
+              <ActionButton
+                label={'clear local history'}
+                onClick={state.clearSnapshotHistory}
+                disabled={state.pendingAction !== null || state.snapshotRecords.length === 0}
+              />
             </div>
           </div>
 
@@ -620,12 +634,33 @@ function MobileTenderlyPanelContent(props: { state: TTenderlyControlState }): Re
 function DesktopTenderlyPanel(props: { state: TTenderlyControlState }): ReactElement {
   const { state } = props
   const [activePanel, setActivePanel] = useState<TDesktopPanelKey | null>(null)
+  const panelRootRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (!state.controlsUnlocked) {
       setActivePanel('snapshots')
     }
   }, [state.controlsUnlocked])
+
+  useEffect(() => {
+    if (!activePanel) {
+      return
+    }
+
+    const handlePointerDown = (event: PointerEvent): void => {
+      const target = event.target
+      if (!(target instanceof Node)) {
+        return
+      }
+
+      if (!panelRootRef.current?.contains(target)) {
+        setActivePanel(null)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [activePanel])
 
   const selectedChainLabel = state.selectedChain?.canonicalChainName || 'Tenderly chain'
   const statusLabel = state.selectedExecutionChainId
@@ -634,7 +669,7 @@ function DesktopTenderlyPanel(props: { state: TTenderlyControlState }): ReactEle
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[75] hidden justify-center px-4 md:flex">
-      <div className="pointer-events-auto flex w-full max-w-4xl flex-col items-center gap-3">
+      <div ref={panelRootRef} className="pointer-events-auto flex w-full max-w-4xl flex-col items-center gap-3">
         {activePanel === 'snapshots' ? (
           <SnapshotPanel state={state} onClose={() => setActivePanel(null)} />
         ) : activePanel === 'faucet' ? (

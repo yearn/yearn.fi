@@ -8,7 +8,8 @@ import {
   resolveLockedRequestedAmountFromInput,
   resolveLockedRequestedWithdrawAssets,
   resolveLockedWithdrawDisplayAmount,
-  resolveLockedWithdrawExpectedOut
+  resolveLockedWithdrawExpectedOut,
+  shouldNormalizeLockedWithdrawDisplayAmount
 } from './YvUsdWithdraw.helpers'
 
 const mockPrepare = (functionName: string, args: readonly unknown[]) =>
@@ -100,6 +101,7 @@ describe('cooldown max selection', () => {
         needsCooldownStart: true,
         maxCooldownDisplayAmount: 51_000000n,
         maxCooldownAssetAmount: 50_000000000000000000n,
+        previewWithdrawLockedAssets: 49_999999999999999999n,
         lockedDisplayPricePerShare: 1_020000n,
         lockedVaultTokenDecimals: 18,
         unlockedPricePerShare: 1_020000n,
@@ -108,17 +110,50 @@ describe('cooldown max selection', () => {
     ).toBe(50_000000000000000000n)
   })
 
+  it('uses previewWithdraw for partial pre-cooldown underlying input when available', () => {
+    expect(
+      resolveLockedRequestedAmountFromInput({
+        amount: 25_000000n,
+        inputUnit: 'underlying',
+        canWithdrawNow: false,
+        needsCooldownStart: true,
+        maxCooldownDisplayAmount: 51_000000n,
+        maxCooldownAssetAmount: 50_000000000000000000n,
+        previewWithdrawLockedAssets: 24_600000000000000000n,
+        lockedDisplayPricePerShare: 1_020000n,
+        lockedVaultTokenDecimals: 18,
+        unlockedPricePerShare: 1_020000n,
+        unlockedVaultDecimals: 18
+      })
+    ).toBe(24_600000000000000000n)
+  })
+
   it('starts cooldown with the full share balance when the exact cooldown asset cap is selected', () => {
     expect(
       resolveCooldownSharesToStart({
         needsCooldownStart: true,
         lockedRequestedAmountRaw: 50_000000000000000000n,
         maxCooldownAssetAmount: 50_000000000000000000n,
+        previewWithdrawShares: 49_999999999999999999n,
         lockedPricePerShare: 1_000000000000000000n,
         lockedVaultTokenDecimals: 18,
         lockedWalletShares: 50_000000000000000000n
       })
     ).toBe(50_000000000000000000n)
+  })
+
+  it('uses previewWithdraw shares for partial cooldown selection when available', () => {
+    expect(
+      resolveCooldownSharesToStart({
+        needsCooldownStart: true,
+        lockedRequestedAmountRaw: 24_600000000000000000n,
+        maxCooldownAssetAmount: 50_000000000000000000n,
+        previewWithdrawShares: 23_700000000000000000n,
+        lockedPricePerShare: 1_000000000000000000n,
+        lockedVaultTokenDecimals: 18,
+        lockedWalletShares: 50_000000000000000000n
+      })
+    ).toBe(23_700000000000000000n)
   })
 })
 
@@ -142,6 +177,42 @@ describe('resolveLockedWithdrawExpectedOut', () => {
         unlockedVaultDecimals: 18
       })
     ).toBe(25_500000n)
+  })
+})
+
+describe('shouldNormalizeLockedWithdrawDisplayAmount', () => {
+  it('normalizes a post-cooldown max selection back to the authoritative display max', () => {
+    expect(
+      shouldNormalizeLockedWithdrawDisplayAmount({
+        canWithdrawNow: true,
+        currentDisplayAmount: 500_000001n,
+        maxDisplayAmount: 500_000000n,
+        requestedLockedAssets: 497_396866n,
+        maxWithdrawAssets: 497_396866n
+      })
+    ).toBe(true)
+  })
+
+  it('does not normalize partial withdraws or inactive withdraw windows', () => {
+    expect(
+      shouldNormalizeLockedWithdrawDisplayAmount({
+        canWithdrawNow: true,
+        currentDisplayAmount: 250_000000n,
+        maxDisplayAmount: 500_000000n,
+        requestedLockedAssets: 248_698433n,
+        maxWithdrawAssets: 497_396866n
+      })
+    ).toBe(false)
+
+    expect(
+      shouldNormalizeLockedWithdrawDisplayAmount({
+        canWithdrawNow: false,
+        currentDisplayAmount: 500_000001n,
+        maxDisplayAmount: 500_000000n,
+        requestedLockedAssets: 497_396866n,
+        maxWithdrawAssets: 497_396866n
+      })
+    ).toBe(false)
   })
 })
 
