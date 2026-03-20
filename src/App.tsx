@@ -10,6 +10,7 @@ import { ChartStyleContextApp } from '@shared/contexts/useChartStyle'
 import { IndexedDB } from '@shared/contexts/useIndexedDB'
 import { WithNotifications } from '@shared/contexts/useNotifications'
 import { WithNotificationsActions } from '@shared/contexts/useNotificationsActions'
+import { TenderlyPanelProvider } from '@shared/contexts/useTenderlyPanel'
 import { WalletContextApp } from '@shared/contexts/useWallet'
 import { Web3ContextApp } from '@shared/contexts/useWeb3'
 import { YearnContextApp } from '@shared/contexts/useYearn'
@@ -26,6 +27,7 @@ import { useLayoutEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useLocation } from 'react-router'
 import { WagmiProvider } from 'wagmi'
+import { TenderlyControlPanel } from '@/components/shared/components/TenderlyControlPanel'
 import { wagmiConfig } from '@/config/wagmi'
 import { ChainsProvider } from '@/context/ChainsProvider'
 import '@hooks/usePlausible'
@@ -102,7 +104,10 @@ function App(): ReactElement {
                                   <IndexedDB>
                                     <WithNotifications>
                                       <WithNotificationsActions>
-                                        <WithLayout />
+                                        <TenderlyPanelProvider>
+                                          <WithLayout />
+                                          <TenderlyControlPanel />
+                                        </TenderlyPanelProvider>
                                       </WithNotificationsActions>
                                     </WithNotifications>
                                   </IndexedDB>

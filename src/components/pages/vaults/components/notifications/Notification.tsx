@@ -8,6 +8,7 @@ import { IconCross } from '@shared/icons/IconCross'
 import { IconLoader } from '@shared/icons/IconLoader'
 import type { TNotification, TNotificationStatus } from '@shared/types/notifications'
 import { cl, SUPPORTED_NETWORKS, truncateHex } from '@shared/utils'
+import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
 import { memo, useCallback, useMemo, useState } from 'react'
 import Link from '/src/components/Link'
@@ -549,10 +550,9 @@ export const Notification = memo(function Notification({
       return null
     }
 
-    const chain = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)
-    const explorerBaseURI = chain?.blockExplorers?.default?.url || 'https://etherscan.io'
+    const explorerBaseURI = getNetwork(notification.executionChainId ?? notification.chainId).defaultBlockExplorer
     return `${explorerBaseURI}/tx/${notification.txHash}`
-  }, [notification.chainId, notification.txHash])
+  }, [notification.chainId, notification.executionChainId, notification.txHash])
 
   const notificationTitle = useMemo(() => {
     switch (notification.type) {

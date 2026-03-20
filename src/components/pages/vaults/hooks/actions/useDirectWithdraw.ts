@@ -1,11 +1,11 @@
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
 import { erc4626Abi } from '@shared/contracts/abi/4626.abi'
 import { vaultAbi } from '@shared/contracts/abi/vaultV2.abi'
+import { type AppUseSimulateContractReturnType, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
 import { maxUint256 } from 'viem'
-import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
 
 interface UseDirectWithdrawParams {
   vaultAddress: Address
@@ -85,7 +85,7 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
 
   // Prepare withdraw transaction using ERC4626 withdraw function
   // withdraw(assets, receiver, owner) - no approval needed when owner == msg.sender
-  const prepareWithdrawErc4626: UseSimulateContractReturnType = useSimulateContract({
+  const prepareWithdrawErc4626: AppUseSimulateContractReturnType = useSimulateContract({
     abi: erc4626Abi,
     functionName: erc4626FunctionName,
     address: params.vaultAddress,
@@ -95,7 +95,7 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
     query: { enabled: prepareWithdrawEnabled && params.useErc4626 }
   })
 
-  const prepareWithdrawV2: UseSimulateContractReturnType = useSimulateContract({
+  const prepareWithdrawV2: AppUseSimulateContractReturnType = useSimulateContract({
     abi: vaultAbi,
     functionName: 'withdraw',
     address: params.vaultAddress,
@@ -105,7 +105,7 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
     query: { enabled: prepareWithdrawEnabled && !params.useErc4626 }
   })
 
-  const prepareWithdraw = useMemo((): UseSimulateContractReturnType => {
+  const prepareWithdraw = useMemo((): AppUseSimulateContractReturnType => {
     const livePrepare = params.useErc4626 ? prepareWithdrawErc4626 : prepareWithdrawV2
     const expectedArgs = params.useErc4626 ? erc4626Args : withdrawV2Args
     const expectedFunctionName = params.useErc4626 ? erc4626FunctionName : 'withdraw'
@@ -128,7 +128,7 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
       ...livePrepare,
       data: undefined,
       isSuccess: false
-    } as UseSimulateContractReturnType
+    } as AppUseSimulateContractReturnType
   }, [
     prepareWithdrawEnabled,
     params.useErc4626,

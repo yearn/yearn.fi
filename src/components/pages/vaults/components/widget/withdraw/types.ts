@@ -16,11 +16,15 @@ export interface WithdrawWidgetProps {
   vaultVersion?: string
   isVaultRetired?: boolean
   vaultUserData: VaultUserData
+  inputBalanceOverride?: bigint
+  inputDisplayBalanceOverride?: bigint
   maxWithdrawAssets?: bigint
   requiredSharesOverride?: bigint
   expectedOutOverride?: bigint
   isActionDisabled?: boolean
   actionDisabledReason?: string
+  customErrorMessage?: string
+  disableFlow?: boolean
   disableTokenSelector?: boolean
   hideZapForTokens?: `0x${string}`[]
   disableAmountInput?: boolean
