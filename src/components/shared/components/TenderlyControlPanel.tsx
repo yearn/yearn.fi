@@ -238,15 +238,11 @@ function useTenderlyControlState() {
   const controlsUnlocked = Boolean(baselineSnapshot)
   const lastRestorableSnapshot = useMemo(() => getLastRestorableTenderlySnapshot(snapshotRecords), [snapshotRecords])
 
-  useEffect(() => {
-    if (selectedAssetAddress && fundableAssets.some((asset) => asset.address === selectedAssetAddress)) {
-      return
-    }
-
-    setSelectedAssetAddress(fundableAssets[0]?.address)
-  }, [fundableAssets, selectedAssetAddress])
-
-  const selectedAsset = fundableAssets.find((asset) => asset.address === selectedAssetAddress)
+  const selectedAssetAddressOrFallback =
+    selectedAssetAddress && fundableAssets.some((asset) => asset.address === selectedAssetAddress)
+      ? selectedAssetAddress
+      : fundableAssets[0]?.address
+  const selectedAsset = fundableAssets.find((asset) => asset.address === selectedAssetAddressOrFallback)
   const filteredAssets = useMemo(() => {
     const normalizedSearch = fundSearch.trim().toLowerCase()
     if (!normalizedSearch) {
@@ -320,7 +316,7 @@ function useTenderlyControlState() {
     fundableAssets,
     filteredAssets,
     selectedAsset,
-    selectedAssetAddress,
+    selectedAssetAddress: selectedAssetAddressOrFallback,
     setSelectedAssetAddress,
     connectedWalletAddress,
     pendingAction,
