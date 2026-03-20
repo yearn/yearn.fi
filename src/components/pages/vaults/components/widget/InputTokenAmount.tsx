@@ -12,6 +12,7 @@ interface Props {
   input: ReturnType<typeof useInput> | ReturnType<typeof useDebouncedInput>
   className?: string
   balance?: bigint
+  displayBalance?: bigint
   decimals?: number
   symbol?: string
   placeholder?: string
@@ -46,6 +47,7 @@ export const InputTokenAmount: FC<Props> = ({
   input,
   className,
   balance,
+  displayBalance,
   decimals,
   symbol,
   placeholder,
@@ -128,6 +130,8 @@ export const InputTokenAmount: FC<Props> = ({
     setFormValue?.(formatUnits(percentageRawAmount, tokenDecimals))
     onInputChange?.(percentageRawAmount)
   }
+
+  const renderedBalance = displayBalance ?? balance
 
   return (
     <div className={cl('flex flex-col w-full relative border border-border rounded-md group', className)}>
@@ -272,8 +276,8 @@ export const InputTokenAmount: FC<Props> = ({
               Connect wallet
             </button>
           ) : (
-            balance !== undefined &&
-            balance !== 0n &&
+            renderedBalance !== undefined &&
+            renderedBalance !== 0n &&
             symbol && (
               <button
                 type="button"
@@ -281,7 +285,7 @@ export const InputTokenAmount: FC<Props> = ({
                 disabled={disabled || isMaxButtonLoading}
                 className="text-sm text-text-secondary hover:text-blue-500 transition-colors disabled:cursor-not-allowed"
               >
-                Balance: {formatTAmount({ value: balance, decimals: decimals ?? input[0].decimals })} {symbol}
+                Balance: {formatTAmount({ value: renderedBalance, decimals: decimals ?? input[0].decimals })} {symbol}
               </button>
             )
           )}
