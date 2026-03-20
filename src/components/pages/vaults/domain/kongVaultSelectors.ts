@@ -769,7 +769,10 @@ const mapSnapshotComposition = (
       if (!estimatedType.includes('katana')) {
         return undefined
       }
-      return pickNumberOrNull(entry.performance?.estimated?.apr) ?? undefined
+      return (
+        pickNumberOrNull(entry.performance?.estimated?.components?.katRewardsAPR, entry.performance?.estimated?.apr) ??
+        undefined
+      )
     })()
     const resolvedApr = hasAllocation
       ? pickNumberOrNull(

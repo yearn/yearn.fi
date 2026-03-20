@@ -259,6 +259,36 @@ describe('getVaultStrategies', () => {
     expect(strategies[0]?.katRewardsAPR).toBe(0.0028)
   })
 
+  it('reads katRewardsAPR from estimated components when apr is omitted', () => {
+    const strategies = getVaultStrategies(vault, {
+      totalAssets: '1000000',
+      composition: [
+        {
+          address: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          name: 'Katana Strategy with Components',
+          status: 'active',
+          totalDebt: '500000',
+          currentDebt: '500000',
+          performance: {
+            estimated: {
+              type: 'katana-estimated-apr',
+              components: {
+                katRewardsAPR: 0.002978698024448475
+              }
+            },
+            oracle: {
+              apr: 0.013945609013431531,
+              apy: 0.014041406702504533
+            }
+          }
+        }
+      ]
+    } as any)
+
+    expect(strategies[0]?.estimatedAPY).toBe(0.014041406702504533)
+    expect(strategies[0]?.katRewardsAPR).toBe(0.002978698024448475)
+  })
+
   it('does not set katRewardsAPR for non-katana strategies', () => {
     const strategies = getVaultStrategies(vault, {
       totalAssets: '1000000',
