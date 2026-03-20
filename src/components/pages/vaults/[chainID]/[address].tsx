@@ -569,15 +569,13 @@ function Index(): ReactElement | null {
   } | null>(null)
   const tourSectionsRef = useRef<Record<SectionKey, boolean> | null>(null)
 
-  useEffect(() => {
-    setWidgetMode((previous) => (widgetActions.includes(previous) ? previous : widgetActions[0]))
-  }, [widgetActions])
-
-  useEffect(() => {
-    if (!widgetActions.includes(mobileDrawerAction)) {
-      setMobileDrawerAction(widgetActions[0])
-    }
-  }, [mobileDrawerAction, widgetActions])
+  // Render-time state adjustment: keep mode valid when available actions change
+  if (!widgetActions.includes(widgetMode)) {
+    setWidgetMode(widgetActions[0])
+  }
+  if (!widgetActions.includes(mobileDrawerAction)) {
+    setMobileDrawerAction(widgetActions[0])
+  }
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -839,11 +837,10 @@ function Index(): ReactElement | null {
     enabled: renderableSections.length > 0 && !isProgrammaticScroll
   })
 
-  useEffect(() => {
-    if (!renderableSections.some((section) => section.key === activeSection) && renderableSections[0]) {
-      setActiveSection(renderableSections[0].key)
-    }
-  }, [renderableSections, activeSection])
+  // Render-time state adjustment: ensure active section is valid
+  if (!renderableSections.some((section) => section.key === activeSection) && renderableSections[0]) {
+    setActiveSection(renderableSections[0].key)
+  }
 
   useEffect(() => {
     if (!pendingSectionKey || !isHeaderCompressed) return
