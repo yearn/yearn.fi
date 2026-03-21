@@ -1,5 +1,4 @@
-import type { ReactElement, ReactNode } from 'react'
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, type ReactElement, type ReactNode, useCallback, useContext, useMemo, useState } from 'react'
 
 export type HeaderDisplayMode = 'collapsible' | 'full' | 'minimal' | 'sticky-name'
 
@@ -24,35 +23,37 @@ const HEADER_DISPLAY_MODE_STORAGE_KEY = 'dev-header-display-mode'
 const ENABLE_TOOLBAR =
   !import.meta.env.PROD || import.meta.env.VITE_ENABLE_DEV_TOOLBAR === 'true' || import.meta.env.MODE !== 'production'
 
+const VALID_MODES: HeaderDisplayMode[] = ['collapsible', 'full', 'minimal', 'sticky-name']
+
+function readStoredDisplayMode(): HeaderDisplayMode {
+  if (!ENABLE_TOOLBAR) return 'collapsible'
+  try {
+    const stored = window.localStorage.getItem(HEADER_DISPLAY_MODE_STORAGE_KEY) as HeaderDisplayMode | null
+    if (stored && VALID_MODES.includes(stored)) {
+      return stored
+    }
+  } catch {
+    // no-op
+  }
+  return 'collapsible'
+}
+
+function persistDisplayMode(mode: HeaderDisplayMode): void {
+  if (!ENABLE_TOOLBAR) return
+  try {
+    window.localStorage.setItem(HEADER_DISPLAY_MODE_STORAGE_KEY, mode)
+  } catch {
+    // no-op
+  }
+}
+
 export function DevFlagsProvider({ children }: { children: ReactNode }): ReactElement {
-  const [headerDisplayMode, setHeaderDisplayMode] = useState<HeaderDisplayMode>('collapsible')
+  const [headerDisplayMode, setHeaderDisplayModeRaw] = useState<HeaderDisplayMode>(readStoredDisplayMode)
 
-  useEffect(() => {
-    if (!ENABLE_TOOLBAR) {
-      return
-    }
-
-    try {
-      const stored = window.localStorage.getItem(HEADER_DISPLAY_MODE_STORAGE_KEY) as HeaderDisplayMode | null
-      if (stored && ['collapsible', 'full', 'minimal', 'sticky-name'].includes(stored)) {
-        setHeaderDisplayMode(stored)
-      }
-    } catch {
-      // no-op
-    }
+  const setHeaderDisplayMode = useCallback((mode: HeaderDisplayMode) => {
+    setHeaderDisplayModeRaw(mode)
+    persistDisplayMode(mode)
   }, [])
-
-  useEffect(() => {
-    if (!ENABLE_TOOLBAR) {
-      return
-    }
-
-    try {
-      window.localStorage.setItem(HEADER_DISPLAY_MODE_STORAGE_KEY, headerDisplayMode)
-    } catch {
-      // no-op
-    }
-  }, [headerDisplayMode])
 
   // Legacy support - map new modes to old boolean
   const headerCompressionEnabled = useMemo(() => headerDisplayMode === 'collapsible', [headerDisplayMode])
@@ -60,7 +61,7 @@ export function DevFlagsProvider({ children }: { children: ReactNode }): ReactEl
     () => (value: boolean) => {
       setHeaderDisplayMode(value ? 'collapsible' : 'full')
     },
-    []
+    [setHeaderDisplayMode]
   )
 
   const value = useMemo(

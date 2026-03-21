@@ -3,7 +3,7 @@ import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { Button } from '@shared/components/Button'
 import { EmptyState } from '@shared/components/EmptyState'
 import { cl } from '@shared/utils'
-import { type ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ReactElement, useCallback, useMemo, useState } from 'react'
 
 type TVaultsBlockingFilterAction = {
   key: string
@@ -46,9 +46,10 @@ export function VaultsListEmpty({
   )
   const selectedBlockingFilterKeys = useMemo(() => new Set(selectedBlockingFilters), [selectedBlockingFilters])
 
-  useEffect(() => {
+  // Render-time state adjustment: prune selections when available options change
+  if (selectedBlockingFilters.some((key) => !availableBlockingFilterKeys.has(key))) {
     setSelectedBlockingFilters((prev) => prev.filter((key) => availableBlockingFilterKeys.has(key)))
-  }, [availableBlockingFilterKeys])
+  }
 
   const toggleBlockingFilter = useCallback((key: string): void => {
     setSelectedBlockingFilters((prev) => (prev.includes(key) ? prev.filter((entry) => entry !== key) : [...prev, key]))
