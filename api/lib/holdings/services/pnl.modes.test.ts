@@ -119,6 +119,22 @@ function createUnknownWithdrawalContext(): RawPnlEventContext {
   }
 }
 
+function createTransferOnlyContext(): RawPnlEventContext {
+  return {
+    addressEvents: {
+      deposits: [],
+      withdrawals: [],
+      transfersIn: createTransferInContext().addressEvents.transfersIn,
+      transfersOut: []
+    },
+    transactionEvents: {
+      deposits: [],
+      withdrawals: [],
+      transfers: []
+    }
+  }
+}
+
 function createTransferOutContext(): RawPnlEventContext {
   return {
     addressEvents: {
@@ -293,6 +309,45 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(vault.unknownCostBasisValueUsd).toBeCloseTo(330)
     expect(vault.totalPnlUsd).toBe(0)
     expect(vault.totalEconomicGainUsd).toBe(0)
+  })
+
+  it('values transfer-only current holdings without fetching historical receipt prices', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+
+    const windfallResponse = await getSingleVaultResponse(createTransferOnlyContext(), 'windfall')
+    const zeroBasisResponse = await getSingleVaultResponse(createTransferOnlyContext(), 'zero_basis')
+    const strictResponse = await getSingleVaultResponse(createTransferOnlyContext(), 'strict')
+
+    expect(fetchHistoricalPricesMock).toHaveBeenNthCalledWith(
+      1,
+      [{ chainId: 1, address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' }],
+      [300]
+    )
+    expect(fetchHistoricalPricesMock).toHaveBeenNthCalledWith(
+      2,
+      [{ chainId: 1, address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' }],
+      [300]
+    )
+    expect(fetchHistoricalPricesMock).toHaveBeenNthCalledWith(
+      3,
+      [{ chainId: 1, address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' }],
+      [300]
+    )
+
+    expect(windfallResponse.summary.totalCurrentValueUsd).toBeCloseTo(330)
+    expect(windfallResponse.summary.totalWindfallPnlUsd).toBeCloseTo(330)
+    expect(windfallResponse.summary.totalPnlUsd).toBe(0)
+    expect(windfallResponse.summary.totalEconomicGainUsd).toBeCloseTo(330)
+
+    expect(zeroBasisResponse.summary.totalCurrentValueUsd).toBeCloseTo(330)
+    expect(zeroBasisResponse.summary.totalUnrealizedPnlUsd).toBeCloseTo(330)
+    expect(zeroBasisResponse.summary.totalPnlUsd).toBeCloseTo(330)
+    expect(zeroBasisResponse.summary.totalEconomicGainUsd).toBeCloseTo(330)
+
+    expect(strictResponse.summary.totalCurrentValueUsd).toBeCloseTo(330)
+    expect(strictResponse.summary.totalUnknownCostBasisValueUsd).toBeCloseTo(330)
+    expect(strictResponse.summary.totalPnlUsd).toBe(0)
+    expect(strictResponse.summary.totalEconomicGainUsd).toBe(0)
   })
 
   it('computes realized pnl for unknown withdrawals in zero-basis and windfall modes', async () => {

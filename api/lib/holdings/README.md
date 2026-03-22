@@ -282,7 +282,7 @@ Notes:
 - Same-transaction router flows can carry basis into or out of a staking vault family when the transfer can be matched to an indexed underlying vault deposit or withdrawal in the same transaction.
 - Known migrator transactions can roll basis from a source family into a destination family. When source basis cannot be reconstructed, the destination shares stay partial / unknown-basis.
 - Plain share transfers may leave some lots with unknown cost basis. Those vaults are returned with `costBasisStatus: "partial"`. In `strict` mode, the unmatched current portion is reported in `unknownCostBasisValueUsd`; in `zero_basis` and `windfall`, that value is zeroed and the economics are attributed according to `unknownTransferInPnlMode`.
-- The endpoint currently filters to direct-interaction families. Pure transfer-only families may be omitted unless they also have direct deposit / withdraw history, realized PnL, or recognized migration activity.
+- The endpoint keeps families with non-zero current shares even if they only arrived through transfers, but transfer-only families with zero remaining shares may still be omitted. Those transfer-only holdings are marked partial and prioritized for current-value completeness over full historical price reconstruction.
 - `isComplete` becomes `false` when at least one returned vault still has partial / unknown basis.
 
 ### Unknown Transfer-In Modes

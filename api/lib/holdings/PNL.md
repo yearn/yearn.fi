@@ -411,8 +411,8 @@ Known limitations:
 
 - unrecognized migration paths still fall back to partial basis
 - ambiguous transfer provenance still falls back to unknown basis
-- the endpoint currently filters to direct-interaction families
-- pure transfer-only families can be omitted from the response
+- families with no direct interaction but non-zero current shares are still surfaced as partial holdings, with current value prioritized over full historical transfer receipt pricing
+- transfer-only families with zero current shares can still be omitted from the response
 - missing metadata, PPS, or token prices can block full valuation for a family
 
 This is why the response exposes:

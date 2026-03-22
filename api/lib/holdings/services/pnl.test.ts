@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { DepositEvent, TransferEvent, WithdrawEvent } from '../types'
-import { buildRawPnlEvents, filterDirectInteractionLedgers, processRawPnlEvents } from './pnl'
+import {
+  buildRawPnlEvents,
+  filterDirectInteractionLedgers,
+  filterRelevantHoldingsLedgers,
+  processRawPnlEvents
+} from './pnl'
 
 const USER = '0x96a489a533ba0913dd8e507e6d985a45bc783566'
 const ROUTER = '0x1111111111111111111111111111111111111111'
@@ -396,6 +401,30 @@ describe('processRawPnlEvents', () => {
 
     expect(transferOnlyLedger.get(FAMILY_KEY)).toBeDefined()
     expect(filteredLedgers.get(FAMILY_KEY)).toBeUndefined()
+  })
+
+  it('keeps transfer-only families with current shares in the holdings ledger set', () => {
+    const transferOnlyLedger = processRawPnlEvents(
+      buildRawPnlEvents({
+        addressEvents: {
+          deposits: [],
+          withdrawals: [],
+          transfersIn: [createTransferEvent()],
+          transfersOut: []
+        },
+        transactionEvents: {
+          deposits: [],
+          withdrawals: [],
+          transfers: [createTransferEvent()]
+        }
+      }),
+      USER
+    )
+
+    const filteredLedgers = filterRelevantHoldingsLedgers(transferOnlyLedger)
+
+    expect(transferOnlyLedger.get(FAMILY_KEY)).toBeDefined()
+    expect(filteredLedgers.get(FAMILY_KEY)).toBeDefined()
   })
 
   it('treats same-vault withdraw and redeposit in the same tx as a basis rollover', () => {
