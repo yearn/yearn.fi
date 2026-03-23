@@ -24,7 +24,9 @@ const DEFAULT_TIMEOUT_MS = 4_000
 const DEFAULT_MAX_RETRIES = 2
 const DEFAULT_RETRY_DELAY_MS = 200
 const TIMESTAMP_BATCH_SIZE = 10
-const TOKEN_BATCH_SIZE = 5
+const MAX_TOKENS_PER_BATCH = 50
+const MAX_TIMESTAMPS_PER_TOKEN_PER_BATCH = 50
+const MAX_PRICE_POINTS_PER_BATCH = MAX_TOKENS_PER_BATCH * TIMESTAMP_BATCH_SIZE
 const PARALLEL_REQUESTS = 2
 
 type TCoinRequest = { chain: string; address: string; timestamps: number[] }
@@ -84,6 +86,80 @@ function mergeCoinRequests(coins: TCoinRequest[]): TCoinRequest[] {
   }, new Map())
 
   return Array.from(merged.values())
+}
+
+function buildTokenRequests(tokensToFetch: TCoinRequest[]): TCoinRequest[] {
+  const timestampSlicesByToken = tokensToFetch.map((coin) =>
+    chunkItems(coin.timestamps, TIMESTAMP_BATCH_SIZE).map((timestampBatch) => ({
+      chain: coin.chain,
+      address: coin.address,
+      timestamps: timestampBatch
+    }))
+  )
+  const tokenRequests: TCoinRequest[] = []
+  let sliceIndex = 0
+
+  while (true) {
+    let addedSlice = false
+
+    timestampSlicesByToken.forEach((timestampSlices) => {
+      const slice = timestampSlices[sliceIndex]
+
+      if (!slice) {
+        return
+      }
+
+      tokenRequests.push(slice)
+      addedSlice = true
+    })
+
+    if (!addedSlice) {
+      break
+    }
+
+    sliceIndex += 1
+  }
+
+  return tokenRequests
+}
+
+function buildRequestBatches(tokenRequests: TCoinRequest[]): Array<{ coinBatch: TCoinRequest[] }> {
+  const batches: Array<{ coinBatch: TCoinRequest[] }> = []
+  let currentBatch: TCoinRequest[] = []
+  let currentBatchPricePoints = 0
+  let currentBatchTokenCounts = new Map<string, number>()
+
+  tokenRequests.forEach((tokenRequest) => {
+    const tokenKey = `${tokenRequest.chain}:${tokenRequest.address.toLowerCase()}`
+    const currentSlicesForToken = currentBatchTokenCounts.get(tokenKey) ?? 0
+    const nextTokenCount = currentBatchTokenCounts.has(tokenKey)
+      ? currentBatchTokenCounts.size
+      : currentBatchTokenCounts.size + 1
+    const nextPricePointCount = currentBatchPricePoints + tokenRequest.timestamps.length
+    const nextTokenTimestampCount = currentSlicesForToken * TIMESTAMP_BATCH_SIZE + tokenRequest.timestamps.length
+
+    if (
+      currentBatch.length > 0 &&
+      (nextTokenCount > MAX_TOKENS_PER_BATCH ||
+        nextPricePointCount > MAX_PRICE_POINTS_PER_BATCH ||
+        nextTokenTimestampCount > MAX_TIMESTAMPS_PER_TOKEN_PER_BATCH)
+    ) {
+      batches.push({ coinBatch: mergeCoinRequests(currentBatch) })
+      currentBatch = []
+      currentBatchPricePoints = 0
+      currentBatchTokenCounts = new Map()
+    }
+
+    currentBatch.push(tokenRequest)
+    currentBatchPricePoints += tokenRequest.timestamps.length
+    currentBatchTokenCounts.set(tokenKey, (currentBatchTokenCounts.get(tokenKey) ?? 0) + 1)
+  })
+
+  if (currentBatch.length > 0) {
+    batches.push({ coinBatch: mergeCoinRequests(currentBatch) })
+  }
+
+  return batches
 }
 
 function countRequestedPricePoints(coins: TCoinRequest[]): number {
@@ -242,19 +318,17 @@ export async function fetchHistoricalPrices(
     0
   )
   const newPrices: CachedPrice[] = []
-  const tokenRequests = tokensToFetch.flatMap((coin) => {
-    const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
-    const missingTimestamps = missingByToken.get(tokenKey) ?? []
-
-    return chunkItems(missingTimestamps, TIMESTAMP_BATCH_SIZE).map((timestampBatch) => ({
-      chain: coin.chain,
-      address: coin.address,
-      timestamps: timestampBatch
-    }))
-  })
-  const batches = chunkItems(tokenRequests, TOKEN_BATCH_SIZE).map((coinBatch) => ({
-    coinBatch: mergeCoinRequests(coinBatch)
-  }))
+  const tokenRequests = buildTokenRequests(
+    tokensToFetch.map((coin) => {
+      const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
+      return {
+        chain: coin.chain,
+        address: coin.address,
+        timestamps: missingByToken.get(tokenKey) ?? []
+      }
+    })
+  )
+  const batches = buildRequestBatches(tokenRequests)
   const batchGroups = chunkItems(batches, PARALLEL_REQUESTS)
   const fetchStats = { successfulBatches: 0 }
   debugLog('defillama', 'prepared price fetch batches', {
@@ -264,7 +338,9 @@ export async function fetchHistoricalPrices(
     missingPricePoints,
     tokenRequests: tokenRequests.length,
     batches: batches.length,
-    batchGroups: batchGroups.length
+    batchGroups: batchGroups.length,
+    maxTokensPerBatch: MAX_TOKENS_PER_BATCH,
+    maxPricePointsPerBatch: MAX_PRICE_POINTS_PER_BATCH
   })
 
   await batchGroups.reduce<Promise<void>>(async (previousGroupPromise, batchGroup, groupIndex) => {

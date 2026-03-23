@@ -180,6 +180,107 @@ describe('parseDefiLlamaResponse', () => {
     })
   })
 
+  it('batches up to 50 token addresses into a single request', async () => {
+    const tokens = Array.from({ length: 51 }, (_value, index) => ({
+      chainId: 1,
+      address: `0x${(index + 1).toString(16).padStart(40, '0')}`
+    }))
+    const timestamp = 1700000000
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const requestUrl = new URL(input.toString())
+      const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+        string,
+        number[]
+      >
+
+      return createBatchResponse({
+        coins: Object.fromEntries(
+          Object.entries(coinsParam).map(([coinKey, requestedTimestamps]) => [
+            coinKey,
+            {
+              symbol: 'TKN',
+              prices: requestedTimestamps.map((requestedTimestamp) => ({
+                timestamp: requestedTimestamp,
+                price: 1,
+                confidence: 0.99
+              }))
+            }
+          ])
+        )
+      })
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPrices(tokens, [timestamp])
+
+    expect(fetchStub).toHaveBeenCalledTimes(2)
+
+    const firstRequestUrl = new URL(fetchStub.mock.calls[0][0] as string)
+    const secondRequestUrl = new URL(fetchStub.mock.calls[1][0] as string)
+    const firstCoinsParam = JSON.parse(
+      decodeURIComponent(firstRequestUrl.searchParams.get('coins') ?? 'null')
+    ) as Record<string, number[]>
+    const secondCoinsParam = JSON.parse(
+      decodeURIComponent(secondRequestUrl.searchParams.get('coins') ?? 'null')
+    ) as Record<string, number[]>
+
+    expect(Object.keys(firstCoinsParam)).toHaveLength(50)
+    expect(Object.keys(secondCoinsParam)).toHaveLength(1)
+    expect(prices.size).toBe(51)
+  })
+
+  it('interleaves token timestamp slices so multi-token requests stay grouped together', async () => {
+    const tokens = Array.from({ length: 6 }, (_value, index) => ({
+      chainId: 1,
+      address: `0x${(index + 1).toString(16).padStart(40, '0')}`
+    }))
+    const timestamps = [
+      1700000000, 1700000600, 1700001200, 1700001800, 1700002400, 1700003000, 1700003600, 1700004200, 1700004800,
+      1700005400, 1700006000, 1700006600
+    ]
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const requestUrl = new URL(input.toString())
+      const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+        string,
+        number[]
+      >
+
+      return createBatchResponse({
+        coins: Object.fromEntries(
+          Object.entries(coinsParam).map(([coinKey, requestedTimestamps]) => [
+            coinKey,
+            {
+              symbol: 'TKN',
+              prices: requestedTimestamps.map((requestedTimestamp) => ({
+                timestamp: requestedTimestamp,
+                price: 1,
+                confidence: 0.99
+              }))
+            }
+          ])
+        )
+      })
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    await fetchHistoricalPrices(tokens, timestamps)
+
+    expect(fetchStub).toHaveBeenCalledTimes(1)
+
+    const requestUrl = new URL(fetchStub.mock.calls[0][0] as string)
+    const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+      string,
+      number[]
+    >
+
+    expect(Object.keys(coinsParam)).toHaveLength(6)
+    Object.values(coinsParam).forEach((requestedTimestamps) => {
+      expect(requestedTimestamps).toEqual(timestamps)
+    })
+  })
+
   it('caches prices under the requested timestamps even when DefiLlama returns shifted timestamps', async () => {
     const usdcKey = 'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
     const requestedTimestamps = [1700000000, 1700003600]
