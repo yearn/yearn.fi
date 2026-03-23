@@ -146,15 +146,19 @@ export function useSimulateContract<
   parameters?: UseSimulateContractParameters<abi, functionName, args, Config, chainId, selectData>
 ): UseSimulateContractReturnType<abi, functionName, args, Config, chainId, selectData> {
   const unsupportedRequestedChain = isUnsupportedRequestedChain(parameters?.chainId)
+  const resolvedParameters =
+    parameters === undefined
+      ? undefined
+      : ({
+          ...parameters,
+          chainId: resolveHookChainId(parameters.chainId) as chainId,
+          query: {
+            ...(parameters.query || {}),
+            enabled: !unsupportedRequestedChain && (parameters.query?.enabled ?? true)
+          }
+        } as any)
 
-  return useWagmiSimulateContract({
-    ...(parameters || {}),
-    chainId: resolveHookChainId(parameters?.chainId) as chainId,
-    query: {
-      ...(parameters?.query || {}),
-      enabled: !unsupportedRequestedChain && (parameters?.query?.enabled ?? true)
-    }
-  } as UseSimulateContractParameters<abi, functionName, args, Config, chainId, selectData>)
+  return useWagmiSimulateContract(resolvedParameters)
 }
 
 export function useBlockNumber<chainId extends Config['chains'][number]['id'] = Config['chains'][number]['id']>(
