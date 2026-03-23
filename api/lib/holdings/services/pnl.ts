@@ -1,4 +1,5 @@
 import type { DepositEvent, TransferEvent, WithdrawEvent } from '../types'
+import { enrichRawPnlEventsWithCowTradeAcquisitions } from './cow'
 import { debugLog, debugTable, getHoldingsDebugFilters } from './debug'
 import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
 import {
@@ -1451,7 +1452,7 @@ export async function getHoldingsPnL(
     txWithdrawals: rawContext.transactionEvents.withdrawals.length,
     txTransfers: rawContext.transactionEvents.transfers.length
   })
-  const rawEvents = buildRawPnlEvents(rawContext)
+  const rawEvents = await enrichRawPnlEventsWithCowTradeAcquisitions(buildRawPnlEvents(rawContext), userAddress)
   const debugTxLedgerKeys = getDebugTxLedgerKeys(rawEvents)
   const rawLedgers = processRawPnlEvents(rawEvents, userAddress)
   const directInteractionLedgers = filterDirectInteractionLedgers(rawLedgers)

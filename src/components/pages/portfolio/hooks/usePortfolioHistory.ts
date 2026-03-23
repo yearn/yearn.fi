@@ -23,7 +23,8 @@ export function usePortfolioHistory() {
     endpoint,
     schema: portfolioHistorySimpleResponseSchema,
     config: {
-      cacheDuration: 4 * 60 * 60 * 1000 // 4 hours
+      cacheDuration: 4 * 60 * 60 * 1000, // 4 hours
+      keepPreviousData: false
     }
   })
 

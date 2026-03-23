@@ -2,6 +2,7 @@ export interface HoldingsConfig {
   readonly envioGraphqlUrl: string
   readonly envioPassword: string
   readonly databaseUrl: string | null
+  readonly ethereumRpcUrl: string
   readonly kongBaseUrl: string
   readonly defillamaBaseUrl: string
   readonly historyDays: number
@@ -17,6 +18,9 @@ export const config: HoldingsConfig = {
   get databaseUrl() {
     return process.env.DATABASE_URL ?? null
   },
+  get ethereumRpcUrl() {
+    return process.env.ETHEREUM_RPC_URL ?? 'https://ethereum-rpc.publicnode.com'
+  },
   kongBaseUrl: 'https://kong.yearn.fi',
   defillamaBaseUrl: 'https://coins.llama.fi',
   historyDays: 365
@@ -28,5 +32,8 @@ export function validateConfig(): void {
   }
   if (!process.env.DATABASE_URL) {
     console.warn('[Holdings] DATABASE_URL not set, caching disabled')
+  }
+  if (!process.env.ETHEREUM_RPC_URL) {
+    console.warn('[Holdings] ETHEREUM_RPC_URL not set, using default public mainnet RPC')
   }
 }

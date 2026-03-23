@@ -18,7 +18,8 @@ export function usePortfolioPnL() {
     endpoint,
     schema: portfolioPnlResponseSchema,
     config: {
-      cacheDuration: 5 * 60 * 1000
+      cacheDuration: 5 * 60 * 1000,
+      keepPreviousData: false
     }
   })
 
