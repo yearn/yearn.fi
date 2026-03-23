@@ -774,6 +774,8 @@ type TransactionFromEventResults = [
   TransferEvent[]
 ]
 
+const inFlightAddressScopedEventFetches = new Map<string, Promise<AddressEventResults>>()
+
 export interface RawPnlEventContext {
   addressEvents: UserEvents
   transactionEvents: {
@@ -918,7 +920,16 @@ function getParallelAddressEventFetches(
   ]
 }
 
-async function fetchAddressScopedEvents(
+function getAddressScopedEventFetchKey(
+  addressLower: string,
+  maxTimestamp: number | undefined,
+  fetchType: HoldingsEventFetchType,
+  paginationMode: HoldingsEventPaginationMode
+): string {
+  return `${addressLower}:${maxTimestamp ?? DEFAULT_MAX_TIMESTAMP}:${fetchType}:${paginationMode}`
+}
+
+async function fetchAddressScopedEventsUncached(
   addressLower: string,
   maxTimestamp: number | undefined,
   fetchType: HoldingsEventFetchType,
@@ -946,6 +957,35 @@ async function fetchAddressScopedEvents(
       : getParallelAddressEventFetches(addressLower, counts, maxTimestamp)
 
   return Promise.all(fetches) as Promise<AddressEventResults>
+}
+
+async function fetchAddressScopedEvents(
+  addressLower: string,
+  maxTimestamp: number | undefined,
+  fetchType: HoldingsEventFetchType,
+  paginationMode: HoldingsEventPaginationMode
+): Promise<AddressEventResults> {
+  const key = getAddressScopedEventFetchKey(addressLower, maxTimestamp, fetchType, paginationMode)
+  const existing = inFlightAddressScopedEventFetches.get(key)
+
+  if (existing) {
+    debugLog('graphql', 'reusing in-flight address-scoped event fetch', {
+      address: addressLower,
+      maxTimestamp: maxTimestamp ?? DEFAULT_MAX_TIMESTAMP,
+      fetchType,
+      paginationMode
+    })
+    return existing
+  }
+
+  const request = fetchAddressScopedEventsUncached(addressLower, maxTimestamp, fetchType, paginationMode).finally(
+    () => {
+      inFlightAddressScopedEventFetches.delete(key)
+    }
+  )
+
+  inFlightAddressScopedEventFetches.set(key, request)
+  return request
 }
 
 function getTransactionFromEventFetches(
@@ -978,15 +1018,8 @@ export async function fetchUserEvents(
 ): Promise<UserEvents> {
   const addressLower = userAddress.toLowerCase()
 
-  // All 6 event types fetched in parallel, but each type paginates sequentially
-  const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] = await Promise.all([
-    fetchAllSequential<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', maxTimestamp),
-    fetchAllSequential<WithdrawEvent>(WITHDRAWALS_QUERY, 'owner', addressLower, 'Withdraw', maxTimestamp),
-    fetchAllSequential<V2DepositEvent>(V2_DEPOSITS_QUERY, 'recipient', addressLower, 'V2Deposit', maxTimestamp),
-    fetchAllSequential<V2WithdrawEvent>(V2_WITHDRAWALS_QUERY, 'recipient', addressLower, 'V2Withdraw', maxTimestamp),
-    fetchAllSequential<TransferEvent>(TRANSFERS_IN_QUERY, 'receiver', addressLower, 'Transfer', maxTimestamp),
-    fetchAllSequential<TransferEvent>(TRANSFERS_OUT_QUERY, 'sender', addressLower, 'Transfer', maxTimestamp)
-  ])
+  const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] =
+    await fetchAddressScopedEvents(addressLower, maxTimestamp, 'seq', 'paged')
 
   const processed = processEvents(
     v3Deposits,

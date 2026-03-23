@@ -89,4 +89,28 @@ describe('fetchMultipleVaultsPPS', () => {
 
     expect(activeRequests.max).toBe(2)
   })
+
+  it('reuses in-flight vault PPS fetches across concurrent callers', async () => {
+    const fetchFn = vi.fn(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      return createResponse([{ time: 100, value: '1.2' }])
+    }) as typeof fetch
+
+    const [first, second] = await Promise.all([
+      fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress: '0xABC' }], {
+        fetchFn,
+        concurrency: 1,
+        maxRetries: 0
+      }),
+      fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress: '0xabc' }], {
+        fetchFn,
+        concurrency: 1,
+        maxRetries: 0
+      })
+    ])
+
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+    expect(first.get('1:0xabc')?.get(100)).toBe(1.2)
+    expect(second.get('1:0xabc')?.get(100)).toBe(1.2)
+  })
 })

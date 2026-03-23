@@ -35,6 +35,7 @@ const RETRYABLE_ERROR_CODES = new Set([
   'UND_ERR_ABORTED'
 ])
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504])
+const inFlightVaultPPSFetches = new Map<string, Promise<PPSTimeline>>()
 
 export function buildPPSTimeline(response: KongPPSDataPoint[]): PPSTimeline {
   return new Map(response.map((p) => [p.time, parseFloat(p.value)]))
@@ -154,6 +155,27 @@ async function fetchVaultPPSWithRetry(
   }
 }
 
+function fetchVaultPPSDeduped(
+  chainId: number,
+  vaultAddress: string,
+  options?: TKongFetchOptions
+): Promise<PPSTimeline> {
+  const key = `${chainId}:${vaultAddress.toLowerCase()}`
+  const existing = inFlightVaultPPSFetches.get(key)
+
+  if (existing) {
+    debugLog('kong-pps', 'reusing in-flight vault PPS fetch', { key })
+    return existing
+  }
+
+  const request = fetchVaultPPSWithRetry(chainId, vaultAddress, options).finally(() => {
+    inFlightVaultPPSFetches.delete(key)
+  })
+
+  inFlightVaultPPSFetches.set(key, request)
+  return request
+}
+
 export async function fetchMultipleVaultsPPS(
   vaults: Array<{ chainId: number; vaultAddress: string }>,
   options?: TKongFetchOptions
@@ -175,7 +197,7 @@ export async function fetchMultipleVaultsPPS(
       batch.map(async ({ chainId, vaultAddress }) => {
         const key = `${chainId}:${vaultAddress.toLowerCase()}`
         try {
-          const timeline = await fetchVaultPPSWithRetry(chainId, vaultAddress, options)
+          const timeline = await fetchVaultPPSDeduped(chainId, vaultAddress, options)
           return { key, timeline }
         } catch (error) {
           console.error(`[Kong] Failed to fetch PPS for ${key}:`, error)
