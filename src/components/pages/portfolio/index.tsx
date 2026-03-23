@@ -18,7 +18,13 @@ import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
-import { METRIC_VALUE_CLASS, MetricHeader, MetricsCard, type TMetricBlock } from '@shared/components/MetricsCard'
+import {
+  METRIC_FOOTNOTE_CLASS,
+  METRIC_VALUE_CLASS,
+  MetricHeader,
+  MetricsCard,
+  type TMetricBlock
+} from '@shared/components/MetricsCard'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
@@ -37,7 +43,9 @@ import { useChainId, useSwitchChain } from 'wagmi'
 import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { type TPortfolioModel, usePortfolioModel } from './hooks/usePortfolioModel'
+import { usePortfolioPnL } from './hooks/usePortfolioPnL'
 import { useVaultWithStakingRewards } from './hooks/useVaultWithStakingRewards'
+import type { TPortfolioPnlSummary } from './types/api'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -45,6 +53,20 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2
 })
+
+function formatSignedCurrency(value: number): string {
+  const absoluteValue = currencyFormatter.format(Math.abs(value))
+
+  if (value > 0) {
+    return `+${absoluteValue}`
+  }
+
+  if (value < 0) {
+    return `-${absoluteValue}`
+  }
+
+  return absoluteValue
+}
 
 const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
@@ -64,7 +86,10 @@ type TPortfolioHeaderProps = Pick<
   | 'isHoldingsLoading'
   | 'isSearchingBalances'
   | 'totalPortfolioValue'
->
+> & {
+  isPnlLoading: boolean
+  pnlSummary: TPortfolioPnlSummary | null
+}
 
 type TPortfolioHoldingsProps = Pick<
   TPortfolioModel,
@@ -100,6 +125,8 @@ function PortfolioHeaderSection({
   isActive,
   isHoldingsLoading,
   isSearchingBalances,
+  isPnlLoading,
+  pnlSummary,
   totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
   const katanaTooltipContent = (
@@ -146,6 +173,15 @@ function PortfolioHeaderSection({
     return <span>{currencyFormatter.format(value)}</span>
   }
 
+  function renderSignedCurrencyMetric(value: number | null): ReactElement {
+    if (isPnlLoading) return metricSpinner
+    if (value === null) return <span>{'—'}</span>
+
+    const toneClassName = value > 0 ? 'text-green-400' : value < 0 ? 'text-red-400' : 'text-text-primary'
+
+    return <span className={toneClassName}>{formatSignedCurrency(value)}</span>
+  }
+
   const metrics: TMetricBlock[] = [
     {
       key: 'total-balance',
@@ -178,6 +214,47 @@ function PortfolioHeaderSection({
     }
   ]
 
+  const pnlMetrics: TMetricBlock[] = [
+    {
+      key: 'portfolio-pnl',
+      header: (
+        <MetricHeader
+          label="Portfolio PnL"
+          mobileLabel="P&L"
+          tooltip="Market PnL on indexed Yearn vault positions. This can be partial when cost basis is unknown."
+        />
+      ),
+      value: <span className={METRIC_VALUE_CLASS}>{renderSignedCurrencyMetric(pnlSummary?.totalPnlUsd ?? null)}</span>,
+      footnote:
+        pnlSummary && !pnlSummary.isComplete ? (
+          <span className={METRIC_FOOTNOTE_CLASS}>
+            {`${pnlSummary.partialVaults} ${pnlSummary.partialVaults === 1 ? 'vault has' : 'vaults have'} partial cost basis.`}
+          </span>
+        ) : undefined
+    },
+    {
+      key: 'economic-gain',
+      header: (
+        <MetricHeader
+          label="Economic Gain"
+          mobileLabel="Gain"
+          tooltip="Broader result than market PnL. Includes windfalls from unknown-basis transfers in windfall mode."
+        />
+      ),
+      value: (
+        <span className={METRIC_VALUE_CLASS}>
+          {renderSignedCurrencyMetric(pnlSummary?.totalEconomicGainUsd ?? null)}
+        </span>
+      ),
+      footnote:
+        pnlSummary && Math.abs(pnlSummary.totalWindfallPnlUsd) > 0.005 ? (
+          <span className={METRIC_FOOTNOTE_CLASS}>
+            {`Includes ${currencyFormatter.format(pnlSummary.totalWindfallPnlUsd)} windfall.`}
+          </span>
+        ) : undefined
+    }
+  ]
+
   return (
     <section className={'flex flex-col gap-2'}>
       <div className="px-1">
@@ -193,7 +270,18 @@ function PortfolioHeaderSection({
         </Tooltip>
       </div>
       {isActive && (
-        <MetricsCard items={metrics} className="rounded-t-lg rounded-b-none border border-border" mobileLayout="grid" />
+        <div className="flex flex-col gap-0">
+          <MetricsCard
+            items={metrics}
+            className="rounded-t-lg rounded-b-none border border-border"
+            mobileLayout="grid"
+          />
+          <MetricsCard
+            items={pnlMetrics}
+            className="rounded-none border-x border-b border-border"
+            mobileLayout="grid"
+          />
+        </div>
       )}
     </section>
   )
@@ -941,6 +1029,7 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
   const { data: historyData, isLoading: historyLoading } = usePortfolioHistory()
+  const { data: pnlSummary, isLoading: pnlLoading } = usePortfolioPnL()
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
@@ -1052,6 +1141,8 @@ function PortfolioPage(): ReactElement {
             isHoldingsLoading={model.isHoldingsLoading}
             isSearchingBalances={model.isSearchingBalances}
             hasKatanaHoldings={model.hasKatanaHoldings}
+            isPnlLoading={pnlLoading}
+            pnlSummary={pnlSummary}
             totalPortfolioValue={model.totalPortfolioValue}
           />
           <PortfolioHistoryChart data={historyData} isLoading={historyLoading} mergeWithHeader={model.isActive} />

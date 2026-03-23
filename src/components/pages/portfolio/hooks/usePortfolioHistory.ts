@@ -11,7 +11,7 @@ export function usePortfolioHistory() {
     if (!address) {
       return null
     }
-    return `/api/holdings/history?address=${address}`
+    return `/api/holdings/history?address=${address}&debug=1&fetchType=parallel&paginationMode=all`
   }, [address])
 
   const {
