@@ -14,6 +14,7 @@ import type {
 } from '@shared/types/tenderly'
 import {
   buildTenderlyFundableAssets,
+  clearTenderlySnapshotBucket,
   getTenderlySnapshotBucketKey,
   getValidBaselineSnapshot,
   markTenderlySnapshotInvalid,
@@ -57,6 +58,7 @@ type TTenderlyPanelContext = {
   refetchStatus: () => Promise<void>
   createBaselineSnapshot: () => Promise<void>
   createSnapshot: () => Promise<void>
+  clearSnapshotHistory: () => void
   revertToSnapshot: (snapshotRecord: TTenderlySnapshotRecord) => Promise<void>
   increaseTime: (params: Omit<TTenderlyIncreaseTimeRequest, 'canonicalChainId'>) => Promise<void>
   fundWallet: (params: Omit<TTenderlyFundRequest, 'canonicalChainId' | 'walletAddress'>) => Promise<void>
@@ -77,6 +79,7 @@ const TenderlyPanelContext = createContext<TTenderlyPanelContext>({
   refetchStatus: async (): Promise<void> => undefined,
   createBaselineSnapshot: async (): Promise<void> => undefined,
   createSnapshot: async (): Promise<void> => undefined,
+  clearSnapshotHistory: (): void => undefined,
   revertToSnapshot: async (): Promise<void> => undefined,
   increaseTime: async (): Promise<void> => undefined,
   fundWallet: async (): Promise<void> => undefined
@@ -359,6 +362,23 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
     }
   }, [createSnapshotWithKind])
 
+  const clearSnapshotHistory = useCallback((): void => {
+    if (!selectedCanonicalChainId || !selectedChain?.executionChainId) {
+      return
+    }
+
+    updateSnapshotStorage((currentStorage) =>
+      clearTenderlySnapshotBucket(currentStorage, {
+        canonicalChainId: selectedCanonicalChainId,
+        executionChainId: selectedChain.executionChainId
+      })
+    )
+    toast({
+      content: 'Cleared local Tenderly snapshot history for this chain',
+      type: 'success'
+    })
+  }, [selectedCanonicalChainId, selectedChain?.executionChainId, updateSnapshotStorage])
+
   const revertToSnapshotWithToast = useCallback(
     async (snapshotRecord: TTenderlySnapshotRecord): Promise<void> => {
       try {
@@ -422,6 +442,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
       refetchStatus,
       createBaselineSnapshot,
       createSnapshot,
+      clearSnapshotHistory,
       revertToSnapshot: revertToSnapshotWithToast,
       increaseTime: increaseTimeWithToast,
       fundWallet: fundWalletWithToast
@@ -442,6 +463,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
       refetchStatus,
       createBaselineSnapshot,
       createSnapshot,
+      clearSnapshotHistory,
       revertToSnapshotWithToast,
       increaseTimeWithToast,
       fundWalletWithToast

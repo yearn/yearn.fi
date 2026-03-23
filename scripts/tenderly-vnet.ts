@@ -51,6 +51,9 @@ type TCreateVnetPayload = {
     enabled: boolean
     verification_visibility: 'bytecode'
   }
+  rpc_config?: {
+    rpc_name: string
+  }
 }
 
 const DEFAULT_ACCOUNT_SLUG = 'me'
@@ -76,14 +79,15 @@ Options:
   --network-id <id>       Parent network id (default: 1)
   --block-number <num>    Fork block number or latest (default: latest)
   --chain-id <id>         Execution chain id (default: 69420<network-id>)
+  --rpc-name <name>       Stable public RPC name for predictable endpoint reuse
   --enable-sync           Enable state sync (default: false)
   --enable-explorer       Enable public explorer (default: false)
   --json                  Print raw API JSON response
   --help                  Show this help text
 
 Profiles:
-  webops   -> WEBOPS_TENDERLY_API_KEY, TENDERLY_ACCOUNT_SLUG, TENDERLY_PROJECT_SLUG
-  personal -> PERSONAL_TENDERLY_API_KEY, PERSONAL_ACCOUNT_SLUG, PERSONAL_PROJECT_SLUG
+  webops   -> WEBOPS_TENDERLY_API_KEY, TENDERLY_ACCOUNT_SLUG, TENDERLY_PROJECT_SLUG, WEBOPS_TENDERLY_RPC_NAME
+  personal -> PERSONAL_TENDERLY_API_KEY, PERSONAL_ACCOUNT_SLUG, PERSONAL_PROJECT_SLUG, PERSONAL_TENDERLY_RPC_NAME
 
 Explicit flags always win over profile defaults.
 `
@@ -251,6 +255,19 @@ function resolveTenderlyCredentials(
   }
 }
 
+function resolveRpcName(
+  flags: Record<string, string>,
+  env: Record<string, string | undefined>,
+  profile: TTenderlyProfile
+): string | undefined {
+  const profileDefaultEnvKey = profile === 'personal' ? 'PERSONAL_TENDERLY_RPC_NAME' : 'WEBOPS_TENDERLY_RPC_NAME'
+  return getArg(flags, 'rpc-name') || getEnvValue(env, profileDefaultEnvKey) || env.TENDERLY_RPC_NAME?.trim()
+}
+
+function buildPredictablePublicRpcUrl(accountSlug: string, projectSlug: string, rpcName: string): string {
+  return `https://virtual.rpc.tenderly.co/${encodeURIComponent(accountSlug)}/${encodeURIComponent(projectSlug)}/public/${encodeURIComponent(rpcName)}`
+}
+
 async function createVirtualTestNet(
   apiKey: string,
   accountSlug: string,
@@ -306,6 +323,7 @@ async function main(): Promise<void> {
   const envFromFile = readEnvFile(resolve(scriptDir, '../.env'))
   const env = { ...envFromFile, ...process.env }
   const { apiKey, accountSlug, projectSlug, profile } = resolveTenderlyCredentials(flags, env)
+  const rpcName = resolveRpcName(flags, env, profile)
   const timestamp = Date.now().toString()
   const requestedSlug = getArg(flags, 'slug') || `vnet-${timestamp}`
   const defaultDisplayNamePrefix = profile === 'personal' ? 'Personal VNet' : 'Webops VNet'
@@ -335,7 +353,8 @@ async function main(): Promise<void> {
     explorer_page_config: {
       enabled: enableExplorer,
       verification_visibility: 'bytecode'
-    }
+    },
+    ...(rpcName ? { rpc_config: { rpc_name: rpcName } } : {})
   }
 
   const response = await createVirtualTestNet(apiKey, accountSlug, projectSlug, payload)
@@ -347,6 +366,7 @@ async function main(): Promise<void> {
 
   const adminRpc = response.rpcs?.find((rpc) => rpc.name === 'Admin RPC')?.url
   const publicRpc = response.rpcs?.find((rpc) => rpc.name === 'Public RPC')?.url
+  const predictablePublicRpc = rpcName ? buildPredictablePublicRpcUrl(accountSlug, projectSlug, rpcName) : undefined
 
   console.log(`Created Tenderly Virtual TestNet`)
   console.log(`profile: ${profile}`)
@@ -354,6 +374,8 @@ async function main(): Promise<void> {
   console.log(`project: ${projectSlug}`)
   console.log(`slug: ${response.slug || requestedSlug}`)
   console.log(`display name: ${response.display_name || displayName}`)
+  if (rpcName) console.log(`rpc name: ${rpcName}`)
+  if (predictablePublicRpc) console.log(`predictable public rpc: ${predictablePublicRpc}`)
   if (adminRpc) console.log(`admin rpc: ${adminRpc}`)
   if (publicRpc) console.log(`public rpc: ${publicRpc}`)
   console.log(`chain-id: ${chainId}`)
