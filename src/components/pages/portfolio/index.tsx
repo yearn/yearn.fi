@@ -31,6 +31,7 @@ import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
+import { IconQuestion } from '@shared/icons/IconQuestion'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, SUPPORTED_NETWORKS } from '@shared/utils'
@@ -70,6 +71,8 @@ function formatSignedCurrency(value: number): string {
 
 const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
+const footnoteTooltipClassName =
+  'max-w-[260px] rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs leading-relaxed text-text-primary'
 const PORTFOLIO_TABS = [
   { key: 'positions', label: 'Your Vaults' },
   { key: 'activity', label: 'Activity' },
@@ -116,6 +119,30 @@ function PortfolioPageLayout({ children }: { children: ReactElement }): ReactEle
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
       <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16'}>{children}</div>
     </div>
+  )
+}
+
+function FootnoteWithTooltip({ label, tooltip }: { label: string; tooltip: string }): ReactElement {
+  return (
+    <span className={cl(METRIC_FOOTNOTE_CLASS, 'inline-flex items-center gap-1.5')}>
+      <span>{label}</span>
+      <Tooltip
+        className={'h-auto w-auto justify-start gap-0'}
+        openDelayMs={150}
+        side={'top'}
+        tooltip={<div className={footnoteTooltipClassName}>{tooltip}</div>}
+      >
+        <button
+          type={'button'}
+          aria-label={tooltip}
+          className={
+            'inline-flex h-4 w-4 items-center justify-center rounded-full text-text-secondary transition-colors hover:text-text-primary'
+          }
+        >
+          <IconQuestion className={'size-3.5'} />
+        </button>
+      </Tooltip>
+    </span>
   )
 }
 
@@ -227,9 +254,12 @@ function PortfolioHeaderSection({
       value: <span className={METRIC_VALUE_CLASS}>{renderSignedCurrencyMetric(pnlSummary?.totalPnlUsd ?? null)}</span>,
       footnote:
         pnlSummary && !pnlSummary.isComplete ? (
-          <span className={METRIC_FOOTNOTE_CLASS}>
-            {`${pnlSummary.partialVaults} ${pnlSummary.partialVaults === 1 ? 'vault has' : 'vaults have'} partial cost basis.`}
-          </span>
+          <FootnoteWithTooltip
+            label={`${pnlSummary.partialVaults} ${pnlSummary.partialVaults === 1 ? 'vault has' : 'vaults have'} partial cost basis.`}
+            tooltip={
+              'Partial cost basis means we know the current holding, but part of its acquisition history cannot be fully reconstructed. Current value is included, while PnL may be incomplete for those vaults.'
+            }
+          />
         ) : undefined
     },
     {
@@ -248,9 +278,10 @@ function PortfolioHeaderSection({
       ),
       footnote:
         pnlSummary && Math.abs(pnlSummary.totalWindfallPnlUsd) > 0.005 ? (
-          <span className={METRIC_FOOTNOTE_CLASS}>
-            {`Includes ${currencyFormatter.format(pnlSummary.totalWindfallPnlUsd)} windfall.`}
-          </span>
+          <FootnoteWithTooltip
+            label={`Includes ${currencyFormatter.format(pnlSummary.totalWindfallPnlUsd)} windfall.`}
+            tooltip={'Windfall is value received from transfers with unknown original cost basis.'}
+          />
         ) : undefined
     }
   ]
