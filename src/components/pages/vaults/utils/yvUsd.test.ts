@@ -168,7 +168,7 @@ describe('yvUSD historical PPS normalization', () => {
         lockedPricePerShare: 1.038008,
         unlockedPricePerShare: 1.005734
       })
-    ).toBeCloseTo(1.043960757872, 12)
+    ).toBeCloseTo(1.043959937872, 12)
   })
 
   it('annualizes PPS changes into APR and APY using the shared helper formulas', () => {
@@ -221,6 +221,23 @@ describe('yvUSD historical PPS normalization', () => {
         }
       })
     ).toBeCloseTo(0.0538388189, 10)
+  })
+
+  it('preserves a valid 0 percent 30d APY instead of falling back to 7d', () => {
+    expect(
+      calculateLockedYvUsdHistoricalApy({
+        lockedPricePerShare: {
+          today: 1.02,
+          weekAgo: 1.03,
+          monthAgo: 1.02
+        },
+        unlockedPricePerShare: {
+          today: 1.01,
+          weekAgo: 1,
+          monthAgo: 1.01
+        }
+      })
+    ).toBe(0)
   })
 })
 

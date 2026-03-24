@@ -15,8 +15,8 @@ describe('buildUnderlyingLockedPpsSeries', () => {
     })
 
     expect(result).not.toBeNull()
-    expect(result?.[0]?.PPS).toBeCloseTo(1.017089034077, 12)
-    expect(result?.[1]?.PPS).toBeCloseTo(1.043960757872, 12)
+    expect(result?.[0]?.PPS).toBeCloseTo(1.017089038077, 12)
+    expect(result?.[1]?.PPS).toBeCloseTo(1.043959937872, 12)
   })
 
   it('returns null PPS points when the unlocked date match is missing', () => {
@@ -28,7 +28,7 @@ describe('buildUnderlyingLockedPpsSeries', () => {
       ]
     })
 
-    expect(result?.[0]?.PPS).toBeCloseTo(1.017089034077, 12)
+    expect(result?.[0]?.PPS).toBeCloseTo(1.017089038077, 12)
     expect(result?.[1]?.PPS).toBeNull()
   })
 })

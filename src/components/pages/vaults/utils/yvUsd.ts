@@ -121,10 +121,6 @@ function normalizeFiniteNonNegativeNumber(value: number | null | undefined): num
   return value
 }
 
-function hasNonZeroHistoricalApy(value: number | null | undefined): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && Math.abs(value) > Number.EPSILON
-}
-
 export function getYvUsdUnderlyingPricePerShare({
   lockedPricePerShare,
   unlockedPricePerShare
@@ -229,7 +225,7 @@ export function calculateLockedYvUsdHistoricalApy({
     periodDays: 30
   })
 
-  if (hasNonZeroHistoricalApy(monthlyApy)) {
+  if (monthlyApy !== null) {
     return monthlyApy
   }
 
