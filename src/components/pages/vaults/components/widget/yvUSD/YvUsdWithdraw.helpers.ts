@@ -9,6 +9,7 @@ import type { TransactionStep } from '../shared/TransactionOverlay'
 
 type TLockedWithdrawStepPhase = 'withdraw' | 'redeem'
 export type TYvUsdAmountUnit = 'underlying' | 'shares' | 'other'
+export type TLockedWithdrawMethod = 'withdraw' | 'redeem'
 
 type TResolveLockedWithdrawAmountParams = {
   maxWithdrawAssets: bigint
@@ -22,6 +23,15 @@ type TResolveLockedRequestedWithdrawAssetsParams = {
   maxDisplayAmount: bigint
   maxWithdrawAssets: bigint
   previewWithdrawShares?: bigint
+}
+
+type TResolveLockedRequestedWithdrawSharesParams = {
+  requestedLockedAssets: bigint
+  maxWithdrawAssets: bigint
+  maxRedeemShares: bigint
+  previewWithdrawShares?: bigint
+  lockedPricePerShare: bigint
+  lockedVaultTokenDecimals: number
 }
 
 type TResolveLockedRequestedAmountFromInputParams = {
@@ -45,6 +55,15 @@ type TResolveLockedWithdrawExpectedOutParams = {
   unlockedVaultDecimals: number
 }
 
+type TResolveLockedRedeemAssetsParams = {
+  requestedLockedShares: bigint
+  maxWithdrawAssets: bigint
+  maxRedeemShares: bigint
+  previewRedeemAssets?: bigint
+  lockedPricePerShare: bigint
+  lockedVaultTokenDecimals: number
+}
+
 type TShouldNormalizeLockedWithdrawDisplayAmountParams = {
   canWithdrawNow: boolean
   currentDisplayAmount: bigint
@@ -65,21 +84,31 @@ type TResolveCooldownSharesToStartParams = {
 
 type TBuildLockedWithdrawStepParams = {
   phase: TLockedWithdrawStepPhase
+  lockedStepMethod: TLockedWithdrawMethod
   prepareLockedWithdraw: UseSimulateContractReturnType
   prepareUnlockedWithdraw: UseSimulateContractReturnType
-  requestedLockedAssets: bigint
+  requestedLockedShares: bigint
+  receivedLockedAssets: bigint
   expectedUnderlyingOut: bigint
+  lockedVaultTokenDecimals: number
   lockedAssetDecimals: number
   underlyingDecimals: number
+  lockedVaultTokenSymbol: string
   lockedAssetSymbol: string
   underlyingSymbol: string
 }
 
-export type TLockedWithdrawNoZapExecutionStep = {
-  key: 'withdraw_locked' | 'withdraw_unlocked'
-  functionName: 'withdraw'
-  args: readonly [bigint, Address, Address]
-}
+export type TLockedWithdrawNoZapExecutionStep =
+  | {
+      key: 'withdraw_locked'
+      functionName: TLockedWithdrawMethod
+      args: readonly [bigint, Address, Address]
+    }
+  | {
+      key: 'withdraw_unlocked'
+      functionName: 'withdraw'
+      args: readonly [bigint, Address, Address]
+    }
 
 export function resolveLockedWithdrawDisplayAmount({
   maxWithdrawAssets,
@@ -121,6 +150,54 @@ export function resolveLockedRequestedWithdrawAssets({
   }
 
   return previewWithdrawShares > maxWithdrawAssets ? maxWithdrawAssets : previewWithdrawShares
+}
+
+export function resolveLockedRequestedWithdrawShares({
+  requestedLockedAssets,
+  maxWithdrawAssets,
+  maxRedeemShares,
+  previewWithdrawShares,
+  lockedPricePerShare,
+  lockedVaultTokenDecimals
+}: TResolveLockedRequestedWithdrawSharesParams): bigint {
+  if (requestedLockedAssets <= 0n || maxWithdrawAssets <= 0n || maxRedeemShares <= 0n) {
+    return 0n
+  }
+
+  if (requestedLockedAssets >= maxWithdrawAssets) {
+    return maxRedeemShares
+  }
+
+  if (typeof previewWithdrawShares === 'bigint' && previewWithdrawShares > 0n) {
+    return previewWithdrawShares > maxRedeemShares ? maxRedeemShares : previewWithdrawShares
+  }
+
+  if (lockedPricePerShare <= 0n) {
+    return 0n
+  }
+
+  const numerator = requestedLockedAssets * 10n ** BigInt(lockedVaultTokenDecimals)
+  const requiredShares = (numerator + lockedPricePerShare - 1n) / lockedPricePerShare
+  return requiredShares > maxRedeemShares ? maxRedeemShares : requiredShares
+}
+
+export function resolveLockedWithdrawMethod({
+  requestedLockedAssets,
+  requestedLockedShares,
+  redeemableLockedAssets
+}: {
+  requestedLockedAssets: bigint
+  requestedLockedShares: bigint
+  redeemableLockedAssets: bigint
+}): TLockedWithdrawMethod {
+  if (
+    requestedLockedAssets > 0n &&
+    (requestedLockedShares <= 0n || redeemableLockedAssets <= 0n || redeemableLockedAssets < requestedLockedAssets)
+  ) {
+    return 'withdraw'
+  }
+
+  return 'redeem'
 }
 
 export function getLockedCooldownMaxAssetAmount({
@@ -228,6 +305,33 @@ export function resolveLockedWithdrawExpectedOut({
   })
 }
 
+export function resolveLockedRedeemAssets({
+  requestedLockedShares,
+  maxWithdrawAssets,
+  maxRedeemShares,
+  previewRedeemAssets,
+  lockedPricePerShare,
+  lockedVaultTokenDecimals
+}: TResolveLockedRedeemAssetsParams): bigint {
+  if (requestedLockedShares <= 0n || maxWithdrawAssets <= 0n || maxRedeemShares <= 0n) {
+    return 0n
+  }
+
+  if (typeof previewRedeemAssets === 'bigint') {
+    return previewRedeemAssets
+  }
+
+  if (requestedLockedShares >= maxRedeemShares) {
+    return maxWithdrawAssets
+  }
+
+  if (lockedPricePerShare <= 0n) {
+    return 0n
+  }
+
+  return (requestedLockedShares * lockedPricePerShare) / 10n ** BigInt(lockedVaultTokenDecimals)
+}
+
 export function shouldNormalizeLockedWithdrawDisplayAmount({
   canWithdrawNow,
   currentDisplayAmount,
@@ -277,18 +381,22 @@ export function resolveCooldownSharesToStart({
 
 export function buildLockedWithdrawNoZapExecutionPlan(params: {
   account?: Address
+  lockedStepMethod: TLockedWithdrawMethod
+  requestedLockedShares: bigint
   requestedLockedAssets: bigint
   requestedUnderlyingAssets: bigint
 }): TLockedWithdrawNoZapExecutionStep[] {
-  if (!params.account || params.requestedLockedAssets <= 0n) {
+  const firstStepAmount =
+    params.lockedStepMethod === 'redeem' ? params.requestedLockedShares : params.requestedLockedAssets
+  if (!params.account || firstStepAmount <= 0n) {
     return []
   }
 
   const account = toAddress(params.account)
   const lockedWithdrawStep: TLockedWithdrawNoZapExecutionStep = {
     key: 'withdraw_locked',
-    functionName: 'withdraw',
-    args: [params.requestedLockedAssets, account, account]
+    functionName: params.lockedStepMethod,
+    args: [firstStepAmount, account, account]
   }
 
   if (params.requestedUnderlyingAssets <= 0n) {
@@ -307,17 +415,25 @@ export function buildLockedWithdrawNoZapExecutionPlan(params: {
 
 export function buildLockedWithdrawTransactionStep({
   phase,
+  lockedStepMethod,
   prepareLockedWithdraw,
   prepareUnlockedWithdraw,
-  requestedLockedAssets,
+  requestedLockedShares,
+  receivedLockedAssets,
   expectedUnderlyingOut,
+  lockedVaultTokenDecimals,
   lockedAssetDecimals,
   underlyingDecimals,
+  lockedVaultTokenSymbol,
   lockedAssetSymbol,
   underlyingSymbol
 }: TBuildLockedWithdrawStepParams): TransactionStep {
+  const formattedLockedShares = formatTAmount({
+    value: requestedLockedShares,
+    decimals: lockedVaultTokenDecimals
+  })
   const formattedLockedAssets = formatTAmount({
-    value: requestedLockedAssets,
+    value: receivedLockedAssets,
     decimals: lockedAssetDecimals
   })
   const formattedUnderlyingOut = formatTAmount({
@@ -329,8 +445,11 @@ export function buildLockedWithdrawTransactionStep({
     return {
       prepare: prepareLockedWithdraw,
       label: 'Withdraw to yvUSD',
-      confirmMessage: `Withdrawing ${formattedLockedAssets} ${lockedAssetSymbol} from the locked vault`,
-      successTitle: 'Locked withdraw successful',
+      confirmMessage:
+        lockedStepMethod === 'redeem'
+          ? `Redeeming ${formattedLockedShares} ${lockedVaultTokenSymbol} from the locked vault`
+          : `Withdrawing ${formattedLockedAssets} ${lockedAssetSymbol} from the locked vault`,
+      successTitle: lockedStepMethod === 'redeem' ? 'Locked redeem successful' : 'Locked withdraw successful',
       successMessage: `Received ${formattedLockedAssets} ${lockedAssetSymbol}. Continuing to withdraw ${formattedUnderlyingOut} ${underlyingSymbol}.`,
       completesFlow: false
     }

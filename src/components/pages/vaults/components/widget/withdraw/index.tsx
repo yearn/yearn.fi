@@ -98,6 +98,7 @@ export function WidgetWithdraw({
   vaultVersion,
   vaultUserData,
   inputBalanceOverride,
+  inputDisplayBalanceOverride,
   maxWithdrawAssets,
   requiredSharesOverride,
   expectedOutOverride,
@@ -291,6 +292,7 @@ export function WidgetWithdraw({
     return maxWithdrawAssets < totalBalanceInUnderlying.raw ? maxWithdrawAssets : totalBalanceInUnderlying.raw
   }, [maxWithdrawAssets, totalBalanceInUnderlying.raw, inputBalanceOverride, disableFlow])
   const inputBalance = inputBalanceOverride ?? effectiveMaxWithdrawAssets
+  const displayedInputBalance = inputDisplayBalanceOverride ?? inputBalance
 
   const isMaxWithdraw = useMemo(() => {
     return (
@@ -875,6 +877,7 @@ export function WidgetWithdraw({
               title="Amount"
               placeholder="0.00"
               balance={inputBalance}
+              displayBalance={displayedInputBalance}
               decimals={assetToken?.decimals ?? 18}
               symbol={assetToken?.symbol || 'tokens'}
               disabled={disableAmountInput || (!!hasBothBalances && !withdrawalSource)}
