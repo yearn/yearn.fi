@@ -9,7 +9,7 @@ import {
 } from '@pages/vaults/utils/charts'
 import { useChartStyle } from '@shared/contexts/useChartStyle'
 import { getChartStyleVariables } from '@shared/utils/chartStyles'
-import type { CSSProperties, ReactElement } from 'react'
+import type { ComponentProps, CSSProperties, ReactElement } from 'react'
 import { useMemo } from 'react'
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
 import type { ChartConfig } from './ChartPrimitives'
@@ -26,11 +26,13 @@ type TYvUsdDualLineChartProps = {
   timeframe: string
   hideTooltip?: boolean
   allowNegativeValues?: boolean
+  referenceFloor?: number
   formatValue: (value: number) => string
   formatTick: (value: number | string) => string
 }
 
 type TYvUsdSeriesKey = 'unlocked' | 'locked'
+type TYAxisDomain = NonNullable<ComponentProps<typeof YAxis>['domain']>
 
 const SERIES_CONFIG: ChartConfig = {
   unlocked: {
@@ -67,6 +69,7 @@ export function YvUsdDualLineChart({
   timeframe,
   hideTooltip,
   allowNegativeValues = false,
+  referenceFloor,
   formatValue,
   formatTick
 }: TYvUsdDualLineChartProps): ReactElement {
@@ -87,6 +90,17 @@ export function YvUsdDualLineChart({
     [filteredData, isShortTimeframe]
   )
   const tickFormatter = isShortTimeframe ? formatChartWeekLabel : formatChartMonthYearLabel
+  const yAxisDomain = useMemo<TYAxisDomain>(() => {
+    if (allowNegativeValues && hasNegativeValues) {
+      return ['auto', 'auto'] as [string, string]
+    }
+
+    if (referenceFloor !== undefined) {
+      return ([dataMin, dataMax]: [number, number]) => [Math.min(referenceFloor, dataMin), dataMax]
+    }
+
+    return [0, 'auto'] as [number, 'auto']
+  }, [allowNegativeValues, hasNegativeValues, referenceFloor])
 
   return (
     <ChartContainer config={SERIES_CONFIG} style={{ height: 'inherit' }}>
@@ -101,7 +115,7 @@ export function YvUsdDualLineChart({
           tickLine={{ stroke: 'var(--chart-axis)' }}
         />
         <YAxis
-          domain={allowNegativeValues && hasNegativeValues ? ['auto', 'auto'] : [0, 'auto']}
+          domain={yAxisDomain}
           tickFormatter={formatTick}
           mirror
           width={CHART_Y_AXIS_WIDTH}
@@ -224,6 +238,7 @@ export function YvUsdPerformanceChart({
       chartData={chartData}
       timeframe={timeframe}
       hideTooltip={hideTooltip}
+      referenceFloor={1}
       formatValue={(value) => value.toFixed(4)}
       formatTick={formatPpsTick}
     />
