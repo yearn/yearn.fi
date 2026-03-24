@@ -3,7 +3,6 @@ import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import {
   convertYvUsdLockedAssetRawAmountToUnderlying,
   convertYvUsdLockedPricePerShareToUnderlying,
-  convertYvUsdUnderlyingRawAmountToLockedAsset,
   getYvUsdLockedWithdrawDisplayMode,
   type TYvUsdVariant,
   YVUSD_LOCKED_ADDRESS,
@@ -40,12 +39,15 @@ import {
   getLockedCooldownMaxAssetAmount,
   getLockedCooldownMaxDisplayAmount,
   resolveCooldownSharesToStart,
+  resolveLockedRedeemAssets,
   resolveLockedRequestedAmountFromInput,
   resolveLockedRequestedWithdrawAssets,
+  resolveLockedRequestedWithdrawShares,
   resolveLockedWithdrawDisplayAmount,
   resolveLockedWithdrawExpectedOut,
+  resolveLockedWithdrawMethod,
   shouldNormalizeLockedWithdrawDisplayAmount,
-  type TYvUsdAmountUnit
+  type TLockedWithdrawMethod
 } from './YvUsdWithdraw.helpers'
 
 type Props = {
@@ -62,7 +64,9 @@ type WithdrawPrefill = {
 }
 
 type LockedWithdrawExecutionSnapshot = {
+  lockedStepMethod: TLockedWithdrawMethod
   requestedLockedAssets: bigint
+  requestedLockedShares: bigint
 }
 
 function getDefaultVariant(hasLocked: boolean, hasUnlocked: boolean): TYvUsdVariant {
@@ -129,52 +133,6 @@ function getYvUsdWithdrawSymbol(variant: TYvUsdVariant): string {
   return variant === 'locked' ? 'yvUSD (Locked)' : 'yvUSD (Unlocked)'
 }
 
-function getYvUsdAmountUnit(address: `0x${string}`, underlyingAssetAddress: `0x${string}`): TYvUsdAmountUnit {
-  if (address === YVUSD_UNLOCKED_ADDRESS) {
-    return 'shares'
-  }
-  if (address === underlyingAssetAddress) {
-    return 'underlying'
-  }
-  return 'other'
-}
-
-function convertYvUsdInputAmount({
-  amount,
-  fromUnit,
-  toUnit,
-  unlockedPricePerShare,
-  unlockedVaultDecimals
-}: {
-  amount: bigint
-  fromUnit: TYvUsdAmountUnit
-  toUnit: TYvUsdAmountUnit
-  unlockedPricePerShare: bigint
-  unlockedVaultDecimals: number
-}): bigint {
-  if (amount <= 0n || fromUnit === toUnit || fromUnit === 'other' || toUnit === 'other') {
-    return amount
-  }
-
-  if (fromUnit === 'shares' && toUnit === 'underlying') {
-    return convertYvUsdLockedAssetRawAmountToUnderlying({
-      amount,
-      unlockedPricePerShare,
-      unlockedVaultDecimals
-    })
-  }
-
-  if (fromUnit === 'underlying' && toUnit === 'shares') {
-    return convertYvUsdUnderlyingRawAmountToLockedAsset({
-      amount,
-      unlockedPricePerShare,
-      unlockedVaultDecimals
-    })
-  }
-
-  return amount
-}
-
 export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collapseDetails }: Props): ReactElement {
   const { address: account } = useAccount()
   const { onRefresh: refreshWalletBalances } = useWallet()
@@ -191,7 +149,6 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const [lockedWithdrawPhase, setLockedWithdrawPhase] = useState<'withdraw' | 'redeem'>('withdraw')
   const [lockedWithdrawExecutionSnapshot, setLockedWithdrawExecutionSnapshot] =
     useState<LockedWithdrawExecutionSnapshot | null>(null)
-  const [selectedWithdrawTokenAddress, setSelectedWithdrawTokenAddress] = useState<`0x${string}` | undefined>(undefined)
   const activeVariant = variant ?? 'unlocked'
   const isLockedVariant = activeVariant === 'locked'
 
@@ -271,6 +228,17 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
       refetchInterval: isLockedVariant ? 30_000 : false
     }
   })
+  const { data: rawMaxRedeemShares, refetch: refetchMaxRedeemShares } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: erc4626Abi,
+    functionName: 'maxRedeem',
+    args: account ? [toAddress(account)] : undefined,
+    chainId,
+    query: {
+      enabled: !!account && isLockedVariant,
+      refetchInterval: isLockedVariant ? 30_000 : false
+    }
+  })
 
   const cooldownStatus = useMemo(() => parseCooldownStatus(rawCooldownStatus), [rawCooldownStatus])
   const cooldownDurationSeconds = resolveDurationSeconds(rawCooldownDuration, YVUSD_LOCKED_COOLDOWN_DAYS)
@@ -284,6 +252,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     [withdrawalWindowSeconds]
   )
   const maxWithdrawAssets = typeof rawMaxWithdrawAssets === 'bigint' ? rawMaxWithdrawAssets : 0n
+  const maxRedeemShares = typeof rawMaxRedeemShares === 'bigint' ? rawMaxRedeemShares : 0n
 
   const hasActiveCooldown = cooldownStatus.shares > 0n
   const { timestamp: nowTimestamp } = useChainTimestamp({
@@ -651,11 +620,110 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
       }),
     [draftWithdrawAmount, lockedMaxWithdrawDisplayAmount, maxWithdrawAssets, rawPreviewWithdrawForRequestedAmount]
   )
+  const {
+    data: rawPreviewWithdrawLockedSharesForRequestedAssets,
+    refetch: refetchPreviewWithdrawLockedSharesForRequestedAssets
+  } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: erc4626Abi,
+    functionName: 'previewWithdraw',
+    args:
+      !!account && isLockedVariant && canWithdrawNow && lockedRequestedWithdrawAssets > 0n
+        ? [lockedRequestedWithdrawAssets]
+        : undefined,
+    chainId,
+    query: {
+      enabled: !!account && isLockedVariant && canWithdrawNow && lockedRequestedWithdrawAssets > 0n
+    }
+  })
+  const lockedRequestedWithdrawShares = useMemo(
+    () =>
+      resolveLockedRequestedWithdrawShares({
+        requestedLockedAssets: lockedRequestedWithdrawAssets,
+        maxWithdrawAssets,
+        maxRedeemShares,
+        previewWithdrawShares:
+          typeof rawPreviewWithdrawLockedSharesForRequestedAssets === 'bigint'
+            ? rawPreviewWithdrawLockedSharesForRequestedAssets
+            : undefined,
+        lockedPricePerShare: lockedUserData.pricePerShare,
+        lockedVaultTokenDecimals
+      }),
+    [
+      lockedRequestedWithdrawAssets,
+      maxWithdrawAssets,
+      maxRedeemShares,
+      rawPreviewWithdrawLockedSharesForRequestedAssets,
+      lockedUserData.pricePerShare,
+      lockedVaultTokenDecimals
+    ]
+  )
 
-  const quotedLockedWithdrawAssets =
-    lockedWithdrawExecutionSnapshot?.requestedLockedAssets ?? lockedRequestedWithdrawAssets
-  const hasLockedWithdrawExecutionSnapshot = (lockedWithdrawExecutionSnapshot?.requestedLockedAssets ?? 0n) > 0n
+  const quotedLockedWithdrawShares =
+    lockedWithdrawExecutionSnapshot?.requestedLockedShares ?? lockedRequestedWithdrawShares
+  const hasLockedWithdrawExecutionSnapshot = lockedWithdrawExecutionSnapshot !== null
   const isExecutingLockedWithdrawRedeem = lockedWithdrawPhase === 'redeem' && hasLockedWithdrawExecutionSnapshot
+  const {
+    data: rawPreviewRedeemLockedAssetsForQuotedShares,
+    refetch: refetchPreviewRedeemLockedAssetsForQuotedShares
+  } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: erc4626Abi,
+    functionName: 'previewRedeem',
+    args: quotedLockedWithdrawShares > 0n ? [quotedLockedWithdrawShares] : undefined,
+    chainId,
+    query: {
+      enabled:
+        !!account &&
+        isLockedVariant &&
+        quotedLockedWithdrawShares > 0n &&
+        (canWithdrawNow || isExecutingLockedWithdrawRedeem)
+    }
+  })
+  const quotedLockedWithdrawRedeemAssets = useMemo(
+    () =>
+      resolveLockedRedeemAssets({
+        requestedLockedShares: quotedLockedWithdrawShares,
+        maxWithdrawAssets,
+        maxRedeemShares,
+        previewRedeemAssets:
+          typeof rawPreviewRedeemLockedAssetsForQuotedShares === 'bigint'
+            ? rawPreviewRedeemLockedAssetsForQuotedShares
+            : undefined,
+        lockedPricePerShare: lockedUserData.pricePerShare,
+        lockedVaultTokenDecimals
+      }),
+    [
+      quotedLockedWithdrawShares,
+      maxWithdrawAssets,
+      maxRedeemShares,
+      rawPreviewRedeemLockedAssetsForQuotedShares,
+      lockedUserData.pricePerShare,
+      lockedVaultTokenDecimals
+    ]
+  )
+  const currentLockedWithdrawMethod = useMemo(
+    () =>
+      resolveLockedWithdrawMethod({
+        requestedLockedAssets: lockedRequestedWithdrawAssets,
+        requestedLockedShares: lockedRequestedWithdrawShares,
+        redeemableLockedAssets: quotedLockedWithdrawRedeemAssets
+      }),
+    [lockedRequestedWithdrawAssets, lockedRequestedWithdrawShares, quotedLockedWithdrawRedeemAssets]
+  )
+  const executionLockedWithdrawMethod = lockedWithdrawExecutionSnapshot?.lockedStepMethod ?? currentLockedWithdrawMethod
+  const quotedLockedWithdrawAssets = useMemo(() => {
+    if (executionLockedWithdrawMethod === 'withdraw') {
+      return lockedWithdrawExecutionSnapshot?.requestedLockedAssets ?? lockedRequestedWithdrawAssets
+    }
+
+    return quotedLockedWithdrawRedeemAssets
+  }, [
+    executionLockedWithdrawMethod,
+    lockedWithdrawExecutionSnapshot,
+    lockedRequestedWithdrawAssets,
+    quotedLockedWithdrawRedeemAssets
+  ])
   const { data: rawPreviewRedeemForQuotedAmount, refetch: refetchPreviewRedeemForQuotedAmount } = useReadContract({
     address: YVUSD_UNLOCKED_ADDRESS,
     abi: erc4626Abi,
@@ -710,6 +778,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     ]
   )
   const executionLockedWithdrawAssets = quotedLockedWithdrawAssets
+  const executionLockedWithdrawShares = quotedLockedWithdrawShares
   const executionUnderlyingWithdrawAssets = quotedUnderlyingWithdrawAssets
   const executionExpectedUnderlyingOut = lockedWithdrawExpectedUnderlyingOut
 
@@ -717,14 +786,39 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     () =>
       buildLockedWithdrawNoZapExecutionPlan({
         account,
+        lockedStepMethod: executionLockedWithdrawMethod,
         requestedLockedAssets: executionLockedWithdrawAssets,
+        requestedLockedShares: executionLockedWithdrawShares,
         requestedUnderlyingAssets: executionUnderlyingWithdrawAssets
       }),
-    [account, executionLockedWithdrawAssets, executionUnderlyingWithdrawAssets]
+    [
+      account,
+      executionLockedWithdrawMethod,
+      executionLockedWithdrawAssets,
+      executionLockedWithdrawShares,
+      executionUnderlyingWithdrawAssets
+    ]
   )
   const lockedWithdrawArgs = lockedWithdrawExecutionPlan[0]?.args
   const unlockedWithdrawArgs = lockedWithdrawExecutionPlan[1]?.args
 
+  const prepareLockedRedeemNow: AppUseSimulateContractReturnType = useSimulateContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: erc4626Abi,
+    functionName: 'redeem',
+    args: lockedWithdrawArgs,
+    account: account ? toAddress(account) : undefined,
+    chainId,
+    query: {
+      enabled:
+        !!account &&
+        isLockedVariant &&
+        canWithdrawNow &&
+        lockedWithdrawPhase === 'withdraw' &&
+        executionLockedWithdrawMethod === 'redeem' &&
+        executionLockedWithdrawShares > 0n
+    }
+  })
   const prepareLockedWithdrawNow: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: erc4626Abi,
@@ -738,9 +832,12 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
         isLockedVariant &&
         canWithdrawNow &&
         lockedWithdrawPhase === 'withdraw' &&
+        executionLockedWithdrawMethod === 'withdraw' &&
         executionLockedWithdrawAssets > 0n
     }
   })
+  const prepareLockedWithdrawStep =
+    executionLockedWithdrawMethod === 'redeem' ? prepareLockedRedeemNow : prepareLockedWithdrawNow
 
   const prepareUnlockedWithdraw: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_UNLOCKED_ADDRESS,
@@ -762,11 +859,14 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const refetchLockedWithdrawState = useCallback((): void => {
     void refetchCooldownStatus()
     void refetchMaxWithdrawAssets()
+    void refetchMaxRedeemShares()
     void refetchPreviewRedeemForMaxWithdraw()
     if (draftWithdrawAmount > 0n) {
       void refetchPreviewWithdrawForRequestedAmount()
+      void refetchPreviewWithdrawLockedSharesForRequestedAssets()
     }
-    if (quotedLockedWithdrawAssets > 0n) {
+    if (quotedLockedWithdrawShares > 0n) {
+      void refetchPreviewRedeemLockedAssetsForQuotedShares()
       void refetchPreviewRedeemForQuotedAmount()
     }
     lockedUserData.refetch()
@@ -774,10 +874,13 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   }, [
     refetchCooldownStatus,
     refetchMaxWithdrawAssets,
+    refetchMaxRedeemShares,
     refetchPreviewRedeemForMaxWithdraw,
     draftWithdrawAmount,
     refetchPreviewWithdrawForRequestedAmount,
-    quotedLockedWithdrawAssets,
+    refetchPreviewWithdrawLockedSharesForRequestedAssets,
+    quotedLockedWithdrawShares,
+    refetchPreviewRedeemLockedAssetsForQuotedShares,
     refetchPreviewRedeemForQuotedAmount,
     lockedUserData,
     unlockedUserData
@@ -846,46 +949,12 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
 
   const selectedDisplayAssetAddress = isLockedVariant ? lockedInputAddress : unlockedAssetAddress
 
-  const handleVariantChange = useCallback(
-    (nextVariant: TYvUsdVariant): void => {
-      const currentInputTokenAddress = toAddress(selectedWithdrawTokenAddress ?? selectedDisplayAssetAddress)
-      const nextInputTokenAddress = nextVariant === 'locked' ? lockedInputAddress : unlockedAssetAddress
-      const currentAmountUnit = getYvUsdAmountUnit(currentInputTokenAddress, unlockedAssetAddress)
-      const nextAmountUnit = getYvUsdAmountUnit(nextInputTokenAddress, unlockedAssetAddress)
-      const canPreserveRawAmount =
-        currentInputTokenAddress === nextInputTokenAddress ||
-        (currentAmountUnit !== 'other' && nextAmountUnit !== 'other')
-      const shouldConvertAmount =
-        draftWithdrawAmount > 0n && canPreserveRawAmount && currentAmountUnit !== nextAmountUnit
-      const nextRawAmount = shouldConvertAmount
-        ? convertYvUsdInputAmount({
-            amount: draftWithdrawAmount,
-            fromUnit: currentAmountUnit,
-            toUnit: nextAmountUnit,
-            unlockedPricePerShare: unlockedUserData.pricePerShare,
-            unlockedVaultDecimals
-          })
-        : canPreserveRawAmount
-          ? draftWithdrawAmount
-          : 0n
-      const nextInputDecimals = nextAmountUnit === 'shares' ? lockedAssetDecimals : unlockedAssetDecimals
-      setDraftWithdrawAmount(nextRawAmount)
-      setPendingPrefillAmount(nextRawAmount > 0n ? formatUnits(nextRawAmount, nextInputDecimals) : undefined)
-      setPendingPrefillAddress(nextVariant === 'locked' ? lockedInputAddress : unlockedAssetAddress)
-      setVariant(nextVariant)
-    },
-    [
-      selectedWithdrawTokenAddress,
-      selectedDisplayAssetAddress,
-      lockedInputAddress,
-      unlockedAssetAddress,
-      draftWithdrawAmount,
-      unlockedUserData.pricePerShare,
-      unlockedVaultDecimals,
-      lockedAssetDecimals,
-      unlockedAssetDecimals
-    ]
-  )
+  const handleVariantChange = useCallback((nextVariant: TYvUsdVariant): void => {
+    setDraftWithdrawAmount(0n)
+    setPendingPrefillAmount(undefined)
+    setPendingPrefillAddress(undefined)
+    setVariant(nextVariant)
+  }, [])
 
   const handleAmountChange = useCallback((amount: bigint): void => {
     setDraftWithdrawAmount(amount)
@@ -899,7 +968,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   }, [showLockedWithdrawOverlay])
 
   const shouldNormalizeLockedWithdrawMaxInput = shouldNormalizeLockedWithdrawDisplayAmount({
-    canWithdrawNow,
+    canWithdrawNow: isLockedVariant && canWithdrawNow,
     currentDisplayAmount: draftWithdrawAmount,
     maxDisplayAmount: lockedMaxWithdrawDisplayAmount,
     requestedLockedAssets: lockedRequestedWithdrawAssets,
@@ -956,19 +1025,24 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
       ? undefined
       : buildLockedWithdrawTransactionStep({
           phase: lockedWithdrawPhase,
-          prepareLockedWithdraw: prepareLockedWithdrawNow,
+          lockedStepMethod: executionLockedWithdrawMethod,
+          prepareLockedWithdraw: prepareLockedWithdrawStep,
           prepareUnlockedWithdraw: prepareUnlockedWithdraw,
-          requestedLockedAssets: executionLockedWithdrawAssets,
+          requestedLockedShares: executionLockedWithdrawShares,
+          receivedLockedAssets: executionLockedWithdrawAssets,
           expectedUnderlyingOut: executionExpectedUnderlyingOut,
+          lockedVaultTokenDecimals,
           lockedAssetDecimals,
           underlyingDecimals: unlockedAssetDecimals,
+          lockedVaultTokenSymbol,
           lockedAssetSymbol: lockedUserData.assetToken?.symbol ?? 'yvUSD',
           underlyingSymbol: unlockedUserData.assetToken?.symbol ?? 'USDC'
         })
   const isLockedWithdrawReady =
     draftWithdrawAmount > 0n &&
-    lockedRequestedWithdrawAssets > 0n &&
-    lockedRequestedWithdrawAssets <= maxWithdrawAssets &&
+    (currentLockedWithdrawMethod === 'redeem'
+      ? lockedRequestedWithdrawShares > 0n && lockedRequestedWithdrawShares <= maxRedeemShares
+      : lockedRequestedWithdrawAssets > 0n && lockedRequestedWithdrawAssets <= maxWithdrawAssets) &&
     executionUnderlyingWithdrawAssets > 0n &&
     !lockedWithdrawInputError &&
     !!lockedReadyWithdrawStep?.prepare.isSuccess &&
@@ -1078,7 +1152,9 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
             classNameOverride="yearn--button--nextgen w-full"
             onClick={() => {
               setLockedWithdrawExecutionSnapshot({
-                requestedLockedAssets: lockedRequestedWithdrawAssets
+                lockedStepMethod: currentLockedWithdrawMethod,
+                requestedLockedAssets: lockedRequestedWithdrawAssets,
+                requestedLockedShares: lockedRequestedWithdrawShares
               })
               setLockedWithdrawPhase('withdraw')
               setShowLockedWithdrawOverlay(true)
@@ -1134,6 +1210,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
               : maxCooldownDisplayAmount
             : undefined
         }
+        inputDisplayBalanceOverride={isLockedVariant && account ? lockedDisplayUserData.depositedValue : undefined}
         maxWithdrawAssets={isLockedVariant && account && canWithdrawNow ? lockedMaxWithdrawDisplayAmount : undefined}
         customErrorMessage={isLockedVariant && account ? lockedWithdrawInputError : undefined}
         disableFlow={isLockedVariant && !!account}
@@ -1142,7 +1219,6 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
         hideActionButton={hideLockedWithdrawAction}
         headerActions={<YvUsdVariantToggle activeVariant={activeVariant} onChange={handleVariantChange} />}
         onAmountChange={handleAmountChange}
-        onTokenSelectionChange={setSelectedWithdrawTokenAddress}
         handleWithdrawSuccess={isLockedVariant ? handleLockedWithdrawSuccess : onWithdrawSuccess}
         hideContainerBorder
         contentBelowInput={withdrawTypeSection}
