@@ -10,10 +10,15 @@ import {
   resolveLockedRequestedWithdrawAssets,
   resolveLockedRequestedWithdrawShares,
   resolveLockedWithdrawDisplayAmount,
+  resolveLockedWithdrawExecutionSnapshot,
   resolveLockedWithdrawExpectedOut,
   resolveLockedWithdrawMethod,
-  shouldNormalizeLockedWithdrawDisplayAmount
+  shouldNormalizeLockedWithdrawDisplayAmount,
+  shouldUseLockedManagedWithdrawFlow
 } from './YvUsdWithdraw.helpers'
+
+const TOKEN_A = '0x0000000000000000000000000000000000000001' as const
+const TOKEN_B = '0x0000000000000000000000000000000000000002' as const
 
 const mockPrepare = (functionName: string, args: readonly unknown[]) =>
   ({
@@ -70,6 +75,17 @@ describe('resolveLockedRequestedWithdrawAssets', () => {
         previewWithdrawShares: 60_000000000000000000n
       })
     ).toBe(50_000000000000000000n)
+  })
+
+  it('keeps over-limit withdraw inputs above the cap so the widget can show an error instead of snapping to max', () => {
+    expect(
+      resolveLockedRequestedWithdrawAssets({
+        requestedDisplayAmount: 52_000000n,
+        maxDisplayAmount: 51_000000n,
+        maxWithdrawAssets: 50_000000000000000000n,
+        previewWithdrawShares: 51_500000000000000000n
+      })
+    ).toBe(51_500000000000000000n)
   })
 })
 
@@ -245,6 +261,92 @@ describe('resolveLockedWithdrawMethod', () => {
   })
 })
 
+describe('resolveLockedWithdrawExecutionSnapshot', () => {
+  it('preserves the snapshotted locked-leg output when live quotes collapse after step 1', () => {
+    expect(
+      resolveLockedWithdrawExecutionSnapshot({
+        executionSnapshot: {
+          lockedStepMethod: 'redeem',
+          requestedLockedAssets: 50_000000000000000000n,
+          requestedLockedShares: 49_999999999999999999n,
+          receivedLockedAssets: 50_000000000000000000n
+        },
+        currentLockedWithdrawMethod: 'withdraw',
+        currentRequestedLockedAssets: 0n,
+        currentRequestedLockedShares: 0n,
+        currentReceivedLockedAssets: 0n
+      })
+    ).toEqual({
+      lockedStepMethod: 'redeem',
+      requestedLockedAssets: 50_000000000000000000n,
+      requestedLockedShares: 49_999999999999999999n,
+      receivedLockedAssets: 50_000000000000000000n
+    })
+  })
+
+  it('uses the current live quote before a step snapshot exists', () => {
+    expect(
+      resolveLockedWithdrawExecutionSnapshot({
+        executionSnapshot: null,
+        currentLockedWithdrawMethod: 'withdraw',
+        currentRequestedLockedAssets: 25_000000000000000000n,
+        currentRequestedLockedShares: 24_500000000000000000n,
+        currentReceivedLockedAssets: 25_000000000000000000n
+      })
+    ).toEqual({
+      lockedStepMethod: 'withdraw',
+      requestedLockedAssets: 25_000000000000000000n,
+      requestedLockedShares: 24_500000000000000000n,
+      receivedLockedAssets: 25_000000000000000000n
+    })
+  })
+})
+
+describe('shouldUseLockedManagedWithdrawFlow', () => {
+  it('keeps the managed locked flow for the default same-chain underlying exit', () => {
+    expect(
+      shouldUseLockedManagedWithdrawFlow({
+        canWithdrawNow: true,
+        chainId: 1,
+        underlyingAssetAddress: TOKEN_A
+      })
+    ).toBe(true)
+  })
+
+  it('lets the generic widget flow handle alternate token or cross-chain exits once locked funds are withdrawable', () => {
+    expect(
+      shouldUseLockedManagedWithdrawFlow({
+        canWithdrawNow: true,
+        selectedTokenAddress: TOKEN_B,
+        chainId: 1,
+        underlyingAssetAddress: TOKEN_A
+      })
+    ).toBe(false)
+
+    expect(
+      shouldUseLockedManagedWithdrawFlow({
+        canWithdrawNow: true,
+        selectedTokenAddress: TOKEN_A,
+        selectedChainId: 10,
+        chainId: 1,
+        underlyingAssetAddress: TOKEN_A
+      })
+    ).toBe(false)
+  })
+
+  it('continues to use the managed flow while the locked position is not yet withdrawable', () => {
+    expect(
+      shouldUseLockedManagedWithdrawFlow({
+        canWithdrawNow: false,
+        selectedTokenAddress: TOKEN_B,
+        selectedChainId: 10,
+        chainId: 1,
+        underlyingAssetAddress: TOKEN_A
+      })
+    ).toBe(true)
+  })
+})
+
 describe('resolveLockedWithdrawExpectedOut', () => {
   it('uses previewRedeem for the exact expected output when it is available', () => {
     expect(
@@ -298,6 +400,16 @@ describe('shouldNormalizeLockedWithdrawDisplayAmount', () => {
         currentDisplayAmount: 500_000001n,
         maxDisplayAmount: 500_000000n,
         requestedLockedAssets: 497_396866n,
+        maxWithdrawAssets: 497_396866n
+      })
+    ).toBe(false)
+
+    expect(
+      shouldNormalizeLockedWithdrawDisplayAmount({
+        canWithdrawNow: true,
+        currentDisplayAmount: 520_000000n,
+        maxDisplayAmount: 500_000000n,
+        requestedLockedAssets: 520_000001n,
         maxWithdrawAssets: 497_396866n
       })
     ).toBe(false)

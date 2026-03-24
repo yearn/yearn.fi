@@ -73,7 +73,7 @@ describe('filterAndSortTokenSelectorTokens', () => {
       tokens,
       mode: 'deposit',
       topTokenAddresses: [TOKEN_A],
-      yearnKnownTokenAddresses: new Set([TOKEN_A.toLowerCase(), TOKEN_B.toLowerCase(), TOKEN_C.toLowerCase()]),
+      yearnKnownTokenAddresses: new Set([TOKEN_A.toLowerCase(), TOKEN_B.toLowerCase()]),
       explicitTokenAddresses: new Set<string>(),
       getTokenUsdValue: (token) => {
         if (token.address === TOKEN_A) {
@@ -119,6 +119,53 @@ describe('filterAndSortTokenSelectorTokens', () => {
     })
 
     expect(filtered.map((token) => token.address)).toEqual([TOKEN_B])
+  })
+
+  it('keeps supported deposit tokens with positive balances visible when pricing is temporarily unavailable', () => {
+    const filtered = filterAndSortTokenSelectorTokens({
+      tokens: [
+        buildToken({
+          address: TOKEN_A,
+          name: 'Known Unpriced Token',
+          symbol: 'KUT',
+          normalizedBalance: 10,
+          rawBalance: 10n
+        }),
+        buildToken({
+          address: TOKEN_B,
+          name: 'Unknown Unpriced Token',
+          symbol: 'UUT',
+          normalizedBalance: 10,
+          rawBalance: 10n
+        })
+      ],
+      mode: 'deposit',
+      yearnKnownTokenAddresses: new Set([TOKEN_A.toLowerCase()]),
+      explicitTokenAddresses: new Set<string>(),
+      getTokenUsdValue: () => 0
+    })
+
+    expect(filtered.map((token) => token.address)).toEqual([TOKEN_A])
+  })
+
+  it('still hides known deposit-token dust when a valid price puts it below the minimum threshold', () => {
+    const filtered = filterAndSortTokenSelectorTokens({
+      tokens: [
+        buildToken({
+          address: TOKEN_A,
+          name: 'Known Dust Token',
+          symbol: 'KDT',
+          normalizedBalance: 10,
+          rawBalance: 10n
+        })
+      ],
+      mode: 'deposit',
+      yearnKnownTokenAddresses: new Set([TOKEN_A.toLowerCase()]),
+      explicitTokenAddresses: new Set<string>(),
+      getTokenUsdValue: () => 0.009
+    })
+
+    expect(filtered).toEqual([])
   })
 
   it('keeps an explicit custom token visible even when it is below the minimum USD value', () => {
