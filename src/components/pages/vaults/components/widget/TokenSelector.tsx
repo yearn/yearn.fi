@@ -6,6 +6,7 @@ import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { isAddress } from 'viem'
 import { CloseIcon } from './shared/Icons'
+import { getTokenLogoSources } from './tokenLogo.utils'
 
 type TTokenType = 'asset' | 'vault' | 'staking' | undefined
 
@@ -42,6 +43,13 @@ const TokenItem: FC<{ token: TToken; selected: boolean; onSelect: () => void; to
   onSelect,
   tokenType
 }) => {
+  const logoSources = getTokenLogoSources({
+    address: token.address,
+    chainId: token.chainID,
+    logoURI: token.logoURI,
+    size: 32
+  })
+
   return (
     <button
       type="button"
@@ -53,7 +61,8 @@ const TokenItem: FC<{ token: TToken; selected: boolean; onSelect: () => void; to
     >
       <div className="flex items-center gap-2">
         <TokenLogo
-          src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${token.chainID}/${token.address?.toLowerCase()}/logo-32.png`}
+          src={logoSources.src}
+          altSrc={logoSources.altSrc}
           tokenSymbol={token.symbol}
           tokenName={token.name}
           width={24}
@@ -113,7 +122,38 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   // Get all tokens with balances from wallet context
   const tokens = useMemo(() => {
     const chainBalances = balances[selectedChainId] || {}
-    const tokenList: TToken[] = []
+    const tokenMap = new Map<string, TToken>()
+
+    const setIfMissing = (token?: TToken): void => {
+      if (!token?.address) {
+        return
+      }
+
+      const key = toAddress(token.address).toLowerCase()
+      if (!tokenMap.has(key)) {
+        tokenMap.set(key, token)
+      }
+    }
+
+    const setOverride = (token?: TToken): void => {
+      if (!token?.address) {
+        return
+      }
+
+      const key = toAddress(token.address).toLowerCase()
+      const existing = tokenMap.get(key)
+      if (!existing) {
+        tokenMap.set(key, token)
+        return
+      }
+
+      tokenMap.set(key, {
+        ...existing,
+        ...token,
+        balance: token.balance ?? existing.balance,
+        value: token.value ?? existing.value
+      })
+    }
 
     // Add all tokens from wallet balances
     Object.entries(chainBalances).forEach(([address, token]) => {
@@ -122,50 +162,44 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       }
 
       if (token.balance.raw > 0n) {
-        tokenList.push(token)
+        setIfMissing(token)
       }
     })
 
     // Also include the currently selected token even if it has no balance
-    if (value && !tokenList.some((t) => t.address?.toLowerCase() === value.toLowerCase())) {
+    if (value && !tokenMap.has(value.toLowerCase())) {
       const selectedToken = getToken({ address: toAddress(value), chainID: selectedChainId })
       if (selectedToken.symbol) {
-        tokenList.push(selectedToken)
+        setIfMissing(selectedToken)
       }
     }
 
     // Include priority tokens even if they have no balance
     const chainPriorityTokens = priorityTokens?.[selectedChainId] || []
     for (const priorityAddress of chainPriorityTokens) {
-      if (!tokenList.some((t) => t.address?.toLowerCase() === priorityAddress.toLowerCase())) {
+      if (!tokenMap.has(priorityAddress.toLowerCase())) {
         const priorityToken = getToken({ address: toAddress(priorityAddress), chainID: selectedChainId })
         if (priorityToken.symbol) {
-          tokenList.push(priorityToken)
+          setIfMissing(priorityToken)
         }
       }
     }
 
     // Include custom address if valid
-    if (
-      customAddress &&
-      isAddress(customAddress) &&
-      !tokenList.some((t) => t.address?.toLowerCase() === customAddress.toLowerCase())
-    ) {
+    if (customAddress && isAddress(customAddress) && !tokenMap.has(customAddress.toLowerCase())) {
       const customToken = getToken({ address: toAddress(customAddress), chainID: selectedChainId })
       if (customToken.symbol) {
-        tokenList.push(customToken)
+        setIfMissing(customToken)
       }
     }
 
-    // Include explicit extra tokens (used by custom widget flows)
+    // Explicit extra tokens should override selector metadata for matching addresses.
     const chainExtraTokens = (extraTokens || []).filter((token) => token.chainID === selectedChainId)
     for (const extraToken of chainExtraTokens) {
-      if (!tokenList.some((t) => t.address?.toLowerCase() === extraToken.address?.toLowerCase())) {
-        tokenList.push(extraToken)
-      }
+      setOverride(extraToken)
     }
 
-    return tokenList
+    return [...tokenMap.values()]
   }, [balances, selectedChainId, value, customAddress, getToken, priorityTokens, extraTokens])
 
   // Filter tokens based on search and limits
