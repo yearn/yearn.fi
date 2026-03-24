@@ -17,6 +17,7 @@ import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { usePersistedShowHiddenVaults } from '@pages/vaults/hooks/vaultsFiltersStorage'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import {
+  calculateLockedYvUsdHistoricalApy,
   getWeightedYvUsdApy,
   getYvUsdSharePrice,
   isYvUsdAddress,
@@ -126,7 +127,13 @@ export function usePortfolioModel(): TPortfolioModel {
         unlockedValue,
         lockedValue,
         unlockedApy: yvUsdUnlockedVault ? calculateVaultHistoricalAPY(yvUsdUnlockedVault) : null,
-        lockedApy: yvUsdLockedVault ? calculateVaultHistoricalAPY(yvUsdLockedVault) : null
+        lockedApy:
+          yvUsdLockedVault && yvUsdUnlockedVault
+            ? calculateLockedYvUsdHistoricalApy({
+                lockedPricePerShare: yvUsdLockedVault.apr.pricePerShare,
+                unlockedPricePerShare: yvUsdUnlockedVault.apr.pricePerShare
+              })
+            : null
       }),
       combinedValue: unlockedValue + lockedValue,
       hasHoldings: unlockedBalance.raw > 0n || lockedBalance.raw > 0n

@@ -1,5 +1,10 @@
 import { useVaultChartTimeseries } from '@pages/vaults/hooks/useVaultChartTimeseries'
-import { mergeYvUsdTvlSeries, type TYvUsdSeriesPoint } from '@pages/vaults/hooks/useYvUsdCharts.helpers'
+import {
+  buildApyDataFromPpsSeries,
+  buildUnderlyingLockedPpsSeries,
+  mergeYvUsdTvlSeries,
+  type TYvUsdSeriesPoint
+} from '@pages/vaults/hooks/useYvUsdCharts.helpers'
 import { transformVaultChartData } from '@pages/vaults/utils/charts'
 import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { useMemo } from 'react'
@@ -84,24 +89,36 @@ export function useYvUsdCharts(): TYvUsdCharts {
 
   const unlockedTransformed = useMemo(() => transformVaultChartData(unlockedData), [unlockedData])
   const lockedTransformed = useMemo(() => transformVaultChartData(lockedData), [lockedData])
+  const lockedUnderlyingPpsData = useMemo(
+    () =>
+      buildUnderlyingLockedPpsSeries({
+        unlockedSeries: unlockedTransformed.ppsData,
+        lockedSeries: lockedTransformed.ppsData
+      }),
+    [lockedTransformed.ppsData, unlockedTransformed.ppsData]
+  )
+  const lockedUnderlyingApyData = useMemo(
+    () => buildApyDataFromPpsSeries(lockedUnderlyingPpsData),
+    [lockedUnderlyingPpsData]
+  )
 
   const apyData = useMemo<TYvUsdSeriesPoint[] | undefined>(() => {
     return mergeByDate({
       unlockedSeries: unlockedTransformed.aprApyData,
-      lockedSeries: lockedTransformed.aprApyData,
+      lockedSeries: lockedUnderlyingApyData,
       getUnlockedValue: getApyPointValue,
       getLockedValue: getApyPointValue
     })
-  }, [lockedTransformed.aprApyData, unlockedTransformed.aprApyData])
+  }, [lockedUnderlyingApyData, unlockedTransformed.aprApyData])
 
   const performanceData = useMemo<TYvUsdSeriesPoint[] | undefined>(() => {
     return mergeByDate({
       unlockedSeries: unlockedTransformed.ppsData,
-      lockedSeries: lockedTransformed.ppsData,
+      lockedSeries: lockedUnderlyingPpsData,
       getUnlockedValue: (point) => getNullableSeriesValue(point?.PPS),
       getLockedValue: (point) => getNullableSeriesValue(point?.PPS)
     })
-  }, [lockedTransformed.ppsData, unlockedTransformed.ppsData])
+  }, [lockedUnderlyingPpsData, unlockedTransformed.ppsData])
 
   const tvlData = useMemo<TYvUsdSeriesPoint[] | undefined>(() => {
     return mergeYvUsdTvlSeries({
