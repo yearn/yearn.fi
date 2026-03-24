@@ -17,6 +17,7 @@ import { CloseIcon } from './shared/Icons'
 import { getTokenLogoSources } from './tokenLogo.utils'
 import {
   filterAndSortTokenSelectorTokens,
+  getDepositMinValueExemptTokenAddresses,
   getDerivedTokenUsdValue,
   getExplicitTokenAddresses,
   getYearnKnownTokenAddresses,
@@ -49,8 +50,10 @@ interface TokenSelectorProps {
   extraTokens?: TToken[]
   onClose?: () => void
   assetAddress?: `0x${string}`
+  assetChainId?: number
   vaultAddress?: `0x${string}`
   stakingAddress?: `0x${string}`
+  allowHiddenVaultTokenSelection?: boolean
   mode?: TTokenSelectorMode
 }
 
@@ -130,8 +133,10 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   extraTokens,
   onClose,
   assetAddress,
+  assetChainId = chainId,
   vaultAddress,
   stakingAddress,
+  allowHiddenVaultTokenSelection,
   mode = 'default'
 }) => {
   const [searchText, setSearchText] = useState('')
@@ -177,25 +182,34 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
     return [...hiddenAddresses]
   }, [allVaults, selectedChainId])
+  const hiddenVaultExemptAddresses = useMemo(
+    () =>
+      mode === 'withdraw' && allowHiddenVaultTokenSelection && selectedChainId === chainId && vaultAddress
+        ? [toAddress(vaultAddress) as `0x${string}`]
+        : [],
+    [allowHiddenVaultTokenSelection, chainId, mode, selectedChainId, vaultAddress]
+  )
   const combinedExcludeTokens = useMemo(
     () => [
       ...new Set(
         [
           ...(excludeTokens || []),
-          ...hiddenVaultTokenAddresses,
+          ...hiddenVaultTokenAddresses.filter(
+            (address) => !hiddenVaultExemptAddresses.includes(toAddress(address) as `0x${string}`)
+          ),
           ...(LEGACY_SELECTOR_TOKEN_ADDRESSES_BY_CHAIN[selectedChainId] || [])
         ].map((address) => toAddress(address))
       )
     ],
-    [excludeTokens, hiddenVaultTokenAddresses, selectedChainId]
+    [excludeTokens, hiddenVaultExemptAddresses, hiddenVaultTokenAddresses, selectedChainId]
   )
   const assetLogoToken = useMemo(() => {
-    if (selectedChainId !== chainId || !assetAddress) {
+    if (selectedChainId !== assetChainId || !assetAddress) {
       return undefined
     }
 
-    return getToken({ address: toAddress(assetAddress), chainID: selectedChainId })
-  }, [assetAddress, chainId, getToken, selectedChainId])
+    return getToken({ address: toAddress(assetAddress), chainID: assetChainId })
+  }, [assetAddress, assetChainId, getToken, selectedChainId])
 
   // Get all tokens with balances from wallet context
   const tokens = useMemo(() => {
@@ -314,13 +328,16 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   const minValueExemptTokenAddresses = useMemo(
     () =>
       mode === 'deposit'
-        ? getExplicitTokenAddresses({
+        ? getDepositMinValueExemptTokenAddresses({
             value,
             chainExtraTokens,
+            assetAddress,
+            assetChainId,
+            selectedChainId,
             customAddress
           })
         : explicitTokenAddresses,
-    [chainExtraTokens, customAddress, explicitTokenAddresses, mode, value]
+    [assetAddress, assetChainId, chainExtraTokens, customAddress, explicitTokenAddresses, mode, selectedChainId, value]
   )
 
   const getTokenUsdValue = useCallback(

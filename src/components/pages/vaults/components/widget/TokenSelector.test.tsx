@@ -235,6 +235,181 @@ describe('TokenSelector', () => {
     expect(html).not.toContain('stkWETH')
   })
 
+  it('keeps the hidden vault share token available only for explicit unstake selection', () => {
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        1: {
+          [BASE_TOKEN_ADDRESS]: buildToken(),
+          [VAULT_TOKEN_ADDRESS]: buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Hidden Vault Token',
+            symbol: 'kpdWETH'
+          }),
+          [STAKING_TOKEN_ADDRESS]: buildToken({
+            address: STAKING_TOKEN_ADDRESS,
+            name: 'Hidden Staking Token',
+            symbol: 'stkWETH'
+          })
+        }
+      },
+      getToken: ({ address }: { address: string }) => {
+        if (address === VAULT_TOKEN_ADDRESS) {
+          return buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Hidden Vault Token',
+            symbol: 'kpdWETH'
+          })
+        }
+        if (address === STAKING_TOKEN_ADDRESS) {
+          return buildToken({
+            address: STAKING_TOKEN_ADDRESS,
+            name: 'Hidden Staking Token',
+            symbol: 'stkWETH'
+          })
+        }
+        return buildToken()
+      }
+    })
+    mockUseYearn.mockReturnValue({
+      allVaults: {
+        [VAULT_TOKEN_ADDRESS]: {
+          chainID: 1,
+          version: '3.0.0',
+          address: VAULT_TOKEN_ADDRESS,
+          token: {
+            address: BASE_TOKEN_ADDRESS,
+            symbol: 'WETH',
+            name: 'Wrapped Ether',
+            description: '',
+            decimals: 18
+          },
+          staking: {
+            address: STAKING_TOKEN_ADDRESS,
+            available: true,
+            source: '',
+            rewards: null
+          },
+          info: {
+            sourceURL: '',
+            riskLevel: 0,
+            riskScore: [],
+            riskScoreComment: '',
+            uiNotice: '',
+            isRetired: false,
+            isBoosted: false,
+            isHighlighted: false,
+            isHidden: true
+          }
+        }
+      },
+      getPrice: () => ({ normalized: 0 })
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector
+        value={BASE_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={1}
+        mode="withdraw"
+        assetAddress={BASE_TOKEN_ADDRESS}
+        vaultAddress={VAULT_TOKEN_ADDRESS}
+        stakingAddress={STAKING_TOKEN_ADDRESS}
+        allowHiddenVaultTokenSelection
+      />
+    )
+
+    expect(html).toContain('kpdWETH')
+    expect(html).not.toContain('stkWETH')
+  })
+
+  it('keeps hidden vault share tokens excluded for withdraw selectors without explicit unstake allowance', () => {
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        1: {
+          [BASE_TOKEN_ADDRESS]: buildToken(),
+          [VAULT_TOKEN_ADDRESS]: buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Hidden Vault Token',
+            symbol: 'kpdWETH'
+          }),
+          [STAKING_TOKEN_ADDRESS]: buildToken({
+            address: STAKING_TOKEN_ADDRESS,
+            name: 'Hidden Staking Token',
+            symbol: 'stkWETH'
+          })
+        }
+      },
+      getToken: ({ address }: { address: string }) => {
+        if (address === VAULT_TOKEN_ADDRESS) {
+          return buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Hidden Vault Token',
+            symbol: 'kpdWETH'
+          })
+        }
+        if (address === STAKING_TOKEN_ADDRESS) {
+          return buildToken({
+            address: STAKING_TOKEN_ADDRESS,
+            name: 'Hidden Staking Token',
+            symbol: 'stkWETH'
+          })
+        }
+        return buildToken()
+      }
+    })
+    mockUseYearn.mockReturnValue({
+      allVaults: {
+        [VAULT_TOKEN_ADDRESS]: {
+          chainID: 1,
+          version: '3.0.0',
+          address: VAULT_TOKEN_ADDRESS,
+          token: {
+            address: BASE_TOKEN_ADDRESS,
+            symbol: 'WETH',
+            name: 'Wrapped Ether',
+            description: '',
+            decimals: 18
+          },
+          staking: {
+            address: STAKING_TOKEN_ADDRESS,
+            available: true,
+            source: '',
+            rewards: null
+          },
+          info: {
+            sourceURL: '',
+            riskLevel: 0,
+            riskScore: [],
+            riskScoreComment: '',
+            uiNotice: '',
+            isRetired: false,
+            isBoosted: false,
+            isHighlighted: false,
+            isHidden: true
+          }
+        }
+      },
+      getPrice: () => ({ normalized: 0 })
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector
+        value={BASE_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={1}
+        mode="withdraw"
+        assetAddress={BASE_TOKEN_ADDRESS}
+        vaultAddress={VAULT_TOKEN_ADDRESS}
+        stakingAddress={STAKING_TOKEN_ADDRESS}
+      />
+    )
+
+    expect(html).not.toContain('kpdWETH')
+    expect(html).not.toContain('stkWETH')
+  })
+
   it('never shows locally deprecated legacy tokens from the token registry', () => {
     mockUseWallet.mockReturnValue({
       isLoading: false,
@@ -273,7 +448,7 @@ describe('TokenSelector', () => {
     expect(html).not.toContain('USDaf Stablecoin')
   })
 
-  it('applies the minimum value filter to pinned asset options in deposit mode', () => {
+  it('keeps the base deposit asset visible while filtering other low-value pinned options', () => {
     mockUseWallet.mockReturnValue({
       isLoading: false,
       balances: {
@@ -299,6 +474,17 @@ describe('TokenSelector', () => {
               display: '0.005',
               decimals: 18
             }
+          }),
+          [STAKING_TOKEN_ADDRESS]: buildToken({
+            address: STAKING_TOKEN_ADDRESS,
+            name: 'Pinned Dust Token',
+            symbol: 'PDT',
+            balance: {
+              raw: 4_000_000_000_000_000n,
+              normalized: 0.004,
+              display: '0.004',
+              decimals: 18
+            }
           })
         }
       },
@@ -312,6 +498,19 @@ describe('TokenSelector', () => {
               raw: 5_000_000_000_000_000n,
               normalized: 0.005,
               display: '0.005',
+              decimals: 18
+            }
+          })
+        }
+        if (address === STAKING_TOKEN_ADDRESS) {
+          return buildToken({
+            address: STAKING_TOKEN_ADDRESS,
+            name: 'Pinned Dust Token',
+            symbol: 'PDT',
+            balance: {
+              raw: 4_000_000_000_000_000n,
+              normalized: 0.004,
+              display: '0.004',
               decimals: 18
             }
           })
@@ -342,12 +541,13 @@ describe('TokenSelector', () => {
         chainId={1}
         mode="deposit"
         assetAddress={VAULT_TOKEN_ADDRESS}
-        priorityTokens={{ 1: [VAULT_TOKEN_ADDRESS] }}
-        topTokens={{ 1: [VAULT_TOKEN_ADDRESS] }}
+        priorityTokens={{ 1: [VAULT_TOKEN_ADDRESS, STAKING_TOKEN_ADDRESS] }}
+        topTokens={{ 1: [VAULT_TOKEN_ADDRESS, STAKING_TOKEN_ADDRESS] }}
       />
     )
 
     expect(html).toContain('Visible Token')
-    expect(html).not.toContain('Dust Asset')
+    expect(html).toContain('Dust Asset')
+    expect(html).not.toContain('Pinned Dust Token')
   })
 })
