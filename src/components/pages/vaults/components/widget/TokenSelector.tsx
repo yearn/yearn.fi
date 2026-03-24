@@ -239,11 +239,15 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
         return
       }
 
+      const shouldPreserveExistingBalance = existing.balance.raw > 0n && token.balance.raw === 0n
+      const shouldPreserveExistingValue =
+        Number.isFinite(existing.value) && existing.value > 0 && (!Number.isFinite(token.value) || token.value <= 0)
+
       tokenMap.set(key, {
         ...existing,
         ...token,
-        balance: token.balance ?? existing.balance,
-        value: token.value ?? existing.value
+        balance: shouldPreserveExistingBalance ? existing.balance : token.balance,
+        value: shouldPreserveExistingValue ? existing.value : token.value
       })
     }
 
@@ -284,7 +288,8 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       }
     }
 
-    // Explicit extra tokens should override selector metadata for matching addresses.
+    // Explicit extra tokens should override selector metadata for matching addresses
+    // without wiping wallet-derived balance/value with zero-value placeholders.
     for (const extraToken of chainExtraTokens) {
       setOverride(extraToken)
     }

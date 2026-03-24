@@ -169,6 +169,9 @@ export function filterAndSortTokenSelectorTokens({
       topIndex: topTokenIndex.get(toAddress(token.address).toLowerCase()) ?? Number.POSITIVE_INFINITY
     }))
     .filter(({ token, address, usdValue }) => {
+      const shouldKeepKnownUnpricedDepositToken =
+        mode === 'deposit' && usdValue <= 0 && token.balance.raw > 0n && knownAddresses.has(address)
+
       if (normalizedLimitTokens.size > 0 && !normalizedLimitTokens.has(address)) {
         return false
       }
@@ -180,7 +183,8 @@ export function filterAndSortTokenSelectorTokens({
       if (
         (mode === 'deposit' || mode === 'withdraw') &&
         usdValue < MIN_SELECTOR_USD_VALUE &&
-        !minValueExemptAddresses.has(address)
+        !minValueExemptAddresses.has(address) &&
+        !shouldKeepKnownUnpricedDepositToken
       ) {
         return false
       }

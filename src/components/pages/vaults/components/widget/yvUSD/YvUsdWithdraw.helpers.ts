@@ -10,6 +10,12 @@ import type { TransactionStep } from '../shared/TransactionOverlay'
 type TLockedWithdrawStepPhase = 'withdraw' | 'redeem'
 export type TYvUsdAmountUnit = 'underlying' | 'shares' | 'other'
 export type TLockedWithdrawMethod = 'withdraw' | 'redeem'
+export type TLockedWithdrawExecutionSnapshot = {
+  lockedStepMethod: TLockedWithdrawMethod
+  requestedLockedAssets: bigint
+  requestedLockedShares: bigint
+  receivedLockedAssets: bigint
+}
 
 type TResolveLockedWithdrawAmountParams = {
   maxWithdrawAssets: bigint
@@ -46,6 +52,14 @@ type TResolveLockedRequestedAmountFromInputParams = {
   lockedVaultTokenDecimals: number
   unlockedPricePerShare: bigint
   unlockedVaultDecimals: number
+}
+
+type TResolveLockedWithdrawExecutionSnapshotParams = {
+  executionSnapshot: TLockedWithdrawExecutionSnapshot | null
+  currentLockedWithdrawMethod: TLockedWithdrawMethod
+  currentRequestedLockedAssets: bigint
+  currentRequestedLockedShares: bigint
+  currentReceivedLockedAssets: bigint
 }
 
 type TResolveLockedWithdrawExpectedOutParams = {
@@ -141,12 +155,16 @@ export function resolveLockedRequestedWithdrawAssets({
     return 0n
   }
 
-  if (maxDisplayAmount > 0n && requestedDisplayAmount >= maxDisplayAmount) {
+  if (maxDisplayAmount > 0n && requestedDisplayAmount === maxDisplayAmount) {
     return maxWithdrawAssets
   }
 
   if (typeof previewWithdrawShares !== 'bigint' || previewWithdrawShares <= 0n) {
     return 0n
+  }
+
+  if (maxDisplayAmount > 0n && requestedDisplayAmount > maxDisplayAmount) {
+    return previewWithdrawShares
   }
 
   return previewWithdrawShares > maxWithdrawAssets ? maxWithdrawAssets : previewWithdrawShares
@@ -198,6 +216,47 @@ export function resolveLockedWithdrawMethod({
   }
 
   return 'redeem'
+}
+
+export function resolveLockedWithdrawExecutionSnapshot({
+  executionSnapshot,
+  currentLockedWithdrawMethod,
+  currentRequestedLockedAssets,
+  currentRequestedLockedShares,
+  currentReceivedLockedAssets
+}: TResolveLockedWithdrawExecutionSnapshotParams): TLockedWithdrawExecutionSnapshot {
+  if (executionSnapshot) {
+    return executionSnapshot
+  }
+
+  return {
+    lockedStepMethod: currentLockedWithdrawMethod,
+    requestedLockedAssets: currentRequestedLockedAssets,
+    requestedLockedShares: currentRequestedLockedShares,
+    receivedLockedAssets: currentReceivedLockedAssets
+  }
+}
+
+export function shouldUseLockedManagedWithdrawFlow({
+  canWithdrawNow,
+  selectedTokenAddress,
+  selectedChainId,
+  chainId,
+  underlyingAssetAddress
+}: {
+  canWithdrawNow: boolean
+  selectedTokenAddress?: Address
+  selectedChainId?: number
+  chainId: number
+  underlyingAssetAddress: Address
+}): boolean {
+  if (!canWithdrawNow) {
+    return true
+  }
+
+  const destinationChainId = selectedChainId ?? chainId
+  const destinationAddress = toAddress(selectedTokenAddress ?? underlyingAssetAddress)
+  return destinationChainId === chainId && destinationAddress === toAddress(underlyingAssetAddress)
 }
 
 export function getLockedCooldownMaxAssetAmount({

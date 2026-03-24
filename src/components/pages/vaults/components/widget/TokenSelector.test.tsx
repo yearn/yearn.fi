@@ -83,6 +83,102 @@ describe('TokenSelector', () => {
     expect(html).not.toContain('Base Token')
   })
 
+  it('preserves wallet balance and value when an extra token only overrides metadata', () => {
+    mockUseYearn.mockReturnValue({
+      allVaults: {},
+      getPrice: () => ({ normalized: 0 })
+    })
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        1: {
+          [BASE_TOKEN_ADDRESS]: buildToken({
+            name: 'Wallet Token',
+            symbol: 'WLT',
+            decimals: 0,
+            value: 100,
+            balance: {
+              raw: 1234n,
+              normalized: 1234,
+              display: '1234',
+              decimals: 0
+            }
+          }),
+          [VAULT_TOKEN_ADDRESS]: buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Lower Value Token',
+            symbol: 'LVT',
+            decimals: 0,
+            value: 50,
+            balance: {
+              raw: 1n,
+              normalized: 1,
+              display: '1',
+              decimals: 0
+            }
+          })
+        }
+      },
+      getToken: ({ address }: { address: string }) => {
+        if (address === VAULT_TOKEN_ADDRESS) {
+          return buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Lower Value Token',
+            symbol: 'LVT',
+            decimals: 0,
+            value: 50,
+            balance: {
+              raw: 1n,
+              normalized: 1,
+              display: '1',
+              decimals: 0
+            }
+          })
+        }
+
+        return buildToken({
+          name: 'Wallet Token',
+          symbol: 'WLT',
+          decimals: 0,
+          value: 100,
+          balance: {
+            raw: 1234n,
+            normalized: 1234,
+            display: '1234',
+            decimals: 0
+          }
+        })
+      }
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector
+        value={BASE_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={1}
+        mode="deposit"
+        extraTokens={[
+          buildToken({
+            name: 'Override Token',
+            symbol: 'OVR',
+            decimals: 0,
+            value: 0,
+            balance: {
+              raw: 0n,
+              normalized: 0,
+              display: '0',
+              decimals: 0
+            }
+          })
+        ]}
+      />
+    )
+
+    expect(html).toContain('Override Token')
+    expect(html).toContain('1,234')
+    expect(html.indexOf('Override Token')).toBeLessThan(html.indexOf('Lower Value Token'))
+  })
+
   it('uses the asset logo for vault and staking entries', () => {
     mockUseWallet.mockReturnValue({
       isLoading: false,
