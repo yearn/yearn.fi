@@ -97,6 +97,7 @@ export function WidgetWithdraw({
   stakingSource,
   vaultVersion,
   vaultUserData,
+  inputBalanceOverride,
   maxWithdrawAssets,
   requiredSharesOverride,
   expectedOutOverride,
@@ -280,6 +281,7 @@ export function WidgetWithdraw({
         : totalBalanceInUnderlying.raw,
     [maxWithdrawAssets, totalBalanceInUnderlying.raw]
   )
+  const inputBalance = inputBalanceOverride ?? effectiveMaxWithdrawAssets
 
   const isMaxWithdraw = useMemo(() => {
     return (
@@ -860,7 +862,7 @@ export function WidgetWithdraw({
               input={withdrawInput}
               title="Amount"
               placeholder="0.00"
-              balance={effectiveMaxWithdrawAssets}
+              balance={inputBalance}
               decimals={assetToken?.decimals ?? 18}
               symbol={assetToken?.symbol || 'tokens'}
               disabled={disableAmountInput || (!!hasBothBalances && !withdrawalSource)}
@@ -872,8 +874,8 @@ export function WidgetWithdraw({
               showTokenSelector={canShowAssetTokenSelector}
               onTokenSelectorClick={canOpenTokenSelector ? () => setShowTokenSelector(true) : undefined}
               onInputChange={(value: bigint) => {
-                if (value === effectiveMaxWithdrawAssets) {
-                  const exactAmount = formatUnits(effectiveMaxWithdrawAssets, assetToken?.decimals ?? 18)
+                if (value === inputBalance) {
+                  const exactAmount = formatUnits(inputBalance, assetToken?.decimals ?? 18)
                   withdrawInput[2](exactAmount)
                 }
               }}
