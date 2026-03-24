@@ -141,7 +141,10 @@ export function WidgetWithdraw({
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
-  const [hasAcceptedPriceImpact, setHasAcceptedPriceImpact] = useState(false)
+  const [priceImpactAcceptance, setPriceImpactAcceptance] = useState<{ key: string; isAccepted: boolean }>({
+    key: '',
+    isAccepted: false
+  })
   const appliedPrefillRef = useRef<string | null>(null)
   const [fallbackStep, setFallbackStep] = useState<'unstake' | 'withdraw'>('unstake')
   const [redeemSharesOverride, setRedeemSharesOverride] = useState<bigint>(0n)
@@ -511,10 +514,8 @@ export function WidgetWithdraw({
     activeFlow.periphery.routerAddress,
     effectiveExpectedOut
   ])
-
-  useEffect(() => {
-    setHasAcceptedPriceImpact(false)
-  }, [priceImpactAcceptanceKey])
+  const hasAcceptedPriceImpact =
+    priceImpactAcceptance.key === priceImpactAcceptanceKey && priceImpactAcceptance.isAccepted
 
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
   const shouldShowZapUi = !isBaseWithdrawToken
@@ -775,7 +776,12 @@ export function WidgetWithdraw({
           <input
             type="checkbox"
             checked={hasAcceptedPriceImpact}
-            onChange={(e) => setHasAcceptedPriceImpact(e.target.checked)}
+            onChange={(e) =>
+              setPriceImpactAcceptance({
+                key: priceImpactAcceptanceKey,
+                isAccepted: e.target.checked
+              })
+            }
             className="size-4 rounded border-red-500/50 bg-transparent text-red-500 focus:ring-red-500/50"
           />
           <span className="text-sm text-red-500">I understand and wish to continue</span>

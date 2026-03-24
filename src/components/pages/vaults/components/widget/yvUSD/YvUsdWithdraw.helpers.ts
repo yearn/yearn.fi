@@ -285,24 +285,24 @@ export function buildLockedWithdrawNoZapExecutionPlan(params: {
   }
 
   const account = toAddress(params.account)
+  const lockedWithdrawStep: TLockedWithdrawNoZapExecutionStep = {
+    key: 'withdraw_locked',
+    functionName: 'withdraw',
+    args: [params.requestedLockedAssets, account, account]
+  }
 
-  const plan: TLockedWithdrawNoZapExecutionStep[] = [
+  if (params.requestedUnderlyingAssets <= 0n) {
+    return [lockedWithdrawStep]
+  }
+
+  return [
+    lockedWithdrawStep,
     {
-      key: 'withdraw_locked',
-      functionName: 'withdraw',
-      args: [params.requestedLockedAssets, account, account]
-    }
-  ]
-
-  if (params.requestedUnderlyingAssets > 0n) {
-    plan.push({
       key: 'withdraw_unlocked',
       functionName: 'withdraw',
       args: [params.requestedUnderlyingAssets, account, account]
-    })
-  }
-
-  return plan
+    }
+  ]
 }
 
 export function buildLockedWithdrawTransactionStep({

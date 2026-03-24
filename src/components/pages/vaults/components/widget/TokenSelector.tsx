@@ -5,7 +5,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TToken } from '@shared/types'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
-import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FC, useCallback, useMemo, useState } from 'react'
 import { isAddress } from 'viem'
 import { CloseIcon } from './shared/Icons'
 import { getTokenLogoSources } from './tokenLogo.utils'
@@ -18,6 +18,15 @@ import {
 } from './tokenSelectorList.utils'
 
 type TTokenType = 'asset' | 'vault' | 'staking' | undefined
+
+const AVAILABLE_CHAINS = [
+  { id: 1, name: 'Ethereum' },
+  { id: 10, name: 'Optimism' },
+  { id: 137, name: 'Polygon' },
+  { id: 42161, name: 'Arbitrum' },
+  { id: 8453, name: 'Base' },
+  { id: 747474, name: 'Katana' }
+] as const
 
 interface TokenSelectorProps {
   value: `0x${string}` | undefined
@@ -115,23 +124,13 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   mode = 'default'
 }) => {
   const [searchText, setSearchText] = useState('')
-  const [customAddress, setCustomAddress] = useState<`0x${string}` | undefined>()
   const [selectedChainId, setSelectedChainId] = useState(chainId)
   const { getToken, isLoading, balances } = useWallet()
   const { tokenLists } = useTokenList()
   const { allVaults, getPrice } = useYearn()
-
-  // Available chains - you can expand this list as needed
-  const availableChains = useMemo(
-    () => [
-      { id: 1, name: 'Ethereum' },
-      { id: 10, name: 'Optimism' },
-      { id: 137, name: 'Polygon' },
-      { id: 42161, name: 'Arbitrum' },
-      { id: 8453, name: 'Base' },
-      { id: 747474, name: 'Katana' }
-    ],
-    []
+  const customAddress = useMemo(
+    () => (searchText && isAddress(searchText) ? (searchText as `0x${string}`) : undefined),
+    [searchText]
   )
 
   const priorityTokenAddresses = useMemo(
@@ -295,13 +294,6 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     getTokenUsdValue
   ])
 
-  // Check if search text is a valid address
-  useEffect(() => {
-    if (searchText && isAddress(searchText) && searchText !== customAddress) {
-      setCustomAddress(searchText as `0x${string}`)
-    }
-  }, [searchText, customAddress])
-
   const handleSelect = useCallback(
     (address: `0x${string}`) => {
       onChange(address, selectedChainId)
@@ -331,7 +323,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       {/* Header with chain selector and close button */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
-          {availableChains.map((chain) => (
+          {AVAILABLE_CHAINS.map((chain) => (
             <button
               key={chain.id}
               onClick={() => setSelectedChainId(chain.id)}

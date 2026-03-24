@@ -188,7 +188,6 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const [pendingPrefillAmount, setPendingPrefillAmount] = useState<string | undefined>(undefined)
   const [pendingPrefillAddress, setPendingPrefillAddress] = useState<`0x${string}` | undefined>(undefined)
   const [prefillRequestKey, setPrefillRequestKey] = useState(0)
-  const [lockedRequestedAmountRaw, setLockedRequestedAmountRaw] = useState<bigint>(0n)
   const [lockedWithdrawPhase, setLockedWithdrawPhase] = useState<'withdraw' | 'redeem'>('withdraw')
   const [lockedWithdrawExecutionSnapshot, setLockedWithdrawExecutionSnapshot] =
     useState<LockedWithdrawExecutionSnapshot | null>(null)
@@ -393,24 +392,79 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
       }),
     [maxCooldownAssetAmount, isLockedUnderlyingDisplay, unlockedUserData.pricePerShare, unlockedVaultDecimals]
   )
+  const { data: rawPreviewWithdrawForRequestedAmount, refetch: refetchPreviewWithdrawForRequestedAmount } =
+    useReadContract({
+      address: YVUSD_UNLOCKED_ADDRESS,
+      abi: erc4626Abi,
+      functionName: 'previewWithdraw',
+      args:
+        isLockedVariant &&
+        draftWithdrawAmount > 0n &&
+        (canWithdrawNow || (!canWithdrawNow && needsCooldownStart && isLockedUnderlyingDisplay))
+          ? [draftWithdrawAmount]
+          : undefined,
+      chainId,
+      query: {
+        enabled:
+          !!account &&
+          isLockedVariant &&
+          draftWithdrawAmount > 0n &&
+          (canWithdrawNow || (!canWithdrawNow && needsCooldownStart && isLockedUnderlyingDisplay))
+      }
+    })
+  const lockedRequestedCooldownAssets = useMemo(() => {
+    if (!isLockedVariant || canWithdrawNow) {
+      return 0n
+    }
+
+    const inputUnit = isLockedUnderlyingDisplay ? 'underlying' : 'shares'
+    return resolveLockedRequestedAmountFromInput({
+      amount: draftWithdrawAmount,
+      inputUnit,
+      canWithdrawNow,
+      needsCooldownStart,
+      maxCooldownDisplayAmount,
+      maxCooldownAssetAmount,
+      previewWithdrawLockedAssets:
+        typeof rawPreviewWithdrawForRequestedAmount === 'bigint' ? rawPreviewWithdrawForRequestedAmount : undefined,
+      lockedDisplayPricePerShare,
+      lockedVaultTokenDecimals,
+      unlockedPricePerShare: unlockedUserData.pricePerShare,
+      unlockedVaultDecimals
+    })
+  }, [
+    isLockedVariant,
+    canWithdrawNow,
+    isLockedUnderlyingDisplay,
+    draftWithdrawAmount,
+    needsCooldownStart,
+    maxCooldownDisplayAmount,
+    maxCooldownAssetAmount,
+    rawPreviewWithdrawForRequestedAmount,
+    lockedDisplayPricePerShare,
+    lockedVaultTokenDecimals,
+    unlockedUserData.pricePerShare,
+    unlockedVaultDecimals
+  ])
   const { data: rawPreviewWithdrawSharesForRequestedCooldownAmount } = useReadContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: erc4626Abi,
     functionName: 'previewWithdraw',
     args:
-      !!account && isLockedVariant && !canWithdrawNow && needsCooldownStart && lockedRequestedAmountRaw > 0n
-        ? [lockedRequestedAmountRaw]
+      !!account && isLockedVariant && !canWithdrawNow && needsCooldownStart && lockedRequestedCooldownAssets > 0n
+        ? [lockedRequestedCooldownAssets]
         : undefined,
     chainId,
     query: {
-      enabled: !!account && isLockedVariant && !canWithdrawNow && needsCooldownStart && lockedRequestedAmountRaw > 0n
+      enabled:
+        !!account && isLockedVariant && !canWithdrawNow && needsCooldownStart && lockedRequestedCooldownAssets > 0n
     }
   })
 
   const cooldownSharesToStart = useMemo(() => {
     return resolveCooldownSharesToStart({
       needsCooldownStart,
-      lockedRequestedAmountRaw,
+      lockedRequestedAmountRaw: lockedRequestedCooldownAssets,
       maxCooldownAssetAmount,
       previewWithdrawShares:
         typeof rawPreviewWithdrawSharesForRequestedCooldownAmount === 'bigint'
@@ -422,7 +476,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     })
   }, [
     needsCooldownStart,
-    lockedRequestedAmountRaw,
+    lockedRequestedCooldownAssets,
     maxCooldownAssetAmount,
     rawPreviewWithdrawSharesForRequestedCooldownAmount,
     lockedUserData.pricePerShare,
@@ -586,27 +640,6 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     lockedDisplayPricePerShare
   ])
 
-  const { data: rawPreviewWithdrawForRequestedAmount, refetch: refetchPreviewWithdrawForRequestedAmount } =
-    useReadContract({
-      address: YVUSD_UNLOCKED_ADDRESS,
-      abi: erc4626Abi,
-      functionName: 'previewWithdraw',
-      args:
-        isLockedVariant &&
-        draftWithdrawAmount > 0n &&
-        (canWithdrawNow || (!canWithdrawNow && needsCooldownStart && isLockedUnderlyingDisplay))
-          ? [draftWithdrawAmount]
-          : undefined,
-      chainId,
-      query: {
-        enabled:
-          !!account &&
-          isLockedVariant &&
-          draftWithdrawAmount > 0n &&
-          (canWithdrawNow || (!canWithdrawNow && needsCooldownStart && isLockedUnderlyingDisplay))
-      }
-    })
-
   const lockedRequestedWithdrawAssets = useMemo(
     () =>
       resolveLockedRequestedWithdrawAssets({
@@ -753,18 +786,11 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const handleCooldownSuccess = useCallback((): void => {
     setShowCooldownOverlay(false)
     setDraftWithdrawAmount(selectedCooldownDisplayAssets)
-    setLockedRequestedAmountRaw(selectedCooldownAssets)
     setPendingPrefillAddress(lockedInputAddress)
     setPendingPrefillAmount(formatUnits(selectedCooldownDisplayAssets, lockedDisplayAssetDecimals))
     setPrefillRequestKey((current) => current + 1)
     refetchLockedWithdrawState()
-  }, [
-    refetchLockedWithdrawState,
-    selectedCooldownDisplayAssets,
-    selectedCooldownAssets,
-    lockedInputAddress,
-    lockedDisplayAssetDecimals
-  ])
+  }, [refetchLockedWithdrawState, selectedCooldownDisplayAssets, lockedInputAddress, lockedDisplayAssetDecimals])
 
   const handleCancelCooldownSuccess = useCallback((): void => {
     setShowCancelCooldownOverlay(false)
@@ -797,7 +823,6 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     setPendingPrefillAddress(lockedInputAddress)
     setPendingPrefillAmount('')
     setPrefillRequestKey((current) => current + 1)
-    setLockedRequestedAmountRaw(0n)
     setLockedWithdrawExecutionSnapshot(null)
     setDraftWithdrawAmount(0n)
     onWithdrawSuccess?.()
@@ -847,26 +872,6 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
       setDraftWithdrawAmount(nextRawAmount)
       setPendingPrefillAmount(nextRawAmount > 0n ? formatUnits(nextRawAmount, nextInputDecimals) : undefined)
       setPendingPrefillAddress(nextVariant === 'locked' ? lockedInputAddress : unlockedAssetAddress)
-      const nextLockedRequestedAmount =
-        nextVariant === 'locked' && !canWithdrawNow
-          ? resolveLockedRequestedAmountFromInput({
-              amount: nextRawAmount,
-              inputUnit: nextAmountUnit,
-              canWithdrawNow,
-              needsCooldownStart,
-              maxCooldownDisplayAmount,
-              maxCooldownAssetAmount,
-              previewWithdrawLockedAssets:
-                typeof rawPreviewWithdrawForRequestedAmount === 'bigint'
-                  ? rawPreviewWithdrawForRequestedAmount
-                  : undefined,
-              lockedDisplayPricePerShare,
-              lockedVaultTokenDecimals,
-              unlockedPricePerShare: unlockedUserData.pricePerShare,
-              unlockedVaultDecimals
-            })
-          : 0n
-      setLockedRequestedAmountRaw(nextLockedRequestedAmount)
       setVariant(nextVariant)
     },
     [
@@ -878,96 +883,13 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
       unlockedUserData.pricePerShare,
       unlockedVaultDecimals,
       lockedAssetDecimals,
-      unlockedAssetDecimals,
-      canWithdrawNow,
-      needsCooldownStart,
-      maxCooldownDisplayAmount,
-      maxCooldownAssetAmount,
-      rawPreviewWithdrawForRequestedAmount,
-      lockedDisplayPricePerShare,
-      lockedVaultTokenDecimals,
-      isLockedVariant
+      unlockedAssetDecimals
     ]
   )
 
-  const handleAmountChange = useCallback(
-    (amount: bigint): void => {
-      setDraftWithdrawAmount(amount)
-      if (!isLockedVariant || canWithdrawNow) {
-        return
-      }
-
-      const inputUnit = isLockedUnderlyingDisplay ? 'underlying' : 'shares'
-      const nextRequestedAmount = resolveLockedRequestedAmountFromInput({
-        amount,
-        inputUnit,
-        canWithdrawNow,
-        needsCooldownStart,
-        maxCooldownDisplayAmount,
-        maxCooldownAssetAmount,
-        previewWithdrawLockedAssets:
-          typeof rawPreviewWithdrawForRequestedAmount === 'bigint' ? rawPreviewWithdrawForRequestedAmount : undefined,
-        lockedDisplayPricePerShare,
-        lockedVaultTokenDecimals,
-        unlockedPricePerShare: unlockedUserData.pricePerShare,
-        unlockedVaultDecimals
-      })
-      setLockedRequestedAmountRaw(nextRequestedAmount)
-    },
-    [
-      isLockedVariant,
-      canWithdrawNow,
-      needsCooldownStart,
-      maxCooldownDisplayAmount,
-      maxCooldownAssetAmount,
-      isLockedUnderlyingDisplay,
-      rawPreviewWithdrawForRequestedAmount,
-      lockedDisplayPricePerShare,
-      lockedVaultTokenDecimals,
-      unlockedUserData.pricePerShare,
-      unlockedVaultDecimals
-    ]
-  )
-
-  useEffect(() => {
-    if (!isLockedVariant || canWithdrawNow) {
-      return
-    }
-
-    const inputUnit = isLockedUnderlyingDisplay ? 'underlying' : 'shares'
-    const nextRequestedAmount = resolveLockedRequestedAmountFromInput({
-      amount: draftWithdrawAmount,
-      inputUnit,
-      canWithdrawNow,
-      needsCooldownStart,
-      maxCooldownDisplayAmount,
-      maxCooldownAssetAmount,
-      previewWithdrawLockedAssets:
-        typeof rawPreviewWithdrawForRequestedAmount === 'bigint' ? rawPreviewWithdrawForRequestedAmount : undefined,
-      lockedDisplayPricePerShare,
-      lockedVaultTokenDecimals,
-      unlockedPricePerShare: unlockedUserData.pricePerShare,
-      unlockedVaultDecimals
-    })
-
-    if (nextRequestedAmount !== lockedRequestedAmountRaw) {
-      setLockedRequestedAmountRaw(nextRequestedAmount)
-    }
-  }, [
-    isLockedVariant,
-    canWithdrawNow,
-    draftWithdrawAmount,
-    isLockedUnderlyingDisplay,
-    needsCooldownStart,
-    maxCooldownDisplayAmount,
-    maxCooldownAssetAmount,
-    rawPreviewWithdrawForRequestedAmount,
-    lockedDisplayPricePerShare,
-    lockedVaultTokenDecimals,
-    unlockedUserData.pricePerShare,
-    unlockedVaultDecimals,
-    lockedRequestedAmountRaw
-  ])
+  const handleAmountChange = useCallback((amount: bigint): void => {
+    setDraftWithdrawAmount(amount)
+  }, [])
 
   useEffect(() => {
     if (!showLockedWithdrawOverlay) {
@@ -1017,7 +939,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     !isLockedVariant || !account || draftWithdrawAmount <= 0n
       ? undefined
       : !canWithdrawNow
-        ? maxCooldownAssetAmount > 0n && lockedRequestedAmountRaw > maxCooldownAssetAmount
+        ? maxCooldownAssetAmount > 0n && lockedRequestedCooldownAssets > maxCooldownAssetAmount
           ? 'Insufficient balance'
           : undefined
         : !shouldNormalizeLockedWithdrawMaxInput &&
