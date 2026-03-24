@@ -24,7 +24,7 @@ const DEFAULT_TIMEOUT_MS = 4_000
 const DEFAULT_PRO_TIMEOUT_MS = 12_000
 const DEFAULT_MAX_RETRIES = 2
 const DEFAULT_RETRY_DELAY_MS = 200
-const DEFAULT_MAX_REQUEST_URL_LENGTH = 4_000
+const DEFAULT_MAX_REQUEST_URL_LENGTH = 3_500
 const SPLITTABLE_GET_STATUS_CODES = new Set([414, 431, 505])
 
 type TCoinRequest = { chain: string; address: string; timestamps: number[] }

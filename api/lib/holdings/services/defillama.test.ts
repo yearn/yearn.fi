@@ -276,7 +276,7 @@ describe('parseDefiLlamaResponse', () => {
 
       expect(requestUrl.origin).toBe('https://pro-api.llama.fi')
       expect(requestUrl.pathname).toBe('/test-llama-key/coins/batchHistorical')
-      expect(requestUrl.toString().length).toBeLessThanOrEqual(4_000)
+      expect(requestUrl.toString().length).toBeLessThanOrEqual(3_500)
       expect(requestInit).toEqual({ signal: expect.any(AbortSignal) })
       expect(Object.keys(requestCoinsParam).length).toBeGreaterThan(0)
     })
@@ -374,7 +374,7 @@ describe('parseDefiLlamaResponse', () => {
 
       expect(requestUrl.origin).toBe('https://pro-api.llama.fi')
       expect(requestUrl.pathname).toBe('/test-llama-key/coins/batchHistorical')
-      expect(requestUrl.toString().length).toBeLessThanOrEqual(4_000)
+      expect(requestUrl.toString().length).toBeLessThanOrEqual(3_500)
       expect(requestInit).toEqual({ signal: expect.any(AbortSignal) })
     })
     expect(prices.size).toBe(20)
