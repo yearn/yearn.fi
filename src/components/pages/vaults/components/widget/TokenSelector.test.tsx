@@ -13,6 +13,19 @@ vi.mock('@shared/contexts/useWallet', () => ({
   useWallet: mockUseWallet
 }))
 
+vi.mock('@shared/contexts/WithTokenList', () => ({
+  useTokenList: () => ({
+    tokenLists: {}
+  })
+}))
+
+vi.mock('@shared/contexts/useYearn', () => ({
+  useYearn: () => ({
+    allVaults: {},
+    getPrice: () => ({ normalized: 0 })
+  })
+}))
+
 function buildToken(overrides: Partial<TToken> = {}): TToken {
   return {
     address: BASE_TOKEN_ADDRESS,
