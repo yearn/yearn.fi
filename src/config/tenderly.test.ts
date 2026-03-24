@@ -7,7 +7,8 @@ import {
   parseTenderlyRuntime,
   resolveCanonicalChainIdForRuntime,
   resolveConnectedCanonicalChainIdForRuntime,
-  resolveExecutionChainIdForRuntime
+  resolveExecutionChainIdForRuntime,
+  resolveTenderlyRpcUriForExecutionChainIdForRuntime
 } from './tenderly'
 
 describe('parseTenderlyRuntime', () => {
@@ -78,6 +79,10 @@ describe('parseTenderlyRuntime', () => {
     expect(resolveCanonicalChainIdForRuntime(runtime, 1)).toBe(1)
     expect(resolveCanonicalChainIdForRuntime(runtime, 73571)).toBe(1)
     expect(resolveConnectedCanonicalChainIdForRuntime(runtime, 73571)).toBe(1)
-    expect(resolveConnectedCanonicalChainIdForRuntime(runtime, 1)).toBeUndefined()
+    expect(resolveConnectedCanonicalChainIdForRuntime(runtime, 1)).toBe(1)
+    expect(resolveTenderlyRpcUriForExecutionChainIdForRuntime(runtime, 73571)).toBe(
+      'https://rpc.tenderly.ethereum.example'
+    )
+    expect(resolveTenderlyRpcUriForExecutionChainIdForRuntime(runtime, 1)).toBeUndefined()
   })
 })

@@ -2,7 +2,11 @@ import type { Chain, PublicClient } from 'viem'
 import { createPublicClient, defineChain, http } from 'viem'
 import * as wagmiChains from 'viem/chains'
 import { katana } from '@/config/chainDefinitions'
-import { resolveExecutionChainId, supportedChainLookup, tenderlyRuntime } from '@/config/tenderly'
+import {
+  resolveExecutionChainId,
+  resolveTenderlyRpcUriForExecutionChainId,
+  supportedChainLookup
+} from '@/config/tenderly'
 import type { TAddress } from '../../types/address'
 import type { TDict, TNDict } from '../../types/mixed'
 import { retrieveConfig } from './config'
@@ -66,11 +70,8 @@ const isChain = (chain: wagmiChains.Chain | unknown): chain is wagmiChains.Chain
 export function getRpcUriFor(chainId: number | string): string {
   const normalizedChainId = Number(chainId)
   if (Number.isInteger(normalizedChainId)) {
-    const resolvedExecutionChainId = resolveExecutionChainId(normalizedChainId)
-    const canonicalChainId = tenderlyRuntime.executionToCanonicalChainId.get(normalizedChainId) ?? normalizedChainId
-    const tenderlyRpc = tenderlyRuntime.configuredByCanonicalId[canonicalChainId]?.rpcUri
-
-    if (tenderlyRpc && (resolvedExecutionChainId === normalizedChainId || canonicalChainId === normalizedChainId)) {
+    const tenderlyRpc = resolveTenderlyRpcUriForExecutionChainId(normalizedChainId)
+    if (tenderlyRpc) {
       return tenderlyRpc
     }
   }

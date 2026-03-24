@@ -268,7 +268,12 @@ export function resolveConnectedCanonicalChainIdForRuntime(
   }
 
   if (runtime.isEnabled) {
-    return runtime.executionToCanonicalChainId.get(chainId as number)
+    const canonicalChainId = runtime.executionToCanonicalChainId.get(chainId as number)
+    if (canonicalChainId !== undefined) {
+      return canonicalChainId
+    }
+
+    return isCanonicalChainEnabledForRuntime(runtime, chainId as number) ? (chainId as TCanonicalChainId) : undefined
   }
 
   return isCanonicalChainEnabledForRuntime(runtime, chainId as number) ? (chainId as TCanonicalChainId) : undefined
@@ -299,4 +304,24 @@ export function resolveExecutionChainIdForRuntime(
 
 export function resolveExecutionChainId(chainId: number | undefined): number | undefined {
   return resolveExecutionChainIdForRuntime(tenderlyRuntime, chainId)
+}
+
+export function resolveTenderlyRpcUriForExecutionChainIdForRuntime(
+  runtime: TTenderlyRuntime,
+  chainId: number | undefined
+): string | undefined {
+  if (!Number.isInteger(chainId)) {
+    return undefined
+  }
+
+  const canonicalChainId = runtime.executionToCanonicalChainId.get(chainId as number)
+  if (canonicalChainId === undefined) {
+    return undefined
+  }
+
+  return runtime.configuredByCanonicalId[canonicalChainId]?.rpcUri
+}
+
+export function resolveTenderlyRpcUriForExecutionChainId(chainId: number | undefined): string | undefined {
+  return resolveTenderlyRpcUriForExecutionChainIdForRuntime(tenderlyRuntime, chainId)
 }
