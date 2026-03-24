@@ -5,6 +5,8 @@ export interface HoldingsConfig {
   readonly ethereumRpcUrl: string
   readonly kongBaseUrl: string
   readonly defillamaBaseUrl: string
+  readonly defillamaProBaseUrl: string
+  readonly defillamaApiKey: string
   readonly historyDays: number
 }
 
@@ -23,6 +25,10 @@ export const config: HoldingsConfig = {
   },
   kongBaseUrl: 'https://kong.yearn.fi',
   defillamaBaseUrl: 'https://coins.llama.fi',
+  defillamaProBaseUrl: 'https://pro-api.llama.fi',
+  get defillamaApiKey() {
+    return process.env.DEFILLAMA_API_KEY?.trim() ?? ''
+  },
   historyDays: 365
 }
 

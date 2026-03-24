@@ -18,6 +18,7 @@ function createBatchResponse(response: DefiLlamaBatchResponse): Response {
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
   vi.mocked(getCachedPrices).mockResolvedValue(new Map())
   vi.mocked(saveCachedPrices).mockResolvedValue()
 })
@@ -228,6 +229,202 @@ describe('parseDefiLlamaResponse', () => {
     expect(Object.keys(firstCoinsParam)).toHaveLength(50)
     expect(Object.keys(secondCoinsParam)).toHaveLength(1)
     expect(prices.size).toBe(51)
+  })
+
+  it('uses the paid DefiLlama pro API GET route with larger batches when DEFILLAMA_API_KEY is set', async () => {
+    vi.stubEnv('DEFILLAMA_API_KEY', 'test-llama-key')
+
+    const tokens = Array.from({ length: 90 }, (_value, index) => ({
+      chainId: 1,
+      address: `0x${(index + 1).toString(16).padStart(40, '0')}`
+    }))
+    const timestamp = 1700000000
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const requestUrl = new URL(input.toString())
+      const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+        string,
+        number[]
+      >
+
+      return createBatchResponse({
+        coins: Object.fromEntries(
+          Object.entries(coinsParam).map(([coinKey, requestedTimestamps]) => [
+            coinKey,
+            {
+              symbol: 'TKN',
+              prices: requestedTimestamps.map((requestedTimestamp) => ({
+                timestamp: requestedTimestamp,
+                price: 1,
+                confidence: 0.99
+              }))
+            }
+          ])
+        )
+      })
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPrices(tokens, [timestamp])
+
+    expect(fetchStub.mock.calls.length).toBeGreaterThan(1)
+    fetchStub.mock.calls.forEach(([requestInput, requestInit]) => {
+      const requestUrl = new URL(String(requestInput))
+      const requestCoinsParam = JSON.parse(
+        decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')
+      ) as Record<string, number[]>
+
+      expect(requestUrl.origin).toBe('https://pro-api.llama.fi')
+      expect(requestUrl.pathname).toBe('/test-llama-key/coins/batchHistorical')
+      expect(requestUrl.toString().length).toBeLessThanOrEqual(4_000)
+      expect(requestInit).toEqual({ signal: expect.any(AbortSignal) })
+      expect(Object.keys(requestCoinsParam).length).toBeGreaterThan(0)
+    })
+    expect(prices.size).toBe(90)
+  })
+
+  it('falls back to the free GET route when the paid GET route fails', async () => {
+    vi.stubEnv('DEFILLAMA_API_KEY', 'test-llama-key')
+
+    const fetchStub = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404
+      } satisfies Partial<Response>)
+      .mockResolvedValueOnce(
+        createBatchResponse({
+          coins: {
+            'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': {
+              symbol: 'USDC',
+              prices: [{ timestamp: 1700000000, price: 1, confidence: 0.99 }]
+            }
+          }
+        })
+      )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPrices(
+      [{ chainId: 1, address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' }],
+      [1700000000]
+    )
+
+    expect(fetchStub).toHaveBeenCalledTimes(2)
+
+    const [firstRequestInput, firstRequestInit] = fetchStub.mock.calls[0] ?? []
+    const [secondRequestInput, secondRequestInit] = fetchStub.mock.calls[1] ?? []
+    const firstRequestUrl = new URL(String(firstRequestInput))
+    const firstCoinsParam = JSON.parse(
+      decodeURIComponent(firstRequestUrl.searchParams.get('coins') ?? 'null')
+    ) as Record<string, number[]>
+
+    expect(firstRequestUrl.origin).toBe('https://pro-api.llama.fi')
+    expect(firstRequestUrl.pathname).toBe('/test-llama-key/coins/batchHistorical')
+    expect(firstRequestInit).toEqual({ signal: expect.any(AbortSignal) })
+    expect(firstCoinsParam).toEqual({
+      'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': [1700000000]
+    })
+    expect(String(secondRequestInput)).toBe(
+      'https://coins.llama.fi/batchHistorical?coins=%7B%22ethereum%3A0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48%22%3A%5B1700000000%5D%7D'
+    )
+    expect(secondRequestInit).toEqual({ signal: expect.any(AbortSignal) })
+    expect(prices.get('ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')?.get(1700000000)).toBe(1)
+  })
+
+  it('splits paid GET batches before the request URL grows beyond the configured limit', async () => {
+    vi.stubEnv('DEFILLAMA_API_KEY', 'test-llama-key')
+
+    const tokens = Array.from({ length: 20 }, (_value, index) => ({
+      chainId: 1,
+      address: `0x${(index + 1).toString(16).padStart(40, '0')}`
+    }))
+    const timestamps = Array.from({ length: 50 }, (_value, index) => 1700000000 + index * 60)
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const requestUrl = new URL(input.toString())
+      const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+        string,
+        number[]
+      >
+
+      return createBatchResponse({
+        coins: Object.fromEntries(
+          Object.entries(coinsParam).map(([coinKey, requestedTimestamps]) => [
+            coinKey,
+            {
+              symbol: 'TKN',
+              prices: requestedTimestamps.map((requestedTimestamp) => ({
+                timestamp: requestedTimestamp,
+                price: 1,
+                confidence: 0.99
+              }))
+            }
+          ])
+        )
+      })
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPrices(tokens, timestamps)
+
+    expect(fetchStub.mock.calls.length).toBeGreaterThan(1)
+    fetchStub.mock.calls.forEach(([requestInput, requestInit]) => {
+      const requestUrl = new URL(String(requestInput))
+
+      expect(requestUrl.origin).toBe('https://pro-api.llama.fi')
+      expect(requestUrl.pathname).toBe('/test-llama-key/coins/batchHistorical')
+      expect(requestUrl.toString().length).toBeLessThanOrEqual(4_000)
+      expect(requestInit).toEqual({ signal: expect.any(AbortSignal) })
+    })
+    expect(prices.size).toBe(20)
+  })
+
+  it('recursively splits oversized GET batches when the server rejects them', async () => {
+    vi.stubEnv('DEFILLAMA_API_KEY', 'test-llama-key')
+
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const requestUrl = new URL(input.toString())
+      const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+        string,
+        number[]
+      >
+      const requestedCoinCount = Object.keys(coinsParam).length
+
+      if (requestedCoinCount > 1) {
+        return new Response(null, { status: 431 })
+      }
+
+      return createBatchResponse({
+        coins: Object.fromEntries(
+          Object.entries(coinsParam).map(([coinKey, requestedTimestamps]) => [
+            coinKey,
+            {
+              symbol: 'TKN',
+              prices: requestedTimestamps.map((requestedTimestamp) => ({
+                timestamp: requestedTimestamp,
+                price: 1,
+                confidence: 0.99
+              }))
+            }
+          ])
+        )
+      })
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPrices(
+      [
+        { chainId: 1, address: '0x0000000000000000000000000000000000000001' },
+        { chainId: 1, address: '0x0000000000000000000000000000000000000002' }
+      ],
+      [1700000000]
+    )
+
+    expect(fetchStub.mock.calls.length).toBeGreaterThan(1)
+    expect(prices.get('ethereum:0x0000000000000000000000000000000000000001')?.get(1700000000)).toBe(1)
+    expect(prices.get('ethereum:0x0000000000000000000000000000000000000002')?.get(1700000000)).toBe(1)
   })
 
   it('interleaves token timestamp slices so multi-token requests stay grouped together', async () => {
