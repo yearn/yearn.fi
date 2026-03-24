@@ -102,6 +102,8 @@ export function WidgetWithdraw({
   expectedOutOverride,
   isActionDisabled = false,
   actionDisabledReason,
+  customErrorMessage,
+  disableFlow = false,
   disableTokenSelector = false,
   hideZapForTokens,
   disableAmountInput = false,
@@ -303,6 +305,10 @@ export function WidgetWithdraw({
     return 0n
   }, [withdrawAmount.bn, isMaxWithdraw, sourceVaultSharesRaw, pricePerShare, vaultDecimals])
   const effectiveRequiredShares = requiredSharesOverride ?? requiredShares
+  const flowCurrentAmount = disableFlow ? 0n : withdrawAmount.bn
+  const flowDebouncedAmount = disableFlow ? 0n : withdrawAmount.debouncedBn
+  const flowRequiredShares = disableFlow ? 0n : effectiveRequiredShares
+  const flowIsMaxWithdraw = disableFlow ? false : isMaxWithdraw
 
   useEffect(() => {
     if (!awaitingPostUnstakeShares || fallbackStep !== 'withdraw') return
@@ -323,14 +329,14 @@ export function WidgetWithdraw({
     sourceToken,
     stakingAddress,
     stakingSource,
-    amount: withdrawAmount.debouncedBn,
-    currentAmount: withdrawAmount.bn,
-    requiredShares: effectiveRequiredShares,
+    amount: flowDebouncedAmount,
+    currentAmount: flowCurrentAmount,
+    requiredShares: flowRequiredShares,
     maxShares: sourceVaultSharesRaw,
     redeemSharesOverride,
-    isMaxWithdraw,
+    isMaxWithdraw: flowIsMaxWithdraw,
     unstakeMaxRedeemShares: withdrawalSource === 'staking' ? stakingRedeemableShares : 0n,
-    allowDirectWithdrawStep: !blockDirectWithdrawStep,
+    allowDirectWithdrawStep: !disableFlow && !blockDirectWithdrawStep,
     optimisticApprovedShares,
     account,
     chainId,
@@ -342,7 +348,7 @@ export function WidgetWithdraw({
     slippage: zapSlippage,
     withdrawalSource,
     isUnstake,
-    isDebouncing: withdrawAmount.isDebouncing,
+    isDebouncing: disableFlow ? false : withdrawAmount.isDebouncing,
     useErc4626: usesErc4626
   })
   const effectiveDirectWithdrawPrepare = blockDirectWithdrawStep
@@ -390,10 +396,10 @@ export function WidgetWithdraw({
   )
 
   const withdrawError = useWithdrawError({
-    amount: withdrawAmount.bn,
-    debouncedAmount: withdrawAmount.debouncedBn,
-    isDebouncing: withdrawAmount.isDebouncing,
-    requiredShares: effectiveRequiredShares,
+    amount: flowCurrentAmount,
+    debouncedAmount: flowDebouncedAmount,
+    isDebouncing: disableFlow ? false : withdrawAmount.isDebouncing,
+    requiredShares: flowRequiredShares,
     totalBalance: sourceVaultSharesRaw,
     account,
     isLoadingRoute: activeFlow.periphery.isLoadingRoute,
@@ -404,6 +410,7 @@ export function WidgetWithdraw({
   })
   const exceedsExternalWithdrawLimit = maxWithdrawAssets !== undefined && withdrawAmount.bn > effectiveMaxWithdrawAssets
   const effectiveWithdrawError =
+    customErrorMessage ||
     actionDisabledReason ||
     (exceedsExternalWithdrawLimit ? 'Amount exceeds currently available withdraw limit.' : undefined) ||
     withdrawError
