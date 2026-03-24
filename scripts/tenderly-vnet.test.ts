@@ -40,6 +40,7 @@ describe('tenderly-vnet console safety', () => {
       details: connectionDetails
     })
 
+    expect(envFragment).toContain('VITE_TENDERLY_MODE=true')
     expect(envFragment).toContain('VITE_TENDERLY_CHAIN_ID_FOR_1=694201')
     expect(envFragment).toContain('VITE_TENDERLY_RPC_URI_FOR_1=https://predictable.public.rpc/stable-path')
     expect(envFragment).toContain('TENDERLY_ADMIN_RPC_URI_FOR_1=https://admin.rpc/secret-path')

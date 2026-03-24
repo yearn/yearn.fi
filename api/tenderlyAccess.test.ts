@@ -9,7 +9,9 @@ describe('isLoopbackAddress', () => {
   it('accepts loopback addresses', () => {
     expect(isLoopbackAddress('localhost')).toBe(true)
     expect(isLoopbackAddress('127.0.0.1')).toBe(true)
+    expect(isLoopbackAddress('127.0.0.2')).toBe(true)
     expect(isLoopbackAddress('::1')).toBe(true)
+    expect(isLoopbackAddress('::ffff:127.0.0.1')).toBe(true)
   })
 
   it('rejects non-loopback addresses', () => {
@@ -22,6 +24,7 @@ describe('isTenderlyAdminRequestAllowed', () => {
   it('allows loopback client addresses', () => {
     expect(isTenderlyAdminRequestAllowed('127.0.0.1')).toBe(true)
     expect(isTenderlyAdminRequestAllowed('::1')).toBe(true)
+    expect(isTenderlyAdminRequestAllowed('::ffff:127.0.0.1')).toBe(true)
   })
 
   it('rejects remote client addresses', async () => {
