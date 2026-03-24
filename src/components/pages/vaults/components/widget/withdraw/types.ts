@@ -16,6 +16,7 @@ export interface WithdrawWidgetProps {
   vaultVersion?: string
   isVaultRetired?: boolean
   vaultUserData: VaultUserData
+  inputBalanceOverride?: bigint
   maxWithdrawAssets?: bigint
   requiredSharesOverride?: bigint
   expectedOutOverride?: bigint
