@@ -1014,6 +1014,7 @@ export function WidgetWithdraw({
         assetAddress={resolvedDisplayAssetAddress}
         vaultAddress={vaultAddress}
         stakingAddress={stakingAddress}
+        allowHiddenVaultTokenSelection={withdrawalSource === 'staking'}
       />
     </div>
   )

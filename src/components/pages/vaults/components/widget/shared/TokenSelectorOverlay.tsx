@@ -16,8 +16,10 @@ interface TokenSelectorOverlayProps {
   topTokens?: Record<number, Address[]>
   extraTokens?: TToken[]
   assetAddress?: Address
+  assetChainId?: number
   vaultAddress?: Address
   stakingAddress?: Address
+  allowHiddenVaultTokenSelection?: boolean
   mode?: TTokenSelectorMode
 }
 
@@ -32,8 +34,10 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
   topTokens,
   extraTokens,
   assetAddress,
+  assetChainId,
   vaultAddress,
   stakingAddress,
+  allowHiddenVaultTokenSelection,
   mode
 }) => {
   return (
@@ -72,8 +76,10 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
           extraTokens={extraTokens}
           onClose={onClose}
           assetAddress={assetAddress}
+          assetChainId={assetChainId}
           vaultAddress={vaultAddress}
           stakingAddress={stakingAddress}
+          allowHiddenVaultTokenSelection={allowHiddenVaultTokenSelection}
           mode={mode}
         />
       </div>

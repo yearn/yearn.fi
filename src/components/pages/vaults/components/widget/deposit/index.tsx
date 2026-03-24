@@ -839,6 +839,7 @@ export function WidgetDeposit({
         excludeTokens={tokenSelectorExcludedTokens}
         extraTokens={tokenSelectorExtraTokens}
         assetAddress={assetAddress}
+        assetChainId={chainId}
         vaultAddress={vaultAddress}
         stakingAddress={stakingAddress}
       />
