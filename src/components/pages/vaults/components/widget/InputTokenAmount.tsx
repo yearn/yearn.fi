@@ -107,6 +107,7 @@ export const InputTokenAmount: FC<Props> = ({
   const handlePercentageClick = async (percentage: number) => {
     if (!balance || balance === 0n) {
       setFormValue?.('0')
+      onInputChange?.(0n)
       return
     }
 
@@ -123,9 +124,9 @@ export const InputTokenAmount: FC<Props> = ({
       }
       return
     }
-    const fullAmount = formatUnits(balance, tokenDecimals)
-    const percentageAmount = ((+fullAmount * percentage) / 100).toFixed(tokenDecimals)
-    setFormValue?.(percentageAmount)
+    const percentageRawAmount = (balance * BigInt(percentage)) / 100n
+    setFormValue?.(formatUnits(percentageRawAmount, tokenDecimals))
+    onInputChange?.(percentageRawAmount)
   }
 
   return (

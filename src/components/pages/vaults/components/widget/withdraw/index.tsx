@@ -274,13 +274,19 @@ export function WidgetWithdraw({
   }, [destinationChainId, onTokenSelectionChange, withdrawToken])
 
   const usesErc4626 = Boolean(vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3'))
-  const effectiveMaxWithdrawAssets = useMemo(
-    () =>
-      maxWithdrawAssets !== undefined && maxWithdrawAssets < totalBalanceInUnderlying.raw
-        ? maxWithdrawAssets
-        : totalBalanceInUnderlying.raw,
-    [maxWithdrawAssets, totalBalanceInUnderlying.raw]
-  )
+  const effectiveMaxWithdrawAssets = useMemo(() => {
+    if (maxWithdrawAssets === undefined) {
+      return totalBalanceInUnderlying.raw
+    }
+
+    // Wrapper-owned flows like locked yvUSD can provide an authoritative contract-quoted max
+    // that is slightly above the widget's PPS-derived balance estimate.
+    if (inputBalanceOverride !== undefined || disableFlow) {
+      return maxWithdrawAssets
+    }
+
+    return maxWithdrawAssets < totalBalanceInUnderlying.raw ? maxWithdrawAssets : totalBalanceInUnderlying.raw
+  }, [maxWithdrawAssets, totalBalanceInUnderlying.raw, inputBalanceOverride, disableFlow])
   const inputBalance = inputBalanceOverride ?? effectiveMaxWithdrawAssets
 
   const isMaxWithdraw = useMemo(() => {
