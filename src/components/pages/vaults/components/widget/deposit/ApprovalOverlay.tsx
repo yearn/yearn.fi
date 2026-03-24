@@ -4,6 +4,7 @@ import { getApproveAbi } from '@shared/utils/approve'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { maxUint256 } from 'viem'
 import { useAccount, useWriteContract } from 'wagmi'
+import { resolveExecutionChainId } from '@/config/tenderly'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from '../shared/TransactionStateIndicators'
 
@@ -38,7 +39,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   const currentChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
   const { writeContractAsync, data: txHash, reset } = useWriteContract()
-  const receipt = useWaitForTransactionReceipt({ hash: txHash })
+  const receipt = useWaitForTransactionReceipt({ hash: txHash, chainId })
 
   // Reset state when overlay closes
   useEffect(() => {
@@ -68,6 +69,13 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
   const handleApprove = useCallback(
     async (amount: bigint) => {
+      const executionChainId = resolveExecutionChainId(chainId)
+      if (executionChainId === undefined) {
+        setTxState('error')
+        setErrorMessage('This network is not enabled for transactions')
+        return
+      }
+
       setTxState('confirming')
       setErrorMessage('')
 
@@ -88,7 +96,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
           abi: getApproveAbi(tokenAddress),
           functionName: 'approve',
           args: [spenderAddress, amount],
-          chainId
+          chainId: executionChainId
         })
         setTxState('pending')
       } catch (error: any) {

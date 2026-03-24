@@ -13,6 +13,7 @@ import type { Transport } from 'viem'
 import { cookieStorage, createConfig, createStorage, fallback, http } from 'wagmi'
 import type { Chain } from 'viem'
 import { supportedChains } from './supportedChains'
+import { getWagmiConfigChains } from './wagmiChains'
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string
 const appName = (import.meta.env.VITE_WALLETCONNECT_PROJECT_NAME as string) || 'Yearn Finance'
@@ -35,10 +36,12 @@ const connectors = connectorsForWallets(
   { projectId, appName }
 )
 
-function buildTransports(): Record<number, Transport> {
+const wagmiChains = getWagmiConfigChains(supportedChains)
+
+function buildTransports(chains: readonly Chain[]): Record<number, Transport> {
   const transports: Record<number, Transport> = {}
 
-  for (const chain of supportedChains) {
+  for (const chain of chains) {
     const network = getNetwork(chain.id)
     const availableTransports: Transport[] = []
 
@@ -65,9 +68,9 @@ function buildTransports(): Record<number, Transport> {
 }
 
 export const wagmiConfig = createConfig({
-  chains: supportedChains as [Chain, ...Chain[]],
+  chains: wagmiChains,
   connectors,
-  transports: buildTransports(),
+  transports: buildTransports(wagmiChains),
   storage: createStorage({ storage: cookieStorage }),
   ssr: true
 })
