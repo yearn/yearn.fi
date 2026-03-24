@@ -139,6 +139,18 @@ export function parseTenderlyRuntime(env: TTenderlyEnv): TTenderlyRuntime {
     throw new Error('Tenderly mode is enabled but no Tenderly execution chains are configured')
   }
 
+  const executionToCanonicalChainId = configuredChains.reduce<Map<number, TCanonicalChainId>>((accumulator, chain) => {
+    const existingCanonicalChainId = accumulator.get(chain.executionChainId)
+    if (existingCanonicalChainId !== undefined) {
+      throw new Error(
+        `Duplicate Tenderly execution chain ID ${chain.executionChainId} configured for canonical chains ${existingCanonicalChainId} and ${chain.canonicalChainId}`
+      )
+    }
+
+    accumulator.set(chain.executionChainId, chain.canonicalChainId)
+    return accumulator
+  }, new Map())
+
   const configuredByCanonicalId = configuredChains.reduce<Record<number, TTenderlyChainConfig>>(
     (accumulator, chain) => {
       accumulator[chain.canonicalChainId] = chain
@@ -154,9 +166,7 @@ export function parseTenderlyRuntime(env: TTenderlyEnv): TTenderlyRuntime {
     canonicalToExecutionChainId: new Map(
       configuredChains.map((chain) => [chain.canonicalChainId, chain.executionChainId])
     ),
-    executionToCanonicalChainId: new Map(
-      configuredChains.map((chain) => [chain.executionChainId, chain.canonicalChainId])
-    )
+    executionToCanonicalChainId
   }
 }
 

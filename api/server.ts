@@ -11,6 +11,7 @@ import {
   requireTenderlyServerChain,
   resolveTenderlyFundRpcRequest
 } from './tenderly.helpers'
+import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 const YVUSD_APR_SERVICE_API = (
@@ -362,18 +363,34 @@ serve({
     }
 
     if (url.pathname === '/api/tenderly/snapshot') {
+      const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(req)
+      if (accessDeniedResponse) {
+        return accessDeniedResponse
+      }
       return handleTenderlySnapshot(req)
     }
 
     if (url.pathname === '/api/tenderly/revert') {
+      const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(req)
+      if (accessDeniedResponse) {
+        return accessDeniedResponse
+      }
       return handleTenderlyRevert(req)
     }
 
     if (url.pathname === '/api/tenderly/increase-time') {
+      const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(req)
+      if (accessDeniedResponse) {
+        return accessDeniedResponse
+      }
       return handleTenderlyIncreaseTime(req)
     }
 
     if (url.pathname === '/api/tenderly/fund') {
+      const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(req)
+      if (accessDeniedResponse) {
+        return accessDeniedResponse
+      }
       return handleTenderlyFund(req)
     }
 
