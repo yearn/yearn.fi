@@ -1,19 +1,20 @@
 import { Button } from '@shared/components/Button'
+import { getPublicClient } from '@wagmi/core'
 import { useNotificationsActions } from '@shared/contexts/useNotificationsActions'
 import {
   type AppUseSimulateContractReturnType,
   useChainId,
-  usePublicClient,
   useSwitchChain,
   useWaitForTransactionReceipt
 } from '@shared/hooks/useAppWagmi'
 import type { TCreateNotificationParams } from '@shared/types/notifications'
 import { cl } from '@shared/utils'
-import { getNetwork } from '@shared/utils/wagmi'
+import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useReward } from 'react-rewards'
 import type { TypedData, TypedDataDomain } from 'viem'
 import { useAccount, useSignTypedData, useWriteContract } from 'wagmi'
+import { isConnectedToExecutionChain } from '@/config/tenderly'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
 import { type OverlayState, shouldAutoContinuePermitSuccess } from './transactionOverlay.helpers'
 
@@ -162,8 +163,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const currentChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>()
-  const client = usePublicClient()
-  const { address: account } = useAccount()
+  const { address: account, chain } = useAccount()
 
   // Notification system integration
   const { createNotification, updateNotification } = useNotificationsActions()
@@ -391,7 +391,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
       const request = currentStep.prepare.data.request as any
       const txChainId = request.chainId
-      const wrongNetwork = txChainId && currentChainId !== txChainId
+      const wrongNetwork = txChainId && !isConnectedToExecutionChain(chain?.id, txChainId)
 
       if (wrongNetwork && txChainId) {
         try {
@@ -431,13 +431,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           return
         }
 
-        const gasOverrides: { gas?: bigint } = client
-          ? await client
+        const gasEstimateClient = txChainId ? getPublicClient(retrieveConfig(), { chainId: txChainId }) : undefined
+        const gasOverrides: { gas?: bigint } = gasEstimateClient
+          ? await gasEstimateClient
               .estimateContractGas(request)
-              .then((gasEstimate) => ({
+              .then((gasEstimate: bigint) => ({
                 gas: (gasEstimate * BigInt(110)) / BigInt(100)
               }))
-              .catch((error) => {
+              .catch((error: unknown) => {
                 console.warn('[TransactionOverlay] Gas estimation failed', {
                   step: currentStep.label,
                   error: (error as Error)?.message || error
@@ -464,8 +465,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       }
     },
     [
-      client,
-      currentChainId,
+      chain?.id,
       finalizeSuccessState,
       handleCreateNotification,
       isLastStep,
@@ -505,41 +505,41 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     executeStep()
   }, [resetTxState, executeStep])
 
-  const waitForAutoContinueBlock = useCallback(
-    async (executedStepLabel?: string) => {
-      // Most flows can continue immediately once the next simulation is ready.
-      // Unstake -> withdraw can race state propagation, so wait one block there.
-      if (executedStepLabel !== 'Unstake') return
+  const waitForAutoContinueBlock = useCallback(async (executedStepLabel?: string) => {
+    // Most flows can continue immediately once the next simulation is ready.
+    // Unstake -> withdraw can race state propagation, so wait one block there.
+    if (executedStepLabel !== 'Unstake') return
 
-      const executedBlockNumber = executedStepBlockRef.current
-      if (!client || executedBlockNumber === undefined) return
+    const executedBlockNumber = executedStepBlockRef.current
+    const executedChainId =
+      ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? undefined
+    const blockClient = executedChainId ? getPublicClient(retrieveConfig(), { chainId: executedChainId }) : undefined
+    if (!blockClient || executedBlockNumber === undefined) return
 
-      const targetBlock = executedBlockNumber + 1n
-      const timeoutMs = 20_000
-      const pollIntervalMs = 1_000
-      const startedAt = Date.now()
+    const targetBlock = executedBlockNumber + 1n
+    const timeoutMs = 20_000
+    const pollIntervalMs = 1_000
+    const startedAt = Date.now()
 
-      while (Date.now() - startedAt < timeoutMs) {
-        try {
-          const latestBlock = await client.getBlockNumber()
-          if (latestBlock >= targetBlock) {
-            return
-          }
-        } catch (error) {
-          console.warn('[TransactionOverlay] Auto-continue block polling failed', {
-            step: executedStepRef.current?.label,
-            error: (error as Error)?.message || error
-          })
+    while (Date.now() - startedAt < timeoutMs) {
+      try {
+        const latestBlock = await blockClient.getBlockNumber()
+        if (latestBlock >= targetBlock) {
           return
         }
-
-        await new Promise((resolve) => {
-          window.setTimeout(resolve, pollIntervalMs)
+      } catch (error) {
+        console.warn('[TransactionOverlay] Auto-continue block polling failed', {
+          step: executedStepRef.current?.label,
+          error: (error as Error)?.message || error
         })
+        return
       }
-    },
-    [client]
-  )
+
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, pollIntervalMs)
+      })
+    }
+  }, [])
 
   useEffect(() => {
     if (step?.prepare.isError) {

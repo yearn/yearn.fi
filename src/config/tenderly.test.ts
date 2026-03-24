@@ -4,6 +4,7 @@ import {
   getSupportedCanonicalChainsForRuntime,
   getSupportedChainLookupForRuntime,
   getSupportedExecutionChainsForRuntime,
+  isConnectedToExecutionChainForRuntime,
   parseTenderlyRuntime,
   resolveCanonicalChainIdForRuntime,
   resolveConnectedCanonicalChainIdForRuntime,
@@ -24,6 +25,7 @@ describe('parseTenderlyRuntime', () => {
     expect(resolveCanonicalChainIdForRuntime(runtime, 1337)).toBe(1)
     expect(resolveConnectedCanonicalChainIdForRuntime(runtime, 1337)).toBe(1)
     expect(resolveConnectedCanonicalChainIdForRuntime(runtime, 1)).toBe(1)
+    expect(isConnectedToExecutionChainForRuntime(runtime, 1, 1)).toBe(true)
   })
 
   it('requires both chain id and rpc uri when a Tenderly chain is configured', () => {
@@ -94,6 +96,10 @@ describe('parseTenderlyRuntime', () => {
       'https://explorer.tenderly.ethereum.example'
     )
     expect(resolveTenderlyRpcUriForExecutionChainIdForRuntime(runtime, 1)).toBeUndefined()
+    expect(isConnectedToExecutionChainForRuntime(runtime, 1, 1)).toBe(false)
+    expect(isConnectedToExecutionChainForRuntime(runtime, 73571, 1)).toBe(true)
+    expect(isConnectedToExecutionChainForRuntime(runtime, 1, 73571)).toBe(false)
+    expect(isConnectedToExecutionChainForRuntime(runtime, 73571, 73571)).toBe(true)
   })
 
   it('does not reuse canonical explorers for execution chains without explicit Tenderly explorer URIs', () => {

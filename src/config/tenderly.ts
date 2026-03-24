@@ -338,6 +338,30 @@ export function resolveExecutionChainId(chainId: number | undefined): number | u
   return resolveExecutionChainIdForRuntime(tenderlyRuntime, chainId)
 }
 
+export function isConnectedToExecutionChainForRuntime(
+  runtime: TTenderlyRuntime,
+  connectedChainId: number | undefined,
+  targetChainId: number | undefined
+): boolean {
+  if (!Number.isInteger(connectedChainId)) {
+    return false
+  }
+
+  const requiredExecutionChainId = resolveExecutionChainIdForRuntime(runtime, targetChainId)
+  if (requiredExecutionChainId === undefined) {
+    return false
+  }
+
+  return connectedChainId === requiredExecutionChainId
+}
+
+export function isConnectedToExecutionChain(
+  connectedChainId: number | undefined,
+  targetChainId: number | undefined
+): boolean {
+  return isConnectedToExecutionChainForRuntime(tenderlyRuntime, connectedChainId, targetChainId)
+}
+
 export function resolveTenderlyRpcUriForExecutionChainIdForRuntime(
   runtime: TTenderlyRuntime,
   chainId: number | undefined

@@ -65,7 +65,7 @@ export const useVaultUserData = ({
     isLoading: isLoadingPPS,
     refetch: refetchPPS
   } = useQuery({
-    queryKey: ['vaultPricePerShare', vaultAddress?.toLowerCase(), chainId],
+    queryKey: ['vaultPricePerShare', vaultAddress?.toLowerCase(), chainId, executionChainId],
     queryFn: async () => {
       if (!executionChainId) {
         throw new Error(`No execution chain found for chainId ${chainId}`)
@@ -122,6 +122,7 @@ export const useVaultUserData = ({
       stakingAddress?.toLowerCase(),
       account?.toLowerCase(),
       chainId,
+      executionChainId,
       stakingSource || '',
       stakingShareBalance.toString()
     ],

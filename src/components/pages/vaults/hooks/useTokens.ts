@@ -90,7 +90,7 @@ export const useTokens = (addresses: (Address | undefined)[], chainId?: number, 
   const validAddresses = addresses.filter((addr): addr is Address => !isZeroAddress(addr))
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['tokens', validAddresses.map((a) => a.toLowerCase()).join('.'), chainId, account],
+    queryKey: ['tokens', validAddresses.map((a) => a.toLowerCase()).join('.'), chainId, executionChainId, account],
     queryFn: () => fetchTokenData(config, validAddresses, chainId || 1, executionChainId || 1, account),
     enabled: validAddresses.length > 0 && !!chainId && !!executionChainId,
     refetchOnMount: false,

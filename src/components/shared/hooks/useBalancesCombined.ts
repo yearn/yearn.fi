@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
-import { getTenderlyBackedCanonicalChainIds } from '@/config/tenderly'
+import { getTenderlyBackedCanonicalChainIds, resolveExecutionChainId } from '@/config/tenderly'
 import { useWeb3 } from '../contexts/useWeb3'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'
@@ -255,12 +255,13 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
 
       for (const [chainIdStr, chainTokens] of Object.entries(tokensByChain)) {
         const chainId = Number(chainIdStr)
+        const executionChainId = resolveExecutionChainId(chainId)
 
         const freshBalances = await fetchTokenBalances(chainId, userAddress, chainTokens, true)
 
         // Update multicall query cache
         const allQueries = queryClient.getQueriesData<TDict<TToken>>({
-          queryKey: balanceQueryKeys.byChainAndUser(chainId, userAddress),
+          queryKey: balanceQueryKeys.byChainAndUser(chainId, executionChainId, userAddress),
           exact: false
         })
 
