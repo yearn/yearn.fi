@@ -107,6 +107,135 @@ export function getYvUsdSharePrice(vault?: TKongVaultInput | null, fallbackAsset
   return assetPrice
 }
 
+export type TYvUsdHistoricalPricePerShare = {
+  today?: number | null
+  weekAgo?: number | null
+  monthAgo?: number | null
+}
+
+function normalizeFiniteNonNegativeNumber(value: number | null | undefined): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null
+  }
+
+  return value
+}
+
+export function getYvUsdUnderlyingPricePerShare({
+  lockedPricePerShare,
+  unlockedPricePerShare
+}: {
+  lockedPricePerShare: number | null | undefined
+  unlockedPricePerShare: number | null | undefined
+}): number | null {
+  const normalizedLockedPricePerShare = normalizeFiniteNonNegativeNumber(lockedPricePerShare)
+  const normalizedUnlockedPricePerShare = normalizeFiniteNonNegativeNumber(unlockedPricePerShare)
+
+  if (normalizedLockedPricePerShare === null || normalizedUnlockedPricePerShare === null) {
+    return null
+  }
+
+  return normalizedLockedPricePerShare * normalizedUnlockedPricePerShare
+}
+
+export function calculateHistoricalAprFromPricePerShares({
+  currentPricePerShare,
+  previousPricePerShare,
+  periodDays
+}: {
+  currentPricePerShare: number | null | undefined
+  previousPricePerShare: number | null | undefined
+  periodDays: number
+}): number | null {
+  const normalizedCurrentPricePerShare = normalizeFiniteNonNegativeNumber(currentPricePerShare)
+  const normalizedPreviousPricePerShare = normalizeFiniteNonNegativeNumber(previousPricePerShare)
+
+  if (
+    normalizedCurrentPricePerShare === null ||
+    normalizedPreviousPricePerShare === null ||
+    normalizedPreviousPricePerShare <= 0
+  ) {
+    return null
+  }
+
+  if (!Number.isFinite(periodDays) || periodDays <= 0) {
+    return null
+  }
+
+  const periodReturn =
+    (normalizedCurrentPricePerShare - normalizedPreviousPricePerShare) / normalizedPreviousPricePerShare
+  return periodReturn * (365 / periodDays)
+}
+
+export function calculateHistoricalApyFromPricePerShares({
+  currentPricePerShare,
+  previousPricePerShare,
+  periodDays,
+  compoundingPeriodDays = 1
+}: {
+  currentPricePerShare: number | null | undefined
+  previousPricePerShare: number | null | undefined
+  periodDays: number
+  compoundingPeriodDays?: number
+}): number | null {
+  const apr = calculateHistoricalAprFromPricePerShares({
+    currentPricePerShare,
+    previousPricePerShare,
+    periodDays
+  })
+
+  if (apr === null) {
+    return null
+  }
+
+  const normalizedCompoundingPeriodDays = Math.max(1, Math.floor(compoundingPeriodDays))
+  const periodsPerYear = 365 / normalizedCompoundingPeriodDays
+  const apyBase = 1 + apr / periodsPerYear
+
+  if (apyBase <= 0) {
+    return null
+  }
+
+  return apyBase ** periodsPerYear - 1
+}
+
+export function calculateLockedYvUsdHistoricalApy({
+  lockedPricePerShare,
+  unlockedPricePerShare
+}: {
+  lockedPricePerShare: TYvUsdHistoricalPricePerShare
+  unlockedPricePerShare: TYvUsdHistoricalPricePerShare
+}): number | null {
+  const currentUnderlyingPricePerShare = getYvUsdUnderlyingPricePerShare({
+    lockedPricePerShare: lockedPricePerShare.today,
+    unlockedPricePerShare: unlockedPricePerShare.today
+  })
+  const monthlyUnderlyingPricePerShare = getYvUsdUnderlyingPricePerShare({
+    lockedPricePerShare: lockedPricePerShare.monthAgo,
+    unlockedPricePerShare: unlockedPricePerShare.monthAgo
+  })
+  const weeklyUnderlyingPricePerShare = getYvUsdUnderlyingPricePerShare({
+    lockedPricePerShare: lockedPricePerShare.weekAgo,
+    unlockedPricePerShare: unlockedPricePerShare.weekAgo
+  })
+
+  const monthlyApy = calculateHistoricalApyFromPricePerShares({
+    currentPricePerShare: currentUnderlyingPricePerShare,
+    previousPricePerShare: monthlyUnderlyingPricePerShare,
+    periodDays: 30
+  })
+
+  if (monthlyApy !== null) {
+    return monthlyApy
+  }
+
+  return calculateHistoricalApyFromPricePerShares({
+    currentPricePerShare: currentUnderlyingPricePerShare,
+    previousPricePerShare: weeklyUnderlyingPricePerShare,
+    periodDays: 7
+  })
+}
+
 function normalizeWeightedValue(value: number | null | undefined): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     return 0
