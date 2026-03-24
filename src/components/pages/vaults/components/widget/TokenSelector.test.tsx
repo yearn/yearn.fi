@@ -4,9 +4,13 @@ import { describe, expect, it, vi } from 'vitest'
 import { TokenSelector } from './TokenSelector'
 
 const BASE_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000001' as const
+const VAULT_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000002' as const
+const STAKING_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000003' as const
+const LEGACY_USDAF_ADDRESS = '0x85E30b8b263bC64d94b827ed450F2EdFEE8579dA' as const
 
-const { mockUseWallet } = vi.hoisted(() => ({
-  mockUseWallet: vi.fn()
+const { mockUseWallet, mockUseYearn } = vi.hoisted(() => ({
+  mockUseWallet: vi.fn(),
+  mockUseYearn: vi.fn()
 }))
 
 vi.mock('@shared/contexts/useWallet', () => ({
@@ -20,10 +24,7 @@ vi.mock('@shared/contexts/WithTokenList', () => ({
 }))
 
 vi.mock('@shared/contexts/useYearn', () => ({
-  useYearn: () => ({
-    allVaults: {},
-    getPrice: () => ({ normalized: 0 })
-  })
+  useYearn: mockUseYearn
 }))
 
 function buildToken(overrides: Partial<TToken> = {}): TToken {
@@ -45,6 +46,11 @@ function buildToken(overrides: Partial<TToken> = {}): TToken {
 }
 
 describe('TokenSelector', () => {
+  mockUseYearn.mockReturnValue({
+    allVaults: {},
+    getPrice: () => ({ normalized: 0 })
+  })
+
   it('lets extra tokens override selector metadata and logo sources for matching addresses', () => {
     mockUseWallet.mockReturnValue({
       isLoading: false,
@@ -75,5 +81,273 @@ describe('TokenSelector', () => {
     expect(html).toContain('OVR')
     expect(html).toContain('https://example.com/override.png')
     expect(html).not.toContain('Base Token')
+  })
+
+  it('uses the asset logo for vault and staking entries', () => {
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        1: {
+          [BASE_TOKEN_ADDRESS]: buildToken({
+            address: BASE_TOKEN_ADDRESS,
+            name: 'Base Token',
+            symbol: 'BASE',
+            logoURI: 'https://example.com/base.png'
+          }),
+          [VAULT_TOKEN_ADDRESS]: buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Vault Token',
+            symbol: 'vBASE',
+            logoURI: 'https://example.com/vault.png'
+          }),
+          [STAKING_TOKEN_ADDRESS]: buildToken({
+            address: STAKING_TOKEN_ADDRESS,
+            name: 'Staking Token',
+            symbol: 'stBASE',
+            logoURI: 'https://example.com/staking.png'
+          })
+        }
+      },
+      getToken: ({ address }: { address: string }) => {
+        if (address === BASE_TOKEN_ADDRESS) {
+          return buildToken({
+            address: BASE_TOKEN_ADDRESS,
+            name: 'Base Token',
+            symbol: 'BASE',
+            logoURI: 'https://example.com/base.png'
+          })
+        }
+        if (address === VAULT_TOKEN_ADDRESS) {
+          return buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Vault Token',
+            symbol: 'vBASE',
+            logoURI: 'https://example.com/vault.png'
+          })
+        }
+        return buildToken({
+          address: STAKING_TOKEN_ADDRESS,
+          name: 'Staking Token',
+          symbol: 'stBASE',
+          logoURI: 'https://example.com/staking.png'
+        })
+      }
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector
+        value={BASE_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={1}
+        assetAddress={BASE_TOKEN_ADDRESS}
+        vaultAddress={VAULT_TOKEN_ADDRESS}
+        stakingAddress={STAKING_TOKEN_ADDRESS}
+      />
+    )
+
+    expect(html).toContain('https://example.com/base.png')
+    expect(html).not.toContain('https://example.com/vault.png')
+    expect(html).not.toContain('https://example.com/staking.png')
+  })
+
+  it('never shows hidden vault share or staking tokens', () => {
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        1: {
+          [BASE_TOKEN_ADDRESS]: buildToken(),
+          [VAULT_TOKEN_ADDRESS]: buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Hidden Vault Token',
+            symbol: 'kpdWETH'
+          }),
+          [STAKING_TOKEN_ADDRESS]: buildToken({
+            address: STAKING_TOKEN_ADDRESS,
+            name: 'Hidden Staking Token',
+            symbol: 'stkWETH'
+          })
+        }
+      },
+      getToken: ({ address }: { address: string }) => {
+        if (address === VAULT_TOKEN_ADDRESS) {
+          return buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Hidden Vault Token',
+            symbol: 'kpdWETH'
+          })
+        }
+        if (address === STAKING_TOKEN_ADDRESS) {
+          return buildToken({
+            address: STAKING_TOKEN_ADDRESS,
+            name: 'Hidden Staking Token',
+            symbol: 'stkWETH'
+          })
+        }
+        return buildToken()
+      }
+    })
+    mockUseYearn.mockReturnValue({
+      allVaults: {
+        [VAULT_TOKEN_ADDRESS]: {
+          chainID: 1,
+          version: '3.0.0',
+          address: VAULT_TOKEN_ADDRESS,
+          token: {
+            address: BASE_TOKEN_ADDRESS,
+            symbol: 'WETH',
+            name: 'Wrapped Ether',
+            description: '',
+            decimals: 18
+          },
+          staking: {
+            address: STAKING_TOKEN_ADDRESS,
+            available: true,
+            source: '',
+            rewards: null
+          },
+          info: {
+            sourceURL: '',
+            riskLevel: 0,
+            riskScore: [],
+            riskScoreComment: '',
+            uiNotice: '',
+            isRetired: false,
+            isBoosted: false,
+            isHighlighted: false,
+            isHidden: true
+          }
+        }
+      },
+      getPrice: () => ({ normalized: 0 })
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector
+        value={BASE_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={1}
+        assetAddress={BASE_TOKEN_ADDRESS}
+      />
+    )
+
+    expect(html).toContain('Base Token')
+    expect(html).not.toContain('kpdWETH')
+    expect(html).not.toContain('stkWETH')
+  })
+
+  it('never shows locally deprecated legacy tokens from the token registry', () => {
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        1: {
+          [BASE_TOKEN_ADDRESS]: buildToken(),
+          [LEGACY_USDAF_ADDRESS]: buildToken({
+            address: LEGACY_USDAF_ADDRESS,
+            name: 'USDaf Stablecoin',
+            symbol: 'USDaf'
+          })
+        }
+      },
+      getToken: ({ address }: { address: string }) => {
+        if (address === LEGACY_USDAF_ADDRESS) {
+          return buildToken({
+            address: LEGACY_USDAF_ADDRESS,
+            name: 'USDaf Stablecoin',
+            symbol: 'USDaf'
+          })
+        }
+        return buildToken()
+      }
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector
+        value={BASE_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={1}
+        assetAddress={BASE_TOKEN_ADDRESS}
+      />
+    )
+
+    expect(html).toContain('Base Token')
+    expect(html).not.toContain('USDaf Stablecoin')
+  })
+
+  it('applies the minimum value filter to pinned asset options in deposit mode', () => {
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        1: {
+          [BASE_TOKEN_ADDRESS]: buildToken({
+            address: BASE_TOKEN_ADDRESS,
+            name: 'Visible Token',
+            symbol: 'VIS',
+            balance: {
+              raw: 1n,
+              normalized: 1,
+              display: '1',
+              decimals: 18
+            }
+          }),
+          [VAULT_TOKEN_ADDRESS]: buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Dust Asset',
+            symbol: 'DST',
+            balance: {
+              raw: 5_000_000_000_000_000n,
+              normalized: 0.005,
+              display: '0.005',
+              decimals: 18
+            }
+          })
+        }
+      },
+      getToken: ({ address }: { address: string }) => {
+        if (address === VAULT_TOKEN_ADDRESS) {
+          return buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Dust Asset',
+            symbol: 'DST',
+            balance: {
+              raw: 5_000_000_000_000_000n,
+              normalized: 0.005,
+              display: '0.005',
+              decimals: 18
+            }
+          })
+        }
+
+        return buildToken({
+          address: BASE_TOKEN_ADDRESS,
+          name: 'Visible Token',
+          symbol: 'VIS',
+          balance: {
+            raw: 1n,
+            normalized: 1,
+            display: '1',
+            decimals: 18
+          }
+        })
+      }
+    })
+    mockUseYearn.mockReturnValue({
+      allVaults: {},
+      getPrice: () => ({ normalized: 1 })
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector
+        value={BASE_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={1}
+        mode="deposit"
+        assetAddress={VAULT_TOKEN_ADDRESS}
+        priorityTokens={{ 1: [VAULT_TOKEN_ADDRESS] }}
+        topTokens={{ 1: [VAULT_TOKEN_ADDRESS] }}
+      />
+    )
+
+    expect(html).toContain('Visible Token')
+    expect(html).not.toContain('Dust Asset')
   })
 })

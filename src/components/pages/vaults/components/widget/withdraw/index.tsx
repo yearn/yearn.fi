@@ -1008,7 +1008,9 @@ export function WidgetWithdraw({
         chainId={chainId}
         value={selectedToken}
         excludeTokens={stakingAddress ? [stakingAddress] : undefined}
+        mode={'withdraw'}
         priorityTokens={priorityTokens}
+        topTokens={priorityTokens}
         assetAddress={resolvedDisplayAssetAddress}
         vaultAddress={vaultAddress}
         stakingAddress={stakingAddress}
