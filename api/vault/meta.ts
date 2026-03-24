@@ -13,6 +13,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Missing or invalid chainId or address' })
   }
 
+  // Strict allowlist validation to prevent XSS via parameter injection
+  if (!/^\d+$/.test(chainId)) {
+    return res.status(400).json({ error: 'Invalid chainId' })
+  }
+  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+    return res.status(400).json({ error: 'Invalid address' })
+  }
+
   try {
     let html = baseHtml
 
