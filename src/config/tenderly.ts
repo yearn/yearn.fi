@@ -20,8 +20,6 @@ export type TTenderlyRuntime = {
   executionToCanonicalChainId: ReadonlyMap<number, TCanonicalChainId>
 }
 
-const PASSTHROUGH_EXECUTION_CHAIN_IDS = new Set<number>([1337, 5402])
-
 function readEnvString(value: TEnvValue): string {
   if (typeof value === 'string') {
     return value.trim()
@@ -294,10 +292,6 @@ export function resolveExecutionChainIdForRuntime(
   }
 
   const normalizedChainId = chainId as number
-
-  if (PASSTHROUGH_EXECUTION_CHAIN_IDS.has(normalizedChainId)) {
-    return normalizedChainId
-  }
 
   if (runtime.executionToCanonicalChainId.has(normalizedChainId)) {
     return normalizedChainId

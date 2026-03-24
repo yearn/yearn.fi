@@ -19,8 +19,6 @@ describe('parseTenderlyRuntime', () => {
     expect(runtime.isEnabled).toBe(false)
     expect(getSupportedCanonicalChainsForRuntime(runtime).map((chain) => chain.id)).toEqual(canonicalChainIds)
     expect(resolveExecutionChainIdForRuntime(runtime, 1)).toBe(1)
-    expect(resolveExecutionChainIdForRuntime(runtime, 1337)).toBe(1337)
-    expect(resolveExecutionChainIdForRuntime(runtime, 5402)).toBe(5402)
     expect(resolveConnectedCanonicalChainIdForRuntime(runtime, 1)).toBe(1)
   })
 
@@ -76,8 +74,6 @@ describe('parseTenderlyRuntime', () => {
 
     expect(resolveExecutionChainIdForRuntime(runtime, 1)).toBe(73571)
     expect(resolveExecutionChainIdForRuntime(runtime, 73571)).toBe(73571)
-    expect(resolveExecutionChainIdForRuntime(runtime, 1337)).toBe(1337)
-    expect(resolveExecutionChainIdForRuntime(runtime, 5402)).toBe(5402)
     expect(resolveExecutionChainIdForRuntime(runtime, 8453)).toBeUndefined()
 
     expect(resolveCanonicalChainIdForRuntime(runtime, 1)).toBe(1)

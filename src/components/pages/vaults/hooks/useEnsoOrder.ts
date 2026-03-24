@@ -6,7 +6,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address, Hash, Hex } from 'viem'
 import { useWalletClient } from 'wagmi'
-import { supportedChains } from '@/config/supportedChains'
+import { supportedWalletChains } from '@/config/supportedChains'
 import { resolveExecutionChainId } from '@/config/tenderly'
 
 interface EnsoTransaction {
@@ -61,7 +61,7 @@ export const useEnsoOrder = ({
 
       // Note: Chain switching is handled by TransactionOverlay before calling executeOrder
       // We use the target chain from props, not walletClient.chain which may be stale
-      const targetChain = supportedChains.find((c) => c.id === executionChainId)
+      const targetChain = supportedWalletChains.find((c) => c.id === executionChainId)
 
       // Send the transaction
       const hash = await walletClient.sendTransaction({
