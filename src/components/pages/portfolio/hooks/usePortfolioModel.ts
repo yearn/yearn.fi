@@ -13,11 +13,11 @@ import {
 import { getCanonicalHoldingsVaultAddress } from '@pages/vaults/domain/normalizeVault'
 import { isNonYearnErc4626Vault } from '@pages/vaults/domain/vaultWarnings'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
+import { useYvUsdCharts } from '@pages/vaults/hooks/useYvUsdCharts'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { usePersistedShowHiddenVaults } from '@pages/vaults/hooks/vaultsFiltersStorage'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import {
-  calculateLockedYvUsdHistoricalApy,
   getWeightedYvUsdApy,
   getYvUsdSharePrice,
   isYvUsdAddress,
@@ -79,6 +79,22 @@ type TYvUsdPortfolioPosition = {
   hasHoldings: boolean
 }
 
+function getLatestYvUsdHistoricalApyValue(
+  apyData: ReturnType<typeof useYvUsdCharts>['apyData'],
+  variant: 'locked' | 'unlocked'
+): number | null {
+  if (!apyData || apyData.length === 0) {
+    return null
+  }
+
+  const latestValue = apyData[apyData.length - 1]?.[variant]
+  if (typeof latestValue !== 'number' || !Number.isFinite(latestValue)) {
+    return null
+  }
+
+  return latestValue / 100
+}
+
 function getChainAddressKey(chainID: number | undefined, address: string): string {
   return `${chainID}_${toAddress(address)}`
 }
@@ -106,6 +122,7 @@ export function usePortfolioModel(): TPortfolioModel {
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
   const { vaults, allVaults, isLoadingVaultList } = useYearn()
   const { listVault: yvUsdVault, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
+  const { apyData: yvUsdHistoricalApyData } = useYvUsdCharts()
   const showHiddenVaults = usePersistedShowHiddenVaults()
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
@@ -126,19 +143,13 @@ export function usePortfolioModel(): TPortfolioModel {
       blendedHistoricalApy: getWeightedYvUsdApy({
         unlockedValue,
         lockedValue,
-        unlockedApy: yvUsdUnlockedVault ? calculateVaultHistoricalAPY(yvUsdUnlockedVault) : null,
-        lockedApy:
-          yvUsdLockedVault && yvUsdUnlockedVault
-            ? calculateLockedYvUsdHistoricalApy({
-                lockedPricePerShare: yvUsdLockedVault.apr.pricePerShare,
-                unlockedPricePerShare: yvUsdUnlockedVault.apr.pricePerShare
-              })
-            : null
+        unlockedApy: getLatestYvUsdHistoricalApyValue(yvUsdHistoricalApyData, 'unlocked'),
+        lockedApy: getLatestYvUsdHistoricalApyValue(yvUsdHistoricalApyData, 'locked')
       }),
       combinedValue: unlockedValue + lockedValue,
       hasHoldings: unlockedBalance.raw > 0n || lockedBalance.raw > 0n
     }
-  }, [getBalance, yvUsdLockedVault, yvUsdUnlockedVault])
+  }, [getBalance, yvUsdHistoricalApyData, yvUsdLockedVault, yvUsdUnlockedVault])
 
   const vaultLookup = useMemo(() => {
     const map = new Map<string, TKongVaultInput>()

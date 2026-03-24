@@ -262,8 +262,8 @@ export type TKongVaultApr = {
   }
   pricePerShare: {
     today: number
-    weekAgo: number
-    monthAgo: number
+    weekAgo: number | null
+    monthAgo: number | null
   }
   forwardAPR: {
     type: string
@@ -646,8 +646,14 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
     },
     pricePerShare: {
       today: normalizePricePerShare(snapshot?.apy?.pricePerShare ?? vault.pricePerShare, token.decimals),
-      weekAgo: normalizePricePerShare(snapshot?.apy?.weeklyPricePerShare, token.decimals),
-      monthAgo: normalizePricePerShare(snapshot?.apy?.monthlyPricePerShare, token.decimals)
+      weekAgo:
+        snapshot?.apy?.weeklyPricePerShare === null || snapshot?.apy?.weeklyPricePerShare === undefined
+          ? null
+          : normalizePricePerShare(snapshot.apy.weeklyPricePerShare, token.decimals),
+      monthAgo:
+        snapshot?.apy?.monthlyPricePerShare === null || snapshot?.apy?.monthlyPricePerShare === undefined
+          ? null
+          : normalizePricePerShare(snapshot.apy.monthlyPricePerShare, token.decimals)
     },
     forwardAPR: {
       type: forwardType,
