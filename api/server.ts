@@ -7,6 +7,7 @@ import type {
 } from '../src/components/shared/types/tenderly'
 import {
   buildTenderlyPanelStatus,
+  buildTenderlyRevertResponse,
   buildTenderlySnapshotRecord,
   requireTenderlyServerChain,
   resolveTenderlyFundRpcRequest
@@ -158,10 +159,7 @@ async function handleTenderlyRevert(req: Request): Promise<Response> {
     const body = await parseJsonBody<TTenderlyRevertRequest>(req)
     const result = await callTenderlyAdminRpc(body.canonicalChainId, 'evm_revert', [body.snapshotId])
 
-    return Response.json({
-      success: Boolean(result),
-      revertedSnapshotId: body.snapshotId
-    })
+    return Response.json(buildTenderlyRevertResponse(result, body.snapshotId))
   } catch (error) {
     console.error('Error reverting Tenderly snapshot:', error)
     return Response.json(

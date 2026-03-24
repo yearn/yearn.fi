@@ -2,6 +2,7 @@ import { getAddress } from 'viem'
 import type {
   TTenderlyFundRequest,
   TTenderlyPanelStatus,
+  TTenderlyRevertResponse,
   TTenderlySnapshotRecord
 } from '../src/components/shared/types/tenderly'
 import { canonicalChains } from '../src/config/chainDefinitions'
@@ -150,6 +151,17 @@ export function buildTenderlySnapshotRecord(params: {
     createdAt: new Date().toISOString(),
     kind,
     lastKnownStatus: 'valid'
+  }
+}
+
+export function buildTenderlyRevertResponse(result: unknown, snapshotId: string): TTenderlyRevertResponse {
+  if (result !== true) {
+    throw new Error(`Tenderly rejected revert for snapshot ${snapshotId}`)
+  }
+
+  return {
+    success: true,
+    revertedSnapshotId: snapshotId
   }
 }
 

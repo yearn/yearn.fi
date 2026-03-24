@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { TTenderlyFundRequest } from '../src/components/shared/types/tenderly'
 import {
   buildTenderlyPanelStatus,
+  buildTenderlyRevertResponse,
   buildTenderlySnapshotRecord,
   parseTenderlyServerChains,
   resolveTenderlyFundRpcRequest
@@ -62,6 +63,19 @@ describe('buildTenderlySnapshotRecord', () => {
     expect(record.kind).toBe('baseline')
     expect(record.lastKnownStatus).toBe('valid')
     expect(record.label.startsWith('Baseline ')).toBe(true)
+  })
+})
+
+describe('buildTenderlyRevertResponse', () => {
+  it('returns a success payload when Tenderly restores the snapshot', () => {
+    expect(buildTenderlyRevertResponse(true, '0x1')).toEqual({
+      success: true,
+      revertedSnapshotId: '0x1'
+    })
+  })
+
+  it('throws when Tenderly rejects the revert', () => {
+    expect(() => buildTenderlyRevertResponse(false, '0xdead')).toThrow('Tenderly rejected revert for snapshot 0xdead')
   })
 })
 
