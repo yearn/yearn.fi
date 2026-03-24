@@ -157,6 +157,50 @@ export function markTenderlySnapshotInvalid(
   }
 }
 
+export function reconcileTenderlySnapshotStorageAfterRevert(
+  snapshotStorage: TTenderlySnapshotStorage,
+  params: {
+    revertedSnapshotRecord: TTenderlySnapshotRecord
+    replacementSnapshotRecord?: TTenderlySnapshotRecord
+  }
+): TTenderlySnapshotStorage {
+  const bucketKey = getTenderlySnapshotBucketKey(
+    params.revertedSnapshotRecord.canonicalChainId,
+    params.revertedSnapshotRecord.executionChainId
+  )
+  const previousRecords = snapshotStorage[bucketKey] || []
+
+  if (previousRecords.length === 0) {
+    return params.replacementSnapshotRecord
+      ? upsertTenderlySnapshotRecord(snapshotStorage, params.replacementSnapshotRecord)
+      : snapshotStorage
+  }
+
+  const revertedAt = Date.parse(params.revertedSnapshotRecord.createdAt)
+  const updatedRecords = previousRecords.map((record) => {
+    const recordCreatedAt = Date.parse(record.createdAt)
+    const isLaterSnapshot =
+      record.kind === 'snapshot' &&
+      Number.isFinite(revertedAt) &&
+      Number.isFinite(recordCreatedAt) &&
+      recordCreatedAt > revertedAt
+
+    if (record.snapshotId !== params.revertedSnapshotRecord.snapshotId && !isLaterSnapshot) {
+      return record
+    }
+
+    return { ...record, lastKnownStatus: 'invalid' as const }
+  })
+  const nextStorage = {
+    ...snapshotStorage,
+    [bucketKey]: sortTenderlySnapshotRecords(updatedRecords)
+  }
+
+  return params.replacementSnapshotRecord
+    ? upsertTenderlySnapshotRecord(nextStorage, params.replacementSnapshotRecord)
+    : nextStorage
+}
+
 export function clearTenderlySnapshotBucket(
   snapshotStorage: TTenderlySnapshotStorage,
   params: { canonicalChainId: number; executionChainId: number }

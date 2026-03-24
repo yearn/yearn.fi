@@ -11,6 +11,7 @@ import {
   getLastRestorableTenderlySnapshot,
   getValidBaselineSnapshot,
   markTenderlySnapshotInvalid,
+  reconcileTenderlySnapshotStorageAfterRevert,
   resolveDefaultTenderlyCanonicalChainId,
   upsertTenderlySnapshotRecord
 } from './tenderlyPanel'
@@ -129,6 +130,56 @@ describe('snapshot helpers', () => {
       getLastRestorableTenderlySnapshot([{ ...latestSnapshot, lastKnownStatus: 'invalid' }, baselineSnapshot])
         ?.snapshotId
     ).toBe('0xbaseline')
+  })
+
+  it('invalidates spent snapshots and stores a replacement snapshot after revert', () => {
+    const revertedSnapshot: TTenderlySnapshotRecord = {
+      ...baselineSnapshot,
+      snapshotId: '0xsnapshot-current',
+      label: 'Current snapshot',
+      kind: 'snapshot',
+      createdAt: '2026-03-18T00:00:00.000Z'
+    }
+    const descendantSnapshot: TTenderlySnapshotRecord = {
+      ...baselineSnapshot,
+      snapshotId: '0xsnapshot-descendant',
+      label: 'Descendant snapshot',
+      kind: 'snapshot',
+      createdAt: '2026-03-19T00:00:00.000Z'
+    }
+    const replacementSnapshot: TTenderlySnapshotRecord = {
+      ...revertedSnapshot,
+      snapshotId: '0xsnapshot-replacement',
+      label: 'Replacement snapshot',
+      createdAt: '2026-03-20T00:00:00.000Z'
+    }
+
+    const updatedStorage = reconcileTenderlySnapshotStorageAfterRevert(
+      {
+        '1:694201': [baselineSnapshot, revertedSnapshot, descendantSnapshot]
+      },
+      {
+        revertedSnapshotRecord: revertedSnapshot,
+        replacementSnapshotRecord: replacementSnapshot
+      }
+    )
+
+    expect(
+      updatedStorage['1:694201']?.find((record) => record.snapshotId === revertedSnapshot.snapshotId)?.lastKnownStatus
+    ).toBe('invalid')
+    expect(
+      updatedStorage['1:694201']?.find((record) => record.snapshotId === descendantSnapshot.snapshotId)?.lastKnownStatus
+    ).toBe('invalid')
+    expect(
+      updatedStorage['1:694201']?.find((record) => record.snapshotId === replacementSnapshot.snapshotId)
+    ).toMatchObject({
+      snapshotId: '0xsnapshot-replacement',
+      lastKnownStatus: 'valid',
+      kind: 'snapshot'
+    })
+    expect(getLastRestorableTenderlySnapshot(updatedStorage['1:694201'] || [])?.snapshotId).toBe(
+      '0xsnapshot-replacement'
+    )
   })
 })
 

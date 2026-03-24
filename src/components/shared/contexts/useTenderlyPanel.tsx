@@ -18,6 +18,7 @@ import {
   getTenderlySnapshotBucketKey,
   getValidBaselineSnapshot,
   markTenderlySnapshotInvalid,
+  reconcileTenderlySnapshotStorageAfterRevert,
   resolveDefaultTenderlyCanonicalChainId,
   sortTenderlySnapshotRecords,
   TENDERLY_SNAPSHOT_STORAGE_KEY,
@@ -219,6 +220,15 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
     [setSnapshotStorage, snapshotStorage]
   )
 
+  const requestSnapshotRecord = useCallback(
+    async (request: TTenderlySnapshotRequest): Promise<TTenderlySnapshotRecord> =>
+      await fetchTenderlyApi<TTenderlySnapshotRecord, TTenderlySnapshotRequest>('/api/tenderly/snapshot', {
+        method: 'POST',
+        body: request
+      }),
+    []
+  )
+
   const createSnapshotWithKind = useCallback(
     async (isBaseline: boolean): Promise<void> => {
       if (!selectedCanonicalChainId) {
@@ -227,16 +237,10 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
 
       setPendingAction(isBaseline ? 'create-baseline' : 'create-snapshot')
       try {
-        const snapshotRecord = await fetchTenderlyApi<TTenderlySnapshotRecord, TTenderlySnapshotRequest>(
-          '/api/tenderly/snapshot',
-          {
-            method: 'POST',
-            body: {
-              canonicalChainId: selectedCanonicalChainId,
-              isBaseline
-            }
-          }
-        )
+        const snapshotRecord = await requestSnapshotRecord({
+          canonicalChainId: selectedCanonicalChainId,
+          isBaseline
+        })
         updateSnapshotStorage((currentStorage) => upsertTenderlySnapshotRecord(currentStorage, snapshotRecord))
         toast({
           content: isBaseline ? 'Baseline snapshot created' : 'Snapshot created',
@@ -246,39 +250,71 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
         setPendingAction(null)
       }
     },
-    [selectedCanonicalChainId, updateSnapshotStorage]
+    [requestSnapshotRecord, selectedCanonicalChainId, updateSnapshotStorage]
   )
 
   const revertToSnapshot = useCallback(
     async (snapshotRecord: TTenderlySnapshotRecord): Promise<void> => {
       setPendingAction('revert-snapshot')
       try {
-        await fetchTenderlyApi('/api/tenderly/revert', {
-          method: 'POST',
-          body: {
+        try {
+          await fetchTenderlyApi('/api/tenderly/revert', {
+            method: 'POST',
+            body: {
+              canonicalChainId: snapshotRecord.canonicalChainId,
+              snapshotId: snapshotRecord.snapshotId
+            }
+          })
+        } catch (error) {
+          updateSnapshotStorage((currentStorage) =>
+            markTenderlySnapshotInvalid(currentStorage, {
+              canonicalChainId: snapshotRecord.canonicalChainId,
+              executionChainId: snapshotRecord.executionChainId,
+              snapshotId: snapshotRecord.snapshotId
+            })
+          )
+          throw error
+        }
+
+        let replacementSnapshotRecord: TTenderlySnapshotRecord | undefined
+        try {
+          replacementSnapshotRecord = await requestSnapshotRecord({
             canonicalChainId: snapshotRecord.canonicalChainId,
-            snapshotId: snapshotRecord.snapshotId
-          }
-        })
-        await refreshTenderlyDependentState()
-        toast({
-          content: snapshotRecord.kind === 'baseline' ? 'Reset to baseline complete' : 'Snapshot revert complete',
-          type: 'success'
-        })
-      } catch (error) {
+            isBaseline: snapshotRecord.kind === 'baseline',
+            label: snapshotRecord.label
+          })
+        } catch (error) {
+          console.error('Failed to create replacement Tenderly snapshot after revert:', error)
+        }
+
         updateSnapshotStorage((currentStorage) =>
-          markTenderlySnapshotInvalid(currentStorage, {
-            canonicalChainId: snapshotRecord.canonicalChainId,
-            executionChainId: snapshotRecord.executionChainId,
-            snapshotId: snapshotRecord.snapshotId
+          reconcileTenderlySnapshotStorageAfterRevert(currentStorage, {
+            revertedSnapshotRecord: snapshotRecord,
+            replacementSnapshotRecord
           })
         )
-        throw error
+
+        try {
+          await refreshTenderlyDependentState()
+        } catch (error) {
+          console.error('Failed to refresh state after Tenderly revert:', error)
+        }
+
+        toast({
+          content: replacementSnapshotRecord
+            ? snapshotRecord.kind === 'baseline'
+              ? 'Reset to baseline complete'
+              : 'Snapshot revert complete'
+            : snapshotRecord.kind === 'baseline'
+              ? 'Reset to baseline complete, but the baseline was consumed. Create a new baseline snapshot before resetting again.'
+              : 'Snapshot revert complete, but that snapshot was consumed. Create a new snapshot if you want to reuse it.',
+          type: replacementSnapshotRecord ? 'success' : 'warning'
+        })
       } finally {
         setPendingAction(null)
       }
     },
-    [refreshTenderlyDependentState, updateSnapshotStorage]
+    [refreshTenderlyDependentState, requestSnapshotRecord, updateSnapshotStorage]
   )
 
   const increaseTime = useCallback(
