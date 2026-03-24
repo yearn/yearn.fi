@@ -1,10 +1,16 @@
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultInfo,
+  getVaultStaking
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TToken } from '@shared/types'
-import { cl, formatTAmount, toAddress } from '@shared/utils'
+import { cl, formatTAmount, isZeroAddress, toAddress } from '@shared/utils'
 import { type FC, useCallback, useMemo, useState } from 'react'
 import { isAddress } from 'viem'
 import { CloseIcon } from './shared/Icons'
@@ -27,6 +33,10 @@ const AVAILABLE_CHAINS = [
   { id: 8453, name: 'Base' },
   { id: 747474, name: 'Katana' }
 ] as const
+
+const LEGACY_SELECTOR_TOKEN_ADDRESSES_BY_CHAIN: Record<number, `0x${string}`[]> = {
+  1: ['0x85E30b8b263bC64d94b827ed450F2EdFEE8579dA'] // Legacy USDaf
+}
 
 interface TokenSelectorProps {
   value: `0x${string}` | undefined
@@ -57,16 +67,17 @@ const TokenTypeChip: FC<{ type: TTokenType }> = ({ type }) => {
   return <span className={cl('px-1.5 py-0.5 text-[10px] font-medium rounded', className)}>{label}</span>
 }
 
-const TokenItem: FC<{ token: TToken; selected: boolean; onSelect: () => void; tokenType?: TTokenType }> = ({
-  token,
-  selected,
-  onSelect,
-  tokenType
-}) => {
+const TokenItem: FC<{
+  token: TToken
+  selected: boolean
+  onSelect: () => void
+  tokenType?: TTokenType
+  logoToken?: Pick<TToken, 'address' | 'chainID' | 'logoURI'>
+}> = ({ token, selected, onSelect, tokenType, logoToken }) => {
   const logoSources = getTokenLogoSources({
-    address: token.address,
-    chainId: token.chainID,
-    logoURI: token.logoURI,
+    address: logoToken?.address ?? token.address,
+    chainId: logoToken?.chainID ?? token.chainID,
+    logoURI: logoToken?.logoURI ?? token.logoURI,
     size: 32
   })
 
@@ -146,6 +157,45 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     () => (extraTokens || []).filter((token) => token.chainID === selectedChainId),
     [extraTokens, selectedChainId]
   )
+  const hiddenVaultTokenAddresses = useMemo(() => {
+    const hiddenAddresses = new Set<`0x${string}`>()
+
+    Object.values(allVaults).forEach((vault) => {
+      const isHidden = getVaultInfo(vault).isHidden
+      if (!isHidden || getVaultChainID(vault) !== selectedChainId) {
+        return
+      }
+
+      hiddenAddresses.add(toAddress(getVaultAddress(vault)) as `0x${string}`)
+
+      const staking = getVaultStaking(vault)
+      const stakingAddress = toAddress(staking.address)
+      if (!isZeroAddress(stakingAddress)) {
+        hiddenAddresses.add(stakingAddress as `0x${string}`)
+      }
+    })
+
+    return [...hiddenAddresses]
+  }, [allVaults, selectedChainId])
+  const combinedExcludeTokens = useMemo(
+    () => [
+      ...new Set(
+        [
+          ...(excludeTokens || []),
+          ...hiddenVaultTokenAddresses,
+          ...(LEGACY_SELECTOR_TOKEN_ADDRESSES_BY_CHAIN[selectedChainId] || [])
+        ].map((address) => toAddress(address))
+      )
+    ],
+    [excludeTokens, hiddenVaultTokenAddresses, selectedChainId]
+  )
+  const assetLogoToken = useMemo(() => {
+    if (selectedChainId !== chainId || !assetAddress) {
+      return undefined
+    }
+
+    return getToken({ address: toAddress(assetAddress), chainID: selectedChainId })
+  }, [assetAddress, chainId, getToken, selectedChainId])
 
   // Get all tokens with balances from wallet context
   const tokens = useMemo(() => {
@@ -242,9 +292,10 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     () =>
       getExplicitTokenAddresses({
         value,
-        priorityTokenAddresses,
+        priorityTokenAddresses: mode === 'deposit' ? [] : priorityTokenAddresses,
         chainExtraTokens,
-        currentTokenAddresses: selectedChainId === chainId ? [assetAddress, vaultAddress, stakingAddress] : [],
+        currentTokenAddresses:
+          mode === 'deposit' || selectedChainId !== chainId ? [] : [assetAddress, vaultAddress, stakingAddress],
         customAddress
       }),
     [
@@ -252,12 +303,24 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       chainExtraTokens,
       chainId,
       customAddress,
+      mode,
       priorityTokenAddresses,
       selectedChainId,
       stakingAddress,
       value,
       vaultAddress
     ]
+  )
+  const minValueExemptTokenAddresses = useMemo(
+    () =>
+      mode === 'deposit'
+        ? getExplicitTokenAddresses({
+            value,
+            chainExtraTokens,
+            customAddress
+          })
+        : explicitTokenAddresses,
+    [chainExtraTokens, customAddress, explicitTokenAddresses, mode, value]
   )
 
   const getTokenUsdValue = useCallback(
@@ -275,10 +338,11 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       tokens,
       mode,
       limitTokens,
-      excludeTokens,
+      excludeTokens: combinedExcludeTokens,
       searchText,
       yearnKnownTokenAddresses,
       explicitTokenAddresses,
+      minValueExemptTokenAddresses,
       topTokenAddresses,
       getTokenUsdValue
     })
@@ -286,10 +350,11 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     tokens,
     mode,
     limitTokens,
-    excludeTokens,
+    combinedExcludeTokens,
     searchText,
     yearnKnownTokenAddresses,
     explicitTokenAddresses,
+    minValueExemptTokenAddresses,
     topTokenAddresses,
     getTokenUsdValue
   ])
@@ -378,6 +443,11 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                 selected={token.address === value}
                 onSelect={() => handleSelect(token.address as `0x${string}`)}
                 tokenType={getTokenType(token.address)}
+                logoToken={
+                  getTokenType(token.address) === 'vault' || getTokenType(token.address) === 'staking'
+                    ? assetLogoToken
+                    : undefined
+                }
               />
             ))}
           </div>

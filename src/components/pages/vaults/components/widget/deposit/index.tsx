@@ -24,7 +24,7 @@ import { TransactionOverlay, type TransactionStep } from '../shared/TransactionO
 import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
-import { COMMON_TOKENS_BY_CHAIN } from '../withdraw/constants'
+import { DEPOSIT_COMMON_TOKENS_BY_CHAIN } from '../withdraw/constants'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
 import { DepositDetails } from './DepositDetails'
@@ -201,7 +201,7 @@ export function WidgetDeposit({
     return [...excluded].map((address) => toAddress(address))
   }, [allVaults, stakingAddress, vaultAddress])
   const tokenSelectorTopTokens = useMemo(() => {
-    const topTokens: Record<number, `0x${string}`[]> = { ...COMMON_TOKENS_BY_CHAIN }
+    const topTokens: Record<number, `0x${string}`[]> = { ...DEPOSIT_COMMON_TOKENS_BY_CHAIN }
     const orderedAddresses = [assetAddress, ...(topTokens[chainId] || [])]
     topTokens[chainId] = [...new Set(orderedAddresses.map((address) => toAddress(address) as `0x${string}`))]
     return topTokens
