@@ -20,6 +20,8 @@ export type TTenderlyRuntime = {
   executionToCanonicalChainId: ReadonlyMap<number, TCanonicalChainId>
 }
 
+// Legacy localhost fork support is intentionally limited to 1337.
+// The older 5402 alias is retired unless we explicitly revive that workflow.
 const LOCAL_EXECUTION_CHAIN_ALIASES = new Map<number, TCanonicalChainId>([[1337, 1]])
 
 function readEnvString(value: TEnvValue): string {
