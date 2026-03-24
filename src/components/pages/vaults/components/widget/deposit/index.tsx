@@ -27,6 +27,7 @@ import { WidgetHeader } from '../shared/WidgetHeader'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
 import { DepositDetails } from './DepositDetails'
+import { getStructurallyExcludedDepositTokenAddresses } from './tokenSelectorFiltering'
 import type { DepositRouteType } from './types'
 import { useDepositError } from './useDepositError'
 import { useDepositFlow } from './useDepositFlow'
@@ -104,6 +105,14 @@ function getDepositButtonLabel(isLoadingRoute: boolean, needsApproval: boolean, 
   return actionLabel
 }
 
+function getTokenLogoURI(token: unknown): string | undefined {
+  if (!token || typeof token !== 'object' || !('logoURI' in token)) {
+    return undefined
+  }
+
+  return typeof token.logoURI === 'string' ? token.logoURI : undefined
+}
+
 export function WidgetDeposit({
   vaultAddress,
   assetAddress,
@@ -136,7 +145,7 @@ export function WidgetDeposit({
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
-  const { zapSlippage, isAutoStakingEnabled, getPrice } = useYearn()
+  const { zapSlippage, isAutoStakingEnabled, getPrice, allVaults } = useYearn()
   const trackEvent = usePlausible()
   const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
 
@@ -171,6 +180,22 @@ export function WidgetDeposit({
       ),
     [tokenSelectorExtraTokens, sourceChainId, depositToken]
   )
+  const tokenSelectorExcludedTokens = useMemo(() => {
+    const excluded = new Set<string>([toAddress(vaultAddress).toLowerCase()])
+
+    if (stakingAddress) {
+      excluded.add(toAddress(stakingAddress).toLowerCase())
+    }
+
+    getStructurallyExcludedDepositTokenAddresses({
+      allVaults,
+      destinationVaultAddress: vaultAddress
+    }).forEach((address) => {
+      excluded.add(toAddress(address).toLowerCase())
+    })
+
+    return [...excluded].map((address) => toAddress(address))
+  }, [allVaults, stakingAddress, vaultAddress])
 
   const inputToken = useMemo(() => {
     if (sourceChainId === chainId && depositToken === assetAddress) {
@@ -181,6 +206,7 @@ export function WidgetDeposit({
     }
     return getToken({ address: depositToken, chainID: sourceChainId })
   }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken, selectedExtraToken])
+  const inputTokenLogoURI = selectedExtraToken?.logoURI ?? getTokenLogoURI(inputToken)
 
   const destinationToken = useMemo(() => {
     if (isAutoStakingEnabled && stakingAddress) return stakingAddress
@@ -668,6 +694,7 @@ export function WidgetDeposit({
           outputTokenUsdPrice={outputTokenPrice}
           tokenAddress={inputToken?.address}
           tokenChainId={inputToken?.chainID}
+          tokenLogoURI={inputTokenLogoURI}
           onTokenSelectorClick={() => setShowTokenSelector(true)}
         />
 
@@ -794,7 +821,7 @@ export function WidgetDeposit({
         chainId={sourceChainId}
         value={selectedToken}
         priorityTokens={{ [chainId]: [assetAddress] }}
-        excludeTokens={stakingAddress ? [stakingAddress] : [vaultAddress]}
+        excludeTokens={tokenSelectorExcludedTokens}
         extraTokens={tokenSelectorExtraTokens}
         assetAddress={assetAddress}
         vaultAddress={vaultAddress}
