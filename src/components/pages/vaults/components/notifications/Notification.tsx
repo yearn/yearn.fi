@@ -551,7 +551,7 @@ export const Notification = memo(function Notification({
     }
 
     const explorerBaseURI = getNetwork(notification.executionChainId ?? notification.chainId).defaultBlockExplorer
-    return `${explorerBaseURI}/tx/${notification.txHash}`
+    return explorerBaseURI ? `${explorerBaseURI}/tx/${notification.txHash}` : null
   }, [notification.chainId, notification.executionChainId, notification.txHash])
 
   const notificationTitle = useMemo(() => {

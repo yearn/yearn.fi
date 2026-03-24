@@ -8,6 +8,7 @@ import {
   resolveCanonicalChainIdForRuntime,
   resolveConnectedCanonicalChainIdForRuntime,
   resolveExecutionChainIdForRuntime,
+  resolveTenderlyExplorerUriForExecutionChainIdForRuntime,
   resolveTenderlyRpcUriForExecutionChainIdForRuntime
 } from './tenderly'
 
@@ -19,6 +20,9 @@ describe('parseTenderlyRuntime', () => {
     expect(runtime.isEnabled).toBe(false)
     expect(getSupportedCanonicalChainsForRuntime(runtime).map((chain) => chain.id)).toEqual(canonicalChainIds)
     expect(resolveExecutionChainIdForRuntime(runtime, 1)).toBe(1)
+    expect(resolveExecutionChainIdForRuntime(runtime, 1337)).toBe(1337)
+    expect(resolveCanonicalChainIdForRuntime(runtime, 1337)).toBe(1)
+    expect(resolveConnectedCanonicalChainIdForRuntime(runtime, 1337)).toBe(1)
     expect(resolveConnectedCanonicalChainIdForRuntime(runtime, 1)).toBe(1)
   })
 
@@ -74,15 +78,36 @@ describe('parseTenderlyRuntime', () => {
 
     expect(resolveExecutionChainIdForRuntime(runtime, 1)).toBe(73571)
     expect(resolveExecutionChainIdForRuntime(runtime, 73571)).toBe(73571)
+    expect(resolveExecutionChainIdForRuntime(runtime, 1337)).toBe(1337)
     expect(resolveExecutionChainIdForRuntime(runtime, 8453)).toBeUndefined()
 
     expect(resolveCanonicalChainIdForRuntime(runtime, 1)).toBe(1)
     expect(resolveCanonicalChainIdForRuntime(runtime, 73571)).toBe(1)
+    expect(resolveCanonicalChainIdForRuntime(runtime, 1337)).toBe(1)
     expect(resolveConnectedCanonicalChainIdForRuntime(runtime, 73571)).toBe(1)
+    expect(resolveConnectedCanonicalChainIdForRuntime(runtime, 1337)).toBe(1)
     expect(resolveConnectedCanonicalChainIdForRuntime(runtime, 1)).toBe(1)
     expect(resolveTenderlyRpcUriForExecutionChainIdForRuntime(runtime, 73571)).toBe(
       'https://rpc.tenderly.ethereum.example'
     )
+    expect(resolveTenderlyExplorerUriForExecutionChainIdForRuntime(runtime, 73571)).toBe(
+      'https://explorer.tenderly.ethereum.example'
+    )
     expect(resolveTenderlyRpcUriForExecutionChainIdForRuntime(runtime, 1)).toBeUndefined()
+  })
+
+  it('does not reuse canonical explorers for execution chains without explicit Tenderly explorer URIs', () => {
+    const runtime = parseTenderlyRuntime({
+      VITE_TENDERLY_MODE: 'true',
+      VITE_TENDERLY_CHAIN_ID_FOR_1: '73571',
+      VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
+    })
+    const supportedCanonicalChains = getSupportedCanonicalChainsForRuntime(runtime)
+    const supportedExecutionChains = getSupportedExecutionChainsForRuntime(runtime, supportedCanonicalChains)
+
+    expect(supportedCanonicalChains[0].blockExplorers?.default.url).toBeTruthy()
+    expect(supportedExecutionChains[0].id).toBe(73571)
+    expect(supportedExecutionChains[0].blockExplorers).toBeUndefined()
+    expect(resolveTenderlyExplorerUriForExecutionChainIdForRuntime(runtime, 73571)).toBeUndefined()
   })
 })

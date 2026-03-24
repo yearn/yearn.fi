@@ -20,6 +20,8 @@ export type TTenderlyRuntime = {
   executionToCanonicalChainId: ReadonlyMap<number, TCanonicalChainId>
 }
 
+const LOCAL_EXECUTION_CHAIN_ALIASES = new Map<number, TCanonicalChainId>([[1337, 1]])
+
 function readEnvString(value: TEnvValue): string {
   if (typeof value === 'string') {
     return value.trim()
@@ -59,34 +61,34 @@ function withTenderlyOverrides(chain: Chain, config?: TTenderlyChainConfig): Cha
         http: [...new Set(publicHttp)]
       }
     },
-    blockExplorers: chain.blockExplorers
-      ? {
-          ...chain.blockExplorers,
-          default: {
-            ...chain.blockExplorers.default,
-            url: config.explorerUri || chain.blockExplorers.default.url
+    blockExplorers:
+      config.explorerUri && chain.blockExplorers
+        ? {
+            ...chain.blockExplorers,
+            default: {
+              ...chain.blockExplorers.default,
+              url: config.explorerUri
+            }
           }
-        }
-      : undefined
+        : chain.blockExplorers
   }
 }
 
 function buildExecutionChain(chain: Chain, config: TTenderlyChainConfig): Chain {
-  const explorerUrl = config.explorerUri || chain.blockExplorers?.default?.url || ''
-
   return {
     ...withTenderlyOverrides(chain, config),
     id: config.executionChainId,
     name: `${chain.name} Tenderly`,
-    blockExplorers: explorerUrl
-      ? {
-          ...chain.blockExplorers,
-          default: {
-            name: `${chain.name} Tenderly Explorer`,
-            url: explorerUrl
+    blockExplorers:
+      config.explorerUri && chain.blockExplorers
+        ? {
+            ...chain.blockExplorers,
+            default: {
+              name: `${chain.name} Tenderly Explorer`,
+              url: config.explorerUri
+            }
           }
-        }
-      : chain.blockExplorers,
+        : undefined,
     testnet: true
   }
 }
@@ -235,6 +237,18 @@ function isCanonicalChainEnabledForRuntime(runtime: TTenderlyRuntime, chainId: n
   return getSupportedCanonicalChainsForRuntime(runtime).some((chain) => chain.id === chainId)
 }
 
+function resolveLocalExecutionCanonicalAliasForRuntime(
+  runtime: TTenderlyRuntime,
+  chainId: number
+): TCanonicalChainId | undefined {
+  const canonicalChainId = LOCAL_EXECUTION_CHAIN_ALIASES.get(chainId)
+  if (canonicalChainId === undefined) {
+    return undefined
+  }
+
+  return isCanonicalChainEnabledForRuntime(runtime, canonicalChainId) ? canonicalChainId : undefined
+}
+
 export function resolveCanonicalChainIdForRuntime(
   runtime: TTenderlyRuntime,
   chainId: number | undefined
@@ -246,6 +260,11 @@ export function resolveCanonicalChainIdForRuntime(
   const executionChainId = runtime.executionToCanonicalChainId.get(chainId as number)
   if (executionChainId !== undefined) {
     return executionChainId
+  }
+
+  const localExecutionAlias = resolveLocalExecutionCanonicalAliasForRuntime(runtime, chainId as number)
+  if (localExecutionAlias !== undefined) {
+    return localExecutionAlias
   }
 
   if (isCanonicalChainEnabledForRuntime(runtime, chainId as number)) {
@@ -265,6 +284,11 @@ export function resolveConnectedCanonicalChainIdForRuntime(
 ): TCanonicalChainId | undefined {
   if (!Number.isInteger(chainId)) {
     return undefined
+  }
+
+  const localExecutionAlias = resolveLocalExecutionCanonicalAliasForRuntime(runtime, chainId as number)
+  if (localExecutionAlias !== undefined) {
+    return localExecutionAlias
   }
 
   if (runtime.isEnabled) {
@@ -292,6 +316,10 @@ export function resolveExecutionChainIdForRuntime(
   }
 
   const normalizedChainId = chainId as number
+
+  if (resolveLocalExecutionCanonicalAliasForRuntime(runtime, normalizedChainId) !== undefined) {
+    return normalizedChainId
+  }
 
   if (runtime.executionToCanonicalChainId.has(normalizedChainId)) {
     return normalizedChainId
@@ -326,4 +354,24 @@ export function resolveTenderlyRpcUriForExecutionChainIdForRuntime(
 
 export function resolveTenderlyRpcUriForExecutionChainId(chainId: number | undefined): string | undefined {
   return resolveTenderlyRpcUriForExecutionChainIdForRuntime(tenderlyRuntime, chainId)
+}
+
+export function resolveTenderlyExplorerUriForExecutionChainIdForRuntime(
+  runtime: TTenderlyRuntime,
+  chainId: number | undefined
+): string | undefined {
+  if (!Number.isInteger(chainId)) {
+    return undefined
+  }
+
+  const canonicalChainId = runtime.executionToCanonicalChainId.get(chainId as number)
+  if (canonicalChainId === undefined) {
+    return undefined
+  }
+
+  return runtime.configuredByCanonicalId[canonicalChainId]?.explorerUri
+}
+
+export function resolveTenderlyExplorerUriForExecutionChainId(chainId: number | undefined): string | undefined {
+  return resolveTenderlyExplorerUriForExecutionChainIdForRuntime(tenderlyRuntime, chainId)
 }

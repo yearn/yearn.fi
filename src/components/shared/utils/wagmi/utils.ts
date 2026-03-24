@@ -4,13 +4,14 @@ import * as wagmiChains from 'viem/chains'
 import { katana } from '@/config/chainDefinitions'
 import {
   resolveExecutionChainId,
+  resolveTenderlyExplorerUriForExecutionChainId,
   resolveTenderlyRpcUriForExecutionChainId,
   supportedChainLookup
 } from '@/config/tenderly'
 import type { TAddress } from '../../types/address'
 import type { TDict, TNDict } from '../../types/mixed'
 import { retrieveConfig } from './config'
-import { anotherLocalhost, localhost } from './networks'
+import { localhost } from './networks'
 
 export type TChainContract = {
   address: TAddress
@@ -127,9 +128,7 @@ function getInfuraBaseURL(chainID: number): string {
 }
 
 function toExtendedChain(chain: Chain): TExtendedChain {
-  const baseChain = (
-    chain.id === localhost.id ? localhost : chain.id === anotherLocalhost.id ? anotherLocalhost : chain
-  ) as Chain
+  const baseChain = (chain.id === localhost.id ? localhost : chain) as Chain
 
   const extendedChain = {
     ...(baseChain as TExtendedChain),
@@ -175,15 +174,20 @@ function toExtendedChain(chain: Chain): TExtendedChain {
   extendedChain.rpcUrls.default.http = [
     ...new Set([extendedChain.defaultRPC, ...extendedChain.rpcUrls.default.http].filter(Boolean))
   ]
+  const tenderlyExecutionExplorer = resolveTenderlyExplorerUriForExecutionChainId(extendedChain.id)
+  const isTenderlyExecutionChain = Boolean(resolveTenderlyRpcUriForExecutionChainId(extendedChain.id))
   extendedChain.defaultBlockExplorer =
-    extendedChain.blockExplorers?.etherscan?.url || extendedChain.blockExplorers?.default.url || 'https://etherscan.io'
+    tenderlyExecutionExplorer ||
+    extendedChain.blockExplorers?.etherscan?.url ||
+    extendedChain.blockExplorers?.default.url ||
+    (isTenderlyExecutionChain ? '' : 'https://etherscan.io')
 
   return extendedChain
 }
 
 function initIndexedWagmiChains(): TNDict<TExtendedChain> {
   const indexedChains: TNDict<TExtendedChain> = {}
-  const baseChains = Object.values({ ...wagmiChains, rari, katana, localhost, anotherLocalhost }).filter(isChain)
+  const baseChains = Object.values({ ...wagmiChains, rari, katana, localhost }).filter(isChain)
 
   for (const chain of [...baseChains, ...supportedChainLookup]) {
     indexedChains[chain.id] = toExtendedChain(chain)
