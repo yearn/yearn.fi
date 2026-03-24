@@ -35,6 +35,7 @@ type TTenderlyVnetConnectionDetails = {
   adminRpc?: string
   publicRpc?: string
   predictablePublicRpc?: string
+  explorerUri?: string
 }
 
 type TCreateVnetPayload = {
@@ -280,6 +281,48 @@ function buildPredictablePublicRpcUrl(accountSlug: string, projectSlug: string, 
   return `https://virtual.rpc.tenderly.co/${encodeURIComponent(accountSlug)}/${encodeURIComponent(projectSlug)}/public/${encodeURIComponent(rpcName)}`
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function isHttpUrl(value: unknown): value is string {
+  return typeof value === 'string' && /^https?:\/\//i.test(value)
+}
+
+export function resolveExplorerUriFromResponse(response: TTenderlyVnetResponse): string | undefined {
+  const queue: Array<{ value: unknown; path: string[] }> = [{ value: response, path: [] }]
+  const visited = new Set<unknown>()
+
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (!current || !isRecord(current.value) || visited.has(current.value)) {
+      continue
+    }
+    visited.add(current.value)
+
+    for (const [key, value] of Object.entries(current.value)) {
+      const normalizedKey = key.toLowerCase()
+      const normalizedPath = [...current.path, normalizedKey]
+      const isExplorerPath = normalizedPath.some((part) => part.includes('explorer'))
+
+      if (isExplorerPath && isHttpUrl(value)) {
+        return value
+      }
+
+      if (Array.isArray(value)) {
+        queue.push(...value.map((entry) => ({ value: entry, path: normalizedPath })))
+        continue
+      }
+
+      if (isRecord(value)) {
+        queue.push({ value, path: normalizedPath })
+      }
+    }
+  }
+
+  return undefined
+}
+
 function getConnectionDetails(
   response: TTenderlyVnetResponse,
   accountSlug: string,
@@ -289,7 +332,8 @@ function getConnectionDetails(
   return {
     adminRpc: response.rpcs?.find((rpc) => rpc.name === 'Admin RPC')?.url,
     publicRpc: response.rpcs?.find((rpc) => rpc.name === 'Public RPC')?.url,
-    predictablePublicRpc: rpcName ? buildPredictablePublicRpcUrl(accountSlug, projectSlug, rpcName) : undefined
+    predictablePublicRpc: rpcName ? buildPredictablePublicRpcUrl(accountSlug, projectSlug, rpcName) : undefined,
+    explorerUri: resolveExplorerUriFromResponse(response)
   }
 }
 
@@ -366,7 +410,7 @@ export function buildTenderlyEnvFragment(params: {
     `VITE_TENDERLY_CHAIN_ID_FOR_${params.canonicalChainId}=${params.executionChainId}`,
     `VITE_TENDERLY_RPC_URI_FOR_${params.canonicalChainId}=${publicRpc}`,
     `TENDERLY_ADMIN_RPC_URI_FOR_${params.canonicalChainId}=${params.details.adminRpc || ''}`,
-    `VITE_TENDERLY_EXPLORER_URI_FOR_${params.canonicalChainId}=`
+    `VITE_TENDERLY_EXPLORER_URI_FOR_${params.canonicalChainId}=${params.details.explorerUri || ''}`
   ].join('\n')
 }
 

@@ -7,6 +7,7 @@ import {
   buildTenderlyApiErrorMessage,
   buildTenderlyEnvFragment,
   buildVnetConsoleSummary,
+  resolveExplorerUriFromResponse,
   sanitizeConsoleText,
   validateWritableOutputPath,
   writeOutputFile
@@ -15,7 +16,8 @@ import {
 const connectionDetails = {
   adminRpc: 'https://admin.rpc/secret-path',
   publicRpc: 'https://dynamic.public.rpc/ephemeral-path',
-  predictablePublicRpc: 'https://predictable.public.rpc/stable-path'
+  predictablePublicRpc: 'https://predictable.public.rpc/stable-path',
+  explorerUri: 'https://explorer.tenderly.public/virtual-mainnet'
 }
 
 const response = {
@@ -44,6 +46,18 @@ describe('tenderly-vnet console safety', () => {
     expect(envFragment).toContain('VITE_TENDERLY_CHAIN_ID_FOR_1=694201')
     expect(envFragment).toContain('VITE_TENDERLY_RPC_URI_FOR_1=https://predictable.public.rpc/stable-path')
     expect(envFragment).toContain('TENDERLY_ADMIN_RPC_URI_FOR_1=https://admin.rpc/secret-path')
+    expect(envFragment).toContain('VITE_TENDERLY_EXPLORER_URI_FOR_1=https://explorer.tenderly.public/virtual-mainnet')
+  })
+
+  it('extracts explorer urls from explorer-specific response fields without mistaking public rpc urls for explorers', () => {
+    expect(
+      resolveExplorerUriFromResponse({
+        public_rpc_url: 'https://rpc.tenderly.example/ignored',
+        explorer_page: {
+          public_url: 'https://explorer.tenderly.public/virtual-mainnet'
+        }
+      })
+    ).toBe('https://explorer.tenderly.public/virtual-mainnet')
   })
 
   it('omits sensitive RPC values from the default console summary', () => {
