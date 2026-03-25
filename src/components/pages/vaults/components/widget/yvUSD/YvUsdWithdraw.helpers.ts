@@ -4,7 +4,6 @@ import {
 } from '@pages/vaults/utils/yvUsd'
 import { formatTAmount, toAddress } from '@shared/utils'
 import type { Address } from 'viem'
-import type { UseSimulateContractReturnType } from 'wagmi'
 import type { TransactionStep } from '../shared/TransactionOverlay'
 
 type TLockedWithdrawStepPhase = 'withdraw' | 'redeem'
@@ -99,8 +98,8 @@ type TResolveCooldownSharesToStartParams = {
 type TBuildLockedWithdrawStepParams = {
   phase: TLockedWithdrawStepPhase
   lockedStepMethod: TLockedWithdrawMethod
-  prepareLockedWithdraw: UseSimulateContractReturnType
-  prepareUnlockedWithdraw: UseSimulateContractReturnType
+  prepareLockedWithdraw: TransactionStep['prepare']
+  prepareUnlockedWithdraw: TransactionStep['prepare']
   requestedLockedShares: bigint
   receivedLockedAssets: bigint
   expectedUnderlyingOut: bigint
@@ -155,7 +154,7 @@ export function resolveLockedRequestedWithdrawAssets({
     return 0n
   }
 
-  if (maxDisplayAmount > 0n && requestedDisplayAmount === maxDisplayAmount) {
+  if (maxDisplayAmount > 0n && requestedDisplayAmount >= maxDisplayAmount) {
     return maxWithdrawAssets
   }
 
