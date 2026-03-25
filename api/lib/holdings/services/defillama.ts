@@ -1,6 +1,13 @@
 import { config } from '../config'
 import { type DefiLlamaBatchResponse, SUPPORTED_CHAINS } from '../types'
-import { type CachedPrice, getCachedPrices, saveCachedPrices } from './cache'
+import {
+  type CachedPrice,
+  type CachedPriceMiss,
+  getCachedPriceMisses,
+  getCachedPrices,
+  saveCachedPriceMisses,
+  saveCachedPrices
+} from './cache'
 import { debugError, debugLog } from './debug'
 
 type TDefiLlamaError = Error & {
@@ -210,6 +217,25 @@ function materializeRequestedPrices(
   })
 }
 
+function materializeRequestedPriceMisses(
+  coins: TCoinRequest[],
+  fetchedPrices: Map<string, Map<number, number>>
+): CachedPriceMiss[] {
+  return coins.flatMap((coin) => {
+    const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
+    const fetchedPriceMap = fetchedPrices.get(tokenKey)
+
+    if ((fetchedPriceMap?.size ?? 0) > 0) {
+      return []
+    }
+
+    return coin.timestamps.map((timestamp) => ({
+      tokenKey,
+      timestamp
+    }))
+  })
+}
+
 function buildCoinsParam(coins: TCoinRequest[]): Record<string, number[]> {
   return coins.reduce<Record<string, number[]>>((accumulator, coin) => {
     accumulator[`${coin.chain}:${coin.address.toLowerCase()}`] = coin.timestamps
@@ -250,6 +276,36 @@ function buildBatchHistoricalRequests(coins: TCoinRequest[]): TDefiLlamaBatchReq
       variant: 'free_get'
     }
   ]
+}
+
+function abbreviateTokenAddress(address: string): string {
+  const normalizedAddress = address.toLowerCase()
+
+  if (normalizedAddress.length <= 9) {
+    return normalizedAddress
+  }
+
+  return `${normalizedAddress.slice(0, 4)}..${normalizedAddress.slice(-3)}`
+}
+
+function buildBatchDebugSummary(
+  coinBatch: TCoinRequest[],
+  uniqueTimestamps: number[]
+): {
+  firstTimestamp: number | null
+  lastTimestamp: number | null
+  firstToken: string | null
+  lastToken: string | null
+} {
+  const firstCoin = coinBatch[0]
+  const lastCoin = coinBatch.at(-1)
+
+  return {
+    firstTimestamp: uniqueTimestamps[0] ?? null,
+    lastTimestamp: uniqueTimestamps.at(-1) ?? null,
+    firstToken: firstCoin ? abbreviateTokenAddress(firstCoin.address) : null,
+    lastToken: lastCoin ? abbreviateTokenAddress(lastCoin.address) : null
+  }
 }
 
 function isSplittableGetError(error: unknown): boolean {
@@ -340,6 +396,7 @@ async function fetchBatch(
   const uniqueTimestamps = [...new Set(coinBatch.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
   const requestedPricePoints = countRequestedPricePoints(coinBatch)
   const requests = buildBatchHistoricalRequests(coinBatch)
+  const batchDebugSummary = buildBatchDebugSummary(coinBatch, uniqueTimestamps)
   const requestDetails = requests.map((request) => ({
     variant: request.variant,
     method: request.init.method ?? 'GET',
@@ -350,6 +407,7 @@ async function fetchBatch(
     tokenCount: coinBatch.length,
     timestampCount: uniqueTimestamps.length,
     pricePointCount: requestedPricePoints,
+    ...batchDebugSummary,
     useProApi: tuning.useProApi,
     requestVariants: requests.map((request) => request.variant),
     requestDetails
@@ -388,6 +446,7 @@ async function fetchBatch(
                 tokenCount: coinBatch.length,
                 timestampCount: uniqueTimestamps.length,
                 pricePointCount: requestedPricePoints,
+                ...batchDebugSummary,
                 useProApi: tuning.useProApi,
                 requestVariant: request.variant,
                 requestMethod: request.init.method ?? 'GET',
@@ -408,6 +467,7 @@ async function fetchBatch(
               tokenCount: coinBatch.length,
               timestampCount: uniqueTimestamps.length,
               pricePointCount: requestedPricePoints,
+              ...batchDebugSummary,
               useProApi: tuning.useProApi,
               requestVariant: request.variant,
               requestMethod: request.init.method ?? 'GET',
@@ -431,6 +491,7 @@ async function fetchBatch(
       tokenCount: coinBatch.length,
       timestampCount: uniqueTimestamps.length,
       pricePointCount: requestedPricePoints,
+      ...batchDebugSummary,
       pricePoints: countPricePoints(parsed),
       useProApi: tuning.useProApi,
       requestVariants: requests.map((request) => request.variant),
@@ -444,6 +505,7 @@ async function fetchBatch(
         tokenCount: coinBatch.length,
         timestampCount: uniqueTimestamps.length,
         pricePointCount: requestedPricePoints,
+        ...batchDebugSummary,
         useProApi: tuning.useProApi
       })
       throw error
@@ -454,6 +516,7 @@ async function fetchBatch(
       tokenCount: coinBatch.length,
       timestampCount: uniqueTimestamps.length,
       pricePointCount: requestedPricePoints,
+      ...batchDebugSummary,
       useProApi: tuning.useProApi
     })
     await wait(tuning.retryDelayMs * 2 ** attempt)
@@ -483,16 +546,24 @@ export async function fetchHistoricalPrices(
     return priceResult
   }, new Map<string, Map<number, number>>())
 
-  const cachedPrices = await getCachedPrices(tokenKeys, timestamps)
+  const [cachedPrices, cachedPriceMisses] = await Promise.all([
+    getCachedPrices(tokenKeys, timestamps),
+    getCachedPriceMisses(tokenKeys, timestamps)
+  ])
   const cachedPricePoints = countPricePoints(cachedPrices)
   debugLog('defillama', 'loaded cached price points', {
     cachedPoints: cachedPricePoints
   })
   const missingByToken = tokenKeys.reduce<Map<string, number[]>>((missing, tokenKey) => {
     const cachedForToken = cachedPrices.get(tokenKey)
+    const cachedMissesForToken = cachedPriceMisses.get(tokenKey)
     const missingTimestamps = timestamps.filter((timestamp) => {
       if (cachedForToken?.has(timestamp)) {
         result.get(tokenKey)!.set(timestamp, cachedForToken.get(timestamp)!)
+        return false
+      }
+
+      if (cachedMissesForToken?.has(timestamp)) {
         return false
       }
 
@@ -521,6 +592,7 @@ export async function fetchHistoricalPrices(
     0
   )
   const newPrices: CachedPrice[] = []
+  const newPriceMisses: CachedPriceMiss[] = []
   const tokenRequests = buildTokenRequests(
     tokensToFetch.map((coin) => {
       const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
@@ -578,6 +650,7 @@ export async function fetchHistoricalPrices(
       fetchStats.successfulBatches += 1
 
       const materializedPrices = materializeRequestedPrices(batch.coinBatch, batchResult.value)
+      const materializedPriceMisses = materializeRequestedPriceMisses(batch.coinBatch, batchResult.value)
       materializedPrices.forEach(({ tokenKey, timestamp, price }) => {
         if (!result.has(tokenKey)) {
           result.set(tokenKey, new Map())
@@ -587,6 +660,7 @@ export async function fetchHistoricalPrices(
         existingMap.set(timestamp, price)
         newPrices.push({ tokenKey, timestamp, price })
       })
+      newPriceMisses.push(...materializedPriceMisses)
     })
 
     if (groupIndex < batchGroups.length - 1 && tuning.interGroupDelayMs > 0) {
@@ -602,10 +676,15 @@ export async function fetchHistoricalPrices(
     saveCachedPrices(newPrices).catch(() => {})
   }
 
+  if (newPriceMisses.length > 0) {
+    saveCachedPriceMisses(newPriceMisses).catch(() => {})
+  }
+
   debugLog('defillama', 'completed historical price fetch', {
     successfulBatches: fetchStats.successfulBatches,
     totalPricePoints: countPricePoints(result),
-    newPrices: newPrices.length
+    newPrices: newPrices.length,
+    newPriceMisses: newPriceMisses.length
   })
 
   return result

@@ -12,6 +12,13 @@ export interface CachedPrice {
   price: number
 }
 
+export interface CachedPriceMiss {
+  tokenKey: string
+  timestamp: number
+}
+
+const PRICE_MISS_TTL_MS = 7 * 24 * 60 * 60 * 1_000
+
 export async function getCachedTotals(userAddress: string, startDate: string, endDate: string): Promise<CachedTotal[]> {
   if (!isDatabaseEnabled()) {
     debugLog('cache', 'skipping cached totals lookup because database is disabled')
@@ -153,6 +160,69 @@ export async function getCachedPrices(
   return result
 }
 
+export async function getCachedPriceMisses(
+  tokenKeys: string[],
+  timestamps: number[]
+): Promise<Map<string, Set<number>>> {
+  const result = new Map<string, Set<number>>()
+
+  if (!isDatabaseEnabled() || tokenKeys.length === 0 || timestamps.length === 0) {
+    if (tokenKeys.length > 0 && timestamps.length > 0) {
+      debugLog('cache', 'skipping cached price misses lookup because database is disabled', {
+        tokenKeys: tokenKeys.length,
+        timestamps: timestamps.length
+      })
+    }
+    return result
+  }
+
+  const pool = await getPool()
+  if (!pool) {
+    debugLog('cache', 'skipping cached price misses lookup because database pool is unavailable', {
+      tokenKeys: tokenKeys.length,
+      timestamps: timestamps.length
+    })
+    return result
+  }
+
+  try {
+    debugLog('cache', 'loading cached price misses', { tokenKeys: tokenKeys.length, timestamps: timestamps.length })
+    const tokenPlaceholders = tokenKeys.map((_, i) => `$${i + 1}`).join(', ')
+    const timestampPlaceholders = timestamps.map((_, i) => `$${tokenKeys.length + i + 1}`).join(', ')
+
+    const query = `
+      SELECT token_key, timestamp
+      FROM token_price_misses
+      WHERE token_key IN (${tokenPlaceholders})
+        AND timestamp IN (${timestampPlaceholders})
+        AND expires_at > NOW()
+    `
+
+    const queryResult = await pool.query<{ token_key: string; timestamp: number }>(query, [...tokenKeys, ...timestamps])
+
+    for (const row of queryResult.rows) {
+      if (!result.has(row.token_key)) {
+        result.set(row.token_key, new Set<number>())
+      }
+      result.get(row.token_key)!.add(row.timestamp)
+    }
+
+    const cachedMissPoints = Array.from(result.values()).reduce((total, timestampSet) => total + timestampSet.size, 0)
+    debugLog('cache', 'loaded cached price misses', {
+      tokenKeys: result.size,
+      missPoints: cachedMissPoints
+    })
+  } catch (error) {
+    console.error('[Cache] Failed to get cached price misses:', error)
+    debugError('cache', 'cached price misses lookup failed', error, {
+      tokenKeys: tokenKeys.length,
+      timestamps: timestamps.length
+    })
+  }
+
+  return result
+}
+
 export async function saveCachedPrices(prices: CachedPrice[]): Promise<void> {
   if (!isDatabaseEnabled() || prices.length === 0) {
     if (prices.length > 0) {
@@ -198,6 +268,56 @@ export async function saveCachedPrices(prices: CachedPrice[]): Promise<void> {
   }
 }
 
+export async function saveCachedPriceMisses(priceMisses: CachedPriceMiss[]): Promise<void> {
+  if (!isDatabaseEnabled() || priceMisses.length === 0) {
+    if (priceMisses.length > 0) {
+      debugLog('cache', 'skipping cached price misses save because database is disabled', { rows: priceMisses.length })
+    }
+    return
+  }
+
+  const pool = await getPool()
+  if (!pool) {
+    debugLog('cache', 'skipping cached price misses save because database pool is unavailable', {
+      rows: priceMisses.length
+    })
+    return
+  }
+
+  try {
+    debugLog('cache', 'saving cached price misses', { rows: priceMisses.length })
+    const expiresAt = new Date(Date.now() + PRICE_MISS_TTL_MS)
+    const BATCH_SIZE = 1_000
+
+    for (let i = 0; i < priceMisses.length; i += BATCH_SIZE) {
+      const batch = priceMisses.slice(i, i + BATCH_SIZE)
+      const values: unknown[] = []
+      const placeholders: string[] = []
+      let paramIndex = 1
+
+      for (const priceMiss of batch) {
+        placeholders.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2})`)
+        values.push(priceMiss.tokenKey, priceMiss.timestamp, expiresAt)
+        paramIndex += 3
+      }
+
+      const query = `
+        INSERT INTO token_price_misses (token_key, timestamp, expires_at)
+        VALUES ${placeholders.join(', ')}
+        ON CONFLICT (token_key, timestamp)
+        DO UPDATE SET expires_at = GREATEST(token_price_misses.expires_at, EXCLUDED.expires_at)
+      `
+
+      await pool.query(query, values)
+    }
+
+    debugLog('cache', 'saved cached price misses', { rows: priceMisses.length })
+  } catch (error) {
+    console.error('[Cache] Failed to save price misses:', error)
+    debugError('cache', 'cached price misses save failed', error, { rows: priceMisses.length })
+  }
+}
+
 export async function deleteStaleCache(): Promise<number> {
   if (!isDatabaseEnabled()) {
     debugLog('cache', 'skipping stale cache deletion because database is disabled')
@@ -211,8 +331,11 @@ export async function deleteStaleCache(): Promise<number> {
   }
 
   try {
-    const result = await pool.query(`DELETE FROM holdings_totals WHERE date < NOW() - INTERVAL '366 days'`)
-    const deletedCount = result.rowCount ?? 0
+    const [staleTotalsResult, expiredMissesResult] = await Promise.all([
+      pool.query(`DELETE FROM holdings_totals WHERE date < NOW() - INTERVAL '366 days'`),
+      pool.query(`DELETE FROM token_price_misses WHERE expires_at <= NOW()`)
+    ])
+    const deletedCount = (staleTotalsResult.rowCount ?? 0) + (expiredMissesResult.rowCount ?? 0)
     console.log(`[Cache] Deleted ${deletedCount} stale cache rows`)
     return deletedCount
   } catch (error) {

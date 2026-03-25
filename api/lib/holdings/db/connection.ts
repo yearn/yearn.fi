@@ -66,6 +66,14 @@ export async function initializeSchema(): Promise<void> {
       PRIMARY KEY (token_key, timestamp)
     );
 
+    CREATE TABLE IF NOT EXISTS token_price_misses (
+      token_key VARCHAR(100) NOT NULL,
+      timestamp INTEGER NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      PRIMARY KEY (token_key, timestamp)
+    );
+
     CREATE TABLE IF NOT EXISTS rate_limits (
       ip VARCHAR(45) PRIMARY KEY,
       request_count INTEGER DEFAULT 1,
@@ -80,6 +88,8 @@ export async function initializeSchema(): Promise<void> {
     );
 
     CREATE INDEX IF NOT EXISTS idx_token_prices_token_key ON token_prices(token_key);
+    CREATE INDEX IF NOT EXISTS idx_token_price_misses_token_key ON token_price_misses(token_key);
+    CREATE INDEX IF NOT EXISTS idx_token_price_misses_expires_at ON token_price_misses(expires_at);
     CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
     CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
   `

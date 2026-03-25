@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { DefiLlamaBatchResponse } from '../types'
-import { getCachedPrices, saveCachedPrices } from './cache'
+import { getCachedPriceMisses, getCachedPrices, saveCachedPriceMisses, saveCachedPrices } from './cache'
 import { fetchHistoricalPrices, getPriceAtTimestamp, parseDefiLlamaResponse } from './defillama'
 
 vi.mock('./cache', () => ({
+  getCachedPriceMisses: vi.fn(async () => new Map()),
   getCachedPrices: vi.fn(async () => new Map()),
+  saveCachedPriceMisses: vi.fn(async () => {}),
   saveCachedPrices: vi.fn(async () => {})
 }))
 
@@ -19,7 +21,9 @@ afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
   vi.unstubAllEnvs()
+  vi.mocked(getCachedPriceMisses).mockResolvedValue(new Map())
   vi.mocked(getCachedPrices).mockResolvedValue(new Map())
+  vi.mocked(saveCachedPriceMisses).mockResolvedValue()
   vi.mocked(saveCachedPrices).mockResolvedValue()
 })
 
@@ -135,6 +139,22 @@ describe('parseDefiLlamaResponse', () => {
     expect(prices.get(usdcKey)?.get(1700003600)).toBe(1.001)
     expect(prices.get(daiKey)?.get(1700000000)).toBe(0.999)
     expect(prices.get(daiKey)?.get(1700003600)).toBe(1)
+  })
+
+  it('skips token-timestamp pairs already cached as misses', async () => {
+    const usdcKey = 'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    vi.mocked(getCachedPriceMisses).mockResolvedValue(new Map([[usdcKey, new Set([1700000000])]]))
+    const fetchStub = vi.fn()
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPrices(
+      [{ chainId: 1, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' }],
+      [1700000000]
+    )
+
+    expect(fetchStub).not.toHaveBeenCalled()
+    expect(prices.get(usdcKey)?.size).toBe(0)
   })
 
   it('merges multiple timestamp slices for the same token into a single batch request', async () => {
@@ -507,6 +527,28 @@ describe('parseDefiLlamaResponse', () => {
     expect(vi.mocked(saveCachedPrices)).toHaveBeenCalledWith([
       { tokenKey: usdcKey, timestamp: 1700000000, price: 1.001 },
       { tokenKey: usdcKey, timestamp: 1700003600, price: 0.999 }
+    ])
+  })
+
+  it('caches exact token-timestamp misses when DefiLlama returns no prices for a token', async () => {
+    const usdcKey = 'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    const fetchStub = vi.fn().mockResolvedValue(
+      createBatchResponse({
+        coins: {}
+      })
+    )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPrices(
+      [{ chainId: 1, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' }],
+      [1700000000, 1700003600]
+    )
+
+    expect(prices.get(usdcKey)?.size).toBe(0)
+    expect(vi.mocked(saveCachedPriceMisses)).toHaveBeenCalledWith([
+      { tokenKey: usdcKey, timestamp: 1700000000 },
+      { tokenKey: usdcKey, timestamp: 1700003600 }
     ])
   })
 })
