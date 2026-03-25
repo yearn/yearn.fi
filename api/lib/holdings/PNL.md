@@ -48,6 +48,7 @@ For known-basis lots, USD basis is derived later from:
 - the underlying token price at that acquisition timestamp
 
 Known-basis lots come from indexed deposit / withdrawal context.
+Known-basis lots can also come from recognized synthetic acquisition flows, such as supported CoW settlement receipt enrichment on Ethereum mainnet.
 Unknown-basis lots usually come from share transfers where the economic source cannot be proven.
 
 ## Mental Model
@@ -97,6 +98,8 @@ The PnL pipeline therefore also loads additional events from the same transactio
 
 Without that enrichment, many transfers would stay permanently ambiguous.
 
+For a small set of recognized Ethereum mainnet CoW settlement flows, the pipeline also inspects the transaction receipt and settlement logs so it can synthesize a known-basis acquisition instead of treating the received position as an unknown transfer-in.
+
 ### 3. Kong PPS
 
 Historical and current price-per-share is used to translate vault shares into underlying asset amounts.
@@ -104,6 +107,8 @@ Historical and current price-per-share is used to translate vault shares into un
 ### 4. DefiLlama Prices
 
 Historical and current underlying token prices are used to express PnL in USD.
+
+In this document, "underlying token" means the vault asset token from Kong metadata, not the Yearn share token itself. For some vaults that asset token is an LP token or pool token rather than a plain ERC20 like USDC.
 
 That includes:
 
@@ -207,6 +212,14 @@ Example:
 - the user only appears on part of that flow
 
 The tx-hash enrichment step lets the engine inspect the whole transaction and attribute basis to the correct family.
+
+For recognized CoW settlement buys, the engine can synthesize a deposit-like acquisition from the receipt by combining:
+
+- the settlement trade log
+- the asset transfer into the vault
+- the share mint from the vault
+
+This lets the destination position start as a known-basis lot instead of a partial transfer-in when the flow is sufficiently unambiguous.
 
 ## How Migrations Work
 

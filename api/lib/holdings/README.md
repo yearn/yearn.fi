@@ -69,13 +69,13 @@ User Request → API Server → Aggregator → Response
 │                                                                  │
 │  4. For each vault position:                                     │
 │     a. Fetch vault metadata (Kong) ─────────────────────────► │
-│        • Token address, decimals                                 │
+│        • Vault asset token address, decimals                      │
 │                                                                  │
 │     b. Fetch Price Per Share (Kong) ────────────────────────► │
 │        • Historical PPS timeseries                               │
 │                                                                  │
 │     c. Fetch Token Price (DefiLlama) ───────────────────────► │
-│        • Historical USD prices                                   │
+│        • Historical USD prices for the vault asset token         │
 │                                                                  │
 │  5. Calculate USD Value per day ────────────────────────────► │
 │                                                                  │
@@ -91,7 +91,7 @@ USD Value = Shares × Price Per Share × Underlying Token Price
 Where:
   • Shares        = User's vault token balance (from events)
   • PPS           = Price Per Share at that timestamp (from Kong)
-  • Token Price   = USD price of underlying token (from DefiLlama)
+  • Token Price   = USD price of the vault asset token (from DefiLlama)
 ```
 
 ### Example:
@@ -103,6 +103,10 @@ USDC:     $1.00
 USD Value = 100 × 1.05 × 1.00 = $105.00
 ```
 
+For LP-based vaults, the "token price" can be an LP token price rather than a plain asset like USDC. For example, a Curve strategy vault may use the Curve LP token as its asset token, and the USD value is still computed as:
+
+`vault shares × PPS × LP token USD price`
+
 ## Components
 
 ### Services
@@ -113,7 +117,8 @@ USD Value = 100 × 1.05 × 1.00 = $105.00
 | `kong.ts` | Kong API | Fetch historical Price Per Share timeseries |
 | `vaults.ts` | Kong API | Fetch vault metadata (token info, decimals, staking) |
 | `defillama.ts` | DefiLlama API | Fetch historical token prices |
-| `cache.ts` | PostgreSQL | Cache daily USD totals per user + token prices |
+| `cow.ts` | Ethereum RPC + CoW settlement logs | Synthesize known-basis acquisitions for recognized CoW settlement flows |
+| `cache.ts` | PostgreSQL | Cache daily USD totals per user + positive token prices + exact price misses |
 | `holdings.ts` | Local | Build position timeline, calculate share balances |
 | `aggregator.ts` | Local | Orchestrate all services, main entry point |
 | `pnl.ts` | Local | Build family ledgers, FIFO lots, and PnL summaries |
@@ -179,6 +184,8 @@ The PnL endpoint fetches more context than the history endpoint:
 2. Additional transaction-scoped events for the same transaction hashes
 
 That transaction-hash enrichment lets the PnL engine match same-transaction router flows, staking wraps/unwraps, and known migration rollovers even when the economically relevant event was not emitted directly on the user's address filter.
+
+For some recognized Ethereum mainnet CoW settlement transactions, the PnL path also inspects the transaction receipt and settlement logs to synthesize a deposit-like acquisition with known basis. This reduces false partial-cost-basis cases for routed buys into vault asset/share positions.
 
 ## API Endpoints
 
@@ -414,11 +421,14 @@ Response:
 | `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
 | `ENVIO_PASSWORD` | No | `''` (empty) | Envio Hasura admin secret (header skipped if empty or 'testing') |
 | `DATABASE_URL` | No | `null` | PostgreSQL connection string (caching disabled if not set) |
+| `ETHEREUM_RPC_URL` | No | `https://ethereum-rpc.publicnode.com` | Mainnet RPC used for receipt-level enrichment such as CoW settlement decoding |
+| `DEFILLAMA_API_KEY` | No | `''` (empty) | Enables the paid DefiLlama GET route at `https://pro-api.llama.fi/{key}/coins/batchHistorical?coins=...` |
 | `ADMIN_SECRET` | No | `null` | Secret for admin endpoints (cache invalidation). Use 32+ char random string. |
 
 **Note**: Kong and DefiLlama base URLs are hardcoded:
 - Kong: `https://kong.yearn.fi`
-- DefiLlama: `https://coins.llama.fi`
+- DefiLlama free: `https://coins.llama.fi`
+- DefiLlama pro: `https://pro-api.llama.fi`
 
 ## Pagination & Performance
 
@@ -517,6 +527,7 @@ Today's value uses the latest available Price Per Share from Kong, which may upd
 1. **PostgreSQL** (server):
    - Daily totals cached per user (today recalculated on each request)
    - Token prices cached globally (shared across all users)
+   - Exact token/timestamp price misses cached globally with TTL to suppress repeated unsupported DefiLlama fetches
 2. **HTTP Cache-Control** (CDN): `s-maxage=300, stale-while-revalidate=600`
 3. **TanStack Query** (client): 4-hour cache duration
 
@@ -541,6 +552,15 @@ CREATE TABLE IF NOT EXISTS token_prices (
   PRIMARY KEY (token_key, timestamp)
 );
 
+-- Exact token/timestamp misses for unsupported DefiLlama points
+CREATE TABLE IF NOT EXISTS token_price_misses (
+  token_key  VARCHAR(100) NOT NULL,
+  timestamp  INTEGER NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  PRIMARY KEY (token_key, timestamp)
+);
+
 -- Vault invalidation timestamps (for cache invalidation)
 CREATE TABLE IF NOT EXISTS vault_invalidations (
   vault_address  VARCHAR(42) NOT NULL,
@@ -550,11 +570,14 @@ CREATE TABLE IF NOT EXISTS vault_invalidations (
 );
 
 CREATE INDEX IF NOT EXISTS idx_token_prices_token_key ON token_prices(token_key);
+CREATE INDEX IF NOT EXISTS idx_token_price_misses_token_key ON token_price_misses(token_key);
+CREATE INDEX IF NOT EXISTS idx_token_price_misses_expires_at ON token_price_misses(expires_at);
 CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
 ```
 
 - `holdings_totals`: ~365 rows per user for full history
-- `token_prices`: Shared cache, reduces DefiLlama API calls from ~45s to ~100ms for repeat requests
+- `token_prices`: Shared positive-price cache, reduces DefiLlama API calls for exact timestamp hits
+- `token_price_misses`: Shared negative cache for exact unsupported price points, currently stored with a 7-day TTL
 - `vault_invalidations`: Tracks when vaults were invalidated for lazy cache refresh
 
 ## Cache Invalidation
