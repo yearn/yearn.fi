@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Chain } from 'viem'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 describe('supportedChains exports', () => {
   afterEach(() => {

@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
 import type { Chain } from 'viem'
 import { base, mainnet } from 'viem/chains'
+import { describe, expect, it } from 'vitest'
 import { getWagmiConfigChains } from './wagmiChains'
 
 describe('getWagmiConfigChains', () => {

@@ -1,5 +1,4 @@
 import { Button } from '@shared/components/Button'
-import { getPublicClient } from '@wagmi/core'
 import { useNotificationsActions } from '@shared/contexts/useNotificationsActions'
 import {
   type AppUseSimulateContractReturnType,
@@ -10,6 +9,7 @@ import {
 import type { TCreateNotificationParams } from '@shared/types/notifications'
 import { cl } from '@shared/utils'
 import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
+import { getPublicClient } from '@wagmi/core'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useReward } from 'react-rewards'
 import type { TypedData, TypedDataDomain } from 'viem'
