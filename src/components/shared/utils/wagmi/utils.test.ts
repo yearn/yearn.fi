@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mainnet } from 'viem/chains'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 describe('getNetwork', () => {
   afterEach(() => {

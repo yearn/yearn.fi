@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import { base, mainnet } from 'viem/chains'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 describe('getTransportRpcUrlsForChain', () => {
   afterEach(() => {
