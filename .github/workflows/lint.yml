@@ -34,3 +34,29 @@ jobs:
 
       - name: Lint
         run: bun run lint
+
+  live-staking-regressions:
+    name: Live staking regressions
+    runs-on: ubuntu-latest
+    env:
+      VITE_RPC_URI_FOR_1: ${{ secrets.VITE_RPC_URI_FOR_1 }}
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+
+      - name: Install project dependencies
+        run: bun install
+
+      - name: Run live staking regression tests
+        run: bun run test:live:staking
