@@ -15,7 +15,6 @@
     "tslint": "tsc -p tsconfig.json --noEmit",
     "bump": "bump",
     "test": "vitest run",
-    "test:live:staking": "vitest run src/components/pages/vaults/components/widget/deposit/valuation.live.test.ts",
     "clean": "bash clean.sh",
     "prepare": "husky"
   },
