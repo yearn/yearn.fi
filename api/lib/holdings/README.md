@@ -183,7 +183,7 @@ The PnL endpoint fetches more context than the history endpoint:
 1. Address-scoped events for the user
 2. Additional transaction-scoped events for the same transaction hashes
 
-That transaction-hash enrichment lets the PnL engine match same-transaction router flows, staking wraps/unwraps, and known migration rollovers even when the economically relevant event was not emitted directly on the user's address filter.
+That transaction-hash enrichment lets the PnL engine match same-transaction router flows, staking stake/unstake moves, and known migration rollovers even when the economically relevant event was not emitted directly on the user's address filter.
 
 For some recognized Ethereum mainnet CoW settlement transactions, the PnL path also inspects the transaction receipt and settlement logs to synthesize a deposit-like acquisition with known basis. This reduces false partial-cost-basis cases for routed buys into vault asset/share positions.
 
@@ -283,9 +283,9 @@ Response (abridged):
 The live response also includes:
 
 - share balances
-- wallet vs staked splits
+- vault-share vs staked-share splits
 - per-vault event counts
-- explicit underlying amounts (`currentUnderlying`, `walletUnderlying`, `stakedUnderlying`)
+- explicit underlying amounts (`currentUnderlying`, `vaultUnderlying`, `stakedUnderlying`)
 - explicit known-basis metrics (`knownCostBasisUnderlying`, `knownCostBasisUsd`, `currentKnownUnderlying`, `currentUnknownUnderlying`)
 
 Notes:
@@ -294,8 +294,8 @@ Notes:
 - Withdrawals realize PnL from the oldest remaining lots first.
 - `totalPnlUsd = totalRealizedPnlUsd + totalUnrealizedPnlUsd`.
 - `totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd`.
-- Staking wrappers are collapsed into the underlying vault family. Staked shares and wallet-held shares share the same FIFO lots and only change location.
-- Underlying vault `Deposit` and `Withdraw` events define cost basis and realized proceeds. Staking `Deposit` and `Withdraw` events are treated as wrap or unwrap moves, not as economic entries.
+- Staking wrappers are collapsed into the underlying vault family. Staked shares and directly held vault shares share the same FIFO lots and only change location.
+- Underlying vault `Deposit` and `Withdraw` events define cost basis and realized proceeds. Staking `Deposit` and `Withdraw` events are treated as stake or unstake moves, not as economic entries.
 - Same-transaction router flows can carry basis into or out of a staking vault family when the transfer can be matched to an indexed underlying vault deposit or withdrawal in the same transaction.
 - Known migrator transactions can roll basis from a source family into a destination family. When source basis cannot be reconstructed, the destination shares stay partial / unknown-basis.
 - Plain share transfers may leave some lots with unknown cost basis. Those vaults are returned with `costBasisStatus: "partial"`. In `strict` mode, the unmatched current portion is reported in `unknownCostBasisValueUsd`; in `zero_basis` and `windfall`, that value is zeroed and the economics are attributed according to `unknownTransferInPnlMode`.
@@ -322,11 +322,11 @@ Query params:
 - `paginationMode` (optional): `paged` or `all` (default: `paged`)
 
 Response additions per vault:
-- `currentLots.wallet` and `currentLots.staked`
+- `currentLots.vault` and `currentLots.staked`
 - `realizedEntries` with consumed lots and USD/underlying proceeds/basis/PnL
 - `unknownTransferInEntries` with receipt-time valuation
 - `unknownWithdrawalEntries` with proceeds and consumed unknown lots
-- `journal` rows with before/after lot summaries for wallet and staked locations
+- `journal` rows with before/after lot summaries for vault-share and staked-share locations
 
 The drilldown response uses the same summary fields and top-level identity fields as `/api/holdings/pnl`, but each vault row is expanded for UI drilldown rather than table rendering.
 

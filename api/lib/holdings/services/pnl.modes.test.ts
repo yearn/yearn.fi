@@ -505,7 +505,7 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
 
     expect(response.vaults[0]).toMatchObject({
       currentUnderlying: 1,
-      walletUnderlying: 1,
+      vaultUnderlying: 1,
       stakedUnderlying: 0,
       currentKnownUnderlying: 1,
       currentUnknownUnderlying: 0,
@@ -525,11 +525,11 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     const response = await getSingleVaultDrilldownResponse(createTransferInContext(), 'windfall')
     const vault = response.vaults[0]
 
-    expect(vault.currentLots.wallet).toHaveLength(2)
+    expect(vault.currentLots.vault).toHaveLength(2)
     expect(vault.currentLots.staked).toHaveLength(0)
     expect(vault.unknownTransferInEntries).toHaveLength(1)
     expect(vault.unknownTransferInEntries[0]).toMatchObject({
-      location: 'wallet',
+      location: 'vault',
       sharesFormatted: 100,
       receiptValueUsd: 200
     })
@@ -537,7 +537,7 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(vault.journal).toHaveLength(2)
     expect(vault.journal[0]).toMatchObject({
       txHash: '0xtransfer-in',
-      walletLotsAfter: {
+      vaultLotsAfter: {
         totalShares: '100000000',
         unknownShares: '100000000'
       }

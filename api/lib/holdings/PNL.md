@@ -47,7 +47,7 @@ A lot has:
 
 - A share amount
 - A location
-  - wallet
+  - vault
   - staked
 - An acquisition timestamp
 - A cost basis in underlying assets, or `null` when basis is unknown
@@ -138,7 +138,7 @@ Raw events are normalized into a transaction journal.
 
 The ledger builder tracks:
 
-- wallet lots
+- vault-share lots
 - staked lots
 - realized entries
 - unknown transfer-in entries
@@ -204,12 +204,12 @@ Staking deposits and withdrawals are not treated as new investments by default.
 
 Instead, they usually mean:
 
-- wallet shares moved into staked location
-- or staked shares moved back to wallet location
+- vault shares moved into staked location
+- or staked shares moved back to vault location
 
 The lot should stay the same. Only its location changes.
 
-This avoids fake realized PnL when the user simply wraps or unwraps a Yearn position.
+This avoids fake realized PnL when the user simply stakes or unstakes a Yearn position.
 
 ## How Router Flows Work
 
@@ -422,8 +422,8 @@ The compact endpoint now also exposes explicit basis and underlying fields:
 
 - `currentUnderlying`
   - current underlying asset amount represented by all current shares
-- `walletUnderlying`
-  - current underlying amount still in the wallet location
+- `vaultUnderlying`
+  - current underlying amount still in the direct vault-share location
 - `stakedUnderlying`
   - current underlying amount in the staking location
 - `currentKnownUnderlying`
@@ -441,7 +441,7 @@ These fields are useful for UI without forcing a drilldown request.
 
 The drilldown endpoint adds per-vault:
 
-- `currentLots.wallet`
+- `currentLots.vault`
 - `currentLots.staked`
 - `realizedEntries`
 - `unknownTransferInEntries`
@@ -452,8 +452,8 @@ The journal is transaction-oriented. It records:
 
 - the computed vault-family view for that transaction
 - whether the wallet had direct address activity in that transaction
-- realized / wrapped / unwrapped / unknown-transfer deltas
-- lot summaries before and after the transaction for wallet and staked locations
+- realized / stake / unstake / unknown-transfer deltas
+- lot summaries before and after the transaction for vault-share and staked-share locations
 
 ## What Is Covered Well Today
 
@@ -461,7 +461,7 @@ The current implementation is strong on:
 
 - direct deposit / withdraw accounting
 - FIFO cost basis for known lots
-- staking wrap and unwrap handling
+- stake and unstake handling for staking wrappers
 - same-transaction router context, when events can be linked by tx hash
 - known migration paths
 - explicit treatment of unknown basis instead of silently inventing numbers

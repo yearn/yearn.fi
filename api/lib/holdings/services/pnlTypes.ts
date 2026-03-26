@@ -1,6 +1,6 @@
 import type { VaultVersion } from './graphql'
 
-export type TLocation = 'wallet' | 'staked'
+export type TLocation = 'vault' | 'staked'
 
 export type TLot = {
   shares: bigint
@@ -51,19 +51,19 @@ export type TPnlDebugJournalRow = {
   depositAssets: string
   withdrawShares: string
   withdrawAssets: string
-  wrapShares: string
-  unwrapShares: string
-  unknownInWalletShares: string
+  stakeShares: string
+  unstakeShares: string
+  unknownInVaultShares: string
   unknownInStakedShares: string
-  transferOutWalletShares: string
+  transferOutVaultShares: string
   transferOutStakedShares: string
   realizedKnownShares: string
   realizedProceedsAssets: string
   realizedBasisAssets: string
   realizedPnlAssets: string
-  walletLotsBefore: TLotSummary
+  vaultLotsBefore: TLotSummary
   stakedLotsBefore: TLotSummary
-  walletLotsAfter: TLotSummary
+  vaultLotsAfter: TLotSummary
   stakedLotsAfter: TLotSummary
 }
 
@@ -130,7 +130,7 @@ export interface FamilyPnlLedger {
   chainId: number
   vaultAddress: string
   stakingVaultAddress: string | null
-  walletLots: TLot[]
+  vaultLots: TLot[]
   stakedLots: TLot[]
   totalDepositedAssets: bigint
   totalWithdrawnAssets: bigint
@@ -146,8 +146,8 @@ export interface FamilyPnlLedger {
   eventCounts: {
     underlyingDeposits: number
     underlyingWithdrawals: number
-    stakingWraps: number
-    stakingUnwraps: number
+    stakes: number
+    unstakes: number
     externalTransfersIn: number
     externalTransfersOut: number
     migrationsIn: number
@@ -164,8 +164,8 @@ export interface HoldingsPnLVault {
   unknownTransferInPnlMode: UnknownTransferInPnlMode
   shares: string
   sharesFormatted: number
-  walletShares: string
-  walletSharesFormatted: number
+  vaultShares: string
+  vaultSharesFormatted: number
   stakedShares: string
   stakedSharesFormatted: number
   knownCostBasisShares: string
@@ -173,14 +173,14 @@ export interface HoldingsPnLVault {
   pricePerShare: number
   tokenPrice: number
   currentUnderlying: number
-  walletUnderlying: number
+  vaultUnderlying: number
   stakedUnderlying: number
   currentKnownUnderlying: number
   currentUnknownUnderlying: number
   knownCostBasisUnderlying: number
   knownCostBasisUsd: number
   currentValueUsd: number
-  walletValueUsd: number
+  vaultValueUsd: number
   stakedValueUsd: number
   unknownCostBasisValueUsd: number
   windfallPnlUsd: number
@@ -195,8 +195,8 @@ export interface HoldingsPnLVault {
   eventCounts: {
     underlyingDeposits: number
     underlyingWithdrawals: number
-    stakingWraps: number
-    stakingUnwraps: number
+    stakes: number
+    unstakes: number
     externalTransfersIn: number
     externalTransfersOut: number
     migrationsIn: number
@@ -296,16 +296,16 @@ export type THoldingsPnlJournalEntry = {
   withdrawSharesFormatted: number
   withdrawAssets: string
   withdrawAssetsFormatted: number
-  wrapShares: string
-  wrapSharesFormatted: number
-  unwrapShares: string
-  unwrapSharesFormatted: number
-  unknownInWalletShares: string
-  unknownInWalletSharesFormatted: number
+  stakeShares: string
+  stakeSharesFormatted: number
+  unstakeShares: string
+  unstakeSharesFormatted: number
+  unknownInVaultShares: string
+  unknownInVaultSharesFormatted: number
   unknownInStakedShares: string
   unknownInStakedSharesFormatted: number
-  transferOutWalletShares: string
-  transferOutWalletSharesFormatted: number
+  transferOutVaultShares: string
+  transferOutVaultSharesFormatted: number
   transferOutStakedShares: string
   transferOutStakedSharesFormatted: number
   realizedKnownShares: string
@@ -316,15 +316,15 @@ export type THoldingsPnlJournalEntry = {
   realizedBasisAssetsFormatted: number
   realizedPnlAssets: string
   realizedPnlAssetsFormatted: number
-  walletLotsBefore: THoldingsPnlJournalLotSummary
+  vaultLotsBefore: THoldingsPnlJournalLotSummary
   stakedLotsBefore: THoldingsPnlJournalLotSummary
-  walletLotsAfter: THoldingsPnlJournalLotSummary
+  vaultLotsAfter: THoldingsPnlJournalLotSummary
   stakedLotsAfter: THoldingsPnlJournalLotSummary
 }
 
 export interface HoldingsPnLDrilldownVault extends HoldingsPnLVault {
   currentLots: {
-    wallet: THoldingsPnlLot[]
+    vault: THoldingsPnlLot[]
     staked: THoldingsPnlLot[]
   }
   realizedEntries: THoldingsPnlRealizedEntry[]

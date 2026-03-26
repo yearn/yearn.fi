@@ -16,8 +16,8 @@ export function toHoldingsPnlEventCounts(vault: FamilyPnlLedger): HoldingsPnLVau
   return {
     underlyingDeposits: vault.eventCounts.underlyingDeposits,
     underlyingWithdrawals: vault.eventCounts.underlyingWithdrawals,
-    stakingWraps: vault.eventCounts.stakingWraps,
-    stakingUnwraps: vault.eventCounts.stakingUnwraps,
+    stakes: vault.eventCounts.stakes,
+    unstakes: vault.eventCounts.unstakes,
     externalTransfersIn: vault.eventCounts.externalTransfersIn,
     externalTransfersOut: vault.eventCounts.externalTransfersOut,
     migrationsIn: vault.eventCounts.migrationsIn,
@@ -122,11 +122,11 @@ export function createMissingMetadataPnlVault(
   tokenPrice: number,
   resolvedPricePerShare: number
 ): HoldingsPnLVault {
-  const walletSharesRaw = sumShares(vault.walletLots)
+  const vaultSharesRaw = sumShares(vault.vaultLots)
   const stakedSharesRaw = sumShares(vault.stakedLots)
-  const totalSharesRaw = walletSharesRaw + stakedSharesRaw
-  const knownLots = [...vault.walletLots, ...vault.stakedLots].filter((lot) => lot.costBasis !== null)
-  const unknownLots = [...vault.walletLots, ...vault.stakedLots].filter((lot) => lot.costBasis === null)
+  const totalSharesRaw = vaultSharesRaw + stakedSharesRaw
+  const knownLots = [...vault.vaultLots, ...vault.stakedLots].filter((lot) => lot.costBasis !== null)
+  const unknownLots = [...vault.vaultLots, ...vault.stakedLots].filter((lot) => lot.costBasis === null)
 
   return {
     chainId: vault.chainId,
@@ -137,8 +137,8 @@ export function createMissingMetadataPnlVault(
     unknownTransferInPnlMode,
     shares: totalSharesRaw.toString(),
     sharesFormatted: 0,
-    walletShares: walletSharesRaw.toString(),
-    walletSharesFormatted: 0,
+    vaultShares: vaultSharesRaw.toString(),
+    vaultSharesFormatted: 0,
     stakedShares: stakedSharesRaw.toString(),
     stakedSharesFormatted: 0,
     knownCostBasisShares: sumShares(knownLots).toString(),
@@ -146,14 +146,14 @@ export function createMissingMetadataPnlVault(
     pricePerShare: resolvedPricePerShare,
     tokenPrice,
     currentUnderlying: 0,
-    walletUnderlying: 0,
+    vaultUnderlying: 0,
     stakedUnderlying: 0,
     currentKnownUnderlying: 0,
     currentUnknownUnderlying: 0,
     knownCostBasisUnderlying: 0,
     knownCostBasisUsd: 0,
     currentValueUsd: 0,
-    walletValueUsd: 0,
+    vaultValueUsd: 0,
     stakedValueUsd: 0,
     unknownCostBasisValueUsd: 0,
     windfallPnlUsd: 0,

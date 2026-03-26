@@ -162,20 +162,20 @@ function serializeJournalRows(
       shareDecimals === undefined ? row.withdrawShares : formatAmount(BigInt(row.withdrawShares), shareDecimals),
     wdAssets:
       assetDecimals === undefined ? row.withdrawAssets : formatAmount(BigInt(row.withdrawAssets), assetDecimals),
-    wrap: shareDecimals === undefined ? row.wrapShares : formatAmount(BigInt(row.wrapShares), shareDecimals),
-    unwrap: shareDecimals === undefined ? row.unwrapShares : formatAmount(BigInt(row.unwrapShares), shareDecimals),
-    unkWallet:
+    stake: shareDecimals === undefined ? row.stakeShares : formatAmount(BigInt(row.stakeShares), shareDecimals),
+    unstake: shareDecimals === undefined ? row.unstakeShares : formatAmount(BigInt(row.unstakeShares), shareDecimals),
+    unkVault:
       shareDecimals === undefined
-        ? row.unknownInWalletShares
-        : formatAmount(BigInt(row.unknownInWalletShares), shareDecimals),
+        ? row.unknownInVaultShares
+        : formatAmount(BigInt(row.unknownInVaultShares), shareDecimals),
     unkStaked:
       shareDecimals === undefined
         ? row.unknownInStakedShares
         : formatAmount(BigInt(row.unknownInStakedShares), shareDecimals),
-    outWallet:
+    outVault:
       shareDecimals === undefined
-        ? row.transferOutWalletShares
-        : formatAmount(BigInt(row.transferOutWalletShares), shareDecimals),
+        ? row.transferOutVaultShares
+        : formatAmount(BigInt(row.transferOutVaultShares), shareDecimals),
     outStaked:
       shareDecimals === undefined
         ? row.transferOutStakedShares
@@ -213,7 +213,7 @@ function formatLotSummaryForResponse(
   summary: TLotSummary,
   shareDecimals: number,
   assetDecimals: number
-): HoldingsPnLDrilldownVault['journal'][number]['walletLotsBefore'] {
+): HoldingsPnLDrilldownVault['journal'][number]['vaultLotsBefore'] {
   return {
     ...summary,
     totalSharesFormatted: formatAmount(BigInt(summary.totalShares), shareDecimals),
@@ -232,7 +232,7 @@ function serializeLotForResponse(args: {
   currentTokenPrice: number
   ppsMap: Map<number, number> | undefined
   tokenPriceMap: Map<number, number> | null
-}): HoldingsPnLDrilldownVault['currentLots']['wallet'][number] {
+}): HoldingsPnLDrilldownVault['currentLots']['vault'][number] {
   const { lot, index, shareDecimals, assetDecimals, resolvedPricePerShare, currentTokenPrice, ppsMap, tokenPriceMap } =
     args
   const acquiredAt = lot.acquiredAt ?? null
@@ -385,16 +385,16 @@ function serializeJournalEntryForResponse(args: {
     withdrawSharesFormatted: formatAmount(BigInt(row.withdrawShares), shareDecimals),
     withdrawAssets: row.withdrawAssets,
     withdrawAssetsFormatted: formatAmount(BigInt(row.withdrawAssets), assetDecimals),
-    wrapShares: row.wrapShares,
-    wrapSharesFormatted: formatAmount(BigInt(row.wrapShares), shareDecimals),
-    unwrapShares: row.unwrapShares,
-    unwrapSharesFormatted: formatAmount(BigInt(row.unwrapShares), shareDecimals),
-    unknownInWalletShares: row.unknownInWalletShares,
-    unknownInWalletSharesFormatted: formatAmount(BigInt(row.unknownInWalletShares), shareDecimals),
+    stakeShares: row.stakeShares,
+    stakeSharesFormatted: formatAmount(BigInt(row.stakeShares), shareDecimals),
+    unstakeShares: row.unstakeShares,
+    unstakeSharesFormatted: formatAmount(BigInt(row.unstakeShares), shareDecimals),
+    unknownInVaultShares: row.unknownInVaultShares,
+    unknownInVaultSharesFormatted: formatAmount(BigInt(row.unknownInVaultShares), shareDecimals),
     unknownInStakedShares: row.unknownInStakedShares,
     unknownInStakedSharesFormatted: formatAmount(BigInt(row.unknownInStakedShares), shareDecimals),
-    transferOutWalletShares: row.transferOutWalletShares,
-    transferOutWalletSharesFormatted: formatAmount(BigInt(row.transferOutWalletShares), shareDecimals),
+    transferOutVaultShares: row.transferOutVaultShares,
+    transferOutVaultSharesFormatted: formatAmount(BigInt(row.transferOutVaultShares), shareDecimals),
     transferOutStakedShares: row.transferOutStakedShares,
     transferOutStakedSharesFormatted: formatAmount(BigInt(row.transferOutStakedShares), shareDecimals),
     realizedKnownShares: row.realizedKnownShares,
@@ -405,9 +405,9 @@ function serializeJournalEntryForResponse(args: {
     realizedBasisAssetsFormatted: formatAmount(BigInt(row.realizedBasisAssets), assetDecimals),
     realizedPnlAssets: row.realizedPnlAssets,
     realizedPnlAssetsFormatted: formatAmount(BigInt(row.realizedPnlAssets), assetDecimals),
-    walletLotsBefore: formatLotSummaryForResponse(row.walletLotsBefore, shareDecimals, assetDecimals),
+    vaultLotsBefore: formatLotSummaryForResponse(row.vaultLotsBefore, shareDecimals, assetDecimals),
     stakedLotsBefore: formatLotSummaryForResponse(row.stakedLotsBefore, shareDecimals, assetDecimals),
-    walletLotsAfter: formatLotSummaryForResponse(row.walletLotsAfter, shareDecimals, assetDecimals),
+    vaultLotsAfter: formatLotSummaryForResponse(row.vaultLotsAfter, shareDecimals, assetDecimals),
     stakedLotsAfter: formatLotSummaryForResponse(row.stakedLotsAfter, shareDecimals, assetDecimals)
   }
 }
@@ -661,7 +661,7 @@ function createFamilyLedger(chainId: number, familyVaultAddress: string): Family
     chainId,
     vaultAddress: familyVaultAddress,
     stakingVaultAddress: getStakingVaultAddress(chainId, familyVaultAddress),
-    walletLots: [],
+    vaultLots: [],
     stakedLots: [],
     totalDepositedAssets: ZERO,
     totalWithdrawnAssets: ZERO,
@@ -677,8 +677,8 @@ function createFamilyLedger(chainId: number, familyVaultAddress: string): Family
     eventCounts: {
       underlyingDeposits: 0,
       underlyingWithdrawals: 0,
-      stakingWraps: 0,
-      stakingUnwraps: 0,
+      stakes: 0,
+      unstakes: 0,
       externalTransfersIn: 0,
       externalTransfersOut: 0,
       migrationsIn: 0,
@@ -705,12 +705,12 @@ function getOrCreateLedger(
 }
 
 function getLocationLots(ledger: FamilyPnlLedger, location: TLocation): TLot[] {
-  return location === 'wallet' ? ledger.walletLots : ledger.stakedLots
+  return location === 'vault' ? ledger.vaultLots : ledger.stakedLots
 }
 
 function setLocationLots(ledger: FamilyPnlLedger, location: TLocation, lots: TLot[]): void {
-  if (location === 'wallet') {
-    ledger.walletLots = lots
+  if (location === 'vault') {
+    ledger.vaultLots = lots
     return
   }
 
@@ -844,7 +844,7 @@ function shouldIncludeFamilyVaultAssetEvent(
 
 function isLedgerEmpty(ledger: FamilyPnlLedger): boolean {
   return (
-    sumShares(ledger.walletLots) === ZERO &&
+    sumShares(ledger.vaultLots) === ZERO &&
     sumShares(ledger.stakedLots) === ZERO &&
     ledger.totalDepositedAssets === ZERO &&
     ledger.totalWithdrawnAssets === ZERO &&
@@ -864,7 +864,7 @@ function isDirectInteractionLedger(ledger: FamilyPnlLedger): boolean {
 }
 
 function hasCurrentShares(ledger: FamilyPnlLedger): boolean {
-  return sumShares(ledger.walletLots) > ZERO || sumShares(ledger.stakedLots) > ZERO
+  return sumShares(ledger.vaultLots) > ZERO || sumShares(ledger.stakedLots) > ZERO
 }
 
 function isCurrentTransferOnlyHoldingsLedger(ledger: FamilyPnlLedger): boolean {
@@ -873,7 +873,7 @@ function isCurrentTransferOnlyHoldingsLedger(ledger: FamilyPnlLedger): boolean {
     !isDirectInteractionLedger(ledger) &&
     ledger.realizedEntries.length === 0 &&
     ledger.unknownWithdrawalEntries.length === 0 &&
-    [...ledger.walletLots, ...ledger.stakedLots].every((lot) => lot.costBasis === null)
+    [...ledger.vaultLots, ...ledger.stakedLots].every((lot) => lot.costBasis === null)
   )
 }
 
@@ -913,7 +913,7 @@ function applyRealization(
   totalShares: bigint,
   totalAssets: bigint,
   stakingShares: bigint,
-  walletShares: bigint,
+  vaultShares: bigint,
   timestamp: number
 ): {
   realizedPnlAssets: bigint
@@ -921,18 +921,18 @@ function applyRealization(
   unknownShares: bigint
   knownProceedsAssets: bigint
   knownCostBasisAssets: bigint
-  consumedWalletShares: bigint
+  consumedVaultShares: bigint
   consumedStakedShares: bigint
 } {
   const consumedStaked = consumeFromLocation(ledger, 'staked', stakingShares)
-  const consumedWallet = consumeFromLocation(ledger, 'wallet', walletShares)
-  const consumedLots = [...consumedStaked.consumedLots, ...consumedWallet.consumedLots]
+  const consumedVault = consumeFromLocation(ledger, 'vault', vaultShares)
+  const consumedLots = [...consumedStaked.consumedLots, ...consumedVault.consumedLots]
   const knownLots = consumedLots.filter((lot) => lot.costBasis !== null)
   const unknownLots = consumedLots.filter((lot) => lot.costBasis === null)
   const knownShares = sumShares(knownLots)
   const knownCostBasis = sumKnownCostBasis(knownLots)
   const knownProceeds = totalShares === ZERO ? ZERO : (totalAssets * knownShares) / totalShares
-  const unknownShares = consumedStaked.consumedShares + consumedWallet.consumedShares - knownShares
+  const unknownShares = consumedStaked.consumedShares + consumedVault.consumedShares - knownShares
   const unknownProceeds = totalShares === ZERO ? ZERO : (totalAssets * unknownShares) / totalShares
 
   if (knownShares > ZERO) {
@@ -955,9 +955,9 @@ function applyRealization(
     })
   }
 
-  if (consumedStaked.consumedShares + consumedWallet.consumedShares < totalShares) {
+  if (consumedStaked.consumedShares + consumedVault.consumedShares < totalShares) {
     ledger.unmatchedTransferOutCount += 1
-    ledger.unmatchedTransferOutShares += totalShares - (consumedStaked.consumedShares + consumedWallet.consumedShares)
+    ledger.unmatchedTransferOutShares += totalShares - (consumedStaked.consumedShares + consumedVault.consumedShares)
   }
 
   return {
@@ -966,34 +966,34 @@ function applyRealization(
     unknownShares,
     knownProceedsAssets: knownProceeds,
     knownCostBasisAssets: knownCostBasis,
-    consumedWalletShares: consumedWallet.consumedShares,
+    consumedVaultShares: consumedVault.consumedShares,
     consumedStakedShares: consumedStaked.consumedShares
   }
 }
 
 function buildJournalView(parts: {
-  acquiredToWallet: bigint
+  acquiredToVault: bigint
   acquiredToStaked: bigint
-  walletRealizeShares: bigint
+  vaultRealizeShares: bigint
   stakingRealizeShares: bigint
-  wrapShares: bigint
-  unwrapShares: bigint
-  unknownInWalletShares: bigint
+  stakeShares: bigint
+  unstakeShares: bigint
+  unknownInVaultShares: bigint
   unknownInStakedShares: bigint
-  transferOutWalletShares: bigint
+  transferOutVaultShares: bigint
   transferOutStakedShares: bigint
 }): string {
   const labels: string[] = []
 
-  if (parts.acquiredToWallet > ZERO) labels.push('deposit->wallet')
+  if (parts.acquiredToVault > ZERO) labels.push('deposit->vault')
   if (parts.acquiredToStaked > ZERO) labels.push('deposit->staked')
-  if (parts.walletRealizeShares > ZERO) labels.push('withdraw<-wallet')
+  if (parts.vaultRealizeShares > ZERO) labels.push('withdraw<-vault')
   if (parts.stakingRealizeShares > ZERO) labels.push('withdraw<-staked')
-  if (parts.wrapShares > ZERO) labels.push('wrap')
-  if (parts.unwrapShares > ZERO) labels.push('unwrap')
-  if (parts.unknownInWalletShares > ZERO) labels.push('transfer_in_wallet_unknown')
+  if (parts.stakeShares > ZERO) labels.push('stake')
+  if (parts.unstakeShares > ZERO) labels.push('unstake')
+  if (parts.unknownInVaultShares > ZERO) labels.push('transfer_in_vault_unknown')
   if (parts.unknownInStakedShares > ZERO) labels.push('transfer_in_staked_unknown')
-  if (parts.transferOutWalletShares > ZERO) labels.push('transfer_out_wallet')
+  if (parts.transferOutVaultShares > ZERO) labels.push('transfer_out_vault')
   if (parts.transferOutStakedShares > ZERO) labels.push('transfer_out_staked')
 
   return labels.length > 0 ? labels.join(' + ') : 'no_position_change'
@@ -1004,7 +1004,7 @@ function addAcquisitionLots(
   totalShares: bigint,
   totalAssets: bigint,
   stakedShares: bigint,
-  walletShares: bigint,
+  vaultShares: bigint,
   timestamp: number
 ): void {
   if (totalShares === ZERO) {
@@ -1012,10 +1012,10 @@ function addAcquisitionLots(
   }
 
   const stakedAssets = (totalAssets * stakedShares) / totalShares
-  const walletAssets = (totalAssets * walletShares) / totalShares
+  const vaultAssets = (totalAssets * vaultShares) / totalShares
 
   addLotsToLocation(ledger, 'staked', [createLot(stakedShares, stakedAssets, timestamp)])
-  addLotsToLocation(ledger, 'wallet', [createLot(walletShares, walletAssets, timestamp)])
+  addLotsToLocation(ledger, 'vault', [createLot(vaultShares, vaultAssets, timestamp)])
 }
 
 function redistributeLotsToTargetShares(lots: TLot[], targetShares: bigint): TLot[] {
@@ -1211,15 +1211,15 @@ function processKnownMigratorCrossFamilyRollover(
   const sourceShouldLog = shouldLogLotTransactions(sourceLedger, migration.transactionHash)
   const destinationShouldLog = shouldLogLotTransactions(destinationLedger, migration.transactionHash)
   const includeDetailedLotLogs = shouldIncludeDetailedLotLogs()
-  const sourceWalletLotsBefore = sourceShouldLog ? cloneLots(sourceLedger.walletLots) : []
+  const sourceVaultLotsBefore = sourceShouldLog ? cloneLots(sourceLedger.vaultLots) : []
   const sourceStakedLotsBefore = sourceShouldLog ? cloneLots(sourceLedger.stakedLots) : []
-  const destinationWalletLotsBefore = destinationShouldLog ? cloneLots(destinationLedger.walletLots) : []
+  const destinationVaultLotsBefore = destinationShouldLog ? cloneLots(destinationLedger.vaultLots) : []
   const destinationStakedLotsBefore = destinationShouldLog ? cloneLots(destinationLedger.stakedLots) : []
 
   sourceLedger.eventCounts.migrationsOut += 1
   destinationLedger.eventCounts.migrationsIn += 1
 
-  const sourceConsumed = consumeFromLocation(sourceLedger, 'wallet', migration.sourceTransferShares)
+  const sourceConsumed = consumeFromLocation(sourceLedger, 'vault', migration.sourceTransferShares)
   const knownSourceLots = sourceConsumed.consumedLots.filter((lot) => lot.costBasis !== null)
   const knownSourceShares = sumShares(knownSourceLots)
   const knownDestinationShares =
@@ -1231,7 +1231,7 @@ function processKnownMigratorCrossFamilyRollover(
   const unknownDestinationShares = migration.destinationDepositShares - rolledShares
   const unmatchedSourceShares = migration.sourceTransferShares - sourceConsumed.consumedShares
 
-  addLotsToLocation(destinationLedger, 'wallet', rolledLots)
+  addLotsToLocation(destinationLedger, 'vault', rolledLots)
 
   if (unknownDestinationShares > ZERO) {
     destinationLedger.unknownCostBasisTransferInCount += 1
@@ -1239,11 +1239,9 @@ function processKnownMigratorCrossFamilyRollover(
     destinationLedger.unknownTransferInEntries.push({
       timestamp: migration.blockTimestamp,
       shares: unknownDestinationShares,
-      location: 'wallet'
+      location: 'vault'
     })
-    addLotsToLocation(destinationLedger, 'wallet', [
-      createLot(unknownDestinationShares, null, migration.blockTimestamp)
-    ])
+    addLotsToLocation(destinationLedger, 'vault', [createLot(unknownDestinationShares, null, migration.blockTimestamp)])
   }
 
   if (unmatchedSourceShares > ZERO) {
@@ -1263,19 +1261,19 @@ function processKnownMigratorCrossFamilyRollover(
     depositAssets: ZERO.toString(),
     withdrawShares: ZERO.toString(),
     withdrawAssets: ZERO.toString(),
-    wrapShares: ZERO.toString(),
-    unwrapShares: ZERO.toString(),
-    unknownInWalletShares: ZERO.toString(),
+    stakeShares: ZERO.toString(),
+    unstakeShares: ZERO.toString(),
+    unknownInVaultShares: ZERO.toString(),
     unknownInStakedShares: ZERO.toString(),
-    transferOutWalletShares: migration.sourceTransferShares.toString(),
+    transferOutVaultShares: migration.sourceTransferShares.toString(),
     transferOutStakedShares: ZERO.toString(),
     realizedKnownShares: ZERO.toString(),
     realizedProceedsAssets: ZERO.toString(),
     realizedBasisAssets: ZERO.toString(),
     realizedPnlAssets: ZERO.toString(),
-    walletLotsBefore: summarizeLots(sourceWalletLotsBefore),
+    vaultLotsBefore: summarizeLots(sourceVaultLotsBefore),
     stakedLotsBefore: summarizeLots(sourceStakedLotsBefore),
-    walletLotsAfter: summarizeLots(sourceLedger.walletLots),
+    vaultLotsAfter: summarizeLots(sourceLedger.vaultLots),
     stakedLotsAfter: summarizeLots(sourceLedger.stakedLots)
   })
 
@@ -1284,26 +1282,26 @@ function processKnownMigratorCrossFamilyRollover(
     txHash: migration.transactionHash,
     familyVaultAddress: migration.destinationFamilyVaultAddress,
     stakingVaultAddress: destinationLedger.stakingVaultAddress,
-    view: 'migrate_in->wallet',
+    view: 'migrate_in->vault',
     hasAddressActivity: true,
     rawEvents: countTxEventsByKind(destinationFamilyEvents),
     depositShares: migration.destinationDepositShares.toString(),
     depositAssets: migration.destinationDepositAssets.toString(),
     withdrawShares: ZERO.toString(),
     withdrawAssets: ZERO.toString(),
-    wrapShares: ZERO.toString(),
-    unwrapShares: ZERO.toString(),
-    unknownInWalletShares: unknownDestinationShares.toString(),
+    stakeShares: ZERO.toString(),
+    unstakeShares: ZERO.toString(),
+    unknownInVaultShares: unknownDestinationShares.toString(),
     unknownInStakedShares: ZERO.toString(),
-    transferOutWalletShares: ZERO.toString(),
+    transferOutVaultShares: ZERO.toString(),
     transferOutStakedShares: ZERO.toString(),
     realizedKnownShares: ZERO.toString(),
     realizedProceedsAssets: ZERO.toString(),
     realizedBasisAssets: ZERO.toString(),
     realizedPnlAssets: ZERO.toString(),
-    walletLotsBefore: summarizeLots(destinationWalletLotsBefore),
+    vaultLotsBefore: summarizeLots(destinationVaultLotsBefore),
     stakedLotsBefore: summarizeLots(destinationStakedLotsBefore),
-    walletLotsAfter: summarizeLots(destinationLedger.walletLots),
+    vaultLotsAfter: summarizeLots(destinationLedger.vaultLots),
     stakedLotsAfter: summarizeLots(destinationLedger.stakedLots)
   })
 
@@ -1318,14 +1316,14 @@ function processKnownMigratorCrossFamilyRollover(
       sourceTransferShares: migration.sourceTransferShares.toString(),
       knownRolledSourceShares: knownSourceShares.toString(),
       unmatchedSourceShares: unmatchedSourceShares.toString(),
-      walletLotsBefore: summarizeLots(sourceWalletLotsBefore),
+      vaultLotsBefore: summarizeLots(sourceVaultLotsBefore),
       stakedLotsBefore: summarizeLots(sourceStakedLotsBefore),
-      walletLotsAfter: summarizeLots(sourceLedger.walletLots),
+      vaultLotsAfter: summarizeLots(sourceLedger.vaultLots),
       stakedLotsAfter: summarizeLots(sourceLedger.stakedLots),
       events: includeDetailedLotLogs ? sourceFamilyEvents.map(serializeRawEvent) : undefined,
-      walletLotEntriesBefore: includeDetailedLotLogs ? serializeLots(sourceWalletLotsBefore) : undefined,
+      vaultLotEntriesBefore: includeDetailedLotLogs ? serializeLots(sourceVaultLotsBefore) : undefined,
       stakedLotEntriesBefore: includeDetailedLotLogs ? serializeLots(sourceStakedLotsBefore) : undefined,
-      walletLotEntriesAfter: includeDetailedLotLogs ? serializeLots(sourceLedger.walletLots) : undefined,
+      vaultLotEntriesAfter: includeDetailedLotLogs ? serializeLots(sourceLedger.vaultLots) : undefined,
       stakedLotEntriesAfter: includeDetailedLotLogs ? serializeLots(sourceLedger.stakedLots) : undefined
     })
   }
@@ -1337,21 +1335,21 @@ function processKnownMigratorCrossFamilyRollover(
       stakingVaultAddress: destinationLedger.stakingVaultAddress,
       transactionHash: migration.transactionHash,
       blockTimestamp: migration.blockTimestamp,
-      view: 'migrate_in->wallet',
+      view: 'migrate_in->vault',
       sourceFamilyVaultAddress: migration.sourceFamilyVaultAddress,
       destinationDepositShares: migration.destinationDepositShares.toString(),
       destinationDepositAssets: migration.destinationDepositAssets.toString(),
       rolledKnownShares: rolledShares.toString(),
       rolledKnownCostBasisAssets: sumKnownCostBasis(rolledLots).toString(),
       unknownDestinationShares: unknownDestinationShares.toString(),
-      walletLotsBefore: summarizeLots(destinationWalletLotsBefore),
+      vaultLotsBefore: summarizeLots(destinationVaultLotsBefore),
       stakedLotsBefore: summarizeLots(destinationStakedLotsBefore),
-      walletLotsAfter: summarizeLots(destinationLedger.walletLots),
+      vaultLotsAfter: summarizeLots(destinationLedger.vaultLots),
       stakedLotsAfter: summarizeLots(destinationLedger.stakedLots),
       events: includeDetailedLotLogs ? destinationFamilyEvents.map(serializeRawEvent) : undefined,
-      walletLotEntriesBefore: includeDetailedLotLogs ? serializeLots(destinationWalletLotsBefore) : undefined,
+      vaultLotEntriesBefore: includeDetailedLotLogs ? serializeLots(destinationVaultLotsBefore) : undefined,
       stakedLotEntriesBefore: includeDetailedLotLogs ? serializeLots(destinationStakedLotsBefore) : undefined,
-      walletLotEntriesAfter: includeDetailedLotLogs ? serializeLots(destinationLedger.walletLots) : undefined,
+      vaultLotEntriesAfter: includeDetailedLotLogs ? serializeLots(destinationLedger.vaultLots) : undefined,
       stakedLotEntriesAfter: includeDetailedLotLogs ? serializeLots(destinationLedger.stakedLots) : undefined
     })
   }
@@ -1388,7 +1386,7 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
   const transactionHash = txFamilyEvents[0]?.transactionHash ?? ''
   const shouldLogTransactionLots = shouldLogLotTransactions(ledger, transactionHash)
   const includeDetailedLotLogs = shouldIncludeDetailedLotLogs()
-  const walletLotsBefore = shouldLogTransactionLots ? cloneLots(ledger.walletLots) : []
+  const vaultLotsBefore = shouldLogTransactionLots ? cloneLots(ledger.vaultLots) : []
   const stakedLotsBefore = shouldLogTransactionLots ? cloneLots(ledger.stakedLots) : []
   const familyHasAddressActivity = hasAddressScopedFamilyActivity(
     txFamilyEvents,
@@ -1426,40 +1424,40 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
       stakingDelta
     })
   ) {
-    const walletConsumed = consumeLots(ledger.walletLots, totalUnderlyingWithdrawShares)
+    const vaultConsumed = consumeLots(ledger.vaultLots, totalUnderlyingWithdrawShares)
     const stakedConsumed = consumeLots(ledger.stakedLots, ZERO)
-    const consumedShares = walletConsumed.consumedShares + stakedConsumed.consumedShares
+    const consumedShares = vaultConsumed.consumedShares + stakedConsumed.consumedShares
 
     if (consumedShares === totalUnderlyingWithdrawShares) {
-      const rolledLots = redistributeLotsToTargetShares(walletConsumed.consumedLots, totalUnderlyingDepositShares)
+      const rolledLots = redistributeLotsToTargetShares(vaultConsumed.consumedLots, totalUnderlyingDepositShares)
 
-      ledger.walletLots = [...walletConsumed.nextLots, ...rolledLots]
+      ledger.vaultLots = [...vaultConsumed.nextLots, ...rolledLots]
 
       ledger.debugJournal.push({
         timestamp: txFamilyEvents[0]?.blockTimestamp ?? 0,
         txHash: transactionHash,
         familyVaultAddress,
         stakingVaultAddress,
-        view: 'same_vault_rollover->wallet',
+        view: 'same_vault_rollover->vault',
         hasAddressActivity: familyHasAddressActivity,
         rawEvents: countTxEventsByKind(txFamilyEvents),
         depositShares: totalUnderlyingDepositShares.toString(),
         depositAssets: totalUnderlyingDepositAssets.toString(),
         withdrawShares: totalUnderlyingWithdrawShares.toString(),
         withdrawAssets: totalUnderlyingWithdrawAssets.toString(),
-        wrapShares: ZERO.toString(),
-        unwrapShares: ZERO.toString(),
-        unknownInWalletShares: ZERO.toString(),
+        stakeShares: ZERO.toString(),
+        unstakeShares: ZERO.toString(),
+        unknownInVaultShares: ZERO.toString(),
         unknownInStakedShares: ZERO.toString(),
-        transferOutWalletShares: ZERO.toString(),
+        transferOutVaultShares: ZERO.toString(),
         transferOutStakedShares: ZERO.toString(),
         realizedKnownShares: ZERO.toString(),
         realizedProceedsAssets: ZERO.toString(),
         realizedBasisAssets: ZERO.toString(),
         realizedPnlAssets: ZERO.toString(),
-        walletLotsBefore: summarizeLots(walletLotsBefore),
+        vaultLotsBefore: summarizeLots(vaultLotsBefore),
         stakedLotsBefore: summarizeLots(stakedLotsBefore),
-        walletLotsAfter: summarizeLots(ledger.walletLots),
+        vaultLotsAfter: summarizeLots(ledger.vaultLots),
         stakedLotsAfter: summarizeLots(ledger.stakedLots)
       })
 
@@ -1472,21 +1470,21 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
           blockTimestamp: txFamilyEvents[0]?.blockTimestamp ?? null,
           familyHasAddressActivity,
           eventCount: txFamilyEvents.length,
-          view: 'same_vault_rollover->wallet',
+          view: 'same_vault_rollover->vault',
           totalUnderlyingDepositShares: totalUnderlyingDepositShares.toString(),
           totalUnderlyingDepositAssets: totalUnderlyingDepositAssets.toString(),
           totalUnderlyingWithdrawShares: totalUnderlyingWithdrawShares.toString(),
           totalUnderlyingWithdrawAssets: totalUnderlyingWithdrawAssets.toString(),
           rolledLotCount: rolledLots.length,
           rolledKnownCostBasisAssets: sumKnownCostBasis(rolledLots.filter((lot) => lot.costBasis !== null)).toString(),
-          walletLotsBefore: summarizeLots(walletLotsBefore),
+          vaultLotsBefore: summarizeLots(vaultLotsBefore),
           stakedLotsBefore: summarizeLots(stakedLotsBefore),
-          walletLotsAfter: summarizeLots(ledger.walletLots),
+          vaultLotsAfter: summarizeLots(ledger.vaultLots),
           stakedLotsAfter: summarizeLots(ledger.stakedLots),
           events: includeDetailedLotLogs ? txFamilyEvents.map(serializeRawEvent) : undefined,
-          walletLotEntriesBefore: includeDetailedLotLogs ? serializeLots(walletLotsBefore) : undefined,
+          vaultLotEntriesBefore: includeDetailedLotLogs ? serializeLots(vaultLotsBefore) : undefined,
           stakedLotEntriesBefore: includeDetailedLotLogs ? serializeLots(stakedLotsBefore) : undefined,
-          walletLotEntriesAfter: includeDetailedLotLogs ? serializeLots(ledger.walletLots) : undefined,
+          vaultLotEntriesAfter: includeDetailedLotLogs ? serializeLots(ledger.vaultLots) : undefined,
           stakedLotEntriesAfter: includeDetailedLotLogs ? serializeLots(ledger.stakedLots) : undefined
         })
       }
@@ -1501,58 +1499,61 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
   ledger.eventCounts.underlyingWithdrawals += txUnderlyingWithdrawals.length
 
   const stakingRealizeShares = minBigInt(negativeBigIntMagnitude(stakingDelta), totalUnderlyingWithdrawShares)
-  const walletRealizeShares = totalUnderlyingWithdrawShares - stakingRealizeShares
+  const vaultRealizeShares = totalUnderlyingWithdrawShares - stakingRealizeShares
 
   const realization = applyRealization(
     ledger,
     totalUnderlyingWithdrawShares,
     totalUnderlyingWithdrawAssets,
     stakingRealizeShares,
-    walletRealizeShares,
+    vaultRealizeShares,
     txFamilyEvents[0]?.blockTimestamp ?? 0
   )
 
   const acquiredToStaked = minBigInt(positiveBigInt(stakingDelta), totalUnderlyingDepositShares)
-  const acquiredToWallet = minBigInt(positiveBigInt(underlyingDelta), totalUnderlyingDepositShares - acquiredToStaked)
+  const acquiredToVault = minBigInt(positiveBigInt(underlyingDelta), totalUnderlyingDepositShares - acquiredToStaked)
 
   addAcquisitionLots(
     ledger,
     totalUnderlyingDepositShares,
     totalUnderlyingDepositAssets,
     acquiredToStaked,
-    acquiredToWallet,
+    acquiredToVault,
     txFamilyEvents[0]?.blockTimestamp ?? 0
   )
 
-  const remainingUnderlyingDelta = underlyingDelta - acquiredToWallet + walletRealizeShares
+  const remainingUnderlyingDelta = underlyingDelta - acquiredToVault + vaultRealizeShares
   const remainingStakingDelta = stakingDelta - acquiredToStaked + stakingRealizeShares
-  const wrapShares = minBigInt(negativeBigIntMagnitude(remainingUnderlyingDelta), positiveBigInt(remainingStakingDelta))
-  const remainingUnderlyingAfterWrap = remainingUnderlyingDelta + wrapShares
-  const remainingStakingAfterWrap = remainingStakingDelta - wrapShares
-  const unwrapShares = minBigInt(
+  const stakeShares = minBigInt(
+    negativeBigIntMagnitude(remainingUnderlyingDelta),
+    positiveBigInt(remainingStakingDelta)
+  )
+  const remainingUnderlyingAfterWrap = remainingUnderlyingDelta + stakeShares
+  const remainingStakingAfterWrap = remainingStakingDelta - stakeShares
+  const unstakeShares = minBigInt(
     negativeBigIntMagnitude(remainingStakingAfterWrap),
     positiveBigInt(remainingUnderlyingAfterWrap)
   )
-  const finalUnderlyingDelta = remainingUnderlyingAfterWrap - unwrapShares
-  const finalStakingDelta = remainingStakingAfterWrap + unwrapShares
-  const unknownInWalletShares = positiveBigInt(finalUnderlyingDelta)
+  const finalUnderlyingDelta = remainingUnderlyingAfterWrap - unstakeShares
+  const finalStakingDelta = remainingStakingAfterWrap + unstakeShares
+  const unknownInVaultShares = positiveBigInt(finalUnderlyingDelta)
   const unknownInStakedShares = positiveBigInt(finalStakingDelta)
-  const transferOutWalletShares = negativeBigIntMagnitude(finalUnderlyingDelta)
+  const transferOutVaultShares = negativeBigIntMagnitude(finalUnderlyingDelta)
   const transferOutStakedShares = negativeBigIntMagnitude(finalStakingDelta)
 
-  if (wrapShares > ZERO) {
-    ledger.eventCounts.stakingWraps += 1
-    moveBetweenLocations(ledger, 'wallet', 'staked', wrapShares)
+  if (stakeShares > ZERO) {
+    ledger.eventCounts.stakes += 1
+    moveBetweenLocations(ledger, 'vault', 'staked', stakeShares)
   }
 
-  if (unwrapShares > ZERO) {
-    ledger.eventCounts.stakingUnwraps += 1
-    moveBetweenLocations(ledger, 'staked', 'wallet', unwrapShares)
+  if (unstakeShares > ZERO) {
+    ledger.eventCounts.unstakes += 1
+    moveBetweenLocations(ledger, 'staked', 'vault', unstakeShares)
   }
 
-  handleUnknownTransferIn(ledger, 'wallet', unknownInWalletShares, txFamilyEvents[0]?.blockTimestamp ?? 0)
+  handleUnknownTransferIn(ledger, 'vault', unknownInVaultShares, txFamilyEvents[0]?.blockTimestamp ?? 0)
   handleUnknownTransferIn(ledger, 'staked', unknownInStakedShares, txFamilyEvents[0]?.blockTimestamp ?? 0)
-  handleExternalTransferOut(ledger, 'wallet', transferOutWalletShares)
+  handleExternalTransferOut(ledger, 'vault', transferOutVaultShares)
   handleExternalTransferOut(ledger, 'staked', transferOutStakedShares)
 
   ledger.debugJournal.push({
@@ -1561,15 +1562,15 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
     familyVaultAddress,
     stakingVaultAddress,
     view: buildJournalView({
-      acquiredToWallet,
+      acquiredToVault,
       acquiredToStaked,
-      walletRealizeShares,
+      vaultRealizeShares,
       stakingRealizeShares,
-      wrapShares,
-      unwrapShares,
-      unknownInWalletShares,
+      stakeShares,
+      unstakeShares,
+      unknownInVaultShares,
       unknownInStakedShares,
-      transferOutWalletShares,
+      transferOutVaultShares,
       transferOutStakedShares
     }),
     hasAddressActivity: familyHasAddressActivity,
@@ -1578,19 +1579,19 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
     depositAssets: totalUnderlyingDepositAssets.toString(),
     withdrawShares: totalUnderlyingWithdrawShares.toString(),
     withdrawAssets: totalUnderlyingWithdrawAssets.toString(),
-    wrapShares: wrapShares.toString(),
-    unwrapShares: unwrapShares.toString(),
-    unknownInWalletShares: unknownInWalletShares.toString(),
+    stakeShares: stakeShares.toString(),
+    unstakeShares: unstakeShares.toString(),
+    unknownInVaultShares: unknownInVaultShares.toString(),
     unknownInStakedShares: unknownInStakedShares.toString(),
-    transferOutWalletShares: transferOutWalletShares.toString(),
+    transferOutVaultShares: transferOutVaultShares.toString(),
     transferOutStakedShares: transferOutStakedShares.toString(),
     realizedKnownShares: realization.knownShares.toString(),
     realizedProceedsAssets: realization.knownProceedsAssets.toString(),
     realizedBasisAssets: realization.knownCostBasisAssets.toString(),
     realizedPnlAssets: realization.realizedPnlAssets.toString(),
-    walletLotsBefore: summarizeLots(walletLotsBefore),
+    vaultLotsBefore: summarizeLots(vaultLotsBefore),
     stakedLotsBefore: summarizeLots(stakedLotsBefore),
-    walletLotsAfter: summarizeLots(ledger.walletLots),
+    vaultLotsAfter: summarizeLots(ledger.vaultLots),
     stakedLotsAfter: summarizeLots(ledger.stakedLots)
   })
 
@@ -1609,26 +1610,26 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
       totalUnderlyingDepositAssets: totalUnderlyingDepositAssets.toString(),
       totalUnderlyingWithdrawShares: totalUnderlyingWithdrawShares.toString(),
       totalUnderlyingWithdrawAssets: totalUnderlyingWithdrawAssets.toString(),
-      acquiredToWallet: acquiredToWallet.toString(),
+      acquiredToVault: acquiredToVault.toString(),
       acquiredToStaked: acquiredToStaked.toString(),
-      walletRealizeShares: walletRealizeShares.toString(),
+      vaultRealizeShares: vaultRealizeShares.toString(),
       stakingRealizeShares: stakingRealizeShares.toString(),
-      wrapShares: wrapShares.toString(),
-      unwrapShares: unwrapShares.toString(),
+      stakeShares: stakeShares.toString(),
+      unstakeShares: unstakeShares.toString(),
       finalUnderlyingDelta: finalUnderlyingDelta.toString(),
       finalStakingDelta: finalStakingDelta.toString(),
       realizedKnownShares: realization.knownShares.toString(),
       realizedProceedsAssets: realization.knownProceedsAssets.toString(),
       realizedBasisAssets: realization.knownCostBasisAssets.toString(),
       realizedPnlAssets: realization.realizedPnlAssets.toString(),
-      walletLotsBefore: summarizeLots(walletLotsBefore),
+      vaultLotsBefore: summarizeLots(vaultLotsBefore),
       stakedLotsBefore: summarizeLots(stakedLotsBefore),
-      walletLotsAfter: summarizeLots(ledger.walletLots),
+      vaultLotsAfter: summarizeLots(ledger.vaultLots),
       stakedLotsAfter: summarizeLots(ledger.stakedLots),
       events: includeDetailedLotLogs ? txFamilyEvents.map(serializeRawEvent) : undefined,
-      walletLotEntriesBefore: includeDetailedLotLogs ? serializeLots(walletLotsBefore) : undefined,
+      vaultLotEntriesBefore: includeDetailedLotLogs ? serializeLots(vaultLotsBefore) : undefined,
       stakedLotEntriesBefore: includeDetailedLotLogs ? serializeLots(stakedLotsBefore) : undefined,
-      walletLotEntriesAfter: includeDetailedLotLogs ? serializeLots(ledger.walletLots) : undefined,
+      vaultLotEntriesAfter: includeDetailedLotLogs ? serializeLots(ledger.vaultLots) : undefined,
       stakedLotEntriesAfter: includeDetailedLotLogs ? serializeLots(ledger.stakedLots) : undefined
     })
   }
@@ -1640,7 +1641,7 @@ export function processRawPnlEvents(events: TRawPnlEvent[], userAddress: string)
 
   // Process transactions in two passes:
   // 1. detect cross-family migrations that should carry basis across vaults
-  // 2. interpret the remaining per-family activity as deposits, withdrawals, wraps, unwraps, or transfers
+  // 2. interpret the remaining per-family activity as deposits, withdrawals, stakes, unstakes, or transfers
   groupEventsByTransaction(events).forEach((txEvents) => {
     const handledFamilyKeys = processKnownMigratorCrossFamilyRollover(ledgers, txEvents, userAddressLower)
 
@@ -1735,7 +1736,7 @@ async function computeHoldingsPnLArtifacts(
       currentTimestamp,
       ...historicalPriceLedgers.flatMap((vault) => vault.realizedEntries.map((entry) => entry.timestamp)),
       ...historicalPriceLedgers.flatMap((vault) =>
-        [...vault.walletLots, ...vault.stakedLots]
+        [...vault.vaultLots, ...vault.stakedLots]
           .map((lot) => lot.acquiredAt)
           .filter((timestamp): timestamp is number => timestamp !== undefined)
       ),
@@ -1808,11 +1809,11 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
   const tokenPriceMap = priceKey ? priceData.get(priceKey) : null
   const tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, currentTimestamp) : 0
   const resolvedPricePerShare = pricePerShare ?? 0
-  const walletSharesRaw = sumShares(vault.walletLots)
+  const vaultSharesRaw = sumShares(vault.vaultLots)
   const stakedSharesRaw = sumShares(vault.stakedLots)
-  const totalSharesRaw = walletSharesRaw + stakedSharesRaw
-  const knownLots = [...vault.walletLots, ...vault.stakedLots].filter((lot) => lot.costBasis !== null)
-  const unknownLots = [...vault.walletLots, ...vault.stakedLots].filter((lot) => lot.costBasis === null)
+  const totalSharesRaw = vaultSharesRaw + stakedSharesRaw
+  const knownLots = [...vault.vaultLots, ...vault.stakedLots].filter((lot) => lot.costBasis !== null)
+  const unknownLots = [...vault.vaultLots, ...vault.stakedLots].filter((lot) => lot.costBasis === null)
   const knownSharesRaw = sumShares(knownLots)
   const unknownSharesRaw = sumShares(unknownLots)
 
@@ -1829,9 +1830,9 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
         familyVaultAddress: vault.vaultAddress,
         stakingVaultAddress: vault.stakingVaultAddress,
         status: 'missing_metadata',
-        walletLots: summarizeLots(vault.walletLots),
+        vaultLots: summarizeLots(vault.vaultLots),
         stakedLots: summarizeLots(vault.stakedLots),
-        walletLotEntries: includeDetailedLotLogs ? serializeLots(vault.walletLots) : undefined,
+        vaultLotEntries: includeDetailedLotLogs ? serializeLots(vault.vaultLots) : undefined,
         stakedLotEntries: includeDetailedLotLogs ? serializeLots(vault.stakedLots) : undefined,
         realizedEntries: vault.realizedEntries.map((entry) => ({
           timestamp: entry.timestamp,
@@ -1847,18 +1848,18 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
     return createMissingMetadataPnlVault(vault, unknownTransferInPnlMode, tokenPrice, resolvedPricePerShare)
   }
 
-  const walletSharesFormatted = formatAmount(walletSharesRaw, metadata.decimals)
+  const vaultSharesFormatted = formatAmount(vaultSharesRaw, metadata.decimals)
   const stakedSharesFormatted = formatAmount(stakedSharesRaw, metadata.decimals)
   const sharesFormatted = formatAmount(totalSharesRaw, metadata.decimals)
   const knownCostBasisUnderlying = formatAmount(sumKnownCostBasis(knownLots), metadata.token.decimals)
-  const walletUnderlying = walletSharesFormatted * resolvedPricePerShare
+  const vaultUnderlying = vaultSharesFormatted * resolvedPricePerShare
   const stakedUnderlying = stakedSharesFormatted * resolvedPricePerShare
-  const currentUnderlying = walletUnderlying + stakedUnderlying
+  const currentUnderlying = vaultUnderlying + stakedUnderlying
   const currentKnownUnderlying = formatAmount(knownSharesRaw, metadata.decimals) * resolvedPricePerShare
   const currentUnknownUnderlying = formatAmount(unknownSharesRaw, metadata.decimals) * resolvedPricePerShare
-  const walletValueUsd = walletUnderlying * tokenPrice
+  const vaultValueUsd = vaultUnderlying * tokenPrice
   const stakedValueUsd = stakedUnderlying * tokenPrice
-  const currentValueUsd = walletValueUsd + stakedValueUsd
+  const currentValueUsd = vaultValueUsd + stakedValueUsd
   const isTransferOnlyHoldingsLedger = isCurrentTransferOnlyHoldingsLedger(vault)
 
   if (isTransferOnlyHoldingsLedger) {
@@ -1900,8 +1901,8 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
       unknownTransferInPnlMode,
       shares: totalSharesRaw.toString(),
       sharesFormatted,
-      walletShares: walletSharesRaw.toString(),
-      walletSharesFormatted,
+      vaultShares: vaultSharesRaw.toString(),
+      vaultSharesFormatted,
       stakedShares: stakedSharesRaw.toString(),
       stakedSharesFormatted,
       knownCostBasisShares: knownSharesRaw.toString(),
@@ -1909,14 +1910,14 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
       pricePerShare: resolvedPricePerShare,
       tokenPrice,
       currentUnderlying,
-      walletUnderlying,
+      vaultUnderlying,
       stakedUnderlying,
       currentKnownUnderlying,
       currentUnknownUnderlying,
       knownCostBasisUnderlying,
       knownCostBasisUsd: 0,
       currentValueUsd,
-      walletValueUsd,
+      vaultValueUsd,
       stakedValueUsd,
       unknownCostBasisValueUsd: lightweightValuation.unknownCostBasisValueUsd,
       windfallPnlUsd: lightweightValuation.windfallPnlUsd,
@@ -1994,10 +1995,10 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
       symbol: metadata.token.symbol,
       shareDecimals: metadata.decimals,
       assetDecimals: metadata.token.decimals,
-      walletLots: summarizeLots(vault.walletLots),
+      vaultLots: summarizeLots(vault.vaultLots),
       stakedLots: summarizeLots(vault.stakedLots),
-      walletLotEntries: includeDetailedLotLogs
-        ? serializeLots(vault.walletLots, metadata.decimals, metadata.token.decimals)
+      vaultLotEntries: includeDetailedLotLogs
+        ? serializeLots(vault.vaultLots, metadata.decimals, metadata.token.decimals)
         : undefined,
       stakedLotEntries: includeDetailedLotLogs
         ? serializeLots(vault.stakedLots, metadata.decimals, metadata.token.decimals)
@@ -2023,8 +2024,8 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
     unknownTransferInPnlMode,
     shares: totalSharesRaw.toString(),
     sharesFormatted,
-    walletShares: walletSharesRaw.toString(),
-    walletSharesFormatted,
+    vaultShares: vaultSharesRaw.toString(),
+    vaultSharesFormatted,
     stakedShares: stakedSharesRaw.toString(),
     stakedSharesFormatted,
     knownCostBasisShares: knownSharesRaw.toString(),
@@ -2032,14 +2033,14 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
     pricePerShare: resolvedPricePerShare,
     tokenPrice,
     currentUnderlying,
-    walletUnderlying,
+    vaultUnderlying,
     stakedUnderlying,
     currentKnownUnderlying,
     currentUnknownUnderlying,
     knownCostBasisUnderlying,
     knownCostBasisUsd,
     currentValueUsd,
-    walletValueUsd,
+    vaultValueUsd,
     stakedValueUsd,
     unknownCostBasisValueUsd: valuationState.unknownCostBasisValueUsd,
     windfallPnlUsd: valuationState.windfallPnlUsd,
@@ -2089,7 +2090,7 @@ function materializeHoldingsPnLDrilldownVault(
     return {
       ...baseVault,
       currentLots: {
-        wallet: vault.walletLots.map((lot, index) => ({
+        vault: vault.vaultLots.map((lot, index) => ({
           index,
           shares: lot.shares.toString(),
           sharesFormatted: 0,
@@ -2131,7 +2132,7 @@ function materializeHoldingsPnLDrilldownVault(
   return {
     ...baseVault,
     currentLots: {
-      wallet: vault.walletLots.map((lot, index) =>
+      vault: vault.vaultLots.map((lot, index) =>
         serializeLotForResponse({
           lot,
           index,

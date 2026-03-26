@@ -71,7 +71,7 @@ function createTransferEvent(overrides: Partial<TransferEvent>): TransferEvent {
 }
 
 describe('processRawPnlEvents', () => {
-  it('moves a family lot from wallet to staked on a direct stake wrap', () => {
+  it('moves a family lot from vault shares to staked shares on a direct stake', () => {
     const underlyingDeposit = createDepositEvent()
     const stakeDeposit = createDepositEvent({
       id: 'stake-deposit',
@@ -113,15 +113,15 @@ describe('processRawPnlEvents', () => {
     ).get(FAMILY_KEY)
 
     expect(ledger).toBeDefined()
-    expect(ledger?.walletLots).toEqual([])
+    expect(ledger?.vaultLots).toEqual([])
     expect(ledger?.stakedLots).toEqual([{ shares: 100n, costBasis: 1000n, acquiredAt: 100 }])
     expect(ledger?.realizedEntries).toEqual([])
     expect(ledger?.totalDepositedAssets).toBe(1000n)
     expect(ledger?.eventCounts.underlyingDeposits).toBe(1)
-    expect(ledger?.eventCounts.stakingWraps).toBe(1)
+    expect(ledger?.eventCounts.stakes).toBe(1)
   })
 
-  it('moves a family lot from staked back to wallet on unstake without realizing pnl', () => {
+  it('moves a family lot from staked shares back to vault shares on unstake without realizing pnl', () => {
     const underlyingDeposit = createDepositEvent()
     const stakeDeposit = createDepositEvent({
       id: 'stake-deposit',
@@ -185,11 +185,11 @@ describe('processRawPnlEvents', () => {
     ).get(FAMILY_KEY)
 
     expect(ledger).toBeDefined()
-    expect(ledger?.walletLots).toEqual([{ shares: 100n, costBasis: 1000n, acquiredAt: 100 }])
+    expect(ledger?.vaultLots).toEqual([{ shares: 100n, costBasis: 1000n, acquiredAt: 100 }])
     expect(ledger?.stakedLots).toEqual([])
     expect(ledger?.realizedEntries).toEqual([])
-    expect(ledger?.eventCounts.stakingWraps).toBe(1)
-    expect(ledger?.eventCounts.stakingUnwraps).toBe(1)
+    expect(ledger?.eventCounts.stakes).toBe(1)
+    expect(ledger?.eventCounts.unstakes).toBe(1)
   })
 
   it('uses the underlying vault deposit as cost basis for router stakes into staking vaults', () => {
@@ -232,7 +232,7 @@ describe('processRawPnlEvents', () => {
     ).get(FAMILY_KEY)
 
     expect(ledger).toBeDefined()
-    expect(ledger?.walletLots).toEqual([])
+    expect(ledger?.vaultLots).toEqual([])
     expect(ledger?.stakedLots).toEqual([{ shares: 900n, costBasis: 1000n, acquiredAt: 200 }])
     expect(ledger?.unknownCostBasisTransferInCount).toBe(0)
     expect(ledger?.eventCounts.underlyingDeposits).toBe(1)
@@ -268,7 +268,7 @@ describe('processRawPnlEvents', () => {
     ).get(FAMILY_KEY)
 
     expect(ledger).toBeDefined()
-    expect(ledger?.walletLots).toEqual([{ shares: 900n, costBasis: 1000n, acquiredAt: 100 }])
+    expect(ledger?.vaultLots).toEqual([{ shares: 900n, costBasis: 1000n, acquiredAt: 100 }])
     expect(ledger?.stakedLots).toEqual([])
     expect(ledger?.totalDepositedAssets).toBe(1000n)
     expect(ledger?.eventCounts.underlyingDeposits).toBe(1)
@@ -333,7 +333,7 @@ describe('processRawPnlEvents', () => {
     ).get(FAMILY_KEY)
 
     expect(ledger).toBeDefined()
-    expect(ledger?.walletLots).toEqual([])
+    expect(ledger?.vaultLots).toEqual([])
     expect(ledger?.stakedLots).toEqual([])
     expect(ledger?.realizedEntries).toEqual([
       {
@@ -494,7 +494,7 @@ describe('processRawPnlEvents', () => {
     ).get(FAMILY_KEY)
 
     expect(ledger).toBeDefined()
-    expect(ledger?.walletLots).toEqual([{ shares: 99n, costBasis: 1000n, acquiredAt: 100 }])
+    expect(ledger?.vaultLots).toEqual([{ shares: 99n, costBasis: 1000n, acquiredAt: 100 }])
     expect(ledger?.stakedLots).toEqual([])
     expect(ledger?.realizedEntries).toEqual([])
     expect(ledger?.unknownCostBasisTransferInCount).toBe(0)
@@ -503,7 +503,7 @@ describe('processRawPnlEvents', () => {
     expect(ledger?.totalWithdrawnAssets).toBe(0n)
     expect(ledger?.eventCounts.underlyingDeposits).toBe(1)
     expect(ledger?.eventCounts.underlyingWithdrawals).toBe(0)
-    expect(ledger?.debugJournal.at(-1)?.view).toBe('same_vault_rollover->wallet')
+    expect(ledger?.debugJournal.at(-1)?.view).toBe('same_vault_rollover->vault')
   })
 
   it('rolls known source basis into the destination vault on a known migrator tx', () => {
@@ -582,14 +582,14 @@ describe('processRawPnlEvents', () => {
     const sourceLedger = ledgers.get(sourceFamilyKey)
     const destinationLedger = ledgers.get(destinationFamilyKey)
 
-    expect(sourceLedger?.walletLots).toEqual([])
+    expect(sourceLedger?.vaultLots).toEqual([])
     expect(sourceLedger?.realizedEntries).toEqual([])
     expect(sourceLedger?.eventCounts.migrationsOut).toBe(1)
-    expect(destinationLedger?.walletLots).toEqual([{ shares: 80n, costBasis: 1000n, acquiredAt: 100 }])
+    expect(destinationLedger?.vaultLots).toEqual([{ shares: 80n, costBasis: 1000n, acquiredAt: 100 }])
     expect(destinationLedger?.totalDepositedAssets).toBe(0n)
     expect(destinationLedger?.realizedEntries).toEqual([])
     expect(destinationLedger?.eventCounts.migrationsIn).toBe(1)
-    expect(destinationLedger?.debugJournal.at(-1)?.view).toBe('migrate_in->wallet')
+    expect(destinationLedger?.debugJournal.at(-1)?.view).toBe('migrate_in->vault')
     expect(filteredLedgers.get(destinationFamilyKey)).toBeDefined()
   })
 
@@ -671,7 +671,7 @@ describe('processRawPnlEvents', () => {
     const destinationLedger = ledgers.get(destinationFamilyKey)
 
     expect(sourceLedger?.unmatchedTransferOutShares).toBe(158n)
-    expect(destinationLedger?.walletLots).toEqual([{ shares: 175n, costBasis: null, acquiredAt: 200 }])
+    expect(destinationLedger?.vaultLots).toEqual([{ shares: 175n, costBasis: null, acquiredAt: 200 }])
     expect(destinationLedger?.unknownCostBasisTransferInCount).toBe(1)
     expect(destinationLedger?.unknownCostBasisTransferInShares).toBe(175n)
     expect(destinationLedger?.totalDepositedAssets).toBe(0n)
@@ -752,7 +752,7 @@ describe('processRawPnlEvents', () => {
       USER
     )
 
-    expect(ledgers.get(destinationFamilyKey)?.walletLots).toEqual([{ shares: 80n, costBasis: 1000n, acquiredAt: 100 }])
+    expect(ledgers.get(destinationFamilyKey)?.vaultLots).toEqual([{ shares: 80n, costBasis: 1000n, acquiredAt: 100 }])
     expect(ledgers.get(destinationFamilyKey)?.eventCounts.migrationsIn).toBe(1)
   })
 })

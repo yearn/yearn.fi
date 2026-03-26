@@ -161,7 +161,7 @@ describe('enrichRawPnlEventsWithCowTradeAcquisitions', () => {
 
     const ledger = processRawPnlEvents(enrichedEvents, USER).get(FAMILY_KEY)
 
-    expect(ledger?.walletLots).toEqual([{ shares: 500n, costBasis: 400n, acquiredAt: 200 }])
+    expect(ledger?.vaultLots).toEqual([{ shares: 500n, costBasis: 400n, acquiredAt: 200 }])
     expect(ledger?.unknownCostBasisTransferInCount).toBe(0)
     expect(ledger?.totalDepositedAssets).toBe(400n)
     expect(ledger?.eventCounts.underlyingDeposits).toBe(1)
@@ -177,7 +177,7 @@ describe('enrichRawPnlEventsWithCowTradeAcquisitions', () => {
 
     const ledger = processRawPnlEvents(enrichedEvents, USER).get(FAMILY_KEY)
 
-    expect(ledger?.walletLots).toEqual([{ shares: 500n, costBasis: null, acquiredAt: 200 }])
+    expect(ledger?.vaultLots).toEqual([{ shares: 500n, costBasis: null, acquiredAt: 200 }])
     expect(ledger?.unknownCostBasisTransferInCount).toBe(1)
     expect(ledger?.unknownCostBasisTransferInShares).toBe(500n)
   })
