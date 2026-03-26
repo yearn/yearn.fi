@@ -150,7 +150,6 @@ export function WidgetDeposit({
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
-  const [hasAcceptedPriceImpact, setHasAcceptedPriceImpact] = useState(false)
   const appliedPrefillRef = useRef<string | null>(null)
 
   const {
@@ -232,11 +231,10 @@ export function WidgetDeposit({
     setShowTokenSelector
   })
 
-  useEffect(() => {
-    if (!shouldCollapseDetails && isDetailsPanelOpen) {
-      setIsDetailsPanelOpen(false)
-    }
-  }, [isDetailsPanelOpen, shouldCollapseDetails])
+  // Render-time state adjustment: close panel when collapse is disabled
+  if (!shouldCollapseDetails && isDetailsPanelOpen) {
+    setIsDetailsPanelOpen(false)
+  }
 
   const { routeType, activeFlow } = useDepositFlow({
     depositToken,
@@ -375,9 +373,20 @@ export function WidgetDeposit({
     activeFlow.periphery.expectedOut
   ])
 
-  useEffect(() => {
-    setHasAcceptedPriceImpact(false)
-  }, [priceImpactAcceptanceKey])
+  const [priceImpactAcceptanceState, setPriceImpactAcceptanceState] = useState<{
+    key: string
+    isAccepted: boolean
+  }>({
+    key: priceImpactAcceptanceKey,
+    isAccepted: false
+  })
+  if (priceImpactAcceptanceState.key !== priceImpactAcceptanceKey) {
+    setPriceImpactAcceptanceState({
+      key: priceImpactAcceptanceKey,
+      isAccepted: false
+    })
+  }
+  const hasAcceptedPriceImpact = priceImpactAcceptanceState.isAccepted
 
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
@@ -582,7 +591,12 @@ export function WidgetDeposit({
           <input
             type="checkbox"
             checked={hasAcceptedPriceImpact}
-            onChange={(e) => setHasAcceptedPriceImpact(e.target.checked)}
+            onChange={(e) =>
+              setPriceImpactAcceptanceState({
+                key: priceImpactAcceptanceKey,
+                isAccepted: e.target.checked
+              })
+            }
             className="size-4 rounded border-red-500/50 bg-transparent text-red-500 focus:ring-red-500/50"
           />
           <span className="text-sm text-red-500">I understand and wish to continue</span>
