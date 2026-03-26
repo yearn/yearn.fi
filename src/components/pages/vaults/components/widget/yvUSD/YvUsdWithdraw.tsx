@@ -14,14 +14,14 @@ import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { erc4626Abi } from '@shared/contracts/abi/4626.abi'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
+import { type AppUseSimulateContractReturnType, useReadContract, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { formatTAmount, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
-import type { UseSimulateContractReturnType } from 'wagmi'
-import { useAccount, useReadContract, useSimulateContract } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { WidgetWithdraw } from '../withdraw'
@@ -142,13 +142,8 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const [pendingPrefillAmount, setPendingPrefillAmount] = useState<string | undefined>(undefined)
   const [pendingPrefillAddress, setPendingPrefillAddress] = useState<`0x${string}` | undefined>(undefined)
   const [prefillRequestKey, setPrefillRequestKey] = useState(0)
-  const [lockedWithdrawPhase, setLockedWithdrawPhase] = useState<'withdraw' | 'redeem'>('withdraw')
-  const [lockedWithdrawExecutionSnapshot, setLockedWithdrawExecutionSnapshot] =
-    useState<TLockedWithdrawExecutionSnapshot | null>(null)
-  const [selectedLockedWithdrawTokenAddress, setSelectedLockedWithdrawTokenAddress] = useState<
-    `0x${string}` | undefined
-  >(undefined)
-  const [selectedLockedWithdrawChainId, setSelectedLockedWithdrawChainId] = useState<number | undefined>(undefined)
+  const [lockedRequestedAmountRaw, setLockedRequestedAmountRaw] = useState<bigint>(0n)
+  const [selectedWithdrawTokenAddress, setSelectedWithdrawTokenAddress] = useState<`0x${string}` | undefined>(undefined)
   const activeVariant = variant ?? 'unlocked'
   const isLockedVariant = activeVariant === 'locked'
 
@@ -264,7 +259,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     nowTimestamp,
     cooldownEnd: cooldownStatus.cooldownEnd,
     windowEnd: cooldownStatus.windowEnd,
-    availableWithdrawLimit: maxWithdrawAssets
+    availableWithdrawLimit
   })
   const needsCooldownStart = hasLocked && (!hasActiveCooldown || isCooldownWindowExpired)
 
@@ -486,7 +481,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     windowRemainingSeconds
   )
 
-  const prepareStartCooldown: UseSimulateContractReturnType = useSimulateContract({
+  const prepareStartCooldown: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: yvUsdLockedVaultAbi,
     functionName: 'startCooldown',
@@ -497,7 +492,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
       enabled: !!account && isLockedVariant && needsCooldownStart && cooldownSharesToStart > 0n
     }
   })
-  const prepareCancelCooldown: UseSimulateContractReturnType = useSimulateContract({
+  const prepareCancelCooldown: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: yvUsdLockedVaultAbi,
     functionName: 'cancelCooldown',
@@ -1030,61 +1025,19 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const selectedVault = isLockedVariant ? lockedVault : unlockedVault
   const selectedRouteAssetAddress = isLockedVariant ? lockedAssetAddress : unlockedAssetAddress
   const selectedVaultUserData = isLockedVariant ? lockedDisplayUserData : unlockedUserData
-  const usesLockedManagedWithdrawFlow =
-    isLockedVariant &&
-    !!account &&
-    shouldUseLockedManagedWithdrawFlow({
-      canWithdrawNow,
-      selectedTokenAddress: selectedLockedWithdrawTokenAddress,
-      selectedChainId: selectedLockedWithdrawChainId,
-      chainId,
-      underlyingAssetAddress: unlockedAssetAddress
-    })
   const disableLockedAmountInput = isLockedVariant && isCooldownActive && !canWithdrawNow
-  const hideLockedWithdrawAction = usesLockedManagedWithdrawFlow
-  const lockedWithdrawInputError =
-    !isLockedVariant || !account || draftWithdrawAmount <= 0n
-      ? undefined
-      : !canWithdrawNow
-        ? maxCooldownAssetAmount > 0n && lockedRequestedCooldownAssets > maxCooldownAssetAmount
-          ? 'Insufficient balance'
-          : undefined
-        : !shouldNormalizeLockedWithdrawMaxInput &&
-            lockedMaxWithdrawDisplayAmount > 0n &&
-            draftWithdrawAmount > lockedMaxWithdrawDisplayAmount
-          ? 'Amount exceeds currently available withdraw limit.'
-          : undefined
-  const lockedReadyWithdrawStep =
-    !account ||
-    executionLockedWithdrawAssets <= 0n ||
-    (lockedWithdrawPhase === 'withdraw' && !canWithdrawNow) ||
-    (lockedWithdrawPhase === 'redeem' && !hasLockedWithdrawExecutionSnapshot) ||
-    executionUnderlyingWithdrawAssets <= 0n
-      ? undefined
-      : buildLockedWithdrawTransactionStep({
-          phase: lockedWithdrawPhase,
-          lockedStepMethod: executionLockedWithdrawMethod,
-          prepareLockedWithdraw: prepareLockedWithdrawStep,
-          prepareUnlockedWithdraw: prepareUnlockedWithdraw,
-          requestedLockedShares: executionLockedWithdrawShares,
-          receivedLockedAssets: executionLockedWithdrawAssets,
-          expectedUnderlyingOut: executionExpectedUnderlyingOut,
-          lockedVaultTokenDecimals,
-          lockedAssetDecimals,
-          underlyingDecimals: unlockedAssetDecimals,
-          lockedVaultTokenSymbol,
-          lockedAssetSymbol: lockedUserData.assetToken?.symbol ?? 'yvUSD',
-          underlyingSymbol: unlockedUserData.assetToken?.symbol ?? 'USDC'
-        })
-  const isLockedWithdrawReady =
-    draftWithdrawAmount > 0n &&
-    (currentLockedWithdrawMethod === 'redeem'
-      ? lockedRequestedWithdrawShares > 0n && lockedRequestedWithdrawShares <= maxRedeemShares
-      : lockedRequestedWithdrawAssets > 0n && lockedRequestedWithdrawAssets <= maxWithdrawAssets) &&
-    executionUnderlyingWithdrawAssets > 0n &&
-    !lockedWithdrawInputError &&
-    !!lockedReadyWithdrawStep?.prepare.isSuccess &&
-    !!lockedReadyWithdrawStep.prepare.data?.request
+  const hideLockedWithdrawAction = isLockedVariant && !!account && !canWithdrawNow
+  const effectiveLockedActionDisabledReason =
+    isLockedVariant && !hideLockedWithdrawAction ? lockedActionDisabledReason : undefined
+  const lockedRequestedShares = clampLockedRequestedShares(
+    lockedRequestedAmountRaw,
+    canWithdrawNow,
+    availableWithdrawSharesCap
+  )
+  const lockedExpectedUnderlyingOut =
+    lockedDisplayPricePerShare > 0n
+      ? (lockedRequestedShares * lockedDisplayPricePerShare) / 10n ** BigInt(lockedVaultTokenDecimals)
+      : 0n
 
   const withdrawPrefill = getWithdrawPrefill(
     activeVariant,

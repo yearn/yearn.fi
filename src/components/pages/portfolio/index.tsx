@@ -26,6 +26,7 @@ import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
@@ -35,7 +36,6 @@ import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { useChainId, useSwitchChain } from 'wagmi'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
