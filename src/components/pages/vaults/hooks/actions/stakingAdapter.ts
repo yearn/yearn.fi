@@ -83,28 +83,6 @@ export function getRedeemPreviewCall(stakingSource: string | undefined, amount: 
   return undefined
 }
 
-export function getStakingConvertToAssetsCall(
-  stakingSource: string | undefined,
-  shares: bigint
-): StakingCall | undefined {
-  const source = normalizeStakingSource(stakingSource)
-  if (source === 'VeYFI') {
-    return {
-      abi: VEYFI_GAUGE_ABI,
-      functionName: 'convertToAssets',
-      args: [shares]
-    }
-  }
-  if (source === 'yBOLD') {
-    return {
-      abi: TOKENIZED_STRATEGY_ABI,
-      functionName: 'convertToAssets',
-      args: [shares]
-    }
-  }
-  return undefined
-}
-
 export function getDirectStakeCall({ stakingSource, amount, account }: DirectStakeCallInput): StakingCall {
   const source = normalizeStakingSource(stakingSource)
 

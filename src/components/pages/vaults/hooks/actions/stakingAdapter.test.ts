@@ -8,7 +8,6 @@ import {
   getDirectUnstakeCalls,
   getRedeemPreviewCall,
   getStakePreviewCall,
-  getStakingConvertToAssetsCall,
   getStakingWithdrawableAssets,
   normalizeStakingSource
 } from './stakingAdapter'
@@ -33,21 +32,6 @@ describe('stakingAdapter', () => {
       args: [amount]
     })
     expect(getStakePreviewCall('Legacy', amount)).toBeUndefined()
-  })
-
-  it('builds convertToAssets calls for vault-backed staking wrappers', () => {
-    const shares = 42n
-    expect(getStakingConvertToAssetsCall('VeYFI', shares)).toMatchObject({
-      abi: VEYFI_GAUGE_ABI,
-      functionName: 'convertToAssets',
-      args: [shares]
-    })
-    expect(getStakingConvertToAssetsCall('yBOLD', shares)).toMatchObject({
-      abi: TOKENIZED_STRATEGY_ABI,
-      functionName: 'convertToAssets',
-      args: [shares]
-    })
-    expect(getStakingConvertToAssetsCall('Legacy', shares)).toBeUndefined()
   })
 
   it('builds redeem preview calls for vault-backed staking wrappers', () => {

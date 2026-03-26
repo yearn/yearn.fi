@@ -776,8 +776,11 @@ export function WidgetDeposit({
         shareValue={formatWidgetValue(depositValueInfo.vaultShareValueInAsset, assetToken?.decimals ?? 18)}
         assetSymbol={assetToken?.symbol || ''}
         usdValue={formatWidgetValue(depositValueInfo.vaultShareValueUsdRaw)}
+        showShareConversion={willReceiveStakedShares && activeFlow.periphery.expectedOut !== normalizedExpectedOut}
         convertedVaultSharesAmount={
-          willReceiveStakedShares ? formatWidgetValue(normalizedExpectedOut, vaultDecimals) : undefined
+          willReceiveStakedShares && activeFlow.periphery.expectedOut !== normalizedExpectedOut
+            ? formatWidgetValue(normalizedExpectedOut, vaultDecimals)
+            : undefined
         }
       />
 

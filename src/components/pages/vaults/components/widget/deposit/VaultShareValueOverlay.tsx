@@ -9,6 +9,7 @@ interface VaultShareValueOverlayProps {
   shareValue: string
   assetSymbol: string
   usdValue: string
+  showShareConversion?: boolean
   convertedVaultSharesAmount?: string
 }
 
@@ -20,9 +21,10 @@ export const VaultShareValueOverlay: FC<VaultShareValueOverlayProps> = ({
   shareValue,
   assetSymbol,
   usdValue,
+  showShareConversion = false,
   convertedVaultSharesAmount
 }) => {
-  const showsShareConversion = !!convertedVaultSharesAmount && convertedVaultSharesAmount !== sharesAmount
+  const showsShareConversion = showShareConversion && !!convertedVaultSharesAmount
 
   return (
     <InfoOverlay isOpen={isOpen} onClose={onClose} title="Vault Share Value">
