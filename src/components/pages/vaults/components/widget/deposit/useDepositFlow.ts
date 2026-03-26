@@ -1,3 +1,4 @@
+import { getRedeemPreviewCall } from '@pages/vaults/hooks/actions/stakingAdapter'
 import { useDirectDeposit } from '@pages/vaults/hooks/actions/useDirectDeposit'
 import { useDirectStake } from '@pages/vaults/hooks/actions/useDirectStake'
 import { useEnsoDeposit } from '@pages/vaults/hooks/actions/useEnsoDeposit'
@@ -5,9 +6,11 @@ import { useYvUsdLockedZapDeposit } from '@pages/vaults/hooks/actions/useYvUsdLo
 import { YVUSD_LOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
-import type { Address } from 'viem'
+import { type Address, isAddressEqual } from 'viem'
+import { useReadContract } from 'wagmi'
 import type { DepositRouteType } from './types'
 import { useDepositRoute } from './useDepositRoute'
+import { resolveValuationShareCount } from './valuation'
 
 interface UseDepositFlowProps {
   // Token addresses
@@ -46,7 +49,9 @@ export interface DepositFlowResult {
       isAllowanceSufficient: boolean
       allowance: bigint
       expectedOut: bigint
+      normalizedExpectedOut: bigint
       isLoadingRoute: boolean
+      isLoadingExpectedOutNormalization: boolean
       isCrossChain: boolean
       routerAddress?: string
       error?: unknown
@@ -146,8 +151,56 @@ export const useDepositFlow = ({
     return ensoFlow
   }, [routeType, isYvUsdLockedZapDeposit, yvUsdLockedZapDeposit, directDeposit, directStake, ensoFlow])
 
+  const shouldNormalizeExpectedOut =
+    !!stakingAddress && isAddressEqual(destinationToken, stakingAddress) && activeFlow.periphery.expectedOut > 0n
+
+  const previewRedeemCall = useMemo(
+    () =>
+      shouldNormalizeExpectedOut ? getRedeemPreviewCall(stakingSource, activeFlow.periphery.expectedOut) : undefined,
+    [shouldNormalizeExpectedOut, stakingSource, activeFlow.periphery.expectedOut]
+  )
+
+  const { data: normalizedExpectedOutData, isLoading: isLoadingExpectedOutNormalization } = useReadContract({
+    address: stakingAddress,
+    abi: (previewRedeemCall?.abi || []) as any,
+    functionName: (previewRedeemCall?.functionName || 'previewRedeem') as any,
+    args: previewRedeemCall?.args as any,
+    chainId,
+    query: {
+      enabled: shouldNormalizeExpectedOut && !!stakingAddress && !!previewRedeemCall
+    }
+  })
+
+  const normalizedExpectedOut = useMemo(
+    () =>
+      resolveValuationShareCount({
+        expectedOut: activeFlow.periphery.expectedOut,
+        destinationToken,
+        vaultAddress,
+        stakingAddress,
+        previewedVaultShares: previewRedeemCall ? (normalizedExpectedOutData as bigint | undefined) : undefined
+      }),
+    [
+      activeFlow.periphery.expectedOut,
+      destinationToken,
+      vaultAddress,
+      stakingAddress,
+      previewRedeemCall,
+      normalizedExpectedOutData
+    ]
+  )
+
   return {
     routeType,
-    activeFlow
+    activeFlow: {
+      ...activeFlow,
+      periphery: {
+        ...activeFlow.periphery,
+        normalizedExpectedOut,
+        isLoadingExpectedOutNormalization: Boolean(
+          shouldNormalizeExpectedOut && !!previewRedeemCall && isLoadingExpectedOutNormalization
+        )
+      }
+    }
   }
 }

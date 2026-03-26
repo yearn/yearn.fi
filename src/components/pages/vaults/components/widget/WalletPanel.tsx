@@ -222,8 +222,16 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   const navigate = useNavigate()
   const { getPrice } = useYearn()
   const [activeTab, setActiveTab] = useState<WalletTabKey>('balances')
-  const { assetToken, vaultToken, stakingToken, depositedValue, depositedShares, pricePerShare, isLoading } =
-    vaultUserData
+  const {
+    assetToken,
+    vaultToken,
+    stakingToken,
+    depositedValue,
+    depositedShares,
+    pricePerShare,
+    stakingWithdrawableAssets,
+    isLoading
+  } = vaultUserData
   const isYvUsd = isYvUsdVault(currentVault)
   const vaultDecimals = getVaultDecimals(currentVault)
   const vaultTVL = getVaultTVL(currentVault)
@@ -243,7 +251,8 @@ export const WalletPanel: FC<WalletPanelProps> = ({
     ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID ?? chainId }).normalized
     : 0
   const assetDecimals = assetToken?.decimals ?? vaultDecimals
-  const shareTokenDecimals = vaultToken?.decimals ?? 18
+  const vaultShareDecimals = vaultToken?.decimals ?? 18
+  const stakingShareDecimals = stakingToken?.decimals ?? vaultShareDecimals
   const maxShareLabelLength = 'vault shares'.length
   const baseVaultSharesLabel = vaultSymbol || 'vault shares'
   const baseStakedSharesLabel = stakingSymbol || baseVaultSharesLabel
@@ -275,30 +284,30 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   )
 
   const depositedLabel = formatTokenAmount(depositedValue, assetDecimals, assetSymbol)
-  const vaultBalanceLabel = formatTokenAmount(vaultBalance, shareTokenDecimals, vaultSharesLabel, {
+  const vaultBalanceLabel = formatTokenAmount(vaultBalance, vaultShareDecimals, vaultSharesLabel, {
     shouldCompactValue: true
   })
-  const stakingBalanceLabel = formatTokenAmount(stakingBalance, shareTokenDecimals, stakedSharesLabel, {
+  const stakingBalanceLabel = formatTokenAmount(stakingBalance, stakingShareDecimals, stakedSharesLabel, {
     shouldCompactValue: true
   })
-  const totalSharesLabel = formatTokenAmount(depositedShares, shareTokenDecimals, vaultSharesLabel, {
+  const totalSharesLabel = formatTokenAmount(depositedShares, vaultShareDecimals, vaultSharesLabel, {
     shouldCompactValue: true
   })
   const availableLabel = formatTokenAmount(availableBalance, assetDecimals, assetSymbol, { shouldCompactValue: true })
 
   const vaultSharesUsd = useMemo(() => {
     if (!pricePerShare || vaultBalance === 0n || assetPrice === 0) return 0
-    const underlying = (vaultBalance * pricePerShare) / 10n ** BigInt(shareTokenDecimals)
+    const underlying = (vaultBalance * pricePerShare) / 10n ** BigInt(vaultShareDecimals)
     const normalized = toNormalizedBN(underlying, assetDecimals).normalized
     return normalized * assetPrice
-  }, [pricePerShare, vaultBalance, shareTokenDecimals, assetDecimals, assetPrice])
+  }, [pricePerShare, vaultBalance, vaultShareDecimals, assetDecimals, assetPrice])
 
   const stakedSharesUsd = useMemo(() => {
-    if (!pricePerShare || stakingBalance === 0n || assetPrice === 0) return 0
-    const underlying = (stakingBalance * pricePerShare) / 10n ** BigInt(shareTokenDecimals)
+    if (!pricePerShare || stakingWithdrawableAssets === 0n || assetPrice === 0) return 0
+    const underlying = (stakingWithdrawableAssets * pricePerShare) / 10n ** BigInt(vaultShareDecimals)
     const normalized = toNormalizedBN(underlying, assetDecimals).normalized
     return normalized * assetPrice
-  }, [pricePerShare, stakingBalance, shareTokenDecimals, assetDecimals, assetPrice])
+  }, [pricePerShare, stakingWithdrawableAssets, vaultShareDecimals, assetDecimals, assetPrice])
 
   const totalSharesUsd = vaultSharesUsd + stakedSharesUsd
   const availableUsd = (assetToken?.balance.normalized ?? 0) * assetPrice
