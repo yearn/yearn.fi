@@ -1,7 +1,6 @@
 import { useNotifications } from '@shared/contexts/useNotifications'
 import type { TNotification } from '@shared/types/notifications'
-import { SUPPORTED_NETWORKS } from '@shared/utils'
-import { retrieveConfig } from '@shared/utils/wagmi'
+import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
 import { useCallback, useEffect, useRef } from 'react'
 import { getBlock, waitForTransactionReceipt } from 'wagmi/actions'
 
@@ -28,16 +27,17 @@ export function useTransactionStatusPoller(notification: TNotification): void {
 
     try {
       const config = retrieveConfig()
-      const chain = SUPPORTED_NETWORKS.find((network) => network.id === notification.chainId)
+      const pollingChainId = notification.executionChainId ?? notification.chainId
+      const chain = getNetwork(pollingChainId)
 
       if (!chain) {
-        console.warn(`Chain ${notification.chainId} not supported for transaction polling`)
+        console.warn(`Chain ${pollingChainId} not supported for transaction polling`)
         return
       }
 
       // Wait for transaction receipt with a short timeout to avoid blocking
       const receipt = await waitForTransactionReceipt(config, {
-        chainId: notification.chainId,
+        chainId: pollingChainId,
         hash: notification.txHash,
         timeout: 5000 // 5 second timeout to avoid long waits
       })
@@ -47,7 +47,7 @@ export function useTransactionStatusPoller(notification: TNotification): void {
 
         // Get the block information to retrieve the timestamp
         const block = await getBlock(config, {
-          chainId: notification.chainId,
+          chainId: pollingChainId,
           blockNumber: receipt.blockNumber
         })
 

@@ -2,17 +2,14 @@ import type { FC, PropsWithChildren } from 'react'
 import { useMemo } from 'react'
 import { useLocation } from 'react-router'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
-import { supportedChains, type TSupportedChainId } from '@/config/supportedChains'
+import { supportedAppChains, type TSupportedChainId } from '@/config/supportedChains'
+import { getCanonicalChain, resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/tenderly'
 import { chainsContext, type TChainsContext } from '@/context/chainsContext'
 
 const DEFAULT_CHAIN_ID = 1 as TSupportedChainId
 
-function getSupportedChain(chainId: number) {
-  return supportedChains.find((chain: { id: number }) => chain.id === chainId)
-}
-
 export const ChainsProvider: FC<PropsWithChildren> = ({ children }) => {
-  const chainId = useChainId()
+  const rawChainId = useChainId()
   const { pathname } = useLocation()
   const account = useAccount()
   const { switchChain } = useSwitchChain()
@@ -23,21 +20,32 @@ export const ChainsProvider: FC<PropsWithChildren> = ({ children }) => {
   }, [pathname])
 
   const contextValue = useMemo((): TChainsContext => {
-    const isConnectedChainValid = !!(account.chain?.id && getSupportedChain(account.chain.id))
-    const chainIdIntent = (chainIdParam || chainId || DEFAULT_CHAIN_ID) as TSupportedChainId
+    const connectedCanonicalChainId = resolveConnectedCanonicalChainId(account.chain?.id)
+    const resolvedCanonicalChainId = resolveConnectedCanonicalChainId(rawChainId) ?? DEFAULT_CHAIN_ID
+    const chainIdIntent = (
+      chainIdParam && getCanonicalChain(chainIdParam)?.id ? chainIdParam : resolvedCanonicalChainId
+    ) as TSupportedChainId
+    const executionChainId = resolveExecutionChainId(chainIdIntent) ?? resolveExecutionChainId(resolvedCanonicalChainId)
 
     return {
-      chains: supportedChains,
-      chainId: (chainId || DEFAULT_CHAIN_ID) as TSupportedChainId,
+      chains: supportedAppChains,
+      chainId: resolvedCanonicalChainId,
       chainIdIntent,
-      getChainFromId: getSupportedChain,
+      executionChainId: executionChainId ?? resolvedCanonicalChainId,
+      getChainFromId: getCanonicalChain,
+      getExecutionChainId: resolveExecutionChainId,
       switchNetwork: (newChainId: number) => {
-        switchChain?.({ chainId: newChainId })
+        const nextExecutionChainId = resolveExecutionChainId(newChainId)
+        if (nextExecutionChainId === undefined) {
+          console.warn(`Chain ${newChainId} is not enabled for execution`)
+          return
+        }
+        switchChain?.({ chainId: nextExecutionChainId })
       },
-      isConnectedChainValid,
+      isConnectedChainValid: Boolean(connectedCanonicalChainId),
       isConnected: !!account.address
     }
-  }, [chainId, chainIdParam, account.chain?.id, account.address, switchChain])
+  }, [rawChainId, chainIdParam, account.chain?.id, account.address, switchChain])
 
   return <chainsContext.Provider value={contextValue}>{children}</chainsContext.Provider>
 }

@@ -1,21 +1,20 @@
 import { Button } from '@shared/components/Button'
 import { useNotificationsActions } from '@shared/contexts/useNotificationsActions'
+import {
+  type AppUseSimulateContractReturnType,
+  useChainId,
+  useSwitchChain,
+  useWaitForTransactionReceipt
+} from '@shared/hooks/useAppWagmi'
 import type { TCreateNotificationParams } from '@shared/types/notifications'
 import { cl } from '@shared/utils'
-import { getNetwork } from '@shared/utils/wagmi'
+import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
+import { getPublicClient } from '@wagmi/core'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useReward } from 'react-rewards'
 import type { TypedData, TypedDataDomain } from 'viem'
-import {
-  type UseSimulateContractReturnType,
-  useAccount,
-  useChainId,
-  usePublicClient,
-  useSignTypedData,
-  useSwitchChain,
-  useWaitForTransactionReceipt,
-  useWriteContract
-} from 'wagmi'
+import { useAccount, useSignTypedData, useWriteContract } from 'wagmi'
+import { isConnectedToExecutionChain } from '@/config/tenderly'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
 import { type OverlayState, shouldAutoContinuePermitSuccess } from './transactionOverlay.helpers'
 
@@ -33,7 +32,7 @@ export type PermitDataAsync = {
 export type PermitData = PermitDataDirect | PermitDataAsync
 
 export type TransactionStep = {
-  prepare: UseSimulateContractReturnType
+  prepare: AppUseSimulateContractReturnType
   label: string
   confirmMessage: string
   successTitle: string
@@ -52,7 +51,7 @@ type TPrepareDebugInfo = {
   isError: boolean
   isLoading: boolean
   isFetching: boolean
-  status: UseSimulateContractReturnType['status']
+  status: AppUseSimulateContractReturnType['status']
   error?: string
   request?: {
     chainId?: number
@@ -61,7 +60,7 @@ type TPrepareDebugInfo = {
   }
 }
 
-function getPrepareDebugInfo(prepare?: UseSimulateContractReturnType): TPrepareDebugInfo | undefined {
+function getPrepareDebugInfo(prepare?: AppUseSimulateContractReturnType): TPrepareDebugInfo | undefined {
   if (!prepare) return undefined
   const request = prepare.data?.request as any
 
@@ -164,8 +163,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const currentChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>()
-  const client = usePublicClient()
-  const { address: account } = useAccount()
+  const { address: account, chain } = useAccount()
 
   // Notification system integration
   const { createNotification, updateNotification } = useNotificationsActions()
@@ -177,10 +175,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   // Track the step that was just executed (for showing success messages)
   const executedStepRef = useRef<TransactionStep | null>(null)
 
-  const receipt = useWaitForTransactionReceipt({ hash: txHash, confirmations })
   const explorerChainId =
-    ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? currentChainId
-  const blockExplorer = explorerChainId ? getNetwork(explorerChainId).defaultBlockExplorer : ''
+    ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? undefined
+  const receipt = useWaitForTransactionReceipt({ hash: txHash, chainId: explorerChainId, confirmations })
+  const blockExplorer = getNetwork(explorerChainId ?? currentChainId).defaultBlockExplorer
   const explorerTxUrl = txHash && blockExplorer ? `${blockExplorer}/tx/${txHash}` : ''
 
   // Track if the executed step was the last step (captured at execution time)
@@ -291,12 +289,16 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     async (
       txHash: `0x${string}`,
       notification?: TCreateNotificationParams,
+      executionChainId?: number,
       status: 'pending' | 'submitted' = 'pending'
     ): Promise<number | undefined> => {
       if (!notification || !account) return undefined
 
       try {
-        const id = await createNotification(notification)
+        const id = await createNotification({
+          ...notification,
+          executionChainId: executionChainId ?? notification.executionChainId
+        })
         setNotificationId(id)
         await updateNotification({ id, txHash, status })
         return id
@@ -389,7 +391,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
       const request = currentStep.prepare.data.request as any
       const txChainId = request.chainId
-      const wrongNetwork = txChainId && currentChainId !== txChainId
+      const wrongNetwork = txChainId && !isConnectedToExecutionChain(chain?.id, txChainId)
 
       if (wrongNetwork && txChainId) {
         try {
@@ -413,7 +415,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           }
 
           if (isCrossChain) {
-            await handleCreateNotification(result.hash, currentStep.notification, 'submitted')
+            await handleCreateNotification(result.hash, currentStep.notification, txChainId, 'submitted')
             if (currentStep.showConfetti) {
               setTimeout(() => reward(), 100)
             }
@@ -425,17 +427,18 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
           setTxHash(result.hash)
           setOverlayState('pending')
-          await handleCreateNotification(result.hash, currentStep.notification)
+          await handleCreateNotification(result.hash, currentStep.notification, txChainId)
           return
         }
 
-        const gasOverrides: { gas?: bigint } = client
-          ? await client
+        const gasEstimateClient = txChainId ? getPublicClient(retrieveConfig(), { chainId: txChainId }) : undefined
+        const gasOverrides: { gas?: bigint } = gasEstimateClient
+          ? await gasEstimateClient
               .estimateContractGas(request)
-              .then((gasEstimate) => ({
+              .then((gasEstimate: bigint) => ({
                 gas: (gasEstimate * BigInt(110)) / BigInt(100)
               }))
-              .catch((error) => {
+              .catch((error: unknown) => {
                 console.warn('[TransactionOverlay] Gas estimation failed', {
                   step: currentStep.label,
                   error: (error as Error)?.message || error
@@ -450,7 +453,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         })
         setTxHash(hash)
         setOverlayState('pending')
-        await handleCreateNotification(hash, currentStep.notification)
+        await handleCreateNotification(hash, currentStep.notification, txChainId)
       } catch (error: any) {
         if (isUserRejectionError(error)) {
           onClose()
@@ -462,8 +465,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       }
     },
     [
-      client,
-      currentChainId,
+      chain?.id,
       finalizeSuccessState,
       handleCreateNotification,
       isLastStep,
@@ -503,41 +505,41 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     executeStep()
   }, [resetTxState, executeStep])
 
-  const waitForAutoContinueBlock = useCallback(
-    async (executedStepLabel?: string) => {
-      // Most flows can continue immediately once the next simulation is ready.
-      // Unstake -> withdraw can race state propagation, so wait one block there.
-      if (executedStepLabel !== 'Unstake') return
+  const waitForAutoContinueBlock = useCallback(async (executedStepLabel?: string) => {
+    // Most flows can continue immediately once the next simulation is ready.
+    // Unstake -> withdraw can race state propagation, so wait one block there.
+    if (executedStepLabel !== 'Unstake') return
 
-      const executedBlockNumber = executedStepBlockRef.current
-      if (!client || executedBlockNumber === undefined) return
+    const executedBlockNumber = executedStepBlockRef.current
+    const executedChainId =
+      ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? undefined
+    const blockClient = executedChainId ? getPublicClient(retrieveConfig(), { chainId: executedChainId }) : undefined
+    if (!blockClient || executedBlockNumber === undefined) return
 
-      const targetBlock = executedBlockNumber + 1n
-      const timeoutMs = 20_000
-      const pollIntervalMs = 1_000
-      const startedAt = Date.now()
+    const targetBlock = executedBlockNumber + 1n
+    const timeoutMs = 20_000
+    const pollIntervalMs = 1_000
+    const startedAt = Date.now()
 
-      while (Date.now() - startedAt < timeoutMs) {
-        try {
-          const latestBlock = await client.getBlockNumber()
-          if (latestBlock >= targetBlock) {
-            return
-          }
-        } catch (error) {
-          console.warn('[TransactionOverlay] Auto-continue block polling failed', {
-            step: executedStepRef.current?.label,
-            error: (error as Error)?.message || error
-          })
+    while (Date.now() - startedAt < timeoutMs) {
+      try {
+        const latestBlock = await blockClient.getBlockNumber()
+        if (latestBlock >= targetBlock) {
           return
         }
-
-        await new Promise((resolve) => {
-          window.setTimeout(resolve, pollIntervalMs)
+      } catch (error) {
+        console.warn('[TransactionOverlay] Auto-continue block polling failed', {
+          step: executedStepRef.current?.label,
+          error: (error as Error)?.message || error
         })
+        return
       }
-    },
-    [client]
-  )
+
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, pollIntervalMs)
+      })
+    }
+  }, [])
 
   useEffect(() => {
     if (step?.prepare.isError) {

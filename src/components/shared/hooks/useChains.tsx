@@ -1,22 +1,20 @@
 import { useCustomCompareMemo, useDeepCompareMemo } from '@react-hookz/web'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
-
+import { SUPPORTED_NETWORKS } from '@shared/utils/constants'
 import type { Chain } from 'viem'
 import type { Connector } from 'wagmi'
-import { useConfig, useConnect } from 'wagmi'
+import { useConnect } from 'wagmi'
 
 export function useChainOptions(chains: number[] | null): TMultiSelectOptionProps[] {
   const { connectors } = useConnect()
-  const config = useConfig()
 
   const injectedChains = useCustomCompareMemo(
     (): Chain[] | undefined => {
       connectors //Hard trigger re-render when connectors change
-      const noFork = config.chains.filter(({ id }): boolean => id !== 1337)
-      return noFork as Chain[]
+      return SUPPORTED_NETWORKS as Chain[]
     },
-    [[...connectors], config],
-    (savedDeps: [Connector[], typeof config], deps: [Connector[], typeof config]): boolean => {
+    [[...connectors]],
+    (savedDeps: [Connector[]], deps: [Connector[]]): boolean => {
       for (const savedDep of savedDeps[0]) {
         if (!deps[0].find((dep): boolean => dep.id === savedDep.id)) {
           return false
