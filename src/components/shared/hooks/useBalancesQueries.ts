@@ -1,6 +1,7 @@
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { type UseQueryOptions, useQueries } from '@tanstack/react-query'
 import { useCallback, useMemo, useRef } from 'react'
+import { resolveExecutionChainId } from '@/config/tenderly'
 import type { TAddress } from '../types/address'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { isZeroAddress } from '../utils/tools.is'
@@ -23,9 +24,10 @@ function buildBalanceQueryOptions(
 ): TBalanceQueryOptions[] {
   return Object.entries(tokensByChain).map(([chainIdStr, chainTokens]) => {
     const chainId = Number(chainIdStr)
+    const executionChainId = resolveExecutionChainId(chainId)
     const config = getChainConfig(chainId)
     const tokenAddresses = chainTokens.map((t) => t.address)
-    const queryKey = balanceQueryKeys.byTokens(chainId, userAddress, tokenAddresses)
+    const queryKey = balanceQueryKeys.byTokens(chainId, executionChainId, userAddress, tokenAddresses)
 
     return {
       queryKey,

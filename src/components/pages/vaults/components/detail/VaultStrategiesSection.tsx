@@ -243,6 +243,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
                   variant={vaultVariant}
                   apr={strategy.estimatedAPY}
                   netApr={strategy.netAPR}
+                  katRewardsAPR={strategy.katRewardsAPR}
                   fees={fees}
                 />
               ))}
@@ -301,6 +302,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
                   variant={vaultVariant}
                   apr={strategy.estimatedAPY}
                   netApr={strategy.netAPR}
+                  katRewardsAPR={strategy.katRewardsAPR}
                   fees={fees}
                 />
               ))}

@@ -20,6 +20,7 @@ import {
   getCommonBlockingKeys,
   shouldShowComboBlockingAction
 } from '@pages/vaults/utils/blockingFilterInsights'
+import { resolveNextSingleChainSelection } from '@pages/vaults/utils/chainSelection'
 import {
   AGGRESSIVENESS_OPTIONS,
   AVAILABLE_TOGGLE_VALUE,
@@ -737,7 +738,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
   )
   const handleToggleChain = useCallback(
     (chainId: number): void => {
-      handleChainsChange(toggleInArray(displayedChains ?? null, chainId))
+      handleChainsChange(resolveNextSingleChainSelection(displayedChains, chainId))
     },
     [displayedChains, handleChainsChange]
   )

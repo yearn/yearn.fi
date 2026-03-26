@@ -1,11 +1,11 @@
 import { useTokenAllowance } from '@pages/vaults/hooks/useTokenAllowance'
 import type { MigrateRouteType, UseMigrateFlowReturn } from '@pages/vaults/types'
 import { ERC_4626_ROUTER_ABI } from '@shared/contracts/abi/erc4626Router.abi'
+import { type AppUseSimulateContractReturnType, usePublicClient, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { detectPermitType, type PermitType, type TPermitSignature } from '@shared/hooks/usePermit'
 import { getMigratorConfig, type MigratorConfig } from '@shared/utils/migratorRegistry'
 import { useEffect, useMemo, useState } from 'react'
 import { type Address, encodeFunctionData, erc20Abi } from 'viem'
-import { type UseSimulateContractReturnType, usePublicClient, useSimulateContract } from 'wagmi'
 import { YEARN_4626_ROUTER } from '@/components/shared/utils'
 
 // Default permit deadline: 20 minutes from now
@@ -105,7 +105,7 @@ export const useMigrateFlow = ({
 
   // Prepare approve (when using approve flow and allowance insufficient)
   const prepareApproveEnabled = routeType === 'approve' && !isAllowanceSufficient && hasBalance && !!account && enabled
-  const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
+  const prepareApprove: AppUseSimulateContractReturnType = useSimulateContract({
     abi: erc20Abi,
     functionName: 'approve',
     address: vaultFrom,
@@ -115,7 +115,7 @@ export const useMigrateFlow = ({
   })
 
   const prepareMigrateEnabled = routeType === 'approve' && hasBalance && !!account && enabled && isAllowanceSufficient
-  const prepareMigrate: UseSimulateContractReturnType = useSimulateContract({
+  const prepareMigrate: AppUseSimulateContractReturnType = useSimulateContract({
     abi: migratorConfig.abi,
     functionName: migratorConfig.functionName,
     address: effectiveRouter,
@@ -160,7 +160,7 @@ export const useMigrateFlow = ({
     migratorConfig.functionName
   ])
 
-  const prepareMulticall: UseSimulateContractReturnType = useSimulateContract({
+  const prepareMulticall: AppUseSimulateContractReturnType = useSimulateContract({
     abi: ERC_4626_ROUTER_ABI,
     functionName: 'multicall',
     address: effectiveRouter,

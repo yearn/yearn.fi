@@ -1,5 +1,6 @@
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { useNotifications } from '@shared/contexts/useNotifications'
+import { useTenderlyPanel } from '@shared/contexts/useTenderlyPanel'
 import useWallet from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconBurgerPlain } from '@shared/icons/IconBurgerPlain'
@@ -14,6 +15,7 @@ import { truncateHex } from '@shared/utils/tools.address'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
+import { isTenderlyModeEnabled, tenderlyRuntime } from '@/config/tenderly'
 import Link from '/src/components/Link'
 import { AccountDropdown } from './AccountDropdown'
 import { HeaderNavMenu } from './HeaderNavMenu'
@@ -98,6 +100,50 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
   )
 }
 
+function TenderlyIndicator(): ReactElement | null {
+  const { isPanelAvailable, isOpen, togglePanel } = useTenderlyPanel()
+
+  if (!isTenderlyModeEnabled()) {
+    return null
+  }
+
+  const configuredMappings = tenderlyRuntime.configuredCanonicalChainIds
+    .map((canonicalChainId) => {
+      const executionChainId = tenderlyRuntime.configuredByCanonicalId[canonicalChainId]?.executionChainId
+      return executionChainId ? `${canonicalChainId} -> ${executionChainId}` : String(canonicalChainId)
+    })
+    .join(', ')
+
+  if (!isPanelAvailable) {
+    return (
+      <span
+        title={`Tenderly mode enabled${configuredMappings ? ` (${configuredMappings})` : ''}`}
+        className={
+          'inline-flex items-center rounded-full border border-border bg-surface-secondary px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary'
+        }
+      >
+        {'Tenderly'}
+      </span>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={togglePanel}
+      title={`Tenderly mode enabled${configuredMappings ? ` (${configuredMappings})` : ''}`}
+      className={cl(
+        'inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors',
+        isOpen
+          ? 'border-text-primary bg-text-primary text-surface'
+          : 'border-border bg-surface-secondary text-text-secondary hover:text-text-primary'
+      )}
+    >
+      {'Tenderly'}
+    </button>
+  )
+}
+
 function AppHeader(): ReactElement {
   const location = useLocation()
   const pathname = location.pathname
@@ -143,6 +189,8 @@ function AppHeader(): ReactElement {
                       {'Portfolio'}
                     </span>
                   </Link>
+
+                  <TenderlyIndicator />
 
                   <button
                     className={

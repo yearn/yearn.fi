@@ -6,7 +6,9 @@ export type TChainsContext = {
   chains: readonly Chain[]
   chainId: TSupportedChainId
   chainIdIntent: TSupportedChainId
+  executionChainId: number
   getChainFromId: (chainId: number) => Chain | undefined
+  getExecutionChainId: (chainId: number) => number | undefined
   switchNetwork: (chainId: number) => void
   isConnectedChainValid: boolean
   isConnected: boolean

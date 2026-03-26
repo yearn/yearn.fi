@@ -3,9 +3,11 @@ import { JUICED_STAKING_REWARDS_ABI } from '@shared/contracts/abi/juicedStakingR
 import { STAKING_REWARDS_ABI } from '@shared/contracts/abi/stakingRewards.abi'
 import { V3_STAKING_REWARDS_ABI } from '@shared/contracts/abi/V3StakingRewards.abi'
 import { VEYFI_GAUGE_ABI } from '@shared/contracts/abi/veYFIGauge.abi'
+import { useReadContract } from '@shared/hooks/useAppWagmi'
 import { toNormalizedValue } from '@shared/utils'
 import { useCallback, useMemo } from 'react'
-import { useReadContract, useReadContracts } from 'wagmi'
+import { useReadContracts } from 'wagmi'
+import { resolveExecutionChainId } from '@/config/tenderly'
 
 export type TRewardToken = {
   address: `0x${string}`
@@ -32,6 +34,7 @@ type UseStakingRewardsReturn = {
 
 export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRewardsReturn {
   const { stakingAddress, stakingSource, rewardTokens, userAddress, chainId, enabled = true } = params
+  const executionChainId = resolveExecutionChainId(chainId)
 
   const isEnabled = enabled && !!stakingAddress && !!userAddress && rewardTokens.length > 0
 
@@ -74,9 +77,9 @@ export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRe
       abi: JUICED_STAKING_REWARDS_ABI,
       functionName: 'earned' as const,
       args: [userAddress, token.address] as const,
-      chainId
+      chainId: executionChainId
     }))
-  }, [isJuiced, stakingAddress, userAddress, rewardTokens, chainId])
+  }, [executionChainId, isJuiced, stakingAddress, userAddress, rewardTokens])
 
   const {
     data: juicedEarned,
@@ -84,7 +87,7 @@ export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRe
     refetch: refetchJuiced
   } = useReadContracts({
     contracts: juicedContracts,
-    query: { enabled: isEnabled && isJuiced && juicedContracts.length > 0 }
+    query: { enabled: isEnabled && isJuiced && juicedContracts.length > 0 && !!executionChainId }
   })
 
   // Legacy/OP Boost staking uses earned(account) for single reward token

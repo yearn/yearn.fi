@@ -1,8 +1,13 @@
+import {
+  type AppUseSimulateContractReturnType,
+  usePublicClient,
+  useWaitForTransactionReceipt
+} from '@shared/hooks/useAppWagmi'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address, Hash, Hex } from 'viem'
-import type { UseSimulateContractReturnType } from 'wagmi'
-import { usePublicClient, useWaitForTransactionReceipt, useWalletClient } from 'wagmi'
-import { supportedChains } from '@/config/supportedChains'
+import { useWalletClient } from 'wagmi'
+import { supportedWalletChains } from '@/config/supportedChains'
+import { resolveExecutionChainId } from '@/config/tenderly'
 
 interface EnsoTransaction {
   to: Address
@@ -19,7 +24,7 @@ interface UseEnsoOrderProps {
 }
 
 interface UseEnsoOrderReturn {
-  prepareEnsoOrder: UseSimulateContractReturnType
+  prepareEnsoOrder: AppUseSimulateContractReturnType
   receiptSuccess: boolean
   txHash: Hash | undefined
 }
@@ -34,12 +39,13 @@ export const useEnsoOrder = ({
   const [error, setError] = useState<Error | null>(null)
   const [txHash, setTxHash] = useState<Hash | undefined>()
   const [waitingForTx, setWaitingForTx] = useState(false)
+  const executionChainId = resolveExecutionChainId(chainId)
   // Don't specify chainId - use current chain. TxButton handles chain switching before execution.
   const publicClient = usePublicClient()
   const { data: walletClient } = useWalletClient()
   const { data: receipt, isSuccess: receiptSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
-    chainId
+    chainId: executionChainId
   })
 
   const executeOrder = useCallback(async () => {
@@ -51,10 +57,11 @@ export const useEnsoOrder = ({
       if (!ensoTx) throw new Error('No Enso transaction data')
       if (!walletClient) throw new Error('No wallet client available')
       if (!publicClient) throw new Error('No public client available')
+      if (!executionChainId) throw new Error(`No execution chain configured for chain ${chainId}`)
 
       // Note: Chain switching is handled by TransactionOverlay before calling executeOrder
       // We use the target chain from props, not walletClient.chain which may be stale
-      const targetChain = supportedChains.find((c) => c.id === chainId)
+      const targetChain = supportedWalletChains.find((c) => c.id === executionChainId)
 
       // Send the transaction
       const hash = await walletClient.sendTransaction({
@@ -74,7 +81,7 @@ export const useEnsoOrder = ({
       setIsExecuting(false)
       throw err
     }
-  }, [getEnsoTransaction, walletClient, publicClient, chainId])
+  }, [chainId, executionChainId, getEnsoTransaction, walletClient, publicClient])
 
   const ensoTx = getEnsoTransaction()
   useEffect(() => {
@@ -95,10 +102,10 @@ export const useEnsoOrder = ({
   }, [receipt, waitingForTx])
 
   // Create a mock simulate contract result that TxButton can understand
-  const prepareEnsoOrder: UseSimulateContractReturnType = useMemo(() => {
+  const prepareEnsoOrder: AppUseSimulateContractReturnType = useMemo(() => {
     return {
       data:
-        enabled && ensoTx
+        enabled && ensoTx && executionChainId
           ? {
               request: {
                 // Standard contract fields for gas estimation
@@ -108,7 +115,7 @@ export const useEnsoOrder = ({
                 args: [] as readonly unknown[],
                 data: ensoTx.data,
                 value: BigInt(ensoTx.value || 0),
-                chainId, // Use chainId prop (source chain), not ensoTx.chainId which may be undefined
+                chainId: executionChainId,
                 account: ensoTx.from,
                 // Custom marker to identify this as an Enso order
                 __isEnsoOrder: true,
@@ -124,7 +131,7 @@ export const useEnsoOrder = ({
       error: null,
       isError: false,
       isLoading: isExecuting || waitingForTx,
-      isSuccess: enabled && !!ensoTx && !isExecuting && !waitingForTx,
+      isSuccess: enabled && !!ensoTx && !!executionChainId && !isExecuting && !waitingForTx,
       isFetching: false,
       isPending: false,
       isRefetching: false,
@@ -132,8 +139,8 @@ export const useEnsoOrder = ({
       status: isExecuting ? 'pending' : error ? 'error' : 'success',
       fetchStatus: 'idle',
       dataUpdatedAt: Date.now()
-    } as UseSimulateContractReturnType
-  }, [enabled, error, isExecuting, executeOrder, ensoTx, txHash, waitingForTx, chainId])
+    } as AppUseSimulateContractReturnType
+  }, [enabled, error, executeOrder, executionChainId, isExecuting, ensoTx, txHash, waitingForTx])
 
   return {
     prepareEnsoOrder,

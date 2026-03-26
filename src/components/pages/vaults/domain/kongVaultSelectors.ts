@@ -262,8 +262,8 @@ export type TKongVaultApr = {
   }
   pricePerShare: {
     today: number
-    weekAgo: number
-    monthAgo: number
+    weekAgo: number | null
+    monthAgo: number | null
   }
   forwardAPR: {
     type: string
@@ -333,6 +333,7 @@ export type TKongVaultStrategy = {
   description: string
   netAPR: number | null
   estimatedAPY?: number | null
+  katRewardsAPR?: number | null
   status: 'active' | 'not_active' | 'unallocated'
   details?: {
     totalDebt: string
@@ -645,8 +646,14 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
     },
     pricePerShare: {
       today: normalizePricePerShare(snapshot?.apy?.pricePerShare ?? vault.pricePerShare, token.decimals),
-      weekAgo: normalizePricePerShare(snapshot?.apy?.weeklyPricePerShare, token.decimals),
-      monthAgo: normalizePricePerShare(snapshot?.apy?.monthlyPricePerShare, token.decimals)
+      weekAgo:
+        snapshot?.apy?.weeklyPricePerShare === null || snapshot?.apy?.weeklyPricePerShare === undefined
+          ? null
+          : normalizePricePerShare(snapshot.apy.weeklyPricePerShare, token.decimals),
+      monthAgo:
+        snapshot?.apy?.monthlyPricePerShare === null || snapshot?.apy?.monthlyPricePerShare === undefined
+          ? null
+          : normalizePricePerShare(snapshot.apy.monthlyPricePerShare, token.decimals)
     },
     forwardAPR: {
       type: forwardType,
@@ -753,12 +760,25 @@ const mapSnapshotComposition = (
     const status = normalizeCompositionStatus(entry.status, hasAllocation)
     const name = entry.name?.trim() || `Strategy ${index + 1}`
     const estimatedAPY = (() => {
-      const oracleApy = pickNumberOrNull(entry.performance?.oracle?.apy)
-      if (oracleApy !== null) {
-        return oracleApy
-      }
       const estimatedApy = pickNumberOrNull(entry.performance?.estimated?.apy)
-      return estimatedApy === null ? undefined : estimatedApy
+      if (estimatedApy !== null) {
+        return estimatedApy
+      }
+      // For Katana strategies, estimated.apr is KAT rewards (additive incentive),
+      // NOT the base yield — so skip straight to oracle.apy for the base value.
+      // KAT rewards are captured separately in katRewardsAPR below.
+      const oracleApy = pickNumberOrNull(entry.performance?.oracle?.apy)
+      return oracleApy === null ? undefined : oracleApy
+    })()
+    const katRewardsAPR = (() => {
+      const estimatedType = entry.performance?.estimated?.type ?? ''
+      if (!estimatedType.includes('katana')) {
+        return undefined
+      }
+      return (
+        pickNumberOrNull(entry.performance?.estimated?.components?.katRewardsAPR, entry.performance?.estimated?.apr) ??
+        undefined
+      )
     })()
     const resolvedApr = hasAllocation
       ? pickNumberOrNull(
@@ -773,6 +793,7 @@ const mapSnapshotComposition = (
       description: '',
       netAPR: resolvedApr,
       estimatedAPY,
+      katRewardsAPR,
       status,
       details: {
         totalDebt,
