@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
+import { getTenderlyBackedCanonicalChainIds, resolveExecutionChainId } from '@/config/tenderly'
 import { useWeb3 } from '../contexts/useWeb3'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'
@@ -58,13 +59,17 @@ function mergeBalanceSources(...sources: TChainTokens[]): TChainTokens {
 export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
   const { address: userAddress } = useWeb3()
   const queryClient = useQueryClient()
+  const ensoUnsupportedNetworks = useMemo(
+    () => [...new Set([...ENSO_UNSUPPORTED_NETWORKS, ...getTenderlyBackedCanonicalChainIds()])],
+    []
+  )
 
   const tokens = useMemo(() => (userAddress ? props?.tokens || [] : []), [props?.tokens, userAddress])
 
   // Split tokens into Enso-supported and multicall-required groups
   const { ensoTokens, multicallTokens: requiredMulticallTokens } = useMemo(() => {
-    return partitionTokensByBalanceSource(tokens, ENSO_UNSUPPORTED_NETWORKS)
-  }, [tokens])
+    return partitionTokensByBalanceSource(tokens, ensoUnsupportedNetworks)
+  }, [ensoUnsupportedNetworks, tokens])
 
   // Fetch from Enso for supported chains
   const {
@@ -250,12 +255,13 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
 
       for (const [chainIdStr, chainTokens] of Object.entries(tokensByChain)) {
         const chainId = Number(chainIdStr)
+        const executionChainId = resolveExecutionChainId(chainId)
 
         const freshBalances = await fetchTokenBalances(chainId, userAddress, chainTokens, true)
 
         // Update multicall query cache
         const allQueries = queryClient.getQueriesData<TDict<TToken>>({
-          queryKey: balanceQueryKeys.byChainAndUser(chainId, userAddress),
+          queryKey: balanceQueryKeys.byChainAndUser(chainId, executionChainId, userAddress),
           exact: false
         })
 
@@ -277,7 +283,7 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
         const mergedEnsoData = { ...currentEnsoData }
         for (const [chainIdStr, tokens] of Object.entries(updatedBalances)) {
           const chainId = Number(chainIdStr)
-          if (!ENSO_UNSUPPORTED_NETWORKS.includes(chainId)) {
+          if (!ensoUnsupportedNetworks.includes(chainId)) {
             if (!mergedEnsoData[chainId]) {
               mergedEnsoData[chainId] = {}
             }
@@ -289,7 +295,7 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
 
       return updatedBalances
     },
-    [queryClient, userAddress]
+    [ensoUnsupportedNetworks, queryClient, userAddress]
   )
 
   const status = useMemo((): 'error' | 'loading' | 'success' | 'unknown' => {

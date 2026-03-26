@@ -1,8 +1,10 @@
 import { Button } from '@shared/components/Button'
+import { useSwitchChain, useWaitForTransactionReceipt } from '@shared/hooks/useAppWagmi'
 import { getApproveAbi } from '@shared/utils/approve'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { maxUint256 } from 'viem'
-import { useAccount, useChainId, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from 'wagmi'
+import { useAccount, useWriteContract } from 'wagmi'
+import { isConnectedToExecutionChain, resolveExecutionChainId } from '@/config/tenderly'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from '../shared/TransactionStateIndicators'
 
@@ -33,11 +35,10 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   const [txState, setTxState] = useState<TxState>('idle')
   const [errorMessage, setErrorMessage] = useState('')
 
-  const { address: account } = useAccount()
-  const currentChainId = useChainId()
+  const { address: account, chain } = useAccount()
   const { switchChainAsync } = useSwitchChain()
   const { writeContractAsync, data: txHash, reset } = useWriteContract()
-  const receipt = useWaitForTransactionReceipt({ hash: txHash })
+  const receipt = useWaitForTransactionReceipt({ hash: txHash, chainId })
 
   // Reset state when overlay closes
   useEffect(() => {
@@ -67,11 +68,18 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
   const handleApprove = useCallback(
     async (amount: bigint) => {
+      const executionChainId = resolveExecutionChainId(chainId)
+      if (executionChainId === undefined) {
+        setTxState('error')
+        setErrorMessage('This network is not enabled for transactions')
+        return
+      }
+
       setTxState('confirming')
       setErrorMessage('')
 
       // Handle chain switch if needed
-      if (currentChainId !== chainId) {
+      if (!isConnectedToExecutionChain(chain?.id, chainId)) {
         try {
           await switchChainAsync({ chainId })
         } catch {
@@ -87,7 +95,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
           abi: getApproveAbi(tokenAddress),
           functionName: 'approve',
           args: [spenderAddress, amount],
-          chainId
+          chainId: executionChainId
         })
         setTxState('pending')
       } catch (error: any) {
@@ -104,7 +112,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
         }
       }
     },
-    [currentChainId, chainId, tokenAddress, spenderAddress, writeContractAsync, switchChainAsync]
+    [chain?.id, chainId, tokenAddress, spenderAddress, writeContractAsync, switchChainAsync]
   )
 
   const handleRevoke = useCallback(() => handleApprove(0n), [handleApprove])
