@@ -290,6 +290,7 @@ export function WidgetDeposit({
   })
 
   const willReceiveStakedShares = routeType === 'DIRECT_STAKE' || (isAutoStakingEnabled && !!stakingAddress)
+  const receivedSharesLabel = willReceiveStakedShares ? 'Staked shares' : (vaultSharesLabel ?? 'Vault shares')
   const sharesDecimals = willReceiveStakedShares
     ? (stakingToken?.decimals ?? vault?.decimals ?? 18)
     : (vault?.decimals ?? 18)
@@ -771,9 +772,16 @@ export function WidgetDeposit({
         isOpen={showVaultShareValueModal}
         onClose={() => setShowVaultShareValueModal(false)}
         sharesAmount={formatWidgetValue(activeFlow.periphery.expectedOut, sharesDecimals)}
+        sharesLabel={receivedSharesLabel}
         shareValue={formatWidgetValue(depositValueInfo.vaultShareValueInAsset, assetToken?.decimals ?? 18)}
         assetSymbol={assetToken?.symbol || ''}
         usdValue={formatWidgetValue(depositValueInfo.vaultShareValueUsdRaw)}
+        showShareConversion={willReceiveStakedShares && activeFlow.periphery.expectedOut !== normalizedExpectedOut}
+        convertedVaultSharesAmount={
+          willReceiveStakedShares && activeFlow.periphery.expectedOut !== normalizedExpectedOut
+            ? formatWidgetValue(normalizedExpectedOut, vaultDecimals)
+            : undefined
+        }
       />
 
       <ApprovalOverlay

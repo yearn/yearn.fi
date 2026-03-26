@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest'
 import {
   getDirectStakeCall,
   getDirectUnstakeCalls,
+  getRedeemPreviewCall,
   getStakePreviewCall,
-  getStakingConvertToAssetsCall,
   getStakingWithdrawableAssets,
   normalizeStakingSource
 } from './stakingAdapter'
@@ -34,19 +34,19 @@ describe('stakingAdapter', () => {
     expect(getStakePreviewCall('Legacy', amount)).toBeUndefined()
   })
 
-  it('builds convertToAssets calls for vault-backed staking wrappers', () => {
+  it('builds redeem preview calls for vault-backed staking wrappers', () => {
     const shares = 42n
-    expect(getStakingConvertToAssetsCall('VeYFI', shares)).toMatchObject({
+    expect(getRedeemPreviewCall('VeYFI', shares)).toMatchObject({
       abi: VEYFI_GAUGE_ABI,
-      functionName: 'convertToAssets',
+      functionName: 'previewRedeem',
       args: [shares]
     })
-    expect(getStakingConvertToAssetsCall('yBOLD', shares)).toMatchObject({
+    expect(getRedeemPreviewCall('yBOLD', shares)).toMatchObject({
       abi: TOKENIZED_STRATEGY_ABI,
-      functionName: 'convertToAssets',
+      functionName: 'previewRedeem',
       args: [shares]
     })
-    expect(getStakingConvertToAssetsCall('Legacy', shares)).toBeUndefined()
+    expect(getRedeemPreviewCall('Legacy', shares)).toBeUndefined()
   })
 
   it('builds direct stake calls per staking source', () => {

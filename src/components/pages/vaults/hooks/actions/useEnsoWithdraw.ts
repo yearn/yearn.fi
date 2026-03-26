@@ -19,6 +19,28 @@ interface UseEnsoWithdrawParams {
 }
 
 export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdrawFlowReturn {
+  const routeQueryKey = useMemo(
+    () =>
+      [
+        params.chainId,
+        params.destinationChainId ?? 'same-chain',
+        params.vaultAddress,
+        params.withdrawToken,
+        params.account ?? 'no-account',
+        params.receiver ?? 'no-receiver',
+        params.slippage ?? 'default'
+      ].join(':'),
+    [
+      params.chainId,
+      params.destinationChainId,
+      params.vaultAddress,
+      params.withdrawToken,
+      params.account,
+      params.receiver,
+      params.slippage
+    ]
+  )
+
   // Get Enso routing flow
   const ensoFlow = useSolverEnso({
     tokenIn: params.vaultAddress,
@@ -38,14 +60,14 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
 
   useEffect(() => {
     ensoFlow.methods.resetRoute()
-  }, [params.currentAmount])
+  }, [params.currentAmount, routeQueryKey, ensoFlow.methods.resetRoute])
 
-  // Fetch route when debounced amount changes
+  // Re-quote whenever any route-defining input changes, not just the amount.
   useEffect(() => {
     if (params.amount > 0n && params.enabled) {
-      ensoFlow.methods.getRoute()
+      void ensoFlow.methods.getRoute()
     }
-  }, [params.amount, params.enabled])
+  }, [params.amount, params.enabled, routeQueryKey, ensoFlow.methods.getRoute])
 
   // Prepare Enso order for withdrawal
   const canWithdraw = ensoFlow.periphery.route && params.amount > 0n && isAllowanceSufficient
