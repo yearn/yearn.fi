@@ -14,20 +14,20 @@ export function resolveValuationShareCount({
   destinationToken,
   vaultAddress,
   stakingAddress,
-  convertedStakingAssets
+  previewedVaultShares
 }: {
   expectedOut: bigint
   destinationToken: Address
   vaultAddress: Address
   stakingAddress?: Address
-  convertedStakingAssets?: bigint
+  previewedVaultShares?: bigint
 }): bigint {
   if (isAddressEqual(destinationToken, vaultAddress)) {
     return expectedOut
   }
 
-  if (stakingAddress && isAddressEqual(destinationToken, stakingAddress) && convertedStakingAssets !== undefined) {
-    return convertedStakingAssets
+  if (stakingAddress && isAddressEqual(destinationToken, stakingAddress) && previewedVaultShares !== undefined) {
+    return previewedVaultShares
   }
 
   return expectedOut

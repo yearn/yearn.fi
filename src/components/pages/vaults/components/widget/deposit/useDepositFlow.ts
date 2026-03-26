@@ -1,4 +1,4 @@
-import { getStakingConvertToAssetsCall } from '@pages/vaults/hooks/actions/stakingAdapter'
+import { getRedeemPreviewCall } from '@pages/vaults/hooks/actions/stakingAdapter'
 import { useDirectDeposit } from '@pages/vaults/hooks/actions/useDirectDeposit'
 import { useDirectStake } from '@pages/vaults/hooks/actions/useDirectStake'
 import { useEnsoDeposit } from '@pages/vaults/hooks/actions/useEnsoDeposit'
@@ -154,22 +154,20 @@ export const useDepositFlow = ({
   const shouldNormalizeExpectedOut =
     !!stakingAddress && isAddressEqual(destinationToken, stakingAddress) && activeFlow.periphery.expectedOut > 0n
 
-  const convertToAssetsCall = useMemo(
+  const previewRedeemCall = useMemo(
     () =>
-      shouldNormalizeExpectedOut
-        ? getStakingConvertToAssetsCall(stakingSource, activeFlow.periphery.expectedOut)
-        : undefined,
+      shouldNormalizeExpectedOut ? getRedeemPreviewCall(stakingSource, activeFlow.periphery.expectedOut) : undefined,
     [shouldNormalizeExpectedOut, stakingSource, activeFlow.periphery.expectedOut]
   )
 
   const { data: normalizedExpectedOutData, isLoading: isLoadingExpectedOutNormalization } = useReadContract({
     address: stakingAddress,
-    abi: (convertToAssetsCall?.abi || []) as any,
-    functionName: (convertToAssetsCall?.functionName || 'convertToAssets') as any,
-    args: convertToAssetsCall?.args as any,
+    abi: (previewRedeemCall?.abi || []) as any,
+    functionName: (previewRedeemCall?.functionName || 'previewRedeem') as any,
+    args: previewRedeemCall?.args as any,
     chainId,
     query: {
-      enabled: shouldNormalizeExpectedOut && !!stakingAddress && !!convertToAssetsCall
+      enabled: shouldNormalizeExpectedOut && !!stakingAddress && !!previewRedeemCall
     }
   })
 
@@ -180,14 +178,14 @@ export const useDepositFlow = ({
         destinationToken,
         vaultAddress,
         stakingAddress,
-        convertedStakingAssets: convertToAssetsCall ? (normalizedExpectedOutData as bigint | undefined) : undefined
+        previewedVaultShares: previewRedeemCall ? (normalizedExpectedOutData as bigint | undefined) : undefined
       }),
     [
       activeFlow.periphery.expectedOut,
       destinationToken,
       vaultAddress,
       stakingAddress,
-      convertToAssetsCall,
+      previewRedeemCall,
       normalizedExpectedOutData
     ]
   )
@@ -200,7 +198,7 @@ export const useDepositFlow = ({
         ...activeFlow.periphery,
         normalizedExpectedOut,
         isLoadingExpectedOutNormalization: Boolean(
-          shouldNormalizeExpectedOut && !!convertToAssetsCall && isLoadingExpectedOutNormalization
+          shouldNormalizeExpectedOut && !!previewRedeemCall && isLoadingExpectedOutNormalization
         )
       }
     }

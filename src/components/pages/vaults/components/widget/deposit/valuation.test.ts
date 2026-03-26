@@ -36,7 +36,7 @@ describe('resolveValuationShareCount', () => {
         destinationToken: STAKING,
         vaultAddress: VAULT,
         stakingAddress: STAKING,
-        convertedStakingAssets: 99n
+        previewedVaultShares: 99n
       })
     ).toBe(99n)
   })
@@ -48,7 +48,7 @@ describe('resolveValuationShareCount', () => {
         destinationToken: OTHER,
         vaultAddress: VAULT,
         stakingAddress: STAKING,
-        convertedStakingAssets: 100n
+        previewedVaultShares: 100n
       })
     ).toBe(42n)
   })
