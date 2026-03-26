@@ -32,25 +32,47 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
     slippage: params.slippage,
     enabled: params.enabled
   })
+  const { getEnsoTransaction, getRoute, resetRoute } = ensoFlow.methods
 
   // Calculate if allowance is sufficient
   const isAllowanceSufficient = !ensoFlow.periphery.routerAddress || ensoFlow.periphery.allowance >= params.amount
 
   useEffect(() => {
-    ensoFlow.methods.resetRoute()
-  }, [params.currentAmount])
+    resetRoute()
+  }, [
+    resetRoute,
+    params.currentAmount,
+    params.vaultAddress,
+    params.withdrawToken,
+    params.account,
+    params.receiver,
+    params.chainId,
+    params.destinationChainId,
+    params.slippage
+  ])
 
-  // Fetch route when debounced amount changes
+  // Refetch the Enso route whenever any routing input changes.
   useEffect(() => {
     if (params.amount > 0n && params.enabled) {
-      ensoFlow.methods.getRoute()
+      void getRoute()
     }
-  }, [params.amount, params.enabled])
+  }, [
+    getRoute,
+    params.amount,
+    params.enabled,
+    params.vaultAddress,
+    params.withdrawToken,
+    params.account,
+    params.receiver,
+    params.chainId,
+    params.destinationChainId,
+    params.slippage
+  ])
 
   // Prepare Enso order for withdrawal
   const canWithdraw = ensoFlow.periphery.route && params.amount > 0n && isAllowanceSufficient
   const { prepareEnsoOrder } = useEnsoOrder({
-    getEnsoTransaction: ensoFlow.methods.getEnsoTransaction,
+    getEnsoTransaction,
     enabled: canWithdraw,
     chainId: params.chainId
   })
@@ -72,9 +94,9 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
         isCrossChain: ensoFlow.periphery.isCrossChain,
         routerAddress: ensoFlow.periphery.routerAddress,
         error: ensoFlow.periphery.error?.message,
-        resetQuote: ensoFlow.methods.resetRoute
+        resetQuote: resetRoute
       }
     }),
-    [ensoFlow, prepareEnsoOrder, canWithdraw, isAllowanceSufficient]
+    [ensoFlow, prepareEnsoOrder, canWithdraw, isAllowanceSufficient, resetRoute]
   )
 }

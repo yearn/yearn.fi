@@ -31,6 +31,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
     slippage: params.slippage,
     enabled: params.enabled
   })
+  const { getEnsoTransaction, getRoute, resetRoute } = ensoFlow.methods
 
   // Check if this is a native token (no approval needed)
   const isNativeToken = params.depositToken === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
@@ -40,20 +41,39 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
     isNativeToken || !ensoFlow.periphery.routerAddress || ensoFlow.periphery.allowance >= params.amount
 
   useEffect(() => {
-    ensoFlow.methods.resetRoute()
-  }, [params.currentAmount])
+    resetRoute()
+  }, [
+    resetRoute,
+    params.currentAmount,
+    params.depositToken,
+    params.vaultAddress,
+    params.account,
+    params.chainId,
+    params.destinationChainId,
+    params.slippage
+  ])
 
-  // Fetch route when debounced amount changes
+  // Refetch the Enso route whenever any routing input changes.
   useEffect(() => {
     if (params.amount > 0n && params.enabled) {
-      ensoFlow.methods.getRoute()
+      void getRoute()
     }
-  }, [params.amount, params.enabled])
+  }, [
+    getRoute,
+    params.amount,
+    params.enabled,
+    params.depositToken,
+    params.vaultAddress,
+    params.account,
+    params.chainId,
+    params.destinationChainId,
+    params.slippage
+  ])
 
   // Prepare Enso order for deposit
   const canDeposit = ensoFlow.periphery.route && params.amount > 0n && isEnsoAllowanceSufficient
   const { prepareEnsoOrder } = useEnsoOrder({
-    getEnsoTransaction: ensoFlow.methods.getEnsoTransaction,
+    getEnsoTransaction,
     enabled: canDeposit,
     chainId: params.chainId
   })

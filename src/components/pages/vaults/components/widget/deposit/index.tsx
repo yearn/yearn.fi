@@ -1,5 +1,6 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
+import { getRedeemPreviewCall } from '@pages/vaults/hooks/actions/stakingAdapter'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
@@ -17,7 +18,7 @@ import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
-import { useAccount } from 'wagmi'
+import { useAccount, useReadContract } from 'wagmi'
 import { SettingsPanel } from '../SettingsPanel'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
@@ -293,6 +294,50 @@ export function WidgetDeposit({
     ? (stakingToken?.decimals ?? vault?.decimals ?? 18)
     : (vault?.decimals ?? 18)
   const vaultDecimals = vault?.decimals ?? 18
+  const receivedSharesLabel = willReceiveStakedShares ? 'Staked shares' : (vaultSharesLabel ?? 'Vault shares')
+
+  const stakingRedeemPreviewCall = useMemo(() => {
+    if (!willReceiveStakedShares || !stakingAddress || activeFlow.periphery.expectedOut === 0n) {
+      return undefined
+    }
+    return getRedeemPreviewCall(stakingSource, activeFlow.periphery.expectedOut)
+  }, [willReceiveStakedShares, stakingAddress, stakingSource, activeFlow.periphery.expectedOut])
+
+  const { data: previewRedeemVaultSharesData, isLoading: isLoadingStakingRedeemPreview } = useReadContract({
+    address: stakingAddress,
+    abi: (stakingRedeemPreviewCall?.abi || []) as any,
+    functionName: (stakingRedeemPreviewCall?.functionName || 'previewRedeem') as any,
+    args: stakingRedeemPreviewCall?.args as any,
+    chainId,
+    query: {
+      enabled: !!stakingAddress && !!stakingRedeemPreviewCall
+    }
+  })
+
+  const expectedVaultSharesEquivalent = useMemo(() => {
+    if (!willReceiveStakedShares) {
+      return activeFlow.periphery.expectedOut
+    }
+
+    if (stakingRedeemPreviewCall) {
+      return (previewRedeemVaultSharesData as bigint | undefined) ?? 0n
+    }
+
+    const previewRedeemVaultShares = previewRedeemVaultSharesData as bigint | undefined
+    if (previewRedeemVaultShares !== undefined) {
+      return previewRedeemVaultShares
+    }
+
+    return activeFlow.periphery.expectedOut
+  }, [
+    willReceiveStakedShares,
+    stakingRedeemPreviewCall,
+    previewRedeemVaultSharesData,
+    activeFlow.periphery.expectedOut
+  ])
+
+  const isLoadingShareValueQuote =
+    activeFlow.periphery.isLoadingRoute || (!!stakingRedeemPreviewCall && isLoadingStakingRedeemPreview)
 
   const estimatedAnnualReturn = useMemo(() => {
     if (depositAmount.debouncedBn === 0n || vaultAPR === 0) return 0
@@ -300,9 +345,9 @@ export function WidgetDeposit({
   }, [depositAmount.debouncedBn, inputToken?.decimals, vaultAPR])
 
   const expectedOutInAsset = useMemo(() => {
-    if (activeFlow.periphery.expectedOut === 0n || !pricePerShare || depositAmount.bn === 0n) return 0n
-    return (activeFlow.periphery.expectedOut * pricePerShare) / 10n ** BigInt(vaultDecimals)
-  }, [activeFlow.periphery.expectedOut, vaultDecimals, pricePerShare, depositAmount.bn])
+    if (expectedVaultSharesEquivalent === 0n || !pricePerShare || depositAmount.bn === 0n) return 0n
+    return (expectedVaultSharesEquivalent * pricePerShare) / 10n ** BigInt(vaultDecimals)
+  }, [expectedVaultSharesEquivalent, vaultDecimals, pricePerShare, depositAmount.bn])
 
   const inputTokenPrice =
     inputToken?.address && inputToken?.chainID
@@ -320,13 +365,11 @@ export function WidgetDeposit({
       : 0
 
   const vaultShareValue = useMemo(() => {
-    const expectedOut = activeFlow.periphery.expectedOut
     const assetDecimals = assetToken?.decimals ?? 18
 
-    // Use vault decimals for pricePerShare calculation
     const valueInAsset =
-      expectedOut > 0n && pricePerShare && pricePerShare > 0n
-        ? (expectedOut * pricePerShare) / 10n ** BigInt(vaultDecimals)
+      expectedVaultSharesEquivalent > 0n && pricePerShare && pricePerShare > 0n
+        ? (expectedVaultSharesEquivalent * pricePerShare) / 10n ** BigInt(vaultDecimals)
         : 0n
 
     const formatted = formatWidgetValue(valueInAsset, assetDecimals)
@@ -334,7 +377,7 @@ export function WidgetDeposit({
     const usd = formatWidgetValue(usdRaw)
 
     return { formatted, usd, usdRaw }
-  }, [activeFlow.periphery.expectedOut, vaultDecimals, assetToken?.decimals, pricePerShare, assetTokenPrice])
+  }, [expectedVaultSharesEquivalent, vaultDecimals, assetToken?.decimals, pricePerShare, assetTokenPrice])
 
   // Calculate price impact for high slippage warning
   const priceImpactInfo = useMemo(() => {
@@ -534,15 +577,14 @@ export function WidgetDeposit({
       inputTokenUsdPrice={inputTokenPrice}
       routeType={routeType}
       isSwap={selectedToken !== assetAddress}
-      isLoadingQuote={activeFlow.periphery.isLoadingRoute}
+      isLoadingQuote={isLoadingShareValueQuote}
       isQuoteStale={depositAmount.isDebouncing || depositAmount.bn !== depositAmount.debouncedBn}
       expectedOutInAsset={expectedOutInAsset}
+      receivedSharesValueInAsset={expectedOutInAsset}
       assetTokenSymbol={assetToken?.symbol}
       assetTokenDecimals={assetToken?.decimals ?? 18}
       expectedVaultShares={activeFlow.periphery.expectedOut}
-      vaultDecimals={vaultDecimals}
       sharesDisplayDecimals={sharesDecimals}
-      pricePerShare={pricePerShare || 0n}
       assetUsdPrice={assetTokenPrice}
       willReceiveStakedShares={willReceiveStakedShares}
       vaultSharesLabel={vaultSharesLabel}
@@ -560,7 +602,7 @@ export function WidgetDeposit({
   )
 
   const priceImpactWarning = priceImpactInfo.isHigh &&
-    !activeFlow.periphery.isLoadingRoute &&
+    !isLoadingShareValueQuote &&
     !depositAmount.isDebouncing &&
     depositAmount.bn === depositAmount.debouncedBn &&
     depositAmount.bn > 0n && (
@@ -763,9 +805,13 @@ export function WidgetDeposit({
         isOpen={showVaultShareValueModal}
         onClose={() => setShowVaultShareValueModal(false)}
         sharesAmount={formatWidgetValue(activeFlow.periphery.expectedOut, sharesDecimals)}
+        sharesLabel={receivedSharesLabel}
         shareValue={vaultShareValue.formatted}
         assetSymbol={assetToken?.symbol || ''}
         usdValue={vaultShareValue.usd}
+        convertedVaultSharesAmount={
+          willReceiveStakedShares ? formatWidgetValue(expectedVaultSharesEquivalent, vaultDecimals) : undefined
+        }
       />
 
       <ApprovalOverlay

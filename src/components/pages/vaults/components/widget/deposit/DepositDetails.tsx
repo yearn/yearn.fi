@@ -15,13 +15,12 @@ interface DepositDetailsProps {
   isLoadingQuote: boolean
   isQuoteStale: boolean
   expectedOutInAsset: bigint
+  receivedSharesValueInAsset: bigint
   assetTokenSymbol?: string
   assetTokenDecimals: number
   // Vault/Staking shares info
   expectedVaultShares: bigint
-  vaultDecimals: number // For pricePerShare calculations (always vault's decimals)
   sharesDisplayDecimals: number // For displaying share amounts (vault or staking decimals)
-  pricePerShare: bigint
   assetUsdPrice: number
   willReceiveStakedShares: boolean
   vaultSharesLabel?: string
@@ -49,12 +48,11 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   isLoadingQuote,
   isQuoteStale,
   expectedOutInAsset,
+  receivedSharesValueInAsset,
   assetTokenSymbol,
   assetTokenDecimals,
   expectedVaultShares,
-  vaultDecimals,
   sharesDisplayDecimals,
-  pricePerShare,
   assetUsdPrice,
   willReceiveStakedShares,
   vaultSharesLabel,
@@ -80,13 +78,8 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   }
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
 
-  // Calculate vault share value in underlying asset terms (use vault decimals for pricePerShare)
-  const vaultShareValueInAsset =
-    expectedVaultShares > 0n && pricePerShare > 0n
-      ? (expectedVaultShares * pricePerShare) / 10n ** BigInt(vaultDecimals)
-      : 0n
-  const vaultShareValueDisplay = formatWidgetValue(vaultShareValueInAsset, assetTokenDecimals)
-  const vaultShareValueUsdRaw = Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
+  const vaultShareValueDisplay = formatWidgetValue(receivedSharesValueInAsset, assetTokenDecimals)
+  const vaultShareValueUsdRaw = Number(formatUnits(receivedSharesValueInAsset, assetTokenDecimals)) * assetUsdPrice
   const vaultShareValueUsd = formatWidgetValue(vaultShareValueUsdRaw)
 
   // Calculate price impact (USD to deposit vs vault share value USD)
