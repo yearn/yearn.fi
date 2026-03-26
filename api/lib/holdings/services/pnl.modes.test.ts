@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RawPnlEventContext } from './graphql'
-import type { HoldingsPnLResponse } from './pnl'
+import type { HoldingsPnLDrilldownResponse, HoldingsPnLResponse } from './pnl'
 
 const VAULT = '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204'
 const USER = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
@@ -240,6 +240,18 @@ async function getSingleVaultResponse(
   return response
 }
 
+async function getSingleVaultDrilldownResponse(
+  rawContext: RawPnlEventContext,
+  unknownMode?: 'strict' | 'zero_basis' | 'windfall',
+  overrides?: Parameters<typeof configureServiceMocks>[1]
+): Promise<HoldingsPnLDrilldownResponse> {
+  configureServiceMocks(rawContext, overrides)
+  const { getHoldingsPnLDrilldown } = await importPnlModule()
+  const response = await getHoldingsPnLDrilldown(USER, 'all', unknownMode)
+  expect(response.vaults).toHaveLength(1)
+  return response
+}
+
 describe('getHoldingsPnL unknown transfer-in modes', () => {
   afterEach(() => {
     vi.restoreAllMocks()
@@ -438,5 +450,97 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(vault.totalPnlUsd).toBeCloseTo(1000)
     expect(vault.totalEconomicGainUsd).toBeCloseTo(1000)
     expect(response.summary.totalUnrealizedPnlUsd).toBeCloseTo(1000)
+  })
+
+  it('adds explicit underlying and known-basis usd fields to vault rows', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+
+    const response = await getSingleVaultResponse(
+      {
+        addressEvents: {
+          deposits: [
+            {
+              id: 'known-deposit',
+              vaultAddress: VAULT,
+              chainId: 1,
+              blockNumber: 1,
+              blockTimestamp: 100,
+              logIndex: 1,
+              transactionHash: '0xknown-deposit',
+              transactionFrom: USER,
+              owner: USER,
+              sender: USER,
+              assets: '1000000000000000000',
+              shares: '1000000000000000000'
+            }
+          ],
+          withdrawals: [],
+          transfersIn: [],
+          transfersOut: []
+        },
+        transactionEvents: {
+          deposits: [],
+          withdrawals: [],
+          transfers: []
+        }
+      },
+      'windfall',
+      {
+        metadata: {
+          tokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+          symbol: 'WETH',
+          decimals: 18
+        },
+        ppsTimeline: new Map([
+          [100, 1],
+          [300, 1]
+        ]),
+        priceKey: 'ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+        prices: new Map([
+          [100, 2000],
+          [300, 3000]
+        ])
+      }
+    )
+
+    expect(response.vaults[0]).toMatchObject({
+      currentUnderlying: 1,
+      walletUnderlying: 1,
+      stakedUnderlying: 0,
+      currentKnownUnderlying: 1,
+      currentUnknownUnderlying: 0,
+      knownCostBasisUnderlying: 1,
+      knownCostBasisUsd: 2000
+    })
+    expect(response.vaults[0]?.metadata).toMatchObject({
+      symbol: 'WETH',
+      decimals: 18,
+      assetDecimals: 18
+    })
+  })
+
+  it('returns drilldown lots, unknown-basis receipts, and journal rows', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+
+    const response = await getSingleVaultDrilldownResponse(createTransferInContext(), 'windfall')
+    const vault = response.vaults[0]
+
+    expect(vault.currentLots.wallet).toHaveLength(2)
+    expect(vault.currentLots.staked).toHaveLength(0)
+    expect(vault.unknownTransferInEntries).toHaveLength(1)
+    expect(vault.unknownTransferInEntries[0]).toMatchObject({
+      location: 'wallet',
+      sharesFormatted: 100,
+      receiptValueUsd: 200
+    })
+    expect(vault.realizedEntries).toHaveLength(0)
+    expect(vault.journal).toHaveLength(2)
+    expect(vault.journal[0]).toMatchObject({
+      txHash: '0xtransfer-in',
+      walletLotsAfter: {
+        totalShares: '100000000',
+        unknownShares: '100000000'
+      }
+    })
   })
 })

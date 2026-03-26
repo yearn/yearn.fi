@@ -1,4 +1,4 @@
-import type { DepositEvent, TransferEvent, WithdrawEvent } from '../types'
+import type { DepositEvent, TransferEvent, VaultMetadata, WithdrawEvent } from '../types'
 import { enrichRawPnlEventsWithCowTradeAcquisitions } from './cow'
 import { debugLog, debugTable, getHoldingsDebugFilters } from './debug'
 import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
@@ -24,14 +24,23 @@ import {
   ZERO_ADDRESS
 } from './pnlShared'
 
-export type { HoldingsPnLResponse, HoldingsPnLVault, UnknownTransferInPnlMode } from './pnlTypes'
+export type {
+  HoldingsPnLDrilldownResponse,
+  HoldingsPnLDrilldownVault,
+  HoldingsPnLResponse,
+  HoldingsPnLVault,
+  UnknownTransferInPnlMode
+} from './pnlTypes'
 
 import type {
   FamilyPnlLedger,
+  HoldingsPnLDrilldownResponse,
+  HoldingsPnLDrilldownVault,
   HoldingsPnLResponse,
   HoldingsPnLVault,
   TLocation,
   TLot,
+  TLotSummary,
   TPnlDebugJournalRow,
   TRawPnlEvent,
   TRawScopes,
@@ -55,13 +64,7 @@ function cloneLots(lots: TLot[]): TLot[] {
   return lots.map((lot) => createLot(lot.shares, lot.costBasis, lot.acquiredAt))
 }
 
-function summarizeLots(lots: TLot[]): {
-  lotCount: number
-  totalShares: string
-  knownShares: string
-  unknownShares: string
-  totalKnownCostBasis: string
-} {
+function summarizeLots(lots: TLot[]): TLotSummary {
   const knownLots = lots.filter((lot) => lot.costBasis !== null)
   const unknownLots = lots.filter((lot) => lot.costBasis === null)
 
@@ -192,6 +195,221 @@ function serializeJournalRows(
     realizedPnl:
       assetDecimals === undefined ? row.realizedPnlAssets : formatAmount(BigInt(row.realizedPnlAssets), assetDecimals)
   }))
+}
+
+type TPnlComputationArtifacts = {
+  userAddress: string
+  version: VaultVersion
+  unknownTransferInPnlMode: UnknownTransferInPnlMode
+  currentTimestamp: number
+  vaults: FamilyPnlLedger[]
+  vaultMetadata: Map<string, VaultMetadata>
+  ppsData: Map<string, Map<number, number>>
+  priceData: Map<string, Map<number, number>>
+  debugTxLedgerKeys: Set<string>
+}
+
+function formatLotSummaryForResponse(
+  summary: TLotSummary,
+  shareDecimals: number,
+  assetDecimals: number
+): HoldingsPnLDrilldownVault['journal'][number]['walletLotsBefore'] {
+  return {
+    ...summary,
+    totalSharesFormatted: formatAmount(BigInt(summary.totalShares), shareDecimals),
+    knownSharesFormatted: formatAmount(BigInt(summary.knownShares), shareDecimals),
+    unknownSharesFormatted: formatAmount(BigInt(summary.unknownShares), shareDecimals),
+    totalKnownCostBasisFormatted: formatAmount(BigInt(summary.totalKnownCostBasis), assetDecimals)
+  }
+}
+
+function serializeLotForResponse(args: {
+  lot: TLot
+  index: number
+  shareDecimals: number
+  assetDecimals: number
+  resolvedPricePerShare: number
+  currentTokenPrice: number
+  ppsMap: Map<number, number> | undefined
+  tokenPriceMap: Map<number, number> | null
+}): HoldingsPnLDrilldownVault['currentLots']['wallet'][number] {
+  const { lot, index, shareDecimals, assetDecimals, resolvedPricePerShare, currentTokenPrice, ppsMap, tokenPriceMap } =
+    args
+  const acquiredAt = lot.acquiredAt ?? null
+  const sharesFormatted = formatAmount(lot.shares, shareDecimals)
+  const costBasisFormatted = lot.costBasis === null ? null : formatAmount(lot.costBasis, assetDecimals)
+  const pricePerShareAtAcquisition =
+    acquiredAt === null
+      ? resolvedPricePerShare
+      : ppsMap
+        ? (getPPS(ppsMap, acquiredAt) ?? resolvedPricePerShare)
+        : resolvedPricePerShare
+  const tokenPriceAtAcquisition =
+    acquiredAt === null ? currentTokenPrice : getTokenPriceForTimestamp(tokenPriceMap, acquiredAt, currentTokenPrice)
+  const currentUnderlying = sharesFormatted * resolvedPricePerShare
+
+  return {
+    index,
+    shares: lot.shares.toString(),
+    sharesFormatted,
+    costBasis: lot.costBasis?.toString() ?? null,
+    costBasisFormatted,
+    acquiredAt,
+    costBasisUsd: costBasisFormatted === null ? null : costBasisFormatted * tokenPriceAtAcquisition,
+    pricePerShareAtAcquisition,
+    tokenPriceAtAcquisition,
+    currentUnderlying,
+    currentValueUsd: currentUnderlying * currentTokenPrice
+  }
+}
+
+function serializeRealizedEntryForResponse(args: {
+  entry: FamilyPnlLedger['realizedEntries'][number]
+  shareDecimals: number
+  assetDecimals: number
+  currentTokenPrice: number
+  tokenPriceMap: Map<number, number> | null
+  resolvedPricePerShare: number
+  ppsMap: Map<number, number> | undefined
+}): HoldingsPnLDrilldownVault['realizedEntries'][number] {
+  const { entry, shareDecimals, assetDecimals, currentTokenPrice, tokenPriceMap, resolvedPricePerShare, ppsMap } = args
+  const realizedTokenPrice = getTokenPriceForTimestamp(tokenPriceMap, entry.timestamp, currentTokenPrice)
+  const basisUsd = getKnownLotsCostBasisUsd(entry.consumedLots, assetDecimals, tokenPriceMap, currentTokenPrice)
+
+  return {
+    timestamp: entry.timestamp,
+    proceedsAssets: entry.proceedsAssets.toString(),
+    proceedsUnderlying: formatAmount(entry.proceedsAssets, assetDecimals),
+    proceedsUsd: formatAmount(entry.proceedsAssets, assetDecimals) * realizedTokenPrice,
+    basisAssets: entry.basisAssets.toString(),
+    basisUnderlying: formatAmount(entry.basisAssets, assetDecimals),
+    basisUsd,
+    pnlAssets: entry.pnlAssets.toString(),
+    pnlUnderlying: formatAmount(entry.pnlAssets, assetDecimals),
+    pnlUsd: formatAmount(entry.proceedsAssets, assetDecimals) * realizedTokenPrice - basisUsd,
+    consumedLots: entry.consumedLots.map((lot, index) =>
+      serializeLotForResponse({
+        lot,
+        index,
+        shareDecimals,
+        assetDecimals,
+        resolvedPricePerShare,
+        currentTokenPrice,
+        ppsMap,
+        tokenPriceMap
+      })
+    )
+  }
+}
+
+function serializeUnknownTransferInEntryForResponse(args: {
+  entry: FamilyPnlLedger['unknownTransferInEntries'][number]
+  shareDecimals: number
+  currentTokenPrice: number
+  resolvedPricePerShare: number
+  ppsMap: Map<number, number> | undefined
+  tokenPriceMap: Map<number, number> | null
+}): HoldingsPnLDrilldownVault['unknownTransferInEntries'][number] {
+  const { entry, shareDecimals, currentTokenPrice, resolvedPricePerShare, ppsMap, tokenPriceMap } = args
+  const pricePerShareAtReceipt = ppsMap
+    ? (getPPS(ppsMap, entry.timestamp) ?? resolvedPricePerShare)
+    : resolvedPricePerShare
+  const tokenPriceAtReceipt = getTokenPriceForTimestamp(tokenPriceMap, entry.timestamp, currentTokenPrice)
+  const sharesFormatted = formatAmount(entry.shares, shareDecimals)
+  const receiptUnderlying = sharesFormatted * pricePerShareAtReceipt
+
+  return {
+    timestamp: entry.timestamp,
+    location: entry.location,
+    shares: entry.shares.toString(),
+    sharesFormatted,
+    pricePerShareAtReceipt,
+    tokenPriceAtReceipt,
+    receiptUnderlying,
+    receiptValueUsd: receiptUnderlying * tokenPriceAtReceipt
+  }
+}
+
+function serializeUnknownWithdrawalEntryForResponse(args: {
+  entry: FamilyPnlLedger['unknownWithdrawalEntries'][number]
+  shareDecimals: number
+  assetDecimals: number
+  currentTokenPrice: number
+  tokenPriceMap: Map<number, number> | null
+  resolvedPricePerShare: number
+  ppsMap: Map<number, number> | undefined
+}): HoldingsPnLDrilldownVault['unknownWithdrawalEntries'][number] {
+  const { entry, shareDecimals, assetDecimals, currentTokenPrice, tokenPriceMap, resolvedPricePerShare, ppsMap } = args
+  const realizedTokenPrice = getTokenPriceForTimestamp(tokenPriceMap, entry.timestamp, currentTokenPrice)
+
+  return {
+    timestamp: entry.timestamp,
+    shares: entry.shares.toString(),
+    sharesFormatted: formatAmount(entry.shares, shareDecimals),
+    proceedsAssets: entry.proceedsAssets.toString(),
+    proceedsUnderlying: formatAmount(entry.proceedsAssets, assetDecimals),
+    proceedsUsd: formatAmount(entry.proceedsAssets, assetDecimals) * realizedTokenPrice,
+    consumedLots: entry.consumedLots.map((lot, index) =>
+      serializeLotForResponse({
+        lot,
+        index,
+        shareDecimals,
+        assetDecimals,
+        resolvedPricePerShare,
+        currentTokenPrice,
+        ppsMap,
+        tokenPriceMap
+      })
+    )
+  }
+}
+
+function serializeJournalEntryForResponse(args: {
+  row: TPnlDebugJournalRow
+  shareDecimals: number
+  assetDecimals: number
+}): HoldingsPnLDrilldownVault['journal'][number] {
+  const { row, shareDecimals, assetDecimals } = args
+
+  return {
+    timestamp: row.timestamp,
+    txHash: row.txHash,
+    view: row.view,
+    hasAddressActivity: row.hasAddressActivity,
+    rawEvents: row.rawEvents,
+    depositShares: row.depositShares,
+    depositSharesFormatted: formatAmount(BigInt(row.depositShares), shareDecimals),
+    depositAssets: row.depositAssets,
+    depositAssetsFormatted: formatAmount(BigInt(row.depositAssets), assetDecimals),
+    withdrawShares: row.withdrawShares,
+    withdrawSharesFormatted: formatAmount(BigInt(row.withdrawShares), shareDecimals),
+    withdrawAssets: row.withdrawAssets,
+    withdrawAssetsFormatted: formatAmount(BigInt(row.withdrawAssets), assetDecimals),
+    wrapShares: row.wrapShares,
+    wrapSharesFormatted: formatAmount(BigInt(row.wrapShares), shareDecimals),
+    unwrapShares: row.unwrapShares,
+    unwrapSharesFormatted: formatAmount(BigInt(row.unwrapShares), shareDecimals),
+    unknownInWalletShares: row.unknownInWalletShares,
+    unknownInWalletSharesFormatted: formatAmount(BigInt(row.unknownInWalletShares), shareDecimals),
+    unknownInStakedShares: row.unknownInStakedShares,
+    unknownInStakedSharesFormatted: formatAmount(BigInt(row.unknownInStakedShares), shareDecimals),
+    transferOutWalletShares: row.transferOutWalletShares,
+    transferOutWalletSharesFormatted: formatAmount(BigInt(row.transferOutWalletShares), shareDecimals),
+    transferOutStakedShares: row.transferOutStakedShares,
+    transferOutStakedSharesFormatted: formatAmount(BigInt(row.transferOutStakedShares), shareDecimals),
+    realizedKnownShares: row.realizedKnownShares,
+    realizedKnownSharesFormatted: formatAmount(BigInt(row.realizedKnownShares), shareDecimals),
+    realizedProceedsAssets: row.realizedProceedsAssets,
+    realizedProceedsAssetsFormatted: formatAmount(BigInt(row.realizedProceedsAssets), assetDecimals),
+    realizedBasisAssets: row.realizedBasisAssets,
+    realizedBasisAssetsFormatted: formatAmount(BigInt(row.realizedBasisAssets), assetDecimals),
+    realizedPnlAssets: row.realizedPnlAssets,
+    realizedPnlAssetsFormatted: formatAmount(BigInt(row.realizedPnlAssets), assetDecimals),
+    walletLotsBefore: formatLotSummaryForResponse(row.walletLotsBefore, shareDecimals, assetDecimals),
+    stakedLotsBefore: formatLotSummaryForResponse(row.stakedLotsBefore, shareDecimals, assetDecimals),
+    walletLotsAfter: formatLotSummaryForResponse(row.walletLotsAfter, shareDecimals, assetDecimals),
+    stakedLotsAfter: formatLotSummaryForResponse(row.stakedLotsAfter, shareDecimals, assetDecimals)
+  }
 }
 
 function serializeRawEvent(event: TRawPnlEvent): Record<string, unknown> {
@@ -838,7 +1056,8 @@ function handleUnknownTransferIn(
   ledger.unknownCostBasisTransferInShares += shares
   ledger.unknownTransferInEntries.push({
     timestamp,
-    shares
+    shares,
+    location
   })
   addLotsToLocation(ledger, location, [createLot(shares, null, timestamp)])
 }
@@ -1019,7 +1238,8 @@ function processKnownMigratorCrossFamilyRollover(
     destinationLedger.unknownCostBasisTransferInShares += unknownDestinationShares
     destinationLedger.unknownTransferInEntries.push({
       timestamp: migration.blockTimestamp,
-      shares: unknownDestinationShares
+      shares: unknownDestinationShares,
+      location: 'wallet'
     })
     addLotsToLocation(destinationLedger, 'wallet', [
       createLot(unknownDestinationShares, null, migration.blockTimestamp)
@@ -1052,7 +1272,11 @@ function processKnownMigratorCrossFamilyRollover(
     realizedKnownShares: ZERO.toString(),
     realizedProceedsAssets: ZERO.toString(),
     realizedBasisAssets: ZERO.toString(),
-    realizedPnlAssets: ZERO.toString()
+    realizedPnlAssets: ZERO.toString(),
+    walletLotsBefore: summarizeLots(sourceWalletLotsBefore),
+    stakedLotsBefore: summarizeLots(sourceStakedLotsBefore),
+    walletLotsAfter: summarizeLots(sourceLedger.walletLots),
+    stakedLotsAfter: summarizeLots(sourceLedger.stakedLots)
   })
 
   destinationLedger.debugJournal.push({
@@ -1076,7 +1300,11 @@ function processKnownMigratorCrossFamilyRollover(
     realizedKnownShares: ZERO.toString(),
     realizedProceedsAssets: ZERO.toString(),
     realizedBasisAssets: ZERO.toString(),
-    realizedPnlAssets: ZERO.toString()
+    realizedPnlAssets: ZERO.toString(),
+    walletLotsBefore: summarizeLots(destinationWalletLotsBefore),
+    stakedLotsBefore: summarizeLots(destinationStakedLotsBefore),
+    walletLotsAfter: summarizeLots(destinationLedger.walletLots),
+    stakedLotsAfter: summarizeLots(destinationLedger.stakedLots)
   })
 
   if (sourceShouldLog) {
@@ -1228,7 +1456,11 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
         realizedKnownShares: ZERO.toString(),
         realizedProceedsAssets: ZERO.toString(),
         realizedBasisAssets: ZERO.toString(),
-        realizedPnlAssets: ZERO.toString()
+        realizedPnlAssets: ZERO.toString(),
+        walletLotsBefore: summarizeLots(walletLotsBefore),
+        stakedLotsBefore: summarizeLots(stakedLotsBefore),
+        walletLotsAfter: summarizeLots(ledger.walletLots),
+        stakedLotsAfter: summarizeLots(ledger.stakedLots)
       })
 
       if (shouldLogTransactionLots) {
@@ -1355,7 +1587,11 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
     realizedKnownShares: realization.knownShares.toString(),
     realizedProceedsAssets: realization.knownProceedsAssets.toString(),
     realizedBasisAssets: realization.knownCostBasisAssets.toString(),
-    realizedPnlAssets: realization.realizedPnlAssets.toString()
+    realizedPnlAssets: realization.realizedPnlAssets.toString(),
+    walletLotsBefore: summarizeLots(walletLotsBefore),
+    stakedLotsBefore: summarizeLots(stakedLotsBefore),
+    walletLotsAfter: summarizeLots(ledger.walletLots),
+    stakedLotsAfter: summarizeLots(ledger.stakedLots)
   })
 
   if (shouldLogTransactionLots) {
@@ -1434,13 +1670,13 @@ export function processRawPnlEvents(events: TRawPnlEvent[], userAddress: string)
   }, new Map<string, FamilyPnlLedger>())
 }
 
-export async function getHoldingsPnL(
+async function computeHoldingsPnLArtifacts(
   userAddress: string,
-  version: VaultVersion = 'all',
-  unknownTransferInPnlMode: UnknownTransferInPnlMode = 'windfall',
-  fetchType: HoldingsEventFetchType = 'seq',
-  paginationMode: HoldingsEventPaginationMode = 'paged'
-): Promise<HoldingsPnLResponse> {
+  version: VaultVersion,
+  unknownTransferInPnlMode: UnknownTransferInPnlMode,
+  fetchType: HoldingsEventFetchType,
+  paginationMode: HoldingsEventPaginationMode
+): Promise<TPnlComputationArtifacts> {
   debugLog('pnl', 'starting holdings pnl calculation', { version, unknownTransferInPnlMode, fetchType, paginationMode })
   const rawContext = await fetchRawUserPnlEvents(userAddress, version, undefined, fetchType, paginationMode)
   debugLog('pnl', 'loaded raw pnl event context', {
@@ -1468,7 +1704,17 @@ export async function getHoldingsPnL(
 
   if (vaults.length === 0) {
     debugLog('pnl', 'no pnl ledgers produced for address')
-    return createEmptyHoldingsPnlResponse(userAddress, version, unknownTransferInPnlMode)
+    return {
+      userAddress,
+      version,
+      unknownTransferInPnlMode,
+      currentTimestamp,
+      vaults: [],
+      vaultMetadata: new Map<string, VaultMetadata>(),
+      ppsData: new Map<string, Map<number, number>>(),
+      priceData: new Map<string, Map<number, number>>(),
+      debugTxLedgerKeys
+    }
   }
 
   const vaultIdentifiers = vaults.map((vault) => ({
@@ -1539,260 +1785,288 @@ export async function getHoldingsPnL(
     priceKeys: priceData.size
   })
 
-  const pnlVaults = vaults
-    .map<HoldingsPnLVault>((vault) => {
-      const vaultKey = toVaultKey(vault.chainId, vault.vaultAddress)
-      const metadata = vaultMetadata.get(vaultKey) ?? null
-      const ppsMap = ppsData.get(vaultKey)
-      const pricePerShare = ppsMap ? getPPS(ppsMap, currentTimestamp) : null
-      const priceKey = metadata ? `${getChainPrefix(vault.chainId)}:${metadata.token.address.toLowerCase()}` : null
-      const tokenPriceMap = priceKey ? priceData.get(priceKey) : null
-      const tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, currentTimestamp) : 0
-      const resolvedPricePerShare = pricePerShare ?? 0
-      const walletSharesRaw = sumShares(vault.walletLots)
-      const stakedSharesRaw = sumShares(vault.stakedLots)
-      const totalSharesRaw = walletSharesRaw + stakedSharesRaw
-      const knownLots = [...vault.walletLots, ...vault.stakedLots].filter((lot) => lot.costBasis !== null)
-      const unknownLots = [...vault.walletLots, ...vault.stakedLots].filter((lot) => lot.costBasis === null)
-      const knownSharesRaw = sumShares(knownLots)
-      const unknownSharesRaw = sumShares(unknownLots)
+  return {
+    userAddress,
+    version,
+    unknownTransferInPnlMode,
+    currentTimestamp,
+    vaults,
+    vaultMetadata,
+    ppsData,
+    priceData,
+    debugTxLedgerKeys
+  }
+}
 
-      if (!metadata) {
-        if (shouldLogFinalLots(vault, debugTxLedgerKeys)) {
-          const includeDetailedLotLogs = shouldIncludeDetailedLotLogs()
-          debugTable(
-            'pnl-journal',
-            `family transaction journal ${vault.vaultAddress}${vault.stakingVaultAddress ? ` (staking ${vault.stakingVaultAddress})` : ''}`,
-            serializeJournalRows(vault.debugJournal)
-          )
-          debugLog('pnl-lots', 'final family lots missing metadata', {
-            chainId: vault.chainId,
-            familyVaultAddress: vault.vaultAddress,
-            stakingVaultAddress: vault.stakingVaultAddress,
-            status: 'missing_metadata',
-            walletLots: summarizeLots(vault.walletLots),
-            stakedLots: summarizeLots(vault.stakedLots),
-            walletLotEntries: includeDetailedLotLogs ? serializeLots(vault.walletLots) : undefined,
-            stakedLotEntries: includeDetailedLotLogs ? serializeLots(vault.stakedLots) : undefined,
-            realizedEntries: vault.realizedEntries.map((entry) => ({
-              timestamp: entry.timestamp,
-              proceedsAssets: entry.proceedsAssets.toString(),
-              basisAssets: entry.basisAssets.toString(),
-              pnlAssets: entry.pnlAssets.toString()
-            })),
-            unknownCostBasisTransferInShares: vault.unknownCostBasisTransferInShares.toString(),
-            unmatchedTransferOutShares: vault.unmatchedTransferOutShares.toString()
-          })
-        }
+function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComputationArtifacts): HoldingsPnLVault {
+  const { currentTimestamp, debugTxLedgerKeys, priceData, ppsData, unknownTransferInPnlMode, vaultMetadata } = artifacts
+  const vaultKey = toVaultKey(vault.chainId, vault.vaultAddress)
+  const metadata = vaultMetadata.get(vaultKey) ?? null
+  const ppsMap = ppsData.get(vaultKey)
+  const pricePerShare = ppsMap ? getPPS(ppsMap, currentTimestamp) : null
+  const priceKey = metadata ? `${getChainPrefix(vault.chainId)}:${metadata.token.address.toLowerCase()}` : null
+  const tokenPriceMap = priceKey ? priceData.get(priceKey) : null
+  const tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, currentTimestamp) : 0
+  const resolvedPricePerShare = pricePerShare ?? 0
+  const walletSharesRaw = sumShares(vault.walletLots)
+  const stakedSharesRaw = sumShares(vault.stakedLots)
+  const totalSharesRaw = walletSharesRaw + stakedSharesRaw
+  const knownLots = [...vault.walletLots, ...vault.stakedLots].filter((lot) => lot.costBasis !== null)
+  const unknownLots = [...vault.walletLots, ...vault.stakedLots].filter((lot) => lot.costBasis === null)
+  const knownSharesRaw = sumShares(knownLots)
+  const unknownSharesRaw = sumShares(unknownLots)
 
-        return createMissingMetadataPnlVault(vault, unknownTransferInPnlMode, tokenPrice, resolvedPricePerShare)
-      }
-
-      const walletSharesFormatted = formatAmount(walletSharesRaw, metadata.decimals)
-      const stakedSharesFormatted = formatAmount(stakedSharesRaw, metadata.decimals)
-      const sharesFormatted = formatAmount(totalSharesRaw, metadata.decimals)
-      const knownCostBasisUnderlying = formatAmount(sumKnownCostBasis(knownLots), metadata.token.decimals)
-      const currentWalletUnderlying = walletSharesFormatted * resolvedPricePerShare
-      const currentStakedUnderlying = stakedSharesFormatted * resolvedPricePerShare
-      const currentKnownUnderlying = formatAmount(knownSharesRaw, metadata.decimals) * resolvedPricePerShare
-      const currentUnknownUnderlying = formatAmount(unknownSharesRaw, metadata.decimals) * resolvedPricePerShare
-      const walletValueUsd = currentWalletUnderlying * tokenPrice
-      const stakedValueUsd = currentStakedUnderlying * tokenPrice
-      const currentValueUsd = walletValueUsd + stakedValueUsd
-      const isTransferOnlyHoldingsLedger = isCurrentTransferOnlyHoldingsLedger(vault)
-
-      if (isTransferOnlyHoldingsLedger) {
-        // Transfer-only current holdings are surfaced for balance completeness without forcing
-        // historical token price fetches across every receipt timestamp.
-        const status = pricePerShare === null ? 'missing_pps' : tokenPrice > 0 ? 'ok' : 'missing_price'
-        const lightweightValuation =
-          unknownTransferInPnlMode === 'strict'
-            ? {
-                unknownCostBasisValueUsd: currentUnknownUnderlying * tokenPrice,
-                windfallPnlUsd: 0,
-                realizedPnlUnderlying: 0,
-                realizedPnlUsd: 0,
-                unrealizedPnlUnderlying: 0,
-                unrealizedPnlUsd: 0
-              }
-            : unknownTransferInPnlMode === 'zero_basis'
-              ? {
-                  unknownCostBasisValueUsd: 0,
-                  windfallPnlUsd: 0,
-                  realizedPnlUnderlying: 0,
-                  realizedPnlUsd: 0,
-                  unrealizedPnlUnderlying: currentUnknownUnderlying,
-                  unrealizedPnlUsd: currentValueUsd
-                }
-              : {
-                  unknownCostBasisValueUsd: 0,
-                  windfallPnlUsd: currentValueUsd,
-                  realizedPnlUnderlying: 0,
-                  realizedPnlUsd: 0,
-                  unrealizedPnlUnderlying: 0,
-                  unrealizedPnlUsd: 0
-                }
-
-        return {
-          chainId: vault.chainId,
-          vaultAddress: vault.vaultAddress,
-          stakingVaultAddress: vault.stakingVaultAddress,
-          status,
-          costBasisStatus: 'partial',
-          unknownTransferInPnlMode,
-          shares: totalSharesRaw.toString(),
-          sharesFormatted,
-          walletShares: walletSharesRaw.toString(),
-          walletSharesFormatted,
-          stakedShares: stakedSharesRaw.toString(),
-          stakedSharesFormatted,
-          knownCostBasisShares: knownSharesRaw.toString(),
-          unknownCostBasisShares: unknownSharesRaw.toString(),
-          pricePerShare: resolvedPricePerShare,
-          tokenPrice,
-          currentValueUsd,
-          walletValueUsd,
-          stakedValueUsd,
-          unknownCostBasisValueUsd: lightweightValuation.unknownCostBasisValueUsd,
-          windfallPnlUsd: lightweightValuation.windfallPnlUsd,
-          realizedPnlUnderlying: lightweightValuation.realizedPnlUnderlying,
-          realizedPnlUsd: lightweightValuation.realizedPnlUsd,
-          unrealizedPnlUnderlying: lightweightValuation.unrealizedPnlUnderlying,
-          unrealizedPnlUsd: lightweightValuation.unrealizedPnlUsd,
-          totalPnlUsd: lightweightValuation.realizedPnlUsd + lightweightValuation.unrealizedPnlUsd,
-          totalEconomicGainUsd:
-            lightweightValuation.realizedPnlUsd +
-            lightweightValuation.unrealizedPnlUsd +
-            lightweightValuation.windfallPnlUsd,
-          totalDepositedUnderlying: formatAmount(vault.totalDepositedAssets, metadata.token.decimals),
-          totalWithdrawnUnderlying: formatAmount(vault.totalWithdrawnAssets, metadata.token.decimals),
-          eventCounts: toHoldingsPnlEventCounts(vault),
-          metadata: {
-            symbol: metadata.token.symbol,
-            decimals: metadata.decimals,
-            tokenAddress: metadata.token.address
-          }
-        }
-      }
-
-      const knownCostBasisUsd = getKnownLotsCostBasisUsd(knownLots, metadata.token.decimals, tokenPriceMap, tokenPrice)
-      const baseRealizedPnlUnderlying = vault.realizedEntries.reduce(
-        (total, entry) => total + formatAmount(entry.pnlAssets, metadata.token.decimals),
-        0
+  if (!metadata) {
+    if (shouldLogFinalLots(vault, debugTxLedgerKeys)) {
+      const includeDetailedLotLogs = shouldIncludeDetailedLotLogs()
+      debugTable(
+        'pnl-journal',
+        `family transaction journal ${vault.vaultAddress}${vault.stakingVaultAddress ? ` (staking ${vault.stakingVaultAddress})` : ''}`,
+        serializeJournalRows(vault.debugJournal)
       )
-      const baseRealizedPnlUsd = vault.realizedEntries.reduce((total, entry) => {
-        const realizedTokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, entry.timestamp) : 0
-        const proceedsUsd = formatAmount(entry.proceedsAssets, metadata.token.decimals) * realizedTokenPrice
-        const basisUsd = getKnownLotsCostBasisUsd(
-          entry.consumedLots,
-          metadata.token.decimals,
-          tokenPriceMap,
-          tokenPrice
-        )
-        return total + (proceedsUsd - basisUsd)
-      }, 0)
-      const baseUnrealizedPnlUnderlying = pricePerShare === null ? 0 : currentKnownUnderlying - knownCostBasisUnderlying
-      const baseUnrealizedPnlUsd = currentKnownUnderlying * tokenPrice - knownCostBasisUsd
-      const valuationState = applyUnknownTransferInModeAdjustment({
-        unknownTransferInPnlMode,
-        vault,
-        unknownLots,
-        metadata,
-        ppsMap,
-        tokenPriceMap,
-        tokenPrice,
-        currentTimestamp,
-        resolvedPricePerShare,
-        currentUnknownUnderlying,
-        baseRealizedPnlUnderlying,
-        baseRealizedPnlUsd,
-        baseUnrealizedPnlUnderlying,
-        baseUnrealizedPnlUsd
-      })
-      const costBasisStatus =
-        vault.unknownCostBasisTransferInCount === 0 &&
-        vault.withdrawalsWithUnknownCostBasis === 0 &&
-        vault.unmatchedTransferOutShares === ZERO
-          ? 'complete'
-          : 'partial'
-      const status = pricePerShare === null ? 'missing_pps' : tokenPrice > 0 ? 'ok' : 'missing_price'
-
-      if (shouldLogFinalLots(vault, debugTxLedgerKeys)) {
-        const includeDetailedLotLogs = shouldIncludeDetailedLotLogs()
-        debugTable(
-          'pnl-journal',
-          `family transaction journal ${vault.vaultAddress}${vault.stakingVaultAddress ? ` (staking ${vault.stakingVaultAddress})` : ''}`,
-          serializeJournalRows(vault.debugJournal, metadata.decimals, metadata.token.decimals)
-        )
-        debugLog('pnl-lots', 'final family lots', {
-          chainId: vault.chainId,
-          familyVaultAddress: vault.vaultAddress,
-          stakingVaultAddress: vault.stakingVaultAddress,
-          status,
-          costBasisStatus,
-          symbol: metadata.token.symbol,
-          shareDecimals: metadata.decimals,
-          assetDecimals: metadata.token.decimals,
-          walletLots: summarizeLots(vault.walletLots),
-          stakedLots: summarizeLots(vault.stakedLots),
-          walletLotEntries: includeDetailedLotLogs
-            ? serializeLots(vault.walletLots, metadata.decimals, metadata.token.decimals)
-            : undefined,
-          stakedLotEntries: includeDetailedLotLogs
-            ? serializeLots(vault.stakedLots, metadata.decimals, metadata.token.decimals)
-            : undefined,
-          realizedEntries: vault.realizedEntries.map((entry) => ({
-            timestamp: entry.timestamp,
-            proceedsAssets: entry.proceedsAssets.toString(),
-            basisAssets: entry.basisAssets.toString(),
-            pnlAssets: entry.pnlAssets.toString(),
-            pnlAssetsFormatted: formatAmount(entry.pnlAssets, metadata.token.decimals)
-          })),
-          unknownCostBasisTransferInShares: vault.unknownCostBasisTransferInShares.toString(),
-          unmatchedTransferOutShares: vault.unmatchedTransferOutShares.toString()
-        })
-      }
-
-      return {
+      debugLog('pnl-lots', 'final family lots missing metadata', {
         chainId: vault.chainId,
-        vaultAddress: vault.vaultAddress,
+        familyVaultAddress: vault.vaultAddress,
         stakingVaultAddress: vault.stakingVaultAddress,
-        status,
-        costBasisStatus,
-        unknownTransferInPnlMode,
-        shares: totalSharesRaw.toString(),
-        sharesFormatted,
-        walletShares: walletSharesRaw.toString(),
-        walletSharesFormatted,
-        stakedShares: stakedSharesRaw.toString(),
-        stakedSharesFormatted,
-        knownCostBasisShares: knownSharesRaw.toString(),
-        unknownCostBasisShares: unknownSharesRaw.toString(),
-        pricePerShare: resolvedPricePerShare,
-        tokenPrice,
-        currentValueUsd,
-        walletValueUsd,
-        stakedValueUsd,
-        unknownCostBasisValueUsd: valuationState.unknownCostBasisValueUsd,
-        windfallPnlUsd: valuationState.windfallPnlUsd,
-        realizedPnlUnderlying: valuationState.realizedPnlUnderlying,
-        realizedPnlUsd: valuationState.realizedPnlUsd,
-        unrealizedPnlUnderlying: valuationState.unrealizedPnlUnderlying,
-        unrealizedPnlUsd: valuationState.unrealizedPnlUsd,
-        totalPnlUsd: valuationState.realizedPnlUsd + valuationState.unrealizedPnlUsd,
-        totalEconomicGainUsd:
-          valuationState.realizedPnlUsd + valuationState.unrealizedPnlUsd + valuationState.windfallPnlUsd,
-        totalDepositedUnderlying: formatAmount(vault.totalDepositedAssets, metadata.token.decimals),
-        totalWithdrawnUnderlying: formatAmount(vault.totalWithdrawnAssets, metadata.token.decimals),
-        eventCounts: toHoldingsPnlEventCounts(vault),
-        metadata: {
-          symbol: metadata.token.symbol,
-          decimals: metadata.decimals,
-          tokenAddress: metadata.token.address
-        }
+        status: 'missing_metadata',
+        walletLots: summarizeLots(vault.walletLots),
+        stakedLots: summarizeLots(vault.stakedLots),
+        walletLotEntries: includeDetailedLotLogs ? serializeLots(vault.walletLots) : undefined,
+        stakedLotEntries: includeDetailedLotLogs ? serializeLots(vault.stakedLots) : undefined,
+        realizedEntries: vault.realizedEntries.map((entry) => ({
+          timestamp: entry.timestamp,
+          proceedsAssets: entry.proceedsAssets.toString(),
+          basisAssets: entry.basisAssets.toString(),
+          pnlAssets: entry.pnlAssets.toString()
+        })),
+        unknownCostBasisTransferInShares: vault.unknownCostBasisTransferInShares.toString(),
+        unmatchedTransferOutShares: vault.unmatchedTransferOutShares.toString()
+      })
+    }
+
+    return createMissingMetadataPnlVault(vault, unknownTransferInPnlMode, tokenPrice, resolvedPricePerShare)
+  }
+
+  const walletSharesFormatted = formatAmount(walletSharesRaw, metadata.decimals)
+  const stakedSharesFormatted = formatAmount(stakedSharesRaw, metadata.decimals)
+  const sharesFormatted = formatAmount(totalSharesRaw, metadata.decimals)
+  const knownCostBasisUnderlying = formatAmount(sumKnownCostBasis(knownLots), metadata.token.decimals)
+  const walletUnderlying = walletSharesFormatted * resolvedPricePerShare
+  const stakedUnderlying = stakedSharesFormatted * resolvedPricePerShare
+  const currentUnderlying = walletUnderlying + stakedUnderlying
+  const currentKnownUnderlying = formatAmount(knownSharesRaw, metadata.decimals) * resolvedPricePerShare
+  const currentUnknownUnderlying = formatAmount(unknownSharesRaw, metadata.decimals) * resolvedPricePerShare
+  const walletValueUsd = walletUnderlying * tokenPrice
+  const stakedValueUsd = stakedUnderlying * tokenPrice
+  const currentValueUsd = walletValueUsd + stakedValueUsd
+  const isTransferOnlyHoldingsLedger = isCurrentTransferOnlyHoldingsLedger(vault)
+
+  if (isTransferOnlyHoldingsLedger) {
+    const status = pricePerShare === null ? 'missing_pps' : tokenPrice > 0 ? 'ok' : 'missing_price'
+    const lightweightValuation =
+      unknownTransferInPnlMode === 'strict'
+        ? {
+            unknownCostBasisValueUsd: currentUnknownUnderlying * tokenPrice,
+            windfallPnlUsd: 0,
+            realizedPnlUnderlying: 0,
+            realizedPnlUsd: 0,
+            unrealizedPnlUnderlying: 0,
+            unrealizedPnlUsd: 0
+          }
+        : unknownTransferInPnlMode === 'zero_basis'
+          ? {
+              unknownCostBasisValueUsd: 0,
+              windfallPnlUsd: 0,
+              realizedPnlUnderlying: 0,
+              realizedPnlUsd: 0,
+              unrealizedPnlUnderlying: currentUnknownUnderlying,
+              unrealizedPnlUsd: currentValueUsd
+            }
+          : {
+              unknownCostBasisValueUsd: 0,
+              windfallPnlUsd: currentValueUsd,
+              realizedPnlUnderlying: 0,
+              realizedPnlUsd: 0,
+              unrealizedPnlUnderlying: 0,
+              unrealizedPnlUsd: 0
+            }
+
+    return {
+      chainId: vault.chainId,
+      vaultAddress: vault.vaultAddress,
+      stakingVaultAddress: vault.stakingVaultAddress,
+      status,
+      costBasisStatus: 'partial',
+      unknownTransferInPnlMode,
+      shares: totalSharesRaw.toString(),
+      sharesFormatted,
+      walletShares: walletSharesRaw.toString(),
+      walletSharesFormatted,
+      stakedShares: stakedSharesRaw.toString(),
+      stakedSharesFormatted,
+      knownCostBasisShares: knownSharesRaw.toString(),
+      unknownCostBasisShares: unknownSharesRaw.toString(),
+      pricePerShare: resolvedPricePerShare,
+      tokenPrice,
+      currentUnderlying,
+      walletUnderlying,
+      stakedUnderlying,
+      currentKnownUnderlying,
+      currentUnknownUnderlying,
+      knownCostBasisUnderlying,
+      knownCostBasisUsd: 0,
+      currentValueUsd,
+      walletValueUsd,
+      stakedValueUsd,
+      unknownCostBasisValueUsd: lightweightValuation.unknownCostBasisValueUsd,
+      windfallPnlUsd: lightweightValuation.windfallPnlUsd,
+      realizedPnlUnderlying: lightweightValuation.realizedPnlUnderlying,
+      realizedPnlUsd: lightweightValuation.realizedPnlUsd,
+      unrealizedPnlUnderlying: lightweightValuation.unrealizedPnlUnderlying,
+      unrealizedPnlUsd: lightweightValuation.unrealizedPnlUsd,
+      totalPnlUsd: lightweightValuation.realizedPnlUsd + lightweightValuation.unrealizedPnlUsd,
+      totalEconomicGainUsd:
+        lightweightValuation.realizedPnlUsd +
+        lightweightValuation.unrealizedPnlUsd +
+        lightweightValuation.windfallPnlUsd,
+      totalDepositedUnderlying: formatAmount(vault.totalDepositedAssets, metadata.token.decimals),
+      totalWithdrawnUnderlying: formatAmount(vault.totalWithdrawnAssets, metadata.token.decimals),
+      eventCounts: toHoldingsPnlEventCounts(vault),
+      metadata: {
+        symbol: metadata.token.symbol,
+        decimals: metadata.decimals,
+        assetDecimals: metadata.token.decimals,
+        tokenAddress: metadata.token.address
       }
+    }
+  }
+
+  const knownCostBasisUsd = getKnownLotsCostBasisUsd(knownLots, metadata.token.decimals, tokenPriceMap, tokenPrice)
+  const baseRealizedPnlUnderlying = vault.realizedEntries.reduce(
+    (total, entry) => total + formatAmount(entry.pnlAssets, metadata.token.decimals),
+    0
+  )
+  const baseRealizedPnlUsd = vault.realizedEntries.reduce((total, entry) => {
+    const realizedTokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, entry.timestamp) : 0
+    const proceedsUsd = formatAmount(entry.proceedsAssets, metadata.token.decimals) * realizedTokenPrice
+    const basisUsd = getKnownLotsCostBasisUsd(entry.consumedLots, metadata.token.decimals, tokenPriceMap, tokenPrice)
+    return total + (proceedsUsd - basisUsd)
+  }, 0)
+  const baseUnrealizedPnlUnderlying = pricePerShare === null ? 0 : currentKnownUnderlying - knownCostBasisUnderlying
+  const baseUnrealizedPnlUsd = currentKnownUnderlying * tokenPrice - knownCostBasisUsd
+  const valuationState = applyUnknownTransferInModeAdjustment({
+    unknownTransferInPnlMode,
+    vault,
+    unknownLots,
+    metadata,
+    ppsMap,
+    tokenPriceMap,
+    tokenPrice,
+    currentTimestamp,
+    resolvedPricePerShare,
+    currentUnknownUnderlying,
+    baseRealizedPnlUnderlying,
+    baseRealizedPnlUsd,
+    baseUnrealizedPnlUnderlying,
+    baseUnrealizedPnlUsd
+  })
+  const costBasisStatus =
+    vault.unknownCostBasisTransferInCount === 0 &&
+    vault.withdrawalsWithUnknownCostBasis === 0 &&
+    vault.unmatchedTransferOutShares === ZERO
+      ? 'complete'
+      : 'partial'
+  const status = pricePerShare === null ? 'missing_pps' : tokenPrice > 0 ? 'ok' : 'missing_price'
+
+  if (shouldLogFinalLots(vault, debugTxLedgerKeys)) {
+    const includeDetailedLotLogs = shouldIncludeDetailedLotLogs()
+    debugTable(
+      'pnl-journal',
+      `family transaction journal ${vault.vaultAddress}${vault.stakingVaultAddress ? ` (staking ${vault.stakingVaultAddress})` : ''}`,
+      serializeJournalRows(vault.debugJournal, metadata.decimals, metadata.token.decimals)
+    )
+    debugLog('pnl-lots', 'final family lots', {
+      chainId: vault.chainId,
+      familyVaultAddress: vault.vaultAddress,
+      stakingVaultAddress: vault.stakingVaultAddress,
+      status,
+      costBasisStatus,
+      symbol: metadata.token.symbol,
+      shareDecimals: metadata.decimals,
+      assetDecimals: metadata.token.decimals,
+      walletLots: summarizeLots(vault.walletLots),
+      stakedLots: summarizeLots(vault.stakedLots),
+      walletLotEntries: includeDetailedLotLogs
+        ? serializeLots(vault.walletLots, metadata.decimals, metadata.token.decimals)
+        : undefined,
+      stakedLotEntries: includeDetailedLotLogs
+        ? serializeLots(vault.stakedLots, metadata.decimals, metadata.token.decimals)
+        : undefined,
+      realizedEntries: vault.realizedEntries.map((entry) => ({
+        timestamp: entry.timestamp,
+        proceedsAssets: entry.proceedsAssets.toString(),
+        basisAssets: entry.basisAssets.toString(),
+        pnlAssets: entry.pnlAssets.toString(),
+        pnlAssetsFormatted: formatAmount(entry.pnlAssets, metadata.token.decimals)
+      })),
+      unknownCostBasisTransferInShares: vault.unknownCostBasisTransferInShares.toString(),
+      unmatchedTransferOutShares: vault.unmatchedTransferOutShares.toString()
     })
+  }
+
+  return {
+    chainId: vault.chainId,
+    vaultAddress: vault.vaultAddress,
+    stakingVaultAddress: vault.stakingVaultAddress,
+    status,
+    costBasisStatus,
+    unknownTransferInPnlMode,
+    shares: totalSharesRaw.toString(),
+    sharesFormatted,
+    walletShares: walletSharesRaw.toString(),
+    walletSharesFormatted,
+    stakedShares: stakedSharesRaw.toString(),
+    stakedSharesFormatted,
+    knownCostBasisShares: knownSharesRaw.toString(),
+    unknownCostBasisShares: unknownSharesRaw.toString(),
+    pricePerShare: resolvedPricePerShare,
+    tokenPrice,
+    currentUnderlying,
+    walletUnderlying,
+    stakedUnderlying,
+    currentKnownUnderlying,
+    currentUnknownUnderlying,
+    knownCostBasisUnderlying,
+    knownCostBasisUsd,
+    currentValueUsd,
+    walletValueUsd,
+    stakedValueUsd,
+    unknownCostBasisValueUsd: valuationState.unknownCostBasisValueUsd,
+    windfallPnlUsd: valuationState.windfallPnlUsd,
+    realizedPnlUnderlying: valuationState.realizedPnlUnderlying,
+    realizedPnlUsd: valuationState.realizedPnlUsd,
+    unrealizedPnlUnderlying: valuationState.unrealizedPnlUnderlying,
+    unrealizedPnlUsd: valuationState.unrealizedPnlUsd,
+    totalPnlUsd: valuationState.realizedPnlUsd + valuationState.unrealizedPnlUsd,
+    totalEconomicGainUsd:
+      valuationState.realizedPnlUsd + valuationState.unrealizedPnlUsd + valuationState.windfallPnlUsd,
+    totalDepositedUnderlying: formatAmount(vault.totalDepositedAssets, metadata.token.decimals),
+    totalWithdrawnUnderlying: formatAmount(vault.totalWithdrawnAssets, metadata.token.decimals),
+    eventCounts: toHoldingsPnlEventCounts(vault),
+    metadata: {
+      symbol: metadata.token.symbol,
+      decimals: metadata.decimals,
+      assetDecimals: metadata.token.decimals,
+      tokenAddress: metadata.token.address
+    }
+  }
+}
+
+function materializeHoldingsPnLVaults(artifacts: TPnlComputationArtifacts): HoldingsPnLVault[] {
+  const pnlVaults = artifacts.vaults
+    .map((vault) => materializeHoldingsPnLVault(vault, artifacts))
     .sort((a, b) => b.currentValueUsd - a.currentValueUsd)
+
   debugLog('pnl', 'materialized pnl vault rows', {
     vaults: pnlVaults.length,
     missingMetadata: pnlVaults.filter((vault) => vault.status === 'missing_metadata').length,
@@ -1801,6 +2075,149 @@ export async function getHoldingsPnL(
     partialCostBasis: pnlVaults.filter((vault) => vault.costBasisStatus === 'partial').length
   })
 
+  return pnlVaults
+}
+
+function materializeHoldingsPnLDrilldownVault(
+  vault: FamilyPnlLedger,
+  artifacts: TPnlComputationArtifacts
+): HoldingsPnLDrilldownVault {
+  const baseVault = materializeHoldingsPnLVault(vault, artifacts)
+  const metadata = artifacts.vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null
+
+  if (!metadata) {
+    return {
+      ...baseVault,
+      currentLots: {
+        wallet: vault.walletLots.map((lot, index) => ({
+          index,
+          shares: lot.shares.toString(),
+          sharesFormatted: 0,
+          costBasis: lot.costBasis?.toString() ?? null,
+          costBasisFormatted: null,
+          acquiredAt: lot.acquiredAt ?? null,
+          costBasisUsd: null,
+          pricePerShareAtAcquisition: 0,
+          tokenPriceAtAcquisition: 0,
+          currentUnderlying: 0,
+          currentValueUsd: 0
+        })),
+        staked: vault.stakedLots.map((lot, index) => ({
+          index,
+          shares: lot.shares.toString(),
+          sharesFormatted: 0,
+          costBasis: lot.costBasis?.toString() ?? null,
+          costBasisFormatted: null,
+          acquiredAt: lot.acquiredAt ?? null,
+          costBasisUsd: null,
+          pricePerShareAtAcquisition: 0,
+          tokenPriceAtAcquisition: 0,
+          currentUnderlying: 0,
+          currentValueUsd: 0
+        }))
+      },
+      realizedEntries: [],
+      unknownTransferInEntries: [],
+      unknownWithdrawalEntries: [],
+      journal: []
+    }
+  }
+
+  const vaultKey = toVaultKey(vault.chainId, vault.vaultAddress)
+  const ppsMap = artifacts.ppsData.get(vaultKey)
+  const priceKey = `${getChainPrefix(vault.chainId)}:${metadata.token.address.toLowerCase()}`
+  const tokenPriceMap = artifacts.priceData.get(priceKey) ?? null
+
+  return {
+    ...baseVault,
+    currentLots: {
+      wallet: vault.walletLots.map((lot, index) =>
+        serializeLotForResponse({
+          lot,
+          index,
+          shareDecimals: metadata.decimals,
+          assetDecimals: metadata.token.decimals,
+          resolvedPricePerShare: baseVault.pricePerShare,
+          currentTokenPrice: baseVault.tokenPrice,
+          ppsMap,
+          tokenPriceMap
+        })
+      ),
+      staked: vault.stakedLots.map((lot, index) =>
+        serializeLotForResponse({
+          lot,
+          index,
+          shareDecimals: metadata.decimals,
+          assetDecimals: metadata.token.decimals,
+          resolvedPricePerShare: baseVault.pricePerShare,
+          currentTokenPrice: baseVault.tokenPrice,
+          ppsMap,
+          tokenPriceMap
+        })
+      )
+    },
+    realizedEntries: vault.realizedEntries.map((entry) =>
+      serializeRealizedEntryForResponse({
+        entry,
+        shareDecimals: metadata.decimals,
+        assetDecimals: metadata.token.decimals,
+        currentTokenPrice: baseVault.tokenPrice,
+        tokenPriceMap,
+        resolvedPricePerShare: baseVault.pricePerShare,
+        ppsMap
+      })
+    ),
+    unknownTransferInEntries: vault.unknownTransferInEntries.map((entry) =>
+      serializeUnknownTransferInEntryForResponse({
+        entry,
+        shareDecimals: metadata.decimals,
+        currentTokenPrice: baseVault.tokenPrice,
+        resolvedPricePerShare: baseVault.pricePerShare,
+        ppsMap,
+        tokenPriceMap
+      })
+    ),
+    unknownWithdrawalEntries: vault.unknownWithdrawalEntries.map((entry) =>
+      serializeUnknownWithdrawalEntryForResponse({
+        entry,
+        shareDecimals: metadata.decimals,
+        assetDecimals: metadata.token.decimals,
+        currentTokenPrice: baseVault.tokenPrice,
+        tokenPriceMap,
+        resolvedPricePerShare: baseVault.pricePerShare,
+        ppsMap
+      })
+    ),
+    journal: vault.debugJournal.map((row) =>
+      serializeJournalEntryForResponse({
+        row,
+        shareDecimals: metadata.decimals,
+        assetDecimals: metadata.token.decimals
+      })
+    )
+  }
+}
+
+export async function getHoldingsPnL(
+  userAddress: string,
+  version: VaultVersion = 'all',
+  unknownTransferInPnlMode: UnknownTransferInPnlMode = 'windfall',
+  fetchType: HoldingsEventFetchType = 'seq',
+  paginationMode: HoldingsEventPaginationMode = 'paged'
+): Promise<HoldingsPnLResponse> {
+  const artifacts = await computeHoldingsPnLArtifacts(
+    userAddress,
+    version,
+    unknownTransferInPnlMode,
+    fetchType,
+    paginationMode
+  )
+
+  if (artifacts.vaults.length === 0) {
+    return createEmptyHoldingsPnlResponse(userAddress, version, unknownTransferInPnlMode)
+  }
+
+  const pnlVaults = materializeHoldingsPnLVaults(artifacts)
   const summary = summarizePnlVaults(pnlVaults)
   debugLog('pnl', 'completed holdings pnl calculation', {
     unknownTransferInPnlMode,
@@ -1821,5 +2238,60 @@ export async function getHoldingsPnL(
     generatedAt: new Date().toISOString(),
     summary,
     vaults: pnlVaults
+  }
+}
+
+export async function getHoldingsPnLDrilldown(
+  userAddress: string,
+  version: VaultVersion = 'all',
+  unknownTransferInPnlMode: UnknownTransferInPnlMode = 'windfall',
+  fetchType: HoldingsEventFetchType = 'seq',
+  paginationMode: HoldingsEventPaginationMode = 'paged',
+  vaultFilter?: string | null
+): Promise<HoldingsPnLDrilldownResponse> {
+  const artifacts = await computeHoldingsPnLArtifacts(
+    userAddress,
+    version,
+    unknownTransferInPnlMode,
+    fetchType,
+    paginationMode
+  )
+
+  if (artifacts.vaults.length === 0) {
+    return {
+      ...createEmptyHoldingsPnlResponse(userAddress, version, unknownTransferInPnlMode),
+      vaults: []
+    }
+  }
+
+  const filteredVaults =
+    vaultFilter === undefined || vaultFilter === null
+      ? artifacts.vaults
+      : artifacts.vaults.filter(
+          (vault) =>
+            vault.vaultAddress === vaultFilter.toLowerCase() || vault.stakingVaultAddress === vaultFilter.toLowerCase()
+        )
+
+  const drilldownVaults = filteredVaults
+    .map((vault) => materializeHoldingsPnLDrilldownVault(vault, artifacts))
+    .sort((a, b) => b.currentValueUsd - a.currentValueUsd)
+  const summary = summarizePnlVaults(drilldownVaults)
+
+  debugLog('pnl', 'completed holdings pnl drilldown calculation', {
+    unknownTransferInPnlMode,
+    vaultFilter: vaultFilter?.toLowerCase() ?? null,
+    totalVaults: summary.totalVaults,
+    totalCurrentValueUsd: summary.totalCurrentValueUsd,
+    totalPnlUsd: summary.totalPnlUsd,
+    totalEconomicGainUsd: summary.totalEconomicGainUsd
+  })
+
+  return {
+    address: userAddress,
+    version,
+    unknownTransferInPnlMode,
+    generatedAt: new Date().toISOString(),
+    summary,
+    vaults: drilldownVaults
   }
 }

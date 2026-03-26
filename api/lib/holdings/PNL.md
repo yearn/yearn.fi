@@ -1,6 +1,6 @@
 # Holdings PnL Logic
 
-This document explains how `GET /api/holdings/pnl` works today.
+This document explains how `GET /api/holdings/pnl` and `GET /api/holdings/pnl/drilldown` work today.
 
 It is written for product engineers and contributors who need to understand the accounting model without reading the full implementation in `api/lib/holdings/services/pnl.ts`.
 
@@ -27,6 +27,17 @@ The endpoint is not:
 - A generic ERC20 PnL engine
 - A full wallet-wide cash-flow ledger
 - A proof that every historical transfer has been classified perfectly
+
+## Public Surfaces
+
+The backend now exposes two PnL shapes:
+
+- `GET /api/holdings/pnl`
+  - compact portfolio summary plus one row per vault family
+  - intended for overview cards, value tables, filters, and composition views
+- `GET /api/holdings/pnl/drilldown`
+  - the same valuation basis, but expanded with current lots, realized lot consumption, unknown-basis receipts and withdrawals, and a transaction journal
+  - intended for vault drawers, lot timelines, and accounting inspection UI
 
 ## Core Idea
 
@@ -405,6 +416,45 @@ A vault is `partial` when the engine still has ambiguity, such as:
 - withdrawals that consumed unknown-basis shares
 - unmatched transfer-outs
 
+### Per-Vault Current/Basis Fields
+
+The compact endpoint now also exposes explicit basis and underlying fields:
+
+- `currentUnderlying`
+  - current underlying asset amount represented by all current shares
+- `walletUnderlying`
+  - current underlying amount still in the wallet location
+- `stakedUnderlying`
+  - current underlying amount in the staking location
+- `currentKnownUnderlying`
+  - current underlying amount attributed to known-basis lots
+- `currentUnknownUnderlying`
+  - current underlying amount attributed to unknown-basis lots
+- `knownCostBasisUnderlying`
+  - summed underlying asset basis from known lots
+- `knownCostBasisUsd`
+  - USD-marked basis of known lots using acquisition-time token prices
+
+These fields are useful for UI without forcing a drilldown request.
+
+### Drilldown Fields
+
+The drilldown endpoint adds per-vault:
+
+- `currentLots.wallet`
+- `currentLots.staked`
+- `realizedEntries`
+- `unknownTransferInEntries`
+- `unknownWithdrawalEntries`
+- `journal`
+
+The journal is transaction-oriented. It records:
+
+- the computed vault-family view for that transaction
+- whether the wallet had direct address activity in that transaction
+- realized / wrapped / unwrapped / unknown-transfer deltas
+- lot summaries before and after the transaction for wallet and staked locations
+
 ## What Is Covered Well Today
 
 The current implementation is strong on:
@@ -447,7 +497,8 @@ If you are debugging one wallet:
    - `unknownCostBasisValueUsd`
    - `windfallPnlUsd`
    - `eventCounts`
-4. Use debug mode to inspect the transaction journal and final lots.
+4. Call `/api/holdings/pnl/drilldown` for the relevant vault family.
+5. Use debug mode only when you also want server-side logs or transaction-specific log tables.
 
 ## Code Map
 

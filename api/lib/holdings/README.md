@@ -259,6 +259,9 @@ Response (abridged):
       "status": "ok",
       "costBasisStatus": "partial",
       "unknownTransferInPnlMode": "windfall",
+      "currentUnderlying": 105.0,
+      "knownCostBasisUnderlying": 100.0,
+      "knownCostBasisUsd": 100.0,
       "unknownCostBasisValueUsd": 0,
       "windfallPnlUsd": 100.0,
       "realizedPnlUsd": 12.5,
@@ -269,6 +272,7 @@ Response (abridged):
       "metadata": {
         "symbol": "USDC",
         "decimals": 6,
+        "assetDecimals": 6,
         "tokenAddress": "0x..."
       }
     }
@@ -276,7 +280,13 @@ Response (abridged):
 }
 ```
 
-The live response also includes share balances, wallet vs staked splits, and per-vault event counts.
+The live response also includes:
+
+- share balances
+- wallet vs staked splits
+- per-vault event counts
+- explicit underlying amounts (`currentUnderlying`, `walletUnderlying`, `stakedUnderlying`)
+- explicit known-basis metrics (`knownCostBasisUnderlying`, `knownCostBasisUsd`, `currentKnownUnderlying`, `currentUnknownUnderlying`)
 
 Notes:
 - Deposits create FIFO lots using the indexed `assets` and `shares` values.
@@ -291,6 +301,34 @@ Notes:
 - Plain share transfers may leave some lots with unknown cost basis. Those vaults are returned with `costBasisStatus: "partial"`. In `strict` mode, the unmatched current portion is reported in `unknownCostBasisValueUsd`; in `zero_basis` and `windfall`, that value is zeroed and the economics are attributed according to `unknownTransferInPnlMode`.
 - The endpoint keeps families with non-zero current shares even if they only arrived through transfers, but transfer-only families with zero remaining shares may still be omitted. Those transfer-only holdings are marked partial and prioritized for current-value completeness over full historical price reconstruction.
 - `isComplete` becomes `false` when at least one returned vault still has partial / unknown basis.
+
+### GET `/api/holdings/pnl/drilldown`
+Lot-level drilldown for the PnL engine. This is the "excessive" companion to `/api/holdings/pnl`.
+
+Use it when the frontend needs current lots, realized lot consumption, unknown-basis receipts / withdrawals, or a transaction journal showing how the family lot state changed over time.
+
+```bash
+curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x..."
+curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x...&vault=0x..."
+curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x...&unknownMode=windfall"
+```
+
+Query params:
+- `address` (required): Ethereum address
+- `vault` (optional): family vault or staking vault address to limit the response to one family
+- `version` (optional): `v2`, `v3`, or `all` (default: `all`)
+- `unknownMode` (optional): `strict`, `zero_basis`, or `windfall` (default: `windfall`)
+- `fetchType` (optional): `seq` or `parallel` (default: `seq`)
+- `paginationMode` (optional): `paged` or `all` (default: `paged`)
+
+Response additions per vault:
+- `currentLots.wallet` and `currentLots.staked`
+- `realizedEntries` with consumed lots and USD/underlying proceeds/basis/PnL
+- `unknownTransferInEntries` with receipt-time valuation
+- `unknownWithdrawalEntries` with proceeds and consumed unknown lots
+- `journal` rows with before/after lot summaries for wallet and staked locations
+
+The drilldown response uses the same summary fields and top-level identity fields as `/api/holdings/pnl`, but each vault row is expanded for UI drilldown rather than table rendering.
 
 ### Unknown Transfer-In Modes
 
@@ -330,79 +368,6 @@ windfall:
   totalWindfallPnlUsd = 1,000
   totalPnlUsd = 150
   totalEconomicGainUsd = 1,150
-```
-
-### GET `/api/holdings/breakdown`
-Current vault positions with detailed breakdown (not cached).
-
-```bash
-curl "http://localhost:3001/api/holdings/breakdown?address=0x..."
-```
-
-Response:
-```json
-{
-  "address": "0x...",
-  "summary": {
-    "totalVaults": 5,
-    "vaultsWithShares": 2,
-    "totalUsdValue": 1500.00
-  },
-  "vaults": [
-    {
-      "chainId": 1,
-      "vaultAddress": "0x...",
-      "shares": "1000000000000000000",
-      "sharesFormatted": 1.0,
-      "pricePerShare": 1.05,
-      "tokenPrice": 1.00,
-      "usdValue": 1.05,
-      "metadata": {
-        "symbol": "USDC",
-        "decimals": 18,
-        "tokenAddress": "0x..."
-      },
-      "status": "ok"
-    }
-  ]
-}
-```
-
-### GET `/api/holdings/debug`
-Debug endpoint for inspecting raw events.
-
-```bash
-curl "http://localhost:3001/api/holdings/debug?address=0x...&vault=0x..."
-```
-
-### POST `/api/admin/invalidate-cache`
-Protected endpoint to invalidate cache when new vaults are indexed.
-
-```bash
-curl -X POST "http://localhost:3001/api/admin/invalidate-cache" \
-  -H "x-admin-secret: $ADMIN_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{"vaults": [{"address": "0x...", "chainId": 1}]}'
-```
-
-Request body:
-```json
-{
-  "vaults": [
-    { "address": "0xac37729b76db6438ce62042ae1270ee574ca7571", "chainId": 1 },
-    { "address": "0x7fd8af959b54a677a1d8f92265bd0714274c56a3", "chainId": 8453 }
-  ]
-}
-```
-
-Response:
-```json
-{
-  "success": true,
-  "invalidated": 2,
-  "vaults": ["1:0xac37729b...", "8453:0x7fd8af9..."],
-  "timestamp": "2026-03-07T12:00:00Z"
-}
 ```
 
 ## Supported Chains

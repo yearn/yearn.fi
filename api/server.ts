@@ -2,6 +2,7 @@ import { serve } from 'bun'
 import {
   getHistoricalHoldings,
   getHoldingsPnL,
+  getHoldingsPnLDrilldown,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
   initializeSchema,
@@ -338,6 +339,113 @@ async function handleHoldingsPnL(req: Request): Promise<Response> {
   }
 }
 
+async function handleHoldingsPnLDrilldown(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const vault = url.searchParams.get('vault')
+  const versionParam = url.searchParams.get('version')
+  const debugEnabled =
+    isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
+  const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
+  const debugVault = url.searchParams.get('debugVault') ?? vault
+  const debugTx = url.searchParams.get('debugTx')
+  const unknownTransferInPnlMode = parseUnknownTransferInPnlMode(url.searchParams.get('unknownMode'))
+  const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
+  const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  if (vault !== null && !isValidAddress(vault)) {
+    return Response.json({ error: 'Invalid vault address', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const pnl = await withHoldingsDebugContext(
+      createHoldingsDebugContext('pnl', address, debugEnabled, {
+        lotsEnabled: debugLotsEnabled,
+        vaultFilter: debugVault,
+        txFilter: debugTx
+      }),
+      async () => {
+        debugLog('route', 'started holdings pnl drilldown request', {
+          version,
+          unknownTransferInPnlMode,
+          fetchType,
+          paginationMode,
+          vault: vault?.toLowerCase() ?? null,
+          debugLotsEnabled,
+          debugVault: debugVault?.toLowerCase() ?? null,
+          debugTx: debugTx?.toLowerCase() ?? null
+        })
+
+        try {
+          const response = await getHoldingsPnLDrilldown(
+            address,
+            version,
+            unknownTransferInPnlMode,
+            fetchType,
+            paginationMode,
+            vault
+          )
+          debugLog('route', 'completed holdings pnl drilldown request', {
+            version,
+            unknownTransferInPnlMode,
+            fetchType,
+            paginationMode,
+            vault: vault?.toLowerCase() ?? null,
+            totalVaults: response.summary.totalVaults,
+            totalCurrentValueUsd: response.summary.totalCurrentValueUsd,
+            totalPnlUsd: response.summary.totalPnlUsd,
+            totalEconomicGainUsd: response.summary.totalEconomicGainUsd
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings pnl drilldown request failed', error, {
+            version,
+            unknownTransferInPnlMode,
+            fetchType,
+            paginationMode,
+            vault: vault?.toLowerCase() ?? null
+          })
+          throw error
+        }
+      }
+    )
+
+    if (pnl.summary.totalVaults === 0) {
+      return Response.json(
+        {
+          error: vault ? 'No matching holdings found for address and vault' : 'No holdings found for address',
+          status: 404
+        },
+        { status: 404 }
+      )
+    }
+
+    return Response.json(pnl, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching holdings PnL drilldown:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json(
+      { error: 'Failed to fetch holdings PnL drilldown', message, stack, status: 502 },
+      { status: 502 }
+    )
+  }
+}
+
 async function main() {
   // Catch uncaught exceptions
   process.on('uncaughtException', (error) => {
@@ -372,6 +480,8 @@ async function main() {
           response = await handleEnsoRoute(req)
         } else if (url.pathname === '/api/holdings/history') {
           response = await handleHoldingsHistory(req)
+        } else if (url.pathname === '/api/holdings/pnl/drilldown') {
+          response = await handleHoldingsPnLDrilldown(req)
         } else if (url.pathname === '/api/holdings/pnl') {
           response = await handleHoldingsPnL(req)
         } else {
@@ -396,6 +506,7 @@ async function main() {
   console.log('🚀 API server running on http://localhost:3001')
   console.log('📊 Holdings API: http://localhost:3001/api/holdings/history?address=0x...')
   console.log('💹 PnL API: http://localhost:3001/api/holdings/pnl?address=0x...')
+  console.log('🧾 PnL Drilldown API: http://localhost:3001/api/holdings/pnl/drilldown?address=0x...')
 }
 
 main().catch((error) => {
