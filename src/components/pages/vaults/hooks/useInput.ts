@@ -1,5 +1,5 @@
 import { exactToSimple } from '@shared/utils'
-import { type ChangeEvent, type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ChangeEvent, type Dispatch, type SetStateAction, useCallback, useMemo, useState } from 'react'
 import { parseUnits } from 'viem'
 
 export interface InputValue {
@@ -61,13 +61,11 @@ const createUseInputHook =
       [setFormValue, decimals]
     )
 
-    // Trim existing if beyond decimal limit
-    useEffect(() => {
-      setFormValue((prev) => {
-        const [whole, fraction] = prev.split('.')
-        return fraction && fraction.length > decimals ? `${whole}.${fraction.slice(0, decimals)}` : prev
-      })
-    }, [setFormValue, decimals])
+    // Render-time state adjustment: trim form value when decimals decrease
+    const [whole, fraction] = formValue.split('.')
+    if (fraction && fraction.length > decimals) {
+      setFormValue(`${whole}.${fraction.slice(0, decimals)}`)
+    }
 
     // State change on formValue / decimals
     const state = useMemo(() => {

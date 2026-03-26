@@ -165,10 +165,6 @@ export function WidgetDeposit({
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
-  const [priceImpactAcceptance, setPriceImpactAcceptance] = useState<{ key: string; isAccepted: boolean }>({
-    key: '',
-    isAccepted: false
-  })
   const appliedPrefillRef = useRef<string | null>(null)
 
   const {
@@ -273,11 +269,10 @@ export function WidgetDeposit({
     setShowTokenSelector
   })
 
-  useEffect(() => {
-    if (!shouldCollapseDetails && isDetailsPanelOpen) {
-      setIsDetailsPanelOpen(false)
-    }
-  }, [isDetailsPanelOpen, shouldCollapseDetails])
+  // Render-time state adjustment: close panel when collapse is disabled
+  if (!shouldCollapseDetails && isDetailsPanelOpen) {
+    setIsDetailsPanelOpen(false)
+  }
 
   const { routeType, activeFlow } = useDepositFlow({
     depositToken,
@@ -415,8 +410,21 @@ export function WidgetDeposit({
     activeFlow.periphery.routerAddress,
     activeFlow.periphery.expectedOut
   ])
-  const hasAcceptedPriceImpact =
-    priceImpactAcceptance.key === priceImpactAcceptanceKey && priceImpactAcceptance.isAccepted
+
+  const [priceImpactAcceptanceState, setPriceImpactAcceptanceState] = useState<{
+    key: string
+    isAccepted: boolean
+  }>({
+    key: priceImpactAcceptanceKey,
+    isAccepted: false
+  })
+  if (priceImpactAcceptanceState.key !== priceImpactAcceptanceKey) {
+    setPriceImpactAcceptanceState({
+      key: priceImpactAcceptanceKey,
+      isAccepted: false
+    })
+  }
+  const hasAcceptedPriceImpact = priceImpactAcceptanceState.isAccepted
 
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
@@ -629,7 +637,7 @@ export function WidgetDeposit({
             type="checkbox"
             checked={hasAcceptedPriceImpact}
             onChange={(e) =>
-              setPriceImpactAcceptance({
+              setPriceImpactAcceptanceState({
                 key: priceImpactAcceptanceKey,
                 isAccepted: e.target.checked
               })

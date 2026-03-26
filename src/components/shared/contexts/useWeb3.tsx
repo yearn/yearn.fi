@@ -53,7 +53,6 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   const { openChainModal } = useChainModal()
   const trackEvent = usePlausible()
   const [clusters, setClusters] = useState<{ name: string; avatar: string } | undefined>(undefined)
-  const [isUserConnecting, setIsUserConnecting] = useState(false)
   const [isFetchingClusters, setIsFetchingClusters] = useState(false)
   const wasConnectedRef = useRef(false)
   const previousChainIDRef = useRef<number | undefined>(undefined)
@@ -210,16 +209,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     }
   }, [address, ensName, isConnected])
 
-  useEffect(() => {
-    if (isConnecting) {
-      if (hasUserRequestedConnectionRef.current) {
-        setIsUserConnecting(true)
-      }
-      return
-    }
-
-    setIsUserConnecting(false)
-  }, [isConnecting])
+  const isUserConnecting = isConnecting && hasUserRequestedConnectionRef.current
 
   const isIdentityLoading = Boolean((isEnsLoading && !!address) || isFetchingClusters)
   const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false
