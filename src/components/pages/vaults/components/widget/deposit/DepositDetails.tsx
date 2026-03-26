@@ -1,5 +1,4 @@
 import type { FC } from 'react'
-import { formatUnits } from 'viem'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import type { DepositRouteType } from './types'
 
@@ -19,10 +18,14 @@ interface DepositDetailsProps {
   assetTokenDecimals: number
   // Vault/Staking shares info
   expectedVaultShares: bigint
-  vaultDecimals: number // For pricePerShare calculations (always vault's decimals)
+  vaultDecimals: number // Backward-compatible prop; valuation is computed in the parent.
   sharesDisplayDecimals: number // For displaying share amounts (vault or staking decimals)
   pricePerShare: bigint
   assetUsdPrice: number
+  vaultShareValueInAsset: bigint
+  vaultShareValueUsdRaw: number
+  priceImpactPercentage: number
+  hasHighPriceImpact: boolean
   willReceiveStakedShares: boolean
   vaultSharesLabel?: string
   onShowVaultSharesModal: () => void
@@ -43,7 +46,6 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   depositAmountBn,
   inputTokenSymbol,
   inputTokenDecimals,
-  inputTokenUsdPrice,
   routeType,
   isSwap,
   isLoadingQuote,
@@ -52,10 +54,11 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   assetTokenSymbol,
   assetTokenDecimals,
   expectedVaultShares,
-  vaultDecimals,
   sharesDisplayDecimals,
-  pricePerShare,
-  assetUsdPrice,
+  vaultShareValueInAsset,
+  vaultShareValueUsdRaw,
+  priceImpactPercentage,
+  hasHighPriceImpact,
   willReceiveStakedShares,
   vaultSharesLabel,
   onShowVaultSharesModal,
@@ -79,23 +82,9 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
     return 'Deposit'
   }
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
-
-  // Calculate vault share value in underlying asset terms (use vault decimals for pricePerShare)
-  const vaultShareValueInAsset =
-    expectedVaultShares > 0n && pricePerShare > 0n
-      ? (expectedVaultShares * pricePerShare) / 10n ** BigInt(vaultDecimals)
-      : 0n
   const vaultShareValueDisplay = formatWidgetValue(vaultShareValueInAsset, assetTokenDecimals)
-  const vaultShareValueUsdRaw = Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
   const vaultShareValueUsd = formatWidgetValue(vaultShareValueUsdRaw)
-
-  // Calculate price impact (USD to deposit vs vault share value USD)
-  const usdValueToDeposit = Number(formatUnits(depositAmountBn, inputTokenDecimals)) * inputTokenUsdPrice
-  const priceImpact =
-    usdValueToDeposit > 0 && vaultShareValueUsdRaw > 0
-      ? ((usdValueToDeposit - vaultShareValueUsdRaw) / usdValueToDeposit) * 100
-      : 0
-  const hasHighPriceImpact = !isQuoteStale && !isLoadingQuote && priceImpact > 5
+  const shouldHighlightPriceImpact = !isQuoteStale && !isLoadingQuote && hasHighPriceImpact
   return (
     <div className="">
       <div className="flex flex-col gap-2">
@@ -166,7 +155,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
           >
             Vault share value
           </button>
-          <p className={`text-sm ${hasHighPriceImpact ? 'text-red-500' : 'text-text-primary'}`}>
+          <p className={`text-sm ${shouldHighlightPriceImpact ? 'text-red-500' : 'text-text-primary'}`}>
             {isLoadingQuote ? (
               <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
             ) : (
@@ -175,7 +164,9 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 <span className="font-normal">{`${assetTokenSymbol || ''} (`}</span>
                 <span className="font-normal">{`$${vaultShareValueUsd}`}</span>
                 <span className="font-normal">{')'}</span>
-                {hasHighPriceImpact && <span className="font-semibold">{` (-${priceImpact.toFixed(2)}%)`}</span>}
+                {shouldHighlightPriceImpact && (
+                  <span className="font-semibold">{` (-${priceImpactPercentage.toFixed(2)}%)`}</span>
+                )}
               </>
             )}
           </p>

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getDirectStakeCall,
   getDirectUnstakeCalls,
+  getRedeemPreviewCall,
   getStakePreviewCall,
   getStakingWithdrawableAssets,
   normalizeStakingSource
@@ -31,6 +32,21 @@ describe('stakingAdapter', () => {
       args: [amount]
     })
     expect(getStakePreviewCall('Legacy', amount)).toBeUndefined()
+  })
+
+  it('builds redeem preview calls for vault-backed staking wrappers', () => {
+    const shares = 42n
+    expect(getRedeemPreviewCall('VeYFI', shares)).toMatchObject({
+      abi: VEYFI_GAUGE_ABI,
+      functionName: 'previewRedeem',
+      args: [shares]
+    })
+    expect(getRedeemPreviewCall('yBOLD', shares)).toMatchObject({
+      abi: TOKENIZED_STRATEGY_ABI,
+      functionName: 'previewRedeem',
+      args: [shares]
+    })
+    expect(getRedeemPreviewCall('Legacy', shares)).toBeUndefined()
   })
 
   it('builds direct stake calls per staking source', () => {
