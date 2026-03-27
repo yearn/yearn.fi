@@ -446,7 +446,7 @@ export function WidgetWithdraw({
       tokenSymbol: approvalToken?.symbol,
       tokenDecimals: approvalToken?.decimals ?? 18,
       spenderAddress: toAddress(activeFlow.periphery.routerAddress || sourceToken),
-      spenderName: routeType === 'ENSO' ? 'Enso Router' : activeFlow.periphery.routerAddress ? 'Vault Zap' : undefined
+      spenderName: routeType === 'ENSO' ? 'Enso Router' : activeFlow.periphery.routerAddress ? 'Yearn Zap' : undefined
     }
   }, [
     activeFlow.actions.prepareApprove,
