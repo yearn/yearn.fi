@@ -1,9 +1,6 @@
 import type { TNotification } from '@shared/types/notifications'
 
-export function appendCachedNotification(
-  cachedEntries: TNotification[],
-  notification: TNotification
-): TNotification[] {
+export function appendCachedNotification(cachedEntries: TNotification[], notification: TNotification): TNotification[] {
   return [...cachedEntries, notification]
 }
 
