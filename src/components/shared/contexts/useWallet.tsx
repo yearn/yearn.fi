@@ -20,6 +20,7 @@ import { useStakingAssetConversions } from '../hooks/useStakingAssetConversions'
 import { getVaultHoldingsUsdValue } from '../hooks/useVaultFilterUtils'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
 import { DEFAULT_ERC20, isZeroAddress, toAddress, zeroNormalizedBN } from '../utils'
+import { hasWalletBalanceSnapshot, shouldExposeWalletLoading } from './useWallet.helpers'
 import { useWeb3 } from './useWeb3'
 import { useYearn } from './useYearn'
 import { useYearnTokens } from './useYearn.helper'
@@ -146,6 +147,13 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     return _tokens as TYChainTokens
   }, [deferredTokensRaw])
   const isBalancesPending = deferredTokensRaw !== visibleTokensRaw
+  const hasVisibleBalances = hasWalletBalanceSnapshot(visibleTokensRaw)
+  const isWalletLoading = shouldExposeWalletLoading({
+    userAddress,
+    hasVisibleBalances,
+    isLoading,
+    isBalancesPending
+  })
 
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
@@ -278,7 +286,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       getBalance,
       getVaultHoldingsUsd,
       balances,
-      isLoading: isLoading || isBalancesPending,
+      isLoading: isWalletLoading,
       onRefresh,
       cumulatedValueInV2Vaults,
       cumulatedValueInV3Vaults
@@ -288,8 +296,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       getBalance,
       getVaultHoldingsUsd,
       balances,
-      isLoading,
-      isBalancesPending,
+      isWalletLoading,
       onRefresh,
       cumulatedValueInV2Vaults,
       cumulatedValueInV3Vaults
