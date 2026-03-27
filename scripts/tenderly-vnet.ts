@@ -18,6 +18,12 @@ type TResolvedTenderlyCredentials = {
   profile: TTenderlyProfile
 }
 
+type TTenderlyProfileDefaults = {
+  apiKeyEnv: string
+  accountEnvKeys: string[]
+  projectEnvKeys: string[]
+}
+
 type TTenderlyVnetResponse = {
   slug?: string
   display_name?: string
@@ -68,6 +74,18 @@ const DEFAULT_NETWORK_ID = 1
 const DEFAULT_CHAIN_ID_PREFIX = '69420'
 const TENDERLY_API_URL = 'https://api.tenderly.co/api/v1/account'
 const REDACTED_URL = '[redacted-url]'
+const TENDERLY_PROFILE_DEFAULTS: Record<TTenderlyProfile, TTenderlyProfileDefaults> = {
+  personal: {
+    apiKeyEnv: 'PERSONAL_TENDERLY_API_KEY',
+    accountEnvKeys: ['PERSONAL_ACCOUNT_SLUG', 'ACCOUNT_SLUG'],
+    projectEnvKeys: ['PERSONAL_PROJECT_SLUG', 'PROJECT_SLUG']
+  },
+  webops: {
+    apiKeyEnv: 'WEBOPS_TENDERLY_API_KEY',
+    accountEnvKeys: ['WEBOPS_ACCOUNT_SLUG', 'TENDERLY_ACCOUNT_SLUG'],
+    projectEnvKeys: ['WEBOPS_PROJECT_SLUG', 'TENDERLY_PROJECT_SLUG']
+  }
+}
 
 const HELP_TEXT = `Tenderly Virtual TestNet bootstrap
 
@@ -76,7 +94,7 @@ Usage:
 
 Options:
   --profile <name>       Credential profile: webops or personal (default: webops)
-  --account <slug>        Tenderly account slug (defaults to TENDERLY_ACCOUNT_SLUG, then me)
+  --account <slug>        Tenderly account slug (defaults from selected profile env vars, then me)
   --project <slug>        Tenderly project slug (defaults from selected profile env vars)
   --api-key <key>         Tenderly API key override
   --api-key-env <name>    Env var name to read the API key from
@@ -96,7 +114,8 @@ Options:
   --help                  Show this help text
 
 Profiles:
-  webops   -> WEBOPS_TENDERLY_API_KEY, TENDERLY_ACCOUNT_SLUG, TENDERLY_PROJECT_SLUG, WEBOPS_TENDERLY_RPC_NAME
+  webops   -> WEBOPS_TENDERLY_API_KEY, WEBOPS_ACCOUNT_SLUG, WEBOPS_PROJECT_SLUG, WEBOPS_TENDERLY_RPC_NAME
+              legacy slug fallback: TENDERLY_ACCOUNT_SLUG, TENDERLY_PROJECT_SLUG
   personal -> PERSONAL_TENDERLY_API_KEY, PERSONAL_ACCOUNT_SLUG, PERSONAL_PROJECT_SLUG, PERSONAL_TENDERLY_RPC_NAME
 
 Sensitive RPC values are never printed to stdout. Use --write-env or --write-response when you need them locally.
@@ -212,35 +231,29 @@ function getEnvValue(env: Record<string, string | undefined>, key?: string): str
   return env[key]?.trim()
 }
 
+function getFirstEnvValue(env: Record<string, string | undefined>, keys: string[]): string | undefined {
+  return keys.map((key) => getEnvValue(env, key)).find((value) => Boolean(value))
+}
+
 export function sanitizeConsoleText(value: string): string {
   return value.replace(/https?:\/\/\S+/gi, REDACTED_URL)
 }
 
-function resolveTenderlyCredentials(
+export function resolveTenderlyCredentials(
   flags: Record<string, string>,
   env: Record<string, string | undefined>
 ): TResolvedTenderlyCredentials {
   const profile = parseProfile(getArg(flags, 'profile'))
-  const profileDefaults =
-    profile === 'personal'
-      ? {
-          apiKeyEnv: 'PERSONAL_TENDERLY_API_KEY',
-          accountEnv: 'PERSONAL_ACCOUNT_SLUG',
-          projectEnv: 'PERSONAL_PROJECT_SLUG'
-        }
-      : {
-          apiKeyEnv: 'WEBOPS_TENDERLY_API_KEY',
-          accountEnv: 'TENDERLY_ACCOUNT_SLUG',
-          projectEnv: 'TENDERLY_PROJECT_SLUG'
-        }
+  const profileDefaults = TENDERLY_PROFILE_DEFAULTS[profile]
 
-  const apiKeyEnv = getArg(flags, 'api-key-env') || profileDefaults.apiKeyEnv
-  const accountEnv = getArg(flags, 'account-env') || profileDefaults.accountEnv
-  const projectEnv = getArg(flags, 'project-env') || profileDefaults.projectEnv
+  const apiKeyEnv = getArg(flags, 'api-key-env')
+  const accountEnv = getArg(flags, 'account-env')
+  const projectEnv = getArg(flags, 'project-env')
 
   const apiKey =
     getArg(flags, 'api-key') ||
     getEnvValue(env, apiKeyEnv) ||
+    getEnvValue(env, profileDefaults.apiKeyEnv) ||
     env.TENDERLY_ACCESS_KEY?.trim() ||
     env.TENDERLY_API_KEY?.trim()
 
@@ -251,12 +264,10 @@ function resolveTenderlyCredentials(
   const accountSlug =
     getArg(flags, 'account') ||
     getEnvValue(env, accountEnv) ||
-    (profile === 'personal' ? env.ACCOUNT_SLUG?.trim() : undefined) ||
+    getFirstEnvValue(env, profileDefaults.accountEnvKeys) ||
     DEFAULT_ACCOUNT_SLUG
   const projectSlug = requireString(
-    getArg(flags, 'project') ||
-      getEnvValue(env, projectEnv) ||
-      (profile === 'personal' ? env.PROJECT_SLUG?.trim() : undefined),
+    getArg(flags, 'project') || getEnvValue(env, projectEnv) || getFirstEnvValue(env, profileDefaults.projectEnvKeys),
     '--project or a configured Tenderly project env var'
   )
 

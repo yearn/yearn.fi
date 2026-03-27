@@ -8,6 +8,7 @@ import {
   buildTenderlyEnvFragment,
   buildVnetConsoleSummary,
   resolveExplorerUriFromResponse,
+  resolveTenderlyCredentials,
   sanitizeConsoleText,
   validateWritableOutputPath,
   writeOutputFile
@@ -31,6 +32,44 @@ const response = {
 }
 
 describe('tenderly-vnet console safety', () => {
+  it('prefers webops account and project slugs over legacy and personal env vars', () => {
+    expect(
+      resolveTenderlyCredentials(
+        { profile: 'webops' },
+        {
+          WEBOPS_TENDERLY_API_KEY: 'webops-key',
+          WEBOPS_ACCOUNT_SLUG: 'webops-account',
+          WEBOPS_PROJECT_SLUG: 'webops-project',
+          TENDERLY_ACCOUNT_SLUG: 'legacy-account',
+          TENDERLY_PROJECT_SLUG: 'legacy-project',
+          PERSONAL_ACCOUNT_SLUG: 'personal-account',
+          PERSONAL_PROJECT_SLUG: 'personal-project'
+        }
+      )
+    ).toMatchObject({
+      apiKey: 'webops-key',
+      accountSlug: 'webops-account',
+      projectSlug: 'webops-project',
+      profile: 'webops'
+    })
+  })
+
+  it('falls back to legacy webops slug env vars when WEBOPS slugs are unset', () => {
+    expect(
+      resolveTenderlyCredentials(
+        { profile: 'webops' },
+        {
+          WEBOPS_TENDERLY_API_KEY: 'webops-key',
+          TENDERLY_ACCOUNT_SLUG: 'legacy-account',
+          TENDERLY_PROJECT_SLUG: 'legacy-project'
+        }
+      )
+    ).toMatchObject({
+      accountSlug: 'legacy-account',
+      projectSlug: 'legacy-project'
+    })
+  })
+
   it('redacts URLs in console text', () => {
     expect(sanitizeConsoleText('failed at https://admin.rpc/secret-path')).toBe('failed at [redacted-url]')
   })
