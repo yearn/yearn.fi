@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  scheduleAdditionalYvUsdDepositRefetch,
-  shouldDeferYvUsdDepositSuccessUntilClose
-} from './YvUsdDeposit.helpers'
+import { scheduleAdditionalYvUsdDepositRefetch, shouldRefetchUnlockedAfterYvUsdDeposit } from './YvUsdDeposit.helpers'
 
 describe('YvUsdDeposit', () => {
   beforeEach(() => {
@@ -31,9 +28,9 @@ describe('YvUsdDeposit', () => {
     expect(unlockedRefetch).not.toHaveBeenCalled()
   })
 
-  it('only defers success effects for locked deposits', () => {
-    expect(shouldDeferYvUsdDepositSuccessUntilClose('locked')).toBe(true)
-    expect(shouldDeferYvUsdDepositSuccessUntilClose('unlocked')).toBe(false)
-    expect(shouldDeferYvUsdDepositSuccessUntilClose(null)).toBe(false)
+  it('only schedules the extra unlocked refetch for locked deposits', () => {
+    expect(shouldRefetchUnlockedAfterYvUsdDeposit('locked')).toBe(true)
+    expect(shouldRefetchUnlockedAfterYvUsdDeposit('unlocked')).toBe(false)
+    expect(shouldRefetchUnlockedAfterYvUsdDeposit(null)).toBe(false)
   })
 })

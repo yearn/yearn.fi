@@ -1,6 +1,6 @@
 import type { TYvUsdVariant } from '@pages/vaults/utils/yvUsd'
 
-export function shouldDeferYvUsdDepositSuccessUntilClose(variant: TYvUsdVariant | null): boolean {
+export function shouldRefetchUnlockedAfterYvUsdDeposit(variant: TYvUsdVariant | null): boolean {
   return variant === 'locked'
 }
 
@@ -8,7 +8,7 @@ export function scheduleAdditionalYvUsdDepositRefetch(
   variant: TYvUsdVariant | null,
   refetchUnlocked: () => void
 ): void {
-  if (!shouldDeferYvUsdDepositSuccessUntilClose(variant)) {
+  if (!shouldRefetchUnlockedAfterYvUsdDeposit(variant)) {
     return
   }
 

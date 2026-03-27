@@ -18,7 +18,7 @@ import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { WidgetDeposit } from '../deposit'
 import { getDefaultTokenLogoSrc } from '../tokenLogo.utils'
-import { scheduleAdditionalYvUsdDepositRefetch, shouldDeferYvUsdDepositSuccessUntilClose } from './YvUsdDeposit.helpers'
+import { scheduleAdditionalYvUsdDepositRefetch } from './YvUsdDeposit.helpers'
 import { YvUsdVariantToggle } from './YvUsdVariantToggle'
 
 type Props = {
@@ -299,7 +299,6 @@ export function YvUsdDeposit({
         onPrefillApplied={() => setPendingPrefillAmount(undefined)}
         tokenSelectorExtraTokens={lockedDepositExtraTokens}
         vaultSharesLabel={getVaultSharesLabel(variant)}
-        deferSuccessEffectsUntilClose={shouldDeferYvUsdDepositSuccessUntilClose(variant)}
       />
     </div>
   )
