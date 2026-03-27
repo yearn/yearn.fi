@@ -97,11 +97,15 @@ export function WidgetWithdraw({
   stakingSource,
   vaultVersion,
   vaultUserData,
+  inputBalanceOverride,
+  inputDisplayBalanceOverride,
   maxWithdrawAssets,
   requiredSharesOverride,
   expectedOutOverride,
   isActionDisabled = false,
   actionDisabledReason,
+  customErrorMessage,
+  disableFlow = false,
   disableTokenSelector = false,
   hideZapForTokens,
   disableAmountInput = false,
@@ -138,6 +142,10 @@ export function WidgetWithdraw({
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
+  const [priceImpactAcceptance, setPriceImpactAcceptance] = useState<{ key: string; isAccepted: boolean }>({
+    key: '',
+    isAccepted: false
+  })
   const appliedPrefillRef = useRef<string | null>(null)
   const [fallbackStep, setFallbackStep] = useState<'unstake' | 'withdraw'>('unstake')
   const [redeemSharesOverride, setRedeemSharesOverride] = useState<bigint>(0n)
@@ -266,13 +274,21 @@ export function WidgetWithdraw({
   }, [destinationChainId, onTokenSelectionChange, withdrawToken])
 
   const usesErc4626 = Boolean(vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3'))
-  const effectiveMaxWithdrawAssets = useMemo(
-    () =>
-      maxWithdrawAssets !== undefined && maxWithdrawAssets < totalBalanceInUnderlying.raw
-        ? maxWithdrawAssets
-        : totalBalanceInUnderlying.raw,
-    [maxWithdrawAssets, totalBalanceInUnderlying.raw]
-  )
+  const effectiveMaxWithdrawAssets = useMemo(() => {
+    if (maxWithdrawAssets === undefined) {
+      return totalBalanceInUnderlying.raw
+    }
+
+    // Wrapper-owned flows like locked yvUSD can provide an authoritative contract-quoted max
+    // that is slightly above the widget's PPS-derived balance estimate.
+    if (inputBalanceOverride !== undefined || disableFlow) {
+      return maxWithdrawAssets
+    }
+
+    return maxWithdrawAssets < totalBalanceInUnderlying.raw ? maxWithdrawAssets : totalBalanceInUnderlying.raw
+  }, [maxWithdrawAssets, totalBalanceInUnderlying.raw, inputBalanceOverride, disableFlow])
+  const inputBalance = inputBalanceOverride ?? effectiveMaxWithdrawAssets
+  const displayedInputBalance = inputDisplayBalanceOverride ?? inputBalance
 
   const isMaxWithdraw = useMemo(() => {
     return (
@@ -298,6 +314,10 @@ export function WidgetWithdraw({
     return 0n
   }, [withdrawAmount.bn, isMaxWithdraw, sourceVaultSharesRaw, pricePerShare, vaultDecimals])
   const effectiveRequiredShares = requiredSharesOverride ?? requiredShares
+  const flowCurrentAmount = disableFlow ? 0n : withdrawAmount.bn
+  const flowDebouncedAmount = disableFlow ? 0n : withdrawAmount.debouncedBn
+  const flowRequiredShares = disableFlow ? 0n : effectiveRequiredShares
+  const flowIsMaxWithdraw = disableFlow ? false : isMaxWithdraw
 
   useEffect(() => {
     if (!awaitingPostUnstakeShares || fallbackStep !== 'withdraw') return
@@ -318,14 +338,14 @@ export function WidgetWithdraw({
     sourceToken,
     stakingAddress,
     stakingSource,
-    amount: withdrawAmount.debouncedBn,
-    currentAmount: withdrawAmount.bn,
-    requiredShares: effectiveRequiredShares,
+    amount: flowDebouncedAmount,
+    currentAmount: flowCurrentAmount,
+    requiredShares: flowRequiredShares,
     maxShares: sourceVaultSharesRaw,
     redeemSharesOverride,
-    isMaxWithdraw,
+    isMaxWithdraw: flowIsMaxWithdraw,
     unstakeMaxRedeemShares: withdrawalSource === 'staking' ? stakingRedeemableShares : 0n,
-    allowDirectWithdrawStep: !blockDirectWithdrawStep,
+    allowDirectWithdrawStep: !disableFlow && !blockDirectWithdrawStep,
     optimisticApprovedShares,
     account,
     chainId,
@@ -337,7 +357,7 @@ export function WidgetWithdraw({
     slippage: zapSlippage,
     withdrawalSource,
     isUnstake,
-    isDebouncing: withdrawAmount.isDebouncing,
+    isDebouncing: disableFlow ? false : withdrawAmount.isDebouncing,
     useErc4626: usesErc4626
   })
   const effectiveDirectWithdrawPrepare = blockDirectWithdrawStep
@@ -384,10 +404,10 @@ export function WidgetWithdraw({
   )
 
   const withdrawError = useWithdrawError({
-    amount: withdrawAmount.bn,
-    debouncedAmount: withdrawAmount.debouncedBn,
-    isDebouncing: withdrawAmount.isDebouncing,
-    requiredShares: effectiveRequiredShares,
+    amount: flowCurrentAmount,
+    debouncedAmount: flowDebouncedAmount,
+    isDebouncing: disableFlow ? false : withdrawAmount.isDebouncing,
+    requiredShares: flowRequiredShares,
     totalBalance: sourceVaultSharesRaw,
     account,
     isLoadingRoute: activeFlow.periphery.isLoadingRoute,
@@ -398,6 +418,7 @@ export function WidgetWithdraw({
   })
   const exceedsExternalWithdrawLimit = maxWithdrawAssets !== undefined && withdrawAmount.bn > effectiveMaxWithdrawAssets
   const effectiveWithdrawError =
+    customErrorMessage ||
     actionDisabledReason ||
     (exceedsExternalWithdrawLimit ? 'Amount exceeds currently available withdraw limit.' : undefined) ||
     withdrawError
@@ -420,7 +441,7 @@ export function WidgetWithdraw({
       tokenSymbol: approvalToken?.symbol,
       tokenDecimals: approvalToken?.decimals ?? 18,
       spenderAddress: toAddress(activeFlow.periphery.routerAddress || sourceToken),
-      spenderName: routeType === 'ENSO' ? 'Enso Router' : activeFlow.periphery.routerAddress ? 'Vault Zap' : undefined
+      spenderName: routeType === 'ENSO' ? 'Enso Router' : activeFlow.periphery.routerAddress ? 'Yearn Zap' : undefined
     }
   }, [
     activeFlow.actions.prepareApprove,
@@ -490,21 +511,8 @@ export function WidgetWithdraw({
     activeFlow.periphery.routerAddress,
     effectiveExpectedOut
   ])
-
-  const [priceImpactAcceptanceState, setPriceImpactAcceptanceState] = useState<{
-    key: string
-    isAccepted: boolean
-  }>({
-    key: priceImpactAcceptanceKey,
-    isAccepted: false
-  })
-  if (priceImpactAcceptanceState.key !== priceImpactAcceptanceKey) {
-    setPriceImpactAcceptanceState({
-      key: priceImpactAcceptanceKey,
-      isAccepted: false
-    })
-  }
-  const hasAcceptedPriceImpact = priceImpactAcceptanceState.isAccepted
+  const hasAcceptedPriceImpact =
+    priceImpactAcceptance.key === priceImpactAcceptanceKey && priceImpactAcceptance.isAccepted
 
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
   const shouldShowZapUi = !isBaseWithdrawToken
@@ -766,7 +774,7 @@ export function WidgetWithdraw({
             type="checkbox"
             checked={hasAcceptedPriceImpact}
             onChange={(e) =>
-              setPriceImpactAcceptanceState({
+              setPriceImpactAcceptance({
                 key: priceImpactAcceptanceKey,
                 isAccepted: e.target.checked
               })
@@ -863,7 +871,8 @@ export function WidgetWithdraw({
               input={withdrawInput}
               title="Amount"
               placeholder="0.00"
-              balance={effectiveMaxWithdrawAssets}
+              balance={inputBalance}
+              displayBalance={displayedInputBalance}
               decimals={assetToken?.decimals ?? 18}
               symbol={assetToken?.symbol || 'tokens'}
               disabled={disableAmountInput || (!!hasBothBalances && !withdrawalSource)}
@@ -875,8 +884,8 @@ export function WidgetWithdraw({
               showTokenSelector={canShowAssetTokenSelector}
               onTokenSelectorClick={canOpenTokenSelector ? () => setShowTokenSelector(true) : undefined}
               onInputChange={(value: bigint) => {
-                if (value === effectiveMaxWithdrawAssets) {
-                  const exactAmount = formatUnits(effectiveMaxWithdrawAssets, assetToken?.decimals ?? 18)
+                if (value === inputBalance) {
+                  const exactAmount = formatUnits(inputBalance, assetToken?.decimals ?? 18)
                   withdrawInput[2](exactAmount)
                 }
               }}
@@ -997,10 +1006,13 @@ export function WidgetWithdraw({
         chainId={chainId}
         value={selectedToken}
         excludeTokens={stakingAddress ? [stakingAddress] : undefined}
+        mode={'withdraw'}
         priorityTokens={priorityTokens}
+        topTokens={priorityTokens}
         assetAddress={resolvedDisplayAssetAddress}
         vaultAddress={vaultAddress}
         stakingAddress={stakingAddress}
+        allowHiddenVaultTokenSelection={withdrawalSource === 'staking'}
       />
     </div>
   )

@@ -6,11 +6,13 @@ import { cl, formatTAmount, simpleToExact } from '@shared/utils'
 import { type ChangeEvent, type FC, useMemo } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
+import { getTokenLogoSources } from './tokenLogo.utils'
 
 interface Props {
   input: ReturnType<typeof useInput> | ReturnType<typeof useDebouncedInput>
   className?: string
   balance?: bigint
+  displayBalance?: bigint
   decimals?: number
   symbol?: string
   placeholder?: string
@@ -28,6 +30,7 @@ interface Props {
   // Token info for logo
   tokenAddress?: string
   tokenChainId?: number
+  tokenLogoURI?: string
   // Zap token display
   zapToken?: {
     symbol: string
@@ -44,6 +47,7 @@ export const InputTokenAmount: FC<Props> = ({
   input,
   className,
   balance,
+  displayBalance,
   decimals,
   symbol,
   placeholder,
@@ -59,6 +63,7 @@ export const InputTokenAmount: FC<Props> = ({
   outputTokenUsdPrice = 0,
   tokenAddress,
   tokenChainId,
+  tokenLogoURI,
   zapToken,
   onRemoveZap,
   zapNotificationText
@@ -95,11 +100,16 @@ export const InputTokenAmount: FC<Props> = ({
     if (!zapToken?.expectedAmount || !outputTokenUsdPrice) return '0.00'
     return (parseFloat(zapToken.expectedAmount) * outputTokenUsdPrice).toFixed(2)
   }, [zapToken?.expectedAmount, outputTokenUsdPrice])
+  const tokenLogoSources = useMemo(
+    () => getTokenLogoSources({ address: tokenAddress, chainId: tokenChainId, logoURI: tokenLogoURI, size: 32 }),
+    [tokenAddress, tokenChainId, tokenLogoURI]
+  )
 
   // Calculate percentage amounts
   const handlePercentageClick = async (percentage: number) => {
     if (!balance || balance === 0n) {
       setFormValue?.('0')
+      onInputChange?.(0n)
       return
     }
 
@@ -116,10 +126,12 @@ export const InputTokenAmount: FC<Props> = ({
       }
       return
     }
-    const fullAmount = formatUnits(balance, tokenDecimals)
-    const percentageAmount = ((+fullAmount * percentage) / 100).toFixed(tokenDecimals)
-    setFormValue?.(percentageAmount)
+    const percentageRawAmount = (balance * BigInt(percentage)) / 100n
+    setFormValue?.(formatUnits(percentageRawAmount, tokenDecimals))
+    onInputChange?.(percentageRawAmount)
   }
+
+  const renderedBalance = displayBalance ?? balance
 
   return (
     <div className={cl('flex flex-col w-full relative border border-border rounded-md group', className)}>
@@ -228,7 +240,8 @@ export const InputTokenAmount: FC<Props> = ({
             >
               {tokenAddress && tokenChainId && (
                 <TokenLogo
-                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${tokenChainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                  src={tokenLogoSources.src}
+                  altSrc={tokenLogoSources.altSrc}
                   tokenSymbol={symbol ?? ''}
                   tokenName={symbol ?? ''}
                   chainId={tokenChainId}
@@ -263,8 +276,8 @@ export const InputTokenAmount: FC<Props> = ({
               Connect wallet
             </button>
           ) : (
-            balance !== undefined &&
-            balance !== 0n &&
+            renderedBalance !== undefined &&
+            renderedBalance !== 0n &&
             symbol && (
               <button
                 type="button"
@@ -272,7 +285,7 @@ export const InputTokenAmount: FC<Props> = ({
                 disabled={disabled || isMaxButtonLoading}
                 className="text-sm text-text-secondary hover:text-blue-500 transition-colors disabled:cursor-not-allowed"
               >
-                Balance: {formatTAmount({ value: balance, decimals: decimals ?? input[0].decimals })} {symbol}
+                Balance: {formatTAmount({ value: renderedBalance, decimals: decimals ?? input[0].decimals })} {symbol}
               </button>
             )
           )}

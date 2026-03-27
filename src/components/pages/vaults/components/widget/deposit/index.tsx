@@ -24,9 +24,12 @@ import { TransactionOverlay, type TransactionStep } from '../shared/TransactionO
 import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
+import { DEPOSIT_COMMON_TOKENS_BY_CHAIN } from '../withdraw/constants'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
+import { getDepositApprovalSpender } from './approvalSpender'
 import { DepositDetails } from './DepositDetails'
+import { getStructurallyExcludedDepositTokenAddresses } from './tokenSelectorFiltering'
 import type { DepositRouteType } from './types'
 import { useDepositError } from './useDepositError'
 import { useDepositFlow } from './useDepositFlow'
@@ -68,6 +71,8 @@ interface Props {
   hideContainerBorder?: boolean
   headerActions?: ReactNode
   tokenSelectorExtraTokens?: TToken[]
+  deferSuccessEffectsUntilClose?: boolean
+  deferSuccessEffectsUntilConfettiEnd?: boolean
 }
 
 type DepositActionCopy = {
@@ -105,6 +110,14 @@ function getDepositButtonLabel(isLoadingRoute: boolean, needsApproval: boolean, 
   return actionLabel
 }
 
+function getTokenLogoURI(token: unknown): string | undefined {
+  if (!token || typeof token !== 'object' || !('logoURI' in token)) {
+    return undefined
+  }
+
+  return typeof token.logoURI === 'string' ? token.logoURI : undefined
+}
+
 export function WidgetDeposit({
   vaultAddress,
   assetAddress,
@@ -132,12 +145,14 @@ export function WidgetDeposit({
   hideActionButton = false,
   hideContainerBorder = false,
   headerActions,
-  tokenSelectorExtraTokens
+  tokenSelectorExtraTokens,
+  deferSuccessEffectsUntilClose = false,
+  deferSuccessEffectsUntilConfettiEnd = true
 }: Props): ReactElement {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
-  const { zapSlippage, isAutoStakingEnabled, getPrice } = useYearn()
+  const { zapSlippage, isAutoStakingEnabled, getPrice, allVaults } = useYearn()
   const trackEvent = usePlausible()
   const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
 
@@ -150,6 +165,10 @@ export function WidgetDeposit({
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
+  const [priceImpactAcceptance, setPriceImpactAcceptance] = useState<{ key: string; isAccepted: boolean }>({
+    key: '',
+    isAccepted: false
+  })
   const appliedPrefillRef = useRef<string | null>(null)
 
   const {
@@ -171,6 +190,28 @@ export function WidgetDeposit({
       ),
     [tokenSelectorExtraTokens, sourceChainId, depositToken]
   )
+  const tokenSelectorExcludedTokens = useMemo(() => {
+    const excluded = new Set<string>([toAddress(vaultAddress).toLowerCase()])
+
+    if (stakingAddress) {
+      excluded.add(toAddress(stakingAddress).toLowerCase())
+    }
+
+    getStructurallyExcludedDepositTokenAddresses({
+      allVaults,
+      destinationVaultAddress: vaultAddress
+    }).forEach((address) => {
+      excluded.add(toAddress(address).toLowerCase())
+    })
+
+    return [...excluded].map((address) => toAddress(address))
+  }, [allVaults, stakingAddress, vaultAddress])
+  const tokenSelectorTopTokens = useMemo(() => {
+    const topTokens: Record<number, `0x${string}`[]> = { ...DEPOSIT_COMMON_TOKENS_BY_CHAIN }
+    const orderedAddresses = [assetAddress, ...(topTokens[chainId] || [])]
+    topTokens[chainId] = [...new Set(orderedAddresses.map((address) => toAddress(address) as `0x${string}`))]
+    return topTokens
+  }, [assetAddress, chainId])
 
   const inputToken = useMemo(() => {
     if (sourceChainId === chainId && depositToken === assetAddress) {
@@ -181,6 +222,7 @@ export function WidgetDeposit({
     }
     return getToken({ address: depositToken, chainID: sourceChainId })
   }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken, selectedExtraToken])
+  const inputTokenLogoURI = selectedExtraToken?.logoURI ?? getTokenLogoURI(inputToken)
 
   const destinationToken = useMemo(() => {
     if (isAutoStakingEnabled && stakingAddress) return stakingAddress
@@ -372,21 +414,8 @@ export function WidgetDeposit({
     activeFlow.periphery.routerAddress,
     activeFlow.periphery.expectedOut
   ])
-
-  const [priceImpactAcceptanceState, setPriceImpactAcceptanceState] = useState<{
-    key: string
-    isAccepted: boolean
-  }>({
-    key: priceImpactAcceptanceKey,
-    isAccepted: false
-  })
-  if (priceImpactAcceptanceState.key !== priceImpactAcceptanceKey) {
-    setPriceImpactAcceptanceState({
-      key: priceImpactAcceptanceKey,
-      isAccepted: false
-    })
-  }
-  const hasAcceptedPriceImpact = priceImpactAcceptanceState.isAccepted
+  const hasAcceptedPriceImpact =
+    priceImpactAcceptance.key === priceImpactAcceptanceKey && priceImpactAcceptance.isAccepted
 
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
@@ -530,7 +559,14 @@ export function WidgetDeposit({
   // Render
   // ============================================================================
   const isSettingsVisible = !!account && !!isSettingsOpen
-  const approvalSpenderName = !isNativeToken ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined
+  const { spenderAddress: approvalSpenderAddress, spenderName: approvalSpenderName } = getDepositApprovalSpender({
+    routeType,
+    destinationToken,
+    stakingAddress,
+    routerAddress: activeFlow.periphery.routerAddress,
+    vaultSymbol,
+    stakingTokenSymbol: stakingToken?.symbol
+  })
   const onAllowanceClick =
     !isNativeToken && activeFlow.periphery.allowance > 0n
       ? (): void => {
@@ -592,7 +628,7 @@ export function WidgetDeposit({
             type="checkbox"
             checked={hasAcceptedPriceImpact}
             onChange={(e) =>
-              setPriceImpactAcceptanceState({
+              setPriceImpactAcceptance({
                 key: priceImpactAcceptanceKey,
                 isAccepted: e.target.checked
               })
@@ -691,6 +727,7 @@ export function WidgetDeposit({
           outputTokenUsdPrice={outputTokenPrice}
           tokenAddress={inputToken?.address}
           tokenChainId={inputToken?.chainID}
+          tokenLogoURI={inputTokenLogoURI}
           onTokenSelectorClick={() => setShowTokenSelector(true)}
         />
 
@@ -748,7 +785,8 @@ export function WidgetDeposit({
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
         isLastStep={!needsApproval}
-        deferOnAllCompleteUntilClose={routeType === 'ENSO'}
+        deferOnAllCompleteUntilClose={deferSuccessEffectsUntilClose}
+        deferOnAllCompleteUntilConfettiEnd={deferSuccessEffectsUntilConfettiEnd}
         autoContinueToNextStep
         autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleDepositSuccess}
@@ -804,14 +842,8 @@ export function WidgetDeposit({
         tokenSymbol={inputToken?.symbol || ''}
         tokenAddress={toAddress(depositToken)}
         tokenDecimals={inputToken?.decimals ?? 18}
-        spenderAddress={toAddress(
-          routeType === 'ENSO'
-            ? activeFlow.periphery.routerAddress || destinationToken
-            : routeType === 'DIRECT_STAKE'
-              ? stakingAddress || destinationToken
-              : destinationToken
-        )}
-        spenderName={routeType === 'ENSO' ? 'Enso Router' : 'Vault'}
+        spenderAddress={approvalSpenderAddress || destinationToken}
+        spenderName={approvalSpenderName || 'Vault'}
         chainId={sourceChainId}
         currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, inputToken?.decimals ?? 18) || '0'}
       />
@@ -821,12 +853,15 @@ export function WidgetDeposit({
         isOpen={showTokenSelector}
         onClose={() => setShowTokenSelector(false)}
         onChange={handleTokenChange}
+        mode={'deposit'}
         chainId={sourceChainId}
         value={selectedToken}
         priorityTokens={{ [chainId]: [assetAddress] }}
-        excludeTokens={stakingAddress ? [stakingAddress] : [vaultAddress]}
+        topTokens={tokenSelectorTopTokens}
+        excludeTokens={tokenSelectorExcludedTokens}
         extraTokens={tokenSelectorExtraTokens}
         assetAddress={assetAddress}
+        assetChainId={chainId}
         vaultAddress={vaultAddress}
         stakingAddress={stakingAddress}
       />
