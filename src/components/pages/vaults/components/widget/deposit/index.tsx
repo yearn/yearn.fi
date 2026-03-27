@@ -71,6 +71,8 @@ interface Props {
   hideContainerBorder?: boolean
   headerActions?: ReactNode
   tokenSelectorExtraTokens?: TToken[]
+  deferSuccessEffectsUntilClose?: boolean
+  deferSuccessEffectsUntilConfettiEnd?: boolean
 }
 
 type DepositActionCopy = {
@@ -143,7 +145,9 @@ export function WidgetDeposit({
   hideActionButton = false,
   hideContainerBorder = false,
   headerActions,
-  tokenSelectorExtraTokens
+  tokenSelectorExtraTokens,
+  deferSuccessEffectsUntilClose = false,
+  deferSuccessEffectsUntilConfettiEnd = true
 }: Props): ReactElement {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -782,7 +786,8 @@ export function WidgetDeposit({
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
         isLastStep={!needsApproval}
-        deferOnAllCompleteUntilClose={routeType === 'ENSO'}
+        deferOnAllCompleteUntilClose={deferSuccessEffectsUntilClose}
+        deferOnAllCompleteUntilConfettiEnd={deferSuccessEffectsUntilConfettiEnd}
         autoContinueToNextStep
         autoContinueStepLabels={['Approve', 'Sign Permit']}
         onAllComplete={handleDepositSuccess}
