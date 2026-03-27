@@ -1,5 +1,5 @@
-import { useBlockNumber, usePublicClient } from '@shared/hooks/useAppWagmi'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useBlockNumber, usePublicClient } from 'wagmi'
 
 type TChainTimestampState = {
   blockTimestamp: number
@@ -21,22 +21,30 @@ export function useChainTimestamp({ chainId, enabled = true }: { chainId?: numbe
   const [chainTimestampState, setChainTimestampState] = useState<TChainTimestampState | undefined>(undefined)
   const [isLoading, setIsLoading] = useState(false)
   const [, setTick] = useState(0)
+  const latestFetchIdRef = useRef(0)
 
   const refetch = useCallback(async (): Promise<void> => {
     if (!enabled || !publicClient) {
       return
     }
 
+    const fetchId = latestFetchIdRef.current + 1
+    latestFetchIdRef.current = fetchId
     setIsLoading(true)
     try {
       const block =
         blockNumber !== undefined ? await publicClient.getBlock({ blockNumber }) : await publicClient.getBlock()
+      if (fetchId !== latestFetchIdRef.current) {
+        return
+      }
       setChainTimestampState({
         blockTimestamp: Number(block.timestamp),
         fetchedAtMs: Date.now()
       })
     } finally {
-      setIsLoading(false)
+      if (fetchId === latestFetchIdRef.current) {
+        setIsLoading(false)
+      }
     }
   }, [blockNumber, enabled, publicClient])
 
