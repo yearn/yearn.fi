@@ -27,6 +27,7 @@ import { WidgetHeader } from '../shared/WidgetHeader'
 import { DEPOSIT_COMMON_TOKENS_BY_CHAIN } from '../withdraw/constants'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
+import { getDepositApprovalSpender } from './approvalSpender'
 import { DepositDetails } from './DepositDetails'
 import { getStructurallyExcludedDepositTokenAddresses } from './tokenSelectorFiltering'
 import type { DepositRouteType } from './types'
@@ -555,7 +556,14 @@ export function WidgetDeposit({
   // Render
   // ============================================================================
   const isSettingsVisible = !!account && !!isSettingsOpen
-  const approvalSpenderName = !isNativeToken ? (routeType === 'ENSO' ? 'Enso' : 'Vault') : undefined
+  const { spenderAddress: approvalSpenderAddress, spenderName: approvalSpenderName } = getDepositApprovalSpender({
+    routeType,
+    destinationToken,
+    stakingAddress,
+    routerAddress: activeFlow.periphery.routerAddress,
+    vaultSymbol,
+    stakingTokenSymbol: stakingToken?.symbol
+  })
   const onAllowanceClick =
     !isNativeToken && activeFlow.periphery.allowance > 0n
       ? (): void => {
@@ -830,14 +838,8 @@ export function WidgetDeposit({
         tokenSymbol={inputToken?.symbol || ''}
         tokenAddress={toAddress(depositToken)}
         tokenDecimals={inputToken?.decimals ?? 18}
-        spenderAddress={toAddress(
-          routeType === 'ENSO'
-            ? activeFlow.periphery.routerAddress || destinationToken
-            : routeType === 'DIRECT_STAKE'
-              ? stakingAddress || destinationToken
-              : destinationToken
-        )}
-        spenderName={routeType === 'ENSO' ? 'Enso Router' : 'Vault'}
+        spenderAddress={approvalSpenderAddress || destinationToken}
+        spenderName={approvalSpenderName || 'Vault'}
         chainId={sourceChainId}
         currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, inputToken?.decimals ?? 18) || '0'}
       />
