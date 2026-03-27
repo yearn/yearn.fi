@@ -18,6 +18,7 @@ import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { WidgetDeposit } from '../deposit'
 import { getDefaultTokenLogoSrc } from '../tokenLogo.utils'
+import { scheduleAdditionalYvUsdDepositRefetch } from './YvUsdDeposit.helpers'
 import { YvUsdVariantToggle } from './YvUsdVariantToggle'
 
 type Props = {
@@ -228,8 +229,7 @@ export function YvUsdDeposit({
     onVariantChange?.(nextVariant)
   }
   const handleDepositSuccess = (): void => {
-    unlockedUserData.refetch()
-    lockedUserData.refetch()
+    scheduleAdditionalYvUsdDepositRefetch(variant, unlockedUserData.refetch)
     onDepositSuccess?.()
   }
   const depositPrefill = getDepositPrefill(variant, unlockedAssetAddress, chainId, pendingPrefillAmount)
