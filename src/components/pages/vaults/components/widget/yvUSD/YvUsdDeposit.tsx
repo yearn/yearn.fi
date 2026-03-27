@@ -17,6 +17,8 @@ import type { ReactElement } from 'react'
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { WidgetDeposit } from '../deposit'
+import { getDefaultTokenLogoSrc } from '../tokenLogo.utils'
+import { scheduleAdditionalYvUsdDepositRefetch } from './YvUsdDeposit.helpers'
 import { YvUsdVariantToggle } from './YvUsdVariantToggle'
 
 type Props = {
@@ -39,27 +41,31 @@ type LockedDepositExtraTokenCandidate = {
   symbol?: string
   decimals?: number
   chainID?: number
+  logoURI?: string
   balance?: TToken['balance']
 }
 
 type TYvUsdAmountUnit = 'underlying' | 'shares' | 'other'
 
-function getLockedDepositExtraTokens(token?: LockedDepositExtraTokenCandidate): TToken[] {
-  if (!token?.address || !token.chainID || !token.symbol || !token.name || !token.decimals) {
-    return []
-  }
-
-  return [
-    {
-      address: toAddress(token.address),
-      name: token.name,
-      symbol: token.symbol,
-      decimals: token.decimals,
-      chainID: token.chainID,
-      value: 0,
-      balance: token.balance ?? zeroNormalizedBN
+function getLockedDepositExtraTokens(tokens: Array<LockedDepositExtraTokenCandidate | undefined>): TToken[] {
+  return tokens.flatMap((token) => {
+    if (!token?.address || !token.chainID || !token.symbol || !token.name || !token.decimals) {
+      return []
     }
-  ]
+
+    return [
+      {
+        address: toAddress(token.address),
+        name: token.name,
+        symbol: token.symbol,
+        decimals: token.decimals,
+        chainID: token.chainID,
+        logoURI: token.logoURI,
+        value: 0,
+        balance: token.balance ?? zeroNormalizedBN
+      }
+    ]
+  })
 }
 
 function getYvUsdAmountUnit(address: `0x${string}`, underlyingAssetAddress: `0x${string}`): TYvUsdAmountUnit {
@@ -147,17 +153,37 @@ export function YvUsdDeposit({
   const isLockedVariant = variant === 'locked'
   const selectedAssetAddress = isLockedVariant ? lockedAssetAddress : unlockedAssetAddress
   const selectedVaultUserData = isLockedVariant ? lockedUserData : unlockedUserData
-  const lockedDepositInputToken = isLockedVariant
+  const lockedDepositLogoURI = getDefaultTokenLogoSrc({
+    address: unlockedAssetAddress,
+    chainId,
+    size: 32
+  })
+  const lockedDepositShareTokenOverride = isLockedVariant
+    ? {
+        address: lockedUserData.assetToken?.address ?? lockedAssetAddress,
+        name: lockedUserData.assetToken?.name ?? unlockedUserData.vaultToken?.name ?? 'yvUSD',
+        symbol: lockedUserData.assetToken?.symbol ?? unlockedUserData.vaultToken?.symbol ?? 'yvUSD',
+        decimals: lockedUserData.assetToken?.decimals ?? unlockedUserData.vaultToken?.decimals ?? 18,
+        chainID: lockedUserData.assetToken?.chainID ?? chainId,
+        logoURI: lockedDepositLogoURI,
+        balance: lockedUserData.assetToken?.balance
+      }
+    : undefined
+  const lockedDepositUnderlyingToken = isLockedVariant
     ? {
         address: unlockedUserData.assetToken?.address ?? unlockedAssetAddress,
         name: unlockedUserData.assetToken?.name ?? unlockedVault.token.name ?? 'USD Coin',
         symbol: unlockedUserData.assetToken?.symbol ?? unlockedVault.token.symbol ?? 'USDC',
         decimals: unlockedUserData.assetToken?.decimals ?? unlockedVault.token.decimals ?? 6,
         chainID: unlockedUserData.assetToken?.chainID ?? chainId,
+        logoURI: lockedDepositLogoURI,
         balance: unlockedUserData.assetToken?.balance
       }
     : undefined
-  const lockedDepositExtraTokens = getLockedDepositExtraTokens(lockedDepositInputToken)
+  const lockedDepositExtraTokens = getLockedDepositExtraTokens([
+    lockedDepositShareTokenOverride,
+    lockedDepositUnderlyingToken
+  ])
 
   if (isLoading || !unlockedVault || !lockedVault) {
     return (
@@ -201,6 +227,10 @@ export function YvUsdDeposit({
     setPendingPrefillAmount(nextAmount)
     setVariant(nextVariant)
     onVariantChange?.(nextVariant)
+  }
+  const handleDepositSuccess = (): void => {
+    scheduleAdditionalYvUsdDepositRefetch(variant, unlockedUserData.refetch)
+    onDepositSuccess?.()
   }
   const depositPrefill = getDepositPrefill(variant, unlockedAssetAddress, chainId, pendingPrefillAmount)
 
@@ -256,7 +286,7 @@ export function YvUsdDeposit({
         vaultAPR={isLockedVariant ? lockedApr : unlockedApr}
         vaultSymbol={getYvUsdDepositSymbol(variant)}
         vaultUserData={selectedVaultUserData}
-        handleDepositSuccess={onDepositSuccess}
+        handleDepositSuccess={handleDepositSuccess}
         onAmountChange={setDraftDepositAmount}
         onTokenSelectionChange={setSelectedDepositTokenAddress}
         hideDetails={!variant}

@@ -10,6 +10,28 @@ export const EMPTY_COOLDOWN_STATUS: TYvUsdCooldownStatus = {
   shares: 0n
 }
 
+export function resolveCooldownWindowState(params: {
+  hasActiveCooldown: boolean
+  nowTimestamp: number
+  cooldownEnd: number
+  windowEnd: number
+  availableWithdrawLimit: bigint
+}): {
+  isCooldownActive: boolean
+  isWithdrawalWindowOpen: boolean
+  isCooldownWindowExpired: boolean
+} {
+  const { hasActiveCooldown, nowTimestamp, cooldownEnd, windowEnd, availableWithdrawLimit } = params
+  const canWithdrawNow = availableWithdrawLimit > 0n
+
+  return {
+    isCooldownActive: hasActiveCooldown && !canWithdrawNow && nowTimestamp < cooldownEnd,
+    isWithdrawalWindowOpen:
+      canWithdrawNow || (hasActiveCooldown && nowTimestamp >= cooldownEnd && nowTimestamp <= windowEnd),
+    isCooldownWindowExpired: hasActiveCooldown && !canWithdrawNow && nowTimestamp > windowEnd
+  }
+}
+
 function parseCooldownTimestamp(value: unknown): number {
   return typeof value === 'bigint' ? Number(value) : 0
 }

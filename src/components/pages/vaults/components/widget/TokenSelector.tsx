@@ -1,13 +1,43 @@
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultInfo,
+  getVaultStaking
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
+import { useYearn } from '@shared/contexts/useYearn'
+import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TToken } from '@shared/types'
-import { cl, formatTAmount, toAddress } from '@shared/utils'
-import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { cl, formatTAmount, isZeroAddress, toAddress } from '@shared/utils'
+import { type FC, useCallback, useMemo, useState } from 'react'
 import { isAddress } from 'viem'
 import { CloseIcon } from './shared/Icons'
+import { getTokenLogoSources } from './tokenLogo.utils'
+import {
+  filterAndSortTokenSelectorTokens,
+  getDepositMinValueExemptTokenAddresses,
+  getDerivedTokenUsdValue,
+  getExplicitTokenAddresses,
+  getYearnKnownTokenAddresses,
+  type TTokenSelectorMode
+} from './tokenSelectorList.utils'
 
 type TTokenType = 'asset' | 'vault' | 'staking' | undefined
+
+const AVAILABLE_CHAINS = [
+  { id: 1, name: 'Ethereum' },
+  { id: 10, name: 'Optimism' },
+  { id: 137, name: 'Polygon' },
+  { id: 42161, name: 'Arbitrum' },
+  { id: 8453, name: 'Base' },
+  { id: 747474, name: 'Katana' }
+] as const
+
+const LEGACY_SELECTOR_TOKEN_ADDRESSES_BY_CHAIN: Record<number, `0x${string}`[]> = {
+  1: ['0x85E30b8b263bC64d94b827ed450F2EdFEE8579dA'] // Legacy USDaf
+}
 
 interface TokenSelectorProps {
   value: `0x${string}` | undefined
@@ -16,11 +46,15 @@ interface TokenSelectorProps {
   limitTokens?: `0x${string}`[]
   excludeTokens?: `0x${string}`[]
   priorityTokens?: Record<number, `0x${string}`[]> // chainId -> addresses to always show
+  topTokens?: Record<number, `0x${string}`[]>
   extraTokens?: TToken[]
   onClose?: () => void
   assetAddress?: `0x${string}`
+  assetChainId?: number
   vaultAddress?: `0x${string}`
   stakingAddress?: `0x${string}`
+  allowHiddenVaultTokenSelection?: boolean
+  mode?: TTokenSelectorMode
 }
 
 const TokenTypeChip: FC<{ type: TTokenType }> = ({ type }) => {
@@ -36,12 +70,20 @@ const TokenTypeChip: FC<{ type: TTokenType }> = ({ type }) => {
   return <span className={cl('px-1.5 py-0.5 text-[10px] font-medium rounded', className)}>{label}</span>
 }
 
-const TokenItem: FC<{ token: TToken; selected: boolean; onSelect: () => void; tokenType?: TTokenType }> = ({
-  token,
-  selected,
-  onSelect,
-  tokenType
-}) => {
+const TokenItem: FC<{
+  token: TToken
+  selected: boolean
+  onSelect: () => void
+  tokenType?: TTokenType
+  logoToken?: Pick<TToken, 'address' | 'chainID' | 'logoURI'>
+}> = ({ token, selected, onSelect, tokenType, logoToken }) => {
+  const logoSources = getTokenLogoSources({
+    address: logoToken?.address ?? token.address,
+    chainId: logoToken?.chainID ?? token.chainID,
+    logoURI: logoToken?.logoURI ?? token.logoURI,
+    size: 32
+  })
+
   return (
     <button
       type="button"
@@ -53,7 +95,8 @@ const TokenItem: FC<{ token: TToken; selected: boolean; onSelect: () => void; to
     >
       <div className="flex items-center gap-2">
         <TokenLogo
-          src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${token.chainID}/${token.address?.toLowerCase()}/logo-32.png`}
+          src={logoSources.src}
+          altSrc={logoSources.altSrc}
           tokenSymbol={token.symbol}
           tokenName={token.name}
           width={24}
@@ -86,34 +129,127 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   limitTokens,
   excludeTokens,
   priorityTokens,
+  topTokens,
   extraTokens,
   onClose,
   assetAddress,
+  assetChainId = chainId,
   vaultAddress,
-  stakingAddress
+  stakingAddress,
+  allowHiddenVaultTokenSelection,
+  mode = 'default'
 }) => {
   const [searchText, setSearchText] = useState('')
-  const [customAddress, setCustomAddress] = useState<`0x${string}` | undefined>()
   const [selectedChainId, setSelectedChainId] = useState(chainId)
   const { getToken, isLoading, balances } = useWallet()
-
-  // Available chains - you can expand this list as needed
-  const availableChains = useMemo(
-    () => [
-      { id: 1, name: 'Ethereum' },
-      { id: 10, name: 'Optimism' },
-      { id: 137, name: 'Polygon' },
-      { id: 42161, name: 'Arbitrum' },
-      { id: 8453, name: 'Base' },
-      { id: 747474, name: 'Katana' }
-    ],
-    []
+  const { tokenLists } = useTokenList()
+  const { allVaults, getPrice } = useYearn()
+  const customAddress = useMemo(
+    () => (searchText && isAddress(searchText) ? (searchText as `0x${string}`) : undefined),
+    [searchText]
   )
+
+  const priorityTokenAddresses = useMemo(
+    () => (priorityTokens?.[selectedChainId] || []).map((address) => toAddress(address) as `0x${string}`),
+    [priorityTokens, selectedChainId]
+  )
+  const topTokenAddresses = useMemo(
+    () => (topTokens?.[selectedChainId] || []).map((address) => toAddress(address) as `0x${string}`),
+    [selectedChainId, topTokens]
+  )
+
+  const chainExtraTokens = useMemo(
+    () => (extraTokens || []).filter((token) => token.chainID === selectedChainId),
+    [extraTokens, selectedChainId]
+  )
+  const hiddenVaultTokenAddresses = useMemo(() => {
+    const hiddenAddresses = new Set<`0x${string}`>()
+
+    Object.values(allVaults).forEach((vault) => {
+      const isHidden = getVaultInfo(vault).isHidden
+      if (!isHidden || getVaultChainID(vault) !== selectedChainId) {
+        return
+      }
+
+      hiddenAddresses.add(toAddress(getVaultAddress(vault)) as `0x${string}`)
+
+      const staking = getVaultStaking(vault)
+      const stakingAddress = toAddress(staking.address)
+      if (!isZeroAddress(stakingAddress)) {
+        hiddenAddresses.add(stakingAddress as `0x${string}`)
+      }
+    })
+
+    return [...hiddenAddresses]
+  }, [allVaults, selectedChainId])
+  const hiddenVaultExemptAddresses = useMemo(
+    () =>
+      mode === 'withdraw' && allowHiddenVaultTokenSelection && selectedChainId === chainId && vaultAddress
+        ? [toAddress(vaultAddress) as `0x${string}`]
+        : [],
+    [allowHiddenVaultTokenSelection, chainId, mode, selectedChainId, vaultAddress]
+  )
+  const combinedExcludeTokens = useMemo(
+    () => [
+      ...new Set(
+        [
+          ...(excludeTokens || []),
+          ...hiddenVaultTokenAddresses.filter(
+            (address) => !hiddenVaultExemptAddresses.includes(toAddress(address) as `0x${string}`)
+          ),
+          ...(LEGACY_SELECTOR_TOKEN_ADDRESSES_BY_CHAIN[selectedChainId] || [])
+        ].map((address) => toAddress(address))
+      )
+    ],
+    [excludeTokens, hiddenVaultExemptAddresses, hiddenVaultTokenAddresses, selectedChainId]
+  )
+  const assetLogoToken = useMemo(() => {
+    if (selectedChainId !== assetChainId || !assetAddress) {
+      return undefined
+    }
+
+    return getToken({ address: toAddress(assetAddress), chainID: assetChainId })
+  }, [assetAddress, assetChainId, getToken, selectedChainId])
 
   // Get all tokens with balances from wallet context
   const tokens = useMemo(() => {
     const chainBalances = balances[selectedChainId] || {}
-    const tokenList: TToken[] = []
+    const tokenMap = new Map<string, TToken>()
+
+    const setIfMissing = (token?: TToken): void => {
+      if (!token?.address) {
+        return
+      }
+
+      const key = toAddress(token.address).toLowerCase()
+      if (!tokenMap.has(key)) {
+        tokenMap.set(key, token)
+      }
+    }
+
+    const setOverride = (token?: TToken): void => {
+      if (!token?.address) {
+        return
+      }
+
+      const key = toAddress(token.address).toLowerCase()
+      const existing = tokenMap.get(key)
+      if (!existing) {
+        tokenMap.set(key, token)
+        return
+      }
+
+      const shouldPreserveExistingBalance = existing.balance.raw > 0n && token.balance.raw === 0n
+      const shouldPreserveExistingValue =
+        Number.isFinite(existing.value) && existing.value > 0 && (!Number.isFinite(token.value) || token.value <= 0)
+
+      tokenMap.set(key, {
+        ...existing,
+        ...token,
+        balance: shouldPreserveExistingBalance ? existing.balance : token.balance,
+        value: shouldPreserveExistingValue ? existing.value : token.value
+      })
+    }
 
     // Add all tokens from wallet balances
     Object.entries(chainBalances).forEach(([address, token]) => {
@@ -122,81 +258,128 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       }
 
       if (token.balance.raw > 0n) {
-        tokenList.push(token)
+        setIfMissing(token)
       }
     })
 
     // Also include the currently selected token even if it has no balance
-    if (value && !tokenList.some((t) => t.address?.toLowerCase() === value.toLowerCase())) {
+    if (value && !tokenMap.has(value.toLowerCase())) {
       const selectedToken = getToken({ address: toAddress(value), chainID: selectedChainId })
       if (selectedToken.symbol) {
-        tokenList.push(selectedToken)
+        setIfMissing(selectedToken)
       }
     }
 
     // Include priority tokens even if they have no balance
-    const chainPriorityTokens = priorityTokens?.[selectedChainId] || []
-    for (const priorityAddress of chainPriorityTokens) {
-      if (!tokenList.some((t) => t.address?.toLowerCase() === priorityAddress.toLowerCase())) {
+    for (const priorityAddress of priorityTokenAddresses) {
+      if (!tokenMap.has(priorityAddress.toLowerCase())) {
         const priorityToken = getToken({ address: toAddress(priorityAddress), chainID: selectedChainId })
         if (priorityToken.symbol) {
-          tokenList.push(priorityToken)
+          setIfMissing(priorityToken)
         }
       }
     }
 
     // Include custom address if valid
-    if (
-      customAddress &&
-      isAddress(customAddress) &&
-      !tokenList.some((t) => t.address?.toLowerCase() === customAddress.toLowerCase())
-    ) {
+    if (customAddress && isAddress(customAddress) && !tokenMap.has(customAddress.toLowerCase())) {
       const customToken = getToken({ address: toAddress(customAddress), chainID: selectedChainId })
       if (customToken.symbol) {
-        tokenList.push(customToken)
+        setIfMissing(customToken)
       }
     }
 
-    // Include explicit extra tokens (used by custom widget flows)
-    const chainExtraTokens = (extraTokens || []).filter((token) => token.chainID === selectedChainId)
+    // Explicit extra tokens should override selector metadata for matching addresses
+    // without wiping wallet-derived balance/value with zero-value placeholders.
     for (const extraToken of chainExtraTokens) {
-      if (!tokenList.some((t) => t.address?.toLowerCase() === extraToken.address?.toLowerCase())) {
-        tokenList.push(extraToken)
-      }
+      setOverride(extraToken)
     }
 
-    return tokenList
-  }, [balances, selectedChainId, value, customAddress, getToken, priorityTokens, extraTokens])
+    return [...tokenMap.values()]
+  }, [balances, selectedChainId, value, customAddress, getToken, priorityTokenAddresses, chainExtraTokens])
+
+  const yearnKnownTokenAddresses = useMemo(
+    () =>
+      getYearnKnownTokenAddresses({
+        chainId: selectedChainId,
+        chainTokenList: tokenLists[selectedChainId],
+        allVaults
+      }),
+    [allVaults, selectedChainId, tokenLists]
+  )
+
+  const explicitTokenAddresses = useMemo(
+    () =>
+      getExplicitTokenAddresses({
+        value,
+        priorityTokenAddresses: mode === 'deposit' ? [] : priorityTokenAddresses,
+        chainExtraTokens,
+        currentTokenAddresses:
+          mode === 'deposit' || selectedChainId !== chainId ? [] : [assetAddress, vaultAddress, stakingAddress],
+        customAddress
+      }),
+    [
+      assetAddress,
+      chainExtraTokens,
+      chainId,
+      customAddress,
+      mode,
+      priorityTokenAddresses,
+      selectedChainId,
+      stakingAddress,
+      value,
+      vaultAddress
+    ]
+  )
+  const minValueExemptTokenAddresses = useMemo(
+    () =>
+      mode === 'deposit'
+        ? getDepositMinValueExemptTokenAddresses({
+            value,
+            chainExtraTokens,
+            assetAddress,
+            assetChainId,
+            selectedChainId,
+            customAddress
+          })
+        : explicitTokenAddresses,
+    [assetAddress, assetChainId, chainExtraTokens, customAddress, explicitTokenAddresses, mode, selectedChainId, value]
+  )
+
+  const getTokenUsdValue = useCallback(
+    (token: TToken) =>
+      getDerivedTokenUsdValue({
+        token,
+        getPrice
+      }),
+    [getPrice]
+  )
 
   // Filter tokens based on search and limits
   const filteredTokens = useMemo(() => {
-    const filtered = tokens
-      .filter((token) => !limitTokens?.length || limitTokens.includes(token.address as `0x${string}`))
-      .filter((token) => !excludeTokens?.length || !excludeTokens.includes(token.address as `0x${string}`))
-      .filter((token) => {
-        if (!searchText) return true
-        const search = searchText.toLowerCase()
-        return (
-          token.symbol?.toLowerCase().includes(search) ||
-          token.name?.toLowerCase().includes(search) ||
-          token.address?.toLowerCase().includes(search)
-        )
-      })
-
-    // Sort by balance (highest first)
-    return filtered.toSorted((a, b) => {
-      const aBalance = a.balance?.raw || 0n
-      const bBalance = b.balance?.raw || 0n
-      return bBalance > aBalance ? 1 : -1
+    return filterAndSortTokenSelectorTokens({
+      tokens,
+      mode,
+      limitTokens,
+      excludeTokens: combinedExcludeTokens,
+      searchText,
+      yearnKnownTokenAddresses,
+      explicitTokenAddresses,
+      minValueExemptTokenAddresses,
+      topTokenAddresses,
+      getTokenUsdValue
     })
-  }, [tokens, limitTokens, excludeTokens, searchText])
-
-  // Check if search text is a valid address
-  useEffect(() => {
-    if (searchText && isAddress(searchText) && searchText !== customAddress) {
-      setCustomAddress(searchText as `0x${string}`)
-    }
-  }, [searchText, customAddress])
+  }, [
+    tokens,
+    mode,
+    limitTokens,
+    combinedExcludeTokens,
+    searchText,
+    yearnKnownTokenAddresses,
+    explicitTokenAddresses,
+    minValueExemptTokenAddresses,
+    topTokenAddresses,
+    getTokenUsdValue
+  ])
 
   const handleSelect = useCallback(
     (address: `0x${string}`) => {
@@ -227,7 +410,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       {/* Header with chain selector and close button */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
-          {availableChains.map((chain) => (
+          {AVAILABLE_CHAINS.map((chain) => (
             <button
               key={chain.id}
               onClick={() => setSelectedChainId(chain.id)}
@@ -282,6 +465,11 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                 selected={token.address === value}
                 onSelect={() => handleSelect(token.address as `0x${string}`)}
                 tokenType={getTokenType(token.address)}
+                logoToken={
+                  getTokenType(token.address) === 'vault' || getTokenType(token.address) === 'staking'
+                    ? assetLogoToken
+                    : undefined
+                }
               />
             ))}
           </div>

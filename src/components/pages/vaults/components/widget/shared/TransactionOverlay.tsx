@@ -17,7 +17,11 @@ import {
   useWriteContract
 } from 'wagmi'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
-import { type OverlayState, shouldAutoContinuePermitSuccess } from './transactionOverlay.helpers'
+import {
+  type OverlayState,
+  resolveCompletionDeferral,
+  shouldAutoContinuePermitSuccess
+} from './transactionOverlay.helpers'
 
 export type PermitDataDirect = {
   domain: TypedDataDomain
@@ -135,6 +139,7 @@ type TransactionOverlayProps = {
   isLastStep?: boolean
   onAllComplete?: () => void
   deferOnAllCompleteUntilClose?: boolean
+  deferOnAllCompleteUntilConfettiEnd?: boolean
   onStepSuccess?: (label: string) => void
   topOffset?: string
   contentAlign?: 'center' | 'start'
@@ -149,6 +154,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   isLastStep = true,
   onAllComplete,
   deferOnAllCompleteUntilClose = false,
+  deferOnAllCompleteUntilConfettiEnd = false,
   onStepSuccess,
   contentAlign = 'center',
   autoContinueToNextStep = false,
@@ -196,16 +202,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       (autoContinueStepLabels.length === 0 || autoContinueStepLabels.includes(executedStepLabel))
   )
 
-  const confettiId = useId()
-  const { reward } = useReward(confettiId, 'confetti', {
-    spread: 80,
-    elementCount: 80,
-    startVelocity: 35,
-    decay: 0.91,
-    lifetime: 200,
-    colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
-  })
-
   // Track if we've started execution to prevent re-triggering
   const hasStartedRef = useRef(false)
   const hasAutoContinuedFromStepRef = useRef<string | null>(null)
@@ -226,6 +222,17 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     onAllComplete?.()
   }, [onAllComplete])
 
+  const confettiId = useId()
+  const { reward } = useReward(confettiId, 'confetti', {
+    spread: 80,
+    elementCount: 80,
+    startVelocity: 35,
+    decay: 0.91,
+    lifetime: 200,
+    colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
+    onAnimationComplete: runAllCompleteIfPending
+  })
+
   const finalizeSuccessState = useCallback(
     (completedAllSteps: boolean, completedStep?: TransactionStep | null) => {
       setOverlayState('success')
@@ -237,7 +244,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         return
       }
 
-      if (deferOnAllCompleteUntilClose) {
+      const completionDeferral = resolveCompletionDeferral({
+        completedAllSteps,
+        deferOnAllCompleteUntilClose,
+        deferOnAllCompleteUntilConfettiEnd,
+        stepShowsConfetti: Boolean((completedStep ?? executedStepRef.current)?.showConfetti)
+      })
+
+      if (completionDeferral === 'after-close' || completionDeferral === 'after-confetti') {
         hasPendingCompletionRef.current = true
         return
       }
@@ -245,7 +259,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       hasPendingCompletionRef.current = false
       onAllComplete?.()
     },
-    [deferOnAllCompleteUntilClose, onAllComplete]
+    [deferOnAllCompleteUntilClose, deferOnAllCompleteUntilConfettiEnd, onAllComplete]
   )
 
   const setStepExecutionContext = useCallback((nextStep: TransactionStep, nextIsLastStep: boolean) => {
