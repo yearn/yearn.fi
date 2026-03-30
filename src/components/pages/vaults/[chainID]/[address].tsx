@@ -378,6 +378,7 @@ function Index(): ReactElement | null {
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
   const [sectionScrollOffset, setSectionScrollOffset] = useState(0)
   const [isHeaderCompressed, setIsHeaderCompressed] = useState(false)
+  const [isHeaderAutoCompressed, setIsHeaderAutoCompressed] = useState(false)
   const [yvUsdApyVariant, setYvUsdApyVariant] = useState<TYvUsdVariant>('locked')
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const scrollPadding = 16
@@ -1288,6 +1289,10 @@ function Index(): ReactElement | null {
             onWidgetWalletOpen={openWidgetWallet}
             onWidgetCloseOverlays={closeWidgetOverlays}
             onCompressionChange={setIsHeaderCompressed}
+            onCompressionStateChange={({ isCompressed, isForceCompressed }): void => {
+              setIsHeaderCompressed(isCompressed)
+              setIsHeaderAutoCompressed(isForceCompressed)
+            }}
           />
         </header>
 
@@ -1482,9 +1487,44 @@ function Index(): ReactElement | null {
                 section.key === 'risk' ||
                 section.key === 'strategies' ||
                 section.key === 'info'
-              if (isCollapsible) {
-                const typedKey = section.key as SectionKey
-                const isOpen = openSections[typedKey]
+              const needsScaledYvUsdBanner = isYvUsd && isHeaderAutoCompressed && section.key === 'charts'
+
+              const sectionNode = (() => {
+                if (isCollapsible) {
+                  const typedKey = section.key as SectionKey
+                  const isOpen = openSections[typedKey]
+
+                  return (
+                    <div
+                      key={section.key}
+                      ref={section.ref}
+                      data-scroll-spy-key={section.key}
+                      data-tour={sectionTourTargets[section.key as SectionKey]}
+                      className={'border border-border rounded-lg bg-surface'}
+                      style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
+                    >
+                      <button
+                        type={'button'}
+                        className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
+                        onClick={(): void =>
+                          setOpenSections((previous) => ({
+                            ...previous,
+                            [typedKey]: !previous[typedKey]
+                          }))
+                        }
+                      >
+                        <span className={'text-base font-semibold text-text-primary'}>
+                          {collapsibleTitles[typedKey]}
+                        </span>
+                        <IconChevron
+                          className={'size-4 text-text-secondary transition-transform duration-200'}
+                          direction={isOpen ? 'up' : 'down'}
+                        />
+                      </button>
+                      {isOpen ? <div>{section.content}</div> : null}
+                    </div>
+                  )
+                }
 
                 return (
                   <div
@@ -1495,39 +1535,22 @@ function Index(): ReactElement | null {
                     className={'border border-border rounded-lg bg-surface'}
                     style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
                   >
-                    <button
-                      type={'button'}
-                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
-                      onClick={(): void =>
-                        setOpenSections((previous) => ({
-                          ...previous,
-                          [typedKey]: !previous[typedKey]
-                        }))
-                      }
-                    >
-                      <span className={'text-base font-semibold text-text-primary'}>{collapsibleTitles[typedKey]}</span>
-                      <IconChevron
-                        className={'size-4 text-text-secondary transition-transform duration-200'}
-                        direction={isOpen ? 'up' : 'down'}
-                      />
-                    </button>
-                    {isOpen ? <div>{section.content}</div> : null}
+                    {section.content}
                   </div>
                 )
+              })()
+
+              if (!needsScaledYvUsdBanner) {
+                return sectionNode
               }
 
-              return (
-                <div
-                  key={section.key}
-                  ref={section.ref}
-                  data-scroll-spy-key={section.key}
-                  data-tour={sectionTourTargets[section.key as SectionKey]}
-                  className={'border border-border rounded-lg bg-surface'}
-                  style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
-                >
-                  {section.content}
-                </div>
-              )
+              return [
+                sectionNode,
+                <YvUsdHeaderBanner
+                  key={'yvusd-header-banner-compressed'}
+                  className={'w-full max-h-[72px] min-h-[72px]'}
+                />
+              ]
             })}
             {renderableSections.length > 0 ? <div aria-hidden className={'h-[65vh]'} /> : null}
           </div>

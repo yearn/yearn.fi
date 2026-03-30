@@ -6,6 +6,8 @@ import {
   VaultChartsSection
 } from '@pages/vaults/components/detail/VaultChartsSection'
 import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
+import { resolveForwardApyDisplayConfig } from '@pages/vaults/components/table/apyDisplayConfig'
+import type { TVaultForwardAPYVariant } from '@pages/vaults/components/table/VaultForwardAPY'
 import {
   getVaultAddress,
   getVaultChainID,
@@ -18,6 +20,7 @@ import {
   type TKongVaultInput,
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import {
@@ -32,8 +35,8 @@ import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
 import { formatCounterValue, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
-import type { MouseEvent, ReactElement } from 'react'
-import { useMemo } from 'react'
+import type { MouseEvent, ReactElement, ReactNode } from 'react'
+import { cloneElement, isValidElement, useMemo } from 'react'
 import { type TVaultsExpandedView, VaultsExpandedSelector } from './VaultsExpandedSelector'
 
 const EXPANDED_VIEW_TO_CHART_TAB: Record<
@@ -60,6 +63,9 @@ type TVaultsListRowExpandedContentProps = {
   showKindTag?: boolean
   showHiddenTag?: boolean
   isHidden?: boolean
+  apyDisplayVariant?: TVaultForwardAPYVariant
+  showBoostDetails?: boolean
+  expandedApyTooltip?: ReactNode
 }
 
 export default function VaultsListRowExpandedContent({
@@ -69,19 +75,47 @@ export default function VaultsListRowExpandedContent({
   onNavigateToVault,
   showKindTag = true,
   showHiddenTag = false,
-  isHidden
+  isHidden,
+  apyDisplayVariant = 'default',
+  showBoostDetails = true,
+  expandedApyTooltip
 }: TVaultsListRowExpandedContentProps): ReactElement {
   const trackEvent = usePlausible()
   const chartTimeframe: TVaultChartTimeframe = '1y'
   const chainID = getVaultChainID(currentVault)
   const vaultAddress = getVaultAddress(currentVault)
   const isYvUsd = isYvUsdAddress(vaultAddress)
+  const vaultApyData = useVaultApyData(currentVault)
   const { data: snapshotVault } = useVaultSnapshot({
     chainId: chainID,
     address: vaultAddress
   })
   const snapshotMergedVault = useMemo(() => getVaultView(currentVault, snapshotVault), [currentVault, snapshotVault])
   const chartTab = isExpandedChartView(expandedView) ? EXPANDED_VIEW_TO_CHART_TAB[expandedView] : undefined
+  const { displayConfig } = useMemo(
+    () =>
+      resolveForwardApyDisplayConfig({
+        currentVault,
+        data: vaultApyData,
+        displayVariant: apyDisplayVariant,
+        showSubline: false,
+        showSublineTooltip: true,
+        showBoostDetails,
+        canOpenModal: false
+      }),
+    [currentVault, vaultApyData, apyDisplayVariant, showBoostDetails]
+  )
+  const apyTooltipContent = isYvUsd ? expandedApyTooltip : displayConfig.tooltip?.content
+  const plainApyTooltipContent = useMemo(() => {
+    if (!isValidElement<{ className?: string }>(apyTooltipContent)) {
+      return apyTooltipContent
+    }
+    const tooltipContent = apyTooltipContent as ReactElement<{ className?: string }>
+    const className = tooltipContent.props.className
+    return cloneElement(tooltipContent, {
+      className: `${className ?? ''} bg-transparent border-0 shadow-none`
+    })
+  }, [apyTooltipContent])
 
   const handleGoToVault = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation()
@@ -102,12 +136,13 @@ export default function VaultsListRowExpandedContent({
           <div className={'col-span-12 border-r border-border'}>
             <VaultAboutSection
               currentVault={snapshotMergedVault}
-              className={'md:px-15'}
+              className={'md:px-15 md:pb-2'}
               showKindTag={showKindTag}
               showVaultAddress={true}
               showHiddenTag={showHiddenTag}
               isHidden={isHidden}
             />
+            {plainApyTooltipContent ? <div className={'px-4 pb-4 md:px-15'}>{plainApyTooltipContent}</div> : null}
           </div>
           <div className={'col-span-12 flex flex-col gap-4'} data-tour="vaults-row-expanded-strategy">
             <VaultsExpandedSelector
