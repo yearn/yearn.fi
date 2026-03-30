@@ -929,10 +929,12 @@ export function VaultDetailsHeaderPresentation({
 export function VaultDetailsHeader({
   isCollapsibleMode = true,
   onCompressionChange,
+  onCompressionStateChange,
   ...presentationProps
 }: TVaultDetailsHeaderBaseProps & {
   isCollapsibleMode?: boolean
   onCompressionChange?: (isCompressed: boolean) => void
+  onCompressionStateChange?: (state: { isCompressed: boolean; isForceCompressed: boolean }) => void
 }): ReactElement {
   const [forceCompressed, setForceCompressed] = useState(false)
   const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode, forceCompressed })
@@ -950,6 +952,10 @@ export function VaultDetailsHeader({
   useEffect(() => {
     onCompressionChange?.(isCompressed)
   }, [isCompressed, onCompressionChange])
+
+  useEffect(() => {
+    onCompressionStateChange?.({ isCompressed, isForceCompressed: forceCompressed })
+  }, [isCompressed, forceCompressed, onCompressionStateChange])
 
   return <VaultDetailsHeaderPresentation {...presentationProps} isCompressed={isCompressed} />
 }
