@@ -6,9 +6,11 @@ import {
   getVaultInfo,
   getVaultStaking,
   getVaultToken,
+  getVaultVersion,
   isAutomatedVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { isYvUsdAddress, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
@@ -35,7 +37,71 @@ type TCurvePoolsApiResponse = {
 const CURVE_POOLS_CACHE_TTL_MS = 30 * 60 * 1000
 const CURVE_POOLS_CACHE_GC_MS = 60 * 60 * 1000
 const CURVE_POOLS_ENDPOINT = 'https://api.curve.finance/v1/getPools/all'
+const YVUSD_API_URL = 'https://yvusd-api.yearn.fi/api/aprs'
+const USER_DOCS_V2_URL = 'https://docs.yearn.fi/getting-started/products/yvaults/v2'
+const USER_DOCS_V3_URL = 'https://docs.yearn.fi/getting-started/products/yvaults/v3'
+const DEVELOPER_DOCS_V2_URL = 'https://docs.yearn.fi/developers/building-on-yearn'
+const DEVELOPER_DOCS_V3_URL = 'https://docs.yearn.fi/developers/v3/overview'
+const USER_DOCS_YVUSD_URL = 'https://docs.yearn.fi/getting-started/products/yvaults/yvusd'
+const DEVELOPER_DOCS_YVUSD_URL = 'https://docs.yearn.fi/developers/yvusd/'
+const USER_DOCS_YBOLD_URL = 'https://docs.yearn.fi/getting-started/products/yvaults/yBold'
+const DEVELOPER_DOCS_YBOLD_URL = DEVELOPER_DOCS_V3_URL
+const USER_DOCS_YCRV_URL = 'https://docs.yearn.fi/getting-started/products/ylockers/ycrv/overview'
+const DEVELOPER_DOCS_YCRV_URL = DEVELOPER_DOCS_V2_URL
+const USER_DOCS_YYB_URL = 'https://docs.yearn.fi/getting-started/products/ylockers/yyb/overview'
+const DEVELOPER_DOCS_YYB_URL = DEVELOPER_DOCS_V2_URL
 const INFO_LABEL_CLASS = 'w-full text-sm text-text-secondary md:w-auto md:pr-4'
+
+export function getVaultDocsLinks(
+  vaultAddress: `0x${string}`,
+  tokenSymbol: string,
+  version: string
+): {
+  userDocumentationUrl: string
+  developerDocumentationUrl: string
+} {
+  const normalizedSymbol = tokenSymbol.toLowerCase()
+
+  if (isYvUsdAddress(vaultAddress)) {
+    return {
+      developerDocumentationUrl: DEVELOPER_DOCS_YVUSD_URL,
+      userDocumentationUrl: USER_DOCS_YVUSD_URL
+    }
+  }
+
+  if (vaultAddress === YBOLD_VAULT_ADDRESS) {
+    return {
+      developerDocumentationUrl: DEVELOPER_DOCS_YBOLD_URL,
+      userDocumentationUrl: USER_DOCS_YBOLD_URL
+    }
+  }
+
+  if (normalizedSymbol === 'ycrv') {
+    return {
+      developerDocumentationUrl: DEVELOPER_DOCS_YCRV_URL,
+      userDocumentationUrl: USER_DOCS_YCRV_URL
+    }
+  }
+
+  if (normalizedSymbol === 'yyb') {
+    return {
+      developerDocumentationUrl: DEVELOPER_DOCS_YYB_URL,
+      userDocumentationUrl: USER_DOCS_YYB_URL
+    }
+  }
+
+  if (version.startsWith('3') || version.startsWith('~3')) {
+    return {
+      developerDocumentationUrl: DEVELOPER_DOCS_V3_URL,
+      userDocumentationUrl: USER_DOCS_V3_URL
+    }
+  }
+
+  return {
+    developerDocumentationUrl: DEVELOPER_DOCS_V2_URL,
+    userDocumentationUrl: USER_DOCS_V2_URL
+  }
+}
 
 export function extractCurvePools(payload: unknown): TCurvePoolEntry[] {
   const poolData = (payload as TCurvePoolsApiResponse | null)?.data?.poolData
@@ -203,6 +269,12 @@ export function VaultInfoSection({
   const liquidityUrl = getLiquidityUrl({ isVelodrome, isAerodrome, tokenAddress: token.address })
   const powergloveUrl = `https://powerglove.yearn.fi/vaults/${chainID}/${vaultAddress}`
   const deployedLabel = getDeployedLabel(inceptTime)
+  const vaultVersion = getVaultVersion(currentVault)
+  const { developerDocumentationUrl, userDocumentationUrl } = getVaultDocsLinks(
+    vaultAddress,
+    token.symbol,
+    vaultVersion
+  )
 
   return (
     <div className={'grid w-full grid-cols-1 gap-10 p-4 md:p-6 md:pt-0'}>
@@ -309,6 +381,42 @@ export function VaultInfoSection({
         ) : null}
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+          <p className={INFO_LABEL_CLASS}>{'User Documentation'}</p>
+          <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+            <a
+              href={userDocumentationUrl}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              className={
+                'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+              }
+              suppressHydrationWarning
+            >
+              {'View Documentation'}
+              <IconLinkOut className={'size-3'} />
+            </a>
+          </div>
+        </div>
+
+        <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+          <p className={INFO_LABEL_CLASS}>{'Developer Documentation'}</p>
+          <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+            <a
+              href={developerDocumentationUrl}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              className={
+                'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+              }
+              suppressHydrationWarning
+            >
+              {'View Documentation'}
+              <IconLinkOut className={'size-3'} />
+            </a>
+          </div>
+        </div>
+
+        <div className={'flex flex-col items-start md:flex-row md:items-center'}>
           <p className={INFO_LABEL_CLASS}>{'Powerglove Analytics Page'}</p>
           <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
             <a
@@ -325,6 +433,26 @@ export function VaultInfoSection({
             </a>
           </div>
         </div>
+
+        {isYvUsd ? (
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+            <p className={INFO_LABEL_CLASS}>{'yvUSD API'}</p>
+            <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+              <a
+                href={YVUSD_API_URL}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+                }
+                suppressHydrationWarning
+              >
+                {'View API Data'}
+                <IconLinkOut className={'size-3'} />
+              </a>
+            </div>
+          </div>
+        ) : null}
 
         <div className={'flex flex-col items-start md:flex-row md:items-center'}>
           <p className={INFO_LABEL_CLASS}>{'Vault Snapshot Data'}</p>
