@@ -73,6 +73,7 @@ const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
 const footnoteTooltipClassName =
   'max-w-[260px] rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs leading-relaxed text-text-primary'
+const metricTooltipContentClassName = 'flex max-w-[280px] flex-col gap-1 leading-relaxed'
 const PORTFOLIO_TABS = [
   { key: 'positions', label: 'Your Vaults' },
   { key: 'activity', label: 'Activity' },
@@ -156,6 +157,25 @@ function PortfolioHeaderSection({
   pnlSummary,
   totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
+  const portfolioPnlTooltip = (
+    <div className={metricTooltipContentClassName}>
+      <p>{'Market PnL on indexed Yearn vault positions.'}</p>
+      <p>
+        <span className="font-mono">{'totalPnlUsd = totalRealizedPnlUsd + totalUnrealizedPnlUsd'}</span>
+      </p>
+    </div>
+  )
+
+  const economicGainTooltip = (
+    <div className={metricTooltipContentClassName}>
+      <p>{'Full economic benefit from the position.'}</p>
+      <p>
+        <span className="font-mono">{'totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd'}</span>
+      </p>
+      <p>{'Adds the receipt-time value of unknown-basis transfers on top of Portfolio PnL.'}</p>
+    </div>
+  )
+
   const katanaTooltipContent = (
     <div className={headingTooltipClassName}>
       <p>{'*One or more vaults are receiving extra incentives.'}</p>
@@ -244,13 +264,7 @@ function PortfolioHeaderSection({
   const pnlMetrics: TMetricBlock[] = [
     {
       key: 'portfolio-pnl',
-      header: (
-        <MetricHeader
-          label="Portfolio PnL"
-          mobileLabel="P&L"
-          tooltip="Market PnL on indexed Yearn vault positions. This can be partial when cost basis is unknown."
-        />
-      ),
+      header: <MetricHeader label="Portfolio PnL" mobileLabel="P&L" tooltip={portfolioPnlTooltip} />,
       value: <span className={METRIC_VALUE_CLASS}>{renderSignedCurrencyMetric(pnlSummary?.totalPnlUsd ?? null)}</span>,
       footnote:
         pnlSummary && !pnlSummary.isComplete ? (
@@ -264,13 +278,7 @@ function PortfolioHeaderSection({
     },
     {
       key: 'economic-gain',
-      header: (
-        <MetricHeader
-          label="Economic Gain"
-          mobileLabel="Gain"
-          tooltip="Broader result than market PnL. Includes windfalls from unknown-basis transfers in windfall mode."
-        />
-      ),
+      header: <MetricHeader label="Economic Gain" mobileLabel="Gain" tooltip={economicGainTooltip} />,
       value: (
         <span className={METRIC_VALUE_CLASS}>
           {renderSignedCurrencyMetric(pnlSummary?.totalEconomicGainUsd ?? null)}
