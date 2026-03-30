@@ -910,6 +910,9 @@ function VaultsListRowComponent({
             showKindTag={showKindChip}
             showHiddenTag={isHiddenVault}
             isHidden={isHiddenVault}
+            apyDisplayVariant={apyDisplayVariant}
+            showBoostDetails={showBoostDetails}
+            expandedApyTooltip={isYvUsd ? yvUsdApyTooltip : undefined}
           />
         </Suspense>
       ) : null}

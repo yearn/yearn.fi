@@ -15,22 +15,22 @@ const STANDARD_VAULT = {
 }
 
 describe('getVaultPrimaryLogoSrc', () => {
-  it('returns the yvUSD seal logo for the unlocked vault', () => {
+  it('returns the yvUSD primary logo for the unlocked vault', () => {
     expect(
       getVaultPrimaryLogoSrc({
         ...STANDARD_VAULT,
         address: YVUSD_UNLOCKED_ADDRESS
       } as unknown as TKongVaultInput)
-    ).toMatch(/yvUSD-seal\.png$/)
+    ).toMatch(/yvusd-128\.png$/)
   })
 
-  it('returns the yvUSD seal logo for the locked vault', () => {
+  it('returns the yvUSD primary logo for the locked vault', () => {
     expect(
       getVaultPrimaryLogoSrc({
         ...STANDARD_VAULT,
         address: YVUSD_LOCKED_ADDRESS
       } as unknown as TKongVaultInput)
-    ).toMatch(/yvUSD-seal\.png$/)
+    ).toMatch(/yvusd-128\.png$/)
   })
 
   it('returns the standard token asset logo for non-yvUSD vaults', () => {

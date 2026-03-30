@@ -12,7 +12,7 @@ function getAssetsBaseUrl(): string {
 
 export function getVaultPrimaryLogoSrc(vault: TKongVaultInput): string {
   if (isYvUsdVault(vault)) {
-    return `${getBaseUrl()}yvUSD-seal.png`
+    return `${getBaseUrl()}yvusd-128.png`
   }
 
   const chainID = getVaultChainID(vault)
