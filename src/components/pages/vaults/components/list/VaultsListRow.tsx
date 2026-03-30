@@ -934,6 +934,9 @@ function VaultsListRowComponent({
             isHidden={isHiddenVault}
             showUserViews={showUserViews}
             chartVariant={expandedChartVariant}
+            apyDisplayVariant={apyDisplayVariant}
+            showBoostDetails={showBoostDetails}
+            expandedApyTooltip={isYvUsd ? yvUsdApyTooltip : undefined}
           />
         </Suspense>
       ) : null}
