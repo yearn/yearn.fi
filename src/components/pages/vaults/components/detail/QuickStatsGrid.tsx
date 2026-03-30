@@ -1,11 +1,17 @@
+import { APYDetailsModal } from '@pages/vaults/components/table/APYDetailsModal'
 import type { TVaultForwardAPYHandle } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
+import { YvUsdApyDetailsContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { getVaultAPR, getVaultToken, getVaultTVL, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
+import { getYvUsdInfinifiPointsNote, type TYvUsdVariant } from '@pages/vaults/utils/yvUsd'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
+import { IconLock } from '@shared/icons/IconLock'
+import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import { cl, formatApyDisplay, toNormalizedBN } from '@shared/utils'
-import type { KeyboardEvent, ReactElement, ReactNode } from 'react'
-import { useRef } from 'react'
+import type { KeyboardEvent, MouseEvent, ReactElement, ReactNode } from 'react'
+import { useRef, useState } from 'react'
 
 interface StatCardProps {
   label: string
@@ -134,45 +140,56 @@ interface MobileKeyMetricsProps {
   currentVault: TKongVaultInput
   showSectionNav?: boolean
   depositedValue?: bigint
+  depositedUsdValue?: number
   tokenPrice: number
+  apyBox?: ReactElement
 }
 
 export function MobileKeyMetrics({
   currentVault,
   showSectionNav = true,
   depositedValue,
-  tokenPrice
+  depositedUsdValue,
+  tokenPrice,
+  apyBox
 }: MobileKeyMetricsProps): ReactElement {
   const { address, isActive } = useWeb3()
   const forwardApyRef = useRef<TVaultForwardAPYHandle>(null)
   const token = getVaultToken(currentVault)
   const tvl = getVaultTVL(currentVault)
 
+  const hasDepositedUsdOverride = isActive && address && typeof depositedUsdValue === 'number' && depositedUsdValue > 0
   const hasVaultBalance = isActive && address && depositedValue !== undefined && depositedValue > 0n
   const depositedAmount = toNormalizedBN(depositedValue ?? 0n, token.decimals)
-  const depositUsdValue = depositedAmount.normalized * tokenPrice
-  const depositValue = hasVaultBalance ? formatUSD(depositUsdValue) : '$0.00'
+  const resolvedDepositedUsdValue = depositedAmount.normalized * tokenPrice
+  const depositValue = hasDepositedUsdOverride
+    ? formatUSD(depositedUsdValue)
+    : hasVaultBalance
+      ? formatUSD(resolvedDepositedUsdValue)
+      : '$0.00'
 
   return (
     <div className="md:hidden space-y-2">
       <div className="grid grid-cols-3 gap-1.5 min-[375px]:gap-2">
-        <CompactStatBox
-          label="Est. APY"
-          onClick={() => forwardApyRef.current?.openModal()}
-          value={
-            <VaultForwardAPY
-              ref={forwardApyRef}
-              currentVault={currentVault}
-              showSubline={false}
-              showSublineTooltip
-              showBoostDetails={false}
-              className="items-start text-left"
-              valueClassName="text-xs min-[375px]:text-sm font-semibold text-text-primary"
-              containerClassName="w-full"
-              isContainerInteractive
-            />
-          }
-        />
+        {apyBox ?? (
+          <CompactStatBox
+            label="Est. APY"
+            onClick={() => forwardApyRef.current?.openModal()}
+            value={
+              <VaultForwardAPY
+                ref={forwardApyRef}
+                currentVault={currentVault}
+                showSubline={false}
+                showSublineTooltip
+                showBoostDetails={false}
+                className="items-start text-left"
+                valueClassName="text-xs min-[375px]:text-sm font-semibold text-text-primary"
+                containerClassName="w-full"
+                isContainerInteractive
+              />
+            }
+          />
+        )}
         <CompactStatBox label="TVL" value={formatUSD(tvl.tvl)} />
         <CompactStatBox label="Deposited" value={depositValue} />
       </div>
@@ -184,5 +201,100 @@ export function MobileKeyMetrics({
         </div>
       ) : null}
     </div>
+  )
+}
+
+export function YvUsdApyStatBox({
+  lockedApy,
+  unlockedApy,
+  activeVariant,
+  onVariantChange,
+  lockedHasInfinifiPoints = false,
+  unlockedHasInfinifiPoints = false
+}: {
+  lockedApy: number
+  unlockedApy: number
+  activeVariant?: TYvUsdVariant
+  onVariantChange?: (variant: TYvUsdVariant) => void
+  lockedHasInfinifiPoints?: boolean
+  unlockedHasInfinifiPoints?: boolean
+}): ReactElement {
+  const [internalVariant, setInternalVariant] = useState<TYvUsdVariant>('locked')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const isControlledVariant = activeVariant !== undefined
+  const apyVariant = isControlledVariant ? activeVariant : internalVariant
+  const isLockedVariant = apyVariant === 'locked'
+  const selectedApy = isLockedVariant ? lockedApy : unlockedApy
+  const selectedLabel = isLockedVariant ? 'Locked' : 'Unlocked'
+  const toggleLabel = isLockedVariant ? 'Switch to unlocked APY display' : 'Switch to locked APY display'
+  const hasInfinifiPoints = lockedHasInfinifiPoints || unlockedHasInfinifiPoints
+  const infinifiPointsNote = hasInfinifiPoints ? getYvUsdInfinifiPointsNote() : undefined
+
+  const handleToggle = (event: MouseEvent<HTMLButtonElement>): void => {
+    event.preventDefault()
+    event.stopPropagation()
+    const nextVariant = apyVariant === 'locked' ? 'unlocked' : 'locked'
+    if (isControlledVariant) {
+      onVariantChange?.(nextVariant)
+      return
+    }
+    setInternalVariant(nextVariant)
+  }
+
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (event.target !== event.currentTarget) {
+      return
+    }
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return
+    }
+    event.preventDefault()
+    setIsModalOpen(true)
+  }
+
+  return (
+    <>
+      {/* biome-ignore lint/a11y/useSemanticElements: this card opens a modal while containing a nested variant toggle button */}
+      <div
+        className={
+          'flex min-w-0 flex-1 cursor-pointer flex-col rounded-lg border border-border bg-surface-secondary px-2 py-1.5 min-[375px]:px-3 min-[375px]:py-2'
+        }
+        role={'button'}
+        tabIndex={0}
+        aria-label={'Open yvUSD APY details'}
+        onClick={() => setIsModalOpen(true)}
+        onKeyDown={handleCardKeyDown}
+      >
+        <p className={'text-[10px] min-[375px]:text-xs text-text-secondary truncate'}>{'Est. APY'}</p>
+        <div className={'mt-0.5 flex items-center gap-2'}>
+          <button
+            type={'button'}
+            onClick={handleToggle}
+            aria-label={toggleLabel}
+            className={'inline-flex size-5 items-center justify-center rounded-sm text-text-secondary'}
+          >
+            {isLockedVariant ? <IconLock className={'size-3.5'} /> : <IconLockOpen className={'size-3.5'} />}
+          </button>
+          <div className={'flex min-w-0 flex-col'}>
+            <span
+              className={'inline-flex items-center gap-1.5 text-xs min-[375px]:text-sm font-semibold text-text-primary'}
+            >
+              {hasInfinifiPoints ? (
+                <IconInfinifiPoints className={'size-3.5 shrink-0'} aria-label={'Infinifi points'} />
+              ) : null}
+              {formatApyDisplay(selectedApy)}
+            </span>
+            <span className={'text-[10px] min-[375px]:text-xs text-text-secondary'}>{selectedLabel}</span>
+          </div>
+        </div>
+      </div>
+      <APYDetailsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={'yvUSD APY'}>
+        <YvUsdApyDetailsContent
+          lockedValue={lockedApy}
+          unlockedValue={unlockedApy}
+          infinifiPointsNote={infinifiPointsNote}
+        />
+      </APYDetailsModal>
+    </>
   )
 }

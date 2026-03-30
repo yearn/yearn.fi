@@ -1,8 +1,8 @@
 import type { TNormalizedBN } from '@shared/types'
 import { isZeroAddress, toNormalizedBN } from '@shared/utils'
-import { useCallback, useState } from 'react'
+import { getApproveAbi } from '@shared/utils/approve'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address, Hex } from 'viem'
-import { erc20Abi } from 'viem'
 import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
 
@@ -90,6 +90,8 @@ export const useSolverEnso = ({
   const [route, setRoute] = useState<EnsoRouteResponse | undefined>()
   const [error, setError] = useState<EnsoError | undefined>()
   const [isLoadingRoute, setIsLoadingRoute] = useState(false)
+  const routeRequestIdRef = useRef(0)
+  const routeAbortControllerRef = useRef<AbortController | null>(null)
 
   const isCrossChain = destinationChainId !== undefined && destinationChainId !== chainId
   const routerAddress = route?.tx?.to
@@ -111,6 +113,12 @@ export const useSolverEnso = ({
     if (!enabled || !fromAddress || amountIn <= 0n) return
     if (isZeroAddress(tokenIn) || isZeroAddress(tokenOut)) return
 
+    const requestId = routeRequestIdRef.current + 1
+    routeRequestIdRef.current = requestId
+    routeAbortControllerRef.current?.abort()
+    const abortController = new AbortController()
+    routeAbortControllerRef.current = abortController
+
     setIsLoadingRoute(true)
     try {
       const params = new URLSearchParams({
@@ -124,9 +132,14 @@ export const useSolverEnso = ({
         ...(receiver && { receiver })
       })
 
-      const response = await fetch(`${ENSO_ROUTE_PROXY}?${params}`)
+      const response = await fetch(`${ENSO_ROUTE_PROXY}?${params}`, { signal: abortController.signal })
 
       const data: EnsoRouteResponse & EnsoError = await response.json()
+      const isLatestRequest = routeRequestIdRef.current === requestId && !abortController.signal.aborted
+
+      if (!isLatestRequest) {
+        return
+      }
 
       if (data.error) {
         console.warn('[Enso] Route error', {
@@ -139,13 +152,18 @@ export const useSolverEnso = ({
           message: data.message,
           requestId: data.requestId
         })
+        setRoute(undefined)
         setError(data)
 
-        throw new Error(`Enso API error: ${data.message}`)
+        return
       }
       setError(undefined)
       setRoute(data)
     } catch (err) {
+      if (abortController.signal.aborted || routeRequestIdRef.current !== requestId) {
+        return
+      }
+      setRoute(undefined)
       console.error('Failed to get Enso route:', err, {
         chainId,
         destinationChainId,
@@ -154,7 +172,12 @@ export const useSolverEnso = ({
         amountIn: amountIn.toString()
       })
     } finally {
-      setIsLoadingRoute(false)
+      if (routeRequestIdRef.current === requestId) {
+        setIsLoadingRoute(false)
+        if (routeAbortControllerRef.current === abortController) {
+          routeAbortControllerRef.current = null
+        }
+      }
     }
   }, [tokenIn, tokenOut, amountIn, fromAddress, receiver, chainId, destinationChainId, slippage, enabled, isCrossChain])
 
@@ -163,15 +186,26 @@ export const useSolverEnso = ({
   }, [route])
 
   const resetRoute = useCallback(() => {
+    routeRequestIdRef.current += 1
+    routeAbortControllerRef.current?.abort()
+    routeAbortControllerRef.current = null
     setRoute(undefined)
     setError(undefined)
+    setIsLoadingRoute(false)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      routeAbortControllerRef.current?.abort()
+      routeAbortControllerRef.current = null
+    }
   }, [])
 
   const isValidInput = amountIn > 0n
   const isAllowanceSufficient = !allowanceSpender || allowance >= amountIn
   const prepareApproveEnabled = routerAddress && !isAllowanceSufficient && isValidInput && enabled
   const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
-    abi: erc20Abi,
+    abi: getApproveAbi(tokenIn),
     functionName: 'approve',
     address: tokenIn,
     args: routerAddress ? [routerAddress, amountIn] : undefined,

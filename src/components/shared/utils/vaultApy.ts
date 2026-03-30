@@ -6,7 +6,6 @@ const KATANA_CHAIN_ID = 747474
 export type TKatanaAprData = {
   katanaAppRewardsAPR?: number
   fixedRateKatanaRewards?: number
-  katanaBonusAPY?: number
   steerPointsPerDollar?: number
 }
 
@@ -45,17 +44,13 @@ export function getKatanaAprData(vault: TKongVaultInput): TKatanaAprData | undef
   }
 
   const apr = getVaultAPR(vault)
-  const fixedRateKatanaRewards = normalizeFiniteNumber(apr.extra.fixedRateKatanaRewards)
   const katanaAppRewardsAPR = normalizeFiniteNumber(apr.extra.katanaAppRewardsAPR)
-  const katanaBonusAPY = normalizeFiniteNumber(apr.extra.katanaBonusAPY)
+  const fixedRateKatanaRewards = normalizeFiniteNumber(apr.extra.fixedRateKatanaRewards)
   const steerPointsPerDollar = normalizeFiniteNumber(apr.extra.steerPointsPerDollar)
 
-  const hasKatanaComponentData = [
-    fixedRateKatanaRewards,
-    katanaAppRewardsAPR,
-    katanaBonusAPY,
-    steerPointsPerDollar
-  ].some((value) => value !== undefined)
+  const hasKatanaComponentData = [katanaAppRewardsAPR, fixedRateKatanaRewards, steerPointsPerDollar].some(
+    (value) => value !== undefined
+  )
 
   if (!hasKatanaComponentData) {
     return undefined
@@ -64,7 +59,6 @@ export function getKatanaAprData(vault: TKongVaultInput): TKatanaAprData | undef
   return {
     katanaAppRewardsAPR,
     fixedRateKatanaRewards,
-    katanaBonusAPY,
     steerPointsPerDollar
   }
 }

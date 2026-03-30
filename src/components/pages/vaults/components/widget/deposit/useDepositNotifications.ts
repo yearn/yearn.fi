@@ -3,6 +3,7 @@ import type { TCreateNotificationParams } from '@shared/types/notifications'
 import { formatTAmount, toAddress } from '@shared/utils'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
+import { getDepositApprovalSpender } from './approvalSpender'
 import type { DepositRouteType } from './types'
 
 interface UseDepositNotificationsProps {
@@ -54,19 +55,16 @@ export const useDepositNotifications = ({
   const approveNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!inputToken || !vault || !account) return undefined
 
-    let spenderAddress: Address
-    let spenderName: string
+    const { spenderAddress, spenderName } = getDepositApprovalSpender({
+      routeType,
+      destinationToken,
+      stakingAddress,
+      routerAddress,
+      vaultSymbol: vault.symbol,
+      stakingTokenSymbol: stakingToken?.symbol
+    })
 
-    if (routeType === 'ENSO') {
-      spenderAddress = (routerAddress as Address) || destinationToken
-      spenderName = routerAddress ? 'Enso Router' : vault.symbol || ''
-    } else if (routeType === 'DIRECT_STAKE') {
-      spenderAddress = stakingAddress || destinationToken
-      spenderName = stakingToken?.symbol || 'Staking Contract'
-    } else if (routeType === 'DIRECT_DEPOSIT') {
-      spenderAddress = destinationToken
-      spenderName = vault.symbol || 'Vault'
-    } else {
+    if (!spenderAddress || !spenderName) {
       return undefined
     }
 
@@ -90,11 +88,11 @@ export const useDepositNotifications = ({
     account,
     routeType,
     routerAddress,
+    destinationToken,
+    stakingAddress,
     depositToken,
     depositAmount,
-    sourceChainId,
-    destinationToken,
-    stakingAddress
+    sourceChainId
   ])
 
   const depositNotificationParams = useMemo((): TCreateNotificationParams | undefined => {

@@ -28,25 +28,44 @@ export function VirtualizedVaultsList<TItem>({
 }: TVirtualizedVaultsListProps<TItem>): ReactElement {
   const parentRef = useRef<HTMLDivElement | null>(null)
   const [scrollMargin, setScrollMargin] = useState(0)
+  const scrollMarginRef = useRef(0)
   const totalPlaceholderCount = renderPlaceholder ? Math.max(0, placeholderCount ?? 0) : 0
   const totalCount = items.length + totalPlaceholderCount
 
   useLayoutEffect(() => {
+    let frame = 0
+
     const update = (): void => {
+      frame = 0
       const node = parentRef.current
       if (!node) return
-      setScrollMargin(node.getBoundingClientRect().top + window.scrollY)
+      const nextScrollMargin = Math.round(node.getBoundingClientRect().top + window.scrollY)
+      if (nextScrollMargin === scrollMarginRef.current) {
+        return
+      }
+      scrollMarginRef.current = nextScrollMargin
+      setScrollMargin(nextScrollMargin)
     }
 
-    update()
+    const scheduleUpdate = (): void => {
+      if (frame) {
+        return
+      }
+      frame = window.requestAnimationFrame(update)
+    }
 
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update)
+    scheduleUpdate()
+
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(scheduleUpdate)
     observer?.observe(document.body)
-    window.addEventListener('resize', update)
+    window.addEventListener('resize', scheduleUpdate)
 
     return () => {
+      if (frame) {
+        window.cancelAnimationFrame(frame)
+      }
       observer?.disconnect()
-      window.removeEventListener('resize', update)
+      window.removeEventListener('resize', scheduleUpdate)
     }
   }, [])
 

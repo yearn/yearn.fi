@@ -76,12 +76,7 @@ export const usdtAbi = [
         type: 'uint256'
       }
     ],
-    outputs: [
-      {
-        name: '',
-        type: 'bool'
-      }
-    ]
+    outputs: []
   },
   {
     type: 'function',
@@ -182,12 +177,7 @@ export const usdtAbi = [
         type: 'uint256'
       }
     ],
-    outputs: [
-      {
-        name: '',
-        type: 'bool'
-      }
-    ]
+    outputs: []
   }
 ] as const
 

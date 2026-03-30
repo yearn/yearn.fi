@@ -1,8 +1,9 @@
 import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import type { TNotification, TNotificationStatus, TNotificationsContext } from '@shared/types/notifications'
 import type React from 'react'
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, startTransition, useCallback, useContext, useMemo, useState } from 'react'
 import { useIndexedDBStore } from 'use-indexeddb'
+import { appendCachedNotification, mergeCachedNotificationEntry } from './useNotifications.helpers'
 
 const defaultProps: TNotificationsContext = {
   cachedEntries: [],
@@ -72,9 +73,12 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
         const notification = await getByID(id)
 
         if (notification) {
-          await update({ ...notification, ...entry })
-          setEntryNonce((nonce) => nonce + 1)
-          setNotificationStatus(entry?.status || null)
+          const updatedNotification = { ...notification, ...entry }
+          await update(updatedNotification)
+          startTransition(() => {
+            setCachedEntries((currentEntries) => mergeCachedNotificationEntry(currentEntries, id, updatedNotification))
+            setNotificationStatus(entry?.status || null)
+          })
         } else {
           console.warn(`Notification with id ${id} not found`)
         }
@@ -89,8 +93,10 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
     async (notification: TNotification): Promise<number> => {
       try {
         const id = await add(notification)
-        setEntryNonce((nonce) => nonce + 1)
-        setNotificationStatus(notification.status)
+        startTransition(() => {
+          setCachedEntries((currentEntries) => appendCachedNotification(currentEntries, { ...notification, id }))
+          setNotificationStatus(notification.status)
+        })
         return id
       } catch (error) {
         console.error('Failed to add notification:', error)

@@ -2,6 +2,47 @@ import { serve } from 'bun'
 import { getHistoricalHoldings, initializeSchema, type VaultVersion, validateConfig } from './lib/holdings'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+const YVUSD_APR_SERVICE_API = (
+  process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
+).replace(/\/$/, '')
+
+async function handleYvUsdAprs(req: Request): Promise<Response> {
+  if (req.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  const requestUrl = new URL(req.url)
+  const upstreamUrl = new URL(YVUSD_APR_SERVICE_API)
+  requestUrl.searchParams.forEach((value, key) => {
+    upstreamUrl.searchParams.set(key, value)
+  })
+
+  try {
+    const response = await fetch(upstreamUrl.toString(), {
+      headers: {
+        Accept: 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      const details = await response.text()
+      return Response.json(
+        { error: 'yvUSD APR upstream error', status: response.status, details },
+        { status: response.status }
+      )
+    }
+
+    const data = await response.json()
+    return Response.json(data, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120'
+      }
+    })
+  } catch (error) {
+    console.error('Error proxying yvUSD APR request:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -229,6 +270,8 @@ async function main() {
           response = await handleEnsoRoute(req)
         } else if (url.pathname === '/api/holdings/history') {
           response = await handleHoldingsHistory(req)
+        } else if (url.pathname === '/api/yvusd/aprs') {
+          response = await handleYvUsdAprs(req)
         } else {
           response = new Response('Not found', { status: 404 })
         }

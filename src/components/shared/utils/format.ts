@@ -80,7 +80,27 @@ export const exactToSimple = (bn?: bigint | string | number, scale?: number) => 
  ** to correctly format bigNumbers, currency and date
  **************************************************************************/
 export const toBigInt = (amount?: TNumberish): bigint => {
-  return BigInt(amount || 0)
+  if (amount === undefined || amount === null) {
+    return 0n
+  }
+
+  if (typeof amount === 'bigint') {
+    return amount
+  }
+
+  const asString = String(amount).trim()
+  if (asString === '') {
+    return 0n
+  }
+
+  const normalized = asString.includes('e') || asString.includes('E') ? eToNumber(asString) : asString
+  const integerPart = normalized.includes('.') ? normalized.split('.')[0] : normalized
+
+  if (integerPart === '' || integerPart === '-' || integerPart === '+') {
+    return 0n
+  }
+
+  return BigInt(integerPart)
 }
 
 export function toBigNumberAsAmount(bnAmount = 0n, decimals = 18, decimalsToDisplay = 2, symbol = ''): string {
@@ -157,7 +177,7 @@ type TFormatCurrencyWithPrecision = {
   amount: number
   maxFractionDigits: number
   intlOptions: Intl.NumberFormatOptions
-  locale: string
+  locales: string[]
   symbol: string
 }
 
@@ -236,10 +256,10 @@ function formatCurrencyWithPrecision({
   amount,
   maxFractionDigits,
   intlOptions,
-  locale,
+  locales,
   symbol
 }: TFormatCurrencyWithPrecision): string {
-  return new Intl.NumberFormat([locale, 'en-US'], {
+  return new Intl.NumberFormat(locales, {
     ...intlOptions,
     maximumFractionDigits: Math.max(maxFractionDigits, intlOptions.maximumFractionDigits || maxFractionDigits)
   })
@@ -257,13 +277,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
    ** - If smbol is percent, then we will display as `12 %` or `12%` (US)
    ** - If symbol is any other token, we will display as `123,79 USDC` or `USDC 123.79` (US)
    **********************************************************************************************/
-  let locale = 'en-US'
-  if (typeof navigator !== 'undefined') {
-    locale = navigator.language || 'fr-FR'
-  }
-  const locales = []
-  locales.push('en-US')
-  locales.push(locale)
+  const locales = resolveLocales()
 
   const { shouldDisplaySymbol, shouldCompactValue, ...rest } = options
   const intlOptions: Intl.NumberFormatOptions = rest
@@ -278,7 +292,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
   }
 
   if (isPercent && amount > 5 && shouldCompactValue) {
-    return `> ${new Intl.NumberFormat([locale, 'en-US'], intlOptions).format(5).replace('EUR', symbol)}`
+    return `> ${new Intl.NumberFormat(locales, intlOptions).format(5).replace('EUR', symbol)}`
   }
 
   /**********************************************************************************************
@@ -287,7 +301,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
    ** - 267839372 would be `267,84 M` or  `267.84M` (US)
    **********************************************************************************************/
   if (amount > 10_000 && shouldCompactValue) {
-    return new Intl.NumberFormat([locale, 'en-US'], {
+    return new Intl.NumberFormat(locales, {
       ...intlOptions,
       notation: 'compact',
       compactDisplay: 'short'
@@ -307,7 +321,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
         amount,
         maxFractionDigits: 2,
         intlOptions,
-        locale,
+        locales,
         symbol
       })
     }
@@ -325,7 +339,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
         amount,
         maxFractionDigits: 8,
         intlOptions,
-        locale,
+        locales,
         symbol
       })
     }
@@ -334,7 +348,7 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
         amount,
         maxFractionDigits: 12,
         intlOptions,
-        locale,
+        locales,
         symbol
       })
     }
@@ -342,11 +356,11 @@ export function formatLocalAmount(amount: number, decimals: number, symbol: stri
       amount,
       maxFractionDigits: decimals,
       intlOptions,
-      locale,
+      locales,
       symbol
     })
   }
-  return new Intl.NumberFormat([locale, 'en-US'], intlOptions).format(amount).replace('EUR', symbol)
+  return new Intl.NumberFormat(locales, intlOptions).format(amount).replace('EUR', symbol)
 }
 
 export function formatTAmount(props: TAmount): string {
@@ -586,7 +600,14 @@ function resolveApyFractionDigits(value: number): number {
   return resolveSignificantFractionDigits(value)
 }
 
-export function formatTvlDisplay(value: number, options?: { locales?: string[] }): string {
+export function formatTvlDisplay(
+  value: number,
+  options?: {
+    locales?: string[]
+    minimumFractionDigits?: number
+    maximumFractionDigits?: number
+  }
+): string {
   if (value === Infinity || value === -Infinity) {
     return '$∞'
   }
@@ -603,18 +624,23 @@ export function formatTvlDisplay(value: number, options?: { locales?: string[] }
     return `$${formatter.format(safeValue)}`
   }
 
-  let minimumFractionDigits = 0
-  let maximumFractionDigits = 0
+  let minimumFractionDigits = options?.minimumFractionDigits
+  let maximumFractionDigits = options?.maximumFractionDigits
 
-  if (absValue < 1) {
-    minimumFractionDigits = 2
-    maximumFractionDigits = 2
-  } else if (absValue < 10) {
-    minimumFractionDigits = 2
-    maximumFractionDigits = 2
-  } else if (absValue < 100) {
-    minimumFractionDigits = 1
-    maximumFractionDigits = 2
+  if (minimumFractionDigits === undefined || maximumFractionDigits === undefined) {
+    minimumFractionDigits = 0
+    maximumFractionDigits = 0
+
+    if (absValue < 1) {
+      minimumFractionDigits = 2
+      maximumFractionDigits = 2
+    } else if (absValue < 10) {
+      minimumFractionDigits = 2
+      maximumFractionDigits = 2
+    } else if (absValue < 100) {
+      minimumFractionDigits = 1
+      maximumFractionDigits = 2
+    }
   }
 
   const formatter = new Intl.NumberFormat(locales, {

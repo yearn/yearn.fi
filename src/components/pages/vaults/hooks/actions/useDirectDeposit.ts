@@ -2,8 +2,8 @@ import type { UseWidgetDepositFlowReturn } from '@pages/vaults/types'
 import { erc4626Abi } from '@shared/contracts/abi/4626.abi'
 import { vaultAbi } from '@shared/contracts/abi/vaultV2.abi'
 import { toAddress } from '@shared/utils'
+import { getApproveAbi } from '@shared/utils/approve'
 import type { Address } from 'viem'
-import { erc20Abi } from 'viem'
 import { type UseSimulateContractReturnType, useReadContract, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
 
@@ -44,7 +44,7 @@ export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepos
 
   // Prepare approve transaction using useSimulateContract
   const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
-    abi: erc20Abi,
+    abi: getApproveAbi(params.assetAddress),
     functionName: 'approve',
     address: params.assetAddress,
     args: params.amount > 0n && params.vaultAddress ? [params.vaultAddress, params.amount] : undefined,
