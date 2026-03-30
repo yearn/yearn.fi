@@ -59,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  const { address, refresh } = req.query
+  const { address } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -70,12 +70,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Clear cache if refresh=true (useful when new vaults are indexed)
-    if (refresh === 'true' || refresh === '1') {
-      const { clearUserCache } = await import('../lib/holdings/services/cache')
-      await clearUserCache(address)
-    }
-
     const { getHistoricalHoldings } = await import('../lib/holdings')
     const holdings = await getHistoricalHoldings(address)
 
