@@ -96,6 +96,24 @@ Notes:
     git push origin <branch-name>
     ```
 
+### Running the OWASP ZAP Scan Locally
+
+You can run the ZAP baseline scan workflow locally using [act](https://github.com/nektos/act):
+
+``` bash
+act workflow_dispatch -W .github/workflows/zap-baseline.yml
+```
+
+The scan targets the URL set in `OWASP_ZAP_TARGET_URL` (defaults to `https://yearn.fi`). Reports are written to the repo root:
+- `report_html.html` — full HTML report
+- `report_md.md` — markdown summary
+
+To override the target URL:
+
+``` bash
+act workflow_dispatch -W .github/workflows/zap-baseline.yml --env OWASP_ZAP_TARGET_URL=https://staging.yearn.fi
+```
+
 ### Submitting Pull Request
 
 - Go to your GitHub and navigate to your forked repo
