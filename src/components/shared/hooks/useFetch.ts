@@ -19,6 +19,8 @@ type TUseZodProps<T> = {
     maxRetries?: number
     /** Keep previous data while fetching (default: true) */
     keepPreviousData?: boolean
+    /** Request timeout in milliseconds (default: 15 seconds) */
+    timeout?: number
   }
 }
 
@@ -31,8 +33,12 @@ export const getFetchQueryKey = (endpoint: string | null | undefined): TFetchQue
   return ['fetch', endpoint]
 }
 
-export async function fetchWithSchema<T>(endpoint: string, schema: z.Schema<T>): Promise<T> {
-  const data = await baseFetcher<T>(endpoint)
+export async function fetchWithSchema<T>(
+  endpoint: string,
+  schema: z.Schema<T>,
+  options?: { timeout?: number }
+): Promise<T> {
+  const data = await baseFetcher<T>(endpoint, { timeout: options?.timeout })
   const parsedData = schema.safeParse(data)
 
   if (!parsedData.success) {
@@ -51,6 +57,7 @@ export function useFetch<T>({ endpoint, schema, config }: TUseZodProps<T>): UseQ
     maxRetries = 3,
     keepPreviousData: keepPreviousDataFlag = true,
     enabled: enabledOverride,
+    timeout,
     retry,
     retryDelay,
     ...queryConfig
@@ -79,7 +86,7 @@ export function useFetch<T>({ endpoint, schema, config }: TUseZodProps<T>): UseQ
   const result = useQuery<T, Error>({
     queryKey,
     enabled: isEnabled,
-    queryFn: () => fetchWithSchema(endpoint as string, schema),
+    queryFn: () => fetchWithSchema(endpoint as string, schema, { timeout }),
     staleTime: cacheDuration,
     refetchInterval: shouldEnableRefreshInterval ? refreshInterval : false,
     refetchOnWindowFocus: false,

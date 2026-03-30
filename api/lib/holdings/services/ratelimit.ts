@@ -1,5 +1,4 @@
-import { neon } from '@neondatabase/serverless'
-import { config } from '../config'
+import { getPool, isDatabaseEnabled } from '../db/connection'
 
 const WINDOW_MS = 60 * 1000 // 1 minute
 const MAX_REQUESTS = 10
@@ -10,31 +9,35 @@ export interface RateLimitResult {
 }
 
 export async function checkRateLimit(ip: string): Promise<RateLimitResult> {
-  if (!config.databaseUrl) {
+  if (!isDatabaseEnabled()) {
+    return { allowed: true }
+  }
+
+  const pool = await getPool()
+  if (!pool) {
     return { allowed: true }
   }
 
   try {
-    const sql = neon(config.databaseUrl)
+    const result = await pool.query<{ request_count: number; window_start: Date }>(
+      `INSERT INTO rate_limits (ip, request_count, window_start)
+       VALUES ($1, 1, NOW())
+       ON CONFLICT (ip) DO UPDATE SET
+         request_count = CASE
+           WHEN rate_limits.window_start < NOW() - INTERVAL '1 minute'
+           THEN 1
+           ELSE rate_limits.request_count + 1
+         END,
+         window_start = CASE
+           WHEN rate_limits.window_start < NOW() - INTERVAL '1 minute'
+           THEN NOW()
+           ELSE rate_limits.window_start
+         END
+       RETURNING request_count, window_start`,
+      [ip]
+    )
 
-    const result = await sql`
-      INSERT INTO rate_limits (ip, request_count, window_start)
-      VALUES (${ip}, 1, NOW())
-      ON CONFLICT (ip) DO UPDATE SET
-        request_count = CASE
-          WHEN rate_limits.window_start < NOW() - INTERVAL '1 minute'
-          THEN 1
-          ELSE rate_limits.request_count + 1
-        END,
-        window_start = CASE
-          WHEN rate_limits.window_start < NOW() - INTERVAL '1 minute'
-          THEN NOW()
-          ELSE rate_limits.window_start
-        END
-      RETURNING request_count, window_start
-    `
-
-    const { request_count, window_start } = result[0]
+    const { request_count, window_start } = result.rows[0]
 
     if (request_count > MAX_REQUESTS) {
       const windowEnd = new Date(window_start).getTime() + WINDOW_MS

@@ -62,7 +62,7 @@ function withCors(response: Response): Response {
   })
 }
 
-function handleCorsPrelight(): Response {
+function handleCorsPreFlight(): Response {
   return new Response(null, {
     status: 204,
     headers: CORS_HEADERS
@@ -257,7 +257,7 @@ async function main() {
 
       try {
         if (req.method === 'OPTIONS') {
-          return handleCorsPrelight()
+          return handleCorsPreFlight()
         }
 
         let response: Response
