@@ -1,5 +1,6 @@
 import { serve } from 'bun'
 import {
+  clearUserCache,
   getHistoricalHoldings,
   getHoldingsPnL,
   type HoldingsEventFetchType,
@@ -226,6 +227,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
   const debugVault = url.searchParams.get('debugVault')
   const debugTx = url.searchParams.get('debugTx')
+  const refresh = url.searchParams.get('refresh') === '1'
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -238,6 +240,11 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
+    if (refresh) {
+      const cleared = await clearUserCache(address)
+      console.log(`[Server] Cleared ${cleared} cached entries for ${address}`)
+    }
+
     const holdings = await withHoldingsDebugContext(
       createHoldingsDebugContext('history', address, debugEnabled, {
         lotsEnabled: debugLotsEnabled,
@@ -247,6 +254,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       async () => {
         debugLog('route', 'started holdings history request', {
           version,
+          refresh,
           debugLotsEnabled,
           debugVault: debugVault?.toLowerCase() ?? null,
           debugTx: debugTx?.toLowerCase() ?? null
@@ -256,6 +264,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
           const response = await getHistoricalHoldings(address, version)
           debugLog('route', 'completed holdings history request', {
             version,
+            refresh,
             points: response.dataPoints.length,
             nonZeroPoints: response.dataPoints.filter((point) => point.totalUsdValue > 0).length
           })
