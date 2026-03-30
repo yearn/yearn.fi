@@ -4,17 +4,24 @@ import {
   getVaultTVL,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
-import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
-import { TokenLogo } from '@shared/components/TokenLogo'
+import { useVaultUserData, type VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import {
+  getYvUsdSharePrice,
+  isYvUsdVault,
+  YVUSD_CHAIN_ID,
+  YVUSD_LOCKED_ADDRESS,
+  YVUSD_UNLOCKED_ADDRESS
+} from '@pages/vaults/utils/yvUsd'
 import { useNotifications } from '@shared/contexts/useNotifications'
-import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
+import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconLoader } from '@shared/icons/IconLoader'
 import { IconWallet } from '@shared/icons/IconWallet'
-import type { TToken } from '@shared/types'
 import type { TNotification, TNotificationStatus } from '@shared/types/notifications'
 import {
   cl,
@@ -25,10 +32,11 @@ import {
   toNormalizedBN,
   truncateHex
 } from '@shared/utils'
-import { getVaultName } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useReadContract } from 'wagmi'
+import { formatDuration, parseCooldownStatus, resolveCooldownWindowState } from './yvUSD/cooldownUtils'
 
 type WalletPanelProps = {
   isActive: boolean
@@ -37,7 +45,6 @@ type WalletPanelProps = {
   stakingAddress?: `0x${string}`
   chainId: number
   vaultUserData: VaultUserData
-  onSelectZapToken?: (token: TToken) => void
 }
 
 const WALLET_TABS = [
@@ -58,23 +65,174 @@ const STATUS_STYLES: Record<TNotificationStatus, { label: string; className: str
   error: { label: 'Error', className: 'bg-[#C73203] text-white', icon: <IconCross className="size-3" /> }
 }
 
+function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElement {
+  const { getPrice } = useYearn()
+  const { unlockedVault, lockedVault, isLoading: isLoadingYvUsd } = useYvUsdVaults()
+
+  const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
+  const unlockedUserData = useVaultUserData({
+    vaultAddress: toAddress(unlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS),
+    assetAddress: unlockedAssetAddress,
+    chainId: YVUSD_CHAIN_ID,
+    account
+  })
+  const lockedUserData = useVaultUserData({
+    vaultAddress: toAddress(lockedVault?.address ?? YVUSD_LOCKED_ADDRESS),
+    assetAddress: YVUSD_UNLOCKED_ADDRESS,
+    chainId: YVUSD_CHAIN_ID,
+    account
+  })
+  const { data: rawCooldownStatus, isLoading: isLoadingCooldownStatus } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'getCooldownStatus',
+    args: account ? [toAddress(account)] : undefined,
+    chainId: YVUSD_CHAIN_ID,
+    query: {
+      enabled: !!account,
+      refetchInterval: account ? 30_000 : false
+    }
+  })
+  const { data: rawAvailableWithdrawLimit, isLoading: isLoadingAvailableWithdrawLimit } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'availableWithdrawLimit',
+    args: account ? [toAddress(account)] : undefined,
+    chainId: YVUSD_CHAIN_ID,
+    query: {
+      enabled: !!account,
+      refetchInterval: account ? 30_000 : false
+    }
+  })
+  const cooldownStatus = useMemo(() => parseCooldownStatus(rawCooldownStatus), [rawCooldownStatus])
+  const hasActiveCooldown = cooldownStatus.shares > 0n
+  const availableWithdrawLimit = typeof rawAvailableWithdrawLimit === 'bigint' ? rawAvailableWithdrawLimit : 0n
+  const { timestamp: nowTimestamp } = useChainTimestamp({
+    chainId: YVUSD_CHAIN_ID,
+    enabled: Boolean(account && hasActiveCooldown)
+  })
+  const { isCooldownActive, isWithdrawalWindowOpen } = resolveCooldownWindowState({
+    hasActiveCooldown,
+    nowTimestamp,
+    cooldownEnd: cooldownStatus.cooldownEnd,
+    windowEnd: cooldownStatus.windowEnd,
+    availableWithdrawLimit
+  })
+  const cooldownRemainingSeconds = isCooldownActive ? cooldownStatus.cooldownEnd - nowTimestamp : 0
+  const windowRemainingSeconds = isWithdrawalWindowOpen ? cooldownStatus.windowEnd - nowTimestamp : 0
+  const sharesUnderCooldown = hasActiveCooldown ? cooldownStatus.shares : 0n
+  const assetsUnderCooldown = useMemo(() => {
+    if (!hasActiveCooldown || lockedUserData.pricePerShare <= 0n) return 0n
+    const vaultDecimals = lockedUserData.vaultToken?.decimals ?? 18
+    return (sharesUnderCooldown * lockedUserData.pricePerShare) / 10n ** BigInt(vaultDecimals)
+  }, [hasActiveCooldown, lockedUserData.pricePerShare, lockedUserData.vaultToken?.decimals, sharesUnderCooldown])
+
+  const unlockedSymbol = unlockedUserData.assetToken?.symbol ?? 'USDC'
+  const lockedSymbol = lockedUserData.assetToken?.symbol ?? 'yvUSD'
+  const unlockedDecimals = unlockedUserData.assetToken?.decimals ?? 6
+  const lockedDecimals = lockedUserData.assetToken?.decimals ?? 18
+  const unlockedAssetPrice =
+    unlockedUserData.assetToken?.address && unlockedUserData.assetToken?.chainID
+      ? getPrice({
+          address: toAddress(unlockedUserData.assetToken.address),
+          chainID: unlockedUserData.assetToken.chainID
+        }).normalized
+      : unlockedVault?.tvl.price || 0
+  const unlockedSharePrice = getYvUsdSharePrice(unlockedVault, unlockedAssetPrice)
+  const unlockedNormalized = toNormalizedBN(unlockedUserData.depositedValue, unlockedDecimals).normalized
+  const lockedNormalized = toNormalizedBN(lockedUserData.depositedValue, lockedDecimals).normalized
+  const unlockedUsd = unlockedNormalized * unlockedAssetPrice
+  const lockedUsd = lockedNormalized * unlockedSharePrice
+  const totalUsd = unlockedUsd + lockedUsd
+
+  if (isLoadingYvUsd || unlockedUserData.isLoading || lockedUserData.isLoading) {
+    return <p className="text-text-secondary">{'Loading yvUSD position data...'}</p>
+  }
+
+  return (
+    <>
+      <div className="flex items-start justify-between gap-4">
+        <span className="text-text-secondary">Deposited value</span>
+        <span className="text-text-primary text-base font-semibold">{formatUSD(totalUsd)}</span>
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-text-secondary">Unlocked position</span>
+        <span className="text-text-primary text-base font-semibold">
+          {`${formatTAmount({ value: unlockedUserData.depositedValue, decimals: unlockedDecimals })} ${unlockedSymbol}`}
+          <span className="ml-1 text-xs text-text-secondary font-medium">({formatUSD(unlockedUsd)})</span>
+        </span>
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-text-secondary">Locked position</span>
+        <span className="text-text-primary text-base font-semibold">
+          {`${formatTAmount({ value: lockedUserData.depositedValue, decimals: lockedDecimals })} ${lockedSymbol}`}
+          <span className="ml-1 text-xs text-text-secondary font-medium">({formatUSD(lockedUsd)})</span>
+        </span>
+      </div>
+      {account && hasActiveCooldown ? (
+        <div className="rounded-lg border border-border bg-surface-secondary p-3 space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{'Cooldown status'}</p>
+          {isLoadingCooldownStatus || isLoadingAvailableWithdrawLimit ? (
+            <p className="text-xs text-text-secondary">{'Loading cooldown status...'}</p>
+          ) : (
+            <>
+              <p className="text-xs text-text-secondary">
+                {`Shares in cooldown: ${formatTAmount({
+                  value: sharesUnderCooldown,
+                  decimals: lockedUserData.vaultToken?.decimals ?? 18
+                })}`}
+              </p>
+              <p className="text-xs text-text-secondary">
+                {`Estimated assets in cooldown: ${formatTAmount({
+                  value: assetsUnderCooldown,
+                  decimals: lockedUserData.assetToken?.decimals ?? 18
+                })} ${lockedUserData.assetToken?.symbol ?? 'USDC'}`}
+              </p>
+              <p className="text-xs text-text-secondary">
+                {`Available to withdraw now: ${formatTAmount({
+                  value: availableWithdrawLimit,
+                  decimals: lockedUserData.assetToken?.decimals ?? 18
+                })} ${lockedUserData.assetToken?.symbol ?? 'USDC'}`}
+              </p>
+              <p className="text-xs text-text-secondary">
+                {isCooldownActive
+                  ? `Cooldown remaining: ${formatDuration(cooldownRemainingSeconds)}`
+                  : isWithdrawalWindowOpen
+                    ? `Withdrawal window remaining: ${formatDuration(windowRemainingSeconds)}`
+                    : 'Withdrawal window closed. Start a new cooldown to withdraw.'}
+              </p>
+            </>
+          )}
+        </div>
+      ) : null}
+    </>
+  )
+}
+
 export const WalletPanel: FC<WalletPanelProps> = ({
   isActive: isPanelActive,
   currentVault,
   vaultAddress,
   stakingAddress,
   chainId,
-  vaultUserData,
-  onSelectZapToken
+  vaultUserData
 }) => {
   const { address, isActive: isWalletActive, openLoginModal } = useWeb3()
   const { cachedEntries } = useNotifications()
   const navigate = useNavigate()
-  const { balances } = useWallet()
   const { getPrice } = useYearn()
   const [activeTab, setActiveTab] = useState<WalletTabKey>('balances')
-  const { assetToken, vaultToken, stakingToken, depositedValue, depositedShares, pricePerShare, isLoading } =
-    vaultUserData
+  const {
+    assetToken,
+    vaultToken,
+    stakingToken,
+    depositedValue,
+    depositedShares,
+    pricePerShare,
+    stakingWithdrawableAssets,
+    isLoading
+  } = vaultUserData
+  const isYvUsd = isYvUsdVault(currentVault)
   const vaultDecimals = getVaultDecimals(currentVault)
   const vaultTVL = getVaultTVL(currentVault)
 
@@ -89,12 +247,12 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   const hasVaultShares = vaultBalance > 0n
   const hasStakedShares = stakingBalance > 0n
   const showTotalShares = hasVaultShares && hasStakedShares
-  const vaultName = getVaultName(currentVault)
   const assetPrice = assetToken?.address
     ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID ?? chainId }).normalized
     : 0
   const assetDecimals = assetToken?.decimals ?? vaultDecimals
-  const shareTokenDecimals = vaultToken?.decimals ?? 18
+  const vaultShareDecimals = vaultToken?.decimals ?? 18
+  const stakingShareDecimals = stakingToken?.decimals ?? vaultShareDecimals
   const maxShareLabelLength = 'vault shares'.length
   const baseVaultSharesLabel = vaultSymbol || 'vault shares'
   const baseStakedSharesLabel = stakingSymbol || baseVaultSharesLabel
@@ -126,38 +284,39 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   )
 
   const depositedLabel = formatTokenAmount(depositedValue, assetDecimals, assetSymbol)
-  const vaultBalanceLabel = formatTokenAmount(vaultBalance, shareTokenDecimals, vaultSharesLabel, {
+  const vaultBalanceLabel = formatTokenAmount(vaultBalance, vaultShareDecimals, vaultSharesLabel, {
     shouldCompactValue: true
   })
-  const stakingBalanceLabel = formatTokenAmount(stakingBalance, shareTokenDecimals, stakedSharesLabel, {
+  const stakingBalanceLabel = formatTokenAmount(stakingBalance, stakingShareDecimals, stakedSharesLabel, {
     shouldCompactValue: true
   })
-  const totalSharesLabel = formatTokenAmount(depositedShares, shareTokenDecimals, vaultSharesLabel, {
+  const totalSharesLabel = formatTokenAmount(depositedShares, vaultShareDecimals, vaultSharesLabel, {
     shouldCompactValue: true
   })
   const availableLabel = formatTokenAmount(availableBalance, assetDecimals, assetSymbol, { shouldCompactValue: true })
 
   const vaultSharesUsd = useMemo(() => {
     if (!pricePerShare || vaultBalance === 0n || assetPrice === 0) return 0
-    const underlying = (vaultBalance * pricePerShare) / 10n ** BigInt(shareTokenDecimals)
+    const underlying = (vaultBalance * pricePerShare) / 10n ** BigInt(vaultShareDecimals)
     const normalized = toNormalizedBN(underlying, assetDecimals).normalized
     return normalized * assetPrice
-  }, [pricePerShare, vaultBalance, shareTokenDecimals, assetDecimals, assetPrice])
+  }, [pricePerShare, vaultBalance, vaultShareDecimals, assetDecimals, assetPrice])
 
   const stakedSharesUsd = useMemo(() => {
-    if (!pricePerShare || stakingBalance === 0n || assetPrice === 0) return 0
-    const underlying = (stakingBalance * pricePerShare) / 10n ** BigInt(shareTokenDecimals)
+    if (!pricePerShare || stakingWithdrawableAssets === 0n || assetPrice === 0) return 0
+    const underlying = (stakingWithdrawableAssets * pricePerShare) / 10n ** BigInt(vaultShareDecimals)
     const normalized = toNormalizedBN(underlying, assetDecimals).normalized
     return normalized * assetPrice
-  }, [pricePerShare, stakingBalance, shareTokenDecimals, assetDecimals, assetPrice])
+  }, [pricePerShare, stakingWithdrawableAssets, vaultShareDecimals, assetDecimals, assetPrice])
 
   const totalSharesUsd = vaultSharesUsd + stakedSharesUsd
   const availableUsd = (assetToken?.balance.normalized ?? 0) * assetPrice
 
   const relatedAddresses = useMemo(() => {
-    const addresses = [vaultAddress, stakingAddress].filter(Boolean) as `0x${string}`[]
+    const yvUsdAddresses = isYvUsd ? [YVUSD_UNLOCKED_ADDRESS, YVUSD_LOCKED_ADDRESS] : []
+    const addresses = [...yvUsdAddresses, vaultAddress, stakingAddress].filter(Boolean) as `0x${string}`[]
     return addresses.map((addr) => toAddress(addr).toLowerCase())
-  }, [vaultAddress, stakingAddress])
+  }, [isYvUsd, vaultAddress, stakingAddress])
 
   const recentEntries = useMemo(() => {
     const filtered = (
@@ -172,31 +331,6 @@ export const WalletPanel: FC<WalletPanelProps> = ({
 
     return filtered.toReversed().slice(0, 3)
   }, [address, cachedEntries, relatedAddresses, chainId])
-
-  const zapTokens = useMemo(() => {
-    const chainBalances = balances[chainId] || {}
-    const excluded = [vaultAddress, stakingAddress].filter(Boolean).map((addr) => toAddress(addr).toLowerCase())
-    const tokens = Object.values(chainBalances).filter((token) => {
-      if (!token?.address) return false
-      if (token.balance.raw <= 0n) return false
-      return !excluded.includes(toAddress(token.address).toLowerCase())
-    }) as TToken[]
-
-    const sorted = tokens.toSorted((a, b) => {
-      const aBalance = a.balance?.raw || 0n
-      const bBalance = b.balance?.raw || 0n
-      return bBalance > aBalance ? 1 : -1
-    })
-    return sorted.map((token) => {
-      const tokenPrice = getPrice({ address: toAddress(token.address), chainID: token.chainID }).normalized
-      const tokenUsd = token.balance.normalized * tokenPrice
-      return {
-        token,
-        amountLabel: formatTokenAmount(token.balance.raw, token.decimals, token.symbol, { shouldCompactValue: true }),
-        usdLabel: formatUSD(tokenUsd)
-      }
-    })
-  }, [balances, chainId, vaultAddress, stakingAddress, getPrice, formatTokenAmount])
 
   return (
     <div
@@ -251,48 +385,54 @@ export const WalletPanel: FC<WalletPanelProps> = ({
                     <section className="space-y-3">
                       <h4 className="text-sm font-semibold text-text-primary">Your Vault balances</h4>
                       <div className="space-y-2 text-sm">
-                        <div className="flex items-start justify-between gap-4">
-                          <span className="text-text-secondary">Deposited value</span>
-                          <div className="text-right">
-                            <span className="text-text-primary text-base font-semibold">{depositedLabel}</span>
-                            <span className="text-xs text-text-secondary ml-1 font-medium">
-                              ({formatUSD(depositedUsd)})
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-text-secondary ">
-                            {hasStakedShares && !showTotalShares ? 'Staked shares' : 'Deposited shares'}
-                          </span>
-                          <span className="text-text-primary text-base font-semibold">
-                            {hasStakedShares && !showTotalShares ? stakingBalanceLabel : vaultBalanceLabel}
-                            <span className="ml-1 text-xs text-text-secondary font-medium">
-                              ({formatUSD(hasStakedShares && !showTotalShares ? stakedSharesUsd : vaultSharesUsd)})
-                            </span>
-                          </span>
-                        </div>
-                        {showTotalShares ? (
+                        {isYvUsd ? (
+                          <YvUsdVaultBalances account={address ? toAddress(address) : undefined} />
+                        ) : (
                           <>
+                            <div className="flex items-start justify-between gap-4">
+                              <span className="text-text-secondary">Deposited value</span>
+                              <div className="text-right">
+                                <span className="text-text-primary text-base font-semibold">{depositedLabel}</span>
+                                <span className="text-xs text-text-secondary ml-1 font-medium">
+                                  ({formatUSD(depositedUsd)})
+                                </span>
+                              </div>
+                            </div>
                             <div className="flex items-center justify-between gap-4">
-                              <span className="text-text-secondary">Staked shares</span>
+                              <span className="text-text-secondary ">
+                                {hasStakedShares && !showTotalShares ? 'Staked shares' : 'Deposited shares'}
+                              </span>
                               <span className="text-text-primary text-base font-semibold">
-                                {stakingBalanceLabel}
+                                {hasStakedShares && !showTotalShares ? stakingBalanceLabel : vaultBalanceLabel}
                                 <span className="ml-1 text-xs text-text-secondary font-medium">
-                                  ({formatUSD(stakedSharesUsd)})
+                                  ({formatUSD(hasStakedShares && !showTotalShares ? stakedSharesUsd : vaultSharesUsd)})
                                 </span>
                               </span>
                             </div>
-                            <div className="flex items-center justify-between gap-4">
-                              <span className="text-text-secondary">Total shares</span>
-                              <span className="text-text-primary font-semibold">
-                                {totalSharesLabel}
-                                <span className="ml-1 text-xs text-text-secondary font-medium">
-                                  ({formatUSD(totalSharesUsd)})
-                                </span>
-                              </span>
-                            </div>
+                            {showTotalShares ? (
+                              <>
+                                <div className="flex items-center justify-between gap-4">
+                                  <span className="text-text-secondary">Staked shares</span>
+                                  <span className="text-text-primary text-base font-semibold">
+                                    {stakingBalanceLabel}
+                                    <span className="ml-1 text-xs text-text-secondary font-medium">
+                                      ({formatUSD(stakedSharesUsd)})
+                                    </span>
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between gap-4">
+                                  <span className="text-text-secondary">Total shares</span>
+                                  <span className="text-text-primary font-semibold">
+                                    {totalSharesLabel}
+                                    <span className="ml-1 text-xs text-text-secondary font-medium">
+                                      ({formatUSD(totalSharesUsd)})
+                                    </span>
+                                  </span>
+                                </div>
+                              </>
+                            ) : null}
                           </>
-                        ) : null}
+                        )}
                       </div>
                     </section>
 
@@ -309,46 +449,6 @@ export const WalletPanel: FC<WalletPanelProps> = ({
                           </span>
                         </div>
                       </div>
-                    </section>
-
-                    <section className="space-y-3">
-                      <h4 className="text-sm font-semibold text-text-primary">Zap-ready tokens</h4>
-                      {zapTokens.length === 0 ? (
-                        <div className="text-xs text-text-secondary">No wallet tokens available to zap.</div>
-                      ) : (
-                        <div className="space-y-2">
-                          {zapTokens.map(({ token, amountLabel, usdLabel }) => (
-                            <button
-                              key={`${token.chainID}-${token.address}`}
-                              type="button"
-                              onClick={() => onSelectZapToken?.(token)}
-                              className="group relative flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface-secondary px-3 py-2 transition-colors hover:bg-surface"
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <TokenLogo
-                                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${token.chainID}/${token.address.toLowerCase()}/logo-32.png`}
-                                  tokenSymbol={token.symbol}
-                                  tokenName={token.name}
-                                  width={20}
-                                  height={20}
-                                  className="rounded-full"
-                                />
-                                <div className="min-w-0 text-left">
-                                  <div className="text-sm font-semibold text-text-primary">{token.symbol}</div>
-                                  <div className="text-[10px] text-text-secondary truncate">{token.name}</div>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-semibold text-text-primary">{amountLabel}</div>
-                                <div className="text-[10px] text-text-secondary font-medium">({usdLabel})</div>
-                              </div>
-                              <span className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100">
-                                deposit into {vaultName}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
                     </section>
                   </>
                 ) : null}

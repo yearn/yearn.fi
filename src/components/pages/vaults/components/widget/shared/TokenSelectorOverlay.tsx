@@ -1,4 +1,6 @@
 import { TokenSelector } from '@pages/vaults/components/widget/TokenSelector'
+import type { TTokenSelectorMode } from '@pages/vaults/components/widget/tokenSelectorList.utils'
+import type { TToken } from '@shared/types'
 import { cl } from '@shared/utils'
 import type { FC } from 'react'
 import type { Address } from 'viem'
@@ -11,9 +13,14 @@ interface TokenSelectorOverlayProps {
   value?: Address
   excludeTokens?: Address[]
   priorityTokens?: Record<number, Address[]>
+  topTokens?: Record<number, Address[]>
+  extraTokens?: TToken[]
   assetAddress?: Address
+  assetChainId?: number
   vaultAddress?: Address
   stakingAddress?: Address
+  allowHiddenVaultTokenSelection?: boolean
+  mode?: TTokenSelectorMode
 }
 
 export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
@@ -24,9 +31,14 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
   value,
   excludeTokens,
   priorityTokens,
+  topTokens,
+  extraTokens,
   assetAddress,
+  assetChainId,
   vaultAddress,
-  stakingAddress
+  stakingAddress,
+  allowHiddenVaultTokenSelection,
+  mode
 }) => {
   return (
     <div
@@ -60,10 +72,15 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
           chainId={chainId}
           excludeTokens={excludeTokens}
           priorityTokens={priorityTokens}
+          topTokens={topTokens}
+          extraTokens={extraTokens}
           onClose={onClose}
           assetAddress={assetAddress}
+          assetChainId={assetChainId}
           vaultAddress={vaultAddress}
           stakingAddress={stakingAddress}
+          allowHiddenVaultTokenSelection={allowHiddenVaultTokenSelection}
+          mode={mode}
         />
       </div>
     </div>

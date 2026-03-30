@@ -3,10 +3,16 @@ import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
+import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
+import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
+import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
 import type { WidgetActionType } from '@pages/vaults/types'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
+import { getVaultPrimaryLogoSrc } from '@pages/vaults/utils/vaultLogo'
 import {
   getCategoryDescription,
   getChainDescription,
@@ -16,6 +22,15 @@ import {
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import {
+  getYvUsdInfinifiPointsNote,
+  getYvUsdSharePrice,
+  isYvUsdVault,
+  type TYvUsdVariant,
+  YVUSD_CHAIN_ID,
+  YVUSD_LOCKED_ADDRESS,
+  YVUSD_UNLOCKED_ADDRESS
+} from '@pages/vaults/utils/yvUsd'
+import {
   METRIC_FOOTNOTE_CLASS,
   METRIC_VALUE_CLASS,
   MetricHeader,
@@ -24,56 +39,125 @@ import {
 } from '@shared/components/MetricsCard'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { Tooltip } from '@shared/components/Tooltip'
+import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
+import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { cl, formatUSD, SELECTOR_BAR_STYLES, toNormalizedBN } from '@shared/utils'
+import { IconLock } from '@shared/icons/IconLock'
+import { IconLockOpen } from '@shared/icons/IconLockOpen'
+import { cl, formatApyDisplay, formatUSD, isZero, SELECTOR_BAR_STYLES, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement, Ref } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
+type TVaultKindType = 'multi' | 'single' | undefined
+
+function noop(): void {}
+
+function noopWidgetModeChange(_mode: WidgetActionType): void {}
+
+function noopSelectSection(_key: string): void {}
+
+function getVaultProductTypeLabel(listKind: ReturnType<typeof deriveListKind>): string {
+  if (listKind === 'allocator' || listKind === 'strategy') {
+    return 'Single Asset'
+  }
+
+  if (listKind === 'legacy') {
+    return 'Legacy'
+  }
+
+  return 'LP Token'
+}
+
+function getVaultKindType(
+  kind: string | null | undefined,
+  listKind: ReturnType<typeof deriveListKind>
+): TVaultKindType {
+  if (kind === 'Multi Strategy') {
+    return 'multi'
+  }
+
+  if (kind === 'Single Strategy') {
+    return 'single'
+  }
+
+  if (listKind === 'allocator') {
+    return 'multi'
+  }
+
+  if (listKind === 'strategy') {
+    return 'single'
+  }
+
+  return undefined
+}
+
+function getVaultKindLabel(kindType: TVaultKindType, fallbackKind: string | null | undefined): string | undefined {
+  if (kindType === 'multi') {
+    return 'Allocator'
+  }
+
+  if (kindType === 'single') {
+    return 'Strategy'
+  }
+
+  return fallbackKind ?? undefined
+}
+
+function getVaultLogoSize({ isCompressed, isYvUsd }: { isCompressed: boolean; isYvUsd: boolean }): number {
+  if (isYvUsd) {
+    return 40
+  }
+
+  return isCompressed ? 32 : 40
+}
+
+function getVaultLogoContainerSizeClassName({
+  isCompressed,
+  isYvUsd
+}: {
+  isCompressed: boolean
+  isYvUsd: boolean
+}): string {
+  if (isYvUsd || !isCompressed) {
+    return 'size-10'
+  }
+
+  return 'size-8'
+}
+
+function getYvUsdHistoricalValue(monthAgo: number, weekAgo: number): number {
+  return isZero(monthAgo) ? weekAgo : monthAgo
+}
+
 function VaultHeaderIdentity({
   currentVault: currentVaultInput,
   isCompressed,
-  className
+  className,
+  includeTourAttributes = true
 }: {
   currentVault: TKongVaultInput
   isCompressed: boolean
   className?: string
+  includeTourAttributes?: boolean
 }): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
   const chainName = getNetwork(currentVault.chainID).name
-  const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${
-    currentVault.chainID
-  }/${currentVault.token.address.toLowerCase()}/logo-128.png`
+  const isYvUsd = isYvUsdVault(currentVault)
+  const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
   const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
   const showChainChip = !isCompressed
   const showCategoryChip = Boolean(currentVault.category)
   const listKind = deriveListKind(currentVault)
-  const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
-  const isLegacyVault = listKind === 'legacy'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
-
-  const baseKindType: 'multi' | 'single' | undefined = ((): 'multi' | 'single' | undefined => {
-    if (currentVault.kind === 'Multi Strategy') return 'multi'
-    if (currentVault.kind === 'Single Strategy') return 'single'
-    return undefined
-  })()
-
-  const fallbackKindType: 'multi' | 'single' | undefined = ((): 'multi' | 'single' | undefined => {
-    if (listKind === 'allocator') return 'multi'
-    if (listKind === 'strategy') return 'single'
-    return undefined
-  })()
-  const kindType = baseKindType ?? fallbackKindType
-
-  const kindLabel: string | undefined = ((): string | undefined => {
-    if (kindType === 'multi') return 'Allocator'
-    if (kindType === 'single') return 'Strategy'
-    return currentVault.kind
-  })()
+  const productTypeLabel = getVaultProductTypeLabel(listKind)
+  const kindType = getVaultKindType(currentVault.kind, listKind)
+  const kindLabel = getVaultKindLabel(kindType, currentVault.kind)
   const chainDescription = getChainDescription(currentVault.chainID)
   const categoryDescription = getCategoryDescription(currentVault.category)
   const productTypeDescription = getProductTypeDescription(listKind)
@@ -87,6 +171,8 @@ function VaultHeaderIdentity({
   const [isTitleClipped, setIsTitleClipped] = useState(false)
   const titleRef = useRef<HTMLSpanElement>(null)
   const vaultName = getVaultName(currentVault)
+  const tokenLogoSize = getVaultLogoSize({ isCompressed, isYvUsd })
+  const tokenLogoContainerSizeClassName = getVaultLogoContainerSizeClassName({ isCompressed, isYvUsd })
 
   useEffect(() => {
     // Preload chain logo so it appears instantly when the chip mounts
@@ -116,20 +202,20 @@ function VaultHeaderIdentity({
   return (
     <div
       className={cl('flex flex-col gap-1 px-1 mt-0', isCompressed ? 'md:justify-center' : 'pt-4', className)}
-      data-tour="vault-detail-title"
+      data-tour={includeTourAttributes ? 'vault-detail-title' : undefined}
     >
       <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
         <div
           className={cl(
             'relative flex items-center justify-start rounded-full bg-surface/70',
-            isCompressed ? 'size-8' : 'size-10'
+            tokenLogoContainerSizeClassName
           )}
         >
           <TokenLogo
             src={tokenLogoSrc}
             tokenSymbol={currentVault.token.symbol || ''}
-            width={isCompressed ? 32 : 40}
-            height={isCompressed ? 32 : 40}
+            width={tokenLogoSize}
+            height={tokenLogoSize}
           />
           {isCompressed ? (
             <div
@@ -255,19 +341,21 @@ function SectionSelectorBar({
   onSelectSection,
   sectionSelectorRef,
   sectionTabs,
-  isCompressed
+  isCompressed,
+  includeTourAttributes = true
 }: {
   activeSectionKey?: string
   onSelectSection?: (key: string) => void
   sectionSelectorRef?: Ref<HTMLDivElement>
   sectionTabs: { key: string; label: string }[]
   isCompressed: boolean
+  includeTourAttributes?: boolean
 }): ReactElement {
   return (
     <div
       className={'flex flex-wrap gap-2 md:gap-3 w-full'}
       ref={sectionSelectorRef}
-      data-tour="vault-detail-section-nav"
+      data-tour={includeTourAttributes ? 'vault-detail-section-nav' : undefined}
     >
       <div
         className={cl(
@@ -303,20 +391,106 @@ function SectionSelectorBar({
 
 function VaultOverviewCard({
   currentVault: currentVaultInput,
-  isCompressed
+  isCompressed,
+  includeTourAttributes = true,
+  yvUsdApyVariant: controlledYvUsdApyVariant,
+  onYvUsdApyVariantChange
 }: {
   currentVault: TKongVaultInput
   isCompressed: boolean
+  includeTourAttributes?: boolean
+  yvUsdApyVariant?: TYvUsdVariant
+  onYvUsdApyVariantChange?: (variant: TYvUsdVariant) => void
 }): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
   const listKind = deriveListKind(currentVault)
   const isFactoryVault = listKind === 'factory'
+  const isYvUsd = isYvUsdVault(currentVault)
+  const [internalYvUsdApyVariant, setInternalYvUsdApyVariant] = useState<TYvUsdVariant>('locked')
+  const { metrics: yvUsdMetrics, unlockedVault, lockedVault } = useYvUsdVaults()
+  const isControlledYvUsdApyVariant = controlledYvUsdApyVariant !== undefined
+  const yvUsdApyVariant = isControlledYvUsdApyVariant ? controlledYvUsdApyVariant : internalYvUsdApyVariant
+  const unlockedForwardApy =
+    yvUsdMetrics?.unlocked.apy ?? (currentVault.apr?.forwardAPR?.netAPR || currentVault.apr?.netAPR || 0)
+  const lockedForwardApy = yvUsdMetrics?.locked.apy ?? lockedVault?.apr?.forwardAPR?.netAPR ?? 0
+  const unlockedMonthly = unlockedVault?.apr?.points?.monthAgo ?? currentVault.apr.points.monthAgo
+  const unlockedWeekly = unlockedVault?.apr?.points?.weekAgo ?? currentVault.apr.points.weekAgo
+  const unlockedHistorical = getYvUsdHistoricalValue(unlockedMonthly, unlockedWeekly)
+  const lockedMonthly = lockedVault?.apr?.points?.monthAgo ?? 0
+  const lockedWeekly = lockedVault?.apr?.points?.weekAgo ?? 0
+  const lockedHistorical = getYvUsdHistoricalValue(lockedMonthly, lockedWeekly)
+  const totalTvl = currentVault.tvl?.tvl ?? unlockedVault?.tvl?.tvl ?? yvUsdMetrics?.unlocked.tvl ?? 0
+  const lockedTvl = lockedVault?.tvl?.tvl ?? yvUsdMetrics?.locked.tvl ?? 0
+  const tvlBreakdown = getYvUsdTvlBreakdown({ totalTvl, lockedTvl })
+  const unlockedTvl = tvlBreakdown.unlockedTvl
+  const combinedTvl = tvlBreakdown.totalTvl
+  const isLockedApyVariant = yvUsdApyVariant === 'locked'
+  const selectedForwardApy = isLockedApyVariant ? lockedForwardApy : unlockedForwardApy
+  const selectedHistoricalApy = isLockedApyVariant ? lockedHistorical : unlockedHistorical
+  const hasInfinifiPoints = Boolean(yvUsdMetrics?.locked.hasInfinifiPoints || yvUsdMetrics?.unlocked.hasInfinifiPoints)
+  const infinifiPointsNote = hasInfinifiPoints ? getYvUsdInfinifiPointsNote() : undefined
+  const selectedApyIcon = isLockedApyVariant ? (
+    <IconLock className="size-4 text-text-secondary" />
+  ) : (
+    <IconLockOpen className="size-4 text-text-secondary" />
+  )
+  const apyToggleLabel = isLockedApyVariant ? 'Switch to unlocked APY display' : 'Switch to locked APY display'
+  const toggleApyVariant = (): void => {
+    const nextVariant = yvUsdApyVariant === 'locked' ? 'unlocked' : 'locked'
+    if (isControlledYvUsdApyVariant) {
+      onYvUsdApyVariantChange?.(nextVariant)
+      return
+    }
+    setInternalYvUsdApyVariant(nextVariant)
+  }
+  const renderYvUsdApyValue = (value: number): ReactElement => (
+    <span className={cl('inline-flex items-center gap-2', METRIC_VALUE_CLASS)}>
+      <button
+        type="button"
+        onClick={toggleApyVariant}
+        aria-label={apyToggleLabel}
+        className="inline-flex items-center rounded-sm text-text-secondary transition-colors hover:text-text-primary"
+      >
+        {selectedApyIcon}
+      </button>
+      {hasInfinifiPoints ? <IconInfinifiPoints className="size-3.5 shrink-0" aria-label="Infinifi points" /> : null}
+      {formatApyDisplay(value)}
+    </span>
+  )
+  const yvUsdEstApyTooltip = isYvUsd ? (
+    <YvUsdApyTooltipContent
+      lockedValue={lockedForwardApy}
+      unlockedValue={unlockedForwardApy}
+      iconClassName="size-4"
+      infinifiPointsNote={infinifiPointsNote}
+    />
+  ) : undefined
+  const yvUsdHistoricalApyTooltip = isYvUsd ? (
+    <YvUsdApyTooltipContent
+      lockedValue={lockedHistorical}
+      unlockedValue={unlockedHistorical}
+      iconClassName="size-4"
+      infinifiPointsNote={infinifiPointsNote}
+    />
+  ) : undefined
+  const yvUsdTvlTooltip = isYvUsd ? (
+    <YvUsdTvlTooltipContent
+      lockedValue={lockedTvl}
+      unlockedValue={unlockedTvl}
+      className="border-0 bg-transparent p-0"
+      iconClassName="size-4"
+    />
+  ) : undefined
   const metrics: TMetricBlock[] = [
     {
       key: 'est-apy',
       header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY based on underlying markets'} />,
-      value: (
+      value: isYvUsd ? (
+        <Tooltip className={'gap-0 h-auto'} openDelayMs={150} tooltip={yvUsdEstApyTooltip ?? ''} align={'center'}>
+          {renderYvUsdApyValue(selectedForwardApy)}
+        </Tooltip>
+      ) : (
         <VaultForwardAPY
           currentVault={currentVault}
           showSubline={false}
@@ -329,7 +503,16 @@ function VaultOverviewCard({
     {
       key: 'historical-apy',
       header: <MetricHeader label={'30 Day APY'} tooltip={'Average realized APY over the previous 30 days'} />,
-      value: (
+      value: isYvUsd ? (
+        <Tooltip
+          className={'gap-0 h-auto'}
+          openDelayMs={150}
+          tooltip={yvUsdHistoricalApyTooltip ?? ''}
+          align={'center'}
+        >
+          {renderYvUsdApyValue(selectedHistoricalApy)}
+        </Tooltip>
+      ) : (
         <VaultHistoricalAPY
           currentVault={currentVault}
           showSublineTooltip
@@ -342,8 +525,25 @@ function VaultOverviewCard({
     {
       key: 'tvl',
       header: <MetricHeader label={'TVL'} tooltip={'Total value currently deposited into this vault'} />,
-      value: <VaultTVL currentVault={currentVault} valueClassName={METRIC_VALUE_CLASS} />,
-      footnote: (
+      value: isYvUsd ? (
+        <span className={METRIC_VALUE_CLASS}>
+          <RenderAmount
+            value={combinedTvl || 0}
+            symbol={'USD'}
+            decimals={0}
+            options={{
+              shouldCompactValue: true,
+              maximumFractionDigits: 2,
+              minimumFractionDigits: 0
+            }}
+          />
+        </span>
+      ) : (
+        <VaultTVL currentVault={currentVault} valueClassName={METRIC_VALUE_CLASS} />
+      ),
+      footnote: isYvUsd ? (
+        yvUsdTvlTooltip
+      ) : (
         <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
           <RenderAmount
             value={Number(totalAssets)}
@@ -362,7 +562,7 @@ function VaultOverviewCard({
   ]
 
   return (
-    <div data-tour="vault-detail-overview">
+    <div data-tour={includeTourAttributes ? 'vault-detail-overview' : undefined}>
       <MetricsCard
         items={metrics}
         className={cl(
@@ -375,25 +575,126 @@ function VaultOverviewCard({
   )
 }
 
+function YvUsdUserHoldingsCard({
+  isCompressed,
+  includeTourAttributes = true
+}: {
+  isCompressed: boolean
+  includeTourAttributes?: boolean
+}): ReactElement {
+  const { address } = useWeb3()
+  const { getPrice } = useYearn()
+  const { unlockedVault, lockedVault } = useYvUsdVaults()
+  const account = address ? toAddress(address) : undefined
+  const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
+
+  const unlockedUserData = useVaultUserData({
+    vaultAddress: toAddress(unlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS),
+    assetAddress: unlockedAssetAddress,
+    chainId: YVUSD_CHAIN_ID,
+    account
+  })
+  const lockedUserData = useVaultUserData({
+    vaultAddress: toAddress(lockedVault?.address ?? YVUSD_LOCKED_ADDRESS),
+    assetAddress: YVUSD_UNLOCKED_ADDRESS,
+    chainId: YVUSD_CHAIN_ID,
+    account
+  })
+
+  const unlockedAmount = toNormalizedBN(
+    unlockedUserData.depositedValue,
+    unlockedUserData.assetToken?.decimals ?? 6
+  ).normalized
+  const lockedAmount = toNormalizedBN(
+    lockedUserData.depositedValue,
+    lockedUserData.assetToken?.decimals ?? 18
+  ).normalized
+  const unlockedAssetPrice =
+    getPrice({ address: unlockedAssetAddress, chainID: YVUSD_CHAIN_ID }).normalized || unlockedVault?.tvl.price || 0
+  const unlockedSharePrice = getYvUsdSharePrice(unlockedVault, unlockedAssetPrice)
+  const unlockedValueUsd = unlockedAmount * unlockedAssetPrice
+  const lockedValueUsd = lockedAmount * unlockedSharePrice
+  const totalValueUsd = unlockedValueUsd + lockedValueUsd
+
+  const sections: TMetricBlock[] = [
+    {
+      key: 'deposited',
+      header: (
+        <MetricHeader
+          label={'Your Deposits'}
+          tooltip={'Review the USD value of everything you have supplied to this vault so far.'}
+        />
+      ),
+      value: (
+        <span className={METRIC_VALUE_CLASS} suppressHydrationWarning>
+          {formatUSD(totalValueUsd)}
+        </span>
+      ),
+      footnote: (
+        <div className={cl(METRIC_FOOTNOTE_CLASS, 'flex flex-col gap-1')} suppressHydrationWarning>
+          <div className="flex items-center justify-between gap-4">
+            <span className="inline-flex items-center gap-2 text-text-secondary">
+              <IconLock className="size-3" />
+              {'Locked Deposits'}
+            </span>
+            <RenderAmount
+              value={lockedValueUsd}
+              symbol={'USD'}
+              decimals={0}
+              options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="inline-flex items-center gap-2 text-text-secondary">
+              <IconLockOpen className="size-3" />
+              {'Unlocked Deposits'}
+            </span>
+            <RenderAmount
+              value={unlockedValueUsd}
+              symbol={'USD'}
+              decimals={0}
+              options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
+            />
+          </div>
+        </div>
+      )
+    }
+  ]
+
+  return (
+    <div data-tour={includeTourAttributes ? 'vault-detail-user-holdings' : undefined}>
+      <MetricsCard
+        items={sections}
+        className={cl(
+          'rounded-b-none',
+          isCompressed ? 'rounded-tl-lg border-t border-x border-border' : 'border-t border-x border-border'
+        )}
+        footnoteDisplay={'tooltip'}
+      />
+    </div>
+  )
+}
+
 function UserHoldingsCard({
   currentVault: currentVaultInput,
   depositedValue,
   tokenPrice,
-  isCompressed
+  isCompressed,
+  includeTourAttributes = true
 }: {
   currentVault: TKongVaultInput
   depositedValue: bigint
   tokenPrice: number
   isCompressed: boolean
+  includeTourAttributes?: boolean
 }): ReactElement {
-  console.log('depositedValue', depositedValue)
-  console.log('tokenPrice', tokenPrice)
   const currentVault = getVaultView(currentVaultInput)
-  console.log('currentVault', currentVault)
+  if (isYvUsdVault(currentVault)) {
+    return <YvUsdUserHoldingsCard isCompressed={isCompressed} includeTourAttributes={includeTourAttributes} />
+  }
+
   const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
-  console.log('depositedAmount', depositedAmount)
   const depositedValueUSD = depositedAmount.normalized * tokenPrice
-  console.log('depositedValueUSD', depositedValueUSD)
   const sections: TMetricBlock[] = [
     {
       key: 'deposited',
@@ -427,7 +728,7 @@ function UserHoldingsCard({
   ]
 
   return (
-    <div data-tour="vault-detail-user-holdings">
+    <div data-tour={includeTourAttributes ? 'vault-detail-user-holdings' : undefined}>
       <MetricsCard
         items={sections}
         className={cl(
@@ -440,25 +741,10 @@ function UserHoldingsCard({
   )
 }
 
-export function VaultDetailsHeader({
-  currentVault: currentVaultInput,
-  depositedValue,
-  isCollapsibleMode = true,
-  sectionTabs = [],
-  activeSectionKey,
-  onSelectSection,
-  sectionSelectorRef,
-  widgetActions = [],
-  widgetMode,
-  onWidgetModeChange,
-  onCompressionChange,
-  onWidgetWalletOpen,
-  isWidgetWalletOpen,
-  onWidgetCloseOverlays
-}: {
+type TVaultDetailsHeaderBaseProps = {
   currentVault: TKongVaultInput
   depositedValue: bigint
-  isCollapsibleMode?: boolean
+  yvUsdApyVariant?: TYvUsdVariant
   sectionTabs?: { key: string; label: string }[]
   activeSectionKey?: string
   onSelectSection?: (key: string) => void
@@ -466,30 +752,42 @@ export function VaultDetailsHeader({
   widgetActions?: WidgetActionType[]
   widgetMode?: WidgetActionType
   onWidgetModeChange?: (mode: WidgetActionType) => void
-  onCompressionChange?: (isCompressed: boolean) => void
+  onYvUsdApyVariantChange?: (variant: TYvUsdVariant) => void
   onWidgetWalletOpen?: () => void
   isWidgetWalletOpen?: boolean
   onWidgetCloseOverlays?: () => void
-}): ReactElement {
+}
+
+type TVaultDetailsHeaderPresentationProps = TVaultDetailsHeaderBaseProps & {
+  isCompressed: boolean
+  includeTourAttributes?: boolean
+}
+
+export function VaultDetailsHeaderPresentation({
+  currentVault: currentVaultInput,
+  depositedValue,
+  yvUsdApyVariant,
+  sectionTabs = [],
+  activeSectionKey,
+  onSelectSection,
+  sectionSelectorRef,
+  widgetActions = [],
+  widgetMode,
+  onWidgetModeChange,
+  onYvUsdApyVariantChange,
+  onWidgetWalletOpen,
+  isWidgetWalletOpen,
+  onWidgetCloseOverlays,
+  isCompressed,
+  includeTourAttributes = true
+}: TVaultDetailsHeaderPresentationProps): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
-  const [forceCompressed, setForceCompressed] = useState(false)
-  const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode, forceCompressed })
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const updateViewport = (): void => {
-      setForceCompressed(window.innerHeight < 890)
-    }
-    updateViewport()
-    window.addEventListener('resize', updateViewport)
-    return (): void => window.removeEventListener('resize', updateViewport)
-  }, [])
-
-  useEffect(() => {
-    onCompressionChange?.(isCompressed)
-  }, [isCompressed, onCompressionChange])
-
   const tokenPrice = currentVault.tvl.price || 0
+  const isYvUsd = isYvUsdVault(currentVault)
+  const handleSelectSection = onSelectSection ?? noopSelectSection
+  const handleWidgetModeChange = onWidgetModeChange ?? noopWidgetModeChange
+  const handleWidgetWalletOpen = onWidgetWalletOpen ?? noop
+  const handleWidgetCloseOverlays = onWidgetCloseOverlays ?? noop
 
   return (
     <div
@@ -519,18 +817,26 @@ export function VaultDetailsHeader({
                 currentVault={currentVault}
                 isCompressed={isCompressed}
                 className={'col-span-5 pl-6'}
+                includeTourAttributes={includeTourAttributes}
               />
               <div className={'col-span-8 pl-4'}>
-                <VaultOverviewCard currentVault={currentVault} isCompressed={isCompressed} />
+                <VaultOverviewCard
+                  currentVault={currentVault}
+                  isCompressed={isCompressed}
+                  includeTourAttributes={includeTourAttributes}
+                  yvUsdApyVariant={yvUsdApyVariant}
+                  onYvUsdApyVariantChange={onYvUsdApyVariantChange}
+                />
               </div>
               {sectionTabs.length > 0 ? (
                 <div className={'col-span-13'}>
                   <SectionSelectorBar
                     activeSectionKey={activeSectionKey}
-                    onSelectSection={onSelectSection}
+                    onSelectSection={handleSelectSection}
                     sectionSelectorRef={sectionSelectorRef}
                     sectionTabs={sectionTabs}
                     isCompressed={isCompressed}
+                    includeTourAttributes={includeTourAttributes}
                   />
                 </div>
               ) : null}
@@ -539,25 +845,47 @@ export function VaultDetailsHeader({
         </div>
       ) : (
         <>
-          <VaultHeaderIdentity
-            currentVault={currentVault}
-            isCompressed={isCompressed}
-            className={'md:col-span-20 md:row-start-2'}
-          />
+          {isYvUsd ? (
+            <div className={'md:col-span-20 md:row-start-2 md:flex md:items-stretch md:gap-6'}>
+              <VaultHeaderIdentity
+                currentVault={currentVault}
+                isCompressed={isCompressed}
+                className={'md:w-[20%] md:min-w-[300px] md:max-w-[420px] md:flex-none'}
+                includeTourAttributes={includeTourAttributes}
+              />
+              <div className={'hidden md:flex md:min-w-0 md:flex-1 self-stretch'}>
+                <YvUsdHeaderBanner className={'w-full max-h-[85px] self-stretch'} />
+              </div>
+            </div>
+          ) : (
+            <VaultHeaderIdentity
+              currentVault={currentVault}
+              isCompressed={isCompressed}
+              className={'md:col-span-20 md:row-start-2'}
+              includeTourAttributes={includeTourAttributes}
+            />
+          )}
           <div className={cl('md:col-span-13 md:row-start-3')}>
             {' '}
             {/* step 2 should be here*/}
             <div className={'flex flex-col'}>
               <div className={'pt-4'}>
-                <VaultOverviewCard currentVault={currentVault} isCompressed={isCompressed} />
+                <VaultOverviewCard
+                  currentVault={currentVault}
+                  isCompressed={isCompressed}
+                  includeTourAttributes={includeTourAttributes}
+                  yvUsdApyVariant={yvUsdApyVariant}
+                  onYvUsdApyVariantChange={onYvUsdApyVariantChange}
+                />
               </div>
               {sectionTabs.length > 0 ? (
                 <SectionSelectorBar
                   activeSectionKey={activeSectionKey}
-                  onSelectSection={onSelectSection}
+                  onSelectSection={handleSelectSection}
                   sectionSelectorRef={sectionSelectorRef}
                   sectionTabs={sectionTabs}
                   isCompressed={isCompressed}
+                  includeTourAttributes={includeTourAttributes}
                 />
               ) : null}
             </div>
@@ -578,20 +906,50 @@ export function VaultDetailsHeader({
           depositedValue={depositedValue}
           tokenPrice={tokenPrice}
           isCompressed={isCompressed}
+          includeTourAttributes={includeTourAttributes}
         />
         {widgetActions.length > 0 && widgetMode && onWidgetModeChange ? (
           <WidgetTabs
             actions={widgetActions}
             activeAction={widgetMode}
-            onActionChange={onWidgetModeChange}
+            onActionChange={handleWidgetModeChange}
             className={isCompressed ? '-mt-px rounded-t-none' : undefined}
-            onOpenWallet={onWidgetWalletOpen}
+            onOpenWallet={handleWidgetWalletOpen}
             isWalletOpen={isWidgetWalletOpen}
-            onCloseOverlays={onWidgetCloseOverlays}
-            dataTour="vault-detail-widget-tabs"
+            onCloseOverlays={handleWidgetCloseOverlays}
+            dataTour={includeTourAttributes ? 'vault-detail-widget-tabs' : undefined}
+            walletDataTour={includeTourAttributes ? 'vault-detail-widget-my-info' : undefined}
           />
         ) : null}
       </div>
     </div>
   )
+}
+
+export function VaultDetailsHeader({
+  isCollapsibleMode = true,
+  onCompressionChange,
+  ...presentationProps
+}: TVaultDetailsHeaderBaseProps & {
+  isCollapsibleMode?: boolean
+  onCompressionChange?: (isCompressed: boolean) => void
+}): ReactElement {
+  const [forceCompressed, setForceCompressed] = useState(false)
+  const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode, forceCompressed })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const updateViewport = (): void => {
+      setForceCompressed(window.innerHeight < 890)
+    }
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+    return (): void => window.removeEventListener('resize', updateViewport)
+  }, [])
+
+  useEffect(() => {
+    onCompressionChange?.(isCompressed)
+  }, [isCompressed, onCompressionChange])
+
+  return <VaultDetailsHeaderPresentation {...presentationProps} isCompressed={isCompressed} />
 }

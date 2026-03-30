@@ -2,7 +2,7 @@ import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import type { TVaultForwardAPYVariant } from '@pages/vaults/components/table/VaultForwardAPY'
 import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
-import { toAddress } from '@shared/utils'
+import { cl, toAddress } from '@shared/utils'
 
 import type { ReactElement } from 'react'
 
@@ -36,6 +36,10 @@ type TVaultsAuxiliaryListProps = {
   onExpandedChange?: (vaultKey: string, next: boolean) => void
 }
 
+function getVaultListKey(vault: TKongVaultInput): string {
+  return `${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}`
+}
+
 // TODO: the contents of this component override the type filers. This should only happen for HOLDINGS and not AVAILABLE TO DEPOSIT
 export function VaultsAuxiliaryList({
   title,
@@ -62,7 +66,7 @@ export function VaultsAuxiliaryList({
   }
 
   return (
-    <div className={'flex flex-col gap-2 border-b border-border pb-3'}>
+    <div className={cl('flex flex-col gap-2 border-b border-border', title ? 'pb-3' : '')}>
       {title ? (
         <p className={'px-4 text-xs font-semibold uppercase tracking-wide text-text-secondary md:px-8'}>{title}</p>
       ) : null}
@@ -70,14 +74,11 @@ export function VaultsAuxiliaryList({
         items={vaults}
         estimateSize={81}
         itemSpacingClassName={'pb-px'}
-        getItemKey={(vault): string => `${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}`}
+        getItemKey={getVaultListKey}
         renderItem={(vault): ReactElement => {
-          const key = `${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}`
+          const key = getVaultListKey(vault)
           const rowApyDisplayVariant = resolveApyDisplayVariant?.(vault) ?? apyDisplayVariant
           const isExpanded = expandedVaultKeys ? Boolean(expandedVaultKeys[key]) : undefined
-          const handleExpandedChange = onExpandedChange
-            ? (next: boolean): void => onExpandedChange(key, next)
-            : undefined
           return (
             <VaultsListRow
               currentVault={vault}
@@ -95,7 +96,7 @@ export function VaultsAuxiliaryList({
               shouldCollapseChips={shouldCollapseChips}
               showStrategies={showStrategies}
               isExpanded={isExpanded}
-              onExpandedChange={handleExpandedChange}
+              onExpandedChange={onExpandedChange}
             />
           )
         }}

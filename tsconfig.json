@@ -41,7 +41,7 @@
     "isolatedModules": true,
     "types": ["vite/client"]
   },
-  "exclude": ["node_modules", "_app", "api", "worktrees", "vitest.config.ts"],
+  "exclude": ["node_modules", "_app", "api", "worktrees", "vitest.config.ts", "docs/temp/yvusd-gpt-pro-bundle"],
   "include": [
     "**/*.css",
     "**/*.ts",

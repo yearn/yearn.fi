@@ -24,7 +24,8 @@ export function usePortfolioHistory() {
     schema: portfolioHistorySimpleResponseSchema,
     config: {
       cacheDuration: 4 * 60 * 60 * 1000, // 4 hours
-      keepPreviousData: false
+      keepPreviousData: false,
+      timeout: 2 * 60 * 1000 // 2 minutes for large holdings requests
     }
   })
 

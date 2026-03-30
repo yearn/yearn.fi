@@ -1,6 +1,7 @@
 import { Button } from '@shared/components/Button'
+import { getApproveAbi } from '@shared/utils/approve'
 import { type FC, useCallback, useEffect, useState } from 'react'
-import { erc20Abi, maxUint256 } from 'viem'
+import { maxUint256 } from 'viem'
 import { useAccount, useChainId, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from 'wagmi'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from '../shared/TransactionStateIndicators'
@@ -83,7 +84,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
       try {
         await writeContractAsync({
           address: tokenAddress,
-          abi: erc20Abi,
+          abi: getApproveAbi(tokenAddress),
           functionName: 'approve',
           args: [spenderAddress, amount],
           chainId
