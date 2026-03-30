@@ -56,3 +56,9 @@ yearn.fi-worktree-*
 
 # codex settings
 .codex
+
+# ZAP scan artifacts
+report_html.html
+report_md.md
+report_json.json
+zap.yaml
