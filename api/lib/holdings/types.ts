@@ -87,6 +87,7 @@ export interface TransferEvent {
 export interface VaultMetadata {
   address: string
   chainId: number
+  category: 'stable' | 'volatile'
   token: {
     address: string
     symbol: string

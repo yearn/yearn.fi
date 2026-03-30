@@ -250,6 +250,16 @@ Response (abridged):
     "totalUnrealizedPnlUsd": 45.25,
     "totalPnlUsd": 65.75,
     "totalEconomicGainUsd": 165.75,
+    "byCategory": {
+      "stable": {
+        "totalPnlUsd": 40.0,
+        "totalEconomicGainUsd": 60.0
+      },
+      "volatile": {
+        "totalPnlUsd": 25.75,
+        "totalEconomicGainUsd": 105.75
+      }
+    },
     "isComplete": false
   },
   "vaults": [
@@ -269,7 +279,8 @@ Response (abridged):
       "metadata": {
         "symbol": "USDC",
         "decimals": 6,
-        "tokenAddress": "0x..."
+        "tokenAddress": "0x...",
+        "category": "stable"
       }
     }
   ]
@@ -284,6 +295,7 @@ Notes:
 - Withdrawals realize PnL from the oldest remaining lots first.
 - `totalPnlUsd = totalRealizedPnlUsd + totalUnrealizedPnlUsd`.
 - `totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd`.
+- `summary.byCategory.stable` and `summary.byCategory.volatile` split `totalPnlUsd` and `totalEconomicGainUsd` by Kong vault category while the top-level summary remains the portfolio-wide total.
 - Staking wrappers are collapsed into the underlying vault family. Staked shares and wallet-held shares share the same FIFO lots and only change location.
 - Underlying vault `Deposit` and `Withdraw` events define cost basis and realized proceeds. Staking `Deposit` and `Withdraw` events are treated as wrap or unwrap moves, not as economic entries.
 - Same-transaction router flows can carry basis into or out of a staking vault family when the transfer can be matched to an indexed underlying vault deposit or withdrawal in the same transaction.

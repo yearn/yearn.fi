@@ -69,6 +69,7 @@ export function MetricsCard({
             >
               <div className={'flex items-center justify-between'}>{item.header}</div>
               <div className={'[&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>{valueContent}</div>
+              {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
               {showFootnote && footnoteDisplay === 'inline' ? <div>{item.footnote}</div> : null}
             </div>
           )

@@ -229,6 +229,39 @@ function PortfolioHeaderSection({
     return <span className={toneClassName}>{formatSignedCurrency(value)}</span>
   }
 
+  function renderSignedCurrencyBreakdownValue(value: number): ReactElement {
+    const toneClassName = value > 0 ? 'text-green-400' : value < 0 ? 'text-red-400' : 'text-text-secondary'
+    return <span className={toneClassName}>{formatSignedCurrency(value)}</span>
+  }
+
+  function renderPnlBreakdownLabel(values: {
+    stable: number | null | undefined
+    volatile: number | null | undefined
+  }): ReactElement | undefined {
+    if (
+      isPnlLoading ||
+      values.stable === null ||
+      values.stable === undefined ||
+      values.volatile === null ||
+      values.volatile === undefined
+    ) {
+      return undefined
+    }
+
+    return (
+      <div className={cl(METRIC_FOOTNOTE_CLASS, 'flex flex-wrap items-center gap-x-3 gap-y-1')}>
+        <span className="inline-flex items-center gap-1">
+          <span>{'Stable'}</span>
+          {renderSignedCurrencyBreakdownValue(values.stable)}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span>{'Volatile'}</span>
+          {renderSignedCurrencyBreakdownValue(values.volatile)}
+        </span>
+      </div>
+    )
+  }
+
   const metrics: TMetricBlock[] = [
     {
       key: 'total-balance',
@@ -266,6 +299,10 @@ function PortfolioHeaderSection({
       key: 'portfolio-pnl',
       header: <MetricHeader label="Portfolio PnL" mobileLabel="P&L" tooltip={portfolioPnlTooltip} />,
       value: <span className={METRIC_VALUE_CLASS}>{renderSignedCurrencyMetric(pnlSummary?.totalPnlUsd ?? null)}</span>,
+      secondaryLabel: renderPnlBreakdownLabel({
+        stable: pnlSummary?.byCategory.stable.totalPnlUsd,
+        volatile: pnlSummary?.byCategory.volatile.totalPnlUsd
+      }),
       footnote:
         pnlSummary && !pnlSummary.isComplete ? (
           <FootnoteWithTooltip
@@ -284,6 +321,10 @@ function PortfolioHeaderSection({
           {renderSignedCurrencyMetric(pnlSummary?.totalEconomicGainUsd ?? null)}
         </span>
       ),
+      secondaryLabel: renderPnlBreakdownLabel({
+        stable: pnlSummary?.byCategory.stable.totalEconomicGainUsd,
+        volatile: pnlSummary?.byCategory.volatile.totalEconomicGainUsd
+      }),
       footnote:
         pnlSummary && Math.abs(pnlSummary.totalWindfallPnlUsd) > 0.005 ? (
           <FootnoteWithTooltip

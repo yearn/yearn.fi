@@ -1670,7 +1670,8 @@ export async function getHoldingsPnL(
           metadata: {
             symbol: metadata.token.symbol,
             decimals: metadata.decimals,
-            tokenAddress: metadata.token.address
+            tokenAddress: metadata.token.address,
+            category: metadata.category
           }
         }
       }
@@ -1788,7 +1789,8 @@ export async function getHoldingsPnL(
         metadata: {
           symbol: metadata.token.symbol,
           decimals: metadata.decimals,
-          tokenAddress: metadata.token.address
+          tokenAddress: metadata.token.address,
+          category: metadata.category
         }
       }
     })

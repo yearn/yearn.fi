@@ -188,7 +188,13 @@ export interface HoldingsPnLVault {
     symbol: string
     decimals: number
     tokenAddress: string
+    category: 'stable' | 'volatile'
   } | null
+}
+
+export interface HoldingsPnLCategoryBreakdown {
+  totalPnlUsd: number
+  totalEconomicGainUsd: number
 }
 
 export interface HoldingsPnLResponse {
@@ -207,6 +213,10 @@ export interface HoldingsPnLResponse {
     totalUnrealizedPnlUsd: number
     totalPnlUsd: number
     totalEconomicGainUsd: number
+    byCategory: {
+      stable: HoldingsPnLCategoryBreakdown
+      volatile: HoldingsPnLCategoryBreakdown
+    }
     isComplete: boolean
   }
   vaults: HoldingsPnLVault[]

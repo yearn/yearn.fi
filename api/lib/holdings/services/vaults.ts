@@ -8,6 +8,7 @@ interface KongVault {
   chainId: number
   symbol: string
   decimals: number
+  category?: string | null
   asset: {
     address: string
     symbol: string
@@ -24,6 +25,9 @@ interface KongVaultSnapshot {
   chainId: number
   symbol?: string
   decimals?: number
+  meta?: {
+    category?: string | null
+  } | null
   asset?: {
     address: string
     symbol: string
@@ -62,10 +66,71 @@ const DEFAULT_TIMEOUT_MS = 4_000
 const DEFAULT_MAX_RETRIES = 2
 const DEFAULT_RETRY_DELAY_MS = 200
 const SNAPSHOT_CONCURRENCY = 3
+const KNOWN_STABLECOIN_SYMBOLS = new Set([
+  'USDC',
+  'USDT',
+  'DAI',
+  'FRAX',
+  'LUSD',
+  'TUSD',
+  'USDE',
+  'SUSDE',
+  'GHO',
+  'CRVUSD',
+  'USD0',
+  'PYUSD',
+  'USDP',
+  'SDAI',
+  'AUSD',
+  'BOLD'
+])
 const vaultListState: TVaultListState = {
   vaultListCache: null,
   stakingToVaultMap: null,
   loadPromise: null
+}
+
+function normalizeVaultCategory(category?: string | null): 'stable' | 'volatile' | null {
+  const normalized = String(category ?? '')
+    .trim()
+    .toLowerCase()
+
+  if (!normalized) {
+    return null
+  }
+
+  if (normalized === 'stablecoin') {
+    return 'stable'
+  }
+
+  if (normalized === 'volatile' || normalized === 'auto') {
+    return 'volatile'
+  }
+
+  return null
+}
+
+function deriveVaultCategory(symbols: Array<string | undefined>): 'stable' | 'volatile' {
+  const haystack = symbols
+    .filter((symbol): symbol is string => Boolean(symbol))
+    .join(' ')
+    .toUpperCase()
+
+  for (const stable of KNOWN_STABLECOIN_SYMBOLS) {
+    if (haystack.includes(stable)) {
+      return 'stable'
+    }
+  }
+
+  return 'volatile'
+}
+
+function resolveVaultCategory(args: {
+  category?: string | null
+  assetSymbol?: string
+  vaultSymbol?: string
+}): 'stable' | 'volatile' {
+  return normalizeVaultCategory(args.category) ?? deriveVaultCategory([args.assetSymbol, args.vaultSymbol])
 }
 
 function wait(delayMs: number): Promise<void> {
@@ -100,6 +165,11 @@ function buildMetadataMaps(vaults: KongVault[]): {
       const metadata: VaultMetadata = {
         address: vault.address.toLowerCase(),
         chainId: vault.chainId,
+        category: resolveVaultCategory({
+          category: vault.category,
+          assetSymbol: vault.asset.symbol,
+          vaultSymbol: vault.symbol
+        }),
         token: {
           address: vault.asset.address.toLowerCase(),
           symbol: vault.asset.symbol,
@@ -116,6 +186,7 @@ function buildMetadataMaps(vaults: KongVault[]): {
         const stakingMetadata: VaultMetadata = {
           address: vault.staking.address.toLowerCase(),
           chainId: vault.chainId,
+          category: metadata.category,
           token: {
             address: vault.address.toLowerCase(),
             symbol: vault.symbol,
@@ -167,6 +238,11 @@ function buildMetadataFromSnapshot(snapshot: KongVaultSnapshot): VaultMetadata |
   return {
     address: snapshot.address.toLowerCase(),
     chainId: snapshot.chainId,
+    category: resolveVaultCategory({
+      category: snapshot.meta?.category,
+      assetSymbol: snapshot.asset.symbol,
+      vaultSymbol: snapshot.symbol
+    }),
     token: {
       address: snapshot.asset.address.toLowerCase(),
       symbol: snapshot.asset.symbol,
@@ -184,6 +260,11 @@ function buildStakingMetadataFromSnapshot(stakingAddress: string, snapshot: Kong
   return {
     address: stakingAddress.toLowerCase(),
     chainId: snapshot.chainId,
+    category: resolveVaultCategory({
+      category: snapshot.meta?.category,
+      assetSymbol: snapshot.asset?.symbol,
+      vaultSymbol: snapshot.symbol
+    }),
     token: {
       address: snapshot.address.toLowerCase(),
       symbol: snapshot.symbol,
