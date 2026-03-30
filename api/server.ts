@@ -1,5 +1,11 @@
 import { serve } from 'bun'
-import { getHistoricalHoldings, initializeSchema, type VaultVersion, validateConfig } from './lib/holdings'
+import {
+  clearUserCache,
+  getHistoricalHoldings,
+  initializeSchema,
+  type VaultVersion,
+  validateConfig
+} from './lib/holdings'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 const YVUSD_APR_SERVICE_API = (
@@ -193,6 +199,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
   const versionParam = url.searchParams.get('version')
+  const refresh = url.searchParams.get('refresh') === '1'
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -205,6 +212,11 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
+    if (refresh) {
+      const cleared = await clearUserCache(address)
+      console.log(`[Server] Cleared ${cleared} cached entries for ${address}`)
+    }
+
     const holdings = await getHistoricalHoldings(address, version)
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
