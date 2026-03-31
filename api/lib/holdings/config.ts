@@ -18,7 +18,7 @@ export const config: HoldingsConfig = {
     return process.env.ENVIO_PASSWORD ?? ''
   },
   get databaseUrl() {
-    return process.env.DATABASE_URL ?? null
+    return process.env.DATABASE_URL_PREVIEW ?? process.env.DATABASE_URL ?? null
   },
   get ethereumRpcUrl() {
     return process.env.ETHEREUM_RPC_URL ?? 'https://ethereum-rpc.publicnode.com'
@@ -36,8 +36,8 @@ export function validateConfig(): void {
   if (!process.env.ENVIO_GRAPHQL_URL) {
     console.warn('[Holdings] ENVIO_GRAPHQL_URL not set, using default localhost:8080')
   }
-  if (!process.env.DATABASE_URL) {
-    console.warn('[Holdings] DATABASE_URL not set, caching disabled')
+  if (!process.env.DATABASE_URL_PREVIEW && !process.env.DATABASE_URL) {
+    console.warn('[Holdings] DATABASE_URL_PREVIEW / DATABASE_URL not set, caching disabled')
   }
   if (!process.env.ETHEREUM_RPC_URL) {
     console.warn('[Holdings] ETHEREUM_RPC_URL not set, using default public mainnet RPC')

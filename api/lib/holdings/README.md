@@ -387,7 +387,8 @@ windfall:
 |----------|----------|---------|-------------|
 | `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
 | `ENVIO_PASSWORD` | No | `''` (empty) | Envio Hasura admin secret (header skipped if empty or 'testing') |
-| `DATABASE_URL` | No | `null` | PostgreSQL connection string (caching disabled if not set) |
+| `DATABASE_URL_PREVIEW` | No | `null` | Preview PostgreSQL connection string. Used in preference to `DATABASE_URL` when set. |
+| `DATABASE_URL` | No | `null` | Default PostgreSQL connection string (caching disabled if neither DB env var is set) |
 | `ETHEREUM_RPC_URL` | No | `https://ethereum-rpc.publicnode.com` | Mainnet RPC used for receipt-level enrichment such as CoW settlement decoding |
 | `DEFILLAMA_API_KEY` | No | `''` (empty) | Enables the paid DefiLlama GET route at `https://pro-api.llama.fi/{key}/coins/batchHistorical?coins=...` |
 | `ADMIN_SECRET` | No | `null` | Secret for admin endpoints (cache invalidation). Use 32+ char random string. |
