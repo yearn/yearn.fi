@@ -1,8 +1,11 @@
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
+import { useYearn } from '@shared/contexts/useYearn'
+import { IconChevron } from '@shared/icons/IconChevron'
 import type { TToken } from '@shared/types'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
+import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { type FC, useCallback, useMemo, useState } from 'react'
 import { isAddress } from 'viem'
 import { CloseIcon } from './shared/Icons'
@@ -94,6 +97,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 }) => {
   const [searchText, setSearchText] = useState('')
   const [selectedChainId, setSelectedChainId] = useState(chainId)
+  const [showUnlisted, setShowUnlisted] = useState(false)
   const { getToken, isLoading, balances } = useWallet()
 
   // Derived: treat valid address input as custom token
@@ -115,63 +119,73 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   // Get all tokens with balances from wallet context
   const tokens = useMemo(() => {
     const chainBalances = balances[selectedChainId] || {}
-    const tokenList: TToken[] = []
 
-    // Add all tokens from wallet balances
-    Object.entries(chainBalances).forEach(([address, token]) => {
-      if (token.chainID === 137 && toAddress(address) === '0x0000000000000000000000000000000000001010') {
-        return // Skip MATIC
-      }
+    // Wallet tokens with a balance
+    const walletTokens = Object.entries(chainBalances)
+      .filter(
+        ([address, token]) =>
+          token.balance.raw > 0n &&
+          !(token.chainID === 137 && toAddress(address) === '0x0000000000000000000000000000000000001010')
+      )
+      .map(([, token]) => token)
 
-      if (token.balance.raw > 0n) {
-        tokenList.push(token)
-      }
-    })
+    // Priority tokens (shown even without balance)
+    const priorityResolved = (priorityTokens?.[selectedChainId] || [])
+      .map((addr) => getToken({ address: toAddress(addr), chainID: selectedChainId }))
+      .filter((t) => Boolean(t.symbol))
 
-    // Also include the currently selected token even if it has no balance
-    if (value && !tokenList.some((t) => t.address?.toLowerCase() === value.toLowerCase())) {
-      const selectedToken = getToken({ address: toAddress(value), chainID: selectedChainId })
-      if (selectedToken.symbol) {
-        tokenList.push(selectedToken)
-      }
-    }
+    // Currently selected token (shown even without balance)
+    const selectedResolved = value
+      ? [getToken({ address: toAddress(value), chainID: selectedChainId })].filter((t) => Boolean(t.symbol))
+      : []
 
-    // Include priority tokens even if they have no balance
-    const chainPriorityTokens = priorityTokens?.[selectedChainId] || []
-    for (const priorityAddress of chainPriorityTokens) {
-      if (!tokenList.some((t) => t.address?.toLowerCase() === priorityAddress.toLowerCase())) {
-        const priorityToken = getToken({ address: toAddress(priorityAddress), chainID: selectedChainId })
-        if (priorityToken.symbol) {
-          tokenList.push(priorityToken)
-        }
-      }
-    }
+    // Custom address from search input
+    const customResolved =
+      customAddress && isAddress(customAddress)
+        ? [getToken({ address: toAddress(customAddress), chainID: selectedChainId })].filter((t) => Boolean(t.symbol))
+        : []
 
-    // Include custom address if valid
-    if (
-      customAddress &&
-      isAddress(customAddress) &&
-      !tokenList.some((t) => t.address?.toLowerCase() === customAddress.toLowerCase())
-    ) {
-      const customToken = getToken({ address: toAddress(customAddress), chainID: selectedChainId })
-      if (customToken.symbol) {
-        tokenList.push(customToken)
-      }
-    }
-
-    // Include explicit extra tokens (used by custom widget flows)
+    // Extra tokens for custom widget flows
     const chainExtraTokens = (extraTokens || []).filter((token) => token.chainID === selectedChainId)
-    for (const extraToken of chainExtraTokens) {
-      if (!tokenList.some((t) => t.address?.toLowerCase() === extraToken.address?.toLowerCase())) {
-        tokenList.push(extraToken)
-      }
-    }
 
-    return tokenList
+    // Merge all sources, deduplicate by address (first occurrence wins)
+    const seen = new Set<string>()
+    return [...walletTokens, ...selectedResolved, ...priorityResolved, ...customResolved, ...chainExtraTokens].filter(
+      (token) => {
+        const addr = token.address?.toLowerCase() ?? ''
+        if (seen.has(addr)) return false
+        seen.add(addr)
+        return true
+      }
+    )
   }, [balances, selectedChainId, value, customAddress, getToken, priorityTokens, extraTokens])
 
-  // Filter tokens based on search and limits
-  const filteredTokens = useMemo(() => {
+  // Build a map of vault underlying asset addresses → total TVL for ranking.
+  // Native ETH is always treated as known (ranked via highest-TVL vault asset).
+  const { vaults } = useYearn()
+  const assetTvlByChain = useMemo(() => {
+    const chainVaults = Object.values(vaults).filter(
+      (vault) => vault.chainId === selectedChainId && vault.asset?.address
+    )
+    const entries = chainVaults.map((vault) => vault.asset!.address.toLowerCase())
+    const uniqueAddrs = [...new Set(entries)]
+    const tvlMap = Object.fromEntries(
+      uniqueAddrs.map((addr) => [
+        addr,
+        chainVaults.filter((v) => v.asset!.address.toLowerCase() === addr).reduce((sum, v) => sum + (v.tvl || 0), 0)
+      ])
+    )
+
+    // Include native ETH as known with Infinity ranking so it sorts to the top
+    const ethAddr = ETH_TOKEN_ADDRESS.toLowerCase()
+    if (tvlMap[ethAddr] === undefined) {
+      return { ...tvlMap, [ethAddr]: Number.POSITIVE_INFINITY }
+    }
+    return tvlMap
+  }, [vaults, selectedChainId])
+
+  // Filter tokens based on search and limits, then split into known/unlisted
+  const { knownTokens, unlistedTokens } = useMemo(() => {
     const filtered = tokens
       .filter((token) => !limitTokens?.length || limitTokens.includes(token.address as `0x${string}`))
       .filter((token) => !excludeTokens?.length || !excludeTokens.includes(token.address as `0x${string}`))
@@ -185,13 +199,29 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
         )
       })
 
-    // Sort by balance (highest first)
-    return filtered.toSorted((a, b) => {
+    const isKnownAsset = (token: TToken): boolean => assetTvlByChain[token.address?.toLowerCase() ?? ''] !== undefined
+    const known = filtered.filter(isKnownAsset)
+    const unlisted = filtered.filter((token) => !isKnownAsset(token))
+
+    // Sort known assets by TVL rank (highest TVL first), then by balance
+    const sortedKnown = known.toSorted((a, b) => {
+      const aTvl = assetTvlByChain[a.address?.toLowerCase() ?? ''] || 0
+      const bTvl = assetTvlByChain[b.address?.toLowerCase() ?? ''] || 0
+      if (bTvl !== aTvl) return bTvl - aTvl
       const aBalance = a.balance?.raw || 0n
       const bBalance = b.balance?.raw || 0n
       return bBalance > aBalance ? 1 : -1
     })
-  }, [tokens, limitTokens, excludeTokens, searchText])
+
+    // Sort unlisted by balance (highest first)
+    const sortedUnlisted = unlisted.toSorted((a, b) => {
+      const aBalance = a.balance?.raw || 0n
+      const bBalance = b.balance?.raw || 0n
+      return bBalance > aBalance ? 1 : -1
+    })
+
+    return { knownTokens: sortedKnown, unlistedTokens: sortedUnlisted }
+  }, [tokens, limitTokens, excludeTokens, searchText, assetTvlByChain])
 
   const handleSelect = useCallback(
     (address: `0x${string}`) => {
@@ -264,13 +294,13 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           <div className="flex items-center justify-center py-8">
             <div className="w-5 h-5 border-2 border-border border-t-primary rounded-full animate-spin" />
           </div>
-        ) : filteredTokens.length === 0 ? (
+        ) : knownTokens.length === 0 && unlistedTokens.length === 0 ? (
           <div className="text-center py-8 text-text-secondary text-sm">
             {searchText ? 'No tokens found' : 'No tokens available'}
           </div>
         ) : (
           <div className="space-y-1">
-            {filteredTokens.map((token) => (
+            {knownTokens.map((token) => (
               <TokenItem
                 key={token.address}
                 token={token}
@@ -279,6 +309,30 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                 tokenType={getTokenType(token.address)}
               />
             ))}
+            {unlistedTokens.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowUnlisted((prev) => !prev)}
+                  className="flex items-center gap-1.5 w-full px-3 py-2 mt-2 text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  <IconChevron
+                    className={cl('size-3 transition-transform', showUnlisted ? 'rotate-0' : '-rotate-90')}
+                  />
+                  <span>Unlisted Tokens ({unlistedTokens.length})</span>
+                </button>
+                {showUnlisted &&
+                  unlistedTokens.map((token) => (
+                    <TokenItem
+                      key={token.address}
+                      token={token}
+                      selected={token.address === value}
+                      onSelect={() => handleSelect(token.address as `0x${string}`)}
+                      tokenType={getTokenType(token.address)}
+                    />
+                  ))}
+              </>
+            )}
           </div>
         )}
       </div>
