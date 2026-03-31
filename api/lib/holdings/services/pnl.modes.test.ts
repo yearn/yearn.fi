@@ -209,6 +209,7 @@ function configureServiceMocks(
         {
           address: VAULT,
           chainId: 1,
+          version: 'v3',
           token: {
             address: metadata.tokenAddress,
             symbol: metadata.symbol,
@@ -288,6 +289,23 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
 
     await getHoldingsPnL(USER, 'all', 'windfall', 'parallel', 'all')
     expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'parallel', 'all')
+  })
+
+  it('filters versioned pnl responses using authoritative vault metadata', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+    configureServiceMocks(createTransferInContext())
+
+    const { getHoldingsPnL } = await importPnlModule()
+
+    const v2Response = await getHoldingsPnL(USER, 'v2')
+    expect(v2Response.summary.totalVaults).toBe(0)
+    expect(v2Response.vaults).toEqual([])
+    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'seq', 'paged')
+
+    const v3Response = await getHoldingsPnL(USER, 'v3')
+    expect(v3Response.summary.totalVaults).toBe(1)
+    expect(v3Response.vaults[0]?.vaultAddress).toBe(VAULT)
+    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'seq', 'paged')
   })
 
   it('treats unknown transfer-ins as full unrealized pnl in zero-basis mode', async () => {

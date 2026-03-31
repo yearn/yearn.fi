@@ -209,6 +209,18 @@ type TPnlComputationArtifacts = {
   debugTxLedgerKeys: Set<string>
 }
 
+function filterVaultsByAuthoritativeVersion(
+  vaults: FamilyPnlLedger[],
+  vaultMetadata: Map<string, VaultMetadata>,
+  version: VaultVersion
+): FamilyPnlLedger[] {
+  if (version === 'all') {
+    return vaults
+  }
+
+  return vaults.filter((vault) => vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))?.version === version)
+}
+
 function formatLotSummaryForResponse(
   summary: TLotSummary,
   shareDecimals: number,
@@ -1679,7 +1691,7 @@ async function computeHoldingsPnLArtifacts(
   paginationMode: HoldingsEventPaginationMode
 ): Promise<TPnlComputationArtifacts> {
   debugLog('pnl', 'starting holdings pnl calculation', { version, unknownTransferInPnlMode, fetchType, paginationMode })
-  const rawContext = await fetchRawUserPnlEvents(userAddress, version, undefined, fetchType, paginationMode)
+  const rawContext = await fetchRawUserPnlEvents(userAddress, 'all', undefined, fetchType, paginationMode)
   debugLog('pnl', 'loaded raw pnl event context', {
     addressDeposits: rawContext.addressEvents.deposits.length,
     addressWithdrawals: rawContext.addressEvents.withdrawals.length,
@@ -1722,15 +1734,56 @@ async function computeHoldingsPnLArtifacts(
     chainId: vault.chainId,
     vaultAddress: vault.vaultAddress
   }))
-  const vaultMetadata = await fetchMultipleVaultsMetadata(vaultIdentifiers)
-  const ppsData = await fetchMultipleVaultsPPS(vaultIdentifiers)
+  const resolvedVaultMetadata = await fetchMultipleVaultsMetadata(vaultIdentifiers)
+  const filteredVaults = filterVaultsByAuthoritativeVersion(vaults, resolvedVaultMetadata, version)
+  const filteredVaultIdentifiers = filteredVaults.map((vault) => ({
+    chainId: vault.chainId,
+    vaultAddress: vault.vaultAddress
+  }))
+  const vaultMetadata = filteredVaultIdentifiers.reduce<Map<string, VaultMetadata>>((filtered, vault) => {
+    const key = toVaultKey(vault.chainId, vault.vaultAddress)
+    const metadata = resolvedVaultMetadata.get(key)
+    if (metadata) {
+      filtered.set(key, metadata)
+    }
+    return filtered
+  }, new Map<string, VaultMetadata>())
+
+  if (version !== 'all') {
+    debugLog('pnl', 'filtered pnl ledgers by authoritative vault version', {
+      requestedVersion: version,
+      ledgersBefore: vaults.length,
+      ledgersAfter: filteredVaults.length,
+      metadataResolved: resolvedVaultMetadata.size
+    })
+  }
+
+  if (filteredVaults.length === 0) {
+    debugLog('pnl', 'no pnl ledgers matched requested version after authoritative vault filtering', {
+      requestedVersion: version,
+      ledgersBefore: vaults.length
+    })
+    return {
+      userAddress,
+      version,
+      unknownTransferInPnlMode,
+      currentTimestamp,
+      vaults: [],
+      vaultMetadata,
+      ppsData: new Map<string, Map<number, number>>(),
+      priceData: new Map<string, Map<number, number>>(),
+      debugTxLedgerKeys
+    }
+  }
+
+  const ppsData = await fetchMultipleVaultsPPS(filteredVaultIdentifiers)
   debugLog('pnl', 'resolved vault metadata and PPS', {
-    vaults: vaultIdentifiers.length,
+    vaults: filteredVaultIdentifiers.length,
     metadataResolved: vaultMetadata.size,
     ppsResolved: ppsData.size,
     emptyPpsTimelines: Array.from(ppsData.values()).filter((timeline) => timeline.size === 0).length
   })
-  const historicalPriceLedgers = vaults.filter((vault) => !isCurrentTransferOnlyHoldingsLedger(vault))
+  const historicalPriceLedgers = filteredVaults.filter((vault) => !isCurrentTransferOnlyHoldingsLedger(vault))
   const timestamps = [
     ...new Set([
       currentTimestamp,
@@ -1759,7 +1812,7 @@ async function computeHoldingsPnLArtifacts(
     ])
   ].sort((a, b) => a - b)
   const seenTokens = new Set<string>()
-  const tokens = vaultIdentifiers.reduce<Array<{ chainId: number; address: string }>>((allTokens, vault) => {
+  const tokens = filteredVaultIdentifiers.reduce<Array<{ chainId: number; address: string }>>((allTokens, vault) => {
     const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
 
     if (!metadata) {
@@ -1791,7 +1844,7 @@ async function computeHoldingsPnLArtifacts(
     version,
     unknownTransferInPnlMode,
     currentTimestamp,
-    vaults,
+    vaults: filteredVaults,
     vaultMetadata,
     ppsData,
     priceData,
