@@ -142,11 +142,7 @@ function buildFontFingerprint(fontFamily: string, probe: TFontProbe): string | n
   renderContext.fillText(probe.sampleText, 16, 12)
 
   const imageData = renderContext.getImageData(0, 0, width, height).data
-  let hash = 2166136261
-
-  for (let index = 0; index < imageData.length; index += 4) {
-    hash = Math.imul(hash ^ imageData[index + 3], 16777619)
-  }
+  const hash = imageData.reduce((currentHash, channel) => Math.imul(currentHash ^ channel, 16777619), 2166136261)
 
   return `${width}:${height}:${hash >>> 0}`
 }
@@ -226,8 +222,33 @@ function RenderedFontHeader({
   const [fallbackMatches, setFallbackMatches] = useState<TRenderedFontMatch[]>([])
 
   useEffect(() => {
-    setIsolatedMatches(inferRenderedFontMatches(isolatedStack, candidates, probes))
-    setFallbackMatches(inferRenderedFontMatches(fallbackStack, candidates, probes))
+    let isActive = true
+
+    const syncMatches = (): void => {
+      if (!isActive) {
+        return
+      }
+
+      setIsolatedMatches(inferRenderedFontMatches(isolatedStack, candidates, probes))
+      setFallbackMatches(inferRenderedFontMatches(fallbackStack, candidates, probes))
+    }
+
+    syncMatches()
+
+    const fontSet = document.fonts
+
+    void fontSet.ready.then(() => {
+      syncMatches()
+    })
+
+    fontSet.addEventListener('loadingdone', syncMatches)
+    fontSet.addEventListener('loadingerror', syncMatches)
+
+    return () => {
+      isActive = false
+      fontSet.removeEventListener('loadingdone', syncMatches)
+      fontSet.removeEventListener('loadingerror', syncMatches)
+    }
   }, [candidates, fallbackStack, isolatedStack, probes])
 
   return (
