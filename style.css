@@ -10,11 +10,9 @@
 @theme {
   /* Font families */
   --font-family-aeonik:
-    'Aeonik', 'Aeonik Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    Roboto, Helvetica, Arial, sans-serif;
+    'Aeonik', 'Aeonik Fallback', system-ui, sans-serif;
   --font-family-aeonik-fono:
-    'Aeonik Fono', 'Aeonik Fallback', -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    'Aeonik Fono', 'Aeonik Fallback', system-ui, sans-serif;
   --font-family-aeonik-mono:
     'Aeonik Mono', 'Aeonik Mono Fallback', ui-monospace, SFMono-Regular,
     Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
@@ -166,8 +164,7 @@ html {
 body {
   background-color: var(--color-app);
   color: var(--color-text-primary);
-  font-family: 'Aeonik', 'Aeonik Fallback', -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Aeonik', 'Aeonik Fallback', system-ui, sans-serif;
   /* Mobile-optimized line height for readability */
   line-height: 1.5;
 }
