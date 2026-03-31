@@ -51,9 +51,7 @@
 /* Explicit sans fallback used when Aeonik cannot be resolved */
 @font-face {
   font-family: "Aeonik Fallback";
-  src:
-    local("SF Pro Text"), local("SF Pro Display"), local("Helvetica Neue"), local("Helvetica"), local("Arial"),
-    local("Segoe UI"), local("Roboto");
+  src: local("SF Pro Text"), local("SF Pro Display"), local("Arial"), local("Segoe UI"), local("Roboto");
   font-weight: 300 900;
   font-style: normal;
   font-display: swap;
@@ -117,6 +115,6 @@
 
 /* CSS Variables for Fonts */
 :root {
-  --font-aeonik: "Aeonik", "Aeonik Fallback", system-ui, sans-serif;
-  --font-aeonik-fono: "Aeonik Fono", "Aeonik Fallback", system-ui, sans-serif;
+  --font-aeonik: "Aeonik", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-aeonik-fono: "Aeonik Fono", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
 }

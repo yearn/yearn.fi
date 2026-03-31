@@ -15,17 +15,14 @@ type TFontStatus = 'available' | 'missing' | 'system' | 'generic' | 'unknown'
 const SANS_STACK: TFontCandidate[] = [
   { family: '"Aeonik"', kind: 'named', label: 'Aeonik', note: 'Primary self-hosted UI sans.' },
   {
-    family: '"Aeonik Fallback"',
-    kind: 'named',
-    label: 'Aeonik Fallback',
-    note: 'Explicit local alias for sane system sans.'
-  },
-  {
     family: 'system-ui',
     kind: 'system',
     label: 'system-ui',
     note: 'Cross-platform system UI sans keyword.'
   },
+  { family: '"Helvetica Neue"', kind: 'named', label: 'Helvetica Neue', note: 'Primary macOS legacy sans fallback.' },
+  { family: 'Helvetica', kind: 'named', label: 'Helvetica', note: 'Broader Apple-compatible sans fallback.' },
+  { family: 'Arial', kind: 'named', label: 'Arial', note: 'Cross-platform safety-net sans.' },
   { family: 'sans-serif', kind: 'generic', label: 'sans-serif', note: 'Browser generic sans fallback.' }
 ]
 
