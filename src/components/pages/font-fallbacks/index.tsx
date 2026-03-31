@@ -1,5 +1,4 @@
 import { Meta } from '@shared/components/Meta'
-import { cl } from '@shared/utils'
 import type { ReactElement, ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 
@@ -10,7 +9,20 @@ type TFontCandidate = {
   note: string
 }
 
-type TFontStatus = 'available' | 'missing' | 'system' | 'generic' | 'unknown'
+type TFontIdentityCandidate = Pick<TFontCandidate, 'family' | 'kind' | 'label'>
+type TFontProbe = {
+  fontSizePx: number
+  fontStyle: 'normal' | 'italic'
+  fontWeight: number
+  label: string
+  sampleText: string
+}
+
+type TRenderedFontMatch = {
+  aliases: string[]
+  label: string
+  primaryLabel: string | null
+}
 
 const SANS_STACK: TFontCandidate[] = [
   { family: '"Aeonik"', kind: 'named', label: 'Aeonik', note: 'Primary self-hosted UI sans.' },
@@ -31,6 +43,45 @@ const MONO_STACK: TFontCandidate[] = [
   { family: 'Consolas', kind: 'named', label: 'Consolas', note: 'Preferred Windows mono fallback.' },
   { family: '"Liberation Mono"', kind: 'named', label: 'Liberation Mono', note: 'Common Linux mono fallback.' },
   { family: 'monospace', kind: 'generic', label: 'monospace', note: 'Browser generic mono fallback.' }
+]
+
+const SANS_RENDER_CANDIDATES: TFontIdentityCandidate[] = [
+  { family: '"Aeonik"', kind: 'named', label: 'Aeonik' },
+  { family: '"SF Pro Text"', kind: 'named', label: 'SF Pro Text' },
+  { family: '"SF Pro Display"', kind: 'named', label: 'SF Pro Display' },
+  { family: 'Helvetica', kind: 'named', label: 'Helvetica' },
+  { family: 'Arial', kind: 'named', label: 'Arial' },
+  { family: '"Segoe UI"', kind: 'named', label: 'Segoe UI' },
+  { family: 'Roboto', kind: 'named', label: 'Roboto' },
+  { family: 'system-ui', kind: 'system', label: 'system-ui' },
+  { family: 'sans-serif', kind: 'generic', label: 'sans-serif' }
+]
+
+const MONO_RENDER_CANDIDATES: TFontIdentityCandidate[] = [
+  { family: '"Aeonik Mono"', kind: 'named', label: 'Aeonik Mono' },
+  { family: '"SFMono-Regular"', kind: 'named', label: 'SFMono-Regular' },
+  { family: 'Menlo', kind: 'named', label: 'Menlo' },
+  { family: 'Consolas', kind: 'named', label: 'Consolas' },
+  { family: '"Liberation Mono"', kind: 'named', label: 'Liberation Mono' },
+  { family: 'monospace', kind: 'generic', label: 'monospace' }
+]
+
+const SANS_RENDER_PROBES: TFontProbe[] = [
+  { label: 'Regular', fontSizePx: 14, fontStyle: 'normal', fontWeight: 400, sampleText: 'Yearn BOLD Stability Pool' },
+  { label: 'Bold', fontSizePx: 18, fontStyle: 'normal', fontWeight: 900, sampleText: 'Yearn BOLD 2.74%' },
+  { label: 'Italic', fontSizePx: 14, fontStyle: 'italic', fontWeight: 400, sampleText: 'Italic stress sample' }
+]
+
+const MONO_RENDER_PROBES: TFontProbe[] = [
+  { label: 'Regular', fontSizePx: 16, fontStyle: 'normal', fontWeight: 400, sampleText: '2.74% 3.00% $4.54M' },
+  { label: 'Bold', fontSizePx: 14, fontStyle: 'normal', fontWeight: 700, sampleText: '9,430 BOLD ($9,480)' },
+  {
+    label: 'Italic',
+    fontSizePx: 12,
+    fontStyle: 'italic',
+    fontWeight: 400,
+    sampleText: 'Projected settlement 03/26/26 14:08'
+  }
 ]
 
 const BODY_STACK = SANS_STACK.map((entry) => entry.family).join(', ')
@@ -55,39 +106,145 @@ function buildFallbackStack(candidates: TFontCandidate[], startIndex: number): s
     .join(', ')
 }
 
-function getNamedFontStatus(candidate: TFontCandidate): TFontStatus {
-  if (candidate.kind === 'system') {
-    return 'system'
-  }
-  if (candidate.kind === 'generic') {
-    return 'generic'
+function buildCanvasFont(probe: TFontProbe, fontFamily: string): string {
+  return `${probe.fontStyle} ${probe.fontWeight} ${probe.fontSizePx}px ${fontFamily}`
+}
+
+function buildFontFingerprint(fontFamily: string, probe: TFontProbe): string | null {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d', { willReadFrequently: true })
+
+  if (!context) {
+    return null
   }
 
-  try {
-    return document.fonts.check(`16px ${candidate.family}`) ? 'available' : 'missing'
-  } catch {
-    return 'unknown'
+  context.font = buildCanvasFont(probe, fontFamily)
+  context.textBaseline = 'top'
+
+  const width = Math.max(1, Math.ceil(context.measureText(probe.sampleText).width + 32))
+  const height = Math.max(1, Math.ceil(probe.fontSizePx * 3))
+
+  canvas.width = width
+  canvas.height = height
+
+  const renderContext = canvas.getContext('2d', { willReadFrequently: true })
+
+  if (!renderContext) {
+    return null
+  }
+
+  renderContext.fillStyle = '#ffffff'
+  renderContext.fillRect(0, 0, width, height)
+  renderContext.fillStyle = '#000000'
+  renderContext.font = buildCanvasFont(probe, fontFamily)
+  renderContext.textBaseline = 'top'
+  renderContext.fontKerning = 'normal'
+  renderContext.fillText(probe.sampleText, 16, 12)
+
+  const imageData = renderContext.getImageData(0, 0, width, height).data
+  let hash = 2166136261
+
+  for (let index = 0; index < imageData.length; index += 4) {
+    hash = Math.imul(hash ^ imageData[index + 3], 16777619)
+  }
+
+  return `${width}:${height}:${hash >>> 0}`
+}
+
+function rankRenderedMatches(matches: TFontIdentityCandidate[]): TFontIdentityCandidate[] {
+  const priority = {
+    named: 0,
+    system: 1,
+    generic: 2
+  }
+
+  return [...matches].sort((candidateA, candidateB) => priority[candidateA.kind] - priority[candidateB.kind])
+}
+
+function inferRenderedFontMatch(
+  stack: string,
+  candidates: TFontIdentityCandidate[],
+  probe: TFontProbe
+): TRenderedFontMatch {
+  const stackFingerprint = buildFontFingerprint(stack, probe)
+
+  if (!stackFingerprint) {
+    return { label: probe.label, primaryLabel: null, aliases: [] }
+  }
+
+  const matches = candidates.filter((candidate) => buildFontFingerprint(candidate.family, probe) === stackFingerprint)
+
+  if (!matches.length) {
+    return { label: probe.label, primaryLabel: null, aliases: [] }
+  }
+
+  const rankedMatches = rankRenderedMatches(matches)
+
+  return {
+    label: probe.label,
+    primaryLabel: rankedMatches[0]?.label || null,
+    aliases: rankedMatches.slice(1).map((candidate) => candidate.label)
   }
 }
 
-function statusClassName(status: TFontStatus): string {
-  return {
-    available: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    missing: 'border-red-200 bg-red-50 text-red-700',
-    system: 'border-blue-200 bg-blue-50 text-blue-700',
-    generic: 'border-neutral-300 bg-neutral-100 text-neutral-700',
-    unknown: 'border-neutral-300 bg-neutral-100 text-neutral-700'
-  }[status]
+function inferRenderedFontMatches(
+  stack: string,
+  candidates: TFontIdentityCandidate[],
+  probes: TFontProbe[]
+): TRenderedFontMatch[] {
+  return probes.map((probe) => inferRenderedFontMatch(stack, candidates, probe))
 }
 
-function statusLabel(status: TFontStatus): string {
-  return {
-    available: 'Available',
-    missing: 'Missing',
-    system: 'System keyword',
-    generic: 'Generic family',
-    unknown: 'Unknown'
-  }[status]
+function formatRenderedFontMatches(matches: TRenderedFontMatch[]): string {
+  const primaryLabels = [
+    ...new Set(matches.map((match) => match.primaryLabel).filter((label): label is string => Boolean(label)))
+  ]
+
+  if (!primaryLabels.length) {
+    return 'No exact match in known candidates'
+  }
+
+  if (primaryLabels.length === 1) {
+    return primaryLabels[0]
+  }
+
+  return matches.map((match) => `${match.label} ${match.primaryLabel || 'Unknown'}`).join(' · ')
+}
+
+function RenderedFontHeader({
+  isolatedStack,
+  fallbackStack,
+  candidates,
+  probes
+}: {
+  candidates: TFontIdentityCandidate[]
+  fallbackStack: string
+  isolatedStack: string
+  probes: TFontProbe[]
+}): ReactElement {
+  const [isolatedMatches, setIsolatedMatches] = useState<TRenderedFontMatch[]>([])
+  const [fallbackMatches, setFallbackMatches] = useState<TRenderedFontMatch[]>([])
+
+  useEffect(() => {
+    setIsolatedMatches(inferRenderedFontMatches(isolatedStack, candidates, probes))
+    setFallbackMatches(inferRenderedFontMatches(fallbackStack, candidates, probes))
+  }, [candidates, fallbackStack, isolatedStack, probes])
+
+  return (
+    <div className={'min-w-0 rounded-lg border border-border bg-surface-secondary px-3 py-2'}>
+      <p className={'font-number text-[10px] uppercase tracking-wide text-text-tertiary'}>{'Likely Rendered'}</p>
+      <div className={'mt-2 grid gap-1 text-xs text-text-secondary'}>
+        <p>
+          <span className={'font-medium text-text-primary'}>{'Isolated: '}</span>
+          {formatRenderedFontMatches(isolatedMatches)}
+        </p>
+        <p>
+          <span className={'font-medium text-text-primary'}>{'Fallback: '}</span>
+          {formatRenderedFontMatches(fallbackMatches)}
+        </p>
+      </div>
+    </div>
+  )
 }
 
 function PreviewShell({ children, fontFamily }: { children: ReactNode; fontFamily: string }): ReactElement {
@@ -98,7 +255,7 @@ function PreviewShell({ children, fontFamily }: { children: ReactNode; fontFamil
   )
 }
 
-function PreviewPanel({ label, stack, preview }: { label: string; stack: string; preview: ReactNode }): ReactElement {
+function PreviewPanel({ label, stack, preview }: { label: string; preview: ReactNode; stack: string }): ReactElement {
   return (
     <div className={'flex flex-col gap-2'}>
       <div className={'flex flex-col gap-1'}>
@@ -186,7 +343,8 @@ function FontCard({
   fallbackStack,
   isolatedPreview,
   fallbackPreview,
-  status,
+  probeCandidates,
+  probes,
   order
 }: {
   candidate: TFontCandidate
@@ -194,7 +352,8 @@ function FontCard({
   fallbackStack: string
   isolatedPreview: ReactNode
   order: number
-  status: TFontStatus
+  probeCandidates: TFontIdentityCandidate[]
+  probes: TFontProbe[]
 }): ReactElement {
   return (
     <article className={'flex h-full flex-col gap-4 border border-border bg-surface p-4'}>
@@ -203,9 +362,12 @@ function FontCard({
           <p className={'font-number text-xs text-text-tertiary'}>{`${order}. ${candidate.label}`}</p>
           <h2 className={'text-base font-semibold text-text-primary'}>{candidate.note}</h2>
         </div>
-        <span className={cl('rounded-full border px-2 py-1 text-xs font-medium', statusClassName(status))}>
-          {statusLabel(status)}
-        </span>
+        <RenderedFontHeader
+          isolatedStack={candidate.family}
+          fallbackStack={fallbackStack}
+          candidates={probeCandidates}
+          probes={probes}
+        />
       </div>
       <PreviewPanel label={'Isolated family'} stack={candidate.family} preview={isolatedPreview} />
       <PreviewPanel label={'Fallback from here'} stack={fallbackStack} preview={fallbackPreview} />
@@ -237,7 +399,6 @@ function StackPreview({
 }
 
 function Index(): ReactElement {
-  const [statuses, setStatuses] = useState<Record<string, TFontStatus>>({})
   const [platform, setPlatform] = useState('Unknown platform')
 
   useEffect(() => {
@@ -246,15 +407,6 @@ function Index(): ReactElement {
     }
 
     setPlatform(navigatorWithUserAgentData.userAgentData?.platform || navigator.platform || 'Unknown platform')
-
-    const updateStatuses = () =>
-      setStatuses(
-        Object.fromEntries(
-          [...SANS_STACK, ...MONO_STACK].map((candidate) => [candidate.label, getNamedFontStatus(candidate)])
-        )
-      )
-
-    void document.fonts.ready.then(updateStatuses).catch(updateStatuses)
   }, [])
 
   return (
@@ -279,7 +431,8 @@ function Index(): ReactElement {
                 Use this page to compare the live body stack and number stack against each individual fallback
                 candidate. Each card shows the isolated family first, then the actual remaining fallback chain from that
                 point in the stack. The bold weights mirror the vault detail route, and the italic lines are included as
-                a deliberate stress test.
+                a deliberate stress test. The rendered-face readout is inferred by matching canvas output against known
+                families on this machine.
               </p>
             </div>
             <div className={'grid gap-2 text-sm text-text-secondary'}>
@@ -318,7 +471,8 @@ function Index(): ReactElement {
                 fallbackStack={buildFallbackStack(SANS_STACK, index)}
                 isolatedPreview={<VaultSansPreview fontFamily={candidate.family} />}
                 order={index + 1}
-                status={statuses[candidate.label] || 'unknown'}
+                probeCandidates={SANS_RENDER_CANDIDATES}
+                probes={SANS_RENDER_PROBES}
               />
             ))}
           </div>
@@ -340,7 +494,8 @@ function Index(): ReactElement {
                 fallbackStack={buildFallbackStack(MONO_STACK, index)}
                 isolatedPreview={<VaultMonoPreview fontFamily={candidate.family} />}
                 order={index + 1}
-                status={statuses[candidate.label] || 'unknown'}
+                probeCandidates={MONO_RENDER_CANDIDATES}
+                probes={MONO_RENDER_PROBES}
               />
             ))}
           </div>
