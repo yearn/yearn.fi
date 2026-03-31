@@ -192,6 +192,8 @@ For some recognized Ethereum mainnet CoW settlement transactions, the PnL path a
 ### GET `/api/holdings/history`
 Holdings history for charts (date + total value).
 
+The history series ends at the latest settled UTC day, not an intraday "today" point. This keeps the daily series cacheable and avoids recomputing a moving final point on every request. For current portfolio value, use `/api/holdings/pnl`.
+
 ```bash
 curl "http://localhost:3001/api/holdings/history?address=0x..."
 ```

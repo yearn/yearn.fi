@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VaultVersion } from '../lib/holdings'
 import { checkRateLimit } from '../lib/holdings'
 
 function simpleHash(str: string): string {
@@ -59,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  const { address, refresh } = req.query
+  const { address, refresh, version: versionParam } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -69,15 +70,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid Ethereum address' })
   }
 
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
   try {
     // Clear cache if refresh=true (useful when new vaults are indexed)
     if (refresh === 'true' || refresh === '1') {
       const { clearUserCache } = await import('../lib/holdings/services/cache')
-      await clearUserCache(address)
+      await clearUserCache(address, version)
     }
 
     const { getHistoricalHoldings } = await import('../lib/holdings')
-    const holdings = await getHistoricalHoldings(address)
+    const holdings = await getHistoricalHoldings(address, version)
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
     if (!hasHoldings) {
@@ -87,6 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
     return res.status(200).json({
       address: holdings.address,
+      version,
       dataPoints: holdings.dataPoints.map((dp) => ({
         date: dp.date,
         value: dp.totalUsdValue

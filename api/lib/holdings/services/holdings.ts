@@ -98,10 +98,11 @@ export function getUniqueVaults(timeline: TimelineEvent[]): Array<{ vaultAddress
   return vaults
 }
 
-export function generateDailyTimestamps(days: number): number[] {
+export function generateDailyTimestamps(days: number, endOffsetDays = 0): number[] {
   const timestamps: number[] = []
   const now = new Date()
   now.setUTCHours(0, 0, 0, 0)
+  now.setUTCDate(now.getUTCDate() - endOffsetDays)
 
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now)

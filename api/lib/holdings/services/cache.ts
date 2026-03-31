@@ -1,5 +1,6 @@
 import { getPool, isDatabaseEnabled } from '../db/connection'
 import { debugError, debugLog } from './debug'
+import type { VaultVersion } from './graphql'
 
 export interface CachedTotal {
   date: string
@@ -19,7 +20,12 @@ export interface CachedPriceMiss {
 
 const PRICE_MISS_TTL_MS = 7 * 24 * 60 * 60 * 1_000
 
-export async function getCachedTotals(userAddress: string, startDate: string, endDate: string): Promise<CachedTotal[]> {
+export async function getCachedTotals(
+  userAddress: string,
+  version: VaultVersion,
+  startDate: string,
+  endDate: string
+): Promise<CachedTotal[]> {
   if (!isDatabaseEnabled()) {
     debugLog('cache', 'skipping cached totals lookup because database is disabled')
     return []
@@ -32,16 +38,16 @@ export async function getCachedTotals(userAddress: string, startDate: string, en
   }
 
   try {
-    debugLog('cache', 'loading cached totals', { userAddress: userAddress.toLowerCase(), startDate, endDate })
-    const result = await pool.query<{ date: Date; usd_value: string }>(
-      `SELECT date, usd_value FROM holdings_totals
-       WHERE user_address = $1 AND date >= $2 AND date <= $3
+    debugLog('cache', 'loading cached totals', { userAddress: userAddress.toLowerCase(), version, startDate, endDate })
+    const result = await pool.query<{ date: string; usd_value: string }>(
+      `SELECT date::text AS date, usd_value FROM holdings_totals
+       WHERE user_address = $1 AND version = $2 AND date >= $3 AND date <= $4
        ORDER BY date ASC`,
-      [userAddress.toLowerCase(), startDate, endDate]
+      [userAddress.toLowerCase(), version, startDate, endDate]
     )
 
     const totals = result.rows.map((row) => ({
-      date: row.date.toISOString().split('T')[0],
+      date: row.date,
       usdValue: parseFloat(row.usd_value)
     }))
 
@@ -54,7 +60,11 @@ export async function getCachedTotals(userAddress: string, startDate: string, en
   }
 }
 
-export async function saveCachedTotals(userAddress: string, totals: CachedTotal[]): Promise<void> {
+export async function saveCachedTotals(
+  userAddress: string,
+  version: VaultVersion,
+  totals: CachedTotal[]
+): Promise<void> {
   if (!isDatabaseEnabled() || totals.length === 0) {
     if (totals.length > 0) {
       debugLog('cache', 'skipping cached totals save because database is disabled', { rows: totals.length })
@@ -69,21 +79,25 @@ export async function saveCachedTotals(userAddress: string, totals: CachedTotal[
   }
 
   try {
-    debugLog('cache', 'saving cached totals', { userAddress: userAddress.toLowerCase(), rows: totals.length })
+    debugLog('cache', 'saving cached totals', {
+      userAddress: userAddress.toLowerCase(),
+      version,
+      rows: totals.length
+    })
     const values: unknown[] = []
     const placeholders: string[] = []
     let paramIndex = 1
 
     for (const total of totals) {
-      placeholders.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2})`)
-      values.push(userAddress.toLowerCase(), total.date, total.usdValue)
-      paramIndex += 3
+      placeholders.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3})`)
+      values.push(userAddress.toLowerCase(), version, total.date, total.usdValue)
+      paramIndex += 4
     }
 
     const query = `
-      INSERT INTO holdings_totals (user_address, date, usd_value)
+      INSERT INTO holdings_totals (user_address, version, date, usd_value)
       VALUES ${placeholders.join(', ')}
-      ON CONFLICT (user_address, date)
+      ON CONFLICT (user_address, version, date)
       DO UPDATE SET usd_value = EXCLUDED.usd_value, updated_at = NOW()
     `
 
@@ -345,10 +359,11 @@ export async function deleteStaleCache(): Promise<number> {
   }
 }
 
-export async function clearUserCache(userAddress: string): Promise<number> {
+export async function clearUserCache(userAddress: string, version?: VaultVersion): Promise<number> {
   if (!isDatabaseEnabled()) {
     debugLog('cache', 'skipping user cache clear because database is disabled', {
-      userAddress: userAddress.toLowerCase()
+      userAddress: userAddress.toLowerCase(),
+      version: version ?? null
     })
     return 0
   }
@@ -356,19 +371,29 @@ export async function clearUserCache(userAddress: string): Promise<number> {
   const pool = await getPool()
   if (!pool) {
     debugLog('cache', 'skipping user cache clear because database pool is unavailable', {
-      userAddress: userAddress.toLowerCase()
+      userAddress: userAddress.toLowerCase(),
+      version: version ?? null
     })
     return 0
   }
 
   try {
-    const result = await pool.query('DELETE FROM holdings_totals WHERE user_address = $1', [userAddress.toLowerCase()])
+    const normalizedAddress = userAddress.toLowerCase()
+    const result = version
+      ? await pool.query('DELETE FROM holdings_totals WHERE user_address = $1 AND version = $2', [
+          normalizedAddress,
+          version
+        ])
+      : await pool.query('DELETE FROM holdings_totals WHERE user_address = $1', [normalizedAddress])
     const deletedCount = result.rowCount ?? 0
-    console.log(`[Cache] Cleared ${deletedCount} cached rows for user ${userAddress}`)
+    console.log(`[Cache] Cleared ${deletedCount} cached rows for user ${userAddress}${version ? ` (${version})` : ''}`)
     return deletedCount
   } catch (error) {
     console.error('[Cache] Failed to clear user cache:', error)
-    debugError('cache', 'user cache clear failed', error, { userAddress: userAddress.toLowerCase() })
+    debugError('cache', 'user cache clear failed', error, {
+      userAddress: userAddress.toLowerCase(),
+      version: version ?? null
+    })
     return 0
   }
 }
@@ -493,6 +518,7 @@ export interface CachedTotalsResult {
 
 export async function getCachedTotalsWithTimestamp(
   userAddress: string,
+  version: VaultVersion,
   startDate: string,
   endDate: string
 ): Promise<CachedTotalsResult> {
@@ -510,18 +536,19 @@ export async function getCachedTotalsWithTimestamp(
   try {
     debugLog('cache', 'loading cached totals with timestamps', {
       userAddress: userAddress.toLowerCase(),
+      version,
       startDate,
       endDate
     })
-    const result = await pool.query<{ date: Date; usd_value: string; updated_at: Date }>(
-      `SELECT date, usd_value, updated_at FROM holdings_totals
-       WHERE user_address = $1 AND date >= $2 AND date <= $3
+    const result = await pool.query<{ date: string; usd_value: string; updated_at: Date }>(
+      `SELECT date::text AS date, usd_value, updated_at FROM holdings_totals
+       WHERE user_address = $1 AND version = $2 AND date >= $3 AND date <= $4
        ORDER BY date ASC`,
-      [userAddress.toLowerCase(), startDate, endDate]
+      [userAddress.toLowerCase(), version, startDate, endDate]
     )
 
     const totals = result.rows.map((row) => ({
-      date: row.date.toISOString().split('T')[0],
+      date: row.date,
       usdValue: parseFloat(row.usd_value)
     }))
 
@@ -539,6 +566,7 @@ export async function getCachedTotalsWithTimestamp(
     console.error('[Cache] Failed to get cached totals with timestamp:', error)
     debugError('cache', 'cached totals with timestamp lookup failed', error, {
       userAddress: userAddress.toLowerCase(),
+      version,
       startDate,
       endDate
     })
