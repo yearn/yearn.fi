@@ -1,7 +1,10 @@
 /* Aeonik Font Family */
 @font-face {
   font-family: "Aeonik";
-  src: url("./Aeonik-Light.ttf") format("truetype");
+  src:
+    local("Aeonik Light"),
+    local("Aeonik-Light"),
+    url("./Aeonik-Light.ttf") format("truetype");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
@@ -10,6 +13,9 @@
 @font-face {
   font-family: "Aeonik";
   src:
+    local("Aeonik"),
+    local("Aeonik Regular"),
+    local("Aeonik-Regular"),
     url("./Aeonik-Regular.woff2") format("woff2"),
     url("./Aeonik-Regular.woff") format("woff"),
     url("./Aeonik-Regular.ttf") format("truetype");
@@ -21,6 +27,8 @@
 @font-face {
   font-family: "Aeonik";
   src:
+    local("Aeonik Bold"),
+    local("Aeonik-Bold"),
     url("./Aeonik-Bold.woff2") format("woff2"),
     url("./Aeonik-Bold.woff") format("woff"),
     url("./Aeonik-Bold.ttf") format("truetype");
@@ -31,8 +39,22 @@
 
 @font-face {
   font-family: "Aeonik";
-  src: url("./Aeonik-Black.ttf") format("truetype");
+  src:
+    local("Aeonik Black"),
+    local("Aeonik-Black"),
+    url("./Aeonik-Black.ttf") format("truetype");
   font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Explicit sans fallback used when Aeonik cannot be resolved */
+@font-face {
+  font-family: "Aeonik Fallback";
+  src:
+    local("SF Pro Text"), local("SF Pro Display"), local("Helvetica Neue"), local("Helvetica"), local("Arial"),
+    local("Segoe UI"), local("Roboto");
+  font-weight: 300 900;
   font-style: normal;
   font-display: swap;
 }
@@ -58,6 +80,9 @@
 @font-face {
   font-family: "Aeonik Mono";
   src:
+    local("Aeonik Mono"),
+    local("AeonikMono Regular"),
+    local("AeonikMono-Regular"),
     url("./AeonikMono-Regular.woff2") format("woff2"),
     url("./AeonikMono-Regular.woff") format("woff"),
     url("./AeonikMono-Regular.ttf") format("truetype");
@@ -69,6 +94,9 @@
 @font-face {
   font-family: "Aeonik Mono";
   src:
+    local("Aeonik Mono Bold"),
+    local("AeonikMono Bold"),
+    local("AeonikMono-Bold"),
     url("./AeonikMono-Bold.woff2") format("woff2"),
     url("./AeonikMono-Bold.woff") format("woff"),
     url("./AeonikMono-Bold.ttf") format("truetype");
@@ -77,10 +105,21 @@
   font-display: swap;
 }
 
+/* Explicit monospace fallback used when Aeonik Mono cannot be resolved */
+@font-face {
+  font-family: "Aeonik Mono Fallback";
+  src:
+    local("SF Mono"), local("SFMono-Regular"), local("Menlo"), local("Monaco"), local("Consolas"), local("Courier New");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* CSS Variables for Fonts */
 :root {
-  --font-aeonik: "Aeonik", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-aeonik:
+    "Aeonik", "Aeonik Fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-aeonik-fono:
-    "Aeonik Fono", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --scp-font: "Source Code Pro", "Aeonik Mono", Consolas, "Courier New", monospace;
+    "Aeonik Fono", "Aeonik Fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
 }
