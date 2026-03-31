@@ -103,16 +103,6 @@
   font-display: swap;
 }
 
-/* Explicit monospace fallback used when Aeonik Mono cannot be resolved */
-@font-face {
-  font-family: "Aeonik Mono Fallback";
-  src:
-    local("SF Mono"), local("SFMono-Regular"), local("Menlo"), local("Monaco"), local("Consolas"), local("Courier New");
-  font-weight: 400 700;
-  font-style: normal;
-  font-display: swap;
-}
-
 /* CSS Variables for Fonts */
 :root {
   --font-aeonik: "Aeonik", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;

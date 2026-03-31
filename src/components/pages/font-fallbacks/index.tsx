@@ -28,19 +28,15 @@ const SANS_STACK: TFontCandidate[] = [
 
 const MONO_STACK: TFontCandidate[] = [
   { family: '"Aeonik Mono"', kind: 'named', label: 'Aeonik Mono', note: 'Primary mono for numeric UI samples.' },
-  {
-    family: '"Aeonik Mono Fallback"',
-    kind: 'named',
-    label: 'Aeonik Mono Fallback',
-    note: 'Explicit local alias for system mono fonts.'
-  },
-  { family: 'ui-monospace', kind: 'system', label: 'ui-monospace', note: 'Browser system mono keyword.' },
-  { family: 'SFMono-Regular', kind: 'named', label: 'SFMono-Regular', note: 'macOS system mono face.' },
-  { family: 'Menlo', kind: 'named', label: 'Menlo', note: 'Modern macOS fallback mono.' },
-  { family: 'Monaco', kind: 'named', label: 'Monaco', note: 'Older macOS mono fallback.' },
-  { family: 'Consolas', kind: 'named', label: 'Consolas', note: 'Primary Windows mono.' },
+  { family: 'Menlo', kind: 'named', label: 'Menlo', note: 'Preferred macOS mono fallback.' },
+  { family: 'Consolas', kind: 'named', label: 'Consolas', note: 'Preferred Windows mono fallback.' },
   { family: '"Liberation Mono"', kind: 'named', label: 'Liberation Mono', note: 'Common Linux mono fallback.' },
-  { family: '"Courier New"', kind: 'named', label: 'Courier New', note: 'Last explicit named mono fallback.' },
+  {
+    family: '"Courier New"',
+    kind: 'named',
+    label: 'Courier New',
+    note: 'Bottom named mono fallback across platforms.'
+  },
   { family: 'monospace', kind: 'generic', label: 'monospace', note: 'Browser generic mono fallback.' }
 ]
 
