@@ -105,6 +105,6 @@
 
 /* CSS Variables for Fonts */
 :root {
-  --font-aeonik: "Aeonik", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-aeonik-fono: "Aeonik Fono", system-ui, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-aeonik: "Aeonik", Helvetica, Arial, system-ui, sans-serif;
+  --font-aeonik-fono: "Aeonik Fono", Helvetica, Arial, system-ui, sans-serif;
 }

@@ -14,15 +14,14 @@ type TFontStatus = 'available' | 'missing' | 'system' | 'generic' | 'unknown'
 
 const SANS_STACK: TFontCandidate[] = [
   { family: '"Aeonik"', kind: 'named', label: 'Aeonik', note: 'Primary self-hosted UI sans.' },
+  { family: 'Helvetica', kind: 'named', label: 'Helvetica', note: 'Primary Apple-compatible sans fallback.' },
+  { family: 'Arial', kind: 'named', label: 'Arial', note: 'Cross-platform safety-net sans.' },
   {
     family: 'system-ui',
     kind: 'system',
     label: 'system-ui',
-    note: 'Cross-platform system UI sans keyword.'
+    note: 'Late cross-platform system UI fallback keyword.'
   },
-  { family: '"Helvetica Neue"', kind: 'named', label: 'Helvetica Neue', note: 'Primary macOS legacy sans fallback.' },
-  { family: 'Helvetica', kind: 'named', label: 'Helvetica', note: 'Broader Apple-compatible sans fallback.' },
-  { family: 'Arial', kind: 'named', label: 'Arial', note: 'Cross-platform safety-net sans.' },
   { family: 'sans-serif', kind: 'generic', label: 'sans-serif', note: 'Browser generic sans fallback.' }
 ]
 
@@ -31,12 +30,6 @@ const MONO_STACK: TFontCandidate[] = [
   { family: 'Menlo', kind: 'named', label: 'Menlo', note: 'Preferred macOS mono fallback.' },
   { family: 'Consolas', kind: 'named', label: 'Consolas', note: 'Preferred Windows mono fallback.' },
   { family: '"Liberation Mono"', kind: 'named', label: 'Liberation Mono', note: 'Common Linux mono fallback.' },
-  {
-    family: '"Courier New"',
-    kind: 'named',
-    label: 'Courier New',
-    note: 'Bottom named mono fallback across platforms.'
-  },
   { family: 'monospace', kind: 'generic', label: 'monospace', note: 'Browser generic mono fallback.' }
 ]
 
