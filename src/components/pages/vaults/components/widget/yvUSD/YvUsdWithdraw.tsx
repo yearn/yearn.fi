@@ -821,7 +821,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const lockedWithdrawArgs = lockedWithdrawExecutionPlan[0]?.args
   const unlockedWithdrawArgs = lockedWithdrawExecutionPlan[1]?.args
 
-  const prepareLockedRedeemNow: UseSimulateContractReturnType = useSimulateContract({
+  const prepareLockedRedeemNow: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: erc4626Abi,
     functionName: 'redeem',
@@ -838,7 +838,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
         executionLockedWithdrawShares > 0n
     }
   })
-  const prepareLockedWithdrawNow: UseSimulateContractReturnType = useSimulateContract({
+  const prepareLockedWithdrawNow: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: erc4626Abi,
     functionName: 'withdraw',
@@ -858,7 +858,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const prepareLockedWithdrawStep =
     executionLockedWithdrawMethod === 'redeem' ? prepareLockedRedeemNow : prepareLockedWithdrawNow
 
-  const prepareUnlockedWithdraw: UseSimulateContractReturnType = useSimulateContract({
+  const prepareUnlockedWithdraw: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_UNLOCKED_ADDRESS,
     abi: erc4626Abi,
     functionName: 'withdraw',
