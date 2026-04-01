@@ -1,7 +1,6 @@
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { defineConfig } from 'vite'
-import webfontDownload from 'vite-plugin-webfont-dl'
 
 const API_PROXY_TARGET = 'http://localhost:3001'
 const API_HEALTHCHECK_PATH = '/api/enso/balances'
@@ -64,17 +63,7 @@ function previewApiGuard() {
 }
 
 export default defineConfig({
-  plugins: [
-    react(),
-    previewApiGuard(),
-    webfontDownload(['https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600;700&display=swap'], {
-      injectAsStyleTag: true,
-      minifyCss: true,
-      async: true,
-      cache: true,
-      proxy: false
-    })
-  ],
+  plugins: [react(), previewApiGuard()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
