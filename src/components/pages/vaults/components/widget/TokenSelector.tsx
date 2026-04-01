@@ -10,7 +10,7 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TToken } from '@shared/types'
-import { cl, formatTAmount, toAddress } from '@shared/utils'
+import { cl, formatTAmount, isZeroAddress, toAddress } from '@shared/utils'
 import { type FC, useCallback, useMemo, useState } from 'react'
 import { isAddress } from 'viem'
 import { CloseIcon } from './shared/Icons'
@@ -142,21 +142,11 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   const [searchText, setSearchText] = useState('')
   const [selectedChainId, setSelectedChainId] = useState(chainId)
   const { getToken, isLoading, balances } = useWallet()
-
-  // Derived: treat valid address input as custom token
-  const customAddress = searchText && isAddress(searchText) ? (searchText as `0x${string}`) : undefined
-
-  // Available chains - you can expand this list as needed
-  const availableChains = useMemo(
-    () => [
-      { id: 1, name: 'Ethereum' },
-      { id: 10, name: 'Optimism' },
-      { id: 137, name: 'Polygon' },
-      { id: 42161, name: 'Arbitrum' },
-      { id: 8453, name: 'Base' },
-      { id: 747474, name: 'Katana' }
-    ],
-    []
+  const { tokenLists } = useTokenList()
+  const { allVaults, getPrice } = useYearn()
+  const customAddress = useMemo(
+    () => (searchText && isAddress(searchText) ? (searchText as `0x${string}`) : undefined),
+    [searchText]
   )
 
   const priorityTokenAddresses = useMemo(
@@ -378,7 +368,18 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       topTokenAddresses,
       getTokenUsdValue
     })
-  }, [tokens, limitTokens, excludeTokens, searchText])
+  }, [
+    tokens,
+    mode,
+    limitTokens,
+    combinedExcludeTokens,
+    searchText,
+    yearnKnownTokenAddresses,
+    explicitTokenAddresses,
+    minValueExemptTokenAddresses,
+    topTokenAddresses,
+    getTokenUsdValue
+  ])
 
   const handleSelect = useCallback(
     (address: `0x${string}`) => {

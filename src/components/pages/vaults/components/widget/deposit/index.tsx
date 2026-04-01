@@ -2,6 +2,7 @@ import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmou
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
+import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
@@ -22,6 +23,7 @@ import { useWidgetContext } from '../shared/useWidgetContext'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
 import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
+import { DEPOSIT_COMMON_TOKENS_BY_CHAIN } from '../withdraw/constants'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
 import { getDepositApprovalSpender } from './approvalSpender'
@@ -157,6 +159,7 @@ export function WidgetDeposit({
     trackEvent,
     ensoEnabled
   } = useWidgetContext({ chainId, vaultAddress })
+  const { allVaults } = useYearn()
 
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
