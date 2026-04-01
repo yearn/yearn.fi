@@ -484,15 +484,13 @@ export function WidgetDeposit({
     onResult: setDepositInput
   })
 
-  // Fires via onStepSuccess when the deposit/stake tx is confirmed on-chain,
-  // before the success screen and confetti appear. Starting the wallet refresh
-  // here means the async RPC fetch runs during the confetti animation so
-  // balances are already updated by the time the user dismisses the overlay.
-  // Not called for cross-chain deposits (those have no on-chain confirmation event
-  // at this stage), so cross-chain refresh stays in handleDepositSuccess below.
+  // Called by TransactionOverlay after the final tx confirms on-chain, while the
+  // overlay is in "refreshing" state. We await the wallet balance refetch so the
+  // success screen appears only once balances are fresh. Not called for cross-chain
+  // deposits (those refresh in handleDepositSuccess after bridge completes).
   const handleDepositTransactionSuccess = useCallback(
-    (label: string) => {
-      if (label === 'Approve' || label === 'Sign Permit') return
+    async (_label: string) => {
+      if (isCrossChain) return
       const tokensToRefresh = [
         { address: depositToken, chainID: sourceChainId },
         { address: vaultAddress, chainID: chainId }
@@ -500,10 +498,19 @@ export function WidgetDeposit({
       if (stakingAddress) {
         tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
       }
-      refreshWalletBalances(tokensToRefresh)
       refetchVaultUserData()
+      await refreshWalletBalances(tokensToRefresh)
     },
-    [depositToken, sourceChainId, vaultAddress, chainId, stakingAddress, refreshWalletBalances, refetchVaultUserData]
+    [
+      isCrossChain,
+      depositToken,
+      sourceChainId,
+      vaultAddress,
+      chainId,
+      stakingAddress,
+      refreshWalletBalances,
+      refetchVaultUserData
+    ]
   )
 
   const handleDepositSuccess = useCallback(() => {
@@ -529,8 +536,8 @@ export function WidgetDeposit({
     setDepositInput('')
     // Cross-chain deposits: the transaction submits on source chain but funds
     // don't arrive on destination until minutes later, so there is no on-chain
-    // receipt event that triggers onStepSuccess. Refresh source-chain balances
-    // here instead so the sent tokens are reflected promptly.
+    // receipt — onBeforeSuccess never fires for these. Refresh balances here
+    // instead so the sent tokens are reflected after the bridge completes.
     if (isCrossChain) {
       const tokensToRefresh = [
         { address: depositToken, chainID: sourceChainId },
@@ -818,7 +825,7 @@ export function WidgetDeposit({
         deferOnAllCompleteUntilConfettiEnd={deferSuccessEffectsUntilConfettiEnd}
         autoContinueToNextStep
         autoContinueStepLabels={['Approve', 'Sign Permit']}
-        onStepSuccess={handleDepositTransactionSuccess}
+        onBeforeSuccess={handleDepositTransactionSuccess}
         onAllComplete={handleDepositSuccess}
       />
 
