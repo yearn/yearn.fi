@@ -1,6 +1,5 @@
+import { formatStrategiesApy, formatStrategiesPercent } from '@pages/vaults/components/detail/strategiesPercentFormat'
 import { describe, expect, it } from 'vitest'
-
-import { formatStrategiesApy, formatStrategiesPercent } from './strategiesPercentFormat'
 
 describe('strategiesPercentFormat', () => {
   it('pads percentages to the strategy card precision rules', () => {

@@ -1,6 +1,6 @@
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { computeKatanaTotalApr, resolveKatanaExtras } from '@pages/vaults/hooks/useVaultApyData'
 import { describe, expect, it } from 'vitest'
-import { computeKatanaTotalApr, resolveKatanaExtras } from './useVaultApyData'
 
 const DETAIL_VAULT_WITH_COMPONENTS = {
   version: '3.0.0',

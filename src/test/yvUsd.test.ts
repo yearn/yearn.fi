@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import {
   calculateHistoricalAprFromPricePerShares,
   calculateHistoricalApyFromPricePerShares,
@@ -9,11 +8,9 @@ import {
   convertYvUsdVariantAmountString,
   convertYvUsdVariantRawAmount,
   getWeightedYvUsdApy,
-  getYvUsdLockedWithdrawDisplayMode,
-  getYvUsdUnderlyingPricePerShare,
-  YVUSD_CUSTOM_RISK_SCORE,
-  YVUSD_RISK_SCORE_ITEMS
-} from './yvUsd'
+  getYvUsdUnderlyingPricePerShare
+} from '@pages/vaults/utils/yvUsd'
+import { describe, expect, it } from 'vitest'
 
 describe('getWeightedYvUsdApy', () => {
   it('returns the unlocked APY when only unlocked value is present', () => {
@@ -69,22 +66,6 @@ describe('getWeightedYvUsdApy', () => {
         lockedApy: 0.09
       })
     ).toBeNull()
-  })
-})
-
-describe('yvUSD risk override', () => {
-  it('uses the provisional custom score for the detail risk section', () => {
-    expect(YVUSD_CUSTOM_RISK_SCORE).toBe('3/5')
-    expect(YVUSD_RISK_SCORE_ITEMS[0]?.score).toBe('3/5')
-  })
-
-  it('keeps the current published risk sections intact', () => {
-    expect(YVUSD_RISK_SCORE_ITEMS.map((item) => item.label)).toEqual([
-      'Overall Risk Score',
-      'Leverage Looping',
-      'Duration and PT Strategies',
-      'Cross-Chain Routing'
-    ])
   })
 })
 
@@ -238,15 +219,5 @@ describe('yvUSD historical PPS normalization', () => {
         }
       })
     ).toBe(0)
-  })
-})
-
-describe('yvUSD locked withdraw display mode', () => {
-  it('uses underlying display mode when the helper is called with Enso enabled', () => {
-    expect(getYvUsdLockedWithdrawDisplayMode(true)).toBe('underlying')
-  })
-
-  it('keeps underlying display mode even when Enso is unavailable', () => {
-    expect(getYvUsdLockedWithdrawDisplayMode(false)).toBe('underlying')
   })
 })

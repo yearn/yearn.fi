@@ -1,5 +1,8 @@
+import {
+  calculateDepositValueInfo,
+  resolveValuationShareCount
+} from '@pages/vaults/components/widget/deposit/valuation'
 import { describe, expect, it } from 'vitest'
-import { calculateDepositValueInfo, resolveValuationShareCount } from './valuation'
 
 const VAULT = '0x0000000000000000000000000000000000000001'
 const STAKING = '0x0000000000000000000000000000000000000002'

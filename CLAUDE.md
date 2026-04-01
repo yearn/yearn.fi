@@ -25,9 +25,12 @@ Husky runs `lint-staged` + `bun run tslint` on every commit.
 
 ## Testing
 
-- NEVER create UI/component tests (tests that use `render`, `screen`, `@testing-library/react`, or similar)
-- Only create tests for math/calculation logic (APY/APR, price impact, share/asset conversions, formatting numbers, duration math)
-- Do NOT create tests for: config assertions, boolean flag logic, string/URL mapping, route resolution, schema validation, CSS classes, array/set manipulation, state machines, or ABI construction
+All tests live in `src/test/` — focused on math and calculations where a wrong decimal silently loses user funds. Expected values should be human-verified independently of the code. Do not test boolean flag logic, string mapping, config assertions, or control flow — an AI will just adjust expected values to match the implementation, making those tests circular.
+
+**Deprioritised:** UI/component tests (`render`, `screen`, `@testing-library/react`). Low value because when AI writes both the implementation and the tests, it validates its own assumptions against itself — when the implementation changes, the tests get rewritten to match, so they never actually catch anything.
+
+- Never mirror the source tree 1:1. Group related calculations into a single test file per domain.
+- Never create a new test file for a single helper — find the test file it belongs in, or create one if a new domain is emerging
 
 ## Code Style
 

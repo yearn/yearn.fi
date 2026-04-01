@@ -1,5 +1,5 @@
+import { buildApyDataFromPpsSeries, buildUnderlyingLockedPpsSeries } from '@pages/vaults/hooks/useYvUsdCharts.helpers'
 import { describe, expect, it } from 'vitest'
-import { buildApyDataFromPpsSeries, buildUnderlyingLockedPpsSeries } from './useYvUsdCharts.helpers'
 
 describe('buildUnderlyingLockedPpsSeries', () => {
   it('converts locked PPS into underlying terms using the unlocked PPS for the same date', () => {

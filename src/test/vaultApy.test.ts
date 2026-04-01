@@ -1,11 +1,11 @@
 import type { TKongVault, TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
-import { describe, expect, it } from 'vitest'
 import {
   calculateKatanaThirtyDayAPY,
   calculateVaultEstimatedAPY,
   calculateVaultHistoricalAPY,
   getKatanaAprData
-} from './vaultApy'
+} from '@shared/utils/vaultApy'
+import { describe, expect, it } from 'vitest'
 
 const BASE_VAULT: TKongVault = {
   chainId: 747474,

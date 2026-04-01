@@ -1,5 +1,5 @@
+import { formatTAmount } from '@shared/utils/format'
 import { afterEach, describe, expect, it } from 'vitest'
-import { formatTAmount } from './format'
 
 const originalNavigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
 
