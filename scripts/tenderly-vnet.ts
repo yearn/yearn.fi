@@ -2,6 +2,7 @@
 
 import { accessSync, chmodSync, constants, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import { createInterface } from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
 
 type TParsedCliArgs = {
@@ -18,12 +19,32 @@ type TResolvedTenderlyCredentials = {
   profile: TTenderlyProfile
 }
 
+type TTenderlyProfileDefaults = {
+  apiKeyEnv: string
+  accountEnvKeys: string[]
+  projectEnvKeys: string[]
+  rpcNameEnv: string
+  rpcOwnerEnv: string
+}
+
 type TTenderlyVnetResponse = {
   slug?: string
   display_name?: string
   chain_id?: number
   network_id?: number
   id?: string
+  fork_config?: {
+    network_id?: number | string
+    block_number?: number | string
+  }
+  virtual_network_config?: {
+    chain_config?: {
+      chain_id?: number | string
+    }
+  }
+  explorer_page_config?: {
+    enabled?: boolean
+  }
   rpcs?: Array<{
     name: string
     url: string
@@ -36,6 +57,13 @@ type TTenderlyVnetConnectionDetails = {
   publicRpc?: string
   predictablePublicRpc?: string
   explorerUri?: string
+}
+
+type TTenderlyCurrentChainMapping = {
+  canonicalChainId: number
+  executionChainId?: number
+  adminRpcUri?: string
+  publicRpcUri?: string
 }
 
 type TCreateVnetPayload = {
@@ -66,8 +94,28 @@ type TCreateVnetPayload = {
 const DEFAULT_ACCOUNT_SLUG = 'me'
 const DEFAULT_NETWORK_ID = 1
 const DEFAULT_CHAIN_ID_PREFIX = '69420'
+const DEFAULT_RPC_NAMES: Record<TTenderlyProfile, string> = {
+  webops: 'yearn-fi-webops-vnet',
+  personal: 'yearn-fi-personal-vnet'
+}
 const TENDERLY_API_URL = 'https://api.tenderly.co/api/v1/account'
 const REDACTED_URL = '[redacted-url]'
+const TENDERLY_PROFILE_DEFAULTS: Record<TTenderlyProfile, TTenderlyProfileDefaults> = {
+  personal: {
+    apiKeyEnv: 'PERSONAL_TENDERLY_API_KEY',
+    accountEnvKeys: ['PERSONAL_ACCOUNT_SLUG', 'ACCOUNT_SLUG'],
+    projectEnvKeys: ['PERSONAL_PROJECT_SLUG', 'PROJECT_SLUG'],
+    rpcNameEnv: 'PERSONAL_TENDERLY_RPC_NAME',
+    rpcOwnerEnv: 'PERSONAL_TENDERLY_RPC_OWNER'
+  },
+  webops: {
+    apiKeyEnv: 'WEBOPS_TENDERLY_API_KEY',
+    accountEnvKeys: ['WEBOPS_ACCOUNT_SLUG', 'TENDERLY_ACCOUNT_SLUG'],
+    projectEnvKeys: ['WEBOPS_PROJECT_SLUG', 'TENDERLY_PROJECT_SLUG'],
+    rpcNameEnv: 'WEBOPS_TENDERLY_RPC_NAME',
+    rpcOwnerEnv: 'WEBOPS_TENDERLY_RPC_OWNER'
+  }
+}
 
 const HELP_TEXT = `Tenderly Virtual TestNet bootstrap
 
@@ -87,20 +135,26 @@ Options:
   --network-id <id>       Parent network id (default: 1)
   --block-number <num>    Fork block number or latest (default: latest)
   --chain-id <id>         Execution chain id (default: 69420<network-id>)
-  --rpc-name <name>       Stable public RPC name for predictable endpoint reuse
+  --rpc-name <name>       Stable public RPC name override for predictable endpoint reuse
+  --rpc-owner <name>      Owner suffix used to derive the default stable public RPC name
   --enable-sync           Enable state sync (default: false)
   --enable-explorer       Enable public explorer (default: false)
+  --keep-previous         Keep the currently configured VNet instead of deleting it after a successful replacement
   --json                  Print a sanitized JSON summary
   --write-env <path>      Write the generated Tenderly env fragment to a local file
   --write-response <path> Write the raw Tenderly API response JSON to a local file
   --help                  Show this help text
 
 Profiles:
-  webops   -> WEBOPS_TENDERLY_API_KEY, TENDERLY_ACCOUNT_SLUG, TENDERLY_PROJECT_SLUG, WEBOPS_TENDERLY_RPC_NAME
-  personal -> PERSONAL_TENDERLY_API_KEY, PERSONAL_ACCOUNT_SLUG, PERSONAL_PROJECT_SLUG, PERSONAL_TENDERLY_RPC_NAME
+  webops   -> WEBOPS_TENDERLY_API_KEY, WEBOPS_ACCOUNT_SLUG, WEBOPS_PROJECT_SLUG, WEBOPS_TENDERLY_RPC_NAME, WEBOPS_TENDERLY_RPC_OWNER
+              legacy slug fallback: TENDERLY_ACCOUNT_SLUG, TENDERLY_PROJECT_SLUG
+  personal -> PERSONAL_TENDERLY_API_KEY, PERSONAL_ACCOUNT_SLUG, PERSONAL_PROJECT_SLUG, PERSONAL_TENDERLY_RPC_NAME, PERSONAL_TENDERLY_RPC_OWNER
 
 Sensitive RPC values are never printed to stdout. Use --write-env or --write-response when you need them locally.
 Explicit flags always win over profile defaults.
+If no explicit stable RPC name is configured, the script derives one from profile + chain + owner.
+For webops, owner resolution prefers WEBOPS_TENDERLY_RPC_OWNER, then TENDERLY_RPC_OWNER, then the local shell user.
+If no owner can be inferred, the script prompts in interactive shells and otherwise fails with a suggested owner.
 `
 
 function parseProfile(value: string | undefined): TTenderlyProfile {
@@ -142,7 +196,7 @@ function parseCliArgs(argv: readonly string[]): TParsedCliArgs {
   return recurse(0, { flags: {}, positionals: [] })
 }
 
-function readEnvFile(path = '.env'): Record<string, string> {
+export function readEnvFile(path = '.env'): Record<string, string> {
   if (!existsSync(path)) return {}
 
   const envLines = readFileSync(path, 'utf8').split('\n')
@@ -212,11 +266,15 @@ function getEnvValue(env: Record<string, string | undefined>, key?: string): str
   return env[key]?.trim()
 }
 
+function getFirstEnvValue(env: Record<string, string | undefined>, keys: string[]): string | undefined {
+  return keys.map((key) => env[key]?.trim()).find(Boolean)
+}
+
 export function sanitizeConsoleText(value: string): string {
   return value.replace(/https?:\/\/\S+/gi, REDACTED_URL)
 }
 
-function resolveTenderlyCredentials(
+export function resolveTenderlyCredentials(
   flags: Record<string, string>,
   env: Record<string, string | undefined>
 ): TResolvedTenderlyCredentials {
@@ -268,16 +326,117 @@ function resolveTenderlyCredentials(
   }
 }
 
-function resolveRpcName(
+export function resolveRpcName(
   flags: Record<string, string>,
   env: Record<string, string | undefined>,
   profile: TTenderlyProfile
 ): string | undefined {
-  const profileDefaultEnvKey = profile === 'personal' ? 'PERSONAL_TENDERLY_RPC_NAME' : 'WEBOPS_TENDERLY_RPC_NAME'
-  return getArg(flags, 'rpc-name') || getEnvValue(env, profileDefaultEnvKey) || env.TENDERLY_RPC_NAME?.trim()
+  const profileDefaults = TENDERLY_PROFILE_DEFAULTS[profile]
+  return getArg(flags, 'rpc-name') || getEnvValue(env, profileDefaults.rpcNameEnv) || env.TENDERLY_RPC_NAME?.trim()
 }
 
-function buildPredictablePublicRpcUrl(accountSlug: string, projectSlug: string, rpcName: string): string {
+export function normalizeTenderlyRpcNameComponent(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+export function resolveRpcOwner(
+  flags: Record<string, string>,
+  env: Record<string, string | undefined>,
+  profile: TTenderlyProfile
+): string | undefined {
+  const profileDefaults = TENDERLY_PROFILE_DEFAULTS[profile]
+  const rawValue =
+    getArg(flags, 'rpc-owner') || getEnvValue(env, profileDefaults.rpcOwnerEnv) || env.TENDERLY_RPC_OWNER?.trim()
+
+  if (!rawValue) {
+    return undefined
+  }
+
+  const normalizedValue = normalizeTenderlyRpcNameComponent(rawValue)
+  return normalizedValue || undefined
+}
+
+export function suggestTenderlyRpcOwner(env: Record<string, string | undefined>): string | undefined {
+  const rawValue = getFirstEnvValue(env, ['TENDERLY_RPC_OWNER', 'USER', 'LOGNAME', 'USERNAME'])
+  if (!rawValue) {
+    return undefined
+  }
+
+  const normalizedValue = normalizeTenderlyRpcNameComponent(rawValue)
+  return normalizedValue || undefined
+}
+
+export function suggestTenderlyRpcName(
+  profile: TTenderlyProfile,
+  params?: {
+    networkId?: number
+    owner?: string
+  }
+): string {
+  const suffixParts = [params?.networkId?.toString(), params?.owner].filter(Boolean)
+  return [DEFAULT_RPC_NAMES[profile], ...suffixParts].join('-')
+}
+
+export async function resolveRequiredRpcName(params: {
+  flags: Record<string, string>
+  env: Record<string, string | undefined>
+  profile: TTenderlyProfile
+  networkId: number
+  canPrompt?: boolean
+  promptOwner?: (suggestedOwner: string, suggestedRpcName: string) => Promise<string>
+}): Promise<string> {
+  const configuredRpcName = resolveRpcName(params.flags, params.env, params.profile)
+  if (configuredRpcName) {
+    return configuredRpcName
+  }
+
+  const configuredOwner = resolveRpcOwner(params.flags, params.env, params.profile)
+  if (configuredOwner) {
+    return suggestTenderlyRpcName(params.profile, {
+      networkId: params.networkId,
+      owner: configuredOwner
+    })
+  }
+
+  if (params.profile !== 'webops') {
+    return suggestTenderlyRpcName(params.profile, { networkId: params.networkId })
+  }
+
+  const suggestedOwner = suggestTenderlyRpcOwner(params.env)
+  if (suggestedOwner) {
+    return suggestTenderlyRpcName(params.profile, {
+      networkId: params.networkId,
+      owner: suggestedOwner
+    })
+  }
+
+  const fallbackSuggestedOwner = 'yourname'
+  const suggestedRpcName = suggestTenderlyRpcName(params.profile, {
+    networkId: params.networkId,
+    owner: fallbackSuggestedOwner
+  })
+
+  if (params.canPrompt && params.promptOwner) {
+    const promptedValue = normalizeTenderlyRpcNameComponent(
+      await params.promptOwner(fallbackSuggestedOwner, suggestedRpcName)
+    )
+    return suggestTenderlyRpcName(params.profile, {
+      networkId: params.networkId,
+      owner: promptedValue || fallbackSuggestedOwner
+    })
+  }
+
+  throw new Error(
+    `Missing Tenderly RPC owner. Set WEBOPS_TENDERLY_RPC_OWNER, pass --rpc-owner, or use the suggested value: ${fallbackSuggestedOwner}. The derived stable RPC name would be: ${suggestedRpcName}`
+  )
+}
+
+export function buildPredictablePublicRpcUrl(accountSlug: string, projectSlug: string, rpcName: string): string {
   return `https://virtual.rpc.tenderly.co/${encodeURIComponent(accountSlug)}/${encodeURIComponent(projectSlug)}/public/${encodeURIComponent(rpcName)}`
 }
 
@@ -335,6 +494,81 @@ function getConnectionDetails(
     predictablePublicRpc: rpcName ? buildPredictablePublicRpcUrl(accountSlug, projectSlug, rpcName) : undefined,
     explorerUri: resolveExplorerUriFromResponse(response)
   }
+}
+
+function resolveVnetRpcUrl(vnet: TTenderlyVnetResponse, rpcName: string): string | undefined {
+  return vnet.rpcs?.find((rpc) => rpc.name === rpcName)?.url
+}
+
+function normalizeVnetListResponse(responseBody: string): TTenderlyVnetResponse[] {
+  const parsed = parseResponseBody(responseBody) as unknown
+
+  if (Array.isArray(parsed)) {
+    return parsed.filter((entry): entry is TTenderlyVnetResponse => isRecord(entry))
+  }
+
+  if (isRecord(parsed)) {
+    const nestedList = [parsed.vnets, parsed.virtual_networks, parsed.data].find(Array.isArray)
+    if (nestedList) {
+      return nestedList.filter((entry): entry is TTenderlyVnetResponse => isRecord(entry))
+    }
+  }
+
+  return []
+}
+
+function resolveCurrentChainMapping(
+  env: Record<string, string | undefined>,
+  canonicalChainId: number
+): TTenderlyCurrentChainMapping | undefined {
+  const executionChainId = parseOptionalInteger(
+    getEnvValue(env, `VITE_TENDERLY_CHAIN_ID_FOR_${canonicalChainId}`),
+    `VITE_TENDERLY_CHAIN_ID_FOR_${canonicalChainId}`
+  )
+  const adminRpcUri = getEnvValue(env, `TENDERLY_ADMIN_RPC_URI_FOR_${canonicalChainId}`)
+  const publicRpcUri = getEnvValue(env, `VITE_TENDERLY_RPC_URI_FOR_${canonicalChainId}`)
+
+  if (!executionChainId && !adminRpcUri && !publicRpcUri) {
+    return undefined
+  }
+
+  return {
+    canonicalChainId,
+    executionChainId,
+    adminRpcUri,
+    publicRpcUri
+  }
+}
+
+function selectMatchingConfiguredVnet(params: {
+  vnets: TTenderlyVnetResponse[]
+  currentMapping: TTenderlyCurrentChainMapping
+}): TTenderlyVnetResponse | undefined {
+  const adminRpcMatch = params.currentMapping.adminRpcUri
+    ? params.vnets.find((vnet) => resolveVnetRpcUrl(vnet, 'Admin RPC') === params.currentMapping.adminRpcUri)
+    : undefined
+
+  if (adminRpcMatch) {
+    return adminRpcMatch
+  }
+
+  const publicRpcMatch = params.currentMapping.publicRpcUri
+    ? params.vnets.find((vnet) => resolveVnetRpcUrl(vnet, 'Public RPC') === params.currentMapping.publicRpcUri)
+    : undefined
+
+  if (publicRpcMatch) {
+    return publicRpcMatch
+  }
+
+  const executionChainMatches =
+    params.currentMapping.executionChainId === undefined
+      ? []
+      : params.vnets.filter(
+          (vnet) =>
+            Number(vnet.virtual_network_config?.chain_config?.chain_id) === params.currentMapping.executionChainId
+        )
+
+  return executionChainMatches.length === 1 ? executionChainMatches[0] : undefined
 }
 
 function selectPublicRpc(details: TTenderlyVnetConnectionDetails): string | undefined {
@@ -422,8 +656,12 @@ export function buildSanitizedVnetJson(params: {
   networkId: number
   response: TTenderlyVnetResponse
   details: TTenderlyVnetConnectionDetails
+  rpcName: string
   envFilePath?: string
   responseFilePath?: string
+  replacedVnetId?: string
+  deletedPreviousVnetId?: string
+  deletionNote?: string
 }): Record<string, unknown> {
   const sanitizedResponse = Object.fromEntries(
     Object.entries(params.response).filter(([key]) => key !== 'rpcs')
@@ -439,10 +677,14 @@ export function buildSanitizedVnetJson(params: {
     display_name: params.response.display_name || params.displayName,
     chain_id: params.chainId,
     network_id: params.networkId,
+    rpc_name: params.rpcName,
     has_admin_rpc: Boolean(params.details.adminRpc),
     has_public_rpc: Boolean(selectPublicRpc(params.details)),
     env_file_path: params.envFilePath || null,
     response_file_path: params.responseFilePath || null,
+    replaced_vnet_id: params.replacedVnetId || null,
+    deleted_previous_vnet_id: params.deletedPreviousVnetId || null,
+    deletion_note: params.deletionNote || null,
     note:
       hasSensitiveValues && !params.envFilePath && !params.responseFilePath
         ? 'Sensitive RPC values were returned but were not printed. Use --write-env or --write-response to persist them locally.'
@@ -458,8 +700,12 @@ export function buildVnetConsoleSummary(params: {
   networkId: number
   response: TTenderlyVnetResponse
   details: TTenderlyVnetConnectionDetails
+  rpcName: string
   envFilePath?: string
   responseFilePath?: string
+  replacedVnetId?: string
+  deletedPreviousVnetId?: string
+  deletionNote?: string
 }): string[] {
   const hasSensitiveValues = Boolean(
     params.details.adminRpc || params.details.publicRpc || params.details.predictablePublicRpc
@@ -470,11 +716,15 @@ export function buildVnetConsoleSummary(params: {
     `profile: ${params.profile}`,
     `slug: ${params.response.slug || params.requestedSlug}`,
     `display name: ${params.response.display_name || params.displayName}`,
+    `rpc name: ${params.rpcName}`,
     params.envFilePath ? `wrote env fragment: ${params.envFilePath}` : undefined,
     params.responseFilePath ? `wrote raw response json: ${params.responseFilePath}` : undefined,
     hasSensitiveValues && !params.envFilePath && !params.responseFilePath
       ? 'Sensitive RPC values were returned but not printed. Use --write-env <path> or --write-response <path> to persist them locally.'
       : undefined,
+    params.replacedVnetId ? `replaced previous vnet: ${params.replacedVnetId}` : undefined,
+    params.deletedPreviousVnetId ? `deleted previous vnet: ${params.deletedPreviousVnetId}` : undefined,
+    params.deletionNote ? `previous vnet deletion note: ${params.deletionNote}` : undefined,
     `chain-id: ${params.chainId}`,
     `network-id: ${params.networkId}`
   ].filter((line): line is string => Boolean(line))
@@ -529,6 +779,59 @@ async function createVirtualTestNet(
   return parsed
 }
 
+async function listVirtualTestNets(
+  apiKey: string,
+  accountSlug: string,
+  projectSlug: string
+): Promise<TTenderlyVnetResponse[]> {
+  const response = await fetch(
+    `${TENDERLY_API_URL}/${encodeURIComponent(accountSlug)}/project/${encodeURIComponent(projectSlug)}/vnets`,
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'X-Access-Key': apiKey
+      }
+    }
+  )
+
+  const responseBody = (await response.text()) || '[]'
+  if (!response.ok) {
+    throw new Error(
+      buildTenderlyApiErrorMessage({ status: response.status, parsedBody: parseResponseBody(responseBody) })
+    )
+  }
+
+  return normalizeVnetListResponse(responseBody)
+}
+
+async function deleteVirtualTestNet(
+  apiKey: string,
+  accountSlug: string,
+  projectSlug: string,
+  vnetId: string
+): Promise<void> {
+  const response = await fetch(
+    `${TENDERLY_API_URL}/${encodeURIComponent(accountSlug)}/project/${encodeURIComponent(projectSlug)}/vnets/${encodeURIComponent(vnetId)}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        'X-Access-Key': apiKey
+      }
+    }
+  )
+
+  if (response.ok || response.status === 404) {
+    return
+  }
+
+  const responseBody = (await response.text()) || '{}'
+  throw new Error(
+    buildTenderlyApiErrorMessage({ status: response.status, parsedBody: parseResponseBody(responseBody) })
+  )
+}
+
 async function main(): Promise<void> {
   const parsedArgs = parseCliArgs(process.argv.slice(2))
   const { flags } = parsedArgs
@@ -542,16 +845,42 @@ async function main(): Promise<void> {
   const envFromFile = readEnvFile(resolve(scriptDir, '../.env'))
   const env = { ...envFromFile, ...process.env }
   const { apiKey, accountSlug, projectSlug, profile } = resolveTenderlyCredentials(flags, env)
-  const rpcName = resolveRpcName(flags, env, profile)
+  const networkId = parseOptionalInteger(getArg(flags, 'network-id'), 'network-id') || DEFAULT_NETWORK_ID
+  const chainId = parseOptionalInteger(getArg(flags, 'chain-id'), 'chain-id') || resolveDefaultChainId(networkId)
+  const rpcName = await resolveRequiredRpcName({
+    flags,
+    env,
+    profile,
+    networkId,
+    canPrompt: Boolean(process.stdin.isTTY && process.stderr.isTTY),
+    promptOwner: async (suggestedOwner: string, suggestedRpcName: string): Promise<string> => {
+      const readline = createInterface({
+        input: process.stdin,
+        output: process.stderr
+      })
+
+      try {
+        return await readline.question(`Tenderly RPC owner suffix [${suggestedOwner}] -> ${suggestedRpcName}: `)
+      } finally {
+        readline.close()
+      }
+    }
+  })
+  const currentChainMapping = resolveCurrentChainMapping(env, networkId)
+  const currentVnetToReplace = currentChainMapping
+    ? selectMatchingConfiguredVnet({
+        vnets: await listVirtualTestNets(apiKey, accountSlug, projectSlug),
+        currentMapping: currentChainMapping
+      })
+    : undefined
   const timestamp = Date.now().toString()
   const requestedSlug = getArg(flags, 'slug') || `vnet-${timestamp}`
   const defaultDisplayNamePrefix = profile === 'personal' ? 'Personal VNet' : 'Webops VNet'
   const displayName = getArg(flags, 'display-name') || `${defaultDisplayNamePrefix} ${timestamp}`
-  const networkId = parseOptionalInteger(getArg(flags, 'network-id'), 'network-id') || DEFAULT_NETWORK_ID
-  const chainId = parseOptionalInteger(getArg(flags, 'chain-id'), 'chain-id') || resolveDefaultChainId(networkId)
   const blockNumber = getArg(flags, 'block-number') || 'latest'
   const enableSync = parseBooleanFlag(flags, 'enable-sync', false)
   const enableExplorer = parseBooleanFlag(flags, 'enable-explorer', false)
+  const keepPrevious = parseBooleanFlag(flags, 'keep-previous', false)
   const { envFilePath, responseFilePath } = resolveRequestedOutputPaths(flags)
 
   const payload: TCreateVnetPayload = {
@@ -579,6 +908,16 @@ async function main(): Promise<void> {
 
   const response = await createVirtualTestNet(apiKey, accountSlug, projectSlug, payload)
   const details = getConnectionDetails(response, accountSlug, projectSlug, rpcName)
+  let deletedPreviousVnetId: string | undefined
+  let deletionNote: string | undefined
+  if (!keepPrevious && currentVnetToReplace?.id && currentVnetToReplace.id !== response.id) {
+    try {
+      await deleteVirtualTestNet(apiKey, accountSlug, projectSlug, currentVnetToReplace.id)
+      deletedPreviousVnetId = currentVnetToReplace.id
+    } catch (error) {
+      deletionNote = error instanceof Error ? sanitizeConsoleText(error.message) : 'Failed to delete previous vnet'
+    }
+  }
   if (envFilePath) {
     writeOutputFile(
       envFilePath,
@@ -604,8 +943,12 @@ async function main(): Promise<void> {
           networkId,
           response,
           details,
+          rpcName,
           envFilePath,
-          responseFilePath
+          responseFilePath,
+          replacedVnetId: currentVnetToReplace?.id,
+          deletedPreviousVnetId,
+          deletionNote
         }),
         null,
         2
@@ -622,8 +965,12 @@ async function main(): Promise<void> {
     networkId,
     response,
     details,
+    rpcName,
     envFilePath,
-    responseFilePath
+    responseFilePath,
+    replacedVnetId: currentVnetToReplace?.id,
+    deletedPreviousVnetId,
+    deletionNote
   }).forEach((line) => {
     console.log(line)
   })

@@ -7,8 +7,14 @@ import {
   buildTenderlyApiErrorMessage,
   buildTenderlyEnvFragment,
   buildVnetConsoleSummary,
+  normalizeTenderlyRpcNameComponent,
   resolveExplorerUriFromResponse,
+  resolveRequiredRpcName,
+  resolveRpcOwner,
+  resolveTenderlyCredentials,
   sanitizeConsoleText,
+  suggestTenderlyRpcName,
+  suggestTenderlyRpcOwner,
   validateWritableOutputPath,
   writeOutputFile
 } from './tenderly-vnet'
@@ -31,6 +37,130 @@ const response = {
 }
 
 describe('tenderly-vnet console safety', () => {
+  it('prefers webops account and project slugs over legacy and personal env vars', () => {
+    expect(
+      resolveTenderlyCredentials(
+        { profile: 'webops' },
+        {
+          WEBOPS_TENDERLY_API_KEY: 'webops-key',
+          WEBOPS_ACCOUNT_SLUG: 'webops-account',
+          WEBOPS_PROJECT_SLUG: 'webops-project',
+          TENDERLY_ACCOUNT_SLUG: 'legacy-account',
+          TENDERLY_PROJECT_SLUG: 'legacy-project',
+          PERSONAL_ACCOUNT_SLUG: 'personal-account',
+          PERSONAL_PROJECT_SLUG: 'personal-project'
+        }
+      )
+    ).toMatchObject({
+      apiKey: 'webops-key',
+      accountSlug: 'webops-account',
+      projectSlug: 'webops-project',
+      profile: 'webops'
+    })
+  })
+
+  it('falls back to legacy webops slug env vars when WEBOPS slugs are unset', () => {
+    expect(
+      resolveTenderlyCredentials(
+        { profile: 'webops' },
+        {
+          WEBOPS_TENDERLY_API_KEY: 'webops-key',
+          TENDERLY_ACCOUNT_SLUG: 'legacy-account',
+          TENDERLY_PROJECT_SLUG: 'legacy-project'
+        }
+      )
+    ).toMatchObject({
+      accountSlug: 'legacy-account',
+      projectSlug: 'legacy-project'
+    })
+  })
+
+  it('suggests stable rpc names by profile', () => {
+    expect(suggestTenderlyRpcName('webops', { networkId: 10, owner: 'ross' })).toBe('yearn-fi-webops-vnet-10-ross')
+    expect(suggestTenderlyRpcName('personal', { networkId: 8453 })).toBe('yearn-fi-personal-vnet-8453')
+  })
+
+  it('normalizes owner suffixes and resolves profile-specific owner env vars', () => {
+    expect(normalizeTenderlyRpcNameComponent('Ross Yearn')).toBe('ross-yearn')
+    expect(
+      resolveRpcOwner(
+        { profile: 'webops' },
+        {
+          WEBOPS_TENDERLY_RPC_OWNER: 'Ross'
+        },
+        'webops'
+      )
+    ).toBe('ross')
+    expect(suggestTenderlyRpcOwner({ USER: 'Ross' })).toBe('ross')
+  })
+
+  it('requires a stable rpc owner in non-interactive webops mode when no explicit rpc name is configured', async () => {
+    await expect(
+      resolveRequiredRpcName({
+        flags: {},
+        env: {},
+        profile: 'webops',
+        networkId: 10,
+        canPrompt: false
+      })
+    ).rejects.toThrow('Missing Tenderly RPC owner')
+  })
+
+  it('derives stable rpc names from owner-aware defaults and prompts for webops owner when needed', async () => {
+    await expect(
+      resolveRequiredRpcName({
+        flags: {},
+        env: {
+          WEBOPS_TENDERLY_RPC_OWNER: 'Ross'
+        },
+        profile: 'webops',
+        networkId: 10
+      })
+    ).resolves.toBe('yearn-fi-webops-vnet-10-ross')
+
+    await expect(
+      resolveRequiredRpcName({
+        flags: {},
+        env: {
+          USER: 'Ross'
+        },
+        profile: 'webops',
+        networkId: 10
+      })
+    ).resolves.toBe('yearn-fi-webops-vnet-10-ross')
+
+    await expect(
+      resolveRequiredRpcName({
+        flags: {},
+        env: {},
+        profile: 'webops',
+        networkId: 10,
+        canPrompt: true,
+        promptOwner: async () => ''
+      })
+    ).resolves.toBe('yearn-fi-webops-vnet-10-yourname')
+
+    await expect(
+      resolveRequiredRpcName({
+        flags: {},
+        env: {},
+        profile: 'webops',
+        networkId: 10,
+        canPrompt: true,
+        promptOwner: async () => 'Ross'
+      })
+    ).resolves.toBe('yearn-fi-webops-vnet-10-ross')
+
+    await expect(
+      resolveRequiredRpcName({
+        flags: {},
+        env: {},
+        profile: 'personal',
+        networkId: 8453
+      })
+    ).resolves.toBe('yearn-fi-personal-vnet-8453')
+  })
+
   it('redacts URLs in console text', () => {
     expect(sanitizeConsoleText('failed at https://admin.rpc/secret-path')).toBe('failed at [redacted-url]')
   })
@@ -68,7 +198,8 @@ describe('tenderly-vnet console safety', () => {
       chainId: 694201,
       networkId: 1,
       response,
-      details: connectionDetails
+      details: connectionDetails,
+      rpcName: 'yearn-fi-personal-vnet-1'
     }).join('\n')
 
     expect(summary).toContain('Created Tenderly Virtual TestNet')
@@ -87,6 +218,7 @@ describe('tenderly-vnet console safety', () => {
       networkId: 1,
       response,
       details: connectionDetails,
+      rpcName: 'yearn-fi-webops-vnet-1-ross',
       envFilePath: '/tmp/tenderly-vnet.env',
       responseFilePath: '/tmp/tenderly-vnet.json'
     }).join('\n')
@@ -105,13 +237,15 @@ describe('tenderly-vnet console safety', () => {
       chainId: 694201,
       networkId: 1,
       response,
-      details: connectionDetails
+      details: connectionDetails,
+      rpcName: 'yearn-fi-personal-vnet-1'
     })
 
     const serialized = JSON.stringify(sanitized)
 
     expect(serialized).toContain('"has_admin_rpc":true')
     expect(serialized).toContain('"has_public_rpc":true')
+    expect(serialized).toContain('"rpc_name"')
     expect(serialized).not.toContain('"rpcs"')
     expect(serialized).not.toContain(connectionDetails.adminRpc)
     expect(serialized).not.toContain(connectionDetails.publicRpc)
