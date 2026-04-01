@@ -23,6 +23,12 @@ IMPORTANT: After making code changes, always verify:
 
 Husky runs `lint-staged` + `bun run tslint` on every commit.
 
+## Testing
+
+- NEVER create UI/component tests (tests that use `render`, `screen`, `@testing-library/react`, or similar)
+- Only create tests for math/calculation logic (APY/APR, price impact, share/asset conversions, formatting numbers, duration math)
+- Do NOT create tests for: config assertions, boolean flag logic, string/URL mapping, route resolution, schema validation, CSS classes, array/set manipulation, state machines, or ABI construction
+
 ## Code Style
 
 Formatting is enforced by Biome (biome.jsonc) — do not worry about indentation, quotes, or commas.
