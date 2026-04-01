@@ -2,6 +2,7 @@ import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmou
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
+import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
@@ -21,6 +22,7 @@ import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
 import { useWidgetContext } from '../shared/useWidgetContext'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
+import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
 import { DEPOSIT_COMMON_TOKENS_BY_CHAIN } from '../withdraw/constants'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
@@ -146,12 +148,18 @@ export function WidgetDeposit({
   deferSuccessEffectsUntilClose = false,
   deferSuccessEffectsUntilConfettiEnd = true
 }: Props): ReactElement {
-  const { address: account } = useAccount()
-  const { openLoginModal } = useWeb3()
-  const { onRefresh: refreshWalletBalances, getToken } = useWallet()
-  const { zapSlippage, isAutoStakingEnabled, getPrice, allVaults } = useYearn()
-  const trackEvent = usePlausible()
-  const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
+  const {
+    account,
+    openLoginModal,
+    refreshWalletBalances,
+    getToken,
+    zapSlippage,
+    isAutoStakingEnabled,
+    getPrice,
+    trackEvent,
+    ensoEnabled
+  } = useWidgetContext({ chainId, vaultAddress })
+  const { allVaults } = useYearn()
 
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
@@ -159,11 +167,6 @@ export function WidgetDeposit({
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
-  const [priceImpactAcceptance, setPriceImpactAcceptance] = useState<{ key: string; isAccepted: boolean }>({
-    key: '',
-    isAccepted: false
-  })
-  const appliedPrefillRef = useRef<string | null>(null)
 
   const {
     assetToken,
@@ -404,8 +407,6 @@ export function WidgetDeposit({
     activeFlow.periphery.routerAddress ?? '',
     activeFlow.periphery.expectedOut
   ])
-  const hasAcceptedPriceImpact =
-    priceImpactAcceptance.key === priceImpactAcceptanceKey && priceImpactAcceptance.isAccepted
 
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
@@ -596,32 +597,20 @@ export function WidgetDeposit({
     />
   )
 
-  const priceImpactWarning = priceImpactInfo.isHigh &&
-    !isLoadingQuote &&
-    !depositAmount.isDebouncing &&
-    depositAmount.bn === depositAmount.debouncedBn &&
-    depositAmount.bn > 0n && (
-      <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 space-y-3">
-        <p className="text-sm text-red-500">
-          Price impact is high ({priceImpactInfo.percentage.toFixed(2)}%). Consider depositing less or waiting for
-          better liquidity conditions.
-        </p>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={hasAcceptedPriceImpact}
-            onChange={(e) =>
-              setPriceImpactAcceptance({
-                key: priceImpactAcceptanceKey,
-                isAccepted: e.target.checked
-              })
-            }
-            className="size-4 rounded border-red-500/50 bg-transparent text-red-500 focus:ring-red-500/50"
-          />
-          <span className="text-sm text-red-500">I understand and wish to continue</span>
-        </label>
-      </div>
-    )
+  const priceImpactWarning = (
+    <PriceImpactWarning
+      percentage={priceImpactInfo.percentage}
+      isHigh={priceImpactInfo.isHigh}
+      isLoading={isLoadingQuote}
+      isDebouncing={depositAmount.isDebouncing}
+      isAmountSynced={depositAmount.bn === depositAmount.debouncedBn}
+      hasAmount={depositAmount.bn > 0n}
+      hasAcceptedPriceImpact={hasAcceptedPriceImpact}
+      priceImpactAcceptanceKey={priceImpactAcceptanceKey}
+      setAcceptedPriceImpactKey={setAcceptedPriceImpactKey}
+      actionVerb="depositing"
+    />
+  )
 
   const showActionRow = !hideActionButton || !!onOpenSettings
   const showSettingsButton = !!account && !!onOpenSettings

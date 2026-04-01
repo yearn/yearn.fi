@@ -14,6 +14,7 @@ import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { erc4626Abi } from '@shared/contracts/abi/4626.abi'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
+import { type AppUseSimulateContractReturnType, useReadContract, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { formatTAmount, toAddress } from '@shared/utils'
@@ -820,7 +821,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const lockedWithdrawArgs = lockedWithdrawExecutionPlan[0]?.args
   const unlockedWithdrawArgs = lockedWithdrawExecutionPlan[1]?.args
 
-  const prepareLockedRedeemNow: UseSimulateContractReturnType = useSimulateContract({
+  const prepareLockedRedeemNow: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: erc4626Abi,
     functionName: 'redeem',
@@ -837,7 +838,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
         executionLockedWithdrawShares > 0n
     }
   })
-  const prepareLockedWithdrawNow: UseSimulateContractReturnType = useSimulateContract({
+  const prepareLockedWithdrawNow: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: erc4626Abi,
     functionName: 'withdraw',
@@ -857,7 +858,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const prepareLockedWithdrawStep =
     executionLockedWithdrawMethod === 'redeem' ? prepareLockedRedeemNow : prepareLockedWithdrawNow
 
-  const prepareUnlockedWithdraw: UseSimulateContractReturnType = useSimulateContract({
+  const prepareUnlockedWithdraw: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_UNLOCKED_ADDRESS,
     abi: erc4626Abi,
     functionName: 'withdraw',

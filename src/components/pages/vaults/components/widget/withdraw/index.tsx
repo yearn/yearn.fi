@@ -132,11 +132,6 @@ export function WidgetWithdraw({
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
-  const [priceImpactAcceptance, setPriceImpactAcceptance] = useState<{ key: string; isAccepted: boolean }>({
-    key: '',
-    isAccepted: false
-  })
-  const appliedPrefillRef = useRef<string | null>(null)
   const [fallbackStep, setFallbackStep] = useState<'unstake' | 'withdraw'>('unstake')
   const [redeemSharesOverride, setRedeemSharesOverride] = useState<bigint>(0n)
   const [awaitingPostUnstakeShares, setAwaitingPostUnstakeShares] = useState(false)
@@ -508,8 +503,6 @@ export function WidgetWithdraw({
     activeFlow.periphery.routerAddress ?? '',
     effectiveExpectedOut
   ])
-  const hasAcceptedPriceImpact =
-    priceImpactAcceptance.key === priceImpactAcceptanceKey && priceImpactAcceptance.isAccepted
 
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
   const shouldShowZapUi = !isBaseWithdrawToken
@@ -748,32 +741,40 @@ export function WidgetWithdraw({
     />
   )
 
-  const priceImpactWarning = priceImpactInfo.isHigh &&
-    !isFetchingQuote &&
-    !withdrawAmount.isDebouncing &&
-    withdrawAmount.bn === withdrawAmount.debouncedBn &&
-    withdrawAmount.bn > 0n && (
-      <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 space-y-3">
-        <p className="text-sm text-red-500">
-          Price impact is high ({priceImpactInfo.percentage.toFixed(2)}%). Consider withdrawing less or waiting for
-          better liquidity conditions.
-        </p>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={hasAcceptedPriceImpact}
-            onChange={(e) =>
-              setPriceImpactAcceptance({
-                key: priceImpactAcceptanceKey,
-                isAccepted: e.target.checked
-              })
-            }
-            className="size-4 rounded border-red-500/50 bg-transparent text-red-500 focus:ring-red-500/50"
-          />
-          <span className="text-sm text-red-500">I understand and wish to continue</span>
-        </label>
-      </div>
-    )
+  const priceImpactWarning = (
+    <PriceImpactWarning
+      percentage={priceImpactInfo.percentage}
+      isHigh={priceImpactInfo.isHigh}
+      isLoading={isFetchingQuote}
+      isDebouncing={withdrawAmount.isDebouncing}
+      isAmountSynced={withdrawAmount.bn === withdrawAmount.debouncedBn}
+      hasAmount={withdrawAmount.bn > 0n}
+      hasAcceptedPriceImpact={hasAcceptedPriceImpact}
+      priceImpactAcceptanceKey={priceImpactAcceptanceKey}
+      setAcceptedPriceImpactKey={setAcceptedPriceImpactKey}
+      actionVerb="withdrawing"
+    />
+  )
+
+  const showSettingsButton = !!account && !!onOpenSettings
+  const withdrawButtonLabel = getWithdrawCtaLabel({
+    isFetchingQuote,
+    showApprove: approvalState.hasApprovalStep,
+    isAllowanceSufficient: approvalState.isAllowanceSufficient,
+    transactionName
+  })
+  const isWithdrawButtonDisabled =
+    isWithdrawCtaDisabled({
+      hasError: !!effectiveWithdrawError || isActionDisabled,
+      withdrawAmountRaw: withdrawAmount.bn,
+      isFetchingQuote,
+      isDebouncing: withdrawAmount.isDebouncing,
+      showApprove: approvalState.hasApprovalStep,
+      isAllowanceSufficient: approvalState.isAllowanceSufficient,
+      prepareApproveEnabled: Boolean(activeFlow.periphery.prepareApproveEnabled),
+      prepareWithdrawEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
+    }) ||
+    (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
 
   const actionRow = (
     <div className="flex flex-col gap-3">
