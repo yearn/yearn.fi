@@ -23,6 +23,18 @@ IMPORTANT: After making code changes, always verify:
 
 Husky runs `lint-staged` + `bun run tslint` on every commit.
 
+## Testing
+
+All tests live in `src/test/` — never mirror the source tree 1:1. Group related tests into a single file per domain.
+
+**Priority: math and calculations.** APY/APR, price impact, share/asset conversions, bigint math, formatting, duration math. A wrong decimal silently loses user funds. Expected values must be human-verified independently of the code — if an AI would just read the implementation and write the expected value to match, the test is worthless.
+
+**Allowed: safety-critical logic.** Transaction state machines (skipping steps or double-submitting costs funds), URL validation (XSS vectors, misdirected pool links). These are kept because the consequences of a bug are severe and not immediately visible.
+
+**Deprioritised: UI/component tests.** Do not use `render`, `screen`, or `@testing-library/react`. When AI writes both the implementation and the tests, it validates its own assumptions against itself — when the implementation changes, the tests get rewritten to match, so they never actually catch anything.
+
+**Do not test:** config assertions, boolean flag logic, string/label mapping, route resolution, schema validation, data selection/preference, viewport/layout (Tailwind standardizes breakpoints), ABI construction, balance partitioning. These are all patterns where the expected value has no independent source of truth.
+
 ## Code Style
 
 Formatting is enforced by Biome (biome.jsonc) — do not worry about indentation, quotes, or commas.
