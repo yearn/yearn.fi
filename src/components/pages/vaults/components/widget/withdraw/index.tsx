@@ -636,6 +636,32 @@ export function WidgetWithdraw({
     setShowTransactionOverlay(true)
   }, [routeType, fallbackStep, isMaxWithdraw, vault?.balance.raw])
 
+  // Called by TransactionOverlay after the final tx confirms, while the overlay
+  // is in "refreshing" state. Awaiting the balance refetch ensures the success
+  // screen appears only once balances are fresh.
+  const handleWithdrawTransactionSuccess = useCallback(
+    async (_label: string) => {
+      const tokensToRefresh = [
+        { address: withdrawToken, chainID: destinationChainId },
+        { address: vaultAddress, chainID: chainId }
+      ]
+      if (stakingAddress) {
+        tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
+      }
+      refetchVaultUserData()
+      await refreshWalletBalances(tokensToRefresh)
+    },
+    [
+      withdrawToken,
+      destinationChainId,
+      vaultAddress,
+      chainId,
+      stakingAddress,
+      refreshWalletBalances,
+      refetchVaultUserData
+    ]
+  )
+
   const handleWithdrawSuccess = useCallback(() => {
     const sharesToWithdraw = formatUnits(effectiveWithdrawAmountRaw, assetToken?.decimals ?? 18)
     const priceUsd = assetTokenPrice
@@ -657,16 +683,6 @@ export function WidgetWithdraw({
     })
 
     setWithdrawInput('')
-    const tokensToRefresh = [
-      { address: withdrawToken, chainID: destinationChainId },
-      { address: vaultAddress, chainID: chainId }
-    ]
-    if (stakingAddress) {
-      tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
-    }
-
-    refreshWalletBalances(tokensToRefresh)
-    refetchVaultUserData()
     onWithdrawSuccess?.()
   }, [
     effectiveWithdrawAmountRaw,
@@ -680,11 +696,7 @@ export function WidgetWithdraw({
     withdrawToken,
     routeType,
     setWithdrawInput,
-    destinationChainId,
-    stakingAddress,
-    refreshWalletBalances,
-    onWithdrawSuccess,
-    refetchVaultUserData
+    onWithdrawSuccess
   ])
 
   if (isLoadingVaultData) {
@@ -928,6 +940,7 @@ export function WidgetWithdraw({
         autoContinueToNextStep
         autoContinueStepLabels={['Approve', 'Sign Permit', 'Unstake']}
         onStepSuccess={handleTransactionStepSuccess}
+        onBeforeSuccess={handleWithdrawTransactionSuccess}
         onAllComplete={handleWithdrawSuccess}
       />
 
