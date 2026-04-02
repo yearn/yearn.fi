@@ -12,6 +12,7 @@ import {
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
 import {
   formatAmount,
+  isKnownZeroBasisRewardDistribution,
   KNOWN_VAULT_MIGRATORS,
   lowerCaseAddress,
   minBigInt,
@@ -164,6 +165,14 @@ function serializeJournalRows(
       assetDecimals === undefined ? row.withdrawAssets : formatAmount(BigInt(row.withdrawAssets), assetDecimals),
     stake: shareDecimals === undefined ? row.stakeShares : formatAmount(BigInt(row.stakeShares), shareDecimals),
     unstake: shareDecimals === undefined ? row.unstakeShares : formatAmount(BigInt(row.unstakeShares), shareDecimals),
+    rewardVault:
+      shareDecimals === undefined
+        ? row.rewardInVaultShares
+        : formatAmount(BigInt(row.rewardInVaultShares), shareDecimals),
+    rewardStaked:
+      shareDecimals === undefined
+        ? row.rewardInStakedShares
+        : formatAmount(BigInt(row.rewardInStakedShares), shareDecimals),
     unkVault:
       shareDecimals === undefined
         ? row.unknownInVaultShares
@@ -342,6 +351,35 @@ function serializeUnknownTransferInEntryForResponse(args: {
   }
 }
 
+function serializeRewardTransferInEntryForResponse(args: {
+  entry: FamilyPnlLedger['rewardTransferInEntries'][number]
+  shareDecimals: number
+  currentTokenPrice: number
+  resolvedPricePerShare: number
+  ppsMap: Map<number, number> | undefined
+  tokenPriceMap: Map<number, number> | null
+}): HoldingsPnLDrilldownVault['rewardTransferInEntries'][number] {
+  const { entry, shareDecimals, currentTokenPrice, resolvedPricePerShare, ppsMap, tokenPriceMap } = args
+  const pricePerShareAtReceipt = ppsMap
+    ? (getPPS(ppsMap, entry.timestamp) ?? resolvedPricePerShare)
+    : resolvedPricePerShare
+  const tokenPriceAtReceipt = getTokenPriceForTimestamp(tokenPriceMap, entry.timestamp, currentTokenPrice)
+  const sharesFormatted = formatAmount(entry.shares, shareDecimals)
+  const receiptUnderlying = sharesFormatted * pricePerShareAtReceipt
+
+  return {
+    timestamp: entry.timestamp,
+    location: entry.location,
+    distributor: entry.distributor,
+    shares: entry.shares.toString(),
+    sharesFormatted,
+    pricePerShareAtReceipt,
+    tokenPriceAtReceipt,
+    receiptUnderlying,
+    receiptValueUsd: receiptUnderlying * tokenPriceAtReceipt
+  }
+}
+
 function serializeUnknownWithdrawalEntryForResponse(args: {
   entry: FamilyPnlLedger['unknownWithdrawalEntries'][number]
   shareDecimals: number
@@ -401,6 +439,10 @@ function serializeJournalEntryForResponse(args: {
     stakeSharesFormatted: formatAmount(BigInt(row.stakeShares), shareDecimals),
     unstakeShares: row.unstakeShares,
     unstakeSharesFormatted: formatAmount(BigInt(row.unstakeShares), shareDecimals),
+    rewardInVaultShares: row.rewardInVaultShares,
+    rewardInVaultSharesFormatted: formatAmount(BigInt(row.rewardInVaultShares), shareDecimals),
+    rewardInStakedShares: row.rewardInStakedShares,
+    rewardInStakedSharesFormatted: formatAmount(BigInt(row.rewardInStakedShares), shareDecimals),
     unknownInVaultShares: row.unknownInVaultShares,
     unknownInVaultSharesFormatted: formatAmount(BigInt(row.unknownInVaultShares), shareDecimals),
     unknownInStakedShares: row.unknownInStakedShares,
@@ -683,6 +725,7 @@ function createFamilyLedger(chainId: number, familyVaultAddress: string): Family
     unmatchedTransferOutCount: 0,
     unmatchedTransferOutShares: ZERO,
     realizedEntries: [],
+    rewardTransferInEntries: [],
     unknownTransferInEntries: [],
     unknownWithdrawalEntries: [],
     debugJournal: [],
@@ -691,6 +734,7 @@ function createFamilyLedger(chainId: number, familyVaultAddress: string): Family
       underlyingWithdrawals: 0,
       stakes: 0,
       unstakes: 0,
+      rewardTransfersIn: 0,
       externalTransfersIn: 0,
       externalTransfersOut: 0,
       migrationsIn: 0,
@@ -990,6 +1034,8 @@ function buildJournalView(parts: {
   stakingRealizeShares: bigint
   stakeShares: bigint
   unstakeShares: bigint
+  rewardInVaultShares: bigint
+  rewardInStakedShares: bigint
   unknownInVaultShares: bigint
   unknownInStakedShares: bigint
   transferOutVaultShares: bigint
@@ -1003,6 +1049,8 @@ function buildJournalView(parts: {
   if (parts.stakingRealizeShares > ZERO) labels.push('withdraw<-staked')
   if (parts.stakeShares > ZERO) labels.push('stake')
   if (parts.unstakeShares > ZERO) labels.push('unstake')
+  if (parts.rewardInVaultShares > ZERO) labels.push('reward_in_vault')
+  if (parts.rewardInStakedShares > ZERO) labels.push('reward_in_staked')
   if (parts.unknownInVaultShares > ZERO) labels.push('transfer_in_vault_unknown')
   if (parts.unknownInStakedShares > ZERO) labels.push('transfer_in_staked_unknown')
   if (parts.transferOutVaultShares > ZERO) labels.push('transfer_out_vault')
@@ -1072,6 +1120,110 @@ function handleUnknownTransferIn(
     location
   })
   addLotsToLocation(ledger, location, [createLot(shares, null, timestamp)])
+}
+
+function handleRewardTransferIn(
+  ledger: FamilyPnlLedger,
+  location: TLocation,
+  shares: bigint,
+  timestamp: number,
+  distributor: string
+): void {
+  if (shares === ZERO) {
+    return
+  }
+
+  ledger.eventCounts.rewardTransfersIn += 1
+  ledger.rewardTransferInEntries.push({
+    timestamp,
+    shares,
+    location,
+    distributor
+  })
+  addLotsToLocation(ledger, location, [createLot(shares, ZERO, timestamp)])
+}
+
+function getRecognizedRewardTransferIns(
+  txFamilyEvents: TRawPnlEvent[],
+  userAddress: string,
+  familyVaultAddress: string,
+  stakingVaultAddress: string | null
+): FamilyPnlLedger['rewardTransferInEntries'] {
+  return txFamilyEvents.flatMap((event) => {
+    if (
+      event.kind !== 'transfer' ||
+      !event.scopes.address ||
+      event.receiver !== userAddress ||
+      !isKnownZeroBasisRewardDistribution(event.chainId, event.sender, event.vaultAddress)
+    ) {
+      return []
+    }
+
+    if (event.vaultAddress === familyVaultAddress) {
+      return [
+        {
+          timestamp: event.blockTimestamp,
+          shares: event.shares,
+          location: 'vault' as const,
+          distributor: event.sender
+        }
+      ]
+    }
+
+    if (stakingVaultAddress !== null && event.vaultAddress === stakingVaultAddress) {
+      return [
+        {
+          timestamp: event.blockTimestamp,
+          shares: event.shares,
+          location: 'staked' as const,
+          distributor: event.sender
+        }
+      ]
+    }
+
+    return []
+  })
+}
+
+function allocateRecognizedRewardTransferIns(
+  rewardEntries: FamilyPnlLedger['rewardTransferInEntries'],
+  availableVaultShares: bigint,
+  availableStakedShares: bigint
+): {
+  allocatedEntries: FamilyPnlLedger['rewardTransferInEntries']
+  rewardInVaultShares: bigint
+  rewardInStakedShares: bigint
+} {
+  let remainingVaultShares = availableVaultShares
+  let remainingStakedShares = availableStakedShares
+  const allocatedEntries: FamilyPnlLedger['rewardTransferInEntries'] = []
+
+  rewardEntries.forEach((entry) => {
+    const availableShares = entry.location === 'vault' ? remainingVaultShares : remainingStakedShares
+    const allocatedShares = minBigInt(entry.shares, availableShares)
+
+    if (allocatedShares === ZERO) {
+      return
+    }
+
+    allocatedEntries.push({
+      ...entry,
+      shares: allocatedShares
+    })
+
+    if (entry.location === 'vault') {
+      remainingVaultShares -= allocatedShares
+      return
+    }
+
+    remainingStakedShares -= allocatedShares
+  })
+
+  return {
+    allocatedEntries,
+    rewardInVaultShares: availableVaultShares - remainingVaultShares,
+    rewardInStakedShares: availableStakedShares - remainingStakedShares
+  }
 }
 
 function handleExternalTransferOut(ledger: FamilyPnlLedger, location: TLocation, shares: bigint): void {
@@ -1275,6 +1427,8 @@ function processKnownMigratorCrossFamilyRollover(
     withdrawAssets: ZERO.toString(),
     stakeShares: ZERO.toString(),
     unstakeShares: ZERO.toString(),
+    rewardInVaultShares: ZERO.toString(),
+    rewardInStakedShares: ZERO.toString(),
     unknownInVaultShares: ZERO.toString(),
     unknownInStakedShares: ZERO.toString(),
     transferOutVaultShares: migration.sourceTransferShares.toString(),
@@ -1303,6 +1457,8 @@ function processKnownMigratorCrossFamilyRollover(
     withdrawAssets: ZERO.toString(),
     stakeShares: ZERO.toString(),
     unstakeShares: ZERO.toString(),
+    rewardInVaultShares: ZERO.toString(),
+    rewardInStakedShares: ZERO.toString(),
     unknownInVaultShares: unknownDestinationShares.toString(),
     unknownInStakedShares: ZERO.toString(),
     transferOutVaultShares: ZERO.toString(),
@@ -1459,6 +1615,8 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
         withdrawAssets: totalUnderlyingWithdrawAssets.toString(),
         stakeShares: ZERO.toString(),
         unstakeShares: ZERO.toString(),
+        rewardInVaultShares: ZERO.toString(),
+        rewardInStakedShares: ZERO.toString(),
         unknownInVaultShares: ZERO.toString(),
         unknownInStakedShares: ZERO.toString(),
         transferOutVaultShares: ZERO.toString(),
@@ -1548,8 +1706,15 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
   )
   const finalUnderlyingDelta = remainingUnderlyingAfterWrap - unstakeShares
   const finalStakingDelta = remainingStakingAfterWrap + unstakeShares
-  const unknownInVaultShares = positiveBigInt(finalUnderlyingDelta)
-  const unknownInStakedShares = positiveBigInt(finalStakingDelta)
+  const rewardAllocation = allocateRecognizedRewardTransferIns(
+    getRecognizedRewardTransferIns(txFamilyEvents, userAddress, familyVaultAddress, stakingVaultAddress),
+    positiveBigInt(finalUnderlyingDelta),
+    positiveBigInt(finalStakingDelta)
+  )
+  const rewardInVaultShares = rewardAllocation.rewardInVaultShares
+  const rewardInStakedShares = rewardAllocation.rewardInStakedShares
+  const unknownInVaultShares = positiveBigInt(finalUnderlyingDelta) - rewardInVaultShares
+  const unknownInStakedShares = positiveBigInt(finalStakingDelta) - rewardInStakedShares
   const transferOutVaultShares = negativeBigIntMagnitude(finalUnderlyingDelta)
   const transferOutStakedShares = negativeBigIntMagnitude(finalStakingDelta)
 
@@ -1563,6 +1728,9 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
     moveBetweenLocations(ledger, 'staked', 'vault', unstakeShares)
   }
 
+  rewardAllocation.allocatedEntries.forEach((entry) => {
+    handleRewardTransferIn(ledger, entry.location, entry.shares, entry.timestamp, entry.distributor)
+  })
   handleUnknownTransferIn(ledger, 'vault', unknownInVaultShares, txFamilyEvents[0]?.blockTimestamp ?? 0)
   handleUnknownTransferIn(ledger, 'staked', unknownInStakedShares, txFamilyEvents[0]?.blockTimestamp ?? 0)
   handleExternalTransferOut(ledger, 'vault', transferOutVaultShares)
@@ -1580,6 +1748,8 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
       stakingRealizeShares,
       stakeShares,
       unstakeShares,
+      rewardInVaultShares,
+      rewardInStakedShares,
       unknownInVaultShares,
       unknownInStakedShares,
       transferOutVaultShares,
@@ -1593,6 +1763,8 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
     withdrawAssets: totalUnderlyingWithdrawAssets.toString(),
     stakeShares: stakeShares.toString(),
     unstakeShares: unstakeShares.toString(),
+    rewardInVaultShares: rewardInVaultShares.toString(),
+    rewardInStakedShares: rewardInStakedShares.toString(),
     unknownInVaultShares: unknownInVaultShares.toString(),
     unknownInStakedShares: unknownInStakedShares.toString(),
     transferOutVaultShares: transferOutVaultShares.toString(),
@@ -1628,6 +1800,8 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
       stakingRealizeShares: stakingRealizeShares.toString(),
       stakeShares: stakeShares.toString(),
       unstakeShares: unstakeShares.toString(),
+      rewardInVaultShares: rewardInVaultShares.toString(),
+      rewardInStakedShares: rewardInStakedShares.toString(),
       finalUnderlyingDelta: finalUnderlyingDelta.toString(),
       finalStakingDelta: finalStakingDelta.toString(),
       realizedKnownShares: realization.knownShares.toString(),
@@ -2171,6 +2345,7 @@ function materializeHoldingsPnLDrilldownVault(
         }))
       },
       realizedEntries: [],
+      rewardTransferInEntries: [],
       unknownTransferInEntries: [],
       unknownWithdrawalEntries: [],
       journal: []
@@ -2219,6 +2394,16 @@ function materializeHoldingsPnLDrilldownVault(
         tokenPriceMap,
         resolvedPricePerShare: baseVault.pricePerShare,
         ppsMap
+      })
+    ),
+    rewardTransferInEntries: vault.rewardTransferInEntries.map((entry) =>
+      serializeRewardTransferInEntryForResponse({
+        entry,
+        shareDecimals: metadata.decimals,
+        currentTokenPrice: baseVault.tokenPrice,
+        resolvedPricePerShare: baseVault.pricePerShare,
+        ppsMap,
+        tokenPriceMap
       })
     ),
     unknownTransferInEntries: vault.unknownTransferInEntries.map((entry) =>

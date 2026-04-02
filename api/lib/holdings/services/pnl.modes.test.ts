@@ -3,6 +3,8 @@ import type { RawPnlEventContext } from './graphql'
 import type { HoldingsPnLDrilldownResponse, HoldingsPnLResponse } from './pnl'
 
 const VAULT = '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204'
+const REWARD_DISTRIBUTOR = '0xb226c52eb411326cdb54824a88abafdaaff16d3d'
+const REWARD_VAULT = '0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f'
 const USER = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
 const ROUTER = '0x1111111111111111111111111111111111111111'
 const PRICE_KEY = 'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
@@ -135,6 +137,36 @@ function createTransferOnlyContext(): RawPnlEventContext {
   }
 }
 
+function createRewardTransferInContext(): RawPnlEventContext {
+  const rewardTransferIn = {
+    id: 'reward-transfer-in',
+    vaultAddress: REWARD_VAULT,
+    chainId: 1,
+    blockNumber: 1,
+    blockTimestamp: 100,
+    logIndex: 1,
+    transactionHash: '0xreward-transfer-in',
+    transactionFrom: REWARD_DISTRIBUTOR,
+    sender: REWARD_DISTRIBUTOR,
+    receiver: USER,
+    value: '100000000'
+  }
+
+  return {
+    addressEvents: {
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [rewardTransferIn],
+      transfersOut: []
+    },
+    transactionEvents: {
+      deposits: [],
+      withdrawals: [],
+      transfers: [rewardTransferIn]
+    }
+  }
+}
+
 function createTransferOutContext(): RawPnlEventContext {
   return {
     addressEvents: {
@@ -168,6 +200,7 @@ function createTransferOutContext(): RawPnlEventContext {
 function configureServiceMocks(
   rawContext: RawPnlEventContext,
   overrides?: {
+    vaultAddress?: string
     metadata?: {
       tokenAddress: string
       symbol: string
@@ -179,6 +212,7 @@ function configureServiceMocks(
     prices?: Map<number, number>
   }
 ): void {
+  const vaultAddress = overrides?.vaultAddress ?? VAULT
   const metadata = overrides?.metadata ?? {
     tokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     symbol: 'USDC',
@@ -205,9 +239,9 @@ function configureServiceMocks(
   fetchMultipleVaultsMetadataMock.mockResolvedValue(
     new Map([
       [
-        `1:${VAULT}`,
+        `1:${vaultAddress}`,
         {
-          address: VAULT,
+          address: vaultAddress,
           chainId: 1,
           version: 'v3',
           token: {
@@ -220,7 +254,7 @@ function configureServiceMocks(
       ]
     ])
   )
-  fetchMultipleVaultsPPSMock.mockResolvedValue(new Map([[`1:${VAULT}`, ppsTimeline]]))
+  fetchMultipleVaultsPPSMock.mockResolvedValue(new Map([[`1:${vaultAddress}`, ppsTimeline]]))
   fetchHistoricalPricesMock.mockResolvedValue(new Map([[priceKey, prices]]))
 }
 
@@ -323,6 +357,42 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(vault.unrealizedPnlUsd).toBeCloseTo(330)
     expect(vault.totalPnlUsd).toBeCloseTo(330)
     expect(vault.totalEconomicGainUsd).toBeCloseTo(330)
+  })
+
+  it('treats recognized reward transfer-ins as complete zero-basis lots in windfall mode', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+
+    const response = await getSingleVaultDrilldownResponse(createRewardTransferInContext(), 'windfall', {
+      vaultAddress: REWARD_VAULT
+    })
+    const vault = response.vaults[0]
+
+    expect(vault.costBasisStatus).toBe('complete')
+    expect(vault.windfallPnlUsd).toBe(0)
+    expect(vault.unrealizedPnlUsd).toBeCloseTo(330)
+    expect(vault.totalPnlUsd).toBeCloseTo(330)
+    expect(vault.totalEconomicGainUsd).toBeCloseTo(330)
+    expect(vault.eventCounts.rewardTransfersIn).toBe(1)
+    expect(vault.eventCounts.externalTransfersIn).toBe(0)
+    expect(vault.rewardTransferInEntries).toHaveLength(1)
+    expect(vault.rewardTransferInEntries[0]).toMatchObject({
+      distributor: REWARD_DISTRIBUTOR,
+      location: 'vault',
+      sharesFormatted: 100,
+      receiptValueUsd: 200
+    })
+    expect(vault.unknownTransferInEntries).toEqual([])
+    expect(vault.currentLots.vault).toHaveLength(1)
+    expect(vault.currentLots.vault[0]?.costBasis).toBe('0')
+    expect(vault.currentLots.vault[0]?.costBasisUsd).toBe(0)
+    expect(vault.currentLots.vault[0]?.currentValueUsd).toBeCloseTo(330)
+    expect(vault.journal).toHaveLength(1)
+    expect(vault.journal[0]).toMatchObject({
+      txHash: '0xreward-transfer-in',
+      view: 'reward_in_vault',
+      rewardInVaultShares: '100000000',
+      unknownInVaultShares: '0'
+    })
   })
 
   it('preserves strict-mode unknown cost basis behavior', async () => {

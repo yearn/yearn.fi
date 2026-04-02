@@ -296,6 +296,7 @@ Notes:
 - Withdrawals realize PnL from the oldest remaining lots first.
 - `totalPnlUsd = totalRealizedPnlUsd + totalUnrealizedPnlUsd`.
 - `totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd`.
+- Some recognized reward-distribution flows are treated as explicit zero-basis reward receipts rather than unknown transfers. Those shares are considered economically free, but they stay `costBasisStatus: "complete"` and contribute to normal realized / unrealized PnL instead of `windfallPnlUsd`.
 - Staking wrappers are collapsed into the underlying vault family. Staked shares and directly held vault shares share the same FIFO lots and only change location.
 - Underlying vault `Deposit` and `Withdraw` events define cost basis and realized proceeds. Staking `Deposit` and `Withdraw` events are treated as stake or unstake moves, not as economic entries.
 - Same-transaction router flows can carry basis into or out of a staking vault family when the transfer can be matched to an indexed underlying vault deposit or withdrawal in the same transaction.
@@ -326,9 +327,14 @@ Query params:
 Response additions per vault:
 - `currentLots.vault` and `currentLots.staked`
 - `realizedEntries` with consumed lots and USD/underlying proceeds/basis/PnL
+- `rewardTransferInEntries` for recognized zero-basis reward receipts
 - `unknownTransferInEntries` with receipt-time valuation
 - `unknownWithdrawalEntries` with proceeds and consumed unknown lots
 - `journal` rows with before/after lot summaries for vault-share and staked-share locations
+
+Notes:
+- `rewardTransferInEntries` are known-basis receipts with `costBasis = 0`, so they are not affected by `unknownMode`.
+- The drilldown journal includes `rewardInVaultShares` / `rewardInStakedShares` and the transaction hash. If the UI wants explorer links for reward rows, it should join the reward entry to the matching journal row.
 
 The drilldown response uses the same summary fields and top-level identity fields as `/api/holdings/pnl`, but each vault row is expanded for UI drilldown rather than table rendering.
 

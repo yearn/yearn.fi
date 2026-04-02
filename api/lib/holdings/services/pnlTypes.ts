@@ -30,6 +30,13 @@ export type TUnknownTransferInEntry = {
   location: TLocation
 }
 
+export type TRewardTransferInEntry = {
+  timestamp: number
+  shares: bigint
+  location: TLocation
+  distributor: string
+}
+
 export type TUnknownWithdrawalEntry = {
   timestamp: number
   shares: bigint
@@ -53,6 +60,8 @@ export type TPnlDebugJournalRow = {
   withdrawAssets: string
   stakeShares: string
   unstakeShares: string
+  rewardInVaultShares: string
+  rewardInStakedShares: string
   unknownInVaultShares: string
   unknownInStakedShares: string
   transferOutVaultShares: string
@@ -140,6 +149,7 @@ export interface FamilyPnlLedger {
   unmatchedTransferOutCount: number
   unmatchedTransferOutShares: bigint
   realizedEntries: TRealizedEntry[]
+  rewardTransferInEntries: TRewardTransferInEntry[]
   unknownTransferInEntries: TUnknownTransferInEntry[]
   unknownWithdrawalEntries: TUnknownWithdrawalEntry[]
   debugJournal: TPnlDebugJournalRow[]
@@ -148,6 +158,7 @@ export interface FamilyPnlLedger {
     underlyingWithdrawals: number
     stakes: number
     unstakes: number
+    rewardTransfersIn: number
     externalTransfersIn: number
     externalTransfersOut: number
     migrationsIn: number
@@ -197,6 +208,7 @@ export interface HoldingsPnLVault {
     underlyingWithdrawals: number
     stakes: number
     unstakes: number
+    rewardTransfersIn: number
     externalTransfersIn: number
     externalTransfersOut: number
     migrationsIn: number
@@ -265,6 +277,18 @@ export type THoldingsPnlUnknownTransferInEntry = {
   receiptValueUsd: number
 }
 
+export type THoldingsPnlRewardTransferInEntry = {
+  timestamp: number
+  location: TLocation
+  distributor: string
+  shares: string
+  sharesFormatted: number
+  pricePerShareAtReceipt: number
+  tokenPriceAtReceipt: number
+  receiptUnderlying: number
+  receiptValueUsd: number
+}
+
 export type THoldingsPnlUnknownWithdrawalEntry = {
   timestamp: number
   shares: string
@@ -300,6 +324,10 @@ export type THoldingsPnlJournalEntry = {
   stakeSharesFormatted: number
   unstakeShares: string
   unstakeSharesFormatted: number
+  rewardInVaultShares: string
+  rewardInVaultSharesFormatted: number
+  rewardInStakedShares: string
+  rewardInStakedSharesFormatted: number
   unknownInVaultShares: string
   unknownInVaultSharesFormatted: number
   unknownInStakedShares: string
@@ -328,6 +356,7 @@ export interface HoldingsPnLDrilldownVault extends HoldingsPnLVault {
     staked: THoldingsPnlLot[]
   }
   realizedEntries: THoldingsPnlRealizedEntry[]
+  rewardTransferInEntries: THoldingsPnlRewardTransferInEntry[]
   unknownTransferInEntries: THoldingsPnlUnknownTransferInEntry[]
   unknownWithdrawalEntries: THoldingsPnlUnknownWithdrawalEntry[]
   journal: THoldingsPnlJournalEntry[]

@@ -18,6 +18,7 @@ export function toHoldingsPnlEventCounts(vault: FamilyPnlLedger): HoldingsPnLVau
     underlyingWithdrawals: vault.eventCounts.underlyingWithdrawals,
     stakes: vault.eventCounts.stakes,
     unstakes: vault.eventCounts.unstakes,
+    rewardTransfersIn: vault.eventCounts.rewardTransfersIn,
     externalTransfersIn: vault.eventCounts.externalTransfersIn,
     externalTransfersOut: vault.eventCounts.externalTransfersOut,
     migrationsIn: vault.eventCounts.migrationsIn,

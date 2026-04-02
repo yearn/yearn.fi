@@ -13,9 +13,12 @@ const MIGRATOR = '0x9327e2fdc57c7d70782f29ab46f6385afaf4503c'
 const YEARN_4626_ROUTER = '0x1112dbcf805682e828606f74ab717abf4b4fd8de'
 const STAKING_VAULT = '0x622fa41799406b120f9a40da843d358b7b2cfee3'
 const UNDERLYING_VAULT = '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204'
+const REWARD_DISTRIBUTOR = '0xb226c52eb411326cdb54824a88abafdaaff16d3d'
+const REWARD_VAULT = '0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f'
 const SOURCE_MIGRATION_VAULT = '0x1635b506a88fbf428465ad65d00e8d6b6e5846c3'
 const DESTINATION_MIGRATION_VAULT = '0x75a291f0232add37d72dd1dcff55b715755ecdee'
 const FAMILY_KEY = `1:${UNDERLYING_VAULT}`
+const REWARD_FAMILY_KEY = `1:${REWARD_VAULT}`
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 function createDepositEvent(overrides: Partial<DepositEvent>): DepositEvent {
@@ -272,6 +275,51 @@ describe('processRawPnlEvents', () => {
     expect(ledger?.stakedLots).toEqual([])
     expect(ledger?.totalDepositedAssets).toBe(1000n)
     expect(ledger?.eventCounts.underlyingDeposits).toBe(1)
+  })
+
+  it('classifies known reward distributor receipts as zero-basis rewards instead of unknown transfer-ins', () => {
+    const rewardTransferIn = createTransferEvent({
+      id: 'reward-transfer-in',
+      transactionHash: '0xreward',
+      vaultAddress: REWARD_VAULT,
+      sender: REWARD_DISTRIBUTOR,
+      receiver: USER,
+      value: '100'
+    })
+
+    const ledger = processRawPnlEvents(
+      buildRawPnlEvents({
+        addressEvents: {
+          deposits: [],
+          withdrawals: [],
+          transfersIn: [rewardTransferIn],
+          transfersOut: []
+        },
+        transactionEvents: {
+          deposits: [],
+          withdrawals: [],
+          transfers: [rewardTransferIn]
+        }
+      }),
+      USER
+    ).get(REWARD_FAMILY_KEY)
+
+    expect(ledger).toBeDefined()
+    expect(ledger?.vaultLots).toEqual([{ shares: 100n, costBasis: 0n, acquiredAt: 100 }])
+    expect(ledger?.stakedLots).toEqual([])
+    expect(ledger?.unknownCostBasisTransferInCount).toBe(0)
+    expect(ledger?.unknownTransferInEntries).toEqual([])
+    expect(ledger?.rewardTransferInEntries).toEqual([
+      {
+        timestamp: 100,
+        shares: 100n,
+        location: 'vault',
+        distributor: REWARD_DISTRIBUTOR
+      }
+    ])
+    expect(ledger?.eventCounts.rewardTransfersIn).toBe(1)
+    expect(ledger?.eventCounts.externalTransfersIn).toBe(0)
+    expect(ledger?.debugJournal.at(-1)?.view).toBe('reward_in_vault')
   })
 
   it('realizes pnl from underlying vault withdrawals when staked shares exit through a router', () => {

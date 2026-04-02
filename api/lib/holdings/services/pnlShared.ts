@@ -8,6 +8,9 @@ export const KNOWN_VAULT_MIGRATORS = new Set([
   '0x1824df8d751704fa10fa371d62a37f9b8772ab90',
   '0x1112dbcf805682e828606f74ab717abf4b4fd8de'
 ])
+export const KNOWN_ZERO_BASIS_REWARD_DISTRIBUTIONS = new Set([
+  '1:0xb226c52eb411326cdb54824a88abafdaaff16d3d:0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f'
+])
 
 export function lowerCaseAddress(address: string): string {
   return address.toLowerCase()
@@ -15,6 +18,16 @@ export function lowerCaseAddress(address: string): string {
 
 export function toVaultKey(chainId: number, vaultAddress: string): string {
   return `${chainId}:${vaultAddress.toLowerCase()}`
+}
+
+export function isKnownZeroBasisRewardDistribution(
+  chainId: number,
+  distributorAddress: string,
+  rewardedTokenAddress: string
+): boolean {
+  return KNOWN_ZERO_BASIS_REWARD_DISTRIBUTIONS.has(
+    `${chainId}:${distributorAddress.toLowerCase()}:${rewardedTokenAddress.toLowerCase()}`
+  )
 }
 
 export function minBigInt(a: bigint, b: bigint): bigint {

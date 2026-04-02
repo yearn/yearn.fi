@@ -60,6 +60,7 @@ For known-basis lots, USD basis is derived later from:
 
 Known-basis lots come from indexed deposit / withdrawal context.
 Known-basis lots can also come from recognized synthetic acquisition flows, such as supported CoW settlement receipt enrichment on Ethereum mainnet.
+Known-basis lots can also come from recognized zero-basis reward receipts, where the engine can identify a distributor flow that should be treated as a reward rather than as an unknown transfer-in.
 Unknown-basis lots usually come from share transfers where the economic source cannot be proven.
 
 ## Mental Model
@@ -141,6 +142,7 @@ The ledger builder tracks:
 - vault-share lots
 - staked lots
 - realized entries
+- recognized reward transfer-in entries
 - unknown transfer-in entries
 - withdrawals that consumed unknown-basis shares
 - unmatched transfer-outs
@@ -257,6 +259,25 @@ If shares arrive and the engine cannot prove where their basis came from, those 
 If shares leave and the engine cannot match them to known or unknown lots cleanly, the ledger records unmatched transfer-out state.
 
 This is why the endpoint exposes completeness metadata instead of pretending every vault is fully known.
+
+## Recognized Reward Receipts
+
+Some transfer-ins are not treated as unknown.
+
+When the engine can match an incoming share transfer to a recognized reward distributor for that vault asset token, it classifies the receipt as:
+
+- a reward transfer-in
+- a known lot with `costBasis = 0`
+- a complete-basis receipt, not a partial / unknown one
+
+That means:
+
+- `costBasisStatus` stays `complete` for that receipt path
+- the receipt does not contribute to `unknownCostBasisValueUsd`
+- the receipt does not use `windfallPnlUsd`
+- all later value is reported as normal realized / unrealized PnL on a zero-basis lot
+
+Today this path is intended for explicit known reward-distribution flows, not for generic airdrops or arbitrary transfers.
 
 ## Unknown Transfer-In Modes
 
@@ -444,6 +465,7 @@ The drilldown endpoint adds per-vault:
 - `currentLots.vault`
 - `currentLots.staked`
 - `realizedEntries`
+- `rewardTransferInEntries`
 - `unknownTransferInEntries`
 - `unknownWithdrawalEntries`
 - `journal`
@@ -452,8 +474,17 @@ The journal is transaction-oriented. It records:
 
 - the computed vault-family view for that transaction
 - whether the wallet had direct address activity in that transaction
-- realized / stake / unstake / unknown-transfer deltas
+- realized / stake / unstake / reward / unknown-transfer deltas
 - lot summaries before and after the transaction for vault-share and staked-share locations
+
+For frontend drilldown:
+
+- `rewardTransferInEntries` should be rendered separately from `unknownTransferInEntries`
+- reward entries are known zero-basis receipts, so they should not be styled as accounting ambiguity
+- `txHash` currently lives on `journal`, not directly on each reward entry
+- if the UI wants explorer links for reward rows, it should match a reward entry to the journal row with the same:
+  - `timestamp`
+  - `rewardInVaultShares` or `rewardInStakedShares`
 
 ## What Is Covered Well Today
 
