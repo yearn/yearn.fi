@@ -8,7 +8,6 @@ const PortfolioPage = lazy(() => import('@pages/portfolio/index'))
 const VaultsPage = lazy(() => import('@pages/vaults/index'))
 const VaultsDetailPage = lazy(() => import('@pages/vaults/[chainID]/[address]'))
 const IconListPage = lazy(() => import('@pages/icon-list/index'))
-const FontFallbacksPage = lazy(() => import('@pages/font-fallbacks/index'))
 
 // Loading component
 const PageLoader = (): ReactElement => (
@@ -38,9 +37,6 @@ export function Routes(): ReactElement {
 
         {/* Icon inventory page */}
         <Route path="/icon-list" element={<IconListPage />} />
-
-        {/* Font fallback debug page */}
-        <Route path="/font-fallbacks" element={<FontFallbacksPage />} />
 
         {/* Unified Vaults routes */}
         <Route path="/vaults">
