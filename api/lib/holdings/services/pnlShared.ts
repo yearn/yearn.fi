@@ -10,7 +10,8 @@ export const KNOWN_VAULT_ROLLOVER_INTERMEDIARIES = new Set([
   '0x4fe93ebc4ce6ae4f81601cc7ce7139023919e003'
 ])
 export const KNOWN_ZERO_BASIS_REWARD_DISTRIBUTIONS = new Set([
-  '1:0xb226c52eb411326cdb54824a88abafdaaff16d3d:0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f'
+  '1:0xb226c52eb411326cdb54824a88abafdaaff16d3d:0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f',
+  '747474:0xa03e39cdeac8c2823a6edc80956207294807c20d:0x80c34bd3a3569e126e7055831036aa7b212cb159'
 ])
 
 export function lowerCaseAddress(address: string): string {

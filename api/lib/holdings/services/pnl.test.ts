@@ -16,11 +16,14 @@ const STAKING_VAULT = '0x622fa41799406b120f9a40da843d358b7b2cfee3'
 const UNDERLYING_VAULT = '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204'
 const REWARD_DISTRIBUTOR = '0xb226c52eb411326cdb54824a88abafdaaff16d3d'
 const REWARD_VAULT = '0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f'
+const KATANA_REWARD_DISTRIBUTOR = '0xa03e39cdeac8c2823a6edc80956207294807c20d'
+const KATANA_REWARD_VAULT = '0x80c34bd3a3569e126e7055831036aa7b212cb159'
 const SOURCE_MIGRATION_VAULT = '0x1635b506a88fbf428465ad65d00e8d6b6e5846c3'
 const DESTINATION_MIGRATION_VAULT = '0x75a291f0232add37d72dd1dcff55b715755ecdee'
 const ENDO_STEP_VAULT = '0xc56413869c6cdf96496f2b1ef801fedbdfa7ddb0'
 const FAMILY_KEY = `1:${UNDERLYING_VAULT}`
 const REWARD_FAMILY_KEY = `1:${REWARD_VAULT}`
+const KATANA_REWARD_FAMILY_KEY = `747474:${KATANA_REWARD_VAULT}`
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 function createDepositEvent(overrides: Partial<DepositEvent>): DepositEvent {
@@ -317,6 +320,51 @@ describe('processRawPnlEvents', () => {
         shares: 100n,
         location: 'vault',
         distributor: REWARD_DISTRIBUTOR
+      }
+    ])
+    expect(ledger?.eventCounts.rewardTransfersIn).toBe(1)
+    expect(ledger?.eventCounts.externalTransfersIn).toBe(0)
+    expect(ledger?.debugJournal.at(-1)?.view).toBe('reward_in_vault')
+  })
+
+  it('classifies known Katana reward distributor receipts as zero-basis rewards instead of unknown transfer-ins', () => {
+    const rewardTransferIn = createTransferEvent({
+      id: 'katana-reward-transfer-in',
+      chainId: 747474,
+      transactionHash: '0xkatana-reward',
+      vaultAddress: KATANA_REWARD_VAULT,
+      sender: KATANA_REWARD_DISTRIBUTOR,
+      receiver: USER,
+      value: '8523506'
+    })
+
+    const ledger = processRawPnlEvents(
+      buildRawPnlEvents({
+        addressEvents: {
+          deposits: [],
+          withdrawals: [],
+          transfersIn: [rewardTransferIn],
+          transfersOut: []
+        },
+        transactionEvents: {
+          deposits: [],
+          withdrawals: [],
+          transfers: [rewardTransferIn]
+        }
+      }),
+      USER
+    ).get(KATANA_REWARD_FAMILY_KEY)
+
+    expect(ledger).toBeDefined()
+    expect(ledger?.vaultLots).toEqual([{ shares: 8523506n, costBasis: 0n, acquiredAt: 100 }])
+    expect(ledger?.unknownCostBasisTransferInCount).toBe(0)
+    expect(ledger?.unknownTransferInEntries).toEqual([])
+    expect(ledger?.rewardTransferInEntries).toEqual([
+      {
+        timestamp: 100,
+        shares: 8523506n,
+        location: 'vault',
+        distributor: KATANA_REWARD_DISTRIBUTOR
       }
     ])
     expect(ledger?.eventCounts.rewardTransfersIn).toBe(1)
