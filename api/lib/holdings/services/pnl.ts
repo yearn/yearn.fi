@@ -13,7 +13,7 @@ import { fetchMultipleVaultsPPS, getPPS } from './kong'
 import {
   formatAmount,
   isKnownZeroBasisRewardDistribution,
-  KNOWN_VAULT_MIGRATORS,
+  KNOWN_VAULT_ROLLOVER_INTERMEDIARIES,
   lowerCaseAddress,
   minBigInt,
   negativeBigIntMagnitude,
@@ -1246,31 +1246,28 @@ function detectKnownMigratorCrossFamilyRollover(
   userAddress: string
 ): TDetectedKnownMigration | null {
   const txFamilyGroups = groupTransactionEventsByFamily(txEvents)
-
-  if (txFamilyGroups.length !== 2) {
-    return null
-  }
-
-  const sourceFamilyEvents = txFamilyGroups.find((familyEvents) => {
+  const sourceFamilyCandidates = txFamilyGroups.filter((familyEvents) => {
     const addressTransfersToMigrator = familyEvents.filter(
       (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
         event.kind === 'transfer' &&
         event.scopes.address &&
         event.sender === userAddress &&
-        KNOWN_VAULT_MIGRATORS.has(event.receiver)
+        KNOWN_VAULT_ROLLOVER_INTERMEDIARIES.has(event.receiver)
     )
 
     if (addressTransfersToMigrator.length === 0) {
       return false
     }
 
-    if (familyEvents.some((event) => event.kind === 'deposit' || event.kind === 'withdrawal')) {
+    if (
+      familyEvents.some((event) => event.scopes.address && (event.kind === 'deposit' || event.kind === 'withdrawal'))
+    ) {
       return false
     }
 
     const migratorAddress = addressTransfersToMigrator[0]?.receiver ?? null
 
-    if (migratorAddress === null) {
+    if (migratorAddress === null || addressTransfersToMigrator.some((event) => event.receiver !== migratorAddress)) {
       return false
     }
 
@@ -1283,7 +1280,7 @@ function detectKnownMigratorCrossFamilyRollover(
 
     return burnedShares > ZERO && burnedShares === sumEventShares(addressTransfersToMigrator)
   })
-  const destinationFamilyEvents = txFamilyGroups.find((familyEvents) => {
+  const destinationFamilyCandidates = txFamilyGroups.filter((familyEvents) => {
     const addressDeposits = familyEvents.filter(
       (event): event is Extract<TRawPnlEvent, { kind: 'deposit' }> =>
         event.kind === 'deposit' && event.scopes.address && event.owner === userAddress
@@ -1303,10 +1300,17 @@ function detectKnownMigratorCrossFamilyRollover(
       )
     )
 
-    return mintedShares > ZERO && mintedShares === sumEventShares(addressDeposits)
+    return mintedShares > ZERO
   })
+  const sourceFamilyEvents = sourceFamilyCandidates[0]
+  const destinationFamilyEvents = destinationFamilyCandidates[0]
 
-  if (!sourceFamilyEvents || !destinationFamilyEvents) {
+  if (
+    sourceFamilyCandidates.length !== 1 ||
+    destinationFamilyCandidates.length !== 1 ||
+    !sourceFamilyEvents ||
+    !destinationFamilyEvents
+  ) {
     return null
   }
 
@@ -1329,14 +1333,23 @@ function detectKnownMigratorCrossFamilyRollover(
       event.kind === 'transfer' &&
       event.scopes.address &&
       event.sender === userAddress &&
-      KNOWN_VAULT_MIGRATORS.has(event.receiver)
+      KNOWN_VAULT_ROLLOVER_INTERMEDIARIES.has(event.receiver)
   )
   const destinationDeposits = destinationFamilyEvents.filter(
     (event): event is Extract<TRawPnlEvent, { kind: 'deposit' }> =>
       event.kind === 'deposit' && event.scopes.address && event.owner === userAddress
   )
+  const destinationMintsToUser = destinationFamilyEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+      event.kind === 'transfer' &&
+      event.scopes.address &&
+      event.sender === ZERO_ADDRESS &&
+      event.receiver === userAddress
+  )
   const sourceTransferShares = sumEventShares(sourceTransfersToMigrator)
-  const destinationDepositShares = sumEventShares(destinationDeposits)
+  const destinationMintedShares = sumEventShares(destinationMintsToUser)
+  const destinationDepositShares =
+    destinationMintedShares > ZERO ? destinationMintedShares : sumEventShares(destinationDeposits)
   const destinationDepositAssets = sumEventAssets(destinationDeposits)
 
   if (sourceTransferShares === ZERO || destinationDepositShares === ZERO || destinationDepositAssets === ZERO) {

@@ -61,6 +61,7 @@ For known-basis lots, USD basis is derived later from:
 Known-basis lots come from indexed deposit / withdrawal context.
 Known-basis lots can also come from recognized synthetic acquisition flows, such as supported CoW settlement receipt enrichment on Ethereum mainnet.
 Known-basis lots can also come from recognized zero-basis reward receipts, where the engine can identify a distributor flow that should be treated as a reward rather than as an unknown transfer-in.
+Known-basis lots can also come from recognized vault-to-vault rollover flows, where source vault lots are consumed and their basis is redistributed into the destination vault shares.
 Unknown-basis lots usually come from share transfers where the economic source cannot be proven.
 
 ## Mental Model
@@ -278,6 +279,25 @@ That means:
 - all later value is reported as normal realized / unrealized PnL on a zero-basis lot
 
 Today this path is intended for explicit known reward-distribution flows, not for generic airdrops or arbitrary transfers.
+
+## Recognized Vault Rollovers
+
+Some transfer-ins are not rewards and are not unknown.
+
+When the engine can prove that a transaction is a vault-to-vault rollover, it classifies the receipt as:
+
+- a migration / rollover from a source family into a destination family
+- a known-basis receipt whose destination lots inherit source-lot basis
+- a complete-basis receipt unless the source side already had unknown basis
+
+That means:
+
+- the destination path increments `eventCounts.migrationsIn`
+- the source path increments `eventCounts.migrationsOut`
+- destination shares do not become `unknownTransferInEntries` just because a router or intermediary sat in the middle
+- basis is preserved across the rollover instead of being reset to zero or marked unknown
+
+Today this path covers explicit known migrator flows and supported Enso-mediated vault rollovers. It is intentionally pattern-based rather than a blanket router whitelist.
 
 ## Unknown Transfer-In Modes
 

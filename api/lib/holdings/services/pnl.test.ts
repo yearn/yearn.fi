@@ -11,12 +11,14 @@ const USER = '0x96a489a533ba0913dd8e507e6d985a45bc783566'
 const ROUTER = '0x1111111111111111111111111111111111111111'
 const MIGRATOR = '0x9327e2fdc57c7d70782f29ab46f6385afaf4503c'
 const YEARN_4626_ROUTER = '0x1112dbcf805682e828606f74ab717abf4b4fd8de'
+const ENSO_EXECUTOR = '0x4fe93ebc4ce6ae4f81601cc7ce7139023919e003'
 const STAKING_VAULT = '0x622fa41799406b120f9a40da843d358b7b2cfee3'
 const UNDERLYING_VAULT = '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204'
 const REWARD_DISTRIBUTOR = '0xb226c52eb411326cdb54824a88abafdaaff16d3d'
 const REWARD_VAULT = '0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f'
 const SOURCE_MIGRATION_VAULT = '0x1635b506a88fbf428465ad65d00e8d6b6e5846c3'
 const DESTINATION_MIGRATION_VAULT = '0x75a291f0232add37d72dd1dcff55b715755ecdee'
+const ENDO_STEP_VAULT = '0xc56413869c6cdf96496f2b1ef801fedbdfa7ddb0'
 const FAMILY_KEY = `1:${UNDERLYING_VAULT}`
 const REWARD_FAMILY_KEY = `1:${REWARD_VAULT}`
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
@@ -802,5 +804,119 @@ describe('processRawPnlEvents', () => {
 
     expect(ledgers.get(destinationFamilyKey)?.vaultLots).toEqual([{ shares: 80n, costBasis: 1000n, acquiredAt: 100 }])
     expect(ledgers.get(destinationFamilyKey)?.eventCounts.migrationsIn).toBe(1)
+  })
+
+  it('rolls basis through Enso-mediated cross-family vault rollovers', () => {
+    const sourceFamilyKey = `1:${SOURCE_MIGRATION_VAULT}`
+    const destinationFamilyKey = `1:${DESTINATION_MIGRATION_VAULT}`
+    const sourceDeposit = createDepositEvent({
+      id: 'source-deposit-enso',
+      transactionHash: '0xsource-deposit-enso',
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      assets: '1000',
+      shares: '100'
+    })
+    const migrateOut = createTransferEvent({
+      id: 'migrate-out-enso',
+      transactionHash: '0xenso-rollover',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 1,
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      sender: USER,
+      receiver: ENSO_EXECUTOR,
+      value: '100'
+    })
+    const migrateBurn = createTransferEvent({
+      id: 'migrate-burn-enso',
+      transactionHash: '0xenso-rollover',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 2,
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      sender: ENSO_EXECUTOR,
+      receiver: ZERO_ADDRESS,
+      value: '100'
+    })
+    const sourceWithdraw = createWithdrawEvent({
+      id: 'source-withdraw-enso',
+      transactionHash: '0xenso-rollover',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 3,
+      vaultAddress: SOURCE_MIGRATION_VAULT,
+      owner: ENSO_EXECUTOR,
+      assets: '1100',
+      shares: '100'
+    })
+    const ensoStepBurn = createTransferEvent({
+      id: 'enso-step-burn',
+      transactionHash: '0xenso-rollover',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 3,
+      vaultAddress: ENDO_STEP_VAULT,
+      sender: DESTINATION_MIGRATION_VAULT,
+      receiver: ZERO_ADDRESS,
+      value: '103'
+    })
+    const ensoStepWithdraw = createWithdrawEvent({
+      id: 'enso-step-withdraw',
+      transactionHash: '0xenso-rollover',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 4,
+      vaultAddress: ENDO_STEP_VAULT,
+      owner: DESTINATION_MIGRATION_VAULT,
+      assets: '1100',
+      shares: '103'
+    })
+    const destinationMint = createTransferEvent({
+      id: 'destination-mint-enso',
+      transactionHash: '0xenso-rollover',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 5,
+      vaultAddress: DESTINATION_MIGRATION_VAULT,
+      sender: ZERO_ADDRESS,
+      receiver: USER,
+      value: '81'
+    })
+    const destinationDeposit = createDepositEvent({
+      id: 'destination-deposit-enso',
+      transactionHash: '0xenso-rollover',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 6,
+      vaultAddress: DESTINATION_MIGRATION_VAULT,
+      owner: USER,
+      sender: ENSO_EXECUTOR,
+      assets: '1100',
+      shares: '80'
+    })
+
+    const ledgers = processRawPnlEvents(
+      buildRawPnlEvents({
+        addressEvents: {
+          deposits: [sourceDeposit, destinationDeposit],
+          withdrawals: [],
+          transfersIn: [destinationMint],
+          transfersOut: [migrateOut]
+        },
+        transactionEvents: {
+          deposits: [sourceDeposit, destinationDeposit],
+          withdrawals: [sourceWithdraw, ensoStepWithdraw],
+          transfers: [migrateOut, migrateBurn, ensoStepBurn, destinationMint]
+        }
+      }),
+      USER
+    )
+
+    expect(ledgers.get(sourceFamilyKey)?.vaultLots).toEqual([])
+    expect(ledgers.get(sourceFamilyKey)?.eventCounts.migrationsOut).toBe(1)
+    expect(ledgers.get(destinationFamilyKey)?.vaultLots).toEqual([{ shares: 81n, costBasis: 1000n, acquiredAt: 100 }])
+    expect(ledgers.get(destinationFamilyKey)?.unknownTransferInEntries).toEqual([])
+    expect(ledgers.get(destinationFamilyKey)?.eventCounts.migrationsIn).toBe(1)
+    expect(ledgers.get(destinationFamilyKey)?.debugJournal.at(-1)?.view).toBe('migrate_in->vault')
   })
 })

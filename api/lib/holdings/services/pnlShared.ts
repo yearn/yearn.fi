@@ -3,10 +3,11 @@ import type { TLot } from './pnlTypes'
 
 export const ZERO = 0n
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
-export const KNOWN_VAULT_MIGRATORS = new Set([
+export const KNOWN_VAULT_ROLLOVER_INTERMEDIARIES = new Set([
   '0x9327e2fdc57c7d70782f29ab46f6385afaf4503c',
   '0x1824df8d751704fa10fa371d62a37f9b8772ab90',
-  '0x1112dbcf805682e828606f74ab717abf4b4fd8de'
+  '0x1112dbcf805682e828606f74ab717abf4b4fd8de',
+  '0x4fe93ebc4ce6ae4f81601cc7ce7139023919e003'
 ])
 export const KNOWN_ZERO_BASIS_REWARD_DISTRIBUTIONS = new Set([
   '1:0xb226c52eb411326cdb54824a88abafdaaff16d3d:0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f'
