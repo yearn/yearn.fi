@@ -18,6 +18,16 @@ const REWARD_DISTRIBUTOR = '0xb226c52eb411326cdb54824a88abafdaaff16d3d'
 const REWARD_VAULT = '0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f'
 const KATANA_REWARD_DISTRIBUTOR = '0xa03e39cdeac8c2823a6edc80956207294807c20d'
 const KATANA_REWARD_VAULT = '0x80c34bd3a3569e126e7055831036aa7b212cb159'
+const KATANA_MULTISIG_REWARD_DISTRIBUTORS = [
+  '0x67c912ff560951526bffdff66dfbd4df8ae23756',
+  '0x5480f3152748809495bd56c14eab4a622aa3a19b'
+] as const
+const KATANA_MULTISIG_REWARD_VAULTS = [
+  '0x80c34bd3a3569e126e7055831036aa7b212cb159',
+  '0xe007ca01894c863d7898045ed5a3b4abf0b18f37',
+  '0xaa0362ecc584b985056e47812931270b99c91f9d',
+  '0x9a6bd7b6fd5c4f87eb66356441502fc7dcdd185b'
+] as const
 const SOURCE_MIGRATION_VAULT = '0x1635b506a88fbf428465ad65d00e8d6b6e5846c3'
 const DESTINATION_MIGRATION_VAULT = '0x75a291f0232add37d72dd1dcff55b715755ecdee'
 const ENDO_STEP_VAULT = '0xc56413869c6cdf96496f2b1ef801fedbdfa7ddb0'
@@ -365,6 +375,55 @@ describe('processRawPnlEvents', () => {
         shares: 8523506n,
         location: 'vault',
         distributor: KATANA_REWARD_DISTRIBUTOR
+      }
+    ])
+    expect(ledger?.eventCounts.rewardTransfersIn).toBe(1)
+    expect(ledger?.eventCounts.externalTransfersIn).toBe(0)
+    expect(ledger?.debugJournal.at(-1)?.view).toBe('reward_in_vault')
+  })
+
+  it.each(
+    KATANA_MULTISIG_REWARD_DISTRIBUTORS.flatMap((distributor) =>
+      KATANA_MULTISIG_REWARD_VAULTS.map((vaultAddress) => [distributor, vaultAddress] as const)
+    )
+  )('classifies Katana multisig reward receipts from %s for %s as zero-basis rewards instead of unknown transfer-ins', (distributor, vaultAddress) => {
+    const rewardTransferIn = createTransferEvent({
+      id: `katana-multisig-reward-transfer-in-${distributor}-${vaultAddress}`,
+      chainId: 747474,
+      transactionHash: '0xkatana-multisig-reward',
+      vaultAddress,
+      sender: distributor,
+      receiver: USER,
+      value: '100'
+    })
+
+    const ledger = processRawPnlEvents(
+      buildRawPnlEvents({
+        addressEvents: {
+          deposits: [],
+          withdrawals: [],
+          transfersIn: [rewardTransferIn],
+          transfersOut: []
+        },
+        transactionEvents: {
+          deposits: [],
+          withdrawals: [],
+          transfers: [rewardTransferIn]
+        }
+      }),
+      USER
+    ).get(`747474:${vaultAddress}`)
+
+    expect(ledger).toBeDefined()
+    expect(ledger?.vaultLots).toEqual([{ shares: 100n, costBasis: 0n, acquiredAt: 100 }])
+    expect(ledger?.unknownCostBasisTransferInCount).toBe(0)
+    expect(ledger?.unknownTransferInEntries).toEqual([])
+    expect(ledger?.rewardTransferInEntries).toEqual([
+      {
+        timestamp: 100,
+        shares: 100n,
+        location: 'vault',
+        distributor
       }
     ])
     expect(ledger?.eventCounts.rewardTransfersIn).toBe(1)
