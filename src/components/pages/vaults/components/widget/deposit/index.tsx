@@ -475,6 +475,35 @@ export function WidgetDeposit({
     onResult: setDepositInput
   })
 
+  // Called by TransactionOverlay after the final tx confirms on-chain, while the
+  // overlay is in "refreshing" state. We await the wallet balance refetch so the
+  // success screen appears only once balances are fresh. Not called for cross-chain
+  // deposits (those refresh in handleDepositSuccess after bridge completes).
+  const handleDepositTransactionSuccess = useCallback(
+    async (_label: string) => {
+      if (isCrossChain) return
+      const tokensToRefresh = [
+        { address: depositToken, chainID: sourceChainId },
+        { address: vaultAddress, chainID: chainId }
+      ]
+      if (stakingAddress) {
+        tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
+      }
+      refetchVaultUserData()
+      await refreshWalletBalances(tokensToRefresh)
+    },
+    [
+      isCrossChain,
+      depositToken,
+      sourceChainId,
+      vaultAddress,
+      chainId,
+      stakingAddress,
+      refreshWalletBalances,
+      refetchVaultUserData
+    ]
+  )
+
   const handleDepositSuccess = useCallback(() => {
     const amountToDeposit = formatUnits(depositAmount.bn, inputToken?.decimals ?? 18)
     const priceUsd = inputTokenPrice
@@ -496,15 +525,21 @@ export function WidgetDeposit({
     })
 
     setDepositInput('')
-    const tokensToRefresh = [
-      { address: depositToken, chainID: sourceChainId },
-      { address: vaultAddress, chainID: chainId }
-    ]
-    if (stakingAddress) {
-      tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
+    // Cross-chain deposits: the transaction submits on source chain but funds
+    // don't arrive on destination until minutes later, so there is no on-chain
+    // receipt — onBeforeSuccess never fires for these. Refresh balances here
+    // instead so the sent tokens are reflected after the bridge completes.
+    if (isCrossChain) {
+      const tokensToRefresh = [
+        { address: depositToken, chainID: sourceChainId },
+        { address: vaultAddress, chainID: chainId }
+      ]
+      if (stakingAddress) {
+        tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
+      }
+      refreshWalletBalances(tokensToRefresh)
+      refetchVaultUserData()
     }
-    refreshWalletBalances(tokensToRefresh)
-    refetchVaultUserData()
     onDepositSuccess?.()
   }, [
     depositAmount.bn,
@@ -518,6 +553,7 @@ export function WidgetDeposit({
     depositToken,
     routeType,
     setDepositInput,
+    isCrossChain,
     refreshWalletBalances,
     sourceChainId,
     stakingAddress,
@@ -761,6 +797,7 @@ export function WidgetDeposit({
         deferOnAllCompleteUntilConfettiEnd={deferSuccessEffectsUntilConfettiEnd}
         autoContinueToNextStep
         autoContinueStepLabels={['Approve', 'Sign Permit']}
+        onBeforeSuccess={handleDepositTransactionSuccess}
         onAllComplete={handleDepositSuccess}
       />
 

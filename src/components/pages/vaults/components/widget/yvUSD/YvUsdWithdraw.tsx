@@ -938,27 +938,26 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     [chainId, refetchLockedWithdrawState, refreshWalletBalances]
   )
 
+  const handleLockedWithdrawBeforeSuccess = useCallback(
+    async (_label: string): Promise<void> => {
+      refetchLockedWithdrawState()
+      await refreshWalletBalances([
+        { address: YVUSD_LOCKED_ADDRESS, chainID: chainId },
+        { address: YVUSD_UNLOCKED_ADDRESS, chainID: chainId },
+        { address: unlockedAssetAddress, chainID: chainId }
+      ])
+    },
+    [chainId, refetchLockedWithdrawState, refreshWalletBalances, unlockedAssetAddress]
+  )
+
   const handleLockedWithdrawSuccess = useCallback((): void => {
-    refetchLockedWithdrawState()
-    refreshWalletBalances([
-      { address: YVUSD_LOCKED_ADDRESS, chainID: chainId },
-      { address: YVUSD_UNLOCKED_ADDRESS, chainID: chainId },
-      { address: unlockedAssetAddress, chainID: chainId }
-    ])
     setPendingPrefillAddress(lockedInputAddress)
     setPendingPrefillAmount('')
     setPrefillRequestKey((current) => current + 1)
     setLockedWithdrawExecutionSnapshot(null)
     setDraftWithdrawAmount(0n)
     onWithdrawSuccess?.()
-  }, [
-    chainId,
-    refetchLockedWithdrawState,
-    refreshWalletBalances,
-    unlockedAssetAddress,
-    lockedInputAddress,
-    onWithdrawSuccess
-  ])
+  }, [lockedInputAddress, onWithdrawSuccess])
 
   const handleFillAvailableWithdrawAmount = useCallback((): void => {
     if (!canWithdrawNow || lockedMaxWithdrawDisplayAmount <= 0n) {
@@ -1292,6 +1291,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
         autoContinueToNextStep
         autoContinueStepLabels={['Withdraw to yvUSD']}
         onStepSuccess={handleLockedWithdrawStepSuccess}
+        onBeforeSuccess={handleLockedWithdrawBeforeSuccess}
         onAllComplete={handleLockedWithdrawSuccess}
       />
       <InfoOverlay

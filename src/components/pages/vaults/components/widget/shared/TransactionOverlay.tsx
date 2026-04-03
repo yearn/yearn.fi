@@ -17,9 +17,11 @@ import { useAccount, useSignTypedData, useWriteContract } from 'wagmi'
 import { isConnectedToExecutionChain } from '@/config/tenderly'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
 import {
+  type CompletionDeferral,
   type OverlayState,
   resolveCompletionDeferral,
-  shouldAutoContinuePermitSuccess
+  shouldAutoContinuePermitSuccess,
+  shouldRunDeferredCompletion
 } from './transactionOverlay.helpers'
 
 export type PermitDataDirect = {
@@ -140,6 +142,13 @@ type TransactionOverlayProps = {
   deferOnAllCompleteUntilClose?: boolean
   deferOnAllCompleteUntilConfettiEnd?: boolean
   onStepSuccess?: (label: string) => void
+  /**
+   * Called after the final transaction is confirmed, before the success screen
+   * is shown. The overlay stays in a "refreshing" state while this resolves.
+   * Use this to await balance/data refetches so the success screen renders
+   * with fresh data and no background work remaining.
+   */
+  onBeforeSuccess?: (label: string) => Promise<void>
   topOffset?: string
   contentAlign?: 'center' | 'start'
   autoContinueToNextStep?: boolean
@@ -155,6 +164,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   deferOnAllCompleteUntilClose = false,
   deferOnAllCompleteUntilConfettiEnd = false,
   onStepSuccess,
+  onBeforeSuccess,
   contentAlign = 'center',
   autoContinueToNextStep = false,
   autoContinueStepLabels = []
@@ -207,18 +217,29 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const hasAdvancedFromStepRef = useRef<string | null>(null)
   const autoContinueNonceRef = useRef(0)
   const writeContractResetRef = useRef(writeContract.reset)
-  const hasPendingCompletionRef = useRef(false)
+  const pendingCompletionRef = useRef<CompletionDeferral>('none')
   const [isAutoContinuing, setIsAutoContinuing] = useState(false)
 
   useEffect(() => {
     writeContractResetRef.current = writeContract.reset
   }, [writeContract.reset])
 
-  const runAllCompleteIfPending = useCallback(() => {
-    if (!hasPendingCompletionRef.current) return
-    hasPendingCompletionRef.current = false
-    onAllComplete?.()
-  }, [onAllComplete])
+  const runAllCompleteIfPending = useCallback(
+    (trigger: 'close' | 'confetti') => {
+      if (
+        !shouldRunDeferredCompletion({
+          completionDeferral: pendingCompletionRef.current,
+          trigger
+        })
+      ) {
+        return
+      }
+
+      pendingCompletionRef.current = 'none'
+      onAllComplete?.()
+    },
+    [onAllComplete]
+  )
 
   const confettiId = useId()
   const { reward } = useReward(confettiId, 'confetti', {
@@ -228,7 +249,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     decay: 0.91,
     lifetime: 200,
     colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
-    onAnimationComplete: runAllCompleteIfPending
+    onAnimationComplete: () => runAllCompleteIfPending('confetti')
   })
 
   const finalizeSuccessState = useCallback(
@@ -238,7 +259,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       setCompletedStepSnapshot(completedAllSteps ? (completedStep ?? executedStepRef.current ?? null) : null)
 
       if (!completedAllSteps) {
-        hasPendingCompletionRef.current = false
+        pendingCompletionRef.current = 'none'
         return
       }
 
@@ -250,11 +271,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       })
 
       if (completionDeferral === 'after-close' || completionDeferral === 'after-confetti') {
-        hasPendingCompletionRef.current = true
+        pendingCompletionRef.current = completionDeferral
         return
       }
 
-      hasPendingCompletionRef.current = false
+      pendingCompletionRef.current = 'none'
       onAllComplete?.()
     },
     [deferOnAllCompleteUntilClose, deferOnAllCompleteUntilConfettiEnd, onAllComplete]
@@ -279,7 +300,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   // Reset state when overlay closes
   useEffect(() => {
     if (!isOpen) {
-      runAllCompleteIfPending()
+      runAllCompleteIfPending('close')
       setOverlayState('idle')
       setErrorMessage('')
       setHasCompletedFlow(false)
@@ -292,7 +313,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       executedStepRef.current = null
       wasLastStepRef.current = false
       executedStepBlockRef.current = undefined
-      hasPendingCompletionRef.current = false
+      pendingCompletionRef.current = 'none'
       autoContinueNonceRef.current += 1
       setIsAutoContinuing(false)
     }
@@ -645,16 +666,29 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       }
 
       const completedAllSteps = executedStepRef.current?.completesFlow ?? wasLastStepRef.current
-      finalizeSuccessState(completedAllSteps, executedStepRef.current)
+      const capturedStep = executedStepRef.current
+      const capturedReceipt = receipt.data
       resetTxState()
 
       // Update notification to success
-      handleUpdateNotification({ receipt: receipt.data, status: 'success' })
+      handleUpdateNotification({ receipt: capturedReceipt, status: 'success' })
       setNotificationId(undefined)
 
-      // Fire confetti if the executed step has confetti enabled
-      if (executedStepRef.current?.showConfetti) {
-        setTimeout(() => reward(), 100)
+      if (completedAllSteps && onBeforeSuccess) {
+        setOverlayState('refreshing')
+        void (async () => {
+          await onBeforeSuccess(capturedStep?.label ?? '')
+          await new Promise((resolve) => setTimeout(resolve, 500))
+          finalizeSuccessState(completedAllSteps, capturedStep)
+          if (capturedStep?.showConfetti) {
+            setTimeout(() => reward(), 100)
+          }
+        })()
+      } else {
+        finalizeSuccessState(completedAllSteps, capturedStep)
+        if (capturedStep?.showConfetti) {
+          setTimeout(() => reward(), 100)
+        }
       }
     }
   }, [
@@ -664,6 +698,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     reward,
     handleUpdateNotification,
     onStepSuccess,
+    onBeforeSuccess,
     isStepReady,
     step?.label,
     resetTxState,
@@ -814,6 +849,25 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
               <p className="text-sm text-text-secondary">
                 {isPreparingNextStep ? 'Preparing next step...' : 'Waiting for confirmation...'}
               </p>
+              {explorerTxUrl ? (
+                <a
+                  href={explorerTxUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 text-sm font-semibold text-text-primary underline"
+                >
+                  View on block explorer
+                </a>
+              ) : null}
+            </>
+          )}
+
+          {/* Refreshing State */}
+          {overlayState === 'refreshing' && (
+            <>
+              <Spinner />
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction confirmed</h3>
+              <p className="text-sm text-text-secondary">Updating balances...</p>
               {explorerTxUrl ? (
                 <a
                   href={explorerTxUrl}
