@@ -49,6 +49,7 @@ import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDrop
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { usePrefetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
+import { useOptimisticValue } from '@shared/hooks/useOptimisticValue'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
 import type { RefObject } from 'react'
@@ -68,6 +69,24 @@ import { VAULTS_FILTERS_STORAGE_KEY } from './vaultsFiltersStorage'
 
 const DEFAULT_VAULT_TYPES = ['multi', 'single']
 const DEFAULT_SORT_BY: TPossibleSortBy = 'tvl'
+
+const areArraysEquivalent = (
+  a: Array<string | number> | null | undefined,
+  b: Array<string | number> | null | undefined
+): boolean => {
+  const normalize = (value: Array<string | number> | null | undefined): Array<string | number> => {
+    if (!value || value.length === 0) {
+      return []
+    }
+    return [...new Set(value)].sort((left, right) => String(left).localeCompare(String(right)))
+  }
+  const normalizedA = normalize(a)
+  const normalizedB = normalize(b)
+  if (normalizedA.length !== normalizedB.length) {
+    return false
+  }
+  return normalizedA.every((value, index) => value === normalizedB[index])
+}
 
 type TVaultsPinnedSection = {
   key: string
@@ -255,16 +274,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
 
   usePrefetchYearnVaults(vaultType === 'v3')
 
-  useEffect(() => {
-    if (sortBy !== 'featuringScore') {
-      return
-    }
-    onChangeSortBy(DEFAULT_SORT_BY)
-    if (sortDirection !== 'desc') {
-      onChangeSortDirection('desc')
-    }
-  }, [sortBy, sortDirection, onChangeSortBy, onChangeSortDirection])
-
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
   const searchValue = search ?? ''
@@ -279,16 +288,22 @@ export function useVaultsPageModel(): TVaultsPageModel {
     }) ?? false
   const shouldCollapseChips = isBelow1000
   const shouldStackFilters = isBelow1000 && !isBelow768
-  const [optimisticVaultType, setOptimisticVaultType] = useState<TVaultType | null>(null)
-  const [optimisticChains, setOptimisticChains] = useState<number[] | null>(null)
-  const [optimisticTypes, setOptimisticTypes] = useState<string[] | null>(null)
-  const [optimisticCategories, setOptimisticCategories] = useState<string[] | null>(null)
-  const [optimisticAggressiveness, setOptimisticAggressiveness] = useState<string[] | null>(null)
-  const [optimisticUnderlyingAssets, setOptimisticUnderlyingAssets] = useState<string[] | null>(null)
-  const [optimisticMinTvl, setOptimisticMinTvl] = useState<number | null>(null)
-  const [optimisticShowLegacyVaults, setOptimisticShowLegacyVaults] = useState<boolean | null>(null)
-  const [optimisticShowHiddenVaults, setOptimisticShowHiddenVaults] = useState<boolean | null>(null)
-  const [optimisticShowStrategies, setOptimisticShowStrategies] = useState<boolean | null>(null)
+
+  // Optimistic UI — show immediate feedback while URL state catches up
+  const [displayedVaultType, setOptimisticVaultType] = useOptimisticValue(vaultType)
+  const [displayedChains, setOptimisticChains] = useOptimisticValue(chains, areArraysEquivalent)
+  const [displayedTypes, setOptimisticTypes] = useOptimisticValue(types, areArraysEquivalent)
+  const [displayedCategories, setOptimisticCategories] = useOptimisticValue(categories, areArraysEquivalent)
+  const [displayedAggressiveness, setOptimisticAggressiveness] = useOptimisticValue(aggressiveness, areArraysEquivalent)
+  const [displayedUnderlyingAssets, setOptimisticUnderlyingAssets] = useOptimisticValue(
+    underlyingAssets,
+    areArraysEquivalent
+  )
+  const [displayedMinTvl, setOptimisticMinTvl] = useOptimisticValue(minTvl)
+  const [displayedShowLegacyVaults, setOptimisticShowLegacyVaults] = useOptimisticValue(showLegacyVaults)
+  const [displayedShowHiddenVaults, setOptimisticShowHiddenVaults] = useOptimisticValue(showHiddenVaults)
+  const [displayedShowStrategies, setOptimisticShowStrategies] = useOptimisticValue(showStrategies)
+
   const listChains = useDeferredValue(chains)
   const listTypes = useDeferredValue(types)
   const listCategories = useDeferredValue(categories)
@@ -298,95 +313,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const listShowLegacyVaults = useDeferredValue(showLegacyVaults)
   const listShowHiddenVaults = useDeferredValue(showHiddenVaults)
   const listShowStrategies = useDeferredValue(showStrategies)
-  const areArraysEquivalent = useCallback(
-    (a: Array<string | number> | null | undefined, b: Array<string | number> | null | undefined): boolean => {
-      const normalize = (value: Array<string | number> | null | undefined): Array<string | number> => {
-        if (!value || value.length === 0) {
-          return []
-        }
-        return [...new Set(value)].sort((left, right) => String(left).localeCompare(String(right)))
-      }
-      const normalizedA = normalize(a)
-      const normalizedB = normalize(b)
-      if (normalizedA.length !== normalizedB.length) {
-        return false
-      }
-      return normalizedA.every((value, index) => value === normalizedB[index])
-    },
-    []
-  )
-
-  useEffect(() => {
-    if (optimisticVaultType && optimisticVaultType === vaultType) {
-      setOptimisticVaultType(null)
-    }
-  }, [optimisticVaultType, vaultType])
-
-  useEffect(() => {
-    if (optimisticChains !== null && areArraysEquivalent(optimisticChains, chains)) {
-      setOptimisticChains(null)
-    }
-  }, [optimisticChains, chains, areArraysEquivalent])
-
-  useEffect(() => {
-    if (optimisticTypes !== null && areArraysEquivalent(optimisticTypes, types)) {
-      setOptimisticTypes(null)
-    }
-  }, [optimisticTypes, types, areArraysEquivalent])
-
-  useEffect(() => {
-    if (optimisticCategories !== null && areArraysEquivalent(optimisticCategories, categories)) {
-      setOptimisticCategories(null)
-    }
-  }, [optimisticCategories, categories, areArraysEquivalent])
-
-  useEffect(() => {
-    if (optimisticAggressiveness !== null && areArraysEquivalent(optimisticAggressiveness, aggressiveness)) {
-      setOptimisticAggressiveness(null)
-    }
-  }, [optimisticAggressiveness, aggressiveness, areArraysEquivalent])
-
-  useEffect(() => {
-    if (optimisticUnderlyingAssets !== null && areArraysEquivalent(optimisticUnderlyingAssets, underlyingAssets)) {
-      setOptimisticUnderlyingAssets(null)
-    }
-  }, [optimisticUnderlyingAssets, underlyingAssets, areArraysEquivalent])
-
-  useEffect(() => {
-    if (optimisticMinTvl !== null && optimisticMinTvl === minTvl) {
-      setOptimisticMinTvl(null)
-    }
-  }, [optimisticMinTvl, minTvl])
-
-  useEffect(() => {
-    if (optimisticShowLegacyVaults !== null && optimisticShowLegacyVaults === showLegacyVaults) {
-      setOptimisticShowLegacyVaults(null)
-    }
-  }, [optimisticShowLegacyVaults, showLegacyVaults])
-
-  useEffect(() => {
-    if (optimisticShowHiddenVaults !== null && optimisticShowHiddenVaults === showHiddenVaults) {
-      setOptimisticShowHiddenVaults(null)
-    }
-  }, [optimisticShowHiddenVaults, showHiddenVaults])
-
-  useEffect(() => {
-    if (optimisticShowStrategies !== null && optimisticShowStrategies === showStrategies) {
-      setOptimisticShowStrategies(null)
-    }
-  }, [optimisticShowStrategies, showStrategies])
-
-  const displayedVaultType = optimisticVaultType ?? vaultType
-  const displayedChains = optimisticChains ?? chains
-  const displayedTypes = optimisticTypes ?? types
-  const displayedCategories = optimisticCategories ?? categories
-  const displayedAggressiveness = optimisticAggressiveness ?? aggressiveness
-  const displayedUnderlyingAssets = optimisticUnderlyingAssets ?? underlyingAssets
-  const displayedMinTvl = optimisticMinTvl ?? minTvl
-  const displayedShowLegacyVaults = optimisticShowLegacyVaults ?? showLegacyVaults
-  const displayedShowHiddenVaults = optimisticShowHiddenVaults ?? showHiddenVaults
-  const displayedShowStrategies = optimisticShowStrategies ?? showStrategies
-  const hasDisplayedTypesParam = hasTypesParam || optimisticTypes !== null
+  const hasDisplayedTypesParam = hasTypesParam || displayedTypes !== types
   const hasListTypesParam = hasTypesParam
 
   const resolveV3Types = useCallback(
@@ -876,13 +803,13 @@ export function useVaultsPageModel(): TVaultsPageModel {
 
   const handleVaultVersionToggle = useCallback(
     (nextType: TVaultType): void => {
-      if (nextType === vaultType && !optimisticVaultType) {
+      if (nextType === displayedVaultType) {
         return
       }
       setOptimisticVaultType(nextType)
       onChangeVaultType(nextType)
     },
-    [optimisticVaultType, onChangeVaultType, vaultType]
+    [displayedVaultType, onChangeVaultType]
   )
   const handleToggleVaultType = useCallback(
     (nextType: 'v3' | 'lp'): void => {

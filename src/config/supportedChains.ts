@@ -1,5 +1,10 @@
-import { katana } from '@shared/utils/wagmi'
-import { arbitrum, base, fantom, mainnet, optimism, polygon, sonic } from 'viem/chains'
+import type { Chain } from 'viem'
+import type { TCanonicalChainId } from './chainDefinitions'
+import { supportedCanonicalChains, supportedExecutionChains } from './tenderly'
 
-export const supportedChains = [mainnet, optimism, polygon, fantom, base, arbitrum, sonic, katana] as const
-export type TSupportedChainId = (typeof supportedChains)[number]['id']
+export const supportedChains = supportedCanonicalChains
+export const supportedAppChains = supportedCanonicalChains
+export const supportedWalletChains = supportedExecutionChains
+
+export type TSupportedChainId = TCanonicalChainId
+export type TSupportedChain = Chain

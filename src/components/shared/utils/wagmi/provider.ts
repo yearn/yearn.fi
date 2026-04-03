@@ -10,6 +10,7 @@ import {
   waitForTransactionReceipt,
   writeContract
 } from 'wagmi/actions'
+import { resolveExecutionChainId } from '@/config/tenderly'
 import type { TAddress } from '../../types/address'
 import { assert, assertAddress } from '../assert'
 import { toBigInt } from '../format'
@@ -17,12 +18,6 @@ import { toAddress } from '../tools.address'
 import { retrieveConfig } from './config'
 import type { TTxResponse } from './transaction'
 import { defaultTxStatus } from './transaction'
-
-interface WindowWithCustomEthereum extends Window {
-  ethereum?: {
-    useForknetForMainnet?: boolean
-  }
-}
 
 export type TWagmiProviderContract = {
   walletClient: Client
@@ -73,21 +68,21 @@ export async function handleTx(args: TWriteTransaction, props: TPrepareWriteCont
 
   const config = retrieveConfig()
   args.statusHandler?.({ ...defaultTxStatus, pending: true })
-  let wagmiProvider = await toWagmiProvider(args.connector)
-
-  // Use debug mode
-  if ((window as WindowWithCustomEthereum).ethereum?.useForknetForMainnet) {
-    if (args.chainID === 1) {
-      args.chainID = 1337
+  const targetChainId = resolveExecutionChainId(args.chainID)
+  if (targetChainId === undefined) {
+    return {
+      isSuccessful: false,
+      error: new Error(`Chain ${args.chainID} is not enabled for execution`)
     }
   }
+  let wagmiProvider = await toWagmiProvider(args.connector)
 
   /*******************************************************************************************
    ** First, make sure we are using the correct chainID.
    ******************************************************************************************/
-  if (wagmiProvider.chainId !== args.chainID) {
+  if (wagmiProvider.chainId !== targetChainId) {
     try {
-      await switchChain(config, { chainId: args.chainID })
+      await switchChain(config, { chainId: targetChainId })
     } catch (error) {
       if (!(error instanceof BaseError)) {
         return { isSuccessful: false, error }
@@ -105,18 +100,19 @@ export async function handleTx(args: TWriteTransaction, props: TPrepareWriteCont
   wagmiProvider = await toWagmiProvider(args.connector)
   assertAddress(props.address, 'contractAddress')
   assertAddress(wagmiProvider.address, 'userAddress')
-  assert(wagmiProvider.chainId === args.chainID, 'ChainID mismatch')
+  assert(wagmiProvider.chainId === targetChainId, 'ChainID mismatch')
   try {
     const simulateContractConfig = await simulateContract(config, {
       ...wagmiProvider,
       ...(props as SimulateContractParameters),
+      chainId: targetChainId,
       address: props.address,
       value: toBigInt(props.value)
     })
     const hash = await writeContract(config, simulateContractConfig.request)
     args.txHashHandler?.(hash)
     const receipt = await waitForTransactionReceipt(config, {
-      chainId: wagmiProvider.chainId,
+      chainId: targetChainId,
       hash,
       confirmations: props.confirmation || 2
     })

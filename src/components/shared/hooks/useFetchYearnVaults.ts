@@ -3,14 +3,14 @@ import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { fetchWithSchema, getFetchQueryKey, useFetch } from '@shared/hooks/useFetch'
 import type { TDict } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { SUPPORTED_NETWORKS, toAddress } from '@shared/utils'
 import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import { kongVaultListSchema } from '@shared/utils/schemas/kongVaultListSchema'
 import type { QueryObserverResult } from '@tanstack/react-query'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 
-const DEFAULT_CHAIN_IDS = [1, 10, 137, 146, 250, 8453, 42161, 747474]
+const DEFAULT_CHAIN_IDS = SUPPORTED_NETWORKS.map((network) => network.id)
 const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/list/vaults`
 
 export const isCatalogYearnVault = (item: TKongVaultListItem): boolean =>

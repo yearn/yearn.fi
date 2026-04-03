@@ -1,4 +1,4 @@
-export type OverlayState = 'idle' | 'confirming' | 'pending' | 'success' | 'error'
+export type OverlayState = 'idle' | 'confirming' | 'pending' | 'refreshing' | 'success' | 'error'
 export type CompletionDeferral = 'none' | 'immediate' | 'after-close' | 'after-confetti'
 
 export function shouldAutoContinuePermitSuccess(params: {
@@ -49,4 +49,21 @@ export function resolveCompletionDeferral(params: {
   if (deferOnAllCompleteUntilClose) return 'after-close'
   if (deferOnAllCompleteUntilConfettiEnd && stepShowsConfetti) return 'after-confetti'
   return 'immediate'
+}
+
+export function shouldRunDeferredCompletion(params: {
+  completionDeferral: CompletionDeferral
+  trigger: 'close' | 'confetti'
+}): boolean {
+  const { completionDeferral, trigger } = params
+
+  if (completionDeferral === 'after-confetti') {
+    return trigger === 'confetti' || trigger === 'close'
+  }
+
+  if (completionDeferral === 'after-close') {
+    return trigger === 'close'
+  }
+
+  return false
 }
