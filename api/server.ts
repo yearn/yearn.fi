@@ -1,4 +1,10 @@
 import { serve } from 'bun'
+import type {
+  TTenderlyFundRequest,
+  TTenderlyIncreaseTimeRequest,
+  TTenderlyRevertRequest,
+  TTenderlySnapshotRequest
+} from '../src/components/shared/types/tenderly'
 import {
   clearUserCache,
   deleteStaleCache,
@@ -9,12 +15,6 @@ import {
   validateConfig
 } from './lib/holdings'
 import { invalidateVaults, type VaultIdentifier } from './lib/holdings/services/cache'
-import type {
-  TTenderlyFundRequest,
-  TTenderlyIncreaseTimeRequest,
-  TTenderlyRevertRequest,
-  TTenderlySnapshotRequest
-} from '../src/components/shared/types/tenderly'
 import {
   buildTenderlyPanelStatus,
   buildTenderlyRevertResponse,
