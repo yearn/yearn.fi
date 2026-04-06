@@ -12,15 +12,7 @@ import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import type { TAddress } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
-import {
-  type ForwardedRef,
-  forwardRef,
-  type ReactElement,
-  type ReactNode,
-  useEffect,
-  useImperativeHandle,
-  useState
-} from 'react'
+import { type ForwardedRef, forwardRef, type ReactElement, type ReactNode, useImperativeHandle, useState } from 'react'
 import { WidgetDeposit } from './deposit'
 import { WidgetMigrate } from './migrate'
 import { WidgetWithdraw } from './withdraw'
@@ -108,11 +100,10 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
     }
   }))
 
-  useEffect(() => {
-    if (mode === undefined) {
-      setInternalMode(actions[0])
-    }
-  }, [actions, mode])
+  // Render-time state adjustment: keep internal mode valid when actions change
+  if (mode === undefined && !actions.includes(internalMode)) {
+    setInternalMode(actions[0])
+  }
 
   function renderSelectedComponent(): ReactElement {
     switch (currentMode) {

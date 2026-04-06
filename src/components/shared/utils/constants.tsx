@@ -1,9 +1,11 @@
 import type { TAddress, TNDict, TToken } from '@shared/types'
 import { arbitrum, base, fantom, mainnet, optimism, polygon, sonic } from 'viem/chains'
+import { supportedAppChains } from '@/config/supportedChains'
 import { toAddress } from './tools.address'
-import { katana } from './wagmi'
 
-export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum, sonic, katana]
+export const SUPPORTED_NETWORKS = supportedAppChains.length
+  ? supportedAppChains
+  : [mainnet, optimism, polygon, fantom, base, arbitrum, sonic]
 
 export const MULTICALL3_ADDRESS = toAddress('0xcA11bde05977b3631167028862bE2a173976CA11')
 

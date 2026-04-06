@@ -2,7 +2,7 @@ import { JUICED_STAKING_REWARDS_ABI } from '@shared/contracts/abi/juicedStakingR
 import { STAKING_REWARDS_ABI } from '@shared/contracts/abi/stakingRewards.abi'
 import { V3_STAKING_REWARDS_ABI } from '@shared/contracts/abi/V3StakingRewards.abi'
 import { VEYFI_GAUGE_ABI } from '@shared/contracts/abi/veYFIGauge.abi'
-import { useSimulateContract } from 'wagmi'
+import { useSimulateContract } from '@shared/hooks/useAppWagmi'
 
 type UseClaimStakingRewardsParams = {
   stakingAddress?: `0x${string}`

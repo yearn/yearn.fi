@@ -1,7 +1,7 @@
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
+import { type AppUseSimulateContractReturnType, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import type { Address } from 'viem'
 import { maxUint256 } from 'viem'
-import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
 import { getDirectUnstakeCalls } from './stakingAdapter'
 
 interface UseDirectUnstakeParams {
@@ -27,7 +27,7 @@ export function useDirectUnstake(params: UseDirectUnstakeParams): UseWidgetWithd
     maxRedeemShares: params.maxRedeemShares
   })
 
-  const preparePrimaryWithdraw: UseSimulateContractReturnType = useSimulateContract({
+  const preparePrimaryWithdraw: AppUseSimulateContractReturnType = useSimulateContract({
     abi: unstakeCalls.primary.abi as any,
     functionName: unstakeCalls.primary.functionName as any,
     address: params.stakingAddress,
@@ -40,7 +40,7 @@ export function useDirectUnstake(params: UseDirectUnstakeParams): UseWidgetWithd
   const shouldTryFallback =
     prepareWithdrawEnabled && !!unstakeCalls.fallback && !!params.stakingAddress && preparePrimaryWithdraw.isError
 
-  const prepareFallbackWithdraw: UseSimulateContractReturnType = useSimulateContract({
+  const prepareFallbackWithdraw: AppUseSimulateContractReturnType = useSimulateContract({
     abi: (unstakeCalls.fallback?.abi || []) as any,
     functionName: (unstakeCalls.fallback?.functionName || 'withdraw') as any,
     address: params.stakingAddress,
@@ -50,7 +50,7 @@ export function useDirectUnstake(params: UseDirectUnstakeParams): UseWidgetWithd
     query: { enabled: shouldTryFallback }
   })
 
-  const prepareWithdraw: UseSimulateContractReturnType =
+  const prepareWithdraw: AppUseSimulateContractReturnType =
     unstakeCalls.fallback && preparePrimaryWithdraw.isError ? prepareFallbackWithdraw : preparePrimaryWithdraw
 
   return {

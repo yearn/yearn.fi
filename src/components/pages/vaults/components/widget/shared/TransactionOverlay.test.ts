@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { resolveCompletionDeferral, shouldAutoContinuePermitSuccess } from './transactionOverlay.helpers'
+import {
+  resolveCompletionDeferral,
+  shouldAutoContinuePermitSuccess,
+  shouldRunDeferredCompletion
+} from './transactionOverlay.helpers'
 
 describe('shouldAutoContinuePermitSuccess', () => {
   it('continues permit steps once the next step is ready', () => {
@@ -94,5 +98,34 @@ describe('resolveCompletionDeferral', () => {
         stepShowsConfetti: false
       })
     ).toBe('immediate')
+  })
+})
+
+describe('shouldRunDeferredCompletion', () => {
+  it('does not run close-deferred completion on confetti end', () => {
+    expect(
+      shouldRunDeferredCompletion({
+        completionDeferral: 'after-close',
+        trigger: 'confetti'
+      })
+    ).toBe(false)
+  })
+
+  it('runs confetti-deferred completion when the animation finishes', () => {
+    expect(
+      shouldRunDeferredCompletion({
+        completionDeferral: 'after-confetti',
+        trigger: 'confetti'
+      })
+    ).toBe(true)
+  })
+
+  it('flushes any deferred completion when the overlay closes', () => {
+    expect(
+      shouldRunDeferredCompletion({
+        completionDeferral: 'after-confetti',
+        trigger: 'close'
+      })
+    ).toBe(true)
   })
 })

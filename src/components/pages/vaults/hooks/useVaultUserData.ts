@@ -5,6 +5,7 @@ import { useCallback, useMemo } from 'react'
 import { type Address, getContract } from 'viem'
 import { useConfig } from 'wagmi'
 import { getClient, readContract } from 'wagmi/actions'
+import { resolveExecutionChainId } from '@/config/tenderly'
 import { getStakingRedeemableShares, getStakingWithdrawableAssets } from './actions/stakingAdapter'
 import { type Token, useTokens } from './useTokens'
 
@@ -47,6 +48,7 @@ export const useVaultUserData = ({
   account
 }: UseVaultUserDataParams): VaultUserData => {
   const config = useConfig()
+  const executionChainId = resolveExecutionChainId(chainId)
 
   // Reuse useTokens for token data + balances
   const priorityAddresses = useMemo(() => {
@@ -63,9 +65,12 @@ export const useVaultUserData = ({
     isLoading: isLoadingPPS,
     refetch: refetchPPS
   } = useQuery({
-    queryKey: ['vaultPricePerShare', vaultAddress?.toLowerCase(), chainId],
+    queryKey: ['vaultPricePerShare', vaultAddress?.toLowerCase(), chainId, executionChainId],
     queryFn: async () => {
-      const client = getClient(config, { chainId })
+      if (!executionChainId) {
+        throw new Error(`No execution chain found for chainId ${chainId}`)
+      }
+      const client = getClient(config, { chainId: executionChainId })
       if (!client) {
         throw new Error(`No client found for chainId ${chainId}`)
       }
@@ -76,7 +81,7 @@ export const useVaultUserData = ({
       })
       return contract.read.pricePerShare()
     },
-    enabled: !!vaultAddress && !!chainId,
+    enabled: !!vaultAddress && !!chainId && !!executionChainId,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false
@@ -117,6 +122,7 @@ export const useVaultUserData = ({
       stakingAddress?.toLowerCase(),
       account?.toLowerCase(),
       chainId,
+      executionChainId,
       stakingSource || '',
       stakingShareBalance.toString()
     ],
@@ -135,7 +141,7 @@ export const useVaultUserData = ({
         args?: readonly unknown[]
       }) =>
         readContract(config, {
-          chainId,
+          chainId: executionChainId!,
           address: request.address,
           abi: request.abi as any,
           functionName: request.functionName as any,
@@ -161,7 +167,7 @@ export const useVaultUserData = ({
 
       return { withdrawableAssets, redeemableShares }
     },
-    enabled: !!stakingAddress && !!account && !!chainId,
+    enabled: !!stakingAddress && !!account && !!chainId && !!executionChainId,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false

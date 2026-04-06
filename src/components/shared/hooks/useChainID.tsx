@@ -7,12 +7,8 @@ export type TUseChainIDRes = {
   safeChainID: number
 }
 
-export const toSafeChainID = (chainID: number, fallback: number): number => {
-  if ([1337, 31337].includes(chainID)) {
-    return fallback
-  }
-  return chainID
-}
+export const toSafeChainID = (chainID: number, fallback: number): number =>
+  Number.isInteger(chainID) && chainID > 0 ? chainID : fallback
 
 export function useChainID(defaultChainID?: number): TUseChainIDRes {
   const { chainId, switchNetwork } = useChains()

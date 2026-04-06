@@ -1,9 +1,9 @@
 import { useClaimMerkleRewards } from '@pages/vaults/hooks/rewards/useClaimMerkleRewards'
+import { useChainId } from '@shared/hooks/useAppWagmi'
 import { toNormalizedValue } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useCallback, useMemo } from 'react'
-import type { UseSimulateContractReturnType } from 'wagmi'
-import { useChainId, useWriteContract } from 'wagmi'
+import { useWriteContract } from 'wagmi'
 import type { TransactionStep } from '../shared/TransactionOverlay'
 import { RewardRow } from './RewardRow'
 import type { TGroupedMerkleReward } from './types'
@@ -38,7 +38,7 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
       return undefined
     }
     return {
-      prepare: prepare as unknown as UseSimulateContractReturnType,
+      prepare,
       label: 'Claim',
       confirmMessage: `Claim ${formattedAmount} ${groupedReward.token.symbol}`,
       successTitle: 'Rewards Claimed',

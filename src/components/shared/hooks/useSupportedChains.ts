@@ -1,17 +1,13 @@
 import { useMemo } from 'react'
 import type { Chain } from 'viem/chains'
-import { retrieveConfig } from '../utils/wagmi'
+import { supportedAppChains } from '@/config/supportedChains'
 
 /******************************************************************************
- ** The useSupportedChains hook returns an array of supported chains, based on
- ** the injected connector.
+ ** The useSupportedChains hook returns the canonical app chains used by vault
+ ** filters, URLs, and query-state serialization.
  *****************************************************************************/
 export function useSupportedChains(): Chain[] {
-  const supportedChains = useMemo((): Chain[] => {
-    const config = retrieveConfig()
-    const noFork = config.chains.filter(({ id }): boolean => id !== 1337)
-    return noFork
-  }, [])
+  const chains = useMemo((): Chain[] => [...supportedAppChains], [])
 
-  return supportedChains
+  return chains
 }
