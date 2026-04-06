@@ -12,6 +12,7 @@ import {
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
 import {
   formatAmount,
+  isKnownCompatibleAssetVaultRollover,
   isKnownZeroBasisRewardDistribution,
   KNOWN_VAULT_ROLLOVER_INTERMEDIARIES,
   lowerCaseAddress,
@@ -942,6 +943,10 @@ type TDetectedKnownMigration = {
   sourceTransferShares: bigint
   destinationDepositShares: bigint
   destinationDepositAssets: bigint
+  sourceUnderlyingWithdrawCount: number
+  sourceUnderlyingWithdrawAssets: bigint
+  destinationUnderlyingDepositCount: number
+  destinationUnderlyingDepositAssets: bigint
 }
 
 export function filterDirectInteractionLedgers(ledgers: Map<string, FamilyPnlLedger>): Map<string, FamilyPnlLedger> {
@@ -1364,16 +1369,170 @@ function detectKnownMigratorCrossFamilyRollover(
     blockTimestamp: sourceFamilyEvents[0]?.blockTimestamp ?? destinationFamilyEvents[0]?.blockTimestamp ?? 0,
     sourceTransferShares,
     destinationDepositShares,
-    destinationDepositAssets
+    destinationDepositAssets,
+    sourceUnderlyingWithdrawCount: 0,
+    sourceUnderlyingWithdrawAssets: ZERO,
+    destinationUnderlyingDepositCount: 0,
+    destinationUnderlyingDepositAssets: ZERO
   }
 }
 
-function processKnownMigratorCrossFamilyRollover(
+function detectKnownCompatibleAssetVaultCrossFamilyRollover(
+  txEvents: TRawPnlEvent[],
+  userAddress: string,
+  vaultMetadata: Map<string, VaultMetadata>
+): TDetectedKnownMigration | null {
+  const txFamilyGroups = groupTransactionEventsByFamily(txEvents)
+  const candidates = txFamilyGroups.flatMap((outerFamilyEvents) => {
+    const outerFamilyVaultAddress = outerFamilyEvents[0]?.familyVaultAddress
+    const chainId = outerFamilyEvents[0]?.chainId
+
+    if (!outerFamilyVaultAddress || chainId === undefined) {
+      return []
+    }
+
+    const outerMetadata = vaultMetadata.get(toVaultKey(chainId, outerFamilyVaultAddress))
+
+    if (!outerMetadata) {
+      return []
+    }
+
+    const innerFamilyVaultAddress = outerMetadata.token.address.toLowerCase()
+
+    if (!isKnownCompatibleAssetVaultRollover(chainId, outerFamilyVaultAddress, innerFamilyVaultAddress)) {
+      return []
+    }
+
+    const innerFamilyEvents = txFamilyGroups.find(
+      (familyEvents) =>
+        familyEvents[0]?.chainId === chainId && familyEvents[0]?.familyVaultAddress === innerFamilyVaultAddress
+    )
+
+    if (!innerFamilyEvents) {
+      return []
+    }
+
+    const destinationDeposits = outerFamilyEvents.filter(
+      (event): event is Extract<TRawPnlEvent, { kind: 'deposit' }> =>
+        event.kind === 'deposit' && event.scopes.address && event.owner === userAddress
+    )
+    const destinationMintsToUser = outerFamilyEvents.filter(
+      (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+        event.kind === 'transfer' &&
+        event.scopes.address &&
+        event.sender === ZERO_ADDRESS &&
+        event.receiver === userAddress
+    )
+    const sourceTransfersToOuterVault = innerFamilyEvents.filter(
+      (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+        event.kind === 'transfer' &&
+        event.scopes.address &&
+        event.sender === userAddress &&
+        event.receiver === outerFamilyVaultAddress
+    )
+    const sourceTransferShares = sumEventShares(sourceTransfersToOuterVault)
+    const destinationDepositAssets = sumEventAssets(destinationDeposits)
+    const destinationMintedShares = sumEventShares(destinationMintsToUser)
+    const destinationDepositShares =
+      destinationMintedShares > ZERO ? destinationMintedShares : sumEventShares(destinationDeposits)
+
+    if (
+      sourceTransferShares > ZERO &&
+      destinationDepositShares > ZERO &&
+      destinationDepositAssets > ZERO &&
+      destinationDepositAssets === sourceTransferShares
+    ) {
+      return [
+        {
+          chainId,
+          sourceFamilyVaultAddress: innerFamilyVaultAddress,
+          destinationFamilyVaultAddress: outerFamilyVaultAddress,
+          transactionHash: innerFamilyEvents[0]?.transactionHash ?? outerFamilyEvents[0]?.transactionHash ?? '',
+          blockTimestamp: innerFamilyEvents[0]?.blockTimestamp ?? outerFamilyEvents[0]?.blockTimestamp ?? 0,
+          sourceTransferShares,
+          destinationDepositShares,
+          destinationDepositAssets,
+          sourceUnderlyingWithdrawCount: 0,
+          sourceUnderlyingWithdrawAssets: ZERO,
+          destinationUnderlyingDepositCount: destinationDeposits.length,
+          destinationUnderlyingDepositAssets: destinationDepositAssets
+        }
+      ]
+    }
+
+    const sourceWithdrawals = outerFamilyEvents.filter(
+      (event): event is Extract<TRawPnlEvent, { kind: 'withdrawal' }> =>
+        event.kind === 'withdrawal' && event.scopes.address && event.owner === userAddress
+    )
+    const sourceBurnedShares = sumEventShares(
+      outerFamilyEvents.filter(
+        (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+          event.kind === 'transfer' &&
+          event.scopes.address &&
+          event.sender === userAddress &&
+          event.receiver === ZERO_ADDRESS
+      )
+    )
+    const destinationTransfersFromOuterVault = innerFamilyEvents.filter(
+      (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+        event.kind === 'transfer' &&
+        event.scopes.address &&
+        event.sender === outerFamilyVaultAddress &&
+        event.receiver === userAddress
+    )
+    const sourceWithdrawShares = sumEventShares(sourceWithdrawals)
+    const sourceWithdrawAssets = sumEventAssets(sourceWithdrawals)
+    const destinationTransferShares = sumEventShares(destinationTransfersFromOuterVault)
+
+    if (
+      sourceWithdrawShares > ZERO &&
+      sourceWithdrawAssets > ZERO &&
+      destinationTransferShares > ZERO &&
+      sourceWithdrawAssets === destinationTransferShares &&
+      (sourceBurnedShares === ZERO || sourceBurnedShares === sourceWithdrawShares)
+    ) {
+      return [
+        {
+          chainId,
+          sourceFamilyVaultAddress: outerFamilyVaultAddress,
+          destinationFamilyVaultAddress: innerFamilyVaultAddress,
+          transactionHash: outerFamilyEvents[0]?.transactionHash ?? innerFamilyEvents[0]?.transactionHash ?? '',
+          blockTimestamp: outerFamilyEvents[0]?.blockTimestamp ?? innerFamilyEvents[0]?.blockTimestamp ?? 0,
+          sourceTransferShares: sourceWithdrawShares,
+          destinationDepositShares: destinationTransferShares,
+          destinationDepositAssets: destinationTransferShares,
+          sourceUnderlyingWithdrawCount: sourceWithdrawals.length,
+          sourceUnderlyingWithdrawAssets: sourceWithdrawAssets,
+          destinationUnderlyingDepositCount: 0,
+          destinationUnderlyingDepositAssets: ZERO
+        }
+      ]
+    }
+
+    return []
+  })
+
+  return candidates.length === 1 ? candidates[0] : null
+}
+
+function detectKnownCrossFamilyRollover(
+  txEvents: TRawPnlEvent[],
+  userAddress: string,
+  vaultMetadata: Map<string, VaultMetadata>
+): TDetectedKnownMigration | null {
+  return (
+    detectKnownMigratorCrossFamilyRollover(txEvents, userAddress) ??
+    detectKnownCompatibleAssetVaultCrossFamilyRollover(txEvents, userAddress, vaultMetadata)
+  )
+}
+
+function processKnownCrossFamilyRollover(
   ledgers: Map<string, FamilyPnlLedger>,
   txEvents: TRawPnlEvent[],
-  userAddress: string
+  userAddress: string,
+  vaultMetadata: Map<string, VaultMetadata>
 ): Set<string> {
-  const migration = detectKnownMigratorCrossFamilyRollover(txEvents, userAddress)
+  const migration = detectKnownCrossFamilyRollover(txEvents, userAddress, vaultMetadata)
 
   if (!migration) {
     return new Set()
@@ -1395,6 +1554,10 @@ function processKnownMigratorCrossFamilyRollover(
 
   sourceLedger.eventCounts.migrationsOut += 1
   destinationLedger.eventCounts.migrationsIn += 1
+  sourceLedger.totalWithdrawnAssets += migration.sourceUnderlyingWithdrawAssets
+  sourceLedger.eventCounts.underlyingWithdrawals += migration.sourceUnderlyingWithdrawCount
+  destinationLedger.totalDepositedAssets += migration.destinationUnderlyingDepositAssets
+  destinationLedger.eventCounts.underlyingDeposits += migration.destinationUnderlyingDepositCount
 
   const sourceConsumed = consumeFromLocation(sourceLedger, 'vault', migration.sourceTransferShares)
   const knownSourceLots = sourceConsumed.consumedLots.filter((lot) => lot.costBasis !== null)
@@ -1834,7 +1997,11 @@ function processFamilyTransaction(ledger: FamilyPnlLedger, txFamilyEvents: TRawP
   }
 }
 
-export function processRawPnlEvents(events: TRawPnlEvent[], userAddress: string): Map<string, FamilyPnlLedger> {
+export function processRawPnlEvents(
+  events: TRawPnlEvent[],
+  userAddress: string,
+  vaultMetadata: Map<string, VaultMetadata> = new Map<string, VaultMetadata>()
+): Map<string, FamilyPnlLedger> {
   const ledgers = new Map<string, FamilyPnlLedger>()
   const userAddressLower = userAddress.toLowerCase()
 
@@ -1842,7 +2009,7 @@ export function processRawPnlEvents(events: TRawPnlEvent[], userAddress: string)
   // 1. detect cross-family migrations that should carry basis across vaults
   // 2. interpret the remaining per-family activity as deposits, withdrawals, stakes, unstakes, or transfers
   groupEventsByTransaction(events).forEach((txEvents) => {
-    const handledFamilyKeys = processKnownMigratorCrossFamilyRollover(ledgers, txEvents, userAddressLower)
+    const handledFamilyKeys = processKnownCrossFamilyRollover(ledgers, txEvents, userAddressLower, vaultMetadata)
 
     groupTransactionEventsByFamily(txEvents).forEach((txFamilyEvents) => {
       const familyVaultAddress = txFamilyEvents[0]?.familyVaultAddress
@@ -1889,8 +2056,23 @@ async function computeHoldingsPnLArtifacts(
     txTransfers: rawContext.transactionEvents.transfers.length
   })
   const rawEvents = await enrichRawPnlEventsWithCowTradeAcquisitions(buildRawPnlEvents(rawContext), userAddress)
+  const rawVaultIdentifiers = Array.from(
+    rawEvents.reduce<Map<string, { chainId: number; vaultAddress: string }>>((identifiers, event) => {
+      const key = toVaultKey(event.chainId, event.familyVaultAddress)
+
+      if (!identifiers.has(key)) {
+        identifiers.set(key, {
+          chainId: event.chainId,
+          vaultAddress: event.familyVaultAddress
+        })
+      }
+
+      return identifiers
+    }, new Map<string, { chainId: number; vaultAddress: string }>())
+  ).map(([, identifier]) => identifier)
+  const resolvedVaultMetadata = await fetchMultipleVaultsMetadata(rawVaultIdentifiers)
   const debugTxLedgerKeys = getDebugTxLedgerKeys(rawEvents)
-  const rawLedgers = processRawPnlEvents(rawEvents, userAddress)
+  const rawLedgers = processRawPnlEvents(rawEvents, userAddress, resolvedVaultMetadata)
   const directInteractionLedgers = filterDirectInteractionLedgers(rawLedgers)
   const ledgers = filterRelevantHoldingsLedgers(rawLedgers)
   const vaults = Array.from(ledgers.values())
@@ -1917,11 +2099,6 @@ async function computeHoldingsPnLArtifacts(
     }
   }
 
-  const vaultIdentifiers = vaults.map((vault) => ({
-    chainId: vault.chainId,
-    vaultAddress: vault.vaultAddress
-  }))
-  const resolvedVaultMetadata = await fetchMultipleVaultsMetadata(vaultIdentifiers)
   const filteredVaults = filterVaultsByAuthoritativeVersion(vaults, resolvedVaultMetadata, version)
   const filteredVaultIdentifiers = filteredVaults.map((vault) => ({
     chainId: vault.chainId,

@@ -297,7 +297,7 @@ That means:
 - destination shares do not become `unknownTransferInEntries` just because a router or intermediary sat in the middle
 - basis is preserved across the rollover instead of being reset to zero or marked unknown
 
-Today this path covers explicit known migrator flows and supported Enso-mediated vault rollovers. It is intentionally pattern-based rather than a blanket router whitelist.
+Today this path covers explicit known migrator flows, supported Enso-mediated vault rollovers, and supported compatible nested-vault paths where one Yearn vault token is the asset of another Yearn vault. The current compatible nested-vault allowlist includes the `ysyBOLD <-> yBOLD` path on Ethereum mainnet. It is intentionally pattern-based rather than a blanket router whitelist.
 
 ## Unknown Transfer-In Modes
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { DepositEvent, TransferEvent, WithdrawEvent } from '../types'
+import type { DepositEvent, TransferEvent, VaultMetadata, WithdrawEvent } from '../types'
 import {
   buildRawPnlEvents,
   filterDirectInteractionLedgers,
@@ -31,10 +31,45 @@ const KATANA_MULTISIG_REWARD_VAULTS = [
 const SOURCE_MIGRATION_VAULT = '0x1635b506a88fbf428465ad65d00e8d6b6e5846c3'
 const DESTINATION_MIGRATION_VAULT = '0x75a291f0232add37d72dd1dcff55b715755ecdee'
 const ENDO_STEP_VAULT = '0xc56413869c6cdf96496f2b1ef801fedbdfa7ddb0'
+const BOLD_TOKEN = '0x6440f144b7e50d6a8439336510312d2f54beb01d'
+const YBOLD_VAULT = '0x9f4330700a36b29952869fac9b33f45eedd8a3d8'
+const YSYBOLD_VAULT = '0x23346b04a7f55b8760e5860aa5a77383d63491cd'
 const FAMILY_KEY = `1:${UNDERLYING_VAULT}`
 const REWARD_FAMILY_KEY = `1:${REWARD_VAULT}`
 const KATANA_REWARD_FAMILY_KEY = `747474:${KATANA_REWARD_VAULT}`
+const YBOLD_FAMILY_KEY = `1:${YBOLD_VAULT}`
+const YSYBOLD_FAMILY_KEY = `1:${YSYBOLD_VAULT}`
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+const BOLD_STACK_METADATA = new Map<string, VaultMetadata>([
+  [
+    YBOLD_FAMILY_KEY,
+    {
+      address: YBOLD_VAULT,
+      chainId: 1,
+      version: 'v3',
+      token: {
+        address: BOLD_TOKEN,
+        symbol: 'BOLD',
+        decimals: 18
+      },
+      decimals: 18
+    }
+  ],
+  [
+    YSYBOLD_FAMILY_KEY,
+    {
+      address: YSYBOLD_VAULT,
+      chainId: 1,
+      version: 'v3',
+      token: {
+        address: YBOLD_VAULT,
+        symbol: 'yBOLD',
+        decimals: 18
+      },
+      decimals: 18
+    }
+  ]
+])
 
 function createDepositEvent(overrides: Partial<DepositEvent>): DepositEvent {
   return {
@@ -1025,5 +1060,90 @@ describe('processRawPnlEvents', () => {
     expect(ledgers.get(destinationFamilyKey)?.unknownTransferInEntries).toEqual([])
     expect(ledgers.get(destinationFamilyKey)?.eventCounts.migrationsIn).toBe(1)
     expect(ledgers.get(destinationFamilyKey)?.debugJournal.at(-1)?.view).toBe('migrate_in->vault')
+  })
+
+  it('rolls basis from ysyBOLD withdrawals into yBOLD receipts', () => {
+    const outerDepositMint = createTransferEvent({
+      id: 'ysybold-mint',
+      transactionHash: '0xysybold-deposit',
+      vaultAddress: YSYBOLD_VAULT,
+      sender: ZERO_ADDRESS,
+      receiver: USER,
+      value: '94'
+    })
+    const outerDeposit = createDepositEvent({
+      id: 'ysybold-deposit',
+      transactionHash: '0xysybold-deposit',
+      vaultAddress: YSYBOLD_VAULT,
+      owner: USER,
+      sender: USER,
+      assets: '100',
+      shares: '94'
+    })
+    const outerBurn = createTransferEvent({
+      id: 'ysybold-burn',
+      transactionHash: '0xysybold-withdraw',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 1,
+      vaultAddress: YSYBOLD_VAULT,
+      sender: USER,
+      receiver: ZERO_ADDRESS,
+      value: '94'
+    })
+    const innerTransfer = createTransferEvent({
+      id: 'ybold-transfer-in',
+      transactionHash: '0xysybold-withdraw',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 2,
+      vaultAddress: YBOLD_VAULT,
+      sender: YSYBOLD_VAULT,
+      receiver: USER,
+      value: '100'
+    })
+    const outerWithdraw = createWithdrawEvent({
+      id: 'ysybold-withdraw',
+      transactionHash: '0xysybold-withdraw',
+      blockNumber: 2,
+      blockTimestamp: 200,
+      logIndex: 3,
+      vaultAddress: YSYBOLD_VAULT,
+      owner: USER,
+      assets: '100',
+      shares: '94'
+    })
+
+    const ledgers = processRawPnlEvents(
+      buildRawPnlEvents({
+        addressEvents: {
+          deposits: [outerDeposit],
+          withdrawals: [outerWithdraw],
+          transfersIn: [outerDepositMint, innerTransfer],
+          transfersOut: [outerBurn]
+        },
+        transactionEvents: {
+          deposits: [outerDeposit],
+          withdrawals: [outerWithdraw],
+          transfers: [outerDepositMint, outerBurn, innerTransfer]
+        }
+      }),
+      USER,
+      BOLD_STACK_METADATA
+    )
+    const outerLedger = ledgers.get(YSYBOLD_FAMILY_KEY)
+    const innerLedger = ledgers.get(YBOLD_FAMILY_KEY)
+
+    expect(outerLedger?.vaultLots).toEqual([])
+    expect(outerLedger?.realizedEntries).toEqual([])
+    expect(outerLedger?.unknownWithdrawalEntries).toEqual([])
+    expect(outerLedger?.eventCounts.underlyingDeposits).toBe(1)
+    expect(outerLedger?.eventCounts.underlyingWithdrawals).toBe(1)
+    expect(outerLedger?.eventCounts.migrationsOut).toBe(1)
+    expect(outerLedger?.totalWithdrawnAssets).toBe(100n)
+    expect(innerLedger?.vaultLots).toEqual([{ shares: 100n, costBasis: 100n, acquiredAt: 100 }])
+    expect(innerLedger?.unknownTransferInEntries).toEqual([])
+    expect(innerLedger?.eventCounts.migrationsIn).toBe(1)
+    expect(innerLedger?.debugJournal.at(-1)?.view).toBe('migrate_in->vault')
   })
 })
