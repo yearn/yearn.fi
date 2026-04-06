@@ -467,7 +467,7 @@ When only calculating a few missing days, the `maxTimestamp` parameter limits ev
 ```typescript
 // Only fetch events up to end of last missing day
 const maxTimestamp = Math.max(...missingTimestamps) + 86400
-const events = await fetchUserEvents(userAddress, version, maxTimestamp)
+const events = await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
 ```
 
 ## Caching Strategy
@@ -487,35 +487,25 @@ The cache stores **daily USD totals per user** (not per-vault breakdowns).
 │  └────────┬────────┘                                        │
 │           │                                                  │
 │           ▼                                                  │
-│  ┌───────────────────────────────────────┐                  │
-│  │ Found: Days 1-360 cached              │                  │
-│  │ Missing: Days 361-365                 │                  │
-│  │ Today: Always recalculated            │                  │
-│  └────────┬──────────────────────────────┘                  │
-│           │                                                  │
-│           ▼                                                  │
-│  ┌───────────────────────────────────────┐                  │
-│  │ Only calculate missing days (361-365) │                  │
-│  │ Fetch events with maxTimestamp filter │                  │
-│  │ Save new daily totals to cache        │                  │
-│  └────────┬──────────────────────────────┘                  │
-│           │                                                  │
-│           ▼                                                  │
-│  ┌───────────────────────────────────────┐                  │
-│  │ Merge cached + new data               │                  │
-│  │ Return complete 365-day response      │                  │
-│  └───────────────────────────────────────┘                  │
+│  ┌──────────────────────────────────────────────┐           │
+│  │ If all settled UTC days are cached           │           │
+│  │ → return directly from cache                 │           │
+│  └──────────────────────────────────────────────┘           │
+│  ┌──────────────────────────────────────────────┐           │
+│  │ If some settled days are missing             │           │
+│  │ → fetch only up to the last missing day      │           │
+│  │ → calculate missing days                     │           │
+│  │ → save new daily totals to cache             │           │
+│  └──────────────────────────────────────────────┘           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Why Today is Always Recalculated
-
-Today's value uses the latest available Price Per Share from Kong, which may update throughout the day. Recalculating ensures users see current values.
+The history series ends at the latest settled UTC day rather than an intraday moving "today" point. Current portfolio value should come from `/api/holdings/pnl`.
 
 ### Cache Layers
 
 1. **PostgreSQL** (server):
-   - Daily totals cached per user (today recalculated on each request)
+   - Daily totals cached per user and vault version
    - Token prices cached globally (shared across all users)
    - Exact token/timestamp price misses cached globally with TTL to suppress repeated unsupported DefiLlama fetches
 2. **HTTP Cache-Control** (CDN): `s-maxage=300, stale-while-revalidate=600`
@@ -527,10 +517,11 @@ Today's value uses the latest available Price Per Share from Kong, which may upd
 -- User daily totals (one row per user per day)
 CREATE TABLE IF NOT EXISTS holdings_totals (
   user_address VARCHAR(42) NOT NULL,
+  version      VARCHAR(8) NOT NULL DEFAULT 'all',
   date         DATE NOT NULL,
   usd_value    NUMERIC NOT NULL,
   updated_at   TIMESTAMP DEFAULT NOW(),
-  PRIMARY KEY (user_address, date)
+  PRIMARY KEY (user_address, version, date)
 );
 
 -- Token price cache (shared across all users)

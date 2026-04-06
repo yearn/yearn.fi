@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { HoldingsEventFetchType, HoldingsEventPaginationMode } from '../../lib/holdings'
 import { checkRateLimit } from '../../lib/holdings'
 
 function simpleHash(str: string): string {
@@ -31,6 +32,14 @@ function parseUnknownTransferInPnlMode(value: unknown): 'strict' | 'zero_basis' 
   return value === 'strict' || value === 'zero_basis' || value === 'windfall' ? value : 'windfall'
 }
 
+function parseHoldingsEventFetchType(value: string | string[] | undefined): HoldingsEventFetchType {
+  return value === 'parallel' ? 'parallel' : 'seq'
+}
+
+function parseHoldingsEventPaginationMode(value: string | string[] | undefined): HoldingsEventPaginationMode {
+  return value === 'all' ? 'all' : 'paged'
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -59,7 +68,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  const { address, vault, version, unknownMode } = req.query
+  const {
+    address,
+    vault,
+    version,
+    unknownMode,
+    fetchType: fetchTypeParam,
+    paginationMode: paginationModeParam
+  } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -73,14 +89,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid vault address' })
   }
 
+  const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
+  const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
+
   try {
     const { getHoldingsPnLDrilldown } = await import('../../lib/holdings')
     const pnl = await getHoldingsPnLDrilldown(
       address,
       version === 'v2' || version === 'v3' ? version : 'all',
       parseUnknownTransferInPnlMode(Array.isArray(unknownMode) ? unknownMode[0] : unknownMode),
-      'seq',
-      'paged',
+      fetchType,
+      paginationMode,
       vault
     )
 
