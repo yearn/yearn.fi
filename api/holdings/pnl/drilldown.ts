@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { HoldingsEventFetchType, HoldingsEventPaginationMode, VaultVersion } from '../lib/holdings'
-import { checkRateLimit } from '../lib/holdings'
+import type { HoldingsEventFetchType, HoldingsEventPaginationMode } from '../../lib/holdings'
+import { checkRateLimit } from '../../lib/holdings'
 
 function simpleHash(str: string): string {
   let hash = 0
@@ -18,7 +18,6 @@ function getClientIdentifier(req: VercelRequest): string {
     return (Array.isArray(forwarded) ? forwarded[0] : forwarded).split(',')[0].trim()
   }
 
-  // Fallback: fingerprint from headers
   const ua = req.headers['user-agent'] || ''
   const lang = req.headers['accept-language'] || ''
   const encoding = req.headers['accept-encoding'] || ''
@@ -27,6 +26,10 @@ function getClientIdentifier(req: VercelRequest): string {
 
 function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
+}
+
+function parseUnknownTransferInPnlMode(value: unknown): 'strict' | 'zero_basis' | 'windfall' {
+  return value === 'strict' || value === 'zero_basis' || value === 'windfall' ? value : 'windfall'
 }
 
 function parseHoldingsEventFetchType(value: string | string[] | undefined): HoldingsEventFetchType {
@@ -38,7 +41,6 @@ function parseHoldingsEventPaginationMode(value: string | string[] | undefined):
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
@@ -51,7 +53,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  // Rate limiting
   const clientId = getClientIdentifier(req)
   const rateCheck = await checkRateLimit(clientId)
   if (!rateCheck.allowed) {
@@ -59,19 +60,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(429).json({ error: 'Too many requests', retryAfter: rateCheck.retryAfter })
   }
 
-  // Check if Envio is configured
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
     return res.status(503).json({
-      error: 'Holdings history API not configured',
+      error: 'Holdings PnL drilldown API not configured',
       details: 'ENVIO_GRAPHQL_URL environment variable is not set. This feature requires a running Envio indexer.'
     })
   }
 
   const {
     address,
-    refresh,
-    version: versionParam,
+    vault,
+    version,
+    unknownMode,
     fetchType: fetchTypeParam,
     paginationMode: paginationModeParam
   } = req.query
@@ -84,47 +85,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid Ethereum address' })
   }
 
-  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+  if (vault !== undefined && (typeof vault !== 'string' || !isValidAddress(vault))) {
+    return res.status(400).json({ error: 'Invalid vault address' })
+  }
+
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
 
   try {
-    // Clear cache if refresh=true (useful when new vaults are indexed)
-    if (refresh === 'true' || refresh === '1') {
-      const { clearUserCache } = await import('../lib/holdings/services/cache')
-      await clearUserCache(address, version)
-    }
+    const { getHoldingsPnLDrilldown } = await import('../../lib/holdings')
+    const pnl = await getHoldingsPnLDrilldown(
+      address,
+      version === 'v2' || version === 'v3' ? version : 'all',
+      parseUnknownTransferInPnlMode(Array.isArray(unknownMode) ? unknownMode[0] : unknownMode),
+      fetchType,
+      paginationMode,
+      vault
+    )
 
-    const { getHistoricalHoldings } = await import('../lib/holdings')
-    const holdings = await getHistoricalHoldings(address, version, fetchType, paginationMode)
-
-    const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
-    if (!hasHoldings) {
-      return res.status(404).json({ error: 'No holdings found for address' })
+    if (pnl.summary.totalVaults === 0) {
+      return res.status(404).json({
+        error: vault ? 'No matching holdings found for address and vault' : 'No holdings found for address'
+      })
     }
 
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-    return res.status(200).json({
-      address: holdings.address,
-      version,
-      dataPoints: holdings.dataPoints.map((dp) => ({
-        date: dp.date,
-        value: dp.totalUsdValue
-      }))
-    })
+    return res.status(200).json(pnl)
   } catch (error) {
-    console.error('Holdings history error:', error)
+    console.error('Holdings PnL drilldown error:', error)
 
     if (process.env.NODE_ENV === 'development') {
       const message = error instanceof Error ? error.message : String(error)
       const stack = error instanceof Error ? error.stack : undefined
       return res.status(502).json({
-        error: 'Failed to fetch historical holdings',
+        error: 'Failed to fetch holdings PnL drilldown',
         message,
         stack
       })
     }
 
-    return res.status(502).json({ error: 'Failed to fetch historical holdings' })
+    return res.status(502).json({ error: 'Failed to fetch holdings PnL drilldown' })
   }
 }

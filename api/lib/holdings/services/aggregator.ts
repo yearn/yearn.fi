@@ -1,8 +1,15 @@
 import { config } from '../config'
+import type { VaultMetadata } from '../types'
 import type { CachedTotal } from './cache'
 import { checkCacheStaleness, clearUserCache, getCachedTotalsWithTimestamp, saveCachedTotals } from './cache'
+import { debugLog } from './debug'
 import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
-import { fetchUserEvents, type VaultVersion } from './graphql'
+import {
+  fetchUserEvents,
+  type HoldingsEventFetchType,
+  type HoldingsEventPaginationMode,
+  type VaultVersion
+} from './graphql'
 import {
   buildPositionTimeline,
   generateDailyTimestamps,
@@ -11,6 +18,7 @@ import {
   timestampToDateString
 } from './holdings'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
+import { toVaultKey } from './pnlShared'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
 export interface HoldingsHistoryResponse {
@@ -19,44 +27,127 @@ export interface HoldingsHistoryResponse {
   dataPoints: Array<{ date: string; timestamp: number; totalUsdValue: number }>
 }
 
+function filterVaultsByAuthoritativeVersion<
+  TVault extends {
+    chainId: number
+    vaultAddress: string
+  }
+>(vaults: TVault[], vaultMetadata: Map<string, VaultMetadata>, version: VaultVersion): TVault[] {
+  if (version === 'all') {
+    return vaults
+  }
+
+  return vaults.filter((vault) => vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))?.version === version)
+}
+
 export async function getHistoricalHoldings(
   userAddress: string,
-  version: VaultVersion = 'all'
+  version: VaultVersion = 'all',
+  fetchType: HoldingsEventFetchType = 'seq',
+  paginationMode: HoldingsEventPaginationMode = 'paged'
 ): Promise<HoldingsHistoryResponse> {
   const days = config.historyDays
-  const timestamps = generateDailyTimestamps(days)
+  const timestamps = generateDailyTimestamps(days, 1)
   const startDate = timestampToDateString(timestamps[0])
   const endDate = timestampToDateString(timestamps[timestamps.length - 1])
-  const todayDate = timestampToDateString(Math.floor(Date.now() / 1000))
+  debugLog('history', 'starting historical holdings aggregation', {
+    version,
+    fetchType,
+    paginationMode,
+    days,
+    timestamps: timestamps.length,
+    startDate,
+    endDate
+  })
 
   // Fetch cached totals with timestamp info for staleness check
-  let { totals: cachedTotals, oldestUpdatedAt } = await getCachedTotalsWithTimestamp(userAddress, startDate, endDate)
+  let { totals: cachedTotals, oldestUpdatedAt } = await getCachedTotalsWithTimestamp(
+    userAddress,
+    version,
+    startDate,
+    endDate
+  )
+  debugLog('history', 'loaded cached totals for request', {
+    version,
+    cachedTotals: cachedTotals.length,
+    oldestUpdatedAt: oldestUpdatedAt?.toISOString() ?? null
+  })
 
-  // Always fetch user events (needed for staleness check)
+  const cachedByDate = new Map(cachedTotals.map((total) => [total.date, total.usdValue]))
+  const hasFullCacheCoverage = timestamps.every((timestamp) => cachedByDate.has(timestampToDateString(timestamp)))
+
+  if (hasFullCacheCoverage) {
+    const dataPoints = timestamps.map((timestamp) => ({
+      date: timestampToDateString(timestamp),
+      timestamp,
+      totalUsdValue: cachedByDate.get(timestampToDateString(timestamp)) ?? 0
+    }))
+    debugLog('history', 'serving fully cached historical holdings', {
+      version,
+      dataPoints: dataPoints.length,
+      oldestUpdatedAt: oldestUpdatedAt?.toISOString() ?? null
+    })
+
+    return {
+      address: userAddress,
+      periodDays: days,
+      dataPoints
+    }
+  }
+
+  // Always fetch the full event set, then filter vaults by authoritative Kong metadata version.
   const maxTimestamp = Math.max(...timestamps) + 86400
-  const events = await fetchUserEvents(userAddress, version, maxTimestamp)
+  const events = await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
   const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
+  debugLog('history', 'built position timeline', {
+    fetchType,
+    paginationMode,
+    deposits: events.deposits.length,
+    withdrawals: events.withdrawals.length,
+    transfersIn: events.transfersIn.length,
+    transfersOut: events.transfersOut.length,
+    timelineEntries: timeline.length
+  })
+
+  const rawVaults = timeline.length > 0 ? getUniqueVaults(timeline) : []
+  const vaultMetadata = rawVaults.length > 0 ? await fetchMultipleVaultsMetadata(rawVaults) : new Map()
+  const vaults = filterVaultsByAuthoritativeVersion(rawVaults, vaultMetadata, version)
+  debugLog('history', 'resolved authoritative vault versions for history', {
+    version,
+    fetchType,
+    paginationMode,
+    rawVaults: rawVaults.length,
+    filteredVaults: vaults.length,
+    metadataResolved: vaultMetadata.size
+  })
 
   // Check if any vaults have been invalidated since cache was written
-  if (cachedTotals.length > 0 && timeline.length > 0) {
-    const vaults = getUniqueVaults(timeline)
+  if (cachedTotals.length > 0 && vaults.length > 0) {
     const vaultIdentifiers = vaults.map((v) => ({ address: v.vaultAddress, chainId: v.chainId }))
     const isStale = await checkCacheStaleness(vaultIdentifiers, oldestUpdatedAt)
+    debugLog('history', 'completed cache staleness check', {
+      version,
+      fetchType,
+      paginationMode,
+      vaults: vaultIdentifiers.length,
+      isStale
+    })
 
     if (isStale) {
       console.log(`[Aggregator] Cache stale for ${userAddress}, clearing and recalculating`)
-      await clearUserCache(userAddress)
+      await clearUserCache(userAddress, version)
       cachedTotals = []
       oldestUpdatedAt = null
     }
   }
 
-  const cachedByDate = new Map(cachedTotals.map((t) => [t.date, t.usdValue]))
-
-  // Always recalculate today (Kong/DefiLlama may not have today's data early in the day)
-  const missingTimestamps = timestamps.filter(
-    (ts) => !cachedByDate.has(timestampToDateString(ts)) || timestampToDateString(ts) === todayDate
-  )
+  const missingTimestamps = timestamps.filter((ts) => !cachedByDate.has(timestampToDateString(ts)))
+  debugLog('history', 'computed missing timestamps', {
+    fetchType,
+    paginationMode,
+    cachedDates: cachedByDate.size,
+    missingTimestamps: missingTimestamps.length
+  })
 
   const newTotals: CachedTotal[] = []
 
@@ -64,6 +155,7 @@ export async function getHistoricalHoldings(
     // Events already fetched above
 
     if (timeline.length === 0) {
+      debugLog('history', 'timeline empty, returning zero holdings history')
       // No holdings - return zeros without caching to prevent DB spam
       return {
         address: userAddress,
@@ -74,10 +166,32 @@ export async function getHistoricalHoldings(
           totalUsdValue: 0
         }))
       }
+    } else if (vaults.length === 0) {
+      debugLog('history', 'no vaults matched the requested authoritative version, returning zero holdings history', {
+        version,
+        fetchType,
+        paginationMode
+      })
+      return {
+        address: userAddress,
+        periodDays: days,
+        dataPoints: timestamps.map((ts) => ({
+          date: timestampToDateString(ts),
+          timestamp: ts,
+          totalUsdValue: 0
+        }))
+      }
     } else {
-      const vaults = getUniqueVaults(timeline)
-      const vaultMetadata = await fetchMultipleVaultsMetadata(vaults)
       const ppsData = await fetchMultipleVaultsPPS(vaults)
+      debugLog('history', 'resolved metadata and PPS for history', {
+        version,
+        fetchType,
+        paginationMode,
+        vaults: vaults.length,
+        metadataResolved: vaultMetadata.size,
+        ppsResolved: ppsData.size,
+        emptyPpsTimelines: Array.from(ppsData.values()).filter((timeline) => timeline.size === 0).length
+      })
 
       const seenTokens = new Set<string>()
       const underlyingTokens: Array<{ chainId: number; address: string }> = []
@@ -93,6 +207,14 @@ export async function getHistoricalHoldings(
       }
 
       const priceData = await fetchHistoricalPrices(underlyingTokens, missingTimestamps)
+      debugLog('history', 'resolved historical token prices', {
+        version,
+        fetchType,
+        paginationMode,
+        tokens: underlyingTokens.length,
+        priceKeys: priceData.size,
+        missingTimestamps: missingTimestamps.length
+      })
 
       for (const timestamp of missingTimestamps) {
         let dayTotal = 0
@@ -108,7 +230,9 @@ export async function getHistoricalHoldings(
           if (shares === BigInt(0)) continue
 
           const ppsMap = ppsData.get(vaultKey)
-          const pps = ppsMap ? getPPS(ppsMap, timestamp) : 1.0
+          const pps = ppsMap ? getPPS(ppsMap, timestamp) : null
+
+          if (pps === null) continue
 
           const priceKey = `${getChainPrefix(vault.chainId)}:${metadata.token.address.toLowerCase()}`
           const tokenPriceMap = priceData.get(priceKey)
@@ -122,10 +246,24 @@ export async function getHistoricalHoldings(
 
         newTotals.push({ date: timestampToDateString(timestamp), usdValue: dayTotal })
       }
+
+      debugLog('history', 'calculated uncached daily totals', {
+        version,
+        fetchType,
+        paginationMode,
+        newTotals: newTotals.length,
+        nonZeroTotals: newTotals.filter((total) => total.usdValue > 0).length
+      })
     }
 
     if (newTotals.length > 0) {
-      await saveCachedTotals(userAddress, newTotals)
+      await saveCachedTotals(userAddress, version, newTotals)
+      debugLog('history', 'saved recalculated totals to cache', {
+        version,
+        fetchType,
+        paginationMode,
+        newTotals: newTotals.length
+      })
     }
   }
 
@@ -139,6 +277,13 @@ export async function getHistoricalHoldings(
     timestamp: ts,
     totalUsdValue: cachedByDate.get(timestampToDateString(ts)) ?? 0
   }))
+  debugLog('history', 'completed historical holdings aggregation', {
+    version,
+    fetchType,
+    paginationMode,
+    dataPoints: dataPoints.length,
+    nonZeroPoints: dataPoints.filter((point) => point.totalUsdValue > 0).length
+  })
 
   return {
     address: userAddress,

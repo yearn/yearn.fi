@@ -9,12 +9,24 @@ import {
   clearUserCache,
   deleteStaleCache,
   getHistoricalHoldings,
+  getHoldingsPnL,
+  getHoldingsPnLDrilldown,
+  type HoldingsEventFetchType,
+  type HoldingsEventPaginationMode,
   initializeSchema,
   isDatabaseEnabled,
+  type UnknownTransferInPnlMode,
   type VaultVersion,
   validateConfig
 } from './lib/holdings'
 import { invalidateVaults, type VaultIdentifier } from './lib/holdings/services/cache'
+import {
+  createHoldingsDebugContext,
+  debugError,
+  debugLog,
+  isHoldingsDebugRequested,
+  withHoldingsDebugContext
+} from './lib/holdings/services/debug'
 import {
   buildTenderlyPanelStatus,
   buildTenderlyRevertResponse,
@@ -129,6 +141,18 @@ function validateInvalidateBody(body: unknown): body is InvalidateRequestBody {
   }
 
   return true
+}
+
+function parseUnknownTransferInPnlMode(value: string | null): UnknownTransferInPnlMode {
+  return value === 'strict' || value === 'zero_basis' || value === 'windfall' ? value : 'windfall'
+}
+
+function parseHoldingsEventFetchType(value: string | null): HoldingsEventFetchType {
+  return value === 'parallel' ? 'parallel' : 'seq'
+}
+
+function parseHoldingsEventPaginationMode(value: string | null): HoldingsEventPaginationMode {
+  return value === 'all' ? 'all' : 'paged'
 }
 
 async function parseJsonBody<T>(req: Request): Promise<T> {
@@ -399,7 +423,15 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
   const versionParam = url.searchParams.get('version')
-  const refresh = url.searchParams.get('refresh') === '1'
+  const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
+  const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+  const debugEnabled =
+    isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
+  const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
+  const debugVault = url.searchParams.get('debugVault')
+  const debugTx = url.searchParams.get('debugTx')
+  const refreshParam = url.searchParams.get('refresh')
+  const refresh = refreshParam === 'true' || refreshParam === '1'
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -413,11 +445,44 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
 
   try {
     if (refresh) {
-      const cleared = await clearUserCache(address)
+      const cleared = await clearUserCache(address, version)
       console.log(`[Server] Cleared ${cleared} cached entries for ${address}`)
     }
 
-    const holdings = await getHistoricalHoldings(address, version)
+    const holdings = await withHoldingsDebugContext(
+      createHoldingsDebugContext('history', address, debugEnabled, {
+        lotsEnabled: debugLotsEnabled,
+        vaultFilter: debugVault,
+        txFilter: debugTx
+      }),
+      async () => {
+        debugLog('route', 'started holdings history request', {
+          version,
+          fetchType,
+          paginationMode,
+          refresh,
+          debugLotsEnabled,
+          debugVault: debugVault?.toLowerCase() ?? null,
+          debugTx: debugTx?.toLowerCase() ?? null
+        })
+
+        try {
+          const response = await getHistoricalHoldings(address, version, fetchType, paginationMode)
+          debugLog('route', 'completed holdings history request', {
+            version,
+            fetchType,
+            paginationMode,
+            refresh,
+            points: response.dataPoints.length,
+            nonZeroPoints: response.dataPoints.filter((point) => point.totalUsdValue > 0).length
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings history request failed', error, { version, fetchType, paginationMode })
+          throw error
+        }
+      }
+    )
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
     if (!hasHoldings) {
@@ -443,8 +508,197 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
     console.error('Error fetching holdings history:', error)
     const message = error instanceof Error ? error.message : String(error)
     const stack = error instanceof Error ? error.stack : undefined
-    // server.ts exists locally only, so it's ok to log the stack for debugging purposes
     return Response.json({ error: 'Failed to fetch historical holdings', message, stack, status: 502 }, { status: 502 })
+  }
+}
+
+async function handleHoldingsPnL(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const versionParam = url.searchParams.get('version')
+  const debugEnabled =
+    isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
+  const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
+  const debugVault = url.searchParams.get('debugVault')
+  const debugTx = url.searchParams.get('debugTx')
+  const unknownTransferInPnlMode = parseUnknownTransferInPnlMode(url.searchParams.get('unknownMode'))
+  const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
+  const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const pnl = await withHoldingsDebugContext(
+      createHoldingsDebugContext('pnl', address, debugEnabled, {
+        lotsEnabled: debugLotsEnabled,
+        vaultFilter: debugVault,
+        txFilter: debugTx
+      }),
+      async () => {
+        debugLog('route', 'started holdings pnl request', {
+          version,
+          unknownTransferInPnlMode,
+          fetchType,
+          paginationMode,
+          debugLotsEnabled,
+          debugVault: debugVault?.toLowerCase() ?? null,
+          debugTx: debugTx?.toLowerCase() ?? null
+        })
+
+        try {
+          const response = await getHoldingsPnL(address, version, unknownTransferInPnlMode, fetchType, paginationMode)
+          debugLog('route', 'completed holdings pnl request', {
+            version,
+            unknownTransferInPnlMode,
+            fetchType,
+            paginationMode,
+            totalVaults: response.summary.totalVaults,
+            totalCurrentValueUsd: response.summary.totalCurrentValueUsd,
+            totalPnlUsd: response.summary.totalPnlUsd,
+            totalEconomicGainUsd: response.summary.totalEconomicGainUsd
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings pnl request failed', error, {
+            version,
+            unknownTransferInPnlMode,
+            fetchType,
+            paginationMode
+          })
+          throw error
+        }
+      }
+    )
+
+    if (pnl.summary.totalVaults === 0) {
+      return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
+    }
+
+    return Response.json(pnl, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching holdings PnL:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json({ error: 'Failed to fetch holdings PnL', message, stack, status: 502 }, { status: 502 })
+  }
+}
+
+async function handleHoldingsPnLDrilldown(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const vault = url.searchParams.get('vault')
+  const versionParam = url.searchParams.get('version')
+  const debugEnabled =
+    isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
+  const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
+  const debugVault = url.searchParams.get('debugVault') ?? vault
+  const debugTx = url.searchParams.get('debugTx')
+  const unknownTransferInPnlMode = parseUnknownTransferInPnlMode(url.searchParams.get('unknownMode'))
+  const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
+  const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  if (vault !== null && !isValidAddress(vault)) {
+    return Response.json({ error: 'Invalid vault address', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const pnl = await withHoldingsDebugContext(
+      createHoldingsDebugContext('pnl', address, debugEnabled, {
+        lotsEnabled: debugLotsEnabled,
+        vaultFilter: debugVault,
+        txFilter: debugTx
+      }),
+      async () => {
+        debugLog('route', 'started holdings pnl drilldown request', {
+          version,
+          unknownTransferInPnlMode,
+          fetchType,
+          paginationMode,
+          vault: vault?.toLowerCase() ?? null,
+          debugLotsEnabled,
+          debugVault: debugVault?.toLowerCase() ?? null,
+          debugTx: debugTx?.toLowerCase() ?? null
+        })
+
+        try {
+          const response = await getHoldingsPnLDrilldown(
+            address,
+            version,
+            unknownTransferInPnlMode,
+            fetchType,
+            paginationMode,
+            vault
+          )
+          debugLog('route', 'completed holdings pnl drilldown request', {
+            version,
+            unknownTransferInPnlMode,
+            fetchType,
+            paginationMode,
+            vault: vault?.toLowerCase() ?? null,
+            totalVaults: response.summary.totalVaults,
+            totalCurrentValueUsd: response.summary.totalCurrentValueUsd,
+            totalPnlUsd: response.summary.totalPnlUsd,
+            totalEconomicGainUsd: response.summary.totalEconomicGainUsd
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings pnl drilldown request failed', error, {
+            version,
+            unknownTransferInPnlMode,
+            fetchType,
+            paginationMode,
+            vault: vault?.toLowerCase() ?? null
+          })
+          throw error
+        }
+      }
+    )
+
+    if (pnl.summary.totalVaults === 0) {
+      return Response.json(
+        {
+          error: vault ? 'No matching holdings found for address and vault' : 'No holdings found for address',
+          status: 404
+        },
+        { status: 404 }
+      )
+    }
+
+    return Response.json(pnl, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching holdings PnL drilldown:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json(
+      { error: 'Failed to fetch holdings PnL drilldown', message, stack, status: 502 },
+      { status: 502 }
+    )
   }
 }
 
@@ -543,7 +797,6 @@ async function handleInvalidateCache(req: Request): Promise<Response> {
 }
 
 async function main() {
-  // Catch uncaught exceptions
   process.on('uncaughtException', (error) => {
     console.error('💥 Uncaught Exception:', error)
   })
@@ -580,6 +833,14 @@ async function main() {
 
         if (url.pathname === '/api/holdings/history') {
           return withCors(await handleHoldingsHistory(req))
+        }
+
+        if (url.pathname === '/api/holdings/pnl/drilldown') {
+          return withCors(await handleHoldingsPnLDrilldown(req))
+        }
+
+        if (url.pathname === '/api/holdings/pnl') {
+          return withCors(await handleHoldingsPnL(req))
         }
 
         if (url.pathname === '/api/holdings/chores') {
@@ -642,11 +903,13 @@ async function main() {
       }
     },
     port: 3001,
-    idleTimeout: 120 // 2 minutes for long-running requests like historical holdings
+    idleTimeout: 120
   })
 
   console.log('🚀 API server running on http://localhost:3001')
   console.log('📊 Holdings API: http://localhost:3001/api/holdings/history?address=0x...')
+  console.log('💹 PnL API: http://localhost:3001/api/holdings/pnl?address=0x...')
+  console.log('🧾 PnL Drilldown API: http://localhost:3001/api/holdings/pnl/drilldown?address=0x...')
 }
 
 main().catch((error) => {

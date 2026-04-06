@@ -1,4 +1,5 @@
 import type { DepositEvent, TimelineEvent, TransferEvent, WithdrawEvent } from '../types'
+import { getFamilyVaultAddress } from './staking'
 
 export function buildPositionTimeline(
   deposits: DepositEvent[],
@@ -10,7 +11,7 @@ export function buildPositionTimeline(
 
   for (const deposit of deposits) {
     events.push({
-      vaultAddress: deposit.vaultAddress.toLowerCase(),
+      vaultAddress: getFamilyVaultAddress(deposit.chainId, deposit.vaultAddress),
       chainId: deposit.chainId,
       blockNumber: deposit.blockNumber,
       blockTimestamp: deposit.blockTimestamp,
@@ -20,7 +21,7 @@ export function buildPositionTimeline(
 
   for (const withdrawal of withdrawals) {
     events.push({
-      vaultAddress: withdrawal.vaultAddress.toLowerCase(),
+      vaultAddress: getFamilyVaultAddress(withdrawal.chainId, withdrawal.vaultAddress),
       chainId: withdrawal.chainId,
       blockNumber: withdrawal.blockNumber,
       blockTimestamp: withdrawal.blockTimestamp,
@@ -30,7 +31,7 @@ export function buildPositionTimeline(
 
   for (const transfer of transfersIn) {
     events.push({
-      vaultAddress: transfer.vaultAddress.toLowerCase(),
+      vaultAddress: getFamilyVaultAddress(transfer.chainId, transfer.vaultAddress),
       chainId: transfer.chainId,
       blockNumber: transfer.blockNumber,
       blockTimestamp: transfer.blockTimestamp,
@@ -40,7 +41,7 @@ export function buildPositionTimeline(
 
   for (const transfer of transfersOut) {
     events.push({
-      vaultAddress: transfer.vaultAddress.toLowerCase(),
+      vaultAddress: getFamilyVaultAddress(transfer.chainId, transfer.vaultAddress),
       chainId: transfer.chainId,
       blockNumber: transfer.blockNumber,
       blockTimestamp: transfer.blockTimestamp,
@@ -97,10 +98,11 @@ export function getUniqueVaults(timeline: TimelineEvent[]): Array<{ vaultAddress
   return vaults
 }
 
-export function generateDailyTimestamps(days: number): number[] {
+export function generateDailyTimestamps(days: number, endOffsetDays = 0): number[] {
   const timestamps: number[] = []
   const now = new Date()
   now.setUTCHours(0, 0, 0, 0)
+  now.setUTCDate(now.getUTCDate() - endOffsetDays)
 
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now)

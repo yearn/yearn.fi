@@ -11,7 +11,7 @@ export function usePortfolioHistory() {
     if (!address) {
       return null
     }
-    return `/api/holdings/history?address=${address}`
+    return `/api/holdings/history?address=${address}&debug=1&fetchType=parallel&paginationMode=all`
   }, [address])
 
   const {
@@ -24,6 +24,7 @@ export function usePortfolioHistory() {
     schema: portfolioHistorySimpleResponseSchema,
     config: {
       cacheDuration: 4 * 60 * 60 * 1000, // 4 hours
+      keepPreviousData: false,
       timeout: 2 * 60 * 1000 // 2 minutes for large holdings requests
     }
   })

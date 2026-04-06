@@ -20,7 +20,13 @@ import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
-import { METRIC_VALUE_CLASS, MetricHeader, MetricsCard, type TMetricBlock } from '@shared/components/MetricsCard'
+import {
+  METRIC_FOOTNOTE_CLASS,
+  METRIC_VALUE_CLASS,
+  MetricHeader,
+  MetricsCard,
+  type TMetricBlock
+} from '@shared/components/MetricsCard'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
@@ -28,6 +34,7 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
+import { IconQuestion } from '@shared/icons/IconQuestion'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS } from '@shared/utils'
@@ -38,6 +45,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
+import { usePortfolioPnL } from './hooks/usePortfolioPnL'
+import type { TPortfolioPnlSummary } from './types/api'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -46,8 +55,25 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2
 })
 
+function formatSignedCurrency(value: number): string {
+  const absoluteValue = currencyFormatter.format(Math.abs(value))
+
+  if (value > 0) {
+    return `+${absoluteValue}`
+  }
+
+  if (value < 0) {
+    return `-${absoluteValue}`
+  }
+
+  return absoluteValue
+}
+
 const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
+const footnoteTooltipClassName =
+  'max-w-[260px] rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs leading-relaxed text-text-primary'
+const metricTooltipContentClassName = 'flex max-w-[280px] flex-col gap-1 leading-relaxed'
 const PORTFOLIO_TABS = [
   { key: 'positions', label: 'Your Vaults' },
   { key: 'activity', label: 'Activity' },
@@ -64,7 +90,10 @@ type TPortfolioHeaderProps = Pick<
   | 'isHoldingsLoading'
   | 'isSearchingBalances'
   | 'totalPortfolioValue'
->
+> & {
+  isPnlLoading: boolean
+  pnlSummary: TPortfolioPnlSummary | null
+}
 
 type TPortfolioHoldingsProps = Pick<
   TPortfolioModel,
@@ -94,14 +123,59 @@ function PortfolioPageLayout({ children }: { children: ReactElement }): ReactEle
   )
 }
 
+function FootnoteWithTooltip({ label, tooltip }: { label: string; tooltip: string }): ReactElement {
+  return (
+    <span className={cl(METRIC_FOOTNOTE_CLASS, 'inline-flex items-center gap-1.5')}>
+      <span>{label}</span>
+      <Tooltip
+        className={'h-auto w-auto justify-start gap-0'}
+        openDelayMs={150}
+        side={'top'}
+        tooltip={<div className={footnoteTooltipClassName}>{tooltip}</div>}
+      >
+        <button
+          type={'button'}
+          aria-label={tooltip}
+          className={
+            'inline-flex h-4 w-4 items-center justify-center rounded-full text-text-secondary transition-colors hover:text-text-primary'
+          }
+        >
+          <IconQuestion className={'size-3.5'} />
+        </button>
+      </Tooltip>
+    </span>
+  )
+}
+
 function PortfolioHeaderSection({
   blendedMetrics,
   hasKatanaHoldings,
   isActive,
   isHoldingsLoading,
   isSearchingBalances,
+  isPnlLoading,
+  pnlSummary,
   totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
+  const portfolioPnlTooltip = (
+    <div className={metricTooltipContentClassName}>
+      <p>{'Market PnL on indexed Yearn vault positions.'}</p>
+      <p>
+        <span className="font-mono">{'totalPnlUsd = totalRealizedPnlUsd + totalUnrealizedPnlUsd'}</span>
+      </p>
+    </div>
+  )
+
+  const economicGainTooltip = (
+    <div className={metricTooltipContentClassName}>
+      <p>{'Full economic benefit from the position.'}</p>
+      <p>
+        <span className="font-mono">{'totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd'}</span>
+      </p>
+      <p>{'Adds the receipt-time value of unknown-basis transfers on top of Portfolio PnL.'}</p>
+    </div>
+  )
+
   const katanaTooltipContent = (
     <div className={headingTooltipClassName}>
       <p>{'*One or more vaults are receiving extra incentives.'}</p>
@@ -146,6 +220,48 @@ function PortfolioHeaderSection({
     return <span>{currencyFormatter.format(value)}</span>
   }
 
+  function renderSignedCurrencyMetric(value: number | null): ReactElement {
+    if (isPnlLoading) return metricSpinner
+    if (value === null) return <span>{'—'}</span>
+
+    const toneClassName = value > 0 ? 'text-green-400' : value < 0 ? 'text-red-400' : 'text-text-primary'
+
+    return <span className={toneClassName}>{formatSignedCurrency(value)}</span>
+  }
+
+  function renderSignedCurrencyBreakdownValue(value: number): ReactElement {
+    const toneClassName = value > 0 ? 'text-green-400' : value < 0 ? 'text-red-400' : 'text-text-secondary'
+    return <span className={toneClassName}>{formatSignedCurrency(value)}</span>
+  }
+
+  function renderPnlBreakdownLabel(values: {
+    stable: number | null | undefined
+    volatile: number | null | undefined
+  }): ReactElement | undefined {
+    if (
+      isPnlLoading ||
+      values.stable === null ||
+      values.stable === undefined ||
+      values.volatile === null ||
+      values.volatile === undefined
+    ) {
+      return undefined
+    }
+
+    return (
+      <div className={cl(METRIC_FOOTNOTE_CLASS, 'flex flex-wrap items-center gap-x-3 gap-y-1')}>
+        <span className="inline-flex items-center gap-1">
+          <span>{'Stable'}</span>
+          {renderSignedCurrencyBreakdownValue(values.stable)}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span>{'Volatile'}</span>
+          {renderSignedCurrencyBreakdownValue(values.volatile)}
+        </span>
+      </div>
+    )
+  }
+
   const metrics: TMetricBlock[] = [
     {
       key: 'total-balance',
@@ -178,6 +294,47 @@ function PortfolioHeaderSection({
     }
   ]
 
+  const pnlMetrics: TMetricBlock[] = [
+    {
+      key: 'portfolio-pnl',
+      header: <MetricHeader label="Portfolio PnL" mobileLabel="P&L" tooltip={portfolioPnlTooltip} />,
+      value: <span className={METRIC_VALUE_CLASS}>{renderSignedCurrencyMetric(pnlSummary?.totalPnlUsd ?? null)}</span>,
+      secondaryLabel: renderPnlBreakdownLabel({
+        stable: pnlSummary?.byCategory.stable.totalPnlUsd,
+        volatile: pnlSummary?.byCategory.volatile.totalPnlUsd
+      }),
+      footnote:
+        pnlSummary && !pnlSummary.isComplete ? (
+          <FootnoteWithTooltip
+            label={`${pnlSummary.partialVaults} ${pnlSummary.partialVaults === 1 ? 'vault has' : 'vaults have'} partial cost basis.`}
+            tooltip={
+              'Partial cost basis means we know the current holding, but part of its acquisition history cannot be fully reconstructed. Current value is included, while PnL may be incomplete for those vaults.'
+            }
+          />
+        ) : undefined
+    },
+    {
+      key: 'economic-gain',
+      header: <MetricHeader label="Economic Gain" mobileLabel="Gain" tooltip={economicGainTooltip} />,
+      value: (
+        <span className={METRIC_VALUE_CLASS}>
+          {renderSignedCurrencyMetric(pnlSummary?.totalEconomicGainUsd ?? null)}
+        </span>
+      ),
+      secondaryLabel: renderPnlBreakdownLabel({
+        stable: pnlSummary?.byCategory.stable.totalEconomicGainUsd,
+        volatile: pnlSummary?.byCategory.volatile.totalEconomicGainUsd
+      }),
+      footnote:
+        pnlSummary && Math.abs(pnlSummary.totalWindfallPnlUsd) > 0.005 ? (
+          <FootnoteWithTooltip
+            label={`Includes ${currencyFormatter.format(pnlSummary.totalWindfallPnlUsd)} windfall.`}
+            tooltip={'Windfall is value received from transfers with unknown original cost basis.'}
+          />
+        ) : undefined
+    }
+  ]
+
   return (
     <section className={'flex flex-col gap-2'}>
       <div className="px-1">
@@ -193,7 +350,18 @@ function PortfolioHeaderSection({
         </Tooltip>
       </div>
       {isActive && (
-        <MetricsCard items={metrics} className="rounded-t-lg rounded-b-none border border-border" mobileLayout="grid" />
+        <div className="flex flex-col gap-0">
+          <MetricsCard
+            items={metrics}
+            className="rounded-t-lg rounded-b-none border border-border"
+            mobileLayout="grid"
+          />
+          <MetricsCard
+            items={pnlMetrics}
+            className="rounded-none border-x border-b border-border"
+            mobileLayout="grid"
+          />
+        </div>
       )}
     </section>
   )
@@ -957,6 +1125,7 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
   const { data: historyData, isLoading: historyLoading } = usePortfolioHistory()
+  const { data: pnlSummary, isLoading: pnlLoading } = usePortfolioPnL()
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
@@ -1068,6 +1237,8 @@ function PortfolioPage(): ReactElement {
             isHoldingsLoading={model.isHoldingsLoading}
             isSearchingBalances={model.isSearchingBalances}
             hasKatanaHoldings={model.hasKatanaHoldings}
+            isPnlLoading={pnlLoading}
+            pnlSummary={pnlSummary}
             totalPortfolioValue={model.totalPortfolioValue}
           />
           <PortfolioHistoryChart data={historyData} isLoading={historyLoading} mergeWithHeader={model.isActive} />
