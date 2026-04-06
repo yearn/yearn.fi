@@ -3,6 +3,7 @@ import { type Address, isAddressEqual } from 'viem'
 
 interface UseResetEnsoSelectionParams {
   ensoEnabled: boolean
+  allowedChainIds?: number[]
   selectedToken?: Address
   selectedChainId?: number
   assetAddress: Address
@@ -15,6 +16,7 @@ interface UseResetEnsoSelectionParams {
 
 export function useResetEnsoSelection({
   ensoEnabled,
+  allowedChainIds,
   selectedToken,
   selectedChainId,
   assetAddress,
@@ -25,28 +27,34 @@ export function useResetEnsoSelection({
   setShowTokenSelector
 }: UseResetEnsoSelectionParams): void {
   useEffect(() => {
-    if (ensoEnabled) {
-      return
-    }
-
     const hasNonAssetTokenSelected = selectedToken !== undefined && !isAddressEqual(selectedToken, assetAddress)
     const hasCrossChainSelection = selectedChainId !== undefined && selectedChainId !== chainId
+    const hasDisallowedChainSelection =
+      selectedChainId !== undefined &&
+      !!allowedChainIds &&
+      allowedChainIds.length > 0 &&
+      !allowedChainIds.includes(selectedChainId)
+    const shouldResetForChainRestriction = hasCrossChainSelection && hasDisallowedChainSelection
+    const shouldResetToken = hasNonAssetTokenSelected && (!ensoEnabled || shouldResetForChainRestriction)
+    const shouldResetChain = hasCrossChainSelection && (!ensoEnabled || shouldResetForChainRestriction)
+    const shouldCloseSelector = showTokenSelector && (!ensoEnabled || shouldResetForChainRestriction)
 
-    if (!hasNonAssetTokenSelected && !hasCrossChainSelection && !showTokenSelector) {
+    if (!shouldResetToken && !shouldResetChain && !shouldCloseSelector) {
       return
     }
 
-    if (hasNonAssetTokenSelected) {
+    if (shouldResetToken) {
       setSelectedToken(assetAddress)
     }
-    if (hasCrossChainSelection) {
+    if (shouldResetChain) {
       setSelectedChainId(undefined)
     }
-    if (showTokenSelector) {
+    if (shouldCloseSelector) {
       setShowTokenSelector(false)
     }
   }, [
     ensoEnabled,
+    allowedChainIds,
     selectedToken,
     selectedChainId,
     assetAddress,

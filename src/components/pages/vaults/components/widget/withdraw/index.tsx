@@ -20,6 +20,7 @@ import { useWidgetContext } from '../shared/useWidgetContext'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
 import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
+import { getAllowedTokenSelectorChainIds } from '../tokenSelectorChains'
 import { getPriorityTokens } from './constants'
 import { SourceSelector } from './SourceSelector'
 import type { WithdrawalSource, WithdrawWidgetProps } from './types'
@@ -124,6 +125,7 @@ export function WidgetWithdraw({
 }: WidgetWithdrawProps): ReactElement {
   const { account, openLoginModal, refreshWalletBalances, getToken, zapSlippage, getPrice, trackEvent, ensoEnabled } =
     useWidgetContext({ chainId, vaultAddress })
+  const tokenSelectorAllowedChainIds = useMemo(() => getAllowedTokenSelectorChainIds(chainId), [chainId])
 
   const resolvedDisplayAssetAddress = displayAssetAddress ?? assetAddress
 
@@ -163,6 +165,7 @@ export function WidgetWithdraw({
 
   useResetEnsoSelection({
     ensoEnabled,
+    allowedChainIds: tokenSelectorAllowedChainIds,
     selectedToken,
     selectedChainId,
     assetAddress: resolvedDisplayAssetAddress,
@@ -178,13 +181,23 @@ export function WidgetWithdraw({
     const key = `${prefillRequestKey ?? ''}-${prefill.address}-${prefill.chainId}-${prefill.amount}`
     if (appliedPrefillRef.current === key) return
     appliedPrefillRef.current = key
-    setSelectedToken(prefill.address)
-    setSelectedChainId(prefill.chainId)
+    const isCrossChainPrefillBlocked =
+      prefill.chainId !== chainId && !tokenSelectorAllowedChainIds.includes(prefill.chainId)
+    setSelectedToken(isCrossChainPrefillBlocked ? resolvedDisplayAssetAddress : prefill.address)
+    setSelectedChainId(isCrossChainPrefillBlocked ? undefined : prefill.chainId)
     if (prefill.amount !== undefined) {
       setWithdrawInput(prefill.amount)
     }
     onPrefillApplied?.()
-  }, [prefill, prefillRequestKey, setWithdrawInput, onPrefillApplied])
+  }, [
+    prefill,
+    prefillRequestKey,
+    tokenSelectorAllowedChainIds,
+    chainId,
+    resolvedDisplayAssetAddress,
+    setWithdrawInput,
+    onPrefillApplied
+  ])
 
   // Derived token values
   const withdrawToken = selectedToken || resolvedDisplayAssetAddress
@@ -224,6 +237,7 @@ export function WidgetWithdraw({
 
   useResetEnsoSelection({
     ensoEnabled,
+    allowedChainIds: tokenSelectorAllowedChainIds,
     selectedToken,
     selectedChainId,
     assetAddress: resolvedDisplayAssetAddress,
@@ -990,6 +1004,7 @@ export function WidgetWithdraw({
           activeFlow.periphery.resetQuote?.()
         }}
         chainId={chainId}
+        allowedChainIds={tokenSelectorAllowedChainIds}
         value={selectedToken}
         excludeTokens={stakingAddress ? [stakingAddress] : undefined}
         mode={'withdraw'}

@@ -226,6 +226,19 @@ function handleEnsoStatus(): Response {
   return Response.json({ configured: !!apiKey })
 }
 
+const KATANA_CHAIN_ID = 747474
+
+function isKatanaCrossChainRoute(chainId: string, destinationChainId?: string): boolean {
+  const sourceChainId = Number(chainId)
+  const targetChainId = Number(destinationChainId || chainId)
+
+  if (!Number.isFinite(sourceChainId) || !Number.isFinite(targetChainId)) {
+    return false
+  }
+
+  return sourceChainId !== targetChainId && (sourceChainId === KATANA_CHAIN_ID || targetChainId === KATANA_CHAIN_ID)
+}
+
 async function handleEnsoRoute(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const fromAddress = url.searchParams.get('fromAddress')
@@ -239,6 +252,17 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
 
   if (!fromAddress || !chainId || !tokenIn || !tokenOut || !amountIn) {
     return Response.json({ error: 'Missing required parameters' }, { status: 400 })
+  }
+  if (destinationChainId && isKatanaCrossChainRoute(chainId, destinationChainId)) {
+    return Response.json(
+      {
+        error: 'unsupported_route',
+        message: 'Cross-chain zaps involving Katana are disabled',
+        requestId: 'katana-crosschain-disabled',
+        statusCode: 400
+      },
+      { status: 400 }
+    )
   }
 
   const apiKey = process.env.ENSO_API_KEY
