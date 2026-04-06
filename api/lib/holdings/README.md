@@ -203,7 +203,7 @@ curl "http://localhost:3001/api/holdings/history?address=0x...&paginationMode=al
 Query params:
 - `address` (required): Ethereum address
 - `version` (optional): `v2`, `v3`, or `all` (default: `all`)
-- `refresh` (optional): `true` or `1` to force cache refresh
+- `refresh` (optional, local Bun server only): `true` or `1` to force cache refresh
 - `fetchType` (optional): `seq` or `parallel` (default: `seq`)
 - `paginationMode` (optional): `paged` or `all` (default: `paged`)
 
@@ -516,12 +516,12 @@ The history series ends at the latest settled UTC day rather than an intraday mo
 ```sql
 -- User daily totals (one row per user per day)
 CREATE TABLE IF NOT EXISTS holdings_totals (
-  user_address VARCHAR(42) NOT NULL,
-  version      VARCHAR(8) NOT NULL DEFAULT 'all',
-  date         DATE NOT NULL,
-  usd_value    NUMERIC NOT NULL,
-  updated_at   TIMESTAMP DEFAULT NOW(),
-  PRIMARY KEY (user_address, version, date)
+  user_address_hash VARCHAR(64) NOT NULL,
+  version           VARCHAR(8) NOT NULL DEFAULT 'all',
+  date              DATE NOT NULL,
+  usd_value         NUMERIC NOT NULL,
+  updated_at        TIMESTAMP DEFAULT NOW(),
+  PRIMARY KEY (user_address_hash, version, date)
 );
 
 -- Token price cache (shared across all users)
@@ -556,7 +556,7 @@ CREATE INDEX IF NOT EXISTS idx_token_price_misses_expires_at ON token_price_miss
 CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
 ```
 
-- `holdings_totals`: ~365 rows per user for full history
+- `holdings_totals`: ~365 rows per hashed user key for full history
 - `token_prices`: Shared positive-price cache, reduces DefiLlama API calls for exact timestamp hits
 - `token_price_misses`: Shared negative cache for exact unsupported price points, currently stored with a 7-day TTL
 - `vault_invalidations`: Tracks when vaults were invalidated for lazy cache refresh

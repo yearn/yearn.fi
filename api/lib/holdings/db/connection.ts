@@ -1,4 +1,5 @@
 import { Pool } from '@neondatabase/serverless'
+import { createHash } from 'node:crypto'
 import { config } from '../config'
 
 interface QueryResult<T> {
@@ -12,6 +13,14 @@ interface DatabasePool {
 }
 
 let pool: DatabasePool | null = null
+
+function normalizeUserAddress(userAddress: string): string {
+  return userAddress.toLowerCase()
+}
+
+function toUserAddressHash(userAddress: string): string {
+  return createHash('sha256').update(normalizeUserAddress(userAddress)).digest('hex')
+}
 
 async function createPool(): Promise<DatabasePool | null> {
   if (!config.databaseUrl) {
@@ -51,37 +60,19 @@ export async function initializeSchema(): Promise<void> {
 
   const schema = `
     CREATE TABLE IF NOT EXISTS holdings_totals (
-      user_address VARCHAR(42) NOT NULL,
+      user_address_hash VARCHAR(64) NOT NULL,
       version VARCHAR(8) NOT NULL DEFAULT 'all',
       date DATE NOT NULL,
       usd_value NUMERIC NOT NULL,
       updated_at TIMESTAMP DEFAULT NOW(),
-      PRIMARY KEY (user_address, version, date)
+      PRIMARY KEY (user_address_hash, version, date)
     );
 
+    ALTER TABLE holdings_totals ADD COLUMN IF NOT EXISTS user_address_hash VARCHAR(64);
     ALTER TABLE holdings_totals ADD COLUMN IF NOT EXISTS version VARCHAR(8);
     UPDATE holdings_totals SET version = 'all' WHERE version IS NULL;
     ALTER TABLE holdings_totals ALTER COLUMN version SET DEFAULT 'all';
     ALTER TABLE holdings_totals ALTER COLUMN version SET NOT NULL;
-
-    DO $$
-    BEGIN
-      IF EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'holdings_totals_pkey'
-          AND conrelid = 'holdings_totals'::regclass
-      ) AND NOT EXISTS (
-        SELECT 1
-        FROM information_schema.key_column_usage
-        WHERE table_name = 'holdings_totals'
-          AND constraint_name = 'holdings_totals_pkey'
-          AND column_name = 'version'
-      ) THEN
-        ALTER TABLE holdings_totals DROP CONSTRAINT holdings_totals_pkey;
-        ALTER TABLE holdings_totals ADD CONSTRAINT holdings_totals_pkey PRIMARY KEY (user_address, version, date);
-      END IF;
-    END $$;
 
     CREATE TABLE IF NOT EXISTS token_prices (
       token_key VARCHAR(100) NOT NULL,
@@ -121,9 +112,86 @@ export async function initializeSchema(): Promise<void> {
 
   try {
     await db.query(schema)
+    await migrateHoldingsTotalsAddressStorage(db)
     console.log('[Holdings DB] Schema initialized successfully')
   } catch (error) {
     console.error('[Holdings DB] Failed to initialize schema:', error)
+  }
+}
+
+async function migrateHoldingsTotalsAddressStorage(db: DatabasePool): Promise<void> {
+  const columnsResult = await db.query<{ column_name: string }>(
+    `SELECT column_name
+     FROM information_schema.columns
+     WHERE table_name = 'holdings_totals'`
+  )
+  const columns = new Set(columnsResult.rows.map((row) => row.column_name))
+  const hasLegacyUserAddressColumn = columns.has('user_address')
+  const hasUserAddressHashColumn = columns.has('user_address_hash')
+
+  if (!hasUserAddressHashColumn) {
+    return
+  }
+
+  if (hasLegacyUserAddressColumn) {
+    const legacyAddressesResult = await db.query<{ user_address: string }>(
+      `SELECT DISTINCT user_address
+       FROM holdings_totals
+       WHERE user_address IS NOT NULL
+         AND (user_address_hash IS NULL OR user_address_hash = '')`
+    )
+
+    for (const row of legacyAddressesResult.rows) {
+      const normalizedAddress = normalizeUserAddress(row.user_address)
+      const userAddressHash = toUserAddressHash(normalizedAddress)
+      await db.query(
+        `UPDATE holdings_totals
+         SET user_address_hash = $1
+         WHERE user_address = $2
+           AND (user_address_hash IS NULL OR user_address_hash = '')`,
+        [userAddressHash, normalizedAddress]
+      )
+    }
+  }
+
+  const unresolvedHashesResult = await db.query<{ count: string }>(
+    `SELECT COUNT(*)::text AS count
+     FROM holdings_totals
+     WHERE user_address_hash IS NULL OR user_address_hash = ''`
+  )
+  const unresolvedHashes = Number(unresolvedHashesResult.rows[0]?.count ?? '0')
+
+  if (unresolvedHashes > 0) {
+    throw new Error(`Unable to migrate holdings_totals user address hashes for ${unresolvedHashes} rows`)
+  }
+
+  const primaryKeyResult = await db.query<{ column_name: string }>(
+    `SELECT kcu.column_name
+     FROM information_schema.table_constraints tc
+     JOIN information_schema.key_column_usage kcu
+       ON tc.constraint_name = kcu.constraint_name
+      AND tc.table_schema = kcu.table_schema
+     WHERE tc.table_name = 'holdings_totals'
+       AND tc.constraint_type = 'PRIMARY KEY'
+     ORDER BY kcu.ordinal_position`
+  )
+  const primaryKeyColumns = primaryKeyResult.rows.map((row) => row.column_name)
+  const expectedPrimaryKeyColumns = ['user_address_hash', 'version', 'date']
+  const hasExpectedPrimaryKey =
+    primaryKeyColumns.length === expectedPrimaryKeyColumns.length &&
+    primaryKeyColumns.every((columnName, index) => columnName === expectedPrimaryKeyColumns[index])
+
+  if (!hasExpectedPrimaryKey) {
+    await db.query('ALTER TABLE holdings_totals DROP CONSTRAINT IF EXISTS holdings_totals_pkey')
+    await db.query(
+      'ALTER TABLE holdings_totals ADD CONSTRAINT holdings_totals_pkey PRIMARY KEY (user_address_hash, version, date)'
+    )
+  }
+
+  await db.query('ALTER TABLE holdings_totals ALTER COLUMN user_address_hash SET NOT NULL')
+
+  if (hasLegacyUserAddressColumn) {
+    await db.query('ALTER TABLE holdings_totals DROP COLUMN IF EXISTS user_address')
   }
 }
 
