@@ -183,7 +183,7 @@ The PnL endpoint fetches more context than the history endpoint:
 1. Address-scoped events for the user
 2. Additional transaction-scoped events for the same transaction hashes
 
-That transaction-hash enrichment lets the PnL engine match same-transaction router flows, staking wraps/unwraps, and known migration rollovers even when the economically relevant event was not emitted directly on the user's address filter.
+That transaction-hash enrichment lets the PnL engine match same-transaction router flows, staking stake/unstake moves, and known migration rollovers even when the economically relevant event was not emitted directly on the user's address filter.
 
 For some recognized Ethereum mainnet CoW settlement transactions, the PnL path also inspects the transaction receipt and settlement logs to synthesize a deposit-like acquisition with known basis. This reduces false partial-cost-basis cases for routed buys into vault asset/share positions.
 
@@ -192,14 +192,20 @@ For some recognized Ethereum mainnet CoW settlement transactions, the PnL path a
 ### GET `/api/holdings/history`
 Holdings history for charts (date + total value).
 
+The history series ends at the latest settled UTC day, not an intraday "today" point. This keeps the daily series cacheable and avoids recomputing a moving final point on every request. For current portfolio value, use `/api/holdings/pnl`.
+
 ```bash
 curl "http://localhost:3001/api/holdings/history?address=0x..."
+curl "http://localhost:3001/api/holdings/history?address=0x...&fetchType=parallel"
+curl "http://localhost:3001/api/holdings/history?address=0x...&paginationMode=all"
 ```
 
 Query params:
 - `address` (required): Ethereum address
 - `version` (optional): `v2`, `v3`, or `all` (default: `all`)
 - `refresh` (optional): `true` or `1` to force cache refresh
+- `fetchType` (optional): `seq` or `parallel` (default: `seq`)
+- `paginationMode` (optional): `paged` or `all` (default: `paged`)
 
 Response:
 ```json
@@ -269,6 +275,9 @@ Response (abridged):
       "status": "ok",
       "costBasisStatus": "partial",
       "unknownTransferInPnlMode": "windfall",
+      "currentUnderlying": 105.0,
+      "knownCostBasisUnderlying": 100.0,
+      "knownCostBasisUsd": 100.0,
       "unknownCostBasisValueUsd": 0,
       "windfallPnlUsd": 100.0,
       "realizedPnlUsd": 12.5,
@@ -279,6 +288,7 @@ Response (abridged):
       "metadata": {
         "symbol": "USDC",
         "decimals": 6,
+        "assetDecimals": 6,
         "tokenAddress": "0x...",
         "category": "stable"
       }
@@ -287,7 +297,13 @@ Response (abridged):
 }
 ```
 
-The live response also includes share balances, wallet vs staked splits, and per-vault event counts.
+The live response also includes:
+
+- share balances
+- vault-share vs staked-share splits
+- per-vault event counts
+- explicit underlying amounts (`currentUnderlying`, `vaultUnderlying`, `stakedUnderlying`)
+- explicit known-basis metrics (`knownCostBasisUnderlying`, `knownCostBasisUsd`, `currentKnownUnderlying`, `currentUnknownUnderlying`)
 
 Notes:
 - Deposits create FIFO lots using the indexed `assets` and `shares` values.
@@ -295,14 +311,48 @@ Notes:
 - Withdrawals realize PnL from the oldest remaining lots first.
 - `totalPnlUsd = totalRealizedPnlUsd + totalUnrealizedPnlUsd`.
 - `totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd`.
+- Some recognized reward-distribution flows are treated as explicit zero-basis reward receipts rather than unknown transfers. Those shares are considered economically free, but they stay `costBasisStatus: "complete"` and contribute to normal realized / unrealized PnL instead of `windfallPnlUsd`.
 - `summary.byCategory.stable` and `summary.byCategory.volatile` split `totalPnlUsd` and `totalEconomicGainUsd` by Kong vault category while the top-level summary remains the portfolio-wide total.
-- Staking wrappers are collapsed into the underlying vault family. Staked shares and wallet-held shares share the same FIFO lots and only change location.
-- Underlying vault `Deposit` and `Withdraw` events define cost basis and realized proceeds. Staking `Deposit` and `Withdraw` events are treated as wrap or unwrap moves, not as economic entries.
+- Staking wrappers are collapsed into the underlying vault family. Staked shares and directly held vault shares share the same FIFO lots and only change location.
+- Underlying vault `Deposit` and `Withdraw` events define cost basis and realized proceeds. Staking `Deposit` and `Withdraw` events are treated as stake or unstake moves, not as economic entries.
 - Same-transaction router flows can carry basis into or out of a staking vault family when the transfer can be matched to an indexed underlying vault deposit or withdrawal in the same transaction.
-- Known migrator transactions can roll basis from a source family into a destination family. When source basis cannot be reconstructed, the destination shares stay partial / unknown-basis.
+- Recognized vault-to-vault rollover transactions can roll basis from a source family into a destination family, including known migrator flows, supported Enso-mediated rollovers on Ethereum mainnet, and supported compatible nested-vault paths where one Yearn vault token is the asset of another Yearn vault. The current compatible nested-vault allowlist includes the `ysyBOLD <-> yBOLD` path on Ethereum mainnet. When source basis cannot be reconstructed, the destination shares stay partial / unknown-basis.
 - Plain share transfers may leave some lots with unknown cost basis. Those vaults are returned with `costBasisStatus: "partial"`. In `strict` mode, the unmatched current portion is reported in `unknownCostBasisValueUsd`; in `zero_basis` and `windfall`, that value is zeroed and the economics are attributed according to `unknownTransferInPnlMode`.
 - The endpoint keeps families with non-zero current shares even if they only arrived through transfers, but transfer-only families with zero remaining shares may still be omitted. Those transfer-only holdings are marked partial and prioritized for current-value completeness over full historical price reconstruction.
 - `isComplete` becomes `false` when at least one returned vault still has partial / unknown basis.
+
+### GET `/api/holdings/pnl/drilldown`
+Lot-level drilldown for the PnL engine. This is the "excessive" companion to `/api/holdings/pnl`.
+
+Use it when the frontend needs current lots, realized lot consumption, unknown-basis receipts / withdrawals, or a transaction journal showing how the family lot state changed over time.
+
+```bash
+curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x..."
+curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x...&vault=0x..."
+curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x...&unknownMode=windfall"
+```
+
+Query params:
+- `address` (required): Ethereum address
+- `vault` (optional): family vault or staking vault address to limit the response to one family
+- `version` (optional): `v2`, `v3`, or `all` (default: `all`)
+- `unknownMode` (optional): `strict`, `zero_basis`, or `windfall` (default: `windfall`)
+- `fetchType` (optional): `seq` or `parallel` (default: `seq`)
+- `paginationMode` (optional): `paged` or `all` (default: `paged`)
+
+Response additions per vault:
+- `currentLots.vault` and `currentLots.staked`
+- `realizedEntries` with consumed lots and USD/underlying proceeds/basis/PnL
+- `rewardTransferInEntries` for recognized zero-basis reward receipts
+- `unknownTransferInEntries` with receipt-time valuation
+- `unknownWithdrawalEntries` with proceeds and consumed unknown lots
+- `journal` rows with before/after lot summaries for vault-share and staked-share locations
+
+Notes:
+- `rewardTransferInEntries` are known-basis receipts with `costBasis = 0`, so they are not affected by `unknownMode`.
+- The drilldown journal includes `rewardInVaultShares` / `rewardInStakedShares` and the transaction hash. If the UI wants explorer links for reward rows, it should join the reward entry to the matching journal row.
+
+The drilldown response uses the same summary fields and top-level identity fields as `/api/holdings/pnl`, but each vault row is expanded for UI drilldown rather than table rendering.
 
 ### Unknown Transfer-In Modes
 
@@ -344,79 +394,6 @@ windfall:
   totalEconomicGainUsd = 1,150
 ```
 
-### GET `/api/holdings/breakdown`
-Current vault positions with detailed breakdown (not cached).
-
-```bash
-curl "http://localhost:3001/api/holdings/breakdown?address=0x..."
-```
-
-Response:
-```json
-{
-  "address": "0x...",
-  "summary": {
-    "totalVaults": 5,
-    "vaultsWithShares": 2,
-    "totalUsdValue": 1500.00
-  },
-  "vaults": [
-    {
-      "chainId": 1,
-      "vaultAddress": "0x...",
-      "shares": "1000000000000000000",
-      "sharesFormatted": 1.0,
-      "pricePerShare": 1.05,
-      "tokenPrice": 1.00,
-      "usdValue": 1.05,
-      "metadata": {
-        "symbol": "USDC",
-        "decimals": 18,
-        "tokenAddress": "0x..."
-      },
-      "status": "ok"
-    }
-  ]
-}
-```
-
-### GET `/api/holdings/debug`
-Debug endpoint for inspecting raw events.
-
-```bash
-curl "http://localhost:3001/api/holdings/debug?address=0x...&vault=0x..."
-```
-
-### POST `/api/admin/invalidate-cache`
-Protected endpoint to invalidate cache when new vaults are indexed.
-
-```bash
-curl -X POST "http://localhost:3001/api/admin/invalidate-cache" \
-  -H "x-admin-secret: $ADMIN_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{"vaults": [{"address": "0x...", "chainId": 1}]}'
-```
-
-Request body:
-```json
-{
-  "vaults": [
-    { "address": "0xac37729b76db6438ce62042ae1270ee574ca7571", "chainId": 1 },
-    { "address": "0x7fd8af959b54a677a1d8f92265bd0714274c56a3", "chainId": 8453 }
-  ]
-}
-```
-
-Response:
-```json
-{
-  "success": true,
-  "invalidated": 2,
-  "vaults": ["1:0xac37729b...", "8453:0x7fd8af9..."],
-  "timestamp": "2026-03-07T12:00:00Z"
-}
-```
-
 ## Supported Chains
 
 | Chain | ID | DefiLlama Prefix |
@@ -432,7 +409,8 @@ Response:
 |----------|----------|---------|-------------|
 | `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
 | `ENVIO_PASSWORD` | No | `''` (empty) | Envio Hasura admin secret (header skipped if empty or 'testing') |
-| `DATABASE_URL` | No | `null` | PostgreSQL connection string (caching disabled if not set) |
+| `DATABASE_URL_PREVIEW` | No | `null` | Preview PostgreSQL connection string. Used in preference to `DATABASE_URL` when set. |
+| `DATABASE_URL` | No | `null` | Default PostgreSQL connection string (caching disabled if neither DB env var is set) |
 | `ETHEREUM_RPC_URL` | No | `https://ethereum-rpc.publicnode.com` | Mainnet RPC used for receipt-level enrichment such as CoW settlement decoding |
 | `DEFILLAMA_API_KEY` | No | `''` (empty) | Enables the paid DefiLlama GET route at `https://pro-api.llama.fi/{key}/coins/batchHistorical?coins=...` |
 | `ADMIN_SECRET` | No | `null` | Secret for admin endpoints (cache invalidation). Use 32+ char random string. |
@@ -489,7 +467,7 @@ When only calculating a few missing days, the `maxTimestamp` parameter limits ev
 ```typescript
 // Only fetch events up to end of last missing day
 const maxTimestamp = Math.max(...missingTimestamps) + 86400
-const events = await fetchUserEvents(userAddress, version, maxTimestamp)
+const events = await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
 ```
 
 ## Caching Strategy
@@ -509,35 +487,25 @@ The cache stores **daily USD totals per user** (not per-vault breakdowns).
 │  └────────┬────────┘                                        │
 │           │                                                  │
 │           ▼                                                  │
-│  ┌───────────────────────────────────────┐                  │
-│  │ Found: Days 1-360 cached              │                  │
-│  │ Missing: Days 361-365                 │                  │
-│  │ Today: Always recalculated            │                  │
-│  └────────┬──────────────────────────────┘                  │
-│           │                                                  │
-│           ▼                                                  │
-│  ┌───────────────────────────────────────┐                  │
-│  │ Only calculate missing days (361-365) │                  │
-│  │ Fetch events with maxTimestamp filter │                  │
-│  │ Save new daily totals to cache        │                  │
-│  └────────┬──────────────────────────────┘                  │
-│           │                                                  │
-│           ▼                                                  │
-│  ┌───────────────────────────────────────┐                  │
-│  │ Merge cached + new data               │                  │
-│  │ Return complete 365-day response      │                  │
-│  └───────────────────────────────────────┘                  │
+│  ┌──────────────────────────────────────────────┐           │
+│  │ If all settled UTC days are cached           │           │
+│  │ → return directly from cache                 │           │
+│  └──────────────────────────────────────────────┘           │
+│  ┌──────────────────────────────────────────────┐           │
+│  │ If some settled days are missing             │           │
+│  │ → fetch only up to the last missing day      │           │
+│  │ → calculate missing days                     │           │
+│  │ → save new daily totals to cache             │           │
+│  └──────────────────────────────────────────────┘           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Why Today is Always Recalculated
-
-Today's value uses the latest available Price Per Share from Kong, which may update throughout the day. Recalculating ensures users see current values.
+The history series ends at the latest settled UTC day rather than an intraday moving "today" point. Current portfolio value should come from `/api/holdings/pnl`.
 
 ### Cache Layers
 
 1. **PostgreSQL** (server):
-   - Daily totals cached per user (today recalculated on each request)
+   - Daily totals cached per user and vault version
    - Token prices cached globally (shared across all users)
    - Exact token/timestamp price misses cached globally with TTL to suppress repeated unsupported DefiLlama fetches
 2. **HTTP Cache-Control** (CDN): `s-maxage=300, stale-while-revalidate=600`
@@ -549,10 +517,11 @@ Today's value uses the latest available Price Per Share from Kong, which may upd
 -- User daily totals (one row per user per day)
 CREATE TABLE IF NOT EXISTS holdings_totals (
   user_address VARCHAR(42) NOT NULL,
+  version      VARCHAR(8) NOT NULL DEFAULT 'all',
   date         DATE NOT NULL,
   usd_value    NUMERIC NOT NULL,
   updated_at   TIMESTAMP DEFAULT NOW(),
-  PRIMARY KEY (user_address, date)
+  PRIMARY KEY (user_address, version, date)
 );
 
 -- Token price cache (shared across all users)

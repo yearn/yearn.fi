@@ -1,12 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { HoldingsEventFetchType, HoldingsEventPaginationMode } from '../lib/holdings'
-import { checkRateLimit } from '../lib/holdings'
+import type { HoldingsEventFetchType, HoldingsEventPaginationMode } from '../../lib/holdings'
+import { checkRateLimit } from '../../lib/holdings'
 
 function simpleHash(str: string): string {
-  const hash = Array.from(str).reduce((currentHash, char) => {
-    const nextHash = (currentHash << 5) - currentHash + char.charCodeAt(0)
-    return nextHash & nextHash
-  }, 0)
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash
+  }
   return Math.abs(hash).toString(36)
 }
 
@@ -61,12 +63,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
     return res.status(503).json({
-      error: 'Holdings PnL API not configured',
+      error: 'Holdings PnL drilldown API not configured',
       details: 'ENVIO_GRAPHQL_URL environment variable is not set. This feature requires a running Envio indexer.'
     })
   }
 
-  const { address, version, unknownMode, fetchType: fetchTypeParam, paginationMode: paginationModeParam } = req.query
+  const {
+    address,
+    vault,
+    version,
+    unknownMode,
+    fetchType: fetchTypeParam,
+    paginationMode: paginationModeParam
+  } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -76,38 +85,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid Ethereum address' })
   }
 
+  if (vault !== undefined && (typeof vault !== 'string' || !isValidAddress(vault))) {
+    return res.status(400).json({ error: 'Invalid vault address' })
+  }
+
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
 
   try {
-    const { getHoldingsPnL } = await import('../lib/holdings')
-    const pnl = await getHoldingsPnL(
+    const { getHoldingsPnLDrilldown } = await import('../../lib/holdings')
+    const pnl = await getHoldingsPnLDrilldown(
       address,
       version === 'v2' || version === 'v3' ? version : 'all',
       parseUnknownTransferInPnlMode(Array.isArray(unknownMode) ? unknownMode[0] : unknownMode),
       fetchType,
-      paginationMode
+      paginationMode,
+      vault
     )
 
     if (pnl.summary.totalVaults === 0) {
-      return res.status(404).json({ error: 'No holdings found for address' })
+      return res.status(404).json({
+        error: vault ? 'No matching holdings found for address and vault' : 'No holdings found for address'
+      })
     }
 
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
     return res.status(200).json(pnl)
   } catch (error) {
-    console.error('Holdings PnL error:', error)
+    console.error('Holdings PnL drilldown error:', error)
 
     if (process.env.NODE_ENV === 'development') {
       const message = error instanceof Error ? error.message : String(error)
       const stack = error instanceof Error ? error.stack : undefined
       return res.status(502).json({
-        error: 'Failed to fetch holdings PnL',
+        error: 'Failed to fetch holdings PnL drilldown',
         message,
         stack
       })
     }
 
-    return res.status(502).json({ error: 'Failed to fetch holdings PnL' })
+    return res.status(502).json({ error: 'Failed to fetch holdings PnL drilldown' })
   }
 }

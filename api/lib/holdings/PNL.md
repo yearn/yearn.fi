@@ -1,6 +1,6 @@
 # Holdings PnL Logic
 
-This document explains how `GET /api/holdings/pnl` works today.
+This document explains how `GET /api/holdings/pnl` and `GET /api/holdings/pnl/drilldown` work today.
 
 It is written for product engineers and contributors who need to understand the accounting model without reading the full implementation in `api/lib/holdings/services/pnl.ts`.
 
@@ -28,6 +28,17 @@ The endpoint is not:
 - A full wallet-wide cash-flow ledger
 - A proof that every historical transfer has been classified perfectly
 
+## Public Surfaces
+
+The backend now exposes two PnL shapes:
+
+- `GET /api/holdings/pnl`
+  - compact portfolio summary plus one row per vault family
+  - intended for overview cards, value tables, filters, and composition views
+- `GET /api/holdings/pnl/drilldown`
+  - the same valuation basis, but expanded with current lots, realized lot consumption, unknown-basis receipts and withdrawals, and a transaction journal
+  - intended for vault drawers, lot timelines, and accounting inspection UI
+
 ## Core Idea
 
 The engine models each vault family as a set of share lots.
@@ -36,7 +47,7 @@ A lot has:
 
 - A share amount
 - A location
-  - wallet
+  - vault
   - staked
 - An acquisition timestamp
 - A cost basis in underlying assets, or `null` when basis is unknown
@@ -49,6 +60,8 @@ For known-basis lots, USD basis is derived later from:
 
 Known-basis lots come from indexed deposit / withdrawal context.
 Known-basis lots can also come from recognized synthetic acquisition flows, such as supported CoW settlement receipt enrichment on Ethereum mainnet.
+Known-basis lots can also come from recognized zero-basis reward receipts, where the engine can identify a distributor flow that should be treated as a reward rather than as an unknown transfer-in.
+Known-basis lots can also come from recognized vault-to-vault rollover flows, where source vault lots are consumed and their basis is redistributed into the destination vault shares.
 Unknown-basis lots usually come from share transfers where the economic source cannot be proven.
 
 ## Mental Model
@@ -127,9 +140,10 @@ Raw events are normalized into a transaction journal.
 
 The ledger builder tracks:
 
-- wallet lots
+- vault-share lots
 - staked lots
 - realized entries
+- recognized reward transfer-in entries
 - unknown transfer-in entries
 - withdrawals that consumed unknown-basis shares
 - unmatched transfer-outs
@@ -193,12 +207,12 @@ Staking deposits and withdrawals are not treated as new investments by default.
 
 Instead, they usually mean:
 
-- wallet shares moved into staked location
-- or staked shares moved back to wallet location
+- vault shares moved into staked location
+- or staked shares moved back to vault location
 
 The lot should stay the same. Only its location changes.
 
-This avoids fake realized PnL when the user simply wraps or unwraps a Yearn position.
+This avoids fake realized PnL when the user simply stakes or unstakes a Yearn position.
 
 ## How Router Flows Work
 
@@ -246,6 +260,44 @@ If shares arrive and the engine cannot prove where their basis came from, those 
 If shares leave and the engine cannot match them to known or unknown lots cleanly, the ledger records unmatched transfer-out state.
 
 This is why the endpoint exposes completeness metadata instead of pretending every vault is fully known.
+
+## Recognized Reward Receipts
+
+Some transfer-ins are not treated as unknown.
+
+When the engine can match an incoming share transfer to a recognized reward distributor for that vault asset token, it classifies the receipt as:
+
+- a reward transfer-in
+- a known lot with `costBasis = 0`
+- a complete-basis receipt, not a partial / unknown one
+
+That means:
+
+- `costBasisStatus` stays `complete` for that receipt path
+- the receipt does not contribute to `unknownCostBasisValueUsd`
+- the receipt does not use `windfallPnlUsd`
+- all later value is reported as normal realized / unrealized PnL on a zero-basis lot
+
+Today this path is intended for explicit known reward-distribution flows, not for generic airdrops or arbitrary transfers.
+
+## Recognized Vault Rollovers
+
+Some transfer-ins are not rewards and are not unknown.
+
+When the engine can prove that a transaction is a vault-to-vault rollover, it classifies the receipt as:
+
+- a migration / rollover from a source family into a destination family
+- a known-basis receipt whose destination lots inherit source-lot basis
+- a complete-basis receipt unless the source side already had unknown basis
+
+That means:
+
+- the destination path increments `eventCounts.migrationsIn`
+- the source path increments `eventCounts.migrationsOut`
+- destination shares do not become `unknownTransferInEntries` just because a router or intermediary sat in the middle
+- basis is preserved across the rollover instead of being reset to zero or marked unknown
+
+Today this path covers explicit known migrator flows, supported Enso-mediated vault rollovers, and supported compatible nested-vault paths where one Yearn vault token is the asset of another Yearn vault. The current compatible nested-vault allowlist includes the `ysyBOLD <-> yBOLD` path on Ethereum mainnet. It is intentionally pattern-based rather than a blanket router whitelist.
 
 ## Unknown Transfer-In Modes
 
@@ -405,13 +457,62 @@ A vault is `partial` when the engine still has ambiguity, such as:
 - withdrawals that consumed unknown-basis shares
 - unmatched transfer-outs
 
+### Per-Vault Current/Basis Fields
+
+The compact endpoint now also exposes explicit basis and underlying fields:
+
+- `currentUnderlying`
+  - current underlying asset amount represented by all current shares
+- `vaultUnderlying`
+  - current underlying amount still in the direct vault-share location
+- `stakedUnderlying`
+  - current underlying amount in the staking location
+- `currentKnownUnderlying`
+  - current underlying amount attributed to known-basis lots
+- `currentUnknownUnderlying`
+  - current underlying amount attributed to unknown-basis lots
+- `knownCostBasisUnderlying`
+  - summed underlying asset basis from known lots
+- `knownCostBasisUsd`
+  - USD-marked basis of known lots using acquisition-time token prices
+
+These fields are useful for UI without forcing a drilldown request.
+
+### Drilldown Fields
+
+The drilldown endpoint adds per-vault:
+
+- `currentLots.vault`
+- `currentLots.staked`
+- `realizedEntries`
+- `rewardTransferInEntries`
+- `unknownTransferInEntries`
+- `unknownWithdrawalEntries`
+- `journal`
+
+The journal is transaction-oriented. It records:
+
+- the computed vault-family view for that transaction
+- whether the wallet had direct address activity in that transaction
+- realized / stake / unstake / reward / unknown-transfer deltas
+- lot summaries before and after the transaction for vault-share and staked-share locations
+
+For frontend drilldown:
+
+- `rewardTransferInEntries` should be rendered separately from `unknownTransferInEntries`
+- reward entries are known zero-basis receipts, so they should not be styled as accounting ambiguity
+- `txHash` currently lives on `journal`, not directly on each reward entry
+- if the UI wants explorer links for reward rows, it should match a reward entry to the journal row with the same:
+  - `timestamp`
+  - `rewardInVaultShares` or `rewardInStakedShares`
+
 ## What Is Covered Well Today
 
 The current implementation is strong on:
 
 - direct deposit / withdraw accounting
 - FIFO cost basis for known lots
-- staking wrap and unwrap handling
+- stake and unstake handling for staking wrappers
 - same-transaction router context, when events can be linked by tx hash
 - known migration paths
 - explicit treatment of unknown basis instead of silently inventing numbers
@@ -447,7 +548,8 @@ If you are debugging one wallet:
    - `unknownCostBasisValueUsd`
    - `windfallPnlUsd`
    - `eventCounts`
-4. Use debug mode to inspect the transaction journal and final lots.
+4. Call `/api/holdings/pnl/drilldown` for the relevant vault family.
+5. Use debug mode only when you also want server-side logs or transaction-specific log tables.
 
 ## Code Map
 

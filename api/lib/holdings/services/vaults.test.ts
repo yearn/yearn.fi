@@ -8,9 +8,11 @@ function createVaultListResponse(): Response {
     JSON.stringify([
       {
         address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
+        apiVersion: '3.0.2',
         chainId: 1,
         symbol: 'yvUSDC',
         decimals: 6,
+        v3: true,
         asset: {
           address: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
           symbol: 'USDC',
@@ -33,9 +35,11 @@ function createVaultSnapshotResponse(): Response {
   return new Response(
     JSON.stringify({
       address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
+      apiVersion: '3.0.2',
       chainId: 1,
       symbol: 'yvUSDC',
       decimals: 6,
+      v3: true,
       asset: {
         address: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
         symbol: 'USDC',
@@ -130,6 +134,7 @@ describe('fetchMultipleVaultsMetadata', () => {
     expect(metadata.get(`1:${STAKING_VAULT}`)).toEqual({
       address: STAKING_VAULT,
       chainId: 1,
+      version: 'v3',
       token: {
         address: UNDERLYING_VAULT,
         symbol: 'yvUSDC',

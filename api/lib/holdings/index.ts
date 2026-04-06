@@ -10,6 +10,9 @@ export {
 } from './services/graphql'
 export {
   getHoldingsPnL,
+  getHoldingsPnLDrilldown,
+  type HoldingsPnLDrilldownResponse,
+  type HoldingsPnLDrilldownVault,
   type HoldingsPnLResponse,
   type HoldingsPnLVault,
   type UnknownTransferInPnlMode

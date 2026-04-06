@@ -1,0 +1,186 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+const getCachedTotalsWithTimestampMock = vi.fn()
+const saveCachedTotalsMock = vi.fn()
+const clearUserCacheMock = vi.fn()
+const checkCacheStalenessMock = vi.fn()
+const fetchUserEventsMock = vi.fn()
+const buildPositionTimelineMock = vi.fn()
+const generateDailyTimestampsMock = vi.fn()
+const getShareBalanceAtTimestampMock = vi.fn()
+const getUniqueVaultsMock = vi.fn()
+const timestampToDateStringMock = vi.fn()
+const fetchMultipleVaultsMetadataMock = vi.fn()
+const fetchMultipleVaultsPPSMock = vi.fn()
+const getPPSMock = vi.fn()
+const fetchHistoricalPricesMock = vi.fn()
+const getChainPrefixMock = vi.fn()
+const getPriceAtTimestampMock = vi.fn()
+
+vi.mock('./cache', () => ({
+  getCachedTotalsWithTimestamp: getCachedTotalsWithTimestampMock,
+  saveCachedTotals: saveCachedTotalsMock,
+  clearUserCache: clearUserCacheMock,
+  checkCacheStaleness: checkCacheStalenessMock
+}))
+
+vi.mock('./graphql', () => ({
+  fetchUserEvents: fetchUserEventsMock
+}))
+
+vi.mock('./holdings', () => ({
+  buildPositionTimeline: buildPositionTimelineMock,
+  generateDailyTimestamps: generateDailyTimestampsMock,
+  getShareBalanceAtTimestamp: getShareBalanceAtTimestampMock,
+  getUniqueVaults: getUniqueVaultsMock,
+  timestampToDateString: timestampToDateStringMock
+}))
+
+vi.mock('./vaults', () => ({
+  fetchMultipleVaultsMetadata: fetchMultipleVaultsMetadataMock
+}))
+
+vi.mock('./kong', () => ({
+  fetchMultipleVaultsPPS: fetchMultipleVaultsPPSMock,
+  getPPS: getPPSMock
+}))
+
+vi.mock('./defillama', () => ({
+  fetchHistoricalPrices: fetchHistoricalPricesMock,
+  getChainPrefix: getChainPrefixMock,
+  getPriceAtTimestamp: getPriceAtTimestampMock
+}))
+
+describe('getHistoricalHoldings', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+  })
+
+  it('caches versioned history separately and filters vaults using authoritative metadata version', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(999_000)
+
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+    const v2VaultAddress = '0x00000000000000000000000000000000000000a2'
+    const v3VaultAddress = '0x00000000000000000000000000000000000000a3'
+    const v2TokenAddress = '0x0000000000000000000000000000000000000aa2'
+    const v3TokenAddress = '0x0000000000000000000000000000000000000aa3'
+    const timeline = [{ id: 'v2-entry' }, { id: 'v3-entry' }]
+    const vaults = [
+      { chainId: 1, vaultAddress: v2VaultAddress },
+      { chainId: 1, vaultAddress: v3VaultAddress }
+    ]
+
+    generateDailyTimestampsMock.mockReturnValue([100])
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    getCachedTotalsWithTimestampMock.mockResolvedValue({ totals: [], oldestUpdatedAt: null })
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+    buildPositionTimelineMock.mockReturnValue(timeline)
+    getUniqueVaultsMock.mockReturnValue(vaults)
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${v2VaultAddress}`,
+          {
+            address: v2VaultAddress,
+            chainId: 1,
+            version: 'v2',
+            token: {
+              address: v2TokenAddress,
+              symbol: 'TKN2',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ],
+        [
+          `1:${v3VaultAddress}`,
+          {
+            address: v3VaultAddress,
+            chainId: 1,
+            version: 'v3',
+            token: {
+              address: v3TokenAddress,
+              symbol: 'TKN3',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+    fetchMultipleVaultsPPSMock.mockImplementation(async (requestedVaults: typeof vaults) => {
+      return new Map(
+        requestedVaults.map((vault) => [`${vault.chainId}:${vault.vaultAddress.toLowerCase()}`, new Map([[100, 1]])])
+      )
+    })
+    fetchHistoricalPricesMock.mockResolvedValue(new Map([[`ethereum:${v2TokenAddress}`, new Map([[100, 1]])]]))
+    getChainPrefixMock.mockReturnValue('ethereum')
+    getPPSMock.mockReturnValue(1)
+    getPriceAtTimestampMock.mockReturnValue(1)
+    getShareBalanceAtTimestampMock.mockImplementation((_timeline: unknown, vaultAddress: string) => {
+      return vaultAddress === v2VaultAddress ? 2n * 10n ** 18n : 5n * 10n ** 18n
+    })
+    checkCacheStalenessMock.mockResolvedValue(false)
+
+    const { getHistoricalHoldings } = await import('./aggregator')
+    const response = await getHistoricalHoldings(userAddress, 'v2', 'parallel', 'all')
+
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86500, 'parallel', 'all')
+    expect(getCachedTotalsWithTimestampMock).toHaveBeenCalledWith(userAddress, 'v2', 'date-100', 'date-100')
+    expect(fetchMultipleVaultsPPSMock).toHaveBeenCalledWith([vaults[0]])
+    expect(saveCachedTotalsMock).toHaveBeenCalledWith(userAddress, 'v2', [{ date: 'date-100', usdValue: 2 }])
+    expect(response.dataPoints).toEqual([{ date: 'date-100', timestamp: 100, totalUsdValue: 2 }])
+  })
+
+  it('defaults history event fetching to sequential paged mode', async () => {
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+
+    generateDailyTimestampsMock.mockReturnValue([100])
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    getCachedTotalsWithTimestampMock.mockResolvedValue({ totals: [], oldestUpdatedAt: null })
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+    buildPositionTimelineMock.mockReturnValue([])
+
+    const { getHistoricalHoldings } = await import('./aggregator')
+    await getHistoricalHoldings(userAddress, 'all')
+
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86500, 'seq', 'paged')
+  })
+
+  it('returns fully cached history without refetching events or valuations', async () => {
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+
+    generateDailyTimestampsMock.mockReturnValue([100, 200])
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    getCachedTotalsWithTimestampMock.mockResolvedValue({
+      totals: [
+        { date: 'date-100', usdValue: 1 },
+        { date: 'date-200', usdValue: 2 }
+      ],
+      oldestUpdatedAt: new Date('2026-03-31T00:00:00Z')
+    })
+
+    const { getHistoricalHoldings } = await import('./aggregator')
+    const response = await getHistoricalHoldings(userAddress, 'all')
+
+    expect(fetchUserEventsMock).not.toHaveBeenCalled()
+    expect(fetchMultipleVaultsMetadataMock).not.toHaveBeenCalled()
+    expect(fetchMultipleVaultsPPSMock).not.toHaveBeenCalled()
+    expect(fetchHistoricalPricesMock).not.toHaveBeenCalled()
+    expect(response.dataPoints).toEqual([
+      { date: 'date-100', timestamp: 100, totalUsdValue: 1 },
+      { date: 'date-200', timestamp: 200, totalUsdValue: 2 }
+    ])
+  })
+})

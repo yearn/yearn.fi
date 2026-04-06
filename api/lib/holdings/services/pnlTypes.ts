@@ -1,11 +1,19 @@
 import type { VaultVersion } from './graphql'
 
-export type TLocation = 'wallet' | 'staked'
+export type TLocation = 'vault' | 'staked'
 
 export type TLot = {
   shares: bigint
   costBasis: bigint | null
   acquiredAt?: number
+}
+
+export type TLotSummary = {
+  lotCount: number
+  totalShares: string
+  knownShares: string
+  unknownShares: string
+  totalKnownCostBasis: string
 }
 
 export type TRealizedEntry = {
@@ -19,6 +27,14 @@ export type TRealizedEntry = {
 export type TUnknownTransferInEntry = {
   timestamp: number
   shares: bigint
+  location: TLocation
+}
+
+export type TRewardTransferInEntry = {
+  timestamp: number
+  shares: bigint
+  location: TLocation
+  distributor: string
 }
 
 export type TUnknownWithdrawalEntry = {
@@ -42,16 +58,22 @@ export type TPnlDebugJournalRow = {
   depositAssets: string
   withdrawShares: string
   withdrawAssets: string
-  wrapShares: string
-  unwrapShares: string
-  unknownInWalletShares: string
+  stakeShares: string
+  unstakeShares: string
+  rewardInVaultShares: string
+  rewardInStakedShares: string
+  unknownInVaultShares: string
   unknownInStakedShares: string
-  transferOutWalletShares: string
+  transferOutVaultShares: string
   transferOutStakedShares: string
   realizedKnownShares: string
   realizedProceedsAssets: string
   realizedBasisAssets: string
   realizedPnlAssets: string
+  vaultLotsBefore: TLotSummary
+  stakedLotsBefore: TLotSummary
+  vaultLotsAfter: TLotSummary
+  stakedLotsAfter: TLotSummary
 }
 
 export type TRawScopes = {
@@ -117,7 +139,7 @@ export interface FamilyPnlLedger {
   chainId: number
   vaultAddress: string
   stakingVaultAddress: string | null
-  walletLots: TLot[]
+  vaultLots: TLot[]
   stakedLots: TLot[]
   totalDepositedAssets: bigint
   totalWithdrawnAssets: bigint
@@ -127,14 +149,16 @@ export interface FamilyPnlLedger {
   unmatchedTransferOutCount: number
   unmatchedTransferOutShares: bigint
   realizedEntries: TRealizedEntry[]
+  rewardTransferInEntries: TRewardTransferInEntry[]
   unknownTransferInEntries: TUnknownTransferInEntry[]
   unknownWithdrawalEntries: TUnknownWithdrawalEntry[]
   debugJournal: TPnlDebugJournalRow[]
   eventCounts: {
     underlyingDeposits: number
     underlyingWithdrawals: number
-    stakingWraps: number
-    stakingUnwraps: number
+    stakes: number
+    unstakes: number
+    rewardTransfersIn: number
     externalTransfersIn: number
     externalTransfersOut: number
     migrationsIn: number
@@ -151,16 +175,23 @@ export interface HoldingsPnLVault {
   unknownTransferInPnlMode: UnknownTransferInPnlMode
   shares: string
   sharesFormatted: number
-  walletShares: string
-  walletSharesFormatted: number
+  vaultShares: string
+  vaultSharesFormatted: number
   stakedShares: string
   stakedSharesFormatted: number
   knownCostBasisShares: string
   unknownCostBasisShares: string
   pricePerShare: number
   tokenPrice: number
+  currentUnderlying: number
+  vaultUnderlying: number
+  stakedUnderlying: number
+  currentKnownUnderlying: number
+  currentUnknownUnderlying: number
+  knownCostBasisUnderlying: number
+  knownCostBasisUsd: number
   currentValueUsd: number
-  walletValueUsd: number
+  vaultValueUsd: number
   stakedValueUsd: number
   unknownCostBasisValueUsd: number
   windfallPnlUsd: number
@@ -175,8 +206,9 @@ export interface HoldingsPnLVault {
   eventCounts: {
     underlyingDeposits: number
     underlyingWithdrawals: number
-    stakingWraps: number
-    stakingUnwraps: number
+    stakes: number
+    unstakes: number
+    rewardTransfersIn: number
     externalTransfersIn: number
     externalTransfersOut: number
     migrationsIn: number
@@ -187,6 +219,7 @@ export interface HoldingsPnLVault {
   metadata: {
     symbol: string
     decimals: number
+    assetDecimals: number
     tokenAddress: string
     category: 'stable' | 'volatile'
   } | null
@@ -197,29 +230,164 @@ export interface HoldingsPnLCategoryBreakdown {
   totalEconomicGainUsd: number
 }
 
+export type THoldingsPnlSummary = {
+  totalVaults: number
+  completeVaults: number
+  partialVaults: number
+  totalCurrentValueUsd: number
+  totalUnknownCostBasisValueUsd: number
+  totalWindfallPnlUsd: number
+  totalRealizedPnlUsd: number
+  totalUnrealizedPnlUsd: number
+  totalPnlUsd: number
+  totalEconomicGainUsd: number
+  byCategory: {
+    stable: HoldingsPnLCategoryBreakdown
+    volatile: HoldingsPnLCategoryBreakdown
+  }
+  isComplete: boolean
+}
+
+export type THoldingsPnlLot = {
+  index: number
+  shares: string
+  sharesFormatted: number
+  costBasis: string | null
+  costBasisFormatted: number | null
+  acquiredAt: number | null
+  costBasisUsd: number | null
+  pricePerShareAtAcquisition: number
+  tokenPriceAtAcquisition: number
+  currentUnderlying: number
+  currentValueUsd: number
+}
+
+export type THoldingsPnlRealizedEntry = {
+  timestamp: number
+  proceedsAssets: string
+  proceedsUnderlying: number
+  proceedsUsd: number
+  basisAssets: string
+  basisUnderlying: number
+  basisUsd: number
+  pnlAssets: string
+  pnlUnderlying: number
+  pnlUsd: number
+  consumedLots: THoldingsPnlLot[]
+}
+
+export type THoldingsPnlUnknownTransferInEntry = {
+  timestamp: number
+  location: TLocation
+  shares: string
+  sharesFormatted: number
+  pricePerShareAtReceipt: number
+  tokenPriceAtReceipt: number
+  receiptUnderlying: number
+  receiptValueUsd: number
+}
+
+export type THoldingsPnlRewardTransferInEntry = {
+  timestamp: number
+  location: TLocation
+  distributor: string
+  shares: string
+  sharesFormatted: number
+  pricePerShareAtReceipt: number
+  tokenPriceAtReceipt: number
+  receiptUnderlying: number
+  receiptValueUsd: number
+}
+
+export type THoldingsPnlUnknownWithdrawalEntry = {
+  timestamp: number
+  shares: string
+  sharesFormatted: number
+  proceedsAssets: string
+  proceedsUnderlying: number
+  proceedsUsd: number
+  consumedLots: THoldingsPnlLot[]
+}
+
+export type THoldingsPnlJournalLotSummary = TLotSummary & {
+  totalSharesFormatted: number
+  knownSharesFormatted: number
+  unknownSharesFormatted: number
+  totalKnownCostBasisFormatted: number
+}
+
+export type THoldingsPnlJournalEntry = {
+  timestamp: number
+  txHash: string
+  view: string
+  hasAddressActivity: boolean
+  rawEvents: string
+  depositShares: string
+  depositSharesFormatted: number
+  depositAssets: string
+  depositAssetsFormatted: number
+  withdrawShares: string
+  withdrawSharesFormatted: number
+  withdrawAssets: string
+  withdrawAssetsFormatted: number
+  stakeShares: string
+  stakeSharesFormatted: number
+  unstakeShares: string
+  unstakeSharesFormatted: number
+  rewardInVaultShares: string
+  rewardInVaultSharesFormatted: number
+  rewardInStakedShares: string
+  rewardInStakedSharesFormatted: number
+  unknownInVaultShares: string
+  unknownInVaultSharesFormatted: number
+  unknownInStakedShares: string
+  unknownInStakedSharesFormatted: number
+  transferOutVaultShares: string
+  transferOutVaultSharesFormatted: number
+  transferOutStakedShares: string
+  transferOutStakedSharesFormatted: number
+  realizedKnownShares: string
+  realizedKnownSharesFormatted: number
+  realizedProceedsAssets: string
+  realizedProceedsAssetsFormatted: number
+  realizedBasisAssets: string
+  realizedBasisAssetsFormatted: number
+  realizedPnlAssets: string
+  realizedPnlAssetsFormatted: number
+  vaultLotsBefore: THoldingsPnlJournalLotSummary
+  stakedLotsBefore: THoldingsPnlJournalLotSummary
+  vaultLotsAfter: THoldingsPnlJournalLotSummary
+  stakedLotsAfter: THoldingsPnlJournalLotSummary
+}
+
+export interface HoldingsPnLDrilldownVault extends HoldingsPnLVault {
+  currentLots: {
+    vault: THoldingsPnlLot[]
+    staked: THoldingsPnlLot[]
+  }
+  realizedEntries: THoldingsPnlRealizedEntry[]
+  rewardTransferInEntries: THoldingsPnlRewardTransferInEntry[]
+  unknownTransferInEntries: THoldingsPnlUnknownTransferInEntry[]
+  unknownWithdrawalEntries: THoldingsPnlUnknownWithdrawalEntry[]
+  journal: THoldingsPnlJournalEntry[]
+}
+
 export interface HoldingsPnLResponse {
   address: string
   version: VaultVersion
   unknownTransferInPnlMode: UnknownTransferInPnlMode
   generatedAt: string
-  summary: {
-    totalVaults: number
-    completeVaults: number
-    partialVaults: number
-    totalCurrentValueUsd: number
-    totalUnknownCostBasisValueUsd: number
-    totalWindfallPnlUsd: number
-    totalRealizedPnlUsd: number
-    totalUnrealizedPnlUsd: number
-    totalPnlUsd: number
-    totalEconomicGainUsd: number
-    byCategory: {
-      stable: HoldingsPnLCategoryBreakdown
-      volatile: HoldingsPnLCategoryBreakdown
-    }
-    isComplete: boolean
-  }
+  summary: THoldingsPnlSummary
   vaults: HoldingsPnLVault[]
+}
+
+export interface HoldingsPnLDrilldownResponse {
+  address: string
+  version: VaultVersion
+  unknownTransferInPnlMode: UnknownTransferInPnlMode
+  generatedAt: string
+  summary: THoldingsPnlSummary
+  vaults: HoldingsPnLDrilldownVault[]
 }
 
 export type TPnlComputationState = {

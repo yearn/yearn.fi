@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RawPnlEventContext } from './graphql'
-import type { HoldingsPnLResponse } from './pnl'
+import type { HoldingsPnLDrilldownResponse, HoldingsPnLResponse } from './pnl'
 
 const VAULT = '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204'
+const REWARD_DISTRIBUTOR = '0xb226c52eb411326cdb54824a88abafdaaff16d3d'
+const REWARD_VAULT = '0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f'
 const USER = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
 const ROUTER = '0x1111111111111111111111111111111111111111'
 const PRICE_KEY = 'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
@@ -135,6 +137,36 @@ function createTransferOnlyContext(): RawPnlEventContext {
   }
 }
 
+function createRewardTransferInContext(): RawPnlEventContext {
+  const rewardTransferIn = {
+    id: 'reward-transfer-in',
+    vaultAddress: REWARD_VAULT,
+    chainId: 1,
+    blockNumber: 1,
+    blockTimestamp: 100,
+    logIndex: 1,
+    transactionHash: '0xreward-transfer-in',
+    transactionFrom: REWARD_DISTRIBUTOR,
+    sender: REWARD_DISTRIBUTOR,
+    receiver: USER,
+    value: '100000000'
+  }
+
+  return {
+    addressEvents: {
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [rewardTransferIn],
+      transfersOut: []
+    },
+    transactionEvents: {
+      deposits: [],
+      withdrawals: [],
+      transfers: [rewardTransferIn]
+    }
+  }
+}
+
 function createTransferOutContext(): RawPnlEventContext {
   return {
     addressEvents: {
@@ -168,6 +200,7 @@ function createTransferOutContext(): RawPnlEventContext {
 function configureServiceMocks(
   rawContext: RawPnlEventContext,
   overrides?: {
+    vaultAddress?: string
     metadata?: {
       tokenAddress: string
       symbol: string
@@ -180,6 +213,7 @@ function configureServiceMocks(
     prices?: Map<number, number>
   }
 ): void {
+  const vaultAddress = overrides?.vaultAddress ?? VAULT
   const metadata = overrides?.metadata ?? {
     tokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     symbol: 'USDC',
@@ -207,10 +241,11 @@ function configureServiceMocks(
   fetchMultipleVaultsMetadataMock.mockResolvedValue(
     new Map([
       [
-        `1:${VAULT}`,
+        `1:${vaultAddress}`,
         {
-          address: VAULT,
+          address: vaultAddress,
           chainId: 1,
+          version: 'v3',
           token: {
             address: metadata.tokenAddress,
             symbol: metadata.symbol,
@@ -222,7 +257,7 @@ function configureServiceMocks(
       ]
     ])
   )
-  fetchMultipleVaultsPPSMock.mockResolvedValue(new Map([[`1:${VAULT}`, ppsTimeline]]))
+  fetchMultipleVaultsPPSMock.mockResolvedValue(new Map([[`1:${vaultAddress}`, ppsTimeline]]))
   fetchHistoricalPricesMock.mockResolvedValue(new Map([[priceKey, prices]]))
 }
 
@@ -239,6 +274,18 @@ async function getSingleVaultResponse(
   configureServiceMocks(rawContext, overrides)
   const { getHoldingsPnL } = await importPnlModule()
   const response = await getHoldingsPnL(USER, 'all', unknownMode)
+  expect(response.vaults).toHaveLength(1)
+  return response
+}
+
+async function getSingleVaultDrilldownResponse(
+  rawContext: RawPnlEventContext,
+  unknownMode?: 'strict' | 'zero_basis' | 'windfall',
+  overrides?: Parameters<typeof configureServiceMocks>[1]
+): Promise<HoldingsPnLDrilldownResponse> {
+  configureServiceMocks(rawContext, overrides)
+  const { getHoldingsPnLDrilldown } = await importPnlModule()
+  const response = await getHoldingsPnLDrilldown(USER, 'all', unknownMode)
   expect(response.vaults).toHaveLength(1)
   return response
 }
@@ -281,6 +328,23 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'parallel', 'all')
   })
 
+  it('filters versioned pnl responses using authoritative vault metadata', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+    configureServiceMocks(createTransferInContext())
+
+    const { getHoldingsPnL } = await importPnlModule()
+
+    const v2Response = await getHoldingsPnL(USER, 'v2')
+    expect(v2Response.summary.totalVaults).toBe(0)
+    expect(v2Response.vaults).toEqual([])
+    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'seq', 'paged')
+
+    const v3Response = await getHoldingsPnL(USER, 'v3')
+    expect(v3Response.summary.totalVaults).toBe(1)
+    expect(v3Response.vaults[0]?.vaultAddress).toBe(VAULT)
+    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'seq', 'paged')
+  })
+
   it('treats unknown transfer-ins as full unrealized pnl in zero-basis mode', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(300_000)
 
@@ -296,6 +360,42 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(vault.unrealizedPnlUsd).toBeCloseTo(330)
     expect(vault.totalPnlUsd).toBeCloseTo(330)
     expect(vault.totalEconomicGainUsd).toBeCloseTo(330)
+  })
+
+  it('treats recognized reward transfer-ins as complete zero-basis lots in windfall mode', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+
+    const response = await getSingleVaultDrilldownResponse(createRewardTransferInContext(), 'windfall', {
+      vaultAddress: REWARD_VAULT
+    })
+    const vault = response.vaults[0]
+
+    expect(vault.costBasisStatus).toBe('complete')
+    expect(vault.windfallPnlUsd).toBe(0)
+    expect(vault.unrealizedPnlUsd).toBeCloseTo(330)
+    expect(vault.totalPnlUsd).toBeCloseTo(330)
+    expect(vault.totalEconomicGainUsd).toBeCloseTo(330)
+    expect(vault.eventCounts.rewardTransfersIn).toBe(1)
+    expect(vault.eventCounts.externalTransfersIn).toBe(0)
+    expect(vault.rewardTransferInEntries).toHaveLength(1)
+    expect(vault.rewardTransferInEntries[0]).toMatchObject({
+      distributor: REWARD_DISTRIBUTOR,
+      location: 'vault',
+      sharesFormatted: 100,
+      receiptValueUsd: 200
+    })
+    expect(vault.unknownTransferInEntries).toEqual([])
+    expect(vault.currentLots.vault).toHaveLength(1)
+    expect(vault.currentLots.vault[0]?.costBasis).toBe('0')
+    expect(vault.currentLots.vault[0]?.costBasisUsd).toBe(0)
+    expect(vault.currentLots.vault[0]?.currentValueUsd).toBeCloseTo(330)
+    expect(vault.journal).toHaveLength(1)
+    expect(vault.journal[0]).toMatchObject({
+      txHash: '0xreward-transfer-in',
+      view: 'reward_in_vault',
+      rewardInVaultShares: '100000000',
+      unknownInVaultShares: '0'
+    })
   })
 
   it('preserves strict-mode unknown cost basis behavior', async () => {
@@ -444,6 +544,98 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(response.summary.totalUnrealizedPnlUsd).toBeCloseTo(1000)
   })
 
+  it('adds explicit underlying and known-basis usd fields to vault rows', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+
+    const response = await getSingleVaultResponse(
+      {
+        addressEvents: {
+          deposits: [
+            {
+              id: 'known-deposit',
+              vaultAddress: VAULT,
+              chainId: 1,
+              blockNumber: 1,
+              blockTimestamp: 100,
+              logIndex: 1,
+              transactionHash: '0xknown-deposit',
+              transactionFrom: USER,
+              owner: USER,
+              sender: USER,
+              assets: '1000000000000000000',
+              shares: '1000000000000000000'
+            }
+          ],
+          withdrawals: [],
+          transfersIn: [],
+          transfersOut: []
+        },
+        transactionEvents: {
+          deposits: [],
+          withdrawals: [],
+          transfers: []
+        }
+      },
+      'windfall',
+      {
+        metadata: {
+          tokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+          symbol: 'WETH',
+          decimals: 18
+        },
+        ppsTimeline: new Map([
+          [100, 1],
+          [300, 1]
+        ]),
+        priceKey: 'ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+        prices: new Map([
+          [100, 2000],
+          [300, 3000]
+        ])
+      }
+    )
+
+    expect(response.vaults[0]).toMatchObject({
+      currentUnderlying: 1,
+      vaultUnderlying: 1,
+      stakedUnderlying: 0,
+      currentKnownUnderlying: 1,
+      currentUnknownUnderlying: 0,
+      knownCostBasisUnderlying: 1,
+      knownCostBasisUsd: 2000
+    })
+    expect(response.vaults[0]?.metadata).toMatchObject({
+      symbol: 'WETH',
+      decimals: 18,
+      assetDecimals: 18
+    })
+  })
+
+  it('returns drilldown lots, unknown-basis receipts, and journal rows', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+
+    const response = await getSingleVaultDrilldownResponse(createTransferInContext(), 'windfall')
+    const vault = response.vaults[0]
+
+    expect(vault.currentLots.vault).toHaveLength(2)
+    expect(vault.currentLots.staked).toHaveLength(0)
+    expect(vault.unknownTransferInEntries).toHaveLength(1)
+    expect(vault.unknownTransferInEntries[0]).toMatchObject({
+      location: 'vault',
+      sharesFormatted: 100,
+      receiptValueUsd: 200
+    })
+    expect(vault.realizedEntries).toHaveLength(0)
+    expect(vault.journal).toHaveLength(2)
+    expect(vault.journal[0]).toMatchObject({
+      txHash: '0xtransfer-in',
+      vaultLotsAfter: {
+        totalShares: '100000000',
+        unknownShares: '100000000'
+      }
+    })
+  })
+
   it('splits summary totals by stable and volatile vault categories', async () => {
     const { summarizePnlVaults } = await import('./pnlValuation')
 
@@ -457,16 +649,23 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
         unknownTransferInPnlMode: 'windfall',
         shares: '1',
         sharesFormatted: 1,
-        walletShares: '1',
-        walletSharesFormatted: 1,
+        vaultShares: '1',
+        vaultSharesFormatted: 1,
         stakedShares: '0',
         stakedSharesFormatted: 0,
         knownCostBasisShares: '1',
         unknownCostBasisShares: '0',
         pricePerShare: 1,
         tokenPrice: 1,
+        currentUnderlying: 10,
+        vaultUnderlying: 10,
+        stakedUnderlying: 0,
+        currentKnownUnderlying: 10,
+        currentUnknownUnderlying: 0,
+        knownCostBasisUnderlying: 10,
+        knownCostBasisUsd: 10,
         currentValueUsd: 10,
-        walletValueUsd: 10,
+        vaultValueUsd: 10,
         stakedValueUsd: 0,
         unknownCostBasisValueUsd: 0,
         windfallPnlUsd: 0,
@@ -481,8 +680,9 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
         eventCounts: {
           underlyingDeposits: 0,
           underlyingWithdrawals: 0,
-          stakingWraps: 0,
-          stakingUnwraps: 0,
+          stakes: 0,
+          unstakes: 0,
+          rewardTransfersIn: 0,
           externalTransfersIn: 0,
           externalTransfersOut: 0,
           migrationsIn: 0,
@@ -493,6 +693,7 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
         metadata: {
           symbol: 'USDC',
           decimals: 6,
+          assetDecimals: 6,
           tokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
           category: 'stable'
         }
@@ -506,16 +707,23 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
         unknownTransferInPnlMode: 'windfall',
         shares: '1',
         sharesFormatted: 1,
-        walletShares: '1',
-        walletSharesFormatted: 1,
+        vaultShares: '1',
+        vaultSharesFormatted: 1,
         stakedShares: '0',
         stakedSharesFormatted: 0,
         knownCostBasisShares: '1',
         unknownCostBasisShares: '0',
         pricePerShare: 1,
         tokenPrice: 1,
+        currentUnderlying: 20,
+        vaultUnderlying: 20,
+        stakedUnderlying: 0,
+        currentKnownUnderlying: 20,
+        currentUnknownUnderlying: 0,
+        knownCostBasisUnderlying: 20,
+        knownCostBasisUsd: 17,
         currentValueUsd: 20,
-        walletValueUsd: 20,
+        vaultValueUsd: 20,
         stakedValueUsd: 0,
         unknownCostBasisValueUsd: 0,
         windfallPnlUsd: 3,
@@ -530,8 +738,9 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
         eventCounts: {
           underlyingDeposits: 0,
           underlyingWithdrawals: 0,
-          stakingWraps: 0,
-          stakingUnwraps: 0,
+          stakes: 0,
+          unstakes: 0,
+          rewardTransfersIn: 0,
           externalTransfersIn: 0,
           externalTransfersOut: 0,
           migrationsIn: 0,
@@ -542,6 +751,7 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
         metadata: {
           symbol: 'WETH',
           decimals: 18,
+          assetDecimals: 18,
           tokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
           category: 'volatile'
         }

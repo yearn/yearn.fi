@@ -5,9 +5,11 @@ import { getUnderlyingVault, isStakingVault } from './staking'
 
 interface KongVault {
   address: string
+  apiVersion?: string
   chainId: number
   symbol: string
   decimals: number
+  v3?: boolean
   category?: string | null
   asset: {
     address: string
@@ -22,9 +24,11 @@ interface KongVault {
 
 interface KongVaultSnapshot {
   address: string
+  apiVersion?: string
   chainId: number
   symbol?: string
   decimals?: number
+  v3?: boolean
   meta?: {
     category?: string | null
   } | null
@@ -162,9 +166,11 @@ function buildMetadataMaps(vaults: KongVault[]): {
     stakingToVaultMap: Map<string, VaultMetadata>
   }>(
     (maps, vault) => {
+      const version = inferVaultVersion(vault)
       const metadata: VaultMetadata = {
         address: vault.address.toLowerCase(),
         chainId: vault.chainId,
+        version,
         category: resolveVaultCategory({
           category: vault.category,
           assetSymbol: vault.asset.symbol,
@@ -186,6 +192,7 @@ function buildMetadataMaps(vaults: KongVault[]): {
         const stakingMetadata: VaultMetadata = {
           address: vault.staking.address.toLowerCase(),
           chainId: vault.chainId,
+          version,
           category: metadata.category,
           token: {
             address: vault.address.toLowerCase(),
@@ -204,6 +211,14 @@ function buildMetadataMaps(vaults: KongVault[]): {
       stakingToVaultMap: new Map<string, VaultMetadata>()
     }
   )
+}
+
+function inferVaultVersion(vault: { apiVersion?: string; v3?: boolean }): 'v2' | 'v3' {
+  if (vault.v3 === true) {
+    return 'v3'
+  }
+
+  return typeof vault.apiVersion === 'string' && vault.apiVersion.startsWith('3') ? 'v3' : 'v2'
 }
 
 function chunkItems<T>(items: T[], chunkSize: number): T[][] {
@@ -238,6 +253,7 @@ function buildMetadataFromSnapshot(snapshot: KongVaultSnapshot): VaultMetadata |
   return {
     address: snapshot.address.toLowerCase(),
     chainId: snapshot.chainId,
+    version: inferVaultVersion(snapshot),
     category: resolveVaultCategory({
       category: snapshot.meta?.category,
       assetSymbol: snapshot.asset.symbol,
@@ -260,6 +276,7 @@ function buildStakingMetadataFromSnapshot(stakingAddress: string, snapshot: Kong
   return {
     address: stakingAddress.toLowerCase(),
     chainId: snapshot.chainId,
+    version: inferVaultVersion(snapshot),
     category: resolveVaultCategory({
       category: snapshot.meta?.category,
       assetSymbol: snapshot.asset?.symbol,
