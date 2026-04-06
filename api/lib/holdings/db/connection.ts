@@ -1,5 +1,5 @@
-import { Pool } from '@neondatabase/serverless'
 import { createHash } from 'node:crypto'
+import { Pool } from '@neondatabase/serverless'
 import { config } from '../config'
 
 interface QueryResult<T> {
