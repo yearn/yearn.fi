@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { HoldingsEventFetchType, HoldingsEventPaginationMode } from '../lib/holdings'
-import { checkRateLimit } from '../lib/holdings'
+import { checkRateLimit, ensureSchemaInitialized } from '../lib/holdings'
 
 function simpleHash(str: string): string {
   const hash = Array.from(str).reduce((currentHash, char) => {
@@ -49,6 +49,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  try {
+    await ensureSchemaInitialized()
+  } catch (error) {
+    console.error('Holdings PnL schema initialization error:', error)
+    return res.status(500).json({ error: 'Failed to initialize holdings storage' })
   }
 
   const clientId = getClientIdentifier(req)

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { deleteStaleCache, initializeSchema } from '../lib/holdings'
+import { deleteStaleCache, ensureSchemaInitialized } from '../lib/holdings'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Verify cron secret
@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    await initializeSchema()
+    await ensureSchemaInitialized()
     const deletedCount = await deleteStaleCache()
 
     return res.status(200).json({

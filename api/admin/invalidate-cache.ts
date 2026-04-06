@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { isDatabaseEnabled } from '../lib/holdings/db/connection'
+import { ensureSchemaInitialized, isDatabaseEnabled } from '../lib/holdings/db/connection'
 import { invalidateVaults, type VaultIdentifier } from '../lib/holdings/services/cache'
 
 function isValidAddress(address: string): boolean {
@@ -67,6 +67,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    await ensureSchemaInitialized()
+
     const vaults: VaultIdentifier[] = body.vaults.map((v) => ({
       address: v.address,
       chainId: v.chainId

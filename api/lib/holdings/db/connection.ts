@@ -13,6 +13,7 @@ interface DatabasePool {
 }
 
 let pool: DatabasePool | null = null
+let schemaInitializationPromise: Promise<void> | null = null
 
 function normalizeUserAddress(userAddress: string): string {
   return userAddress.toLowerCase()
@@ -116,7 +117,23 @@ export async function initializeSchema(): Promise<void> {
     console.log('[Holdings DB] Schema initialized successfully')
   } catch (error) {
     console.error('[Holdings DB] Failed to initialize schema:', error)
+    throw error
   }
+}
+
+export function ensureSchemaInitialized(): Promise<void> {
+  if (!isDatabaseEnabled()) {
+    return Promise.resolve()
+  }
+
+  if (!schemaInitializationPromise) {
+    schemaInitializationPromise = initializeSchema().catch((error) => {
+      schemaInitializationPromise = null
+      throw error
+    })
+  }
+
+  return schemaInitializationPromise
 }
 
 async function migrateHoldingsTotalsAddressStorage(db: DatabasePool): Promise<void> {
