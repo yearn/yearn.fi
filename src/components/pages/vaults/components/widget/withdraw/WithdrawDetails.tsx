@@ -1,3 +1,4 @@
+import { formatCounterValue } from '@shared/utils/format'
 import type { ReactElement } from 'react'
 import { formatUnits } from 'viem'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
@@ -70,6 +71,8 @@ export function WithdrawDetails({
   const approvalLabel = getApprovalLabel(approvalSpenderName)
   const withdrawUsdValue = Number(formatUnits(withdrawAmountBn, assetDecimals)) * assetUsdPrice
   const expectedOutUsdValue = Number(formatUnits(expectedOut, outputDecimals)) * outputUsdPrice
+  const withdrawUsdDisplay = formatCounterValue(formatUnits(withdrawAmountBn, assetDecimals), assetUsdPrice)
+  const expectedOutUsdDisplay = formatCounterValue(formatUnits(expectedOut, outputDecimals), outputUsdPrice)
   const priceImpact =
     withdrawUsdValue > 0 && expectedOutUsdValue > 0
       ? ((withdrawUsdValue - expectedOutUsdValue) / withdrawUsdValue) * 100
@@ -107,6 +110,7 @@ export function WithdrawDetails({
               <p className="text-sm text-text-primary">
                 <span className="font-semibold">{withdrawAmountSimple}</span>{' '}
                 <span className="font-normal">{assetSymbol}</span>
+                <span className="font-normal">{` (${withdrawUsdDisplay})`}</span>
               </p>
             </div>
           </div>
@@ -123,6 +127,7 @@ export function WithdrawDetails({
                 <>
                   <span className="font-semibold">{formatWidgetValue(expectedOut, outputDecimals)}</span>{' '}
                   <span className="font-normal">{outputSymbol}</span>
+                  {routeType === 'ENSO' && <span className="font-normal">{` (${expectedOutUsdDisplay})`}</span>}
                   {hasHighPriceImpact && <span className="font-semibold">{` (-${priceImpact.toFixed(2)}%)`}</span>}
                 </>
               ) : (
