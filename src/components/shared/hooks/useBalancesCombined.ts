@@ -1,13 +1,50 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
+import { getTenderlyBackedCanonicalChainIds, resolveExecutionChainId } from '@/config/tenderly'
 import { useWeb3 } from '../contexts/useWeb3'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'
 import { isZeroAddress } from '../utils/tools.is'
-import type { TChainStatus, TUseBalancesReq, TUseBalancesRes, TUseBalancesTokens } from './useBalances.multichains'
+import { shouldUseDiscoveryFallbackToken } from './balanceDiscoveryFallback'
+import {
+  hasPositiveCachedBalance,
+  type TChainStatus,
+  type TUseBalancesReq,
+  type TUseBalancesRes,
+  type TUseBalancesTokens
+} from './useBalances.multichains'
 import { fetchTokenBalances, useBalancesQueries } from './useBalancesQueries'
 import { balanceQueryKeys } from './useBalancesQuery'
+import { partitionTokensByBalanceSource } from './useBalancesRouting'
 import { ENSO_UNSUPPORTED_NETWORKS, useEnsoBalances } from './useEnsoBalances'
+
+function mergeChainStatusMaps(...maps: TNDict<boolean>[]): TNDict<boolean> {
+  const merged: TNDict<boolean> = {}
+
+  maps.forEach((map) => {
+    Object.entries(map).forEach(([chainId, value]) => {
+      merged[Number(chainId)] = Boolean(merged[Number(chainId)] || value)
+    })
+  })
+
+  return merged
+}
+
+function mergeBalanceSources(...sources: TChainTokens[]): TChainTokens {
+  const merged: TChainTokens = {}
+
+  sources.forEach((source) => {
+    Object.entries(source).forEach(([chainIdStr, tokens]) => {
+      const chainId = Number(chainIdStr)
+      merged[chainId] = {
+        ...(merged[chainId] || {}),
+        ...tokens
+      }
+    })
+  })
+
+  return merged
+}
 
 /*******************************************************************************
  ** Combined balance hook that uses Enso API for supported chains
@@ -22,24 +59,17 @@ import { ENSO_UNSUPPORTED_NETWORKS, useEnsoBalances } from './useEnsoBalances'
 export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
   const { address: userAddress } = useWeb3()
   const queryClient = useQueryClient()
+  const ensoUnsupportedNetworks = useMemo(
+    () => [...new Set([...ENSO_UNSUPPORTED_NETWORKS, ...getTenderlyBackedCanonicalChainIds()])],
+    []
+  )
 
   const tokens = useMemo(() => (userAddress ? props?.tokens || [] : []), [props?.tokens, userAddress])
 
   // Split tokens into Enso-supported and multicall-required groups
-  const { ensoTokens, multicallTokens } = useMemo(() => {
-    const enso: TUseBalancesTokens[] = []
-    const multicall: TUseBalancesTokens[] = []
-
-    for (const token of tokens) {
-      if (ENSO_UNSUPPORTED_NETWORKS.includes(token.chainID)) {
-        multicall.push(token)
-      } else {
-        enso.push(token)
-      }
-    }
-
-    return { ensoTokens: enso, multicallTokens: multicall }
-  }, [tokens])
+  const { ensoTokens, multicallTokens: requiredMulticallTokens } = useMemo(() => {
+    return partitionTokensByBalanceSource(tokens, ensoUnsupportedNetworks)
+  }, [ensoUnsupportedNetworks, tokens])
 
   // Fetch from Enso for supported chains
   const {
@@ -56,111 +86,147 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     enabled: ensoTokens.length > 0
   })
 
-  // Fetch from multicall for unsupported chains (e.g., Fantom)
+  const discoveryFallbackTokens = useMemo((): TUseBalancesTokens[] => {
+    if (ensoTokens.length === 0) {
+      return []
+    }
+    if (!userAddress) {
+      return []
+    }
+    if (!ensoError && (!ensoSuccess || !ensoBalances)) {
+      return []
+    }
+
+    return ensoTokens.filter((token) => {
+      const tokenAddress = toAddress(token.address)
+      const hasEnsoBalance = Boolean(ensoBalances?.[token.chainID]?.[tokenAddress])
+      if (hasEnsoBalance) {
+        return false
+      }
+
+      return shouldUseDiscoveryFallbackToken({
+        token,
+        hasPositiveBalanceCache: hasPositiveCachedBalance(token.chainID, tokenAddress, userAddress)
+      })
+    })
+  }, [ensoBalances, ensoError, ensoSuccess, ensoTokens, userAddress])
+
   const {
-    data: multicallBalances,
-    isLoading: multicallLoading,
-    isError: multicallError,
-    isSuccess: multicallSuccess,
-    error: multicallErrorObj,
-    refetch: multicallRefetch,
-    chainLoadingStatus: multicallChainLoading,
-    chainSuccessStatus: multicallChainSuccess,
-    chainErrorStatus: multicallChainError
-  } = useBalancesQueries(userAddress, multicallTokens, {
-    enabled: multicallTokens.length > 0
+    data: requiredMulticallBalances,
+    isLoading: requiredMulticallLoading,
+    isError: requiredMulticallError,
+    isSuccess: requiredMulticallSuccess,
+    error: requiredMulticallErrorObj,
+    refetch: requiredMulticallRefetch,
+    chainLoadingStatus: requiredMulticallChainLoading,
+    chainSuccessStatus: requiredMulticallChainSuccess,
+    chainErrorStatus: requiredMulticallChainError
+  } = useBalancesQueries(userAddress, requiredMulticallTokens, {
+    priorityChainId: props?.priorityChainID,
+    enabled: requiredMulticallTokens.length > 0
+  })
+
+  const {
+    data: discoveryFallbackBalances,
+    isLoading: discoveryFallbackLoading,
+    isError: discoveryFallbackError,
+    isSuccess: discoveryFallbackSuccess,
+    error: discoveryFallbackErrorObj,
+    refetch: discoveryFallbackRefetch,
+    chainLoadingStatus: discoveryFallbackChainLoading,
+    chainSuccessStatus: discoveryFallbackChainSuccess,
+    chainErrorStatus: discoveryFallbackChainError
+  } = useBalancesQueries(userAddress, discoveryFallbackTokens, {
+    priorityChainId: props?.priorityChainID,
+    enabled: discoveryFallbackTokens.length > 0
   })
 
   // Merge balances from both sources
   const balances = useMemo(() => {
-    const hasEnsoData = ensoTokens.length > 0
-    const hasMulticallData = multicallTokens.length > 0
-
-    const result: TChainTokens = {}
-
-    // Process Enso-supported tokens
-    if (hasEnsoData && ensoBalances) {
-      for (const token of ensoTokens) {
-        const chainId = token.chainID
-        const tokenAddress = toAddress(token.address)
-
-        if (!result[chainId]) {
-          result[chainId] = {}
-        }
-
-        const ensoToken = ensoBalances[chainId]?.[tokenAddress]
-        if (ensoToken) {
-          result[chainId][tokenAddress] = ensoToken
-        }
-      }
-    }
-
-    // Process multicall tokens (unsupported chains)
-    if (hasMulticallData && multicallBalances) {
-      for (const token of multicallTokens) {
-        const chainId = token.chainID
-        const tokenAddress = toAddress(token.address)
-
-        if (!result[chainId]) {
-          result[chainId] = {}
-        }
-
-        const multicallToken = multicallBalances[chainId]?.[tokenAddress]
-        if (multicallToken) {
-          result[chainId][tokenAddress] = multicallToken
-        }
-      }
-    }
-
-    return result
-  }, [ensoBalances, multicallBalances, ensoTokens, multicallTokens])
+    return mergeBalanceSources(ensoBalances, requiredMulticallBalances, discoveryFallbackBalances)
+  }, [discoveryFallbackBalances, ensoBalances, requiredMulticallBalances])
 
   // Combine loading/error/success states
   const isLoading = useMemo(() => {
     const ensoRelevant = ensoTokens.length > 0
-    const multicallRelevant = multicallTokens.length > 0
-    return (ensoRelevant && ensoLoading) || (multicallRelevant && multicallLoading)
-  }, [ensoTokens.length, multicallTokens.length, ensoLoading, multicallLoading])
+    const requiredMulticallRelevant = requiredMulticallTokens.length > 0
+    const discoveryRelevant = discoveryFallbackTokens.length > 0
+    return (
+      (ensoRelevant && ensoLoading) ||
+      (requiredMulticallRelevant && requiredMulticallLoading) ||
+      (discoveryRelevant && discoveryFallbackLoading)
+    )
+  }, [
+    discoveryFallbackLoading,
+    discoveryFallbackTokens.length,
+    ensoLoading,
+    ensoTokens.length,
+    requiredMulticallLoading,
+    requiredMulticallTokens.length
+  ])
 
   const isError = useMemo(() => {
     const ensoRelevant = ensoTokens.length > 0
-    const multicallRelevant = multicallTokens.length > 0
-    // Only error if both sources that are relevant have errors
-    const ensoFailed = ensoRelevant && ensoError
-    const multicallFailed = multicallRelevant && multicallError
-    // If both are relevant, both must fail. If only one is relevant, that one must fail.
-    if (ensoRelevant && multicallRelevant) return ensoFailed && multicallFailed
-    return ensoFailed || multicallFailed
-  }, [ensoTokens.length, multicallTokens.length, ensoError, multicallError])
+    const requiredMulticallRelevant = requiredMulticallTokens.length > 0
+    const discoveryRelevant = discoveryFallbackTokens.length > 0
+    return (
+      (ensoRelevant && ensoError) ||
+      (requiredMulticallRelevant && requiredMulticallError) ||
+      (discoveryRelevant && discoveryFallbackError)
+    )
+  }, [
+    discoveryFallbackError,
+    discoveryFallbackTokens.length,
+    ensoError,
+    ensoTokens.length,
+    requiredMulticallError,
+    requiredMulticallTokens.length
+  ])
 
   const isSuccess = useMemo(() => {
     const ensoRelevant = ensoTokens.length > 0
-    const multicallRelevant = multicallTokens.length > 0
-    // Success if at least one relevant source succeeds
+    const requiredMulticallRelevant = requiredMulticallTokens.length > 0
+    const discoveryRelevant = discoveryFallbackTokens.length > 0
     const ensoOk = !ensoRelevant || ensoSuccess
-    const multicallOk = !multicallRelevant || multicallSuccess
-    return ensoOk && multicallOk
-  }, [ensoTokens.length, multicallTokens.length, ensoSuccess, multicallSuccess])
+    const requiredMulticallOk = !requiredMulticallRelevant || requiredMulticallSuccess
+    const discoveryOk = !discoveryRelevant || discoveryFallbackSuccess
+    return ensoOk && requiredMulticallOk && discoveryOk
+  }, [
+    discoveryFallbackSuccess,
+    discoveryFallbackTokens.length,
+    ensoSuccess,
+    ensoTokens.length,
+    requiredMulticallSuccess,
+    requiredMulticallTokens.length
+  ])
 
-  const error = ensoErrorObj || multicallErrorObj || null
+  const error = discoveryFallbackErrorObj || requiredMulticallErrorObj || ensoErrorObj || null
 
   // Merge chain status maps
   const chainLoadingStatus = useMemo((): TNDict<boolean> => {
-    return { ...ensoChainLoading, ...multicallChainLoading }
-  }, [ensoChainLoading, multicallChainLoading])
+    return mergeChainStatusMaps(ensoChainLoading, requiredMulticallChainLoading, discoveryFallbackChainLoading)
+  }, [discoveryFallbackChainLoading, ensoChainLoading, requiredMulticallChainLoading])
 
   const chainSuccessStatus = useMemo((): TNDict<boolean> => {
-    return { ...ensoChainSuccess, ...multicallChainSuccess }
-  }, [ensoChainSuccess, multicallChainSuccess])
+    return mergeChainStatusMaps(ensoChainSuccess, requiredMulticallChainSuccess, discoveryFallbackChainSuccess)
+  }, [discoveryFallbackChainSuccess, ensoChainSuccess, requiredMulticallChainSuccess])
 
   const chainErrorStatus = useMemo((): TNDict<boolean> => {
-    return { ...ensoChainError, ...multicallChainError }
-  }, [ensoChainError, multicallChainError])
+    return mergeChainStatusMaps(ensoChainError, requiredMulticallChainError, discoveryFallbackChainError)
+  }, [discoveryFallbackChainError, ensoChainError, requiredMulticallChainError])
 
   const refetch = useCallback(() => {
     if (ensoTokens.length > 0) ensoRefetch()
-    if (multicallTokens.length > 0) multicallRefetch()
-  }, [ensoTokens.length, multicallTokens.length, ensoRefetch, multicallRefetch])
+    if (requiredMulticallTokens.length > 0) requiredMulticallRefetch()
+    if (discoveryFallbackTokens.length > 0) discoveryFallbackRefetch()
+  }, [
+    discoveryFallbackRefetch,
+    discoveryFallbackTokens.length,
+    ensoRefetch,
+    ensoTokens.length,
+    requiredMulticallRefetch,
+    requiredMulticallTokens.length
+  ])
 
   const onUpdate = useCallback(
     async (shouldForceFetch?: boolean): Promise<TChainTokens> => {
@@ -189,12 +255,13 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
 
       for (const [chainIdStr, chainTokens] of Object.entries(tokensByChain)) {
         const chainId = Number(chainIdStr)
+        const executionChainId = resolveExecutionChainId(chainId)
 
         const freshBalances = await fetchTokenBalances(chainId, userAddress, chainTokens, true)
 
         // Update multicall query cache
         const allQueries = queryClient.getQueriesData<TDict<TToken>>({
-          queryKey: balanceQueryKeys.byChainAndUser(chainId, userAddress),
+          queryKey: balanceQueryKeys.byChainAndUser(chainId, executionChainId, userAddress),
           exact: false
         })
 
@@ -216,7 +283,7 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
         const mergedEnsoData = { ...currentEnsoData }
         for (const [chainIdStr, tokens] of Object.entries(updatedBalances)) {
           const chainId = Number(chainIdStr)
-          if (!ENSO_UNSUPPORTED_NETWORKS.includes(chainId)) {
+          if (!ensoUnsupportedNetworks.includes(chainId)) {
             if (!mergedEnsoData[chainId]) {
               mergedEnsoData[chainId] = {}
             }
@@ -228,7 +295,7 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
 
       return updatedBalances
     },
-    [queryClient, userAddress]
+    [ensoUnsupportedNetworks, queryClient, userAddress]
   )
 
   const status = useMemo((): 'error' | 'loading' | 'success' | 'unknown' => {

@@ -1,3 +1,5 @@
+import { useTokenSuggestions } from '@pages/portfolio/hooks/useTokenSuggestions'
+import { useVaultSuggestions } from '@pages/portfolio/hooks/useVaultSuggestions'
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import {
   getVaultAddress,
@@ -5,29 +7,45 @@ import {
   getVaultInfo,
   getVaultMigration,
   getVaultStaking,
-  type TKongVault
+  type TKongVault,
+  type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { getCanonicalHoldingsVaultAddress } from '@pages/vaults/domain/normalizeVault'
+import { isNonYearnErc4626Vault } from '@pages/vaults/domain/vaultWarnings'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
+import { useYvUsdCharts } from '@pages/vaults/hooks/useYvUsdCharts'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import { usePersistedShowHiddenVaults } from '@pages/vaults/hooks/vaultsFiltersStorage'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
+import {
+  getWeightedYvUsdApy,
+  getYvUsdSharePrice,
+  isYvUsdAddress,
+  isYvUsdVault,
+  YVUSD_CHAIN_ID,
+  YVUSD_LOCKED_ADDRESS,
+  YVUSD_UNLOCKED_ADDRESS
+} from '@pages/vaults/utils/yvUsd'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { isZeroAddress, toAddress } from '@shared/utils'
 import { calculateVaultEstimatedAPY, calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { filterVisiblePortfolioHoldings } from './portfolioVisibility'
 
 type THoldingsRow = {
   key: string
-  vault: TKongVault
+  vault: TKongVaultInput
   hrefOverride?: string
 }
 
-type TSuggestedVaultRow = {
-  key: string
-  vault: TKongVault
-}
+export type TSuggestedItem =
+  | { type: 'external'; key: string; vault: TKongVault; externalProtocol: string; underlyingSymbol: string }
+  | { type: 'personalized'; key: string; vault: TKongVault; matchedSymbol: string }
+  | { type: 'generic'; key: string; vault: TKongVault }
 
 export type TPortfolioBlendedMetrics = {
   blendedCurrentAPY: number | null
@@ -46,7 +64,7 @@ export type TPortfolioModel = {
   openLoginModal: () => void
   sortBy: TPossibleSortBy
   sortDirection: TSortDirection
-  suggestedRows: TSuggestedVaultRow[]
+  suggestedRows: TSuggestedItem[]
   totalPortfolioValue: number
   vaultFlags: Record<string, TVaultFlags>
   setSortBy: TSortStateSetter<TPossibleSortBy>
@@ -54,13 +72,42 @@ export type TPortfolioModel = {
 }
 
 type TSortStateSetter<T> = (value: T | ((previous: T) => T)) => void
+type TYvUsdPortfolioPosition = {
+  blendedCurrentApy: number | null
+  blendedHistoricalApy: number | null
+  combinedValue: number
+  hasHoldings: boolean
+}
+
+function getLatestYvUsdHistoricalApyValue(
+  apyData: ReturnType<typeof useYvUsdCharts>['apyData'],
+  variant: 'locked' | 'unlocked'
+): number | null {
+  if (!apyData || apyData.length === 0) {
+    return null
+  }
+
+  const latestValue = apyData[apyData.length - 1]?.[variant]
+  if (typeof latestValue !== 'number' || !Number.isFinite(latestValue)) {
+    return null
+  }
+
+  return latestValue / 100
+}
 
 function getChainAddressKey(chainID: number | undefined, address: string): string {
   return `${chainID}_${toAddress(address)}`
 }
 
-function isPortfolioV3Vault(vault: TKongVault): boolean {
+function isPortfolioV3Vault(vault: TKongVaultInput): boolean {
   return isV3Vault(vault, isAllocatorVaultOverride(vault))
+}
+
+function getPortfolioRowHref(vault: TKongVaultInput): string | undefined {
+  if (isPortfolioV3Vault(vault)) {
+    return undefined
+  }
+  return `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
 }
 
 export function usePortfolioModel(): TPortfolioModel {
@@ -69,32 +116,74 @@ export function usePortfolioModel(): TPortfolioModel {
     cumulatedValueInV3Vaults,
     isLoading: isWalletLoading,
     getBalance,
+    getVaultHoldingsUsd,
     balances
   } = useWallet()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
-  const { getPrice, vaults, isLoadingVaultList } = useYearn()
+  const { vaults, allVaults, isLoadingVaultList } = useYearn()
+  const { listVault: yvUsdVault, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
+  const { apyData: yvUsdHistoricalApyData } = useYvUsdCharts()
+  const showHiddenVaults = usePersistedShowHiddenVaults()
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
 
-  const vaultLookup = useMemo(() => {
-    const map = new Map<string, TKongVault>()
+  const yvUsdPosition = useMemo<TYvUsdPortfolioPosition>(() => {
+    const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID })
+    const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID })
+    const unlockedValue = unlockedBalance.normalized * getYvUsdSharePrice(yvUsdUnlockedVault)
+    const lockedValue = lockedBalance.normalized * getYvUsdSharePrice(yvUsdLockedVault)
 
-    Object.values(vaults).forEach((vault) => {
-      const vaultKey = getVaultKey(vault)
-      map.set(vaultKey, vault)
+    return {
+      blendedCurrentApy: getWeightedYvUsdApy({
+        unlockedValue,
+        lockedValue,
+        unlockedApy: yvUsdUnlockedVault ? calculateVaultEstimatedAPY(yvUsdUnlockedVault) || null : null,
+        lockedApy: yvUsdLockedVault ? calculateVaultEstimatedAPY(yvUsdLockedVault) || null : null
+      }),
+      blendedHistoricalApy: getWeightedYvUsdApy({
+        unlockedValue,
+        lockedValue,
+        unlockedApy: getLatestYvUsdHistoricalApyValue(yvUsdHistoricalApyData, 'unlocked'),
+        lockedApy: getLatestYvUsdHistoricalApyValue(yvUsdHistoricalApyData, 'locked')
+      }),
+      combinedValue: unlockedValue + lockedValue,
+      hasHoldings: unlockedBalance.raw > 0n || lockedBalance.raw > 0n
+    }
+  }, [getBalance, yvUsdHistoricalApyData, yvUsdLockedVault, yvUsdUnlockedVault])
+
+  const vaultLookup = useMemo(() => {
+    const map = new Map<string, TKongVaultInput>()
+
+    Object.values(allVaults).forEach((vault) => {
+      if (isYvUsdAddress(getVaultAddress(vault))) {
+        return
+      }
+      const canonicalVaultAddress = getCanonicalHoldingsVaultAddress(getVaultAddress(vault))
+      const canonicalVault = allVaults[canonicalVaultAddress] ?? vault
+      const vaultKey = getVaultKey(canonicalVault)
+      if (!map.has(vaultKey)) {
+        map.set(vaultKey, canonicalVault)
+      }
 
       const staking = getVaultStaking(vault)
-      if (staking?.available && staking.address) {
-        const stakingKey = getChainAddressKey(getVaultChainID(vault), staking.address)
-        map.set(stakingKey, vault)
+      if (!isZeroAddress(staking.address)) {
+        const stakingKey = getChainAddressKey(getVaultChainID(canonicalVault), staking.address)
+        if (!map.has(stakingKey)) {
+          map.set(stakingKey, canonicalVault)
+        }
+      }
+
+      const directKey = getChainAddressKey(getVaultChainID(canonicalVault), getVaultAddress(vault))
+      if (!map.has(directKey)) {
+        map.set(directKey, canonicalVault)
       }
     })
 
     return map
-  }, [vaults])
+  }, [allVaults])
 
   const holdingsVaults = useMemo(() => {
-    const result: TKongVault[] = []
+    const result: TKongVaultInput[] = []
     const seen = new Set<string>()
 
     Object.entries(balances || {}).forEach(([chainIDKey, perChain]) => {
@@ -102,6 +191,9 @@ export function usePortfolioModel(): TPortfolioModel {
       const chainID = Number.isFinite(parsedChainID) ? parsedChainID : undefined
       Object.values(perChain || {}).forEach((token) => {
         if (!token?.balance || token.balance.raw <= 0n) {
+          return
+        }
+        if (isYvUsdAddress(token.address)) {
           return
         }
         const tokenChainID = chainID ?? token.chainID
@@ -119,31 +211,42 @@ export function usePortfolioModel(): TPortfolioModel {
       })
     })
 
+    if (yvUsdVault && yvUsdPosition.hasHoldings) {
+      const yvUsdKey = getVaultKey(yvUsdVault)
+      if (!seen.has(yvUsdKey)) {
+        seen.add(yvUsdKey)
+        result.push(yvUsdVault)
+      }
+    }
+
     return result
-  }, [balances, vaultLookup])
+  }, [balances, vaultLookup, yvUsdPosition.hasHoldings, yvUsdVault])
+
+  const visibleHoldingsVaults = useMemo(
+    () => filterVisiblePortfolioHoldings(holdingsVaults, showHiddenVaults),
+    [holdingsVaults, showHiddenVaults]
+  )
 
   const vaultFlags = useMemo(() => {
     const flags: Record<string, TVaultFlags> = {}
 
-    holdingsVaults.forEach((vault) => {
+    visibleHoldingsVaults.forEach((vault) => {
       const key = getVaultKey(vault)
-      const info = getVaultInfo(vault)
-      const migration = getVaultMigration(vault)
       flags[key] = {
         hasHoldings: true,
-        isMigratable: Boolean(migration?.available),
-        isRetired: Boolean(info?.isRetired),
-        isHidden: Boolean(info?.isHidden)
+        isMigratable: Boolean(getVaultMigration(vault)?.available),
+        isRetired: Boolean(getVaultInfo(vault)?.isRetired),
+        isHidden: Boolean(getVaultInfo(vault)?.isHidden),
+        isNotYearn: isYvUsdVault(vault) ? false : isNonYearnErc4626Vault({ vault: vault as TKongVault })
       }
     })
 
     return flags
-  }, [holdingsVaults])
+  }, [visibleHoldingsVaults])
 
   const isSearchingBalances =
     (isActive || isUserConnecting) && (isWalletLoading || isUserConnecting || isIdentityLoading)
-  const isLoading = isLoadingVaultList
-  const isHoldingsLoading = (isLoading && isActive) || isSearchingBalances
+  const isHoldingsLoading = (isLoadingVaultList && isActive) || isSearchingBalances
 
   const suggestedVaultCandidates = useMemo(
     () =>
@@ -152,42 +255,76 @@ export function usePortfolioModel(): TPortfolioModel {
           return false
         }
 
-        const info = getVaultInfo(vault)
-        const migration = getVaultMigration(vault)
-        const isHidden = Boolean(info?.isHidden)
-        const isRetired = Boolean(info?.isRetired)
-        const isMigratable = Boolean(migration?.available)
-        const isHighlighted = Boolean(info?.isHighlighted)
+        const isHidden = Boolean(getVaultInfo(vault)?.isHidden)
+        const isRetired = Boolean(getVaultInfo(vault)?.isRetired)
+        const isMigratable = Boolean(getVaultMigration(vault)?.available)
+        const isHighlighted = Boolean(getVaultInfo(vault)?.isHighlighted)
 
         return !isHidden && !isRetired && !isMigratable && isHighlighted
       }),
     [vaults]
   )
 
-  const sortedHoldings = useSortVaults(holdingsVaults, sortBy, sortDirection)
+  const sortedHoldings = useSortVaults(visibleHoldingsVaults, sortBy, sortDirection)
   const sortedCandidates = useSortVaults(suggestedVaultCandidates, 'tvl', 'desc')
 
   const holdingsKeySet = useMemo(() => new Set(sortedHoldings.map((vault) => getVaultKey(vault))), [sortedHoldings])
 
-  const suggestedVaults = useMemo(
+  const genericVaults = useMemo(
     () => sortedCandidates.filter((vault) => !holdingsKeySet.has(getVaultKey(vault))).slice(0, 4),
     [sortedCandidates, holdingsKeySet]
   )
 
-  const holdingsRows = useMemo(() => {
-    return sortedHoldings.map((vault) => {
-      const key = getVaultKey(vault)
-      const hrefOverride = isPortfolioV3Vault(vault)
-        ? undefined
-        : `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
-      return { key, vault, hrefOverride }
-    })
-  }, [sortedHoldings])
+  const tokenSuggestions = useTokenSuggestions(holdingsKeySet)
+  const { suggestions: vaultSuggestions } = useVaultSuggestions(holdingsKeySet)
 
-  const suggestedRows = useMemo(
-    () => suggestedVaults.map((vault) => ({ key: getVaultKey(vault), vault })),
-    [suggestedVaults]
+  const holdingsRows = useMemo(
+    () =>
+      sortedHoldings.map((vault) => ({
+        key: getVaultKey(vault),
+        vault,
+        hrefOverride: getPortfolioRowHref(vault)
+      })),
+    [sortedHoldings]
   )
+
+  const suggestedRows = useMemo((): TSuggestedItem[] => {
+    const candidates: { item: TSuggestedItem; vaultKey: string }[] = [
+      ...vaultSuggestions.slice(0, 2).map((ext) => ({
+        item: {
+          type: 'external' as const,
+          key: `ext-${getVaultKey(ext.vault)}`,
+          vault: ext.vault,
+          externalProtocol: ext.externalProtocol,
+          underlyingSymbol: ext.underlyingSymbol
+        },
+        vaultKey: getVaultKey(ext.vault)
+      })),
+      ...tokenSuggestions.map((ps) => ({
+        item: {
+          type: 'personalized' as const,
+          key: `pers-${getVaultKey(ps.vault)}`,
+          vault: ps.vault,
+          matchedSymbol: ps.matchedSymbol
+        },
+        vaultKey: getVaultKey(ps.vault)
+      })),
+      ...genericVaults.map((vault) => ({
+        item: { type: 'generic' as const, key: `gen-${getVaultKey(vault)}`, vault },
+        vaultKey: getVaultKey(vault)
+      }))
+    ]
+
+    const seen = new Set<string>()
+    return candidates
+      .filter(({ vaultKey }) => {
+        if (seen.has(vaultKey)) return false
+        seen.add(vaultKey)
+        return true
+      })
+      .slice(0, 4)
+      .map(({ item }) => item)
+  }, [vaultSuggestions, tokenSuggestions, genericVaults])
 
   const hasHoldings = sortedHoldings.length > 0
   const hasKatanaHoldings = useMemo(
@@ -196,98 +333,69 @@ export function usePortfolioModel(): TPortfolioModel {
   )
   const totalPortfolioValue = (cumulatedValueInV2Vaults || 0) + (cumulatedValueInV3Vaults || 0)
 
-  const getVaultEstimatedAPY = useMemo(
-    () =>
-      (vault: (typeof holdingsVaults)[number]): number | null => {
-        const apy = calculateVaultEstimatedAPY(vault)
-        return apy === 0 ? null : apy
-      },
-    []
+  const getVaultEstimatedAPY = useCallback(
+    (vault: (typeof holdingsVaults)[number]): number | null => {
+      if (isYvUsdVault(vault)) {
+        return yvUsdPosition.blendedCurrentApy
+      }
+
+      const apy = calculateVaultEstimatedAPY(vault)
+      const hasHistoricalNet = 'performance' in vault && Boolean(vault.performance?.historical?.net)
+      return apy === 0 && !hasHistoricalNet ? null : apy
+    },
+    [yvUsdPosition.blendedCurrentApy]
   )
 
-  const getVaultHistoricalAPY = useMemo(
-    () =>
-      (vault: (typeof holdingsVaults)[number]): number | null => {
-        return calculateVaultHistoricalAPY(vault)
-      },
-    []
+  const getVaultHistoricalAPY = useCallback(
+    (vault: (typeof holdingsVaults)[number]): number | null => {
+      if (isYvUsdVault(vault)) {
+        return yvUsdPosition.blendedHistoricalApy
+      }
+
+      return calculateVaultHistoricalAPY(vault)
+    },
+    [yvUsdPosition.blendedHistoricalApy]
   )
 
-  const getVaultValue = useMemo(
-    () =>
-      (vault: (typeof holdingsVaults)[number]): number => {
-        const chainID = getVaultChainID(vault)
-        const address = getVaultAddress(vault)
-        const staking = getVaultStaking(vault)
+  const getVaultValue = useCallback(
+    (vault: (typeof holdingsVaults)[number]): number => {
+      if (isYvUsdVault(vault)) {
+        return yvUsdPosition.combinedValue
+      }
 
-        const shareBalance = getBalance({
-          address,
-          chainID
-        })
-        const price = getPrice({
-          address,
-          chainID
-        })
-        const baseValue = shareBalance.normalized * price.normalized
-
-        const stakingValue =
-          staking?.available && staking.address
-            ? getBalance({
-                address: staking.address,
-                chainID
-              }).normalized * price.normalized
-            : 0
-
-        return baseValue + stakingValue
-      },
-    [getBalance, getPrice]
+      return getVaultHoldingsUsd(vault)
+    },
+    [getVaultHoldingsUsd, yvUsdPosition.combinedValue]
   )
 
   const blendedMetrics = useMemo(() => {
+    const isFiniteNumber = (v: number | null): v is number => v !== null && Number.isFinite(v)
+
     const { totalValue, weightedCurrent, weightedHistorical, hasCurrent, hasHistorical } = holdingsVaults.reduce(
       (acc, vault) => {
         const value = getVaultValue(vault)
-        if (!Number.isFinite(value) || value <= 0) {
-          return acc
-        }
+        if (!Number.isFinite(value) || value <= 0) return acc
 
         const estimatedAPY = getVaultEstimatedAPY(vault)
-        const newWeightedCurrent =
-          typeof estimatedAPY === 'number' && Number.isFinite(estimatedAPY)
-            ? acc.weightedCurrent + value * estimatedAPY
-            : acc.weightedCurrent
-        const newHasCurrent = acc.hasCurrent || (typeof estimatedAPY === 'number' && Number.isFinite(estimatedAPY))
-
         const historicalAPY = getVaultHistoricalAPY(vault)
-        const newWeightedHistorical =
-          typeof historicalAPY === 'number' && Number.isFinite(historicalAPY)
-            ? acc.weightedHistorical + value * historicalAPY
-            : acc.weightedHistorical
-        const newHasHistorical =
-          acc.hasHistorical || (typeof historicalAPY === 'number' && Number.isFinite(historicalAPY))
 
         return {
           totalValue: acc.totalValue + value,
-          weightedCurrent: newWeightedCurrent,
-          weightedHistorical: newWeightedHistorical,
-          hasCurrent: newHasCurrent,
-          hasHistorical: newHasHistorical
+          weightedCurrent: acc.weightedCurrent + (isFiniteNumber(estimatedAPY) ? value * estimatedAPY : 0),
+          weightedHistorical: acc.weightedHistorical + (isFiniteNumber(historicalAPY) ? value * historicalAPY : 0),
+          hasCurrent: acc.hasCurrent || isFiniteNumber(estimatedAPY),
+          hasHistorical: acc.hasHistorical || isFiniteNumber(historicalAPY)
         }
       },
       { totalValue: 0, weightedCurrent: 0, weightedHistorical: 0, hasCurrent: false, hasHistorical: false }
     )
 
-    const blendedCurrentAPY = totalValue > 0 && hasCurrent ? weightedCurrent / totalValue : null
-    const blendedHistoricalAPY = totalValue > 0 && hasHistorical ? weightedHistorical / totalValue : null
-    const blendedCurrentAPYPercent = blendedCurrentAPY !== null ? blendedCurrentAPY * 100 : null
-    const blendedHistoricalAPYPercent = blendedHistoricalAPY !== null ? blendedHistoricalAPY * 100 : null
-    const estimatedAnnualReturn = blendedCurrentAPY !== null ? totalPortfolioValue * blendedCurrentAPY : null
+    const blendedCurrentAPY = totalValue > 0 && hasCurrent ? (weightedCurrent / totalValue) * 100 : null
+    const blendedHistoricalAPY = totalValue > 0 && hasHistorical ? (weightedHistorical / totalValue) * 100 : null
+    const estimatedAnnualReturn =
+      totalValue > 0 && hasCurrent ? totalPortfolioValue * (weightedCurrent / totalValue) : null
 
-    return {
-      blendedCurrentAPY: blendedCurrentAPYPercent,
-      blendedHistoricalAPY: blendedHistoricalAPYPercent,
-      estimatedAnnualReturn
-    }
+    return { blendedCurrentAPY, blendedHistoricalAPY, estimatedAnnualReturn }
   }, [getVaultEstimatedAPY, getVaultHistoricalAPY, getVaultValue, holdingsVaults, totalPortfolioValue])
 
   return {

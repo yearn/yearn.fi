@@ -1,5 +1,7 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
+import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
+import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { Notification } from '@pages/vaults/components/notifications/Notification'
@@ -30,22 +32,20 @@ import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconQuestion } from '@shared/icons/IconQuestion'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
-import { cl, formatPercent, SUPPORTED_NETWORKS } from '@shared/utils'
+import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { useChainId, useSwitchChain } from 'wagmi'
 import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
-import { type TPortfolioModel, usePortfolioModel } from './hooks/usePortfolioModel'
 import { usePortfolioPnL } from './hooks/usePortfolioPnL'
-import { useVaultWithStakingRewards } from './hooks/useVaultWithStakingRewards'
 import type { TPortfolioPnlSummary } from './types/api'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
@@ -73,6 +73,7 @@ const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
 const footnoteTooltipClassName =
   'max-w-[260px] rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs leading-relaxed text-text-primary'
+const metricTooltipContentClassName = 'flex max-w-[280px] flex-col gap-1 leading-relaxed'
 const PORTFOLIO_TABS = [
   { key: 'positions', label: 'Your Vaults' },
   { key: 'activity', label: 'Activity' },
@@ -156,6 +157,25 @@ function PortfolioHeaderSection({
   pnlSummary,
   totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
+  const portfolioPnlTooltip = (
+    <div className={metricTooltipContentClassName}>
+      <p>{'Market PnL on indexed Yearn vault positions.'}</p>
+      <p>
+        <span className="font-mono">{'totalPnlUsd = totalRealizedPnlUsd + totalUnrealizedPnlUsd'}</span>
+      </p>
+    </div>
+  )
+
+  const economicGainTooltip = (
+    <div className={metricTooltipContentClassName}>
+      <p>{'Full economic benefit from the position.'}</p>
+      <p>
+        <span className="font-mono">{'totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd'}</span>
+      </p>
+      <p>{'Adds the receipt-time value of unknown-basis transfers on top of Portfolio PnL.'}</p>
+    </div>
+  )
+
   const katanaTooltipContent = (
     <div className={headingTooltipClassName}>
       <p>{'*One or more vaults are receiving extra incentives.'}</p>
@@ -164,7 +184,7 @@ function PortfolioHeaderSection({
   )
 
   const metricSpinner = (
-    <span className="inline-flex h-6 w-20 animate-spin items-center justify-center">
+    <span className="inline-flex h-6 w-20 items-center justify-center">
       <IconSpinner className="size-4 text-text-secondary" />
     </span>
   )
@@ -209,6 +229,39 @@ function PortfolioHeaderSection({
     return <span className={toneClassName}>{formatSignedCurrency(value)}</span>
   }
 
+  function renderSignedCurrencyBreakdownValue(value: number): ReactElement {
+    const toneClassName = value > 0 ? 'text-green-400' : value < 0 ? 'text-red-400' : 'text-text-secondary'
+    return <span className={toneClassName}>{formatSignedCurrency(value)}</span>
+  }
+
+  function renderPnlBreakdownLabel(values: {
+    stable: number | null | undefined
+    volatile: number | null | undefined
+  }): ReactElement | undefined {
+    if (
+      isPnlLoading ||
+      values.stable === null ||
+      values.stable === undefined ||
+      values.volatile === null ||
+      values.volatile === undefined
+    ) {
+      return undefined
+    }
+
+    return (
+      <div className={cl(METRIC_FOOTNOTE_CLASS, 'flex flex-wrap items-center gap-x-3 gap-y-1')}>
+        <span className="inline-flex items-center gap-1">
+          <span>{'Stable'}</span>
+          {renderSignedCurrencyBreakdownValue(values.stable)}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span>{'Volatile'}</span>
+          {renderSignedCurrencyBreakdownValue(values.volatile)}
+        </span>
+      </div>
+    )
+  }
+
   const metrics: TMetricBlock[] = [
     {
       key: 'total-balance',
@@ -244,14 +297,12 @@ function PortfolioHeaderSection({
   const pnlMetrics: TMetricBlock[] = [
     {
       key: 'portfolio-pnl',
-      header: (
-        <MetricHeader
-          label="Portfolio PnL"
-          mobileLabel="P&L"
-          tooltip="Market PnL on indexed Yearn vault positions. This can be partial when cost basis is unknown."
-        />
-      ),
+      header: <MetricHeader label="Portfolio PnL" mobileLabel="P&L" tooltip={portfolioPnlTooltip} />,
       value: <span className={METRIC_VALUE_CLASS}>{renderSignedCurrencyMetric(pnlSummary?.totalPnlUsd ?? null)}</span>,
+      secondaryLabel: renderPnlBreakdownLabel({
+        stable: pnlSummary?.byCategory.stable.totalPnlUsd,
+        volatile: pnlSummary?.byCategory.volatile.totalPnlUsd
+      }),
       footnote:
         pnlSummary && !pnlSummary.isComplete ? (
           <FootnoteWithTooltip
@@ -264,18 +315,16 @@ function PortfolioHeaderSection({
     },
     {
       key: 'economic-gain',
-      header: (
-        <MetricHeader
-          label="Economic Gain"
-          mobileLabel="Gain"
-          tooltip="Broader result than market PnL. Includes windfalls from unknown-basis transfers in windfall mode."
-        />
-      ),
+      header: <MetricHeader label="Economic Gain" mobileLabel="Gain" tooltip={economicGainTooltip} />,
       value: (
         <span className={METRIC_VALUE_CLASS}>
           {renderSignedCurrencyMetric(pnlSummary?.totalEconomicGainUsd ?? null)}
         </span>
       ),
+      secondaryLabel: renderPnlBreakdownLabel({
+        stable: pnlSummary?.byCategory.stable.totalEconomicGainUsd,
+        volatile: pnlSummary?.byCategory.volatile.totalEconomicGainUsd
+      }),
       footnote:
         pnlSummary && Math.abs(pnlSummary.totalWindfallPnlUsd) > 0.005 ? (
           <FootnoteWithTooltip
@@ -458,7 +507,7 @@ function ChainStakingRewardsFetcher({
 }): null {
   const { vault, staking, isLoading: isLoadingVault } = useVaultWithStakingRewards(originalVault, isActive)
 
-  const stakingAddress = staking.available ? staking.address : undefined
+  const stakingAddress = !isZeroAddress(staking.address) ? staking.address : undefined
   const rewardTokens = useMemo(
     () =>
       (staking.rewards ?? []).map((reward) => ({
@@ -541,7 +590,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   const { vaults } = useYearn()
   const trackEvent = usePlausible()
   const stakingVaults = useMemo(
-    () => Object.values(vaults).filter((vault) => getVaultStaking(vault).available),
+    () => Object.values(vaults).filter((vault) => !isZeroAddress(getVaultStaking(vault).address)),
     [vaults]
   )
   const [selectedChainId, setSelectedChainId] = useState<number | null>(null)
@@ -1036,22 +1085,38 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
     return null
   }
 
+  const hasPersonalized = suggestedRows.some((r) => r.type === 'personalized' || r.type === 'external')
+  const tooltipText = hasPersonalized
+    ? 'Suggestions based on tokens in your wallet and vault performance.'
+    : 'Vaults picked for you based on performance and popularity.'
+
   return (
     <section className="flex flex-col gap-2">
       <Tooltip
         className="h-auto justify-start gap-0"
         openDelayMs={150}
         side="top"
-        tooltip={
-          <div className={headingTooltipClassName}>{'Vaults picked for you based on performance and popularity.'}</div>
-        }
+        tooltip={<div className={headingTooltipClassName}>{tooltipText}</div>}
       >
         <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">{'You might like'}</h2>
       </Tooltip>
       <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
-        {suggestedRows.map((row) => (
-          <SuggestedVaultCard key={row.key} vault={row.vault} />
-        ))}
+        {suggestedRows.map((row) => {
+          if (row.type === 'external') {
+            return (
+              <SuggestedVaultCard
+                key={row.key}
+                vault={row.vault}
+                matchedSymbol={row.underlyingSymbol}
+                externalProtocol={row.externalProtocol}
+              />
+            )
+          }
+          if (row.type === 'personalized') {
+            return <SuggestedVaultCard key={row.key} vault={row.vault} matchedSymbol={row.matchedSymbol} />
+          }
+          return <SuggestedVaultCard key={row.key} vault={row.vault} />
+        })}
       </div>
     </section>
   )
@@ -1155,7 +1220,7 @@ function PortfolioPage(): ReactElement {
   return (
     <PortfolioPageLayout>
       <div ref={varsRef} className="flex flex-col" style={{ '--portfolio-breadcrumbs-height': '0px' } as CSSProperties}>
-        <div ref={breadcrumbsRef} className="sticky top-[var(--header-height)] z-40 bg-app pb-2">
+        <div ref={breadcrumbsRef} className="sticky top-(--header-height) z-40 bg-app pb-2">
           <Breadcrumbs
             className="px-1"
             items={[

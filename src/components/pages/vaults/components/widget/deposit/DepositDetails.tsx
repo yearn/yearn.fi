@@ -1,5 +1,4 @@
 import type { FC } from 'react'
-import { formatUnits } from 'viem'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import type { DepositRouteType } from './types'
 
@@ -8,20 +7,27 @@ interface DepositDetailsProps {
   depositAmountBn: bigint
   inputTokenSymbol?: string
   inputTokenDecimals: number
+  inputTokenUsdPrice: number
   // Route info
   routeType: DepositRouteType
   isSwap: boolean
   isLoadingQuote: boolean
+  isQuoteStale: boolean
   expectedOutInAsset: bigint
   assetTokenSymbol?: string
   assetTokenDecimals: number
   // Vault/Staking shares info
   expectedVaultShares: bigint
-  vaultDecimals: number // For pricePerShare calculations (always vault's decimals)
+  vaultDecimals: number // Backward-compatible prop; valuation is computed in the parent.
   sharesDisplayDecimals: number // For displaying share amounts (vault or staking decimals)
   pricePerShare: bigint
   assetUsdPrice: number
+  vaultShareValueInAsset: bigint
+  vaultShareValueUsdRaw: number
+  priceImpactPercentage: number
+  hasHighPriceImpact: boolean
   willReceiveStakedShares: boolean
+  vaultSharesLabel?: string
   onShowVaultSharesModal: () => void
   onShowVaultShareValueModal: () => void
   // Annual return info
@@ -43,15 +49,18 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   routeType,
   isSwap,
   isLoadingQuote,
+  isQuoteStale,
   expectedOutInAsset,
   assetTokenSymbol,
   assetTokenDecimals,
   expectedVaultShares,
-  vaultDecimals,
   sharesDisplayDecimals,
-  pricePerShare,
-  assetUsdPrice,
+  vaultShareValueInAsset,
+  vaultShareValueUsdRaw,
+  priceImpactPercentage,
+  hasHighPriceImpact,
   willReceiveStakedShares,
+  vaultSharesLabel,
   onShowVaultSharesModal,
   onShowVaultShareValueModal,
   estimatedAnnualReturn,
@@ -64,7 +73,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   onShowApprovalOverlay
 }) => {
   const isStake = routeType === 'DIRECT_STAKE'
-  const sharesLabel = willReceiveStakedShares ? 'Staked shares' : 'Vault shares'
+  const sharesLabel = willReceiveStakedShares ? 'Staked shares' : (vaultSharesLabel ?? 'Vault shares')
 
   // Determine action verb based on route type
   const getActionVerb = () => {
@@ -73,18 +82,11 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
     return 'Deposit'
   }
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
-
-  // Calculate vault share value in underlying asset terms (use vault decimals for pricePerShare)
-  const vaultShareValueInAsset =
-    expectedVaultShares > 0n && pricePerShare > 0n
-      ? (expectedVaultShares * pricePerShare) / 10n ** BigInt(vaultDecimals)
-      : 0n
   const vaultShareValueDisplay = formatWidgetValue(vaultShareValueInAsset, assetTokenDecimals)
-  const vaultShareValueUsd = formatWidgetValue(
-    Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
-  )
+  const vaultShareValueUsd = formatWidgetValue(vaultShareValueUsdRaw)
+  const shouldHighlightPriceImpact = !isQuoteStale && !isLoadingQuote && hasHighPriceImpact
   return (
-    <div>
+    <div className="">
       <div className="flex flex-col gap-2">
         {/* You will deposit/swap/stake */}
         <div className="flex items-center justify-between h-5">
@@ -153,7 +155,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
           >
             Vault share value
           </button>
-          <p className="text-sm text-text-primary">
+          <p className={`text-sm ${shouldHighlightPriceImpact ? 'text-red-500' : 'text-text-primary'}`}>
             {isLoadingQuote ? (
               <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
             ) : (
@@ -162,6 +164,9 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 <span className="font-normal">{`${assetTokenSymbol || ''} (`}</span>
                 <span className="font-normal">{`$${vaultShareValueUsd}`}</span>
                 <span className="font-normal">{')'}</span>
+                {shouldHighlightPriceImpact && (
+                  <span className="font-semibold">{` (-${priceImpactPercentage.toFixed(2)}%)`}</span>
+                )}
               </>
             )}
           </p>

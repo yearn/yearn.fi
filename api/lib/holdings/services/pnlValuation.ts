@@ -5,12 +5,20 @@ import { getPPS } from './kong'
 import { formatAmount, sumShares } from './pnlShared'
 import type {
   FamilyPnlLedger,
+  HoldingsPnLCategoryBreakdown,
   HoldingsPnLResponse,
   HoldingsPnLVault,
   TLot,
   TPnlComputationState,
   UnknownTransferInPnlMode
 } from './pnlTypes'
+
+function createEmptyCategoryBreakdown(): HoldingsPnLCategoryBreakdown {
+  return {
+    totalPnlUsd: 0,
+    totalEconomicGainUsd: 0
+  }
+}
 
 export function toHoldingsPnlEventCounts(vault: FamilyPnlLedger): HoldingsPnLVault['eventCounts'] {
   return {
@@ -49,6 +57,10 @@ export function createEmptyHoldingsPnlResponse(
       totalUnrealizedPnlUsd: 0,
       totalPnlUsd: 0,
       totalEconomicGainUsd: 0,
+      byCategory: {
+        stable: createEmptyCategoryBreakdown(),
+        volatile: createEmptyCategoryBreakdown()
+      },
       isComplete: true
     },
     vaults: []
@@ -57,19 +69,36 @@ export function createEmptyHoldingsPnlResponse(
 
 export function summarizePnlVaults(vaults: HoldingsPnLVault[]): HoldingsPnLResponse['summary'] {
   return vaults.reduce(
-    (totals, vault) => ({
-      totalVaults: totals.totalVaults + 1,
-      completeVaults: totals.completeVaults + (vault.costBasisStatus === 'complete' ? 1 : 0),
-      partialVaults: totals.partialVaults + (vault.costBasisStatus === 'partial' ? 1 : 0),
-      totalCurrentValueUsd: totals.totalCurrentValueUsd + vault.currentValueUsd,
-      totalUnknownCostBasisValueUsd: totals.totalUnknownCostBasisValueUsd + vault.unknownCostBasisValueUsd,
-      totalWindfallPnlUsd: totals.totalWindfallPnlUsd + vault.windfallPnlUsd,
-      totalRealizedPnlUsd: totals.totalRealizedPnlUsd + vault.realizedPnlUsd,
-      totalUnrealizedPnlUsd: totals.totalUnrealizedPnlUsd + vault.unrealizedPnlUsd,
-      totalPnlUsd: totals.totalPnlUsd + vault.totalPnlUsd,
-      totalEconomicGainUsd: totals.totalEconomicGainUsd + vault.totalEconomicGainUsd,
-      isComplete: totals.isComplete && vault.costBasisStatus === 'complete'
-    }),
+    (totals, vault) => {
+      const category = vault.metadata?.category ?? 'volatile'
+
+      return {
+        totalVaults: totals.totalVaults + 1,
+        completeVaults: totals.completeVaults + (vault.costBasisStatus === 'complete' ? 1 : 0),
+        partialVaults: totals.partialVaults + (vault.costBasisStatus === 'partial' ? 1 : 0),
+        totalCurrentValueUsd: totals.totalCurrentValueUsd + vault.currentValueUsd,
+        totalUnknownCostBasisValueUsd: totals.totalUnknownCostBasisValueUsd + vault.unknownCostBasisValueUsd,
+        totalWindfallPnlUsd: totals.totalWindfallPnlUsd + vault.windfallPnlUsd,
+        totalRealizedPnlUsd: totals.totalRealizedPnlUsd + vault.realizedPnlUsd,
+        totalUnrealizedPnlUsd: totals.totalUnrealizedPnlUsd + vault.unrealizedPnlUsd,
+        totalPnlUsd: totals.totalPnlUsd + vault.totalPnlUsd,
+        totalEconomicGainUsd: totals.totalEconomicGainUsd + vault.totalEconomicGainUsd,
+        byCategory: {
+          stable: {
+            totalPnlUsd: totals.byCategory.stable.totalPnlUsd + (category === 'stable' ? vault.totalPnlUsd : 0),
+            totalEconomicGainUsd:
+              totals.byCategory.stable.totalEconomicGainUsd + (category === 'stable' ? vault.totalEconomicGainUsd : 0)
+          },
+          volatile: {
+            totalPnlUsd: totals.byCategory.volatile.totalPnlUsd + (category === 'volatile' ? vault.totalPnlUsd : 0),
+            totalEconomicGainUsd:
+              totals.byCategory.volatile.totalEconomicGainUsd +
+              (category === 'volatile' ? vault.totalEconomicGainUsd : 0)
+          }
+        },
+        isComplete: totals.isComplete && vault.costBasisStatus === 'complete'
+      }
+    },
     {
       totalVaults: 0,
       completeVaults: 0,
@@ -81,6 +110,10 @@ export function summarizePnlVaults(vaults: HoldingsPnLVault[]): HoldingsPnLRespo
       totalUnrealizedPnlUsd: 0,
       totalPnlUsd: 0,
       totalEconomicGainUsd: 0,
+      byCategory: {
+        stable: createEmptyCategoryBreakdown(),
+        volatile: createEmptyCategoryBreakdown()
+      },
       isComplete: true
     }
   )

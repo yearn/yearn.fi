@@ -1,24 +1,28 @@
 import { Button } from '@shared/components/Button'
 import { useNotificationsActions } from '@shared/contexts/useNotificationsActions'
+import {
+  type AppUseSimulateContractReturnType,
+  useChainId,
+  useSwitchChain,
+  useWaitForTransactionReceipt
+} from '@shared/hooks/useAppWagmi'
 import type { TCreateNotificationParams } from '@shared/types/notifications'
 import { cl } from '@shared/utils'
-import { getNetwork } from '@shared/utils/wagmi'
+import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
+import { getPublicClient } from '@wagmi/core'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useReward } from 'react-rewards'
 import type { TypedData, TypedDataDomain } from 'viem'
-import {
-  type UseSimulateContractReturnType,
-  useAccount,
-  useChainId,
-  usePublicClient,
-  useSignTypedData,
-  useSwitchChain,
-  useWaitForTransactionReceipt,
-  useWriteContract
-} from 'wagmi'
+import { useAccount, useSignTypedData, useWriteContract } from 'wagmi'
+import { isConnectedToExecutionChain } from '@/config/tenderly'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
-
-type OverlayState = 'idle' | 'confirming' | 'pending' | 'success' | 'error'
+import {
+  type CompletionDeferral,
+  type OverlayState,
+  resolveCompletionDeferral,
+  shouldAutoContinuePermitSuccess,
+  shouldRunDeferredCompletion
+} from './transactionOverlay.helpers'
 
 export type PermitDataDirect = {
   domain: TypedDataDomain
@@ -34,11 +38,12 @@ export type PermitDataAsync = {
 export type PermitData = PermitDataDirect | PermitDataAsync
 
 export type TransactionStep = {
-  prepare: UseSimulateContractReturnType
+  prepare: AppUseSimulateContractReturnType
   label: string
   confirmMessage: string
   successTitle: string
   successMessage: string
+  completesFlow?: boolean
   showConfetti?: boolean
   notification?: TCreateNotificationParams
   // Permit-specific fields
@@ -47,7 +52,21 @@ export type TransactionStep = {
   onPermitSigned?: (signature: `0x${string}`) => void
 }
 
-const getPrepareDebugInfo = (prepare?: UseSimulateContractReturnType) => {
+type TPrepareDebugInfo = {
+  isSuccess: boolean
+  isError: boolean
+  isLoading: boolean
+  isFetching: boolean
+  status: AppUseSimulateContractReturnType['status']
+  error?: string
+  request?: {
+    chainId?: number
+    address?: unknown
+    functionName?: unknown
+  }
+}
+
+function getPrepareDebugInfo(prepare?: AppUseSimulateContractReturnType): TPrepareDebugInfo | undefined {
   if (!prepare) return undefined
   const request = prepare.data?.request as any
 
@@ -68,7 +87,9 @@ const getPrepareDebugInfo = (prepare?: UseSimulateContractReturnType) => {
   }
 }
 
-const getStepDebugInfo = (step?: TransactionStep) => {
+function getStepDebugInfo(
+  step?: TransactionStep
+): { step: 'missing' } | { label: string; isPermit?: boolean; prepare?: TPrepareDebugInfo } {
   if (!step) return { step: 'missing' }
   return {
     label: step.label,
@@ -77,12 +98,57 @@ const getStepDebugInfo = (step?: TransactionStep) => {
   }
 }
 
+function getSuccessButtonLabel(params: {
+  isCrossChainNotification: boolean
+  isTerminalSuccess: boolean
+  isAutoContinuing: boolean
+  executedStepAutoContinues: boolean
+  currentStepLabel?: string
+}): string {
+  if (params.isCrossChainNotification) {
+    return 'Got it'
+  }
+
+  if (params.isTerminalSuccess) {
+    return 'Nice'
+  }
+
+  if (params.executedStepAutoContinues || params.isAutoContinuing) {
+    return 'Continuing...'
+  }
+
+  return params.currentStepLabel || 'Continue'
+}
+
+function isUserRejectionError(error: any): boolean {
+  return (
+    error?.message?.toLowerCase().includes('rejected') ||
+    error?.message?.toLowerCase().includes('denied') ||
+    error?.code === 4001
+  )
+}
+
+function getTransactionErrorMessage(error: any): string {
+  const errorMsg = error?.shortMessage || error?.message || 'Transaction failed. Please try again.'
+  return errorMsg.length > 100 ? 'Transaction failed. Please try again.' : errorMsg
+}
+
 type TransactionOverlayProps = {
   isOpen: boolean
   onClose: () => void
   step?: TransactionStep
   isLastStep?: boolean
   onAllComplete?: () => void
+  deferOnAllCompleteUntilClose?: boolean
+  deferOnAllCompleteUntilConfettiEnd?: boolean
+  onStepSuccess?: (label: string) => void
+  /**
+   * Called after the final transaction is confirmed, before the success screen
+   * is shown. The overlay stays in a "refreshing" state while this resolves.
+   * Use this to await balance/data refetches so the success screen renders
+   * with fresh data and no background work remaining.
+   */
+  onBeforeSuccess?: (label: string) => Promise<void>
   topOffset?: string
   contentAlign?: 'center' | 'start'
   autoContinueToNextStep?: boolean
@@ -95,20 +161,25 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   step,
   isLastStep = true,
   onAllComplete,
+  deferOnAllCompleteUntilClose = false,
+  deferOnAllCompleteUntilConfettiEnd = false,
+  onStepSuccess,
+  onBeforeSuccess,
   contentAlign = 'center',
   autoContinueToNextStep = false,
   autoContinueStepLabels = []
 }) => {
   const [overlayState, setOverlayState] = useState<OverlayState>('success')
   const [errorMessage, setErrorMessage] = useState<string>('')
+  const [hasCompletedFlow, setHasCompletedFlow] = useState(false)
+  const [completedStepSnapshot, setCompletedStepSnapshot] = useState<TransactionStep | null>(null)
 
   const writeContract = useWriteContract()
   const { signTypedDataAsync } = useSignTypedData()
   const currentChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
-  const [ensoTxHash, setEnsoTxHash] = useState<`0x${string}` | undefined>()
-  const client = usePublicClient()
-  const { address: account } = useAccount()
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>()
+  const { address: account, chain } = useAccount()
 
   // Notification system integration
   const { createNotification, updateNotification } = useNotificationsActions()
@@ -120,18 +191,55 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   // Track the step that was just executed (for showing success messages)
   const executedStepRef = useRef<TransactionStep | null>(null)
 
-  const receipt = useWaitForTransactionReceipt({ hash: writeContract.data || ensoTxHash, confirmations })
-  const txHash = (writeContract.data || ensoTxHash) as `0x${string}` | undefined
   const explorerChainId =
-    ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? currentChainId
-  const blockExplorer = explorerChainId ? getNetwork(explorerChainId).defaultBlockExplorer : ''
+    ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? undefined
+  const receipt = useWaitForTransactionReceipt({ hash: txHash, chainId: explorerChainId, confirmations })
+  const blockExplorer = getNetwork(explorerChainId ?? currentChainId).defaultBlockExplorer
   const explorerTxUrl = txHash && blockExplorer ? `${blockExplorer}/tx/${txHash}` : ''
 
   // Track if the executed step was the last step (captured at execution time)
   const wasLastStepRef = useRef(false)
+  const executedStepBlockRef = useRef<bigint | undefined>(undefined)
 
   // Check if current step is ready to execute
-  const isStepReady = step?.prepare.isSuccess && !!step?.prepare.data?.request
+  const isStepReady = Boolean(step?.prepare.isSuccess && step?.prepare.data?.request)
+  const executedStepLabel = executedStepRef.current?.label
+  const executedStepAutoContinues = Boolean(
+    executedStepLabel &&
+      autoContinueToNextStep &&
+      (autoContinueStepLabels.length === 0 || autoContinueStepLabels.includes(executedStepLabel))
+  )
+
+  // Track if we've started execution to prevent re-triggering
+  const hasStartedRef = useRef(false)
+  const hasAutoContinuedFromStepRef = useRef<string | null>(null)
+  const hasReportedStepSuccessRef = useRef(false)
+  const hasAdvancedFromStepRef = useRef<string | null>(null)
+  const autoContinueNonceRef = useRef(0)
+  const writeContractResetRef = useRef(writeContract.reset)
+  const pendingCompletionRef = useRef<CompletionDeferral>('none')
+  const [isAutoContinuing, setIsAutoContinuing] = useState(false)
+
+  useEffect(() => {
+    writeContractResetRef.current = writeContract.reset
+  }, [writeContract.reset])
+
+  const runAllCompleteIfPending = useCallback(
+    (trigger: 'close' | 'confetti') => {
+      if (
+        !shouldRunDeferredCompletion({
+          completionDeferral: pendingCompletionRef.current,
+          trigger
+        })
+      ) {
+        return
+      }
+
+      pendingCompletionRef.current = 'none'
+      onAllComplete?.()
+    },
+    [onAllComplete]
+  )
 
   const confettiId = useId()
   const { reward } = useReward(confettiId, 'confetti', {
@@ -140,39 +248,92 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     startVelocity: 35,
     decay: 0.91,
     lifetime: 200,
-    colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
+    colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
+    onAnimationComplete: () => runAllCompleteIfPending('confetti')
   })
 
-  // Track if we've started execution to prevent re-triggering
-  const hasStartedRef = useRef(false)
-  const hasAutoContinuedFromStepRef = useRef<string | null>(null)
+  const finalizeSuccessState = useCallback(
+    (completedAllSteps: boolean, completedStep?: TransactionStep | null) => {
+      setOverlayState('success')
+      setHasCompletedFlow(completedAllSteps)
+      setCompletedStepSnapshot(completedAllSteps ? (completedStep ?? executedStepRef.current ?? null) : null)
+
+      if (!completedAllSteps) {
+        pendingCompletionRef.current = 'none'
+        return
+      }
+
+      const completionDeferral = resolveCompletionDeferral({
+        completedAllSteps,
+        deferOnAllCompleteUntilClose,
+        deferOnAllCompleteUntilConfettiEnd,
+        stepShowsConfetti: Boolean((completedStep ?? executedStepRef.current)?.showConfetti)
+      })
+
+      if (completionDeferral === 'after-close' || completionDeferral === 'after-confetti') {
+        pendingCompletionRef.current = completionDeferral
+        return
+      }
+
+      pendingCompletionRef.current = 'none'
+      onAllComplete?.()
+    },
+    [deferOnAllCompleteUntilClose, deferOnAllCompleteUntilConfettiEnd, onAllComplete]
+  )
+
+  const setStepExecutionContext = useCallback((nextStep: TransactionStep, nextIsLastStep: boolean) => {
+    executedStepRef.current = nextStep
+    wasLastStepRef.current = nextStep.completesFlow ?? nextIsLastStep
+    hasReportedStepSuccessRef.current = false
+    hasAdvancedFromStepRef.current = null
+    setCompletedStepSnapshot(null)
+  }, [])
+
+  const resetTxState = useCallback((clearNotification = false) => {
+    writeContractResetRef.current()
+    setTxHash(undefined)
+    if (clearNotification) {
+      setNotificationId(undefined)
+    }
+  }, [])
 
   // Reset state when overlay closes
   useEffect(() => {
     if (!isOpen) {
+      runAllCompleteIfPending('close')
       setOverlayState('idle')
       setErrorMessage('')
-      setEnsoTxHash(undefined)
+      setHasCompletedFlow(false)
+      setCompletedStepSnapshot(null)
+      resetTxState(true)
       hasStartedRef.current = false
       hasAutoContinuedFromStepRef.current = null
+      hasReportedStepSuccessRef.current = false
+      hasAdvancedFromStepRef.current = null
       executedStepRef.current = null
       wasLastStepRef.current = false
-      setNotificationId(undefined)
-      writeContract.reset()
+      executedStepBlockRef.current = undefined
+      pendingCompletionRef.current = 'none'
+      autoContinueNonceRef.current += 1
+      setIsAutoContinuing(false)
     }
-  }, [isOpen])
+  }, [isOpen, resetTxState, runAllCompleteIfPending])
 
   // Create notification with txHash (called after signing succeeds)
   const handleCreateNotification = useCallback(
     async (
       txHash: `0x${string}`,
       notification?: TCreateNotificationParams,
+      executionChainId?: number,
       status: 'pending' | 'submitted' = 'pending'
     ): Promise<number | undefined> => {
       if (!notification || !account) return undefined
 
       try {
-        const id = await createNotification(notification)
+        const id = await createNotification({
+          ...notification,
+          executionChainId: executionChainId ?? notification.executionChainId
+        })
         setNotificationId(id)
         await updateNotification({ id, txHash, status })
         return id
@@ -202,192 +363,218 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     [notificationId, updateNotification]
   )
 
+  const executePermitStep = useCallback(
+    async (currentStep: TransactionStep) => {
+      setStepExecutionContext(currentStep, isLastStep)
+      setOverlayState('confirming')
+      setErrorMessage('')
+
+      try {
+        const permitData =
+          currentStep.permitData && 'getPermitData' in currentStep.permitData
+            ? await currentStep.permitData.getPermitData()
+            : currentStep.permitData
+
+        if (!permitData) {
+          console.error('[TransactionOverlay] Missing permit data', getStepDebugInfo(currentStep))
+          throw new Error('Failed to get permit data')
+        }
+
+        const signature = await signTypedDataAsync({
+          domain: permitData.domain,
+          types: permitData.types,
+          primaryType: permitData.primaryType,
+          message: permitData.message
+        })
+
+        currentStep.onPermitSigned?.(signature)
+        const completedAllSteps = currentStep.completesFlow ?? isLastStep
+        if (!hasReportedStepSuccessRef.current && currentStep.label) {
+          hasReportedStepSuccessRef.current = true
+          onStepSuccess?.(currentStep.label)
+        }
+        finalizeSuccessState(completedAllSteps, currentStep)
+
+        if (currentStep.showConfetti) {
+          setTimeout(() => reward(), 100)
+        }
+      } catch (error: any) {
+        if (isUserRejectionError(error)) {
+          onClose()
+          return
+        }
+        console.error('Permit signing failed:', error)
+        setOverlayState('error')
+        setErrorMessage('Failed to sign permit. Please try again.')
+      }
+    },
+    [finalizeSuccessState, isLastStep, onClose, onStepSuccess, reward, setStepExecutionContext, signTypedDataAsync]
+  )
+
+  const executeContractStep = useCallback(
+    async (currentStep: TransactionStep) => {
+      if (!currentStep.prepare.isSuccess || !currentStep.prepare.data?.request) {
+        console.warn('[TransactionOverlay] Transaction not ready', getStepDebugInfo(currentStep))
+        setOverlayState('error')
+        setErrorMessage('Transaction not ready. Please try again.')
+        return
+      }
+
+      setStepExecutionContext(currentStep, isLastStep)
+      setOverlayState('confirming')
+      setErrorMessage('')
+
+      const request = currentStep.prepare.data.request as any
+      const txChainId = request.chainId
+      const wrongNetwork = txChainId && !isConnectedToExecutionChain(chain?.id, txChainId)
+
+      if (wrongNetwork && txChainId) {
+        try {
+          await switchChainAsync({ chainId: txChainId })
+        } catch {
+          console.warn('[TransactionOverlay] Chain switch rejected', { to: txChainId, step: currentStep.label })
+          onClose()
+          return
+        }
+      }
+
+      const isEnsoOrder = Boolean(request.__isEnsoOrder)
+      const isCrossChain = currentStep.notification?.type === 'crosschain zap'
+
+      try {
+        if (isEnsoOrder) {
+          const customWriteAsync = request.writeContractAsync
+          const result = await customWriteAsync()
+          if (!result.hash) {
+            return
+          }
+
+          if (isCrossChain) {
+            await handleCreateNotification(result.hash, currentStep.notification, txChainId, 'submitted')
+            if (currentStep.showConfetti) {
+              setTimeout(() => reward(), 100)
+            }
+            setNotificationId(undefined)
+            const completedAllSteps = executedStepRef.current?.completesFlow ?? wasLastStepRef.current
+            finalizeSuccessState(completedAllSteps, currentStep)
+            return
+          }
+
+          setTxHash(result.hash)
+          setOverlayState('pending')
+          await handleCreateNotification(result.hash, currentStep.notification, txChainId)
+          return
+        }
+
+        const gasEstimateClient = txChainId ? getPublicClient(retrieveConfig(), { chainId: txChainId }) : undefined
+        const gasOverrides: { gas?: bigint } = gasEstimateClient
+          ? await gasEstimateClient
+              .estimateContractGas(request)
+              .then((gasEstimate: bigint) => ({
+                gas: (gasEstimate * BigInt(110)) / BigInt(100)
+              }))
+              .catch((error: unknown) => {
+                console.warn('[TransactionOverlay] Gas estimation failed', {
+                  step: currentStep.label,
+                  error: (error as Error)?.message || error
+                })
+                return {}
+              })
+          : {}
+
+        const hash = await writeContract.writeContractAsync({
+          ...request,
+          ...gasOverrides
+        })
+        setTxHash(hash)
+        setOverlayState('pending')
+        await handleCreateNotification(hash, currentStep.notification, txChainId)
+      } catch (error: any) {
+        if (isUserRejectionError(error)) {
+          onClose()
+          return
+        }
+        console.error('Transaction failed:', error)
+        setOverlayState('error')
+        setErrorMessage(getTransactionErrorMessage(error))
+      }
+    },
+    [
+      chain?.id,
+      finalizeSuccessState,
+      handleCreateNotification,
+      isLastStep,
+      onClose,
+      reward,
+      setStepExecutionContext,
+      switchChainAsync,
+      writeContract
+    ]
+  )
+
   const executeStep = useCallback(async () => {
     if (!step) {
       console.warn('[TransactionOverlay] Execute called without step')
       return
     }
 
-    // For permit steps, we don't need prepare.isSuccess - we need permitData
-    if (step?.isPermit && step?.permitData) {
-      // Handle permit signing flow
-      executedStepRef.current = step
-      wasLastStepRef.current = isLastStep
-
-      setOverlayState('confirming')
-      setErrorMessage('')
-
-      try {
-        // Get permit data - either direct or via async getter
-        let permitDataDirect: PermitDataDirect | undefined
-        if ('getPermitData' in step.permitData) {
-          permitDataDirect = await step.permitData.getPermitData()
-        } else {
-          permitDataDirect = step.permitData
-        }
-
-        if (!permitDataDirect) {
-          console.error('[TransactionOverlay] Missing permit data', getStepDebugInfo(step))
-          throw new Error('Failed to get permit data')
-        }
-
-        const signature = await signTypedDataAsync({
-          domain: permitDataDirect.domain,
-          types: permitDataDirect.types,
-          primaryType: permitDataDirect.primaryType,
-          message: permitDataDirect.message
-        })
-
-        // Pass signature back to the flow
-        step.onPermitSigned?.(signature)
-        setOverlayState('success')
-
-        if (step.showConfetti) {
-          setTimeout(() => reward(), 100)
-        }
-      } catch (error: any) {
-        const isUserRejection =
-          error?.message?.toLowerCase().includes('rejected') ||
-          error?.message?.toLowerCase().includes('denied') ||
-          error?.code === 4001
-
-        if (isUserRejection) {
-          onClose()
-        } else {
-          console.error('Permit signing failed:', error)
-          setOverlayState('error')
-          setErrorMessage('Failed to sign permit. Please try again.')
-        }
-      }
+    if (step.isPermit && step.permitData) {
+      await executePermitStep(step)
       return
     }
 
-    if (!step?.prepare.isSuccess || !step?.prepare.data?.request) {
-      console.warn('[TransactionOverlay] Transaction not ready', getStepDebugInfo(step))
-      setOverlayState('error')
-      setErrorMessage('Transaction not ready. Please try again.')
-      return
-    }
-
-    // Capture step info for success messages
-    executedStepRef.current = step
-    wasLastStepRef.current = isLastStep
-
-    setOverlayState('confirming')
-    setErrorMessage('')
-
-    const txChainId = step.prepare.data.request.chainId
-    const wrongNetwork = txChainId && currentChainId !== txChainId
-
-    // Handle chain switch if needed
-    if (wrongNetwork && txChainId) {
-      try {
-        console.info('[TransactionOverlay] Switching chain', {
-          from: currentChainId,
-          to: txChainId,
-          step: step.label
-        })
-        await switchChainAsync({ chainId: txChainId })
-      } catch {
-        // User rejected chain switch - silent close
-        console.warn('[TransactionOverlay] Chain switch rejected', { to: txChainId, step: step.label })
-        onClose()
-        return
-      }
-    }
-
-    const isEnsoOrder = !!(step.prepare.data.request as any)?.__isEnsoOrder
-    const isCrossChain = step.notification?.type === 'crosschain zap'
-
-    try {
-      if (isEnsoOrder) {
-        console.info('[TransactionOverlay] Executing Enso order', {
-          step: step.label,
-          isCrossChain
-        })
-        const customWriteAsync = (step.prepare.data.request as any).writeContractAsync
-        const result = await customWriteAsync()
-        if (result.hash) {
-          // For cross-chain: use 'submitted' status and show success immediately
-          if (isCrossChain) {
-            await handleCreateNotification(result.hash, step.notification, 'submitted')
-            setOverlayState('success')
-            if (step.showConfetti) {
-              setTimeout(() => reward(), 100)
-            }
-            setNotificationId(undefined)
-            // Trigger onAllComplete immediately for cross-chain success
-            if (wasLastStepRef.current) {
-              onAllComplete?.()
-            }
-          } else {
-            // Same-chain Enso: wait for receipt
-            setEnsoTxHash(result.hash)
-            setOverlayState('pending')
-            await handleCreateNotification(result.hash, step.notification)
-          }
-        }
-      } else {
-        // Estimate gas with buffer
-        let gasOverrides: { gas?: bigint } = {}
-        if (client) {
-          try {
-            const gasEstimate = await client.estimateContractGas(step.prepare.data.request as any)
-            if (gasEstimate) {
-              gasOverrides = { gas: (gasEstimate * BigInt(110)) / BigInt(100) }
-            }
-          } catch (error) {
-            console.warn('[TransactionOverlay] Gas estimation failed', {
-              step: step.label,
-              error: (error as Error)?.message || error
-            })
-            // Gas estimation failed, proceed without override
-          }
-        }
-
-        const hash = await writeContract.writeContractAsync({
-          ...step.prepare.data.request,
-          ...gasOverrides
-        })
-        setOverlayState('pending')
-        await handleCreateNotification(hash, step.notification)
-      }
-    } catch (error: any) {
-      const isUserRejection =
-        error?.message?.toLowerCase().includes('rejected') ||
-        error?.message?.toLowerCase().includes('denied') ||
-        error?.code === 4001
-
-      if (isUserRejection) {
-        onClose()
-      } else {
-        console.error('Transaction failed:', error)
-        setOverlayState('error')
-        // Show more specific error if available
-        const errorMsg = error?.shortMessage || error?.message || 'Transaction failed. Please try again.'
-        setErrorMessage(errorMsg.length > 100 ? 'Transaction failed. Please try again.' : errorMsg)
-      }
-    }
-  }, [
-    step,
-    currentChainId,
-    switchChainAsync,
-    client,
-    writeContract,
-    signTypedDataAsync,
-    onClose,
-    handleCreateNotification,
-    isLastStep,
-    reward,
-    onAllComplete
-  ])
+    await executeContractStep(step)
+  }, [executeContractStep, executePermitStep, step])
 
   const advanceToNextStep = useCallback(() => {
+    const executedStepLabel = executedStepRef.current?.label
+    if (!executedStepLabel) return
+    if (hasAdvancedFromStepRef.current === executedStepLabel) return
+
+    hasAdvancedFromStepRef.current = executedStepLabel
+    autoContinueNonceRef.current += 1
+    setIsAutoContinuing(false)
+
     // Reset for next step - parent will provide the new step
-    writeContract.reset()
-    setEnsoTxHash(undefined)
+    resetTxState()
     executeStep()
-  }, [writeContract, executeStep])
+  }, [resetTxState, executeStep])
+
+  const waitForAutoContinueBlock = useCallback(async (executedStepLabel?: string) => {
+    // Most flows can continue immediately once the next simulation is ready.
+    // Unstake -> withdraw can race state propagation, so wait one block there.
+    if (executedStepLabel !== 'Unstake') return
+
+    const executedBlockNumber = executedStepBlockRef.current
+    const executedChainId =
+      ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? undefined
+    const blockClient = executedChainId ? getPublicClient(retrieveConfig(), { chainId: executedChainId }) : undefined
+    if (!blockClient || executedBlockNumber === undefined) return
+
+    const targetBlock = executedBlockNumber + 1n
+    const timeoutMs = 20_000
+    const pollIntervalMs = 1_000
+    const startedAt = Date.now()
+
+    while (Date.now() - startedAt < timeoutMs) {
+      try {
+        const latestBlock = await blockClient.getBlockNumber()
+        if (latestBlock >= targetBlock) {
+          return
+        }
+      } catch (error) {
+        console.warn('[TransactionOverlay] Auto-continue block polling failed', {
+          step: executedStepRef.current?.label,
+          error: (error as Error)?.message || error
+        })
+        return
+      }
+
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, pollIntervalMs)
+      })
+    }
+  }, [])
 
   useEffect(() => {
     if (step?.prepare.isError) {
@@ -395,45 +582,38 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     }
   }, [step?.prepare.isError, step?.prepare.error, step?.label])
 
+  const successStep = completedStepSnapshot ?? executedStepRef.current
+  const executedStepCompletesFlow = successStep?.completesFlow ?? wasLastStepRef.current
+  const isTerminalSuccess = overlayState === 'success' && (hasCompletedFlow || executedStepCompletesFlow)
+  const isPreparingNextStep =
+    overlayState === 'pending' && receipt.isSuccess && !wasLastStepRef.current && executedStepAutoContinues
+  const isSuccessButtonBusy = !isTerminalSuccess && (!isStepReady || isAutoContinuing)
+  const successButtonLabel = getSuccessButtonLabel({
+    isCrossChainNotification: successStep?.notification?.type === 'crosschain zap',
+    isTerminalSuccess,
+    isAutoContinuing,
+    executedStepAutoContinues,
+    currentStepLabel: step?.label
+  })
+
   const handleNextStep = useCallback(() => {
-    if (wasLastStepRef.current) {
+    if (isAutoContinuing) return
+
+    if (isTerminalSuccess) {
       onClose()
     } else {
       advanceToNextStep()
     }
-  }, [onClose, advanceToNextStep])
+  }, [isAutoContinuing, isTerminalSuccess, onClose, advanceToNextStep])
 
   const handleRetry = useCallback(() => {
-    writeContract.reset()
-    setEnsoTxHash(undefined)
+    resetTxState()
     executeStep()
-  }, [writeContract, executeStep])
+  }, [resetTxState, executeStep])
 
   const handleClose = useCallback(() => {
     onClose()
   }, [onClose])
-
-  useEffect(() => {
-    if (!isOpen || overlayState !== 'success') return
-    if (!autoContinueToNextStep || wasLastStepRef.current || !isStepReady) return
-
-    const executedStepLabel = executedStepRef.current?.label
-    if (!executedStepLabel) return
-    if (!step?.label || step.label === executedStepLabel) return
-    if (autoContinueStepLabels.length > 0 && !autoContinueStepLabels.includes(executedStepLabel)) return
-    if (hasAutoContinuedFromStepRef.current === executedStepLabel) return
-
-    hasAutoContinuedFromStepRef.current = executedStepLabel
-    advanceToNextStep()
-  }, [
-    isOpen,
-    overlayState,
-    autoContinueToNextStep,
-    autoContinueStepLabels,
-    isStepReady,
-    step?.label,
-    advanceToNextStep
-  ])
 
   // Start step when overlay opens
   useEffect(() => {
@@ -441,31 +621,74 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       hasStartedRef.current = true
       executeStep()
     }
-  }, [isOpen, overlayState])
+  }, [isOpen, overlayState, step, executeStep])
 
   // Handle transaction success
   useEffect(() => {
     // For multi-step flows, wait until next step is ready before showing success
     // Check that step has changed (different label) and is ready
+    if (receipt.isSuccess && receipt.data?.transactionHash && overlayState === 'pending') {
+      executedStepBlockRef.current = receipt.data.blockNumber
+      const executedStepLabel = executedStepRef.current?.label
+      if (!hasReportedStepSuccessRef.current && executedStepLabel) {
+        hasReportedStepSuccessRef.current = true
+        onStepSuccess?.(executedStepLabel)
+      }
+    }
+
     const isNextStepReady = step?.label !== executedStepRef.current?.label && isStepReady
     const canShowSuccess = wasLastStepRef.current || isNextStepReady
     if (receipt.isSuccess && receipt.data?.transactionHash && overlayState === 'pending' && canShowSuccess) {
-      setOverlayState('success')
-      writeContract.reset()
-      setEnsoTxHash(undefined)
+      if (executedStepLabel && executedStepAutoContinues && !wasLastStepRef.current) {
+        if (hasAdvancedFromStepRef.current === executedStepLabel) {
+          return
+        }
+        if (hasAutoContinuedFromStepRef.current === executedStepLabel) {
+          return
+        }
 
-      // Update notification to success
-      handleUpdateNotification({ receipt: receipt.data, status: 'success' })
-      setNotificationId(undefined)
+        handleUpdateNotification({ receipt: receipt.data, status: 'success' })
+        setNotificationId(undefined)
 
-      // Fire confetti if the executed step has confetti enabled
-      if (executedStepRef.current?.showConfetti) {
-        setTimeout(() => reward(), 100)
+        hasAutoContinuedFromStepRef.current = executedStepLabel
+        const nonceAtSchedule = autoContinueNonceRef.current
+        setIsAutoContinuing(true)
+        const advance = async () => {
+          await waitForAutoContinueBlock(executedStepLabel)
+          if (autoContinueNonceRef.current !== nonceAtSchedule) {
+            setIsAutoContinuing(false)
+            return
+          }
+          advanceToNextStep()
+        }
+        void advance()
+        return
       }
 
-      // Trigger onAllComplete immediately when last step succeeds
-      if (wasLastStepRef.current) {
-        onAllComplete?.()
+      const completedAllSteps = executedStepRef.current?.completesFlow ?? wasLastStepRef.current
+      const capturedStep = executedStepRef.current
+      const capturedReceipt = receipt.data
+      resetTxState()
+
+      // Update notification to success
+      handleUpdateNotification({ receipt: capturedReceipt, status: 'success' })
+      setNotificationId(undefined)
+
+      if (completedAllSteps && onBeforeSuccess) {
+        setOverlayState('refreshing')
+        void (async () => {
+          await onBeforeSuccess(capturedStep?.label ?? '')
+          await new Promise((resolve) => setTimeout(resolve, 500))
+          finalizeSuccessState(completedAllSteps, capturedStep)
+          if (capturedStep?.showConfetti) {
+            setTimeout(() => reward(), 100)
+          }
+        })()
+      } else {
+        finalizeSuccessState(completedAllSteps, capturedStep)
+        if (capturedStep?.showConfetti) {
+          setTimeout(() => reward(), 100)
+        }
       }
     }
   }, [
@@ -474,8 +697,46 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     overlayState,
     reward,
     handleUpdateNotification,
-    onAllComplete,
+    onStepSuccess,
+    onBeforeSuccess,
     isStepReady,
+    step?.label,
+    resetTxState,
+    autoContinueNonceRef,
+    executedStepAutoContinues,
+    executedStepLabel,
+    advanceToNextStep,
+    finalizeSuccessState,
+    waitForAutoContinueBlock
+  ])
+
+  useEffect(() => {
+    if (
+      !shouldAutoContinuePermitSuccess({
+        overlayState,
+        executedStepIsPermit: executedStepRef.current?.isPermit,
+        executedStepAutoContinues,
+        executedStepCompletesFlow,
+        currentStepLabel: step?.label,
+        executedStepLabel,
+        isStepReady,
+        hasAdvancedFromStep: hasAdvancedFromStepRef.current,
+        hasAutoContinuedFromStep: hasAutoContinuedFromStepRef.current
+      })
+    ) {
+      return
+    }
+
+    hasAutoContinuedFromStepRef.current = executedStepLabel ?? null
+    setIsAutoContinuing(true)
+    advanceToNextStep()
+  }, [
+    advanceToNextStep,
+    executedStepAutoContinues,
+    executedStepCompletesFlow,
+    executedStepLabel,
+    isStepReady,
+    overlayState,
     step?.label
   ])
 
@@ -484,14 +745,43 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     if (receipt.isError && receipt.error && overlayState === 'pending') {
       setOverlayState('error')
       setErrorMessage('Transaction failed. Please try again.')
-      writeContract.reset()
-      setEnsoTxHash(undefined)
+      resetTxState()
 
       // Update notification to error
       handleUpdateNotification({ status: 'error' })
       setNotificationId(undefined)
     }
-  }, [receipt.isError, receipt.error, overlayState, handleUpdateNotification])
+  }, [receipt.isError, receipt.error, overlayState, handleUpdateNotification, resetTxState])
+
+  // When step 1 succeeds in a multi-step flow, the next step simulation may need a refetch
+  // to pick up post-transaction state (e.g. unstake -> withdraw).
+  useEffect(() => {
+    if (!isOpen || overlayState !== 'pending') return
+    if (!receipt.isSuccess || !receipt.data?.transactionHash) return
+    if (wasLastStepRef.current) return
+    if (!step?.label || step.label === executedStepRef.current?.label) return
+    if (isStepReady) return
+
+    const refetch = step.prepare.refetch
+    if (!refetch) return
+
+    void refetch()
+    const intervalId = window.setInterval(() => {
+      void refetch()
+    }, 1500)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [
+    isOpen,
+    overlayState,
+    receipt.isSuccess,
+    receipt.data?.transactionHash,
+    step?.label,
+    step?.prepare.refetch,
+    isStepReady
+  ])
 
   return (
     <div
@@ -553,8 +843,31 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           {overlayState === 'pending' && (
             <>
               <Spinner />
-              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction pending</h3>
-              <p className="text-sm text-text-secondary">Waiting for confirmation...</p>
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">
+                {isPreparingNextStep ? 'Transaction confirmed' : 'Transaction pending'}
+              </h3>
+              <p className="text-sm text-text-secondary">
+                {isPreparingNextStep ? 'Preparing next step...' : 'Waiting for confirmation...'}
+              </p>
+              {explorerTxUrl ? (
+                <a
+                  href={explorerTxUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 text-sm font-semibold text-text-primary underline"
+                >
+                  View on block explorer
+                </a>
+              ) : null}
+            </>
+          )}
+
+          {/* Refreshing State */}
+          {overlayState === 'refreshing' && (
+            <>
+              <Spinner />
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction confirmed</h3>
+              <p className="text-sm text-text-secondary">Updating balances...</p>
               {explorerTxUrl ? (
                 <a
                   href={explorerTxUrl}
@@ -575,25 +888,17 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
                 <span id={confettiId} className="absolute top-1/2 left-1/2" />
                 <AnimatedCheckmark isVisible />
               </div>
-              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">
-                {executedStepRef.current?.successTitle}
-              </h3>
-              <p className="text-sm text-text-secondary whitespace-pre-line mb-6">
-                {executedStepRef.current?.successMessage}
-              </p>
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{successStep?.successTitle}</h3>
+              <p className="text-sm text-text-secondary whitespace-pre-line mb-6">{successStep?.successMessage}</p>
               <Button
                 onClick={handleNextStep}
-                variant={!wasLastStepRef.current && !isStepReady ? 'busy' : 'filled'}
-                isBusy={!wasLastStepRef.current && !isStepReady}
-                disabled={!wasLastStepRef.current && !isStepReady}
+                variant={isSuccessButtonBusy ? 'busy' : 'filled'}
+                isBusy={isSuccessButtonBusy}
+                disabled={isSuccessButtonBusy}
                 className="w-full max-w-xs"
                 classNameOverride="yearn--button--nextgen w-full"
               >
-                {executedStepRef.current?.notification?.type === 'crosschain zap'
-                  ? 'Got it'
-                  : wasLastStepRef.current
-                    ? 'Nice'
-                    : step?.label || 'Continue'}
+                {successButtonLabel}
               </Button>
             </>
           )}

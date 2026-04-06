@@ -3,6 +3,7 @@ import type { DependencyList } from 'react'
 import { erc20Abi, type MulticallParameters } from 'viem'
 import type { Connector } from 'wagmi'
 import { multicall } from 'wagmi/actions'
+import { resolveExecutionChainId } from '@/config/tenderly'
 import type { TAddress } from '../types/address'
 import type { TChainTokens, TDefaultStatus, TDict, TNDict, TToken } from '../types/mixed'
 import { ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS } from '../utils/constants'
@@ -22,7 +23,19 @@ export type TUseBalancesTokens = {
   decimals?: number
   name?: string
   symbol?: string
+  // Legacy token hint kept for backward compatibility.
   for?: string
+  isVaultToken?: boolean
+  isStakingToken?: boolean
+  isCatalogVault?: boolean
+  // A staking-only pair is a classic rewards contract token (not itself a vault token).
+  // These pairs should be fully sourced from multicall for deterministic accounting.
+  isStakingOnlyPair?: boolean
+  // A vault-backed staking pair means the staking token is also a vault token (e.g. yBOLD style).
+  isVaultBackedStaking?: boolean
+  holdingsAliasVaultAddress?: TAddress
+  pairedVaultAddress?: TAddress
+  pairedStakingAddress?: TAddress
 }
 export type TUseBalancesReq = {
   key?: string | number
@@ -50,12 +63,35 @@ export type TUseBalancesRes = {
 type TUpdates = TDict<TToken & { lastUpdate: number; owner: TAddress }>
 const TOKEN_UPDATE: TUpdates = {}
 
+function getTokenUpdateKey(chainID: number, executionChainId: number | undefined, address: TAddress): string {
+  return `${chainID}:${executionChainId ?? 'none'}/${toAddress(address)}`
+}
+
+export function hasPositiveCachedBalance(chainID: number, address: TAddress, ownerAddress?: TAddress): boolean {
+  if (!ownerAddress || isZeroAddress(ownerAddress)) {
+    return false
+  }
+
+  const executionChainId = resolveExecutionChainId(chainID)
+  const tokenUpdateInfo = TOKEN_UPDATE[getTokenUpdateKey(chainID, executionChainId, address)]
+  if (!tokenUpdateInfo) {
+    return false
+  }
+
+  return toAddress(tokenUpdateInfo.owner) === toAddress(ownerAddress) && tokenUpdateInfo.balance.raw > 0n
+}
+
 export async function performCall(
   chainID: number,
   chunckCalls: MulticallParameters['contracts'],
   tokens: TUseBalancesTokens[],
   ownerAddress: TAddress
 ): Promise<[TDict<TToken>, Error | undefined]> {
+  const executionChainId = resolveExecutionChainId(chainID)
+  if (executionChainId === undefined) {
+    return [{}, new Error(`Chain ${chainID} is not enabled for execution`)]
+  }
+
   type TMulticallResult =
     | { error?: undefined; result: never; status: 'success' }
     | { error: Error; result?: undefined; status: 'failure' }
@@ -64,11 +100,11 @@ export async function performCall(
     try {
       const results = await multicall(retrieveConfig(), {
         contracts: chunckCalls as never[],
-        chainId: chainID
+        chainId: executionChainId
       })
       return { results }
     } catch (error) {
-      console.error(`Failed to trigger multicall on chain ${chainID}`, error)
+      console.error(`Failed to trigger multicall on chain ${executionChainId}`, error)
       return { results: [], error: error as Error }
     }
   })()
@@ -151,7 +187,7 @@ export async function performCall(
       _data[toAddress(address)].decimals = 18
     }
 
-    TOKEN_UPDATE[`${chainID}/${toAddress(address)}`] = {
+    TOKEN_UPDATE[getTokenUpdateKey(chainID, executionChainId, address)] = {
       ..._data[toAddress(address)],
       owner: toAddress(ownerAddress),
       lastUpdate: Date.now()
@@ -173,10 +209,11 @@ export async function getBalances(
   shouldForceFetch = false
 ): Promise<[TDict<TToken>, Error | undefined, TBalanceFetchStats]> {
   const ownerAddress = address
+  const executionChainId = resolveExecutionChainId(chainID)
 
   const cachedResults: TDict<TToken> = {}
   for (const element of tokens) {
-    const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(element.address)}`]
+    const tokenUpdateInfo = TOKEN_UPDATE[getTokenUpdateKey(chainID, executionChainId, element.address)]
     if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000 && !shouldForceFetch) {
       if (toAddress(tokenUpdateInfo.owner) === toAddress(ownerAddress)) {
         cachedResults[toAddress(element.address)] = tokenUpdateInfo

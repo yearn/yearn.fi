@@ -1,14 +1,17 @@
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
-import { gaugeV2Abi } from '@shared/contracts/abi/gaugeV2.abi'
+import { type AppUseSimulateContractReturnType, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import type { Address } from 'viem'
 import { maxUint256 } from 'viem'
-import { type UseSimulateContractReturnType, useSimulateContract } from 'wagmi'
+import { getDirectUnstakeCalls } from './stakingAdapter'
 
 interface UseDirectUnstakeParams {
   stakingAddress?: Address
   amount: bigint // vault token amount to unstake
+  redeemAll?: boolean
+  maxRedeemShares?: bigint
   account?: Address
   chainId: number
+  stakingSource?: string
   enabled: boolean
 }
 
@@ -16,16 +19,39 @@ export function useDirectUnstake(params: UseDirectUnstakeParams): UseWidgetWithd
   const isValidInput = params.amount > 0n && !!params.stakingAddress
   const prepareWithdrawEnabled = isValidInput && !!params.account && params.enabled
 
-  // Prepare unstake transaction using gauge withdraw function
-  // withdraw(amount, receiver, owner) - no approval needed when owner == msg.sender
-  const prepareWithdraw: UseSimulateContractReturnType = useSimulateContract({
-    abi: gaugeV2Abi,
-    functionName: 'withdraw',
+  const unstakeCalls = getDirectUnstakeCalls({
+    stakingSource: params.stakingSource,
+    amount: params.amount,
+    account: params.account,
+    redeemAll: params.redeemAll,
+    maxRedeemShares: params.maxRedeemShares
+  })
+
+  const preparePrimaryWithdraw: AppUseSimulateContractReturnType = useSimulateContract({
+    abi: unstakeCalls.primary.abi as any,
+    functionName: unstakeCalls.primary.functionName as any,
     address: params.stakingAddress,
-    args: params.stakingAddress && params.account ? [params.amount, params.account, params.account] : undefined,
+    args: unstakeCalls.primary.args as any,
     chainId: params.chainId,
+    account: params.account,
     query: { enabled: prepareWithdrawEnabled }
   })
+
+  const shouldTryFallback =
+    prepareWithdrawEnabled && !!unstakeCalls.fallback && !!params.stakingAddress && preparePrimaryWithdraw.isError
+
+  const prepareFallbackWithdraw: AppUseSimulateContractReturnType = useSimulateContract({
+    abi: (unstakeCalls.fallback?.abi || []) as any,
+    functionName: (unstakeCalls.fallback?.functionName || 'withdraw') as any,
+    address: params.stakingAddress,
+    args: unstakeCalls.fallback?.args as any,
+    chainId: params.chainId,
+    account: params.account,
+    query: { enabled: shouldTryFallback }
+  })
+
+  const prepareWithdraw: AppUseSimulateContractReturnType =
+    unstakeCalls.fallback && preparePrimaryWithdraw.isError ? prepareFallbackWithdraw : preparePrimaryWithdraw
 
   return {
     actions: {

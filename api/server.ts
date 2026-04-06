@@ -1,15 +1,25 @@
 import { serve } from 'bun'
+import type {
+  TTenderlyFundRequest,
+  TTenderlyIncreaseTimeRequest,
+  TTenderlyRevertRequest,
+  TTenderlySnapshotRequest
+} from '../src/components/shared/types/tenderly'
 import {
+  clearUserCache,
+  deleteStaleCache,
   getHistoricalHoldings,
   getHoldingsPnL,
   getHoldingsPnLDrilldown,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
   initializeSchema,
+  isDatabaseEnabled,
   type UnknownTransferInPnlMode,
   type VaultVersion,
   validateConfig
 } from './lib/holdings'
+import { invalidateVaults, type VaultIdentifier } from './lib/holdings/services/cache'
 import {
   createHoldingsDebugContext,
   debugError,
@@ -17,13 +27,78 @@ import {
   isHoldingsDebugRequested,
   withHoldingsDebugContext
 } from './lib/holdings/services/debug'
+import {
+  buildTenderlyPanelStatus,
+  buildTenderlyRevertResponse,
+  buildTenderlySnapshotRecord,
+  requireTenderlyServerChain,
+  resolveTenderlyFundRpcRequest
+} from './tenderly.helpers'
+import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+const YVUSD_APR_SERVICE_API = (
+  process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
+).replace(/\/$/, '')
+
+type TTenderlyJsonRpcSuccess = {
+  id: string | number | null
+  jsonrpc: '2.0'
+  result: unknown
+}
+
+type TTenderlyJsonRpcError = {
+  id: string | number | null
+  jsonrpc: '2.0'
+  error: {
+    code: number
+    message: string
+    data?: unknown
+  }
+}
+
+async function handleYvUsdAprs(req: Request): Promise<Response> {
+  if (req.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  const requestUrl = new URL(req.url)
+  const upstreamUrl = new URL(YVUSD_APR_SERVICE_API)
+  requestUrl.searchParams.forEach((value, key) => {
+    upstreamUrl.searchParams.set(key, value)
+  })
+
+  try {
+    const response = await fetch(upstreamUrl.toString(), {
+      headers: {
+        Accept: 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      const details = await response.text()
+      return Response.json(
+        { error: 'yvUSD APR upstream error', status: response.status, details },
+        { status: response.status }
+      )
+    }
+
+    const data = await response.json()
+    return Response.json(data, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120'
+      }
+    })
+  } catch (error) {
+    console.error('Error proxying yvUSD APR request:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type'
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-secret'
 }
 
 function withCors(response: Response): Response {
@@ -38,7 +113,7 @@ function withCors(response: Response): Response {
   })
 }
 
-function handleCorsPrelight(): Response {
+function handleCorsPreFlight(): Response {
   return new Response(null, {
     status: 204,
     headers: CORS_HEADERS
@@ -47,6 +122,25 @@ function handleCorsPrelight(): Response {
 
 function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
+}
+
+interface InvalidateRequestBody {
+  vaults: Array<{ address: string; chainId: number }>
+}
+
+function validateInvalidateBody(body: unknown): body is InvalidateRequestBody {
+  if (!body || typeof body !== 'object') return false
+  const candidate = body as Record<string, unknown>
+  if (!Array.isArray(candidate.vaults) || candidate.vaults.length === 0) return false
+
+  for (const vault of candidate.vaults) {
+    if (!vault || typeof vault !== 'object') return false
+    const value = vault as Record<string, unknown>
+    if (typeof value.address !== 'string' || !isValidAddress(value.address)) return false
+    if (typeof value.chainId !== 'number' || !Number.isInteger(value.chainId)) return false
+  }
+
+  return true
 }
 
 function parseUnknownTransferInPnlMode(value: string | null): UnknownTransferInPnlMode {
@@ -59,6 +153,154 @@ function parseHoldingsEventFetchType(value: string | null): HoldingsEventFetchTy
 
 function parseHoldingsEventPaginationMode(value: string | null): HoldingsEventPaginationMode {
   return value === 'all' ? 'all' : 'paged'
+}
+
+async function parseJsonBody<T>(req: Request): Promise<T> {
+  try {
+    return (await req.json()) as T
+  } catch (_error) {
+    throw new Error('Invalid JSON body')
+  }
+}
+
+async function callTenderlyAdminRpc(canonicalChainId: number, method: string, params: unknown[]): Promise<unknown> {
+  const configuredChain = requireTenderlyServerChain(process.env, canonicalChainId)
+  const response = await fetch(configuredChain.adminRpcUri as string, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      id: 1,
+      jsonrpc: '2.0',
+      method,
+      params
+    })
+  })
+
+  if (!response.ok) {
+    const details = await response.text()
+    throw new Error(`Tenderly RPC request failed with status ${response.status}: ${details}`)
+  }
+
+  const payload = (await response.json()) as TTenderlyJsonRpcSuccess | TTenderlyJsonRpcError
+  if ('error' in payload) {
+    throw new Error(`${payload.error.message} (code ${payload.error.code})`)
+  }
+
+  return payload.result
+}
+
+function handleTenderlyStatus(req: Request): Response {
+  if (req.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  try {
+    return Response.json(buildTenderlyPanelStatus(process.env))
+  } catch (error) {
+    console.error('Error building Tenderly status:', error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to build Tenderly status' },
+      { status: 500 }
+    )
+  }
+}
+
+async function handleTenderlySnapshot(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  try {
+    const body = await parseJsonBody<TTenderlySnapshotRequest>(req)
+    const configuredChain = requireTenderlyServerChain(process.env, body.canonicalChainId)
+    const snapshotId = await callTenderlyAdminRpc(body.canonicalChainId, 'evm_snapshot', [])
+    const snapshotRecord = buildTenderlySnapshotRecord({
+      canonicalChainId: body.canonicalChainId,
+      executionChainId: configuredChain.executionChainId,
+      snapshotId: String(snapshotId),
+      label: body.label,
+      isBaseline: body.isBaseline
+    })
+
+    return Response.json(snapshotRecord)
+  } catch (error) {
+    console.error('Error creating Tenderly snapshot:', error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to create Tenderly snapshot' },
+      { status: 400 }
+    )
+  }
+}
+
+async function handleTenderlyRevert(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  try {
+    const body = await parseJsonBody<TTenderlyRevertRequest>(req)
+    const result = await callTenderlyAdminRpc(body.canonicalChainId, 'evm_revert', [body.snapshotId])
+
+    return Response.json(buildTenderlyRevertResponse(result, body.snapshotId))
+  } catch (error) {
+    console.error('Error reverting Tenderly snapshot:', error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to revert Tenderly snapshot' },
+      { status: 400 }
+    )
+  }
+}
+
+async function handleTenderlyIncreaseTime(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  try {
+    const body = await parseJsonBody<TTenderlyIncreaseTimeRequest>(req)
+    if (!Number.isInteger(body.seconds) || body.seconds <= 0) {
+      throw new Error('seconds must be a positive integer')
+    }
+
+    const timeResult = await callTenderlyAdminRpc(body.canonicalChainId, 'evm_increaseTime', [
+      `0x${BigInt(body.seconds).toString(16)}`
+    ])
+    const mineResult = body.mineBlock ? await callTenderlyAdminRpc(body.canonicalChainId, 'evm_mine', []) : undefined
+
+    return Response.json({
+      timeResult,
+      mineResult
+    })
+  } catch (error) {
+    console.error('Error increasing Tenderly time:', error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to increase Tenderly time' },
+      { status: 400 }
+    )
+  }
+}
+
+async function handleTenderlyFund(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  try {
+    const body = await parseJsonBody<TTenderlyFundRequest>(req)
+    const { method, params } = resolveTenderlyFundRpcRequest(body)
+    const result = await callTenderlyAdminRpc(body.canonicalChainId, method, params)
+
+    return Response.json({
+      method,
+      result
+    })
+  } catch (error) {
+    console.error('Error funding Tenderly wallet:', error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to fund wallet on Tenderly' },
+      { status: 400 }
+    )
+  }
 }
 
 function handleEnsoStatus(): Response {
@@ -186,6 +428,8 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
   const debugVault = url.searchParams.get('debugVault')
   const debugTx = url.searchParams.get('debugTx')
+  const refreshParam = url.searchParams.get('refresh')
+  const refresh = refreshParam === 'true' || refreshParam === '1'
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -198,6 +442,11 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
+    if (refresh) {
+      const cleared = await clearUserCache(address, version)
+      console.log(`[Server] Cleared ${cleared} cached entries for ${address}`)
+    }
+
     const holdings = await withHoldingsDebugContext(
       createHoldingsDebugContext('history', address, debugEnabled, {
         lotsEnabled: debugLotsEnabled,
@@ -207,6 +456,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       async () => {
         debugLog('route', 'started holdings history request', {
           version,
+          refresh,
           debugLotsEnabled,
           debugVault: debugVault?.toLowerCase() ?? null,
           debugTx: debugTx?.toLowerCase() ?? null
@@ -216,6 +466,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
           const response = await getHistoricalHoldings(address, version)
           debugLog('route', 'completed holdings history request', {
             version,
+            refresh,
             points: response.dataPoints.length,
             nonZeroPoints: response.dataPoints.filter((point) => point.totalUsdValue > 0).length
           })
@@ -251,7 +502,6 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
     console.error('Error fetching holdings history:', error)
     const message = error instanceof Error ? error.message : String(error)
     const stack = error instanceof Error ? error.stack : undefined
-    // server.ts exists locally only, so it's ok to log the stack for debugging purposes
     return Response.json({ error: 'Failed to fetch historical holdings', message, stack, status: 502 }, { status: 502 })
   }
 }
@@ -446,8 +696,101 @@ async function handleHoldingsPnLDrilldown(req: Request): Promise<Response> {
   }
 }
 
+async function handleHoldingsChores(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  const authHeader = req.headers.get('authorization')
+  const cronSecret = process.env.CRON_SECRET
+
+  if (!cronSecret) {
+    console.error('[Chores] CRON_SECRET not configured')
+    return Response.json({ error: 'Server misconfigured' }, { status: 500 })
+  }
+
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    await initializeSchema()
+    const deletedCount = await deleteStaleCache()
+
+    return Response.json({
+      success: true,
+      deletedRows: deletedCount,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('[Chores] Failed to run cleanup:', error)
+    return Response.json({ error: 'Cleanup failed' }, { status: 500 })
+  }
+}
+
+async function handleInvalidateCache(req: Request): Promise<Response> {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  const adminSecret = process.env.ADMIN_SECRET
+  if (!adminSecret) {
+    return Response.json({ error: 'Admin endpoint not configured' }, { status: 503 })
+  }
+
+  const providedSecret = req.headers.get('x-admin-secret')
+  if (providedSecret !== adminSecret) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!isDatabaseEnabled()) {
+    return Response.json({ error: 'Caching not enabled (DATABASE_URL not configured)' }, { status: 503 })
+  }
+
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch (_error) {
+    return Response.json(
+      {
+        error: 'Invalid request body',
+        expected: { vaults: [{ address: '0x...', chainId: 1 }] }
+      },
+      { status: 400 }
+    )
+  }
+
+  if (!validateInvalidateBody(body)) {
+    return Response.json(
+      {
+        error: 'Invalid request body',
+        expected: { vaults: [{ address: '0x...', chainId: 1 }] }
+      },
+      { status: 400 }
+    )
+  }
+
+  try {
+    const vaults: VaultIdentifier[] = body.vaults.map((vault) => ({
+      address: vault.address,
+      chainId: vault.chainId
+    }))
+
+    const invalidatedCount = await invalidateVaults(vaults)
+
+    return Response.json({
+      success: true,
+      invalidated: invalidatedCount,
+      vaults: vaults.map((vault) => `${vault.chainId}:${vault.address.toLowerCase()}`),
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('[Admin] Invalidate cache error:', error)
+    return Response.json({ error: 'Failed to invalidate cache' }, { status: 500 })
+  }
+}
+
 async function main() {
-  // Catch uncaught exceptions
   process.on('uncaughtException', (error) => {
     console.error('💥 Uncaught Exception:', error)
   })
@@ -461,34 +804,88 @@ async function main() {
   await initializeSchema()
 
   serve({
-    async fetch(req) {
+    async fetch(req, server) {
       const url = new URL(req.url)
       console.log(`[Server] ${req.method} ${url.pathname}`)
 
       try {
         if (req.method === 'OPTIONS') {
-          return handleCorsPrelight()
+          return handleCorsPreFlight()
         }
-
-        let response: Response
 
         if (url.pathname === '/api/enso/status') {
-          response = handleEnsoStatus()
-        } else if (url.pathname === '/api/enso/balances') {
-          response = await handleEnsoBalances(req)
-        } else if (url.pathname === '/api/enso/route') {
-          response = await handleEnsoRoute(req)
-        } else if (url.pathname === '/api/holdings/history') {
-          response = await handleHoldingsHistory(req)
-        } else if (url.pathname === '/api/holdings/pnl/drilldown') {
-          response = await handleHoldingsPnLDrilldown(req)
-        } else if (url.pathname === '/api/holdings/pnl') {
-          response = await handleHoldingsPnL(req)
-        } else {
-          response = new Response('Not found', { status: 404 })
+          return withCors(handleEnsoStatus())
         }
 
-        return withCors(response)
+        if (url.pathname === '/api/enso/balances') {
+          return withCors(await handleEnsoBalances(req))
+        }
+
+        if (url.pathname === '/api/enso/route') {
+          return withCors(await handleEnsoRoute(req))
+        }
+
+        if (url.pathname === '/api/holdings/history') {
+          return withCors(await handleHoldingsHistory(req))
+        }
+
+        if (url.pathname === '/api/holdings/pnl/drilldown') {
+          return withCors(await handleHoldingsPnLDrilldown(req))
+        }
+
+        if (url.pathname === '/api/holdings/pnl') {
+          return withCors(await handleHoldingsPnL(req))
+        }
+
+        if (url.pathname === '/api/holdings/chores') {
+          return withCors(await handleHoldingsChores(req))
+        }
+
+        if (url.pathname === '/api/admin/invalidate-cache') {
+          return withCors(await handleInvalidateCache(req))
+        }
+
+        if (url.pathname === '/api/yvusd/aprs') {
+          return withCors(await handleYvUsdAprs(req))
+        }
+
+        if (url.pathname === '/api/tenderly/status') {
+          return withCors(handleTenderlyStatus(req))
+        }
+
+        if (url.pathname === '/api/tenderly/snapshot') {
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          if (accessDeniedResponse) {
+            return withCors(accessDeniedResponse)
+          }
+          return withCors(await handleTenderlySnapshot(req))
+        }
+
+        if (url.pathname === '/api/tenderly/revert') {
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          if (accessDeniedResponse) {
+            return withCors(accessDeniedResponse)
+          }
+          return withCors(await handleTenderlyRevert(req))
+        }
+
+        if (url.pathname === '/api/tenderly/increase-time') {
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          if (accessDeniedResponse) {
+            return withCors(accessDeniedResponse)
+          }
+          return withCors(await handleTenderlyIncreaseTime(req))
+        }
+
+        if (url.pathname === '/api/tenderly/fund') {
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          if (accessDeniedResponse) {
+            return withCors(accessDeniedResponse)
+          }
+          return withCors(await handleTenderlyFund(req))
+        }
+
+        return withCors(new Response('Not found', { status: 404 }))
       } catch (error) {
         console.error('💥 Request handler error:', error)
         return withCors(
@@ -500,7 +897,7 @@ async function main() {
       }
     },
     port: 3001,
-    idleTimeout: 120 // 2 minutes for long-running requests like historical holdings
+    idleTimeout: 120
   })
 
   console.log('🚀 API server running on http://localhost:3001')

@@ -12,7 +12,7 @@ import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import type { TAddress } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
-import { type FC, forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react'
+import { type ForwardedRef, forwardRef, type ReactElement, type ReactNode, useImperativeHandle, useState } from 'react'
 import { WidgetDeposit } from './deposit'
 import { WidgetMigrate } from './migrate'
 import { WidgetWithdraw } from './withdraw'
@@ -57,171 +57,153 @@ const getActionLabel = (action: ActionType): string => {
   }
 }
 
-export const Widget = forwardRef<TWidgetRef, Props>(
-  (
-    {
-      currentVault,
-      vaultAddress,
-      gaugeAddress,
-      disableDepositStaking,
-      actions,
-      chainId,
-      vaultUserData,
-      handleSuccess,
-      mode,
-      onModeChange,
-      showTabs = true,
-      onOpenSettings,
-      isSettingsOpen,
-      depositPrefill,
-      onDepositPrefillConsumed,
-      hideTabSelector,
-      disableBorderRadius,
-      collapseDetails
-    },
-    ref
-  ) => {
-    const [internalMode, setInternalMode] = useState<ActionType>(actions[0])
-    const currentMode = mode ?? internalMode
-    const setMode = onModeChange ?? setInternalMode
-    const assetToken = getVaultToken(currentVault).address
-    const vaultAPR = getVaultAPR(currentVault)
-    const vaultSymbol = getVaultSymbol(currentVault)
-    const vaultStaking = getVaultStaking(currentVault)
-    const vaultVersion = getVaultVersion(currentVault)
-    const vaultInfo = getVaultInfo(currentVault)
-    const vaultMigration = getVaultMigration(currentVault)
-    const resolvedStakingAddress = isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)
+export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
+  {
+    currentVault,
+    vaultAddress,
+    gaugeAddress,
+    disableDepositStaking,
+    actions,
+    chainId,
+    vaultUserData,
+    handleSuccess,
+    mode,
+    onModeChange,
+    showTabs = true,
+    onOpenSettings,
+    isSettingsOpen,
+    depositPrefill,
+    onDepositPrefillConsumed,
+    hideTabSelector,
+    disableBorderRadius,
+    collapseDetails
+  }: Props,
+  ref: ForwardedRef<TWidgetRef>
+): ReactElement {
+  const [internalMode, setInternalMode] = useState<ActionType>(actions[0])
+  const currentMode = mode ?? internalMode
+  const setMode = onModeChange ?? setInternalMode
+  const assetToken = getVaultToken(currentVault).address
+  const vaultAPR = getVaultAPR(currentVault)
+  const vaultSymbol = getVaultSymbol(currentVault)
+  const vaultStaking = getVaultStaking(currentVault)
+  const vaultVersion = getVaultVersion(currentVault)
+  const vaultInfo = getVaultInfo(currentVault)
+  const vaultMigration = getVaultMigration(currentVault)
+  const resolvedStakingAddress = isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)
 
-    useImperativeHandle(ref, () => ({
-      setMode: (newMode: ActionType) => {
-        if (actions.includes(newMode)) {
-          setMode(newMode)
-        }
+  useImperativeHandle(ref, () => ({
+    setMode(newMode: ActionType): void {
+      if (actions.includes(newMode)) {
+        setMode(newMode)
       }
-    }))
-
-    useEffect(() => {
-      if (mode === undefined) {
-        setInternalMode(actions[0])
-      }
-    }, [actions, mode])
-
-    const SelectedComponent = useMemo(() => {
-      switch (currentMode) {
-        case ActionType.Deposit:
-          return (
-            <WidgetDeposit
-              vaultAddress={toAddress(vaultAddress)}
-              assetAddress={toAddress(assetToken)}
-              stakingAddress={disableDepositStaking ? undefined : resolvedStakingAddress}
-              chainId={chainId}
-              vaultAPR={vaultAPR?.forwardAPR?.netAPR || 0}
-              vaultSymbol={vaultSymbol || ''}
-              stakingSource={vaultStaking?.source}
-              vaultUserData={vaultUserData}
-              handleDepositSuccess={handleSuccess}
-              prefill={depositPrefill ?? undefined}
-              onPrefillApplied={onDepositPrefillConsumed}
-              onOpenSettings={onOpenSettings}
-              isSettingsOpen={isSettingsOpen}
-              hideSettings={hideTabSelector}
-              disableBorderRadius={disableBorderRadius}
-              collapseDetails={collapseDetails}
-            />
-          )
-        case ActionType.Withdraw:
-          return (
-            <WidgetWithdraw
-              vaultAddress={toAddress(vaultAddress)}
-              assetAddress={toAddress(assetToken)}
-              stakingAddress={resolvedStakingAddress}
-              chainId={chainId}
-              vaultSymbol={vaultSymbol || ''}
-              vaultVersion={vaultVersion}
-              isVaultRetired={Boolean(vaultInfo?.isRetired)}
-              vaultUserData={vaultUserData}
-              handleWithdrawSuccess={handleSuccess}
-              onOpenSettings={onOpenSettings}
-              isSettingsOpen={isSettingsOpen}
-              hideSettings={hideTabSelector}
-              disableBorderRadius={disableBorderRadius}
-              collapseDetails={collapseDetails}
-            />
-          )
-        case ActionType.Migrate:
-          return (
-            <WidgetMigrate
-              vaultAddress={toAddress(vaultAddress)}
-              assetAddress={toAddress(assetToken)}
-              stakingAddress={resolvedStakingAddress}
-              chainId={chainId}
-              vaultSymbol={vaultSymbol || ''}
-              vaultVersion={vaultVersion}
-              migrationTarget={toAddress(vaultMigration?.address)}
-              migrationContract={toAddress(vaultMigration?.contract)}
-              vaultUserData={vaultUserData}
-              handleMigrateSuccess={handleSuccess}
-            />
-          )
-      }
-    }, [
-      currentMode,
-      vaultAddress,
-      disableDepositStaking,
-      currentVault,
-      assetToken,
-      chainId,
-      vaultUserData,
-      handleSuccess,
-      depositPrefill,
-      onDepositPrefillConsumed,
-      onOpenSettings,
-      isSettingsOpen,
-      hideTabSelector,
-      disableBorderRadius,
-      resolvedStakingAddress,
-      collapseDetails
-    ])
-
-    // Mobile mode: simple layout without tabs
-    if (hideTabSelector) {
-      return (
-        <div className="flex flex-col gap-0 w-full h-full">
-          <div
-            className={cl('bg-surface relative w-full min-w-0', {
-              'rounded-lg': !disableBorderRadius
-            })}
-          >
-            {SelectedComponent}
-          </div>
-        </div>
-      )
     }
+  }))
 
+  // Render-time state adjustment: keep internal mode valid when actions change
+  if (mode === undefined && !actions.includes(internalMode)) {
+    setInternalMode(actions[0])
+  }
+
+  function renderSelectedComponent(): ReactElement {
+    switch (currentMode) {
+      case ActionType.Deposit:
+        return (
+          <WidgetDeposit
+            vaultAddress={toAddress(vaultAddress)}
+            assetAddress={toAddress(assetToken)}
+            stakingAddress={disableDepositStaking ? undefined : resolvedStakingAddress}
+            chainId={chainId}
+            vaultAPR={vaultAPR?.forwardAPR?.netAPR || 0}
+            vaultSymbol={vaultSymbol || ''}
+            stakingSource={vaultStaking?.source}
+            vaultUserData={vaultUserData}
+            handleDepositSuccess={handleSuccess}
+            prefill={depositPrefill ?? undefined}
+            onPrefillApplied={onDepositPrefillConsumed}
+            onOpenSettings={onOpenSettings}
+            isSettingsOpen={isSettingsOpen}
+            hideSettings={hideTabSelector}
+            disableBorderRadius={disableBorderRadius}
+            collapseDetails={collapseDetails}
+          />
+        )
+      case ActionType.Withdraw:
+        return (
+          <WidgetWithdraw
+            vaultAddress={toAddress(vaultAddress)}
+            assetAddress={toAddress(assetToken)}
+            stakingAddress={resolvedStakingAddress}
+            chainId={chainId}
+            vaultSymbol={vaultSymbol || ''}
+            stakingSource={vaultStaking?.source}
+            vaultVersion={vaultVersion}
+            isVaultRetired={Boolean(vaultInfo?.isRetired)}
+            vaultUserData={vaultUserData}
+            handleWithdrawSuccess={handleSuccess}
+            onOpenSettings={onOpenSettings}
+            isSettingsOpen={isSettingsOpen}
+            hideSettings={hideTabSelector}
+            disableBorderRadius={disableBorderRadius}
+            collapseDetails={collapseDetails}
+          />
+        )
+      case ActionType.Migrate:
+        return (
+          <WidgetMigrate
+            vaultAddress={toAddress(vaultAddress)}
+            assetAddress={toAddress(assetToken)}
+            stakingAddress={resolvedStakingAddress}
+            chainId={chainId}
+            vaultSymbol={vaultSymbol || ''}
+            vaultVersion={vaultVersion}
+            migrationTarget={toAddress(vaultMigration?.address)}
+            migrationContract={toAddress(vaultMigration?.contract)}
+            vaultUserData={vaultUserData}
+            handleMigrateSuccess={handleSuccess}
+          />
+        )
+    }
+  }
+
+  const selectedComponent = renderSelectedComponent()
+
+  if (hideTabSelector) {
     return (
-      <div className="flex flex-col gap-0 w-full h-full flex-1">
+      <div className="flex flex-col gap-0 w-full h-full">
         <div
-          className={cl('bg-app overflow-hidden relative w-full min-w-0 flex flex-col flex-1', {
-            'rounded-b-lg': !disableBorderRadius
+          className={cl('bg-surface relative w-full min-w-0', {
+            'rounded-lg': !disableBorderRadius
           })}
         >
-          {showTabs ? (
-            <WidgetTabs
-              actions={actions}
-              activeAction={currentMode}
-              onActionChange={setMode}
-              disableBorderRadius={disableBorderRadius}
-            />
-          ) : null}
-          <div className="bg-surface flex-1 flex flex-col [&>div]:flex-1 [&>div]:h-full">{SelectedComponent}</div>
+          {selectedComponent}
         </div>
       </div>
     )
   }
-)
 
-export const WidgetTabs: FC<{
+  return (
+    <div className="flex flex-col gap-0 w-full h-full flex-1">
+      <div
+        className={cl('bg-app overflow-hidden relative w-full min-w-0 flex flex-col flex-1', {
+          'rounded-b-lg': !disableBorderRadius
+        })}
+      >
+        {showTabs ? (
+          <WidgetTabs
+            actions={actions}
+            activeAction={currentMode}
+            onActionChange={setMode}
+            disableBorderRadius={disableBorderRadius}
+          />
+        ) : null}
+        <div className="bg-surface flex-1 flex flex-col [&>div]:flex-1 [&>div]:h-full">{selectedComponent}</div>
+      </div>
+    </div>
+  )
+})
+
+type WidgetTabsProps = {
   actions: ActionType[]
   activeAction: ActionType
   onActionChange: (action: ActionType) => void
@@ -231,7 +213,10 @@ export const WidgetTabs: FC<{
   onCloseOverlays?: () => void
   disableBorderRadius?: boolean
   dataTour?: string
-}> = ({
+  walletDataTour?: string
+}
+
+export function WidgetTabs({
   actions,
   activeAction,
   onActionChange,
@@ -240,9 +225,11 @@ export const WidgetTabs: FC<{
   isWalletOpen,
   onCloseOverlays,
   disableBorderRadius,
-  dataTour
-}) => {
+  dataTour,
+  walletDataTour
+}: WidgetTabsProps): ReactElement {
   const isWalletTabActive = !!isWalletOpen
+
   return (
     <div
       className={cl('bg-surface-secondary border border-border gap-2 flex min-h-9 p-1', className, {
@@ -269,7 +256,7 @@ export const WidgetTabs: FC<{
             onCloseOverlays?.()
             onOpenWallet()
           }}
-          dataTour="vault-detail-widget-my-info"
+          dataTour={walletDataTour}
         >
           {'My Info'}
         </TabButton>
@@ -278,13 +265,15 @@ export const WidgetTabs: FC<{
   )
 }
 
-const TabButton: FC<{
+type TabButtonProps = {
   className?: string
-  children: React.ReactNode
+  children: ReactNode
   onClick: () => void
   isActive: boolean
   dataTour?: string
-}> = ({ children, onClick, isActive, className, dataTour }) => {
+}
+
+function TabButton({ children, onClick, isActive, className, dataTour }: TabButtonProps): ReactElement {
   return (
     <button
       type="button"

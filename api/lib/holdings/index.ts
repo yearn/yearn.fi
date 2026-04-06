@@ -1,7 +1,7 @@
 export { config, validateConfig } from './config'
 export { initializeSchema, isDatabaseEnabled } from './db/connection'
 export { getHistoricalHoldings, type HoldingsHistoryResponse } from './services/aggregator'
-export { deleteStaleCache } from './services/cache'
+export { clearUserCache, deleteStaleCache } from './services/cache'
 export {
   fetchUserEvents,
   type HoldingsEventFetchType,

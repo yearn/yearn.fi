@@ -7,6 +7,8 @@ export type TNotificationType =
   | 'approve'
   | 'deposit'
   | 'withdraw'
+  | 'start cooldown'
+  | 'cancel cooldown'
   | 'zap'
   | 'crosschain zap'
   | 'withdraw zap'
@@ -24,6 +26,7 @@ export type TNotification = {
   type: TNotificationType
   address: TAddress
   chainId: number
+  executionChainId?: number
   toChainId?: number // Destination chain ID for cross-chain transactions
   spenderAddress?: TAddress
   spenderName?: string
@@ -58,6 +61,7 @@ export type TCreateNotificationParams = {
   fromAddress: TAddress
   fromSymbol: string
   fromChainId: number
+  executionChainId?: number
   toAddress?: TAddress // optional for approve/claim
   toSymbol?: string
   toAmount?: string // expected output amount for withdrawals

@@ -5,6 +5,11 @@ const portfolioHistorySimpleDataPointSchema = z.object({
   value: z.number()
 })
 
+const portfolioPnlCategoryBreakdownSchema = z.object({
+  totalPnlUsd: z.number(),
+  totalEconomicGainUsd: z.number()
+})
+
 export const portfolioHistorySimpleResponseSchema = z.object({
   address: z.string(),
   dataPoints: z.array(portfolioHistorySimpleDataPointSchema)
@@ -16,6 +21,10 @@ const portfolioPnlSummarySchema = z.object({
   totalWindfallPnlUsd: z.number(),
   totalPnlUsd: z.number(),
   totalEconomicGainUsd: z.number(),
+  byCategory: z.object({
+    stable: portfolioPnlCategoryBreakdownSchema,
+    volatile: portfolioPnlCategoryBreakdownSchema
+  }),
   isComplete: z.boolean()
 })
 

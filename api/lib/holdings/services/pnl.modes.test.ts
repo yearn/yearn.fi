@@ -206,6 +206,7 @@ function configureServiceMocks(
       symbol: string
       decimals: number
       shareDecimals?: number
+      category?: 'stable' | 'volatile'
     }
     ppsTimeline?: Map<number, number>
     priceKey?: string
@@ -217,7 +218,8 @@ function configureServiceMocks(
     tokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     symbol: 'USDC',
     decimals: 6,
-    shareDecimals: 6
+    shareDecimals: 6,
+    category: 'stable' as const
   }
   const ppsTimeline =
     overrides?.ppsTimeline ??
@@ -249,6 +251,7 @@ function configureServiceMocks(
             symbol: metadata.symbol,
             decimals: metadata.decimals
           },
+          category: metadata.category ?? 'volatile',
           decimals: metadata.shareDecimals ?? metadata.decimals
         }
       ]
@@ -517,7 +520,8 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
         metadata: {
           tokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
           symbol: 'WETH',
-          decimals: 18
+          decimals: 18,
+          category: 'volatile'
         },
         ppsTimeline: new Map([
           [100, 1],
@@ -630,5 +634,135 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
         unknownShares: '100000000'
       }
     })
+  })
+
+  it('splits summary totals by stable and volatile vault categories', async () => {
+    const { summarizePnlVaults } = await import('./pnlValuation')
+
+    const summary = summarizePnlVaults([
+      {
+        chainId: 1,
+        vaultAddress: '0x1111111111111111111111111111111111111111',
+        stakingVaultAddress: null,
+        status: 'ok',
+        costBasisStatus: 'complete',
+        unknownTransferInPnlMode: 'windfall',
+        shares: '1',
+        sharesFormatted: 1,
+        vaultShares: '1',
+        vaultSharesFormatted: 1,
+        stakedShares: '0',
+        stakedSharesFormatted: 0,
+        knownCostBasisShares: '1',
+        unknownCostBasisShares: '0',
+        pricePerShare: 1,
+        tokenPrice: 1,
+        currentUnderlying: 10,
+        vaultUnderlying: 10,
+        stakedUnderlying: 0,
+        currentKnownUnderlying: 10,
+        currentUnknownUnderlying: 0,
+        knownCostBasisUnderlying: 10,
+        knownCostBasisUsd: 10,
+        currentValueUsd: 10,
+        vaultValueUsd: 10,
+        stakedValueUsd: 0,
+        unknownCostBasisValueUsd: 0,
+        windfallPnlUsd: 0,
+        realizedPnlUnderlying: 0,
+        realizedPnlUsd: 0,
+        unrealizedPnlUnderlying: 0,
+        unrealizedPnlUsd: 12,
+        totalPnlUsd: 12,
+        totalEconomicGainUsd: 12,
+        totalDepositedUnderlying: 0,
+        totalWithdrawnUnderlying: 0,
+        eventCounts: {
+          underlyingDeposits: 0,
+          underlyingWithdrawals: 0,
+          stakes: 0,
+          unstakes: 0,
+          rewardTransfersIn: 0,
+          externalTransfersIn: 0,
+          externalTransfersOut: 0,
+          migrationsIn: 0,
+          migrationsOut: 0,
+          unknownCostBasisTransfersIn: 0,
+          withdrawalsWithUnknownCostBasis: 0
+        },
+        metadata: {
+          symbol: 'USDC',
+          decimals: 6,
+          assetDecimals: 6,
+          tokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+          category: 'stable'
+        }
+      },
+      {
+        chainId: 1,
+        vaultAddress: '0x2222222222222222222222222222222222222222',
+        stakingVaultAddress: null,
+        status: 'ok',
+        costBasisStatus: 'complete',
+        unknownTransferInPnlMode: 'windfall',
+        shares: '1',
+        sharesFormatted: 1,
+        vaultShares: '1',
+        vaultSharesFormatted: 1,
+        stakedShares: '0',
+        stakedSharesFormatted: 0,
+        knownCostBasisShares: '1',
+        unknownCostBasisShares: '0',
+        pricePerShare: 1,
+        tokenPrice: 1,
+        currentUnderlying: 20,
+        vaultUnderlying: 20,
+        stakedUnderlying: 0,
+        currentKnownUnderlying: 20,
+        currentUnknownUnderlying: 0,
+        knownCostBasisUnderlying: 20,
+        knownCostBasisUsd: 17,
+        currentValueUsd: 20,
+        vaultValueUsd: 20,
+        stakedValueUsd: 0,
+        unknownCostBasisValueUsd: 0,
+        windfallPnlUsd: 3,
+        realizedPnlUnderlying: 0,
+        realizedPnlUsd: 0,
+        unrealizedPnlUnderlying: 0,
+        unrealizedPnlUsd: 5,
+        totalPnlUsd: 5,
+        totalEconomicGainUsd: 8,
+        totalDepositedUnderlying: 0,
+        totalWithdrawnUnderlying: 0,
+        eventCounts: {
+          underlyingDeposits: 0,
+          underlyingWithdrawals: 0,
+          stakes: 0,
+          unstakes: 0,
+          rewardTransfersIn: 0,
+          externalTransfersIn: 0,
+          externalTransfersOut: 0,
+          migrationsIn: 0,
+          migrationsOut: 0,
+          unknownCostBasisTransfersIn: 0,
+          withdrawalsWithUnknownCostBasis: 0
+        },
+        metadata: {
+          symbol: 'WETH',
+          decimals: 18,
+          assetDecimals: 18,
+          tokenAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+          category: 'volatile'
+        }
+      }
+    ])
+
+    expect(summary.totalPnlUsd).toBe(17)
+    expect(summary.totalEconomicGainUsd).toBe(20)
+    expect(summary.byCategory.stable.totalPnlUsd).toBe(12)
+    expect(summary.byCategory.stable.totalEconomicGainUsd).toBe(12)
+    expect(summary.byCategory.volatile.totalPnlUsd).toBe(5)
+    expect(summary.byCategory.volatile.totalEconomicGainUsd).toBe(8)
   })
 })

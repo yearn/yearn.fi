@@ -1,5 +1,4 @@
 import type { ReactElement } from 'react'
-import { useEffect } from 'react'
 
 type TMeta = {
   title: string
@@ -11,10 +10,6 @@ type TMeta = {
 }
 
 export function Meta(meta: TMeta): ReactElement {
-  useEffect(() => {
-    document.title = meta.title
-  }, [meta.title])
-
   return (
     <>
       <title>{meta.title}</title>

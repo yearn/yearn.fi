@@ -42,12 +42,21 @@ function Image(props: CustomImageProps): ReactElement {
   } = props
 
   const [imageSrc, setImageSrc] = useState<string | typeof src>(src)
+  const [prevSrc, setPrevSrc] = useState(src)
   const [isVisible, setIsVisible] = useState(loading !== 'lazy' || priority === true)
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const imageRef = useRef<HTMLDivElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
+
+  // Render-time state adjustment: reset when src prop changes
+  if (src !== prevSrc) {
+    setPrevSrc(src)
+    setImageSrc(src)
+    setHasError(false)
+    setIsLoading(true)
+  }
 
   // Set up IntersectionObserver for lazy loading
   useEffect(() => {
@@ -74,13 +83,6 @@ function Image(props: CustomImageProps): ReactElement {
       observerRef.current?.disconnect()
     }
   }, [loading, priority])
-
-  // Reset states when src changes
-  useEffect(() => {
-    setImageSrc(src)
-    setHasError(false)
-    setIsLoading(true)
-  }, [src])
 
   // Handle already-cached images where onLoad might not fire
   useEffect(() => {

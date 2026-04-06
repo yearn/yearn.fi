@@ -10,14 +10,11 @@
 @theme {
   /* Font families */
   --font-family-aeonik:
-    Aeonik, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-    Arial, sans-serif;
+    'Aeonik', Helvetica, Arial, system-ui, sans-serif;
   --font-family-aeonik-fono:
-    'Aeonik Fono', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    Helvetica, Arial, sans-serif;
-  --font-family-aeonik-mono: 'Aeonik Mono', Consolas, 'Courier New', monospace;
-  --font-family-source-code-pro:
-    'Source Code Pro', 'Aeonik Mono', Consolas, 'Courier New', monospace;
+    'Aeonik Fono', Helvetica, Arial, system-ui, sans-serif;
+  --font-family-aeonik-mono:
+    'Aeonik Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
   --color-black: hsl(0 0% 0%);
   --color-white: hsl(0 0% 100%);
@@ -166,9 +163,7 @@ html {
 body {
   background-color: var(--color-app);
   color: var(--color-text-primary);
-  font-family:
-    aeonik, 'aeonik Fallback', 'Source Code Pro', 'Source Code Pro Fallback',
-    sans-serif;
+  font-family: 'Aeonik', Helvetica, Arial, system-ui, sans-serif;
   /* Mobile-optimized line height for readability */
   line-height: 1.5;
 }
@@ -181,8 +176,7 @@ body {
 @layer utilities {
   .font-number {
     font-family:
-      'Aeonik Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-      'Liberation Mono', 'Courier New', monospace;
+      'Aeonik Mono', Menlo, Consolas, 'Liberation Mono', monospace;
   }
 
   .scrollbar-none {

@@ -4,13 +4,14 @@ import { Button } from '@shared/components/Button'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { usePublicClient } from '@shared/hooks/useAppWagmi'
 import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { formatTAmount, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { hexToNumber, slice } from 'viem'
-import { useAccount, usePublicClient } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { useYearn } from '@/components/shared/contexts/useYearn'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { formatWidgetValue } from '../shared/valueDisplay'
@@ -245,6 +246,7 @@ export const WidgetMigrate: FC<Props> = ({
           confirmMessage: `Sign permit for ${formattedBalance} ${vaultSymbol}`,
           successTitle: 'Permit signed',
           successMessage: 'Ready to migrate.',
+          completesFlow: false,
           isPermit: true,
           permitData: { getPermitData } as any,
           onPermitSigned: handlePermitSigned,
@@ -265,6 +267,7 @@ export const WidgetMigrate: FC<Props> = ({
         confirmMessage: `Migrating ${formattedBalance} ${vaultSymbol}`,
         successTitle: 'Migration successful!',
         successMessage: 'Your funds have been migrated to the new vault.',
+        completesFlow: true,
         showConfetti: true,
         notification: {
           type: 'migrate' as const,
@@ -287,6 +290,7 @@ export const WidgetMigrate: FC<Props> = ({
         confirmMessage: `Approving ${formattedBalance} ${vaultSymbol} for migration`,
         successTitle: 'Approval successful',
         successMessage: `Approved ${formattedBalance} ${vaultSymbol}.\nReady to migrate.`,
+        completesFlow: false,
         notification: {
           type: 'approve' as const,
           amount: formattedBalance,
@@ -304,6 +308,7 @@ export const WidgetMigrate: FC<Props> = ({
       confirmMessage: `Migrating ${formattedBalance} ${vaultSymbol}`,
       successTitle: 'Migration successful!',
       successMessage: 'Your funds have been migrated to the new vault.',
+      completesFlow: true,
       showConfetti: true,
       notification: {
         type: 'migrate' as const,

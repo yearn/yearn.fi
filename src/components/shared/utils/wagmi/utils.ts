@@ -1,10 +1,17 @@
 import type { Chain, PublicClient } from 'viem'
 import { createPublicClient, defineChain, http } from 'viem'
 import * as wagmiChains from 'viem/chains'
+import { katana } from '@/config/chainDefinitions'
+import {
+  resolveExecutionChainId,
+  resolveTenderlyExplorerUriForExecutionChainId,
+  resolveTenderlyRpcUriForExecutionChainId,
+  supportedChainLookup
+} from '@/config/tenderly'
 import type { TAddress } from '../../types/address'
 import type { TDict, TNDict } from '../../types/mixed'
 import { retrieveConfig } from './config'
-import { anotherLocalhost, localhost } from './networks'
+import { localhost } from './networks'
 
 export type TChainContract = {
   address: TAddress
@@ -39,32 +46,6 @@ const rari = defineChain({
   }
 })
 
-export const katana = defineChain({
-  id: 747474,
-  name: 'Katana',
-  nativeCurrency: {
-    decimals: 18,
-    name: 'Ether',
-    symbol: 'ETH'
-  },
-  rpcUrls: {
-    default: { http: ['https://rpc.katanarpc.com'] }
-  },
-  blockExplorers: {
-    default: {
-      name: 'Katana Explorer',
-      url: 'https://katanascan.com'
-    }
-  },
-  contracts: {
-    multicall3: {
-      address: '0xcA11bde05977b3631167028862bE2a173976CA11',
-      blockCreated: 1898013
-    }
-  },
-  testnet: false
-})
-
 /***************************************************************************************************
  ** Extended Chain type is used to add additional properties to the basic wagmi Chain type.
  ** Ee need to add:
@@ -88,6 +69,14 @@ const isChain = (chain: wagmiChains.Chain | unknown): chain is wagmiChains.Chain
 }
 
 export function getRpcUriFor(chainId: number | string): string {
+  const normalizedChainId = Number(chainId)
+  if (Number.isInteger(normalizedChainId)) {
+    const tenderlyRpc = resolveTenderlyRpcUriForExecutionChainId(normalizedChainId)
+    if (tenderlyRpc) {
+      return tenderlyRpc
+    }
+  }
+
   const key = `VITE_RPC_URI_FOR_${chainId}`
   const value = import.meta.env[key]
   if (typeof value !== 'string') {
@@ -138,46 +127,73 @@ function getInfuraBaseURL(chainID: number): string {
   return ''
 }
 
-function initIndexedWagmiChains(): TNDict<TExtendedChain> {
-  const _indexedWagmiChains: TNDict<TExtendedChain> = {}
-  for (const chain of Object.values({ ...wagmiChains, rari, katana })) {
-    if (isChain(chain)) {
-      const baseChain = chain as unknown as TExtendedChain
-      const extendedChain =
-        baseChain.id === 1337
-          ? (localhost as unknown as TExtendedChain)
-          : baseChain.id === 5402
-            ? (anotherLocalhost as unknown as TExtendedChain)
-            : baseChain
+function toExtendedChain(chain: Chain): TExtendedChain {
+  const baseChain = (chain.id === localhost.id ? localhost : chain) as Chain
 
-      extendedChain.contracts = {
-        ...extendedChain.contracts
-      }
-
-      const newRPC = getRpcUriFor(extendedChain.id)
-      const oldRPC =
-        import.meta.env.VITE_JSON_RPC_URI?.[extendedChain.id] || import.meta.env.VITE_JSON_RPC_URL?.[extendedChain.id]
-      if (!newRPC && oldRPC) {
-        console.debug(
-          `VITE_JSON_RPC_URI[${extendedChain.id}] is deprecated. Please use VITE_RPC_URI_FOR_${extendedChain.id}`
-        )
-      }
-      const defaultJsonRPCURL = extendedChain?.rpcUrls?.public?.http?.[0]
-
-      extendedChain.defaultRPC = newRPC || oldRPC || defaultJsonRPCURL || ''
-      extendedChain.rpcUrls.alchemy = { http: [getAlchemyBaseURL(extendedChain.id)] }
-      extendedChain.rpcUrls.infura = { http: [getInfuraBaseURL(extendedChain.id)] }
-
-      const http = [extendedChain.defaultRPC, ...extendedChain.rpcUrls.default.http].filter(Boolean)
-      extendedChain.rpcUrls.default.http = http
-      extendedChain.defaultBlockExplorer =
-        extendedChain.blockExplorers?.etherscan?.url ||
-        extendedChain.blockExplorers?.default.url ||
-        'https://etherscan.io'
-      _indexedWagmiChains[extendedChain.id] = extendedChain
+  const extendedChain = {
+    ...(baseChain as TExtendedChain),
+    rpcUrls: {
+      ...baseChain.rpcUrls,
+      default: {
+        ...baseChain.rpcUrls.default,
+        http: [...(baseChain.rpcUrls.default?.http || [])]
+      },
+      public: baseChain.rpcUrls.public
+        ? {
+            ...baseChain.rpcUrls.public,
+            http: [...(baseChain.rpcUrls.public.http || [])]
+          }
+        : undefined
+    },
+    blockExplorers: baseChain.blockExplorers
+      ? {
+          ...baseChain.blockExplorers,
+          default: {
+            ...baseChain.blockExplorers.default
+          }
+        }
+      : undefined,
+    contracts: {
+      ...((baseChain as TExtendedChain).contracts || {})
     }
+  } as TExtendedChain
+
+  const newRPC = getRpcUriFor(extendedChain.id)
+  const oldRPC =
+    import.meta.env.VITE_JSON_RPC_URI?.[extendedChain.id] || import.meta.env.VITE_JSON_RPC_URL?.[extendedChain.id]
+  if (!newRPC && oldRPC) {
+    console.debug(
+      `VITE_JSON_RPC_URI[${extendedChain.id}] is deprecated. Please use VITE_RPC_URI_FOR_${extendedChain.id}`
+    )
   }
-  return _indexedWagmiChains
+
+  const defaultJsonRPCURL = extendedChain.rpcUrls.public?.http?.[0] || extendedChain.rpcUrls.default?.http?.[0]
+  extendedChain.defaultRPC = newRPC || oldRPC || defaultJsonRPCURL || ''
+  extendedChain.rpcUrls.alchemy = { http: [getAlchemyBaseURL(extendedChain.id)] }
+  extendedChain.rpcUrls.infura = { http: [getInfuraBaseURL(extendedChain.id)] }
+  extendedChain.rpcUrls.default.http = [
+    ...new Set([extendedChain.defaultRPC, ...extendedChain.rpcUrls.default.http].filter(Boolean))
+  ]
+  const tenderlyExecutionExplorer = resolveTenderlyExplorerUriForExecutionChainId(extendedChain.id)
+  const isTenderlyExecutionChain = Boolean(resolveTenderlyRpcUriForExecutionChainId(extendedChain.id))
+  extendedChain.defaultBlockExplorer =
+    tenderlyExecutionExplorer ||
+    extendedChain.blockExplorers?.etherscan?.url ||
+    extendedChain.blockExplorers?.default.url ||
+    (isTenderlyExecutionChain ? '' : 'https://etherscan.io')
+
+  return extendedChain
+}
+
+function initIndexedWagmiChains(): TNDict<TExtendedChain> {
+  const indexedChains: TNDict<TExtendedChain> = {}
+  const baseChains = Object.values({ ...wagmiChains, rari, katana, localhost }).filter(isChain)
+
+  for (const chain of [...baseChains, ...supportedChainLookup]) {
+    indexedChains[chain.id] = toExtendedChain(chain)
+  }
+
+  return indexedChains
 }
 export const indexedWagmiChains: TNDict<TExtendedChain> = initIndexedWagmiChains()
 
@@ -208,21 +224,24 @@ export function getNetwork(chainID: number): TExtendedChain {
 }
 
 export function getClient(chainID: number): PublicClient {
-  if (!indexedWagmiChains[chainID]) {
+  const executionChainId = resolveExecutionChainId(chainID)
+  if (executionChainId === undefined || !indexedWagmiChains[executionChainId]) {
     throw new Error(`Chain ${chainID} is not supported`)
   }
-  const chainConfig = indexedWagmiChains?.[chainID] || retrieveConfig().chains.find((chain) => chain.id === chainID)
+  const chainConfig =
+    indexedWagmiChains[executionChainId] || retrieveConfig().chains.find((chain) => chain.id === executionChainId)
 
-  const newRPC = getRpcUriFor(chainID)
-  const oldRPC = import.meta.env.VITE_JSON_RPC_URI?.[chainID] || import.meta.env.VITE_JSON_RPC_URL?.[chainID]
+  const newRPC = getRpcUriFor(executionChainId)
+  const oldRPC =
+    import.meta.env.VITE_JSON_RPC_URI?.[executionChainId] || import.meta.env.VITE_JSON_RPC_URL?.[executionChainId]
 
   const url =
     newRPC ||
     oldRPC ||
-    chainConfig.rpcUrls.default.http[0] ||
-    chainConfig.rpcUrls.alchemy.http[0] ||
-    chainConfig.rpcUrls.infura.http[0] ||
-    indexedWagmiChains?.[chainID]?.rpcUrls?.public?.http?.[0] ||
+    chainConfig?.rpcUrls.default.http[0] ||
+    chainConfig?.rpcUrls.alchemy.http[0] ||
+    chainConfig?.rpcUrls.infura.http[0] ||
+    indexedWagmiChains[executionChainId]?.rpcUrls?.public?.http?.[0] ||
     ''
 
   try {
@@ -232,11 +251,11 @@ export function getClient(chainID: number): PublicClient {
       const headers = { Authorization: `Basic ${btoa(urlAsNodeURL.username + ':' + urlAsNodeURL.password)}` }
       const cleanUrl = urlAsNodeURL.href.replace(`${urlAsNodeURL.username}:${urlAsNodeURL.password}@`, '')
       return createPublicClient({
-        chain: indexedWagmiChains[chainID],
+        chain: indexedWagmiChains[executionChainId],
         transport: http(cleanUrl, { fetchOptions: { headers } })
       })
     }
-    return createPublicClient({ chain: indexedWagmiChains[chainID], transport: http(url) })
+    return createPublicClient({ chain: indexedWagmiChains[executionChainId], transport: http(url) })
   } catch {
     throw new Error(`We couldn't get a valid RPC URL for chain ${chainID}`)
   }

@@ -9,7 +9,7 @@ import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
 import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
 import type { QueryObserverResult } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
-import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, memo, useCallback, useContext, useState } from 'react'
 import { useLocation } from 'react-router'
 import { deserialize, serialize } from 'wagmi'
 
@@ -22,6 +22,7 @@ export type TYearnContext = {
   earned?: TYDaemonEarned
   prices?: TYDaemonPricesChain
   vaults: TDict<TKongVaultListItem>
+  allVaults: TDict<TKongVaultListItem>
   isLoadingVaultList: boolean
   zapSlippage: number
   maxLoss: bigint
@@ -47,6 +48,7 @@ const YearnContext = createContext<TYearnContext>({
   },
   prices: {},
   vaults: {},
+  allVaults: {},
   isLoadingVaultList: false,
   maxLoss: DEFAULT_MAX_LOSS,
   zapSlippage: 0.1,
@@ -88,21 +90,16 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
   const isVaultDetailPage = isVaultsRoute && location.pathname.split('/').length === 4
   const isPortfolioRoute = location.pathname.startsWith('/portfolio')
   const shouldEnableVaultList = (isVaultsRoute && !isVaultDetailPage) || isPortfolioRoute
-  const [isVaultListEnabled, setIsVaultListEnabled] = useState(shouldEnableVaultList)
-
-  useEffect(() => {
-    if (shouldEnableVaultList) {
-      setIsVaultListEnabled(true)
-    }
-  }, [shouldEnableVaultList])
+  const [isManuallyEnabled, setIsManuallyEnabled] = useState(false)
+  const isVaultListEnabled = shouldEnableVaultList || isManuallyEnabled
 
   const enableVaultListFetch = useCallback(() => {
-    setIsVaultListEnabled(true)
+    setIsManuallyEnabled(true)
   }, [])
 
   const prices = useFetchYearnPrices()
   //RG this endpoint returns empty objects for retired and migrations
-  const { vaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
+  const { vaults, allVaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
     enabled: isVaultListEnabled
   })
 
@@ -127,6 +124,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
         setZapProvider,
         setIsAutoStakingEnabled,
         vaults,
+        allVaults,
         isLoadingVaultList: isLoading,
         mutateVaultList: refetch,
         enableVaultListFetch,

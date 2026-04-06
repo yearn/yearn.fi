@@ -18,6 +18,26 @@ interface UseEnsoDepositParams {
 }
 
 export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFlowReturn {
+  const routeQueryKey = useMemo(
+    () =>
+      [
+        params.chainId,
+        params.destinationChainId ?? 'same-chain',
+        params.depositToken,
+        params.vaultAddress,
+        params.account ?? 'no-account',
+        params.slippage ?? 'default'
+      ].join(':'),
+    [
+      params.chainId,
+      params.destinationChainId,
+      params.depositToken,
+      params.vaultAddress,
+      params.account,
+      params.slippage
+    ]
+  )
+
   // Get Enso routing flow
   const ensoFlow = useSolverEnso({
     tokenIn: params.depositToken,
@@ -41,14 +61,14 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
 
   useEffect(() => {
     ensoFlow.methods.resetRoute()
-  }, [params.currentAmount])
+  }, [params.currentAmount, routeQueryKey, ensoFlow.methods.resetRoute])
 
-  // Fetch route when debounced amount changes
+  // Re-quote whenever any route-defining input changes, not just the amount.
   useEffect(() => {
     if (params.amount > 0n && params.enabled) {
-      ensoFlow.methods.getRoute()
+      void ensoFlow.methods.getRoute()
     }
-  }, [params.amount, params.enabled])
+  }, [params.amount, params.enabled, routeQueryKey, ensoFlow.methods.getRoute])
 
   // Prepare Enso order for deposit
   const canDeposit = ensoFlow.periphery.route && params.amount > 0n && isEnsoAllowanceSufficient
@@ -67,7 +87,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
       },
       periphery: {
         prepareApproveEnabled: ensoFlow.periphery.prepareApproveEnabled,
-        prepareDepositEnabled: !!ensoFlow.periphery.route && params.amount > 0n,
+        prepareDepositEnabled: Boolean(canDeposit && !ensoFlow.periphery.isLoadingRoute),
         isAllowanceSufficient: isEnsoAllowanceSufficient,
         allowance: ensoFlow.periphery.allowance,
         expectedOut: ensoFlow.periphery.expectedOut.raw,

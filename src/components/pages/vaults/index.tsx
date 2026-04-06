@@ -216,11 +216,10 @@ export default function Index(): ReactElement {
     return !chainsMatch || isUpdatingProductType
   }, [activeChains, listChains, isUpdatingProductType, areArraysEquivalent])
 
-  useEffect(() => {
-    if (isCompareOpen && compareVaultKeys.length < 2) {
-      setIsCompareOpen(false)
-    }
-  }, [compareVaultKeys.length, isCompareOpen])
+  // Render-time state adjustment: close compare when fewer than 2 vaults selected
+  if (isCompareOpen && compareVaultKeys.length < 2) {
+    setIsCompareOpen(false)
+  }
 
   useEffect(() => {
     if (!tourState.isOpen) {
@@ -399,7 +398,7 @@ export default function Index(): ReactElement {
                   shouldCollapseChips={shouldCollapseChips}
                   showStrategies={displayedShowStrategies}
                   isExpanded={Boolean(expandedVaultKeys[key])}
-                  onExpandedChange={(next): void => handleExpandedChange(key, next)}
+                  onExpandedChange={handleExpandedChange}
                 />
               )
             }}

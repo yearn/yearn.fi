@@ -19,7 +19,8 @@ export function usePortfolioPnL() {
     schema: portfolioPnlResponseSchema,
     config: {
       cacheDuration: 5 * 60 * 1000,
-      keepPreviousData: false
+      keepPreviousData: false,
+      timeout: 2 * 60 * 1000 // 2 minutes for large holdings requests
     }
   })
 

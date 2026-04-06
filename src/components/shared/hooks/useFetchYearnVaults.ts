@@ -3,22 +3,25 @@ import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { fetchWithSchema, getFetchQueryKey, useFetch } from '@shared/hooks/useFetch'
 import type { TDict } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { SUPPORTED_NETWORKS, toAddress } from '@shared/utils'
 import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import { kongVaultListSchema } from '@shared/utils/schemas/kongVaultListSchema'
 import type { QueryObserverResult } from '@tanstack/react-query'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 
-const DEFAULT_CHAIN_IDS = [1, 10, 137, 146, 250, 8453, 42161, 747474]
+const DEFAULT_CHAIN_IDS = SUPPORTED_NETWORKS.map((network) => network.id)
+const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/list/vaults`
 
-const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/list/vaults?origin=yearn`
+export const isCatalogYearnVault = (item: TKongVaultListItem): boolean =>
+  item.origin === 'yearn' && item.inclusion?.isYearn !== false
 
 function useFetchYearnVaults(
   chainIDs?: number[] | undefined,
   options?: { enabled?: boolean }
 ): {
   vaults: TDict<TKongVaultListItem>
+  allVaults: TDict<TKongVaultListItem>
   isLoading: boolean
   refetch: () => Promise<QueryObserverResult<TKongVaultList, Error>>
 } {
@@ -37,27 +40,51 @@ function useFetchYearnVaults(
     }
   })
 
-  const vaultsObject = useDeepCompareMemo((): TDict<TKongVaultListItem> => {
+  const filteredByChain = useDeepCompareMemo((): TKongVaultListItem[] => {
     if (!kongVaultList) {
-      return {}
+      return []
     }
 
     const chainIdSet = new Set(resolvedChainIds)
-    return kongVaultList
-      .filter((item) => item.inclusion?.isYearn !== false)
-      .filter((item) => chainIdSet.has(item.chainId))
-      .reduce((acc: TDict<TKongVaultListItem>, item): TDict<TKongVaultListItem> => {
-        acc[toAddress(item.address)] = item
-        return acc
-      }, {})
+    return kongVaultList.filter((item) => chainIdSet.has(item.chainId))
   }, [kongVaultList, resolvedChainIds])
 
-  const patchedVaultsObject = useDeepCompareMemo((): TDict<TKongVaultListItem> => {
-    return patchYBoldVaults(vaultsObject)
-  }, [vaultsObject])
+  const allVaultsObject = useDeepCompareMemo((): TDict<TKongVaultListItem> => {
+    if (!filteredByChain.length) {
+      return {}
+    }
+
+    return filteredByChain.reduce((acc: TDict<TKongVaultListItem>, item): TDict<TKongVaultListItem> => {
+      acc[toAddress(item.address)] = item
+      return acc
+    }, {})
+  }, [filteredByChain])
+
+  const catalogVaultsObject = useDeepCompareMemo((): TDict<TKongVaultListItem> => {
+    if (!filteredByChain.length) {
+      return {}
+    }
+
+    return filteredByChain.reduce((acc: TDict<TKongVaultListItem>, item): TDict<TKongVaultListItem> => {
+      if (!isCatalogYearnVault(item)) {
+        return acc
+      }
+      acc[toAddress(item.address)] = item
+      return acc
+    }, {})
+  }, [filteredByChain])
+
+  const patchedAllVaultsObject = useDeepCompareMemo((): TDict<TKongVaultListItem> => {
+    return patchYBoldVaults(allVaultsObject)
+  }, [allVaultsObject])
+
+  const patchedCatalogVaultsObject = useDeepCompareMemo((): TDict<TKongVaultListItem> => {
+    return patchYBoldVaults(catalogVaultsObject)
+  }, [catalogVaultsObject])
 
   return {
-    vaults: patchedVaultsObject,
+    vaults: patchedCatalogVaultsObject,
+    allVaults: patchedAllVaultsObject,
     isLoading,
     refetch: refetch as unknown as () => Promise<QueryObserverResult<TKongVaultList, Error>>
   }

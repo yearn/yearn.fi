@@ -2354,7 +2354,8 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
         symbol: metadata.token.symbol,
         decimals: metadata.decimals,
         assetDecimals: metadata.token.decimals,
-        tokenAddress: metadata.token.address
+        tokenAddress: metadata.token.address,
+        category: metadata.category
       }
     }
   }
@@ -2475,7 +2476,8 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
       symbol: metadata.token.symbol,
       decimals: metadata.decimals,
       assetDecimals: metadata.token.decimals,
-      tokenAddress: metadata.token.address
+      tokenAddress: metadata.token.address,
+      category: metadata.category
     }
   }
 }

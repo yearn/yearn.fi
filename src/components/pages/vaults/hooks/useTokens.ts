@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { type Address, erc20Abi, getContract } from 'viem'
 import { useConfig } from 'wagmi'
 import { getClient } from 'wagmi/actions'
+import { resolveExecutionChainId } from '@/config/tenderly'
 
 export interface Token {
   address?: Address
@@ -14,11 +15,17 @@ export interface Token {
   balance: TNormalizedBN
 }
 
-async function fetchTokenData(config: any, addresses: Address[], chainId: number, account?: Address): Promise<Token[]> {
-  const client = getClient(config, { chainId })
+async function fetchTokenData(
+  config: any,
+  addresses: Address[],
+  canonicalChainId: number,
+  executionChainId: number,
+  account?: Address
+): Promise<Token[]> {
+  const client = getClient(config, { chainId: executionChainId })
 
   if (!client) {
-    throw new Error(`No client found for chainId ${chainId}`)
+    throw new Error(`No client found for chainId ${canonicalChainId}`)
   }
 
   const results = await Promise.all(
@@ -29,21 +36,25 @@ async function fetchTokenData(config: any, addresses: Address[], chainId: number
           abi: erc20Abi,
           client
         })
-
-        const [decimals, symbol, name, balance] = await Promise.all([
+        const [balanceResult, decimalsResult, symbolResult, nameResult] = await Promise.allSettled([
+          account ? contract.read.balanceOf([account]) : Promise.resolve(0n),
           contract.read.decimals(),
           contract.read.symbol(),
-          contract.read.name(),
-          account ? contract.read.balanceOf([account]) : Promise.resolve(0n)
+          contract.read.name()
         ])
+
+        const balance = balanceResult.status === 'fulfilled' ? balanceResult.value : 0n
+        const decimals = decimalsResult.status === 'fulfilled' ? Number(decimalsResult.value) : 18
+        const symbol = symbolResult.status === 'fulfilled' ? String(symbolResult.value) : '???'
+        const name = nameResult.status === 'fulfilled' ? String(nameResult.value) : 'Unknown'
 
         return {
           address,
-          decimals: Number(decimals),
-          symbol: String(symbol),
-          name: String(name),
-          chainID: chainId,
-          balance: toNormalizedBN(balance, Number(decimals))
+          decimals,
+          symbol,
+          name,
+          chainID: canonicalChainId,
+          balance: toNormalizedBN(balance, decimals)
         }
       } catch (error) {
         console.error(`Failed to fetch token ${address}:`, error)
@@ -52,7 +63,7 @@ async function fetchTokenData(config: any, addresses: Address[], chainId: number
           decimals: 18,
           symbol: '???',
           name: 'Unknown',
-          chainID: chainId,
+          chainID: canonicalChainId,
           balance: toNormalizedBN(0n, 18)
         }
       }
@@ -74,13 +85,14 @@ async function fetchTokenData(config: any, addresses: Address[], chainId: number
  ******************************************************************************/
 export const useTokens = (addresses: (Address | undefined)[], chainId?: number, account?: Address) => {
   const config = useConfig()
+  const executionChainId = resolveExecutionChainId(chainId)
 
   const validAddresses = addresses.filter((addr): addr is Address => !isZeroAddress(addr))
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['tokens', validAddresses.map((a) => a.toLowerCase()).join('.'), chainId, account],
-    queryFn: () => fetchTokenData(config, validAddresses, chainId || 1, account),
-    enabled: validAddresses.length > 0 && !!chainId,
+    queryKey: ['tokens', validAddresses.map((a) => a.toLowerCase()).join('.'), chainId, executionChainId, account],
+    queryFn: () => fetchTokenData(config, validAddresses, chainId || 1, executionChainId || 1, account),
+    enabled: validAddresses.length > 0 && !!chainId && !!executionChainId,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false

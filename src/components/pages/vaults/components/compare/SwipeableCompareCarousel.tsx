@@ -4,7 +4,7 @@ import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { cl } from '@shared/utils'
 import { motion, type PanInfo, useAnimation } from 'framer-motion'
-import { type ReactElement, useCallback, useEffect, useState } from 'react'
+import { type ReactElement, useCallback, useState } from 'react'
 
 type TSwipeableCompareCarouselProps = {
   vaults: TKongVaultInput[]
@@ -20,11 +20,10 @@ export function SwipeableCompareCarousel({ vaults, onRemove }: TSwipeableCompare
 
   const maxIndex = vaults.length - 1
 
-  useEffect(() => {
-    if (currentIndex > maxIndex) {
-      setCurrentIndex(Math.max(0, maxIndex))
-    }
-  }, [currentIndex, maxIndex])
+  // Render-time state adjustment: clamp index when vaults are removed
+  if (currentIndex > maxIndex) {
+    setCurrentIndex(Math.max(0, maxIndex))
+  }
 
   const goToIndex = useCallback(
     (index: number) => {

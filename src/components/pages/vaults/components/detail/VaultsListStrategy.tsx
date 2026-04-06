@@ -1,16 +1,19 @@
 import type { TKongVaultApr, TKongVaultStrategy } from '@pages/vaults/domain/kongVaultSelectors'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { Tooltip } from '@shared/components/Tooltip'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import type { TAddress } from '@shared/types'
-import { cl, formatApyDisplay, formatPercent, toAddress, truncateHex } from '@shared/utils'
+import { cl, toAddress, truncateHex } from '@shared/utils'
 import { formatDuration } from '@shared/utils/format.time'
 import { copyToClipboard } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import Link from '/src/components/Link'
+import { STRATEGY_PANEL_ROW_DESKTOP_LAYOUT } from './strategiesLayout'
+import { formatStrategiesApy, formatStrategiesPercent } from './strategiesPercentFormat'
 
 export function VaultsListStrategy({
   details,
@@ -24,6 +27,7 @@ export function VaultsListStrategy({
   variant = 'v3',
   apr,
   netApr,
+  katRewardsAPR,
   fees,
   totalValueUsd
 }: {
@@ -38,6 +42,7 @@ export function VaultsListStrategy({
   variant: 'v2' | 'v3'
   apr: number | null | undefined
   netApr: number | null | undefined
+  katRewardsAPR?: number | null
   fees: TKongVaultApr['fees']
   totalValueUsd: number
 }): ReactElement {
@@ -45,17 +50,44 @@ export function VaultsListStrategy({
   const isInactive = status === 'not_active'
   const isUnallocated = status === 'unallocated'
   const shouldShowPlaceholders = isInactive || isUnallocated
-  const displayApr = apr ?? netApr ?? 0
+  const hasKatRewards = typeof katRewardsAPR === 'number' && katRewardsAPR > 0
+  const baseApr = apr ?? netApr ?? 0
+  const displayApr = hasKatRewards ? baseApr + (katRewardsAPR ?? 0) : baseApr
 
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
   let apyContent: ReactElement | string = '-'
   if (shouldShowPlaceholders) {
     apyContent = '-'
+  } else if (hasKatRewards) {
+    const tooltipContent = (
+      <div className={'rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+        <div>
+          {'Base APY: '}
+          {formatStrategiesApy(baseApr)}
+        </div>
+        <div className={'mt-1'}>
+          {'KAT Rewards APR: '}
+          {formatStrategiesApy(katRewardsAPR)}
+        </div>
+      </div>
+    )
+    apyContent = (
+      <Tooltip tooltip={tooltipContent} openDelayMs={150} align={'center'}>
+        <span
+          className={
+            'flex items-center gap-1 underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+          }
+        >
+          <span aria-hidden>{'⚔️'}</span>
+          {formatStrategiesApy(displayApr)}
+        </span>
+      </Tooltip>
+    )
   } else {
-    apyContent = formatApyDisplay(displayApr)
+    apyContent = formatStrategiesApy(displayApr)
   }
 
-  const allocationContent = isInactive ? '-' : isUnallocated ? '-' : formatPercent((details?.debtRatio || 0) / 100)
+  const allocationContent = isInactive || isUnallocated ? '-' : formatStrategiesPercent((details?.debtRatio || 0) / 100)
 
   const amountContent = isInactive ? '-' : isUnallocated ? '-' : allocation
 
@@ -64,13 +96,15 @@ export function VaultsListStrategy({
       {/* Collapsible header - always visible */}
       <div
         className={cl(
-          'flex flex-col md:grid md:grid-cols-24 items-start md:items-center w-full gap-3 md:gap-4 py-3 px-4 md:px-8 cursor-pointer',
+          'flex flex-col md:grid md:grid-cols-24 items-start md:items-center w-full gap-3 md:gap-3 py-3 px-4 md:px-8 cursor-pointer',
           'transition-colors duration-200 hover:bg-surface-secondary/50'
         )}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {/* Top row on mobile: Name + Chevron */}
-        <div className={'flex w-full items-center justify-between md:col-span-9 md:w-auto'}>
+        <div
+          className={`flex w-full items-center justify-between ${STRATEGY_PANEL_ROW_DESKTOP_LAYOUT.nameColumnSpanClass} md:w-auto`}
+        >
           <div className={'flex min-w-0 flex-1 items-center gap-2'}>
             <div className={'flex items-center justify-center size-6 shrink-0'}>
               <div className={cl('size-2 rounded-full', totalValueUsd > 0.01 ? 'bg-green-500' : 'bg-text-secondary')} />
@@ -99,9 +133,17 @@ export function VaultsListStrategy({
                 className="rounded-full"
               />
             </div>
-            <strong title={name} className={'block truncate font-bold min-w-0'}>
-              {name}
-            </strong>
+            <div className={'min-w-0 flex-1'}>
+              <strong
+                title={name}
+                className={cl(
+                  'block min-w-0 truncate font-bold',
+                  STRATEGY_PANEL_ROW_DESKTOP_LAYOUT.nameLabelDesktopWrapClass
+                )}
+              >
+                {name}
+              </strong>
+            </div>
           </div>
           <div className={'ml-2 flex md:hidden'}>
             <IconChevron
@@ -112,18 +154,26 @@ export function VaultsListStrategy({
         </div>
 
         {/* Stats row - 3 columns on mobile */}
-        <div className={'grid w-full grid-cols-3 gap-2 md:col-span-14 md:grid-cols-15 md:gap-4'}>
-          <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
+        <div
+          className={`grid w-full grid-cols-3 gap-2 ${STRATEGY_PANEL_ROW_DESKTOP_LAYOUT.valuesColumnSpanClass} ${STRATEGY_PANEL_ROW_DESKTOP_LAYOUT.valuesGridClass}`}
+        >
+          <div
+            className={`flex flex-col items-center md:items-end ${STRATEGY_PANEL_ROW_DESKTOP_LAYOUT.valueColumnSpanClass}`}
+          >
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Allocation %'}</p>
             <p className={'font-semibold'}>{allocationContent}</p>
           </div>
-          <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
+          <div
+            className={`flex flex-col items-center md:items-end ${STRATEGY_PANEL_ROW_DESKTOP_LAYOUT.valueColumnSpanClass}`}
+          >
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Amount'}</p>
             <p className={'font-semibold truncate'} title={allocation}>
               {amountContent}
             </p>
           </div>
-          <div className={'flex flex-col items-center md:items-end md:col-span-5'}>
+          <div
+            className={`flex flex-col items-center md:items-end ${STRATEGY_PANEL_ROW_DESKTOP_LAYOUT.valueColumnSpanClass}`}
+          >
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'APY'}</p>
             <p className={'font-semibold'}>{apyContent}</p>
           </div>
@@ -144,11 +194,11 @@ export function VaultsListStrategy({
           <div className={'flex flex-col gap-1 text-sm pt-2'}>
             <div className={'flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3'}>
               <span className={'w-full text-text-secondary md:w-36'}>Management Fee:</span>
-              <span>{formatPercent((fees?.management || 0) * 100, 0)}</span>
+              <span>{formatStrategiesPercent((fees?.management || 0) * 100)}</span>
             </div>
             <div className={'flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3'}>
               <span className={'w-full text-text-secondary md:w-36'}>Performance Fee:</span>
-              <span>{formatPercent((details?.performanceFee || 0) / 100, 0)}</span>
+              <span>{formatStrategiesPercent((details?.performanceFee || 0) / 100)}</span>
             </div>
             <div className={'flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3'}>
               <span className={'w-full text-text-secondary md:w-36'}>Last Report:</span>

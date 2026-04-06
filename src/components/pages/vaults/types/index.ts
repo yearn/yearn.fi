@@ -1,6 +1,6 @@
+import type { AppUseSimulateContractReturnType } from '@shared/hooks/useAppWagmi'
 import type { TAddress, TNormalizedBN } from '@shared/types'
 import type { Hex } from 'viem'
-import type { UseSimulateContractReturnType } from 'wagmi'
 
 export type T<Actions, Periphery> = {
   actions: Actions
@@ -9,8 +9,8 @@ export type T<Actions, Periphery> = {
 
 export type UseStakeReturn = T<
   {
-    prepareApprove: UseSimulateContractReturnType
-    prepareStake: UseSimulateContractReturnType
+    prepareApprove: AppUseSimulateContractReturnType
+    prepareStake: AppUseSimulateContractReturnType
   },
   {
     prepareApproveEnabled: boolean
@@ -22,7 +22,7 @@ export type UseStakeReturn = T<
 
 export type UseUnstakeReturn = T<
   {
-    prepareUnstake: UseSimulateContractReturnType
+    prepareUnstake: AppUseSimulateContractReturnType
   },
   {
     prepareUnstakeEnabled: boolean
@@ -32,8 +32,8 @@ export type UseUnstakeReturn = T<
 
 export type UseDepositReturn = T<
   {
-    prepareApprove: UseSimulateContractReturnType
-    prepareDeposit: UseSimulateContractReturnType
+    prepareApprove: AppUseSimulateContractReturnType
+    prepareDeposit: AppUseSimulateContractReturnType
   },
   {
     prepareApproveEnabled: boolean
@@ -45,7 +45,7 @@ export type UseDepositReturn = T<
 
 export type UseWithdrawReturn = T<
   {
-    prepareWithdraw: UseSimulateContractReturnType
+    prepareWithdraw: AppUseSimulateContractReturnType
   },
   {
     prepareWithdrawEnabled: boolean
@@ -57,8 +57,8 @@ export type UseWithdrawReturn = T<
 // Unified interface for WidgetDepositFinal flows (direct deposit, direct stake, Enso)
 export type UseWidgetDepositFlowReturn = T<
   {
-    prepareApprove: UseSimulateContractReturnType
-    prepareDeposit: UseSimulateContractReturnType
+    prepareApprove: AppUseSimulateContractReturnType
+    prepareDeposit: AppUseSimulateContractReturnType
   },
   {
     prepareApproveEnabled: boolean
@@ -83,8 +83,8 @@ export type UseWidgetDepositFlowReturn = T<
 // Unified interface for WidgetWithdrawFinal flows (direct withdraw, direct unstake, Enso)
 export type UseWidgetWithdrawFlowReturn = T<
   {
-    prepareWithdraw: UseSimulateContractReturnType
-    prepareApprove?: UseSimulateContractReturnType // Optional: only needed for ENSO withdrawals
+    prepareWithdraw: AppUseSimulateContractReturnType
+    prepareApprove?: AppUseSimulateContractReturnType // Optional: only needed for ENSO withdrawals
   },
   {
     prepareWithdrawEnabled: boolean
@@ -118,9 +118,9 @@ export type MigrateRouteType = 'permit' | 'approve'
 
 export type UseMigrateFlowReturn = T<
   {
-    prepareApprove: UseSimulateContractReturnType
-    prepareMigrate: UseSimulateContractReturnType
-    prepareMulticall: UseSimulateContractReturnType // For permit flow: multicall(selfPermit + migrate)
+    prepareApprove: AppUseSimulateContractReturnType
+    prepareMigrate: AppUseSimulateContractReturnType
+    prepareMulticall: AppUseSimulateContractReturnType // For permit flow: multicall(selfPermit + migrate)
   },
   {
     isAllowanceSufficient: boolean

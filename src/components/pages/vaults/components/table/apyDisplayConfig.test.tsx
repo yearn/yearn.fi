@@ -33,11 +33,10 @@ const KATANA_APY_DATA = {
   katanaExtras: {
     fixedRateKatanaRewards: 4,
     katanaAppRewardsAPR: 3,
-    katanaBonusAPY: 2,
     steerPointsPerDollar: 0
   },
-  katanaThirtyDayApr: 12,
-  katanaEstApr: 12
+  katanaThirtyDayApr: 7.1,
+  katanaEstApr: 7
 } as TVaultApyData
 
 describe('resolveHistoricalApyDisplayConfig', () => {

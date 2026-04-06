@@ -1,6 +1,5 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
-import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import type { TAddress } from '@shared/types/address'
 import { fetchClusterName, getClusterImageUrl, isAddress } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
@@ -10,6 +9,7 @@ import type { ReactElement } from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { mainnet } from 'viem/chains'
 import { useAccount, useConnect, useDisconnect, useEnsName } from 'wagmi'
+import { resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/tenderly'
 
 type TWeb3Context = {
   address: TAddress | undefined
@@ -54,13 +54,12 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   const { openChainModal } = useChainModal()
   const trackEvent = usePlausible()
   const [clusters, setClusters] = useState<{ name: string; avatar: string } | undefined>(undefined)
-  const [isUserConnecting, setIsUserConnecting] = useState(false)
   const [isFetchingClusters, setIsFetchingClusters] = useState(false)
   const wasConnectedRef = useRef(false)
   const previousChainIDRef = useRef<number | undefined>(undefined)
   const hasUserRequestedConnectionRef = useRef(false)
 
-  const chainID = chain?.id ?? 1
+  const chainID = resolveConnectedCanonicalChainId(chain?.id) ?? (isConnected ? 0 : 1)
 
   useEffect(() => {
     if (!wasConnectedRef.current && isConnected && hasUserRequestedConnectionRef.current) {
@@ -107,7 +106,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
         hasUserRequestedConnectionRef.current = true
         await connectAsync({
           connector: ledgerConnector,
-          chainId: chainID
+          chainId: resolveExecutionChainId(chainID) ?? chainID
         })
         return
       }
@@ -133,40 +132,85 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     openConnectModal
   ])
 
-  useAsyncTrigger(async (): Promise<void> => {
+  useEffect(() => {
     if (!isConnected || !isAddress(address)) {
       setClusters(undefined)
       setIsFetchingClusters(false)
-      return
+      return undefined
     }
-    setIsFetchingClusters(true)
-    try {
-      const clustersTag = await fetchClusterName(address)
-      if (clustersTag) {
-        const [clustersName] = clustersTag.split('/')
-        const profileImage = getClusterImageUrl(clustersName)
-        setClusters({ name: `${clustersTag}`, avatar: profileImage })
-        return
-      }
+
+    if (ensName) {
       setClusters(undefined)
-    } catch (error) {
-      console.error(error)
-      setClusters(undefined)
-    } finally {
       setIsFetchingClusters(false)
+      return undefined
     }
-  }, [address, isConnected])
 
-  useEffect(() => {
-    if (isConnecting) {
-      if (hasUserRequestedConnectionRef.current) {
-        setIsUserConnecting(true)
+    let isCancelled = false
+    let timeoutId: number | undefined
+    let idleId: number | undefined
+    const supportsIdleCallback =
+      typeof window !== 'undefined' && 'requestIdleCallback' in window && 'cancelIdleCallback' in window
+
+    const run = async (): Promise<void> => {
+      setIsFetchingClusters(true)
+      try {
+        const clustersTag = await fetchClusterName(address)
+        if (isCancelled) {
+          return
+        }
+
+        if (clustersTag) {
+          const [clustersName] = clustersTag.split('/')
+          const profileImage = getClusterImageUrl(clustersName)
+          setClusters({ name: `${clustersTag}`, avatar: profileImage })
+          return
+        }
+
+        setClusters(undefined)
+      } catch (error) {
+        console.error(error)
+        if (!isCancelled) {
+          setClusters(undefined)
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsFetchingClusters(false)
+        }
       }
-      return
     }
 
-    setIsUserConnecting(false)
-  }, [isConnecting])
+    if (supportsIdleCallback) {
+      const idleWindow = window as Window & {
+        requestIdleCallback: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number
+        cancelIdleCallback: (handle: number) => void
+      }
+      idleId = idleWindow.requestIdleCallback(
+        () => {
+          void run()
+        },
+        { timeout: 2000 }
+      )
+    } else {
+      timeoutId = window.setTimeout(() => {
+        void run()
+      }, 400)
+    }
+
+    return () => {
+      isCancelled = true
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId)
+      }
+      if (idleId !== undefined && supportsIdleCallback) {
+        const idleWindow = window as Window & {
+          cancelIdleCallback: (handle: number) => void
+        }
+        idleWindow.cancelIdleCallback(idleId)
+      }
+    }
+  }, [address, ensName, isConnected])
+
+  const isUserConnecting = isConnecting && hasUserRequestedConnectionRef.current
 
   const isIdentityLoading = Boolean((isEnsLoading && !!address) || isFetchingClusters)
   const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false

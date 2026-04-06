@@ -53,7 +53,9 @@ const BASE_VAULT: TKongVault = {
   riskLevel: 1,
   staking: {
     address: null,
-    available: false
+    available: false,
+    source: '',
+    rewards: []
   }
 }
 
@@ -66,7 +68,6 @@ const withComponents = (vault: TKongVault): TKongVault => ({
       apr: vault.performance?.estimated?.apr ?? 0,
       type: vault.performance?.estimated?.type ?? 'katana-estimated-apr',
       components: {
-        katanaBonusAPY: 0.068,
         katanaAppRewardsAPR: 0.0916,
         steerPointsPerDollar: 0.1883,
         fixedRateKatanaRewards: 0.35
@@ -85,7 +86,6 @@ const DETAIL_VAULT_WITH_COMPONENTS = {
     extra: {
       stakingRewardsAPR: 0,
       gammaRewardAPR: 0,
-      katanaBonusAPY: 0.068,
       katanaAppRewardsAPR: 0.0916,
       steerPointsPerDollar: 0.1883,
       fixedRateKatanaRewards: 0.35
@@ -122,12 +122,11 @@ describe('vaultApy Katana calculations', () => {
     expect(katanaData).toEqual({
       katanaAppRewardsAPR: 0.0916,
       fixedRateKatanaRewards: 0.35,
-      katanaBonusAPY: 0.068,
       steerPointsPerDollar: 0.1883
     })
   })
 
-  it('calculates Katana estimated APY from list data using available Kong components', () => {
+  it('calculates Katana estimated APY from list data using native plus fixed and app rewards', () => {
     const apy = calculateVaultEstimatedAPY(withComponents(BASE_VAULT))
     expect(apy).toBeCloseTo(0.4816, 6)
   })

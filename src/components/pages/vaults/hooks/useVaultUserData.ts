@@ -1,9 +1,12 @@
 import { VAULT_V3_ABI } from '@shared/contracts/abi/vaultV3.abi'
+import { toNormalizedBN } from '@shared/utils'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import { type Address, getContract } from 'viem'
 import { useConfig } from 'wagmi'
-import { getClient } from 'wagmi/actions'
+import { getClient, readContract } from 'wagmi/actions'
+import { resolveExecutionChainId } from '@/config/tenderly'
+import { getStakingRedeemableShares, getStakingWithdrawableAssets } from './actions/stakingAdapter'
 import { type Token, useTokens } from './useTokens'
 
 export interface VaultUserData {
@@ -19,6 +22,8 @@ export interface VaultUserData {
   availableToDeposit: bigint
   depositedShares: bigint
   depositedValue: bigint
+  stakingWithdrawableAssets: bigint
+  stakingRedeemableShares: bigint
 
   // State
   isLoading: boolean
@@ -29,6 +34,7 @@ interface UseVaultUserDataParams {
   vaultAddress: Address
   assetAddress: Address
   stakingAddress?: Address
+  stakingSource?: string
   chainId: number
   account?: Address
 }
@@ -37,10 +43,12 @@ export const useVaultUserData = ({
   vaultAddress,
   assetAddress,
   stakingAddress,
+  stakingSource,
   chainId,
   account
 }: UseVaultUserDataParams): VaultUserData => {
   const config = useConfig()
+  const executionChainId = resolveExecutionChainId(chainId)
 
   // Reuse useTokens for token data + balances
   const priorityAddresses = useMemo(() => {
@@ -57,9 +65,12 @@ export const useVaultUserData = ({
     isLoading: isLoadingPPS,
     refetch: refetchPPS
   } = useQuery({
-    queryKey: ['vaultPricePerShare', vaultAddress?.toLowerCase(), chainId],
+    queryKey: ['vaultPricePerShare', vaultAddress?.toLowerCase(), chainId, executionChainId],
     queryFn: async () => {
-      const client = getClient(config, { chainId })
+      if (!executionChainId) {
+        throw new Error(`No execution chain found for chainId ${chainId}`)
+      }
+      const client = getClient(config, { chainId: executionChainId })
       if (!client) {
         throw new Error(`No client found for chainId ${chainId}`)
       }
@@ -70,7 +81,93 @@ export const useVaultUserData = ({
       })
       return contract.read.pricePerShare()
     },
-    enabled: !!vaultAddress && !!chainId,
+    enabled: !!vaultAddress && !!chainId && !!executionChainId,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false
+  })
+
+  // Derive tokens
+  const [assetToken, vaultToken, rawStakingToken] = tokens
+
+  const stakingToken = useMemo(() => {
+    if (!rawStakingToken) {
+      return undefined
+    }
+
+    const metadataMissing = rawStakingToken.symbol === '???' || rawStakingToken.name === 'Unknown'
+    if (!metadataMissing) {
+      return rawStakingToken
+    }
+
+    const fallbackDecimals = vaultToken?.decimals ?? rawStakingToken.decimals ?? 18
+    return {
+      ...rawStakingToken,
+      decimals: fallbackDecimals,
+      symbol: vaultToken?.symbol ?? rawStakingToken.symbol,
+      name: vaultToken?.name ?? rawStakingToken.name,
+      balance: toNormalizedBN(rawStakingToken.balance.raw, fallbackDecimals)
+    }
+  }, [rawStakingToken, vaultToken?.decimals, vaultToken?.symbol, vaultToken?.name])
+
+  const stakingShareBalance = stakingToken?.balance.raw ?? 0n
+
+  const {
+    data: stakingCapacity,
+    isLoading: isLoadingStakingWithdrawableAssets,
+    refetch: refetchStakingWithdrawableAssets
+  } = useQuery({
+    queryKey: [
+      'stakingWithdrawableAssets',
+      stakingAddress?.toLowerCase(),
+      account?.toLowerCase(),
+      chainId,
+      executionChainId,
+      stakingSource || '',
+      stakingShareBalance.toString()
+    ],
+    queryFn: async () => {
+      if (!stakingAddress || !account) {
+        return {
+          withdrawableAssets: stakingShareBalance,
+          redeemableShares: stakingShareBalance
+        }
+      }
+
+      const read = (request: {
+        address: Address
+        abi: readonly unknown[]
+        functionName: string
+        args?: readonly unknown[]
+      }) =>
+        readContract(config, {
+          chainId: executionChainId!,
+          address: request.address,
+          abi: request.abi as any,
+          functionName: request.functionName as any,
+          args: request.args as any
+        })
+
+      const [withdrawableAssets, redeemableShares] = await Promise.all([
+        getStakingWithdrawableAssets({
+          read,
+          stakingAddress,
+          account,
+          stakingSource,
+          stakingShareBalance
+        }),
+        getStakingRedeemableShares({
+          read,
+          stakingAddress,
+          account,
+          stakingSource,
+          stakingShareBalance
+        })
+      ])
+
+      return { withdrawableAssets, redeemableShares }
+    },
+    enabled: !!stakingAddress && !!account && !!chainId && !!executionChainId,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false
@@ -80,16 +177,16 @@ export const useVaultUserData = ({
   const refetch = useCallback(() => {
     refetchTokens()
     refetchPPS()
-  }, [refetchTokens, refetchPPS])
+    refetchStakingWithdrawableAssets()
+  }, [refetchTokens, refetchPPS, refetchStakingWithdrawableAssets])
 
-  // Derive tokens
-  const [assetToken, vaultToken, stakingToken] = tokens
+  const effectiveStakingWithdrawableAssets = stakingCapacity?.withdrawableAssets ?? stakingShareBalance
+  const effectiveStakingRedeemableShares = stakingCapacity?.redeemableShares ?? stakingShareBalance
 
   const depositedShares = useMemo(() => {
     const vaultBalance = vaultToken?.balance.raw ?? 0n
-    const stakingBalance = stakingToken?.balance.raw ?? 0n
-    return vaultBalance + stakingBalance
-  }, [vaultToken, stakingToken])
+    return vaultBalance + effectiveStakingWithdrawableAssets
+  }, [vaultToken, effectiveStakingWithdrawableAssets])
 
   const depositedValue = useMemo(() => {
     if (!pricePerShare || depositedShares === 0n) return 0n
@@ -105,7 +202,9 @@ export const useVaultUserData = ({
     availableToDeposit: assetToken?.balance.raw ?? 0n,
     depositedShares,
     depositedValue,
-    isLoading: isLoadingTokens || isLoadingPPS,
+    stakingWithdrawableAssets: effectiveStakingWithdrawableAssets,
+    stakingRedeemableShares: effectiveStakingRedeemableShares,
+    isLoading: isLoadingTokens || isLoadingPPS || isLoadingStakingWithdrawableAssets,
     refetch
   }
 }
