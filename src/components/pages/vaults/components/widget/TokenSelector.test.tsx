@@ -115,6 +115,49 @@ describe('TokenSelector', () => {
     expect(html).not.toContain('alt="Optimism"')
   })
 
+  it('renders custom header chain options when provided', () => {
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        747474: {
+          [BASE_TOKEN_ADDRESS]: buildToken({
+            chainID: 747474,
+            value: 100
+          })
+        }
+      },
+      getToken: () =>
+        buildToken({
+          chainID: 747474,
+          value: 100
+        })
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector
+        value={BASE_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={747474}
+        allowedChainIds={[747474]}
+        headerChainOptions={[
+          {
+            chainId: 747474,
+            isActive: true,
+            onClick: () => undefined
+          },
+          {
+            chainId: 1,
+            isActive: false,
+            onClick: () => undefined
+          }
+        ]}
+      />
+    )
+
+    expect(html).toContain('alt="Katana"')
+    expect(html).toContain('alt="Ethereum"')
+  })
+
   it('excludes Katana when allowedChainIds omit it', () => {
     mockUseWallet.mockReturnValue({
       isLoading: false,

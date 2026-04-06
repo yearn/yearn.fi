@@ -38,6 +38,13 @@ export function getDepositApprovalSpender({
     }
   }
 
+  if (routeType === 'KATANA_NATIVE_BRIDGE') {
+    return {
+      spenderAddress: toAddress(routerAddress || destinationToken),
+      spenderName: 'Katana Vault Bridge'
+    }
+  }
+
   if (routeType === 'DIRECT_DEPOSIT') {
     return {
       spenderAddress: toAddress(routerAddress || destinationToken),

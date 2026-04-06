@@ -2,12 +2,14 @@ import { getRedeemPreviewCall } from '@pages/vaults/hooks/actions/stakingAdapter
 import { useDirectDeposit } from '@pages/vaults/hooks/actions/useDirectDeposit'
 import { useDirectStake } from '@pages/vaults/hooks/actions/useDirectStake'
 import { useEnsoDeposit } from '@pages/vaults/hooks/actions/useEnsoDeposit'
+import { useKatanaNativeBridge } from '@pages/vaults/hooks/actions/useKatanaNativeBridge'
 import { useYvUsdLockedZapDeposit } from '@pages/vaults/hooks/actions/useYvUsdLockedZapDeposit'
 import { YVUSD_LOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
 import { type Address, isAddressEqual } from 'viem'
 import { useReadContract } from 'wagmi'
+import { KATANA_VAULT_BRIDGE_DESTINATION_NETWORK_ID } from '../katanaBridge'
 import type { DepositRouteType } from './types'
 import { useDepositRoute } from './useDepositRoute'
 import { resolveValuationShareCount } from './valuation'
@@ -34,6 +36,9 @@ interface UseDepositFlowProps {
   // Settings
   slippage: number
   stakingSource?: string
+  allowKatanaNativeBridge?: boolean
+  katanaBridgeContractAddress?: Address
+  katanaBridgeSourceTokenAddress?: Address
 }
 
 export interface DepositFlowResult {
@@ -75,7 +80,10 @@ export const useDepositFlow = ({
   inputDecimals,
   vaultDecimals,
   slippage,
-  stakingSource
+  stakingSource,
+  allowKatanaNativeBridge,
+  katanaBridgeContractAddress,
+  katanaBridgeSourceTokenAddress
 }: UseDepositFlowProps): DepositFlowResult => {
   // Determine routing type
   const routeType = useDepositRoute({
@@ -86,7 +94,9 @@ export const useDepositFlow = ({
     directDepositTokenAddress,
     destinationToken,
     vaultAddress,
-    stakingAddress
+    stakingAddress,
+    allowKatanaNativeBridge,
+    katanaBridgeSourceTokenAddress
   })
 
   const isYvUsdLockedZapDeposit = useMemo(
@@ -143,14 +153,33 @@ export const useDepositFlow = ({
     slippage: slippage * 100
   })
 
+  const katanaNativeBridgeFlow = useKatanaNativeBridge({
+    bridgeContractAddress: katanaBridgeContractAddress || destinationToken,
+    depositToken,
+    amount,
+    account,
+    chainId: sourceChainId,
+    destinationNetworkId: KATANA_VAULT_BRIDGE_DESTINATION_NETWORK_ID,
+    enabled: routeType === 'KATANA_NATIVE_BRIDGE' && !!katanaBridgeContractAddress && amount > 0n && currentAmount > 0n
+  })
+
   // Select active flow based on routing type
   const activeFlow = useMemo(() => {
     if (routeType === 'DIRECT_DEPOSIT') {
       return isYvUsdLockedZapDeposit ? yvUsdLockedZapDeposit : directDeposit
     }
     if (routeType === 'DIRECT_STAKE') return directStake
+    if (routeType === 'KATANA_NATIVE_BRIDGE') return katanaNativeBridgeFlow
     return ensoFlow
-  }, [routeType, isYvUsdLockedZapDeposit, yvUsdLockedZapDeposit, directDeposit, directStake, ensoFlow])
+  }, [
+    routeType,
+    isYvUsdLockedZapDeposit,
+    yvUsdLockedZapDeposit,
+    directDeposit,
+    directStake,
+    katanaNativeBridgeFlow,
+    ensoFlow
+  ])
 
   const shouldNormalizeExpectedOut =
     !!stakingAddress && isAddressEqual(destinationToken, stakingAddress) && activeFlow.periphery.expectedOut > 0n

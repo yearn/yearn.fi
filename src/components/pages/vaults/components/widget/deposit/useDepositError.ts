@@ -54,6 +54,10 @@ export const useDepositError = ({
       return 'Unable to find route'
     }
 
+    if (routeType === 'KATANA_NATIVE_BRIDGE' && flowError && debouncedAmount > 0n && !isDebouncing) {
+      return typeof flowError === 'string' ? flowError : 'Unable to prepare bridge'
+    }
+
     return null
   }, [
     amount,

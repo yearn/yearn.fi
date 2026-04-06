@@ -48,6 +48,15 @@ interface TokenSelectorProps {
   stakingAddress?: `0x${string}`
   allowHiddenVaultTokenSelection?: boolean
   mode?: TTokenSelectorMode
+  headerChainOptions?: {
+    chainId: number
+    isActive: boolean
+    onClick: () => void
+  }[]
+  headerAction?: {
+    label: string
+    onClick: () => void
+  }
 }
 
 const TokenTypeChip: FC<{ type: TTokenType }> = ({ type }) => {
@@ -131,7 +140,9 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   vaultAddress,
   stakingAddress,
   allowHiddenVaultTokenSelection,
-  mode = 'default'
+  mode = 'default',
+  headerChainOptions,
+  headerAction
 }) => {
   const [searchText, setSearchText] = useState('')
   const [selectedChainId, setSelectedChainId] = useState(chainId)
@@ -418,7 +429,36 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     >
       {/* Header with chain selector and close button */}
       <div className="flex items-center justify-between p-4 border-b border-border">
-        {shouldShowChainSelector ? (
+        {headerChainOptions && headerChainOptions.length > 0 ? (
+          <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
+            {headerChainOptions.map((option) => {
+              const optionChain = TOKEN_SELECTOR_AVAILABLE_CHAINS.find((chain) => chain.id === option.chainId)
+              if (!optionChain) {
+                return null
+              }
+
+              return (
+                <button
+                  key={option.chainId}
+                  onClick={option.onClick}
+                  className={cl(
+                    'size-9 flex items-center justify-center rounded-md transition-all',
+                    option.isActive ? 'bg-surface shadow-sm' : 'bg-transparent hover:bg-surface/50'
+                  )}
+                  type="button"
+                >
+                  <ImageWithFallback
+                    src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${option.chainId}/logo.svg`}
+                    alt={optionChain.name}
+                    width={20}
+                    height={20}
+                    className="rounded-full"
+                  />
+                </button>
+              )
+            })}
+          </div>
+        ) : shouldShowChainSelector ? (
           <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
             {availableChains.map((chain) => (
               <button
@@ -440,6 +480,14 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
               </button>
             ))}
           </div>
+        ) : headerAction ? (
+          <button
+            type="button"
+            onClick={headerAction.onClick}
+            className="rounded-lg bg-surface-secondary px-3 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface"
+          >
+            {headerAction.label}
+          </button>
         ) : (
           <div />
         )}

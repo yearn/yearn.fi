@@ -97,6 +97,7 @@ export const useDepositNotifications = ({
 
   const depositNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
     if (!inputToken || !vault || !account || depositAmount === 0n) return undefined
+    if (routeType === 'KATANA_NATIVE_BRIDGE') return undefined
 
     let notificationType: 'deposit' | 'deposit and stake' | 'zap' | 'crosschain zap' | 'stake' = 'deposit'
     if (routeType === 'ENSO') {

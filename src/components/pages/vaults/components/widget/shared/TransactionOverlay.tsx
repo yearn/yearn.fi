@@ -43,6 +43,10 @@ export type TransactionStep = {
   confirmMessage: string
   successTitle: string
   successMessage: string
+  successLink?: {
+    href: string
+    label: string
+  }
   completesFlow?: boolean
   showConfetti?: boolean
   notification?: TCreateNotificationParams
@@ -890,6 +894,16 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
               </div>
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{successStep?.successTitle}</h3>
               <p className="text-sm text-text-secondary whitespace-pre-line mb-6">{successStep?.successMessage}</p>
+              {successStep?.successLink ? (
+                <a
+                  href={successStep.successLink.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mb-6 text-sm font-semibold text-text-primary underline"
+                >
+                  {successStep.successLink.label}
+                </a>
+              ) : null}
               <Button
                 onClick={handleNextStep}
                 variant={isSuccessButtonBusy ? 'busy' : 'filled'}
