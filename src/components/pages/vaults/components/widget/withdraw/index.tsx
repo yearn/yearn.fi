@@ -17,7 +17,7 @@ import { TransactionOverlay, type TransactionStep } from '../shared/TransactionO
 import { usePriceImpactAcceptance } from '../shared/usePriceImpactAcceptance'
 import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
 import { useWidgetContext } from '../shared/useWidgetContext'
-import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
+import { formatWidgetAllowance, formatWidgetPreciseValue, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
 import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
 import { getPriorityTokens } from './constants'
@@ -513,9 +513,13 @@ export function WidgetWithdraw({
 
     const getExpectedAmount = () => {
       if (isUnstake) {
-        return effectiveRequiredShares > 0n ? formatWidgetValue(effectiveRequiredShares, vault?.decimals ?? 18) : '0'
+        return effectiveRequiredShares > 0n
+          ? formatWidgetPreciseValue(effectiveRequiredShares, vault?.decimals ?? 18)
+          : '0'
       }
-      return effectiveExpectedOut > 0n ? formatWidgetValue(effectiveExpectedOut, outputToken?.decimals ?? 18) : '0'
+      return effectiveExpectedOut > 0n
+        ? formatWidgetPreciseValue(effectiveExpectedOut, outputToken?.decimals ?? 18)
+        : '0'
     }
 
     return {
