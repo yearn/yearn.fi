@@ -1,5 +1,5 @@
+import { useBlockNumber, usePublicClient } from '@shared/hooks/useAppWagmi'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useBlockNumber, usePublicClient } from 'wagmi'
 
 type TChainTimestampState = {
   blockTimestamp: number

@@ -17,6 +17,7 @@ import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
+import { useReadContract } from '@shared/hooks/useAppWagmi'
 import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { IconCross } from '@shared/icons/IconCross'
@@ -35,7 +36,6 @@ import {
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useReadContract } from 'wagmi'
 import { formatDuration, parseCooldownStatus, resolveCooldownWindowState } from './yvUSD/cooldownUtils'
 
 type WalletPanelProps = {

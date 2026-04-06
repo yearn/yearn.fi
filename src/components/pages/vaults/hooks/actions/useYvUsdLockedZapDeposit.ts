@@ -1,11 +1,10 @@
 import type { UseWidgetDepositFlowReturn } from '@pages/vaults/types'
 import { YVUSD_LOCKED_ZAP_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { yvUsdLockedZapAbi } from '@shared/contracts/abi/yvUsdLockedZap.abi'
+import { type AppUseSimulateContractReturnType, useReadContract, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { toAddress } from '@shared/utils'
 import { getApproveAbi } from '@shared/utils/approve'
 import type { Address } from 'viem'
-import type { UseSimulateContractReturnType } from 'wagmi'
-import { useReadContract, useSimulateContract } from 'wagmi'
 import { useTokenAllowance } from '../useTokenAllowance'
 
 interface UseYvUsdLockedZapDepositParams {
@@ -39,7 +38,7 @@ export function useYvUsdLockedZapDeposit(params: UseYvUsdLockedZapDepositParams)
     query: { enabled: params.enabled && isValidInput }
   })
 
-  const prepareApprove: UseSimulateContractReturnType = useSimulateContract({
+  const prepareApprove: AppUseSimulateContractReturnType = useSimulateContract({
     abi: getApproveAbi(params.depositToken),
     functionName: 'approve',
     address: params.depositToken,
@@ -48,7 +47,7 @@ export function useYvUsdLockedZapDeposit(params: UseYvUsdLockedZapDepositParams)
     query: { enabled: prepareApproveEnabled }
   })
 
-  const prepareDeposit: UseSimulateContractReturnType = useSimulateContract({
+  const prepareDeposit: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ZAP_ADDRESS,
     abi: yvUsdLockedZapAbi,
     functionName: 'zapIn',

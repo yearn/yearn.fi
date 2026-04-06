@@ -81,6 +81,21 @@ describe('partitionTokensByBalanceSource', () => {
     expect(multicallTokens.map(tokenKey)).toEqual([`250:${getAddress(STAKING_B)}`])
   })
 
+  it('routes Tenderly-backed canonical chains to multicall when Enso is disabled for them', () => {
+    const tokens: TUseBalancesTokens[] = [
+      {
+        address: VAULT_B,
+        chainID: 1,
+        for: 'vault',
+        isVaultToken: true
+      }
+    ]
+
+    const { ensoTokens, multicallTokens } = partitionTokensByBalanceSource(tokens, [1])
+    expect(ensoTokens).toHaveLength(0)
+    expect(multicallTokens.map(tokenKey)).toEqual([`1:${getAddress(VAULT_B)}`])
+  })
+
   it('dedupes duplicate entries and never routes same token to both sources', () => {
     const tokens: TUseBalancesTokens[] = [
       { address: VAULT_A, chainID: 1, for: 'vault' },

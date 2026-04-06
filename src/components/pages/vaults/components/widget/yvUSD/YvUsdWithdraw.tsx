@@ -14,14 +14,14 @@ import { Button } from '@shared/components/Button'
 import { useWallet } from '@shared/contexts/useWallet'
 import { erc4626Abi } from '@shared/contracts/abi/4626.abi'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
+import { type AppUseSimulateContractReturnType, useReadContract, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { formatTAmount, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
-import type { UseSimulateContractReturnType } from 'wagmi'
-import { useAccount, useReadContract, useSimulateContract } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { WidgetWithdraw } from '../withdraw'
@@ -486,7 +486,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     windowRemainingSeconds
   )
 
-  const prepareStartCooldown: UseSimulateContractReturnType = useSimulateContract({
+  const prepareStartCooldown: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: yvUsdLockedVaultAbi,
     functionName: 'startCooldown',
@@ -497,7 +497,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
       enabled: !!account && isLockedVariant && needsCooldownStart && cooldownSharesToStart > 0n
     }
   })
-  const prepareCancelCooldown: UseSimulateContractReturnType = useSimulateContract({
+  const prepareCancelCooldown: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: yvUsdLockedVaultAbi,
     functionName: 'cancelCooldown',
@@ -821,7 +821,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const lockedWithdrawArgs = lockedWithdrawExecutionPlan[0]?.args
   const unlockedWithdrawArgs = lockedWithdrawExecutionPlan[1]?.args
 
-  const prepareLockedRedeemNow: UseSimulateContractReturnType = useSimulateContract({
+  const prepareLockedRedeemNow: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: erc4626Abi,
     functionName: 'redeem',
@@ -838,7 +838,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
         executionLockedWithdrawShares > 0n
     }
   })
-  const prepareLockedWithdrawNow: UseSimulateContractReturnType = useSimulateContract({
+  const prepareLockedWithdrawNow: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
     abi: erc4626Abi,
     functionName: 'withdraw',
@@ -858,7 +858,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
   const prepareLockedWithdrawStep =
     executionLockedWithdrawMethod === 'redeem' ? prepareLockedRedeemNow : prepareLockedWithdrawNow
 
-  const prepareUnlockedWithdraw: UseSimulateContractReturnType = useSimulateContract({
+  const prepareUnlockedWithdraw: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_UNLOCKED_ADDRESS,
     abi: erc4626Abi,
     functionName: 'withdraw',
@@ -938,27 +938,26 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
     [chainId, refetchLockedWithdrawState, refreshWalletBalances]
   )
 
+  const handleLockedWithdrawBeforeSuccess = useCallback(
+    async (_label: string): Promise<void> => {
+      refetchLockedWithdrawState()
+      await refreshWalletBalances([
+        { address: YVUSD_LOCKED_ADDRESS, chainID: chainId },
+        { address: YVUSD_UNLOCKED_ADDRESS, chainID: chainId },
+        { address: unlockedAssetAddress, chainID: chainId }
+      ])
+    },
+    [chainId, refetchLockedWithdrawState, refreshWalletBalances, unlockedAssetAddress]
+  )
+
   const handleLockedWithdrawSuccess = useCallback((): void => {
-    refetchLockedWithdrawState()
-    refreshWalletBalances([
-      { address: YVUSD_LOCKED_ADDRESS, chainID: chainId },
-      { address: YVUSD_UNLOCKED_ADDRESS, chainID: chainId },
-      { address: unlockedAssetAddress, chainID: chainId }
-    ])
     setPendingPrefillAddress(lockedInputAddress)
     setPendingPrefillAmount('')
     setPrefillRequestKey((current) => current + 1)
     setLockedWithdrawExecutionSnapshot(null)
     setDraftWithdrawAmount(0n)
     onWithdrawSuccess?.()
-  }, [
-    chainId,
-    refetchLockedWithdrawState,
-    refreshWalletBalances,
-    unlockedAssetAddress,
-    lockedInputAddress,
-    onWithdrawSuccess
-  ])
+  }, [lockedInputAddress, onWithdrawSuccess])
 
   const handleFillAvailableWithdrawAmount = useCallback((): void => {
     if (!canWithdrawNow || lockedMaxWithdrawDisplayAmount <= 0n) {
@@ -1292,6 +1291,7 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
         autoContinueToNextStep
         autoContinueStepLabels={['Withdraw to yvUSD']}
         onStepSuccess={handleLockedWithdrawStepSuccess}
+        onBeforeSuccess={handleLockedWithdrawBeforeSuccess}
         onAllComplete={handleLockedWithdrawSuccess}
       />
       <InfoOverlay

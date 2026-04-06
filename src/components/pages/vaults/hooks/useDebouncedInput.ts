@@ -44,26 +44,23 @@ const tryParseString = (value: string, decimals: number) => {
 export const useDebouncedInput = (decimals = 18, debounceMs = 500): UseDebouncedInputReturnValue => {
   const [formValue, setFormValue] = useState<string>('')
   const [debouncedFormValue, setDebouncedFormValue] = useState<string>('')
-  const [isDebouncing, setIsDebouncing] = useState(false)
 
   const activity = useState(false)
 
-  // Debounce the form value
+  // Render-time state adjustment: trim form value when decimals decrease
+  const [whole, fraction] = formValue.split('.')
+  if (fraction && fraction.length > decimals) {
+    setFormValue(`${whole}.${fraction.slice(0, decimals)}`)
+  }
+
+  // Derived: debouncing when form value differs from debounced value
+  const isDebouncing = formValue !== debouncedFormValue
+
+  // Timer to settle debounced value — external sync (useEffect required)
   useEffect(() => {
-    if (formValue === debouncedFormValue) {
-      setIsDebouncing(false)
-      return
-    }
-
-    setIsDebouncing(true)
-    const handler = setTimeout(() => {
-      setDebouncedFormValue(formValue)
-      setIsDebouncing(false)
-    }, debounceMs)
-
-    return () => {
-      clearTimeout(handler)
-    }
+    if (formValue === debouncedFormValue) return
+    const handler = setTimeout(() => setDebouncedFormValue(formValue), debounceMs)
+    return () => clearTimeout(handler)
   }, [formValue, debounceMs])
 
   // Handle callback, no change if number is invalid
@@ -82,14 +79,6 @@ export const useDebouncedInput = (decimals = 18, debounceMs = 500): UseDebounced
     },
     [decimals]
   )
-
-  // Trim existing if beyond decimal limit
-  useEffect(() => {
-    setFormValue((prev) => {
-      const [whole, fraction] = prev.split('.')
-      return fraction && fraction.length > decimals ? `${whole}.${fraction.slice(0, decimals)}` : prev
-    })
-  }, [decimals])
 
   // State change on formValue / decimals
   const state = useMemo(() => {
