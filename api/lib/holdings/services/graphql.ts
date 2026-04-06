@@ -1010,16 +1010,18 @@ function getTransactionFromEventFetches(
   ]) as Promise<TransactionFromEventResults>
 }
 
-// Main export - uses sequential fetching (simpler, no indexer dependency)
+// Main export - defaults to sequential paged fetching but allows overrides for experimentation/debugging.
 export async function fetchUserEvents(
   userAddress: string,
   version: VaultVersion = 'all',
-  maxTimestamp?: number
+  maxTimestamp?: number,
+  fetchType: HoldingsEventFetchType = 'seq',
+  paginationMode: HoldingsEventPaginationMode = 'paged'
 ): Promise<UserEvents> {
   const addressLower = userAddress.toLowerCase()
 
   const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] =
-    await fetchAddressScopedEvents(addressLower, maxTimestamp, 'seq', 'paged')
+    await fetchAddressScopedEvents(addressLower, maxTimestamp, fetchType, paginationMode)
 
   const processed = processEvents(
     v3Deposits,
@@ -1033,6 +1035,8 @@ export async function fetchUserEvents(
   debugLog('graphql', 'fetched user events', {
     address: addressLower,
     version,
+    fetchType,
+    paginationMode,
     deposits: processed.deposits.length,
     withdrawals: processed.withdrawals.length,
     transfersIn: processed.transfersIn.length,

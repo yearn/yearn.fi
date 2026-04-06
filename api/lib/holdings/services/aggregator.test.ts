@@ -129,13 +129,33 @@ describe('getHistoricalHoldings', () => {
     checkCacheStalenessMock.mockResolvedValue(false)
 
     const { getHistoricalHoldings } = await import('./aggregator')
-    const response = await getHistoricalHoldings(userAddress, 'v2')
+    const response = await getHistoricalHoldings(userAddress, 'v2', 'parallel', 'all')
 
-    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86500)
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86500, 'parallel', 'all')
     expect(getCachedTotalsWithTimestampMock).toHaveBeenCalledWith(userAddress, 'v2', 'date-100', 'date-100')
     expect(fetchMultipleVaultsPPSMock).toHaveBeenCalledWith([vaults[0]])
     expect(saveCachedTotalsMock).toHaveBeenCalledWith(userAddress, 'v2', [{ date: 'date-100', usdValue: 2 }])
     expect(response.dataPoints).toEqual([{ date: 'date-100', timestamp: 100, totalUsdValue: 2 }])
+  })
+
+  it('defaults history event fetching to sequential paged mode', async () => {
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+
+    generateDailyTimestampsMock.mockReturnValue([100])
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    getCachedTotalsWithTimestampMock.mockResolvedValue({ totals: [], oldestUpdatedAt: null })
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+    buildPositionTimelineMock.mockReturnValue([])
+
+    const { getHistoricalHoldings } = await import('./aggregator')
+    await getHistoricalHoldings(userAddress, 'all')
+
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86500, 'seq', 'paged')
   })
 
   it('returns fully cached history without refetching events or valuations', async () => {

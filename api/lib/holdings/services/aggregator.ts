@@ -4,7 +4,12 @@ import type { CachedTotal } from './cache'
 import { checkCacheStaleness, clearUserCache, getCachedTotalsWithTimestamp, saveCachedTotals } from './cache'
 import { debugLog } from './debug'
 import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
-import { fetchUserEvents, type VaultVersion } from './graphql'
+import {
+  fetchUserEvents,
+  type HoldingsEventFetchType,
+  type HoldingsEventPaginationMode,
+  type VaultVersion
+} from './graphql'
 import {
   buildPositionTimeline,
   generateDailyTimestamps,
@@ -37,7 +42,9 @@ function filterVaultsByAuthoritativeVersion<
 
 export async function getHistoricalHoldings(
   userAddress: string,
-  version: VaultVersion = 'all'
+  version: VaultVersion = 'all',
+  fetchType: HoldingsEventFetchType = 'seq',
+  paginationMode: HoldingsEventPaginationMode = 'paged'
 ): Promise<HoldingsHistoryResponse> {
   const days = config.historyDays
   const timestamps = generateDailyTimestamps(days, 1)
@@ -45,6 +52,8 @@ export async function getHistoricalHoldings(
   const endDate = timestampToDateString(timestamps[timestamps.length - 1])
   debugLog('history', 'starting historical holdings aggregation', {
     version,
+    fetchType,
+    paginationMode,
     days,
     timestamps: timestamps.length,
     startDate,
@@ -88,9 +97,11 @@ export async function getHistoricalHoldings(
 
   // Always fetch the full event set, then filter vaults by authoritative Kong metadata version.
   const maxTimestamp = Math.max(...timestamps) + 86400
-  const events = await fetchUserEvents(userAddress, 'all', maxTimestamp)
+  const events = await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
   const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
   debugLog('history', 'built position timeline', {
+    fetchType,
+    paginationMode,
     deposits: events.deposits.length,
     withdrawals: events.withdrawals.length,
     transfersIn: events.transfersIn.length,
@@ -103,6 +114,8 @@ export async function getHistoricalHoldings(
   const vaults = filterVaultsByAuthoritativeVersion(rawVaults, vaultMetadata, version)
   debugLog('history', 'resolved authoritative vault versions for history', {
     version,
+    fetchType,
+    paginationMode,
     rawVaults: rawVaults.length,
     filteredVaults: vaults.length,
     metadataResolved: vaultMetadata.size
@@ -114,6 +127,8 @@ export async function getHistoricalHoldings(
     const isStale = await checkCacheStaleness(vaultIdentifiers, oldestUpdatedAt)
     debugLog('history', 'completed cache staleness check', {
       version,
+      fetchType,
+      paginationMode,
       vaults: vaultIdentifiers.length,
       isStale
     })
@@ -128,6 +143,8 @@ export async function getHistoricalHoldings(
 
   const missingTimestamps = timestamps.filter((ts) => !cachedByDate.has(timestampToDateString(ts)))
   debugLog('history', 'computed missing timestamps', {
+    fetchType,
+    paginationMode,
     cachedDates: cachedByDate.size,
     missingTimestamps: missingTimestamps.length
   })
@@ -151,7 +168,9 @@ export async function getHistoricalHoldings(
       }
     } else if (vaults.length === 0) {
       debugLog('history', 'no vaults matched the requested authoritative version, returning zero holdings history', {
-        version
+        version,
+        fetchType,
+        paginationMode
       })
       return {
         address: userAddress,
@@ -166,6 +185,8 @@ export async function getHistoricalHoldings(
       const ppsData = await fetchMultipleVaultsPPS(vaults)
       debugLog('history', 'resolved metadata and PPS for history', {
         version,
+        fetchType,
+        paginationMode,
         vaults: vaults.length,
         metadataResolved: vaultMetadata.size,
         ppsResolved: ppsData.size,
@@ -188,6 +209,8 @@ export async function getHistoricalHoldings(
       const priceData = await fetchHistoricalPrices(underlyingTokens, missingTimestamps)
       debugLog('history', 'resolved historical token prices', {
         version,
+        fetchType,
+        paginationMode,
         tokens: underlyingTokens.length,
         priceKeys: priceData.size,
         missingTimestamps: missingTimestamps.length
@@ -226,6 +249,8 @@ export async function getHistoricalHoldings(
 
       debugLog('history', 'calculated uncached daily totals', {
         version,
+        fetchType,
+        paginationMode,
         newTotals: newTotals.length,
         nonZeroTotals: newTotals.filter((total) => total.usdValue > 0).length
       })
@@ -233,7 +258,12 @@ export async function getHistoricalHoldings(
 
     if (newTotals.length > 0) {
       await saveCachedTotals(userAddress, version, newTotals)
-      debugLog('history', 'saved recalculated totals to cache', { version, newTotals: newTotals.length })
+      debugLog('history', 'saved recalculated totals to cache', {
+        version,
+        fetchType,
+        paginationMode,
+        newTotals: newTotals.length
+      })
     }
   }
 
@@ -249,6 +279,8 @@ export async function getHistoricalHoldings(
   }))
   debugLog('history', 'completed historical holdings aggregation', {
     version,
+    fetchType,
+    paginationMode,
     dataPoints: dataPoints.length,
     nonZeroPoints: dataPoints.filter((point) => point.totalUsdValue > 0).length
   })

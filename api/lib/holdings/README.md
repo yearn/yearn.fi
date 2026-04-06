@@ -196,12 +196,16 @@ The history series ends at the latest settled UTC day, not an intraday "today" p
 
 ```bash
 curl "http://localhost:3001/api/holdings/history?address=0x..."
+curl "http://localhost:3001/api/holdings/history?address=0x...&fetchType=parallel"
+curl "http://localhost:3001/api/holdings/history?address=0x...&paginationMode=all"
 ```
 
 Query params:
 - `address` (required): Ethereum address
 - `version` (optional): `v2`, `v3`, or `all` (default: `all`)
 - `refresh` (optional): `true` or `1` to force cache refresh
+- `fetchType` (optional): `seq` or `parallel` (default: `seq`)
+- `paginationMode` (optional): `paged` or `all` (default: `paged`)
 
 Response:
 ```json

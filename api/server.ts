@@ -423,6 +423,8 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
   const versionParam = url.searchParams.get('version')
+  const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
+  const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
   const debugEnabled =
     isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
   const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
@@ -456,6 +458,8 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       async () => {
         debugLog('route', 'started holdings history request', {
           version,
+          fetchType,
+          paginationMode,
           refresh,
           debugLotsEnabled,
           debugVault: debugVault?.toLowerCase() ?? null,
@@ -463,16 +467,18 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
         })
 
         try {
-          const response = await getHistoricalHoldings(address, version)
+          const response = await getHistoricalHoldings(address, version, fetchType, paginationMode)
           debugLog('route', 'completed holdings history request', {
             version,
+            fetchType,
+            paginationMode,
             refresh,
             points: response.dataPoints.length,
             nonZeroPoints: response.dataPoints.filter((point) => point.totalUsdValue > 0).length
           })
           return response
         } catch (error) {
-          debugError('route', 'holdings history request failed', error, { version })
+          debugError('route', 'holdings history request failed', error, { version, fetchType, paginationMode })
           throw error
         }
       }
