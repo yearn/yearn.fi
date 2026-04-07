@@ -19,6 +19,8 @@ export type TKatanaBridgeTransaction = {
   receiver?: string
   fromChainId?: number
   toChainId?: number
+  tokenAddress?: string
+  tokenSymbol?: string
   amount?: string
   depositCount?: string
   timestamp?: number
@@ -42,6 +44,10 @@ export function hasKatanaBridgeBalanceDeltaArrived({
   }
 
   return currentBalance - baselineBalance >= requiredAmount
+}
+
+export function getKatanaBridgeDurationLabel(direction: TKatanaBridgeDirection): string {
+  return direction === 'to-ethereum' ? '~3 hrs' : '~5 min'
 }
 
 type TRecord = Record<string, unknown>
@@ -171,6 +177,22 @@ export function normalizeKatanaBridgeTransactionsResponse(payload: unknown): TKa
         receiver: readFirstString(record, [['receiver'], ['destinationAddress']]),
         fromChainId: readFirstNumber(record, [['sourceChainId'], ['sourceChain', 'id'], ['sourceNetwork']]),
         toChainId: readFirstNumber(record, [['destinationChainId'], ['destChain', 'id'], ['destinationNetwork']]),
+        tokenAddress: readFirstString(record, [
+          ['tokenAddress'],
+          ['originTokenAddress'],
+          ['token', 'address'],
+          ['tokenForTxn', 'tokenAddress'],
+          ['tokenForTxn', 'originTokenAddress'],
+          ['tokenForTxn', 'token', 'address'],
+          ['tokenForTxn', 'wrappedTokenAddress']
+        ]),
+        tokenSymbol: readFirstString(record, [
+          ['tokenSymbol'],
+          ['token', 'symbol'],
+          ['tokenForTxn', 'symbol'],
+          ['tokenForTxn', 'tokenSymbol'],
+          ['tokenForTxn', 'token', 'symbol']
+        ]),
         amount: readFirstAmount(record, [['amount'], ['tokenForTxn', 'amount'], ['value']]),
         depositCount: readFirstString(record, [['depositCount'], ['bridgeDepositCount']]),
         timestamp: timestamp ? (timestamp > 1_000_000_000_000 ? Math.floor(timestamp / 1000) : timestamp) : undefined

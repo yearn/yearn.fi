@@ -3,6 +3,7 @@ import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
+import { getKatanaBridgeAssetConfig } from '@pages/vaults/components/widget/katanaBridge'
 import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
@@ -53,11 +54,18 @@ import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import { cl, formatApyDisplay, formatUSD, isZero, SELECTOR_BAR_STYLES, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
-import { KATANA_BRIDGE_TRACKING_URL } from '@shared/utils/katanaBridge'
+import {
+  getKatanaBridgeDurationLabel,
+  KATANA_BRIDGE_TRACKING_URL,
+  type TKatanaBridgeTransaction,
+  type TKatanaBridgeTransactionsResponse
+} from '@shared/utils/katanaBridge'
 import { getNetwork } from '@shared/utils/wagmi/utils'
+import { useQuery } from '@tanstack/react-query'
 import type { ReactElement, Ref } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
+import { getKatanaBridgeTransactionDirection, pickKatanaBridgeRecoveryTransaction } from './katanaBridgeRecovery'
 
 type TVaultKindType = 'multi' | 'single' | undefined
 
@@ -712,8 +720,9 @@ function UserDepositsBridgeBadge({ currentVault }: { currentVault: TKongVaultInp
 
   const isBridgeComplete = currentBridgeNotification.status === 'success'
   const badgeLabel = isBridgeComplete ? 'Bridge complete' : 'Bridging in progress'
-  const timeframeLabel =
-    currentBridgeNotification.bridgeDirection === 'to-ethereum' ? 'Typical time: ~3 hrs' : 'Typical time: ~5 min'
+  const timeframeLabel = `Typical time: ${getKatanaBridgeDurationLabel(
+    currentBridgeNotification.bridgeDirection || 'to-katana'
+  )}`
 
   return (
     <div className={'inline-flex items-center gap-1.5'}>
@@ -761,6 +770,97 @@ function UserDepositsBridgeBadge({ currentVault }: { currentVault: TKongVaultInp
         >
           <IconClose className={'size-2.5'} />
         </button>
+      ) : null}
+    </div>
+  )
+}
+
+function KatanaBridgeRecoveryNotice({ currentVault }: { currentVault: TKongVaultInput }): ReactElement | null {
+  const { address } = useWeb3()
+  const currentVaultView = getVaultView(currentVault)
+  const assetConfig = getKatanaBridgeAssetConfig({
+    vaultChainId: currentVaultView.chainID,
+    assetAddress: currentVaultView.token.address
+  })
+
+  const { data } = useQuery({
+    queryKey: ['katana-bridge-recovery', address, currentVaultView.address],
+    queryFn: async (): Promise<{
+      transactions: TKatanaBridgeTransaction[]
+      isRecoveryUnavailable?: boolean
+    }> => {
+      const response = await fetch(`/api/katana-bridge/transactions?${new URLSearchParams({ userAddress: address! })}`)
+
+      if (response.status === 503) {
+        return { transactions: [], isRecoveryUnavailable: true }
+      }
+
+      if (!response.ok) {
+        throw new Error(`Katana bridge recovery request failed: ${response.status}`)
+      }
+
+      const payload = (await response.json()) as TKatanaBridgeTransactionsResponse
+      return { transactions: payload.transactions || [] }
+    },
+    enabled: Boolean(address && assetConfig && currentVaultView.chainID === KATANA_CHAIN_ID),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: false,
+    retry: false
+  })
+
+  const recoveryTransaction = assetConfig
+    ? pickKatanaBridgeRecoveryTransaction({
+        transactions: data?.transactions || [],
+        assetConfig
+      })
+    : undefined
+
+  if (!assetConfig) {
+    return null
+  }
+
+  if (!recoveryTransaction) {
+    return null
+  }
+
+  const direction = getKatanaBridgeTransactionDirection(recoveryTransaction)
+  if (!direction) {
+    return null
+  }
+
+  const isReadyToClaim = direction === 'to-ethereum' && recoveryTransaction.status === 'READY_TO_CLAIM'
+  const title = isReadyToClaim
+    ? 'Bridge ready to claim on Ethereum'
+    : direction === 'to-ethereum'
+      ? 'Bridge to Ethereum in progress'
+      : 'Bridge to Katana in progress'
+  const description = isReadyToClaim
+    ? `Your ${assetConfig.destinationTokenSymbol} withdrawal has finished bridging. Open Katana Bridge to claim it on Ethereum.`
+    : direction === 'to-ethereum'
+      ? `Your ${assetConfig.destinationTokenSymbol} withdrawal is still bridging to Ethereum. Typical time: ${getKatanaBridgeDurationLabel(direction)}.`
+      : `Your ${assetConfig.sourceTokenSymbol} bridge to Katana is still settling. Typical time: ${getKatanaBridgeDurationLabel(direction)}.`
+
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-surface px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-text-primary">{title}</p>
+          <p className="mt-1 text-sm text-text-secondary">{description}</p>
+        </div>
+        <a
+          href={KATANA_BRIDGE_TRACKING_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface-secondary px-3 py-2 text-xs font-medium text-text-primary transition-colors hover:bg-surface"
+        >
+          <span>{isReadyToClaim ? 'Open Bridge to Claim' : 'Track on Katana Bridge'}</span>
+          <IconLinkOut className="size-3 shrink-0" />
+        </a>
+      </div>
+      {recoveryTransaction.claimTxHash ? (
+        <p className="mt-2 text-xs text-text-secondary">
+          {'Claim transaction detected. If tokens still do not show in your wallet, verify the bridge activity page.'}
+        </p>
       ) : null}
     </div>
   )
@@ -1000,6 +1100,7 @@ export function VaultDetailsHeaderPresentation({
           isCompressed={isCompressed}
           includeTourAttributes={includeTourAttributes}
         />
+        <KatanaBridgeRecoveryNotice currentVault={currentVault} />
         {widgetActions.length > 0 && widgetMode && onWidgetModeChange ? (
           <WidgetTabs
             actions={widgetActions}
