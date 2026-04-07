@@ -719,28 +719,29 @@ function YvUsdUserHoldingsCard({
       : cooldownSummary?.tone === 'expired'
         ? 'border-[#C73203]/30 bg-[#C73203]/10 text-[#C73203]'
         : 'border-[#C47B07]/30 bg-[#C47B07]/10 text-[#C47B07]'
+  const depositsHeaderLabel = (
+    <span className={'flex items-center gap-2'}>
+      <span>{'Your Deposits'}</span>
+      {cooldownSummary ? (
+        <span
+          className={cl(
+            'rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+            cooldownBadgeClassName
+          )}
+        >
+          {cooldownSummary.label}
+        </span>
+      ) : null}
+    </span>
+  )
 
   const sections: TMetricBlock[] = [
     {
       key: 'deposited',
       header: (
         <MetricHeader
-          label={
-            <span className={'flex items-center gap-2'}>
-              <span>{'Your Deposits'}</span>
-              {cooldownSummary ? (
-                <span
-                  className={cl(
-                    'rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                    cooldownBadgeClassName
-                  )}
-                >
-                  {cooldownSummary.label}
-                </span>
-              ) : null}
-            </span>
-          }
-          mobileLabel={'Your Deposits'}
+          label={depositsHeaderLabel}
+          mobileLabel={depositsHeaderLabel}
           tooltip={'Review the USD value of everything you have supplied to this vault so far.'}
         />
       ),
