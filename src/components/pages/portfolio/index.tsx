@@ -1124,7 +1124,12 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
 
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
-  const { data: historyData, isLoading: historyLoading } = usePortfolioHistory()
+  const {
+    data: historyData,
+    isLoading: historyLoading,
+    error: historyError,
+    isEmpty: historyEmpty
+  } = usePortfolioHistory()
   const { data: pnlSummary, isLoading: pnlLoading } = usePortfolioPnL()
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
@@ -1241,7 +1246,13 @@ function PortfolioPage(): ReactElement {
             pnlSummary={pnlSummary}
             totalPortfolioValue={model.totalPortfolioValue}
           />
-          <PortfolioHistoryChart data={historyData} isLoading={historyLoading} mergeWithHeader={model.isActive} />
+          <PortfolioHistoryChart
+            data={historyData}
+            isLoading={historyLoading}
+            isEmpty={historyEmpty}
+            error={historyError}
+            mergeWithHeader={model.isActive}
+          />
           <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} mergeWithHeader={model.isActive} />
         </div>
         <div className={'pt-4'} key={activeTab}>

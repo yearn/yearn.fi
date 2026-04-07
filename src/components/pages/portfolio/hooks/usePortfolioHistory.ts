@@ -40,10 +40,16 @@ export function usePortfolioHistory() {
   }, [rawData])
 
   const isLoadingState = isLoading || isFetching
+  const errorStatus =
+    (error as { response?: { status?: number }; status?: number } | null)?.response?.status ??
+    (error as { status?: number } | null)?.status
+  const isEmpty = !isLoadingState && Boolean(address) && (errorStatus === 404 || Boolean(data && data.length === 0))
+  const visibleError = isEmpty ? null : error
 
   return {
     data,
     isLoading: isLoadingState,
-    error
+    error: visibleError,
+    isEmpty
   }
 }
