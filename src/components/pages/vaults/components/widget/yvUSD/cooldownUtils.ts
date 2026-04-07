@@ -10,6 +10,12 @@ export const EMPTY_COOLDOWN_STATUS: TYvUsdCooldownStatus = {
   shares: 0n
 }
 
+export type TYvUsdCooldownSummary = {
+  label: string
+  detail: string
+  tone: 'cooling' | 'ready' | 'expired'
+}
+
 export function resolveCooldownWindowState(params: {
   hasActiveCooldown: boolean
   nowTimestamp: number
@@ -29,6 +35,49 @@ export function resolveCooldownWindowState(params: {
     isWithdrawalWindowOpen:
       canWithdrawNow || (hasActiveCooldown && nowTimestamp >= cooldownEnd && nowTimestamp <= windowEnd),
     isCooldownWindowExpired: hasActiveCooldown && !canWithdrawNow && nowTimestamp > windowEnd
+  }
+}
+
+export function resolveYvUsdCooldownSummary(params: {
+  hasActiveCooldown: boolean
+  isCooldownActive: boolean
+  isWithdrawalWindowOpen: boolean
+  isCooldownWindowExpired: boolean
+}): TYvUsdCooldownSummary | null {
+  const { hasActiveCooldown, isCooldownActive, isWithdrawalWindowOpen, isCooldownWindowExpired } = params
+
+  if (!hasActiveCooldown) {
+    return null
+  }
+
+  if (isWithdrawalWindowOpen) {
+    return {
+      label: 'Ready to withdraw',
+      detail: 'Locked yvUSD cooldown completed.',
+      tone: 'ready'
+    }
+  }
+
+  if (isCooldownActive) {
+    return {
+      label: 'Cooling down',
+      detail: 'Locked yvUSD is still in cooldown.',
+      tone: 'cooling'
+    }
+  }
+
+  if (isCooldownWindowExpired) {
+    return {
+      label: 'Cooldown expired',
+      detail: 'Withdrawal window closed. Start a new cooldown to withdraw.',
+      tone: 'expired'
+    }
+  }
+
+  return {
+    label: 'Cooldown pending',
+    detail: 'Cooldown status is being refreshed.',
+    tone: 'cooling'
   }
 }
 
