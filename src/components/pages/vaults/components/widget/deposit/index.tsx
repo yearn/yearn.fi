@@ -2,11 +2,13 @@ import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmou
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
+import { useNotifications } from '@shared/contexts/useNotifications'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
 import type { TToken } from '@shared/types'
+import type { TNotification } from '@shared/types/notifications'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
@@ -127,6 +129,14 @@ function getTokenLogoURI(token: unknown): string | undefined {
   return typeof token.logoURI === 'string' ? token.logoURI : undefined
 }
 
+function getBridgeRawAmount(notification?: TNotification): bigint {
+  try {
+    return notification?.rawAmount ? BigInt(notification.rawAmount) : 0n
+  } catch (_error) {
+    return 0n
+  }
+}
+
 export function WidgetDeposit({
   vaultAddress,
   assetAddress,
@@ -169,6 +179,7 @@ export function WidgetDeposit({
     trackEvent,
     ensoEnabled
   } = useWidgetContext({ chainId, vaultAddress })
+  const { cachedEntries, deleteByID } = useNotifications()
   const { allVaults } = useYearn()
   const tokenSelectorAllowedChainIds = useMemo(() => getAllowedTokenSelectorChainIds(chainId), [chainId])
   const katanaBridgeConfig = useMemo(
@@ -200,6 +211,8 @@ export function WidgetDeposit({
   const [isKatanaBridgeMode, setIsKatanaBridgeMode] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const appliedPrefillRef = useRef<string | null>(null)
+  const appliedBridgePrefillKeyRef = useRef<string | null>(null)
+  const syncedBridgeBalanceNotificationIdRef = useRef<number | null>(null)
 
   // Derived token values
   const depositToken = selectedToken || assetAddress
@@ -273,6 +286,21 @@ export function WidgetDeposit({
     return getToken({ address: depositToken, chainID: sourceChainId })
   }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken, selectedExtraToken])
   const inputTokenLogoURI = selectedExtraToken?.logoURI ?? getTokenLogoURI(inputToken)
+  const currentBridgeNotification = useMemo(() => {
+    if (!account) {
+      return undefined
+    }
+
+    return [...cachedEntries]
+      .filter(
+        (notification) =>
+          notification.type === 'bridge' &&
+          notification.address.toLowerCase() === account.toLowerCase() &&
+          notification.vaultAddress?.toLowerCase() === toAddress(vaultAddress).toLowerCase() &&
+          notification.toAddress?.toLowerCase() === toAddress(assetAddress).toLowerCase()
+      )
+      .sort((firstNotification, secondNotification) => (secondNotification.id ?? 0) - (firstNotification.id ?? 0))[0]
+  }, [account, assetAddress, cachedEntries, vaultAddress])
 
   const destinationToken = useMemo(() => {
     if (isKatanaBridgeMode) return assetAddress
@@ -311,6 +339,49 @@ export function WidgetDeposit({
     }
     onPrefillApplied?.()
   }, [prefill, ensoEnabled, tokenSelectorAllowedChainIds, assetAddress, chainId, setDepositInput, onPrefillApplied])
+
+  useEffect(() => {
+    const bridgePrefillKey =
+      currentBridgeNotification?.status === 'success'
+        ? `${currentBridgeNotification.id}-${assetToken?.balance.raw ?? 0n}`
+        : null
+
+    if (!bridgePrefillKey || bridgePrefillKey === appliedBridgePrefillKeyRef.current) {
+      return
+    }
+
+    appliedBridgePrefillKeyRef.current = bridgePrefillKey
+
+    const bridgedAmount = getBridgeRawAmount(currentBridgeNotification)
+    const availableAmount = assetToken?.balance.raw ?? 0n
+    const depositableAmount =
+      bridgedAmount > 0n && availableAmount > 0n
+        ? bridgedAmount < availableAmount
+          ? bridgedAmount
+          : availableAmount
+        : 0n
+
+    setSelectedToken(assetAddress)
+    setSelectedChainId(undefined)
+    setIsKatanaBridgeMode(false)
+
+    if (depositableAmount > 0n) {
+      setDepositInput(formatUnits(depositableAmount, assetToken?.decimals ?? 18))
+    }
+  }, [assetAddress, assetToken?.balance.raw, assetToken?.decimals, currentBridgeNotification, setDepositInput])
+
+  useEffect(() => {
+    if (currentBridgeNotification?.status !== 'success' || !currentBridgeNotification.id) {
+      return
+    }
+
+    if (syncedBridgeBalanceNotificationIdRef.current === currentBridgeNotification.id) {
+      return
+    }
+
+    syncedBridgeBalanceNotificationIdRef.current = currentBridgeNotification.id
+    refetchVaultUserData()
+  }, [currentBridgeNotification?.id, currentBridgeNotification?.status, refetchVaultUserData])
 
   useResetEnsoSelection({
     ensoEnabled: ensoEnabled || isKatanaBridgeMode,
@@ -364,11 +435,13 @@ export function WidgetDeposit({
   const isCrossChain = sourceChainId !== chainId
   const { approveNotificationParams, depositNotificationParams } = useDepositNotifications({
     inputToken,
+    assetToken,
     vault,
     stakingToken,
     depositToken,
     assetAddress,
     destinationToken,
+    vaultAddress,
     stakingAddress,
     account,
     sourceChainId,
@@ -519,7 +592,8 @@ export function WidgetDeposit({
           href: 'https://bridge.katana.network/transactions',
           label: 'Track bridge status'
         },
-        completesFlow: true
+        completesFlow: true,
+        notification: depositNotificationParams
       }
     }
 
@@ -631,7 +705,6 @@ export function WidgetDeposit({
       setSelectedToken(assetAddress)
       setSelectedChainId(undefined)
       setIsKatanaBridgeMode(false)
-      onDepositSuccess?.()
       return
     }
 
@@ -650,8 +723,20 @@ export function WidgetDeposit({
       refreshWalletBalances(tokensToRefresh)
       refetchVaultUserData()
     }
+
+    if (
+      currentBridgeNotification?.id &&
+      currentBridgeNotification.status === 'success' &&
+      sourceChainId === chainId &&
+      toAddress(depositToken) === toAddress(assetAddress)
+    ) {
+      void deleteByID(currentBridgeNotification.id)
+    }
     onDepositSuccess?.()
   }, [
+    currentBridgeNotification?.id,
+    currentBridgeNotification?.status,
+    deleteByID,
     depositAmount.bn,
     inputToken?.decimals,
     inputToken?.symbol,

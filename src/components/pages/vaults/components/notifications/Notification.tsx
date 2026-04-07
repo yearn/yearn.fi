@@ -184,6 +184,7 @@ function DepositNotificationContent({ notification }: { notification: TNotificat
     ? NETWORK_BY_CHAIN_ID.get(notification.toChainId)?.name || 'Unknown'
     : undefined
   const isCrossChain = !!notification.toChainId && notification.toChainId !== notification.chainId
+  const destinationLabel = notification.type === 'bridge' ? 'Receive on:' : 'To vault:'
 
   const explorerBaseURI = useMemo(() => {
     const chain = NETWORK_BY_CHAIN_ID.get(notification.chainId)
@@ -255,13 +256,13 @@ function DepositNotificationContent({ notification }: { notification: TNotificat
           </p>
           {notification.toTokenName && notification.toAddress && (
             <>
-              <p>{'To vault:'}</p>
+              <p>{destinationLabel}</p>
               <p className={'text-right font-bold'}>
                 <Link
                   href={`${toChainExplorerBaseURI}/address/${notification.toAddress}`}
                   target={'_blank'}
                   rel={'noopener noreferrer'}
-                  aria-label={`View vault ${notification.toTokenName} on explorer`}
+                  aria-label={`View destination ${notification.toTokenName} on explorer`}
                   className={'text-text-primary hover:text-text-secondary'}
                 >
                   <button className={'text-xs font-medium underline'}>{notification.toTokenName}</button>
@@ -504,7 +505,7 @@ function NotificationContent({ notification }: { notification: TNotification }):
     return <CooldownNotificationContent notification={notification} />
   }
 
-  if (['deposit', 'stake', 'zap', 'crosschain zap', 'deposit and stake'].includes(notification.type)) {
+  if (['deposit', 'stake', 'zap', 'crosschain zap', 'deposit and stake', 'bridge'].includes(notification.type)) {
     return <DepositNotificationContent notification={notification} />
   }
 
@@ -570,6 +571,8 @@ export const Notification = memo(function Notification({
         return 'Zap'
       case 'crosschain zap':
         return 'Cross-chain Zap'
+      case 'bridge':
+        return notification.bridgeDirection === 'to-ethereum' ? 'Bridge to Ethereum' : 'Bridge to Katana'
       case 'withdraw zap':
         return 'Withdraw Zap'
       case 'crosschain withdraw zap':
@@ -591,7 +594,7 @@ export const Notification = memo(function Notification({
       default:
         return 'Transaction'
     }
-  }, [notification.type])
+  }, [notification.bridgeDirection, notification.type])
 
   const handleDelete = useCallback(async () => {
     if (!notification.id || isDeleting) {

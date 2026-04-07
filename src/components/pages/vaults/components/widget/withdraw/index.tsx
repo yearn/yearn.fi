@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
 import { ApprovalOverlay } from '../deposit/ApprovalOverlay'
 import { InputTokenAmount } from '../InputTokenAmount'
+import { getKatanaBridgeAssetConfig, KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID } from '../katanaBridge'
 import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
@@ -66,9 +67,20 @@ function getWithdrawActionLabel(isUnstake: boolean, withdrawalSource: Withdrawal
   return 'You will redeem'
 }
 
-function getZapNotificationText(isUnstake: boolean, shouldShowZapUi: boolean): string | undefined {
+function getZapNotificationText({
+  isUnstake,
+  shouldShowZapUi,
+  routeType
+}: {
+  isUnstake: boolean
+  shouldShowZapUi: boolean
+  routeType?: string
+}): string | undefined {
   if (isUnstake) {
     return 'This transaction will unstake'
+  }
+  if (routeType === 'KATANA_NATIVE_BRIDGE') {
+    return 'This transaction will bridge to Ethereum:'
   }
   if (shouldShowZapUi) {
     return '⚡ This transaction will use Enso to Zap to:'
@@ -80,6 +92,7 @@ type ApprovalState = {
   hasApprovalStep: boolean
   isAllowanceSufficient: boolean
   needsApproval: boolean
+  tokenAddress: `0x${string}`
   tokenSymbol?: string
   tokenDecimals: number
   spenderAddress: `0x${string}`
@@ -126,6 +139,10 @@ export function WidgetWithdraw({
   const { account, openLoginModal, refreshWalletBalances, getToken, zapSlippage, getPrice, trackEvent, ensoEnabled } =
     useWidgetContext({ chainId, vaultAddress })
   const tokenSelectorAllowedChainIds = useMemo(() => getAllowedTokenSelectorChainIds(chainId), [chainId])
+  const katanaBridgeConfig = useMemo(
+    () => getKatanaBridgeAssetConfig({ vaultChainId: chainId, assetAddress }),
+    [assetAddress, chainId]
+  )
 
   const resolvedDisplayAssetAddress = displayAssetAddress ?? assetAddress
 
@@ -134,7 +151,7 @@ export function WidgetWithdraw({
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [withdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
-  const [fallbackStep, setFallbackStep] = useState<'unstake' | 'withdraw'>('unstake')
+  const [fallbackStep, setFallbackStep] = useState<'unstake' | 'withdraw' | 'bridge'>('unstake')
   const [redeemSharesOverride, setRedeemSharesOverride] = useState<bigint>(0n)
   const [awaitingPostUnstakeShares, setAwaitingPostUnstakeShares] = useState(false)
   const [vaultSharesBeforeUnstake, setVaultSharesBeforeUnstake] = useState<bigint>(0n)
@@ -157,15 +174,36 @@ export function WidgetWithdraw({
     prefill?.address ?? resolvedDisplayAssetAddress
   )
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>(prefill?.chainId)
+  const [isKatanaBridgeMode, setIsKatanaBridgeMode] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const appliedPrefillRef = useRef<string | null>(null)
 
   const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
   const [withdrawAmount, , setWithdrawInput] = withdrawInput
+  const selectorAllowedChainIds = useMemo(
+    () => (isKatanaBridgeMode ? [KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID] : tokenSelectorAllowedChainIds),
+    [isKatanaBridgeMode, tokenSelectorAllowedChainIds]
+  )
+  const tokenSelectorPriorityTokens = useMemo(() => {
+    if (isKatanaBridgeMode && katanaBridgeConfig) {
+      return { [KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID]: [katanaBridgeConfig.destinationTokenAddress] }
+    }
+    return priorityTokens
+  }, [isKatanaBridgeMode, katanaBridgeConfig, priorityTokens])
+  const tokenSelectorTopTokens = useMemo(() => {
+    if (isKatanaBridgeMode && katanaBridgeConfig) {
+      return { [KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID]: [katanaBridgeConfig.destinationTokenAddress] }
+    }
+    return priorityTokens
+  }, [isKatanaBridgeMode, katanaBridgeConfig, priorityTokens])
+  const tokenSelectorLimitTokens = useMemo(
+    () => (isKatanaBridgeMode && katanaBridgeConfig ? [katanaBridgeConfig.destinationTokenAddress] : undefined),
+    [isKatanaBridgeMode, katanaBridgeConfig]
+  )
 
   useResetEnsoSelection({
-    ensoEnabled,
-    allowedChainIds: tokenSelectorAllowedChainIds,
+    ensoEnabled: ensoEnabled || isKatanaBridgeMode,
+    allowedChainIds: selectorAllowedChainIds,
     selectedToken,
     selectedChainId,
     assetAddress: resolvedDisplayAssetAddress,
@@ -181,10 +219,15 @@ export function WidgetWithdraw({
     const key = `${prefillRequestKey ?? ''}-${prefill.address}-${prefill.chainId}-${prefill.amount}`
     if (appliedPrefillRef.current === key) return
     appliedPrefillRef.current = key
+    const isKatanaBridgePrefill =
+      !!katanaBridgeConfig &&
+      prefill.chainId === KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID &&
+      toAddress(prefill.address) === toAddress(katanaBridgeConfig.destinationTokenAddress)
     const isCrossChainPrefillBlocked =
-      prefill.chainId !== chainId && !tokenSelectorAllowedChainIds.includes(prefill.chainId)
+      prefill.chainId !== chainId && !tokenSelectorAllowedChainIds.includes(prefill.chainId) && !isKatanaBridgePrefill
     setSelectedToken(isCrossChainPrefillBlocked ? resolvedDisplayAssetAddress : prefill.address)
     setSelectedChainId(isCrossChainPrefillBlocked ? undefined : prefill.chainId)
+    setIsKatanaBridgeMode(isKatanaBridgePrefill)
     if (prefill.amount !== undefined) {
       setWithdrawInput(prefill.amount)
     }
@@ -192,6 +235,7 @@ export function WidgetWithdraw({
   }, [
     prefill,
     prefillRequestKey,
+    katanaBridgeConfig,
     tokenSelectorAllowedChainIds,
     chainId,
     resolvedDisplayAssetAddress,
@@ -236,8 +280,8 @@ export function WidgetWithdraw({
   }
 
   useResetEnsoSelection({
-    ensoEnabled,
-    allowedChainIds: tokenSelectorAllowedChainIds,
+    ensoEnabled: ensoEnabled || isKatanaBridgeMode,
+    allowedChainIds: selectorAllowedChainIds,
     selectedToken,
     selectedChainId,
     assetAddress: resolvedDisplayAssetAddress,
@@ -247,6 +291,14 @@ export function WidgetWithdraw({
     setSelectedChainId,
     setShowTokenSelector
   })
+
+  useEffect(() => {
+    if (!katanaBridgeConfig && isKatanaBridgeMode) {
+      setIsKatanaBridgeMode(false)
+      setSelectedToken(resolvedDisplayAssetAddress)
+      setSelectedChainId(undefined)
+    }
+  }, [isKatanaBridgeMode, katanaBridgeConfig, resolvedDisplayAssetAddress])
 
   useEffect(() => {
     if (!showTransactionOverlay) {
@@ -348,6 +400,17 @@ export function WidgetWithdraw({
   }, [awaitingPostUnstakeShares, fallbackStep, vault?.balance.raw, vaultSharesBeforeUnstake])
 
   const blockDirectWithdrawStep = fallbackStep === 'withdraw' && awaitingPostUnstakeShares
+  const workflowStep = useMemo<'unstake' | 'withdraw' | 'bridge'>(() => {
+    if (isKatanaBridgeMode) {
+      if (fallbackStep === 'bridge') return 'bridge'
+      if (withdrawalSource === 'staking') {
+        return fallbackStep === 'withdraw' ? 'withdraw' : 'unstake'
+      }
+      return 'withdraw'
+    }
+
+    return fallbackStep
+  }, [fallbackStep, isKatanaBridgeMode, withdrawalSource])
 
   const { routeType, activeFlow, directWithdrawFlow, directUnstakeFlow } = useWithdrawFlow({
     withdrawToken,
@@ -376,8 +439,13 @@ export function WidgetWithdraw({
     withdrawalSource,
     isUnstake,
     isDebouncing: disableFlow ? false : withdrawAmount.isDebouncing,
-    useErc4626: usesErc4626
+    useErc4626: usesErc4626,
+    workflowStep,
+    allowKatanaNativeBridge: isKatanaBridgeMode,
+    katanaBridgeContractAddress: katanaBridgeConfig?.katanaUnifiedBridgeAddress,
+    katanaBridgeDestinationTokenAddress: katanaBridgeConfig?.destinationTokenAddress
   })
+  const isKatanaNativeBridgeRoute = routeType === 'KATANA_NATIVE_BRIDGE'
   const effectiveDirectWithdrawPrepare = blockDirectWithdrawStep
     ? undefined
     : directWithdrawFlow.actions.prepareWithdraw
@@ -400,11 +468,13 @@ export function WidgetWithdraw({
 
   const isCrossChain = destinationChainId !== chainId
   const effectiveExpectedOut = expectedOutOverride ?? activeFlow.periphery.expectedOut
-  const { approveNotificationParams, unstakeNotificationParams, withdrawNotificationParams } = useWithdrawNotifications(
-    {
+  const { approveNotificationParams, unstakeNotificationParams, withdrawNotificationParams, bridgeNotificationParams } =
+    useWithdrawNotifications({
       vault,
+      assetToken,
       outputToken,
       stakingToken,
+      vaultAddress,
       sourceToken,
       assetAddress,
       withdrawToken,
@@ -418,8 +488,7 @@ export function WidgetWithdraw({
       routerAddress: activeFlow.periphery.routerAddress,
       isCrossChain,
       withdrawalSource: withdrawalSource || 'vault'
-    }
-  )
+    })
 
   const withdrawError = useWithdrawError({
     amount: flowCurrentAmount,
@@ -442,35 +511,58 @@ export function WidgetWithdraw({
     withdrawError
   const isFetchingQuote = routeType === 'ENSO' && Boolean(activeFlow.periphery.isLoadingRoute)
 
-  const actionLabel = getWithdrawActionLabel(isUnstake, withdrawalSource)
+  const actionLabel = isKatanaNativeBridgeRoute
+    ? 'You will bridge'
+    : getWithdrawActionLabel(isUnstake, withdrawalSource)
   const transactionName = getWithdrawTransactionName(routeType, isFetchingQuote)
 
   const approvalState = useMemo((): ApprovalState => {
     const hasApprovalStep = Boolean(activeFlow.actions.prepareApprove)
     const isAllowanceSufficient =
       activeFlow.periphery.isAllowanceSufficient ||
-      (optimisticApprovedShares !== null && optimisticApprovedShares >= effectiveRequiredShares)
-    const approvalToken = withdrawalSource === 'staking' ? stakingToken : vault
+      (optimisticApprovedShares !== null &&
+        optimisticApprovedShares >= (isKatanaNativeBridgeRoute ? effectiveWithdrawAmountRaw : effectiveRequiredShares))
+    const approvalToken =
+      isKatanaNativeBridgeRoute && workflowStep === 'bridge'
+        ? assetToken
+        : withdrawalSource === 'staking'
+          ? stakingToken
+          : vault
 
     return {
       hasApprovalStep,
       isAllowanceSufficient,
       needsApproval: hasApprovalStep && !isAllowanceSufficient,
+      tokenAddress: toAddress(
+        isKatanaNativeBridgeRoute && workflowStep === 'bridge' ? assetAddress : sourceToken
+      ) as `0x${string}`,
       tokenSymbol: approvalToken?.symbol,
       tokenDecimals: approvalToken?.decimals ?? 18,
       spenderAddress: toAddress(activeFlow.periphery.routerAddress || sourceToken),
-      spenderName: routeType === 'ENSO' ? 'Enso Router' : activeFlow.periphery.routerAddress ? 'Yearn Zap' : undefined
+      spenderName:
+        routeType === 'KATANA_NATIVE_BRIDGE'
+          ? 'Katana Unified Bridge'
+          : routeType === 'ENSO'
+            ? 'Enso Router'
+            : activeFlow.periphery.routerAddress
+              ? 'Yearn Zap'
+              : undefined
     }
   }, [
     activeFlow.actions.prepareApprove,
     activeFlow.periphery.isAllowanceSufficient,
     activeFlow.periphery.routerAddress,
+    assetAddress,
+    assetToken,
+    effectiveWithdrawAmountRaw,
+    isKatanaNativeBridgeRoute,
     optimisticApprovedShares,
     effectiveRequiredShares,
+    sourceToken,
     withdrawalSource,
     stakingToken,
     vault,
-    sourceToken,
+    workflowStep,
     routeType
   ])
 
@@ -486,6 +578,13 @@ export function WidgetWithdraw({
 
   // Calculate price impact for high slippage warning
   const priceImpactInfo = useMemo(() => {
+    if (isKatanaNativeBridgeRoute) {
+      return {
+        percentage: 0,
+        isHigh: false
+      }
+    }
+
     const withdrawUsdValue = Number(formatUnits(withdrawAmount.bn, assetToken?.decimals ?? 18)) * assetTokenPrice
     const expectedOutUsdValue =
       Number(formatUnits(effectiveExpectedOut, outputToken?.decimals ?? 18)) * outputTokenPrice
@@ -502,6 +601,7 @@ export function WidgetWithdraw({
     assetToken?.decimals,
     assetTokenPrice,
     effectiveExpectedOut,
+    isKatanaNativeBridgeRoute,
     outputToken?.decimals,
     outputTokenPrice
   ])
@@ -518,9 +618,8 @@ export function WidgetWithdraw({
     effectiveExpectedOut
   ])
 
-  const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
+  const canOpenTokenSelector = (ensoEnabled || !!katanaBridgeConfig) && !disableTokenSelector
   const shouldShowZapUi = !isBaseWithdrawToken
-  const canShowAssetTokenSelector = canOpenTokenSelector && !shouldShowZapUi
 
   const zapToken = useMemo(() => {
     if (!shouldShowZapUi) return undefined
@@ -558,7 +657,11 @@ export function WidgetWithdraw({
     decimals: assetToken?.decimals ?? 18
   })
   const formattedRequiredShares = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
-  const formattedApprovalAmount = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
+  const formattedApprovalAmount = formatTAmount({
+    value:
+      isKatanaNativeBridgeRoute && workflowStep === 'bridge' ? effectiveWithdrawAmountRaw : effectiveRequiredShares,
+    decimals: approvalState.tokenDecimals
+  })
 
   const currentStep: TransactionStep | undefined = useMemo(
     () =>
@@ -568,7 +671,7 @@ export function WidgetWithdraw({
         activeWithdrawPrepare: activeFlow.actions.prepareWithdraw,
         directUnstakePrepare: directUnstakeFlow.actions.prepareWithdraw,
         directWithdrawPrepare: effectiveDirectWithdrawPrepare,
-        fallbackStep,
+        fallbackStep: workflowStep,
         routeType,
         isCrossChain,
         formattedApprovalAmount,
@@ -576,11 +679,13 @@ export function WidgetWithdraw({
         formattedRequiredShares,
         formattedWithdrawAmount,
         assetTokenSymbol: assetToken?.symbol,
+        bridgeDestinationSymbol: outputToken?.symbol,
         vaultSymbol: vault?.symbol,
         stakingTokenSymbol: stakingToken?.symbol,
         approveNotificationParams,
         unstakeNotificationParams,
-        withdrawNotificationParams
+        withdrawNotificationParams,
+        bridgeNotificationParams
       }),
     [
       approvalState.needsApproval,
@@ -588,7 +693,7 @@ export function WidgetWithdraw({
       activeFlow.actions.prepareWithdraw,
       directUnstakeFlow.actions.prepareWithdraw,
       effectiveDirectWithdrawPrepare,
-      fallbackStep,
+      workflowStep,
       routeType,
       isCrossChain,
       formattedApprovalAmount,
@@ -596,11 +701,13 @@ export function WidgetWithdraw({
       formattedRequiredShares,
       formattedWithdrawAmount,
       assetToken?.symbol,
+      outputToken?.symbol,
       vault?.symbol,
       stakingToken?.symbol,
       approveNotificationParams,
       unstakeNotificationParams,
-      withdrawNotificationParams
+      withdrawNotificationParams,
+      bridgeNotificationParams
     ]
   )
 
@@ -616,7 +723,7 @@ export function WidgetWithdraw({
 
   const handleTransactionStepSuccess = useCallback(
     (label: string) => {
-      if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && label === 'Unstake') {
+      if ((routeType === 'DIRECT_UNSTAKE_WITHDRAW' || routeType === 'KATANA_NATIVE_BRIDGE') && label === 'Unstake') {
         setFallbackStep('withdraw')
         setWithdrawalSource('vault')
         setAwaitingPostUnstakeShares(isMaxWithdraw)
@@ -627,14 +734,28 @@ export function WidgetWithdraw({
         }
         void refreshWalletBalances(tokensToRefresh)
         refetchVaultUserData()
+      } else if (routeType === 'KATANA_NATIVE_BRIDGE' && label === 'Withdraw') {
+        setFallbackStep('bridge')
+        const tokensToRefresh = [
+          { address: assetAddress, chainID: chainId },
+          { address: vaultAddress, chainID: chainId }
+        ]
+        if (stakingAddress) {
+          tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
+        }
+        void refreshWalletBalances(tokensToRefresh)
+        refetchVaultUserData()
       } else if (label === 'Approve') {
-        setOptimisticApprovedShares(effectiveRequiredShares)
+        setOptimisticApprovedShares(isKatanaNativeBridgeRoute ? effectiveWithdrawAmountRaw : effectiveRequiredShares)
       }
     },
     [
+      assetAddress,
       routeType,
       isMaxWithdraw,
       effectiveRequiredShares,
+      effectiveWithdrawAmountRaw,
+      isKatanaNativeBridgeRoute,
       vaultAddress,
       chainId,
       stakingAddress,
@@ -644,21 +765,31 @@ export function WidgetWithdraw({
   )
 
   const handleOpenTransactionOverlay = useCallback(() => {
-    if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && fallbackStep === 'unstake' && isMaxWithdraw) {
+    if (
+      (routeType === 'DIRECT_UNSTAKE_WITHDRAW' || routeType === 'KATANA_NATIVE_BRIDGE') &&
+      workflowStep === 'unstake' &&
+      isMaxWithdraw
+    ) {
       setVaultSharesBeforeUnstake(vault?.balance.raw ?? 0n)
     }
     setShowTransactionOverlay(true)
-  }, [routeType, fallbackStep, isMaxWithdraw, vault?.balance.raw])
+  }, [routeType, workflowStep, isMaxWithdraw, vault?.balance.raw])
 
   // Called by TransactionOverlay after the final tx confirms, while the overlay
   // is in "refreshing" state. Awaiting the balance refetch ensures the success
   // screen appears only once balances are fresh.
   const handleWithdrawTransactionSuccess = useCallback(
     async (_label: string) => {
-      const tokensToRefresh = [
-        { address: withdrawToken, chainID: destinationChainId },
-        { address: vaultAddress, chainID: chainId }
-      ]
+      const tokensToRefresh =
+        isKatanaNativeBridgeRoute && workflowStep === 'bridge'
+          ? [
+              { address: assetAddress, chainID: chainId },
+              { address: vaultAddress, chainID: chainId }
+            ]
+          : [
+              { address: withdrawToken, chainID: destinationChainId },
+              { address: vaultAddress, chainID: chainId }
+            ]
       if (stakingAddress) {
         tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
       }
@@ -666,13 +797,16 @@ export function WidgetWithdraw({
       await refreshWalletBalances(tokensToRefresh)
     },
     [
+      assetAddress,
       withdrawToken,
       destinationChainId,
       vaultAddress,
       chainId,
+      isKatanaNativeBridgeRoute,
       stakingAddress,
       refreshWalletBalances,
-      refetchVaultUserData
+      refetchVaultUserData,
+      workflowStep
     ]
   )
 
@@ -692,11 +826,16 @@ export function WidgetWithdraw({
         priceUsd: String(priceUsd),
         valueUsd: String(valueUsd),
         isZap: String(routeType === 'ENSO'),
-        action: 'withdraw'
+        action: isKatanaNativeBridgeRoute ? 'bridge-to-ethereum' : 'withdraw'
       }
     })
 
     setWithdrawInput('')
+    if (isKatanaNativeBridgeRoute) {
+      setSelectedToken(resolvedDisplayAssetAddress)
+      setSelectedChainId(undefined)
+      setIsKatanaBridgeMode(false)
+    }
     onWithdrawSuccess?.()
   }, [
     effectiveWithdrawAmountRaw,
@@ -709,12 +848,56 @@ export function WidgetWithdraw({
     vaultSymbol,
     withdrawToken,
     routeType,
+    isKatanaNativeBridgeRoute,
+    resolvedDisplayAssetAddress,
     setWithdrawInput,
     onWithdrawSuccess
   ])
 
+  const enterKatanaBridgeMode = useCallback(() => {
+    if (!katanaBridgeConfig) return
+
+    setWithdrawInput('')
+    setSelectedToken(katanaBridgeConfig.destinationTokenAddress)
+    setSelectedChainId(KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID)
+    setIsKatanaBridgeMode(true)
+  }, [katanaBridgeConfig, setWithdrawInput])
+
+  const exitKatanaBridgeMode = useCallback(() => {
+    setWithdrawInput('')
+    setSelectedToken(resolvedDisplayAssetAddress)
+    setSelectedChainId(undefined)
+    setIsKatanaBridgeMode(false)
+  }, [resolvedDisplayAssetAddress, setWithdrawInput])
+
+  const handleTokenChange = useCallback(
+    (address: `0x${string}`, chainIdValue?: number) => {
+      const tokenChainId = chainIdValue ?? chainId
+
+      setWithdrawInput('')
+      setSelectedToken(address)
+      setSelectedChainId(chainIdValue)
+      setShowTokenSelector(false)
+      setIsKatanaBridgeMode(
+        Boolean(
+          katanaBridgeConfig &&
+            tokenChainId === KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID &&
+            toAddress(address) === toAddress(katanaBridgeConfig.destinationTokenAddress)
+        )
+      )
+      activeFlow.periphery.resetQuote?.()
+    },
+    [activeFlow.periphery, chainId, katanaBridgeConfig, setWithdrawInput]
+  )
+
   if (isLoadingVaultData) {
-    return <WidgetLoadingSkeleton title="Withdraw" actions={headerActions} disableBorderRadius={disableBorderRadius} />
+    return (
+      <WidgetLoadingSkeleton
+        title={isKatanaBridgeMode ? 'Withdraw and Bridge' : 'Withdraw'}
+        actions={headerActions}
+        disableBorderRadius={disableBorderRadius}
+      />
+    )
   }
 
   // ============================================================================
@@ -722,18 +905,30 @@ export function WidgetWithdraw({
   // ============================================================================
   const isSettingsVisible = !!account && !!isSettingsOpen
   const onAllowanceClick =
-    approvalState.hasApprovalStep && activeFlow.periphery.allowance > 0n && pricePerShare > 0n
+    approvalState.hasApprovalStep &&
+    activeFlow.periphery.allowance > 0n &&
+    (isKatanaNativeBridgeRoute || pricePerShare > 0n)
       ? (): void => {
+          if (isKatanaNativeBridgeRoute) {
+            setWithdrawInput(formatUnits(activeFlow.periphery.allowance, assetToken?.decimals ?? 18))
+            return
+          }
+
           const underlyingAmount =
             (activeFlow.periphery.allowance * pricePerShare) / 10n ** BigInt(vault?.decimals ?? 18)
           setWithdrawInput(formatUnits(underlyingAmount, assetToken?.decimals ?? 18))
         }
       : undefined
-  const zapNotificationText = getZapNotificationText(isUnstake, shouldShowZapUi)
+  const zapNotificationText = getZapNotificationText({
+    isUnstake,
+    shouldShowZapUi,
+    routeType
+  })
   const onRemoveZap = canOpenTokenSelector
     ? (): void => {
         setSelectedToken(resolvedDisplayAssetAddress)
-        setSelectedChainId(chainId)
+        setSelectedChainId(undefined)
+        setIsKatanaBridgeMode(false)
       }
     : undefined
 
@@ -767,7 +962,7 @@ export function WidgetWithdraw({
     />
   )
 
-  const priceImpactWarning = (
+  const priceImpactWarning = isKatanaNativeBridgeRoute ? null : (
     <PriceImpactWarning
       percentage={priceImpactInfo.percentage}
       isHigh={priceImpactInfo.isHigh}
@@ -858,7 +1053,7 @@ export function WidgetWithdraw({
       })}
       data-tour="vault-detail-withdraw-widget"
     >
-      <WidgetHeader title="Withdraw" actions={headerActions} />
+      <WidgetHeader title={isKatanaBridgeMode ? 'Withdraw and Bridge' : 'Withdraw'} actions={headerActions} />
       <div className="flex flex-col flex-1 p-6 pt-2 gap-3">
         <div>
           {/* Withdraw From Selector */}
@@ -880,7 +1075,7 @@ export function WidgetWithdraw({
               outputTokenUsdPrice={outputTokenPrice}
               tokenAddress={assetToken?.address}
               tokenChainId={assetToken?.chainID}
-              showTokenSelector={canShowAssetTokenSelector}
+              showTokenSelector={canOpenTokenSelector && !shouldShowZapUi}
               onTokenSelectorClick={canOpenTokenSelector ? () => setShowTokenSelector(true) : undefined}
               onInputChange={(value: bigint) => {
                 if (value === inputBalance) {
@@ -952,7 +1147,7 @@ export function WidgetWithdraw({
         step={currentStep}
         isLastStep={isLastStep}
         autoContinueToNextStep
-        autoContinueStepLabels={['Approve', 'Sign Permit', 'Unstake']}
+        autoContinueStepLabels={['Approve', 'Sign Permit', 'Unstake', 'Withdraw']}
         onStepSuccess={handleTransactionStepSuccess}
         onBeforeSuccess={handleWithdrawTransactionSuccess}
         onAllComplete={handleWithdrawSuccess}
@@ -984,7 +1179,7 @@ export function WidgetWithdraw({
           setOptimisticApprovedShares(null)
         }}
         tokenSymbol={approvalState.tokenSymbol || ''}
-        tokenAddress={toAddress(sourceToken)}
+        tokenAddress={approvalState.tokenAddress}
         tokenDecimals={approvalState.tokenDecimals}
         spenderAddress={approvalState.spenderAddress}
         spenderName={approvalState.spenderName || 'Vault'}
@@ -996,20 +1191,31 @@ export function WidgetWithdraw({
       <TokenSelectorOverlay
         isOpen={showTokenSelector}
         onClose={() => setShowTokenSelector(false)}
-        onChange={(address, chainIdValue) => {
-          setWithdrawInput('')
-          setSelectedToken(address)
-          setSelectedChainId(chainIdValue)
-          setShowTokenSelector(false)
-          activeFlow.periphery.resetQuote?.()
-        }}
+        onChange={handleTokenChange}
         chainId={chainId}
-        allowedChainIds={tokenSelectorAllowedChainIds}
+        allowedChainIds={selectorAllowedChainIds}
+        limitTokens={tokenSelectorLimitTokens}
+        headerChainOptions={
+          katanaBridgeConfig
+            ? [
+                {
+                  chainId,
+                  isActive: !isKatanaBridgeMode,
+                  onClick: exitKatanaBridgeMode
+                },
+                {
+                  chainId: KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID,
+                  isActive: isKatanaBridgeMode,
+                  onClick: enterKatanaBridgeMode
+                }
+              ]
+            : undefined
+        }
         value={selectedToken}
         excludeTokens={stakingAddress ? [stakingAddress] : undefined}
         mode={'withdraw'}
-        priorityTokens={priorityTokens}
-        topTokens={priorityTokens}
+        priorityTokens={tokenSelectorPriorityTokens}
+        topTokens={tokenSelectorTopTokens}
         assetAddress={resolvedDisplayAssetAddress}
         vaultAddress={vaultAddress}
         stakingAddress={stakingAddress}

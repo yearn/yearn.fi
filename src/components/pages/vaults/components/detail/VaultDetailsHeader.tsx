@@ -5,6 +5,7 @@ import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
 import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
+import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
@@ -40,14 +41,19 @@ import {
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
+import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { IconCheckmark } from '@shared/icons/IconCheckmark'
+import { IconClose } from '@shared/icons/IconClose'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
+import { IconLoader } from '@shared/icons/IconLoader'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import { cl, formatApyDisplay, formatUSD, isZero, SELECTOR_BAR_STYLES, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
+import { KATANA_BRIDGE_TRACKING_URL } from '@shared/utils/katanaBridge'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement, Ref } from 'react'
 import { useEffect, useRef, useState } from 'react'
@@ -675,6 +681,91 @@ function YvUsdUserHoldingsCard({
   )
 }
 
+function UserDepositsBridgeBadge({ currentVault }: { currentVault: TKongVaultInput }): ReactElement | null {
+  const { cachedEntries, updateEntry } = useNotifications()
+  const { address } = useWeb3()
+  const currentVaultView = getVaultView(currentVault)
+
+  const currentBridgeNotification = address
+    ? [...cachedEntries]
+        .filter(
+          (notification) =>
+            notification.type === 'bridge' &&
+            notification.address.toLowerCase() === toAddress(address).toLowerCase() &&
+            notification.vaultAddress?.toLowerCase() === toAddress(currentVaultView.address).toLowerCase()
+        )
+        .sort((firstNotification, secondNotification) => (secondNotification.id ?? 0) - (firstNotification.id ?? 0))[0]
+    : undefined
+
+  if (!currentBridgeNotification || currentVaultView.chainID !== KATANA_CHAIN_ID) {
+    return null
+  }
+
+  const shouldShowBadge =
+    currentBridgeNotification.status === 'pending' ||
+    currentBridgeNotification.status === 'submitted' ||
+    (currentBridgeNotification.status === 'success' && !currentBridgeNotification.bridgeBadgeDismissedAt)
+
+  if (!shouldShowBadge) {
+    return null
+  }
+
+  const isBridgeComplete = currentBridgeNotification.status === 'success'
+  const badgeLabel = isBridgeComplete ? 'Bridge complete' : 'Bridging in progress'
+  const timeframeLabel =
+    currentBridgeNotification.bridgeDirection === 'to-ethereum' ? 'Typical time: ~3 hrs' : 'Typical time: ~5 min'
+
+  return (
+    <div className={'inline-flex items-center gap-1.5'}>
+      <a
+        href={KATANA_BRIDGE_TRACKING_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cl(
+          'inline-flex flex-col items-start gap-0.5 rounded-2xl border px-2.5 py-1.5 text-[11px] font-medium normal-case tracking-normal transition-colors',
+          isBridgeComplete
+            ? 'border-[#00796D]/20 bg-[#00796D]/10 text-[#00796D] hover:bg-[#00796D]/15'
+            : 'border-border bg-surface-secondary text-text-primary hover:bg-surface'
+        )}
+      >
+        <span className={'inline-flex items-center gap-1.5'}>
+          {isBridgeComplete ? (
+            <IconCheckmark className="size-3 shrink-0" />
+          ) : (
+            <IconLoader className="size-3 shrink-0 animate-spin text-text-secondary" />
+          )}
+          <span>{badgeLabel}</span>
+          <IconLinkOut className="size-3 shrink-0" />
+        </span>
+        <span
+          className={cl(
+            'pl-[18px] text-[10px] font-normal leading-tight',
+            isBridgeComplete ? 'text-[#00796D]/80' : 'text-text-secondary'
+          )}
+        >
+          {timeframeLabel}
+        </span>
+      </a>
+      {isBridgeComplete && currentBridgeNotification.id ? (
+        <button
+          type="button"
+          aria-label={'Dismiss bridge complete status'}
+          onClick={(event): void => {
+            event.preventDefault()
+            event.stopPropagation()
+            void updateEntry({ bridgeBadgeDismissedAt: Date.now() / 1000 }, currentBridgeNotification.id as number)
+          }}
+          className={
+            'inline-flex size-5 items-center justify-center rounded-full border border-border bg-surface text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary'
+          }
+        >
+          <IconClose className={'size-2.5'} />
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
 function UserHoldingsCard({
   currentVault: currentVaultInput,
   depositedValue,
@@ -709,6 +800,7 @@ function UserHoldingsCard({
           {formatUSD(depositedValueUSD)}
         </span>
       ),
+      secondaryLabel: <UserDepositsBridgeBadge currentVault={currentVault} />,
       footnote: (
         <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
           <RenderAmount

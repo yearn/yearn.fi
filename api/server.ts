@@ -1,10 +1,12 @@
 import { serve } from 'bun'
+import { isAddress } from 'viem'
 import type {
   TTenderlyFundRequest,
   TTenderlyIncreaseTimeRequest,
   TTenderlyRevertRequest,
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
+import { normalizeKatanaBridgeTransactionsResponse } from '../src/components/shared/utils/katanaBridge'
 import {
   buildTenderlyPanelStatus,
   buildTenderlyRevertResponse,
@@ -15,6 +17,7 @@ import {
 import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+const POLYGON_TRANSACTIONS_API = 'https://api-gateway.polygon.technology/api/v3/transactions/mainnet'
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
@@ -360,6 +363,57 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
   }
 }
 
+async function handleKatanaBridgeTransactions(req: Request): Promise<Response> {
+  if (req.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  const url = new URL(req.url)
+  const userAddress = url.searchParams.get('userAddress')
+
+  if (!userAddress || !isAddress(userAddress)) {
+    return Response.json({ error: 'Missing or invalid userAddress' }, { status: 400 })
+  }
+
+  const apiKey = process.env.POLYGON_API_KEY
+  if (!apiKey) {
+    console.error('POLYGON_API_KEY not configured')
+    return Response.json({ error: 'Katana bridge status API not configured' }, { status: 503 })
+  }
+
+  try {
+    const upstreamUrl = `${POLYGON_TRANSACTIONS_API}?${new URLSearchParams({ userAddress })}`
+    const response = await fetch(upstreamUrl, {
+      headers: {
+        'x-api-key': apiKey,
+        Accept: 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      const details = await response.text()
+      return Response.json(
+        {
+          error: 'Katana bridge status upstream error',
+          status: response.status,
+          details
+        },
+        { status: response.status }
+      )
+    }
+
+    const payload = await response.json()
+    return Response.json(normalizeKatanaBridgeTransactionsResponse(payload), {
+      headers: {
+        'Cache-Control': 'no-store'
+      }
+    })
+  } catch (error) {
+    console.error('Error proxying Katana bridge status request:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 serve({
   async fetch(req, server) {
     const url = new URL(req.url)
@@ -378,6 +432,10 @@ serve({
 
     if (url.pathname === '/api/yvusd/aprs') {
       return handleYvUsdAprs(req)
+    }
+
+    if (url.pathname === '/api/katana-bridge/transactions') {
+      return handleKatanaBridgeTransactions(req)
     }
 
     if (url.pathname === '/api/tenderly/status') {

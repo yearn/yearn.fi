@@ -37,6 +37,7 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
   const isFromStaking = withdrawalSource === 'staking'
   const isUnstake = routeType === 'DIRECT_UNSTAKE'
   const isUnstakeAndWithdrawFallback = routeType === 'DIRECT_UNSTAKE_WITHDRAW'
+  const isKatanaBridgeRoute = routeType === 'KATANA_NATIVE_BRIDGE'
 
   const renderReceiveValue = () => {
     // No input value - just show symbol
@@ -81,6 +82,12 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
                 redeemed for <span className="font-semibold text-text-primary">{vaultAssetSymbol}</span>, then swapped
                 to <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
               </>
+            ) : isKatanaBridgeRoute ? (
+              <>
+                Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> shares will be
+                redeemed for <span className="font-semibold text-text-primary">{vaultAssetSymbol}</span> on Katana, then
+                bridged to <span className="font-semibold text-text-primary">{outputTokenSymbol}</span> on Ethereum.
+              </>
             ) : isUnstake ? (
               <>
                 Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> will be unstaked.
@@ -115,6 +122,12 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
               <>
                 Your vault shares are redeemed for the underlying asset, which is then swapped to your desired token
                 using Enso. The final amount may vary slightly due to market conditions.
+              </>
+            ) : isKatanaBridgeRoute ? (
+              <>
+                This bridge uses multiple steps inside the widget: your vault shares are redeemed on Katana, then the
+                resulting asset is bridged to Ethereum. Once the bridge is ready, you can claim it on Ethereum via the
+                Katana Bridge UI.
               </>
             ) : isUnstake ? (
               <>

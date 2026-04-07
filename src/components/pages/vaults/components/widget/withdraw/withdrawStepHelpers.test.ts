@@ -14,6 +14,7 @@ describe('withdrawStepHelpers', () => {
     expect(getWithdrawTransactionName('DIRECT_WITHDRAW', false)).toBe('Withdraw')
     expect(getWithdrawTransactionName('DIRECT_UNSTAKE', false)).toBe('Unstake')
     expect(getWithdrawTransactionName('DIRECT_UNSTAKE_WITHDRAW', false)).toBe('Unstake & Withdraw')
+    expect(getWithdrawTransactionName('KATANA_NATIVE_BRIDGE', false)).toBe('Withdraw and Bridge')
     expect(getWithdrawTransactionName('ENSO', true)).toBe('Fetching quote')
   })
 
@@ -90,6 +91,44 @@ describe('withdrawStepHelpers', () => {
     expect(step?.successTitle).toBe('Transaction Submitted')
   })
 
+  it('builds Katana native bridge fallback steps', () => {
+    const withdrawStep = buildWithdrawTransactionStep({
+      needsApproval: false,
+      activeWithdrawPrepare: mockPrepare,
+      directWithdrawPrepare: mockPrepare,
+      fallbackStep: 'withdraw',
+      routeType: 'KATANA_NATIVE_BRIDGE',
+      isCrossChain: true,
+      formattedApprovalAmount: '1.00',
+      formattedRequiredShares: '2.00',
+      formattedWithdrawAmount: '3.00',
+      assetTokenSymbol: 'vbUSDC',
+      bridgeDestinationSymbol: 'USDC',
+      withdrawNotificationParams: undefined,
+      bridgeNotificationParams: undefined
+    })
+
+    const bridgeStep = buildWithdrawTransactionStep({
+      needsApproval: false,
+      activeWithdrawPrepare: mockPrepare,
+      fallbackStep: 'bridge',
+      routeType: 'KATANA_NATIVE_BRIDGE',
+      isCrossChain: true,
+      formattedApprovalAmount: '1.00',
+      formattedRequiredShares: '2.00',
+      formattedWithdrawAmount: '3.00',
+      assetTokenSymbol: 'vbUSDC',
+      bridgeDestinationSymbol: 'USDC',
+      withdrawNotificationParams: undefined,
+      bridgeNotificationParams: undefined
+    })
+
+    expect(withdrawStep?.label).toBe('Withdraw')
+    expect(withdrawStep?.successMessage).toContain('Preparing your bridge')
+    expect(bridgeStep?.label).toBe('Bridge')
+    expect(bridgeStep?.successTitle).toBe('Bridge submitted')
+  })
+
   it('computes last step state correctly', () => {
     expect(
       isWithdrawLastStep({
@@ -138,6 +177,34 @@ describe('withdrawStepHelpers', () => {
         },
         needsApproval: false,
         routeType: 'DIRECT_UNSTAKE_WITHDRAW'
+      })
+    ).toBe(true)
+
+    expect(
+      isWithdrawLastStep({
+        currentStep: {
+          prepare: mockPrepare,
+          label: 'Withdraw',
+          confirmMessage: '',
+          successTitle: '',
+          successMessage: ''
+        },
+        needsApproval: false,
+        routeType: 'KATANA_NATIVE_BRIDGE'
+      })
+    ).toBe(false)
+
+    expect(
+      isWithdrawLastStep({
+        currentStep: {
+          prepare: mockPrepare,
+          label: 'Bridge',
+          confirmMessage: '',
+          successTitle: '',
+          successMessage: ''
+        },
+        needsApproval: false,
+        routeType: 'KATANA_NATIVE_BRIDGE'
       })
     ).toBe(true)
   })

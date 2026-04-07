@@ -3,13 +3,21 @@ import { toAddress } from '@shared/utils'
 import type { Address } from 'viem'
 
 export const KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID = 1
+export const KATANA_NATIVE_BRIDGE_DESTINATION_CHAIN_ID = 1
+export const KATANA_NATIVE_BRIDGE_ETHEREUM_NETWORK_ID = 0
 export const KATANA_VAULT_BRIDGE_DESTINATION_NETWORK_ID = 20
+export const KATANA_UNIFIED_BRIDGE_ADDRESS = '0x2a3DD3EB832aF982ec71669E178424b10Dca2EDe'
 
 export type KatanaBridgeAssetConfig = {
   sourceChainId: typeof KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID
   sourceTokenAddress: Address
   sourceTokenSymbol: string
+  destinationChainId: typeof KATANA_NATIVE_BRIDGE_DESTINATION_CHAIN_ID
+  destinationTokenAddress: Address
+  destinationTokenSymbol: string
   bridgeContractAddress: Address
+  ethereumVaultBridgeAddress: Address
+  katanaUnifiedBridgeAddress: Address
   katanaAssetAddress: Address
   katanaAssetSymbol: string
 }
@@ -19,7 +27,12 @@ const KATANA_BRIDGE_ASSET_CONFIGS: KatanaBridgeAssetConfig[] = [
     sourceChainId: KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID,
     sourceTokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
     sourceTokenSymbol: 'WETH',
+    destinationChainId: KATANA_NATIVE_BRIDGE_DESTINATION_CHAIN_ID,
+    destinationTokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+    destinationTokenSymbol: 'WETH',
     bridgeContractAddress: '0x2DC70fb75b88d2eB4715bc06E1595E6D97c34DFF',
+    ethereumVaultBridgeAddress: '0x2DC70fb75b88d2eB4715bc06E1595E6D97c34DFF',
+    katanaUnifiedBridgeAddress: KATANA_UNIFIED_BRIDGE_ADDRESS,
     katanaAssetAddress: '0xEE7D8BCFb72bC1880D0Cf19822eB0A2e6577aB62',
     katanaAssetSymbol: 'WETH'
   },
@@ -27,7 +40,12 @@ const KATANA_BRIDGE_ASSET_CONFIGS: KatanaBridgeAssetConfig[] = [
     sourceChainId: KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID,
     sourceTokenAddress: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
     sourceTokenSymbol: 'WBTC',
+    destinationChainId: KATANA_NATIVE_BRIDGE_DESTINATION_CHAIN_ID,
+    destinationTokenAddress: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+    destinationTokenSymbol: 'WBTC',
     bridgeContractAddress: '0x2C24B57e2CCd1f273045Af6A5f632504C432374F',
+    ethereumVaultBridgeAddress: '0x2C24B57e2CCd1f273045Af6A5f632504C432374F',
+    katanaUnifiedBridgeAddress: KATANA_UNIFIED_BRIDGE_ADDRESS,
     katanaAssetAddress: '0x0913DA6Da4b42f538B445599b46Bb4622342Cf52',
     katanaAssetSymbol: 'WBTC'
   },
@@ -35,7 +53,12 @@ const KATANA_BRIDGE_ASSET_CONFIGS: KatanaBridgeAssetConfig[] = [
     sourceChainId: KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID,
     sourceTokenAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
     sourceTokenSymbol: 'USDC',
+    destinationChainId: KATANA_NATIVE_BRIDGE_DESTINATION_CHAIN_ID,
+    destinationTokenAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    destinationTokenSymbol: 'USDC',
     bridgeContractAddress: '0x53E82ABbb12638F09d9e624578ccB666217a765e',
+    ethereumVaultBridgeAddress: '0x53E82ABbb12638F09d9e624578ccB666217a765e',
+    katanaUnifiedBridgeAddress: KATANA_UNIFIED_BRIDGE_ADDRESS,
     katanaAssetAddress: '0x203A662b0BD271A6ed5a60EdFbd04bFce608FD36',
     katanaAssetSymbol: 'USDC'
   },
@@ -43,7 +66,12 @@ const KATANA_BRIDGE_ASSET_CONFIGS: KatanaBridgeAssetConfig[] = [
     sourceChainId: KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID,
     sourceTokenAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
     sourceTokenSymbol: 'USDT',
+    destinationChainId: KATANA_NATIVE_BRIDGE_DESTINATION_CHAIN_ID,
+    destinationTokenAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+    destinationTokenSymbol: 'USDT',
     bridgeContractAddress: '0x6d4f9f9f8f0155509ecd6Ac6c544fF27999845CC',
+    ethereumVaultBridgeAddress: '0x6d4f9f9f8f0155509ecd6Ac6c544fF27999845CC',
+    katanaUnifiedBridgeAddress: KATANA_UNIFIED_BRIDGE_ADDRESS,
     katanaAssetAddress: '0x2DCa96907fde857dd3D816880A0df407eeB2D2F2',
     katanaAssetSymbol: 'USDT'
   },
@@ -51,7 +79,12 @@ const KATANA_BRIDGE_ASSET_CONFIGS: KatanaBridgeAssetConfig[] = [
     sourceChainId: KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID,
     sourceTokenAddress: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
     sourceTokenSymbol: 'USDS',
+    destinationChainId: KATANA_NATIVE_BRIDGE_DESTINATION_CHAIN_ID,
+    destinationTokenAddress: '0xdC035D45d973E3EC169d2276DDab16f1e407384F',
+    destinationTokenSymbol: 'USDS',
     bridgeContractAddress: '0x3DD459dE96F9C28e3a343b831cbDC2B93c8C4855',
+    ethereumVaultBridgeAddress: '0x3DD459dE96F9C28e3a343b831cbDC2B93c8C4855',
+    katanaUnifiedBridgeAddress: KATANA_UNIFIED_BRIDGE_ADDRESS,
     katanaAssetAddress: '0x62D6A123E8D19d06d68cf0d2294F9A3A0362c6b3',
     katanaAssetSymbol: 'USDS'
   }

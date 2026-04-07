@@ -68,7 +68,12 @@ export function MetricsCard({
               )}
             >
               <div className={'flex items-center justify-between'}>{item.header}</div>
-              <div className={'[&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>{valueContent}</div>
+              <div className={'flex items-center justify-between gap-4'}>
+                <div className={'min-w-0 [&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>
+                  {valueContent}
+                </div>
+                {item.secondaryLabel ? <div className={'shrink-0'}>{item.secondaryLabel}</div> : null}
+              </div>
               {showFootnote && footnoteDisplay === 'inline' ? <div>{item.footnote}</div> : null}
             </div>
           )

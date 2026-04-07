@@ -47,9 +47,9 @@ export const useWithdrawError = ({
     }
 
     // Route-dependent validation - wait for debounce and route fetch
-    if (routeType === 'ENSO') {
+    if (routeType === 'ENSO' || routeType === 'KATANA_NATIVE_BRIDGE') {
       if (flowError && !isLoadingRoute && debouncedAmount > 0n && !isDebouncing) {
-        return 'Unable to find route'
+        return routeType === 'KATANA_NATIVE_BRIDGE' ? 'Unable to prepare bridge' : 'Unable to find route'
       }
     }
 

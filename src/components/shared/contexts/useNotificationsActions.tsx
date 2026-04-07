@@ -35,6 +35,12 @@ export const WithNotificationsActions = ({ children }: { children: React.ReactEl
         toTokenName: params.toSymbol,
         toAmount: params.toAmount,
         toChainId: params.toChainId !== params.fromChainId ? params.toChainId : undefined,
+        rawAmount: params.rawAmount,
+        destinationBalanceRaw: params.destinationBalanceRaw,
+        vaultAddress: params.vaultAddress ? toAddress(params.vaultAddress) : undefined,
+        bridgeDirection: params.bridgeDirection,
+        bridgeLifecycleStatus: params.bridgeLifecycleStatus,
+        trackingUrl: params.trackingUrl,
         // For approve notifications, use toAddress/toSymbol as spender
         spenderAddress: params.type === 'approve' ? toAddress(params.toAddress) : undefined,
         spenderName: params.type === 'approve' ? params.toSymbol : undefined,
@@ -50,16 +56,23 @@ export const WithNotificationsActions = ({ children }: { children: React.ReactEl
 
   const updateNotification = useCallback(
     async (params: TUpdateNotificationParams): Promise<void> => {
-      // Set timeFinished for receipt confirmations or 'submitted' status (cross-chain zaps)
-      const shouldSetTimeFinished = params.receipt || params.status === 'submitted'
+      const shouldSetTimeFinished =
+        params.receipt || params.status === 'submitted' || params.status === 'success' || params.status === 'error'
+
+      const updatePayload = {
+        txHash: params.txHash ?? params.receipt?.transactionHash,
+        claimTxHash: params.claimTxHash,
+        timeFinished: shouldSetTimeFinished ? Date.now() / 1000 : undefined,
+        blockNumber: params.receipt?.blockNumber,
+        status: params.status,
+        bridgeLifecycleStatus: params.bridgeLifecycleStatus,
+        trackingUrl: params.trackingUrl
+      } as const
 
       await updateEntry(
-        {
-          txHash: params.txHash ?? params.receipt?.transactionHash,
-          timeFinished: shouldSetTimeFinished ? Date.now() / 1000 : undefined,
-          blockNumber: params.receipt?.blockNumber,
-          status: params.status
-        },
+        params.bridgeDirection === undefined
+          ? updatePayload
+          : { ...updatePayload, bridgeDirection: params.bridgeDirection },
         params.id
       )
     },
