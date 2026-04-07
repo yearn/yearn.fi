@@ -3,6 +3,11 @@ import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
+import {
+  parseCooldownStatus,
+  resolveCooldownWindowState,
+  resolveYvUsdCooldownSummary
+} from '@pages/vaults/components/widget/yvUSD/cooldownUtils'
 import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
@@ -42,6 +47,9 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
+import { useReadContract } from '@shared/hooks/useAppWagmi'
+import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconLock } from '@shared/icons/IconLock'
@@ -600,6 +608,49 @@ function YvUsdUserHoldingsCard({
     chainId: YVUSD_CHAIN_ID,
     account
   })
+  const { data: rawCooldownStatus } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'getCooldownStatus',
+    args: account ? [toAddress(account)] : undefined,
+    chainId: YVUSD_CHAIN_ID,
+    query: {
+      enabled: !!account,
+      refetchInterval: account ? 30_000 : false
+    }
+  })
+  const { data: rawAvailableWithdrawLimit } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'availableWithdrawLimit',
+    args: account ? [toAddress(account)] : undefined,
+    chainId: YVUSD_CHAIN_ID,
+    query: {
+      enabled: !!account,
+      refetchInterval: account ? 30_000 : false
+    }
+  })
+
+  const cooldownStatus = parseCooldownStatus(rawCooldownStatus)
+  const hasActiveCooldown = cooldownStatus.shares > 0n
+  const availableWithdrawLimit = typeof rawAvailableWithdrawLimit === 'bigint' ? rawAvailableWithdrawLimit : 0n
+  const { timestamp: nowTimestamp } = useChainTimestamp({
+    chainId: YVUSD_CHAIN_ID,
+    enabled: Boolean(account && hasActiveCooldown)
+  })
+  const cooldownWindowState = resolveCooldownWindowState({
+    hasActiveCooldown,
+    nowTimestamp,
+    cooldownEnd: cooldownStatus.cooldownEnd,
+    windowEnd: cooldownStatus.windowEnd,
+    availableWithdrawLimit
+  })
+  const cooldownSummary = resolveYvUsdCooldownSummary({
+    hasActiveCooldown,
+    isCooldownActive: cooldownWindowState.isCooldownActive,
+    isWithdrawalWindowOpen: cooldownWindowState.isWithdrawalWindowOpen,
+    isCooldownWindowExpired: cooldownWindowState.isCooldownWindowExpired
+  })
 
   const unlockedAmount = toNormalizedBN(
     unlockedUserData.depositedValue,
@@ -615,13 +666,34 @@ function YvUsdUserHoldingsCard({
   const unlockedValueUsd = unlockedAmount * unlockedAssetPrice
   const lockedValueUsd = lockedAmount * unlockedSharePrice
   const totalValueUsd = unlockedValueUsd + lockedValueUsd
+  const cooldownBadgeClassName =
+    cooldownSummary?.tone === 'ready'
+      ? 'border-[#00796D]/30 bg-[#00796D]/10 text-[#00796D]'
+      : cooldownSummary?.tone === 'expired'
+        ? 'border-[#C73203]/30 bg-[#C73203]/10 text-[#C73203]'
+        : 'border-[#C47B07]/30 bg-[#C47B07]/10 text-[#C47B07]'
 
   const sections: TMetricBlock[] = [
     {
       key: 'deposited',
       header: (
         <MetricHeader
-          label={'Your Deposits'}
+          label={
+            <span className={'flex items-center gap-2'}>
+              <span>{'Your Deposits'}</span>
+              {cooldownSummary ? (
+                <span
+                  className={cl(
+                    'rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                    cooldownBadgeClassName
+                  )}
+                >
+                  {cooldownSummary.label}
+                </span>
+              ) : null}
+            </span>
+          }
+          mobileLabel={'Your Deposits'}
           tooltip={'Review the USD value of everything you have supplied to this vault so far.'}
         />
       ),
@@ -632,6 +704,12 @@ function YvUsdUserHoldingsCard({
       ),
       footnote: (
         <div className={cl(METRIC_FOOTNOTE_CLASS, 'flex flex-col gap-1')} suppressHydrationWarning>
+          {cooldownSummary ? (
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-text-secondary">{'Locked status'}</span>
+              <span className="text-right text-text-primary">{cooldownSummary.label}</span>
+            </div>
+          ) : null}
           <div className="flex items-center justify-between gap-4">
             <span className="inline-flex items-center gap-2 text-text-secondary">
               <IconLock className="size-3" />

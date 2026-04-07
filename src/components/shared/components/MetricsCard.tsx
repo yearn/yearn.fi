@@ -1,6 +1,6 @@
 import { Tooltip } from '@shared/components/Tooltip'
 import { cl } from '@shared/utils'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 export const METRIC_VALUE_CLASS = 'font-semibold text-[20px] leading-tight md:text-[22px]'
 export const METRIC_FOOTNOTE_CLASS = 'text-xs text-text-secondary'
@@ -83,8 +83,8 @@ export function MetricHeader({
   mobileLabel,
   tooltip
 }: {
-  label: string
-  mobileLabel?: string
+  label: ReactNode
+  mobileLabel?: ReactNode
   tooltip?: string
 }): ReactElement {
   const tooltipContent = (
