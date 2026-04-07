@@ -353,10 +353,11 @@ export function useV3VaultFilter(
 
       const shouldIncludeByCategory = hasUserHoldings || !hasCategoryFilter || Boolean(categories?.includes(category))
       const isPinnedByUserContext = hasUserHoldings || isMigratableVault || isRetiredVault
-      const isStrategy = kind === 'strategy'
-      const shouldIncludeByFeaturedGate = showHiddenVaults || isStrategy || isFeatured || isPinnedByUserContext
+      const isStrategyLike = kind === 'strategy' || kind === 'yieldSplitter'
+      const shouldIncludeByFeaturedGate = showHiddenVaults || isStrategyLike || isFeatured || isPinnedByUserContext
       const shouldIncludeByKind =
         hasUserHoldings ||
+        kind === 'yieldSplitter' ||
         !hasTypeFilter ||
         (Boolean(types?.includes('multi')) && kind === 'allocator') ||
         (Boolean(types?.includes('single')) && kind === 'strategy')

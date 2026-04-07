@@ -7,6 +7,7 @@ import {
   getVaultStaking,
   getVaultToken,
   getVaultVersion,
+  getVaultYieldSplitter,
   isAutomatedVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
@@ -239,6 +240,7 @@ export function VaultInfoSection({
   const isYvUsd = isYvUsdAddress(vaultAddress)
   const token = getVaultToken(currentVault)
   const staking = getVaultStaking(currentVault)
+  const yieldSplitter = getVaultYieldSplitter(currentVault)
   const info = getVaultInfo(currentVault)
   const apr = getVaultAPR(currentVault)
   const category = getVaultCategory(currentVault)
@@ -296,7 +298,52 @@ export function VaultInfoSection({
           <AddressLink address={vaultAddress} explorerUrl={explorerUrl} label={'Vault Contract Address'} />
         )}
 
-        <AddressLink address={token.address} explorerUrl={explorerUrl} label={'Token Contract Address'} />
+        <AddressLink
+          address={token.address}
+          explorerUrl={explorerUrl}
+          label={yieldSplitter ? 'Deposit Asset Contract Address' : 'Token Contract Address'}
+        />
+
+        {yieldSplitter ? (
+          <AddressLink
+            address={yieldSplitter.sourceVaultAddress}
+            explorerUrl={explorerUrl}
+            label={'Source Vault Contract Address'}
+          />
+        ) : null}
+
+        {yieldSplitter ? (
+          <AddressLink
+            address={yieldSplitter.wantVaultAddress}
+            explorerUrl={explorerUrl}
+            label={'Yield Vault Contract Address'}
+          />
+        ) : null}
+
+        {yieldSplitter?.rewardHandlerAddress ? (
+          <AddressLink
+            address={yieldSplitter.rewardHandlerAddress}
+            explorerUrl={explorerUrl}
+            label={'Reward Handler Address'}
+          />
+        ) : null}
+
+        {yieldSplitter?.tokenizedStrategyAddress ? (
+          <AddressLink
+            address={yieldSplitter.tokenizedStrategyAddress}
+            explorerUrl={explorerUrl}
+            label={'Tokenized Strategy Address'}
+          />
+        ) : null}
+
+        {yieldSplitter?.rewardTokenAddresses.map((rewardTokenAddress, index) => (
+          <AddressLink
+            key={rewardTokenAddress}
+            address={rewardTokenAddress}
+            explorerUrl={explorerUrl}
+            label={`Reward Token ${index + 1} Address`}
+          />
+        ))}
 
         {staking.available ? (
           <AddressLink address={staking.address} explorerUrl={explorerUrl} label={'Staking Contract Address'} />

@@ -1,11 +1,16 @@
 import { normalizeVaultCategory } from '@pages/vaults/utils/normalizeVaultCategory'
 import { toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
-import type { TKongVaultListItem, TKongVaultListItemStakingReward } from '@shared/utils/schemas/kongVaultListSchema'
+import type {
+  TKongVaultListItem,
+  TKongVaultListItemStakingReward,
+  TKongVaultListItemYieldSplitter
+} from '@shared/utils/schemas/kongVaultListSchema'
 import type {
   TKongVaultSnapshot,
   TKongVaultSnapshotComposition,
   TKongVaultSnapshotDebt,
-  TKongVaultSnapshotStakingReward
+  TKongVaultSnapshotStakingReward,
+  TKongVaultSnapshotYieldSplitter
 } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { zeroAddress } from 'viem'
 
@@ -204,6 +209,15 @@ const normalizePricePerShare = (value: string | number | null | undefined, decim
   return toNormalizedBN(value, decimals).normalized
 }
 
+const resolveOptionalAddress = (value?: string | null): `0x${string}` | undefined => {
+  if (!value) {
+    return undefined
+  }
+
+  const address = toAddress(value)
+  return address === zeroAddress ? undefined : address
+}
+
 const deriveDefaultCategory = ({
   name,
   symbol,
@@ -309,6 +323,25 @@ export type TKongVaultStaking = {
   rewards: TKongVaultStakingReward[] | null
 }
 
+export type TKongVaultYieldSplitter = {
+  enabled: true
+  sourceVaultAddress: `0x${string}`
+  sourceVaultName: string
+  sourceVaultSymbol: string
+  wantVaultAddress: `0x${string}`
+  wantVaultName: string
+  wantVaultSymbol: string
+  depositAssetAddress?: `0x${string}`
+  depositAssetName: string
+  depositAssetSymbol: string
+  rewardTokenAddresses: `0x${string}`[]
+  rewardHandlerAddress?: `0x${string}`
+  tokenizedStrategyAddress?: `0x${string}`
+  displayType: string
+  displayKind: string
+  uiDescription: string
+}
+
 export type TKongVaultMigration = {
   available: boolean
   address: `0x${string}`
@@ -362,6 +395,7 @@ export type TKongVaultView = {
   featuringScore: number
   strategies: TKongVaultStrategy[] | null
   staking: TKongVaultStaking
+  yieldSplitter: TKongVaultYieldSplitter | null
   migration: TKongVaultMigration
   info: TKongVaultInfo
 }
@@ -470,7 +504,9 @@ export const getVaultDescription = (vault: TKongVaultInput, snapshot?: TKongVaul
   if (isVaultView(vault)) {
     return vault.description
   }
-  return snapshot?.meta?.description ?? ''
+  return (
+    snapshot?.meta?.description ?? snapshot?.yieldSplitter?.uiDescription ?? vault.yieldSplitter?.uiDescription ?? ''
+  )
 }
 
 export const getVaultToken = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultToken => {
@@ -698,6 +734,47 @@ export const getVaultStaking = (vault: TKongVaultInput, snapshot?: TKongVaultSna
   }
 }
 
+const mapYieldSplitter = (
+  yieldSplitter: TKongVaultSnapshotYieldSplitter | TKongVaultListItemYieldSplitter | undefined
+): TKongVaultYieldSplitter | null => {
+  if (!yieldSplitter?.enabled) {
+    return null
+  }
+
+  return {
+    enabled: true,
+    sourceVaultAddress: toAddress(yieldSplitter.sourceVaultAddress),
+    sourceVaultName: yieldSplitter.sourceVaultName ?? '',
+    sourceVaultSymbol: yieldSplitter.sourceVaultSymbol ?? '',
+    wantVaultAddress: toAddress(yieldSplitter.wantVaultAddress),
+    wantVaultName: yieldSplitter.wantVaultName ?? '',
+    wantVaultSymbol: yieldSplitter.wantVaultSymbol ?? '',
+    depositAssetAddress: resolveOptionalAddress(yieldSplitter.depositAssetAddress),
+    depositAssetName: yieldSplitter.depositAssetName ?? '',
+    depositAssetSymbol: yieldSplitter.depositAssetSymbol ?? '',
+    rewardTokenAddresses: (yieldSplitter.rewardTokenAddresses ?? []).map((address) => toAddress(address)),
+    rewardHandlerAddress: resolveOptionalAddress(yieldSplitter.rewardHandlerAddress),
+    tokenizedStrategyAddress: resolveOptionalAddress(yieldSplitter.tokenizedStrategyAddress),
+    displayType: yieldSplitter.displayType ?? 'Yield Splitter',
+    displayKind: yieldSplitter.displayKind ?? 'Vault-to-Vault',
+    uiDescription: yieldSplitter.uiDescription ?? ''
+  }
+}
+
+export const getVaultYieldSplitter = (
+  vault: TKongVaultInput,
+  snapshot?: TKongVaultSnapshot
+): TKongVaultYieldSplitter | null => {
+  if (isVaultView(vault)) {
+    return vault.yieldSplitter
+  }
+
+  return mapYieldSplitter(snapshot?.yieldSplitter ?? vault.yieldSplitter)
+}
+
+export const isYieldSplitterVault = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): boolean =>
+  Boolean(getVaultYieldSplitter(vault, snapshot)?.enabled)
+
 export const getVaultMigration = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultMigration => {
   if (isVaultView(vault)) {
     return vault.migration
@@ -919,6 +996,7 @@ export const getVaultView = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsh
     featuringScore: getVaultFeaturingScore(vault),
     strategies: getVaultStrategies(vault, snapshot),
     staking: getVaultStaking(vault, snapshot),
+    yieldSplitter: getVaultYieldSplitter(vault, snapshot),
     migration: getVaultMigration(vault, snapshot),
     info: getVaultInfo(vault, snapshot)
   }

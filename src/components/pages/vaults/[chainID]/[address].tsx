@@ -209,7 +209,8 @@ const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
             isFinished: reward.isFinished ?? false
           }))
         }
-      : null
+      : null,
+    yieldSplitter: snapshot.yieldSplitter
   }
 }
 
@@ -783,7 +784,7 @@ function Index(): ReactElement | null {
       },
       {
         key: 'strategies' as const,
-        shouldRender: Number(currentVault.strategies?.length || 0) > 0,
+        shouldRender: !currentVault.yieldSplitter && Number(currentVault.strategies?.length || 0) > 0,
         ref: sectionRefs.strategies,
         content: <VaultStrategiesSection currentVault={currentVault} />
       },
@@ -1443,6 +1444,7 @@ function Index(): ReactElement | null {
               {shouldShowWidgetRewards ? (
                 <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
                   <WidgetRewards
+                    vaultAddress={toAddress(currentVault.address)}
                     stakingAddress={stakingAddress}
                     stakingSource={currentVault.staking.source}
                     rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
@@ -1452,6 +1454,7 @@ function Index(): ReactElement | null {
                       price: r.price,
                       isFinished: r.isFinished
                     }))}
+                    yieldSplitter={currentVault.yieldSplitter}
                     chainId={chainId}
                     isPanelOpen={isWidgetRewardsOpen}
                     onOpenRewards={openWidgetRewards}

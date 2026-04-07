@@ -24,6 +24,27 @@ const stakingRewardSchema = z
   })
   .passthrough()
 
+const yieldSplitterSchema = z
+  .object({
+    enabled: z.literal(true),
+    sourceVaultAddress: addressSchema,
+    sourceVaultName: z.string().optional().catch(''),
+    sourceVaultSymbol: z.string().optional().catch(''),
+    wantVaultAddress: addressSchema,
+    wantVaultName: z.string().optional().catch(''),
+    wantVaultSymbol: z.string().optional().catch(''),
+    depositAssetAddress: addressSchema.optional().catch('0x0000000000000000000000000000000000000000'),
+    depositAssetName: z.string().optional().catch(''),
+    depositAssetSymbol: z.string().optional().catch(''),
+    rewardTokenAddresses: z.array(addressSchema).optional().default([]).catch([]),
+    rewardHandlerAddress: addressSchema.optional().catch('0x0000000000000000000000000000000000000000'),
+    tokenizedStrategyAddress: addressSchema.optional().catch('0x0000000000000000000000000000000000000000'),
+    displayType: z.string().optional().default('Yield Splitter').catch('Yield Splitter'),
+    displayKind: z.string().optional().default('Vault-to-Vault').catch('Vault-to-Vault'),
+    uiDescription: z.string().optional().default('').catch('')
+  })
+  .passthrough()
+
 export const kongVaultListItemSchema = z.object({
   chainId: z.number(),
   address: addressSchema,
@@ -125,7 +146,9 @@ export const kongVaultListItemSchema = z.object({
     })
     .nullish(),
 
-  pricePerShare: coerceNullableBigNumberish.optional()
+  pricePerShare: coerceNullableBigNumberish.optional(),
+
+  yieldSplitter: yieldSplitterSchema.optional()
 })
 
 export const kongVaultListSchema = z.array(kongVaultListItemSchema)
@@ -133,3 +156,4 @@ export const kongVaultListSchema = z.array(kongVaultListItemSchema)
 export type TKongVaultListItem = z.infer<typeof kongVaultListItemSchema>
 export type TKongVaultList = z.infer<typeof kongVaultListSchema>
 export type TKongVaultListItemStakingReward = z.infer<typeof stakingRewardSchema>
+export type TKongVaultListItemYieldSplitter = z.infer<typeof yieldSplitterSchema>

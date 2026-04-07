@@ -5,7 +5,7 @@ import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
 import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
-import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { getVaultView, getVaultYieldSplitter, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
@@ -53,7 +53,7 @@ import type { ReactElement, Ref } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
-type TVaultKindType = 'multi' | 'single' | undefined
+type TVaultKindType = 'multi' | 'single' | 'route' | undefined
 
 function noop(): void {}
 
@@ -62,6 +62,10 @@ function noopWidgetModeChange(_mode: WidgetActionType): void {}
 function noopSelectSection(_key: string): void {}
 
 function getVaultProductTypeLabel(listKind: ReturnType<typeof deriveListKind>): string {
+  if (listKind === 'yieldSplitter') {
+    return 'Yield Splitter'
+  }
+
   if (listKind === 'allocator' || listKind === 'strategy') {
     return 'Single Asset'
   }
@@ -77,6 +81,10 @@ function getVaultKindType(
   kind: string | null | undefined,
   listKind: ReturnType<typeof deriveListKind>
 ): TVaultKindType {
+  if (listKind === 'yieldSplitter') {
+    return 'route'
+  }
+
   if (kind === 'Multi Strategy') {
     return 'multi'
   }
@@ -103,6 +111,10 @@ function getVaultKindLabel(kindType: TVaultKindType, fallbackKind: string | null
 
   if (kindType === 'single') {
     return 'Strategy'
+  }
+
+  if (kindType === 'route') {
+    return 'Vault-to-Vault'
   }
 
   return fallbackKind ?? undefined
@@ -158,6 +170,11 @@ function VaultHeaderIdentity({
   const productTypeLabel = getVaultProductTypeLabel(listKind)
   const kindType = getVaultKindType(currentVault.kind, listKind)
   const kindLabel = getVaultKindLabel(kindType, currentVault.kind)
+  const yieldSplitter = getVaultYieldSplitter(currentVault)
+  const yieldSplitterRouteLabel =
+    yieldSplitter && (yieldSplitter.sourceVaultSymbol || yieldSplitter.wantVaultSymbol)
+      ? `${yieldSplitter.sourceVaultSymbol || yieldSplitter.sourceVaultName} -> ${yieldSplitter.wantVaultSymbol || yieldSplitter.wantVaultName}`
+      : ''
   const chainDescription = getChainDescription(currentVault.chainID)
   const categoryDescription = getCategoryDescription(currentVault.category)
   const productTypeDescription = getProductTypeDescription(listKind)
@@ -259,6 +276,9 @@ function VaultHeaderIdentity({
               </a>
             ) : null}
           </div>
+          {!isCompressed && yieldSplitterRouteLabel ? (
+            <span className="mt-1 text-sm text-text-secondary">{yieldSplitterRouteLabel}</span>
+          ) : null}
         </div>
       </div>
       {shouldShowMetadata ? (
@@ -298,6 +318,14 @@ function VaultHeaderIdentity({
               isCollapsed={isCompressed}
               showCollapsedTooltip={isCompressed}
               tooltipDescription={kindDescription}
+            />
+          ) : null}
+          {yieldSplitterRouteLabel ? (
+            <VaultsListChip
+              label={yieldSplitterRouteLabel}
+              isCollapsed={isCompressed}
+              showCollapsedTooltip={isCompressed}
+              tooltipDescription={yieldSplitter?.uiDescription || undefined}
             />
           ) : null}
           {isRetired ? (

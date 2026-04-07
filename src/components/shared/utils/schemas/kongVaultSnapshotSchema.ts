@@ -274,6 +274,27 @@ const snapshotStakingSchema = z
   .nullable()
   .optional()
 
+const snapshotYieldSplitterSchema = z
+  .object({
+    enabled: z.literal(true),
+    sourceVaultAddress: addressSchema,
+    sourceVaultName: z.string().optional().default('').catch(''),
+    sourceVaultSymbol: z.string().optional().default('').catch(''),
+    wantVaultAddress: addressSchema,
+    wantVaultName: z.string().optional().default('').catch(''),
+    wantVaultSymbol: z.string().optional().default('').catch(''),
+    depositAssetAddress: addressSchema.optional().catch(zeroAddress),
+    depositAssetName: z.string().optional().default('').catch(''),
+    depositAssetSymbol: z.string().optional().default('').catch(''),
+    rewardTokenAddresses: z.array(addressSchema).optional().default([]).catch([]),
+    rewardHandlerAddress: addressSchema.optional().catch(zeroAddress),
+    tokenizedStrategyAddress: addressSchema.optional().catch(zeroAddress),
+    displayType: z.string().optional().default('Yield Splitter').catch('Yield Splitter'),
+    displayKind: z.string().optional().default('Vault-to-Vault').catch('Vault-to-Vault'),
+    uiDescription: z.string().optional().default('').catch('')
+  })
+  .passthrough()
+
 export const kongVaultSnapshotSchema = z
   .object({
     address: addressSchema,
@@ -296,7 +317,8 @@ export const kongVaultSnapshotSchema = z
     debts: z.array(snapshotDebtSchema).optional().default([]),
     strategies: z.array(addressSchema).optional().default([]),
     staking: snapshotStakingSchema,
-    inclusion: z.record(z.string(), z.boolean()).optional()
+    inclusion: z.record(z.string(), z.boolean()).optional(),
+    yieldSplitter: snapshotYieldSplitterSchema.optional()
   })
   .passthrough()
 
@@ -305,3 +327,4 @@ export type TKongVaultSnapshotDebt = z.infer<typeof snapshotDebtSchema>
 export type TKongVaultSnapshotComposition = z.infer<typeof snapshotCompositionSchema>
 export type TKongVaultSnapshotStaking = z.infer<typeof snapshotStakingSchema>
 export type TKongVaultSnapshotStakingReward = z.infer<typeof snapshotStakingRewardSchema>
+export type TKongVaultSnapshotYieldSplitter = z.infer<typeof snapshotYieldSplitterSchema>

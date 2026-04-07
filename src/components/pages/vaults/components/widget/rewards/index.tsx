@@ -1,6 +1,8 @@
 import { usePlausible } from '@hooks/usePlausible'
+import type { TKongVaultYieldSplitter } from '@pages/vaults/domain/kongVaultSelectors'
 import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { type TRewardToken, useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
+import { useYieldSplitterRewards } from '@pages/vaults/hooks/rewards/useYieldSplitterRewards'
 import { Button } from '@shared/components/Button'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -14,11 +16,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { MerkleRewardRow } from './MerkleRewardRow'
 import { StakingRewardRow } from './StakingRewardRow'
+import { YieldSplitterRewardRow } from './YieldSplitterRewardRow'
 
 type TWidgetRewardsProps = {
+  vaultAddress?: `0x${string}`
   stakingAddress?: `0x${string}`
   stakingSource?: string
   rewardTokens: TRewardToken[]
+  yieldSplitter?: TKongVaultYieldSplitter | null
   chainId: number
   isPanelOpen?: boolean
   onOpenRewards?: () => void
@@ -28,9 +33,11 @@ type TWidgetRewardsProps = {
 
 export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   const {
+    vaultAddress,
     stakingAddress,
     stakingSource,
     rewardTokens,
+    yieldSplitter,
     chainId,
     isPanelOpen = false,
     onOpenRewards,
@@ -61,6 +68,18 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   })
 
   const {
+    rewards: yieldSplitterRewards,
+    isLoading: isYieldSplitterLoading,
+    refetch: refetchYieldSplitter
+  } = useYieldSplitterRewards({
+    splitterAddress: yieldSplitter ? vaultAddress : undefined,
+    rewardTokenAddresses: yieldSplitter?.rewardTokenAddresses ?? [],
+    userAddress,
+    chainId,
+    enabled: isActive && !!yieldSplitter && !!vaultAddress
+  })
+
+  const {
     groupedRewards: merkleRewards,
     isLoading: isMerkleLoading,
     refetch: refetchMerkle
@@ -71,15 +90,17 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   })
 
   const hasStakingRewards = stakingRewards.length > 0
+  const hasYieldSplitterRewards = yieldSplitterRewards.length > 0
   const hasMerkleRewards = merkleRewards.length > 0
-  const hasAnyRewards = hasStakingRewards || hasMerkleRewards
-  const isRewardsLoading = isStakingLoading || isMerkleLoading
+  const hasAnyRewards = hasStakingRewards || hasYieldSplitterRewards || hasMerkleRewards
+  const isRewardsLoading = isStakingLoading || isYieldSplitterLoading || isMerkleLoading
 
   const totalUsd = useMemo(() => {
     const stakingTotal = stakingRewards.reduce((acc, r) => acc + r.usdValue, 0)
+    const yieldSplitterTotal = yieldSplitterRewards.reduce((acc, r) => acc + r.usdValue, 0)
     const merkleTotal = merkleRewards.reduce((acc, r) => acc + r.totalUsdValue, 0)
-    return stakingTotal + merkleTotal
-  }, [stakingRewards, merkleRewards])
+    return stakingTotal + yieldSplitterTotal + merkleTotal
+  }, [stakingRewards, yieldSplitterRewards, merkleRewards])
 
   const handleOpenRewards = useCallback(() => {
     if (!onOpenRewards || isPanelOpen) {
@@ -113,9 +134,19 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
     setActiveStep(undefined)
     setIsComplete(true)
     refetchStaking()
+    refetchYieldSplitter()
     refetchMerkle()
     onClaimSuccess?.()
-  }, [trackEvent, chainId, stakingAddress, totalUsd, refetchStaking, refetchMerkle, onClaimSuccess])
+  }, [
+    trackEvent,
+    chainId,
+    stakingAddress,
+    totalUsd,
+    refetchStaking,
+    refetchYieldSplitter,
+    refetchMerkle,
+    onClaimSuccess
+  ])
 
   const handleOverlayClose = useCallback(() => {
     setIsOverlayOpen(false)
@@ -210,6 +241,16 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
                     isFirst={index === 0}
                   />
                 ))}
+                {yieldSplitterRewards.map((reward, index) => (
+                  <YieldSplitterRewardRow
+                    key={`${reward.tokenAddress}-${reward.amount}`}
+                    reward={reward}
+                    splitterAddress={vaultAddress!}
+                    chainId={chainId}
+                    onStartClaim={handleStartClaim}
+                    isFirst={index === 0 && !hasStakingRewards}
+                  />
+                ))}
                 {merkleRewards.map((groupedReward, index) => (
                   <MerkleRewardRow
                     key={groupedReward.token.address}
@@ -217,7 +258,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
                     userAddress={userAddress!}
                     chainId={chainId}
                     onStartClaim={handleStartClaim}
-                    isFirst={index === 0 && !hasStakingRewards}
+                    isFirst={index === 0 && !hasStakingRewards && !hasYieldSplitterRewards}
                   />
                 ))}
                 {!isOnCorrectChain && (

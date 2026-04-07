@@ -39,8 +39,10 @@ import {
   deriveV3Aggressiveness,
   expandUnderlyingAssetSelection,
   getUnderlyingAssetLabel,
+  isV3ListKind,
   normalizeUnderlyingAssetSymbol,
-  type TVaultAggressiveness
+  type TVaultAggressiveness,
+  type TVaultListKind
 } from '@pages/vaults/utils/vaultListFacets'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { getSupportedChainsForVaultType } from '@pages/vaults/utils/vaultTypeUtils'
@@ -424,7 +426,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     [listUnderlyingAssetsSanitized]
   )
   const activeV3Kinds = useMemo(() => {
-    const kinds = new Set<'allocator' | 'strategy'>()
+    const kinds = new Set<TVaultListKind>()
     if (listV3Types.includes('multi')) {
       kinds.add('allocator')
     }
@@ -538,7 +540,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     (vault: TKongVaultInput): TVaultsBlockingFilterBaseActionKey[] => {
       const blockingKeys = new Set<TVaultsBlockingFilterBaseActionKey>()
       const listKind = deriveListKind(vault)
-      const isV3Kind = listKind === 'allocator' || listKind === 'strategy'
+      const isV3Kind = isV3ListKind(listKind)
       const isV2Kind = listKind === 'factory' || listKind === 'legacy'
 
       if ((listVaultType === 'v3' && isV2Kind) || (listVaultType === 'factory' && isV3Kind)) {
@@ -587,7 +589,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
         if (!listShowStrategies && listKind === 'strategy') {
           blockingKeys.add('showStrategies')
         }
-        if (isTypesFilterBlockingResults && !activeV3Kinds.has(listKind)) {
+        if (isTypesFilterBlockingResults && listKind !== 'yieldSplitter' && !activeV3Kinds.has(listKind)) {
           blockingKeys.add('showAllTypes')
         }
       }
@@ -665,7 +667,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
   )
   const resolveApyDisplayVariant = useCallback((vault: TKongVaultInput): 'default' | 'factory-list' => {
     const listKind = deriveListKind(vault)
-    return listKind === 'allocator' || listKind === 'strategy' ? 'default' : 'factory-list'
+    return isV3ListKind(listKind) ? 'default' : 'factory-list'
   }, [])
   const handleChainsChange = useCallback(
     (nextChains: number[] | null): void => {
