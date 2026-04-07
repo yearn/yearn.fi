@@ -84,8 +84,8 @@ export function MetricHeader({
   mobileLabel,
   tooltip
 }: {
-  label: string
-  mobileLabel?: string
+  label: ReactNode
+  mobileLabel?: ReactNode
   tooltip?: ReactNode
 }): ReactElement {
   const tooltipContent = (
