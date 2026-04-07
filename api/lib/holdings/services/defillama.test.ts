@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { DefiLlamaBatchResponse } from '../types'
 import { getCachedPriceMisses, getCachedPrices, saveCachedPriceMisses, saveCachedPrices } from './cache'
-import { fetchHistoricalPrices, getPriceAtTimestamp, parseDefiLlamaResponse } from './defillama'
+import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp, parseDefiLlamaResponse } from './defillama'
 
 vi.mock('./cache', () => ({
   getCachedPriceMisses: vi.fn(async () => new Map()),
@@ -28,6 +28,41 @@ afterEach(() => {
 })
 
 describe('parseDefiLlamaResponse', () => {
+  it('maps Katana chain IDs to the katana DefiLlama prefix', () => {
+    expect(getChainPrefix(747474)).toBe('katana')
+  })
+
+  it('uses the katana chain prefix for Katana token requests', async () => {
+    const katanaToken = '0xee7d8bcfb72bc1880d0cf19822eb0a2e6577ab62'
+    const fetchStub = vi.fn().mockResolvedValue(
+      createBatchResponse({
+        coins: {
+          [`katana:${katanaToken}`]: {
+            symbol: 'vbETH',
+            prices: [{ timestamp: 1700000000, price: 2000, confidence: 0.99 }]
+          }
+        }
+      })
+    )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPrices([{ chainId: 747474, address: katanaToken }], [1700000000])
+
+    expect(fetchStub).toHaveBeenCalledTimes(1)
+
+    const requestUrl = new URL(fetchStub.mock.calls[0][0] as string)
+    const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+      string,
+      number[]
+    >
+
+    expect(coinsParam).toEqual({
+      [`katana:${katanaToken}`]: [1700000000]
+    })
+    expect(prices.get(`katana:${katanaToken}`)?.get(1700000000)).toBe(2000)
+  })
+
   it('uses returned timestamps instead of assuming the requested order is preserved', () => {
     const response: DefiLlamaBatchResponse = {
       coins: {
