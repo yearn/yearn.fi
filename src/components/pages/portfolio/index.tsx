@@ -690,18 +690,21 @@ function ChainMerkleRewardsFetcher({
   chainId,
   userAddress,
   isActive,
-  onRewards
+  onRewards,
+  hiddenRewardRoots = []
 }: {
   chainId: number
   userAddress?: `0x${string}`
   isActive: boolean
   onRewards: (chainId: number, rewards: TGroupedMerkleReward[], isLoading: boolean, refetch: () => void) => void
+  hiddenRewardRoots?: `0x${string}`[]
 }): null {
   const isEnabled = isActive && !!userAddress
   const { groupedRewards, isLoading, refetch } = useMerkleRewards({
     userAddress,
     chainId,
-    enabled: isEnabled
+    enabled: isEnabled,
+    hiddenRewardRoots
   })
 
   // Stable refs to avoid recreating the effect callback
@@ -756,6 +759,8 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
       }
     >
   >({})
+  const [hiddenMerkleRewardRoots, setHiddenMerkleRewardRoots] = useState<Record<number, `0x${string}`[]>>({})
+  const [activeMerkleClaim, setActiveMerkleClaim] = useState<{ chainId: number; roots: `0x${string}`[] } | undefined>()
 
   const handleStakingRewards = useCallback(
     (
@@ -857,10 +862,31 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
     return selectedChainData && selectedChainData.rewardCount > 0 ? [selectedChainData] : []
   }, [selectedChainId, chainRewardsData, selectedChainData])
 
-  const handleStartClaim = useCallback((step: TransactionStep) => {
-    setActiveStep(step)
-    setIsOverlayOpen(true)
-  }, [])
+  const handleStartClaim = useCallback(
+    (step: TransactionStep, merkleRewardRoots: `0x${string}`[] = [], chainId?: number) => {
+      setActiveStep(step)
+      setActiveMerkleClaim(
+        chainId !== undefined && merkleRewardRoots.length > 0 ? { chainId, roots: merkleRewardRoots } : undefined
+      )
+      setIsOverlayOpen(true)
+    },
+    []
+  )
+
+  const handleBeforeSuccess = useCallback(async () => {
+    if (activeMerkleClaim) {
+      setHiddenMerkleRewardRoots((prev) => ({
+        ...prev,
+        [activeMerkleClaim.chainId]: [
+          ...new Set([...(prev[activeMerkleClaim.chainId] ?? []), ...activeMerkleClaim.roots])
+        ]
+      }))
+    }
+
+    await Promise.all(
+      chainRewardsData.flatMap((chainRewardData) => [chainRewardData.refetchStaking(), chainRewardData.refetchMerkle()])
+    )
+  }, [activeMerkleClaim, chainRewardsData])
 
   const handleClaimComplete = useCallback(() => {
     trackEvent(PLAUSIBLE_EVENTS.CLAIM, {
@@ -872,16 +898,21 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
     })
     setIsOverlayOpen(false)
     setActiveStep(undefined)
-    chainRewardsData.forEach((c) => {
-      c.refetchStaking()
-      c.refetchMerkle()
-    })
-  }, [trackEvent, selectedChainId, totalUsd, selectedChainData?.totalUsd, chainRewardsData])
+    setActiveMerkleClaim(undefined)
+  }, [trackEvent, selectedChainId, totalUsd, selectedChainData?.totalUsd])
 
   const handleOverlayClose = useCallback(() => {
     setIsOverlayOpen(false)
     setActiveStep(undefined)
+    setActiveMerkleClaim(undefined)
   }, [])
+
+  useEffect(() => {
+    setHiddenMerkleRewardRoots({})
+    setActiveMerkleClaim(undefined)
+    setActiveStep(undefined)
+    setIsOverlayOpen(false)
+  }, [userAddress])
 
   function getChainLogoUrl(chainId: number): string {
     return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
@@ -926,7 +957,9 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                   stakingAddress={sr.stakingAddress}
                   stakingSource={sr.stakingSource}
                   chainId={chainData.chainId}
-                  onStartClaim={handleStartClaim}
+                  onStartClaim={(step, merkleRewardRoots) =>
+                    handleStartClaim(step, merkleRewardRoots, chainData.chainId)
+                  }
                   isFirst={srIdx === 0 && rewardIdx === 0}
                   isAllChainsView={isAllChainsView}
                   onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
@@ -939,7 +972,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                 groupedReward={groupedReward}
                 userAddress={userAddress!}
                 chainId={chainData.chainId}
-                onStartClaim={handleStartClaim}
+                onStartClaim={(step, merkleRewardRoots) => handleStartClaim(step, merkleRewardRoots, chainData.chainId)}
                 isFirst={idx === 0 && chainData.stakingRewards.length === 0}
                 isAllChainsView={isAllChainsView}
                 onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
@@ -995,6 +1028,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
           userAddress={userAddress}
           isActive={isActive}
           onRewards={handleMerkleRewards}
+          hiddenRewardRoots={hiddenMerkleRewardRoots[chainId] ?? []}
         />
       ))}
 
@@ -1077,6 +1111,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
           onClose={handleOverlayClose}
           step={activeStep}
           isLastStep={true}
+          onBeforeSuccess={handleBeforeSuccess}
           onAllComplete={handleClaimComplete}
           topOffset="0"
           contentAlign="center"

@@ -12,7 +12,7 @@ type TMerkleRewardRowProps = {
   groupedReward: TGroupedMerkleReward
   userAddress: `0x${string}`
   chainId: number
-  onStartClaim: (step: TransactionStep) => void
+  onStartClaim: (step: TransactionStep, merkleRewardRoots?: `0x${string}`[]) => void
   isFirst?: boolean
   isAllChainsView?: boolean
   onSwitchChain?: () => void
@@ -49,8 +49,11 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
 
   const handleClaim = useCallback(() => {
     if (!step) return
-    onStartClaim(step)
-  }, [step, onStartClaim])
+    onStartClaim(
+      step,
+      groupedReward.rewards.map((reward) => reward.root)
+    )
+  }, [step, onStartClaim, groupedReward.rewards])
 
   return (
     <RewardRow
