@@ -14,7 +14,7 @@ import { IconClose } from '@shared/icons/IconClose'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { cl, formatUSD, SUPPORTED_NETWORKS, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
-import { Fragment, useMemo } from 'react'
+import { Fragment, useEffect, useMemo } from 'react'
 import { Link } from 'react-router'
 import { usePortfolioBreakdown } from '../hooks/usePortfolioBreakdown'
 import type { TPortfolioBreakdownVault } from '../types/api'
@@ -149,6 +149,44 @@ export function PortfolioHistoryBreakdownModal({
   const { allVaults } = useYearn()
   const { data, isLoading, error } = usePortfolioBreakdown(date, isOpen)
 
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    const root = document.documentElement
+    const body = document.body
+    const previousBodyOverflow = body.style.overflow
+    const previousBodyPaddingRight = body.style.paddingRight
+    const previousRootOverflow = root.style.getPropertyValue('overflow')
+    const previousRootOverflowPriority = root.style.getPropertyPriority('overflow')
+    const previousRootPaddingRight = root.style.getPropertyValue('padding-right')
+    const previousRootPaddingRightPriority = root.style.getPropertyPriority('padding-right')
+    const scrollBarWidth = window.innerWidth - root.clientWidth
+
+    root.style.setProperty('overflow', 'hidden', 'important')
+    body.style.overflow = 'hidden'
+    if (scrollBarWidth > 0) {
+      body.style.paddingRight = `${scrollBarWidth}px`
+      root.style.setProperty('padding-right', `${scrollBarWidth}px`, 'important')
+    }
+
+    return () => {
+      body.style.overflow = previousBodyOverflow
+      body.style.paddingRight = previousBodyPaddingRight
+      if (previousRootOverflow) {
+        root.style.setProperty('overflow', previousRootOverflow, previousRootOverflowPriority)
+      } else {
+        root.style.removeProperty('overflow')
+      }
+      if (previousRootPaddingRight) {
+        root.style.setProperty('padding-right', previousRootPaddingRight, previousRootPaddingRightPriority)
+      } else {
+        root.style.removeProperty('padding-right')
+      }
+    }
+  }, [isOpen])
+
   const enrichedVaults = useMemo<TEnrichedBreakdownVault[]>(() => {
     const displayedVaults = getBreakdownDisplayVaults(data?.vaults ?? [])
     const yvUsdDisplayVault = allVaults[YVUSD_UNLOCKED_ADDRESS] as TKongVaultInput | undefined
@@ -205,7 +243,7 @@ export function PortfolioHistoryBreakdownModal({
           <div className={'fixed inset-0 bg-black/45'} />
         </TransitionChild>
 
-        <div className={'fixed inset-0 overflow-y-auto'}>
+        <div className={'fixed inset-0 overflow-y-auto overscroll-contain'}>
           <div className={'flex min-h-full items-center justify-center p-3 sm:p-6'}>
             <TransitionChild
               as={Fragment}
@@ -255,7 +293,7 @@ export function PortfolioHistoryBreakdownModal({
                       <p className={'text-sm text-text-secondary'}>{'Unable to load vault breakdown right now.'}</p>
                     </div>
                   ) : data && enrichedVaults.length > 0 ? (
-                    <div className={'flex max-h-[70vh] flex-col gap-3 overflow-y-auto pr-1'}>
+                    <div className={'flex max-h-[70vh] flex-col gap-3 overflow-y-auto overscroll-contain pr-1'}>
                       {issueCount > 0 ? (
                         <div
                           className={
