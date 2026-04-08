@@ -13,7 +13,7 @@ type TStakingRewardRowProps = {
   stakingAddress: `0x${string}`
   stakingSource: string
   chainId: number
-  onStartClaim: (step: TransactionStep, merkleRewardRoots?: `0x${string}`[]) => void
+  onStartClaim: (step: TransactionStep, merkleRewardKeys?: string[]) => void
   isFirst?: boolean
   isAllChainsView?: boolean
   onSwitchChain?: () => void

@@ -1,4 +1,5 @@
 import { useClaimMerkleRewards } from '@pages/vaults/hooks/rewards/useClaimMerkleRewards'
+import { buildMerkleRewardKey } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useChainId } from '@shared/hooks/useAppWagmi'
 import { toNormalizedValue } from '@shared/utils'
 import type { ReactElement } from 'react'
@@ -12,7 +13,7 @@ type TMerkleRewardRowProps = {
   groupedReward: TGroupedMerkleReward
   userAddress: `0x${string}`
   chainId: number
-  onStartClaim: (step: TransactionStep, merkleRewardRoots?: `0x${string}`[]) => void
+  onStartClaim: (step: TransactionStep, merkleRewardKeys?: string[]) => void
   isFirst?: boolean
   isAllChainsView?: boolean
   onSwitchChain?: () => void
@@ -51,7 +52,7 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
     if (!step) return
     onStartClaim(
       step,
-      groupedReward.rewards.map((reward) => reward.root)
+      groupedReward.rewards.map((reward) => buildMerkleRewardKey(reward.root, reward.token.address))
     )
   }, [step, onStartClaim, groupedReward.rewards])
 

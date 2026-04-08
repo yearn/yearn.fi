@@ -691,20 +691,20 @@ function ChainMerkleRewardsFetcher({
   userAddress,
   isActive,
   onRewards,
-  hiddenRewardRoots = []
+  hiddenRewardKeys = []
 }: {
   chainId: number
   userAddress?: `0x${string}`
   isActive: boolean
   onRewards: (chainId: number, rewards: TGroupedMerkleReward[], isLoading: boolean, refetch: () => void) => void
-  hiddenRewardRoots?: `0x${string}`[]
+  hiddenRewardKeys?: string[]
 }): null {
   const isEnabled = isActive && !!userAddress
   const { groupedRewards, isLoading, refetch } = useMerkleRewards({
     userAddress,
     chainId,
     enabled: isEnabled,
-    hiddenRewardRoots
+    hiddenRewardKeys
   })
 
   // Stable refs to avoid recreating the effect callback
@@ -759,8 +759,8 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
       }
     >
   >({})
-  const [hiddenMerkleRewardRoots, setHiddenMerkleRewardRoots] = useState<Record<number, `0x${string}`[]>>({})
-  const [activeMerkleClaim, setActiveMerkleClaim] = useState<{ chainId: number; roots: `0x${string}`[] } | undefined>()
+  const [hiddenMerkleRewardKeys, setHiddenMerkleRewardKeys] = useState<Record<number, string[]>>({})
+  const [activeMerkleClaim, setActiveMerkleClaim] = useState<{ chainId: number; keys: string[] } | undefined>()
 
   const handleStakingRewards = useCallback(
     (
@@ -862,23 +862,20 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
     return selectedChainData && selectedChainData.rewardCount > 0 ? [selectedChainData] : []
   }, [selectedChainId, chainRewardsData, selectedChainData])
 
-  const handleStartClaim = useCallback(
-    (step: TransactionStep, merkleRewardRoots: `0x${string}`[] = [], chainId?: number) => {
-      setActiveStep(step)
-      setActiveMerkleClaim(
-        chainId !== undefined && merkleRewardRoots.length > 0 ? { chainId, roots: merkleRewardRoots } : undefined
-      )
-      setIsOverlayOpen(true)
-    },
-    []
-  )
+  const handleStartClaim = useCallback((step: TransactionStep, merkleRewardKeys: string[] = [], chainId?: number) => {
+    setActiveStep(step)
+    setActiveMerkleClaim(
+      chainId !== undefined && merkleRewardKeys.length > 0 ? { chainId, keys: merkleRewardKeys } : undefined
+    )
+    setIsOverlayOpen(true)
+  }, [])
 
   const handleBeforeSuccess = useCallback(async () => {
     if (activeMerkleClaim) {
-      setHiddenMerkleRewardRoots((prev) => ({
+      setHiddenMerkleRewardKeys((prev) => ({
         ...prev,
         [activeMerkleClaim.chainId]: [
-          ...new Set([...(prev[activeMerkleClaim.chainId] ?? []), ...activeMerkleClaim.roots])
+          ...new Set([...(prev[activeMerkleClaim.chainId] ?? []), ...activeMerkleClaim.keys])
         ]
       }))
     }
@@ -908,7 +905,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   }, [])
 
   useEffect(() => {
-    setHiddenMerkleRewardRoots({})
+    setHiddenMerkleRewardKeys({})
     setActiveMerkleClaim(undefined)
     setActiveStep(undefined)
     setIsOverlayOpen(false)
@@ -1028,7 +1025,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
           userAddress={userAddress}
           isActive={isActive}
           onRewards={handleMerkleRewards}
-          hiddenRewardRoots={hiddenMerkleRewardRoots[chainId] ?? []}
+          hiddenRewardKeys={hiddenMerkleRewardKeys[chainId] ?? []}
         />
       ))}
 

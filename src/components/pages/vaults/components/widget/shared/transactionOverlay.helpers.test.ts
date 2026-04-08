@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   AUTO_CONTINUE_SUCCESS_DELAY_MS,
   getAutoContinueConfirmDelayMs,
+  getInitialOverlayState,
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
@@ -205,5 +206,11 @@ describe('getAutoContinueConfirmDelayMs', () => {
 
   it('does not delay the confirm screen for non-Safe flows', () => {
     expect(getAutoContinueConfirmDelayMs({ isWalletSafe: false })).toBe(0)
+  })
+})
+
+describe('getInitialOverlayState', () => {
+  it('starts idle so conditionally mounted overlays can execute their first step on open', () => {
+    expect(getInitialOverlayState()).toBe('idle')
   })
 })

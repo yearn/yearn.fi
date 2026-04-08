@@ -56,6 +56,10 @@ export function resolveExecutionTrackingHash(params: {
   return params.safeExecutionTxHash ?? params.callsReceiptTxHash
 }
 
+export function getInitialOverlayState(): OverlayState {
+  return 'idle'
+}
+
 export function shouldAutoContinuePermitSuccess(params: {
   overlayState: OverlayState
   executedStepIsPermit?: boolean

@@ -21,6 +21,7 @@ import {
   AUTO_CONTINUE_SUCCESS_DELAY_MS,
   type CompletionDeferral,
   getAutoContinueConfirmDelayMs,
+  getInitialOverlayState,
   type OverlayState,
   resolveCompletionDeferral,
   resolveExecutionTrackingHash,
@@ -177,7 +178,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   autoContinueToNextStep = false,
   autoContinueStepLabels = []
 }) => {
-  const [overlayState, setOverlayState] = useState<OverlayState>('success')
+  const [overlayState, setOverlayState] = useState<OverlayState>(getInitialOverlayState())
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [hasCompletedFlow, setHasCompletedFlow] = useState(false)
   const [completedStepSnapshot, setCompletedStepSnapshot] = useState<TransactionStep | null>(null)
