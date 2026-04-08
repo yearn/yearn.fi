@@ -8,6 +8,7 @@ import type {
 import {
   clearUserCache,
   deleteStaleCache,
+  getHoldingsBreakdown,
   getHistoricalHoldings,
   getHoldingsPnL,
   getHoldingsPnLDrilldown,
@@ -512,6 +513,77 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   }
 }
 
+async function handleHoldingsBreakdown(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const versionParam = url.searchParams.get('version')
+  const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
+  const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+  const debugEnabled =
+    isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
+  const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
+  const debugVault = url.searchParams.get('debugVault')
+  const debugTx = url.searchParams.get('debugTx')
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const breakdown = await withHoldingsDebugContext(
+      createHoldingsDebugContext('breakdown', address, debugEnabled, {
+        lotsEnabled: debugLotsEnabled,
+        vaultFilter: debugVault,
+        txFilter: debugTx
+      }),
+      async () => {
+        debugLog('route', 'started holdings breakdown request', {
+          version,
+          fetchType,
+          paginationMode,
+          debugLotsEnabled,
+          debugVault: debugVault?.toLowerCase() ?? null,
+          debugTx: debugTx?.toLowerCase() ?? null
+        })
+
+        try {
+          const response = await getHoldingsBreakdown(address, version, fetchType, paginationMode)
+          debugLog('route', 'completed holdings breakdown request', {
+            version,
+            fetchType,
+            paginationMode,
+            timestamp: response.timestamp,
+            totalVaults: response.summary.totalVaults,
+            vaultsWithShares: response.summary.vaultsWithShares,
+            totalUsdValue: response.summary.totalUsdValue
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings breakdown request failed', error, { version, fetchType, paginationMode })
+          throw error
+        }
+      }
+    )
+
+    return Response.json(breakdown, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching holdings breakdown:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json({ error: 'Failed to fetch holdings breakdown', message, stack, status: 502 }, { status: 502 })
+  }
+}
+
 async function handleHoldingsPnL(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
@@ -835,6 +907,10 @@ async function main() {
           return withCors(await handleHoldingsHistory(req))
         }
 
+        if (url.pathname === '/api/holdings/breakdown') {
+          return withCors(await handleHoldingsBreakdown(req))
+        }
+
         if (url.pathname === '/api/holdings/pnl/drilldown') {
           return withCors(await handleHoldingsPnLDrilldown(req))
         }
@@ -908,6 +984,7 @@ async function main() {
 
   console.log('🚀 API server running on http://localhost:3001')
   console.log('📊 Holdings API: http://localhost:3001/api/holdings/history?address=0x...')
+  console.log('🧩 Holdings Breakdown API: http://localhost:3001/api/holdings/breakdown?address=0x...')
   console.log('💹 PnL API: http://localhost:3001/api/holdings/pnl?address=0x...')
   console.log('🧾 PnL Drilldown API: http://localhost:3001/api/holdings/pnl/drilldown?address=0x...')
 }

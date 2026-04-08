@@ -1,6 +1,12 @@
 export { config, validateConfig } from './config'
 export { ensureSchemaInitialized, initializeSchema, isDatabaseEnabled } from './db/connection'
-export { getHistoricalHoldings, type HoldingsHistoryResponse } from './services/aggregator'
+export {
+  getHistoricalHoldings,
+  getHoldingsBreakdown,
+  type HoldingsBreakdownResponse,
+  type HoldingsBreakdownVaultResponse,
+  type HoldingsHistoryResponse
+} from './services/aggregator'
 export { clearUserCache, deleteStaleCache } from './services/cache'
 export {
   fetchUserEvents,

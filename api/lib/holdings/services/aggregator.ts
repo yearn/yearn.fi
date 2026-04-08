@@ -27,6 +27,44 @@ export interface HoldingsHistoryResponse {
   dataPoints: Array<{ date: string; timestamp: number; totalUsdValue: number }>
 }
 
+export interface HoldingsBreakdownVaultResponse {
+  chainId: number
+  vaultAddress: string
+  shares: string
+  sharesFormatted: number
+  pricePerShare: number | null
+  tokenPrice: number | null
+  usdValue: number | null
+  metadata: {
+    symbol: string
+    decimals: number
+    tokenAddress: string
+  } | null
+  status: 'ok' | 'missing_metadata' | 'missing_pps' | 'missing_price'
+}
+
+export interface HoldingsBreakdownResponse {
+  address: string
+  version: VaultVersion
+  date: string
+  timestamp: number
+  summary: {
+    totalVaults: number
+    vaultsWithShares: number
+    totalUsdValue: number
+    missingMetadata: number
+    missingPps: number
+    missingPrice: number
+  }
+  vaults: HoldingsBreakdownVaultResponse[]
+  issues: {
+    missingMetadata: string[]
+    missingPps: string[]
+    missingPrice: string[]
+  }
+  message?: string
+}
+
 function filterVaultsByAuthoritativeVersion<
   TVault extends {
     chainId: number
@@ -38,6 +76,35 @@ function filterVaultsByAuthoritativeVersion<
   }
 
   return vaults.filter((vault) => vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))?.version === version)
+}
+
+function buildEmptyBreakdownResponse(
+  userAddress: string,
+  version: VaultVersion,
+  timestamp: number,
+  message: string
+): HoldingsBreakdownResponse {
+  return {
+    address: userAddress,
+    version,
+    date: timestampToDateString(timestamp),
+    timestamp,
+    summary: {
+      totalVaults: 0,
+      vaultsWithShares: 0,
+      totalUsdValue: 0,
+      missingMetadata: 0,
+      missingPps: 0,
+      missingPrice: 0
+    },
+    vaults: [],
+    issues: {
+      missingMetadata: [],
+      missingPps: [],
+      missingPrice: []
+    },
+    message
+  }
 }
 
 export async function getHistoricalHoldings(
@@ -289,5 +356,195 @@ export async function getHistoricalHoldings(
     address: userAddress,
     periodDays: days,
     dataPoints
+  }
+}
+
+export async function getHoldingsBreakdown(
+  userAddress: string,
+  version: VaultVersion = 'all',
+  fetchType: HoldingsEventFetchType = 'seq',
+  paginationMode: HoldingsEventPaginationMode = 'paged'
+): Promise<HoldingsBreakdownResponse> {
+  const timestamps = generateDailyTimestamps(config.historyDays, 1)
+  const latestTimestamp = timestamps[timestamps.length - 1]
+  const latestDate = timestampToDateString(latestTimestamp)
+  debugLog('breakdown', 'starting holdings breakdown', {
+    version,
+    fetchType,
+    paginationMode,
+    timestamp: latestTimestamp,
+    date: latestDate
+  })
+
+  const maxTimestamp = latestTimestamp + 86400
+  const events = await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
+  const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
+  debugLog('breakdown', 'built position timeline for breakdown', {
+    version,
+    fetchType,
+    paginationMode,
+    deposits: events.deposits.length,
+    withdrawals: events.withdrawals.length,
+    transfersIn: events.transfersIn.length,
+    transfersOut: events.transfersOut.length,
+    timelineEntries: timeline.length
+  })
+
+  if (timeline.length === 0) {
+    debugLog('breakdown', 'no events found for holdings breakdown', {
+      version,
+      fetchType,
+      paginationMode
+    })
+    return buildEmptyBreakdownResponse(userAddress, version, latestTimestamp, 'No events found')
+  }
+
+  const rawVaults = getUniqueVaults(timeline)
+  const vaultMetadata = rawVaults.length > 0 ? await fetchMultipleVaultsMetadata(rawVaults) : new Map()
+  const vaults = filterVaultsByAuthoritativeVersion(rawVaults, vaultMetadata, version)
+  debugLog('breakdown', 'resolved authoritative vault versions for breakdown', {
+    version,
+    fetchType,
+    paginationMode,
+    rawVaults: rawVaults.length,
+    filteredVaults: vaults.length,
+    metadataResolved: vaultMetadata.size
+  })
+
+  if (vaults.length === 0) {
+    debugLog('breakdown', 'no vaults matched the requested authoritative version for breakdown', {
+      version,
+      fetchType,
+      paginationMode
+    })
+    return buildEmptyBreakdownResponse(userAddress, version, latestTimestamp, 'No matching holdings found')
+  }
+
+  const ppsData = await fetchMultipleVaultsPPS(vaults)
+  const seenTokens = new Set<string>()
+  const underlyingTokens: Array<{ chainId: number; address: string }> = []
+  for (const vault of vaults) {
+    const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
+    if (!metadata) {
+      continue
+    }
+
+    const tokenKey = `${metadata.chainId}:${metadata.token.address.toLowerCase()}`
+    if (!seenTokens.has(tokenKey)) {
+      seenTokens.add(tokenKey)
+      underlyingTokens.push({
+        chainId: metadata.chainId,
+        address: metadata.token.address
+      })
+    }
+  }
+
+  const priceData =
+    underlyingTokens.length > 0 ? await fetchHistoricalPrices(underlyingTokens, [latestTimestamp]) : new Map()
+  debugLog('breakdown', 'resolved metadata, PPS, and prices for breakdown', {
+    version,
+    fetchType,
+    paginationMode,
+    vaults: vaults.length,
+    metadataResolved: vaultMetadata.size,
+    ppsResolved: ppsData.size,
+    tokens: underlyingTokens.length,
+    priceKeys: priceData.size,
+    timestamp: latestTimestamp
+  })
+
+  const results: HoldingsBreakdownVaultResponse[] = []
+
+  for (const vault of vaults) {
+    const vaultKey = toVaultKey(vault.chainId, vault.vaultAddress)
+    const metadata = vaultMetadata.get(vaultKey)
+    const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, latestTimestamp)
+    const ppsMap = ppsData.get(vaultKey)
+    const pps = ppsMap ? getPPS(ppsMap, latestTimestamp) : null
+    const decimals = metadata?.decimals ?? 18
+    const sharesFormatted = Number(shares) / 10 ** decimals
+
+    let tokenPrice: number | null = null
+    let usdValue: number | null = null
+
+    if (metadata) {
+      const priceKey = `${getChainPrefix(metadata.chainId)}:${metadata.token.address.toLowerCase()}`
+      const tokenPriceMap = priceData.get(priceKey)
+      tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, latestTimestamp) : 0
+      usdValue = pps ? sharesFormatted * pps * tokenPrice : 0
+    }
+
+    let status: HoldingsBreakdownVaultResponse['status'] = 'ok'
+    if (!metadata) {
+      status = 'missing_metadata'
+    } else if (!pps) {
+      status = 'missing_pps'
+    } else if (tokenPrice === 0) {
+      status = 'missing_price'
+    }
+
+    results.push({
+      chainId: vault.chainId,
+      vaultAddress: vault.vaultAddress,
+      shares: shares.toString(),
+      sharesFormatted,
+      pricePerShare: pps,
+      tokenPrice,
+      usdValue,
+      metadata: metadata
+        ? {
+            symbol: metadata.token.symbol,
+            decimals: metadata.decimals,
+            tokenAddress: metadata.token.address
+          }
+        : null,
+      status
+    })
+  }
+
+  results.sort((a, b) => (b.usdValue ?? 0) - (a.usdValue ?? 0))
+
+  const withShares = results.filter((vault) => vault.sharesFormatted > 0)
+  const missingMetadata = results.filter((vault) => vault.status === 'missing_metadata')
+  const missingPps = results.filter((vault) => vault.status === 'missing_pps')
+  const missingPrice = results.filter((vault) => vault.status === 'missing_price')
+  const totalUsdValue = withShares.reduce((sum, vault) => sum + (vault.usdValue ?? 0), 0)
+
+  debugLog('breakdown', 'completed holdings breakdown', {
+    version,
+    fetchType,
+    paginationMode,
+    timestamp: latestTimestamp,
+    totalVaults: vaults.length,
+    vaultsWithShares: withShares.length,
+    totalUsdValue,
+    missingMetadata: missingMetadata.length,
+    missingPps: missingPps.length,
+    missingPrice: missingPrice.length
+  })
+
+  return {
+    address: userAddress,
+    version,
+    date: latestDate,
+    timestamp: latestTimestamp,
+    summary: {
+      totalVaults: vaults.length,
+      vaultsWithShares: withShares.length,
+      totalUsdValue,
+      missingMetadata: missingMetadata.length,
+      missingPps: missingPps.length,
+      missingPrice: missingPrice.length
+    },
+    vaults: withShares,
+    issues: {
+      missingMetadata: missingMetadata.map((vault) => `${vault.chainId}:${vault.vaultAddress}`),
+      missingPps: missingPps
+        .filter((vault) => vault.sharesFormatted > 0)
+        .map((vault) => `${vault.chainId}:${vault.vaultAddress}`),
+      missingPrice: missingPrice
+        .filter((vault) => vault.sharesFormatted > 0)
+        .map((vault) => `${vault.chainId}:${vault.vaultAddress}`)
+    }
   }
 }

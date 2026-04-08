@@ -183,4 +183,92 @@ describe('getHistoricalHoldings', () => {
       { date: 'date-200', timestamp: 200, totalUsdValue: 2 }
     ])
   })
+
+  it('builds breakdown using the latest chart timestamp instead of current time', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(999_000)
+
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+    const vaultAddress = '0x00000000000000000000000000000000000000a2'
+    const tokenAddress = '0x0000000000000000000000000000000000000aa2'
+    const timeline = [{ id: 'entry-1' }]
+    const vaults = [{ chainId: 1, vaultAddress }]
+
+    generateDailyTimestampsMock.mockReturnValue([100, 200])
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+    buildPositionTimelineMock.mockReturnValue(timeline)
+    getUniqueVaultsMock.mockReturnValue(vaults)
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${vaultAddress}`,
+          {
+            address: vaultAddress,
+            chainId: 1,
+            version: 'v3',
+            token: {
+              address: tokenAddress,
+              symbol: 'TKN',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+    fetchMultipleVaultsPPSMock.mockResolvedValue(new Map([[`1:${vaultAddress}`, new Map([[200, 1.5]])]]))
+    fetchHistoricalPricesMock.mockResolvedValue(new Map([[`ethereum:${tokenAddress}`, new Map([[200, 2]])]]))
+    getChainPrefixMock.mockReturnValue('ethereum')
+    getPPSMock.mockReturnValue(1.5)
+    getPriceAtTimestampMock.mockReturnValue(2)
+    getShareBalanceAtTimestampMock.mockReturnValue(2n * 10n ** 18n)
+
+    const { getHoldingsBreakdown } = await import('./aggregator')
+    const response = await getHoldingsBreakdown(userAddress, 'all', 'parallel', 'all')
+
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86600, 'parallel', 'all')
+    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress }], [200])
+    expect(getShareBalanceAtTimestampMock).toHaveBeenCalledWith(timeline, vaultAddress, 1, 200)
+    expect(response).toEqual({
+      address: userAddress,
+      version: 'all',
+      date: 'date-200',
+      timestamp: 200,
+      summary: {
+        totalVaults: 1,
+        vaultsWithShares: 1,
+        totalUsdValue: 6,
+        missingMetadata: 0,
+        missingPps: 0,
+        missingPrice: 0
+      },
+      vaults: [
+        {
+          chainId: 1,
+          vaultAddress,
+          shares: '2000000000000000000',
+          sharesFormatted: 2,
+          pricePerShare: 1.5,
+          tokenPrice: 2,
+          usdValue: 6,
+          metadata: {
+            symbol: 'TKN',
+            decimals: 18,
+            tokenAddress
+          },
+          status: 'ok'
+        }
+      ],
+      issues: {
+        missingMetadata: [],
+        missingPps: [],
+        missingPrice: []
+      }
+    })
+  })
 })

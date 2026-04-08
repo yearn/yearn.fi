@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 export interface HoldingsDebugContext {
   enabled: boolean
   requestId: string
-  route: 'history' | 'pnl'
+  route: 'history' | 'breakdown' | 'pnl'
   address: string
   startedAt: number
   lotsEnabled: boolean
@@ -31,7 +31,7 @@ export function isHoldingsDebugRequested(debugValue?: string | null): boolean {
 }
 
 export function createHoldingsDebugContext(
-  route: 'history' | 'pnl',
+  route: 'history' | 'breakdown' | 'pnl',
   address: string,
   enabled: boolean,
   options?: {

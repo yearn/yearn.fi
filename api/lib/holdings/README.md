@@ -10,7 +10,7 @@ Calculates historical USD values and portfolio PnL for a user's Yearn vault posi
 │                    usePortfolioHistory() hook                               │
 │                              │                                               │
 │                              ▼                                               │
-│                    GET /api/holdings/history?address=0x...                  │
+│                GET /api/holdings/history|breakdown?address=0x...            │
 └─────────────────────────────────────────────────────────────────────────────┘
                                │
                                ▼
@@ -216,6 +216,63 @@ Response:
     { "date": "2024-01-01", "value": 1000.50 },
     { "date": "2024-01-02", "value": 1005.25 }
   ]
+}
+```
+
+### GET `/api/holdings/breakdown`
+Per-vault valuation breakdown for the latest settled holdings-history point.
+
+This endpoint uses the same settled UTC day as the final point on `/api/holdings/history`, so it is useful for explaining why the latest chart value is what it is. It does not use current intraday balances or current intraday prices.
+
+```bash
+curl "http://localhost:3001/api/holdings/breakdown?address=0x..."
+curl "http://localhost:3001/api/holdings/breakdown?address=0x...&version=v3"
+curl "http://localhost:3001/api/holdings/breakdown?address=0x...&fetchType=parallel&paginationMode=all"
+```
+
+Query params:
+- `address` (required): Ethereum address
+- `version` (optional): `v2`, `v3`, or `all` (default: `all`)
+- `fetchType` (optional): `seq` or `parallel` (default: `seq`)
+- `paginationMode` (optional): `paged` or `all` (default: `paged`)
+
+Response (abridged):
+```json
+{
+  "address": "0x...",
+  "version": "all",
+  "date": "2026-04-07",
+  "timestamp": 1775529600,
+  "summary": {
+    "totalVaults": 3,
+    "vaultsWithShares": 2,
+    "totalUsdValue": 1250.5,
+    "missingMetadata": 0,
+    "missingPps": 0,
+    "missingPrice": 1
+  },
+  "vaults": [
+    {
+      "chainId": 1,
+      "vaultAddress": "0x...",
+      "shares": "1000000000000000000",
+      "sharesFormatted": 1,
+      "pricePerShare": 1.05,
+      "tokenPrice": 1,
+      "usdValue": 1.05,
+      "metadata": {
+        "symbol": "USDC",
+        "decimals": 18,
+        "tokenAddress": "0x..."
+      },
+      "status": "ok"
+    }
+  ],
+  "issues": {
+    "missingMetadata": [],
+    "missingPps": [],
+    "missingPrice": ["1:0x..."]
+  }
 }
 ```
 
