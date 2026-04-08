@@ -7,6 +7,7 @@ import {
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { getVaultPrimaryLogoSrc } from '@pages/vaults/utils/vaultLogo'
+import { isYvUsdAddress, YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconClose } from '@shared/icons/IconClose'
@@ -35,6 +36,14 @@ type TEnrichedBreakdownVault = {
   altLogoSrc: string | undefined
   usdValue: number
   status: TPortfolioBreakdownVault['status']
+}
+
+type TBreakdownDisplayVault = {
+  chainId: number
+  vaultAddress: string
+  usdValue: number
+  status: TPortfolioBreakdownVault['status']
+  metadata: TPortfolioBreakdownVault['metadata']
 }
 
 function formatBreakdownDate(date: string | null): string {
@@ -72,6 +81,66 @@ function getChainName(chainId: number): string {
   return SUPPORTED_NETWORKS.find((network) => network.id === chainId)?.name ?? `Chain ${chainId}`
 }
 
+function getStatusPriority(status: TPortfolioBreakdownVault['status']): number {
+  switch (status) {
+    case 'missing_metadata':
+      return 3
+    case 'missing_pps':
+      return 2
+    case 'missing_price':
+      return 1
+    default:
+      return 0
+  }
+}
+
+function getMergedStatus(statuses: TPortfolioBreakdownVault['status'][]): TPortfolioBreakdownVault['status'] {
+  return statuses.reduce<TPortfolioBreakdownVault['status']>((selectedStatus, currentStatus) => {
+    return getStatusPriority(currentStatus) > getStatusPriority(selectedStatus) ? currentStatus : selectedStatus
+  }, 'ok')
+}
+
+function getBreakdownDisplayKey(vault: TPortfolioBreakdownVault): string {
+  if (vault.chainId === YVUSD_CHAIN_ID && isYvUsdAddress(vault.vaultAddress)) {
+    return `${YVUSD_CHAIN_ID}:${YVUSD_UNLOCKED_ADDRESS}`
+  }
+
+  return `${vault.chainId}:${toAddress(vault.vaultAddress)}`
+}
+
+function getBreakdownDisplayVaults(vaults: TPortfolioBreakdownVault[]): TBreakdownDisplayVault[] {
+  const groupedVaults = new Map<string, TBreakdownDisplayVault>()
+
+  vaults.forEach((vault) => {
+    const displayKey = getBreakdownDisplayKey(vault)
+    const normalizedVaultAddress =
+      vault.chainId === YVUSD_CHAIN_ID && isYvUsdAddress(vault.vaultAddress)
+        ? YVUSD_UNLOCKED_ADDRESS
+        : toAddress(vault.vaultAddress)
+
+    const existingVault = groupedVaults.get(displayKey)
+    if (!existingVault) {
+      groupedVaults.set(displayKey, {
+        chainId: vault.chainId,
+        vaultAddress: normalizedVaultAddress,
+        usdValue: vault.usdValue ?? 0,
+        status: vault.status,
+        metadata: vault.metadata
+      })
+      return
+    }
+
+    groupedVaults.set(displayKey, {
+      ...existingVault,
+      usdValue: existingVault.usdValue + (vault.usdValue ?? 0),
+      status: getMergedStatus([existingVault.status, vault.status]),
+      metadata: existingVault.metadata ?? vault.metadata
+    })
+  })
+
+  return [...groupedVaults.values()]
+}
+
 export function PortfolioHistoryBreakdownModal({
   date,
   isOpen,
@@ -81,36 +150,45 @@ export function PortfolioHistoryBreakdownModal({
   const { data, isLoading, error } = usePortfolioBreakdown(date, isOpen)
 
   const enrichedVaults = useMemo<TEnrichedBreakdownVault[]>(() => {
-    return (data?.vaults ?? []).map((vault): TEnrichedBreakdownVault => {
-      const normalizedVaultAddress = toAddress(vault.vaultAddress)
-      const currentVault = allVaults[normalizedVaultAddress] as TKongVaultInput | undefined
-      const fallbackTokenAddress = vault.metadata?.tokenAddress
-      const fallbackLogoSrc = fallbackTokenAddress
-        ? `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainId}/${toAddress(fallbackTokenAddress).toLowerCase()}/logo-128.png`
-        : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainId}/${normalizedVaultAddress.toLowerCase()}/logo-128.png`
+    const displayedVaults = getBreakdownDisplayVaults(data?.vaults ?? [])
+    const yvUsdDisplayVault = allVaults[YVUSD_UNLOCKED_ADDRESS] as TKongVaultInput | undefined
 
-      return {
-        chainId: vault.chainId,
-        chainName: currentVault ? getChainName(getVaultChainID(currentVault)) : getChainName(vault.chainId),
-        vaultAddress: normalizedVaultAddress,
-        vaultHref: `/vaults/${vault.chainId}/${normalizedVaultAddress}`,
-        displayName: currentVault ? getVaultName(currentVault) : vault.metadata?.symbol || normalizedVaultAddress,
-        displaySymbol: currentVault ? getVaultSymbol(currentVault) : vault.metadata?.symbol || 'Unknown',
-        logoSrc: currentVault ? getVaultPrimaryLogoSrc(currentVault) : fallbackLogoSrc,
-        altLogoSrc: currentVault
-          ? `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${getVaultChainID(currentVault)}/${toAddress(getVaultToken(currentVault).address).toLowerCase()}/logo-128.png`
-          : undefined,
-        usdValue: vault.usdValue ?? 0,
-        status: vault.status
-      }
-    })
+    return displayedVaults
+      .map((vault): TEnrichedBreakdownVault => {
+        const normalizedVaultAddress = toAddress(vault.vaultAddress)
+        const isMergedYvUsdVault = vault.chainId === YVUSD_CHAIN_ID && normalizedVaultAddress === YVUSD_UNLOCKED_ADDRESS
+        const currentVault = isMergedYvUsdVault
+          ? yvUsdDisplayVault
+          : (allVaults[normalizedVaultAddress] as TKongVaultInput | undefined)
+        const fallbackTokenAddress = vault.metadata?.tokenAddress
+        const fallbackLogoSrc = fallbackTokenAddress
+          ? `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainId}/${toAddress(fallbackTokenAddress).toLowerCase()}/logo-128.png`
+          : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainId}/${normalizedVaultAddress.toLowerCase()}/logo-128.png`
+
+        return {
+          chainId: vault.chainId,
+          chainName: currentVault ? getChainName(getVaultChainID(currentVault)) : getChainName(vault.chainId),
+          vaultAddress: normalizedVaultAddress,
+          vaultHref: `/vaults/${vault.chainId}/${normalizedVaultAddress}`,
+          displayName: currentVault ? getVaultName(currentVault) : vault.metadata?.symbol || normalizedVaultAddress,
+          displaySymbol: currentVault ? getVaultSymbol(currentVault) : vault.metadata?.symbol || 'Unknown',
+          logoSrc: currentVault
+            ? getVaultPrimaryLogoSrc(currentVault)
+            : isMergedYvUsdVault
+              ? `${import.meta.env.BASE_URL || '/'}yvUSD-seal.png`
+              : fallbackLogoSrc,
+          altLogoSrc: currentVault
+            ? `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${getVaultChainID(currentVault)}/${toAddress(getVaultToken(currentVault).address).toLowerCase()}/logo-128.png`
+            : undefined,
+          usdValue: vault.usdValue,
+          status: vault.status
+        }
+      })
+      .sort((leftVault, rightVault) => rightVault.usdValue - leftVault.usdValue)
   }, [allVaults, data?.vaults])
 
   const title = `Vault breakdown on ${formatBreakdownDate(date)}`
-  const issueCount =
-    (data?.issues.missingMetadata.length ?? 0) +
-    (data?.issues.missingPps.length ?? 0) +
-    (data?.issues.missingPrice.length ?? 0)
+  const issueCount = enrichedVaults.filter((vault) => vault.status !== 'ok').length
 
   return (
     <Transition show={isOpen} as={Fragment}>
@@ -150,7 +228,7 @@ export function PortfolioHistoryBreakdownModal({
                     </Dialog.Title>
                     {data ? (
                       <p className={'mt-1 text-sm text-text-secondary'}>
-                        {`${data.summary.vaultsWithShares} vault${data.summary.vaultsWithShares === 1 ? '' : 's'} • ${formatUSD(data.summary.totalUsdValue, 2, 2)}`}
+                        {`${enrichedVaults.length} vault${enrichedVaults.length === 1 ? '' : 's'} • ${formatUSD(data.summary.totalUsdValue, 2, 2)}`}
                       </p>
                     ) : null}
                   </div>
