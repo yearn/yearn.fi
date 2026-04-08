@@ -9,6 +9,7 @@ const API_HEALTHCHECK_EXPECTED_ERROR = 'Missing eoaAddress'
 const API_HEALTHCHECK_TIMEOUT_MS = 500
 const API_HEALTHCHECK_RETRIES = 10
 const API_HEALTHCHECK_DELAY_MS = 300
+const BUILD_SOURCEMAP = process.env.VITE_BUILD_SOURCEMAP === 'true'
 
 function resolveApiProxyTarget(env: Record<string, string>) {
   const explicitTarget = env.API_PROXY_TARGET?.trim() || env.VITE_API_PROXY_TARGET?.trim()
@@ -125,7 +126,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
-      sourcemap: true,
+      sourcemap: BUILD_SOURCEMAP,
       rollupOptions: {
         output: {
           manualChunks: {
