@@ -8,8 +8,8 @@ import type {
 import {
   clearUserCache,
   deleteStaleCache,
-  getHoldingsBreakdown,
   getHistoricalHoldings,
+  getHoldingsBreakdown,
   getHoldingsPnL,
   getHoldingsPnLDrilldown,
   type HoldingsEventFetchType,

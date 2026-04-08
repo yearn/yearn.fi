@@ -20,8 +20,8 @@ import type { ReactElement } from 'react'
 import { useId, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
-import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 import type { TPortfolioHistoryChartData } from '../types/api'
+import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 
 type TTimeframe = '30d' | '90d' | '1y'
 
