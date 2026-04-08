@@ -156,6 +156,25 @@ function parseHoldingsEventPaginationMode(value: string | null): HoldingsEventPa
   return value === 'all' ? 'all' : 'paged'
 }
 
+function parseUtcDateParam(value: string | null): number | null {
+  if (!value) {
+    return null
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) {
+    return null
+  }
+
+  const [, year, month, day] = match
+  const timestamp = Math.floor(Date.UTC(Number(year), Number(month) - 1, Number(day)) / 1000)
+  if (!Number.isFinite(timestamp)) {
+    return null
+  }
+
+  return timestamp
+}
+
 async function parseJsonBody<T>(req: Request): Promise<T> {
   try {
     return (await req.json()) as T
@@ -516,6 +535,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
 async function handleHoldingsBreakdown(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
+  const dateParam = url.searchParams.get('date')
   const versionParam = url.searchParams.get('version')
   const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
   const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
@@ -533,6 +553,11 @@ async function handleHoldingsBreakdown(req: Request): Promise<Response> {
     return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
   }
 
+  const breakdownTimestamp = parseUtcDateParam(dateParam)
+  if (dateParam && breakdownTimestamp === null) {
+    return Response.json({ error: 'Invalid date format, expected YYYY-MM-DD', status: 400 }, { status: 400 })
+  }
+
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
@@ -545,6 +570,7 @@ async function handleHoldingsBreakdown(req: Request): Promise<Response> {
       async () => {
         debugLog('route', 'started holdings breakdown request', {
           version,
+          date: dateParam,
           fetchType,
           paginationMode,
           debugLotsEnabled,
@@ -553,9 +579,16 @@ async function handleHoldingsBreakdown(req: Request): Promise<Response> {
         })
 
         try {
-          const response = await getHoldingsBreakdown(address, version, fetchType, paginationMode)
+          const response = await getHoldingsBreakdown(
+            address,
+            version,
+            fetchType,
+            paginationMode,
+            breakdownTimestamp ?? undefined
+          )
           debugLog('route', 'completed holdings breakdown request', {
             version,
+            date: response.date,
             fetchType,
             paginationMode,
             timestamp: response.timestamp,
@@ -565,7 +598,12 @@ async function handleHoldingsBreakdown(req: Request): Promise<Response> {
           })
           return response
         } catch (error) {
-          debugError('route', 'holdings breakdown request failed', error, { version, fetchType, paginationMode })
+          debugError('route', 'holdings breakdown request failed', error, {
+            version,
+            date: dateParam,
+            fetchType,
+            paginationMode
+          })
           throw error
         }
       }

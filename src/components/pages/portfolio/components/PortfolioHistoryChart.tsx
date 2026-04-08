@@ -15,11 +15,12 @@ import {
   getTimeframeLimit
 } from '@pages/vaults/utils/charts'
 import { IconSpinner } from '@shared/icons/IconSpinner'
-import { cl } from '@shared/utils'
+import { cl, formatUSD } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useId, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
+import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 import type { TPortfolioHistoryChartData } from '../types/api'
 
 type TTimeframe = '30d' | '90d' | '1y'
@@ -47,6 +48,54 @@ const EXAMPLE_PORTFOLIO_DATA: TPortfolioHistoryChartData = [
   { date: '2026-04-01', totalUsdValue: 17250 }
 ]
 
+type TPortfolioHistoryTooltipProps = {
+  active?: boolean
+  payload?: Array<{
+    value?: unknown
+    payload?: {
+      date?: string
+      totalUsdValue?: unknown
+    }
+  }>
+  label?: string
+}
+
+type TActiveChartState = {
+  activeLabel?: string | number
+}
+
+function PortfolioHistoryTooltip({ active, payload }: TPortfolioHistoryTooltipProps): ReactElement | null {
+  if (!active || !payload?.length) {
+    return null
+  }
+
+  const point = payload[0]?.payload
+  const date = point?.date
+  const value = Number(payload[0]?.value ?? point?.totalUsdValue ?? 0)
+
+  if (!date) {
+    return null
+  }
+
+  return (
+    <div
+      className={
+        'pointer-events-none flex min-w-[13rem] flex-col gap-2 rounded-xl border border-border bg-surface px-3 py-3 shadow-xl'
+      }
+    >
+      <div className={'flex flex-col gap-0.5'}>
+        <span className={'text-xs font-medium uppercase tracking-[0.12em] text-text-tertiary'}>
+          {formatChartTooltipDate(date)}
+        </span>
+        <span className={'text-sm font-semibold text-text-primary'}>{formatUSD(value, 2, 2)}</span>
+      </div>
+      <span className={'text-xs font-medium text-text-secondary'}>
+        {value > 0 ? 'Click to see breakdown' : 'No breakdown available for this point'}
+      </span>
+    </div>
+  )
+}
+
 export function PortfolioHistoryChart({
   data,
   isLoading,
@@ -55,6 +104,9 @@ export function PortfolioHistoryChart({
   mergeWithHeader
 }: TPortfolioHistoryChartProps): ReactElement {
   const [timeframe, setTimeframe] = useState<TTimeframe>('1y')
+  const [hoveredBreakdownDate, setHoveredBreakdownDate] = useState<string | null>(null)
+  const [selectedBreakdownDate, setSelectedBreakdownDate] = useState<string | null>(null)
+  const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false)
   const gradientId = useId().replace(/:/g, '')
 
   const sectionClassName = mergeWithHeader
@@ -110,6 +162,41 @@ export function PortfolioHistoryChart({
       }
     }
   }, [])
+
+  const openBreakdownModal = (date: string): void => {
+    setSelectedBreakdownDate(date)
+    setIsBreakdownModalOpen(true)
+  }
+
+  const closeBreakdownModal = (): void => {
+    setIsBreakdownModalOpen(false)
+  }
+
+  const getBreakdownPoint = (date: string | null) => {
+    if (!date) {
+      return null
+    }
+    return filteredData.find((point) => point.date === date) ?? null
+  }
+
+  const handleChartMouseMove = (state: TActiveChartState | undefined): void => {
+    const nextDate = typeof state?.activeLabel === 'string' ? state.activeLabel : null
+    setHoveredBreakdownDate((currentDate) => (currentDate === nextDate ? currentDate : nextDate))
+  }
+
+  const handleChartMouseLeave = (): void => {
+    setHoveredBreakdownDate(null)
+  }
+
+  const handleChartClick = (state?: TActiveChartState): void => {
+    const clickedDate = typeof state?.activeLabel === 'string' ? state.activeLabel : hoveredBreakdownDate
+    const selectedPoint = getBreakdownPoint(clickedDate)
+    if (!selectedPoint || selectedPoint.totalUsdValue <= 0) {
+      return
+    }
+
+    openBreakdownModal(selectedPoint.date)
+  }
 
   if (isLoading) {
     return (
@@ -263,8 +350,18 @@ export function PortfolioHistoryChart({
         </div>
       </div>
       <div className={'h-[300px]'}>
-        <ChartContainer config={chartConfig} style={{ height: '100%', aspectRatio: 'unset' }}>
-          <ComposedChart data={filteredData} margin={CHART_WITH_AXES_MARGIN}>
+        <ChartContainer
+          config={chartConfig}
+          style={{ height: '100%', aspectRatio: 'unset' }}
+          className={getBreakdownPoint(hoveredBreakdownDate)?.totalUsdValue ? 'cursor-pointer' : undefined}
+        >
+          <ComposedChart
+            data={filteredData}
+            margin={CHART_WITH_AXES_MARGIN}
+            onMouseMove={handleChartMouseMove}
+            onMouseLeave={handleChartMouseLeave}
+            onClick={handleChartClick}
+          >
             <defs>
               <linearGradient id={`${gradientId}-holdings`} x1="0" x2="0" y1="0" y2="1">
                 <stop offset="5%" stopColor="var(--color-totalUsdValue)" stopOpacity={0.5} />
@@ -291,20 +388,8 @@ export function PortfolioHistoryChart({
               tickLine={{ stroke: 'var(--chart-axis)' }}
             />
             <ChartTooltip
-              formatter={(value: number) => [
-                `$${value.toLocaleString(undefined, {
-                  maximumFractionDigits: 2,
-                  minimumFractionDigits: 2
-                })}`,
-                'Total Value'
-              ]}
-              labelFormatter={formatChartTooltipDate}
-              contentStyle={{
-                backgroundColor: 'var(--chart-tooltip-bg)',
-                borderRadius: 'var(--chart-tooltip-radius)',
-                border: '1px solid var(--chart-tooltip-border)',
-                boxShadow: 'var(--chart-tooltip-shadow)'
-              }}
+              cursor={{ stroke: 'var(--chart-cursor-line)', strokeWidth: 1 }}
+              content={(props) => <PortfolioHistoryTooltip {...props} />}
             />
             <Area
               type={'monotone'}
@@ -322,11 +407,17 @@ export function PortfolioHistoryChart({
               stroke="var(--color-totalUsdValue)"
               strokeWidth={2}
               dot={false}
+              activeDot={{ r: 4, strokeWidth: 0, fill: 'var(--color-totalUsdValue)' }}
               isAnimationActive={false}
             />
           </ComposedChart>
         </ChartContainer>
       </div>
+      <PortfolioHistoryBreakdownModal
+        date={selectedBreakdownDate}
+        isOpen={isBreakdownModalOpen}
+        onClose={closeBreakdownModal}
+      />
     </section>
   )
 }

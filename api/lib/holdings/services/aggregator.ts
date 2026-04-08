@@ -363,20 +363,21 @@ export async function getHoldingsBreakdown(
   userAddress: string,
   version: VaultVersion = 'all',
   fetchType: HoldingsEventFetchType = 'seq',
-  paginationMode: HoldingsEventPaginationMode = 'paged'
+  paginationMode: HoldingsEventPaginationMode = 'paged',
+  targetTimestamp?: number
 ): Promise<HoldingsBreakdownResponse> {
   const timestamps = generateDailyTimestamps(config.historyDays, 1)
-  const latestTimestamp = timestamps[timestamps.length - 1]
-  const latestDate = timestampToDateString(latestTimestamp)
+  const breakdownTimestamp = targetTimestamp ?? timestamps[timestamps.length - 1]
+  const breakdownDate = timestampToDateString(breakdownTimestamp)
   debugLog('breakdown', 'starting holdings breakdown', {
     version,
     fetchType,
     paginationMode,
-    timestamp: latestTimestamp,
-    date: latestDate
+    timestamp: breakdownTimestamp,
+    date: breakdownDate
   })
 
-  const maxTimestamp = latestTimestamp + 86400
+  const maxTimestamp = breakdownTimestamp + 86400
   const events = await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
   const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
   debugLog('breakdown', 'built position timeline for breakdown', {
@@ -396,7 +397,7 @@ export async function getHoldingsBreakdown(
       fetchType,
       paginationMode
     })
-    return buildEmptyBreakdownResponse(userAddress, version, latestTimestamp, 'No events found')
+    return buildEmptyBreakdownResponse(userAddress, version, breakdownTimestamp, 'No events found')
   }
 
   const rawVaults = getUniqueVaults(timeline)
@@ -417,7 +418,7 @@ export async function getHoldingsBreakdown(
       fetchType,
       paginationMode
     })
-    return buildEmptyBreakdownResponse(userAddress, version, latestTimestamp, 'No matching holdings found')
+    return buildEmptyBreakdownResponse(userAddress, version, breakdownTimestamp, 'No matching holdings found')
   }
 
   const ppsData = await fetchMultipleVaultsPPS(vaults)
@@ -440,7 +441,7 @@ export async function getHoldingsBreakdown(
   }
 
   const priceData =
-    underlyingTokens.length > 0 ? await fetchHistoricalPrices(underlyingTokens, [latestTimestamp]) : new Map()
+    underlyingTokens.length > 0 ? await fetchHistoricalPrices(underlyingTokens, [breakdownTimestamp]) : new Map()
   debugLog('breakdown', 'resolved metadata, PPS, and prices for breakdown', {
     version,
     fetchType,
@@ -450,7 +451,7 @@ export async function getHoldingsBreakdown(
     ppsResolved: ppsData.size,
     tokens: underlyingTokens.length,
     priceKeys: priceData.size,
-    timestamp: latestTimestamp
+    timestamp: breakdownTimestamp
   })
 
   const results: HoldingsBreakdownVaultResponse[] = []
@@ -458,9 +459,9 @@ export async function getHoldingsBreakdown(
   for (const vault of vaults) {
     const vaultKey = toVaultKey(vault.chainId, vault.vaultAddress)
     const metadata = vaultMetadata.get(vaultKey)
-    const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, latestTimestamp)
+    const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, breakdownTimestamp)
     const ppsMap = ppsData.get(vaultKey)
-    const pps = ppsMap ? getPPS(ppsMap, latestTimestamp) : null
+    const pps = ppsMap ? getPPS(ppsMap, breakdownTimestamp) : null
     const decimals = metadata?.decimals ?? 18
     const sharesFormatted = Number(shares) / 10 ** decimals
 
@@ -470,7 +471,7 @@ export async function getHoldingsBreakdown(
     if (metadata) {
       const priceKey = `${getChainPrefix(metadata.chainId)}:${metadata.token.address.toLowerCase()}`
       const tokenPriceMap = priceData.get(priceKey)
-      tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, latestTimestamp) : 0
+      tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, breakdownTimestamp) : 0
       usdValue = pps ? sharesFormatted * pps * tokenPrice : 0
     }
 
@@ -514,7 +515,7 @@ export async function getHoldingsBreakdown(
     version,
     fetchType,
     paginationMode,
-    timestamp: latestTimestamp,
+    timestamp: breakdownTimestamp,
     totalVaults: vaults.length,
     vaultsWithShares: withShares.length,
     totalUsdValue,
@@ -526,8 +527,8 @@ export async function getHoldingsBreakdown(
   return {
     address: userAddress,
     version,
-    date: latestDate,
-    timestamp: latestTimestamp,
+    date: breakdownDate,
+    timestamp: breakdownTimestamp,
     summary: {
       totalVaults: vaults.length,
       vaultsWithShares: withShares.length,

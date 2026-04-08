@@ -36,6 +36,21 @@ function parseHoldingsEventPaginationMode(value: string | string[] | undefined):
   return value === 'all' ? 'all' : 'paged'
 }
 
+function parseUtcDateParam(value: string | string[] | undefined): number | null {
+  if (!value || Array.isArray(value)) {
+    return null
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) {
+    return null
+  }
+
+  const [, year, month, day] = match
+  const timestamp = Math.floor(Date.UTC(Number(year), Number(month) - 1, Number(day)) / 1000)
+  return Number.isFinite(timestamp) ? timestamp : null
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -71,7 +86,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  const { address, version: versionParam, fetchType: fetchTypeParam, paginationMode: paginationModeParam } = req.query
+  const {
+    address,
+    date: dateParam,
+    version: versionParam,
+    fetchType: fetchTypeParam,
+    paginationMode: paginationModeParam
+  } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -81,13 +102,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid Ethereum address' })
   }
 
+  const breakdownTimestamp = parseUtcDateParam(dateParam)
+  if (dateParam && breakdownTimestamp === null) {
+    return res.status(400).json({ error: 'Invalid date format, expected YYYY-MM-DD' })
+  }
+
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
 
   try {
     const { getHoldingsBreakdown } = await import('../lib/holdings')
-    const breakdown = await getHoldingsBreakdown(address, version, fetchType, paginationMode)
+    const breakdown = await getHoldingsBreakdown(
+      address,
+      version,
+      fetchType,
+      paginationMode,
+      breakdownTimestamp ?? undefined
+    )
 
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
     return res.status(200).json(breakdown)

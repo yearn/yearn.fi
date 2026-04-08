@@ -271,4 +271,57 @@ describe('getHistoricalHoldings', () => {
       }
     })
   })
+
+  it('builds breakdown for an explicitly requested historical date', async () => {
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+    const vaultAddress = '0x00000000000000000000000000000000000000b2'
+    const tokenAddress = '0x0000000000000000000000000000000000000bb2'
+    const timeline = [{ id: 'entry-2' }]
+    const vaults = [{ chainId: 1, vaultAddress }]
+
+    generateDailyTimestampsMock.mockReturnValue([100, 200])
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+    buildPositionTimelineMock.mockReturnValue(timeline)
+    getUniqueVaultsMock.mockReturnValue(vaults)
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${vaultAddress}`,
+          {
+            address: vaultAddress,
+            chainId: 1,
+            version: 'v3',
+            token: {
+              address: tokenAddress,
+              symbol: 'OLD',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+    fetchMultipleVaultsPPSMock.mockResolvedValue(new Map([[`1:${vaultAddress}`, new Map([[100, 3]])]]))
+    fetchHistoricalPricesMock.mockResolvedValue(new Map([[`ethereum:${tokenAddress}`, new Map([[100, 4]])]]))
+    getChainPrefixMock.mockReturnValue('ethereum')
+    getPPSMock.mockReturnValue(3)
+    getPriceAtTimestampMock.mockReturnValue(4)
+    getShareBalanceAtTimestampMock.mockReturnValue(5n * 10n ** 18n)
+
+    const { getHoldingsBreakdown } = await import('./aggregator')
+    const response = await getHoldingsBreakdown(userAddress, 'all', 'seq', 'paged', 100)
+
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86500, 'seq', 'paged')
+    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress }], [100])
+    expect(getShareBalanceAtTimestampMock).toHaveBeenCalledWith(timeline, vaultAddress, 1, 100)
+    expect(response.date).toBe('date-100')
+    expect(response.timestamp).toBe(100)
+    expect(response.summary.totalUsdValue).toBe(60)
+  })
 })
