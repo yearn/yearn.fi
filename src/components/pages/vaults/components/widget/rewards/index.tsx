@@ -42,8 +42,8 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false)
   const [activeStep, setActiveStep] = useState<TransactionStep | undefined>()
   const [isComplete, setIsComplete] = useState(false)
-  const [hiddenMerkleRewardRoots, setHiddenMerkleRewardRoots] = useState<`0x${string}`[]>([])
-  const [activeMerkleRewardRoots, setActiveMerkleRewardRoots] = useState<`0x${string}`[]>([])
+  const [hiddenMerkleRewardKeys, setHiddenMerkleRewardKeys] = useState<string[]>([])
+  const [activeMerkleRewardKeys, setActiveMerkleRewardKeys] = useState<string[]>([])
   const currentChainId = useChainId()
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain()
 
@@ -70,7 +70,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
     userAddress,
     chainId,
     enabled: isActive,
-    hiddenRewardRoots: hiddenMerkleRewardRoots
+    hiddenRewardKeys: hiddenMerkleRewardKeys
   })
 
   const hasStakingRewards = stakingRewards.length > 0
@@ -98,19 +98,19 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
     onCloseRewards?.()
   }, [onCloseRewards])
 
-  const handleStartClaim = useCallback((step: TransactionStep, merkleRewardRoots: `0x${string}`[] = []) => {
+  const handleStartClaim = useCallback((step: TransactionStep, merkleRewardKeys: string[] = []) => {
     setActiveStep(step)
-    setActiveMerkleRewardRoots(merkleRewardRoots)
+    setActiveMerkleRewardKeys(merkleRewardKeys)
     setIsOverlayOpen(true)
   }, [])
 
   const handleBeforeSuccess = useCallback(async () => {
-    if (activeMerkleRewardRoots.length > 0) {
-      setHiddenMerkleRewardRoots((prev) => [...new Set([...prev, ...activeMerkleRewardRoots])])
+    if (activeMerkleRewardKeys.length > 0) {
+      setHiddenMerkleRewardKeys((prev) => [...new Set([...prev, ...activeMerkleRewardKeys])])
     }
 
     await Promise.all([refetchStaking(), refetchMerkle()])
-  }, [activeMerkleRewardRoots, refetchStaking, refetchMerkle])
+  }, [activeMerkleRewardKeys, refetchStaking, refetchMerkle])
 
   const handleClaimComplete = useCallback(() => {
     trackEvent(PLAUSIBLE_EVENTS.CLAIM, {
@@ -123,7 +123,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
     })
     setIsOverlayOpen(false)
     setActiveStep(undefined)
-    setActiveMerkleRewardRoots([])
+    setActiveMerkleRewardKeys([])
     setIsComplete(true)
     onClaimSuccess?.()
   }, [trackEvent, chainId, stakingAddress, totalUsd, onClaimSuccess])
@@ -131,12 +131,12 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   const handleOverlayClose = useCallback(() => {
     setIsOverlayOpen(false)
     setActiveStep(undefined)
-    setActiveMerkleRewardRoots([])
+    setActiveMerkleRewardKeys([])
   }, [])
 
   useEffect(() => {
-    setHiddenMerkleRewardRoots([])
-    setActiveMerkleRewardRoots([])
+    setHiddenMerkleRewardKeys([])
+    setActiveMerkleRewardKeys([])
     setActiveStep(undefined)
     setIsOverlayOpen(false)
     setIsComplete(false)
@@ -149,7 +149,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
     if (isOverlayOpen) {
       setIsOverlayOpen(false)
       setActiveStep(undefined)
-      setActiveMerkleRewardRoots([])
+      setActiveMerkleRewardKeys([])
     }
     if (isComplete) {
       setIsComplete(false)

@@ -18,6 +18,7 @@ import { isConnectedToExecutionChain } from '@/config/tenderly'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
 import {
   type CompletionDeferral,
+  getInitialOverlayState,
   type OverlayState,
   resolveCompletionDeferral,
   shouldAutoContinuePermitSuccess,
@@ -169,7 +170,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   autoContinueToNextStep = false,
   autoContinueStepLabels = []
 }) => {
-  const [overlayState, setOverlayState] = useState<OverlayState>('success')
+  const [overlayState, setOverlayState] = useState<OverlayState>(getInitialOverlayState())
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [hasCompletedFlow, setHasCompletedFlow] = useState(false)
   const [completedStepSnapshot, setCompletedStepSnapshot] = useState<TransactionStep | null>(null)

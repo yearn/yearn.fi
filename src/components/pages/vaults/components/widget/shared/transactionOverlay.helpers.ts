@@ -1,6 +1,10 @@
 export type OverlayState = 'idle' | 'confirming' | 'pending' | 'refreshing' | 'success' | 'error'
 export type CompletionDeferral = 'none' | 'immediate' | 'after-close' | 'after-confetti'
 
+export function getInitialOverlayState(): OverlayState {
+  return 'idle'
+}
+
 export function shouldAutoContinuePermitSuccess(params: {
   overlayState: OverlayState
   executedStepIsPermit?: boolean
