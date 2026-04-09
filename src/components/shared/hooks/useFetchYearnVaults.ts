@@ -1,5 +1,6 @@
 import { patchYBoldVaults } from '@pages/vaults/domain/normalizeVault'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
+import { isYvBtcAddress } from '@pages/vaults/utils/yvBtc'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { fetchWithSchema, getFetchQueryKey, useFetch } from '@shared/hooks/useFetch'
 import type { TDict } from '@shared/types'
@@ -14,7 +15,8 @@ const DEFAULT_CHAIN_IDS = SUPPORTED_NETWORKS.map((network) => network.id)
 const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/list/vaults`
 
 export const isCatalogYearnVault = (item: TKongVaultListItem): boolean =>
-  item.origin === 'yearn' && item.inclusion?.isYearn !== false
+  // Temporary frontend override until Kong marks the new yvBTC vault as a Yearn catalog entry.
+  (item.origin === 'yearn' || isYvBtcAddress(item.address)) && item.inclusion?.isYearn !== false
 
 function useFetchYearnVaults(
   chainIDs?: number[] | undefined,

@@ -1,3 +1,4 @@
+import { YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import type { TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import { describe, expect, it } from 'vitest'
 import { isCatalogYearnVault } from './useFetchYearnVaults'
@@ -33,5 +34,11 @@ describe('isCatalogYearnVault', () => {
 
   it('excludes yearn vaults that Kong marks as not included', () => {
     expect(isCatalogYearnVault(makeVault({ origin: 'yearn', inclusion: { isYearn: false } as never }))).toBe(false)
+  })
+
+  it('keeps yvBTC in the public catalog while Kong metadata is incomplete', () => {
+    expect(
+      isCatalogYearnVault(makeVault({ address: YVBTC_UNLOCKED_ADDRESS, origin: null, inclusion: {} as never }))
+    ).toBe(true)
   })
 })
