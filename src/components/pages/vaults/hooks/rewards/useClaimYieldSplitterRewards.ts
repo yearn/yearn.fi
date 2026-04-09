@@ -20,6 +20,8 @@ export function useClaimYieldSplitterRewards(params: UseClaimYieldSplitterReward
   const { splitterAddress, chainId, enabled = true } = params
 
   const prepare = useSimulateContract({
+    // Claims stay on the splitter contract as well. YieldSplitter exposes `getReward()`,
+    // whereas the optional reward handler has its own `claimRewards()` interface.
     address: splitterAddress,
     abi: YIELD_SPLITTER_CLAIM_ABI,
     functionName: 'getReward',

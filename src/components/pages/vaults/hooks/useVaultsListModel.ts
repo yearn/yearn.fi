@@ -34,6 +34,7 @@ type TVaultsListModelArgs = {
   listVaultType: TVaultType
   listChains: number[] | null
   listV3Types: string[]
+  includeYieldSplittersByDefault?: boolean
   listCategories: string[] | null
   listAggressiveness: string[] | null
   listUnderlyingAssets: string[] | null
@@ -128,6 +129,7 @@ export function useVaultsListModel({
   listVaultType,
   listChains,
   listV3Types,
+  includeYieldSplittersByDefault = false,
   listCategories,
   listAggressiveness,
   listUnderlyingAssets,
@@ -192,6 +194,7 @@ export function useVaultsListModel({
     isV3View ? listUnderlyingAssets : null,
     listMinTvl,
     isV3View ? listShowHiddenVaults : undefined,
+    isV3View ? includeYieldSplittersByDefault : undefined,
     isV3View
   )
 
@@ -313,6 +316,7 @@ export function useVaultsListModel({
     isV3View ? listUnderlyingAssets : null,
     listMinTvl,
     isV3View ? listShowHiddenVaults : undefined,
+    false,
     isV3View
   )
 

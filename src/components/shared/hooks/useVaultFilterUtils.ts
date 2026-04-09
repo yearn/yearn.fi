@@ -9,6 +9,7 @@ import {
   getVaultToken,
   getVaultTVL,
   getVaultVersion,
+  isYieldSplitterVault,
   type TKongVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
@@ -247,7 +248,7 @@ export function matchesSelectedChains(chainID: number, chains: number[] | null |
 
 export function isV3Vault(vault: TVaultLike, isAllocatorOverride: boolean): boolean {
   const version = getVaultVersion(vault)
-  return version.startsWith('3') || version.startsWith('~3') || isAllocatorOverride
+  return version.startsWith('3') || version.startsWith('~3') || isAllocatorOverride || isYieldSplitterVault(vault)
 }
 
 export function extractHoldingsVaults(vaultMap: Map<string, TVaultWithMetadata>): TKongVault[] {

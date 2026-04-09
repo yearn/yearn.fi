@@ -4,6 +4,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { isZeroAddress, toAddress, toNormalizedValue } from '@shared/utils'
 import { useCallback, useMemo } from 'react'
 import { useReadContracts } from 'wagmi'
+import { resolveExecutionChainId } from '@/config/tenderly'
 
 const YIELD_SPLITTER_REWARDS_ABI = [
   {
@@ -35,6 +36,7 @@ type UseYieldSplitterRewardsReturn = {
 export function useYieldSplitterRewards(params: UseYieldSplitterRewardsParams): UseYieldSplitterRewardsReturn {
   const { splitterAddress, rewardTokenAddresses, userAddress, chainId, enabled = true } = params
   const { getPrice } = useYearn()
+  const executionChainId = resolveExecutionChainId(chainId)
 
   const normalizedRewardTokenAddresses = useMemo(
     () =>
@@ -66,16 +68,19 @@ export function useYieldSplitterRewards(params: UseYieldSplitterRewardsParams): 
 
   const contracts = useMemo(
     () =>
-      isEnabled
+      isEnabled && !!executionChainId
         ? normalizedRewardTokenAddresses.map((rewardTokenAddress) => ({
+            // Intentionally read rewards from the splitter contract itself.
+            // In the ysplitter ABI, `earned(account, rewardToken)` lives on YieldSplitter,
+            // while `rewardHandlerAddress` points at a helper contract with a different surface.
             address: splitterAddress!,
             abi: YIELD_SPLITTER_REWARDS_ABI,
             functionName: 'earned' as const,
             args: [userAddress!, rewardTokenAddress] as const,
-            chainId
+            chainId: executionChainId
           }))
         : [],
-    [chainId, isEnabled, normalizedRewardTokenAddresses, splitterAddress, userAddress]
+    [executionChainId, isEnabled, normalizedRewardTokenAddresses, splitterAddress, userAddress]
   )
 
   const {
@@ -84,7 +89,7 @@ export function useYieldSplitterRewards(params: UseYieldSplitterRewardsParams): 
     refetch: refetchEarned
   } = useReadContracts({
     contracts,
-    query: { enabled: isEnabled }
+    query: { enabled: isEnabled && !!executionChainId }
   })
 
   const rewards = useMemo((): TStakingReward[] => {

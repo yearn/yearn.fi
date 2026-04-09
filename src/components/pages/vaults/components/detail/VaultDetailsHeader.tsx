@@ -171,10 +171,10 @@ function VaultHeaderIdentity({
   const kindType = getVaultKindType(currentVault.kind, listKind)
   const kindLabel = getVaultKindLabel(kindType, currentVault.kind)
   const yieldSplitter = getVaultYieldSplitter(currentVault)
+  const yieldSplitterRouteFrom = yieldSplitter?.sourceVaultSymbol || yieldSplitter?.sourceVaultName || ''
+  const yieldSplitterRouteTo = yieldSplitter?.wantVaultSymbol || yieldSplitter?.wantVaultName || ''
   const yieldSplitterRouteLabel =
-    yieldSplitter && (yieldSplitter.sourceVaultSymbol || yieldSplitter.wantVaultSymbol)
-      ? `${yieldSplitter.sourceVaultSymbol || yieldSplitter.sourceVaultName} -> ${yieldSplitter.wantVaultSymbol || yieldSplitter.wantVaultName}`
-      : ''
+    yieldSplitterRouteFrom && yieldSplitterRouteTo ? `${yieldSplitterRouteFrom} -> ${yieldSplitterRouteTo}` : ''
   const chainDescription = getChainDescription(currentVault.chainID)
   const categoryDescription = getCategoryDescription(currentVault.category)
   const productTypeDescription = getProductTypeDescription(listKind)

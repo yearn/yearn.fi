@@ -35,6 +35,7 @@ import {
   matchesSelectedChains,
   type TVaultFlags
 } from './useVaultFilterUtils'
+import { matchesSelectedV3Kind } from './useV3VaultFilter.utils'
 
 type TVaultIndexEntry = {
   key: string
@@ -80,6 +81,7 @@ export function useV3VaultFilter(
   underlyingAssets?: string[] | null,
   minTvl?: number,
   showHiddenVaults?: boolean,
+  includeYieldSplittersByDefault?: boolean,
   enabled?: boolean
 ): TV3VaultFilterResult {
   const { vaults, allVaults, getPrice, isLoadingVaultList } = useYearn()
@@ -277,7 +279,6 @@ export function useV3VaultFilter(
     const hasChainFilter = Boolean(chains?.length)
     const hasCategoryFilter = Boolean(categories?.length)
     const hasAggressivenessFilter = Boolean(aggressiveness?.length)
-    const hasTypeFilter = Boolean(types?.length)
     const hasUnderlyingAssetFilter = normalizedUnderlyingAssets.size > 0
 
     const matchesSearch = (searchableText: string): boolean => {
@@ -355,12 +356,12 @@ export function useV3VaultFilter(
       const isPinnedByUserContext = hasUserHoldings || isMigratableVault || isRetiredVault
       const isStrategyLike = kind === 'strategy' || kind === 'yieldSplitter'
       const shouldIncludeByFeaturedGate = showHiddenVaults || isStrategyLike || isFeatured || isPinnedByUserContext
-      const shouldIncludeByKind =
-        hasUserHoldings ||
-        kind === 'yieldSplitter' ||
-        !hasTypeFilter ||
-        (Boolean(types?.includes('multi')) && kind === 'allocator') ||
-        (Boolean(types?.includes('single')) && kind === 'strategy')
+      const shouldIncludeByKind = matchesSelectedV3Kind({
+        kind,
+        types,
+        hasUserHoldings,
+        includeYieldSplittersByDefault: Boolean(includeYieldSplittersByDefault)
+      })
       const shouldIncludeByAggressiveness =
         hasUserHoldings ||
         !hasAggressivenessFilter ||
@@ -413,6 +414,7 @@ export function useV3VaultFilter(
     minTvlValue,
     holdingsVaults,
     showHiddenVaults,
+    includeYieldSplittersByDefault,
     searchRegex,
     lowercaseSearch,
     isSearchEnabled

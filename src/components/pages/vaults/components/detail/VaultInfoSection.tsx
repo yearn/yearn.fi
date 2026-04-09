@@ -299,7 +299,7 @@ export function VaultInfoSection({
         )}
 
         <AddressLink
-          address={token.address}
+          address={yieldSplitter?.depositAssetAddress ?? token.address}
           explorerUrl={explorerUrl}
           label={yieldSplitter ? 'Deposit Asset Contract Address' : 'Token Contract Address'}
         />

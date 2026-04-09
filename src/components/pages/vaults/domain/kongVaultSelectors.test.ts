@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { getVaultAPR, getVaultStaking, getVaultStrategies } from './kongVaultSelectors'
+import {
+  getVaultAPR,
+  getVaultDepositAssetAddress,
+  getVaultStaking,
+  getVaultStrategies,
+  getVaultToken,
+  getVaultVersion,
+  getVaultYieldSplitter
+} from './kongVaultSelectors'
 
 const LIST_REWARD = {
   address: '0x3333333333333333333333333333333333333333',
@@ -113,6 +121,167 @@ describe('getVaultAPR', () => {
     } as any)
 
     expect(apr.pricePerShare.today).toBeCloseTo(1.05, 8)
+  })
+})
+
+describe('getVaultToken', () => {
+  it('prefers yield splitter deposit asset metadata over the generic asset token fields', () => {
+    const vault = {
+      chainId: 1,
+      address: '0x1111111111111111111111111111111111111111',
+      name: 'Yield Splitter',
+      symbol: 'ysUSDC',
+      decimals: 18,
+      asset: {
+        address: '0x2222222222222222222222222222222222222222',
+        name: 'Generic Asset',
+        symbol: 'GEN',
+        decimals: 18
+      },
+      yieldSplitter: {
+        enabled: true,
+        sourceVaultAddress: '0x3333333333333333333333333333333333333333',
+        sourceVaultName: 'Source Vault',
+        sourceVaultSymbol: 'yvSRC',
+        wantVaultAddress: '0x4444444444444444444444444444444444444444',
+        wantVaultName: 'Want Vault',
+        wantVaultSymbol: 'yvWANT',
+        depositAssetAddress: '0x5555555555555555555555555555555555555555',
+        depositAssetName: 'Deposit Asset',
+        depositAssetSymbol: 'DEP',
+        rewardTokenAddresses: []
+      },
+      tvl: 0,
+      performance: {
+        oracle: { apr: 0, apy: 0 },
+        estimated: { apr: 0, apy: 0, type: 'oracle', components: {} },
+        historical: { net: 0, weeklyNet: 0, monthlyNet: 0, inceptionNet: 0 }
+      },
+      fees: {
+        managementFee: 0,
+        performanceFee: 0
+      },
+      category: 'Stablecoin',
+      type: 'Standard',
+      kind: 'Single Strategy',
+      yearn: true,
+      isRetired: false,
+      isHidden: false,
+      isBoosted: false,
+      isHighlighted: false,
+      strategiesCount: 0,
+      riskLevel: 1,
+      staking: null
+    } as any
+
+    const token = getVaultToken(vault)
+
+    expect(token.address).toBe('0x5555555555555555555555555555555555555555')
+    expect(token.name).toBe('Deposit Asset')
+    expect(token.symbol).toBe('DEP')
+    expect(getVaultDepositAssetAddress(vault)).toBe('0x5555555555555555555555555555555555555555')
+  })
+
+  it('merges partial snapshot yield splitter metadata with the richer list entry', () => {
+    const vault = {
+      chainId: 1,
+      address: '0x1111111111111111111111111111111111111111',
+      name: 'Yield Splitter',
+      symbol: 'ysUSDC',
+      decimals: 18,
+      asset: {
+        address: '0x2222222222222222222222222222222222222222',
+        name: 'Generic Asset',
+        symbol: 'GEN',
+        decimals: 18
+      },
+      yieldSplitter: {
+        enabled: true,
+        sourceVaultAddress: '0x3333333333333333333333333333333333333333',
+        sourceVaultName: 'Source Vault',
+        sourceVaultSymbol: 'yvSRC',
+        wantVaultAddress: '0x4444444444444444444444444444444444444444',
+        wantVaultName: 'Want Vault',
+        wantVaultSymbol: 'yvWANT',
+        depositAssetAddress: '0x5555555555555555555555555555555555555555',
+        depositAssetName: 'Deposit Asset',
+        depositAssetSymbol: 'DEP',
+        rewardTokenAddresses: ['0x6666666666666666666666666666666666666666'],
+        rewardHandlerAddress: '0x7777777777777777777777777777777777777777',
+        tokenizedStrategyAddress: '0x8888888888888888888888888888888888888888',
+        uiDescription: 'Deposit one asset and earn another.'
+      },
+      tvl: 0,
+      performance: {
+        oracle: { apr: 0, apy: 0 },
+        estimated: { apr: 0, apy: 0, type: 'oracle', components: {} },
+        historical: { net: 0, weeklyNet: 0, monthlyNet: 0, inceptionNet: 0 }
+      },
+      fees: {
+        managementFee: 0,
+        performanceFee: 0
+      },
+      category: 'Stablecoin',
+      type: 'Standard',
+      kind: 'Single Strategy',
+      yearn: true,
+      isRetired: false,
+      isHidden: false,
+      isBoosted: false,
+      isHighlighted: false,
+      strategiesCount: 0,
+      riskLevel: 1,
+      staking: null
+    } as any
+
+    const snapshot = {
+      yieldSplitter: {
+        enabled: true,
+        sourceVaultAddress: '0x3333333333333333333333333333333333333333',
+        sourceVaultName: '',
+        sourceVaultSymbol: '',
+        wantVaultAddress: '0x4444444444444444444444444444444444444444',
+        wantVaultName: '',
+        wantVaultSymbol: '',
+        depositAssetAddress: '0x0000000000000000000000000000000000000000',
+        depositAssetName: '',
+        depositAssetSymbol: '',
+        rewardTokenAddresses: [],
+        rewardHandlerAddress: '0x0000000000000000000000000000000000000000',
+        tokenizedStrategyAddress: '0x0000000000000000000000000000000000000000',
+        uiDescription: ''
+      }
+    } as any
+
+    const mergedYieldSplitter = getVaultYieldSplitter(vault, snapshot)
+    const token = getVaultToken(vault, snapshot)
+
+    expect(mergedYieldSplitter?.sourceVaultName).toBe('Source Vault')
+    expect(mergedYieldSplitter?.wantVaultSymbol).toBe('yvWANT')
+    expect(mergedYieldSplitter?.depositAssetAddress).toBe('0x5555555555555555555555555555555555555555')
+    expect(mergedYieldSplitter?.rewardTokenAddresses).toEqual(['0x6666666666666666666666666666666666666666'])
+    expect(mergedYieldSplitter?.rewardHandlerAddress).toBe('0x7777777777777777777777777777777777777777')
+    expect(mergedYieldSplitter?.tokenizedStrategyAddress).toBe('0x8888888888888888888888888888888888888888')
+    expect(token.address).toBe('0x5555555555555555555555555555555555555555')
+    expect(token.symbol).toBe('DEP')
+  })
+})
+
+describe('getVaultVersion', () => {
+  it('treats yield splitters without apiVersion metadata as v3 vaults', () => {
+    const vault = {
+      chainId: 1,
+      address: '0x1111111111111111111111111111111111111111',
+      apiVersion: null,
+      v3: false,
+      yieldSplitter: {
+        enabled: true,
+        sourceVaultAddress: '0x3333333333333333333333333333333333333333',
+        wantVaultAddress: '0x4444444444444444444444444444444444444444'
+      }
+    } as any
+
+    expect(getVaultVersion(vault)).toBe('3')
   })
 })
 

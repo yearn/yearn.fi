@@ -317,6 +317,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const listShowStrategies = useDeferredValue(showStrategies)
   const hasDisplayedTypesParam = hasTypesParam || displayedTypes !== types
   const hasListTypesParam = hasTypesParam
+  const includeYieldSplittersByDefault = !listShowStrategies && !hasListTypesParam
 
   const resolveV3Types = useCallback(
     (selected: string[] | null | undefined, shouldShowStrategies: boolean, hasTypesParam: boolean): string[] => {
@@ -400,6 +401,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     listVaultType,
     listChains,
     listV3Types,
+    includeYieldSplittersByDefault,
     listCategories,
     listAggressiveness,
     listUnderlyingAssets: listUnderlyingAssetsSanitized,
@@ -441,6 +443,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     listVaultType,
     listChains,
     listV3Types,
+    includeYieldSplittersByDefault,
     listCategories,
     listAggressiveness: listAggressivenessSanitized.length > 0 ? listAggressivenessSanitized : null,
     listUnderlyingAssets: listUnderlyingAssetsSanitized,
@@ -586,10 +589,11 @@ export function useVaultsPageModel(): TVaultsPageModel {
       }
 
       if (isV3Kind) {
-        if (!listShowStrategies && listKind === 'strategy') {
+        if (!listShowStrategies && (listKind === 'strategy' || listKind === 'yieldSplitter')) {
           blockingKeys.add('showStrategies')
         }
-        if (isTypesFilterBlockingResults && listKind !== 'yieldSplitter' && !activeV3Kinds.has(listKind)) {
+        const typeFilterKind = listKind === 'yieldSplitter' ? 'strategy' : listKind
+        if (isTypesFilterBlockingResults && !activeV3Kinds.has(typeFilterKind)) {
           blockingKeys.add('showAllTypes')
         }
       }

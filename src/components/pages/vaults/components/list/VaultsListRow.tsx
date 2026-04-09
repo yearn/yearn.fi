@@ -95,6 +95,7 @@ type TVaultProductTypePresentation = {
   label: string
   ariaLabel: string
   isLegacy: boolean
+  isFilterable: boolean
 }
 
 type TYvUsdListMetrics = {
@@ -122,8 +123,9 @@ function getVaultProductTypePresentation(listKind: ReturnType<typeof deriveListK
     return {
       productType: 'v3',
       label: 'Yield Splitter',
-      ariaLabel: 'Show yield splitter vaults',
-      isLegacy: false
+      ariaLabel: 'Yield splitter vault',
+      isLegacy: false,
+      isFilterable: false
     }
   }
 
@@ -132,7 +134,8 @@ function getVaultProductTypePresentation(listKind: ReturnType<typeof deriveListK
       productType: 'v3',
       label: 'Single Asset',
       ariaLabel: 'Show single asset vaults',
-      isLegacy: false
+      isLegacy: false,
+      isFilterable: true
     }
   }
 
@@ -141,7 +144,8 @@ function getVaultProductTypePresentation(listKind: ReturnType<typeof deriveListK
       productType: 'lp',
       label: 'Legacy',
       ariaLabel: 'Legacy vault',
-      isLegacy: true
+      isLegacy: true,
+      isFilterable: true
     }
   }
 
@@ -149,7 +153,8 @@ function getVaultProductTypePresentation(listKind: ReturnType<typeof deriveListK
     productType: 'lp',
     label: 'LP Token',
     ariaLabel: 'Show LP token vaults',
-    isLegacy: false
+    isLegacy: false,
+    isFilterable: true
   }
 }
 
@@ -307,12 +312,13 @@ function VaultsListRowComponent({
     productType,
     label: productTypeLabel,
     ariaLabel: productTypeAriaLabel,
-    isLegacy: isLegacyVault
+    isLegacy: isLegacyVault,
+    isFilterable: isProductTypeFilterable
   } = getVaultProductTypePresentation(listKind)
   const showProductTypeChip = showProductTypeChipOverride ?? (Boolean(activeProductType) || Boolean(onToggleVaultType))
-  const isProductTypeActive = activeProductType === productType
+  const isProductTypeActive = isProductTypeFilterable && activeProductType === productType
   const shouldCollapseProductTypeChip =
-    !isLegacyVault && activeProductType !== 'all' && activeProductType === productType
+    isProductTypeFilterable && !isLegacyVault && activeProductType !== 'all' && activeProductType === productType
   const isChipsCompressed = Boolean(shouldCollapseChips) || isMobile
   const shouldCollapseProductType = isChipsCompressed || shouldCollapseProductTypeChip
   const showCollapsedTooltip = isChipsCompressed
@@ -395,10 +401,10 @@ function VaultsListRowComponent({
   const isHiddenVault = Boolean(flags?.isHidden)
   const kindType = getVaultKindType(vaultKind, listKind)
   const kindLabel = getVaultKindLabel(kindType, vaultKind)
+  const yieldSplitterRouteFrom = yieldSplitter?.sourceVaultSymbol || yieldSplitter?.sourceVaultName || ''
+  const yieldSplitterRouteTo = yieldSplitter?.wantVaultSymbol || yieldSplitter?.wantVaultName || ''
   const yieldSplitterRouteLabel =
-    yieldSplitter && (yieldSplitter.sourceVaultSymbol || yieldSplitter.wantVaultSymbol)
-      ? `${yieldSplitter.sourceVaultSymbol || yieldSplitter.sourceVaultName} -> ${yieldSplitter.wantVaultSymbol || yieldSplitter.wantVaultName}`
-      : ''
+    yieldSplitterRouteFrom && yieldSplitterRouteTo ? `${yieldSplitterRouteFrom} -> ${yieldSplitterRouteTo}` : ''
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
   const showKindChip =
@@ -672,7 +678,11 @@ function VaultsListRowComponent({
                     isCollapsed={shouldCollapseProductType}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={productTypeDescription}
-                    onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
+                    onClick={
+                      isProductTypeFilterable && onToggleVaultType
+                        ? (): void => onToggleVaultType(productType)
+                        : undefined
+                    }
                     onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={productTypeAriaLabel}
                   />

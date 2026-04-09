@@ -241,16 +241,15 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
                     isFirst={index === 0}
                   />
                 ))}
-                {yieldSplitterRewards.map((reward, index) => (
+                {hasYieldSplitterRewards ? (
                   <YieldSplitterRewardRow
-                    key={`${reward.tokenAddress}-${reward.amount}`}
-                    reward={reward}
+                    rewards={yieldSplitterRewards}
                     splitterAddress={vaultAddress!}
                     chainId={chainId}
                     onStartClaim={handleStartClaim}
-                    isFirst={index === 0 && !hasStakingRewards}
+                    isFirst={!hasStakingRewards}
                   />
-                ))}
+                ) : null}
                 {merkleRewards.map((groupedReward, index) => (
                   <MerkleRewardRow
                     key={groupedReward.token.address}
