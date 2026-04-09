@@ -1,4 +1,7 @@
-const API_PROXY_TARGET = process.env.API_PROXY_TARGET || 'http://localhost:3001'
+const DEFAULT_API_SERVER_PORT = '3001'
+const API_PROXY_TARGET =
+  process.env.API_PROXY_TARGET || `http://localhost:${process.env.API_SERVER_PORT || DEFAULT_API_SERVER_PORT}`
+const API_SERVER_PORT = process.env.API_SERVER_PORT || new URL(API_PROXY_TARGET).port || DEFAULT_API_SERVER_PORT
 const API_HEALTHCHECK_PATH = process.env.API_HEALTHCHECK_PATH || '/api/enso/balances'
 const API_HEALTHCHECK_EXPECTED_ERROR = 'Missing eoaAddress'
 const API_HEALTHCHECK_TIMEOUT_MS = Number(process.env.API_HEALTHCHECK_TIMEOUT_MS || '500')
@@ -37,6 +40,10 @@ async function checkApi() {
   }
 
   const child = Bun.spawn(['bun', 'api/server.ts'], {
+    env: {
+      ...process.env,
+      API_SERVER_PORT
+    },
     stdin: 'inherit',
     stdout: 'inherit',
     stderr: 'inherit'

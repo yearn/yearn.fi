@@ -15,9 +15,36 @@ import {
 import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+const DEFAULT_API_SERVER_PORT = '3001'
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
+
+function resolveApiServerPort(env: NodeJS.ProcessEnv): number {
+  const configuredPort = env.API_SERVER_PORT
+  if (configuredPort) {
+    const parsedConfiguredPort = Number(configuredPort)
+    if (Number.isInteger(parsedConfiguredPort) && parsedConfiguredPort > 0) {
+      return parsedConfiguredPort
+    }
+  }
+
+  const proxyTarget = env.API_PROXY_TARGET
+  if (proxyTarget) {
+    try {
+      const parsedProxyPort = Number(new URL(proxyTarget).port || DEFAULT_API_SERVER_PORT)
+      if (Number.isInteger(parsedProxyPort) && parsedProxyPort > 0) {
+        return parsedProxyPort
+      }
+    } catch (_error) {
+      console.warn(`Ignoring invalid API_PROXY_TARGET: ${proxyTarget}`)
+    }
+  }
+
+  return Number(DEFAULT_API_SERVER_PORT)
+}
+
+const API_SERVER_PORT = resolveApiServerPort(process.env)
 
 type TTenderlyJsonRpcSuccess = {
   id: string | number | null
@@ -394,7 +421,7 @@ serve({
 
     return new Response('Not found', { status: 404 })
   },
-  port: 3001
+  port: API_SERVER_PORT
 })
 
-console.log('🚀 API server running on http://localhost:3001')
+console.log(`🚀 API server running on http://localhost:${API_SERVER_PORT}`)
