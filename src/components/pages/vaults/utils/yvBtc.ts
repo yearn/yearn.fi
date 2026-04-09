@@ -1,3 +1,4 @@
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { toAddress } from '@shared/utils'
 import type { Address } from 'viem'
 
@@ -10,4 +11,12 @@ export function isYvBtcAddress(address?: string | null): boolean {
   }
 
   return toAddress(address) === YVBTC_UNLOCKED_ADDRESS
+}
+
+export function isYvBtcVault(vault?: TKongVaultInput | null): boolean {
+  if (!vault) {
+    return false
+  }
+
+  return isYvBtcAddress(vault.address)
 }
