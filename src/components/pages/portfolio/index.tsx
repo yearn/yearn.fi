@@ -1,4 +1,5 @@
 import { usePlausible } from '@hooks/usePlausible'
+import { mergeChainMerkleData } from '@pages/portfolio/claimRewards.helpers'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
 import { usePortfolioEntryRefresh } from '@pages/portfolio/hooks/usePortfolioEntryRefresh'
 import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
@@ -616,11 +617,6 @@ function rewardsArrayEqual(a: TStakingReward[], b: TStakingReward[]): boolean {
   return a.every((r, i) => r.tokenAddress === b[i]?.tokenAddress && r.amount === b[i]?.amount)
 }
 
-function merkleRewardsEqual(a: TGroupedMerkleReward[], b: TGroupedMerkleReward[]): boolean {
-  if (a.length !== b.length) return false
-  return a.every((r, i) => r.token.address === b[i]?.token.address && r.totalUnclaimed === b[i]?.totalUnclaimed)
-}
-
 function ChainStakingRewardsFetcher({
   vault: originalVault,
   userAddress,
@@ -799,15 +795,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
   const handleMerkleRewards = useCallback(
     (chainId: number, rewards: TGroupedMerkleReward[], isLoading: boolean, refetch: () => void) => {
-      setChainMerkleData((prev) => {
-        const existing = prev[chainId]
-
-        // Bail out if nothing changed
-        if (existing?.isLoading === isLoading && merkleRewardsEqual(existing.rewards, rewards)) return prev
-        if (!existing && rewards.length === 0 && isLoading) return prev
-
-        return { ...prev, [chainId]: { rewards, isLoading, refetch } }
-      })
+      setChainMerkleData((prev) => mergeChainMerkleData(prev, chainId, rewards, isLoading, refetch))
     },
     []
   )
