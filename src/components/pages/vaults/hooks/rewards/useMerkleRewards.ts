@@ -86,6 +86,10 @@ export const buildMerkleRewardKey = (root: string, tokenAddress: string): string
   return `${normalizeHash(root)}:${normalizeAddress(tokenAddress)}`
 }
 
+export function shouldDeferMerkleRewardRendering(filteredRewardCount: number, isClaimStatusLoading: boolean): boolean {
+  return filteredRewardCount > 0 && isClaimStatusLoading
+}
+
 export function filterYearnMerkleRewards(rewards: MerklV4Reward[], chainId: number): MerklV4Reward[] {
   const allowedTokenAddresses = MERKL_REWARD_TOKEN_ALLOWLIST_BY_CHAIN[chainId] ?? []
   if (allowedTokenAddresses.length === 0) {
@@ -203,9 +207,13 @@ export function useMerkleRewards(params: UseMerkleRewardsParams): UseMerkleRewar
     [claimStatuses, tokenAddresses]
   )
 
+  const isClaimStatusLoading = claimStatusContracts.length > 0 && isLoadingClaimStatuses
+  const shouldDeferRewards = shouldDeferMerkleRewardRendering(filteredChainRewards.length, isClaimStatusLoading)
+
   const rewards = useMemo(
-    (): TMerkleReward[] => buildMerkleRewards(data, chainId, hiddenRewardKeys, claimedByTokenAddress),
-    [claimedByTokenAddress, data, chainId, hiddenRewardKeys]
+    (): TMerkleReward[] =>
+      shouldDeferRewards ? [] : buildMerkleRewards(data, chainId, hiddenRewardKeys, claimedByTokenAddress),
+    [claimedByTokenAddress, data, chainId, hiddenRewardKeys, shouldDeferRewards]
   )
 
   const groupedRewards = useMemo((): TGroupedMerkleReward[] => {
@@ -227,7 +235,7 @@ export function useMerkleRewards(params: UseMerkleRewardsParams): UseMerkleRewar
     }))
   }, [rewards])
 
-  const isLoading = isLoadingApi || (claimStatusContracts.length > 0 && isLoadingClaimStatuses)
+  const isLoading = isLoadingApi || isClaimStatusLoading
 
   const refetch = useCallback(async (): Promise<unknown> => {
     return await Promise.all([
