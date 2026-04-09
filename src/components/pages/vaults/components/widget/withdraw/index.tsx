@@ -481,7 +481,8 @@ export function WidgetWithdraw({
         : 0
     return {
       percentage: impact,
-      isHigh: impact > 5
+      isHigh: impact > 5,
+      isBlocking: impact > 15
     }
   }, [
     withdrawAmount.bn,
@@ -757,6 +758,7 @@ export function WidgetWithdraw({
     <PriceImpactWarning
       percentage={priceImpactInfo.percentage}
       isHigh={priceImpactInfo.isHigh}
+      isBlocking={priceImpactInfo.isBlocking}
       isLoading={isFetchingQuote}
       isDebouncing={withdrawAmount.isDebouncing}
       isAmountSynced={withdrawAmount.bn === withdrawAmount.debouncedBn}
@@ -786,6 +788,7 @@ export function WidgetWithdraw({
       prepareApproveEnabled: Boolean(activeFlow.periphery.prepareApproveEnabled),
       prepareWithdrawEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
     }) ||
+    priceImpactInfo.isBlocking ||
     (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
 
   const actionRow = (

@@ -100,4 +100,38 @@ describe('calculateDepositValueInfo', () => {
     expect(valueInfo.vaultShareValueInAsset).toBe(102n * ONE_ETHER)
     expect(valueInfo.priceImpactPercentage).toBe(0)
   })
+
+  it('sets isBlockingPriceImpact when price impact exceeds 15%', () => {
+    // 20% impact — should be both high and blocking
+    const blockingInfo = calculateDepositValueInfo({
+      depositAmountBn: 100n * ONE_ETHER,
+      inputTokenDecimals: 18,
+      inputTokenUsdPrice: 1,
+      normalizedVaultShares: 80n * ONE_ETHER,
+      vaultDecimals: 18,
+      pricePerShare: ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1
+    })
+    expect(blockingInfo.priceImpactPercentage).toBe(20)
+    expect(blockingInfo.isHighPriceImpact).toBe(true)
+    expect(blockingInfo.isBlockingPriceImpact).toBe(true)
+  })
+
+  it('does not set isBlockingPriceImpact for impacts between 5% and 15%', () => {
+    // 10% impact — high but not blocking
+    const highNotBlockingInfo = calculateDepositValueInfo({
+      depositAmountBn: 100n * ONE_ETHER,
+      inputTokenDecimals: 18,
+      inputTokenUsdPrice: 1,
+      normalizedVaultShares: 90n * ONE_ETHER,
+      vaultDecimals: 18,
+      pricePerShare: ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1
+    })
+    expect(highNotBlockingInfo.priceImpactPercentage).toBe(10)
+    expect(highNotBlockingInfo.isHighPriceImpact).toBe(true)
+    expect(highNotBlockingInfo.isBlockingPriceImpact).toBe(false)
+  })
 })

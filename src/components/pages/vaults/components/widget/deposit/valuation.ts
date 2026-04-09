@@ -1,12 +1,14 @@
 import { type Address, formatUnits, isAddressEqual } from 'viem'
 
 export const HIGH_PRICE_IMPACT_THRESHOLD = 5
+export const BLOCKING_PRICE_IMPACT_THRESHOLD = 15
 
 export type DepositValueInfo = {
   vaultShareValueInAsset: bigint
   vaultShareValueUsdRaw: number
   priceImpactPercentage: number
   isHighPriceImpact: boolean
+  isBlockingPriceImpact: boolean
 }
 
 export function resolveValuationShareCount({
@@ -42,7 +44,8 @@ export function calculateDepositValueInfo({
   pricePerShare,
   assetTokenDecimals,
   assetUsdPrice,
-  highPriceImpactThreshold = HIGH_PRICE_IMPACT_THRESHOLD
+  highPriceImpactThreshold = HIGH_PRICE_IMPACT_THRESHOLD,
+  blockingPriceImpactThreshold = BLOCKING_PRICE_IMPACT_THRESHOLD
 }: {
   depositAmountBn: bigint
   inputTokenDecimals: number
@@ -53,6 +56,7 @@ export function calculateDepositValueInfo({
   assetTokenDecimals: number
   assetUsdPrice: number
   highPriceImpactThreshold?: number
+  blockingPriceImpactThreshold?: number
 }): DepositValueInfo {
   const vaultShareValueInAsset =
     normalizedVaultShares > 0n && pricePerShare > 0n
@@ -70,6 +74,7 @@ export function calculateDepositValueInfo({
     vaultShareValueInAsset,
     vaultShareValueUsdRaw,
     priceImpactPercentage,
-    isHighPriceImpact: priceImpactPercentage > highPriceImpactThreshold
+    isHighPriceImpact: priceImpactPercentage > highPriceImpactThreshold,
+    isBlockingPriceImpact: priceImpactPercentage > blockingPriceImpactThreshold
   }
 }

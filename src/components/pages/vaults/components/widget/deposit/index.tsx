@@ -394,9 +394,14 @@ export function WidgetDeposit({
   const priceImpactInfo = useMemo(() => {
     return {
       percentage: depositValueInfo.priceImpactPercentage,
-      isHigh: depositValueInfo.isHighPriceImpact
+      isHigh: depositValueInfo.isHighPriceImpact,
+      isBlocking: depositValueInfo.isBlockingPriceImpact
     }
-  }, [depositValueInfo.priceImpactPercentage, depositValueInfo.isHighPriceImpact])
+  }, [
+    depositValueInfo.priceImpactPercentage,
+    depositValueInfo.isHighPriceImpact,
+    depositValueInfo.isBlockingPriceImpact
+  ])
 
   const { hasAcceptedPriceImpact, priceImpactAcceptanceKey, setAcceptedPriceImpactKey } = usePriceImpactAcceptance([
     depositAmount.bn,
@@ -637,6 +642,7 @@ export function WidgetDeposit({
     <PriceImpactWarning
       percentage={priceImpactInfo.percentage}
       isHigh={priceImpactInfo.isHigh}
+      isBlocking={priceImpactInfo.isBlocking}
       isLoading={isLoadingQuote}
       isDebouncing={depositAmount.isDebouncing}
       isAmountSynced={depositAmount.bn === depositAmount.debouncedBn}
@@ -658,6 +664,7 @@ export function WidgetDeposit({
     depositAmount.isDebouncing ||
     (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
     (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled) ||
+    priceImpactInfo.isBlocking ||
     (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
 
   const actionRow = showActionRow ? (
