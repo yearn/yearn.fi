@@ -8,6 +8,7 @@ export type DepositValueInfo = {
   vaultShareValueUsdRaw: number
   minVaultShareValueInAsset: bigint
   minVaultShareValueUsdRaw: number
+  hasIncompleteUsdValuation: boolean
   priceImpactPercentage: number
   worstCasePriceImpactPercentage: number
   isHighPriceImpact: boolean
@@ -87,6 +88,10 @@ export function calculateDepositValueInfo({
   const vaultShareValueUsdRaw = Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
   const minVaultShareValueUsdRaw = Number(formatUnits(minVaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
   const usdValueToDeposit = Number(formatUnits(depositAmountBn, inputTokenDecimals)) * inputTokenUsdPrice
+  const hasIncompleteUsdValuation =
+    depositAmountBn > 0n &&
+    (normalizedVaultShares > 0n || normalizedMinVaultShares > 0n) &&
+    (inputTokenUsdPrice <= 0 || assetUsdPrice <= 0)
   const priceImpactPercentage = calculatePriceImpactPercentage({
     inputUsdValue: usdValueToDeposit,
     outputUsdValue: vaultShareValueUsdRaw
@@ -101,6 +106,7 @@ export function calculateDepositValueInfo({
     vaultShareValueUsdRaw,
     minVaultShareValueInAsset,
     minVaultShareValueUsdRaw,
+    hasIncompleteUsdValuation,
     priceImpactPercentage,
     worstCasePriceImpactPercentage,
     isHighPriceImpact: priceImpactPercentage > highPriceImpactThreshold,

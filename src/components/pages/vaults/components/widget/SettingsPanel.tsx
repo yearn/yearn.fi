@@ -3,11 +3,11 @@ import { IconCross } from '@shared/icons/IconCross'
 import { cl } from '@shared/utils'
 import {
   clampZapSlippage,
-  requiresZapSlippageRiskAcknowledgement,
+  getZapSlippageSaveState,
   ZAP_SLIPPAGE_HARD_CAP,
   ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT
 } from '@shared/utils/slippage'
-import { type FC, useEffect, useId, useState } from 'react'
+import { type FC, useCallback, useEffect, useId, useState } from 'react'
 
 type SettingsPanelProps = {
   isActive: boolean
@@ -24,33 +24,38 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive, onClose, varia
   const maximizeYieldId = useId()
 
   useEffect(() => {
-    if (isActive) {
+    if (!isActive) {
       setLocalSlippage(zapSlippage)
       setRiskAcknowledgement('')
     }
   }, [isActive, zapSlippage])
 
-  useEffect(() => {
-    const sanitizedSlippage = clampZapSlippage(localSlippage)
-    const isSlippageDirty = sanitizedSlippage !== zapSlippage
-    const needsRiskAcknowledgement = isSlippageDirty && requiresZapSlippageRiskAcknowledgement(sanitizedSlippage)
-    const hasValidRiskAcknowledgement =
-      !needsRiskAcknowledgement || riskAcknowledgement.trim() === ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT
+  const handleClose = useCallback(() => {
+    const { sanitizedSlippage, isSlippageDirty, hasValidRiskAcknowledgement } = getZapSlippageSaveState({
+      localSlippage,
+      currentSlippage: zapSlippage,
+      riskAcknowledgement
+    })
 
     if (isSlippageDirty && hasValidRiskAcknowledgement) {
       setZapSlippage(sanitizedSlippage)
+    } else {
+      setLocalSlippage(zapSlippage)
+      setRiskAcknowledgement('')
     }
-  }, [localSlippage, riskAcknowledgement, setZapSlippage, zapSlippage])
+
+    onClose?.()
+  }, [localSlippage, onClose, riskAcknowledgement, setZapSlippage, zapSlippage])
 
   if (!isActive) {
     return null
   }
 
-  const sanitizedSlippage = clampZapSlippage(localSlippage)
-  const isSlippageDirty = sanitizedSlippage !== zapSlippage
-  const needsRiskAcknowledgement = isSlippageDirty && requiresZapSlippageRiskAcknowledgement(sanitizedSlippage)
-  const hasValidRiskAcknowledgement =
-    !needsRiskAcknowledgement || riskAcknowledgement.trim() === ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT
+  const { sanitizedSlippage, needsRiskAcknowledgement, hasValidRiskAcknowledgement } = getZapSlippageSaveState({
+    localSlippage,
+    currentSlippage: zapSlippage,
+    riskAcknowledgement
+  })
   const riskAcknowledgementMessage =
     needsRiskAcknowledgement && !hasValidRiskAcknowledgement ? 'Sentence does not match exactly.' : null
 
@@ -78,7 +83,7 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive, onClose, varia
           {onClose ? (
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               aria-label="Close settings"
               className="flex size-7 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
             >
@@ -163,7 +168,7 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive, onClose, varia
                     {riskAcknowledgementMessage ? (
                       <p className="text-xs text-red-500">{riskAcknowledgementMessage}</p>
                     ) : (
-                      <p className="text-xs text-green-500">High-slippage tolerance saved.</p>
+                      <p className="text-xs text-green-500">High-slippage tolerance will save when settings close.</p>
                     )}
                   </div>
                 ) : null}

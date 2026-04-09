@@ -2,17 +2,50 @@ import { Popover, PopoverContent } from '@shared/components/Popover'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconSettings } from '@shared/icons/IconSettings'
 import { cl } from '@shared/utils'
-import { type FC, useCallback, useState } from 'react'
+import {
+  clampZapSlippage,
+  getZapSlippageSaveState,
+  ZAP_SLIPPAGE_HARD_CAP,
+  ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT
+} from '@shared/utils/slippage'
+import { type FC, useCallback, useEffect, useId, useState } from 'react'
 
 export const MobileDrawerSettingsButton: FC = () => {
   const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const [localSlippage, setLocalSlippage] = useState(zapSlippage)
+  const [riskAcknowledgement, setRiskAcknowledgement] = useState('')
+  const slippageId = useId()
+  const riskAcknowledgementId = useId()
+  const maximizeYieldId = useId()
+
+  useEffect(() => {
+    setLocalSlippage(zapSlippage)
+    setRiskAcknowledgement('')
+  }, [zapSlippage])
 
   const handleClose = useCallback(() => {
-    if (localSlippage !== zapSlippage) {
-      setZapSlippage(localSlippage)
+    const { sanitizedSlippage, isSlippageDirty, hasValidRiskAcknowledgement } = getZapSlippageSaveState({
+      localSlippage,
+      currentSlippage: zapSlippage,
+      riskAcknowledgement
+    })
+
+    if (isSlippageDirty && hasValidRiskAcknowledgement) {
+      setZapSlippage(sanitizedSlippage)
+      return
     }
-  }, [localSlippage, zapSlippage, setZapSlippage])
+
+    setLocalSlippage(zapSlippage)
+    setRiskAcknowledgement('')
+  }, [localSlippage, riskAcknowledgement, zapSlippage, setZapSlippage])
+
+  const { sanitizedSlippage, needsRiskAcknowledgement, hasValidRiskAcknowledgement } = getZapSlippageSaveState({
+    localSlippage,
+    currentSlippage: zapSlippage,
+    riskAcknowledgement
+  })
+  const riskAcknowledgementMessage =
+    needsRiskAcknowledgement && !hasValidRiskAcknowledgement ? 'Sentence does not match exactly.' : null
 
   return (
     <Popover
@@ -38,16 +71,18 @@ export const MobileDrawerSettingsButton: FC = () => {
         <div className="space-y-4">
           <div className="space-y-1">
             <h4 className="font-medium text-text-primary">Transaction Settings</h4>
-            <p className="text-xs text-text-secondary">Applies site-wide across all vaults.</p>
+            <p className="text-xs text-text-secondary">
+              Applies site-wide across all vaults. Slippage covers both quote quality and execution buffer.
+            </p>
           </div>
 
           <div className="space-y-3">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label htmlFor="slippage" className="text-sm text-text-primary">
+                <label htmlFor={slippageId} className="text-sm text-text-primary">
                   Slippage Tolerance
                 </label>
-                <span className="text-sm text-text-secondary">{localSlippage}%</span>
+                <span className="text-sm text-text-secondary">{sanitizedSlippage}%</span>
               </div>
               <div className="flex gap-2">
                 <button
@@ -84,26 +119,54 @@ export const MobileDrawerSettingsButton: FC = () => {
                   1.0%
                 </button>
                 <input
+                  id={slippageId}
                   type="number"
-                  value={localSlippage}
-                  onChange={(e) => setLocalSlippage(parseFloat(e.target.value) || 0)}
+                  value={sanitizedSlippage}
+                  onChange={(e) => setLocalSlippage(clampZapSlippage(Number.parseFloat(e.target.value) || 0))}
                   className="w-16 px-2 py-1.5 text-xs border border-border text-text-primary bg-surface text-right rounded-md"
                   step="0.1"
                   min="0"
-                  max="50"
+                  max={String(ZAP_SLIPPAGE_HARD_CAP)}
                 />
               </div>
+              <p className="text-xs text-text-secondary">
+                Default is 0.50%. Transactions at or above 5.00% total slippage are blocked.
+              </p>
+              {needsRiskAcknowledgement ? (
+                <div className="space-y-2 rounded-md border border-red-500/30 bg-red-500/5 p-3">
+                  <label htmlFor={riskAcknowledgementId} className="block text-xs font-medium text-red-500">
+                    Type this sentence exactly to save slippage above 1.00%
+                  </label>
+                  <p className="text-xs text-text-primary">"{ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT}"</p>
+                  <input
+                    id={riskAcknowledgementId}
+                    type="text"
+                    value={riskAcknowledgement}
+                    onChange={(e) => setRiskAcknowledgement(e.target.value)}
+                    className="w-full rounded-md border border-border bg-surface px-3 py-2 text-xs text-text-primary"
+                    placeholder={ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT}
+                    spellCheck={false}
+                    autoComplete="off"
+                  />
+                  {riskAcknowledgementMessage ? (
+                    <p className="text-xs text-red-500">{riskAcknowledgementMessage}</p>
+                  ) : (
+                    <p className="text-xs text-green-500">High-slippage tolerance will save when settings close.</p>
+                  )}
+                </div>
+              ) : null}
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-border">
               <div className="space-y-0.5">
-                <label htmlFor="maximize-yield" className="text-sm text-text-primary">
+                <label htmlFor={maximizeYieldId} className="text-sm text-text-primary">
                   Stake Automatically
                 </label>
                 <p className="text-xs text-text-secondary">Automatically stake to maximize APY.</p>
                 <p className="text-xs text-text-secondary">No assets will be locked.</p>
               </div>
               <button
+                id={maximizeYieldId}
                 role="switch"
                 aria-checked={isAutoStakingEnabled}
                 onClick={() => setIsAutoStakingEnabled(!isAutoStakingEnabled)}

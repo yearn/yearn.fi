@@ -14,6 +14,34 @@ export function requiresZapSlippageRiskAcknowledgement(value: number): boolean {
   return clampZapSlippage(value) > ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_THRESHOLD
 }
 
+export function getZapSlippageSaveState({
+  localSlippage,
+  currentSlippage,
+  riskAcknowledgement = ''
+}: {
+  localSlippage: number
+  currentSlippage: number
+  riskAcknowledgement?: string
+}): {
+  sanitizedSlippage: number
+  isSlippageDirty: boolean
+  needsRiskAcknowledgement: boolean
+  hasValidRiskAcknowledgement: boolean
+} {
+  const sanitizedSlippage = clampZapSlippage(localSlippage)
+  const isSlippageDirty = sanitizedSlippage !== currentSlippage
+  const needsRiskAcknowledgement = isSlippageDirty && requiresZapSlippageRiskAcknowledgement(sanitizedSlippage)
+  const hasValidRiskAcknowledgement =
+    !needsRiskAcknowledgement || riskAcknowledgement.trim() === ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT
+
+  return {
+    sanitizedSlippage,
+    isSlippageDirty,
+    needsRiskAcknowledgement,
+    hasValidRiskAcknowledgement
+  }
+}
+
 export function toBasisPoints(value: number): number {
   return Math.max(0, Math.floor(sanitizeNumber(value) * 100))
 }

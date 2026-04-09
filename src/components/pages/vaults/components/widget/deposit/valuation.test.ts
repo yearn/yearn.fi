@@ -152,4 +152,22 @@ describe('calculateDepositValueInfo', () => {
     expect(valueInfo.priceImpactPercentage).toBe(0)
     expect(valueInfo.worstCasePriceImpactPercentage).toBe(1)
   })
+
+  it('flags incomplete USD valuation when a supported zap quote has no token price', () => {
+    const valueInfo = calculateDepositValueInfo({
+      depositAmountBn: 100n * ONE_ETHER,
+      inputTokenDecimals: 18,
+      inputTokenUsdPrice: 0,
+      normalizedVaultShares: 100n * ONE_ETHER,
+      normalizedMinVaultShares: 99n * ONE_ETHER,
+      vaultDecimals: 18,
+      pricePerShare: ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1
+    })
+
+    expect(valueInfo.hasIncompleteUsdValuation).toBe(true)
+    expect(valueInfo.priceImpactPercentage).toBe(0)
+    expect(valueInfo.worstCasePriceImpactPercentage).toBe(0)
+  })
 })

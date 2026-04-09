@@ -4,7 +4,7 @@ import { calculateWithdrawValueInfo } from './valuation'
 const ONE_ETHER = 10n ** 18n
 
 describe('calculateWithdrawValueInfo', () => {
-  it('treats zero-output zaps as 100% price impact', () => {
+  it('does not invent slippage when a route cannot be built', () => {
     const valueInfo = calculateWithdrawValueInfo({
       withdrawAmountBn: 100n * ONE_ETHER,
       assetTokenDecimals: 18,
@@ -14,10 +14,10 @@ describe('calculateWithdrawValueInfo', () => {
       outputUsdPrice: 1
     })
 
-    expect(valueInfo.priceImpactPercentage).toBe(100)
-    expect(valueInfo.worstCasePriceImpactPercentage).toBe(100)
-    expect(valueInfo.isHighPriceImpact).toBe(true)
-    expect(valueInfo.isBlockingPriceImpact).toBe(true)
+    expect(valueInfo.priceImpactPercentage).toBe(0)
+    expect(valueInfo.worstCasePriceImpactPercentage).toBe(0)
+    expect(valueInfo.isHighPriceImpact).toBe(false)
+    expect(valueInfo.isBlockingPriceImpact).toBe(false)
   })
 
   it('does not infer price impact when the output price is unavailable for a nonzero quote', () => {
@@ -32,6 +32,7 @@ describe('calculateWithdrawValueInfo', () => {
 
     expect(valueInfo.priceImpactPercentage).toBe(0)
     expect(valueInfo.worstCasePriceImpactPercentage).toBe(0)
+    expect(valueInfo.hasIncompleteUsdValuation).toBe(true)
     expect(valueInfo.isHighPriceImpact).toBe(false)
     expect(valueInfo.isBlockingPriceImpact).toBe(false)
   })

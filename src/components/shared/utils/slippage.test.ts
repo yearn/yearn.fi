@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   calculateRemainingEnsoSlippagePercentage,
   clampZapSlippage,
+  getZapSlippageSaveState,
   requiresZapSlippageRiskAcknowledgement,
   toBasisPoints,
-  ZAP_SLIPPAGE_HARD_CAP
+  ZAP_SLIPPAGE_HARD_CAP,
+  ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT
 } from './slippage'
 
 describe('slippage utils', () => {
@@ -17,6 +19,24 @@ describe('slippage utils', () => {
   it('requires typed acknowledgement above 1%', () => {
     expect(requiresZapSlippageRiskAcknowledgement(1)).toBe(false)
     expect(requiresZapSlippageRiskAcknowledgement(1.01)).toBe(true)
+  })
+
+  it('only accepts high-slippage saves after the exact acknowledgement is typed', () => {
+    expect(
+      getZapSlippageSaveState({
+        localSlippage: 3,
+        currentSlippage: 0.5,
+        riskAcknowledgement: 'close enough'
+      }).hasValidRiskAcknowledgement
+    ).toBe(false)
+
+    expect(
+      getZapSlippageSaveState({
+        localSlippage: 3,
+        currentSlippage: 0.5,
+        riskAcknowledgement: ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT
+      }).hasValidRiskAcknowledgement
+    ).toBe(true)
   })
 
   it('converts percentages to basis points without rounding up', () => {

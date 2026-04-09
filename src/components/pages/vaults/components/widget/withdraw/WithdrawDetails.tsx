@@ -81,6 +81,8 @@ export function WithdrawDetails({
   const hasHighPriceImpact = !isQuoteStale && !isLoadingQuote && withdrawValueInfo.isHighPriceImpact
   const withdrawUsdDisplay = formatCounterValue(formatUnits(withdrawAmountBn, assetDecimals), assetUsdPrice)
   const expectedOutUsdDisplay = formatCounterValue(formatUnits(expectedOut, outputDecimals), outputUsdPrice)
+  const shouldShowWithdrawUsdBadge = showSwapRow && assetUsdPrice > 0 && withdrawAmountBn > 0n
+  const shouldShowExpectedOutUsdBadge = routeType === 'ENSO' && outputUsdPrice > 0 && expectedOut > 0n
   return (
     <div>
       <div className="flex flex-col gap-2">
@@ -113,7 +115,7 @@ export function WithdrawDetails({
               <p className="text-sm text-text-primary">
                 <span className="font-semibold">{withdrawAmountSimple}</span>{' '}
                 <span className="font-normal">{assetSymbol}</span>
-                <span className="font-normal">{` (${withdrawUsdDisplay})`}</span>
+                {shouldShowWithdrawUsdBadge ? <span className="font-normal">{` (${withdrawUsdDisplay})`}</span> : null}
               </p>
             </div>
           </div>
@@ -135,7 +137,9 @@ export function WithdrawDetails({
                       {` (-${withdrawValueInfo.priceImpactPercentage.toFixed(2)}%)`}
                     </span>
                   )}
-                  {routeType === 'ENSO' && <span className="font-normal">{` (${expectedOutUsdDisplay})`}</span>}
+                  {shouldShowExpectedOutUsdBadge ? (
+                    <span className="font-normal">{` (${expectedOutUsdDisplay})`}</span>
+                  ) : null}
                 </>
               ) : (
                 <>

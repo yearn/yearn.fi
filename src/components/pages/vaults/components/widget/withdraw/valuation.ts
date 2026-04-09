@@ -7,6 +7,7 @@ export type WithdrawValueInfo = {
   withdrawUsdValueRaw: number
   expectedOutUsdValueRaw: number
   minExpectedOutUsdValueRaw: number
+  hasIncompleteUsdValuation: boolean
   priceImpactPercentage: number
   worstCasePriceImpactPercentage: number
   isHighPriceImpact: boolean
@@ -27,7 +28,7 @@ function calculatePriceImpactPercentage({
   }
 
   if (outputAmount === 0n) {
-    return 100
+    return 0
   }
 
   return outputUsdValueRaw > 0
@@ -59,6 +60,8 @@ export function calculateWithdrawValueInfo({
   const withdrawUsdValueRaw = Number(formatUnits(withdrawAmountBn, assetTokenDecimals)) * assetUsdPrice
   const expectedOutUsdValueRaw = Number(formatUnits(expectedOut, outputDecimals)) * outputUsdPrice
   const minExpectedOutUsdValueRaw = Number(formatUnits(minExpectedOut, outputDecimals)) * outputUsdPrice
+  const hasIncompleteUsdValuation =
+    withdrawAmountBn > 0n && (expectedOut > 0n || minExpectedOut > 0n) && (assetUsdPrice <= 0 || outputUsdPrice <= 0)
 
   const priceImpactPercentage = calculatePriceImpactPercentage({
     withdrawUsdValueRaw,
@@ -75,6 +78,7 @@ export function calculateWithdrawValueInfo({
     withdrawUsdValueRaw,
     expectedOutUsdValueRaw,
     minExpectedOutUsdValueRaw,
+    hasIncompleteUsdValuation,
     priceImpactPercentage,
     worstCasePriceImpactPercentage,
     isHighPriceImpact: priceImpactPercentage > highPriceImpactThreshold,

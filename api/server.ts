@@ -29,18 +29,6 @@ function resolveApiServerPort(env: NodeJS.ProcessEnv): number {
     }
   }
 
-  const proxyTarget = env.API_PROXY_TARGET
-  if (proxyTarget) {
-    try {
-      const parsedProxyPort = Number(new URL(proxyTarget).port || DEFAULT_API_SERVER_PORT)
-      if (Number.isInteger(parsedProxyPort) && parsedProxyPort > 0) {
-        return parsedProxyPort
-      }
-    } catch (_error) {
-      console.warn(`Ignoring invalid API_PROXY_TARGET: ${proxyTarget}`)
-    }
-  }
-
   return Number(DEFAULT_API_SERVER_PORT)
 }
 
