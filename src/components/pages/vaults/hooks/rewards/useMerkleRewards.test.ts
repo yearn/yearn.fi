@@ -5,7 +5,8 @@ import {
   buildMerkleRewards,
   filterYearnMerkleRewards,
   type MerklAPIResponse,
-  type MerklV4Reward
+  type MerklV4Reward,
+  shouldDeferMerkleRewardRendering
 } from './useMerkleRewards'
 
 const KAT_REWARD: MerklV4Reward = {
@@ -108,6 +109,12 @@ describe('useMerkleRewards helpers', () => {
         symbol: 'KAT'
       }
     })
+  })
+
+  it('defers rendering Merkle rewards until onchain claim status has loaded', () => {
+    expect(shouldDeferMerkleRewardRendering(2, true)).toBe(true)
+    expect(shouldDeferMerkleRewardRendering(0, true)).toBe(false)
+    expect(shouldDeferMerkleRewardRendering(2, false)).toBe(false)
   })
 
   it('preserves the reward root and unclaimed amount for visible Yearn rewards', () => {
