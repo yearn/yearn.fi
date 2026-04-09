@@ -26,6 +26,7 @@ import type { WithdrawalSource, WithdrawWidgetProps } from './types'
 import { useWithdrawError } from './useWithdrawError'
 import { useWithdrawFlow } from './useWithdrawFlow'
 import { useWithdrawNotifications } from './useWithdrawNotifications'
+import { calculateWithdrawValueInfo } from './valuation'
 import { WithdrawDetails } from './WithdrawDetails'
 import { WithdrawDetailsOverlay } from './WithdrawDetailsOverlay'
 import {
@@ -472,17 +473,19 @@ export function WidgetWithdraw({
 
   // Calculate price impact for high slippage warning
   const priceImpactInfo = useMemo(() => {
-    const withdrawUsdValue = Number(formatUnits(withdrawAmount.bn, assetToken?.decimals ?? 18)) * assetTokenPrice
-    const expectedOutUsdValue =
-      Number(formatUnits(effectiveExpectedOut, outputToken?.decimals ?? 18)) * outputTokenPrice
-    const impact =
-      withdrawUsdValue > 0 && expectedOutUsdValue > 0
-        ? ((withdrawUsdValue - expectedOutUsdValue) / withdrawUsdValue) * 100
-        : 0
+    const withdrawValueInfo = calculateWithdrawValueInfo({
+      withdrawAmountBn: withdrawAmount.bn,
+      assetTokenDecimals: assetToken?.decimals ?? 18,
+      assetUsdPrice: assetTokenPrice,
+      expectedOut: effectiveExpectedOut,
+      outputDecimals: outputToken?.decimals ?? 18,
+      outputUsdPrice: outputTokenPrice
+    })
+
     return {
-      percentage: impact,
-      isHigh: impact > 5,
-      isBlocking: impact > 15
+      percentage: withdrawValueInfo.priceImpactPercentage,
+      isHigh: withdrawValueInfo.isHighPriceImpact,
+      isBlocking: withdrawValueInfo.isBlockingPriceImpact
     }
   }, [
     withdrawAmount.bn,

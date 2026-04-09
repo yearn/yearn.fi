@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
-import { formatUnits } from 'viem'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import type { WithdrawRouteType } from './types'
+import { calculateWithdrawValueInfo } from './valuation'
 
 interface WithdrawDetailsProps {
   // Action label
@@ -68,13 +68,15 @@ export function WithdrawDetails({
 }: WithdrawDetailsProps): ReactElement {
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
   const approvalLabel = getApprovalLabel(approvalSpenderName)
-  const withdrawUsdValue = Number(formatUnits(withdrawAmountBn, assetDecimals)) * assetUsdPrice
-  const expectedOutUsdValue = Number(formatUnits(expectedOut, outputDecimals)) * outputUsdPrice
-  const priceImpact =
-    withdrawUsdValue > 0 && expectedOutUsdValue > 0
-      ? ((withdrawUsdValue - expectedOutUsdValue) / withdrawUsdValue) * 100
-      : 0
-  const hasHighPriceImpact = !isQuoteStale && !isLoadingQuote && priceImpact > 5
+  const withdrawValueInfo = calculateWithdrawValueInfo({
+    withdrawAmountBn,
+    assetTokenDecimals: assetDecimals,
+    assetUsdPrice,
+    expectedOut,
+    outputDecimals,
+    outputUsdPrice
+  })
+  const hasHighPriceImpact = !isQuoteStale && !isLoadingQuote && withdrawValueInfo.isHighPriceImpact
   return (
     <div>
       <div className="flex flex-col gap-2">
@@ -123,7 +125,11 @@ export function WithdrawDetails({
                 <>
                   <span className="font-semibold">{formatWidgetValue(expectedOut, outputDecimals)}</span>{' '}
                   <span className="font-normal">{outputSymbol}</span>
-                  {hasHighPriceImpact && <span className="font-semibold">{` (-${priceImpact.toFixed(2)}%)`}</span>}
+                  {hasHighPriceImpact && (
+                    <span className="font-semibold">
+                      {` (-${withdrawValueInfo.priceImpactPercentage.toFixed(2)}%)`}
+                    </span>
+                  )}
                 </>
               ) : (
                 <>

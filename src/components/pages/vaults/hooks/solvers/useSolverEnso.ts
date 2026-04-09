@@ -3,8 +3,9 @@ import type { TNormalizedBN } from '@shared/types'
 import { isZeroAddress, toNormalizedBN } from '@shared/utils'
 import { getApproveAbi } from '@shared/utils/approve'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Address, Hex } from 'viem'
+import type { Address } from 'viem'
 import { useTokenAllowance } from '../useTokenAllowance'
+import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse } from './ensoRoute'
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
 
@@ -16,26 +17,6 @@ const ENSO_ROUTER_ADDRESSES: Record<number, Address> = {
   42161: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Arbitrum
   8453: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Base
   747474: '0x3067BDBa0e6628497d527bEF511c22DA8b32cA3F' // Katana
-}
-
-interface EnsoError {
-  error: string
-  message: string
-  requestId: string
-  statusCode: number
-}
-interface EnsoRouteResponse {
-  tx: {
-    to: Address
-    data: Hex
-    value: string
-    from: Address
-    chainId: number
-  }
-  amountOut: string
-  minAmountOut: string
-  gas: string
-  route: any[]
 }
 
 interface UseSolverEnsoProps {
@@ -134,36 +115,42 @@ export const useSolverEnso = ({
 
       const response = await fetch(`${ENSO_ROUTE_PROXY}?${params}`, { signal: abortController.signal })
 
-      const data: EnsoRouteResponse & EnsoError = await response.json()
+      const data = await response.json()
       const isLatestRequest = routeRequestIdRef.current === requestId && !abortController.signal.aborted
 
       if (!isLatestRequest) {
         return
       }
 
-      if (data.error) {
+      const normalizedResponse = normalizeEnsoRouteResponse(data, response.status, chainId)
+      if (normalizedResponse.error) {
         console.warn('[Enso] Route error', {
           chainId,
           destinationChainId,
           tokenIn,
           tokenOut,
           amountIn: amountIn.toString(),
-          statusCode: data.statusCode || response.status,
-          message: data.message,
-          requestId: data.requestId
+          statusCode: normalizedResponse.error.statusCode,
+          message: normalizedResponse.error.message,
+          requestId: normalizedResponse.error.requestId
         })
         setRoute(undefined)
-        setError(data)
+        setError(normalizedResponse.error)
 
         return
       }
       setError(undefined)
-      setRoute(data)
+      setRoute(normalizedResponse.route)
     } catch (err) {
       if (abortController.signal.aborted || routeRequestIdRef.current !== requestId) {
         return
       }
       setRoute(undefined)
+      setError({
+        error: err instanceof Error ? err.name : 'EnsoRouteFetchFailed',
+        message: err instanceof Error ? err.message : 'Failed to get Enso route',
+        statusCode: 0
+      })
       console.error('Failed to get Enso route:', err, {
         chainId,
         destinationChainId,
