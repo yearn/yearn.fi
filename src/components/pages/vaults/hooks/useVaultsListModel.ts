@@ -23,11 +23,7 @@ import { useV3VaultFilter } from '@shared/hooks/useV3VaultFilter'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
 import { useMemo } from 'react'
-
-type TVaultsPinnedSection = {
-  key: string
-  vaults: TKongVaultInput[]
-}
+import { getProductPinnedSections, type TVaultsPinnedSection } from './useVaultsListModel.helpers'
 
 type TVaultsListModelArgs = {
   enabled?: boolean
@@ -346,8 +342,10 @@ export function useVaultsListModel({
   const sortedSuggestedV2Candidates = useSortVaults(filteredV2VaultsAllChains, 'featuringScore', 'desc')
 
   const pinnedSections = useMemo(() => {
-    const sections: TVaultsPinnedSection[] = []
-    const seen = new Set<string>()
+    const sections: TVaultsPinnedSection[] = [
+      ...getProductPinnedSections({ sortedVaults, shouldShowYvUsd, yvUsdVault })
+    ]
+    const seen = new Set(sections.flatMap((section) => section.vaults.map((vault) => getVaultKey(vault))))
     const takeUnseenVaults = (vaults: TKongVaultInput[]): TKongVaultInput[] =>
       vaults.filter((vault) => {
         const key = getVaultKey(vault)
@@ -357,16 +355,6 @@ export function useVaultsListModel({
         seen.add(key)
         return true
       })
-
-    if (shouldShowYvUsd && yvUsdVault) {
-      const yvUsdSectionVaults = takeUnseenVaults([yvUsdVault])
-      if (yvUsdSectionVaults.length > 0) {
-        sections.push({
-          key: 'yvUSD',
-          vaults: yvUsdSectionVaults
-        })
-      }
-    }
 
     if (isAvailablePinned) {
       const availableSectionVaults = takeUnseenVaults(sortedAvailableVaults)
@@ -398,6 +386,7 @@ export function useVaultsListModel({
     sortedHoldingsVaults,
     sortedHoldingsVaultsByDeposited,
     sortedAvailableVaults,
+    sortedVaults,
     shouldShowYvUsd,
     yvUsdVault
   ])

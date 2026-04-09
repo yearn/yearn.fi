@@ -1,5 +1,6 @@
 import { getVaultChainID, getVaultToken, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { toAddress } from '@shared/utils'
+import { isYvBtcVault } from './yvBtc'
 import { isYvUsdVault } from './yvUsd'
 
 function getBaseUrl(): string {
@@ -13,6 +14,10 @@ function getAssetsBaseUrl(): string {
 export function getVaultPrimaryLogoSrc(vault: TKongVaultInput): string {
   if (isYvUsdVault(vault)) {
     return `${getBaseUrl()}yvUSD-seal.png`
+  }
+
+  if (isYvBtcVault(vault)) {
+    return `${getBaseUrl()}yvBTC-1.svg`
   }
 
   const chainID = getVaultChainID(vault)
