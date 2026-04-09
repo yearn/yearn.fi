@@ -1,3 +1,5 @@
+'use client'
+
 import { AGGREGATE3_ABI } from '@shared/contracts/abi/aggregate.abi'
 import type { DependencyList } from 'react'
 import { erc20Abi, type MulticallParameters } from 'viem'

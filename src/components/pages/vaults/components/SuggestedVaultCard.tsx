@@ -1,3 +1,5 @@
+'use client'
+
 import Link from '@components/Link'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
@@ -40,8 +42,8 @@ export function SuggestedVaultCard({
   const vaultCategory = getVaultCategory(vault)
 
   const chain = getNetwork(chainID)
-  const tokenIcon = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+  const tokenIcon = `${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
+  const chainLogoSrc = `${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const listKind = deriveListKind(vault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'

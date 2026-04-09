@@ -1,6 +1,8 @@
+'use client'
+
 import type { FC, PropsWithChildren } from 'react'
+import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
-import { useLocation } from 'react-router'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { supportedChains, type TSupportedChainId } from '@/config/supportedChains'
 import { chainsContext, type TChainsContext } from '@/context/chainsContext'
@@ -13,7 +15,7 @@ function getSupportedChain(chainId: number) {
 
 export const ChainsProvider: FC<PropsWithChildren> = ({ children }) => {
   const chainId = useChainId()
-  const { pathname } = useLocation()
+  const pathname = usePathname()
   const account = useAccount()
   const { switchChain } = useSwitchChain()
 

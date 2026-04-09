@@ -1,3 +1,5 @@
+'use client'
+
 import { erc4626Abi } from '@shared/contracts/abi/4626.abi'
 import { STAKING_REWARDS_ABI } from '@shared/contracts/abi/stakingRewards.abi'
 import { TOKENIZED_STRATEGY_ABI } from '@shared/contracts/abi/tokenizedStrategy.abi'

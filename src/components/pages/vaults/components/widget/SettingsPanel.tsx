@@ -1,3 +1,5 @@
+'use client'
+
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconCross } from '@shared/icons/IconCross'
 import { cl } from '@shared/utils'

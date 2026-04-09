@@ -1,3 +1,5 @@
+'use client'
+
 import { useClaimMerkleRewards } from '@pages/vaults/hooks/rewards/useClaimMerkleRewards'
 import { toNormalizedValue } from '@shared/utils'
 import type { ReactElement } from 'react'

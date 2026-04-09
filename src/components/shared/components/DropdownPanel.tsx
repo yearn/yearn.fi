@@ -1,3 +1,5 @@
+'use client'
+
 import { useThemePreference } from '@hooks/useThemePreference'
 import { cl } from '@shared/utils'
 import type { ReactElement, ReactNode } from 'react'

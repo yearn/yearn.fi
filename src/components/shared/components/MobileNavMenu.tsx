@@ -1,3 +1,5 @@
+'use client'
+
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
@@ -19,9 +21,9 @@ import { LogoYearnMark } from '@shared/icons/LogoYearnMark'
 import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
 import { cl, formatUSD } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
+import { useRouter } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router'
 import Link from '/src/components/Link'
 import { IconTelegram } from '../icons/IconTelegram'
 
@@ -36,7 +38,7 @@ type TNavTile = TNavItem & {
   iconWrapperClass?: string
 }
 
-const BASE_YEARN_ASSET_URI = import.meta.env?.VITE_BASE_YEARN_ASSETS_URI ?? ''
+const BASE_YEARN_ASSET_URI = process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI ?? ''
 
 function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href)
@@ -122,7 +124,7 @@ export function MobileNavMenu({
   const { isActive, openLoginModal, onDesactivate, address, ens, clusters } = useWeb3()
   const { cumulatedValueInV2Vaults, cumulatedValueInV3Vaults, isLoading: isWalletLoading } = useWallet()
   const themePreference = useThemePreference()
-  const navigate = useNavigate()
+  const router = useRouter()
 
   useEffect(() => {
     if (!isOpen) {
@@ -311,12 +313,12 @@ export function MobileNavMenu({
   }
 
   const handleViewPortfolio = (): void => {
-    navigate('/portfolio')
+    router.push('/portfolio')
     setIsWalletDrawerOpen(false)
   }
 
   const handleViewRecentActivity = (): void => {
-    navigate('/portfolio?tab=activity')
+    router.push('/portfolio?tab=activity')
     setIsWalletDrawerOpen(false)
   }
 

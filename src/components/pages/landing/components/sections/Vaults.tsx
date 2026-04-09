@@ -1,3 +1,5 @@
+'use client'
+
 import { usePlausible } from '@hooks/usePlausible'
 import { getVaultAPR, getVaultChainID } from '@pages/vaults/domain/kongVaultSelectors'
 import { SectionHeader } from '@shared/components/SectionHeader'

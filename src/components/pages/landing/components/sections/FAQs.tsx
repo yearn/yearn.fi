@@ -1,3 +1,5 @@
+'use client'
+
 import { SectionHeader } from '@shared/components/SectionHeader'
 import type { FC, ReactNode } from 'react'
 import { useState } from 'react'

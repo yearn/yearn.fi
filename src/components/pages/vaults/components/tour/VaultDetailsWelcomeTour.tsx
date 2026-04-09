@@ -1,3 +1,5 @@
+'use client'
+
 import { useMediaQuery } from '@react-hookz/web'
 import { Button } from '@shared/components/Button'
 import { useLocalStorage } from '@shared/hooks/useLocalStorage'

@@ -1,3 +1,5 @@
+'use client'
+
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import type { TVaultForwardAPYVariant } from '@pages/vaults/components/table/VaultForwardAPY'

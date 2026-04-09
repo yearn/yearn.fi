@@ -1,3 +1,5 @@
+'use client'
+
 import { useDebouncedCallback } from '@react-hookz/web'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconEnter } from '@shared/icons/IconEnter'

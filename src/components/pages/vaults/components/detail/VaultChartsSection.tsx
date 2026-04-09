@@ -1,3 +1,5 @@
+'use client'
+
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useVaultChartTimeseries } from '@pages/vaults/hooks/useVaultChartTimeseries'
 import { transformVaultChartData } from '@pages/vaults/utils/charts'

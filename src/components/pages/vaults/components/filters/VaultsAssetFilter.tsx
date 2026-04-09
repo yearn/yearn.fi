@@ -1,3 +1,5 @@
+'use client'
+
 import { useThrottledState } from '@react-hookz/web'
 import { EmptyState } from '@shared/components/EmptyState'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'

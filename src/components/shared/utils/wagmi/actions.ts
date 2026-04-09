@@ -16,21 +16,6 @@ import { erc20Abi } from 'viem'
 import type { Connector } from 'wagmi'
 import { readContract } from 'wagmi/actions'
 
-interface WindowWithCustomEthereum extends Window {
-  ethereum?: {
-    useForknetForMainnet?: boolean
-  }
-}
-
-function getChainID(chainID: number): number {
-  if (typeof window !== 'undefined' && (window as WindowWithCustomEthereum)?.ethereum?.useForknetForMainnet) {
-    if (chainID === 1) {
-      return 1337
-    }
-  }
-  return chainID
-}
-
 //Because USDT do not return a boolean on approve, we need to use this ABI
 const ALTERNATE_ERC20_APPROVE_ABI = [
   {
@@ -47,7 +32,7 @@ const ALTERNATE_ERC20_APPROVE_ABI = [
   }
 ] as const
 
-const isDevelopment = import.meta.env.MODE === 'development'
+const isDevelopment = process.env.NODE_ENV === 'development'
 
 /*******************************************************************************
  ** isApprovedERC20 is a _VIEW_ function that checks if a token is approved for
@@ -64,7 +49,7 @@ export async function isApprovedERC20(
   const result = await readContract(retrieveConfig(), {
     ...wagmiProvider,
     abi: erc20Abi,
-    chainId: getChainID(chainID),
+    chainId: chainID,
     address: tokenAddress,
     functionName: 'allowance',
     args: [wagmiProvider.address, spender]
@@ -86,7 +71,7 @@ export async function allowanceOf(props: TAllowanceOf): Promise<bigint> {
   const wagmiProvider = await toWagmiProvider(props.connector)
   const result = await readContract(retrieveConfig(), {
     ...wagmiProvider,
-    chainId: getChainID(props.chainID),
+    chainId: props.chainID,
     abi: erc20Abi,
     address: props.tokenAddress,
     functionName: 'allowance',
@@ -198,14 +183,6 @@ export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
         value: props.amount
       })
     }
-    case 1337: {
-      return await handleTx(props, {
-        address: getEthZapperContract(1),
-        abi: ZAP_ETH_TO_YVETH_ABI,
-        functionName: 'deposit',
-        value: props.amount
-      })
-    }
     default: {
       throw new Error('Invalid chainId')
     }
@@ -234,7 +211,7 @@ export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxR
     address: props.contractAddress,
     abi: PARTNER_VAULT_ABI,
     functionName: 'deposit',
-    args: [props.vaultAddress, props.partnerAddress || toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS), props.amount]
+    args: [props.vaultAddress, props.partnerAddress || toAddress(process.env.NEXT_PUBLIC_PARTNER_ID_ADDRESS), props.amount]
   })
 }
 
@@ -273,14 +250,6 @@ export async function withdrawETH(props: TWithdrawEth): Promise<TTxResponse> {
       return await handleTx(props, {
         address: getEthZapperContract(250),
         abi: ZAP_FTM_TO_YVFTM_ABI,
-        functionName: 'withdraw',
-        args: [props.amount]
-      })
-    }
-    case 1337: {
-      return await handleTx(props, {
-        address: getEthZapperContract(1),
-        abi: ZAP_ETH_TO_YVETH_ABI,
         functionName: 'withdraw',
         args: [props.amount]
       })

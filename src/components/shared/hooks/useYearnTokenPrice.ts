@@ -1,3 +1,5 @@
+'use client'
+
 import { useYearn } from '@shared/contexts/useYearn'
 import type { TAddress } from '@shared/types'
 import { toBigInt, toNormalizedValue } from '@shared/utils'

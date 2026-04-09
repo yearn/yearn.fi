@@ -1,3 +1,5 @@
+'use client'
+
 import {
   getVaultAddress,
   getVaultAPR,
@@ -106,7 +108,7 @@ export function VaultAboutSection({
   const vaultSymbol = getVaultSymbol(currentVault)
   const description = getVaultDescription(currentVault)
   const chainName = getNetwork(chainID).name
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+  const chainLogoSrc = `${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'

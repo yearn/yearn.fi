@@ -1,3 +1,5 @@
+'use client'
+
 import { usePlausible } from '@hooks/usePlausible'
 import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
 import {

@@ -19,9 +19,6 @@ export function getEthZapperContract(chainID: number): TAddress {
       return ZAP_FTM_WFTM_CONTRACT
     case 42161:
       return ZERO_ADDRESS
-    //testnets
-    case 1337:
-      return ZAP_ETH_WETH_CONTRACT
     default:
       return ZERO_ADDRESS
   }
@@ -37,9 +34,6 @@ export function getNativeTokenWrapperContract(chainID: number): TAddress {
       return WFTM_TOKEN_ADDRESS
     case 42161:
       return ARB_WETH_TOKEN_ADDRESS
-    //testnets
-    case 1337:
-      return WETH_TOKEN_ADDRESS
     default:
       return ZERO_ADDRESS
   }

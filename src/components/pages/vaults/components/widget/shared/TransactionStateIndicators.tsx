@@ -1,3 +1,5 @@
+'use client'
+
 import { type FC, useEffect, useState } from 'react'
 
 export const AnimatedCheckmark: FC<{ isVisible: boolean }> = ({ isVisible }) => {

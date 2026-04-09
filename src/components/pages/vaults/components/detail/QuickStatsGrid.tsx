@@ -1,3 +1,5 @@
+'use client'
+
 import { APYDetailsModal } from '@pages/vaults/components/table/APYDetailsModal'
 import type { TVaultForwardAPYHandle } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'

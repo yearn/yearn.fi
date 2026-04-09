@@ -1,3 +1,5 @@
+'use client'
+
 import { Solver, type TSolver } from '@pages/vaults/types/solvers'
 import { useLocalStorageValue } from '@react-hookz/web'
 import { useFetchYearnPrices } from '@shared/hooks/useFetchYearnPrices'
@@ -8,9 +10,9 @@ import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/k
 import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
 import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
 import type { QueryObserverResult } from '@tanstack/react-query'
+import { usePathname } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
-import { useLocation } from 'react-router'
 import { deserialize, serialize } from 'wagmi'
 
 export const DEFAULT_SLIPPAGE = 0.5
@@ -40,7 +42,7 @@ export type TYearnContext = {
 }
 
 const YearnContext = createContext<TYearnContext>({
-  currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
+  currentPartner: toAddress(process.env.NEXT_PUBLIC_PARTNER_ID_ADDRESS),
   earned: {
     earned: {},
     totalRealizedGainsUSD: 0,
@@ -67,7 +69,7 @@ const YearnContext = createContext<TYearnContext>({
 })
 
 export const YearnContextApp = memo(function YearnContextApp({ children }: { children: ReactElement }): ReactElement {
-  const location = useLocation()
+  const pathname = usePathname()
   const { value: maxLoss, set: setMaxLoss } = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
     defaultValue: DEFAULT_MAX_LOSS,
     parse: (str, fallback): bigint => (str ? deserialize(str) : (fallback ?? DEFAULT_MAX_LOSS)),
@@ -86,9 +88,9 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
     }
   )
 
-  const isVaultsRoute = location.pathname.startsWith('/vaults')
-  const isVaultDetailPage = isVaultsRoute && location.pathname.split('/').length === 4
-  const isPortfolioRoute = location.pathname.startsWith('/portfolio')
+  const isVaultsRoute = pathname.startsWith('/vaults')
+  const isVaultDetailPage = isVaultsRoute && pathname.split('/').length === 4
+  const isPortfolioRoute = pathname.startsWith('/portfolio')
   const shouldEnableVaultList = (isVaultsRoute && !isVaultDetailPage) || isPortfolioRoute
   const [isVaultListEnabled, setIsVaultListEnabled] = useState(shouldEnableVaultList)
 
@@ -118,7 +120,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
   return (
     <YearnContext.Provider
       value={{
-        currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
+        currentPartner: toAddress(process.env.NEXT_PUBLIC_PARTNER_ID_ADDRESS),
         prices,
         zapSlippage: zapSlippage ?? DEFAULT_SLIPPAGE,
         maxLoss: maxLoss ?? DEFAULT_MAX_LOSS,

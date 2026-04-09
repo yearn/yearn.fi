@@ -1,3 +1,5 @@
+'use client'
+
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { IconClose } from '@shared/icons/IconClose'
 import { cl } from '@shared/utils'

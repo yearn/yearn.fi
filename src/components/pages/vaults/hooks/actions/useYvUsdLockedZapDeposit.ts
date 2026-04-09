@@ -1,3 +1,5 @@
+'use client'
+
 import type { UseWidgetDepositFlowReturn } from '@pages/vaults/types'
 import { YVUSD_LOCKED_ZAP_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { yvUsdLockedZapAbi } from '@shared/contracts/abi/yvUsdLockedZap.abi'

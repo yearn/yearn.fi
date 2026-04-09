@@ -1,3 +1,5 @@
+'use client'
+
 import { patchYBoldVaults } from '@pages/vaults/domain/normalizeVault'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { useDeepCompareMemo } from '@react-hookz/web'

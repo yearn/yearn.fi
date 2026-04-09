@@ -1,3 +1,5 @@
+'use client'
+
 import { cl } from '@shared/utils/cl'
 import type { ReactNode } from 'react'
 import type { NameType, Payload, ValueType } from 'recharts/types/component/DefaultTooltipContent'

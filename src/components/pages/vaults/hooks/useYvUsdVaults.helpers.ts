@@ -1,3 +1,5 @@
+'use client'
+
 import { getVaultView, type TKongVaultInput, type TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
 import { toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'

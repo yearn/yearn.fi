@@ -1,3 +1,5 @@
+'use client'
+
 import { formatAmount } from '@shared/utils'
 
 import type { ReactElement } from 'react'

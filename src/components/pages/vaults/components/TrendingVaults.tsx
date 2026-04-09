@@ -1,3 +1,5 @@
+'use client'
+
 import Link from '@components/Link'
 import { SuggestedVaultCard } from '@pages/vaults/components/SuggestedVaultCard'
 import {
@@ -65,8 +67,8 @@ function TrendingVaultMarqueeItem({ vault }: { vault: TKongVaultInput }): ReactE
   const chain = getNetwork(chainID)
   const staking = getVaultStaking(vault)
   const tvl = getVaultTVL(vault)
-  const tokenIcon = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+  const tokenIcon = `${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
+  const chainLogoSrc = `${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
 
   const apyDisplay = useMemo((): string => {
     if (apyData.mode === 'historical' || apyData.mode === 'noForward') {

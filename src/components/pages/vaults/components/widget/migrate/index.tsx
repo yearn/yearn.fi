@@ -1,3 +1,5 @@
+'use client'
+
 import { usePlausible } from '@hooks/usePlausible'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
@@ -459,9 +461,9 @@ export const WidgetMigrate: FC<Props> = ({
               <TokenLogo
                 src={
                   destinationVault?.logoURI ||
-                  `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`
+                  `${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`
                 }
-                altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`}
+                altSrc={`${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`}
                 tokenSymbol={destinationVault?.symbol || migrationTargetSymbol}
                 tokenName={destinationVault?.name}
                 width={32}

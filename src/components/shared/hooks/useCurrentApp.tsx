@@ -1,8 +1,10 @@
+'use client'
+
 import landingManifest from '@shared/data/landing-manifest.json'
 import vaultsManifest from '@shared/data/vaults-manifest.json'
 import type { TDict } from '@shared/types'
+import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
-import { useLocation } from 'react-router'
 
 type TCurrentApp = {
   name: 'Home' | 'Vaults' | string
@@ -29,8 +31,7 @@ export type TManifest = {
 }
 
 export function useCurrentApp(): TCurrentApp {
-  const location = useLocation()
-  const pathname = location.pathname
+  const pathname = usePathname()
 
   return useMemo((): TCurrentApp => {
     const appMapping: TDict<TCurrentApp> = {

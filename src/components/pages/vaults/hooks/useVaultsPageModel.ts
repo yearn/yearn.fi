@@ -1,3 +1,5 @@
+'use client'
+
 import { VaultsAssetFilter } from '@pages/vaults/components/filters/VaultsAssetFilter'
 import type { TChainConfig } from '@pages/vaults/components/filters/VaultsFiltersBar'
 import type {
@@ -837,7 +839,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       const label = getUnderlyingAssetLabel(assetKey)
       const token = getVaultToken(vault)
       const tokenAddress = token.address.toLowerCase()
-      const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${getVaultChainID(vault)}/${tokenAddress}/logo-32.png`
+      const tokenLogoSrc = `${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${getVaultChainID(vault)}/${tokenAddress}/logo-32.png`
       return {
         label,
         value: assetKey,

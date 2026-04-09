@@ -1,3 +1,5 @@
+'use client'
+
 import Link from '@components/Link'
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { usePlausible } from '@hooks/usePlausible'
@@ -126,7 +128,7 @@ function DesktopCompareGrid({
             const vaultSymbol = getVaultSymbol(vault)
             const vaultToken = getVaultToken(vault)
             const network = getNetwork(chainID)
-            const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+            const chainLogoSrc = `${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
             const vaultKey = getVaultKey(vault)
             const vaultHref = `/vaults/${chainID}/${toAddress(vaultAddress)}`
             const isColumnActive = activeColumn === index
@@ -174,7 +176,7 @@ function DesktopCompareGrid({
                   <div className={'min-w-0'}>
                     <div className={'flex items-center gap-3'}>
                       <TokenLogo
-                        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${vaultToken.address.toLowerCase()}/logo-128.png`}
+                        src={`${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${vaultToken.address.toLowerCase()}/logo-128.png`}
                         tokenSymbol={vaultToken.symbol}
                         width={28}
                         height={28}

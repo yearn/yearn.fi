@@ -1,3 +1,5 @@
+'use client'
+
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { type UseQueryOptions, useQueries } from '@tanstack/react-query'
 import { useCallback, useMemo, useRef } from 'react'

@@ -1,3 +1,5 @@
+'use client'
+
 import { EXTERNAL_TOKENS } from '@pages/portfolio/constants/externalTokens'
 import { buildVaultSuggestions, type TVaultSuggestion } from '@pages/portfolio/hooks/buildVaultSuggestions'
 import { useWeb3 } from '@shared/contexts/useWeb3'

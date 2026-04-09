@@ -1,3 +1,5 @@
+'use client'
+
 import { Button } from '@shared/components/Button'
 import { useNotificationsActions } from '@shared/contexts/useNotificationsActions'
 import type { TCreateNotificationParams } from '@shared/types/notifications'

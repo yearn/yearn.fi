@@ -1,3 +1,5 @@
+'use client'
+
 import type { ReactElement } from 'react'
 import type { ToastOptions } from 'react-hot-toast'
 import { toast as toastMaster, useToasterStore } from 'react-hot-toast'

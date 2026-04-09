@@ -1,3 +1,5 @@
+'use client'
+
 import { cl, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement } from 'react'
 

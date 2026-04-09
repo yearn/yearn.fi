@@ -1,3 +1,5 @@
+'use client'
+
 import { useChartStyle } from '@shared/contexts/useChartStyle'
 import { cl } from '@shared/utils'
 import { getChartStyleVariables } from '@shared/utils/chartStyles'

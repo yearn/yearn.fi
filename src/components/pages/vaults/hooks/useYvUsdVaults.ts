@@ -1,3 +1,5 @@
+'use client'
+
 import { getVaultView, type TKongVaultInput, type TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
 import { useYearn } from '@shared/contexts/useYearn'
 import { toAddress } from '@shared/utils'

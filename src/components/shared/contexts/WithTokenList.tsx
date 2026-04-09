@@ -1,3 +1,5 @@
+'use client'
+
 import { useLocalStorageValue } from '@react-hookz/web'
 import type { Dispatch, ReactElement, SetStateAction } from 'react'
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
@@ -74,7 +76,6 @@ export const WithTokenList = ({
     'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/tokenlistooor.json'
   ]
 }: TTokenListProviderProps): ReactElement => {
-  const isDevelopment = import.meta.env.MODE === 'development'
   const { chainID } = useWeb3()
   const { value: extraTokenlist } = useLocalStorageValue<string[]>('extraTokenlists')
   const { value: extraTokens, set: setExtraTokens } = useLocalStorageValue<TTokenList['tokens']>('extraTokens')
@@ -125,28 +126,6 @@ export const WithTokenList = ({
           balance: zeroNormalizedBN
         }
       }
-
-      /**************************************************************************************
-       ** If we are in development mode, we also want to add the token to our list, but only
-       ** if the token's chainID is 1 (Ethereum).
-       *************************************************************************************/
-      if (isDevelopment && Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) && eachToken.chainId === 1) {
-        if (!tokenListTokens[1337]) {
-          tokenListTokens[1337] = {}
-        }
-        if (!tokenListTokens[1337][toAddress(eachToken.address)]) {
-          tokenListTokens[1337][toAddress(eachToken.address)] = {
-            address: eachToken.address,
-            name: eachToken.name,
-            symbol: eachToken.symbol,
-            decimals: eachToken.decimals,
-            chainID: 1337,
-            logoURI: eachToken.logoURI,
-            value: 0,
-            balance: zeroNormalizedBN
-          }
-        }
-      }
     }
     setTokenList(tokenListTokens)
     setIsInitialized((prev) => [true, prev[1], prev[2]])
@@ -187,28 +166,6 @@ export const WithTokenList = ({
               balance: zeroNormalizedBN
             }
           }
-
-          /**************************************************************************************
-           ** If we are in development mode, we also want to add the token to our list, but only
-           ** if the token's chainID is 1 (Ethereum).
-           *************************************************************************************/
-          if (isDevelopment && Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) && chainId === 1) {
-            if (!tokenListTokens[1337]) {
-              tokenListTokens[1337] = {}
-            }
-            if (!tokenListTokens[1337][toAddress(eachToken.address)]) {
-              tokenListTokens[1337][toAddress(eachToken.address)] = {
-                address: eachToken.address,
-                name: eachToken.name,
-                symbol: eachToken.symbol,
-                decimals: eachToken.decimals,
-                chainID: 1337,
-                logoURI: eachToken.logoURI,
-                value: 0,
-                balance: zeroNormalizedBN
-              }
-            }
-          }
         }
       }
     }
@@ -240,27 +197,6 @@ export const WithTokenList = ({
             logoURI: eachToken.logoURI,
             value: 0,
             balance: zeroNormalizedBN
-          }
-        }
-        /**************************************************************************************
-         ** If we are in development mode, we also want to add the token to our list, but only
-         ** if the token's chainID is 1 (Ethereum).
-         *************************************************************************************/
-        if (isDevelopment && Boolean(import.meta.env.VITE_SHOULD_USE_FORKNET) && eachToken.chainId === 1) {
-          if (!tokenListTokens[1337]) {
-            tokenListTokens[1337] = {}
-          }
-          if (!tokenListTokens[1337][toAddress(eachToken.address)]) {
-            tokenListTokens[1337][toAddress(eachToken.address)] = {
-              address: eachToken.address,
-              name: eachToken.name,
-              symbol: eachToken.symbol,
-              decimals: eachToken.decimals,
-              chainID: 1337,
-              logoURI: eachToken.logoURI,
-              value: 0,
-              balance: zeroNormalizedBN
-            }
           }
         }
       }

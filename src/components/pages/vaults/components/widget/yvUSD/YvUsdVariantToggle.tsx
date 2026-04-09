@@ -1,3 +1,5 @@
+'use client'
+
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import { cl, SELECTOR_BAR_STYLES } from '@shared/utils'

@@ -1,3 +1,5 @@
+'use client'
+
 import { type TYvUsdSeriesPoint, useYvUsdCharts } from '@pages/vaults/hooks/useYvUsdCharts'
 import { cl, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement } from 'react'

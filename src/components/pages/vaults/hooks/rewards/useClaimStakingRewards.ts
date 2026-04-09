@@ -1,3 +1,5 @@
+'use client'
+
 import { JUICED_STAKING_REWARDS_ABI } from '@shared/contracts/abi/juicedStakingRewards.abi'
 import { STAKING_REWARDS_ABI } from '@shared/contracts/abi/stakingRewards.abi'
 import { V3_STAKING_REWARDS_ABI } from '@shared/contracts/abi/V3StakingRewards.abi'

@@ -1,3 +1,5 @@
+'use client'
+
 import { replaceEqualDeep } from '@tanstack/query-core'
 import { getAddress } from 'viem'
 import type { TAddress } from '../types/address'

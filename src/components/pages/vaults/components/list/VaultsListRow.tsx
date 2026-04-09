@@ -1,3 +1,5 @@
+'use client'
+
 import Link from '@components/Link'
 import { usePlausible } from '@hooks/usePlausible'
 import { APYDetailsModal } from '@pages/vaults/components/table/APYDetailsModal'
@@ -59,9 +61,9 @@ import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import type { MouseEvent, ReactElement } from 'react'
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
 import { VaultsListChip } from './VaultsListChip'
 
@@ -259,7 +261,7 @@ function VaultsListRowComponent({
   mobileSecondaryMetric = 'tvl',
   showAllocatorChip = true
 }: TVaultsListRowProps): ReactElement {
-  const navigate = useNavigate()
+  const router = useRouter()
   const trackEvent = usePlausible()
   const chainID = getVaultChainID(currentVault)
   const vaultAddress = getVaultAddress(currentVault)
@@ -271,7 +273,7 @@ function VaultsListRowComponent({
   const vaultCategory = getVaultCategory(currentVault)
   const href = hrefOverride ?? `/vaults/${chainID}/${toAddress(vaultAddress)}`
   const network = getNetwork(chainID)
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+  const chainLogoSrc = `${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const isYvUsd = isYvUsdAddress(vaultAddress)
   const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
   const { address } = useWeb3()
@@ -906,7 +908,7 @@ function VaultsListRowComponent({
             currentVault={currentVault}
             expandedView={expandedView}
             onExpandedViewChange={setExpandedView}
-            onNavigateToVault={() => navigate(href)}
+            onNavigateToVault={() => router.push(href)}
             showKindTag={showKindChip}
             showHiddenTag={isHiddenVault}
             isHidden={isHiddenVault}

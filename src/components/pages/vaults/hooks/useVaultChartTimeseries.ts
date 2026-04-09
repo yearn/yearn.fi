@@ -1,3 +1,5 @@
+'use client'
+
 import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import type { TChartTimeseriesResponse } from '@pages/vaults/types/charts'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'

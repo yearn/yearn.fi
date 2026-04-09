@@ -14,7 +14,7 @@ export const YVUSD_ANNOUNCEMENT_URL = '#'
 export const YVUSD_LEARN_MORE_URL = 'https://x.com/Schlagonia/status/2032147643334582487'
 
 function getYvUsdAprServiceEndpoint(): string {
-  const configuredEndpoint = import.meta.env.VITE_YVUSD_APR_SERVICE_API?.trim().replace(/\/$/, '')
+  const configuredEndpoint = process.env.NEXT_PUBLIC_YVUSD_APR_SERVICE_API?.trim()?.replace(/\/$/, '')
   if (configuredEndpoint?.startsWith('/')) {
     return configuredEndpoint
   }

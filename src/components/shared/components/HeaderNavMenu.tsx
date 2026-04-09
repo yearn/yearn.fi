@@ -1,3 +1,5 @@
+'use client'
+
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconDiscord } from '@shared/icons/IconDiscord'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
@@ -26,7 +28,7 @@ type TNavTile = Pick<TAppTile, 'name' | 'href' | 'description'> & {
   iconWrapperClass?: string
 }
 
-const BASE_YEARN_ASSET_URI = import.meta.env?.VITE_BASE_YEARN_ASSETS_URI ?? ''
+const BASE_YEARN_ASSET_URI = process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI ?? ''
 
 function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href)

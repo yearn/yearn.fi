@@ -1,3 +1,5 @@
+'use client'
+
 import { usePlausible } from '@hooks/usePlausible'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'

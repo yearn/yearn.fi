@@ -1,3 +1,5 @@
+'use client'
+
 import { Tooltip } from '@shared/components/Tooltip'
 import { formatAmount, formatApyDisplay } from '@shared/utils'
 

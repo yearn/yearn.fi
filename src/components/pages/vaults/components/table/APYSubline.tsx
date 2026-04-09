@@ -1,3 +1,5 @@
+'use client'
+
 import { cl } from '@shared/utils'
 import type { FC } from 'react'
 import { Fragment } from 'react'

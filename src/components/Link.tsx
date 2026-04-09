@@ -1,6 +1,7 @@
+'use client'
+
+import NextLink from 'next/link'
 import type { ReactNode } from 'react'
-import type { LinkProps as RouterLinkProps } from 'react-router'
-import { Link as RouterLink } from 'react-router'
 
 export type LinkProps = {
   href?: string
@@ -10,19 +11,15 @@ export type LinkProps = {
   target?: string
   rel?: string
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
-} & Omit<RouterLinkProps, 'to'>
+  prefetch?: boolean
+} & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'children'>
 
 function isExternalLink(url: string): boolean {
-  try {
-    const urlObj = new URL(url, window.location.href)
-    return urlObj.hostname !== window.location.hostname
-  } catch {
-    return false
-  }
+  return /^(https?:\/\/|mailto:|tel:)/i.test(url)
 }
 
 export default function Link(props: LinkProps): React.ReactElement {
-  const { href, to, children, className, target, rel, onClick, ...rest } = props
+  const { href, to, children, className, target, rel, onClick, prefetch, ...rest } = props
 
   // Use href or to, with href taking precedence
   const url = href || to || ''
@@ -43,10 +40,18 @@ export default function Link(props: LinkProps): React.ReactElement {
     )
   }
 
-  // Internal link using React Router
+  // Internal link using Next.js routing.
   return (
-    <RouterLink to={url} className={className} target={target} rel={rel} onClick={onClick} {...rest}>
+    <NextLink
+      href={url}
+      className={className}
+      target={target}
+      rel={rel}
+      onClick={onClick}
+      prefetch={prefetch}
+      {...rest}
+    >
       {children}
-    </RouterLink>
+    </NextLink>
   )
 }

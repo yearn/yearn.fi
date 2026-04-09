@@ -1,3 +1,5 @@
+'use client'
+
 import { cl } from '@shared/utils'
 import type React from 'react'
 import type { ForwardedRef, ReactElement, ReactNode } from 'react'

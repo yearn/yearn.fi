@@ -1,3 +1,5 @@
+'use client'
+
 import type { TAddress } from '../types/address'
 import { toAddress } from '../utils/tools.address'
 

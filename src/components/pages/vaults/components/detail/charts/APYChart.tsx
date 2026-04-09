@@ -1,3 +1,5 @@
+'use client'
+
 import type { TAprApyChartData } from '@pages/vaults/types/charts'
 import {
   formatChartMonthYearLabel,

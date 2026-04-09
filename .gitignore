@@ -1,58 +1,41 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
 .DS_Store
-node_modules
-/dist
-tsconfig.tsbuildinfo
+*.pem
 
-# local env files
-.env.local
-.env.*.local
-
-# Log files
+# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
+.pnpm-debug.log*
 
-# Editor directories and files
-.idea
-.vscode
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# env files (can opt-in for committing if needed)
+.env*
 
-.env
-.next
+# vercel
 .vercel
-.tsconfig.tsbuildinfo
-_app
 
-# Auto Generated PWA files
-**/public/sw.js
-**/public/workbox-*.js
-**/public/worker-*.js
-**/public/sw.js.map
-**/public/workbox-*.js.map
-**/public/worker-*.js.map
-
-# Sentry Auth Token
-.sentryclirc
-
-# docs
-/docs
-AGENTS.md
-
-# playwright
-.playwright-mcp
-
-# local worktree clones
-yearn.fi-worktree-*
-
-# claude settings
-.claude/*
-!.claude/rules/
-!.claude/skills/
-
-# codex settings
-.codex
+# typescript
+*.tsbuildinfo
+next-env.d.ts

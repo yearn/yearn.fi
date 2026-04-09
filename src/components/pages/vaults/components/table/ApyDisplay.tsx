@@ -1,3 +1,5 @@
+'use client'
+
 import { Renderable } from '@shared/components/Renderable'
 import { Tooltip } from '@shared/components/Tooltip'
 import { cl } from '@shared/utils'

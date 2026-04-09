@@ -1,3 +1,5 @@
+'use client'
+
 import { getVaultChainID, getVaultStaking, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { getStakingWithdrawableAssets } from '@pages/vaults/hooks/actions/stakingAdapter'
 import { useDeepCompareMemo } from '@react-hookz/web'

@@ -1,10 +1,12 @@
+'use client'
+
 type TProps = {
   chainID: number | string
   baseURI?: string
 }
 
 export function useYDaemonBaseURI(props?: TProps): { yDaemonBaseUri: string } {
-  const yDaemonBaseUri = props?.baseURI || import.meta.env.VITE_YDAEMON_BASE_URI
+  const yDaemonBaseUri = props?.baseURI || process.env.NEXT_PUBLIC_YDAEMON_BASE_URI
 
   if (!yDaemonBaseUri) {
     throw new Error('YDAEMON_BASE_URI is not defined')

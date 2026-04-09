@@ -1,3 +1,5 @@
+'use client'
+
 import { useFetch } from '@shared/hooks/useFetch'
 import { toAddress } from '@shared/utils'
 import {

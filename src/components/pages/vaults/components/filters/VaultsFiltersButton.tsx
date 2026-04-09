@@ -1,3 +1,5 @@
+'use client'
+
 import { IconFilter } from '@shared/icons/IconFilter'
 import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'

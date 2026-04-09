@@ -1,3 +1,5 @@
+'use client'
+
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import type { TNormalizedBN } from '@shared/types'
 import { toNormalizedBN } from '@shared/utils'

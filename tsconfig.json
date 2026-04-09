@@ -1,57 +1,40 @@
 {
   "compilerOptions": {
-    "rootDirs": ["."],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@shared/*": ["src/components/shared/*"],
-      "@pages/*": ["src/components/pages/*"],
-      "@components/*": ["src/components/*"],
-      "@hooks/*": ["src/hooks/*"],
-      "/src/*": ["src/*"]
-    },
-    /* Basic Options */
-    "target": "ESNext",
-    "module": "ESNext",
-    "lib": ["es6", "es7", "ESNext", "dom"],
+    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
-    "jsx": "preserve",
-    "removeComments": false,
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "inlineSourceMap": true,
-    "inlineSources": true,
-    "resolveJsonModule": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "strict": true,
     "noEmit": true,
-    "incremental": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
     "isolatedModules": true,
-    "types": ["vite/client"]
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/*": ["./src/components/shared/*"],
+      "@pages/*": ["./src/components/pages/*"],
+      "@components/*": ["./src/components/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "/src/*": ["./src/*"]
+    }
   },
-  "exclude": ["node_modules", "_app", "api", "worktrees", "vitest.config.ts", "docs/temp/yvusd-gpt-pro-bundle"],
   "include": [
-    "**/*.css",
+    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "**/*.d.tsx",
-    "public",
-    "postcss.config.js",
-    "tailwind.config.js",
-    "vite.config.ts",
-    "worker/index.js",
-    "env.d.ts"
-  ]
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
 }

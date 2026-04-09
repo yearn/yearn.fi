@@ -1,3 +1,5 @@
+'use client'
+
 import { IconChevron } from '@shared/icons/IconChevron'
 import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'

@@ -1,6 +1,3 @@
-import { useLocation } from 'react-router'
+'use client'
 
-export function usePathname(): string {
-  const location = useLocation()
-  return location.pathname
-}
+export { usePathname } from 'next/navigation'

@@ -1,3 +1,5 @@
+'use client'
+
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import type { ReactElement } from 'react'

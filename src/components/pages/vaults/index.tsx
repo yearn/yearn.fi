@@ -1,3 +1,5 @@
+'use client'
+
 import { usePlausible } from '@hooks/usePlausible'
 import { VaultsCompareModal } from '@pages/vaults/components/compare/VaultsCompareModal'
 import { VaultsFiltersBar } from '@pages/vaults/components/filters/VaultsFiltersBar'

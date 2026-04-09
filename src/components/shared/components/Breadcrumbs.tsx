@@ -1,3 +1,5 @@
+'use client'
+
 import Link from '@components/Link'
 import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'

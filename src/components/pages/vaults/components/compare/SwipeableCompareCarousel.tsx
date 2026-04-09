@@ -1,3 +1,5 @@
+'use client'
+
 import { CompareVaultCard } from '@pages/vaults/components/compare/CompareVaultCard'
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'

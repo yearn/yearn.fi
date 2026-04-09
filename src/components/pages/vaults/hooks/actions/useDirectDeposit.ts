@@ -1,3 +1,5 @@
+'use client'
+
 import type { UseWidgetDepositFlowReturn } from '@pages/vaults/types'
 import { erc4626Abi } from '@shared/contracts/abi/4626.abi'
 import { vaultAbi } from '@shared/contracts/abi/vaultV2.abi'

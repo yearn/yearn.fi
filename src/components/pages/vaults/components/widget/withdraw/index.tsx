@@ -1,3 +1,5 @@
+'use client'
+
 import { usePlausible } from '@hooks/usePlausible'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'

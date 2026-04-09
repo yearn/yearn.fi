@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Address, Hash, Hex } from 'viem'
 import type { UseSimulateContractReturnType } from 'wagmi'

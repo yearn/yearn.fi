@@ -1,3 +1,5 @@
+'use client'
+
 import type { FC } from 'react'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import type { DepositRouteType } from './types'

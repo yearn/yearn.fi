@@ -1,3 +1,5 @@
+'use client'
+
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
 import type { Address } from 'viem'
 import { maxUint256 } from 'viem'

@@ -1,3 +1,5 @@
+'use client'
+
 import type { ErrorInfo, ReactNode } from 'react'
 import { Component } from 'react'
 
@@ -21,7 +23,7 @@ export class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, Chart
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    if (import.meta.env.DEV) {
+    if (process.env.NODE_ENV === 'development') {
       console.error('Chart rendering error', error, errorInfo)
     }
   }

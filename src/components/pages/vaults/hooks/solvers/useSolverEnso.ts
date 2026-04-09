@@ -1,3 +1,5 @@
+'use client'
+
 import type { TNormalizedBN } from '@shared/types'
 import { isZeroAddress, toNormalizedBN } from '@shared/utils'
 import { getApproveAbi } from '@shared/utils/approve'

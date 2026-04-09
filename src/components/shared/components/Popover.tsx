@@ -1,3 +1,5 @@
+'use client'
+
 import { Popover as HeadlessPopover, PopoverButton, PopoverPanel, Transition } from '@headlessui/react'
 import { cl } from '@shared/utils'
 import type { FC, ReactNode } from 'react'

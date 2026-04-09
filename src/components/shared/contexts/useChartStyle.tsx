@@ -1,3 +1,5 @@
+'use client'
+
 import { useLocalStorage } from '@shared/hooks/useLocalStorage'
 import type { TChartStyle } from '@shared/utils/chartStyles'
 import { CHART_STYLE_OPTIONS } from '@shared/utils/chartStyles'

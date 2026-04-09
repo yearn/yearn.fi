@@ -1,10 +1,10 @@
 import type { Chain, PublicClient } from 'viem'
 import { createPublicClient, defineChain, http } from 'viem'
 import * as wagmiChains from 'viem/chains'
+import { getLegacyRpcUriFor, getPublicRpcUriFor } from '@/lib/publicEnv'
 import type { TAddress } from '../../types/address'
 import type { TDict, TNDict } from '../../types/mixed'
 import { retrieveConfig } from './config'
-import { anotherLocalhost, localhost } from './networks'
 
 export type TChainContract = {
   address: TAddress
@@ -88,12 +88,7 @@ const isChain = (chain: wagmiChains.Chain | unknown): chain is wagmiChains.Chain
 }
 
 export function getRpcUriFor(chainId: number | string): string {
-  const key = `VITE_RPC_URI_FOR_${chainId}`
-  const value = import.meta.env[key]
-  if (typeof value !== 'string') {
-    return ''
-  }
-  return value.trim()
+  return getPublicRpcUriFor(chainId)
 }
 
 function getAlchemyBaseURL(chainID: number): string {
@@ -142,24 +137,17 @@ function initIndexedWagmiChains(): TNDict<TExtendedChain> {
   const _indexedWagmiChains: TNDict<TExtendedChain> = {}
   for (const chain of Object.values({ ...wagmiChains, rari, katana })) {
     if (isChain(chain)) {
-      const baseChain = chain as unknown as TExtendedChain
-      const extendedChain =
-        baseChain.id === 1337
-          ? (localhost as unknown as TExtendedChain)
-          : baseChain.id === 5402
-            ? (anotherLocalhost as unknown as TExtendedChain)
-            : baseChain
+      const extendedChain = chain as unknown as TExtendedChain
 
       extendedChain.contracts = {
         ...extendedChain.contracts
       }
 
       const newRPC = getRpcUriFor(extendedChain.id)
-      const oldRPC =
-        import.meta.env.VITE_JSON_RPC_URI?.[extendedChain.id] || import.meta.env.VITE_JSON_RPC_URL?.[extendedChain.id]
+      const oldRPC = getLegacyRpcUriFor(extendedChain.id)
       if (!newRPC && oldRPC) {
         console.debug(
-          `VITE_JSON_RPC_URI[${extendedChain.id}] is deprecated. Please use VITE_RPC_URI_FOR_${extendedChain.id}`
+          `NEXT_PUBLIC_JSON_RPC_URI[${extendedChain.id}] is deprecated. Please use NEXT_PUBLIC_RPC_URI_FOR_${extendedChain.id}`
         )
       }
       const defaultJsonRPCURL = extendedChain?.rpcUrls?.public?.http?.[0]
@@ -214,7 +202,7 @@ export function getClient(chainID: number): PublicClient {
   const chainConfig = indexedWagmiChains?.[chainID] || retrieveConfig().chains.find((chain) => chain.id === chainID)
 
   const newRPC = getRpcUriFor(chainID)
-  const oldRPC = import.meta.env.VITE_JSON_RPC_URI?.[chainID] || import.meta.env.VITE_JSON_RPC_URL?.[chainID]
+  const oldRPC = getLegacyRpcUriFor(chainID)
 
   const url =
     newRPC ||

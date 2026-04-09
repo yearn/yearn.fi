@@ -1,3 +1,5 @@
+'use client'
+
 import { TOOLTIP_DELAY_MS } from '@pages/vaults/utils/vaultTagCopy'
 import { Tooltip } from '@shared/components/Tooltip'
 import { cl } from '@shared/utils'

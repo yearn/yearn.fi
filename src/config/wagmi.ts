@@ -1,3 +1,5 @@
+'use client'
+
 import { getNetwork, getRpcUriFor, registerConfig } from '@shared/utils/wagmi'
 import { connectorsForWallets } from '@rainbow-me/rainbowkit'
 import {
@@ -13,8 +15,8 @@ import type { Transport } from 'viem'
 import { cookieStorage, createConfig, createStorage, fallback, http } from 'wagmi'
 import { supportedChains, type TSupportedChainId } from './supportedChains'
 
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string
-const appName = (import.meta.env.VITE_WALLETCONNECT_PROJECT_NAME as string) || 'Yearn Finance'
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID as string
+const appName = (process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_NAME as string) || 'Yearn Finance'
 
 const connectors = connectorsForWallets(
   [

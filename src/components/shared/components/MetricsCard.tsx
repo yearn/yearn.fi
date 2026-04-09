@@ -1,3 +1,5 @@
+'use client'
+
 import { Tooltip } from '@shared/components/Tooltip'
 import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'

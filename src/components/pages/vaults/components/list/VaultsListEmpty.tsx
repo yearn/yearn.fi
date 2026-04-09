@@ -1,3 +1,5 @@
+'use client'
+
 import { Switch as HeadlessSwitch } from '@headlessui/react'
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { Button } from '@shared/components/Button'

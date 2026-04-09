@@ -1,3 +1,5 @@
+'use client'
+
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { useEffect, useRef, useState } from 'react'
 

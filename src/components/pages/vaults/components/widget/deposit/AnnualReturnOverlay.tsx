@@ -1,3 +1,5 @@
+'use client'
+
 import { formatPercent } from '@shared/utils'
 import type { FC } from 'react'
 import { InfoOverlay } from '../shared/InfoOverlay'

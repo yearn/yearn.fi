@@ -1,3 +1,5 @@
+'use client'
+
 import { useLocalStorage } from '@shared/hooks/useLocalStorage'
 
 export const VAULTS_FILTERS_STORAGE_KEY = 'yearn.fi/vaults-filters@1'

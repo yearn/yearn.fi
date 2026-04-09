@@ -1,3 +1,5 @@
+'use client'
+
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import useWallet from '@shared/contexts/useWallet'
@@ -11,9 +13,9 @@ import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
 import { cl } from '@shared/utils'
 import { normalizePathname } from '@shared/utils/routes'
 import { truncateHex } from '@shared/utils/tools.address'
+import { usePathname } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
-import { useLocation } from 'react-router'
 import Link from '/src/components/Link'
 import { AccountDropdown } from './AccountDropdown'
 import { HeaderNavMenu } from './HeaderNavMenu'
@@ -99,8 +101,7 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
 }
 
 function AppHeader(): ReactElement {
-  const location = useLocation()
-  const pathname = location.pathname
+  const pathname = usePathname()
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { notificationStatus } = useNotifications()

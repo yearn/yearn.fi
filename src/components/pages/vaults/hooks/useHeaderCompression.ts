@@ -1,3 +1,5 @@
+'use client'
+
 import type { Dispatch, SetStateAction } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 

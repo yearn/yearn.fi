@@ -1,3 +1,5 @@
+'use client'
+
 import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import type { TNotification, TNotificationStatus, TNotificationsContext } from '@shared/types/notifications'
 import type React from 'react'

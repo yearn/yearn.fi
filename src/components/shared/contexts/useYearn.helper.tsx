@@ -1,3 +1,5 @@
+'use client'
+
 import {
   getVaultAddress,
   getVaultChainID,
@@ -219,24 +221,5 @@ export function useYearnTokens({
     return tokens
   }, [isEnabled, isLoadingVaultList, availableTokens, availableTokenListTokens])
 
-  function cloneForForknet(tokens: TUseBalancesTokens[]): TUseBalancesTokens[] {
-    const clonedTokens: TUseBalancesTokens[] = []
-    tokens.forEach((token): void => {
-      clonedTokens.push({ ...token })
-      if (token.chainID === 1) {
-        clonedTokens.push({ ...token, chainID: 1337 })
-      }
-    })
-    return clonedTokens
-  }
-
-  const finalTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
-    const shouldEnableForknet = false
-    if (shouldEnableForknet) {
-      return cloneForForknet(allTokens)
-    }
-    return allTokens
-  }, [allTokens])
-
-  return finalTokens
+  return allTokens
 }

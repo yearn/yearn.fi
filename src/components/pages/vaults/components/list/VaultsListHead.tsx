@@ -1,3 +1,5 @@
+'use client'
+
 import { IconChevron } from '@shared/icons/IconChevron'
 import type { TSortDirection } from '@shared/types'
 import { cl } from '@shared/utils'

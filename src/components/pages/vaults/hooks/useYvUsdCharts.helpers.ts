@@ -1,3 +1,5 @@
+'use client'
+
 import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
 import type { TAprApyChartData, TPpsChartData, TTvlChartData } from '@pages/vaults/types/charts'
 import {

@@ -1,3 +1,5 @@
+'use client'
+
 import { cl } from '@shared/utils'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import type { ReactElement } from 'react'

@@ -1,3 +1,5 @@
+'use client'
+
 import { usePlausible } from '@hooks/usePlausible'
 import { Button } from '@shared/components/Button'
 import { SectionHeader } from '@shared/components/SectionHeader'

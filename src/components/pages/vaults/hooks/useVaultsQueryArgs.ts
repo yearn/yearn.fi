@@ -1,8 +1,10 @@
+'use client'
+
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { useSupportedChains } from '@shared/hooks/useSupportedChains'
 import type { TDict, TSortDirection } from '@shared/types'
+import { useSearchParamsUpdater } from '@/lib/useSearchParamsUpdater'
 import { useCallback, useMemo } from 'react'
-import { useSearchParams } from 'react-router'
 
 type TQueryArgs = {
   search: string | null | undefined
@@ -32,7 +34,7 @@ type TUseQueryArgumentsProps = {
 
 function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
   const allChains = useSupportedChains().map((chain): number => chain.id)
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParamsUpdater()
 
   const defaultSortBy = props.defaultSortBy || 'featuringScore'
 

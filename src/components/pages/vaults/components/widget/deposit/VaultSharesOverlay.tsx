@@ -1,3 +1,5 @@
+'use client'
+
 import type { FC } from 'react'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import type { DepositRouteType } from './types'

@@ -1,3 +1,5 @@
+'use client'
+
 import type { TAddress, TNDict, TToken } from '@shared/types'
 import { arbitrum, base, fantom, mainnet, optimism, polygon, sonic } from 'viem/chains'
 import { toAddress } from './tools.address'

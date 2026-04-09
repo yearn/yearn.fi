@@ -1,6 +1,8 @@
 import { cl } from '@shared/utils'
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
 import type { ReactElement, SVGProps } from 'react'
-import { createElement, useCallback, useEffect, useState } from 'react'
+import { createElement } from 'react'
 import Image from '/src/components/Image'
 
 type TIconProps = SVGProps<SVGSVGElement> & {
@@ -26,12 +28,20 @@ type TPublicIconAsset = {
 
 type TUsageMap = Record<string, string[]>
 
-const ICON_MODULES = {
-  ...import.meta.glob('/src/components/shared/icons/*.tsx', { eager: true }),
-  ...import.meta.glob('/src/components/pages/**/Icons.tsx', { eager: true })
+type TModuleExports = Record<string, unknown>
+
+type TRequireContext = {
+  keys: () => string[]
+  <T = TModuleExports>(id: string): T
 }
 
-const SOURCE_MODULES = import.meta.glob('/src/**/*.{ts,tsx,css}', { as: 'raw' })
+declare const require: {
+  context: (directory: string, useSubdirectories: boolean, regExp: RegExp) => TRequireContext
+}
+
+const SHARED_ICONS_CONTEXT = require.context('../../shared/icons', false, /\.tsx$/)
+const PAGE_ICONS_CONTEXT = require.context('../', true, /Icons\.tsx$/)
+const SOURCE_ROOT = path.join(process.cwd(), 'src')
 
 const BROKEN_ASSET_NOTES: Record<string, string> = {
   'public/yearn-logo.svg': 'Broken: file is empty.',
@@ -286,19 +296,31 @@ const PUBLIC_ICON_ASSETS: TPublicIconAsset[] = [
 
 const normalizePath = (path: string): string => (path.startsWith('/src/') ? `src/${path.slice(5)}` : path)
 
-const ICON_ENTRIES: TIconEntry[] = Object.entries(ICON_MODULES)
-  .flatMap(([path, module]) => {
+function toAbsoluteSourcePath(relativePath: string): string {
+  return `/src/${relativePath.replace(/^\.\//, '').replace(/\\/g, '/')}`
+}
+
+function buildIconEntries(context: TRequireContext, basePath: string): TIconEntry[] {
+  return context.keys().flatMap((relativePath) => {
+    const module = context(relativePath) as TModuleExports
+    const resolvedPath = `${basePath}${relativePath.replace(/^\.\//, '')}`
     const exports = module as Record<string, unknown>
     return Object.entries(exports)
       .filter(([, value]) => typeof value === 'function')
       .map(([name, Component]) => ({
-        key: `${path}:${name}`,
+        key: `${resolvedPath}:${name}`,
         name,
-        path,
-        displayPath: normalizePath(path),
+        path: resolvedPath,
+        displayPath: normalizePath(resolvedPath),
         Component: Component as TIconEntry['Component']
       }))
   })
+}
+
+const ICON_ENTRIES: TIconEntry[] = [
+  ...buildIconEntries(SHARED_ICONS_CONTEXT, '/src/components/shared/icons/'),
+  ...buildIconEntries(PAGE_ICONS_CONTEXT, '/src/components/pages/')
+]
   .sort((a, b) => a.path.localeCompare(b.path) || a.name.localeCompare(b.name))
 
 function getIconProps(name: string, override?: Partial<TIconProps>, forceFill?: boolean): TIconProps {
@@ -323,59 +345,61 @@ function findMatches(sources: Record<string, string>, matchers: string[], exclud
     .sort((a, b) => a.localeCompare(b))
 }
 
-export default function IconListPage(): ReactElement {
-  const [usageMap, setUsageMap] = useState<TUsageMap>({})
-  const [isLoadingUsage, setIsLoadingUsage] = useState(true)
-  const [sourceCache, setSourceCache] = useState<Record<string, string> | null>(null)
+async function readSourceFiles(dir: string): Promise<Record<string, string>> {
+  const entries = await fs.readdir(dir, { withFileTypes: true })
+  const files = await Promise.all(
+    entries.map(async (entry): Promise<Record<string, string>> => {
+      const fullPath = path.join(dir, entry.name)
+      if (entry.isDirectory()) {
+        return readSourceFiles(fullPath)
+      }
+      if (!/\.(ts|tsx|css)$/.test(entry.name)) {
+        return {}
+      }
 
-  const loadSourceCache = useCallback(async (): Promise<Record<string, string>> => {
-    if (sourceCache) return sourceCache
-    const entries = await Promise.all(
-      Object.entries(SOURCE_MODULES).map(async ([path, loader]) => [path, await loader()])
+      const content = await fs.readFile(fullPath, 'utf8')
+      const relativePath = path.relative(SOURCE_ROOT, fullPath).replace(/\\/g, '/')
+      return { [toAbsoluteSourcePath(relativePath)]: content }
+    })
+  )
+
+  return Object.assign({}, ...files)
+}
+
+let sourceCachePromise: Promise<Record<string, string>> | undefined
+
+async function loadSourceCache(): Promise<Record<string, string>> {
+  sourceCachePromise ??= readSourceFiles(SOURCE_ROOT)
+  return sourceCachePromise
+}
+
+async function buildUsageMap(): Promise<TUsageMap> {
+  const sources = await loadSourceCache()
+  const nextMap: TUsageMap = {}
+
+  ICON_ENTRIES.forEach((icon) => {
+    const usageKey = `icon:${icon.key}`
+    nextMap[usageKey] = findMatches(
+      sources,
+      [icon.name, `@shared/icons/${icon.name}`, `icons/${icon.name}`],
+      ['/src/components/pages/icon-list/index.tsx', icon.path]
     )
-    const nextCache = Object.fromEntries(entries) as Record<string, string>
-    setSourceCache(nextCache)
-    return nextCache
-  }, [sourceCache])
+  })
 
-  useEffect(() => {
-    let isMounted = true
+  PUBLIC_ICON_ASSETS.forEach((asset) => {
+    const usageKey = `asset:${asset.path}`
+    nextMap[usageKey] = findMatches(
+      sources,
+      [asset.name, asset.src, asset.src.replace(/^\//, '')],
+      ['/src/components/pages/icon-list/index.tsx']
+    )
+  })
 
-    const buildUsageMap = async (): Promise<void> => {
-      setIsLoadingUsage(true)
-      const sources = await loadSourceCache()
-      if (!isMounted) return
+  return nextMap
+}
 
-      const nextMap: TUsageMap = {}
-
-      ICON_ENTRIES.forEach((icon) => {
-        const usageKey = `icon:${icon.key}`
-        nextMap[usageKey] = findMatches(
-          sources,
-          [icon.name, `@shared/icons/${icon.name}`, `icons/${icon.name}`],
-          ['/src/components/pages/icon-list/index.tsx', icon.path]
-        )
-      })
-
-      PUBLIC_ICON_ASSETS.forEach((asset) => {
-        const usageKey = `asset:${asset.path}`
-        nextMap[usageKey] = findMatches(
-          sources,
-          [asset.name, asset.src, asset.src.replace(/^\//, '')],
-          ['/src/components/pages/icon-list/index.tsx']
-        )
-      })
-
-      setUsageMap(nextMap)
-      setIsLoadingUsage(false)
-    }
-
-    void buildUsageMap()
-
-    return () => {
-      isMounted = false
-    }
-  }, [loadSourceCache])
+export default async function IconListPage(): Promise<ReactElement> {
+  const usageMap = await buildUsageMap()
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
@@ -424,11 +448,10 @@ export default function IconListPage(): ReactElement {
                     </div>
                   </div>
                   <div className={'rounded-xl border border-border bg-surface-secondary px-3 py-2'}>
-                    {isLoadingUsage && <p className={'text-xs text-text-secondary'}>{'Loading imports...'}</p>}
-                    {!isLoadingUsage && usage && usage.length === 0 && (
+                    {usage && usage.length === 0 && (
                       <p className={'text-xs text-text-secondary'}>{'No imports found in src.'}</p>
                     )}
-                    {!isLoadingUsage && usage && usage.length > 0 && (
+                    {usage && usage.length > 0 && (
                       <div className={'flex flex-col gap-1'}>
                         {usage.map((path) => (
                           <p key={path} className={'truncate font-mono text-xs text-text-secondary'}>
@@ -477,11 +500,10 @@ export default function IconListPage(): ReactElement {
                     </div>
                   </div>
                   <div className={'rounded-xl border border-border bg-surface-secondary px-3 py-2'}>
-                    {isLoadingUsage && <p className={'text-xs text-text-secondary'}>{'Loading imports...'}</p>}
-                    {!isLoadingUsage && usage && usage.length === 0 && (
+                    {usage && usage.length === 0 && (
                       <p className={'text-xs text-text-secondary'}>{'No imports found in src.'}</p>
                     )}
-                    {!isLoadingUsage && usage && usage.length > 0 && (
+                    {usage && usage.length > 0 && (
                       <div className={'flex flex-col gap-1'}>
                         {usage.map((path) => (
                           <p key={path} className={'truncate font-mono text-xs text-text-secondary'}>

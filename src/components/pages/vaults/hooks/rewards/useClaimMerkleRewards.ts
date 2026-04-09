@@ -1,3 +1,5 @@
+'use client'
+
 import type { TGroupedMerkleReward } from '@pages/vaults/components/widget/rewards/types'
 import { MERKLE_DISTRIBUTOR_ABI } from '@shared/contracts/abi/merkleDistributor.abi'
 import { MERKLE_DISTRIBUTOR_ADDRESS } from '@shared/utils/constants'

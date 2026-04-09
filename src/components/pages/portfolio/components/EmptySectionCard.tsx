@@ -1,7 +1,9 @@
+'use client'
+
 import { Button } from '@shared/components/Button'
 import { EmptyState } from '@shared/components/EmptyState'
+import Link from 'next/link'
 import type { ReactElement } from 'react'
-import { Link } from 'react-router'
 
 type TEmptySectionCardProps = {
   title: string
@@ -17,7 +19,7 @@ export function EmptySectionCard({
   href
 }: TEmptySectionCardProps): ReactElement {
   const actionButton = href ? (
-    <Link to={href} className="yearn--button min-h-[44px] px-6" data-variant="filled">
+    <Link href={href} className="yearn--button min-h-[44px] px-6" data-variant="filled">
       {ctaLabel}
     </Link>
   ) : (

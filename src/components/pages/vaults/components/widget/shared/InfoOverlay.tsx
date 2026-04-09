@@ -1,3 +1,5 @@
+'use client'
+
 import { Button } from '@shared/components/Button'
 import { cl } from '@shared/utils'
 import type { FC, ReactNode } from 'react'

@@ -1,3 +1,5 @@
+'use client'
+
 import {
   getVaultAddress,
   getVaultChainID,
@@ -421,7 +423,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
               type="button"
             >
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo.svg`}
+                src={`${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo.svg`}
                 alt={chain.name}
                 width={20}
                 height={20}

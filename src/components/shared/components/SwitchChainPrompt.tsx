@@ -1,3 +1,5 @@
+'use client'
+
 import { Button } from '@shared/components/Button'
 import { SUPPORTED_NETWORKS } from '@shared/utils/constants'
 import type { ReactElement } from 'react'

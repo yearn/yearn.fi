@@ -1,3 +1,5 @@
+'use client'
+
 import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useEffect, useRef, useState } from 'react'
@@ -181,7 +183,7 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
           }}
         >
           <img
-            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`}
+            src={`${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`}
             alt="Network"
             width={chainIconSize - 4}
             height={chainIconSize - 4}

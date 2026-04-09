@@ -1,3 +1,5 @@
+'use client'
+
 import type { TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import type { TYvUsdVariant } from '@pages/vaults/utils/yvUsd'

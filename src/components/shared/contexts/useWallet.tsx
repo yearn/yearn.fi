@@ -1,3 +1,5 @@
+'use client'
+
 import {
   getVaultAddress,
   getVaultAPR,
@@ -26,7 +28,7 @@ import { useYearn } from './useYearn'
 import { useYearnTokens } from './useYearn.helper'
 import { useTokenList } from './WithTokenList'
 
-const USE_ENSO_BALANCES = import.meta.env.VITE_BALANCE_SOURCE !== 'multicall'
+const USE_ENSO_BALANCES = process.env.NEXT_PUBLIC_BALANCE_SOURCE !== 'multicall'
 
 type TTokenAndChain = { address: TAddress; chainID: number }
 

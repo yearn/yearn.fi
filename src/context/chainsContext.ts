@@ -1,3 +1,5 @@
+'use client'
+
 import { createContext, useContext } from 'react'
 import type { Chain } from 'viem/chains'
 import type { TSupportedChainId } from '@/config/supportedChains'

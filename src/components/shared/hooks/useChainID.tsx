@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo } from 'react'
 import { useChains } from '@/context/chainsContext'
 
@@ -8,10 +10,7 @@ export type TUseChainIDRes = {
 }
 
 export const toSafeChainID = (chainID: number, fallback: number): number => {
-  if ([1337, 31337].includes(chainID)) {
-    return fallback
-  }
-  return chainID
+  return chainID || fallback
 }
 
 export function useChainID(defaultChainID?: number): TUseChainIDRes {

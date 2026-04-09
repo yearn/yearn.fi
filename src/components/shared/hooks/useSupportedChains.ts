@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo } from 'react'
 import type { Chain } from 'viem/chains'
 import { retrieveConfig } from '../utils/wagmi'
@@ -9,8 +11,7 @@ import { retrieveConfig } from '../utils/wagmi'
 export function useSupportedChains(): Chain[] {
   const supportedChains = useMemo((): Chain[] => {
     const config = retrieveConfig()
-    const noFork = config.chains.filter(({ id }): boolean => id !== 1337)
-    return noFork
+    return [...config.chains]
   }, [])
 
   return supportedChains

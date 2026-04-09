@@ -1,3 +1,5 @@
+'use client'
+
 import type { TGroupedMerkleReward, TMerkleReward } from '@pages/vaults/components/widget/rewards/types'
 import { toNormalizedValue } from '@shared/utils'
 import { useQuery } from '@tanstack/react-query'

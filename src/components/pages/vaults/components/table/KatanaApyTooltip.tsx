@@ -1,3 +1,5 @@
+'use client'
+
 import { getVaultChainID, getVaultToken, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { Tooltip } from '@shared/components/Tooltip'
@@ -61,7 +63,7 @@ export function KatanaApyTooltipContent({
 }: Omit<TKatanaTooltipProps, 'children' | 'position' | 'className'>): ReactElement {
   const width = maxWidth || 'w-full max-w-[360px]'
   const resolvedNativeYieldLabel = nativeYieldLabel ?? 'Katana Native 30 Day APY'
-  const baseAssetsUrl = import.meta.env.VITE_BASE_YEARN_ASSETS_URI
+  const baseAssetsUrl = process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI
   const chainId = getVaultChainID(currentVault)
   const tokenAddress = getVaultToken(currentVault).address.toLowerCase()
   const tokenLogoSrc = `${baseAssetsUrl}/tokens/${chainId}/${tokenAddress}/logo-32.png`

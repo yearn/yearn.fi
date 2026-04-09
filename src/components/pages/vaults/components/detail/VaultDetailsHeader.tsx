@@ -1,3 +1,5 @@
+'use client'
+
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
@@ -49,9 +51,9 @@ import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import { cl, formatApyDisplay, formatUSD, isZero, SELECTOR_BAR_STYLES, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
+import Link from 'next/link'
 import type { ReactElement, Ref } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
 
 type TVaultKindType = 'multi' | 'single' | undefined
 
@@ -149,7 +151,7 @@ function VaultHeaderIdentity({
   const chainName = getNetwork(currentVault.chainID).name
   const isYvUsd = isYvUsdVault(currentVault)
   const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
+  const chainLogoSrc = `${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
   const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
   const showChainChip = !isCompressed
@@ -794,11 +796,11 @@ export function VaultDetailsHeaderPresentation({
       className={'grid w-full grid-cols-1 gap-y-0 gap-x-6 text-left md:auto-rows-min md:grid-cols-20 bg-app rounded-lg'}
     >
       <div className={'hidden md:flex items-center gap-2 text-sm text-text-secondary md:col-span-20 px-1'}>
-        <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
+        <Link href={'/'} className={'transition-colors hover:text-text-primary'}>
           {'Home'}
         </Link>
         <span>{'>'}</span>
-        <Link to={'/v3'} className={'transition-colors hover:text-text-primary'}>
+        <Link href={'/vaults'} className={'transition-colors hover:text-text-primary'}>
           {'Vaults'}
         </Link>
         <span>{'>'}</span>

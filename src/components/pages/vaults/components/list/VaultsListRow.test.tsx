@@ -2,7 +2,6 @@ import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { VaultsListRow } from './VaultsListRow'
@@ -59,14 +58,20 @@ vi.mock('@pages/vaults/components/table/VaultRiskScoreTag', () => ({
   RiskScoreInlineDetails: () => <div>{'Risk details'}</div>
 }))
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn()
+  })
+}))
+
 function renderRowHtml(vault: TKongVaultInput): string {
   const queryClient = new QueryClient()
 
   return renderToStaticMarkup(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <VaultsListRow currentVault={vault} />
-      </MemoryRouter>
+      <VaultsListRow currentVault={vault} />
     </QueryClientProvider>
   )
 }

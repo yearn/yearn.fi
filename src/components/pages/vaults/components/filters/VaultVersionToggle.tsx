@@ -1,3 +1,5 @@
+'use client'
+
 import { usePlausible } from '@hooks/usePlausible'
 import { TOOLTIP_DELAY_MS } from '@pages/vaults/utils/vaultTagCopy'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
@@ -10,8 +12,8 @@ import {
 import { Tooltip } from '@shared/components/Tooltip'
 import { cl } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
+import { useSearchParamsUpdater } from '@/lib/useSearchParamsUpdater'
 import type { ReactElement } from 'react'
-import { useSearchParams } from 'react-router'
 
 type TVaultVersionToggleProps = {
   className?: string
@@ -39,7 +41,7 @@ export function VaultVersionToggle({
   onTypeChange,
   isPending
 }: TVaultVersionToggleProps): ReactElement {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParamsUpdater()
   const trackEvent = usePlausible()
   const normalizedType = normalizeVaultTypeParam(searchParams.get('type'))
   const resolvedType = activeType ?? normalizedType

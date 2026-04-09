@@ -1,3 +1,5 @@
+'use client'
+
 import { useCustomCompareMemo, useDeepCompareMemo } from '@react-hookz/web'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
 
@@ -12,8 +14,7 @@ export function useChainOptions(chains: number[] | null): TMultiSelectOptionProp
   const injectedChains = useCustomCompareMemo(
     (): Chain[] | undefined => {
       connectors //Hard trigger re-render when connectors change
-      const noFork = config.chains.filter(({ id }): boolean => id !== 1337)
-      return noFork as Chain[]
+      return [...config.chains]
     },
     [[...connectors], config],
     (savedDeps: [Connector[], typeof config], deps: [Connector[], typeof config]): boolean => {
@@ -34,7 +35,7 @@ export function useChainOptions(chains: number[] | null): TMultiSelectOptionProp
         value: chain.id,
         isSelected: chains?.includes(chain.id) || false,
         icon: (
-          <img src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo-128.png`} alt={chain.name} />
+          <img src={`${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo-128.png`} alt={chain.name} />
         )
       })
     }

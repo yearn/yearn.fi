@@ -1,3 +1,5 @@
+'use client'
+
 import { usePlausible } from '@hooks/usePlausible'
 import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import type { TAddress } from '@shared/types/address'

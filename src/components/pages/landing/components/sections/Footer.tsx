@@ -1,3 +1,5 @@
+'use client'
+
 import type { ReactElement } from 'react'
 import Link from '/src/components/Link'
 

@@ -1,3 +1,5 @@
+'use client'
+
 import type { TTvlChartData } from '@pages/vaults/types/charts'
 import {
   formatChartMonthYearLabel,

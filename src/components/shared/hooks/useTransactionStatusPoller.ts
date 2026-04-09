@@ -1,3 +1,5 @@
+'use client'
+
 import { useNotifications } from '@shared/contexts/useNotifications'
 import type { TNotification } from '@shared/types/notifications'
 import { SUPPORTED_NETWORKS } from '@shared/utils'

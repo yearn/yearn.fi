@@ -1,3 +1,5 @@
+'use client'
+
 import { useTokenSuggestions } from '@pages/portfolio/hooks/useTokenSuggestions'
 import { useVaultSuggestions } from '@pages/portfolio/hooks/useVaultSuggestions'
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'

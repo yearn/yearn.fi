@@ -1,7 +1,6 @@
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
 import { SuggestedVaultCard } from './SuggestedVaultCard'
@@ -34,11 +33,7 @@ function renderCard(vault: TKongVaultInput): string {
   }
 
   try {
-    return renderToStaticMarkup(
-      <MemoryRouter>
-        <SuggestedVaultCard vault={vault} />
-      </MemoryRouter>
-    )
+    return renderToStaticMarkup(<SuggestedVaultCard vault={vault} />)
   } finally {
     ;(globalThis as unknown as { window: unknown }).window = originalWindow
   }

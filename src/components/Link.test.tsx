@@ -1,5 +1,4 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import Link from './Link'
 
@@ -21,18 +20,14 @@ describe('Link', () => {
     }
   })
 
-  it('renders internal links through react-router', () => {
+  it('renders internal links through Next.js Link', () => {
     const originalWindow = globalThis.window
     ;(globalThis as unknown as { window: unknown }).window = {
       location: { href: 'https://yearn.fi/', hostname: 'yearn.fi' }
     }
 
     try {
-      const html = renderToStaticMarkup(
-        <MemoryRouter>
-          <Link href="/vaults">Vaults</Link>
-        </MemoryRouter>
-      )
+      const html = renderToStaticMarkup(<Link href="/vaults">Vaults</Link>)
 
       expect(html).toContain('href="/vaults"')
       expect(html).not.toContain('target="_blank"')

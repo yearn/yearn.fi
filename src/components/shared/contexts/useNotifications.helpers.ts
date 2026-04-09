@@ -1,3 +1,5 @@
+'use client'
+
 import type { TNotification } from '@shared/types/notifications'
 
 export function appendCachedNotification(cachedEntries: TNotification[], notification: TNotification): TNotification[] {

@@ -1,3 +1,5 @@
+'use client'
+
 import { useThemePreference } from '@hooks/useThemePreference'
 import type { ReactElement } from 'react'
 import { Cell, Label, Pie, PieChart, Tooltip } from 'recharts'

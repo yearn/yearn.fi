@@ -1,3 +1,5 @@
+'use client'
+
 import type { ReactElement, ReactNode } from 'react'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
@@ -21,8 +23,7 @@ const DEFAULT_FLAGS: DevFlagsContextValue = {
 const DevFlagsContext = createContext<DevFlagsContextValue | undefined>(undefined)
 
 const HEADER_DISPLAY_MODE_STORAGE_KEY = 'dev-header-display-mode'
-const ENABLE_TOOLBAR =
-  !import.meta.env.PROD || import.meta.env.VITE_ENABLE_DEV_TOOLBAR === 'true' || import.meta.env.MODE !== 'production'
+const ENABLE_TOOLBAR = process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_ENABLE_DEV_TOOLBAR === 'true'
 
 export function DevFlagsProvider({ children }: { children: ReactNode }): ReactElement {
   const [headerDisplayMode, setHeaderDisplayMode] = useState<HeaderDisplayMode>('collapsible')

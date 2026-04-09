@@ -1,3 +1,5 @@
+'use client'
+
 import { usePlausible } from '@hooks/usePlausible'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
 import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
@@ -32,9 +34,9 @@ import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
+import { useSearchParamsUpdater } from '@/lib/useSearchParamsUpdater'
 import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router'
 import { useChainId, useSwitchChain } from 'wagmi'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
@@ -580,7 +582,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   }, [])
 
   function getChainLogoUrl(chainId: number): string {
-    return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
+    return `${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
   }
 
   function renderRewardsContent(): ReactElement {
@@ -954,7 +956,7 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
 
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParamsUpdater()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
 

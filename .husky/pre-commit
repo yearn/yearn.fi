@@ -1,7 +1,0 @@
-set -e
-
-echo 'husky: running lint-staged checks'
-bunx lint-staged
-
-echo 'husky: running type check'
-bun run tslint

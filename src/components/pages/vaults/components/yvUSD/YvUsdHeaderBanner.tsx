@@ -1,9 +1,11 @@
+'use client'
+
 import { YVUSD_LEARN_MORE_URL } from '@pages/vaults/utils/yvUsd'
 import { cl } from '@shared/utils'
 import type { CSSProperties, ReactElement } from 'react'
 
 const BANNER_BACKGROUND_STYLE: CSSProperties = {
-  backgroundImage: `url(${import.meta.env.BASE_URL || '/'}yvusd-banner-bg.png)`,
+  backgroundImage: 'url(/yvusd-banner-bg.png)',
   backgroundPosition: 'center',
   backgroundRepeat: 'no-repeat',
   backgroundSize: 'cover'

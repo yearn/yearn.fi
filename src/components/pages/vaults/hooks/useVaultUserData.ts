@@ -1,3 +1,5 @@
+'use client'
+
 import { VAULT_V3_ABI } from '@shared/contracts/abi/vaultV3.abi'
 import { toNormalizedBN } from '@shared/utils'
 import { useQuery } from '@tanstack/react-query'

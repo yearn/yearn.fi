@@ -3,11 +3,11 @@ import { toAddress } from '@shared/utils'
 import { isYvUsdVault } from './yvUsd'
 
 function getBaseUrl(): string {
-  return import.meta.env.BASE_URL || '/'
+  return '/'
 }
 
 function getAssetsBaseUrl(): string {
-  return import.meta.env.VITE_BASE_YEARN_ASSETS_URI || ''
+  return process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI || ''
 }
 
 export function getVaultPrimaryLogoSrc(vault: TKongVaultInput): string {

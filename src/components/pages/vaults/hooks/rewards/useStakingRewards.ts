@@ -1,3 +1,5 @@
+'use client'
+
 import type { TStakingReward } from '@pages/vaults/components/widget/rewards/types'
 import { JUICED_STAKING_REWARDS_ABI } from '@shared/contracts/abi/juicedStakingRewards.abi'
 import { STAKING_REWARDS_ABI } from '@shared/contracts/abi/stakingRewards.abi'

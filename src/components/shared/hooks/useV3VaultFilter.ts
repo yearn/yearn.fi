@@ -1,3 +1,5 @@
+'use client'
+
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import {
   getVaultAddress,

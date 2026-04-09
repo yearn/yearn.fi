@@ -1,3 +1,5 @@
+'use client'
+
 import { ALL_VAULTSV3_KINDS_KEYS } from '@pages/vaults/constants'
 import {
   getVaultAPR,

@@ -1,3 +1,5 @@
+'use client'
+
 import type { QueryKey, UseQueryOptions, UseQueryResult } from '@tanstack/react-query'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { z } from 'zod'

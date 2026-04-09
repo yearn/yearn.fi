@@ -1,3 +1,5 @@
+'use client'
+
 import type { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { useInput } from '@pages/vaults/hooks/useInput'
 import { TokenLogo } from '@shared/components/TokenLogo'
@@ -331,7 +333,7 @@ export const InputTokenAmount: FC<Props> = ({
               >
                 {zapToken.address && zapToken.chainId && (
                   <TokenLogo
-                    src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${zapToken.chainId}/${zapToken.address.toLowerCase()}/logo-32.png`}
+                    src={`${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${zapToken.chainId}/${zapToken.address.toLowerCase()}/logo-32.png`}
                     tokenSymbol={zapToken.symbol}
                     chainId={zapToken.chainId}
                     width={32}

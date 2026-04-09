@@ -1,3 +1,5 @@
+'use client'
+
 import { useClaimStakingRewards } from '@pages/vaults/hooks/rewards/useClaimStakingRewards'
 import { toNormalizedValue } from '@shared/utils'
 import type { ReactElement } from 'react'

@@ -1,3 +1,5 @@
+'use client'
+
 import type { TPpsChartData } from '@pages/vaults/types/charts'
 import {
   formatChartMonthYearLabel,

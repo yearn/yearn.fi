@@ -1,3 +1,5 @@
+'use client'
+
 import { useDeepCompareMemo } from '@react-hookz/web'
 import type { TYDaemonPricesChain } from '../utils/schemas/yDaemonPricesSchema'
 import { yDaemonPricesChainSchema } from '../utils/schemas/yDaemonPricesSchema'

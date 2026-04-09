@@ -1,3 +1,5 @@
+'use client'
+
 import type { TYvUsdSeriesPoint } from '@pages/vaults/hooks/useYvUsdCharts'
 import {
   formatChartMonthYearLabel,

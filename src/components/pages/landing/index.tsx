@@ -1,3 +1,5 @@
+'use client'
+
 import type { ReactElement } from 'react'
 import { FAQs, Footer, Hero, Integrations, Partners, Security, Vaults } from './components/sections'
 

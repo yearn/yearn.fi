@@ -1,3 +1,5 @@
+'use client'
+
 import type { UseWidgetDepositFlowReturn } from '@pages/vaults/types'
 import { getApproveAbi } from '@shared/utils/approve'
 import type { Address } from 'viem'

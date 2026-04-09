@@ -4,12 +4,12 @@ const DEFAULT_IMAGE_CDN = 'https://cdn.clusters.xyz/profile'
 const clusterNameCache = new Map<string, string | null>()
 
 const getApiBaseUrl = (): string => {
-  const envUrl = import.meta.env.VITE_CLUSTERS_API_URL
+  const envUrl = process.env.NEXT_PUBLIC_CLUSTERS_API_URL
   return (envUrl && envUrl.trim().length > 0 ? envUrl : DEFAULT_API_URL).replace(/\/$/, '')
 }
 
 const getApiKey = (): string | undefined => {
-  const key = import.meta.env.VITE_CLUSTERS_API_KEY
+  const key = process.env.NEXT_PUBLIC_CLUSTERS_API_KEY
   return key && key.trim().length > 0 ? key : undefined
 }
 

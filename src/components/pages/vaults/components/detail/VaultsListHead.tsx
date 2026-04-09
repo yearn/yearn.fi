@@ -1,3 +1,5 @@
+'use client'
+
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconMinus } from '@shared/icons/IconMinus'
 import { IconPlus } from '@shared/icons/IconPlus'

@@ -1,3 +1,5 @@
+'use client'
+
 import type { TChainTokens } from '../types'
 
 type TShouldExposeWalletLoadingParams = {

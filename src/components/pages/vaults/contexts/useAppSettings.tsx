@@ -1,3 +1,5 @@
+'use client'
+
 import { useLocalStorage } from '@shared/hooks/useLocalStorage'
 import { useSessionStorage } from '@shared/hooks/useSessionStorage'
 import type { ReactElement } from 'react'

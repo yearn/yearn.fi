@@ -1,3 +1,5 @@
+'use client'
+
 import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import { isIframe } from '@shared/utils/helpers'
 import type { FC, PropsWithChildren } from 'react'

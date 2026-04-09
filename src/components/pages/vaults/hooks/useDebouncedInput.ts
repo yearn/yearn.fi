@@ -1,3 +1,5 @@
+'use client'
+
 import { exactToSimple } from '@shared/utils'
 import { type ChangeEvent, type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useState } from 'react'
 import { parseUnits } from 'viem'

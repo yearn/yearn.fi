@@ -1,3 +1,5 @@
+'use client'
+
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { DEFAULT_MIN_TVL, readBooleanParam } from '@pages/vaults/utils/constants'
 import { normalizeUnderlyingAssetSymbol } from '@pages/vaults/utils/vaultListFacets'
@@ -5,8 +7,9 @@ import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { getSupportedChainsForVaultType, normalizeVaultTypeParam } from '@pages/vaults/utils/vaultTypeUtils'
 import type { TSortDirection } from '@shared/types'
 import { copyToClipboard } from '@shared/utils/helpers'
+import { usePathname } from 'next/navigation'
+import { useSearchParamsUpdater } from '@/lib/useSearchParamsUpdater'
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useSearchParams } from 'react-router'
 
 type TVaultsQueryStateConfig = {
   defaultTypes?: string[]
@@ -352,8 +355,8 @@ function readSnapshotFromStorage(storageKey: string, defaults: TVaultsQueryDefau
 }
 
 export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQueryState {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParamsUpdater()
+  const pathname = usePathname()
   const defaults = useMemo(
     (): TVaultsQueryDefaults => ({
       defaultTypes: config.defaultTypes ?? [],
@@ -605,9 +608,9 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
       return
     }
     const query = nextParams.toString()
-    const shareUrl = `${window.location.origin}${location.pathname}${query ? `?${query}` : ''}`
+    const shareUrl = `${window.location.origin}${pathname}${query ? `?${query}` : ''}`
     copyToClipboard(shareUrl)
-  }, [buildShareParams, location.pathname, setSearchParams, shouldShareUpdateUrl])
+  }, [buildShareParams, pathname, setSearchParams, shouldShareUpdateUrl])
 
   const lastSyncedQueryRef = useRef<string | null>(null)
 

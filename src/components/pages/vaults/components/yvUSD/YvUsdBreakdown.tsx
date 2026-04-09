@@ -1,3 +1,5 @@
+'use client'
+
 import { YVUSD_DESCRIPTION, YVUSD_LOCKED_COOLDOWN_DAYS, YVUSD_WITHDRAW_WINDOW_DAYS } from '@pages/vaults/utils/yvUsd'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'

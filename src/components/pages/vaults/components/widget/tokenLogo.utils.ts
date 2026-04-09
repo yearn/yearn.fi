@@ -14,7 +14,7 @@ export function getDefaultTokenLogoSrc({
     return undefined
   }
 
-  return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${address.toLowerCase()}/logo-${size}.png`
+  return `${process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${address.toLowerCase()}/logo-${size}.png`
 }
 
 export function getTokenLogoSources({ address, chainId, logoURI, size = 32 }: TokenLogoSourceParams): {

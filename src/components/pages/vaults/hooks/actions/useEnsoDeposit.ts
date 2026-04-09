@@ -1,3 +1,5 @@
+'use client'
+
 import type { UseWidgetDepositFlowReturn } from '@pages/vaults/types'
 import { useEffect, useMemo } from 'react'
 import type { Address } from 'viem'

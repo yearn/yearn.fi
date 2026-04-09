@@ -1,3 +1,5 @@
+'use client'
+
 import type { TUseBalancesTokens } from './useBalances.multichains'
 
 export function shouldUseDiscoveryFallbackToken(params: {

@@ -1,3 +1,5 @@
+'use client'
+
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { deserialize, serialize } from 'wagmi'

@@ -1,3 +1,5 @@
+'use client'
+
 import { Button } from '@shared/components/Button'
 import { getApproveAbi } from '@shared/utils/approve'
 import { type FC, useCallback, useEffect, useState } from 'react'

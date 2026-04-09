@@ -1,3 +1,5 @@
+'use client'
+
 import { KATANA_CHAIN_ID, SPECTRA_MARKET_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
 import {
   getVaultAddress,

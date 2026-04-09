@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect } from 'react'
 import { type Address, erc4626Abi } from 'viem'
 import { useBlockNumber, useReadContract } from 'wagmi'

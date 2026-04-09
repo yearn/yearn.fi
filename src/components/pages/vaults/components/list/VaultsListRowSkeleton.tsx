@@ -1,3 +1,5 @@
+'use client'
+
 import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'
 

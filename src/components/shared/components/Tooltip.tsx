@@ -1,3 +1,5 @@
+'use client'
+
 import { cl } from '@shared/utils'
 import type { FC, MouseEvent, ReactElement } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'

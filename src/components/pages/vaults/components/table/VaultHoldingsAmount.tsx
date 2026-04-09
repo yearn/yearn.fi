@@ -1,3 +1,5 @@
+'use client'
+
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { cl, formatTvlDisplay } from '@shared/utils'
 import type { ReactElement } from 'react'

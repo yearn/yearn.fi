@@ -1,3 +1,5 @@
+'use client'
+
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { useFetch } from '@shared/hooks/useFetch'
 import { toAddress } from '@shared/utils'

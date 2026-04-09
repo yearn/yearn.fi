@@ -1,10 +1,12 @@
+'use client'
+
 import { IconDiscord } from '@shared/icons/IconDiscord'
 import { LogoGimme } from '@shared/icons/LogoGimme'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import type { ReactElement } from 'react'
 import Image from '/src/components/Image'
 
-const BASE_YEARN_ASSET_URI = import.meta.env?.VITE_BASE_YEARN_ASSETS_URI ?? ''
+const BASE_YEARN_ASSET_URI = process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI ?? ''
 
 type TColorProps = {
   front?: string

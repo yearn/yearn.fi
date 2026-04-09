@@ -1,3 +1,5 @@
+'use client'
+
 import { getAddress } from 'viem'
 import type { TUseBalancesTokens } from './useBalances.multichains'
 

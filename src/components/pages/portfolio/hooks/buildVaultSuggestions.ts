@@ -1,3 +1,5 @@
+'use client'
+
 import type { TExternalToken } from '@pages/portfolio/constants/externalTokens'
 import { getEligibleVaults, normalizeSymbol, selectPreferredVault } from '@pages/portfolio/hooks/getEligibleVaults'
 import { getVaultToken, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'

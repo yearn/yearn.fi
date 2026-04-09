@@ -1,3 +1,5 @@
+'use client'
+
 import { useVaultChartTimeseries } from '@pages/vaults/hooks/useVaultChartTimeseries'
 import {
   buildApyDataFromPpsSeries,

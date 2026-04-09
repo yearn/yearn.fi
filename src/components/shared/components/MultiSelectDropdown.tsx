@@ -1,3 +1,5 @@
+'use client'
+
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions, Transition } from '@headlessui/react'
 import { useClickOutside, useThrottledState } from '@react-hookz/web'
 import { Renderable } from '@shared/components/Renderable'

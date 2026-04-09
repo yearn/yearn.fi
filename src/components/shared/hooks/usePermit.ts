@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useState } from 'react'
 import { type Address, type Hex, hexToNumber, parseAbi, slice } from 'viem'
 import { useAccount, usePublicClient, useSignTypedData } from 'wagmi'

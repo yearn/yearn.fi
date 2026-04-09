@@ -1,3 +1,5 @@
+'use client'
+
 export const VAULT_ABI = [
   {
     name: 'Transfer',

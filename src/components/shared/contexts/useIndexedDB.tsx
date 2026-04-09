@@ -1,3 +1,5 @@
+'use client'
+
 import { useMountEffect } from '@react-hookz/web'
 import type React from 'react'
 import { createContext, useContext } from 'react'

@@ -1,3 +1,5 @@
+'use client'
+
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
 import { getVaultInfo, getVaultKind, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'

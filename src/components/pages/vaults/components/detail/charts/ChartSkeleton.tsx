@@ -1,3 +1,5 @@
+'use client'
+
 const PLACEHOLDER_ROWS = ['chart-row-a', 'chart-row-b', 'chart-row-c', 'chart-row-d', 'chart-row-e', 'chart-row-f']
 
 export default function ChartSkeleton() {

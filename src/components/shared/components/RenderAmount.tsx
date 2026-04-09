@@ -1,3 +1,5 @@
+'use client'
+
 import type { TAmount } from '@shared/utils'
 import { cl, formatTAmount, isZero } from '@shared/utils'
 import { type ReactElement, useMemo } from 'react'

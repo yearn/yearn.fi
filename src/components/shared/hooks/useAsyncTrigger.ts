@@ -1,3 +1,5 @@
+'use client'
+
 import { type DependencyList, useCallback, useEffect } from 'react'
 
 //Should be useAsyncEffect, but exhaustive-deps is messing with this.

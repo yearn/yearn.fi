@@ -1,3 +1,5 @@
+'use client'
+
 import { Popover, PopoverContent } from '@shared/components/Popover'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconSettings } from '@shared/icons/IconSettings'

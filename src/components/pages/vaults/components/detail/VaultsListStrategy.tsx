@@ -1,3 +1,5 @@
+'use client'
+
 import type { TKongVaultApr, TKongVaultStrategy } from '@pages/vaults/domain/kongVaultSelectors'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
@@ -112,7 +114,7 @@ export function VaultsListStrategy({
             <div className="shrink-0 flex items-center md:hidden">
               <TokenLogo
                 src={`${
-                  import.meta.env.VITE_BASE_YEARN_ASSETS_URI
+                  process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI
                 }/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                 tokenSymbol={name}
                 tokenName={name}
@@ -124,7 +126,7 @@ export function VaultsListStrategy({
             <div className="shrink-0 hidden md:flex md:items-center">
               <TokenLogo
                 src={`${
-                  import.meta.env.VITE_BASE_YEARN_ASSETS_URI
+                  process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI
                 }/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                 tokenSymbol={name}
                 tokenName={name}
