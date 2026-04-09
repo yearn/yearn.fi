@@ -135,6 +135,8 @@ describe('fetchMultipleVaultsMetadata', () => {
       address: STAKING_VAULT,
       chainId: 1,
       version: 'v3',
+      category: 'stable',
+      isHidden: false,
       token: {
         address: UNDERLYING_VAULT,
         symbol: 'yvUSDC',

@@ -184,6 +184,49 @@ describe('getHistoricalHoldings', () => {
     ])
   })
 
+  it('excludes hidden vaults from historical holdings totals', async () => {
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+    const hiddenVaultAddress = '0x00000000000000000000000000000000000000c2'
+
+    generateDailyTimestampsMock.mockReturnValue([100])
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    getCachedTotalsWithTimestampMock.mockResolvedValue({ totals: [], oldestUpdatedAt: null })
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+    buildPositionTimelineMock.mockReturnValue([{ id: 'hidden-entry' }])
+    getUniqueVaultsMock.mockReturnValue([{ chainId: 1, vaultAddress: hiddenVaultAddress }])
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${hiddenVaultAddress}`,
+          {
+            address: hiddenVaultAddress,
+            chainId: 1,
+            version: 'v3',
+            isHidden: true,
+            token: {
+              address: '0x0000000000000000000000000000000000000cc2',
+              symbol: 'HIDDEN',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHistoricalHoldings } = await import('./aggregator')
+    const response = await getHistoricalHoldings(userAddress, 'all')
+
+    expect(fetchMultipleVaultsPPSMock).not.toHaveBeenCalled()
+    expect(fetchHistoricalPricesMock).not.toHaveBeenCalled()
+    expect(response.dataPoints).toEqual([{ date: 'date-100', timestamp: 100, totalUsdValue: 0 }])
+  })
+
   it('builds breakdown using the latest chart timestamp instead of current time', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(999_000)
 

@@ -224,11 +224,19 @@ function filterVaultsByAuthoritativeVersion(
   vaultMetadata: Map<string, VaultMetadata>,
   version: VaultVersion
 ): FamilyPnlLedger[] {
-  if (version === 'all') {
-    return vaults
-  }
+  return vaults.filter((vault) => {
+    const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
 
-  return vaults.filter((vault) => vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))?.version === version)
+    if (metadata?.isHidden) {
+      return false
+    }
+
+    if (version === 'all') {
+      return true
+    }
+
+    return metadata?.version === version
+  })
 }
 
 function formatLotSummaryForResponse(

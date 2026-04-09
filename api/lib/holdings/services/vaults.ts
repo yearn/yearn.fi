@@ -11,6 +11,7 @@ interface KongVault {
   decimals: number
   v3?: boolean
   category?: string | null
+  isHidden?: boolean
   asset: {
     address: string
     symbol: string
@@ -31,6 +32,7 @@ interface KongVaultSnapshot {
   v3?: boolean
   meta?: {
     category?: string | null
+    isHidden?: boolean
   } | null
   asset?: {
     address: string
@@ -171,6 +173,7 @@ function buildMetadataMaps(vaults: KongVault[]): {
         address: vault.address.toLowerCase(),
         chainId: vault.chainId,
         version,
+        isHidden: Boolean(vault.isHidden),
         category: resolveVaultCategory({
           category: vault.category,
           assetSymbol: vault.asset.symbol,
@@ -193,6 +196,7 @@ function buildMetadataMaps(vaults: KongVault[]): {
           address: vault.staking.address.toLowerCase(),
           chainId: vault.chainId,
           version,
+          isHidden: metadata.isHidden,
           category: metadata.category,
           token: {
             address: vault.address.toLowerCase(),
@@ -254,6 +258,7 @@ function buildMetadataFromSnapshot(snapshot: KongVaultSnapshot): VaultMetadata |
     address: snapshot.address.toLowerCase(),
     chainId: snapshot.chainId,
     version: inferVaultVersion(snapshot),
+    isHidden: Boolean(snapshot.meta?.isHidden),
     category: resolveVaultCategory({
       category: snapshot.meta?.category,
       assetSymbol: snapshot.asset.symbol,
@@ -277,6 +282,7 @@ function buildStakingMetadataFromSnapshot(stakingAddress: string, snapshot: Kong
     address: stakingAddress.toLowerCase(),
     chainId: snapshot.chainId,
     version: inferVaultVersion(snapshot),
+    isHidden: Boolean(snapshot.meta?.isHidden),
     category: resolveVaultCategory({
       category: snapshot.meta?.category,
       assetSymbol: snapshot.asset?.symbol,

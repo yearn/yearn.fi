@@ -71,11 +71,19 @@ function filterVaultsByAuthoritativeVersion<
     vaultAddress: string
   }
 >(vaults: TVault[], vaultMetadata: Map<string, VaultMetadata>, version: VaultVersion): TVault[] {
-  if (version === 'all') {
-    return vaults
-  }
+  return vaults.filter((vault) => {
+    const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
 
-  return vaults.filter((vault) => vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))?.version === version)
+    if (metadata?.isHidden) {
+      return false
+    }
+
+    if (version === 'all') {
+      return true
+    }
+
+    return metadata?.version === version
+  })
 }
 
 function buildEmptyBreakdownResponse(
@@ -262,7 +270,12 @@ export async function getHistoricalHoldings(
 
       const seenTokens = new Set<string>()
       const underlyingTokens: Array<{ chainId: number; address: string }> = []
-      for (const [_key, metadata] of vaultMetadata) {
+      for (const vault of vaults) {
+        const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
+        if (!metadata) {
+          continue
+        }
+
         const tokenKey = `${metadata.chainId}:${metadata.token.address.toLowerCase()}`
         if (!seenTokens.has(tokenKey)) {
           seenTokens.add(tokenKey)

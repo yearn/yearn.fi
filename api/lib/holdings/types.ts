@@ -90,6 +90,7 @@ export interface VaultMetadata {
   chainId: number
   version: 'v2' | 'v3'
   category: 'stable' | 'volatile'
+  isHidden?: boolean
   token: {
     address: string
     symbol: string

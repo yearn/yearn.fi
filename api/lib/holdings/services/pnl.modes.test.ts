@@ -207,6 +207,7 @@ function configureServiceMocks(
       decimals: number
       shareDecimals?: number
       category?: 'stable' | 'volatile'
+      isHidden?: boolean
     }
     ppsTimeline?: Map<number, number>
     priceKey?: string
@@ -246,6 +247,7 @@ function configureServiceMocks(
           address: vaultAddress,
           chainId: 1,
           version: 'v3',
+          isHidden: metadata.isHidden ?? false,
           token: {
             address: metadata.tokenAddress,
             symbol: metadata.symbol,
@@ -343,6 +345,28 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(v3Response.summary.totalVaults).toBe(1)
     expect(v3Response.vaults[0]?.vaultAddress).toBe(VAULT)
     expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'seq', 'paged')
+  })
+
+  it('excludes hidden vaults from pnl responses', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+    configureServiceMocks(createTransferInContext(), {
+      metadata: {
+        tokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+        symbol: 'USDC',
+        decimals: 6,
+        shareDecimals: 6,
+        category: 'stable',
+        isHidden: true
+      }
+    })
+
+    const { getHoldingsPnL } = await importPnlModule()
+    const response = await getHoldingsPnL(USER)
+
+    expect(response.summary.totalVaults).toBe(0)
+    expect(response.vaults).toEqual([])
+    expect(fetchMultipleVaultsPPSMock).not.toHaveBeenCalled()
+    expect(fetchHistoricalPricesMock).not.toHaveBeenCalled()
   })
 
   it('treats unknown transfer-ins as full unrealized pnl in zero-basis mode', async () => {

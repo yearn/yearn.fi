@@ -193,6 +193,7 @@ For some recognized Ethereum mainnet CoW settlement transactions, the PnL path a
 Holdings history for charts (date + total value).
 
 The history series ends at the latest settled UTC day, not an intraday "today" point. This keeps the daily series cacheable and avoids recomputing a moving final point on every request. For current portfolio value, use `/api/holdings/pnl`.
+Vaults with `isHidden=true` in authoritative Kong metadata are excluded from history totals and do not contribute to chart points.
 
 ```bash
 curl "http://localhost:3001/api/holdings/history?address=0x..."
@@ -223,6 +224,7 @@ Response:
 Per-vault valuation breakdown for the latest settled holdings-history point.
 
 This endpoint uses the same settled UTC day as the final point on `/api/holdings/history`, so it is useful for explaining why the latest chart value is what it is. It does not use current intraday balances or current intraday prices.
+Vaults with `isHidden=true` in authoritative Kong metadata are excluded from the returned rows.
 
 ```bash
 curl "http://localhost:3001/api/holdings/breakdown?address=0x..."
@@ -280,6 +282,7 @@ Response (abridged):
 FIFO-based realized and unrealized PnL for the user’s vault activity.
 
 For the dedicated accounting-model walkthrough, see [`PNL.md`](./PNL.md).
+Vaults with `isHidden=true` in authoritative Kong metadata are excluded from both returned rows and summary totals.
 
 ```bash
 curl "http://localhost:3001/api/holdings/pnl?address=0x..."
@@ -382,6 +385,7 @@ Notes:
 Lot-level drilldown for the PnL engine. This is the "excessive" companion to `/api/holdings/pnl`.
 
 Use it when the frontend needs current lots, realized lot consumption, unknown-basis receipts / withdrawals, or a transaction journal showing how the family lot state changed over time.
+Like `/api/holdings/pnl`, it excludes vaults with `isHidden=true` in authoritative Kong metadata.
 
 ```bash
 curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x..."
