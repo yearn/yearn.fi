@@ -45,8 +45,8 @@ export function PriceImpactWarning({
       ) : (
         <>
           <p className="text-sm text-red-500">
-            Price impact is high ({percentage.toFixed(2)}%). Consider {actionVerb} less or waiting for better
-            liquidity conditions.
+            Price impact is high ({percentage.toFixed(2)}%). Consider {actionVerb} less or waiting for better liquidity
+            conditions.
           </p>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
