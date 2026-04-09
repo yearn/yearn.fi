@@ -1,10 +1,12 @@
 import { serve } from 'bun'
+import { isAddress } from 'viem'
 import type {
   TTenderlyFundRequest,
   TTenderlyIncreaseTimeRequest,
   TTenderlyRevertRequest,
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
+import { normalizeKatanaBridgeTransactionsResponse } from '../src/components/shared/utils/katanaBridge'
 import {
   buildTenderlyPanelStatus,
   buildTenderlyRevertResponse,
@@ -15,6 +17,7 @@ import {
 import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+const POLYGON_TRANSACTIONS_API = 'https://api-gateway.polygon.technology/api/v3/transactions/mainnet'
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
@@ -226,6 +229,19 @@ function handleEnsoStatus(): Response {
   return Response.json({ configured: !!apiKey })
 }
 
+const KATANA_CHAIN_ID = 747474
+
+function isKatanaCrossChainRoute(chainId: string, destinationChainId?: string): boolean {
+  const sourceChainId = Number(chainId)
+  const targetChainId = Number(destinationChainId || chainId)
+
+  if (!Number.isFinite(sourceChainId) || !Number.isFinite(targetChainId)) {
+    return false
+  }
+
+  return sourceChainId !== targetChainId && (sourceChainId === KATANA_CHAIN_ID || targetChainId === KATANA_CHAIN_ID)
+}
+
 async function handleEnsoRoute(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const fromAddress = url.searchParams.get('fromAddress')
@@ -239,6 +255,17 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
 
   if (!fromAddress || !chainId || !tokenIn || !tokenOut || !amountIn) {
     return Response.json({ error: 'Missing required parameters' }, { status: 400 })
+  }
+  if (destinationChainId && isKatanaCrossChainRoute(chainId, destinationChainId)) {
+    return Response.json(
+      {
+        error: 'unsupported_route',
+        message: 'Cross-chain zaps involving Katana are disabled',
+        requestId: 'katana-crosschain-disabled',
+        statusCode: 400
+      },
+      { status: 400 }
+    )
   }
 
   const apiKey = process.env.ENSO_API_KEY
@@ -336,6 +363,57 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
   }
 }
 
+async function handleKatanaBridgeTransactions(req: Request): Promise<Response> {
+  if (req.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  const url = new URL(req.url)
+  const userAddress = url.searchParams.get('userAddress')
+
+  if (!userAddress || !isAddress(userAddress)) {
+    return Response.json({ error: 'Missing or invalid userAddress' }, { status: 400 })
+  }
+
+  const apiKey = process.env.POLYGON_API_KEY
+  if (!apiKey) {
+    console.error('POLYGON_API_KEY not configured')
+    return Response.json({ error: 'Katana bridge status API not configured' }, { status: 503 })
+  }
+
+  try {
+    const upstreamUrl = `${POLYGON_TRANSACTIONS_API}?${new URLSearchParams({ userAddress })}`
+    const response = await fetch(upstreamUrl, {
+      headers: {
+        'x-api-key': apiKey,
+        Accept: 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      const details = await response.text()
+      return Response.json(
+        {
+          error: 'Katana bridge status upstream error',
+          status: response.status,
+          details
+        },
+        { status: response.status }
+      )
+    }
+
+    const payload = await response.json()
+    return Response.json(normalizeKatanaBridgeTransactionsResponse(payload), {
+      headers: {
+        'Cache-Control': 'no-store'
+      }
+    })
+  } catch (error) {
+    console.error('Error proxying Katana bridge status request:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 serve({
   async fetch(req, server) {
     const url = new URL(req.url)
@@ -354,6 +432,10 @@ serve({
 
     if (url.pathname === '/api/yvusd/aprs') {
       return handleYvUsdAprs(req)
+    }
+
+    if (url.pathname === '/api/katana-bridge/transactions') {
+      return handleKatanaBridgeTransactions(req)
     }
 
     if (url.pathname === '/api/tenderly/status') {

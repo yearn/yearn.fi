@@ -8,7 +8,7 @@ type TBuildWithdrawTransactionStepArgs = {
   activeWithdrawPrepare?: TransactionStep['prepare']
   directUnstakePrepare?: TransactionStep['prepare']
   directWithdrawPrepare?: TransactionStep['prepare']
-  fallbackStep: 'unstake' | 'withdraw'
+  fallbackStep: 'unstake' | 'withdraw' | 'bridge'
   routeType: WithdrawRouteType
   isCrossChain: boolean
   formattedApprovalAmount: string
@@ -16,11 +16,13 @@ type TBuildWithdrawTransactionStepArgs = {
   formattedRequiredShares: string
   formattedWithdrawAmount: string
   assetTokenSymbol?: string
+  bridgeDestinationSymbol?: string
   vaultSymbol?: string
   stakingTokenSymbol?: string
   approveNotificationParams?: TCreateNotificationParams
   unstakeNotificationParams?: TCreateNotificationParams
   withdrawNotificationParams?: TCreateNotificationParams
+  bridgeNotificationParams?: TCreateNotificationParams
 }
 
 type TWithdrawCtaStateArgs = {
@@ -35,6 +37,9 @@ type TWithdrawCtaStateArgs = {
 }
 
 export function getWithdrawTransactionName(routeType: WithdrawRouteType, isFetchingQuote: boolean): string {
+  if (routeType === 'KATANA_NATIVE_BRIDGE') {
+    return 'Withdraw and Bridge'
+  }
   if (routeType === 'DIRECT_WITHDRAW') {
     return 'Withdraw'
   }
@@ -61,11 +66,13 @@ export function buildWithdrawTransactionStep({
   formattedRequiredShares,
   formattedWithdrawAmount,
   assetTokenSymbol,
+  bridgeDestinationSymbol,
   vaultSymbol,
   stakingTokenSymbol,
   approveNotificationParams,
   unstakeNotificationParams,
-  withdrawNotificationParams
+  withdrawNotificationParams,
+  bridgeNotificationParams
 }: TBuildWithdrawTransactionStepArgs): TransactionStep | undefined {
   if (needsApproval && approvePrepare) {
     return {
@@ -73,7 +80,10 @@ export function buildWithdrawTransactionStep({
       label: 'Approve',
       confirmMessage: `Approving ${formattedApprovalAmount} ${approvalTokenSymbol || ''}`,
       successTitle: 'Approval successful',
-      successMessage: `Approved ${formattedApprovalAmount} ${approvalTokenSymbol || ''}.\nReady to withdraw.`,
+      successMessage:
+        routeType === 'KATANA_NATIVE_BRIDGE'
+          ? `Approved ${formattedApprovalAmount} ${approvalTokenSymbol || ''}.\nReady to bridge.`
+          : `Approved ${formattedApprovalAmount} ${approvalTokenSymbol || ''}.\nReady to withdraw.`,
       completesFlow: false,
       notification: approveNotificationParams
     }
@@ -106,6 +116,56 @@ export function buildWithdrawTransactionStep({
       successMessage: `You have withdrawn ${formattedWithdrawAmount} ${assetTokenSymbol || ''}.`,
       completesFlow: true,
       notification: withdrawNotificationParams
+    }
+  }
+
+  if (routeType === 'KATANA_NATIVE_BRIDGE') {
+    const unstakeSymbol = stakingTokenSymbol || vaultSymbol || 'shares'
+
+    if (fallbackStep === 'unstake' && directUnstakePrepare) {
+      return {
+        prepare: directUnstakePrepare,
+        label: 'Unstake',
+        confirmMessage: `Unstaking ${formattedRequiredShares} ${unstakeSymbol}`,
+        successTitle: 'Unstake successful!',
+        successMessage: `You have unstaked ${formattedRequiredShares} ${unstakeSymbol}.\nPreparing your bridge.`,
+        completesFlow: false,
+        notification: unstakeNotificationParams
+      }
+    }
+
+    if (fallbackStep === 'withdraw') {
+      if (!directWithdrawPrepare) {
+        return undefined
+      }
+
+      return {
+        prepare: directWithdrawPrepare,
+        label: 'Withdraw',
+        confirmMessage: `Withdrawing ${formattedWithdrawAmount} ${assetTokenSymbol || ''}`,
+        successTitle: 'Withdraw successful!',
+        successMessage: `You have withdrawn ${formattedWithdrawAmount} ${assetTokenSymbol || ''}.\nPreparing your bridge.`,
+        completesFlow: false,
+        notification: withdrawNotificationParams
+      }
+    }
+
+    if (!activeWithdrawPrepare) {
+      return undefined
+    }
+
+    return {
+      prepare: activeWithdrawPrepare,
+      label: 'Bridge',
+      confirmMessage: `Bridging ${formattedWithdrawAmount} ${assetTokenSymbol || ''} to ${bridgeDestinationSymbol || 'Ethereum'}`,
+      successTitle: 'Bridge submitted',
+      successMessage: 'Your bridge to Ethereum has been submitted.\nClaim it on Ethereum once the bridge is ready.',
+      successLink: {
+        href: 'https://bridge.katana.network/transactions',
+        label: 'Track bridge status'
+      },
+      completesFlow: true,
+      notification: bridgeNotificationParams
     }
   }
 
@@ -153,6 +213,9 @@ export function isWithdrawLastStep({
   if (needsApproval) return false
   if (routeType === 'DIRECT_UNSTAKE_WITHDRAW') {
     return currentStep.label === 'Withdraw'
+  }
+  if (routeType === 'KATANA_NATIVE_BRIDGE') {
+    return currentStep.label === 'Bridge'
   }
   return true
 }

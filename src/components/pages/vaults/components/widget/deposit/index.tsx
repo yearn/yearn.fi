@@ -2,17 +2,20 @@ import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmou
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
+import { useNotifications } from '@shared/contexts/useNotifications'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
 import type { TToken } from '@shared/types'
+import type { TNotification } from '@shared/types/notifications'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
+import { getKatanaBridgeAssetConfig, KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID } from '../katanaBridge'
 import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
@@ -23,6 +26,7 @@ import { useWidgetContext } from '../shared/useWidgetContext'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
 import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
+import { getAllowedTokenSelectorChainIds } from '../tokenSelectorChains'
 import { DEPOSIT_COMMON_TOKENS_BY_CHAIN } from '../withdraw/constants'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
@@ -81,6 +85,14 @@ type DepositActionCopy = {
 }
 
 function getDepositActionCopy(routeType: DepositRouteType): DepositActionCopy {
+  if (routeType === 'KATANA_NATIVE_BRIDGE') {
+    return {
+      actionLabel: 'Bridge',
+      progressLabel: 'Bridging',
+      pastTenseLabel: 'bridged'
+    }
+  }
+
   if (routeType === 'DIRECT_STAKE') {
     return {
       actionLabel: 'Stake',
@@ -115,6 +127,14 @@ function getTokenLogoURI(token: unknown): string | undefined {
   }
 
   return typeof token.logoURI === 'string' ? token.logoURI : undefined
+}
+
+function getBridgeRawAmount(notification?: TNotification): bigint {
+  try {
+    return notification?.rawAmount ? BigInt(notification.rawAmount) : 0n
+  } catch (_error) {
+    return 0n
+  }
 }
 
 export function WidgetDeposit({
@@ -159,7 +179,13 @@ export function WidgetDeposit({
     trackEvent,
     ensoEnabled
   } = useWidgetContext({ chainId, vaultAddress })
+  const { cachedEntries, deleteByID } = useNotifications()
   const { allVaults } = useYearn()
+  const tokenSelectorAllowedChainIds = useMemo(() => getAllowedTokenSelectorChainIds(chainId), [chainId])
+  const katanaBridgeConfig = useMemo(
+    () => getKatanaBridgeAssetConfig({ vaultChainId: chainId, assetAddress }),
+    [assetAddress, chainId]
+  )
 
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
@@ -182,12 +208,19 @@ export function WidgetDeposit({
   // ============================================================================
   const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(prefill?.address ?? assetAddress)
   const [selectedChainId, setSelectedChainId] = useState<number | undefined>(prefill?.chainId)
+  const [isKatanaBridgeMode, setIsKatanaBridgeMode] = useState(false)
   const [showTokenSelector, setShowTokenSelector] = useState(false)
   const appliedPrefillRef = useRef<string | null>(null)
+  const appliedBridgePrefillKeyRef = useRef<string | null>(null)
+  const syncedBridgeBalanceNotificationIdRef = useRef<number | null>(null)
 
   // Derived token values
   const depositToken = selectedToken || assetAddress
   const sourceChainId = selectedChainId || chainId
+  const selectorAllowedChainIds = useMemo(
+    () => (isKatanaBridgeMode ? [KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID] : tokenSelectorAllowedChainIds),
+    [isKatanaBridgeMode, tokenSelectorAllowedChainIds]
+  )
   const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
   const selectedExtraToken = useMemo(
     () =>
@@ -213,11 +246,35 @@ export function WidgetDeposit({
     return [...excluded].map((address) => toAddress(address))
   }, [allVaults, stakingAddress, vaultAddress])
   const tokenSelectorTopTokens = useMemo(() => {
+    if (isKatanaBridgeMode && katanaBridgeConfig) {
+      const topTokens: Record<number, `0x${string}`[]> = { ...DEPOSIT_COMMON_TOKENS_BY_CHAIN }
+      topTokens[KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID] = [katanaBridgeConfig.sourceTokenAddress]
+      return topTokens
+    }
+
     const topTokens: Record<number, `0x${string}`[]> = { ...DEPOSIT_COMMON_TOKENS_BY_CHAIN }
     const orderedAddresses = [assetAddress, ...(topTokens[chainId] || [])]
     topTokens[chainId] = [...new Set(orderedAddresses.map((address) => toAddress(address) as `0x${string}`))]
     return topTokens
-  }, [assetAddress, chainId])
+  }, [assetAddress, chainId, isKatanaBridgeMode, katanaBridgeConfig])
+  const tokenSelectorPriorityTokens = useMemo(() => {
+    if (isKatanaBridgeMode && katanaBridgeConfig) {
+      return { [KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID]: [katanaBridgeConfig.sourceTokenAddress] }
+    }
+
+    return { [chainId]: [assetAddress] }
+  }, [assetAddress, chainId, isKatanaBridgeMode, katanaBridgeConfig])
+  const tokenSelectorLimitTokens = useMemo(() => {
+    if (isKatanaBridgeMode && katanaBridgeConfig) {
+      return [katanaBridgeConfig.sourceTokenAddress]
+    }
+
+    if (!ensoEnabled && katanaBridgeConfig) {
+      return [assetAddress]
+    }
+
+    return undefined
+  }, [assetAddress, ensoEnabled, isKatanaBridgeMode, katanaBridgeConfig])
 
   const inputToken = useMemo(() => {
     if (sourceChainId === chainId && depositToken === assetAddress) {
@@ -229,11 +286,27 @@ export function WidgetDeposit({
     return getToken({ address: depositToken, chainID: sourceChainId })
   }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken, selectedExtraToken])
   const inputTokenLogoURI = selectedExtraToken?.logoURI ?? getTokenLogoURI(inputToken)
+  const currentBridgeNotification = useMemo(() => {
+    if (!account) {
+      return undefined
+    }
+
+    return [...cachedEntries]
+      .filter(
+        (notification) =>
+          notification.type === 'bridge' &&
+          notification.address.toLowerCase() === account.toLowerCase() &&
+          notification.vaultAddress?.toLowerCase() === toAddress(vaultAddress).toLowerCase() &&
+          notification.toAddress?.toLowerCase() === toAddress(assetAddress).toLowerCase()
+      )
+      .sort((firstNotification, secondNotification) => (secondNotification.id ?? 0) - (firstNotification.id ?? 0))[0]
+  }, [account, assetAddress, cachedEntries, vaultAddress])
 
   const destinationToken = useMemo(() => {
+    if (isKatanaBridgeMode) return assetAddress
     if (isAutoStakingEnabled && stakingAddress) return stakingAddress
     return vaultAddress
-  }, [isAutoStakingEnabled, stakingAddress, vaultAddress])
+  }, [assetAddress, isAutoStakingEnabled, isKatanaBridgeMode, stakingAddress, vaultAddress])
 
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
@@ -253,8 +326,11 @@ export function WidgetDeposit({
     if (appliedPrefillRef.current === key) return
     appliedPrefillRef.current = key
 
+    const isSameChainPrefill = prefill.chainId === chainId
+    const isAllowedPrefillChain = tokenSelectorAllowedChainIds.includes(prefill.chainId)
     const canApplyPrefilledToken =
-      ensoEnabled || (toAddress(prefill.address) === toAddress(assetAddress) && prefill.chainId === chainId)
+      (ensoEnabled && isAllowedPrefillChain) ||
+      (toAddress(prefill.address) === toAddress(assetAddress) && isSameChainPrefill)
 
     setSelectedToken(canApplyPrefilledToken ? prefill.address : assetAddress)
     setSelectedChainId(canApplyPrefilledToken ? prefill.chainId : undefined)
@@ -262,10 +338,54 @@ export function WidgetDeposit({
       setDepositInput(prefill.amount)
     }
     onPrefillApplied?.()
-  }, [prefill, ensoEnabled, assetAddress, chainId, setDepositInput, onPrefillApplied])
+  }, [prefill, ensoEnabled, tokenSelectorAllowedChainIds, assetAddress, chainId, setDepositInput, onPrefillApplied])
+
+  useEffect(() => {
+    const bridgePrefillKey =
+      currentBridgeNotification?.status === 'success'
+        ? `${currentBridgeNotification.id}-${assetToken?.balance.raw ?? 0n}`
+        : null
+
+    if (!bridgePrefillKey || bridgePrefillKey === appliedBridgePrefillKeyRef.current) {
+      return
+    }
+
+    appliedBridgePrefillKeyRef.current = bridgePrefillKey
+
+    const bridgedAmount = getBridgeRawAmount(currentBridgeNotification)
+    const availableAmount = assetToken?.balance.raw ?? 0n
+    const depositableAmount =
+      bridgedAmount > 0n && availableAmount > 0n
+        ? bridgedAmount < availableAmount
+          ? bridgedAmount
+          : availableAmount
+        : 0n
+
+    setSelectedToken(assetAddress)
+    setSelectedChainId(undefined)
+    setIsKatanaBridgeMode(false)
+
+    if (depositableAmount > 0n) {
+      setDepositInput(formatUnits(depositableAmount, assetToken?.decimals ?? 18))
+    }
+  }, [assetAddress, assetToken?.balance.raw, assetToken?.decimals, currentBridgeNotification, setDepositInput])
+
+  useEffect(() => {
+    if (currentBridgeNotification?.status !== 'success' || !currentBridgeNotification.id) {
+      return
+    }
+
+    if (syncedBridgeBalanceNotificationIdRef.current === currentBridgeNotification.id) {
+      return
+    }
+
+    syncedBridgeBalanceNotificationIdRef.current = currentBridgeNotification.id
+    refetchVaultUserData()
+  }, [currentBridgeNotification?.id, currentBridgeNotification?.status, refetchVaultUserData])
 
   useResetEnsoSelection({
-    ensoEnabled,
+    ensoEnabled: ensoEnabled || isKatanaBridgeMode,
+    allowedChainIds: selectorAllowedChainIds,
     selectedToken,
     selectedChainId,
     assetAddress,
@@ -275,6 +395,14 @@ export function WidgetDeposit({
     setSelectedChainId,
     setShowTokenSelector
   })
+
+  useEffect(() => {
+    if (!katanaBridgeConfig && isKatanaBridgeMode) {
+      setIsKatanaBridgeMode(false)
+      setSelectedToken(assetAddress)
+      setSelectedChainId(undefined)
+    }
+  }, [assetAddress, isKatanaBridgeMode, katanaBridgeConfig])
 
   // Render-time state adjustment: close panel when collapse is disabled
   if (!shouldCollapseDetails && isDetailsPanelOpen) {
@@ -297,17 +425,23 @@ export function WidgetDeposit({
     inputDecimals: inputToken?.decimals ?? 18,
     vaultDecimals: vault?.decimals ?? 18,
     slippage: zapSlippage,
-    stakingSource
+    stakingSource,
+    allowKatanaNativeBridge: isKatanaBridgeMode,
+    katanaBridgeContractAddress: katanaBridgeConfig?.bridgeContractAddress,
+    katanaBridgeSourceTokenAddress: katanaBridgeConfig?.sourceTokenAddress
   })
 
+  const isKatanaNativeBridgeRoute = routeType === 'KATANA_NATIVE_BRIDGE'
   const isCrossChain = sourceChainId !== chainId
   const { approveNotificationParams, depositNotificationParams } = useDepositNotifications({
     inputToken,
+    assetToken,
     vault,
     stakingToken,
     depositToken,
     assetAddress,
     destinationToken,
+    vaultAddress,
     stakingAddress,
     account,
     sourceChainId,
@@ -332,24 +466,36 @@ export function WidgetDeposit({
     isAutoStakingEnabled
   })
 
-  const willReceiveStakedShares = routeType === 'DIRECT_STAKE' || (isAutoStakingEnabled && !!stakingAddress)
+  const willReceiveStakedShares =
+    !isKatanaNativeBridgeRoute && (routeType === 'DIRECT_STAKE' || (isAutoStakingEnabled && !!stakingAddress))
   const receivedSharesLabel = willReceiveStakedShares ? 'Staked shares' : (vaultSharesLabel ?? 'Vault shares')
   const sharesDecimals = willReceiveStakedShares
     ? (stakingToken?.decimals ?? vault?.decimals ?? 18)
     : (vault?.decimals ?? 18)
   const vaultDecimals = vault?.decimals ?? 18
-  const normalizedExpectedOut = activeFlow.periphery.normalizedExpectedOut
+  const normalizedExpectedOut = isKatanaNativeBridgeRoute ? 0n : activeFlow.periphery.normalizedExpectedOut
   const isLoadingQuote = activeFlow.periphery.isLoadingRoute || activeFlow.periphery.isLoadingExpectedOutNormalization
 
   const estimatedAnnualReturn = useMemo(() => {
+    if (isKatanaNativeBridgeRoute) return 0
     if (depositAmount.debouncedBn === 0n || vaultAPR === 0) return 0
     return Number(formatUnits(depositAmount.debouncedBn, inputToken?.decimals ?? 18)) * vaultAPR
-  }, [depositAmount.debouncedBn, inputToken?.decimals, vaultAPR])
+  }, [depositAmount.debouncedBn, inputToken?.decimals, isKatanaNativeBridgeRoute, vaultAPR])
 
   const expectedOutInAsset = useMemo(() => {
+    if (isKatanaNativeBridgeRoute) {
+      return activeFlow.periphery.expectedOut
+    }
     if (normalizedExpectedOut === 0n || !pricePerShare || depositAmount.bn === 0n) return 0n
     return (normalizedExpectedOut * pricePerShare) / 10n ** BigInt(vaultDecimals)
-  }, [normalizedExpectedOut, vaultDecimals, pricePerShare, depositAmount.bn])
+  }, [
+    activeFlow.periphery.expectedOut,
+    depositAmount.bn,
+    isKatanaNativeBridgeRoute,
+    normalizedExpectedOut,
+    pricePerShare,
+    vaultDecimals
+  ])
 
   const inputTokenPrice =
     inputToken?.address && inputToken?.chainID
@@ -368,17 +514,25 @@ export function WidgetDeposit({
 
   const depositValueInfo = useMemo(
     () =>
-      calculateDepositValueInfo({
-        depositAmountBn: depositAmount.bn,
-        inputTokenDecimals: inputToken?.decimals ?? 18,
-        inputTokenUsdPrice: inputTokenPrice,
-        normalizedVaultShares: normalizedExpectedOut,
-        vaultDecimals,
-        pricePerShare: pricePerShare || 0n,
-        assetTokenDecimals: assetToken?.decimals ?? 18,
-        assetUsdPrice: assetTokenPrice
-      }),
+      isKatanaNativeBridgeRoute
+        ? {
+            vaultShareValueInAsset: 0n,
+            vaultShareValueUsdRaw: 0,
+            priceImpactPercentage: 0,
+            isHighPriceImpact: false
+          }
+        : calculateDepositValueInfo({
+            depositAmountBn: depositAmount.bn,
+            inputTokenDecimals: inputToken?.decimals ?? 18,
+            inputTokenUsdPrice: inputTokenPrice,
+            normalizedVaultShares: normalizedExpectedOut,
+            vaultDecimals,
+            pricePerShare: pricePerShare || 0n,
+            assetTokenDecimals: assetToken?.decimals ?? 18,
+            assetUsdPrice: assetTokenPrice
+          }),
     [
+      isKatanaNativeBridgeRoute,
       depositAmount.bn,
       inputToken?.decimals,
       inputTokenPrice,
@@ -412,19 +566,36 @@ export function WidgetDeposit({
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
 
   const currentStep: TransactionStep | undefined = useMemo(() => {
+    const { actionLabel, progressLabel, pastTenseLabel } = getDepositActionCopy(routeType)
+
     if (needsApproval) {
       return {
         prepare: activeFlow.actions.prepareApprove,
         label: 'Approve',
         confirmMessage: `Approving ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Approval successful',
-        successMessage: `Approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nReady to deposit.`,
+        successMessage: `Approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nReady to ${actionLabel.toLowerCase()}.`,
         completesFlow: false,
         notification: approveNotificationParams
       }
     }
 
-    const { actionLabel, progressLabel, pastTenseLabel } = getDepositActionCopy(routeType)
+    if (isKatanaNativeBridgeRoute) {
+      return {
+        prepare: activeFlow.actions.prepareDeposit,
+        label: actionLabel,
+        confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
+        successTitle: 'Bridge submitted',
+        successMessage:
+          'Your bridge to Katana has been submitted.\nDeposit into the vault once the bridged asset arrives on Katana.',
+        successLink: {
+          href: 'https://bridge.katana.network/transactions',
+          label: 'Track bridge status'
+        },
+        completesFlow: true,
+        notification: depositNotificationParams
+      }
+    }
 
     if (isCrossChain) {
       return {
@@ -459,7 +630,8 @@ export function WidgetDeposit({
     routeType,
     approveNotificationParams,
     depositNotificationParams,
-    isCrossChain
+    isCrossChain,
+    isKatanaNativeBridgeRoute
   ])
 
   const { fetchMaxQuote, isFetching: isFetchingMaxQuote } = useFetchMaxQuote({
@@ -481,19 +653,23 @@ export function WidgetDeposit({
   // deposits (those refresh in handleDepositSuccess after bridge completes).
   const handleDepositTransactionSuccess = useCallback(
     async (_label: string) => {
-      if (isCrossChain) return
-      const tokensToRefresh = [
-        { address: depositToken, chainID: sourceChainId },
-        { address: vaultAddress, chainID: chainId }
-      ]
-      if (stakingAddress) {
-        tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
+      if (isCrossChain && !isKatanaNativeBridgeRoute) return
+
+      const tokensToRefresh = [{ address: depositToken, chainID: sourceChainId }]
+
+      if (!isKatanaNativeBridgeRoute) {
+        tokensToRefresh.push({ address: vaultAddress, chainID: chainId })
+        if (stakingAddress) {
+          tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
+        }
+        refetchVaultUserData()
       }
-      refetchVaultUserData()
+
       await refreshWalletBalances(tokensToRefresh)
     },
     [
       isCrossChain,
+      isKatanaNativeBridgeRoute,
       depositToken,
       sourceChainId,
       vaultAddress,
@@ -520,11 +696,18 @@ export function WidgetDeposit({
         priceUsd: String(priceUsd),
         valueUsd: String(valueUsd),
         isZap: String(routeType === 'ENSO'),
-        action: 'deposit'
+        action: isKatanaNativeBridgeRoute ? 'bridge-to-katana' : 'deposit'
       }
     })
 
     setDepositInput('')
+    if (isKatanaNativeBridgeRoute) {
+      setSelectedToken(assetAddress)
+      setSelectedChainId(undefined)
+      setIsKatanaBridgeMode(false)
+      return
+    }
+
     // Cross-chain deposits: the transaction submits on source chain but funds
     // don't arrive on destination until minutes later, so there is no on-chain
     // receipt — onBeforeSuccess never fires for these. Refresh balances here
@@ -540,8 +723,20 @@ export function WidgetDeposit({
       refreshWalletBalances(tokensToRefresh)
       refetchVaultUserData()
     }
+
+    if (
+      currentBridgeNotification?.id &&
+      currentBridgeNotification.status === 'success' &&
+      sourceChainId === chainId &&
+      toAddress(depositToken) === toAddress(assetAddress)
+    ) {
+      void deleteByID(currentBridgeNotification.id)
+    }
     onDepositSuccess?.()
   }, [
+    currentBridgeNotification?.id,
+    currentBridgeNotification?.status,
+    deleteByID,
     depositAmount.bn,
     inputToken?.decimals,
     inputToken?.symbol,
@@ -552,23 +747,42 @@ export function WidgetDeposit({
     vaultSymbol,
     depositToken,
     routeType,
+    isKatanaNativeBridgeRoute,
     setDepositInput,
     isCrossChain,
     refreshWalletBalances,
     sourceChainId,
+    assetAddress,
     stakingAddress,
     onDepositSuccess,
     refetchVaultUserData
   ])
+
+  const enterKatanaBridgeMode = useCallback(() => {
+    if (!katanaBridgeConfig) return
+
+    setDepositInput('')
+    setSelectedToken(katanaBridgeConfig.sourceTokenAddress)
+    setSelectedChainId(KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID)
+    setIsKatanaBridgeMode(true)
+  }, [katanaBridgeConfig, setDepositInput])
+
+  const exitKatanaBridgeMode = useCallback(() => {
+    setDepositInput('')
+    setSelectedToken(assetAddress)
+    setSelectedChainId(undefined)
+    setIsKatanaBridgeMode(false)
+  }, [assetAddress, setDepositInput])
 
   const handleTokenChange = useCallback(
     (address: `0x${string}`, tokenChainId?: number) => {
       setDepositInput('')
       setSelectedToken(address)
       setSelectedChainId(tokenChainId)
+      setIsKatanaBridgeMode(Boolean(katanaBridgeConfig && tokenChainId === KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID))
       setShowTokenSelector(false)
     },
-    [setDepositInput]
+    [katanaBridgeConfig, setDepositInput]
   )
 
   if (isLoadingVaultData) {
@@ -633,7 +847,7 @@ export function WidgetDeposit({
     />
   )
 
-  const priceImpactWarning = (
+  const priceImpactWarning = isKatanaNativeBridgeRoute ? null : (
     <PriceImpactWarning
       percentage={priceImpactInfo.percentage}
       isHigh={priceImpactInfo.isHigh}
@@ -658,7 +872,7 @@ export function WidgetDeposit({
     depositAmount.isDebouncing ||
     (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
     (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled) ||
-    (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
+    (!isKatanaNativeBridgeRoute && priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
 
   const actionRow = showActionRow ? (
     <div className="flex flex-col gap-3">
@@ -716,7 +930,7 @@ export function WidgetDeposit({
       })}
       data-tour="vault-detail-deposit-widget"
     >
-      <WidgetHeader title="Deposit" actions={headerActions} />
+      <WidgetHeader title={isKatanaBridgeMode ? 'Bridge' : 'Deposit'} actions={headerActions} />
       <div className="flex flex-col flex-1 p-6 pt-2 gap-3">
         {/* Amount Section */}
         <InputTokenAmount
@@ -730,7 +944,7 @@ export function WidgetDeposit({
           isMaxButtonLoading={isFetchingMaxQuote}
           onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
           errorMessage={depositError || undefined}
-          showTokenSelector={ensoEnabled}
+          showTokenSelector={ensoEnabled || !!katanaBridgeConfig}
           inputTokenUsdPrice={inputTokenPrice}
           outputTokenUsdPrice={outputTokenPrice}
           tokenAddress={inputToken?.address}
@@ -864,8 +1078,26 @@ export function WidgetDeposit({
         onChange={handleTokenChange}
         mode={'deposit'}
         chainId={sourceChainId}
+        allowedChainIds={selectorAllowedChainIds}
+        limitTokens={tokenSelectorLimitTokens}
+        headerChainOptions={
+          katanaBridgeConfig
+            ? [
+                {
+                  chainId,
+                  isActive: !isKatanaBridgeMode,
+                  onClick: exitKatanaBridgeMode
+                },
+                {
+                  chainId: KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID,
+                  isActive: isKatanaBridgeMode,
+                  onClick: enterKatanaBridgeMode
+                }
+              ]
+            : undefined
+        }
         value={selectedToken}
-        priorityTokens={{ [chainId]: [assetAddress] }}
+        priorityTokens={tokenSelectorPriorityTokens}
         topTokens={tokenSelectorTopTokens}
         excludeTokens={tokenSelectorExcludedTokens}
         extraTokens={tokenSelectorExtraTokens}

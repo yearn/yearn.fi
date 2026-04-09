@@ -75,6 +75,8 @@ export function WithdrawDetails({
       ? ((withdrawUsdValue - expectedOutUsdValue) / withdrawUsdValue) * 100
       : 0
   const hasHighPriceImpact = !isQuoteStale && !isLoadingQuote && priceImpact > 5
+  const bridgeMode = routeType === 'KATANA_NATIVE_BRIDGE'
+  const intermediateActionLabel = bridgeMode ? 'You will bridge' : 'You will swap'
   return (
     <div>
       <div className="flex flex-col gap-2">
@@ -102,7 +104,7 @@ export function WithdrawDetails({
         {/* You will swap (only shown when zapping) */}
         {showSwapRow && (
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-text-secondary">You will swap</p>
+            <p className="text-sm text-text-secondary">{intermediateActionLabel}</p>
             <div className="flex items-center gap-1">
               <p className="text-sm text-text-primary">
                 <span className="font-semibold">{withdrawAmountSimple}</span>{' '}
@@ -114,7 +116,10 @@ export function WithdrawDetails({
 
         {/* You will receive */}
         <div className="flex items-center justify-between h-5">
-          <p className="text-sm text-text-secondary">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
+          <p className="text-sm text-text-secondary">
+            {bridgeMode ? 'You will receive on Ethereum' : 'You will receive'}
+            {routeType === 'ENSO' ? ' at least' : ''}
+          </p>
           <div className="flex items-center gap-1">
             <p className={`text-sm ${hasHighPriceImpact ? 'text-red-500' : 'text-text-primary'}`}>
               {isLoadingQuote ? (

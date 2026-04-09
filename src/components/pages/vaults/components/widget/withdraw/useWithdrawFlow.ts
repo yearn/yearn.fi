@@ -1,12 +1,14 @@
 import { useDirectUnstake } from '@pages/vaults/hooks/actions/useDirectUnstake'
 import { useDirectWithdraw } from '@pages/vaults/hooks/actions/useDirectWithdraw'
 import { useEnsoWithdraw } from '@pages/vaults/hooks/actions/useEnsoWithdraw'
+import { useKatanaWithdrawBridge } from '@pages/vaults/hooks/actions/useKatanaWithdrawBridge'
 import { useYvUsdLockedZapWithdraw } from '@pages/vaults/hooks/actions/useYvUsdLockedZapWithdraw'
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
+import { KATANA_NATIVE_BRIDGE_ETHEREUM_NETWORK_ID } from '../katanaBridge'
 import type { WithdrawalSource, WithdrawRouteType } from './types'
 import { useWithdrawRoute } from './useWithdrawRoute'
 
@@ -43,6 +45,10 @@ interface UseWithdrawFlowProps {
   isUnstake: boolean
   isDebouncing: boolean
   useErc4626: boolean
+  workflowStep: 'unstake' | 'withdraw' | 'bridge'
+  allowKatanaNativeBridge?: boolean
+  katanaBridgeContractAddress?: Address
+  katanaBridgeDestinationTokenAddress?: Address
 }
 
 export interface WithdrawFlowResult {
@@ -50,6 +56,7 @@ export interface WithdrawFlowResult {
   activeFlow: UseWidgetWithdrawFlowReturn
   directWithdrawFlow: UseWidgetWithdrawFlowReturn
   directUnstakeFlow: UseWidgetWithdrawFlowReturn
+  katanaNativeBridgeFlow: UseWidgetWithdrawFlowReturn
 }
 
 export function useWithdrawFlow({
@@ -79,7 +86,11 @@ export function useWithdrawFlow({
   withdrawalSource,
   isUnstake,
   isDebouncing,
-  useErc4626
+  useErc4626,
+  workflowStep,
+  allowKatanaNativeBridge,
+  katanaBridgeContractAddress,
+  katanaBridgeDestinationTokenAddress
 }: UseWithdrawFlowProps): WithdrawFlowResult {
   const routeType = useWithdrawRoute({
     vaultAddress,
@@ -88,12 +99,15 @@ export function useWithdrawFlow({
     withdrawalSource,
     chainId,
     outputChainId,
-    isUnstake
+    isUnstake,
+    allowKatanaNativeBridge,
+    katanaBridgeDestinationTokenAddress
   })
   const isDirectWithdrawRoute = routeType === 'DIRECT_WITHDRAW'
   const isDirectUnstakeRoute = routeType === 'DIRECT_UNSTAKE'
   const isDirectUnstakeWithdrawRoute = routeType === 'DIRECT_UNSTAKE_WITHDRAW'
   const isEnsoRoute = routeType === 'ENSO'
+  const isKatanaNativeBridgeRoute = routeType === 'KATANA_NATIVE_BRIDGE'
 
   const isYvUsdLockedZapFlow = useMemo(
     () =>
@@ -107,10 +121,16 @@ export function useWithdrawFlow({
   )
   const directWithdrawEnabled =
     allowDirectWithdrawStep &&
-    (isDirectWithdrawRoute || isDirectUnstakeWithdrawRoute) &&
+    (isDirectWithdrawRoute ||
+      isDirectUnstakeWithdrawRoute ||
+      (isKatanaNativeBridgeRoute && workflowStep === 'withdraw')) &&
     amount > 0n &&
     !isYvUsdLockedZapFlow
-  const directUnstakeEnabled = (isDirectUnstakeRoute || isDirectUnstakeWithdrawRoute) && currentAmount > 0n
+  const directUnstakeEnabled =
+    (isDirectUnstakeRoute ||
+      isDirectUnstakeWithdrawRoute ||
+      (isKatanaNativeBridgeRoute && workflowStep === 'unstake')) &&
+    currentAmount > 0n
   const ensoEnabled = isEnsoRoute && !!withdrawToken && !isDebouncing && requiredShares > 0n && currentAmount > 0n
 
   const directWithdraw = useDirectWithdraw({
@@ -161,6 +181,24 @@ export function useWithdrawFlow({
     slippage: slippage * 100
   })
 
+  const katanaNativeBridgeFlow = useKatanaWithdrawBridge({
+    bridgeContractAddress: katanaBridgeContractAddress || assetAddress,
+    katanaAssetToken: assetAddress,
+    // Agglayer bridgeAsset sends funds to a recipient address on the destination chain.
+    destinationAddress: account || withdrawToken,
+    amount,
+    account,
+    chainId,
+    destinationNetworkId: KATANA_NATIVE_BRIDGE_ETHEREUM_NETWORK_ID,
+    enabled:
+      isKatanaNativeBridgeRoute &&
+      workflowStep === 'bridge' &&
+      !!katanaBridgeContractAddress &&
+      !!katanaBridgeDestinationTokenAddress &&
+      amount > 0n &&
+      currentAmount > 0n
+  })
+
   const activeFlow = useMemo((): UseWidgetWithdrawFlowReturn => {
     if (isDirectWithdrawRoute) {
       return isYvUsdLockedZapFlow ? yvUsdLockedZapWithdraw : directWithdraw
@@ -189,15 +227,27 @@ export function useWithdrawFlow({
         }
       }
     }
+    if (isKatanaNativeBridgeRoute) {
+      if (workflowStep === 'unstake') {
+        return directUnstake
+      }
+      if (workflowStep === 'withdraw') {
+        return directWithdraw
+      }
+      return katanaNativeBridgeFlow
+    }
     return ensoFlow
   }, [
     isDirectWithdrawRoute,
     isDirectUnstakeRoute,
     isDirectUnstakeWithdrawRoute,
+    isKatanaNativeBridgeRoute,
     isYvUsdLockedZapFlow,
     yvUsdLockedZapWithdraw,
     directWithdraw,
     directUnstake,
+    workflowStep,
+    katanaNativeBridgeFlow,
     ensoFlow
   ])
 
@@ -205,6 +255,7 @@ export function useWithdrawFlow({
     routeType,
     activeFlow,
     directWithdrawFlow: directWithdraw,
-    directUnstakeFlow: directUnstake
+    directUnstakeFlow: directUnstake,
+    katanaNativeBridgeFlow
   }
 }

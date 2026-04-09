@@ -29,4 +29,17 @@ describe('getDepositApprovalSpender', () => {
       spenderName: 'yvUSD'
     })
   })
+
+  it('uses the vault bridge spender for Katana native bridge routes', () => {
+    expect(
+      getDepositApprovalSpender({
+        routeType: 'KATANA_NATIVE_BRIDGE',
+        destinationToken: '0x00000000000000000000000000000000000000aa',
+        routerAddress: '0x00000000000000000000000000000000000000bb'
+      })
+    ).toEqual({
+      spenderAddress: getAddress('0x00000000000000000000000000000000000000bb'),
+      spenderName: 'Katana Vault Bridge'
+    })
+  })
 })

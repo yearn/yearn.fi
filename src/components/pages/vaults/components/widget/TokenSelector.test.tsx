@@ -83,6 +83,113 @@ describe('TokenSelector', () => {
     expect(html).not.toContain('Base Token')
   })
 
+  it('hides the chain selector when only one allowed chain is provided', () => {
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        747474: {
+          [BASE_TOKEN_ADDRESS]: buildToken({
+            chainID: 747474,
+            value: 100
+          })
+        }
+      },
+      getToken: () =>
+        buildToken({
+          chainID: 747474,
+          value: 100
+        })
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector
+        value={BASE_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={747474}
+        allowedChainIds={[747474]}
+      />
+    )
+
+    expect(html).not.toContain('alt="Katana"')
+    expect(html).not.toContain('alt="Ethereum"')
+    expect(html).not.toContain('alt="Optimism"')
+  })
+
+  it('renders custom header chain options when provided', () => {
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        747474: {
+          [BASE_TOKEN_ADDRESS]: buildToken({
+            chainID: 747474,
+            value: 100
+          })
+        }
+      },
+      getToken: () =>
+        buildToken({
+          chainID: 747474,
+          value: 100
+        })
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector
+        value={BASE_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={747474}
+        allowedChainIds={[747474]}
+        headerChainOptions={[
+          {
+            chainId: 747474,
+            isActive: true,
+            onClick: () => undefined
+          },
+          {
+            chainId: 1,
+            isActive: false,
+            onClick: () => undefined
+          }
+        ]}
+      />
+    )
+
+    expect(html).toContain('alt="Katana"')
+    expect(html).toContain('alt="Ethereum"')
+  })
+
+  it('excludes Katana when allowedChainIds omit it', () => {
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        1: {
+          [BASE_TOKEN_ADDRESS]: buildToken({
+            chainID: 1,
+            value: 100
+          })
+        }
+      },
+      getToken: () =>
+        buildToken({
+          chainID: 1,
+          value: 100
+        })
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector
+        value={BASE_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={1}
+        allowedChainIds={[1, 10, 137, 42161, 8453]}
+      />
+    )
+
+    expect(html).toContain('alt="Ethereum"')
+    expect(html).toContain('alt="Base"')
+    expect(html).not.toContain('alt="Katana"')
+  })
+
   it('preserves wallet balance and value when an extra token only overrides metadata', () => {
     mockUseYearn.mockReturnValue({
       allVaults: {},

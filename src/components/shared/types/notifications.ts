@@ -1,3 +1,4 @@
+import type { TKatanaBridgeDirection, TKatanaBridgeLifecycleStatus } from '@shared/utils/katanaBridge'
 import type { Hash, TransactionReceipt } from 'viem'
 import type { TAddress } from './address'
 
@@ -20,6 +21,7 @@ export type TNotificationType =
   | 'claim'
   | 'claim and exit'
   | 'migrate'
+  | 'bridge'
 
 export type TNotification = {
   id?: number
@@ -38,9 +40,17 @@ export type TNotification = {
   toTokenName?: string
   toAmount?: string // Expected output amount for withdrawals
   txHash?: Hash
+  claimTxHash?: Hash
   timeFinished?: number
   blockNumber?: bigint
   status: TNotificationStatus
+  rawAmount?: string
+  destinationBalanceRaw?: string
+  bridgeBadgeDismissedAt?: number
+  vaultAddress?: TAddress
+  bridgeDirection?: TKatanaBridgeDirection
+  bridgeLifecycleStatus?: TKatanaBridgeLifecycleStatus
+  trackingUrl?: string
 }
 
 export type TNotificationsContext = {
@@ -66,13 +76,23 @@ export type TCreateNotificationParams = {
   toSymbol?: string
   toAmount?: string // expected output amount for withdrawals
   toChainId?: number // only when cross-chain
+  rawAmount?: string
+  destinationBalanceRaw?: string
+  vaultAddress?: TAddress
+  bridgeDirection?: TKatanaBridgeDirection
+  bridgeLifecycleStatus?: TKatanaBridgeLifecycleStatus
+  trackingUrl?: string
 }
 
 export type TUpdateNotificationParams = {
   id: number
   txHash?: Hash
+  claimTxHash?: Hash
   status?: TNotificationStatus
   receipt?: TransactionReceipt
+  bridgeDirection?: TKatanaBridgeDirection
+  bridgeLifecycleStatus?: TKatanaBridgeLifecycleStatus
+  trackingUrl?: string
 }
 
 export type TNotificationsActionsContext = {

@@ -4,6 +4,7 @@ import { AppSettingsContextApp } from '@pages/vaults/contexts/useAppSettings'
 import { EnsoStatusProvider } from '@pages/vaults/contexts/useEnsoStatus'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import AppHeader from '@shared/components/Header'
+import { KatanaBridgeNotificationsPoller } from '@shared/components/KatanaBridgeNotificationsPoller'
 import { Meta } from '@shared/components/Meta'
 import { WithFonts } from '@shared/components/WithFonts'
 import { ChartStyleContextApp } from '@shared/contexts/useChartStyle'
@@ -105,6 +106,7 @@ function App(): ReactElement {
                                     <WithNotifications>
                                       <WithNotificationsActions>
                                         <TenderlyPanelProvider>
+                                          <KatanaBridgeNotificationsPoller />
                                           <WithLayout />
                                           <TenderlyControlPanel />
                                         </TenderlyPanelProvider>

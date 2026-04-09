@@ -10,6 +10,13 @@ interface TokenSelectorOverlayProps {
   onClose: () => void
   onChange: (address: Address, chainId?: number) => void
   chainId: number
+  allowedChainIds?: number[]
+  limitTokens?: Address[]
+  headerChainOptions?: {
+    chainId: number
+    isActive: boolean
+    onClick: () => void
+  }[]
   value?: Address
   excludeTokens?: Address[]
   priorityTokens?: Record<number, Address[]>
@@ -21,6 +28,10 @@ interface TokenSelectorOverlayProps {
   stakingAddress?: Address
   allowHiddenVaultTokenSelection?: boolean
   mode?: TTokenSelectorMode
+  headerAction?: {
+    label: string
+    onClick: () => void
+  }
 }
 
 export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
@@ -28,6 +39,9 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
   onClose,
   onChange,
   chainId,
+  allowedChainIds,
+  limitTokens,
+  headerChainOptions,
   value,
   excludeTokens,
   priorityTokens,
@@ -38,7 +52,8 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
   vaultAddress,
   stakingAddress,
   allowHiddenVaultTokenSelection,
-  mode
+  mode,
+  headerAction
 }) => {
   return (
     <div
@@ -70,6 +85,9 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
           value={value}
           onChange={onChange}
           chainId={chainId}
+          allowedChainIds={allowedChainIds}
+          limitTokens={limitTokens}
+          headerChainOptions={headerChainOptions}
           excludeTokens={excludeTokens}
           priorityTokens={priorityTokens}
           topTokens={topTokens}
@@ -81,6 +99,7 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
           stakingAddress={stakingAddress}
           allowHiddenVaultTokenSelection={allowHiddenVaultTokenSelection}
           mode={mode}
+          headerAction={headerAction}
         />
       </div>
     </div>

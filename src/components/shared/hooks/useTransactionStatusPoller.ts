@@ -21,7 +21,12 @@ export function useTransactionStatusPoller(notification: TNotification): void {
    * transaction was successful or failed.
    ************************************************************************************************/
   const checkTransactionStatus = useCallback(async (): Promise<void> => {
-    if (!notification.txHash || !notification.id || notification.status !== 'pending') {
+    if (
+      !notification.txHash ||
+      !notification.id ||
+      notification.status !== 'pending' ||
+      notification.type === 'bridge'
+    ) {
       return
     }
 
@@ -84,7 +89,7 @@ export function useTransactionStatusPoller(notification: TNotification): void {
    * status changes or the component unmounts.
    ************************************************************************************************/
   useEffect(() => {
-    if (notification.status === 'pending' && notification.txHash && notification.id) {
+    if (notification.type !== 'bridge' && notification.status === 'pending' && notification.txHash && notification.id) {
       // Check immediately
       checkTransactionStatus()
 

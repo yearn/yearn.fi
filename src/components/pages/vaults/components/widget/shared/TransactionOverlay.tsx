@@ -8,6 +8,7 @@ import {
 } from '@shared/hooks/useAppWagmi'
 import type { TCreateNotificationParams } from '@shared/types/notifications'
 import { cl } from '@shared/utils'
+import { KATANA_BRIDGE_TRACKING_URL } from '@shared/utils/katanaBridge'
 import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
 import { getPublicClient } from '@wagmi/core'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
@@ -43,6 +44,10 @@ export type TransactionStep = {
   confirmMessage: string
   successTitle: string
   successMessage: string
+  successLink?: {
+    href: string
+    label: string
+  }
   completesFlow?: boolean
   showConfetti?: boolean
   notification?: TCreateNotificationParams
@@ -347,14 +352,21 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Update notification with new status/receipt
   const handleUpdateNotification = useCallback(
-    async (params: { status?: 'pending' | 'success' | 'error'; receipt?: any }) => {
+    async (params: {
+      status?: 'pending' | 'submitted' | 'success' | 'error'
+      receipt?: any
+      bridgeLifecycleStatus?: 'SOURCE_CONFIRMED'
+      trackingUrl?: string
+    }) => {
       if (!notificationId) return
 
       try {
         await updateNotification({
           id: notificationId,
           status: params.status,
-          receipt: params.receipt
+          receipt: params.receipt,
+          bridgeLifecycleStatus: params.bridgeLifecycleStatus,
+          trackingUrl: params.trackingUrl
         })
       } catch (error) {
         console.error('Failed to update notification:', error)
@@ -647,7 +659,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           return
         }
 
-        handleUpdateNotification({ receipt: receipt.data, status: 'success' })
+        handleUpdateNotification({
+          receipt: receipt.data,
+          status: executedStepRef.current?.notification?.type === 'bridge' ? 'submitted' : 'success',
+          bridgeLifecycleStatus:
+            executedStepRef.current?.notification?.type === 'bridge' ? 'SOURCE_CONFIRMED' : undefined,
+          trackingUrl: executedStepRef.current?.notification?.type === 'bridge' ? KATANA_BRIDGE_TRACKING_URL : undefined
+        })
         setNotificationId(undefined)
 
         hasAutoContinuedFromStepRef.current = executedStepLabel
@@ -671,7 +689,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       resetTxState()
 
       // Update notification to success
-      handleUpdateNotification({ receipt: capturedReceipt, status: 'success' })
+      handleUpdateNotification({
+        receipt: capturedReceipt,
+        status: capturedStep?.notification?.type === 'bridge' ? 'submitted' : 'success',
+        bridgeLifecycleStatus: capturedStep?.notification?.type === 'bridge' ? 'SOURCE_CONFIRMED' : undefined,
+        trackingUrl: capturedStep?.notification?.type === 'bridge' ? KATANA_BRIDGE_TRACKING_URL : undefined
+      })
       setNotificationId(undefined)
 
       if (completedAllSteps && onBeforeSuccess) {
@@ -890,6 +913,16 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
               </div>
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{successStep?.successTitle}</h3>
               <p className="text-sm text-text-secondary whitespace-pre-line mb-6">{successStep?.successMessage}</p>
+              {successStep?.successLink ? (
+                <a
+                  href={successStep.successLink.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mb-6 text-sm font-semibold text-text-primary underline"
+                >
+                  {successStep.successLink.label}
+                </a>
+              ) : null}
               <Button
                 onClick={handleNextStep}
                 variant={isSuccessButtonBusy ? 'busy' : 'filled'}

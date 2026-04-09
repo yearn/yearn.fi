@@ -1,7 +1,10 @@
+import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
+import { isAddressEqual } from 'viem'
+import { KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID } from '../katanaBridge'
 import type { WithdrawalSource, WithdrawRouteType } from './types'
 
 interface UseWithdrawRouteProps {
@@ -12,11 +15,12 @@ interface UseWithdrawRouteProps {
   chainId: number
   outputChainId: number
   isUnstake: boolean
+  allowKatanaNativeBridge?: boolean
+  katanaBridgeDestinationTokenAddress?: Address
 }
 
-interface ResolveWithdrawRouteTypeProps extends Omit<UseWithdrawRouteProps, 'vaultAddress' | 'chainId'> {
+interface ResolveWithdrawRouteTypeProps extends Omit<UseWithdrawRouteProps, 'vaultAddress'> {
   ensoEnabled: boolean
-  chainId: number
 }
 
 export const resolveWithdrawRouteType = ({
@@ -26,7 +30,9 @@ export const resolveWithdrawRouteType = ({
   chainId,
   outputChainId,
   isUnstake,
-  ensoEnabled
+  ensoEnabled,
+  allowKatanaNativeBridge,
+  katanaBridgeDestinationTokenAddress
 }: ResolveWithdrawRouteTypeProps): WithdrawRouteType => {
   // Case 1: Unstake (staking → vault tokens) - always allowed, doesn't need Enso
   if (isUnstake) {
@@ -39,6 +45,17 @@ export const resolveWithdrawRouteType = ({
   // Case 2: Staked shares → asset fallback (unstake then withdraw)
   if (isUnstakeAndWithdrawFallback) {
     return 'DIRECT_UNSTAKE_WITHDRAW'
+  }
+
+  const isKatanaNativeBridgeRoute =
+    allowKatanaNativeBridge &&
+    chainId === KATANA_CHAIN_ID &&
+    outputChainId === KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID &&
+    !!katanaBridgeDestinationTokenAddress &&
+    isAddressEqual(withdrawToken, katanaBridgeDestinationTokenAddress)
+
+  if (isKatanaNativeBridgeRoute) {
+    return 'KATANA_NATIVE_BRIDGE'
   }
 
   // When Enso disabled, always use direct withdraw
@@ -73,7 +90,9 @@ export const useWithdrawRoute = ({
   withdrawalSource,
   chainId,
   outputChainId,
-  isUnstake
+  isUnstake,
+  allowKatanaNativeBridge,
+  katanaBridgeDestinationTokenAddress
 }: UseWithdrawRouteProps): WithdrawRouteType => {
   const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
 
@@ -85,7 +104,19 @@ export const useWithdrawRoute = ({
       chainId,
       outputChainId,
       isUnstake,
-      ensoEnabled
+      ensoEnabled,
+      allowKatanaNativeBridge,
+      katanaBridgeDestinationTokenAddress
     })
-  }, [ensoEnabled, isUnstake, withdrawToken, chainId, outputChainId, assetAddress, withdrawalSource])
+  }, [
+    allowKatanaNativeBridge,
+    assetAddress,
+    chainId,
+    ensoEnabled,
+    isUnstake,
+    katanaBridgeDestinationTokenAddress,
+    outputChainId,
+    withdrawalSource,
+    withdrawToken
+  ])
 }

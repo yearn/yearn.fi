@@ -1,31 +1,59 @@
+import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import { useMemo } from 'react'
 import { type Address, isAddressEqual } from 'viem'
+import { KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID } from '../katanaBridge'
 import type { DepositRouteType } from './types'
 
 interface UseDepositRouteProps {
   chainId: number
+  sourceChainId?: number
   depositToken: Address
   assetAddress: Address
   directDepositTokenAddress?: Address
   destinationToken: Address
   vaultAddress: Address
   stakingAddress?: Address
+  allowKatanaNativeBridge?: boolean
+  katanaBridgeSourceTokenAddress?: Address
 }
 
-interface ResolveDepositRouteTypeProps extends Omit<UseDepositRouteProps, 'chainId'> {
+interface ResolveDepositRouteTypeProps extends UseDepositRouteProps {
   ensoEnabled: boolean
 }
 
 export function resolveDepositRouteType({
+  chainId,
+  sourceChainId,
   depositToken,
   assetAddress,
   directDepositTokenAddress,
   destinationToken,
   vaultAddress,
   stakingAddress,
+  allowKatanaNativeBridge,
+  katanaBridgeSourceTokenAddress,
   ensoEnabled
 }: ResolveDepositRouteTypeProps): DepositRouteType {
+  if (
+    allowKatanaNativeBridge &&
+    chainId === KATANA_CHAIN_ID &&
+    sourceChainId === KATANA_NATIVE_BRIDGE_SOURCE_CHAIN_ID &&
+    !!katanaBridgeSourceTokenAddress &&
+    isAddressEqual(depositToken, katanaBridgeSourceTokenAddress) &&
+    isAddressEqual(destinationToken, assetAddress)
+  ) {
+    return 'KATANA_NATIVE_BRIDGE'
+  }
+
+  if (
+    sourceChainId !== undefined &&
+    sourceChainId !== chainId &&
+    (chainId === KATANA_CHAIN_ID || sourceChainId === KATANA_CHAIN_ID)
+  ) {
+    return 'NO_ROUTE'
+  }
+
   // Case 1: Direct vault deposit (asset → vault)
   if (
     (isAddressEqual(depositToken, assetAddress) ||
@@ -59,26 +87,45 @@ export function resolveDepositRouteType({
  */
 export function useDepositRoute({
   chainId,
+  sourceChainId,
   depositToken,
   assetAddress,
   directDepositTokenAddress,
   destinationToken,
   vaultAddress,
-  stakingAddress
+  stakingAddress,
+  allowKatanaNativeBridge,
+  katanaBridgeSourceTokenAddress
 }: UseDepositRouteProps): DepositRouteType {
   const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
 
   return useMemo(
     () =>
       resolveDepositRouteType({
+        chainId,
+        sourceChainId,
         depositToken,
         assetAddress,
         directDepositTokenAddress,
         destinationToken,
         vaultAddress,
         stakingAddress,
+        allowKatanaNativeBridge,
+        katanaBridgeSourceTokenAddress,
         ensoEnabled
       }),
-    [ensoEnabled, depositToken, assetAddress, directDepositTokenAddress, destinationToken, vaultAddress, stakingAddress]
+    [
+      ensoEnabled,
+      chainId,
+      sourceChainId,
+      depositToken,
+      assetAddress,
+      directDepositTokenAddress,
+      destinationToken,
+      vaultAddress,
+      stakingAddress,
+      allowKatanaNativeBridge,
+      katanaBridgeSourceTokenAddress
+    ]
   )
 }

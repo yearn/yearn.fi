@@ -85,6 +85,72 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   const vaultShareValueDisplay = formatWidgetValue(vaultShareValueInAsset, assetTokenDecimals)
   const vaultShareValueUsd = formatWidgetValue(vaultShareValueUsdRaw)
   const shouldHighlightPriceImpact = !isQuoteStale && !isLoadingQuote && hasHighPriceImpact
+
+  if (routeType === 'KATANA_NATIVE_BRIDGE') {
+    return (
+      <div className="">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between h-5">
+            <p className="text-sm text-text-secondary">You Will Bridge</p>
+            <p className="text-sm text-text-primary">
+              <span className="font-semibold">
+                {depositAmountBn > 0n ? formatWidgetValue(depositAmountBn, inputTokenDecimals) : '0'}
+              </span>{' '}
+              <span className="font-normal">{inputTokenSymbol}</span>
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between h-5">
+            <p className="text-sm text-text-secondary">You Will Receive on Katana</p>
+            <p className="text-sm text-text-primary">
+              <span className="font-semibold">
+                {expectedOutInAsset > 0n ? formatWidgetValue(expectedOutInAsset, assetTokenDecimals) : '0'}
+              </span>{' '}
+              <span className="font-normal">{assetTokenSymbol || 'tokens'}</span>
+            </p>
+          </div>
+
+          {allowanceDisplay && (
+            <div className="flex items-center justify-between h-5">
+              {onShowApprovalOverlay ? (
+                <button
+                  type="button"
+                  onClick={onShowApprovalOverlay}
+                  className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
+                >
+                  Existing Approval{approvalSpenderName ? ` (${approvalSpenderName})` : ''}
+                </button>
+              ) : (
+                <p className="text-sm text-text-secondary">
+                  Existing Approval{approvalSpenderName ? ` (${approvalSpenderName})` : ''}
+                </p>
+              )}
+              {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
+                <button
+                  type="button"
+                  onClick={onAllowanceClick}
+                  className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
+                >
+                  <span className="font-normal">
+                    <span className="font-semibold">{allowanceDisplay} </span>
+                    <span>{allowanceTokenSymbol || ''}</span>
+                  </span>
+                </button>
+              ) : (
+                <p className="text-sm text-text-primary">
+                  <span className="font-normal">
+                    <span className="font-semibold">{allowanceDisplay} </span>
+                    <span>{allowanceTokenSymbol || ''}</span>
+                  </span>
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="">
       <div className="flex flex-col gap-2">
