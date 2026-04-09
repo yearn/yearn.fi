@@ -148,6 +148,9 @@ export function WidgetDeposit({
   deferSuccessEffectsUntilClose = false,
   deferSuccessEffectsUntilConfettiEnd = true
 }: Props): ReactElement {
+  const bootstrapEnsoQuoteDebugRef = useRef<Record<string, unknown> | null>(null)
+  const lastBootstrapEnsoQuoteDebugKeyRef = useRef<string | null>(null)
+  const lastProtectedEnsoQuoteDebugKeyRef = useRef<string | null>(null)
   const {
     account,
     openLoginModal,
@@ -409,6 +412,16 @@ export function WidgetDeposit({
     setEnsoQuoteSlippage(0)
   }, [ensoSlippageCalibrationKey])
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    bootstrapEnsoQuoteDebugRef.current = null
+    lastBootstrapEnsoQuoteDebugKeyRef.current = null
+    lastProtectedEnsoQuoteDebugKeyRef.current = null
+  }, [ensoSlippageCalibrationKey])
+
   const depositValueInfo = useMemo(
     () =>
       calculateDepositValueInfo({
@@ -459,6 +472,91 @@ export function WidgetDeposit({
 
     setEnsoQuoteSlippage(desiredEnsoQuoteSlippage)
   }, [depositAmount.debouncedBn, desiredEnsoQuoteSlippage, ensoQuoteSlippage, isLoadingQuote, routeType])
+
+  useEffect(() => {
+    if (
+      !import.meta.env.DEV ||
+      routeType !== 'ENSO' ||
+      isLoadingQuote ||
+      depositAmount.isDebouncing ||
+      depositAmount.debouncedBn === 0n ||
+      (activeFlow.periphery.expectedOut === 0n && activeFlow.periphery.minExpectedOut === 0n)
+    ) {
+      return
+    }
+
+    const quoteSummary = {
+      calibrationKey: ensoSlippageCalibrationKey,
+      requestSlippagePercentage: ensoQuoteSlippage,
+      desiredProtectedSlippagePercentage: desiredEnsoQuoteSlippage,
+      userTolerancePercentage: zapSlippage,
+      inputAmountRaw: depositAmount.debouncedBn.toString(),
+      expectedOutRaw: activeFlow.periphery.expectedOut.toString(),
+      minExpectedOutRaw: activeFlow.periphery.minExpectedOut.toString(),
+      normalizedExpectedOutRaw: normalizedExpectedOut.toString(),
+      normalizedMinExpectedOutRaw: normalizedMinExpectedOut.toString(),
+      expectedOutInAssetRaw: expectedOutInAsset.toString(),
+      minExpectedOutInAssetRaw: minExpectedOutInAsset.toString(),
+      expectedPriceImpactPercentage: depositValueInfo.priceImpactPercentage,
+      worstCasePriceImpactPercentage: depositValueInfo.worstCasePriceImpactPercentage,
+      inputTokenSymbol: inputToken?.symbol,
+      destinationTokenSymbol: assetToken?.symbol
+    }
+
+    if (ensoQuoteSlippage === 0) {
+      const bootstrapLogKey = [
+        ensoSlippageCalibrationKey,
+        activeFlow.periphery.expectedOut.toString(),
+        activeFlow.periphery.minExpectedOut.toString()
+      ].join(':')
+
+      if (lastBootstrapEnsoQuoteDebugKeyRef.current === bootstrapLogKey) {
+        return
+      }
+
+      bootstrapEnsoQuoteDebugRef.current = quoteSummary
+      lastBootstrapEnsoQuoteDebugKeyRef.current = bootstrapLogKey
+      console.log('[ENSO][deposit] bootstrap quote', quoteSummary)
+      return
+    }
+
+    const protectedLogKey = [
+      ensoSlippageCalibrationKey,
+      ensoQuoteSlippage.toString(),
+      activeFlow.periphery.expectedOut.toString(),
+      activeFlow.periphery.minExpectedOut.toString()
+    ].join(':')
+
+    if (lastProtectedEnsoQuoteDebugKeyRef.current === protectedLogKey) {
+      return
+    }
+
+    lastProtectedEnsoQuoteDebugKeyRef.current = protectedLogKey
+    console.log('[ENSO][deposit] protected quote comparison', {
+      bootstrapQuote: bootstrapEnsoQuoteDebugRef.current,
+      protectedQuote: quoteSummary,
+      note: 'expectedPriceImpactPercentage comes from amountOut; worstCasePriceImpactPercentage comes from minAmountOut; widget warnings currently use worstCasePriceImpactPercentage.'
+    })
+  }, [
+    activeFlow.periphery.expectedOut,
+    activeFlow.periphery.minExpectedOut,
+    assetToken?.symbol,
+    depositAmount.debouncedBn,
+    depositAmount.isDebouncing,
+    depositValueInfo.priceImpactPercentage,
+    depositValueInfo.worstCasePriceImpactPercentage,
+    desiredEnsoQuoteSlippage,
+    ensoQuoteSlippage,
+    ensoSlippageCalibrationKey,
+    expectedOutInAsset,
+    inputToken?.symbol,
+    isLoadingQuote,
+    minExpectedOutInAsset,
+    normalizedExpectedOut,
+    normalizedMinExpectedOut,
+    routeType,
+    zapSlippage
+  ])
 
   // Calculate total price impact for warning and blocking.
   const priceImpactInfo = useMemo(() => {
@@ -671,7 +769,6 @@ export function WidgetDeposit({
           setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
         }
       : undefined
-  const displayedExpectedOutInAsset = routeType === 'ENSO' ? minExpectedOutInAsset : expectedOutInAsset
   const displayedExpectedVaultShares =
     routeType === 'ENSO' ? activeFlow.periphery.minExpectedOut : activeFlow.periphery.expectedOut
   const displayedVaultShareValueInAsset =
@@ -698,7 +795,8 @@ export function WidgetDeposit({
       isSwap={selectedToken !== assetAddress}
       isLoadingQuote={isLoadingQuote}
       isQuoteStale={depositAmount.isDebouncing || depositAmount.bn !== depositAmount.debouncedBn}
-      expectedOutInAsset={displayedExpectedOutInAsset}
+      expectedOutInAsset={expectedOutInAsset}
+      minExpectedOutInAsset={minExpectedOutInAsset}
       assetTokenSymbol={assetToken?.symbol}
       assetTokenDecimals={assetToken?.decimals ?? 18}
       expectedVaultShares={displayedExpectedVaultShares}
@@ -708,6 +806,7 @@ export function WidgetDeposit({
       assetUsdPrice={assetTokenPrice}
       vaultShareValueInAsset={displayedVaultShareValueInAsset}
       vaultShareValueUsdRaw={displayedVaultShareValueUsdRaw}
+      expectedPriceImpactPercentage={depositValueInfo.priceImpactPercentage}
       priceImpactPercentage={displayedPriceImpactPercentage}
       shouldHighlightPriceImpact={displayedShouldHighlightPriceImpact}
       willReceiveStakedShares={willReceiveStakedShares}

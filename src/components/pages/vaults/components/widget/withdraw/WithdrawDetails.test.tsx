@@ -23,6 +23,7 @@ describe('WithdrawDetails', () => {
         assetUsdPrice={0}
         assetSymbol="yvUSD"
         outputUsdPrice={0}
+        expectedPriceImpactPercentage={0}
         priceImpactPercentage={0}
         shouldHighlightPriceImpact={false}
         routeType="ENSO"
@@ -51,6 +52,7 @@ describe('WithdrawDetails', () => {
         assetUsdPrice={1}
         assetSymbol="yvUSD"
         outputUsdPrice={1}
+        expectedPriceImpactPercentage={0}
         priceImpactPercentage={10}
         shouldHighlightPriceImpact
         routeType="ENSO"
@@ -58,7 +60,8 @@ describe('WithdrawDetails', () => {
       />
     )
 
-    expect(html).toContain('Worst case price impact')
+    expect(html).toContain('Est. / Worst price impact')
+    expect(html).toContain('0.00%')
     expect(html).toContain('10.00%')
     expect(html).toContain('text-red-500')
   })

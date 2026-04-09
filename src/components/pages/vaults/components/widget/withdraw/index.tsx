@@ -123,6 +123,9 @@ export function WidgetWithdraw({
   contentBelowInput,
   hideContainerBorder = false
 }: WidgetWithdrawProps): ReactElement {
+  const bootstrapEnsoQuoteDebugRef = useRef<Record<string, unknown> | null>(null)
+  const lastBootstrapEnsoQuoteDebugKeyRef = useRef<string | null>(null)
+  const lastProtectedEnsoQuoteDebugKeyRef = useRef<string | null>(null)
   const { account, openLoginModal, refreshWalletBalances, getToken, zapSlippage, getPrice, trackEvent, ensoEnabled } =
     useWidgetContext({ chainId, vaultAddress })
 
@@ -510,6 +513,16 @@ export function WidgetWithdraw({
     setEnsoQuoteSlippage(0)
   }, [ensoSlippageCalibrationKey])
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    bootstrapEnsoQuoteDebugRef.current = null
+    lastBootstrapEnsoQuoteDebugKeyRef.current = null
+    lastProtectedEnsoQuoteDebugKeyRef.current = null
+  }, [ensoSlippageCalibrationKey])
+
   const withdrawValueInfo = useMemo(
     () =>
       calculateWithdrawValueInfo({
@@ -558,6 +571,84 @@ export function WidgetWithdraw({
 
     setEnsoQuoteSlippage(desiredEnsoQuoteSlippage)
   }, [desiredEnsoQuoteSlippage, ensoQuoteSlippage, flowRequiredShares, isFetchingQuote, routeType])
+
+  useEffect(() => {
+    if (
+      !import.meta.env.DEV ||
+      routeType !== 'ENSO' ||
+      isFetchingQuote ||
+      withdrawAmount.isDebouncing ||
+      withdrawAmount.debouncedBn === 0n ||
+      (activeFlow.periphery.expectedOut === 0n && activeFlow.periphery.minExpectedOut === 0n)
+    ) {
+      return
+    }
+
+    const quoteSummary = {
+      calibrationKey: ensoSlippageCalibrationKey,
+      requestSlippagePercentage: ensoQuoteSlippage,
+      desiredProtectedSlippagePercentage: desiredEnsoQuoteSlippage,
+      userTolerancePercentage: zapSlippage,
+      inputAmountRaw: flowRequiredShares.toString(),
+      expectedOutRaw: activeFlow.periphery.expectedOut.toString(),
+      minExpectedOutRaw: activeFlow.periphery.minExpectedOut.toString(),
+      expectedPriceImpactPercentage: withdrawValueInfo.priceImpactPercentage,
+      worstCasePriceImpactPercentage: withdrawValueInfo.worstCasePriceImpactPercentage,
+      sourceTokenSymbol: assetToken?.symbol,
+      destinationTokenSymbol: outputToken?.symbol
+    }
+
+    if (ensoQuoteSlippage === 0) {
+      const bootstrapLogKey = [
+        ensoSlippageCalibrationKey,
+        activeFlow.periphery.expectedOut.toString(),
+        activeFlow.periphery.minExpectedOut.toString()
+      ].join(':')
+
+      if (lastBootstrapEnsoQuoteDebugKeyRef.current === bootstrapLogKey) {
+        return
+      }
+
+      bootstrapEnsoQuoteDebugRef.current = quoteSummary
+      lastBootstrapEnsoQuoteDebugKeyRef.current = bootstrapLogKey
+      console.log('[ENSO][withdraw] bootstrap quote', quoteSummary)
+      return
+    }
+
+    const protectedLogKey = [
+      ensoSlippageCalibrationKey,
+      ensoQuoteSlippage.toString(),
+      activeFlow.periphery.expectedOut.toString(),
+      activeFlow.periphery.minExpectedOut.toString()
+    ].join(':')
+
+    if (lastProtectedEnsoQuoteDebugKeyRef.current === protectedLogKey) {
+      return
+    }
+
+    lastProtectedEnsoQuoteDebugKeyRef.current = protectedLogKey
+    console.log('[ENSO][withdraw] protected quote comparison', {
+      bootstrapQuote: bootstrapEnsoQuoteDebugRef.current,
+      protectedQuote: quoteSummary,
+      note: 'expectedPriceImpactPercentage comes from amountOut; worstCasePriceImpactPercentage comes from minAmountOut; widget warnings currently use worstCasePriceImpactPercentage.'
+    })
+  }, [
+    activeFlow.periphery.expectedOut,
+    activeFlow.periphery.minExpectedOut,
+    assetToken?.symbol,
+    desiredEnsoQuoteSlippage,
+    ensoQuoteSlippage,
+    ensoSlippageCalibrationKey,
+    flowRequiredShares,
+    isFetchingQuote,
+    outputToken?.symbol,
+    routeType,
+    withdrawAmount.debouncedBn,
+    withdrawAmount.isDebouncing,
+    withdrawValueInfo.priceImpactPercentage,
+    withdrawValueInfo.worstCasePriceImpactPercentage,
+    zapSlippage
+  ])
 
   // Calculate total price impact for warning and blocking.
   const priceImpactInfo = useMemo(() => {
@@ -825,6 +916,7 @@ export function WidgetWithdraw({
       assetUsdPrice={assetTokenPrice}
       assetSymbol={assetToken?.symbol}
       outputUsdPrice={outputTokenPrice}
+      expectedPriceImpactPercentage={withdrawValueInfo.priceImpactPercentage}
       priceImpactPercentage={displayedPriceImpactPercentage}
       shouldHighlightPriceImpact={shouldHighlightDisplayedPriceImpact}
       routeType={routeType}

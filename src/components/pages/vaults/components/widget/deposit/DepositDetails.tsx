@@ -14,6 +14,7 @@ interface DepositDetailsProps {
   isLoadingQuote: boolean
   isQuoteStale: boolean
   expectedOutInAsset: bigint
+  minExpectedOutInAsset: bigint
   assetTokenSymbol?: string
   assetTokenDecimals: number
   // Vault/Staking shares info
@@ -24,6 +25,7 @@ interface DepositDetailsProps {
   assetUsdPrice: number
   vaultShareValueInAsset: bigint
   vaultShareValueUsdRaw: number
+  expectedPriceImpactPercentage: number
   priceImpactPercentage: number
   shouldHighlightPriceImpact: boolean
   willReceiveStakedShares: boolean
@@ -51,12 +53,14 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   isLoadingQuote,
   isQuoteStale,
   expectedOutInAsset,
+  minExpectedOutInAsset,
   assetTokenSymbol,
   assetTokenDecimals,
   expectedVaultShares,
   sharesDisplayDecimals,
   vaultShareValueInAsset,
   vaultShareValueUsdRaw,
+  expectedPriceImpactPercentage,
   priceImpactPercentage,
   shouldHighlightPriceImpact,
   willReceiveStakedShares,
@@ -100,20 +104,23 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
           </p>
         </div>
 
-        {/* For at least (only shown when swapping via ENSO) */}
+        {/* Expected / minimum output (only shown when swapping via ENSO) */}
         {isSwap && !isStake && (
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-text-secondary">{'For at least'}</p>
+            <p className="text-sm text-text-secondary">For expected / at least</p>
             <p className="text-sm text-text-primary">
               {isLoadingQuote ? (
-                <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
-              ) : expectedOutInAsset > 0n ? (
+                <span className="inline-block h-4 w-36 bg-surface-secondary rounded animate-pulse" />
+              ) : expectedOutInAsset > 0n || minExpectedOutInAsset > 0n ? (
                 <>
                   <span className="font-semibold">{formatWidgetValue(expectedOutInAsset, assetTokenDecimals)}</span>{' '}
+                  <span className="font-normal">{'| '}</span>
+                  <span className="font-semibold">{formatWidgetValue(minExpectedOutInAsset, assetTokenDecimals)}</span>{' '}
                   <span className="font-normal">{assetTokenSymbol || 'tokens'}</span>
                 </>
               ) : (
                 <>
+                  <span className="font-semibold">{'0'}</span> <span className="font-normal">{'| '}</span>
                   <span className="font-semibold">{'0'}</span>{' '}
                   <span className="font-normal">{assetTokenSymbol || 'tokens'}</span>
                 </>
@@ -175,12 +182,16 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
 
         {shouldShowWorstCasePriceImpact && (
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-text-secondary">Worst case price impact</p>
+            <p className="text-sm text-text-secondary">Est. / Worst price impact</p>
             <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
               {isLoadingQuote ? (
-                <span className="inline-block h-4 w-16 bg-surface-secondary rounded animate-pulse" />
+                <span className="inline-block h-4 w-28 bg-surface-secondary rounded animate-pulse" />
               ) : (
-                <span className="font-semibold">{`${priceImpactPercentage.toFixed(2)}%`}</span>
+                <>
+                  <span className="font-semibold">{`${expectedPriceImpactPercentage.toFixed(2)}%`}</span>
+                  <span className="font-normal">{' | '}</span>
+                  <span className="font-semibold">{`${priceImpactPercentage.toFixed(2)}%`}</span>
+                </>
               )}
             </p>
           </div>

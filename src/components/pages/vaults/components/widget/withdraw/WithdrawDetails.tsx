@@ -25,6 +25,7 @@ interface WithdrawDetailsProps {
   assetSymbol?: string
   // Output USD price for slippage calculation
   outputUsdPrice: number
+  expectedPriceImpactPercentage: number
   priceImpactPercentage: number
   shouldHighlightPriceImpact: boolean
   // Route type for "at least" text
@@ -60,6 +61,7 @@ export function WithdrawDetails({
   assetUsdPrice,
   assetSymbol,
   outputUsdPrice,
+  expectedPriceImpactPercentage,
   priceImpactPercentage,
   shouldHighlightPriceImpact,
   routeType,
@@ -147,12 +149,16 @@ export function WithdrawDetails({
 
         {shouldShowWorstCasePriceImpact && (
           <div className="flex items-center justify-between h-5">
-            <p className="text-sm text-text-secondary">Worst case price impact</p>
+            <p className="text-sm text-text-secondary">Est. / Worst price impact</p>
             <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
               {isLoadingQuote ? (
-                <span className="inline-block h-4 w-16 bg-surface-secondary rounded animate-pulse" />
+                <span className="inline-block h-4 w-28 bg-surface-secondary rounded animate-pulse" />
               ) : (
-                <span className="font-semibold">{`${priceImpactPercentage.toFixed(2)}%`}</span>
+                <>
+                  <span className="font-semibold">{`${expectedPriceImpactPercentage.toFixed(2)}%`}</span>
+                  <span className="font-normal">{' | '}</span>
+                  <span className="font-semibold">{`${priceImpactPercentage.toFixed(2)}%`}</span>
+                </>
               )}
             </p>
           </div>

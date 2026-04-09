@@ -16,7 +16,8 @@ describe('DepositDetails', () => {
         isSwap
         isLoadingQuote={false}
         isQuoteStale={false}
-        expectedOutInAsset={9n * ONE_ETHER}
+        expectedOutInAsset={10n * ONE_ETHER}
+        minExpectedOutInAsset={9n * ONE_ETHER}
         assetTokenSymbol="yvUSDC"
         assetTokenDecimals={18}
         expectedVaultShares={9n * ONE_ETHER}
@@ -26,6 +27,7 @@ describe('DepositDetails', () => {
         assetUsdPrice={1}
         vaultShareValueInAsset={9n * ONE_ETHER}
         vaultShareValueUsdRaw={9}
+        expectedPriceImpactPercentage={0}
         priceImpactPercentage={10}
         shouldHighlightPriceImpact
         willReceiveStakedShares={false}
@@ -36,7 +38,11 @@ describe('DepositDetails', () => {
       />
     )
 
-    expect(html).toContain('Worst case price impact')
+    expect(html).toContain('For expected / at least')
+    expect(html).toContain('10.0')
+    expect(html).toContain('| </span><span class="font-semibold">9.00')
+    expect(html).toContain('Est. / Worst price impact')
+    expect(html).toContain('0.00%')
     expect(html).toContain('10.00%')
     expect(html).toContain('text-red-500')
   })
