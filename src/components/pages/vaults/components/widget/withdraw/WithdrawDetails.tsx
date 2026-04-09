@@ -1,4 +1,6 @@
+import { formatCounterValue } from '@shared/utils/format'
 import type { ReactElement } from 'react'
+import { formatUnits } from 'viem'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import type { WithdrawRouteType } from './types'
 import { calculateWithdrawValueInfo } from './valuation'
@@ -77,6 +79,8 @@ export function WithdrawDetails({
     outputUsdPrice
   })
   const hasHighPriceImpact = !isQuoteStale && !isLoadingQuote && withdrawValueInfo.isHighPriceImpact
+  const withdrawUsdDisplay = formatCounterValue(formatUnits(withdrawAmountBn, assetDecimals), assetUsdPrice)
+  const expectedOutUsdDisplay = formatCounterValue(formatUnits(expectedOut, outputDecimals), outputUsdPrice)
   return (
     <div>
       <div className="flex flex-col gap-2">
@@ -109,6 +113,7 @@ export function WithdrawDetails({
               <p className="text-sm text-text-primary">
                 <span className="font-semibold">{withdrawAmountSimple}</span>{' '}
                 <span className="font-normal">{assetSymbol}</span>
+                <span className="font-normal">{` (${withdrawUsdDisplay})`}</span>
               </p>
             </div>
           </div>
@@ -130,6 +135,7 @@ export function WithdrawDetails({
                       {` (-${withdrawValueInfo.priceImpactPercentage.toFixed(2)}%)`}
                     </span>
                   )}
+                  {routeType === 'ENSO' && <span className="font-normal">{` (${expectedOutUsdDisplay})`}</span>}
                 </>
               ) : (
                 <>

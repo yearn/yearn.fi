@@ -527,6 +527,8 @@ export function WidgetWithdraw({
       address: outputToken?.address || '',
       chainId: outputToken?.chainID || chainId,
       expectedAmount: getExpectedAmount(),
+      expectedAmountRaw: isUnstake ? effectiveRequiredShares : effectiveExpectedOut,
+      expectedAmountDecimals: isUnstake ? (vault?.decimals ?? 18) : (outputToken?.decimals ?? 18),
       isLoading: isUnstake ? false : isFetchingQuote
     }
   }, [

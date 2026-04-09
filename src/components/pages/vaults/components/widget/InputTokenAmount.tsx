@@ -3,6 +3,7 @@ import type { useInput } from '@pages/vaults/hooks/useInput'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { cl, formatTAmount, simpleToExact } from '@shared/utils'
+import { formatCounterValue } from '@shared/utils/format'
 import { type ChangeEvent, type FC, useMemo } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
@@ -37,6 +38,8 @@ interface Props {
     address: string
     chainId: number
     expectedAmount?: string
+    expectedAmountRaw?: bigint
+    expectedAmountDecimals?: number
     isLoading?: boolean
   }
   onRemoveZap?: () => void
@@ -97,9 +100,19 @@ export const InputTokenAmount: FC<Props> = ({
 
   // Calculate USD value for output token (when zapping)
   const outputUsdValue = useMemo(() => {
-    if (!zapToken?.expectedAmount || !outputTokenUsdPrice) return '0.00'
-    return (parseFloat(zapToken.expectedAmount) * outputTokenUsdPrice).toFixed(2)
-  }, [zapToken?.expectedAmount, outputTokenUsdPrice])
+    if (
+      zapToken?.expectedAmountRaw === undefined ||
+      zapToken?.expectedAmountDecimals === undefined ||
+      !outputTokenUsdPrice
+    ) {
+      return '0.00'
+    }
+
+    return formatCounterValue(
+      formatUnits(zapToken.expectedAmountRaw, zapToken.expectedAmountDecimals),
+      outputTokenUsdPrice
+    ).replace(/^\$/, '')
+  }, [zapToken?.expectedAmountRaw, zapToken?.expectedAmountDecimals, outputTokenUsdPrice])
   const tokenLogoSources = useMemo(
     () => getTokenLogoSources({ address: tokenAddress, chainId: tokenChainId, logoURI: tokenLogoURI, size: 32 }),
     [tokenAddress, tokenChainId, tokenLogoURI]
