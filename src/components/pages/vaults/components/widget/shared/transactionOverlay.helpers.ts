@@ -60,6 +60,51 @@ export function getInitialOverlayState(): OverlayState {
   return 'idle'
 }
 
+function capitalizeWord(value: string): string {
+  if (!value) return value
+  return `${value[0]?.toUpperCase() || ''}${value.slice(1)}`
+}
+
+export function formatPendingTransactionFunctionName(params: {
+  functionName?: unknown
+  fallbackLabel?: string
+}): string | undefined {
+  const { functionName, fallbackLabel } = params
+
+  if (typeof functionName === 'string' && functionName.length > 0) {
+    return `${capitalizeWord(functionName)}()`
+  }
+
+  if (fallbackLabel) {
+    return `${fallbackLabel}()`
+  }
+
+  return undefined
+}
+
+export function getPendingTransactionTitle(params: {
+  isPreparingNextStep: boolean
+  functionName?: unknown
+  fallbackLabel?: string
+}): string {
+  const { isPreparingNextStep, functionName, fallbackLabel } = params
+
+  if (isPreparingNextStep) {
+    return 'Transaction confirmed'
+  }
+
+  const pendingFunctionName = formatPendingTransactionFunctionName({
+    functionName,
+    fallbackLabel
+  })
+
+  if (!pendingFunctionName) {
+    return 'Transaction pending'
+  }
+
+  return `${pendingFunctionName} transaction pending`
+}
+
 export function shouldAutoContinuePermitSuccess(params: {
   overlayState: OverlayState
   executedStepIsPermit?: boolean
