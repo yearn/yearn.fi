@@ -22,9 +22,9 @@ export interface EnsoRouteResponse {
 }
 
 type EnsoRouteErrorPayload = {
-  error?: string
-  message?: string
-  description?: string
+  error?: string | string[]
+  message?: string | string[]
+  description?: string | string[]
   requestId?: string
   statusCode?: number
 }
@@ -57,12 +57,23 @@ function isEnsoRouteCandidate(data: unknown): data is EnsoRouteCandidate {
   )
 }
 
+function normalizeEnsoErrorText(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value.join(', ')
+  }
+
+  return value
+}
+
 function buildEnsoError(data: unknown, statusCode: number): EnsoError {
   const payload = (data && typeof data === 'object' ? data : {}) as EnsoRouteErrorPayload
+  const error = normalizeEnsoErrorText(payload.error)
+  const message = normalizeEnsoErrorText(payload.message)
+  const description = normalizeEnsoErrorText(payload.description)
 
   return {
-    error: payload.error || payload.message || 'EnsoRouteError',
-    message: payload.description || payload.message || payload.error || 'Unable to find route',
+    error: error || message || 'EnsoRouteError',
+    message: description || message || error || 'Unable to find route',
     requestId: payload.requestId,
     statusCode: payload.statusCode || statusCode
   }

@@ -63,6 +63,7 @@ export function useDirectUnstake(params: UseDirectUnstakeParams): UseWidgetWithd
       isAllowanceSufficient: true, // No approval needed for unstaking own shares
       allowance: maxUint256, // No approval needed - unlimited
       expectedOut: params.amount, // User gets the vault tokens they unstake
+      minExpectedOut: params.amount,
       isLoadingRoute: false, // No routing needed for direct unstake
       isCrossChain: false, // Direct unstake is always same-chain
       error: undefined

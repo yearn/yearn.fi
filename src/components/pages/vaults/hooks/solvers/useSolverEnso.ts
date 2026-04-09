@@ -28,6 +28,7 @@ interface UseSolverEnsoProps {
   chainId: number
   destinationChainId?: number
   slippage?: number // in basis points (e.g., 100 = 1%)
+  requestKey?: string
   enabled?: boolean
   decimalsOut?: number
 }
@@ -65,17 +66,22 @@ export const useSolverEnso = ({
   chainId,
   destinationChainId,
   slippage = 100, // 1% default
+  requestKey = 'default',
   decimalsOut = 18,
   enabled = true
 }: UseSolverEnsoProps): UseSolverEnsoReturn => {
   const [route, setRoute] = useState<EnsoRouteResponse | undefined>()
   const [error, setError] = useState<EnsoError | undefined>()
+  const [resolvedRequestKey, setResolvedRequestKey] = useState<string | undefined>()
+  const [errorRequestKey, setErrorRequestKey] = useState<string | undefined>()
   const [isLoadingRoute, setIsLoadingRoute] = useState(false)
   const routeRequestIdRef = useRef(0)
   const routeAbortControllerRef = useRef<AbortController | null>(null)
 
   const isCrossChain = destinationChainId !== undefined && destinationChainId !== chainId
-  const routerAddress = route?.tx?.to
+  const visibleRoute = resolvedRequestKey === requestKey ? route : undefined
+  const visibleError = errorRequestKey === requestKey ? error : undefined
+  const routerAddress = visibleRoute?.tx?.to
 
   // Use known Enso router for pre-fetching allowance, fall back to actual router from route
   const knownRouterAddress = ENSO_ROUTER_ADDRESSES[chainId]
@@ -93,6 +99,7 @@ export const useSolverEnso = ({
   const getRoute = useCallback(async () => {
     if (!enabled || !fromAddress || amountIn <= 0n) return
     if (isZeroAddress(tokenIn) || isZeroAddress(tokenOut)) return
+    const normalizedSlippage = Number.isFinite(slippage) ? Math.max(0, Math.floor(slippage)) : 0
 
     const requestId = routeRequestIdRef.current + 1
     routeRequestIdRef.current = requestId
@@ -108,7 +115,7 @@ export const useSolverEnso = ({
         tokenIn,
         tokenOut,
         amountIn: amountIn.toString(),
-        slippage: slippage.toString(),
+        slippage: normalizedSlippage.toString(),
         ...(isCrossChain && { destinationChainId: destinationChainId!.toString() }),
         ...(receiver && { receiver })
       })
@@ -136,11 +143,15 @@ export const useSolverEnso = ({
         })
         setRoute(undefined)
         setError(normalizedResponse.error)
+        setResolvedRequestKey(undefined)
+        setErrorRequestKey(requestKey)
 
         return
       }
       setError(undefined)
       setRoute(normalizedResponse.route)
+      setResolvedRequestKey(requestKey)
+      setErrorRequestKey(undefined)
     } catch (err) {
       if (abortController.signal.aborted || routeRequestIdRef.current !== requestId) {
         return
@@ -151,6 +162,8 @@ export const useSolverEnso = ({
         message: err instanceof Error ? err.message : 'Failed to get Enso route',
         statusCode: 0
       })
+      setResolvedRequestKey(undefined)
+      setErrorRequestKey(requestKey)
       console.error('Failed to get Enso route:', err, {
         chainId,
         destinationChainId,
@@ -166,11 +179,23 @@ export const useSolverEnso = ({
         }
       }
     }
-  }, [tokenIn, tokenOut, amountIn, fromAddress, receiver, chainId, destinationChainId, slippage, enabled, isCrossChain])
+  }, [
+    tokenIn,
+    tokenOut,
+    amountIn,
+    fromAddress,
+    receiver,
+    chainId,
+    destinationChainId,
+    slippage,
+    requestKey,
+    enabled,
+    isCrossChain
+  ])
 
   const getEnsoTransaction = useCallback((): EnsoRouteResponse['tx'] | undefined => {
-    return route?.tx
-  }, [route])
+    return visibleRoute?.tx
+  }, [visibleRoute])
 
   const resetRoute = useCallback(() => {
     routeRequestIdRef.current += 1
@@ -178,6 +203,8 @@ export const useSolverEnso = ({
     routeAbortControllerRef.current = null
     setRoute(undefined)
     setError(undefined)
+    setResolvedRequestKey(undefined)
+    setErrorRequestKey(undefined)
     setIsLoadingRoute(false)
   }, [])
 
@@ -189,6 +216,11 @@ export const useSolverEnso = ({
   }, [])
 
   const isValidInput = amountIn > 0n
+  const canRequestRoute =
+    enabled && !!fromAddress && isValidInput && !isZeroAddress(tokenIn) && !isZeroAddress(tokenOut)
+  const hasCurrentRoute = resolvedRequestKey === requestKey
+  const hasCurrentError = errorRequestKey === requestKey
+  const isLoadingCurrentRequest = isLoadingRoute || (canRequestRoute && !hasCurrentRoute && !hasCurrentError)
   const isAllowanceSufficient = !allowanceSpender || allowance >= amountIn
   const prepareApproveEnabled = routerAddress && !isAllowanceSufficient && isValidInput && enabled
   const prepareApprove: AppUseSimulateContractReturnType = useSimulateContract({
@@ -199,12 +231,12 @@ export const useSolverEnso = ({
     chainId,
     query: { enabled: !!prepareApproveEnabled && !!routerAddress }
   })
-  const expectedOut = route?.amountOut
-    ? toNormalizedBN(BigInt(route.amountOut), decimalsOut)
+  const expectedOut = visibleRoute?.amountOut
+    ? toNormalizedBN(BigInt(visibleRoute.amountOut), decimalsOut)
     : toNormalizedBN(0n, decimalsOut)
 
-  const minExpectedOut = route?.minAmountOut
-    ? toNormalizedBN(BigInt(route.minAmountOut), decimalsOut)
+  const minExpectedOut = visibleRoute?.minAmountOut
+    ? toNormalizedBN(BigInt(visibleRoute.minAmountOut), decimalsOut)
     : toNormalizedBN(0n, decimalsOut)
   return {
     actions: {
@@ -216,9 +248,9 @@ export const useSolverEnso = ({
       minExpectedOut,
       allowance,
       isAllowanceSufficient,
-      route,
-      error,
-      isLoadingRoute,
+      route: visibleRoute,
+      error: visibleError,
+      isLoadingRoute: isLoadingCurrentRequest,
       isLoadingAllowance,
       isCrossChain,
       routerAddress

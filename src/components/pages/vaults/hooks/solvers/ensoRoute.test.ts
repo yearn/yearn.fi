@@ -76,4 +76,23 @@ describe('normalizeEnsoRouteResponse', () => {
       }
     })
   })
+
+  it('flattens array-shaped Enso validation errors into readable strings', () => {
+    expect(
+      normalizeEnsoRouteResponse(
+        {
+          message: ['slippage must be a number string'],
+          requestId: 'test-request-id'
+        },
+        400
+      )
+    ).toEqual({
+      error: {
+        error: 'slippage must be a number string',
+        message: 'slippage must be a number string',
+        requestId: 'test-request-id',
+        statusCode: 400
+      }
+    })
+  })
 })

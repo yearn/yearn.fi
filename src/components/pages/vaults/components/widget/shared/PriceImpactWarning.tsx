@@ -1,33 +1,32 @@
+import { ZAP_SLIPPAGE_HARD_CAP } from '@shared/utils/slippage'
 import type { ReactElement } from 'react'
 
 type TPriceImpactWarningProps = {
   percentage: number
-  isHigh: boolean
+  userTolerancePercentage: number
   isBlocking: boolean
   isLoading: boolean
   isDebouncing: boolean
   isAmountSynced: boolean
   hasAmount: boolean
-  hasAcceptedPriceImpact: boolean
-  priceImpactAcceptanceKey: string
-  setAcceptedPriceImpactKey: (key: string | null) => void
-  actionVerb?: string
 }
 
 export function PriceImpactWarning({
   percentage,
-  isHigh,
+  userTolerancePercentage,
   isBlocking,
   isLoading,
   isDebouncing,
   isAmountSynced,
-  hasAmount,
-  hasAcceptedPriceImpact,
-  priceImpactAcceptanceKey,
-  setAcceptedPriceImpactKey,
-  actionVerb = 'depositing'
+  hasAmount
 }: TPriceImpactWarningProps): ReactElement | null {
-  if (!isHigh || isLoading || isDebouncing || !isAmountSynced || !hasAmount) {
+  if (
+    (percentage <= userTolerancePercentage && !isBlocking) ||
+    isLoading ||
+    isDebouncing ||
+    !isAmountSynced ||
+    !hasAmount
+  ) {
     return null
   }
 
@@ -35,29 +34,15 @@ export function PriceImpactWarning({
     <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 space-y-3">
       {isBlocking ? (
         <p className="text-sm text-red-500">
-          Price impact is too high ({percentage.toFixed(2)}%). This transaction cannot be completed. Please try a
-          smaller amount, a different token, or{' '}
-          <a href="https://discord.gg/yearn" target="_blank" rel="noopener noreferrer" className="underline">
-            contact support
-          </a>
-          .
+          Total slippage is too high ({percentage.toFixed(2)}%). Transactions at or above{' '}
+          {ZAP_SLIPPAGE_HARD_CAP.toFixed(2)}% are not supported. Try a smaller amount or use the base asset flow and
+          swap elsewhere.
         </p>
       ) : (
-        <>
-          <p className="text-sm text-red-500">
-            Price impact is high ({percentage.toFixed(2)}%). Consider {actionVerb} less or waiting for better liquidity
-            conditions.
-          </p>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={hasAcceptedPriceImpact}
-              onChange={(e) => setAcceptedPriceImpactKey(e.target.checked ? priceImpactAcceptanceKey : null)}
-              className="size-4 rounded border-red-500/50 bg-transparent text-red-500 focus:ring-red-500/50"
-            />
-            <span className="text-sm text-red-500">I understand and wish to continue</span>
-          </label>
-        </>
+        <p className="text-sm text-red-500">
+          Total slippage is {percentage.toFixed(2)}%, above your {userTolerancePercentage.toFixed(2)}% tolerance.
+          Increase your slippage tolerance in advanced settings by clicking the gear icon below if you want to continue.
+        </p>
       )}
     </div>
   )

@@ -76,6 +76,7 @@ export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepos
       isAllowanceSufficient,
       allowance,
       expectedOut,
+      minExpectedOut: expectedOut,
       isLoadingRoute: false,
       isCrossChain: false,
       error

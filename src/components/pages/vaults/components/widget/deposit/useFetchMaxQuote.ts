@@ -1,3 +1,4 @@
+import { toBasisPoints } from '@shared/utils/slippage'
 import { useCallback, useState } from 'react'
 import type { Address } from 'viem'
 import { formatUnits } from 'viem'
@@ -46,7 +47,7 @@ export const useFetchMaxQuote = ({
         tokenIn: depositToken,
         tokenOut: destinationToken,
         amountIn: balance.toString(),
-        slippage: (slippage * 100).toString(),
+        slippage: toBasisPoints(slippage).toString(),
         ...(isCrossChain && { destinationChainId: chainId.toString() }),
         receiver: account
       })

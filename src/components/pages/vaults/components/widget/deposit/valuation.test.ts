@@ -99,6 +99,7 @@ describe('calculateDepositValueInfo', () => {
 
     expect(valueInfo.vaultShareValueInAsset).toBe(102n * ONE_ETHER)
     expect(valueInfo.priceImpactPercentage).toBe(0)
+    expect(valueInfo.worstCasePriceImpactPercentage).toBe(0)
   })
 
   it('sets isBlockingPriceImpact when price impact exceeds 15%', () => {
@@ -133,5 +134,22 @@ describe('calculateDepositValueInfo', () => {
     expect(highNotBlockingInfo.priceImpactPercentage).toBe(10)
     expect(highNotBlockingInfo.isHighPriceImpact).toBe(true)
     expect(highNotBlockingInfo.isBlockingPriceImpact).toBe(false)
+  })
+
+  it('tracks worst-case price impact from min expected shares separately from the live quote', () => {
+    const valueInfo = calculateDepositValueInfo({
+      depositAmountBn: 100n * ONE_ETHER,
+      inputTokenDecimals: 18,
+      inputTokenUsdPrice: 1,
+      normalizedVaultShares: 100n * ONE_ETHER,
+      normalizedMinVaultShares: 99n * ONE_ETHER,
+      vaultDecimals: 18,
+      pricePerShare: ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1
+    })
+
+    expect(valueInfo.priceImpactPercentage).toBe(0)
+    expect(valueInfo.worstCasePriceImpactPercentage).toBe(1)
   })
 })

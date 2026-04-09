@@ -85,6 +85,7 @@ export function useDirectStake(params: UseDirectStakeParams): UseWidgetDepositFl
       isAllowanceSufficient,
       allowance,
       expectedOut, // Renamed from expectedStakeAmount for unified interface
+      minExpectedOut: expectedOut,
       isLoadingRoute: false,
       isCrossChain: false,
       error: undefined

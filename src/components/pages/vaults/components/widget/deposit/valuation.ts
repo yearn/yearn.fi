@@ -6,9 +6,24 @@ export const BLOCKING_PRICE_IMPACT_THRESHOLD = 15
 export type DepositValueInfo = {
   vaultShareValueInAsset: bigint
   vaultShareValueUsdRaw: number
+  minVaultShareValueInAsset: bigint
+  minVaultShareValueUsdRaw: number
   priceImpactPercentage: number
+  worstCasePriceImpactPercentage: number
   isHighPriceImpact: boolean
   isBlockingPriceImpact: boolean
+}
+
+function calculatePriceImpactPercentage({
+  inputUsdValue,
+  outputUsdValue
+}: {
+  inputUsdValue: number
+  outputUsdValue: number
+}): number {
+  return inputUsdValue > 0 && outputUsdValue > 0
+    ? Math.max(0, ((inputUsdValue - outputUsdValue) / inputUsdValue) * 100)
+    : 0
 }
 
 export function resolveValuationShareCount({
@@ -40,6 +55,7 @@ export function calculateDepositValueInfo({
   inputTokenDecimals,
   inputTokenUsdPrice,
   normalizedVaultShares,
+  normalizedMinVaultShares = normalizedVaultShares,
   vaultDecimals,
   pricePerShare,
   assetTokenDecimals,
@@ -51,6 +67,7 @@ export function calculateDepositValueInfo({
   inputTokenDecimals: number
   inputTokenUsdPrice: number
   normalizedVaultShares: bigint
+  normalizedMinVaultShares?: bigint
   vaultDecimals: number
   pricePerShare: bigint
   assetTokenDecimals: number
@@ -62,18 +79,30 @@ export function calculateDepositValueInfo({
     normalizedVaultShares > 0n && pricePerShare > 0n
       ? (normalizedVaultShares * pricePerShare) / 10n ** BigInt(vaultDecimals)
       : 0n
+  const minVaultShareValueInAsset =
+    normalizedMinVaultShares > 0n && pricePerShare > 0n
+      ? (normalizedMinVaultShares * pricePerShare) / 10n ** BigInt(vaultDecimals)
+      : 0n
 
   const vaultShareValueUsdRaw = Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
+  const minVaultShareValueUsdRaw = Number(formatUnits(minVaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
   const usdValueToDeposit = Number(formatUnits(depositAmountBn, inputTokenDecimals)) * inputTokenUsdPrice
-  const priceImpactPercentage =
-    usdValueToDeposit > 0 && vaultShareValueUsdRaw > 0
-      ? ((usdValueToDeposit - vaultShareValueUsdRaw) / usdValueToDeposit) * 100
-      : 0
+  const priceImpactPercentage = calculatePriceImpactPercentage({
+    inputUsdValue: usdValueToDeposit,
+    outputUsdValue: vaultShareValueUsdRaw
+  })
+  const worstCasePriceImpactPercentage = calculatePriceImpactPercentage({
+    inputUsdValue: usdValueToDeposit,
+    outputUsdValue: minVaultShareValueUsdRaw
+  })
 
   return {
     vaultShareValueInAsset,
     vaultShareValueUsdRaw,
+    minVaultShareValueInAsset,
+    minVaultShareValueUsdRaw,
     priceImpactPercentage,
+    worstCasePriceImpactPercentage,
     isHighPriceImpact: priceImpactPercentage > highPriceImpactThreshold,
     isBlockingPriceImpact: priceImpactPercentage > blockingPriceImpactThreshold
   }
