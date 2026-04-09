@@ -79,9 +79,7 @@ describe('calculateDepositValueInfo', () => {
       assetUsdPrice: 1
     })
 
-    expect(legacyInfo.isHighPriceImpact).toBe(true)
     expect(legacyInfo.priceImpactPercentage).toBeGreaterThan(5)
-    expect(normalizedInfo.isHighPriceImpact).toBe(false)
     expect(normalizedInfo.priceImpactPercentage).toBeLessThan(5)
   })
 
@@ -102,9 +100,8 @@ describe('calculateDepositValueInfo', () => {
     expect(valueInfo.worstCasePriceImpactPercentage).toBe(0)
   })
 
-  it('sets isBlockingPriceImpact when price impact exceeds 15%', () => {
-    // 20% impact — should be both high and blocking
-    const blockingInfo = calculateDepositValueInfo({
+  it('keeps reporting the raw price impact for large losses', () => {
+    const valueInfo = calculateDepositValueInfo({
       depositAmountBn: 100n * ONE_ETHER,
       inputTokenDecimals: 18,
       inputTokenUsdPrice: 1,
@@ -114,14 +111,11 @@ describe('calculateDepositValueInfo', () => {
       assetTokenDecimals: 18,
       assetUsdPrice: 1
     })
-    expect(blockingInfo.priceImpactPercentage).toBe(20)
-    expect(blockingInfo.isHighPriceImpact).toBe(true)
-    expect(blockingInfo.isBlockingPriceImpact).toBe(true)
+    expect(valueInfo.priceImpactPercentage).toBe(20)
   })
 
-  it('does not set isBlockingPriceImpact for impacts between 5% and 15%', () => {
-    // 10% impact — high but not blocking
-    const highNotBlockingInfo = calculateDepositValueInfo({
+  it('keeps reporting the raw price impact for midrange losses', () => {
+    const valueInfo = calculateDepositValueInfo({
       depositAmountBn: 100n * ONE_ETHER,
       inputTokenDecimals: 18,
       inputTokenUsdPrice: 1,
@@ -131,9 +125,7 @@ describe('calculateDepositValueInfo', () => {
       assetTokenDecimals: 18,
       assetUsdPrice: 1
     })
-    expect(highNotBlockingInfo.priceImpactPercentage).toBe(10)
-    expect(highNotBlockingInfo.isHighPriceImpact).toBe(true)
-    expect(highNotBlockingInfo.isBlockingPriceImpact).toBe(false)
+    expect(valueInfo.priceImpactPercentage).toBe(10)
   })
 
   it('tracks worst-case price impact from min expected shares separately from the live quote', () => {

@@ -1,8 +1,5 @@
 import { type Address, formatUnits, isAddressEqual } from 'viem'
 
-export const HIGH_PRICE_IMPACT_THRESHOLD = 5
-export const BLOCKING_PRICE_IMPACT_THRESHOLD = 15
-
 export type DepositValueInfo = {
   vaultShareValueInAsset: bigint
   vaultShareValueUsdRaw: number
@@ -11,8 +8,6 @@ export type DepositValueInfo = {
   hasIncompleteUsdValuation: boolean
   priceImpactPercentage: number
   worstCasePriceImpactPercentage: number
-  isHighPriceImpact: boolean
-  isBlockingPriceImpact: boolean
 }
 
 function calculatePriceImpactPercentage({
@@ -60,9 +55,7 @@ export function calculateDepositValueInfo({
   vaultDecimals,
   pricePerShare,
   assetTokenDecimals,
-  assetUsdPrice,
-  highPriceImpactThreshold = HIGH_PRICE_IMPACT_THRESHOLD,
-  blockingPriceImpactThreshold = BLOCKING_PRICE_IMPACT_THRESHOLD
+  assetUsdPrice
 }: {
   depositAmountBn: bigint
   inputTokenDecimals: number
@@ -73,8 +66,6 @@ export function calculateDepositValueInfo({
   pricePerShare: bigint
   assetTokenDecimals: number
   assetUsdPrice: number
-  highPriceImpactThreshold?: number
-  blockingPriceImpactThreshold?: number
 }): DepositValueInfo {
   const vaultShareValueInAsset =
     normalizedVaultShares > 0n && pricePerShare > 0n
@@ -108,8 +99,6 @@ export function calculateDepositValueInfo({
     minVaultShareValueUsdRaw,
     hasIncompleteUsdValuation,
     priceImpactPercentage,
-    worstCasePriceImpactPercentage,
-    isHighPriceImpact: priceImpactPercentage > highPriceImpactThreshold,
-    isBlockingPriceImpact: priceImpactPercentage > blockingPriceImpactThreshold
+    worstCasePriceImpactPercentage
   }
 }

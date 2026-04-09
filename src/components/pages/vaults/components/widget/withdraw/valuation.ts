@@ -1,8 +1,5 @@
 import { formatUnits } from 'viem'
 
-export const HIGH_PRICE_IMPACT_THRESHOLD = 5
-export const BLOCKING_PRICE_IMPACT_THRESHOLD = 15
-
 export type WithdrawValueInfo = {
   withdrawUsdValueRaw: number
   expectedOutUsdValueRaw: number
@@ -10,8 +7,6 @@ export type WithdrawValueInfo = {
   hasIncompleteUsdValuation: boolean
   priceImpactPercentage: number
   worstCasePriceImpactPercentage: number
-  isHighPriceImpact: boolean
-  isBlockingPriceImpact: boolean
 }
 
 function calculatePriceImpactPercentage({
@@ -43,9 +38,7 @@ export function calculateWithdrawValueInfo({
   expectedOut,
   minExpectedOut = expectedOut,
   outputDecimals,
-  outputUsdPrice,
-  highPriceImpactThreshold = HIGH_PRICE_IMPACT_THRESHOLD,
-  blockingPriceImpactThreshold = BLOCKING_PRICE_IMPACT_THRESHOLD
+  outputUsdPrice
 }: {
   withdrawAmountBn: bigint
   assetTokenDecimals: number
@@ -54,8 +47,6 @@ export function calculateWithdrawValueInfo({
   minExpectedOut?: bigint
   outputDecimals: number
   outputUsdPrice: number
-  highPriceImpactThreshold?: number
-  blockingPriceImpactThreshold?: number
 }): WithdrawValueInfo {
   const withdrawUsdValueRaw = Number(formatUnits(withdrawAmountBn, assetTokenDecimals)) * assetUsdPrice
   const expectedOutUsdValueRaw = Number(formatUnits(expectedOut, outputDecimals)) * outputUsdPrice
@@ -80,8 +71,6 @@ export function calculateWithdrawValueInfo({
     minExpectedOutUsdValueRaw,
     hasIncompleteUsdValuation,
     priceImpactPercentage,
-    worstCasePriceImpactPercentage,
-    isHighPriceImpact: priceImpactPercentage > highPriceImpactThreshold,
-    isBlockingPriceImpact: priceImpactPercentage > blockingPriceImpactThreshold
+    worstCasePriceImpactPercentage
   }
 }

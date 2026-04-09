@@ -72,7 +72,7 @@ export const MobileDrawerSettingsButton: FC = () => {
           <div className="space-y-1">
             <h4 className="font-medium text-text-primary">Transaction Settings</h4>
             <p className="text-xs text-text-secondary">
-              Applies site-wide across all vaults. Slippage covers both quote quality and execution buffer.
+              Applies site-wide across all vaults. Price impact covers both quote quality and execution buffer.
             </p>
           </div>
 
@@ -80,7 +80,7 @@ export const MobileDrawerSettingsButton: FC = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label htmlFor={slippageId} className="text-sm text-text-primary">
-                  Slippage Tolerance
+                  Price Impact Tolerance
                 </label>
                 <span className="text-sm text-text-secondary">{sanitizedSlippage}%</span>
               </div>
@@ -130,12 +130,12 @@ export const MobileDrawerSettingsButton: FC = () => {
                 />
               </div>
               <p className="text-xs text-text-secondary">
-                Default is 0.50%. Transactions at or above 5.00% total slippage are blocked.
+                Default is 0.50%. Transactions with total price impact at or above 5.00% are blocked.
               </p>
               {needsRiskAcknowledgement ? (
                 <div className="space-y-2 rounded-md border border-red-500/30 bg-red-500/5 p-3">
                   <label htmlFor={riskAcknowledgementId} className="block text-xs font-medium text-red-500">
-                    Type this sentence exactly to save slippage above 1.00%
+                    Type this sentence exactly to save price impact above 1.00%
                   </label>
                   <p className="text-xs text-text-primary">"{ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT}"</p>
                   <input
@@ -151,7 +151,7 @@ export const MobileDrawerSettingsButton: FC = () => {
                   {riskAcknowledgementMessage ? (
                     <p className="text-xs text-red-500">{riskAcknowledgementMessage}</p>
                   ) : (
-                    <p className="text-xs text-green-500">High-slippage tolerance will save when settings close.</p>
+                    <p className="text-xs text-green-500">High price impact tolerance will save when settings close.</p>
                   )}
                 </div>
               ) : null}

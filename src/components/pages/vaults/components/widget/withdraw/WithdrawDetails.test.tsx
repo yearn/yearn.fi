@@ -23,11 +23,43 @@ describe('WithdrawDetails', () => {
         assetUsdPrice={0}
         assetSymbol="yvUSD"
         outputUsdPrice={0}
+        priceImpactPercentage={0}
+        shouldHighlightPriceImpact={false}
         routeType="ENSO"
         onShowDetailsModal={() => undefined}
       />
     )
 
     expect(html).not.toContain('($0.00)')
+  })
+
+  it('shows the worst-case price impact row for zap withdrawals', () => {
+    const html = renderToStaticMarkup(
+      <WithdrawDetails
+        actionLabel="You will redeem"
+        requiredShares={10n * ONE_ETHER}
+        sharesDecimals={18}
+        isLoadingQuote={false}
+        isQuoteStale={false}
+        expectedOut={9n * ONE_ETHER}
+        outputDecimals={18}
+        outputSymbol="USDC"
+        showSwapRow
+        withdrawAmountSimple="10"
+        withdrawAmountBn={10n * ONE_ETHER}
+        assetDecimals={18}
+        assetUsdPrice={1}
+        assetSymbol="yvUSD"
+        outputUsdPrice={1}
+        priceImpactPercentage={10}
+        shouldHighlightPriceImpact
+        routeType="ENSO"
+        onShowDetailsModal={() => undefined}
+      />
+    )
+
+    expect(html).toContain('Worst case price impact')
+    expect(html).toContain('10.00%')
+    expect(html).toContain('text-red-500')
   })
 })

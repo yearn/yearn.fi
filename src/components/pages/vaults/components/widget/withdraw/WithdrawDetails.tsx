@@ -3,7 +3,6 @@ import type { ReactElement } from 'react'
 import { formatUnits } from 'viem'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import type { WithdrawRouteType } from './types'
-import { calculateWithdrawValueInfo } from './valuation'
 
 interface WithdrawDetailsProps {
   // Action label
@@ -26,6 +25,8 @@ interface WithdrawDetailsProps {
   assetSymbol?: string
   // Output USD price for slippage calculation
   outputUsdPrice: number
+  priceImpactPercentage: number
+  shouldHighlightPriceImpact: boolean
   // Route type for "at least" text
   routeType: WithdrawRouteType
   // Modal trigger
@@ -59,6 +60,8 @@ export function WithdrawDetails({
   assetUsdPrice,
   assetSymbol,
   outputUsdPrice,
+  priceImpactPercentage,
+  shouldHighlightPriceImpact,
   routeType,
   onShowDetailsModal,
   allowance,
@@ -70,19 +73,12 @@ export function WithdrawDetails({
 }: WithdrawDetailsProps): ReactElement {
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
   const approvalLabel = getApprovalLabel(approvalSpenderName)
-  const withdrawValueInfo = calculateWithdrawValueInfo({
-    withdrawAmountBn,
-    assetTokenDecimals: assetDecimals,
-    assetUsdPrice,
-    expectedOut,
-    outputDecimals,
-    outputUsdPrice
-  })
-  const hasHighPriceImpact = !isQuoteStale && !isLoadingQuote && withdrawValueInfo.isHighPriceImpact
   const withdrawUsdDisplay = formatCounterValue(formatUnits(withdrawAmountBn, assetDecimals), assetUsdPrice)
   const expectedOutUsdDisplay = formatCounterValue(formatUnits(expectedOut, outputDecimals), outputUsdPrice)
   const shouldShowWithdrawUsdBadge = showSwapRow && assetUsdPrice > 0 && withdrawAmountBn > 0n
   const shouldShowExpectedOutUsdBadge = routeType === 'ENSO' && outputUsdPrice > 0 && expectedOut > 0n
+  const shouldShowWorstCasePriceImpact = showSwapRow && routeType === 'ENSO'
+  const shouldUseHighlight = !isQuoteStale && !isLoadingQuote && shouldHighlightPriceImpact
   return (
     <div>
       <div className="flex flex-col gap-2">
@@ -125,17 +121,15 @@ export function WithdrawDetails({
         <div className="flex items-center justify-between h-5">
           <p className="text-sm text-text-secondary">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
           <div className="flex items-center gap-1">
-            <p className={`text-sm ${hasHighPriceImpact ? 'text-red-500' : 'text-text-primary'}`}>
+            <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
               {isLoadingQuote ? (
                 <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : expectedOut > 0n ? (
                 <>
                   <span className="font-semibold">{formatWidgetValue(expectedOut, outputDecimals)}</span>{' '}
                   <span className="font-normal">{outputSymbol}</span>
-                  {hasHighPriceImpact && (
-                    <span className="font-semibold">
-                      {` (-${withdrawValueInfo.priceImpactPercentage.toFixed(2)}%)`}
-                    </span>
+                  {shouldUseHighlight && (
+                    <span className="font-semibold">{` (-${priceImpactPercentage.toFixed(2)}%)`}</span>
                   )}
                   {shouldShowExpectedOutUsdBadge ? (
                     <span className="font-normal">{` (${expectedOutUsdDisplay})`}</span>
@@ -150,6 +144,19 @@ export function WithdrawDetails({
             </p>
           </div>
         </div>
+
+        {shouldShowWorstCasePriceImpact && (
+          <div className="flex items-center justify-between h-5">
+            <p className="text-sm text-text-secondary">Worst case price impact</p>
+            <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
+              {isLoadingQuote ? (
+                <span className="inline-block h-4 w-16 bg-surface-secondary rounded animate-pulse" />
+              ) : (
+                <span className="font-semibold">{`${priceImpactPercentage.toFixed(2)}%`}</span>
+              )}
+            </p>
+          </div>
+        )}
 
         {/* Approved allowance (for zap withdrawals) */}
         {allowanceDisplay && (

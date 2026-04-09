@@ -16,8 +16,6 @@ describe('calculateWithdrawValueInfo', () => {
 
     expect(valueInfo.priceImpactPercentage).toBe(0)
     expect(valueInfo.worstCasePriceImpactPercentage).toBe(0)
-    expect(valueInfo.isHighPriceImpact).toBe(false)
-    expect(valueInfo.isBlockingPriceImpact).toBe(false)
   })
 
   it('does not infer price impact when the output price is unavailable for a nonzero quote', () => {
@@ -33,8 +31,6 @@ describe('calculateWithdrawValueInfo', () => {
     expect(valueInfo.priceImpactPercentage).toBe(0)
     expect(valueInfo.worstCasePriceImpactPercentage).toBe(0)
     expect(valueInfo.hasIncompleteUsdValuation).toBe(true)
-    expect(valueInfo.isHighPriceImpact).toBe(false)
-    expect(valueInfo.isBlockingPriceImpact).toBe(false)
   })
 
   it('tracks the worst-case execution floor separately from the quoted output', () => {

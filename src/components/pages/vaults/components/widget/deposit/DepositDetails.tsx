@@ -25,7 +25,7 @@ interface DepositDetailsProps {
   vaultShareValueInAsset: bigint
   vaultShareValueUsdRaw: number
   priceImpactPercentage: number
-  hasHighPriceImpact: boolean
+  shouldHighlightPriceImpact: boolean
   willReceiveStakedShares: boolean
   vaultSharesLabel?: string
   onShowVaultSharesModal: () => void
@@ -58,7 +58,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   vaultShareValueInAsset,
   vaultShareValueUsdRaw,
   priceImpactPercentage,
-  hasHighPriceImpact,
+  shouldHighlightPriceImpact,
   willReceiveStakedShares,
   vaultSharesLabel,
   onShowVaultSharesModal,
@@ -84,7 +84,8 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
   const vaultShareValueDisplay = formatWidgetValue(vaultShareValueInAsset, assetTokenDecimals)
   const vaultShareValueUsd = formatWidgetValue(vaultShareValueUsdRaw)
-  const shouldHighlightPriceImpact = !isQuoteStale && !isLoadingQuote && hasHighPriceImpact
+  const shouldUseHighlight = !isQuoteStale && !isLoadingQuote && shouldHighlightPriceImpact
+  const shouldShowWorstCasePriceImpact = isSwap && !isStake
   return (
     <div className="">
       <div className="flex flex-col gap-2">
@@ -155,7 +156,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
           >
             Vault share value
           </button>
-          <p className={`text-sm ${shouldHighlightPriceImpact ? 'text-red-500' : 'text-text-primary'}`}>
+          <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
             {isLoadingQuote ? (
               <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
             ) : (
@@ -164,13 +165,26 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 <span className="font-normal">{`${assetTokenSymbol || ''} (`}</span>
                 <span className="font-normal">{`$${vaultShareValueUsd}`}</span>
                 <span className="font-normal">{')'}</span>
-                {shouldHighlightPriceImpact && (
+                {shouldUseHighlight && (
                   <span className="font-semibold">{` (-${priceImpactPercentage.toFixed(2)}%)`}</span>
                 )}
               </>
             )}
           </p>
         </div>
+
+        {shouldShowWorstCasePriceImpact && (
+          <div className="flex items-center justify-between h-5">
+            <p className="text-sm text-text-secondary">Worst case price impact</p>
+            <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
+              {isLoadingQuote ? (
+                <span className="inline-block h-4 w-16 bg-surface-secondary rounded animate-pulse" />
+              ) : (
+                <span className="font-semibold">{`${priceImpactPercentage.toFixed(2)}%`}</span>
+              )}
+            </p>
+          </div>
+        )}
 
         {/* Est. Annual Return */}
         <div className="flex items-center justify-between h-5">

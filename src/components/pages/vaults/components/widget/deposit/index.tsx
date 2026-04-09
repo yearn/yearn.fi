@@ -36,7 +36,7 @@ import { useDepositNotifications } from './useDepositNotifications'
 import { useFetchMaxQuote } from './useFetchMaxQuote'
 import { VaultSharesOverlay } from './VaultSharesOverlay'
 import { VaultShareValueOverlay } from './VaultShareValueOverlay'
-import { calculateDepositValueInfo, HIGH_PRICE_IMPACT_THRESHOLD } from './valuation'
+import { calculateDepositValueInfo } from './valuation'
 
 interface Props {
   vaultAddress: `0x${string}`
@@ -460,7 +460,7 @@ export function WidgetDeposit({
     setEnsoQuoteSlippage(desiredEnsoQuoteSlippage)
   }, [depositAmount.debouncedBn, desiredEnsoQuoteSlippage, ensoQuoteSlippage, isLoadingQuote, routeType])
 
-  // Calculate total slippage for warning and blocking.
+  // Calculate total price impact for warning and blocking.
   const priceImpactInfo = useMemo(() => {
     return {
       percentage: depositValueInfo.worstCasePriceImpactPercentage,
@@ -474,7 +474,7 @@ export function WidgetDeposit({
     depositAmount.debouncedBn > 0n &&
     !depositAmount.isDebouncing &&
     !isLoadingQuote
-      ? 'Unable to estimate zap slippage for the selected token. Use the base asset flow or swap elsewhere.'
+      ? 'Unable to estimate zap price impact for the selected token. Use the base asset flow or swap elsewhere.'
       : null
   const effectiveDepositError = depositError || unpricedEnsoDepositError
 
@@ -680,10 +680,8 @@ export function WidgetDeposit({
     routeType === 'ENSO' ? depositValueInfo.minVaultShareValueUsdRaw : depositValueInfo.vaultShareValueUsdRaw
   const displayedPriceImpactPercentage =
     routeType === 'ENSO' ? depositValueInfo.worstCasePriceImpactPercentage : depositValueInfo.priceImpactPercentage
-  const displayedHasHighPriceImpact =
-    routeType === 'ENSO'
-      ? depositValueInfo.worstCasePriceImpactPercentage > HIGH_PRICE_IMPACT_THRESHOLD
-      : depositValueInfo.isHighPriceImpact
+  const displayedShouldHighlightPriceImpact =
+    routeType === 'ENSO' && (priceImpactInfo.isAboveTolerance || priceImpactInfo.isBlocking)
   const displayedConvertedVaultShares = routeType === 'ENSO' ? normalizedMinExpectedOut : normalizedExpectedOut
   const shouldShowShareConversion =
     willReceiveStakedShares && displayedExpectedVaultShares !== displayedConvertedVaultShares
@@ -711,7 +709,7 @@ export function WidgetDeposit({
       vaultShareValueInAsset={displayedVaultShareValueInAsset}
       vaultShareValueUsdRaw={displayedVaultShareValueUsdRaw}
       priceImpactPercentage={displayedPriceImpactPercentage}
-      hasHighPriceImpact={displayedHasHighPriceImpact}
+      shouldHighlightPriceImpact={displayedShouldHighlightPriceImpact}
       willReceiveStakedShares={willReceiveStakedShares}
       vaultSharesLabel={vaultSharesLabel}
       onShowVaultSharesModal={() => setShowVaultSharesModal(true)}

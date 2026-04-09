@@ -559,7 +559,7 @@ export function WidgetWithdraw({
     setEnsoQuoteSlippage(desiredEnsoQuoteSlippage)
   }, [desiredEnsoQuoteSlippage, ensoQuoteSlippage, flowRequiredShares, isFetchingQuote, routeType])
 
-  // Calculate total slippage for warning and blocking.
+  // Calculate total price impact for warning and blocking.
   const priceImpactInfo = useMemo(() => {
     return {
       percentage: withdrawValueInfo.worstCasePriceImpactPercentage,
@@ -573,13 +573,17 @@ export function WidgetWithdraw({
     withdrawAmount.debouncedBn > 0n &&
     !withdrawAmount.isDebouncing &&
     !isFetchingQuote
-      ? 'Unable to estimate zap slippage for the selected token. Withdraw the base asset or swap elsewhere.'
+      ? 'Unable to estimate zap price impact for the selected token. Withdraw the base asset or swap elsewhere.'
       : null
   const effectiveWithdrawError = baseWithdrawError || unpricedEnsoWithdrawError
 
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
   const shouldShowZapUi = !isBaseWithdrawToken
   const canShowAssetTokenSelector = canOpenTokenSelector && !shouldShowZapUi
+  const displayedPriceImpactPercentage =
+    routeType === 'ENSO' ? withdrawValueInfo.worstCasePriceImpactPercentage : withdrawValueInfo.priceImpactPercentage
+  const shouldHighlightDisplayedPriceImpact =
+    routeType === 'ENSO' && (priceImpactInfo.isAboveTolerance || priceImpactInfo.isBlocking)
 
   const zapToken = useMemo(() => {
     if (!shouldShowZapUi) return undefined
@@ -821,6 +825,8 @@ export function WidgetWithdraw({
       assetUsdPrice={assetTokenPrice}
       assetSymbol={assetToken?.symbol}
       outputUsdPrice={outputTokenPrice}
+      priceImpactPercentage={displayedPriceImpactPercentage}
+      shouldHighlightPriceImpact={shouldHighlightDisplayedPriceImpact}
       routeType={routeType}
       onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
       allowance={approvalState.hasApprovalStep ? activeFlow.periphery.allowance : undefined}
