@@ -282,33 +282,6 @@ export function WidgetDeposit({
     setIsDetailsPanelOpen(false)
   }
 
-  const ensoSlippageCalibrationKey = useMemo(
-    () =>
-      [
-        sourceChainId,
-        vault?.chainID ?? chainId,
-        depositToken,
-        destinationToken,
-        account ?? 'no-account',
-        depositAmount.debouncedBn.toString(),
-        zapSlippage
-      ].join(':'),
-    [
-      account,
-      chainId,
-      depositAmount.debouncedBn,
-      depositToken,
-      destinationToken,
-      sourceChainId,
-      vault?.chainID,
-      zapSlippage
-    ]
-  )
-
-  useEffect(() => {
-    setEnsoQuoteSlippage(0)
-  }, [ensoSlippageCalibrationKey])
-
   const { routeType, activeFlow } = useDepositFlow({
     depositToken,
     assetAddress,
@@ -399,6 +372,42 @@ export function WidgetDeposit({
     assetToken?.address && assetToken?.chainID
       ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
       : 0
+
+  const hasInputTokenPrice = inputTokenPrice > 0
+  const hasAssetTokenPrice = assetTokenPrice > 0
+
+  // ENSO slippage is calibrated from USD price impact, so re-arm the second
+  // quote pass once those price inputs resolve after a cold load.
+  const ensoSlippageCalibrationKey = useMemo(
+    () =>
+      [
+        sourceChainId,
+        vault?.chainID ?? chainId,
+        depositToken,
+        destinationToken,
+        account ?? 'no-account',
+        depositAmount.debouncedBn.toString(),
+        zapSlippage,
+        hasInputTokenPrice,
+        hasAssetTokenPrice
+      ].join(':'),
+    [
+      account,
+      chainId,
+      depositAmount.debouncedBn,
+      depositToken,
+      destinationToken,
+      hasAssetTokenPrice,
+      hasInputTokenPrice,
+      sourceChainId,
+      vault?.chainID,
+      zapSlippage
+    ]
+  )
+
+  useEffect(() => {
+    setEnsoQuoteSlippage(0)
+  }, [ensoSlippageCalibrationKey])
 
   const depositValueInfo = useMemo(
     () =>
@@ -669,7 +678,9 @@ export function WidgetDeposit({
       expectedOutInAsset={routeType === 'ENSO' ? minExpectedOutInAsset : expectedOutInAsset}
       assetTokenSymbol={assetToken?.symbol}
       assetTokenDecimals={assetToken?.decimals ?? 18}
-      expectedVaultShares={activeFlow.periphery.expectedOut}
+      expectedVaultShares={
+        routeType === 'ENSO' ? activeFlow.periphery.minExpectedOut : activeFlow.periphery.expectedOut
+      }
       vaultDecimals={vaultDecimals}
       sharesDisplayDecimals={sharesDecimals}
       pricePerShare={pricePerShare || 0n}

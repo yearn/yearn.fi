@@ -324,34 +324,6 @@ export function WidgetWithdraw({
   const flowDebouncedAmount = disableFlow ? 0n : withdrawAmount.debouncedBn
   const flowRequiredShares = disableFlow ? 0n : effectiveRequiredShares
   const flowIsMaxWithdraw = disableFlow ? false : isMaxWithdraw
-  const ensoSlippageCalibrationKey = useMemo(
-    () =>
-      [
-        chainId,
-        destinationChainId,
-        sourceToken,
-        withdrawToken,
-        withdrawalSource ?? 'none',
-        account ?? 'no-account',
-        flowRequiredShares.toString(),
-        zapSlippage
-      ].join(':'),
-    [
-      account,
-      chainId,
-      destinationChainId,
-      flowRequiredShares,
-      sourceToken,
-      withdrawToken,
-      withdrawalSource,
-      zapSlippage
-    ]
-  )
-
-  useEffect(() => {
-    setEnsoQuoteSlippage(0)
-  }, [ensoSlippageCalibrationKey])
-
   useEffect(() => {
     if (!awaitingPostUnstakeShares || fallbackStep !== 'withdraw') return
 
@@ -499,6 +471,43 @@ export function WidgetWithdraw({
     outputToken?.address && outputToken?.chainID
       ? getPrice({ address: toAddress(outputToken.address), chainID: outputToken.chainID }).normalized
       : 0
+
+  const hasAssetTokenPrice = assetTokenPrice > 0
+  const hasOutputTokenPrice = outputTokenPrice > 0
+
+  // ENSO slippage is calibrated from USD price impact, so re-arm the second
+  // quote pass once those price inputs resolve after a cold load.
+  const ensoSlippageCalibrationKey = useMemo(
+    () =>
+      [
+        chainId,
+        destinationChainId,
+        sourceToken,
+        withdrawToken,
+        withdrawalSource ?? 'none',
+        account ?? 'no-account',
+        flowRequiredShares.toString(),
+        zapSlippage,
+        hasAssetTokenPrice,
+        hasOutputTokenPrice
+      ].join(':'),
+    [
+      account,
+      chainId,
+      destinationChainId,
+      flowRequiredShares,
+      hasAssetTokenPrice,
+      hasOutputTokenPrice,
+      sourceToken,
+      withdrawToken,
+      withdrawalSource,
+      zapSlippage
+    ]
+  )
+
+  useEffect(() => {
+    setEnsoQuoteSlippage(0)
+  }, [ensoSlippageCalibrationKey])
 
   const withdrawValueInfo = useMemo(
     () =>
