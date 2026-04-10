@@ -153,7 +153,7 @@ describe('Vaults page search recovery row', () => {
           blockingFilterActions: [
             {
               key: 'clearMinTvl',
-              label: 'Clear minimum TVL',
+              label: 'Show low-TVL vaults',
               additionalResults: 2,
               onApply: vi.fn()
             }
@@ -174,6 +174,6 @@ describe('Vaults page search recovery row', () => {
 
     expect(html).toContain('Show additional matching vaults hidden by filters.')
     expect(html).not.toContain('Show 2 more matching vaults')
-    expect(html).toContain('Clear minimum TVL (+2)')
+    expect(html).toContain('Show low-TVL vaults (+2)')
   })
 })

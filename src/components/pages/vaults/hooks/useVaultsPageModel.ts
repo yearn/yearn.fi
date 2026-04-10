@@ -127,7 +127,7 @@ const BLOCKING_FILTER_LABELS: Record<TVaultsBlockingFilterBaseActionKey, string>
   showAllCategories: 'Show all categories',
   showAllAggressiveness: 'Show all aggressiveness levels',
   showAllUnderlyingAssets: 'Show all underlying assets',
-  clearMinTvl: 'Clear minimum TVL',
+  clearMinTvl: 'Show low-TVL vaults',
   showAllTypes: 'Show all strategy types',
   showAllVaults: 'Show all vaults'
 }
