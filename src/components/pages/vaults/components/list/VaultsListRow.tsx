@@ -19,8 +19,10 @@ import {
   getVaultSymbol,
   getVaultToken,
   getVaultTVL,
+  getVaultView,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
@@ -265,14 +267,23 @@ function VaultsListRowComponent({
   const vaultAddress = getVaultAddress(currentVault)
   const vaultSymbol = getVaultSymbol(currentVault)
   const vaultName = getVaultDisplayName(currentVault)
+  const isYvUsd = isYvUsdAddress(vaultAddress)
+  const shouldUseSnapshotForApy = !isYvUsd && !('version' in currentVault) && Boolean(currentVault.v3)
+  const { data: snapshotVaultForApy } = useVaultSnapshot({
+    chainId: shouldUseSnapshotForApy ? chainID : undefined,
+    address: shouldUseSnapshotForApy ? vaultAddress : undefined
+  })
+  const apyVault = useMemo(
+    () => (snapshotVaultForApy ? getVaultView(currentVault, snapshotVaultForApy) : currentVault),
+    [currentVault, snapshotVaultForApy]
+  )
   const vaultToken = getVaultToken(currentVault)
-  const apr = getVaultAPR(currentVault)
+  const apr = getVaultAPR(apyVault)
   const vaultKind = getVaultKind(currentVault)
   const vaultCategory = getVaultCategory(currentVault)
   const href = hrefOverride ?? `/vaults/${chainID}/${toAddress(vaultAddress)}`
   const network = getNetwork(chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
-  const isYvUsd = isYvUsdAddress(vaultAddress)
   const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
   const { address } = useWeb3()
   const { getVaultHoldingsUsd, getBalance, isLoading: isWalletLoading } = useWallet()
@@ -758,7 +769,7 @@ function VaultsListRowComponent({
                   </Tooltip>
                 ) : (
                   <VaultForwardAPY
-                    currentVault={currentVault}
+                    currentVault={apyVault}
                     className={'flex-row items-center text-left'}
                     valueClassName={'text-lg font-semibold'}
                     showSubline={false}
@@ -848,7 +859,7 @@ function VaultsListRowComponent({
               </div>
             ) : (
               <VaultForwardAPY
-                currentVault={currentVault}
+                currentVault={apyVault}
                 showSubline={false}
                 showSublineTooltip
                 displayVariant={apyDisplayVariant}
