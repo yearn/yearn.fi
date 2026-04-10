@@ -3,6 +3,19 @@ const API_HEALTHCHECK_PATH = process.env.API_HEALTHCHECK_PATH || '/api/enso/bala
 const API_HEALTHCHECK_EXPECTED_ERROR = 'Missing eoaAddress'
 const API_HEALTHCHECK_TIMEOUT_MS = Number(process.env.API_HEALTHCHECK_TIMEOUT_MS || '500')
 
+function resolveApiPort() {
+  if (process.env.API_PORT) {
+    return process.env.API_PORT
+  }
+
+  try {
+    const parsedTarget = new URL(API_PROXY_TARGET)
+    return parsedTarget.port || (parsedTarget.protocol === 'https:' ? '443' : '80')
+  } catch {
+    return '3001'
+  }
+}
+
 async function checkApi() {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), API_HEALTHCHECK_TIMEOUT_MS)
@@ -37,6 +50,10 @@ async function checkApi() {
   }
 
   const child = Bun.spawn(['bun', 'api/server.ts'], {
+    env: {
+      ...process.env,
+      API_PORT: resolveApiPort()
+    },
     stdin: 'inherit',
     stdout: 'inherit',
     stderr: 'inherit'
