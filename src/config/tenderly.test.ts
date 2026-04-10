@@ -9,6 +9,7 @@ import {
   resolveCanonicalChainIdForRuntime,
   resolveConnectedCanonicalChainIdForRuntime,
   resolveExecutionChainIdForRuntime,
+  resolveInitialTenderlyModeEnabled,
   resolveTenderlyExplorerUriForExecutionChainIdForRuntime,
   resolveTenderlyRpcUriForExecutionChainIdForRuntime
 } from './tenderly'
@@ -115,5 +116,47 @@ describe('parseTenderlyRuntime', () => {
     expect(supportedExecutionChains[0].id).toBe(73571)
     expect(supportedExecutionChains[0].blockExplorers).toBeUndefined()
     expect(resolveTenderlyExplorerUriForExecutionChainIdForRuntime(runtime, 73571)).toBeUndefined()
+  })
+})
+
+describe('resolveInitialTenderlyModeEnabled', () => {
+  it('disables Tenderly when the feature is not configured', () => {
+    expect(
+      resolveInitialTenderlyModeEnabled({
+        isConfigured: false,
+        canToggle: true,
+        storedPreference: 'true'
+      })
+    ).toBe(false)
+  })
+
+  it('defaults to enabled when local toggling is available and no preference is stored', () => {
+    expect(
+      resolveInitialTenderlyModeEnabled({
+        isConfigured: true,
+        canToggle: true,
+        storedPreference: null
+      })
+    ).toBe(true)
+  })
+
+  it('respects an explicit disabled local preference', () => {
+    expect(
+      resolveInitialTenderlyModeEnabled({
+        isConfigured: true,
+        canToggle: true,
+        storedPreference: 'false'
+      })
+    ).toBe(false)
+  })
+
+  it('ignores stored preferences when local toggling is not available', () => {
+    expect(
+      resolveInitialTenderlyModeEnabled({
+        isConfigured: true,
+        canToggle: false,
+        storedPreference: 'false'
+      })
+    ).toBe(true)
   })
 })
