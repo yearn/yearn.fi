@@ -18,6 +18,7 @@ import { isConnectedToExecutionChain } from '@/config/tenderly'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
 import {
   type CompletionDeferral,
+  getPendingTransactionTitle,
   type OverlayState,
   resolveCompletionDeferral,
   shouldAutoContinuePermitSuccess,
@@ -204,6 +205,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   // Check if current step is ready to execute
   const isStepReady = Boolean(step?.prepare.isSuccess && step?.prepare.data?.request)
   const executedStepLabel = executedStepRef.current?.label
+  const executedStepFunctionName = (
+    executedStepRef.current?.prepare.data?.request as { functionName?: unknown } | undefined
+  )?.functionName
   const executedStepAutoContinues = Boolean(
     executedStepLabel &&
       autoContinueToNextStep &&
@@ -844,7 +848,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
             <>
               <Spinner />
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">
-                {isPreparingNextStep ? 'Transaction confirmed' : 'Transaction pending'}
+                {getPendingTransactionTitle({
+                  isPreparingNextStep,
+                  functionName: executedStepFunctionName,
+                  fallbackLabel: executedStepLabel
+                })}
               </h3>
               <p className="text-sm text-text-secondary">
                 {isPreparingNextStep ? 'Preparing next step...' : 'Waiting for confirmation...'}
