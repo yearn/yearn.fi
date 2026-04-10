@@ -8,7 +8,9 @@ import {
   parseTenderlyRuntime,
   resolveCanonicalChainIdForRuntime,
   resolveConnectedCanonicalChainIdForRuntime,
+  resolveConnectedTenderlyExecutionChainForRuntime,
   resolveExecutionChainIdForRuntime,
+  resolveInitialTenderlyModeEnabled,
   resolveTenderlyExplorerUriForExecutionChainIdForRuntime,
   resolveTenderlyRpcUriForExecutionChainIdForRuntime
 } from './tenderly'
@@ -115,5 +117,71 @@ describe('parseTenderlyRuntime', () => {
     expect(supportedExecutionChains[0].id).toBe(73571)
     expect(supportedExecutionChains[0].blockExplorers).toBeUndefined()
     expect(resolveTenderlyExplorerUriForExecutionChainIdForRuntime(runtime, 73571)).toBeUndefined()
+  })
+})
+
+describe('resolveInitialTenderlyModeEnabled', () => {
+  it('disables Tenderly when the feature is not configured', () => {
+    expect(
+      resolveInitialTenderlyModeEnabled({
+        isConfigured: false,
+        canToggle: true,
+        storedPreference: 'true'
+      })
+    ).toBe(false)
+  })
+
+  it('defaults to enabled when local toggling is available and no preference is stored', () => {
+    expect(
+      resolveInitialTenderlyModeEnabled({
+        isConfigured: true,
+        canToggle: true,
+        storedPreference: null
+      })
+    ).toBe(true)
+  })
+
+  it('respects an explicit disabled local preference', () => {
+    expect(
+      resolveInitialTenderlyModeEnabled({
+        isConfigured: true,
+        canToggle: true,
+        storedPreference: 'false'
+      })
+    ).toBe(false)
+  })
+
+  it('ignores stored preferences when local toggling is not available', () => {
+    expect(
+      resolveInitialTenderlyModeEnabled({
+        isConfigured: true,
+        canToggle: false,
+        storedPreference: 'false'
+      })
+    ).toBe(true)
+  })
+
+  it('identifies connected Tenderly execution chains that should be switched off before disabling', () => {
+    const runtime = parseTenderlyRuntime({
+      VITE_TENDERLY_MODE: 'true',
+      VITE_TENDERLY_CHAIN_ID_FOR_1: '73571',
+      VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
+    })
+
+    expect(resolveConnectedTenderlyExecutionChainForRuntime(runtime, 73571)).toEqual({
+      canonicalChainId: 1,
+      executionChainId: 73571,
+      canonicalChainName: 'Ethereum'
+    })
+  })
+
+  it('does not flag canonical chains as Tenderly execution chains', () => {
+    const runtime = parseTenderlyRuntime({
+      VITE_TENDERLY_MODE: 'true',
+      VITE_TENDERLY_CHAIN_ID_FOR_1: '73571',
+      VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
+    })
+
+    expect(resolveConnectedTenderlyExecutionChainForRuntime(runtime, 1)).toBeUndefined()
   })
 })

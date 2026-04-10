@@ -1,4 +1,5 @@
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
+import { toast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useTenderlyPanel } from '@shared/contexts/useTenderlyPanel'
 import useWallet from '@shared/contexts/useWallet'
@@ -12,10 +13,18 @@ import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
 import { cl } from '@shared/utils'
 import { normalizePathname } from '@shared/utils/routes'
 import { truncateHex } from '@shared/utils/tools.address'
-import type { ReactElement } from 'react'
+import type { KeyboardEvent, MouseEvent, ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
-import { isTenderlyModeEnabled, tenderlyRuntime } from '@/config/tenderly'
+import { useAccount } from 'wagmi'
+import {
+  canToggleTenderlyMode,
+  isTenderlyModeConfigured,
+  isTenderlyModeEnabled,
+  persistTenderlyModeEnabled,
+  resolveConnectedTenderlyExecutionChain,
+  tenderlyConfiguredRuntime
+} from '@/config/tenderly'
 import Link from '/src/components/Link'
 import { AccountDropdown } from './AccountDropdown'
 import { HeaderNavMenu } from './HeaderNavMenu'
@@ -100,47 +109,108 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
   )
 }
 
-function TenderlyIndicator(): ReactElement | null {
-  const { isPanelAvailable, isOpen, togglePanel } = useTenderlyPanel()
-
-  if (!isTenderlyModeEnabled()) {
-    return null
-  }
-
-  const configuredMappings = tenderlyRuntime.configuredCanonicalChainIds
+function getConfiguredTenderlyMappingsLabel(): string {
+  return tenderlyConfiguredRuntime.configuredCanonicalChainIds
     .map((canonicalChainId) => {
-      const executionChainId = tenderlyRuntime.configuredByCanonicalId[canonicalChainId]?.executionChainId
+      const executionChainId = tenderlyConfiguredRuntime.configuredByCanonicalId[canonicalChainId]?.executionChainId
       return executionChainId ? `${canonicalChainId} -> ${executionChainId}` : String(canonicalChainId)
     })
     .join(', ')
+}
 
-  if (!isPanelAvailable) {
-    return (
-      <span
-        title={`Tenderly mode enabled${configuredMappings ? ` (${configuredMappings})` : ''}`}
-        className={
-          'inline-flex items-center rounded-full border border-border bg-surface-secondary px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary'
-        }
-      >
-        {'Tenderly'}
-      </span>
-    )
+function TenderlyBadge(): ReactElement | null {
+  const { isPanelAvailable, isOpen, togglePanel } = useTenderlyPanel()
+  const { chain } = useAccount()
+  const isTenderlyConfigured = isTenderlyModeConfigured()
+
+  if (!isTenderlyConfigured && !isTenderlyModeEnabled()) {
+    return null
+  }
+
+  const isTenderlyActive = isTenderlyModeEnabled()
+  const configuredMappings = getConfiguredTenderlyMappingsLabel()
+  const canToggleMode = canToggleTenderlyMode()
+  const canToggleControls = isTenderlyActive && isPanelAvailable
+  const connectedTenderlyExecutionChain = resolveConnectedTenderlyExecutionChain(chain?.id)
+
+  const handleBadgeClick = (): void => {
+    if (!canToggleControls) {
+      return
+    }
+
+    togglePanel()
+  }
+
+  const handleBadgeKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (!canToggleControls) {
+      return
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      togglePanel()
+    }
+  }
+
+  const handleToggleMode = (event: KeyboardEvent<HTMLButtonElement> | MouseEvent<HTMLButtonElement>): void => {
+    event.stopPropagation()
+
+    if (isTenderlyActive && connectedTenderlyExecutionChain) {
+      toast({
+        content: `Switch your wallet back to ${connectedTenderlyExecutionChain.canonicalChainName} before turning Tenderly off`,
+        type: 'warning'
+      })
+      return
+    }
+
+    persistTenderlyModeEnabled(!isTenderlyActive)
+    window.location.reload()
   }
 
   return (
-    <button
-      type="button"
-      onClick={togglePanel}
-      title={`Tenderly mode enabled${configuredMappings ? ` (${configuredMappings})` : ''}`}
+    <div
+      onClick={handleBadgeClick}
+      onKeyDown={handleBadgeKeyDown}
+      role={canToggleControls ? 'button' : undefined}
+      tabIndex={canToggleControls ? 0 : undefined}
+      title={
+        canToggleControls
+          ? `Tenderly mode enabled${configuredMappings ? ` (${configuredMappings})` : ''}. Click to ${isOpen ? 'hide' : 'show'} controls.`
+          : `Use ${isTenderlyActive ? 'Tenderly RPCs and vnets' : 'normal RPCs'}${configuredMappings ? ` (${configuredMappings})` : ''}`
+      }
       className={cl(
-        'inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] transition-colors',
-        isOpen
-          ? 'border-text-primary bg-text-primary text-surface'
-          : 'border-border bg-surface-secondary text-text-secondary hover:text-text-primary'
+        'inline-flex min-h-[32px] items-center gap-2 rounded-md border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] transition-all',
+        canToggleControls ? 'cursor-pointer hover:border-text-primary/60' : 'cursor-default',
+        'border-border bg-surface-secondary'
       )}
     >
-      {'Tenderly'}
-    </button>
+      <span className={cl('transition-colors', isTenderlyActive ? 'text-text-primary' : 'text-text-tertiary')}>
+        {'Tenderly'}
+      </span>
+      {canToggleMode && (
+        <button
+          type="button"
+          onClick={handleToggleMode}
+          onKeyDown={(event): void => {
+            event.stopPropagation()
+          }}
+          role="switch"
+          aria-checked={isTenderlyActive}
+          aria-label={isTenderlyActive ? 'Disable Tenderly mode' : 'Enable Tenderly mode'}
+          className={cl(
+            'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors',
+            isTenderlyActive ? 'border-text-primary/70 bg-text-primary/15' : 'border-border bg-surface'
+          )}
+        >
+          <span
+            className={cl(
+              'block size-3 rounded-full transition-transform',
+              isTenderlyActive ? 'translate-x-[18px] bg-text-primary' : 'translate-x-[3px] bg-text-secondary'
+            )}
+          />
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -182,6 +252,8 @@ function AppHeader(): ReactElement {
             {!isHomePage && (
               <>
                 <div className={'hidden items-center justify-end md:flex gap-2'} data-tour="vaults-header-user">
+                  <TenderlyBadge />
+
                   <Link href={'/portfolio'}>
                     <span
                       className={'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'}
@@ -189,8 +261,6 @@ function AppHeader(): ReactElement {
                       {'Portfolio'}
                     </span>
                   </Link>
-
-                  <TenderlyIndicator />
 
                   <button
                     className={

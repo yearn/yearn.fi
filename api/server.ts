@@ -18,6 +18,18 @@ const ENSO_API_BASE = 'https://api.enso.finance'
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
+const DEFAULT_API_PORT = 3001
+
+function resolveApiPort(): number {
+  const rawPort = process.env.API_PORT?.trim() || String(DEFAULT_API_PORT)
+  const port = Number(rawPort)
+
+  if (!Number.isInteger(port) || port <= 0) {
+    throw new Error(`Invalid API_PORT value: ${rawPort}`)
+  }
+
+  return port
+}
 
 type TTenderlyJsonRpcSuccess = {
   id: string | number | null
@@ -336,6 +348,8 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
   }
 }
 
+const apiPort = resolveApiPort()
+
 serve({
   async fetch(req, server) {
     const url = new URL(req.url)
@@ -394,7 +408,7 @@ serve({
 
     return new Response('Not found', { status: 404 })
   },
-  port: 3001
+  port: apiPort
 })
 
-console.log('🚀 API server running on http://localhost:3001')
+console.log(`🚀 API server running on http://localhost:${apiPort}`)
