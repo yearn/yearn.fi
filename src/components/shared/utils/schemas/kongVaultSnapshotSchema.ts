@@ -133,7 +133,9 @@ const snapshotPerformanceSchema = z
     oracle: z
       .object({
         apr: nullableNumberSchema.optional().catch(null),
-        apy: nullableNumberSchema.optional().catch(null)
+        apy: nullableNumberSchema.optional().catch(null),
+        netAPR: nullableNumberSchema.optional().catch(null),
+        netAPY: nullableNumberSchema.optional().catch(null)
       })
       .partial()
       .optional(),
@@ -189,7 +191,9 @@ const snapshotCompositionSchema = z
         oracle: z
           .object({
             apr: nullableNumberSchema.optional().catch(null),
-            apy: nullableNumberSchema.optional().catch(null)
+            apy: nullableNumberSchema.optional().catch(null),
+            netAPR: nullableNumberSchema.optional().catch(null),
+            netAPY: nullableNumberSchema.optional().catch(null)
           })
           .optional(),
         historical: z

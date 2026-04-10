@@ -48,7 +48,9 @@ export const kongVaultListItemSchema = z.object({
       oracle: z
         .object({
           apr: coerceNullableNumber,
-          apy: coerceNullableNumber
+          apy: coerceNullableNumber,
+          netAPR: coerceNullableNumber.optional(),
+          netAPY: coerceNullableNumber.optional()
         })
         .nullish(),
       estimated: z
