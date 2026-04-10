@@ -416,7 +416,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     isAvailablePinned
   })
 
-  const shouldComputeBlockingInsights = searchValue !== '' && pinnedVaults.length === 0 && mainVaults.length === 0
+  const shouldComputeBlockingInsights = searchValue !== ''
   const isTypesFilterBlockingResults =
     listVaultType !== 'factory' &&
     listShowStrategies &&

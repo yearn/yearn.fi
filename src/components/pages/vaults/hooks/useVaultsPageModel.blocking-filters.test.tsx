@@ -26,6 +26,25 @@ const HIDDEN_ZERO_TVL_VAULT = {
   }
 }
 
+const VISIBLE_VAULT = {
+  key: '1:0x0000000000000000000000000000000000000002',
+  chainID: 1,
+  listKind: 'factory',
+  category: 'Volatile',
+  aggressiveness: null,
+  token: {
+    symbol: 'frxETH',
+    name: 'Frax Ether'
+  },
+  info: {
+    isHidden: false,
+    riskLevel: 2
+  },
+  tvl: {
+    tvl: 1000
+  }
+}
+
 vi.mock('@shared/contexts/useWeb3', () => ({
   useWeb3: () => ({ address: undefined })
 }))
@@ -133,6 +152,7 @@ describe('useVaultsPageModel hidden min TVL recovery', () => {
 
     useVaultsListModelMock.mockImplementation(
       (args: {
+        enabled?: boolean
         searchValue: string
         listMinTvl: number
         listShowLegacyVaults: boolean
@@ -151,6 +171,10 @@ describe('useVaultsPageModel hidden min TVL recovery', () => {
           totalMatchingVaults: 0,
           totalHoldingsMatching: 0,
           isLoadingVaultList: false
+        }
+
+        if (args.enabled === false) {
+          return baseResult
         }
 
         if (
@@ -176,6 +200,116 @@ describe('useVaultsPageModel hidden min TVL recovery', () => {
             ...baseResult,
             mainVaults: [HIDDEN_ZERO_TVL_VAULT],
             totalMatchingVaults: 1
+          }
+        }
+
+        return baseResult
+      }
+    )
+
+    const html = renderHookState()
+
+    expect(html).toContain('&quot;hiddenByFiltersCount&quot;:1')
+    expect(html).toContain('clearMinTvl')
+  })
+
+  it('keeps blocking filter insights available when a search already has visible results', () => {
+    useVaultsQueryStateMock.mockReturnValue({
+      vaultType: 'all',
+      hasTypesParam: false,
+      search: 'frx',
+      types: ['multi', 'single'],
+      categories: [],
+      chains: null,
+      aggressiveness: [],
+      underlyingAssets: [],
+      minTvl: 500,
+      showLegacyVaults: false,
+      showHiddenVaults: false,
+      showStrategies: true,
+      onSearch: vi.fn(),
+      onChangeTypes: vi.fn(),
+      onChangeCategories: vi.fn(),
+      onChangeChains: vi.fn(),
+      onChangeAggressiveness: vi.fn(),
+      onChangeUnderlyingAssets: vi.fn(),
+      onChangeMinTvl: vi.fn(),
+      onChangeShowLegacyVaults: vi.fn(),
+      onChangeShowHiddenVaults: vi.fn(),
+      onChangeShowStrategies: vi.fn(),
+      onChangeVaultType: vi.fn(),
+      onChangeSortBy: vi.fn(),
+      onChangeSortDirection: vi.fn(),
+      onResetMultiSelect: vi.fn(),
+      onResetExtraFilters: vi.fn(),
+      onShareFilters: vi.fn(),
+      sortBy: 'tvl',
+      sortDirection: 'desc'
+    })
+
+    useVaultsListModelMock.mockImplementation(
+      (args: {
+        enabled?: boolean
+        searchValue: string
+        listMinTvl: number
+        listShowLegacyVaults: boolean
+        listShowHiddenVaults: boolean
+      }) => {
+        const baseResult = {
+          listCategoriesSanitized: [],
+          holdingsVaults: [],
+          availableVaults: [],
+          vaultFlags: {},
+          underlyingAssetVaults: {},
+          pinnedSections: [],
+          pinnedVaults: [],
+          mainVaults: [],
+          suggestedVaults: [],
+          totalMatchingVaults: 0,
+          totalHoldingsMatching: 0,
+          isLoadingVaultList: false
+        }
+
+        if (args.enabled === false) {
+          return baseResult
+        }
+
+        if (
+          args.searchValue === 'frx' &&
+          args.listMinTvl === 500 &&
+          args.listShowLegacyVaults === false &&
+          args.listShowHiddenVaults === false
+        ) {
+          return {
+            ...baseResult,
+            mainVaults: [VISIBLE_VAULT],
+            totalMatchingVaults: 1
+          }
+        }
+
+        if (
+          args.searchValue === 'frx' &&
+          args.listMinTvl === 0 &&
+          args.listShowLegacyVaults === false &&
+          args.listShowHiddenVaults === false
+        ) {
+          return {
+            ...baseResult,
+            mainVaults: [VISIBLE_VAULT, HIDDEN_ZERO_TVL_VAULT],
+            totalMatchingVaults: 2
+          }
+        }
+
+        if (
+          args.searchValue === 'frx' &&
+          args.listMinTvl === 0 &&
+          args.listShowLegacyVaults === true &&
+          args.listShowHiddenVaults === true
+        ) {
+          return {
+            ...baseResult,
+            mainVaults: [VISIBLE_VAULT, HIDDEN_ZERO_TVL_VAULT],
+            totalMatchingVaults: 2
           }
         }
 
