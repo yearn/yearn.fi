@@ -392,17 +392,17 @@ describe('VaultsListRow', () => {
     expect(html).not.toContain('aria-label="Infinifi points"')
   })
 
-  it('passes a snapshot-backed vault view to the APY display for v3 list rows', () => {
+  it('passes the list vault directly to the APY display when list payload already includes oracle net APY', () => {
     mockUseVaultSnapshot.mockReturnValue({
       data: {
         address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
         chainId: 1,
         performance: {
           oracle: {
-            apr: 0.0375,
-            apy: 0.038197965598908645,
-            netAPR: 0.03375,
-            netAPY: 0.03431466938555827
+            apr: 0.11,
+            apy: 0.12,
+            netAPR: 0.099,
+            netAPY: 0.101
           }
         }
       }
@@ -425,7 +425,9 @@ describe('VaultsListRow', () => {
       performance: {
         oracle: {
           apr: 0.0375,
-          apy: 0.038197965598908645
+          apy: 0.038197965598908645,
+          netAPR: 0.03375,
+          netAPY: 0.03431466938555827
         },
         estimated: null,
         historical: {
@@ -457,8 +459,9 @@ describe('VaultsListRow', () => {
     renderRowHtml(vault)
 
     const firstCall = mockVaultForwardAPY.mock.calls[0]?.[0] as unknown as {
-      currentVault?: { apr?: { forwardAPR?: { netAPR?: number } } }
+      currentVault?: { performance?: { oracle?: { netAPY?: number } } }
     }
-    expect(firstCall?.currentVault?.apr?.forwardAPR?.netAPR).toBe(0.03431466938555827)
+    expect(firstCall?.currentVault?.performance?.oracle?.netAPY).toBe(0.03431466938555827)
+    expect(mockUseVaultSnapshot).not.toHaveBeenCalled()
   })
 })
