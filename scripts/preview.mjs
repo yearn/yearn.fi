@@ -2,12 +2,12 @@ import { exit, stdout as output } from 'node:process'
 import {
   buildSessionEnv,
   chooseApiRuntime,
-  DEFAULT_API_CHANGE_PATHS,
+  getApiChangePathsForMode,
   resolveLauncherStrategy,
   runLauncherProcesses
 } from './api-runtime.mjs'
 
-const PREVIEW_API_CHANGE_PATHS = [...DEFAULT_API_CHANGE_PATHS, 'scripts/preview.mjs']
+const PREVIEW_API_CHANGE_PATHS = [...getApiChangePathsForMode('production'), 'scripts/preview.mjs']
 
 export const resolvePreviewLauncherStrategy = resolveLauncherStrategy
 
