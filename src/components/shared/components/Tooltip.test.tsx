@@ -1,8 +1,16 @@
 // @vitest-environment jsdom
-import { fireEvent, render } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import { act } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { Tooltip } from './Tooltip'
+
+function hover(element: HTMLElement): void {
+  element.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+}
+
+function click(element: HTMLElement): void {
+  element.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+}
 
 describe('Tooltip', () => {
   it('delays opening when openDelayMs is set', () => {
@@ -14,7 +22,7 @@ describe('Tooltip', () => {
     )
 
     const trigger = container.firstChild as HTMLElement
-    fireEvent.mouseEnter(trigger)
+    hover(trigger)
     expect(queryByText('Tip')).toBeNull()
 
     act(() => {
@@ -32,9 +40,9 @@ describe('Tooltip', () => {
     )
 
     const trigger = container.firstChild as HTMLElement
-    fireEvent.click(trigger)
+    click(trigger)
     expect(queryByText('Tip')).not.toBeNull()
-    fireEvent.click(trigger)
+    click(trigger)
     expect(queryByText('Tip')).toBeNull()
   })
 
@@ -63,7 +71,7 @@ describe('Tooltip', () => {
       )
 
       const trigger = container.firstChild as HTMLElement
-      fireEvent.mouseEnter(trigger)
+      hover(trigger)
       expect(queryByText('Tip')).toBeNull()
     } finally {
       Object.defineProperty(window, 'matchMedia', {

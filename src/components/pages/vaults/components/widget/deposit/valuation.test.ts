@@ -79,9 +79,7 @@ describe('calculateDepositValueInfo', () => {
       assetUsdPrice: 1
     })
 
-    expect(legacyInfo.isHighPriceImpact).toBe(true)
     expect(legacyInfo.priceImpactPercentage).toBeGreaterThan(5)
-    expect(normalizedInfo.isHighPriceImpact).toBe(false)
     expect(normalizedInfo.priceImpactPercentage).toBeLessThan(5)
   })
 
@@ -99,5 +97,69 @@ describe('calculateDepositValueInfo', () => {
 
     expect(valueInfo.vaultShareValueInAsset).toBe(102n * ONE_ETHER)
     expect(valueInfo.priceImpactPercentage).toBe(0)
+    expect(valueInfo.worstCasePriceImpactPercentage).toBe(0)
+  })
+
+  it('keeps reporting the raw price impact for large losses', () => {
+    const valueInfo = calculateDepositValueInfo({
+      depositAmountBn: 100n * ONE_ETHER,
+      inputTokenDecimals: 18,
+      inputTokenUsdPrice: 1,
+      normalizedVaultShares: 80n * ONE_ETHER,
+      vaultDecimals: 18,
+      pricePerShare: ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1
+    })
+    expect(valueInfo.priceImpactPercentage).toBe(20)
+  })
+
+  it('keeps reporting the raw price impact for midrange losses', () => {
+    const valueInfo = calculateDepositValueInfo({
+      depositAmountBn: 100n * ONE_ETHER,
+      inputTokenDecimals: 18,
+      inputTokenUsdPrice: 1,
+      normalizedVaultShares: 90n * ONE_ETHER,
+      vaultDecimals: 18,
+      pricePerShare: ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1
+    })
+    expect(valueInfo.priceImpactPercentage).toBe(10)
+  })
+
+  it('tracks worst-case price impact from min expected shares separately from the live quote', () => {
+    const valueInfo = calculateDepositValueInfo({
+      depositAmountBn: 100n * ONE_ETHER,
+      inputTokenDecimals: 18,
+      inputTokenUsdPrice: 1,
+      normalizedVaultShares: 100n * ONE_ETHER,
+      normalizedMinVaultShares: 99n * ONE_ETHER,
+      vaultDecimals: 18,
+      pricePerShare: ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1
+    })
+
+    expect(valueInfo.priceImpactPercentage).toBe(0)
+    expect(valueInfo.worstCasePriceImpactPercentage).toBe(1)
+  })
+
+  it('flags incomplete USD valuation when a supported zap quote has no token price', () => {
+    const valueInfo = calculateDepositValueInfo({
+      depositAmountBn: 100n * ONE_ETHER,
+      inputTokenDecimals: 18,
+      inputTokenUsdPrice: 0,
+      normalizedVaultShares: 100n * ONE_ETHER,
+      normalizedMinVaultShares: 99n * ONE_ETHER,
+      vaultDecimals: 18,
+      pricePerShare: ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1
+    })
+
+    expect(valueInfo.hasIncompleteUsdValuation).toBe(true)
+    expect(valueInfo.priceImpactPercentage).toBe(0)
+    expect(valueInfo.worstCasePriceImpactPercentage).toBe(0)
   })
 })

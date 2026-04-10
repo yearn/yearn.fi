@@ -49,6 +49,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
     receiver: params.account,
     decimalsOut: params.decimalsOut,
     slippage: params.slippage,
+    requestKey: routeQueryKey,
     enabled: params.enabled
   })
 
@@ -91,6 +92,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         isAllowanceSufficient: isEnsoAllowanceSufficient,
         allowance: ensoFlow.periphery.allowance,
         expectedOut: ensoFlow.periphery.expectedOut.raw,
+        minExpectedOut: ensoFlow.periphery.minExpectedOut.raw,
         isLoadingRoute: ensoFlow.periphery.isLoadingRoute,
         isCrossChain: ensoFlow.periphery.isCrossChain,
         routerAddress: ensoFlow.periphery.routerAddress,
