@@ -599,9 +599,13 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
 
   const forwardNet = isKatanaVault
     ? pickNumber(
+        snapshot?.performance?.oracle?.netAPY,
         snapshot?.performance?.oracle?.apy,
+        snapshot?.performance?.oracle?.netAPR,
         snapshot?.performance?.oracle?.apr,
+        vault.performance?.oracle?.netAPY,
         vault.performance?.oracle?.apy,
+        vault.performance?.oracle?.netAPR,
         snapshot?.performance?.estimated?.apy,
         snapshot?.performance?.estimated?.apr,
         vault.performance?.estimated?.apy,
@@ -611,9 +615,13 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
     : pickNumber(
         snapshot?.performance?.estimated?.apy,
         snapshot?.performance?.estimated?.apr,
+        snapshot?.performance?.oracle?.netAPY,
         snapshot?.performance?.oracle?.apy,
+        snapshot?.performance?.oracle?.netAPR,
         snapshot?.performance?.oracle?.apr,
+        vault.performance?.oracle?.netAPY,
         vault.performance?.oracle?.apy,
+        vault.performance?.oracle?.netAPR,
         vault.performance?.estimated?.apy,
         vault.performance?.historical?.net,
         historical?.net
@@ -765,8 +773,12 @@ const mapSnapshotComposition = (
         return estimatedApy
       }
       // For Katana strategies, estimated.apr is KAT rewards (additive incentive),
-      // NOT the base yield — so skip straight to oracle.apy for the base value.
+      // NOT the base yield — so prefer oracle.netAPY, then fall back to oracle.apy.
       // KAT rewards are captured separately in katRewardsAPR below.
+      const oracleNetApy = pickNumberOrNull(entry.performance?.oracle?.netAPY)
+      if (oracleNetApy !== null) {
+        return oracleNetApy
+      }
       const oracleApy = pickNumberOrNull(entry.performance?.oracle?.apy)
       return oracleApy === null ? undefined : oracleApy
     })()

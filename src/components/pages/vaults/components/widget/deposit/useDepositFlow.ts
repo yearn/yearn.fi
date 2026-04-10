@@ -5,6 +5,7 @@ import { useEnsoDeposit } from '@pages/vaults/hooks/actions/useEnsoDeposit'
 import { useYvUsdLockedZapDeposit } from '@pages/vaults/hooks/actions/useYvUsdLockedZapDeposit'
 import { YVUSD_LOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { toAddress } from '@shared/utils'
+import { toBasisPoints } from '@shared/utils/slippage'
 import { useMemo } from 'react'
 import { type Address, isAddressEqual } from 'viem'
 import { useReadContract } from 'wagmi'
@@ -49,7 +50,9 @@ export interface DepositFlowResult {
       isAllowanceSufficient: boolean
       allowance: bigint
       expectedOut: bigint
+      minExpectedOut: bigint
       normalizedExpectedOut: bigint
+      normalizedMinExpectedOut: bigint
       isLoadingRoute: boolean
       isLoadingExpectedOutNormalization: boolean
       isCrossChain: boolean
@@ -139,7 +142,7 @@ export const useDepositFlow = ({
     destinationChainId,
     decimalsOut: vaultDecimals,
     enabled: routeType === 'ENSO' && !!depositToken && amount > 0n && currentAmount > 0n,
-    slippage: slippage * 100
+    slippage: toBasisPoints(slippage)
   })
 
   // Select active flow based on routing type
@@ -153,6 +156,8 @@ export const useDepositFlow = ({
 
   const shouldNormalizeExpectedOut =
     !!stakingAddress && isAddressEqual(destinationToken, stakingAddress) && activeFlow.periphery.expectedOut > 0n
+  const shouldNormalizeMinExpectedOut =
+    !!stakingAddress && isAddressEqual(destinationToken, stakingAddress) && activeFlow.periphery.minExpectedOut > 0n
 
   const previewRedeemCall = useMemo(
     () =>
@@ -168,6 +173,25 @@ export const useDepositFlow = ({
     chainId,
     query: {
       enabled: shouldNormalizeExpectedOut && !!stakingAddress && !!previewRedeemCall
+    }
+  })
+
+  const previewRedeemMinCall = useMemo(
+    () =>
+      shouldNormalizeMinExpectedOut
+        ? getRedeemPreviewCall(stakingSource, activeFlow.periphery.minExpectedOut)
+        : undefined,
+    [shouldNormalizeMinExpectedOut, stakingSource, activeFlow.periphery.minExpectedOut]
+  )
+
+  const { data: normalizedMinExpectedOutData, isLoading: isLoadingMinExpectedOutNormalization } = useReadContract({
+    address: stakingAddress,
+    abi: (previewRedeemMinCall?.abi || []) as any,
+    functionName: (previewRedeemMinCall?.functionName || 'previewRedeem') as any,
+    args: previewRedeemMinCall?.args as any,
+    chainId,
+    query: {
+      enabled: shouldNormalizeMinExpectedOut && !!stakingAddress && !!previewRedeemMinCall
     }
   })
 
@@ -190,6 +214,25 @@ export const useDepositFlow = ({
     ]
   )
 
+  const normalizedMinExpectedOut = useMemo(
+    () =>
+      resolveValuationShareCount({
+        expectedOut: activeFlow.periphery.minExpectedOut,
+        destinationToken,
+        vaultAddress,
+        stakingAddress,
+        previewedVaultShares: previewRedeemMinCall ? (normalizedMinExpectedOutData as bigint | undefined) : undefined
+      }),
+    [
+      activeFlow.periphery.minExpectedOut,
+      destinationToken,
+      vaultAddress,
+      stakingAddress,
+      previewRedeemMinCall,
+      normalizedMinExpectedOutData
+    ]
+  )
+
   return {
     routeType,
     activeFlow: {
@@ -197,8 +240,10 @@ export const useDepositFlow = ({
       periphery: {
         ...activeFlow.periphery,
         normalizedExpectedOut,
+        normalizedMinExpectedOut,
         isLoadingExpectedOutNormalization: Boolean(
-          shouldNormalizeExpectedOut && !!previewRedeemCall && isLoadingExpectedOutNormalization
+          (shouldNormalizeExpectedOut && !!previewRedeemCall && isLoadingExpectedOutNormalization) ||
+            (shouldNormalizeMinExpectedOut && !!previewRedeemMinCall && isLoadingMinExpectedOutNormalization)
         )
       }
     }

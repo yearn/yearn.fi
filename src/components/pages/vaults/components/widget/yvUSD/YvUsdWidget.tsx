@@ -13,6 +13,8 @@ interface Props {
   handleSuccess?: () => void
   mode?: ActionType
   onModeChange?: (mode: ActionType) => void
+  onOpenSettings?: () => void
+  isSettingsOpen?: boolean
   showTabs?: boolean
   collapseDetails?: boolean
   onDepositVariantChange?: (variant: TYvUsdVariant) => void
@@ -24,6 +26,8 @@ export function YvUsdWidget({
   handleSuccess,
   mode: controlledMode,
   onModeChange,
+  onOpenSettings,
+  isSettingsOpen,
   showTabs = true,
   collapseDetails,
   onDepositVariantChange
@@ -36,6 +40,8 @@ export function YvUsdWidget({
     chainId,
     assetAddress: currentVault.token.address,
     handleSuccess,
+    onOpenSettings,
+    isSettingsOpen,
     collapseDetails,
     onDepositVariantChange
   })
@@ -63,6 +69,8 @@ type RenderSelectedComponentParams = {
   chainId: number
   assetAddress: `0x${string}`
   handleSuccess?: () => void
+  onOpenSettings?: () => void
+  isSettingsOpen?: boolean
   collapseDetails?: boolean
   onDepositVariantChange?: (variant: TYvUsdVariant) => void
 }
@@ -72,6 +80,8 @@ function renderSelectedComponent({
   chainId,
   assetAddress,
   handleSuccess,
+  onOpenSettings,
+  isSettingsOpen,
   collapseDetails,
   onDepositVariantChange
 }: RenderSelectedComponentParams): ReactElement | null {
@@ -82,6 +92,8 @@ function renderSelectedComponent({
           chainId={chainId}
           assetAddress={assetAddress}
           onDepositSuccess={handleSuccess}
+          onOpenSettings={onOpenSettings}
+          isSettingsOpen={isSettingsOpen}
           collapseDetails={collapseDetails}
           onVariantChange={onDepositVariantChange}
         />
@@ -92,6 +104,8 @@ function renderSelectedComponent({
           chainId={chainId}
           assetAddress={assetAddress}
           onWithdrawSuccess={handleSuccess}
+          onOpenSettings={onOpenSettings}
+          isSettingsOpen={isSettingsOpen}
           collapseDetails={collapseDetails}
         />
       )
