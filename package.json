@@ -8,7 +8,7 @@
     "dev:ts": "tsc --watch",
     "tenderly": "bun scripts/tenderly.ts",
     "build": "tsc && vite build",
-    "build:no-sourcemap": "tsc && vite build --no-sourcemap",
+    "build:sourcemap": "tsc && vite build --sourcemap",
     "preview": "concurrently \"bun run preview:server\" \"bun run preview:client\"",
     "preview:client": "vite preview",
     "preview:server": "bun scripts/ensure-api-server.js",
