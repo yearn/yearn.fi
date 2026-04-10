@@ -12,7 +12,7 @@ const PREVIEW_API_CHANGE_PATHS = [...DEFAULT_API_CHANGE_PATHS, 'scripts/preview.
 export const resolvePreviewLauncherStrategy = resolveLauncherStrategy
 
 async function main() {
-  const selection = await chooseApiRuntime({ changePaths: PREVIEW_API_CHANGE_PATHS })
+  const selection = await chooseApiRuntime({ changePaths: PREVIEW_API_CHANGE_PATHS, mode: 'production' })
   const sessionEnv = buildSessionEnv(selection)
 
   output.write(
