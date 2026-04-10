@@ -1,4 +1,6 @@
+import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, realpathSync } from 'node:fs'
+import { createServer } from 'node:net'
 import { cwd, env, exit, stdin as input, stdout as output } from 'node:process'
 import { createInterface } from 'node:readline/promises'
 
@@ -6,6 +8,7 @@ const DEFAULT_API_PORT = 3001
 const API_HEALTHCHECK_PATH = '/api/enso/balances'
 const API_HEALTHCHECK_EXPECTED_ERROR = 'Missing eoaAddress'
 const API_HEALTHCHECK_TIMEOUT_MS = 500
+const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'])
 
 export const DEFAULT_API_CHANGE_PATHS = [
   'api',
@@ -21,6 +24,19 @@ function resolveRealPath(path) {
   } catch {
     return path
   }
+}
+
+function readWorkspacePathForPid(pid) {
+  const procCwdPath = `/proc/${pid}/cwd`
+  if (existsSync(procCwdPath)) {
+    return resolveRealPath(procCwdPath)
+  }
+
+  return runCommand('lsof', ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'])
+    ?.stdout.split('\n')
+    .map((line) => line.trim())
+    .find((line) => line.startsWith('n'))
+    ?.slice(1)
 }
 
 function parseEnvFile(contents) {
@@ -62,7 +78,25 @@ function normalizePort(portValue, fallbackPort = DEFAULT_API_PORT) {
   return Number.isInteger(port) && port > 0 ? port : fallbackPort
 }
 
-function resolveConfiguredApiRuntime(launcherEnv) {
+function isLoopbackHostname(hostname) {
+  return LOOPBACK_HOSTNAMES.has(hostname.trim().toLowerCase())
+}
+
+function getLocalApiProxyTarget(apiPort, apiProxyTarget) {
+  try {
+    const parsedTarget = new URL(apiProxyTarget)
+    if (parsedTarget.protocol !== 'http:' || !isLoopbackHostname(parsedTarget.hostname)) {
+      return `http://localhost:${apiPort}`
+    }
+
+    parsedTarget.port = String(apiPort)
+    return parsedTarget.toString().replace(/\/$/, '')
+  } catch {
+    return `http://localhost:${apiPort}`
+  }
+}
+
+export function resolveConfiguredApiRuntime(launcherEnv) {
   const explicitTarget = launcherEnv.API_PROXY_TARGET?.trim() || launcherEnv.VITE_API_PROXY_TARGET?.trim()
 
   if (explicitTarget) {
@@ -75,12 +109,14 @@ function resolveConfiguredApiRuntime(launcherEnv) {
 
       return {
         apiPort: inferredPort,
-        apiProxyTarget: explicitTarget.replace(/\/$/, '')
+        apiProxyTarget: explicitTarget.replace(/\/$/, ''),
+        isLocalApiTarget: parsedTarget.protocol === 'http:' && isLoopbackHostname(parsedTarget.hostname)
       }
     } catch {
       return {
         apiPort: DEFAULT_API_PORT,
-        apiProxyTarget: `http://localhost:${DEFAULT_API_PORT}`
+        apiProxyTarget: `http://localhost:${DEFAULT_API_PORT}`,
+        isLocalApiTarget: true
       }
     }
   }
@@ -92,7 +128,8 @@ function resolveConfiguredApiRuntime(launcherEnv) {
 
   return {
     apiPort: configuredPort,
-    apiProxyTarget: `http://localhost:${configuredPort}`
+    apiProxyTarget: `http://localhost:${configuredPort}`,
+    isLocalApiTarget: true
   }
 }
 
@@ -126,13 +163,52 @@ async function checkApiHealth(apiProxyTarget) {
   }
 }
 
-function inspectPortOwner(port) {
-  const inspectionResult = Bun.spawnSync({
-    cmd: ['bash', '-lc', `ss -ltnp '( sport = :${port} )' 2>/dev/null`],
-    stdout: 'pipe',
-    stderr: 'pipe'
+function runCommand(command, args) {
+  const result = spawnSync(command, args, {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
   })
-  const inspectionText = inspectionResult.stdout.toString().trim()
+
+  if (result.error) {
+    return undefined
+  }
+
+  return result
+}
+
+function inspectPortOwnerWithLsof(port) {
+  const inspectionResult = runCommand('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fpct'])
+
+  if (!inspectionResult || inspectionResult.status !== 0) {
+    return undefined
+  }
+
+  const lines = inspectionResult.stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const pid = Number(lines.find((line) => line.startsWith('p'))?.slice(1))
+  const command = lines.find((line) => line.startsWith('c'))?.slice(1)
+
+  if (!pid || !command) {
+    return undefined
+  }
+
+  return {
+    pid,
+    command,
+    workspacePath: readWorkspacePathForPid(pid)
+  }
+}
+
+function inspectPortOwnerWithSs(port) {
+  const inspectionResult = runCommand('bash', ['-lc', `ss -ltnp '( sport = :${port} )' 2>/dev/null`])
+
+  if (!inspectionResult || inspectionResult.status !== 0) {
+    return undefined
+  }
+
+  const inspectionText = inspectionResult.stdout.trim()
   const match = inspectionText.match(/users:\(\("([^"]+)",pid=(\d+)/)
 
   if (!match) {
@@ -143,40 +219,46 @@ function inspectPortOwner(port) {
   return {
     pid,
     command: match[1],
-    workspacePath: resolveRealPath(`/proc/${pid}/cwd`)
+    workspacePath: readWorkspacePathForPid(pid)
   }
 }
 
-function getListeningSocketSummary(port) {
-  const inspectionResult = Bun.spawnSync({
-    cmd: ['bash', '-lc', `ss -ltn '( sport = :${port} )' 2>/dev/null | tail -n +2`],
-    stdout: 'pipe',
-    stderr: 'pipe'
-  })
-
-  return inspectionResult.stdout.toString().trim()
+function inspectPortOwner(port) {
+  return inspectPortOwnerWithLsof(port) || inspectPortOwnerWithSs(port)
 }
 
 function getApiChangeEntries(changePaths) {
-  const gitStatus = Bun.spawnSync({
-    cmd: ['git', 'status', '--short', '--untracked-files=all', '--', ...changePaths],
-    stdout: 'pipe',
-    stderr: 'pipe'
-  })
+  const gitStatus = runCommand('git', ['status', '--short', '--untracked-files=all', '--', ...changePaths])
 
-  if (gitStatus.exitCode !== 0) {
+  if (!gitStatus || gitStatus.status !== 0) {
     return []
   }
 
   return gitStatus.stdout
-    .toString()
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
 }
 
-async function isPortAvailable(port) {
-  return getListeningSocketSummary(port) === ''
+export async function isPortAvailable(port) {
+  return new Promise((resolve) => {
+    const probe = createServer()
+
+    probe.once('error', (error) => {
+      if (error && typeof error === 'object' && 'code' in error) {
+        resolve(!['EADDRINUSE', 'EACCES'].includes(error.code))
+        return
+      }
+
+      resolve(false)
+    })
+
+    probe.once('listening', () => {
+      probe.close(() => resolve(true))
+    })
+
+    probe.listen({ port, exclusive: true })
+  })
 }
 
 async function findNextAvailablePort(startPort) {
@@ -312,12 +394,19 @@ async function promptForApiRuntime({
   return selectedOption.value
 }
 
-export function buildSessionEnv(apiPort, launcherEnv) {
-  return {
+export function buildSessionEnv({ apiPort, apiProxyTarget, isLocalApiTarget, launcherEnv }) {
+  const sessionEnv = {
     ...launcherEnv,
-    API_PORT: String(apiPort),
-    API_PROXY_TARGET: `http://localhost:${apiPort}`
+    API_PROXY_TARGET: apiProxyTarget
   }
+
+  if (isLocalApiTarget) {
+    sessionEnv.API_PORT = String(apiPort)
+  } else {
+    delete sessionEnv.API_PORT
+  }
+
+  return sessionEnv
 }
 
 function killChild(child) {
@@ -330,8 +419,21 @@ function killChild(child) {
   return undefined
 }
 
-export async function runLauncherProcesses({ apiPort, reuseExistingApi, launcherEnv, serverCommand, clientCommand }) {
-  const sessionEnv = buildSessionEnv(apiPort, launcherEnv)
+export async function runLauncherProcesses({
+  apiPort,
+  apiProxyTarget,
+  isLocalApiTarget,
+  reuseExistingApi,
+  launcherEnv,
+  serverCommand,
+  clientCommand
+}) {
+  const sessionEnv = buildSessionEnv({
+    apiPort,
+    apiProxyTarget,
+    isLocalApiTarget,
+    launcherEnv
+  })
   const children = [
     reuseExistingApi
       ? undefined
@@ -366,11 +468,23 @@ export async function runLauncherProcesses({ apiPort, reuseExistingApi, launcher
 
 export async function chooseApiRuntime({ changePaths = DEFAULT_API_CHANGE_PATHS } = {}) {
   const launcherEnv = resolveLauncherEnv()
-  const { apiPort: defaultApiPort } = resolveConfiguredApiRuntime(launcherEnv)
+  const configuredApiRuntime = resolveConfiguredApiRuntime(launcherEnv)
+  const { apiPort: defaultApiPort, apiProxyTarget, isLocalApiTarget } = configuredApiRuntime
+
+  if (!isLocalApiTarget) {
+    return {
+      apiPort: defaultApiPort,
+      apiProxyTarget,
+      isLocalApiTarget,
+      reuseExistingApi: true,
+      launcherEnv
+    }
+  }
+
   const currentWorkspacePath = resolveRealPath(cwd())
   const portAvailable = await isPortAvailable(defaultApiPort)
   const commandOwner = portAvailable ? undefined : inspectPortOwner(defaultApiPort)
-  const healthyExistingApi = portAvailable ? false : (await checkApiHealth(`http://localhost:${defaultApiPort}`)).ok
+  const healthyExistingApi = portAvailable ? false : (await checkApiHealth(apiProxyTarget)).ok
   const apiChangeEntries = getApiChangeEntries(changePaths)
   const strategy = resolveLauncherStrategy({
     defaultApiPort,
@@ -384,6 +498,10 @@ export async function chooseApiRuntime({ changePaths = DEFAULT_API_CHANGE_PATHS 
   if (!strategy.shouldPrompt) {
     return {
       apiPort: strategy.apiPort,
+      apiProxyTarget: strategy.reuseExistingApi
+        ? apiProxyTarget
+        : getLocalApiProxyTarget(strategy.apiPort, apiProxyTarget),
+      isLocalApiTarget,
       reuseExistingApi: strategy.reuseExistingApi,
       launcherEnv
     }
@@ -396,6 +514,8 @@ export async function chooseApiRuntime({ changePaths = DEFAULT_API_CHANGE_PATHS 
 
     return {
       apiPort: strategy.recommendedPort,
+      apiProxyTarget: getLocalApiProxyTarget(strategy.recommendedPort, apiProxyTarget),
+      isLocalApiTarget,
       reuseExistingApi: false,
       launcherEnv
     }
@@ -412,6 +532,10 @@ export async function chooseApiRuntime({ changePaths = DEFAULT_API_CHANGE_PATHS 
 
   return {
     ...selection,
+    apiProxyTarget: selection.reuseExistingApi
+      ? apiProxyTarget
+      : getLocalApiProxyTarget(selection.apiPort, apiProxyTarget),
+    isLocalApiTarget,
     launcherEnv
   }
 }
