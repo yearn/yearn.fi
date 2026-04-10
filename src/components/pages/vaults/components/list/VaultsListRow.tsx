@@ -86,6 +86,8 @@ type TVaultRowFlags = {
   isRetired?: boolean
   isHidden?: boolean
   isNotYearn?: boolean
+  yieldModeLabel?: string
+  yieldModeTooltip?: string
 }
 
 type TVaultKindType = 'multi' | 'single' | 'route' | undefined
@@ -716,6 +718,15 @@ function VaultsListRowComponent({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={yieldSplitter?.uiDescription || undefined}
+                    onHoverChange={handleInteractiveHoverChange}
+                  />
+                ) : null}
+                {flags?.yieldModeLabel ? (
+                  <VaultsListChip
+                    label={flags.yieldModeLabel}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={flags.yieldModeTooltip}
                     onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}

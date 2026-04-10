@@ -187,6 +187,7 @@ type TVaultsListData = {
   pinnedVaults: TKongVaultInput[]
   mainVaults: TKongVaultInput[]
   vaultFlags: Record<string, { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }>
+  vaultHrefOverrides: Record<string, string | undefined>
   listChains: number[] | null
   totalMatchingVaults: number
   hiddenByFiltersCount: number
@@ -389,6 +390,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     holdingsVaults,
     availableVaults,
     vaultFlags,
+    vaultHrefOverrides,
     underlyingAssetVaults,
     pinnedSections,
     pinnedVaults,
@@ -1355,6 +1357,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
         pinnedVaults,
         mainVaults,
         vaultFlags,
+        vaultHrefOverrides,
         listChains,
         totalMatchingVaults,
         hiddenByFiltersCount,

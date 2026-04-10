@@ -1,5 +1,5 @@
-import type { TStakingReward } from './types'
 import { toNormalizedValue } from '@shared/utils'
+import type { TStakingReward } from './types'
 
 type TYieldSplitterClaimCopy = {
   confirmMessage: string

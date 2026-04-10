@@ -27,6 +27,7 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { isZeroAddress } from '@shared/utils'
 import { useMemo } from 'react'
+import { matchesSelectedV3Kind } from './useV3VaultFilter.utils'
 import {
   createCheckHasAvailableBalance,
   createCheckHasHoldings,
@@ -35,7 +36,6 @@ import {
   matchesSelectedChains,
   type TVaultFlags
 } from './useVaultFilterUtils'
-import { matchesSelectedV3Kind } from './useV3VaultFilter.utils'
 
 type TVaultIndexEntry = {
   key: string

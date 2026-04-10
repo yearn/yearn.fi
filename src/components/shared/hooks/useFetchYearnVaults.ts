@@ -1,4 +1,9 @@
-import { patchYBoldVaults } from '@pages/vaults/domain/normalizeVault'
+import {
+  filterCatalogYieldSplitterVaults,
+  patchYBoldVaults,
+  primeYieldSplitterHoldingsAliases
+} from '@pages/vaults/domain/normalizeVault'
+import { applyYieldSplitterFallbacks } from '@pages/vaults/domain/yieldSplitterFallback'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { fetchWithSchema, getFetchQueryKey, useFetch } from '@shared/hooks/useFetch'
@@ -75,11 +80,13 @@ function useFetchYearnVaults(
   }, [filteredByChain])
 
   const patchedAllVaultsObject = useDeepCompareMemo((): TDict<TKongVaultListItem> => {
-    return patchYBoldVaults(allVaultsObject)
+    const patchedVaults = patchYBoldVaults(applyYieldSplitterFallbacks(allVaultsObject))
+    primeYieldSplitterHoldingsAliases(patchedVaults)
+    return patchedVaults
   }, [allVaultsObject])
 
   const patchedCatalogVaultsObject = useDeepCompareMemo((): TDict<TKongVaultListItem> => {
-    return patchYBoldVaults(catalogVaultsObject)
+    return patchYBoldVaults(filterCatalogYieldSplitterVaults(applyYieldSplitterFallbacks(catalogVaultsObject)))
   }, [catalogVaultsObject])
 
   return {
