@@ -107,7 +107,8 @@ function renderHookState(): string {
       {},
       JSON.stringify({
         hiddenByFiltersCount: model.list.data.hiddenByFiltersCount,
-        actionKeys: model.list.data.blockingFilterActions.map((action) => action.key)
+        actionKeys: model.list.data.blockingFilterActions.map((action) => action.key),
+        toggleKeys: model.filtersBar.filters.config.toggleOptions.map((option) => option.key)
       })
     )
   }
@@ -194,7 +195,7 @@ describe('useVaultsPageModel hidden min TVL recovery', () => {
           args.searchValue === 'oeth' &&
           args.listMinTvl === 0 &&
           args.listShowLegacyVaults === true &&
-          args.listShowHiddenVaults === true
+          args.listShowHiddenVaults === false
         ) {
           return {
             ...baseResult,
@@ -304,7 +305,7 @@ describe('useVaultsPageModel hidden min TVL recovery', () => {
           args.searchValue === 'frx' &&
           args.listMinTvl === 0 &&
           args.listShowLegacyVaults === true &&
-          args.listShowHiddenVaults === true
+          args.listShowHiddenVaults === false
         ) {
           return {
             ...baseResult,
@@ -321,5 +322,221 @@ describe('useVaultsPageModel hidden min TVL recovery', () => {
 
     expect(html).toContain('&quot;hiddenByFiltersCount&quot;:1')
     expect(html).toContain('clearMinTvl')
+  })
+
+  it('builds exact blocker groups so overlapping hidden matches are fully represented', () => {
+    useVaultsQueryStateMock.mockReturnValue({
+      vaultType: 'all',
+      hasTypesParam: false,
+      search: 'usds',
+      types: ['multi', 'single'],
+      categories: [],
+      chains: null,
+      aggressiveness: [],
+      underlyingAssets: [],
+      minTvl: 500,
+      showLegacyVaults: false,
+      showHiddenVaults: false,
+      showStrategies: false,
+      onSearch: vi.fn(),
+      onChangeTypes: vi.fn(),
+      onChangeCategories: vi.fn(),
+      onChangeChains: vi.fn(),
+      onChangeAggressiveness: vi.fn(),
+      onChangeUnderlyingAssets: vi.fn(),
+      onChangeMinTvl: vi.fn(),
+      onChangeShowLegacyVaults: vi.fn(),
+      onChangeShowHiddenVaults: vi.fn(),
+      onChangeShowStrategies: vi.fn(),
+      onChangeVaultType: vi.fn(),
+      onChangeSortBy: vi.fn(),
+      onChangeSortDirection: vi.fn(),
+      onResetMultiSelect: vi.fn(),
+      onResetExtraFilters: vi.fn(),
+      onShareFilters: vi.fn(),
+      sortBy: 'tvl',
+      sortDirection: 'desc'
+    })
+
+    const visibleFactories = [VISIBLE_VAULT, { ...VISIBLE_VAULT, key: '1:0x3', tvl: { tvl: 2000 } }]
+    const hiddenStrategyA = { ...VISIBLE_VAULT, key: '1:0x4', listKind: 'strategy', tvl: { tvl: 600 } }
+    const hiddenStrategyB = { ...VISIBLE_VAULT, key: '1:0x5', listKind: 'strategy', tvl: { tvl: 700 } }
+    const hiddenStrategyC = { ...VISIBLE_VAULT, key: '1:0x6', listKind: 'strategy', tvl: { tvl: 800 } }
+    const hiddenStrategyLowA = { ...VISIBLE_VAULT, key: '1:0x7', listKind: 'strategy', tvl: { tvl: 100 } }
+    const hiddenStrategyLowB = { ...VISIBLE_VAULT, key: '1:0x8', listKind: 'strategy', tvl: { tvl: 200 } }
+    const hiddenLowAllocator = {
+      ...VISIBLE_VAULT,
+      key: '747474:0x9',
+      chainID: 747474,
+      listKind: 'allocator',
+      tvl: { tvl: 0 }
+    }
+
+    useVaultsListModelMock.mockImplementation(
+      (args: {
+        enabled?: boolean
+        searchValue: string
+        listVaultType: string
+        listMinTvl: number
+        listShowLegacyVaults: boolean
+        listShowHiddenVaults: boolean
+      }) => {
+        const baseResult = {
+          listCategoriesSanitized: [],
+          holdingsVaults: [],
+          availableVaults: [],
+          vaultFlags: {},
+          underlyingAssetVaults: {},
+          pinnedSections: [],
+          pinnedVaults: [],
+          mainVaults: [],
+          suggestedVaults: [],
+          totalMatchingVaults: 0,
+          totalHoldingsMatching: 0,
+          isLoadingVaultList: false
+        }
+
+        if (args.enabled === false || args.searchValue !== 'usds') {
+          return baseResult
+        }
+
+        if (
+          args.listVaultType === 'all' &&
+          args.listMinTvl === 500 &&
+          args.listShowLegacyVaults === false &&
+          args.listShowHiddenVaults === false
+        ) {
+          return {
+            ...baseResult,
+            mainVaults: visibleFactories,
+            totalMatchingVaults: visibleFactories.length
+          }
+        }
+
+        if (
+          args.listVaultType === 'all' &&
+          args.listMinTvl === 0 &&
+          args.listShowLegacyVaults === true &&
+          args.listShowHiddenVaults === false
+        ) {
+          return {
+            ...baseResult,
+            mainVaults: [
+              ...visibleFactories,
+              hiddenStrategyA,
+              hiddenStrategyB,
+              hiddenStrategyC,
+              hiddenStrategyLowA,
+              hiddenStrategyLowB,
+              hiddenLowAllocator
+            ],
+            totalMatchingVaults: 8
+          }
+        }
+
+        return baseResult
+      }
+    )
+
+    const html = renderHookState()
+
+    expect(html).toContain('&quot;hiddenByFiltersCount&quot;:6')
+    expect(html).toContain('showStrategies')
+    expect(html).toContain('clearMinTvl')
+    expect(html).toContain('combo:clearMinTvl+showStrategies')
+  })
+
+  it('does not expose hidden vault toggles or hidden-vault recovery actions', () => {
+    useVaultsQueryStateMock.mockReturnValue({
+      vaultType: 'all',
+      hasTypesParam: false,
+      search: 'hidden',
+      types: ['multi', 'single'],
+      categories: [],
+      chains: null,
+      aggressiveness: [],
+      underlyingAssets: [],
+      minTvl: 500,
+      showLegacyVaults: false,
+      showHiddenVaults: false,
+      showStrategies: false,
+      onSearch: vi.fn(),
+      onChangeTypes: vi.fn(),
+      onChangeCategories: vi.fn(),
+      onChangeChains: vi.fn(),
+      onChangeAggressiveness: vi.fn(),
+      onChangeUnderlyingAssets: vi.fn(),
+      onChangeMinTvl: vi.fn(),
+      onChangeShowLegacyVaults: vi.fn(),
+      onChangeShowHiddenVaults: vi.fn(),
+      onChangeShowStrategies: vi.fn(),
+      onChangeVaultType: vi.fn(),
+      onChangeSortBy: vi.fn(),
+      onChangeSortDirection: vi.fn(),
+      onResetMultiSelect: vi.fn(),
+      onResetExtraFilters: vi.fn(),
+      onShareFilters: vi.fn(),
+      sortBy: 'tvl',
+      sortDirection: 'desc'
+    })
+
+    const hiddenVault = {
+      ...VISIBLE_VAULT,
+      key: '1:0xhidden',
+      info: { isHidden: true, riskLevel: 2 }
+    }
+
+    useVaultsListModelMock.mockImplementation(
+      (args: {
+        enabled?: boolean
+        searchValue: string
+        listVaultType: string
+        listMinTvl: number
+        listShowLegacyVaults: boolean
+        listShowHiddenVaults: boolean
+      }) => {
+        const baseResult = {
+          listCategoriesSanitized: [],
+          holdingsVaults: [],
+          availableVaults: [],
+          vaultFlags: {},
+          underlyingAssetVaults: {},
+          pinnedSections: [],
+          pinnedVaults: [],
+          mainVaults: [],
+          suggestedVaults: [],
+          totalMatchingVaults: 0,
+          totalHoldingsMatching: 0,
+          isLoadingVaultList: false
+        }
+
+        if (args.enabled === false || args.searchValue !== 'hidden') {
+          return baseResult
+        }
+
+        if (
+          args.listVaultType === 'all' &&
+          args.listMinTvl === 0 &&
+          args.listShowLegacyVaults === true &&
+          args.listShowHiddenVaults === true
+        ) {
+          return {
+            ...baseResult,
+            mainVaults: [hiddenVault],
+            totalMatchingVaults: 1
+          }
+        }
+
+        return baseResult
+      }
+    )
+
+    const html = renderHookState()
+
+    expect(html).not.toContain('showHiddenVaults')
+    expect(html).toContain('&quot;toggleKeys&quot;:[')
+    expect(html).toContain('showStrategies')
+    expect(html).toContain('showLegacyVaults')
+    expect(html).not.toContain('&quot;hiddenByFiltersCount&quot;:1')
   })
 })

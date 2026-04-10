@@ -4,6 +4,7 @@ import {
   canClearMinTvl,
   getAdditionalResultsForCombo,
   getAdditionalUniqueEntriesCount,
+  getBlockingFilterActionGroups,
   getCommonBlockingKeys,
   isVaultHiddenByMinTvl,
   shouldShowComboBlockingAction
@@ -54,6 +55,22 @@ describe('blockingFilterInsights', () => {
     expect(canClearMinTvl(500)).toBe(true)
     expect(canClearMinTvl(1)).toBe(true)
     expect(canClearMinTvl(0)).toBe(false)
+  })
+
+  it('groups hidden vault blockers into exact single and combo actions', () => {
+    const groups = getBlockingFilterActionGroups<TKey>([
+      ['showStrategies'],
+      ['showStrategies'],
+      ['showStrategies', 'clearMinTvl'],
+      ['clearMinTvl'],
+      ['showStrategies', 'clearMinTvl']
+    ])
+
+    expect(groups).toEqual([
+      { keys: ['showStrategies'], additionalResults: 2 },
+      { keys: ['clearMinTvl', 'showStrategies'], additionalResults: 2 },
+      { keys: ['clearMinTvl'], additionalResults: 1 }
+    ])
   })
 
   it('shows fallback combo action for a single common blocker when no individual actions are available', () => {

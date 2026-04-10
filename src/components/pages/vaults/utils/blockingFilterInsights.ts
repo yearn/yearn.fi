@@ -43,6 +43,44 @@ export function getAdditionalUniqueEntriesCount<T extends string | number>({
   return Array.from(new Set(candidateKeys)).filter((key) => !currentVisibleKeys.has(key)).length
 }
 
+export function getBlockingFilterActionGroups<T extends string>(
+  blockingKeysByVault: T[][]
+): Array<{ keys: T[]; additionalResults: number }> {
+  const groups = new Map<string, { keys: T[]; additionalResults: number }>()
+
+  for (const blockingKeys of blockingKeysByVault) {
+    const normalizedKeys = Array.from(new Set(blockingKeys)).sort()
+    if (normalizedKeys.length === 0) {
+      continue
+    }
+
+    const groupKey = normalizedKeys.join('|')
+    const existing = groups.get(groupKey)
+    if (existing) {
+      groups.set(groupKey, {
+        ...existing,
+        additionalResults: existing.additionalResults + 1
+      })
+      continue
+    }
+
+    groups.set(groupKey, {
+      keys: normalizedKeys,
+      additionalResults: 1
+    })
+  }
+
+  return Array.from(groups.values()).sort((left, right) => {
+    if (right.additionalResults !== left.additionalResults) {
+      return right.additionalResults - left.additionalResults
+    }
+    if (left.keys.length !== right.keys.length) {
+      return left.keys.length - right.keys.length
+    }
+    return left.keys.join('|').localeCompare(right.keys.join('|'))
+  })
+}
+
 export const MIN_TVL_DISABLED = 0
 
 export function canClearMinTvl(minTvl: number): boolean {
