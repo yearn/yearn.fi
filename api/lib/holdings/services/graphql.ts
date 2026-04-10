@@ -5,7 +5,7 @@ import { debugError, debugLog } from './debug'
 // V3 Vault Queries (with optional maxTimestamp filter)
 const DEPOSITS_QUERY = `
   query GetDeposits($owner: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Deposit(where: { owner: { _eq: $owner }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+    Deposit(where: { owner: { _ilike: $owner }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -24,7 +24,7 @@ const DEPOSITS_QUERY = `
 
 const WITHDRAWALS_QUERY = `
   query GetWithdrawals($owner: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Withdraw(where: { owner: { _eq: $owner }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+    Withdraw(where: { owner: { _ilike: $owner }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -42,7 +42,7 @@ const WITHDRAWALS_QUERY = `
 
 const TRANSFERS_IN_QUERY = `
   query GetTransfersIn($receiver: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Transfer(where: { receiver: { _eq: $receiver }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+    Transfer(where: { receiver: { _ilike: $receiver }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -60,7 +60,7 @@ const TRANSFERS_IN_QUERY = `
 
 const TRANSFERS_OUT_QUERY = `
   query GetTransfersOut($sender: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Transfer(where: { sender: { _eq: $sender }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+    Transfer(where: { sender: { _ilike: $sender }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -82,7 +82,7 @@ const SINGLE_QUERY_LIMIT = 50000
 // V2 Vault Queries (with optional maxTimestamp filter)
 const V2_DEPOSITS_QUERY = `
   query GetV2Deposits($recipient: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    V2Deposit(where: { recipient: { _eq: $recipient }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+    V2Deposit(where: { recipient: { _ilike: $recipient }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -100,7 +100,7 @@ const V2_DEPOSITS_QUERY = `
 
 const V2_WITHDRAWALS_QUERY = `
   query GetV2Withdrawals($recipient: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    V2Withdraw(where: { recipient: { _eq: $recipient }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+    V2Withdraw(where: { recipient: { _ilike: $recipient }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -118,7 +118,7 @@ const V2_WITHDRAWALS_QUERY = `
 
 const DEPOSITS_BY_TX_FROM_QUERY = `
   query GetDepositsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Deposit(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+    Deposit(where: { transactionFrom: { _ilike: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -137,7 +137,7 @@ const DEPOSITS_BY_TX_FROM_QUERY = `
 
 const WITHDRAWALS_BY_TX_FROM_QUERY = `
   query GetWithdrawalsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Withdraw(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+    Withdraw(where: { transactionFrom: { _ilike: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -155,7 +155,7 @@ const WITHDRAWALS_BY_TX_FROM_QUERY = `
 
 const V2_DEPOSITS_BY_TX_FROM_QUERY = `
   query GetV2DepositsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    V2Deposit(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+    V2Deposit(where: { transactionFrom: { _ilike: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -173,7 +173,7 @@ const V2_DEPOSITS_BY_TX_FROM_QUERY = `
 
 const V2_WITHDRAWALS_BY_TX_FROM_QUERY = `
   query GetV2WithdrawalsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    V2Withdraw(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+    V2Withdraw(where: { transactionFrom: { _ilike: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -191,7 +191,7 @@ const V2_WITHDRAWALS_BY_TX_FROM_QUERY = `
 
 const TRANSFERS_BY_TX_FROM_QUERY = `
   query GetTransfersByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Transfer(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
+    Transfer(where: { transactionFrom: { _ilike: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
       id
       vaultAddress
       chainId
@@ -300,32 +300,32 @@ const TRANSFERS_BY_TX_HASHES_QUERY = `
 
 const USER_EVENT_COUNTS_AGGREGATE_QUERY = `
   query GetUserEventCountsAggregate($address: String!, $maxTimestamp: Int!) {
-    deposits: Deposit_aggregate(where: { owner: { _eq: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
+    deposits: Deposit_aggregate(where: { owner: { _ilike: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
       aggregate {
         count
       }
     }
-    withdrawals: Withdraw_aggregate(where: { owner: { _eq: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
+    withdrawals: Withdraw_aggregate(where: { owner: { _ilike: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
       aggregate {
         count
       }
     }
-    transfersIn: Transfer_aggregate(where: { receiver: { _eq: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
+    transfersIn: Transfer_aggregate(where: { receiver: { _ilike: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
       aggregate {
         count
       }
     }
-    transfersOut: Transfer_aggregate(where: { sender: { _eq: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
+    transfersOut: Transfer_aggregate(where: { sender: { _ilike: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
       aggregate {
         count
       }
     }
-    v2Deposits: V2Deposit_aggregate(where: { recipient: { _eq: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
+    v2Deposits: V2Deposit_aggregate(where: { recipient: { _ilike: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
       aggregate {
         count
       }
     }
-    v2Withdrawals: V2Withdraw_aggregate(where: { recipient: { _eq: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
+    v2Withdrawals: V2Withdraw_aggregate(where: { recipient: { _ilike: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
       aggregate {
         count
       }
