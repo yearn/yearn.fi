@@ -16,8 +16,12 @@ import {
 } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import {
+  canClearMinTvl,
   getAdditionalResultsForCombo,
+  getAdditionalUniqueEntriesCount,
   getCommonBlockingKeys,
+  isVaultHiddenByMinTvl,
+  MIN_TVL_DISABLED,
   shouldShowComboBlockingAction
 } from '@pages/vaults/utils/blockingFilterInsights'
 import { resolveNextSingleChainSelection } from '@pages/vaults/utils/chainSelection'
@@ -492,7 +496,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
 
   const { pinnedVaults: clearMinTvlPinnedVaults, mainVaults: clearMinTvlMainVaults } = useVaultsListModel({
     ...blockingProbeBaseArgs,
-    listMinTvl: DEFAULT_MIN_TVL
+    listMinTvl: MIN_TVL_DISABLED
   })
 
   const { pinnedVaults: showAllTypesPinnedVaults, mainVaults: showAllTypesMainVaults } = useVaultsListModel({
@@ -515,7 +519,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       listCategories: null,
       listAggressiveness: null,
       listUnderlyingAssets: null,
-      listMinTvl: DEFAULT_MIN_TVL,
+      listMinTvl: MIN_TVL_DISABLED,
       listShowLegacyVaults: true,
       listShowHiddenVaults: true
     }
@@ -576,11 +580,9 @@ export function useVaultsPageModel(): TVaultsPageModel {
         }
       }
 
-      if (listMinTvl !== DEFAULT_MIN_TVL) {
-        const tvl = getVaultTVL(vault).tvl || 0
-        if (tvl < listMinTvl) {
-          blockingKeys.add('clearMinTvl')
-        }
+      const tvl = getVaultTVL(vault).tvl || 0
+      if (isVaultHiddenByMinTvl({ minTvl: listMinTvl, vaultTvl: tvl })) {
+        blockingKeys.add('clearMinTvl')
       }
 
       if (isV3Kind) {
@@ -865,7 +867,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
   }, [handleUnderlyingAssetsChange])
 
   const handleClearMinTvl = useCallback((): void => {
-    handleMinTvlChange(DEFAULT_MIN_TVL)
+    handleMinTvlChange(MIN_TVL_DISABLED)
   }, [handleMinTvlChange])
 
   const handleShowAllTypes = useCallback((): void => {
@@ -876,38 +878,47 @@ export function useVaultsPageModel(): TVaultsPageModel {
     handleVaultVersionToggle('all')
   }, [handleVaultVersionToggle])
 
-  const currentVisibleResultsCount = pinnedVaults.length + mainVaults.length
-  const showStrategiesResultsCount = showStrategiesPinnedVaults.length + showStrategiesMainVaults.length
-  const showLegacyResultsCount = showLegacyPinnedVaults.length + showLegacyMainVaults.length
-  const showHiddenResultsCount = showHiddenPinnedVaults.length + showHiddenMainVaults.length
-  const showAllChainsResultsCount = showAllChainsPinnedVaults.length + showAllChainsMainVaults.length
-  const showAllCategoriesResultsCount = showAllCategoriesPinnedVaults.length + showAllCategoriesMainVaults.length
-  const showAllAggressivenessResultsCount =
-    showAllAggressivenessPinnedVaults.length + showAllAggressivenessMainVaults.length
-  const showAllUnderlyingAssetsResultsCount =
-    showAllUnderlyingAssetsPinnedVaults.length + showAllUnderlyingAssetsMainVaults.length
-  const clearMinTvlResultsCount = clearMinTvlPinnedVaults.length + clearMinTvlMainVaults.length
-  const showAllTypesResultsCount = showAllTypesPinnedVaults.length + showAllTypesMainVaults.length
-  const showAllVaultsResultsCount = showAllVaultsPinnedVaults.length + showAllVaultsMainVaults.length
-  const allBlockingFiltersResultsCount = allBlockingFiltersPinnedVaults.length + allBlockingFiltersMainVaults.length
+  const getAdditionalResultsCount = useCallback(
+    (vaults: TKongVaultInput[]): number =>
+      getAdditionalUniqueEntriesCount({
+        currentVisibleKeys: currentVisibleVaultKeys,
+        candidateKeys: vaults.map((vault) => getVaultKey(vault))
+      }),
+    [currentVisibleVaultKeys]
+  )
 
-  const showStrategiesAdditionalResults = Math.max(0, showStrategiesResultsCount - currentVisibleResultsCount)
-  const showLegacyAdditionalResults = Math.max(0, showLegacyResultsCount - currentVisibleResultsCount)
-  const showHiddenAdditionalResults = Math.max(0, showHiddenResultsCount - currentVisibleResultsCount)
-  const showAllChainsAdditionalResults = Math.max(0, showAllChainsResultsCount - currentVisibleResultsCount)
-  const showAllCategoriesAdditionalResults = Math.max(0, showAllCategoriesResultsCount - currentVisibleResultsCount)
-  const showAllAggressivenessAdditionalResults = Math.max(
-    0,
-    showAllAggressivenessResultsCount - currentVisibleResultsCount
-  )
-  const showAllUnderlyingAssetsAdditionalResults = Math.max(
-    0,
-    showAllUnderlyingAssetsResultsCount - currentVisibleResultsCount
-  )
-  const clearMinTvlAdditionalResults = Math.max(0, clearMinTvlResultsCount - currentVisibleResultsCount)
-  const showAllTypesAdditionalResults = Math.max(0, showAllTypesResultsCount - currentVisibleResultsCount)
-  const showAllVaultsAdditionalResults = Math.max(0, showAllVaultsResultsCount - currentVisibleResultsCount)
-  const hiddenByFiltersCount = Math.max(0, allBlockingFiltersResultsCount - currentVisibleResultsCount)
+  const showStrategiesAdditionalResults = getAdditionalResultsCount([
+    ...showStrategiesPinnedVaults,
+    ...showStrategiesMainVaults
+  ])
+  const showLegacyAdditionalResults = getAdditionalResultsCount([...showLegacyPinnedVaults, ...showLegacyMainVaults])
+  const showHiddenAdditionalResults = getAdditionalResultsCount([...showHiddenPinnedVaults, ...showHiddenMainVaults])
+  const showAllChainsAdditionalResults = getAdditionalResultsCount([
+    ...showAllChainsPinnedVaults,
+    ...showAllChainsMainVaults
+  ])
+  const showAllCategoriesAdditionalResults = getAdditionalResultsCount([
+    ...showAllCategoriesPinnedVaults,
+    ...showAllCategoriesMainVaults
+  ])
+  const showAllAggressivenessAdditionalResults = getAdditionalResultsCount([
+    ...showAllAggressivenessPinnedVaults,
+    ...showAllAggressivenessMainVaults
+  ])
+  const showAllUnderlyingAssetsAdditionalResults = getAdditionalResultsCount([
+    ...showAllUnderlyingAssetsPinnedVaults,
+    ...showAllUnderlyingAssetsMainVaults
+  ])
+  const clearMinTvlAdditionalResults = getAdditionalResultsCount([...clearMinTvlPinnedVaults, ...clearMinTvlMainVaults])
+  const showAllTypesAdditionalResults = getAdditionalResultsCount([
+    ...showAllTypesPinnedVaults,
+    ...showAllTypesMainVaults
+  ])
+  const showAllVaultsAdditionalResults = getAdditionalResultsCount([
+    ...showAllVaultsPinnedVaults,
+    ...showAllVaultsMainVaults
+  ])
+  const hiddenByFiltersCount = getAdditionalResultsCount(allBlockingFiltersVaults)
 
   const blockingFilterActions = useMemo((): TVaultsBlockingFilterAction[] => {
     const actionHandlers: Record<TVaultsBlockingFilterBaseActionKey, () => void> = {
@@ -949,7 +960,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       },
       {
         key: 'clearMinTvl',
-        isApplicable: listMinTvl !== DEFAULT_MIN_TVL,
+        isApplicable: canClearMinTvl(listMinTvl),
         additionalResults: clearMinTvlAdditionalResults
       },
       {

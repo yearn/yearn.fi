@@ -33,6 +33,26 @@ export function getAdditionalResultsForCombo<T extends string>(blockingKeysByVau
   }, 0)
 }
 
+export function getAdditionalUniqueEntriesCount<T extends string | number>({
+  currentVisibleKeys,
+  candidateKeys
+}: {
+  currentVisibleKeys: Set<T>
+  candidateKeys: T[]
+}): number {
+  return Array.from(new Set(candidateKeys)).filter((key) => !currentVisibleKeys.has(key)).length
+}
+
+export const MIN_TVL_DISABLED = 0
+
+export function canClearMinTvl(minTvl: number): boolean {
+  return minTvl > MIN_TVL_DISABLED
+}
+
+export function isVaultHiddenByMinTvl({ minTvl, vaultTvl }: { minTvl: number; vaultTvl: number }): boolean {
+  return canClearMinTvl(minTvl) && vaultTvl < minTvl
+}
+
 export function shouldShowComboBlockingAction<T extends string>({
   hiddenByFiltersCount,
   comboKeys,

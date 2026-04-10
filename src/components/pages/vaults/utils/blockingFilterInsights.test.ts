@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  canClearMinTvl,
   getAdditionalResultsForCombo,
+  getAdditionalUniqueEntriesCount,
   getCommonBlockingKeys,
+  isVaultHiddenByMinTvl,
   shouldShowComboBlockingAction
 } from './blockingFilterInsights'
 
@@ -30,6 +33,27 @@ describe('blockingFilterInsights', () => {
     )
 
     expect(comboAdditionalResults).toBe(1)
+  })
+
+  it('counts only keys that are newly revealed relative to the current visible set', () => {
+    const additionalResults = getAdditionalUniqueEntriesCount({
+      currentVisibleKeys: new Set(['holdings:1', 'visible:1']),
+      candidateKeys: ['visible:1', 'hidden-by-tvl:1', 'hidden-by-tvl:1']
+    })
+
+    expect(additionalResults).toBe(1)
+  })
+
+  it('treats the default minimum TVL threshold as a real blocker for hidden search results', () => {
+    expect(isVaultHiddenByMinTvl({ minTvl: 500, vaultTvl: 0 })).toBe(true)
+    expect(isVaultHiddenByMinTvl({ minTvl: 500, vaultTvl: 499 })).toBe(true)
+    expect(isVaultHiddenByMinTvl({ minTvl: 500, vaultTvl: 500 })).toBe(false)
+  })
+
+  it('only offers clear minimum TVL when the threshold is still above zero', () => {
+    expect(canClearMinTvl(500)).toBe(true)
+    expect(canClearMinTvl(1)).toBe(true)
+    expect(canClearMinTvl(0)).toBe(false)
   })
 
   it('shows fallback combo action for a single common blocker when no individual actions are available', () => {
