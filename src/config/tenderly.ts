@@ -307,6 +307,39 @@ export function getTenderlyBackedCanonicalChainIds(): readonly TCanonicalChainId
   return tenderlyRuntime.configuredCanonicalChainIds
 }
 
+export function resolveConnectedTenderlyExecutionChainForRuntime(
+  runtime: TTenderlyRuntime,
+  chainId: number | undefined
+): { canonicalChainId: TCanonicalChainId; executionChainId: number; canonicalChainName: string } | undefined {
+  const canonicalChainId = resolveConnectedCanonicalChainIdForRuntime(runtime, chainId)
+  if (canonicalChainId === undefined) {
+    return undefined
+  }
+
+  const executionChainId = resolveExecutionChainIdForRuntime(runtime, canonicalChainId)
+  if (
+    executionChainId === undefined ||
+    executionChainId === canonicalChainId ||
+    !Number.isInteger(chainId) ||
+    chainId !== executionChainId
+  ) {
+    return undefined
+  }
+
+  return {
+    canonicalChainId,
+    executionChainId,
+    canonicalChainName:
+      canonicalChains.find((chain) => chain.id === canonicalChainId)?.name || `chain ${canonicalChainId}`
+  }
+}
+
+export function resolveConnectedTenderlyExecutionChain(
+  chainId: number | undefined
+): { canonicalChainId: TCanonicalChainId; executionChainId: number; canonicalChainName: string } | undefined {
+  return resolveConnectedTenderlyExecutionChainForRuntime(tenderlyRuntime, chainId)
+}
+
 export function isCanonicalChainEnabled(chainId: number): chainId is TCanonicalChainId {
   return supportedCanonicalChains.some((chain) => chain.id === chainId)
 }

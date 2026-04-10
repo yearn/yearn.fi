@@ -1,21 +1,32 @@
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, realpathSync } from 'node:fs'
+import { existsSync, realpathSync, statSync } from 'node:fs'
 import { createServer } from 'node:net'
+import { join } from 'node:path'
 import { cwd, env, exit, stdin as input, stdout as output } from 'node:process'
 import { createInterface } from 'node:readline/promises'
+import { loadEnv } from 'vite'
 
 const DEFAULT_API_PORT = 3001
 const API_HEALTHCHECK_PATH = '/api/enso/balances'
 const API_HEALTHCHECK_EXPECTED_ERROR = 'Missing eoaAddress'
 const API_HEALTHCHECK_TIMEOUT_MS = 500
 const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'])
+export const DEFAULT_API_ENV_CHANGE_PATHS = [
+  '.env',
+  '.env.local',
+  '.env.development',
+  '.env.development.local',
+  '.env.production',
+  '.env.production.local'
+]
 
 export const DEFAULT_API_CHANGE_PATHS = [
   'api',
   'vite.config.ts',
   'scripts/ensure-api-server.js',
   'scripts/api-runtime.mjs',
-  'package.json'
+  'package.json',
+  ...DEFAULT_API_ENV_CHANGE_PATHS
 ]
 
 function resolveRealPath(path) {
@@ -39,38 +50,59 @@ function readWorkspacePathForPid(pid) {
     ?.slice(1)
 }
 
-function parseEnvFile(contents) {
-  return Object.fromEntries(
-    contents
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line && !line.startsWith('#') && line.includes('='))
-      .map((line) => {
-        const separatorIndex = line.indexOf('=')
-        const key = line.slice(0, separatorIndex).trim()
-        const rawValue = line.slice(separatorIndex + 1).trim()
-        const value = rawValue.replace(/^['"]|['"]$/g, '')
-
-        return [key, value]
-      })
-      .filter(([key]) => Boolean(key))
-  )
-}
-
-function readOptionalEnvFile(path) {
-  if (!existsSync(path)) {
-    return {}
-  }
-
-  return parseEnvFile(readFileSync(path, 'utf8'))
-}
-
-function resolveLauncherEnv() {
+export function resolveLauncherEnv(
+  mode,
+  {
+    envDir = cwd(),
+    shellEnv = Object.fromEntries(Object.entries(env).filter((entry) => typeof entry[1] === 'string'))
+  } = {}
+) {
   return {
-    ...readOptionalEnvFile('.env'),
-    ...readOptionalEnvFile('.env.local'),
-    ...Object.fromEntries(Object.entries(env).filter((entry) => typeof entry[1] === 'string'))
+    ...loadEnv(mode, envDir, ''),
+    ...shellEnv
   }
+}
+
+function getModeEnvChangePaths(mode) {
+  return Array.from(new Set(['.env', '.env.local', `.env.${mode}`, `.env.${mode}.local`]))
+}
+
+function readProcessStartedAtMs(pid) {
+  const startedAtResult = runCommand('ps', ['-p', String(pid), '-o', 'lstart='])
+
+  if (!startedAtResult || startedAtResult.status !== 0) {
+    return undefined
+  }
+
+  const startedAtParts = startedAtResult.stdout.trim().split(/\s+/)
+  if (startedAtParts.length < 5) {
+    return undefined
+  }
+
+  const [, month, day, time, year] = startedAtParts
+  const startedAtMs = Date.parse(`${month} ${day} ${year} ${time}`)
+
+  return Number.isNaN(startedAtMs) ? undefined : startedAtMs
+}
+
+export function getEnvChangeEntriesSince(mode, startedAtMs, envDir = cwd()) {
+  const envPaths = getModeEnvChangePaths(mode)
+
+  return envPaths
+    .map((relativePath) => ({
+      relativePath,
+      absolutePath: join(envDir, relativePath)
+    }))
+    .filter(({ absolutePath }) => existsSync(absolutePath))
+    .flatMap(({ relativePath, absolutePath }) => {
+      if (startedAtMs === undefined) {
+        return [`M ${relativePath} (could not verify against the running API process start time)`]
+      }
+
+      return statSync(absolutePath).mtimeMs > startedAtMs
+        ? [`M ${relativePath} (newer than the running API process)`]
+        : []
+    })
 }
 
 function normalizePort(portValue, fallbackPort = DEFAULT_API_PORT) {
@@ -466,8 +498,8 @@ export async function runLauncherProcesses({
   exit(firstExit.code ?? 0)
 }
 
-export async function chooseApiRuntime({ changePaths = DEFAULT_API_CHANGE_PATHS } = {}) {
-  const launcherEnv = resolveLauncherEnv()
+export async function chooseApiRuntime({ changePaths = DEFAULT_API_CHANGE_PATHS, mode = 'development' } = {}) {
+  const launcherEnv = resolveLauncherEnv(mode)
   const configuredApiRuntime = resolveConfiguredApiRuntime(launcherEnv)
   const { apiPort: defaultApiPort, apiProxyTarget, isLocalApiTarget } = configuredApiRuntime
 
@@ -485,7 +517,12 @@ export async function chooseApiRuntime({ changePaths = DEFAULT_API_CHANGE_PATHS 
   const portAvailable = await isPortAvailable(defaultApiPort)
   const commandOwner = portAvailable ? undefined : inspectPortOwner(defaultApiPort)
   const healthyExistingApi = portAvailable ? false : (await checkApiHealth(apiProxyTarget)).ok
-  const apiChangeEntries = getApiChangeEntries(changePaths)
+  const trackedApiChangeEntries = getApiChangeEntries(changePaths)
+  const runtimeEnvChangeEntries =
+    commandOwner?.workspacePath === currentWorkspacePath
+      ? getEnvChangeEntriesSince(mode, readProcessStartedAtMs(commandOwner.pid))
+      : []
+  const apiChangeEntries = Array.from(new Set([...trackedApiChangeEntries, ...runtimeEnvChangeEntries]))
   const strategy = resolveLauncherStrategy({
     defaultApiPort,
     portAvailable,

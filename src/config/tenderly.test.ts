@@ -8,6 +8,7 @@ import {
   parseTenderlyRuntime,
   resolveCanonicalChainIdForRuntime,
   resolveConnectedCanonicalChainIdForRuntime,
+  resolveConnectedTenderlyExecutionChainForRuntime,
   resolveExecutionChainIdForRuntime,
   resolveInitialTenderlyModeEnabled,
   resolveTenderlyExplorerUriForExecutionChainIdForRuntime,
@@ -158,5 +159,29 @@ describe('resolveInitialTenderlyModeEnabled', () => {
         storedPreference: 'false'
       })
     ).toBe(true)
+  })
+
+  it('identifies connected Tenderly execution chains that should be switched off before disabling', () => {
+    const runtime = parseTenderlyRuntime({
+      VITE_TENDERLY_MODE: 'true',
+      VITE_TENDERLY_CHAIN_ID_FOR_1: '73571',
+      VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
+    })
+
+    expect(resolveConnectedTenderlyExecutionChainForRuntime(runtime, 73571)).toEqual({
+      canonicalChainId: 1,
+      executionChainId: 73571,
+      canonicalChainName: 'Ethereum'
+    })
+  })
+
+  it('does not flag canonical chains as Tenderly execution chains', () => {
+    const runtime = parseTenderlyRuntime({
+      VITE_TENDERLY_MODE: 'true',
+      VITE_TENDERLY_CHAIN_ID_FOR_1: '73571',
+      VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
+    })
+
+    expect(resolveConnectedTenderlyExecutionChainForRuntime(runtime, 1)).toBeUndefined()
   })
 })

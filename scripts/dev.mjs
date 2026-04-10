@@ -12,7 +12,7 @@ const DEV_API_CHANGE_PATHS = [...DEFAULT_API_CHANGE_PATHS, 'scripts/dev.mjs']
 export const resolveDevLauncherStrategy = resolveLauncherStrategy
 
 async function main() {
-  const selection = await chooseApiRuntime({ changePaths: DEV_API_CHANGE_PATHS })
+  const selection = await chooseApiRuntime({ changePaths: DEV_API_CHANGE_PATHS, mode: 'development' })
   const sessionEnv = buildSessionEnv(selection)
 
   output.write(

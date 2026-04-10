@@ -1,4 +1,5 @@
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
+import { toast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useTenderlyPanel } from '@shared/contexts/useTenderlyPanel'
 import useWallet from '@shared/contexts/useWallet'
@@ -15,11 +16,13 @@ import { truncateHex } from '@shared/utils/tools.address'
 import type { KeyboardEvent, MouseEvent, ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
+import { useAccount } from 'wagmi'
 import {
   canToggleTenderlyMode,
   isTenderlyModeConfigured,
   isTenderlyModeEnabled,
   persistTenderlyModeEnabled,
+  resolveConnectedTenderlyExecutionChain,
   tenderlyConfiguredRuntime
 } from '@/config/tenderly'
 import Link from '/src/components/Link'
@@ -117,6 +120,7 @@ function getConfiguredTenderlyMappingsLabel(): string {
 
 function TenderlyBadge(): ReactElement | null {
   const { isPanelAvailable, isOpen, togglePanel } = useTenderlyPanel()
+  const { chain } = useAccount()
   const isTenderlyConfigured = isTenderlyModeConfigured()
 
   if (!isTenderlyConfigured && !isTenderlyModeEnabled()) {
@@ -127,6 +131,7 @@ function TenderlyBadge(): ReactElement | null {
   const configuredMappings = getConfiguredTenderlyMappingsLabel()
   const canToggleMode = canToggleTenderlyMode()
   const canToggleControls = isTenderlyActive && isPanelAvailable
+  const connectedTenderlyExecutionChain = resolveConnectedTenderlyExecutionChain(chain?.id)
 
   const handleBadgeClick = (): void => {
     if (!canToggleControls) {
@@ -149,6 +154,15 @@ function TenderlyBadge(): ReactElement | null {
 
   const handleToggleMode = (event: KeyboardEvent<HTMLButtonElement> | MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation()
+
+    if (isTenderlyActive && connectedTenderlyExecutionChain) {
+      toast({
+        content: `Switch your wallet back to ${connectedTenderlyExecutionChain.canonicalChainName} before turning Tenderly off`,
+        type: 'warning'
+      })
+      return
+    }
+
     persistTenderlyModeEnabled(!isTenderlyActive)
     window.location.reload()
   }
