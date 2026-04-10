@@ -1,6 +1,7 @@
 const DEFAULT_API_PORT = '3001'
 const API_PROXY_TARGET =
-  process.env.API_PROXY_TARGET || `http://localhost:${process.env.API_PORT || process.env.API_SERVER_PORT || DEFAULT_API_PORT}`
+  process.env.API_PROXY_TARGET ||
+  `http://localhost:${process.env.API_PORT || process.env.API_SERVER_PORT || DEFAULT_API_PORT}`
 const API_PROXY_TARGET_DESCRIPTION = process.env.API_PROXY_TARGET?.trim()
   ? 'the configured API proxy target'
   : 'the default local API address'

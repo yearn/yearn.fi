@@ -1,6 +1,8 @@
 import { spawnSync } from 'node:child_process'
-import { existsSync, realpathSync, statSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { cwd, env, exit, stdin as input, stdout as output } from 'node:process'
 import { createInterface } from 'node:readline/promises'
@@ -11,22 +13,15 @@ const API_HEALTHCHECK_PATH = '/api/enso/balances'
 const API_HEALTHCHECK_EXPECTED_ERROR = 'Missing eoaAddress'
 const API_HEALTHCHECK_TIMEOUT_MS = 500
 const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'])
-export const DEFAULT_API_ENV_CHANGE_PATHS = [
-  '.env',
-  '.env.local',
-  '.env.development',
-  '.env.development.local',
-  '.env.production',
-  '.env.production.local'
-]
+const API_RUNTIME_STATE_DIR = join(tmpdir(), 'yearn-api-runtime')
+export const DEFAULT_API_ENV_CHANGE_PATHS = ['.env', '.env.local']
 
 export const DEFAULT_API_CHANGE_PATHS = [
   'api',
   'vite.config.ts',
   'scripts/ensure-api-server.js',
   'scripts/api-runtime.mjs',
-  'package.json',
-  ...DEFAULT_API_ENV_CHANGE_PATHS
+  'package.json'
 ]
 
 function resolveRealPath(path) {
@@ -64,7 +59,50 @@ export function resolveLauncherEnv(
 }
 
 function getModeEnvChangePaths(mode) {
-  return Array.from(new Set(['.env', '.env.local', `.env.${mode}`, `.env.${mode}.local`]))
+  return Array.from(new Set([...DEFAULT_API_ENV_CHANGE_PATHS, `.env.${mode}`, `.env.${mode}.local`]))
+}
+
+export function getApiChangePathsForMode(mode) {
+  return [...DEFAULT_API_CHANGE_PATHS, ...getModeEnvChangePaths(mode)]
+}
+
+function resolveApiRuntimeStatePath(workspacePath, port) {
+  const workspaceKey = createHash('sha1').update(workspacePath).digest('hex')
+  return join(API_RUNTIME_STATE_DIR, `${workspaceKey}-${port}.json`)
+}
+
+function readApiRuntimeState(workspacePath, port) {
+  const statePath = resolveApiRuntimeStatePath(workspacePath, port)
+
+  if (!existsSync(statePath)) {
+    return undefined
+  }
+
+  try {
+    return JSON.parse(readFileSync(statePath, 'utf8'))
+  } catch {
+    return undefined
+  }
+}
+
+function writeApiRuntimeState({ workspacePath, port, pid, mode, head, startedAtMs }) {
+  mkdirSync(API_RUNTIME_STATE_DIR, { recursive: true })
+  writeFileSync(
+    resolveApiRuntimeStatePath(workspacePath, port),
+    JSON.stringify({ pid, mode, head, startedAtMs }),
+    'utf8'
+  )
+}
+
+function getCurrentGitHead() {
+  const gitHeadResult = runCommand('git', ['rev-parse', 'HEAD'])
+
+  if (!gitHeadResult || gitHeadResult.status !== 0) {
+    return undefined
+  }
+
+  const gitHead = gitHeadResult.stdout.trim()
+  return gitHead || undefined
 }
 
 function readProcessStartedAtMs(pid) {
@@ -103,6 +141,93 @@ export function getEnvChangeEntriesSince(mode, startedAtMs, envDir = cwd()) {
         ? [`M ${relativePath} (newer than the running API process)`]
         : []
     })
+}
+
+export function getRecordedApiRuntimeMismatchEntries({ workspacePath, port, pid, mode, processStartedAtMs }) {
+  const recordedRuntimeState = readApiRuntimeState(workspacePath, port)
+
+  if (!recordedRuntimeState) {
+    return ['M could not verify the running API launch context for this workspace']
+  }
+
+  if (recordedRuntimeState.pid !== pid) {
+    return ['M the running API pid does not match the last launcher-managed API process for this workspace']
+  }
+
+  if (processStartedAtMs === undefined || recordedRuntimeState.startedAtMs !== processStartedAtMs) {
+    return ['M could not verify that the running API process matches the last launcher-managed start']
+  }
+
+  if (recordedRuntimeState.mode !== mode) {
+    return [`M the running API was started in ${recordedRuntimeState.mode} mode, not ${mode}`]
+  }
+
+  return []
+}
+
+export function getRecordedApiCommittedChangeEntries({
+  workspacePath,
+  port,
+  currentHead,
+  changePaths,
+  runCommandImpl = runCommand
+}) {
+  const recordedRuntimeState = readApiRuntimeState(workspacePath, port)
+
+  if (!recordedRuntimeState?.head || !currentHead) {
+    return ['M could not verify API-related commits since the running API started']
+  }
+
+  if (recordedRuntimeState.head === currentHead) {
+    return []
+  }
+
+  const diffResult = runCommandImpl('git', [
+    'diff',
+    '--name-status',
+    `${recordedRuntimeState.head}..${currentHead}`,
+    '--',
+    ...changePaths
+  ])
+
+  if (!diffResult || diffResult.status !== 0) {
+    return ['M could not verify API-related commits since the running API started']
+  }
+
+  return diffResult.stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
+export async function resolveLocalApiRuntimeOwner({
+  apiPort,
+  apiProxyTarget,
+  checkApiHealthImpl = checkApiHealth,
+  inspectPortOwnerImpl = inspectPortOwner,
+  readProcessStartedAtMsImpl = readProcessStartedAtMs,
+  timeoutMs = 5_000,
+  pollIntervalMs = 100
+}) {
+  const deadline = Date.now() + timeoutMs
+
+  while (Date.now() <= deadline) {
+    const health = await checkApiHealthImpl(apiProxyTarget)
+
+    if (health.ok) {
+      const portOwner = inspectPortOwnerImpl(apiPort)
+      if (portOwner?.pid) {
+        return {
+          pid: portOwner.pid,
+          startedAtMs: readProcessStartedAtMsImpl(portOwner.pid)
+        }
+      }
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs))
+  }
+
+  return undefined
 }
 
 function normalizePort(portValue, fallbackPort = DEFAULT_API_PORT) {
@@ -457,6 +582,7 @@ export async function runLauncherProcesses({
   isLocalApiTarget,
   reuseExistingApi,
   launcherEnv,
+  runtimeMetadata,
   serverCommand,
   clientCommand
 }) {
@@ -469,12 +595,33 @@ export async function runLauncherProcesses({
   const children = [
     reuseExistingApi
       ? undefined
-      : Bun.spawn(serverCommand, {
-          env: sessionEnv,
-          stdin: 'inherit',
-          stdout: 'inherit',
-          stderr: 'inherit'
-        }),
+      : (() => {
+          const serverChild = Bun.spawn(serverCommand, {
+            env: sessionEnv,
+            stdin: 'inherit',
+            stdout: 'inherit',
+            stderr: 'inherit'
+          })
+
+          if (runtimeMetadata) {
+            void resolveLocalApiRuntimeOwner({ apiPort, apiProxyTarget }).then((runtimeOwner) => {
+              if (!runtimeOwner) {
+                return
+              }
+
+              writeApiRuntimeState({
+                workspacePath: runtimeMetadata.workspacePath,
+                port: apiPort,
+                pid: runtimeOwner.pid,
+                mode: runtimeMetadata.mode,
+                head: runtimeMetadata.head,
+                startedAtMs: runtimeOwner.startedAtMs
+              })
+            })
+          }
+
+          return serverChild
+        })(),
     Bun.spawn(clientCommand, {
       env: sessionEnv,
       stdin: 'inherit',
@@ -498,10 +645,12 @@ export async function runLauncherProcesses({
   exit(firstExit.code ?? 0)
 }
 
-export async function chooseApiRuntime({ changePaths = DEFAULT_API_CHANGE_PATHS, mode = 'development' } = {}) {
+export async function chooseApiRuntime({ changePaths, mode = 'development' } = {}) {
   const launcherEnv = resolveLauncherEnv(mode)
   const configuredApiRuntime = resolveConfiguredApiRuntime(launcherEnv)
   const { apiPort: defaultApiPort, apiProxyTarget, isLocalApiTarget } = configuredApiRuntime
+  const currentHead = getCurrentGitHead()
+  const trackedChangePaths = changePaths || getApiChangePathsForMode(mode)
 
   if (!isLocalApiTarget) {
     return {
@@ -516,18 +665,43 @@ export async function chooseApiRuntime({ changePaths = DEFAULT_API_CHANGE_PATHS,
   const currentWorkspacePath = resolveRealPath(cwd())
   const portAvailable = await isPortAvailable(defaultApiPort)
   const commandOwner = portAvailable ? undefined : inspectPortOwner(defaultApiPort)
+  const processStartedAtMs = commandOwner ? readProcessStartedAtMs(commandOwner.pid) : undefined
+  const ownerWorkspaceMatches = commandOwner?.workspacePath === currentWorkspacePath
   const healthyExistingApi = portAvailable ? false : (await checkApiHealth(apiProxyTarget)).ok
-  const trackedApiChangeEntries = getApiChangeEntries(changePaths)
-  const runtimeEnvChangeEntries =
-    commandOwner?.workspacePath === currentWorkspacePath
-      ? getEnvChangeEntriesSince(mode, readProcessStartedAtMs(commandOwner.pid))
+  const trackedApiChangeEntries = getApiChangeEntries(trackedChangePaths)
+  const runtimeEnvChangeEntries = ownerWorkspaceMatches ? getEnvChangeEntriesSince(mode, processStartedAtMs) : []
+  const runtimeMismatchEntries =
+    ownerWorkspaceMatches && healthyExistingApi
+      ? getRecordedApiRuntimeMismatchEntries({
+          workspacePath: currentWorkspacePath,
+          port: defaultApiPort,
+          pid: commandOwner.pid,
+          mode,
+          processStartedAtMs
+        })
       : []
-  const apiChangeEntries = Array.from(new Set([...trackedApiChangeEntries, ...runtimeEnvChangeEntries]))
+  const committedApiChangeEntries =
+    ownerWorkspaceMatches && healthyExistingApi && runtimeMismatchEntries.length === 0
+      ? getRecordedApiCommittedChangeEntries({
+          workspacePath: currentWorkspacePath,
+          port: defaultApiPort,
+          currentHead,
+          changePaths: trackedChangePaths
+        })
+      : []
+  const apiChangeEntries = Array.from(
+    new Set([
+      ...trackedApiChangeEntries,
+      ...runtimeEnvChangeEntries,
+      ...runtimeMismatchEntries,
+      ...committedApiChangeEntries
+    ])
+  )
   const strategy = resolveLauncherStrategy({
     defaultApiPort,
     portAvailable,
     healthyExistingApi,
-    ownerWorkspaceMatches: commandOwner?.workspacePath === currentWorkspacePath,
+    ownerWorkspaceMatches,
     hasApiChanges: apiChangeEntries.length > 0,
     nextAvailablePort: portAvailable ? defaultApiPort : await findNextAvailablePort(defaultApiPort + 1)
   })
@@ -540,7 +714,14 @@ export async function chooseApiRuntime({ changePaths = DEFAULT_API_CHANGE_PATHS,
         : getLocalApiProxyTarget(strategy.apiPort, apiProxyTarget),
       isLocalApiTarget,
       reuseExistingApi: strategy.reuseExistingApi,
-      launcherEnv
+      launcherEnv,
+      runtimeMetadata: strategy.reuseExistingApi
+        ? undefined
+        : {
+            workspacePath: currentWorkspacePath,
+            mode,
+            head: currentHead
+          }
     }
   }
 
@@ -554,7 +735,12 @@ export async function chooseApiRuntime({ changePaths = DEFAULT_API_CHANGE_PATHS,
       apiProxyTarget: getLocalApiProxyTarget(strategy.recommendedPort, apiProxyTarget),
       isLocalApiTarget,
       reuseExistingApi: false,
-      launcherEnv
+      launcherEnv,
+      runtimeMetadata: {
+        workspacePath: currentWorkspacePath,
+        mode,
+        head: currentHead
+      }
     }
   }
 
@@ -573,6 +759,13 @@ export async function chooseApiRuntime({ changePaths = DEFAULT_API_CHANGE_PATHS,
       ? apiProxyTarget
       : getLocalApiProxyTarget(selection.apiPort, apiProxyTarget),
     isLocalApiTarget,
-    launcherEnv
+    launcherEnv,
+    runtimeMetadata: selection.reuseExistingApi
+      ? undefined
+      : {
+          workspacePath: currentWorkspacePath,
+          mode,
+          head: currentHead
+        }
   }
 }
