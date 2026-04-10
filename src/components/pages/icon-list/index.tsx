@@ -31,10 +31,7 @@ const ICON_MODULES = {
   ...import.meta.glob('/src/components/pages/**/Icons.tsx', { eager: true })
 }
 
-const SOURCE_MODULES = import.meta.glob(
-  ['/src/**/*.{ts,tsx,css}', '!/src/**/*.test.{ts,tsx}', '!/src/**/*.spec.{ts,tsx}'],
-  { query: '?raw', import: 'default' }
-)
+const SOURCE_MODULES = import.meta.glob('/src/**/*.{ts,tsx,css}', { as: 'raw' })
 
 const BROKEN_ASSET_NOTES: Record<string, string> = {
   'public/yearn-logo.svg': 'Broken: file is empty.',
