@@ -13,7 +13,7 @@ export const resolvePreviewLauncherStrategy = resolveLauncherStrategy
 
 async function main() {
   const selection = await chooseApiRuntime({ changePaths: PREVIEW_API_CHANGE_PATHS })
-  const sessionEnv = buildSessionEnv(selection.apiPort, selection.launcherEnv)
+  const sessionEnv = buildSessionEnv(selection)
 
   output.write(
     `${selection.reuseExistingApi ? 'Reusing' : 'Starting'} API ${selection.reuseExistingApi ? 'at' : 'on'} ${sessionEnv.API_PROXY_TARGET}\n`
