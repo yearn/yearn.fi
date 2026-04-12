@@ -10,6 +10,7 @@ interface TokenSelectorOverlayProps {
   onClose: () => void
   onChange: (address: Address, chainId?: number) => void
   chainId: number
+  allowedChainIds?: number[]
   value?: Address
   excludeTokens?: Address[]
   priorityTokens?: Record<number, Address[]>
@@ -28,6 +29,7 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
   onClose,
   onChange,
   chainId,
+  allowedChainIds,
   value,
   excludeTokens,
   priorityTokens,
@@ -70,6 +72,7 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
           value={value}
           onChange={onChange}
           chainId={chainId}
+          allowedChainIds={allowedChainIds}
           excludeTokens={excludeTokens}
           priorityTokens={priorityTokens}
           topTokens={topTokens}

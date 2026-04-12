@@ -83,6 +83,7 @@ export const useDepositFlow = ({
   // Determine routing type
   const routeType = useDepositRoute({
     chainId,
+    sourceChainId,
     depositToken,
     assetAddress,
     directDepositTokenAddress,

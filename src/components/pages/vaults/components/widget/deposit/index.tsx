@@ -23,6 +23,7 @@ import { useWidgetContext } from '../shared/useWidgetContext'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
 import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
+import { getAllowedTokenSelectorChainIds } from '../tokenSelectorChains'
 import { DEPOSIT_COMMON_TOKENS_BY_CHAIN } from '../withdraw/constants'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
@@ -163,6 +164,7 @@ export function WidgetDeposit({
     ensoEnabled
   } = useWidgetContext({ chainId, vaultAddress })
   const { allVaults } = useYearn()
+  const tokenSelectorAllowedChainIds = useMemo(() => getAllowedTokenSelectorChainIds(chainId), [chainId])
 
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
@@ -257,8 +259,11 @@ export function WidgetDeposit({
     if (appliedPrefillRef.current === key) return
     appliedPrefillRef.current = key
 
+    const isSameChainPrefill = prefill.chainId === chainId
+    const isAllowedPrefillChain = tokenSelectorAllowedChainIds.includes(prefill.chainId)
     const canApplyPrefilledToken =
-      ensoEnabled || (toAddress(prefill.address) === toAddress(assetAddress) && prefill.chainId === chainId)
+      (ensoEnabled && isAllowedPrefillChain) ||
+      (toAddress(prefill.address) === toAddress(assetAddress) && isSameChainPrefill)
 
     setSelectedToken(canApplyPrefilledToken ? prefill.address : assetAddress)
     setSelectedChainId(canApplyPrefilledToken ? prefill.chainId : undefined)
@@ -266,10 +271,11 @@ export function WidgetDeposit({
       setDepositInput(prefill.amount)
     }
     onPrefillApplied?.()
-  }, [prefill, ensoEnabled, assetAddress, chainId, setDepositInput, onPrefillApplied])
+  }, [prefill, ensoEnabled, tokenSelectorAllowedChainIds, assetAddress, chainId, setDepositInput, onPrefillApplied])
 
   useResetEnsoSelection({
     ensoEnabled,
+    allowedChainIds: tokenSelectorAllowedChainIds,
     selectedToken,
     selectedChainId,
     assetAddress,
@@ -1049,6 +1055,7 @@ export function WidgetDeposit({
         onChange={handleTokenChange}
         mode={'deposit'}
         chainId={sourceChainId}
+        allowedChainIds={tokenSelectorAllowedChainIds}
         value={selectedToken}
         priorityTokens={{ [chainId]: [assetAddress] }}
         topTokens={tokenSelectorTopTokens}

@@ -1,3 +1,4 @@
+import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import { useMemo } from 'react'
 import { type Address, isAddressEqual } from 'viem'
@@ -5,6 +6,7 @@ import type { DepositRouteType } from './types'
 
 interface UseDepositRouteProps {
   chainId: number
+  sourceChainId?: number
   depositToken: Address
   assetAddress: Address
   directDepositTokenAddress?: Address
@@ -13,11 +15,13 @@ interface UseDepositRouteProps {
   stakingAddress?: Address
 }
 
-interface ResolveDepositRouteTypeProps extends Omit<UseDepositRouteProps, 'chainId'> {
+interface ResolveDepositRouteTypeProps extends UseDepositRouteProps {
   ensoEnabled: boolean
 }
 
 export function resolveDepositRouteType({
+  chainId,
+  sourceChainId,
   depositToken,
   assetAddress,
   directDepositTokenAddress,
@@ -26,6 +30,14 @@ export function resolveDepositRouteType({
   stakingAddress,
   ensoEnabled
 }: ResolveDepositRouteTypeProps): DepositRouteType {
+  if (
+    sourceChainId !== undefined &&
+    sourceChainId !== chainId &&
+    (chainId === KATANA_CHAIN_ID || sourceChainId === KATANA_CHAIN_ID)
+  ) {
+    return 'NO_ROUTE'
+  }
+
   // Case 1: Direct vault deposit (asset → vault)
   if (
     (isAddressEqual(depositToken, assetAddress) ||
@@ -59,6 +71,7 @@ export function resolveDepositRouteType({
  */
 export function useDepositRoute({
   chainId,
+  sourceChainId,
   depositToken,
   assetAddress,
   directDepositTokenAddress,
@@ -71,6 +84,8 @@ export function useDepositRoute({
   return useMemo(
     () =>
       resolveDepositRouteType({
+        chainId,
+        sourceChainId,
         depositToken,
         assetAddress,
         directDepositTokenAddress,
@@ -79,6 +94,16 @@ export function useDepositRoute({
         stakingAddress,
         ensoEnabled
       }),
-    [ensoEnabled, depositToken, assetAddress, directDepositTokenAddress, destinationToken, vaultAddress, stakingAddress]
+    [
+      ensoEnabled,
+      chainId,
+      sourceChainId,
+      depositToken,
+      assetAddress,
+      directDepositTokenAddress,
+      destinationToken,
+      vaultAddress,
+      stakingAddress
+    ]
   )
 }
