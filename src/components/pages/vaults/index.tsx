@@ -95,6 +95,7 @@ export default function Index(): ReactElement {
     pinnedVaults,
     mainVaults,
     vaultFlags,
+    vaultHrefOverrides,
     listChains,
     totalMatchingVaults,
     hiddenByFiltersCount,
@@ -356,6 +357,7 @@ export default function Index(): ReactElement {
             key={section.key}
             vaults={section.vaults}
             vaultFlags={vaultFlags}
+            vaultHrefOverrides={vaultHrefOverrides}
             resolveApyDisplayVariant={resolveApyDisplayVariant}
             compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
             onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
@@ -385,6 +387,7 @@ export default function Index(): ReactElement {
                 <VaultsListRow
                   currentVault={vault}
                   flags={vaultFlags[key]}
+                  hrefOverride={vaultHrefOverrides[key]}
                   apyDisplayVariant={rowApyDisplayVariant}
                   compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
                   onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
@@ -432,7 +435,8 @@ export default function Index(): ReactElement {
     resolveApyDisplayVariant,
     search.value,
     shouldCollapseChips,
-    vaultFlags
+    vaultFlags,
+    vaultHrefOverrides
   ])
 
   const compareCount = compareVaultKeys.length

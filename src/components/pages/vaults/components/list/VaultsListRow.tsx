@@ -19,6 +19,7 @@ import {
   getVaultSymbol,
   getVaultToken,
   getVaultTVL,
+  getVaultYieldSplitter,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
@@ -85,15 +86,18 @@ type TVaultRowFlags = {
   isRetired?: boolean
   isHidden?: boolean
   isNotYearn?: boolean
+  yieldModeLabel?: string
+  yieldModeTooltip?: string
 }
 
-type TVaultKindType = 'multi' | 'single' | undefined
+type TVaultKindType = 'multi' | 'single' | 'route' | undefined
 type TVaultProductType = 'v3' | 'lp'
 type TVaultProductTypePresentation = {
   productType: TVaultProductType
   label: string
   ariaLabel: string
   isLegacy: boolean
+  isFilterable: boolean
 }
 
 type TYvUsdListMetrics = {
@@ -117,12 +121,23 @@ function buildSnapshotEndpoint(chainId: number, address: string): string {
 }
 
 function getVaultProductTypePresentation(listKind: ReturnType<typeof deriveListKind>): TVaultProductTypePresentation {
+  if (listKind === 'yieldSplitter') {
+    return {
+      productType: 'v3',
+      label: 'Yield Splitter',
+      ariaLabel: 'Yield splitter vault',
+      isLegacy: false,
+      isFilterable: false
+    }
+  }
+
   if (listKind === 'allocator' || listKind === 'strategy') {
     return {
       productType: 'v3',
       label: 'Single Asset',
       ariaLabel: 'Show single asset vaults',
-      isLegacy: false
+      isLegacy: false,
+      isFilterable: true
     }
   }
 
@@ -131,7 +146,8 @@ function getVaultProductTypePresentation(listKind: ReturnType<typeof deriveListK
       productType: 'lp',
       label: 'Legacy',
       ariaLabel: 'Legacy vault',
-      isLegacy: true
+      isLegacy: true,
+      isFilterable: true
     }
   }
 
@@ -139,7 +155,8 @@ function getVaultProductTypePresentation(listKind: ReturnType<typeof deriveListK
     productType: 'lp',
     label: 'LP Token',
     ariaLabel: 'Show LP token vaults',
-    isLegacy: false
+    isLegacy: false,
+    isFilterable: true
   }
 }
 
@@ -147,6 +164,10 @@ function getVaultKindType(
   kind: string | null | undefined,
   listKind: ReturnType<typeof deriveListKind>
 ): TVaultKindType {
+  if (listKind === 'yieldSplitter') {
+    return 'route'
+  }
+
   if (kind === 'Multi Strategy') {
     return 'multi'
   }
@@ -173,6 +194,10 @@ function getVaultKindLabel(kindType: TVaultKindType, fallbackKind: string | null
 
   if (kindType === 'single') {
     return 'Strategy'
+  }
+
+  if (kindType === 'route') {
+    return 'Vault-to-Vault'
   }
 
   return fallbackKind ?? undefined
@@ -270,6 +295,7 @@ function VaultsListRowComponent({
   const apr = getVaultAPR(currentVault)
   const vaultKind = getVaultKind(currentVault)
   const vaultCategory = getVaultCategory(currentVault)
+  const yieldSplitter = getVaultYieldSplitter(currentVault)
   const href = hrefOverride ?? `/vaults/${chainID}/${toAddress(vaultAddress)}`
   const network = getNetwork(chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
@@ -288,12 +314,13 @@ function VaultsListRowComponent({
     productType,
     label: productTypeLabel,
     ariaLabel: productTypeAriaLabel,
-    isLegacy: isLegacyVault
+    isLegacy: isLegacyVault,
+    isFilterable: isProductTypeFilterable
   } = getVaultProductTypePresentation(listKind)
   const showProductTypeChip = showProductTypeChipOverride ?? (Boolean(activeProductType) || Boolean(onToggleVaultType))
-  const isProductTypeActive = activeProductType === productType
+  const isProductTypeActive = isProductTypeFilterable && activeProductType === productType
   const shouldCollapseProductTypeChip =
-    !isLegacyVault && activeProductType !== 'all' && activeProductType === productType
+    isProductTypeFilterable && !isLegacyVault && activeProductType !== 'all' && activeProductType === productType
   const isChipsCompressed = Boolean(shouldCollapseChips) || isMobile
   const shouldCollapseProductType = isChipsCompressed || shouldCollapseProductTypeChip
   const showCollapsedTooltip = isChipsCompressed
@@ -376,9 +403,14 @@ function VaultsListRowComponent({
   const isHiddenVault = Boolean(flags?.isHidden)
   const kindType = getVaultKindType(vaultKind, listKind)
   const kindLabel = getVaultKindLabel(kindType, vaultKind)
+  const yieldSplitterRouteFrom = yieldSplitter?.sourceVaultSymbol || yieldSplitter?.sourceVaultName || ''
+  const yieldSplitterRouteTo = yieldSplitter?.wantVaultSymbol || yieldSplitter?.wantVaultName || ''
+  const yieldSplitterRouteLabel =
+    yieldSplitterRouteFrom && yieldSplitterRouteTo ? `${yieldSplitterRouteFrom} -> ${yieldSplitterRouteTo}` : ''
   const activeChainIds = activeChains ?? []
   const activeCategoryLabels = activeCategories ?? []
-  const showKindChip = showStrategies && Boolean(kindType) && (showAllocatorChip || kindType !== 'multi')
+  const showKindChip =
+    Boolean(kindType) && (kindType === 'route' || (showStrategies && (showAllocatorChip || kindType !== 'multi')))
   const isKindActive = false
   const chainDescription = getChainDescription(chainID)
   const categoryDescription = getCategoryDescription(vaultCategory)
@@ -648,7 +680,11 @@ function VaultsListRowComponent({
                     isCollapsed={shouldCollapseProductType}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={productTypeDescription}
-                    onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
+                    onClick={
+                      isProductTypeFilterable && onToggleVaultType
+                        ? (): void => onToggleVaultType(productType)
+                        : undefined
+                    }
                     onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={productTypeAriaLabel}
                   />
@@ -669,9 +705,29 @@ function VaultsListRowComponent({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={kindDescription}
-                    onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
+                    onClick={
+                      kindType && kindType !== 'route' && onToggleType ? (): void => onToggleType(kindType) : undefined
+                    }
                     onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={`Filter by ${kindLabel}`}
+                  />
+                ) : null}
+                {yieldSplitterRouteLabel ? (
+                  <VaultsListChip
+                    label={yieldSplitterRouteLabel}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={yieldSplitter?.uiDescription || undefined}
+                    onHoverChange={handleInteractiveHoverChange}
+                  />
+                ) : null}
+                {flags?.yieldModeLabel ? (
+                  <VaultsListChip
+                    label={flags.yieldModeLabel}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={flags.yieldModeTooltip}
+                    onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
                 {flags?.isRetired ? (

@@ -42,6 +42,7 @@ type TVaultStrategyItem = TKongVaultStrategy
 const listKindLabels = {
   allocator: 'Allocator',
   strategy: 'Strategy',
+  yieldSplitter: 'Yield Splitter',
   factory: 'Factory',
   legacy: 'Legacy'
 }

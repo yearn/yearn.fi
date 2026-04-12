@@ -9,12 +9,13 @@ import {
   getVaultToken,
   getVaultVersion,
   isAutomatedVault,
+  isYieldSplitterVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { toAddress } from '@shared/utils'
 
 export type TVaultAssetCategory = 'Stablecoin' | 'Volatile'
-export type TVaultListKind = 'allocator' | 'strategy' | 'factory' | 'legacy'
+export type TVaultListKind = 'allocator' | 'strategy' | 'yieldSplitter' | 'factory' | 'legacy'
 export type TVaultAggressiveness = 'Conservative' | 'Moderate' | 'Aggressive'
 
 export const UNDERLYING_ASSET_OVERRIDES: Record<string, string> = {
@@ -98,6 +99,9 @@ export function deriveListKind(vault: TKongVaultInput): TVaultListKind {
   if (isAllocatorVaultOverride(vault)) {
     return 'allocator'
   }
+  if (isYieldSplitterVault(vault)) {
+    return 'yieldSplitter'
+  }
   const version = getVaultVersion(vault)
   const isV3 = Boolean(version.startsWith('3') || version.startsWith('~3'))
   const kind = getVaultKind(vault)
@@ -113,6 +117,10 @@ export function deriveListKind(vault: TKongVaultInput): TVaultListKind {
   if (name.includes('factory')) return 'factory'
   if (isAutomatedVault(vault)) return 'factory'
   return 'legacy'
+}
+
+export function isV3ListKind(kind: TVaultListKind): boolean {
+  return kind === 'allocator' || kind === 'strategy' || kind === 'yieldSplitter'
 }
 
 function getAggressivenessForRiskLevel(value: number): TVaultAggressiveness | null {
