@@ -1,6 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+const KATANA_CHAIN_ID = 747474
+
+function isKatanaCrossChainRoute(chainId: string, destinationChainId?: string): boolean {
+  const sourceChainId = Number(chainId)
+  const targetChainId = Number(destinationChainId || chainId)
+
+  if (!Number.isFinite(sourceChainId) || !Number.isFinite(targetChainId)) {
+    return false
+  }
+
+  return sourceChainId !== targetChainId && (sourceChainId === KATANA_CHAIN_ID || targetChainId === KATANA_CHAIN_ID)
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -23,6 +35,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (!amountIn || typeof amountIn !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid amountIn' })
+  }
+  if (
+    destinationChainId &&
+    typeof destinationChainId === 'string' &&
+    isKatanaCrossChainRoute(chainId, destinationChainId)
+  ) {
+    return res.status(400).json({
+      error: 'unsupported_route',
+      message: 'Cross-chain zaps involving Katana are disabled',
+      requestId: 'katana-crosschain-disabled',
+      statusCode: 400
+    })
   }
 
   const apiKey = process.env.ENSO_API_KEY
