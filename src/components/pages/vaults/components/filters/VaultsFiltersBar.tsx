@@ -474,8 +474,7 @@ const EMPTY_FILTERS_STATE: TPendingFiltersState = {
   underlyingAssets: [],
   minTvl: DEFAULT_MIN_TVL,
   showStrategies: false,
-  showLegacyVaults: false,
-  showHiddenVaults: false
+  showLegacyVaults: false
 }
 
 function MobileFiltersDrawer({
@@ -583,9 +582,6 @@ function FiltersModal({
     }
     if (pendingState.showLegacyVaults) {
       trackEvent(PLAUSIBLE_EVENTS.FILTER_LEGACY, { props: { enabled: 'true' } })
-    }
-    if (pendingState.showHiddenVaults) {
-      trackEvent(PLAUSIBLE_EVENTS.FILTER_HIDDEN, { props: { enabled: 'true' } })
     }
     if (pendingState.showStrategies) {
       trackEvent(PLAUSIBLE_EVENTS.FILTER_STRATEGIES, { props: { enabled: 'true' } })

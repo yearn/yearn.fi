@@ -11,14 +11,13 @@ export type TPendingFiltersState = {
   minTvl: number
   showStrategies: boolean
   showLegacyVaults: boolean
-  showHiddenVaults: boolean
 }
 
 export type TFiltersConfig = {
   categoryOptions: string[]
   aggressivenessOptions: string[]
   toggleOptions: Array<{
-    key: 'showStrategies' | 'showLegacyVaults' | 'showHiddenVaults'
+    key: 'showStrategies' | 'showLegacyVaults'
     label: string
     description?: string
   }>
@@ -103,10 +102,7 @@ function renderAdvancedSection(
     <div className={section.className}>
       <details className={'rounded-lg border border-border bg-surface-secondary p-4'}>
         <summary className={'cursor-pointer text-sm font-semibold text-text-primary'}>{section.title}</summary>
-        <span className={'text-sm'}>
-          {' '}
-          ⚠️ It is not recommended to deposit to strategies, legacy vaults, or hidden vaults.
-        </span>
+        <span className={'text-sm'}>{' ⚠️ It is not recommended to deposit to strategies or legacy vaults.'}</span>
         <div className={'mt-4 flex flex-col gap-2'}>
           {section.toggles.map((toggle) => (
             <label
