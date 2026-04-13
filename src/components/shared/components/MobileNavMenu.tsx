@@ -173,7 +173,7 @@ export function MobileNavMenu({
     },
     {
       name: 'Curation',
-      href: 'https://app.morpho.org/ethereum/curator/yearn',
+      href: 'https://curation.yearn.fi',
       description: 'Lending Market Curation',
       icon: <LogoCuration className={'size-11'} back={'text-transparent'} front={'text-primary'} />
     },
