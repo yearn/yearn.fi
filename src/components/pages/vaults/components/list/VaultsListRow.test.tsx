@@ -165,6 +165,8 @@ describe('VaultsListRow', () => {
     expect(html).toContain('Up to')
     expect(html).toContain('9.00%')
     expect(html).toContain('inline-flex flex-col items-start')
+    expect(html).toContain('style="width:32px;height:32px"')
+    expect(html).not.toContain('style="width:48px;height:48px"')
   })
 
   it('formats yvUSD locked APY with shared significant-digit rounding in the list row', () => {

@@ -108,22 +108,12 @@ function getVaultKindLabel(kindType: TVaultKindType, fallbackKind: string | null
   return fallbackKind ?? undefined
 }
 
-function getVaultLogoSize({ isCompressed, isYvUsd }: { isCompressed: boolean; isYvUsd: boolean }): number {
-  if (isYvUsd) {
-    return 40
-  }
-
+function getVaultLogoSize({ isCompressed }: { isCompressed: boolean }): number {
   return isCompressed ? 32 : 40
 }
 
-function getVaultLogoContainerSizeClassName({
-  isCompressed,
-  isYvUsd
-}: {
-  isCompressed: boolean
-  isYvUsd: boolean
-}): string {
-  if (isYvUsd || !isCompressed) {
+function getVaultLogoContainerSizeClassName({ isCompressed }: { isCompressed: boolean }): string {
+  if (!isCompressed) {
     return 'size-10'
   }
 
@@ -147,7 +137,6 @@ function VaultHeaderIdentity({
 }): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
   const chainName = getNetwork(currentVault.chainID).name
-  const isYvUsd = isYvUsdVault(currentVault)
   const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
@@ -171,8 +160,8 @@ function VaultHeaderIdentity({
   const [isTitleClipped, setIsTitleClipped] = useState(false)
   const titleRef = useRef<HTMLSpanElement>(null)
   const vaultName = getVaultName(currentVault)
-  const tokenLogoSize = getVaultLogoSize({ isCompressed, isYvUsd })
-  const tokenLogoContainerSizeClassName = getVaultLogoContainerSizeClassName({ isCompressed, isYvUsd })
+  const tokenLogoSize = getVaultLogoSize({ isCompressed })
+  const tokenLogoContainerSizeClassName = getVaultLogoContainerSizeClassName({ isCompressed })
 
   useEffect(() => {
     // Preload chain logo so it appears instantly when the chip mounts

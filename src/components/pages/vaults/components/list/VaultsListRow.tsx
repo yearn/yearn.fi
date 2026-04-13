@@ -546,14 +546,13 @@ function VaultsListRowComponent({
           className={cl(
             leftColumnSpan,
             'z-10',
-            isYvUsd ? '-ml-2' : '',
             'flex flex-col items-start sm:pt-0 md:flex-row md:items-center md:justify-between'
           )}
         >
           <div
             className={cl(
               'flex w-full overflow-visible border-b border-border pb-2',
-              isYvUsd ? 'gap-4' : 'gap-6',
+              'gap-6',
               'md:border-none md:pb-0'
             )}
           >
@@ -566,7 +565,7 @@ function VaultsListRowComponent({
                   isCompareSelected ? `Remove ${vaultName} from comparison` : `Add ${vaultName} to comparison`
                 }
                 tabIndex={0}
-                className={cl('flex cursor-pointer items-center justify-center', isYvUsd ? 'ml-2' : '')}
+                className={'flex cursor-pointer items-center justify-center'}
                 onClick={(event): void => {
                   event.stopPropagation()
                   event.preventDefault()
@@ -596,18 +595,13 @@ function VaultsListRowComponent({
                 </div>
               </div>
             ) : null}
-            <div
-              className={cl(
-                'relative flex items-center justify-center self-center',
-                isYvUsd ? 'size-12' : 'size-8',
-                'min-h-8 min-w-8'
-              )}
-            >
-              {isYvUsd ? (
-                <TokenLogo src={tokenLogoSrc} tokenSymbol={'yvUSD'} width={48} height={48} />
-              ) : (
-                <TokenLogo src={tokenLogoSrc} tokenSymbol={vaultToken.symbol || ''} width={32} height={32} />
-              )}
+            <div className={cl('relative flex items-center justify-center self-center', 'size-8', 'min-h-8 min-w-8')}>
+              <TokenLogo
+                src={tokenLogoSrc}
+                tokenSymbol={isYvUsd ? 'yvUSD' : vaultToken.symbol || ''}
+                width={32}
+                height={32}
+              />
               <div
                 className={
                   'absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface'
