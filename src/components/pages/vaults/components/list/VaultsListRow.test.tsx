@@ -1,7 +1,9 @@
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { getVaultFeeStructureKey } from '@pages/vaults/utils/vaultFees'
 import { YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import type { ComponentProps } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -66,13 +68,13 @@ vi.mock('@pages/vaults/components/table/VaultRiskScoreTag', () => ({
   RiskScoreInlineDetails: () => <div>{'Risk details'}</div>
 }))
 
-function renderRowHtml(vault: TKongVaultInput): string {
+function renderRowHtml(vault: TKongVaultInput, props?: Partial<ComponentProps<typeof VaultsListRow>>): string {
   const queryClient = new QueryClient()
 
   return renderToStaticMarkup(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
-        <VaultsListRow currentVault={vault} />
+        <VaultsListRow currentVault={vault} {...props} />
       </MemoryRouter>
     </QueryClientProvider>
   )
@@ -165,7 +167,7 @@ describe('VaultsListRow', () => {
     expect(html).toContain('Up to')
     expect(html).toContain('9.00%')
     expect(html).toContain('inline-flex flex-col items-start')
-    expect(html).toContain('style="width:32px;height:32px"')
+    expect(html).toContain('style="width:40px;height:40px"')
     expect(html).not.toContain('style="width:48px;height:48px"')
   })
 
@@ -495,5 +497,64 @@ describe('VaultsListRow', () => {
 
     expect(html).toContain('Override')
     expect(html).toContain('Temporary visibility override')
+  })
+
+  it('renders the fees chip as an active exact fee-structure filter', () => {
+    const vault = {
+      chainId: 1,
+      address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
+      name: 'USDC-1 yVault',
+      symbol: 'yvUSDC-1',
+      apiVersion: '3.0.0',
+      decimals: 18,
+      asset: {
+        address: '0x0000000000000000000000000000000000000002',
+        name: 'USDC',
+        symbol: 'USDC',
+        decimals: 6
+      },
+      tvl: 1000,
+      performance: {
+        oracle: {
+          apr: 0.0375,
+          apy: 0.038197965598908645,
+          netAPR: 0.03375,
+          netAPY: 0.03431466938555827
+        },
+        estimated: null,
+        historical: {
+          net: 0.03393840219361399,
+          weeklyNet: 0.04161091901014902,
+          monthlyNet: 0.03393840219361399,
+          inceptionNet: 0.04906534139769114
+        }
+      },
+      fees: {
+        managementFee: 0,
+        performanceFee: 0.1
+      },
+      category: 'Stablecoin',
+      type: 'Standard',
+      kind: 'Single Strategy',
+      v3: true,
+      yearn: true,
+      isRetired: false,
+      isHidden: false,
+      isBoosted: false,
+      isHighlighted: false,
+      strategiesCount: 1,
+      riskLevel: 1,
+      staking: null,
+      pricePerShare: '1000000000000000000'
+    } as unknown as TKongVaultInput
+    const feeStructureKey = getVaultFeeStructureKey(vault)
+
+    const html = renderRowHtml(vault, {
+      activeFeeStructureKey: feeStructureKey
+    })
+
+    expect(html).toContain('Fees: 0% | 10%')
+    expect(html).toContain('aria-label="Filter by 0% management fee and 10% performance fee"')
+    expect(html).toMatch(/data-active="true"[^>]*><span[^>]*>Fees: 0% \| 10%<\/span>/)
   })
 })
