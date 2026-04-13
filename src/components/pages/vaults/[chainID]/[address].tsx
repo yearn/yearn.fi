@@ -8,7 +8,7 @@ import {
   resolveDesktopWidgetHeaderOffset
 } from '@pages/vaults/components/detail/desktopWidgetSizing'
 import { MobileKeyMetrics, YvUsdApyStatBox } from '@pages/vaults/components/detail/QuickStatsGrid'
-import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
+import { type TVaultAddressItem, VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
 import { VaultChartsSection } from '@pages/vaults/components/detail/VaultChartsSection'
 import { VaultDetailsHeader, VaultDetailsHeaderPresentation } from '@pages/vaults/components/detail/VaultDetailsHeader'
 import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSection'
@@ -16,6 +16,7 @@ import { VaultRecentReallocationsSection } from '@pages/vaults/components/detail
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
 import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
+import { resolveForwardApyDisplayConfig } from '@pages/vaults/components/table/apyDisplayConfig'
 import { VaultDetailsWelcomeTour } from '@pages/vaults/components/tour/VaultDetailsWelcomeTour'
 import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
@@ -23,6 +24,7 @@ import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/Mobi
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
+import { YvUsdApyTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import {
   getVaultChainID,
@@ -39,11 +41,13 @@ import {
 import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from '@pages/vaults/domain/vaultWarnings'
 import { useEnsureVaultListFetch } from '@pages/vaults/hooks/useEnsureVaultListFetch'
 import { useVaultRecentReallocations } from '@pages/vaults/hooks/useVaultRecentReallocations'
+import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
 import {
+  getYvUsdInfinifiPointsNote,
   getYvUsdSharePrice,
   isYvUsdAddress,
   type TYvUsdVariant,
@@ -59,8 +63,18 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
-import type { ReactElement } from 'react'
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import type { ReactElement, ReactNode } from 'react'
+import {
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import { isAddressEqual } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
@@ -90,6 +104,95 @@ const resolveHeaderOffset = (): number => {
 }
 
 const desktopWidgetHeightClassNames = getDesktopWidgetHeightClassNames()
+
+const EMPTY_VAULT_FOR_APY_DATA: TKongVaultView = {
+  address: '0x0000000000000000000000000000000000000000',
+  version: '0',
+  type: 'Standard',
+  kind: 'Single Strategy',
+  symbol: '',
+  name: '',
+  description: '',
+  category: '',
+  decimals: 18,
+  chainID: 1,
+  token: {
+    address: '0x0000000000000000000000000000000000000000',
+    name: '',
+    symbol: '',
+    description: '',
+    decimals: 18
+  },
+  tvl: {
+    tvl: 0,
+    totalAssets: 0n,
+    price: 0
+  },
+  apr: {
+    type: '',
+    netAPR: 0,
+    fees: {
+      performance: 0,
+      withdrawal: 0,
+      management: 0
+    },
+    extra: {
+      stakingRewardsAPR: 0,
+      gammaRewardAPR: 0
+    },
+    points: {
+      weekAgo: 0,
+      monthAgo: 0,
+      inception: 0
+    },
+    pricePerShare: {
+      today: 0,
+      weekAgo: null,
+      monthAgo: null
+    },
+    forwardAPR: {
+      type: '',
+      netAPR: 0,
+      composite: {
+        boost: 0,
+        poolAPY: 0,
+        boostedAPR: 0,
+        baseAPR: 0,
+        cvxAPR: 0,
+        rewardsAPR: 0,
+        v3OracleCurrentAPR: 0,
+        v3OracleStratRatioAPR: 0,
+        keepCRV: 0,
+        keepVELO: 0,
+        cvxKeepCRV: 0
+      }
+    }
+  },
+  featuringScore: 0,
+  strategies: [],
+  staking: {
+    address: '0x0000000000000000000000000000000000000000',
+    available: false,
+    source: '',
+    rewards: []
+  },
+  migration: {
+    available: false,
+    address: '0x0000000000000000000000000000000000000000',
+    contract: '0x0000000000000000000000000000000000000000'
+  },
+  info: {
+    sourceURL: '',
+    riskLevel: 0,
+    riskScore: [],
+    riskScoreComment: '',
+    uiNotice: '',
+    isRetired: false,
+    isBoosted: false,
+    isHighlighted: false,
+    isHidden: false
+  }
+}
 
 const RETIRED_VAULT_ALERT_MESSAGES = {
   noFunds: 'This vault is retired.',
@@ -520,6 +623,7 @@ function Index(): ReactElement | null {
   const isLoadingVault = isYvUsd
     ? isLoadingYvUsd || shouldBootstrapYvUsdVaultList
     : !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
+  const vaultApyData = useVaultApyData(currentVault ?? EMPTY_VAULT_FOR_APY_DATA)
   const stakingAddress = !isZeroAddress(currentVault?.staking?.address)
     ? toAddress(currentVault?.staking?.address)
     : undefined
@@ -559,6 +663,82 @@ function Index(): ReactElement | null {
       snapshot: mergedSnapshot
     })
   }, [metadataVault, mergedSnapshot])
+  const vaultAddresses = useMemo((): TVaultAddressItem[] => {
+    if (!currentVault) {
+      return []
+    }
+
+    if (isYvUsd) {
+      const addresses: TVaultAddressItem[] = [
+        { address: YVUSD_UNLOCKED_ADDRESS, label: 'Unlocked Vault Contract Address' },
+        { address: YVUSD_LOCKED_ADDRESS, label: 'Locked Vault Contract Address' }
+      ]
+      if (!isZeroAddress(currentVault.token.address)) {
+        addresses.push({ address: toAddress(currentVault.token.address), label: 'Token Contract Address' })
+      }
+      if (currentVault.staking.available && !isZeroAddress(currentVault.staking.address)) {
+        addresses.push({ address: toAddress(currentVault.staking.address), label: 'Staking Contract Address' })
+      }
+      return addresses
+    }
+
+    const addresses: TVaultAddressItem[] = [
+      { address: toAddress(currentVault.address), label: 'Vault Contract Address' }
+    ]
+    if (!isZeroAddress(currentVault.token.address)) {
+      addresses.push({ address: toAddress(currentVault.token.address), label: 'Token Contract Address' })
+    }
+    if (currentVault.staking.available && !isZeroAddress(currentVault.staking.address)) {
+      addresses.push({ address: toAddress(currentVault.staking.address), label: 'Staking Contract Address' })
+    }
+    return addresses
+  }, [currentVault, isYvUsd])
+  const additionalFeaturesContent = useMemo((): ReactNode => {
+    if (!currentVault) {
+      return null
+    }
+
+    const unlockedApy =
+      yvUsdVault?.apr.forwardAPR.netAPR ?? currentVault.apr.forwardAPR.netAPR ?? currentVault.apr.netAPR ?? 0
+    const lockedApy = yvUsdLockedVault?.apr.forwardAPR.netAPR ?? yvUsdLockedVault?.apr.netAPR ?? 0
+
+    const tooltipContent = isYvUsd ? (
+      <YvUsdApyTooltipContent
+        lockedValue={lockedApy}
+        unlockedValue={unlockedApy}
+        infinifiPointsNote={
+          currentVault.address === YVUSD_UNLOCKED_ADDRESS || currentVault.address === YVUSD_LOCKED_ADDRESS
+            ? getYvUsdInfinifiPointsNote()
+            : undefined
+        }
+      />
+    ) : (
+      resolveForwardApyDisplayConfig({
+        currentVault,
+        data: vaultApyData,
+        displayVariant: 'default',
+        showSubline: false,
+        showSublineTooltip: true,
+        showBoostDetails: true,
+        canOpenModal: false
+      }).displayConfig.tooltip?.content
+    )
+
+    if (!isValidElement<{ className?: string }>(tooltipContent)) {
+      return tooltipContent
+    }
+
+    return cloneElement(tooltipContent, {
+      className: `${tooltipContent.props.className ?? ''} bg-transparent border-0 shadow-none`
+    })
+  }, [
+    currentVault,
+    isYvUsd,
+    vaultApyData,
+    yvUsdLockedVault?.apr.forwardAPR.netAPR,
+    yvUsdLockedVault?.apr.netAPR,
+    yvUsdVault?.apr.forwardAPR.netAPR
+  ])
   const widgetActions = useMemo(() => {
     if (isRetired || isMigratable) {
       return canShowMigrateAction ? [WidgetActionType.Migrate, WidgetActionType.Withdraw] : [WidgetActionType.Withdraw]
@@ -800,7 +980,13 @@ function Index(): ReactElement | null {
         key: 'about' as const,
         shouldRender: true,
         ref: sectionRefs.about,
-        content: <VaultAboutSection currentVault={currentVault} />
+        content: (
+          <VaultAboutSection
+            currentVault={currentVault}
+            vaultAddresses={vaultAddresses}
+            additionalFeaturesContent={additionalFeaturesContent}
+          />
+        )
       },
       {
         key: 'strategies' as const,
@@ -834,6 +1020,7 @@ function Index(): ReactElement | null {
       }
     ]
   }, [
+    additionalFeaturesContent,
     chainId,
     currentVault,
     hasRecentReallocationsError,
@@ -842,7 +1029,8 @@ function Index(): ReactElement | null {
     recentReallocationPanels,
     sectionRefs,
     shouldShowRecentReallocationsSection,
-    snapshotVault?.inceptTime
+    snapshotVault?.inceptTime,
+    vaultAddresses
   ])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])

@@ -72,7 +72,11 @@ function ExpandableInfoItem({ label, value, children, className, icon }: TExpand
         setIsOpen(event.currentTarget.open)
       }}
     >
-      <summary className={'w-full cursor-pointer list-none text-left [&::-webkit-details-marker]:hidden'}>
+      <summary
+        className={
+          'w-full cursor-pointer list-none rounded-lg text-left transition-colors hover:bg-surface-secondary/80 [&::-webkit-details-marker]:hidden'
+        }
+      >
         <InlineHeading
           label={label}
           value={value}
