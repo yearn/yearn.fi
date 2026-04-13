@@ -8,9 +8,6 @@ import {
   YVUSD_UNLOCKED_ADDRESS,
   YVUSD_WITHDRAW_WINDOW_DAYS
 } from '@pages/vaults/utils/yvUsd'
-import { Button } from '@shared/components/Button'
-import { IconLock } from '@shared/icons/IconLock'
-import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import type { TToken } from '@shared/types'
 import { toAddress, zeroNormalizedBN } from '@shared/utils'
 import type { ReactElement } from 'react'
@@ -81,7 +78,7 @@ function getYvUsdAmountUnit(address: `0x${string}`, underlyingAssetAddress: `0x$
 }
 
 function getDepositPrefill(
-  variant: TYvUsdVariant | null,
+  variant: TYvUsdVariant,
   unlockedAssetAddress: `0x${string}`,
   chainId: number,
   pendingPrefillAmount?: string
@@ -103,25 +100,21 @@ function getDepositPrefill(
   return undefined
 }
 
-function getYvUsdDepositSymbol(variant: TYvUsdVariant | null): string {
+function getYvUsdDepositSymbol(variant: TYvUsdVariant): string {
   switch (variant) {
     case 'locked':
       return 'yvUSD (Locked)'
     case 'unlocked':
       return 'yvUSD (Unlocked)'
-    default:
-      return 'yvUSD'
   }
 }
 
-function getVaultSharesLabel(variant: TYvUsdVariant | null): string | undefined {
+function getVaultSharesLabel(variant: TYvUsdVariant): string {
   switch (variant) {
     case 'locked':
       return 'Locked Vault Shares'
     case 'unlocked':
       return 'Unlocked Vault Shares'
-    default:
-      return undefined
   }
 }
 
@@ -136,7 +129,7 @@ export function YvUsdDeposit({
 }: Props): ReactElement {
   const { address: account } = useAccount()
   const { unlockedVault, lockedVault, metrics, isLoading } = useYvUsdVaults()
-  const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
+  const [variant, setVariant] = useState<TYvUsdVariant>('locked')
   const [draftDepositAmount, setDraftDepositAmount] = useState('')
   const [pendingPrefillAmount, setPendingPrefillAmount] = useState<string | undefined>(undefined)
   const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? assetAddress)
@@ -238,44 +231,15 @@ export function YvUsdDeposit({
   }
   const depositPrefill = getDepositPrefill(variant, unlockedAssetAddress, chainId, pendingPrefillAmount)
 
-  const headerToggle =
-    variant === null ? undefined : <YvUsdVariantToggle activeVariant={variant} onChange={handleVariantChange} />
+  const headerToggle = <YvUsdVariantToggle activeVariant={variant} onChange={handleVariantChange} />
 
-  const depositTypeSection = variant ? (
+  const depositTypeSection = (
     <div className="rounded-lg border border-border bg-surface-secondary px-3 py-2 text-sm text-text-secondary">
       <p className="text-sm text-text-secondary">
         {variant === 'locked'
           ? `Locked deposits earn additional yield from unlocked positions. Your position will be locked with a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and a ${YVUSD_WITHDRAW_WINDOW_DAYS} day withdrawal window.`
           : `Unlocked deposits stay liquid but earn less.`}
       </p>
-    </div>
-  ) : (
-    <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface-secondary p-4 text-sm text-text-secondary">
-      <p>{'You can lock your vault position to earn additional yield. Locking helps manage system liquidity.'}</p>
-      <p>{`Locks are subject to a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and a ${YVUSD_WITHDRAW_WINDOW_DAYS} day withdrawal window.`}</p>
-      <p className="font-semibold text-text-primary">{'Please choose your deposit type'}</p>
-      <div className="grid grid-cols-2 gap-3">
-        <Button
-          variant="filled"
-          classNameOverride="yearn--button--nextgen w-full"
-          onClick={() => handleVariantChange('unlocked')}
-        >
-          <span className="inline-flex items-center gap-2">
-            <IconLockOpen className="size-6" />
-            {'Unlocked'}
-          </span>
-        </Button>
-        <Button
-          variant="filled"
-          classNameOverride="yearn--button--nextgen w-full"
-          onClick={() => handleVariantChange('locked')}
-        >
-          <span className="inline-flex items-center gap-2">
-            <IconLock className="size-6" />
-            {'Locked'}
-          </span>
-        </Button>
-      </div>
     </div>
   )
 
@@ -291,16 +255,16 @@ export function YvUsdDeposit({
         vaultSymbol={getYvUsdDepositSymbol(variant)}
         vaultUserData={selectedVaultUserData}
         handleDepositSuccess={handleDepositSuccess}
-        onOpenSettings={variant ? onOpenSettings : undefined}
-        isSettingsOpen={variant ? isSettingsOpen : false}
+        onOpenSettings={onOpenSettings}
+        isSettingsOpen={isSettingsOpen}
         onAmountChange={setDraftDepositAmount}
         onTokenSelectionChange={setSelectedDepositTokenAddress}
-        hideDetails={!variant}
-        hideActionButton={!variant}
+        hideDetails={false}
+        hideActionButton={false}
         hideContainerBorder
         headerActions={headerToggle}
         contentBelowInput={depositTypeSection}
-        collapseDetails={Boolean(collapseDetails && variant !== null)}
+        collapseDetails={Boolean(collapseDetails)}
         prefill={depositPrefill}
         onPrefillApplied={() => setPendingPrefillAmount(undefined)}
         tokenSelectorExtraTokens={lockedDepositExtraTokens}

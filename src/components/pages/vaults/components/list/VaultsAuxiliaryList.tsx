@@ -26,10 +26,12 @@ type TVaultsAuxiliaryListProps = {
   activeChains?: number[]
   activeCategories?: string[]
   activeProductType?: 'v3' | 'lp' | 'all'
+  activeFeeStructureKey?: string | null
   onToggleChain?: (chainId: number) => void
   onToggleCategory?: (category: string) => void
   onToggleType?: (type: string) => void
   onToggleVaultType?: (type: 'v3' | 'lp') => void
+  onToggleFeeStructure?: (feeStructureKey: string) => void
   showStrategies?: boolean
   shouldCollapseChips?: boolean
   expandedVaultKeys?: Record<string, boolean>
@@ -52,10 +54,12 @@ export function VaultsAuxiliaryList({
   activeChains,
   activeCategories,
   activeProductType,
+  activeFeeStructureKey,
   onToggleChain,
   onToggleCategory,
   onToggleType,
   onToggleVaultType,
+  onToggleFeeStructure,
   showStrategies,
   shouldCollapseChips,
   expandedVaultKeys,
@@ -89,10 +93,12 @@ export function VaultsAuxiliaryList({
               activeChains={activeChains}
               activeCategories={activeCategories}
               activeProductType={activeProductType}
+              activeFeeStructureKey={activeFeeStructureKey}
               onToggleChain={onToggleChain}
               onToggleCategory={onToggleCategory}
               onToggleType={onToggleType}
               onToggleVaultType={onToggleVaultType}
+              onToggleFeeStructure={onToggleFeeStructure}
               shouldCollapseChips={shouldCollapseChips}
               showStrategies={showStrategies}
               isExpanded={isExpanded}
