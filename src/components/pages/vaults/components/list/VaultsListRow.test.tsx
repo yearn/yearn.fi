@@ -1,4 +1,5 @@
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -463,5 +464,34 @@ describe('VaultsListRow', () => {
     }
     expect(firstCall?.currentVault?.performance?.oracle?.netAPY).toBe(0.03431466938555827)
     expect(mockUseVaultSnapshot).not.toHaveBeenCalled()
+  })
+
+  it('shows a temporary override chip for yvBTC rows', () => {
+    const vault = {
+      version: '3.0.4',
+      chainID: 1,
+      address: YVBTC_UNLOCKED_ADDRESS,
+      name: 'BTC yVault',
+      symbol: 'yvBTC',
+      category: 'Volatile',
+      kind: null,
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'cbBTC',
+        decimals: 8
+      },
+      tvl: {
+        tvl: 1234,
+        totalAssets: 1234567
+      },
+      info: {
+        riskLevel: 3
+      }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault)
+
+    expect(html).toContain('Override')
+    expect(html).toContain('Temporary visibility override')
   })
 })

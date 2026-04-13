@@ -18,6 +18,7 @@ import {
   deriveListKind,
   deriveV3Aggressiveness,
   expandUnderlyingAssetSelection,
+  hasTemporaryVisibilityOverride,
   isAllocatorVaultOverride,
   normalizeUnderlyingAssetSymbol,
   type TVaultAggressiveness
@@ -354,7 +355,8 @@ export function useV3VaultFilter(
       const shouldIncludeByCategory = hasUserHoldings || !hasCategoryFilter || Boolean(categories?.includes(category))
       const isPinnedByUserContext = hasUserHoldings || isMigratableVault || isRetiredVault
       const isStrategy = kind === 'strategy'
-      const shouldIncludeByFeaturedGate = showHiddenVaults || isStrategy || isFeatured || isPinnedByUserContext
+      const shouldIncludeByFeaturedGate =
+        showHiddenVaults || isStrategy || isFeatured || isPinnedByUserContext || hasTemporaryVisibilityOverride(vault)
       const shouldIncludeByKind =
         hasUserHoldings ||
         !hasTypeFilter ||
