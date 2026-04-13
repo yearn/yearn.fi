@@ -67,15 +67,15 @@ function ExpandableInfoItem({ label, value, children, className, icon }: TExpand
 
   return (
     <details
-      className={cl('py-1', className)}
+      className={className}
       onToggle={(event): void => {
         setIsOpen(event.currentTarget.open)
       }}
     >
       <summary
-        className={
-          'w-full cursor-pointer list-none rounded-lg text-left transition-colors hover:bg-surface-secondary/80 [&::-webkit-details-marker]:hidden'
-        }
+        className={cl(
+          'w-full cursor-pointer list-none rounded-lg text-left transition-colors py-2 hover:bg-surface-secondary/80 [&::-webkit-details-marker]:hidden'
+        )}
       >
         <InlineHeading
           label={label}
@@ -90,7 +90,7 @@ function ExpandableInfoItem({ label, value, children, className, icon }: TExpand
           }
         />
       </summary>
-      <div className={'mt-1 text-sm text-text-secondary'}>{children}</div>
+      <div className={'px-2 mb-2 text-sm text-text-secondary'}>{children}</div>
     </details>
   )
 }
@@ -289,7 +289,7 @@ export function VaultAboutSection({
           ) : null}
         </div>
 
-        <div className={'flex flex-col gap-1.5'}>
+        <div className={'flex flex-col gap-0.5'}>
           <VaultAddressesInfo chainID={chainID} addresses={vaultAddresses} />
 
           <ExpandableInfoItem label={'Chain'} value={chainName} icon={chainIcon}>
@@ -326,11 +326,13 @@ export function VaultAboutSection({
           <ExpandableInfoItem label={'Fees'} value={feesSummary}>
             <div className={'space-y-3'}>
               <p>
-                {
-                  'Management fees are claimed from earned yield, pro-rated and up to the stated percentage of principal.'
-                }
+                <strong>{'Management fees'}</strong>
+                {' are claimed from earned yield, pro-rated and up to the stated percentage of principal.'}
               </p>
-              <p>{'Performance fees are claimed from earned yield, up to the stated percentage of yield earned.'}</p>
+              <p>
+                <strong>{'Performance fees'}</strong>
+                {' are claimed from earned yield, up to the stated percentage of yield earned.'}
+              </p>
             </div>
           </ExpandableInfoItem>
 
