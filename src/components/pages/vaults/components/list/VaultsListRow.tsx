@@ -24,7 +24,10 @@ import {
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
-import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
+import {
+  deriveListKind,
+  hasTemporaryVisibilityOverride as hasTemporaryVaultVisibilityOverride
+} from '@pages/vaults/utils/vaultListFacets'
 import { getVaultPrimaryLogoSrc } from '@pages/vaults/utils/vaultLogo'
 import {
   getCategoryDescription,
@@ -34,7 +37,8 @@ import {
   HIDDEN_TAG_DESCRIPTION,
   MIGRATABLE_TAG_DESCRIPTION,
   NOT_YEARN_TAG_DESCRIPTION,
-  RETIRED_TAG_DESCRIPTION
+  RETIRED_TAG_DESCRIPTION,
+  TEMPORARY_OVERRIDE_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import {
   getYvUsdInfinifiPointsNote,
@@ -51,6 +55,7 @@ import { Tooltip } from '@shared/components/Tooltip'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
+import { IconAlertWarning } from '@shared/icons/IconAlertWarning'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
@@ -374,6 +379,7 @@ function VaultsListRowComponent({
   }, [vaultAddress, chainID, queryClient])
 
   const isHiddenVault = Boolean(flags?.isHidden)
+  const hasTemporaryVisibilityOverride = hasTemporaryVaultVisibilityOverride(currentVault)
   const kindType = getVaultKindType(vaultKind, listKind)
   const kindLabel = getVaultKindLabel(kindType, vaultKind)
   const activeChainIds = activeChains ?? []
@@ -672,6 +678,17 @@ function VaultsListRowComponent({
                     onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
                     onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={`Filter by ${kindLabel}`}
+                  />
+                ) : null}
+                {hasTemporaryVisibilityOverride ? (
+                  <VaultsListChip
+                    label={'Override'}
+                    icon={<IconAlertWarning className={'size-3.5 text-amber-400'} />}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={TEMPORARY_OVERRIDE_TAG_DESCRIPTION}
+                    onHoverChange={handleInteractiveHoverChange}
+                    ariaLabel={'Temporary visibility override'}
                   />
                 ) : null}
                 {flags?.isRetired ? (
