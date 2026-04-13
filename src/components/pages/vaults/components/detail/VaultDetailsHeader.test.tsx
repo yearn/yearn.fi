@@ -199,4 +199,15 @@ describe('VaultDetailsHeaderPresentation', () => {
     expect(html).not.toContain('style="width:40px;height:40px"')
     expect(html).toContain('size-8')
   })
+
+  it('keeps the explorer link visible when header is compressed', () => {
+    const html = renderToStaticMarkup(
+      <MemoryRouter>
+        <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={true} />
+      </MemoryRouter>
+    )
+
+    expect(html).toContain('View vault on block explorer')
+    expect(html).toContain('/address/')
+  })
 })

@@ -236,12 +236,15 @@ function VaultHeaderIdentity({
                 {vaultName}
               </span>
             ) : null}
-            {!isCompressed && explorerHref ? (
+            {explorerHref ? (
               <a
                 href={explorerHref}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
-                className={'text-text-secondary hover:text-text-primary transition-colors h-7 content-end'}
+                className={cl(
+                  'text-text-secondary hover:text-text-primary transition-colors',
+                  isCompressed ? 'h-1.5 inline-flex content-end' : 'h-7 content-end'
+                )}
                 aria-label={'View vault on block explorer'}
               >
                 <IconLinkOut className={'size-4 md:size-4'} />
@@ -305,19 +308,6 @@ function VaultHeaderIdentity({
               showCollapsedTooltip={isCompressed}
               tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}
             />
-          ) : null}
-          {isCompressed && explorerHref ? (
-            <a
-              href={explorerHref}
-              target={'_blank'}
-              rel={'noopener noreferrer'}
-              className={
-                'inline-flex items-center justify-center px-2 py-1 text-text-secondary hover:text-text-primary transition-colors'
-              }
-              aria-label={'View vault on block explorer'}
-            >
-              <IconLinkOut className={'size-4'} />
-            </a>
           ) : null}
         </div>
       ) : null}
