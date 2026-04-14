@@ -234,11 +234,11 @@ export function YvUsdDeposit({
   const headerToggle = <YvUsdVariantToggle activeVariant={variant} onChange={handleVariantChange} />
 
   const depositTypeSection = (
-    <div className="rounded-lg border border-border bg-surface-secondary px-3 py-2 text-sm text-text-secondary">
-      <p className="text-sm text-text-secondary">
+    <div className="rounded-lg border border-border bg-surface-secondary px-3 py-2 text-sm text-text-primary">
+      <p className="text-sm text-primary">
         {variant === 'locked'
           ? `Locked deposits earn additional yield from unlocked positions. Your position will be locked with a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and a ${YVUSD_WITHDRAW_WINDOW_DAYS} day withdrawal window.`
-          : `Unlocked deposits stay liquid but earn less.`}
+          : `Unlocked deposits stay liquid but earn less than locked deposits.`}
       </p>
     </div>
   )
@@ -263,7 +263,8 @@ export function YvUsdDeposit({
         hideActionButton={false}
         hideContainerBorder
         headerActions={headerToggle}
-        contentBelowInput={depositTypeSection}
+        contentAboveButton={depositTypeSection}
+        actionLabelOverride={isLockedVariant ? 'Deposit to Locked' : 'Deposit to Unlocked'}
         collapseDetails={Boolean(collapseDetails)}
         prefill={depositPrefill}
         onPrefillApplied={() => setPendingPrefillAmount(undefined)}
