@@ -47,4 +47,15 @@ describe('resolvePendingSafeOverlayState', () => {
       })
     ).toBe('error')
   })
+
+  it('keeps polling submitted Safe overlays so failures can still surface', () => {
+    expect(
+      resolvePendingSafeOverlayState({
+        overlayState: 'submitted',
+        isWalletSafe: true,
+        hasReceiptTransactionHash: false,
+        callsStatus: 'failure'
+      })
+    ).toBe('error')
+  })
 })
