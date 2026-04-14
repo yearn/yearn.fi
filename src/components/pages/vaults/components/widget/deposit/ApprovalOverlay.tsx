@@ -1,5 +1,6 @@
 import { Button } from '@shared/components/Button'
 import { useChainId, useSwitchChain, useWaitForTransactionReceipt } from '@shared/hooks/useAppWagmi'
+import { useSafeTransactionDetails } from '@shared/hooks/useSafeTransactionDetails'
 import { getApproveAbi } from '@shared/utils/approve'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { maxUint256 } from 'viem'
@@ -7,6 +8,7 @@ import { useAccount, useCallsStatus, useWriteContract } from 'wagmi'
 import { isConnectedToExecutionChain, resolveExecutionChainId } from '@/config/tenderly'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from '../shared/TransactionStateIndicators'
+import { resolveExecutionTrackingHash } from '../shared/transactionOverlay.helpers'
 import {
   resolveApprovalOverlayConnectedChainId,
   resolveApprovalOverlayPendingSafeState
@@ -50,16 +52,29 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   })
   const { switchChainAsync } = useSwitchChain()
   const { writeContractAsync, data: txHash, reset } = useWriteContract()
-  const receipt = useWaitForTransactionReceipt({ hash: txHash, chainId })
+  const safeTransactionDetails = useSafeTransactionDetails({
+    safeTxHash: isWalletSafe ? txHash : undefined,
+    enabled: Boolean(isWalletSafe && txHash && (txState === 'pending' || txState === 'submitted'))
+  })
   const safeCallsStatus = useCallsStatus({
     id: txHash || '0x',
     query: {
       enabled: Boolean(
-        isWalletSafe && txHash && (txState === 'pending' || txState === 'submitted') && !receipt.data?.transactionHash
+        isWalletSafe &&
+          txHash &&
+          (txState === 'pending' || txState === 'submitted') &&
+          !safeTransactionDetails.data?.executionTxHash
       ),
       refetchInterval: 1500
     }
   })
+  const executionTrackingHash = resolveExecutionTrackingHash({
+    isWalletSafe,
+    submittedTxHash: txHash,
+    safeExecutionTxHash: safeTransactionDetails.data?.executionTxHash,
+    callsReceiptTxHash: safeCallsStatus.data?.receipts?.[0]?.transactionHash
+  })
+  const receipt = useWaitForTransactionReceipt({ hash: executionTrackingHash, chainId })
 
   // Reset state when overlay closes
   useEffect(() => {
@@ -82,14 +97,29 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
     const nextTxState = resolveApprovalOverlayPendingSafeState({
       txState,
       isWalletSafe,
-      hasReceiptTransactionHash: Boolean(receipt.data?.transactionHash),
+      hasExecutionReceipt: Boolean(receipt.data?.transactionHash),
+      safeTxStatus: safeTransactionDetails.data?.txStatus,
       callsStatus: safeCallsStatus.data?.status
     })
 
     if (nextTxState === 'submitted') {
       setTxState('submitted')
+      return
     }
-  }, [txState, isWalletSafe, receipt.data?.transactionHash, safeCallsStatus.data?.status])
+
+    if (nextTxState === 'error') {
+      setTxState('error')
+      setErrorMessage('Transaction failed in Safe. Please review your Safe queue and try again.')
+      reset()
+    }
+  }, [
+    txState,
+    isWalletSafe,
+    receipt.data?.transactionHash,
+    safeTransactionDetails.data?.txStatus,
+    safeCallsStatus.data?.status,
+    reset
+  ])
 
   // Handle transaction error
   useEffect(() => {
