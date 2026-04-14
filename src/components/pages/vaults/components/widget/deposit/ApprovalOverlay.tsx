@@ -54,7 +54,9 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   const safeCallsStatus = useCallsStatus({
     id: txHash || '0x',
     query: {
-      enabled: Boolean(isWalletSafe && txHash && txState === 'pending' && !receipt.data?.transactionHash),
+      enabled: Boolean(
+        isWalletSafe && txHash && (txState === 'pending' || txState === 'submitted') && !receipt.data?.transactionHash
+      ),
       refetchInterval: 1500
     }
   })
@@ -70,7 +72,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
   // Handle transaction success
   useEffect(() => {
-    if (receipt.isSuccess && txState === 'pending') {
+    if (receipt.isSuccess && (txState === 'pending' || txState === 'submitted')) {
       setTxState('success')
       reset()
     }
@@ -91,7 +93,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
   // Handle transaction error
   useEffect(() => {
-    if (receipt.isError && txState === 'pending') {
+    if (receipt.isError && (txState === 'pending' || txState === 'submitted')) {
       setTxState('error')
       setErrorMessage('Transaction failed')
       reset()
@@ -257,8 +259,8 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
                 <AnimatedCheckmark isVisible />
                 <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction submitted</h3>
                 <p className="text-sm text-text-secondary mb-6 whitespace-pre-line">
-                  Your approval transaction has been submitted to your Safe.\nExecution may happen separately after the
-                  required confirmations are collected.
+                  {`Your approval transaction has been submitted to your Safe.
+Execution may happen separately after the required confirmations are collected.`}
                 </p>
                 <Button
                   onClick={onClose}

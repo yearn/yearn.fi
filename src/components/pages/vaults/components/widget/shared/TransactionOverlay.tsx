@@ -206,7 +206,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const safeCallsStatus = useCallsStatus({
     id: txHash || '0x',
     query: {
-      enabled: Boolean(isWalletSafe && txHash && overlayState === 'pending' && !receipt.data?.transactionHash),
+      enabled: Boolean(
+        isWalletSafe &&
+          txHash &&
+          (overlayState === 'pending' || overlayState === 'submitted') &&
+          !receipt.data?.transactionHash
+      ),
       refetchInterval: 1500
     }
   })
@@ -687,7 +692,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   useEffect(() => {
     // For multi-step flows, wait until next step is ready before showing success
     // Check that step has changed (different label) and is ready
-    if (receipt.isSuccess && receipt.data?.transactionHash && overlayState === 'pending') {
+    if (
+      receipt.isSuccess &&
+      receipt.data?.transactionHash &&
+      (overlayState === 'pending' || overlayState === 'submitted')
+    ) {
       executedStepBlockRef.current = receipt.data.blockNumber
       const executedStepLabel = executedStepRef.current?.label
       if (!hasReportedStepSuccessRef.current && executedStepLabel) {
@@ -698,7 +707,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
     const isNextStepReady = step?.label !== executedStepRef.current?.label && isStepReady
     const canShowSuccess = wasLastStepRef.current || isNextStepReady
-    if (receipt.isSuccess && receipt.data?.transactionHash && overlayState === 'pending' && canShowSuccess) {
+    if (
+      receipt.isSuccess &&
+      receipt.data?.transactionHash &&
+      (overlayState === 'pending' || overlayState === 'submitted') &&
+      canShowSuccess
+    ) {
       if (executedStepLabel && executedStepAutoContinues && !wasLastStepRef.current) {
         if (hasAdvancedFromStepRef.current === executedStepLabel) {
           return
@@ -802,7 +816,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Handle transaction error
   useEffect(() => {
-    if (receipt.isError && receipt.error && overlayState === 'pending') {
+    if (receipt.isError && receipt.error && (overlayState === 'pending' || overlayState === 'submitted')) {
       setOverlayState('error')
       setErrorMessage('Transaction failed. Please try again.')
       resetTxState()
@@ -947,8 +961,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
               <AnimatedCheckmark isVisible />
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction submitted</h3>
               <p className="text-sm text-text-secondary whitespace-pre-line mb-6">
-                Your transaction has been submitted to your Safe.\nExecution may happen separately after the required
-                confirmations are collected.
+                {`Your transaction has been submitted to your Safe.
+Execution may happen separately after the required confirmations are collected.`}
               </p>
               <Button
                 onClick={handleClose}
