@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { resolvePendingSafeOverlayState } from './transactionOverlay.helpers'
+import { resolveOverlayConnectedChainId, resolvePendingSafeOverlayState } from './transactionOverlay.helpers'
+
+describe('resolveOverlayConnectedChainId', () => {
+  it('prefers the target chain for Safe sessions when account.chain is missing', () => {
+    expect(
+      resolveOverlayConnectedChainId({
+        accountChainId: undefined,
+        currentChainId: 1,
+        targetChainId: 747474,
+        isWalletSafe: true
+      })
+    ).toBe(747474)
+  })
+})
 
 describe('resolvePendingSafeOverlayState', () => {
   it('moves a Safe transaction overlay into a submitted state when the Safe tx is queued but not executed', () => {
