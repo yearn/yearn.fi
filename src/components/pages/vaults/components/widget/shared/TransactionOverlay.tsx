@@ -381,7 +381,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         await updateNotification({
           id: notificationId,
           status: params.status,
-          receipt: params.receipt
+          receipt: params.receipt,
+          awaitingExecution: params.awaitingExecution
         })
       } catch (error) {
         console.error('Failed to update notification:', error)
