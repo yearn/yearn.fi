@@ -19,6 +19,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
 import { useReadContract } from '@shared/hooks/useAppWagmi'
 import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
+import { useTransactionStatusPoller } from '@shared/hooks/useTransactionStatusPoller'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconLoader } from '@shared/icons/IconLoader'
@@ -36,6 +37,7 @@ import {
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { getAwaitingExecutionEntries } from './WalletPanel.helpers'
 import { formatDuration, parseCooldownStatus, resolveCooldownWindowState } from './yvUSD/cooldownUtils'
 
 type WalletPanelProps = {
@@ -63,6 +65,21 @@ const STATUS_STYLES: Record<TNotificationStatus, { label: string; className: str
     icon: <IconLoader className="size-3 animate-spin" />
   },
   error: { label: 'Error', className: 'bg-[#C73203] text-white', icon: <IconCross className="size-3" /> }
+}
+
+function WalletNotificationPoller({ entry }: { entry: TNotification }): null {
+  useTransactionStatusPoller(entry)
+  return null
+}
+
+function WalletNotificationPollers({ entries }: { entries: TNotification[] }): ReactElement {
+  return (
+    <>
+      {entries.map((entry) => (
+        <WalletNotificationPoller key={entry.id ?? `${entry.type}-${entry.txHash}`} entry={entry} />
+      ))}
+    </>
+  )
 }
 
 function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElement {
@@ -318,7 +335,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
     return addresses.map((addr) => toAddress(addr).toLowerCase())
   }, [isYvUsd, vaultAddress, stakingAddress])
 
-  const recentEntries = useMemo(() => {
+  const relatedEntries = useMemo(() => {
     const filtered = (
       address ? cachedEntries.filter((entry) => entry.address.toLowerCase() === address.toLowerCase()) : cachedEntries
     ).filter((entry) => {
@@ -329,8 +346,15 @@ export const WalletPanel: FC<WalletPanelProps> = ({
       return hasRelatedAddress && chainMatches
     })
 
-    return filtered.toReversed().slice(0, 3)
+    return filtered.toReversed()
   }, [address, cachedEntries, relatedAddresses, chainId])
+
+  const recentEntries = useMemo(() => relatedEntries.slice(0, 3), [relatedEntries])
+  const awaitingExecutionEntries = useMemo(() => getAwaitingExecutionEntries(relatedEntries), [relatedEntries])
+  const polledEntries = useMemo(
+    () => relatedEntries.filter((entry) => entry.status === 'pending' || entry.awaitingExecution),
+    [relatedEntries]
+  )
 
   return (
     <div
@@ -341,6 +365,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
       aria-hidden={!isPanelActive}
       data-tour="vault-detail-wallet-panel"
     >
+      <WalletNotificationPollers entries={polledEntries} />
       <div className="bg-surface border border-border rounded-lg flex flex-col flex-1 min-h-0">
         <div className="flex items-center justify-between gap-3 px-6 py-3">
           <h3 className="text-base font-semibold text-text-primary">Wallet</h3>
@@ -364,6 +389,22 @@ export const WalletPanel: FC<WalletPanelProps> = ({
             </div>
           </div>
         </div>
+        {awaitingExecutionEntries.length > 0 ? (
+          <div className="px-6 pb-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('transactions')}
+              className="flex items-center gap-2 rounded-md border border-[#2563EB]/20 bg-[#2563EB]/8 px-3 py-2 text-left text-xs text-text-primary transition-colors hover:bg-[#2563EB]/12"
+            >
+              <IconLoader className="size-3 animate-spin text-[#2563EB]" />
+              <span>
+                {awaitingExecutionEntries.length === 1
+                  ? '1 transaction is awaiting Safe execution.'
+                  : `${awaitingExecutionEntries.length} transactions are awaiting Safe execution.`}
+              </span>
+            </button>
+          </div>
+        ) : null}
         <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 max-h-full p-6 pt-3" data-scroll-priority>
           <div className="space-y-6">
             {!isWalletActive || !address ? (

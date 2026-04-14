@@ -1,8 +1,11 @@
 import { useNotifications } from '@shared/contexts/useNotifications'
 import type { TNotification } from '@shared/types/notifications'
 import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
+import { getConnectorClient } from '@wagmi/core'
 import { useCallback, useEffect, useRef } from 'react'
+import { getCallsStatus } from 'viem/actions'
 import { getBlock, waitForTransactionReceipt } from 'wagmi/actions'
+import { shouldPollNotificationStatus } from './transactionStatusPoller.helpers'
 
 /************************************************************************************************
  * Custom hook to poll transaction status for pending notifications every minute.
@@ -21,7 +24,13 @@ export function useTransactionStatusPoller(notification: TNotification): void {
    * transaction was successful or failed.
    ************************************************************************************************/
   const checkTransactionStatus = useCallback(async (): Promise<void> => {
-    if (!notification.txHash || !notification.id || notification.status !== 'pending') {
+    if (!shouldPollNotificationStatus(notification)) {
+      return
+    }
+
+    const notificationId = notification.id
+    const txHash = notification.txHash
+    if (!notificationId || !txHash) {
       return
     }
 
@@ -35,43 +44,88 @@ export function useTransactionStatusPoller(notification: TNotification): void {
         return
       }
 
-      // Wait for transaction receipt with a short timeout to avoid blocking
-      const receipt = await waitForTransactionReceipt(config, {
-        chainId: pollingChainId,
-        hash: notification.txHash,
-        timeout: 5000 // 5 second timeout to avoid long waits
-      })
+      if (notification.status === 'submitted' && notification.awaitingExecution) {
+        const connectorClient = await getConnectorClient(config, {
+          chainId: pollingChainId,
+          assertChainId: false
+        })
+        const callsStatus = await getCallsStatus(connectorClient, { id: txHash })
 
-      if (receipt) {
-        const newStatus = receipt.status === 'success' ? 'success' : 'error'
+        if (callsStatus.status === 'pending') {
+          return
+        }
 
-        // Get the block information to retrieve the timestamp
+        if (callsStatus.status === 'failure') {
+          await updateEntry(
+            {
+              status: 'error',
+              awaitingExecution: false
+            },
+            notificationId
+          )
+
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current)
+          }
+          return
+        }
+
+        const receipt = callsStatus.receipts?.[0]
+        if (!receipt) {
+          return
+        }
+
         const block = await getBlock(config, {
           chainId: pollingChainId,
           blockNumber: receipt.blockNumber
         })
 
-        // Use the actual block timestamp instead of current time
+        await updateEntry(
+          {
+            status: receipt.status === 'success' ? 'success' : 'error',
+            txHash: receipt.transactionHash,
+            timeFinished: Number(block.timestamp),
+            blockNumber: receipt.blockNumber,
+            awaitingExecution: false
+          },
+          notificationId
+        )
+
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current)
+        }
+        return
+      }
+
+      const receipt = await waitForTransactionReceipt(config, {
+        chainId: pollingChainId,
+        hash: txHash,
+        timeout: 5000
+      })
+
+      if (receipt) {
+        const newStatus = receipt.status === 'success' ? 'success' : 'error'
+        const block = await getBlock(config, {
+          chainId: pollingChainId,
+          blockNumber: receipt.blockNumber
+        })
         const timeFinished = Number(block.timestamp)
 
-        // Update the notification with the new status and transaction details
         await updateEntry(
           {
             status: newStatus,
             timeFinished,
-            blockNumber: receipt.blockNumber
+            blockNumber: receipt.blockNumber,
+            awaitingExecution: false
           },
-          notification.id
+          notificationId
         )
 
-        // Clear the polling interval since transaction is complete
         if (pollIntervalRef.current) {
           clearInterval(pollIntervalRef.current)
         }
       }
     } catch (error) {
-      // If the transaction is not found or still pending, continue polling
-      // Only log actual errors, not timeout or not-found errors
       if (error instanceof Error && !error.message.includes('timeout')) {
         console.warn('Transaction status check failed:', error.message)
       }
@@ -84,18 +138,16 @@ export function useTransactionStatusPoller(notification: TNotification): void {
    * status changes or the component unmounts.
    ************************************************************************************************/
   useEffect(() => {
-    if (notification.status === 'pending' && notification.txHash && notification.id) {
-      // Check immediately
+    if (shouldPollNotificationStatus(notification)) {
       checkTransactionStatus()
 
-      // Then poll every minute
+      const pollIntervalMs = notification.awaitingExecution ? 15000 : 60000
       pollIntervalRef.current = setInterval(() => {
         checkTransactionStatus()
-      }, 60000)
+      }, pollIntervalMs)
     }
 
-    // Clear interval if notification is no longer pending
-    if (pollIntervalRef.current && notification.status !== 'pending') {
+    if (pollIntervalRef.current && !shouldPollNotificationStatus(notification)) {
       clearInterval(pollIntervalRef.current)
     }
 
@@ -104,7 +156,7 @@ export function useTransactionStatusPoller(notification: TNotification): void {
         clearInterval(pollIntervalRef.current)
       }
     }
-  }, [notification.status, notification.txHash, notification.id, checkTransactionStatus])
+  }, [notification, checkTransactionStatus])
 
   /************************************************************************************************
    * Cleanup effect to clear the polling interval when the hook unmounts
