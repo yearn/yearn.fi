@@ -2,7 +2,6 @@ import { formatCounterValue } from '@shared/utils/format'
 import type { ReactElement } from 'react'
 import { formatUnits } from 'viem'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
-import type { WithdrawRouteType } from './types'
 
 interface WithdrawDetailsProps {
   // Action label
@@ -28,8 +27,7 @@ interface WithdrawDetailsProps {
   expectedPriceImpactPercentage: number
   priceImpactPercentage: number
   shouldHighlightPriceImpact: boolean
-  // Route type for "at least" text
-  routeType: WithdrawRouteType
+  hasSwap: boolean
   // Modal trigger
   onShowDetailsModal: () => void
   // Approval info (for zap withdrawals)
@@ -64,7 +62,7 @@ export function WithdrawDetails({
   expectedPriceImpactPercentage,
   priceImpactPercentage,
   shouldHighlightPriceImpact,
-  routeType,
+  hasSwap,
   onShowDetailsModal,
   allowance,
   allowanceTokenDecimals,
@@ -75,11 +73,18 @@ export function WithdrawDetails({
 }: WithdrawDetailsProps): ReactElement {
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
   const approvalLabel = getApprovalLabel(approvalSpenderName)
+  const formatSignedSlippage = (percentage: number) => {
+    if (percentage === 0) {
+      return '0.00%'
+    }
+
+    return `${percentage < 0 ? '+' : '-'}${Math.abs(percentage).toFixed(2)}%`
+  }
   const withdrawUsdDisplay = formatCounterValue(formatUnits(withdrawAmountBn, assetDecimals), assetUsdPrice)
   const expectedOutUsdDisplay = formatCounterValue(formatUnits(expectedOut, outputDecimals), outputUsdPrice)
   const shouldShowWithdrawUsdBadge = showSwapRow && assetUsdPrice > 0 && withdrawAmountBn > 0n
-  const shouldShowExpectedOutUsdBadge = routeType === 'ENSO' && outputUsdPrice > 0 && expectedOut > 0n
-  const shouldShowWorstCasePriceImpact = showSwapRow && routeType === 'ENSO'
+  const shouldShowExpectedOutUsdBadge = hasSwap && outputUsdPrice > 0 && expectedOut > 0n
+  const shouldShowWorstCasePriceImpact = showSwapRow && hasSwap
   const shouldUseHighlight = !isQuoteStale && !isLoadingQuote && shouldHighlightPriceImpact
   return (
     <div>
@@ -121,7 +126,7 @@ export function WithdrawDetails({
 
         {/* You will receive */}
         <div className="flex items-center justify-between h-5">
-          <p className="text-sm text-text-secondary">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
+          <p className="text-sm text-text-secondary">You will receive{hasSwap ? ' at least' : ''}</p>
           <div className="flex items-center gap-1">
             <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
               {isLoadingQuote ? (
@@ -155,9 +160,9 @@ export function WithdrawDetails({
                 <span className="inline-block h-4 w-28 bg-surface-secondary rounded animate-pulse" />
               ) : (
                 <>
-                  <span className="font-semibold">{`${expectedPriceImpactPercentage.toFixed(2)}%`}</span>
+                  <span className="font-semibold">{formatSignedSlippage(expectedPriceImpactPercentage)}</span>
                   <span className="font-normal">{' | '}</span>
-                  <span className="font-semibold">{`${priceImpactPercentage.toFixed(2)}%`}</span>
+                  <span className="font-semibold">{formatSignedSlippage(priceImpactPercentage)}</span>
                 </>
               )}
             </p>

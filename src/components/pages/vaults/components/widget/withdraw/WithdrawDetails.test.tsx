@@ -26,7 +26,7 @@ describe('WithdrawDetails', () => {
         expectedPriceImpactPercentage={0}
         priceImpactPercentage={0}
         shouldHighlightPriceImpact={false}
-        routeType="ENSO"
+        hasSwap
         onShowDetailsModal={() => undefined}
       />
     )
@@ -55,14 +55,75 @@ describe('WithdrawDetails', () => {
         expectedPriceImpactPercentage={0}
         priceImpactPercentage={10}
         shouldHighlightPriceImpact
-        routeType="ENSO"
+        hasSwap
         onShowDetailsModal={() => undefined}
       />
     )
 
     expect(html).toContain('Est. / Worst price impact')
     expect(html).toContain('0.00%')
-    expect(html).toContain('10.00%')
+    expect(html).toContain('-10.00%')
     expect(html).toContain('text-red-500')
+  })
+
+  it('uses receive copy for routed ENSO withdrawals without swaps', () => {
+    const html = renderToStaticMarkup(
+      <WithdrawDetails
+        actionLabel="You will redeem"
+        requiredShares={10n * ONE_ETHER}
+        sharesDecimals={18}
+        isLoadingQuote={false}
+        isQuoteStale={false}
+        expectedOut={10n * ONE_ETHER}
+        outputDecimals={18}
+        outputSymbol="USDC"
+        showSwapRow={false}
+        withdrawAmountSimple="10"
+        withdrawAmountBn={10n * ONE_ETHER}
+        assetDecimals={18}
+        assetUsdPrice={1}
+        assetSymbol="yvUSD"
+        outputUsdPrice={1}
+        expectedPriceImpactPercentage={0}
+        priceImpactPercentage={0}
+        shouldHighlightPriceImpact={false}
+        hasSwap={false}
+        onShowDetailsModal={() => undefined}
+      />
+    )
+
+    expect(html).toContain('You will receive')
+    expect(html).not.toContain('You will receive at least')
+    expect(html).not.toContain('Est. / Worst price impact')
+  })
+
+  it('shows positive slippage for favorable zap withdrawals', () => {
+    const html = renderToStaticMarkup(
+      <WithdrawDetails
+        actionLabel="You will redeem"
+        requiredShares={10n * ONE_ETHER}
+        sharesDecimals={18}
+        isLoadingQuote={false}
+        isQuoteStale={false}
+        expectedOut={10n * ONE_ETHER}
+        outputDecimals={18}
+        outputSymbol="USDC"
+        showSwapRow
+        withdrawAmountSimple="10"
+        withdrawAmountBn={10n * ONE_ETHER}
+        assetDecimals={18}
+        assetUsdPrice={1}
+        assetSymbol="BOLD"
+        outputUsdPrice={1}
+        expectedPriceImpactPercentage={-6}
+        priceImpactPercentage={-3}
+        shouldHighlightPriceImpact={false}
+        hasSwap
+        onShowDetailsModal={() => undefined}
+      />
+    )
+
+    expect(html).toContain('+6.00%')
+    expect(html).toContain('+3.00%')
   })
 })
