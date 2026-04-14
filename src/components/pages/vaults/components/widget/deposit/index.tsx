@@ -64,6 +64,8 @@ interface Props {
   collapseDetails?: boolean
   detailsContent?: ReactNode
   contentBelowInput?: ReactNode
+  contentAboveButton?: ReactNode
+  actionLabelOverride?: string
   vaultSharesLabel?: string
   hideDetails?: boolean
   hideActionButton?: boolean
@@ -96,17 +98,23 @@ function getDepositActionCopy(routeType: DepositRouteType): DepositActionCopy {
   }
 }
 
-function getDepositButtonLabel(isLoadingRoute: boolean, needsApproval: boolean, routeType: DepositRouteType): string {
+function getDepositButtonLabel(
+  isLoadingRoute: boolean,
+  needsApproval: boolean,
+  routeType: DepositRouteType,
+  actionLabelOverride?: string
+): string {
   if (isLoadingRoute) {
     return 'Fetching quote'
   }
 
   const { actionLabel } = getDepositActionCopy(routeType)
+  const resolvedActionLabel = actionLabelOverride ?? actionLabel
   if (needsApproval) {
-    return `Approve & ${actionLabel}`
+    return `Approve & ${resolvedActionLabel}`
   }
 
-  return actionLabel
+  return resolvedActionLabel
 }
 
 function getTokenLogoURI(token: unknown): string | undefined {
@@ -139,6 +147,8 @@ export function WidgetDeposit({
   collapseDetails,
   detailsContent,
   contentBelowInput,
+  contentAboveButton,
+  actionLabelOverride,
   vaultSharesLabel,
   hideDetails = false,
   hideActionButton = false,
@@ -838,7 +848,7 @@ export function WidgetDeposit({
 
   const showActionRow = !hideActionButton || !!onOpenSettings
   const showSettingsButton = !!account && !!onOpenSettings
-  const depositButtonLabel = getDepositButtonLabel(isLoadingQuote, needsApproval, routeType)
+  const depositButtonLabel = getDepositButtonLabel(isLoadingQuote, needsApproval, routeType, actionLabelOverride)
   const isDepositButtonDisabled =
     !!effectiveDepositError ||
     depositAmount.bn === 0n ||
@@ -852,6 +862,7 @@ export function WidgetDeposit({
   const actionRow = showActionRow ? (
     <div className="flex flex-col gap-3">
       {priceImpactWarning}
+      {contentAboveButton}
       <div className="flex items-center gap-2">
         <div className="flex-1">
           {hideActionButton ? null : !account ? (
