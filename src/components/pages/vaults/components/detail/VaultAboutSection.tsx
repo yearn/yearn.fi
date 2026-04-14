@@ -60,14 +60,23 @@ type TExpandableInfoItem = {
   children: ReactNode
   className?: string
   icon?: ReactNode
+  isOpenByDefault?: boolean
 }
 
-function ExpandableInfoItem({ label, value, children, className, icon }: TExpandableInfoItem): ReactElement {
-  const [isOpen, setIsOpen] = useState(false)
+function ExpandableInfoItem({
+  label,
+  value,
+  children,
+  className,
+  icon,
+  isOpenByDefault
+}: TExpandableInfoItem): ReactElement {
+  const [isOpen, setIsOpen] = useState(Boolean(isOpenByDefault))
 
   return (
     <details
       className={className}
+      open={isOpen}
       onToggle={(event): void => {
         setIsOpen(event.currentTarget.open)
       }}
@@ -290,6 +299,12 @@ export function VaultAboutSection({
         </div>
 
         <div className={'flex flex-col gap-0.5'}>
+          {additionalFeaturesContent ? (
+            <ExpandableInfoItem label={'Additional Features'} value={'Additional Features'} isOpenByDefault>
+              <div className={'px-0'}>{additionalFeaturesContent}</div>
+            </ExpandableInfoItem>
+          ) : null}
+
           <VaultAddressesInfo chainID={chainID} addresses={vaultAddresses} />
 
           <ExpandableInfoItem label={'Chain'} value={chainName} icon={chainIcon}>
@@ -335,12 +350,6 @@ export function VaultAboutSection({
               </p>
             </div>
           </ExpandableInfoItem>
-
-          {additionalFeaturesContent ? (
-            <ExpandableInfoItem label={'Additional Features'} value={'Additional Features'}>
-              <div className={'px-0'}>{additionalFeaturesContent}</div>
-            </ExpandableInfoItem>
-          ) : null}
         </div>
       </div>
     </div>

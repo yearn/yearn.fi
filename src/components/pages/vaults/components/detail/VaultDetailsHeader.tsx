@@ -61,6 +61,9 @@ function noopWidgetModeChange(_mode: WidgetActionType): void {}
 
 function noopSelectSection(_key: string): void {}
 
+const COMPRESSED_TITLE_FULL_SIZE_CLASS = 'md:text-[30px] md:leading-9'
+const COMPRESSED_TITLE_COMPACT_SIZE_CLASS = 'md:text-[20px] md:leading-6'
+
 function getVaultProductTypeLabel(listKind: ReturnType<typeof deriveListKind>): string {
   if (listKind === 'allocator' || listKind === 'strategy') {
     return 'Single Asset'
@@ -158,7 +161,8 @@ function VaultHeaderIdentity({
   const shouldShowMetadata =
     showChainChip || showCategoryChip || showKindChip || Boolean(productTypeLabel) || isMigratable || isRetired
   const [isTitleClipped, setIsTitleClipped] = useState(false)
-  const titleRef = useRef<HTMLSpanElement>(null)
+  const titleSlotRef = useRef<HTMLDivElement>(null)
+  const titleMeasureRef = useRef<HTMLSpanElement>(null)
   const vaultName = getVaultName(currentVault)
   const tokenLogoSize = getVaultLogoSize({ isCompressed })
   const tokenLogoContainerSizeClassName = getVaultLogoContainerSizeClassName({ isCompressed })
@@ -176,17 +180,34 @@ function VaultHeaderIdentity({
     }
 
     const measure = (): void => {
-      if (!titleRef.current) return
-      setIsTitleClipped(titleRef.current.scrollWidth > titleRef.current.clientWidth)
+      if (!titleSlotRef.current || !titleMeasureRef.current) {
+        return
+      }
+
+      setIsTitleClipped(titleMeasureRef.current.scrollWidth > titleSlotRef.current.clientWidth)
     }
 
     measure()
-    window.addEventListener('resize', measure)
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measure)
+      return () => {
+        window.removeEventListener('resize', measure)
+      }
+    }
+
+    const observer = new ResizeObserver(measure)
+    const titleSlotElement = titleSlotRef.current
+    const titleMeasureElement = titleMeasureRef.current
+    if (!titleSlotElement || !titleMeasureElement) {
+      return () => observer.disconnect()
+    }
+    observer.observe(titleSlotElement)
+    observer.observe(titleMeasureElement)
 
     return () => {
-      window.removeEventListener('resize', measure)
+      observer.disconnect()
     }
-  }, [isCompressed])
+  }, [isCompressed, vaultName])
 
   return (
     <div
@@ -216,40 +237,72 @@ function VaultHeaderIdentity({
             </div>
           ) : null}
         </div>
-        <div className={'flex flex-col'}>
-          <div className={cl('flex items-center gap-3', isCompressed && isTitleClipped ? 'relative group' : '')}>
-            <strong
-              ref={titleRef}
-              className={cl(
-                'text-lg font-black leading-tight md:text-3xl md:leading-10 text-text-primary',
-                isCompressed ? 'md:text-[30px] md:leading-9 max-w-[260px] truncate whitespace-nowrap' : ''
-              )}
-            >
-              {vaultName}
-            </strong>
-            {isCompressed && isTitleClipped ? (
-              <span
-                className={
-                  'pointer-events-none absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-app px-0 py-0 text-[30px] font-black leading-tight text-text-primary group-hover:block'
-                }
-              >
-                {vaultName}
-              </span>
-            ) : null}
-            {explorerHref ? (
-              <a
-                href={explorerHref}
-                target={'_blank'}
-                rel={'noopener noreferrer'}
-                className={cl(
-                  'text-text-secondary hover:text-text-primary transition-colors',
-                  isCompressed ? 'h-1.5 inline-flex content-end' : 'h-7 content-end'
-                )}
-                aria-label={'View vault on block explorer'}
-              >
-                <IconLinkOut className={'size-4 md:size-4'} />
-              </a>
-            ) : null}
+        <div className={cl('flex flex-col', isCompressed ? 'min-w-0 flex-1' : '')}>
+          <div
+            className={cl(
+              'flex',
+              isCompressed ? 'min-w-0' : 'items-center gap-3',
+              isCompressed && isTitleClipped ? 'items-start' : 'items-center',
+              isCompressed ? 'relative' : ''
+            )}
+          >
+            {isCompressed ? (
+              <div className={'inline-flex max-w-full min-w-0 items-start gap-1'}>
+                <div ref={titleSlotRef} className={'min-w-0'}>
+                  <span
+                    ref={titleMeasureRef}
+                    aria-hidden={true}
+                    className={cl(
+                      'pointer-events-none absolute opacity-0 whitespace-nowrap',
+                      'text-lg font-black leading-tight md:text-3xl md:leading-10',
+                      COMPRESSED_TITLE_FULL_SIZE_CLASS
+                    )}
+                  >
+                    {vaultName}
+                  </span>
+                  <strong
+                    className={cl(
+                      'block text-lg font-black leading-tight text-text-primary',
+                      isTitleClipped
+                        ? `${COMPRESSED_TITLE_COMPACT_SIZE_CLASS} md:[display:-webkit-box] md:[-webkit-box-orient:vertical] md:[-webkit-line-clamp:2] md:[text-wrap:balance] md:whitespace-normal`
+                        : `truncate whitespace-nowrap ${COMPRESSED_TITLE_FULL_SIZE_CLASS}`
+                    )}
+                  >
+                    {vaultName}
+                  </strong>
+                </div>
+                {explorerHref ? (
+                  <a
+                    href={explorerHref}
+                    target={'_blank'}
+                    rel={'noopener noreferrer'}
+                    className={'shrink-0 pt-[15px] text-text-secondary transition-colors hover:text-text-primary'}
+                    aria-label={'View vault on block explorer'}
+                  >
+                    <IconLinkOut className={'size-4 md:size-4'} />
+                  </a>
+                ) : null}
+              </div>
+            ) : (
+              <>
+                <div ref={titleSlotRef}>
+                  <strong className={'text-lg font-black leading-tight md:text-3xl md:leading-10 text-text-primary'}>
+                    {vaultName}
+                  </strong>
+                </div>
+                {explorerHref ? (
+                  <a
+                    href={explorerHref}
+                    target={'_blank'}
+                    rel={'noopener noreferrer'}
+                    className={'h-7 content-end text-text-secondary transition-colors hover:text-text-primary'}
+                    aria-label={'View vault on block explorer'}
+                  >
+                    <IconLinkOut className={'size-4 md:size-4'} />
+                  </a>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -791,24 +844,26 @@ export function VaultDetailsHeaderPresentation({
               // 'border border-border',
             )}
           >
-            <div className={'grid grid-cols-13 gap-y-0 gap-x-6'}>
-              <VaultHeaderIdentity
-                currentVault={currentVault}
-                isCompressed={isCompressed}
-                className={'col-span-5 pl-6'}
-                includeTourAttributes={includeTourAttributes}
-              />
-              <div className={'col-span-8 pl-4'}>
-                <VaultOverviewCard
+            <div className={'flex flex-col'}>
+              <div className={'flex min-w-0'}>
+                <VaultHeaderIdentity
                   currentVault={currentVault}
                   isCompressed={isCompressed}
+                  className={'min-w-0 flex-[6] pl-6'}
                   includeTourAttributes={includeTourAttributes}
-                  yvUsdApyVariant={yvUsdApyVariant}
-                  onYvUsdApyVariantChange={onYvUsdApyVariantChange}
                 />
+                <div className={'min-w-0 flex-[8] pl-4'}>
+                  <VaultOverviewCard
+                    currentVault={currentVault}
+                    isCompressed={isCompressed}
+                    includeTourAttributes={includeTourAttributes}
+                    yvUsdApyVariant={yvUsdApyVariant}
+                    onYvUsdApyVariantChange={onYvUsdApyVariantChange}
+                  />
+                </div>
               </div>
               {sectionTabs.length > 0 ? (
-                <div className={'col-span-13'}>
+                <div>
                   <SectionSelectorBar
                     activeSectionKey={activeSectionKey}
                     onSelectSection={handleSelectSection}
