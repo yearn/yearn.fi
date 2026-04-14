@@ -1,6 +1,23 @@
 export type OverlayState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'refreshing' | 'success' | 'error'
 export type CompletionDeferral = 'none' | 'immediate' | 'after-close' | 'after-confetti'
 
+export function resolveOverlayConnectedChainId(params: {
+  accountChainId: number | undefined
+  currentChainId: number
+  targetChainId: number | undefined
+  isWalletSafe: boolean
+}): number {
+  if (params.accountChainId) {
+    return params.accountChainId
+  }
+
+  if (params.isWalletSafe && params.targetChainId) {
+    return params.targetChainId
+  }
+
+  return params.currentChainId
+}
+
 export function resolvePendingSafeOverlayState(params: {
   overlayState: OverlayState
   isWalletSafe: boolean
