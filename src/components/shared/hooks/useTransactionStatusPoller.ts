@@ -1,4 +1,5 @@
 import { useNotifications } from '@shared/contexts/useNotifications'
+import { fetchSafeTransactionDetails } from '@shared/hooks/useSafeTransactionDetails'
 import type { TNotification } from '@shared/types/notifications'
 import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
 import { getConnectorClient } from '@wagmi/core'
@@ -45,6 +46,68 @@ export function useTransactionStatusPoller(notification: TNotification): void {
       }
 
       if (notification.status === 'submitted' && notification.awaitingExecution) {
+        try {
+          const safeTransaction = await fetchSafeTransactionDetails(txHash)
+
+          if (
+            safeTransaction?.txStatus === 'AWAITING_CONFIRMATIONS' ||
+            safeTransaction?.txStatus === 'AWAITING_EXECUTION' ||
+            safeTransaction?.txStatus === undefined
+          ) {
+            if (!safeTransaction?.executionTxHash) {
+              return
+            }
+          }
+
+          if (safeTransaction?.txStatus === 'FAILED' || safeTransaction?.txStatus === 'CANCELLED') {
+            await updateEntry(
+              {
+                status: 'error',
+                awaitingExecution: false
+              },
+              notificationId
+            )
+
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current)
+            }
+            return
+          }
+
+          if (safeTransaction?.executionTxHash) {
+            const receipt = await waitForTransactionReceipt(config, {
+              chainId: pollingChainId,
+              hash: safeTransaction.executionTxHash,
+              timeout: 5000
+            })
+
+            if (receipt) {
+              const block = await getBlock(config, {
+                chainId: pollingChainId,
+                blockNumber: receipt.blockNumber
+              })
+
+              await updateEntry(
+                {
+                  status: receipt.status === 'success' ? 'success' : 'error',
+                  txHash: receipt.transactionHash,
+                  timeFinished: Number(block.timestamp),
+                  blockNumber: receipt.blockNumber,
+                  awaitingExecution: false
+                },
+                notificationId
+              )
+
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current)
+              }
+              return
+            }
+          }
+        } catch (safeDetailError) {
+          console.warn('Safe transaction detail lookup failed, falling back to wallet_getCallsStatus:', safeDetailError)
+        }
+
         const connectorClient = await getConnectorClient(config, {
           chainId: pollingChainId,
           assertChainId: false
