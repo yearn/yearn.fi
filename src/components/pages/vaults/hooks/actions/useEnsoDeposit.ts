@@ -95,6 +95,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         minExpectedOut: ensoFlow.periphery.minExpectedOut.raw,
         isLoadingRoute: ensoFlow.periphery.isLoadingRoute,
         isCrossChain: ensoFlow.periphery.isCrossChain,
+        routeHasSwap: ensoFlow.periphery.routeHasSwap,
         routerAddress: ensoFlow.periphery.routerAddress,
         error: ensoFlow.periphery.error?.message,
         tx: ensoFlow.periphery.route?.tx,

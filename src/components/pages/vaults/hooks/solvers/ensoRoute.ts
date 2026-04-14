@@ -18,7 +18,13 @@ export interface EnsoRouteResponse {
   amountOut: string
   minAmountOut: string
   gas: string
-  route: unknown[]
+  route: EnsoRouteStep[]
+}
+
+export interface EnsoRouteStep {
+  action?: string
+  protocol?: string
+  [key: string]: unknown
 }
 
 type EnsoRouteErrorPayload = {
@@ -106,4 +112,12 @@ export function normalizeEnsoRouteResponse(
   }
 
   return { error: buildEnsoError(data, statusCode) }
+}
+
+export function routeHasSwapStep(route: EnsoRouteResponse | undefined): boolean {
+  if (!route) {
+    return false
+  }
+
+  return route.route.some((step) => typeof step.action === 'string' && step.action.toLowerCase().includes('swap'))
 }
