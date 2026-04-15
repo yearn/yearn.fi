@@ -1,7 +1,8 @@
 export type OverlayState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'refreshing' | 'success' | 'error'
 export type CompletionDeferral = 'none' | 'immediate' | 'after-close' | 'after-confetti'
 export type SafeTransactionStatus = 'AWAITING_CONFIRMATIONS' | 'AWAITING_EXECUTION' | 'CANCELLED' | 'FAILED' | 'SUCCESS'
-export const AUTO_CONTINUE_SUCCESS_DELAY_MS = 1200
+export const AUTO_CONTINUE_SUCCESS_DELAY_MS = 1600
+export const SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS = 700
 
 export function resolveOverlayConnectedChainId(params: {
   accountChainId: number | undefined
@@ -115,6 +116,10 @@ export function shouldAutoContinueFromSuccessState(params: {
   wasLastStep: boolean
 }): boolean {
   return params.canShowSuccess && params.executedStepAutoContinues && !params.wasLastStep
+}
+
+export function getAutoContinueConfirmDelayMs(params: { isWalletSafe: boolean }): number {
+  return params.isWalletSafe ? SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS : 0
 }
 
 export function resolveCompletionDeferral(params: {
