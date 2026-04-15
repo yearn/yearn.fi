@@ -1,5 +1,6 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
+import { usePortfolioEntryRefresh } from '@pages/portfolio/hooks/usePortfolioEntryRefresh'
 import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
 import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
@@ -24,6 +25,7 @@ import { METRIC_VALUE_CLASS, MetricHeader, MetricsCard, type TMetricBlock } from
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
+import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
@@ -954,9 +956,12 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
 
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
+  const { onRefresh } = useWallet()
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
+
+  usePortfolioEntryRefresh({ isActive: model.isActive, onRefresh })
 
   const activeTab = useMemo((): TPortfolioTabKey => {
     const tabParam = searchParams.get('tab')
