@@ -1,10 +1,16 @@
+import { YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
-import { VaultDetailsHeaderPresentation } from './VaultDetailsHeader'
+Object.defineProperty(globalThis, 'location', {
+  value: {
+    href: 'http://localhost/'
+  },
+  configurable: true
+})
 
 vi.mock('@shared/contexts/useWeb3', () => ({
   useWeb3: () => ({
@@ -82,6 +88,65 @@ vi.mock('@pages/vaults/hooks/useYvUsdVaults', () => ({
   })
 }))
 
+vi.mock('@pages/vaults/hooks/useYvBtcVaults', () => ({
+  useYvBtcVaults: () => ({
+    metrics: {
+      unlocked: {
+        apy: 0.04,
+        tvl: 100,
+        hasInfinifiPoints: false
+      },
+      locked: {
+        apy: 0,
+        tvl: 0,
+        hasInfinifiPoints: false
+      }
+    },
+    unlockedVault: {
+      address: YVBTC_UNLOCKED_ADDRESS,
+      token: {
+        address: '0x0000000000000000000000000000000000000003',
+        symbol: 'WBTC',
+        decimals: 8
+      },
+      tvl: {
+        price: 100000,
+        tvl: 100
+      },
+      apr: {
+        forwardAPR: {
+          netAPR: 0.04
+        },
+        points: {
+          monthAgo: 0.03,
+          weekAgo: 0.02
+        }
+      }
+    },
+    lockedVault: {
+      address: YVBTC_LOCKED_ADDRESS,
+      token: {
+        address: YVBTC_UNLOCKED_ADDRESS,
+        symbol: 'yvBTC',
+        decimals: 18
+      },
+      tvl: {
+        price: 0,
+        tvl: 0
+      },
+      apr: {
+        forwardAPR: {
+          netAPR: 0
+        },
+        points: {
+          monthAgo: 0,
+          weekAgo: 0
+        }
+      }
+    }
+  })
+}))
+
 vi.mock('@shared/components/MetricsCard', () => ({
   METRIC_FOOTNOTE_CLASS: 'metric-footnote',
   METRIC_VALUE_CLASS: 'metric-value',
@@ -129,6 +194,8 @@ vi.mock('@pages/vaults/components/yvUSD/YvUsdBreakdown', () => ({
 vi.mock('@pages/vaults/components/yvUSD/YvUsdHeaderBanner', () => ({
   YvUsdHeaderBanner: () => <div>{'yvUSD banner'}</div>
 }))
+
+const { VaultDetailsHeaderPresentation } = await import('./VaultDetailsHeader')
 
 const YVUSD_VAULT = {
   version: '3.0.4',
