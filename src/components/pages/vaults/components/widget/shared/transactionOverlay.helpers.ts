@@ -89,6 +89,25 @@ export function shouldAutoContinuePermitSuccess(params: {
   return true
 }
 
+export function shouldRefetchNextStepAfterReceipt(params: {
+  isOpen: boolean
+  overlayState: OverlayState
+  hasReceiptTransactionHash: boolean
+  wasLastStep: boolean
+  currentStepLabel?: string
+  executedStepLabel?: string
+  isStepReady: boolean
+}): boolean {
+  if (!params.isOpen) return false
+  if (params.overlayState !== 'pending' && params.overlayState !== 'submitted') return false
+  if (!params.hasReceiptTransactionHash) return false
+  if (params.wasLastStep) return false
+  if (!params.currentStepLabel || params.currentStepLabel === params.executedStepLabel) return false
+  if (params.isStepReady) return false
+
+  return true
+}
+
 export function resolveCompletionDeferral(params: {
   completedAllSteps: boolean
   deferOnAllCompleteUntilClose: boolean
