@@ -1,6 +1,6 @@
 # Holdings PnL Logic
 
-This document explains how `GET /api/holdings/pnl` and `GET /api/holdings/pnl/drilldown` work today.
+This document explains how `GET /api/holdings/pnl`, `GET /api/holdings/pnl/drilldown`, and `GET /api/holdings/pnl/simple` work today.
 
 It is written for product engineers and contributors who need to understand the accounting model without reading the full implementation in `api/lib/holdings/services/pnl.ts`.
 
@@ -38,6 +38,9 @@ The backend now exposes two PnL shapes:
 - `GET /api/holdings/pnl/drilldown`
   - the same valuation basis, but expanded with current lots, realized lot consumption, unknown-basis receipts and withdrawals, and a transaction journal
   - intended for vault drawers, lot timelines, and accounting inspection UI
+- `GET /api/holdings/pnl/simple`
+  - protocol-return summary based on withdrawable-underlying growth while the user held vault shares
+  - intended for performance UI that wants to ignore later asset price movement and avoid full cost-basis reconstruction
 
 ## Core Idea
 
@@ -74,6 +77,55 @@ Think in this order:
 4. Build FIFO lots for each family.
 5. Value remaining lots at current PPS and token price.
 6. Apply an unknown-transfer policy: `strict`, `zero_basis`, or `windfall`.
+
+## Simple Protocol Return
+
+`GET /api/holdings/pnl/simple` is a separate metric, not a faster version of the full accounting route.
+
+It answers:
+
+> How much did Yearn increase the user’s withdrawable underlying amount while the user held vault shares?
+
+It does not answer:
+
+- What was the user’s accounting cost basis?
+- What was the mark-to-market USD PnL after the asset price moved?
+- Was every router / migrator / reward transfer classified for accounting purposes?
+
+The simple route uses only address-scoped events:
+
+- direct deposits
+- direct withdrawals
+- vault-token transfers in
+- vault-token transfers out
+
+It intentionally skips transaction-hash enrichment. That means it avoids the expensive same-transaction fetches used by the full PnL route for CoW settlements, Enso rollovers, vault-to-vault basis carrying, and unknown-transfer classification.
+
+For each receipt, the simple route records:
+
+- shares received
+- baseline underlying amount
+- receipt timestamp
+- receipt-time token price
+
+Deposits use indexed `assets` as the baseline. Transfer-ins use `shares * PPS at receipt`.
+
+For each exit, the route consumes receipt lots FIFO and compares the exit withdrawable underlying amount to the consumed baseline:
+
+- withdrawals use indexed `assets`
+- transfer-outs use `shares * PPS at exit`
+
+Open lots compare current withdrawable underlying to their receipt baseline.
+
+The percentage is weighted across assets with receipt-time token price:
+
+```text
+baselineWeightUsd = baselineUnderlying * receiptTokenPriceUsd
+growthWeightUsd = growthUnderlying * receiptTokenPriceUsd
+protocolReturnPct = growthWeightUsd / baselineWeightUsd * 100
+```
+
+Because both numerator and denominator use the same receipt-time price, later token price movement does not affect `protocolReturnPct`. The metric is driven by PPS / withdrawable-underlying growth only.
 
 ## Vault Families
 

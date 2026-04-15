@@ -23,4 +23,10 @@ export {
   type HoldingsPnLVault,
   type UnknownTransferInPnlMode
 } from './services/pnl'
+export {
+  getHoldingsPnLSimple,
+  type HoldingsPnLSimpleResponse,
+  type HoldingsPnLSimpleVault,
+  type THoldingsPnLSimpleStatus
+} from './services/pnlSimple'
 export { checkRateLimit } from './services/ratelimit'
