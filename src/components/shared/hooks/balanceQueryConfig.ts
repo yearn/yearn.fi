@@ -22,6 +22,14 @@ export const CHAIN_CACHE_CONFIG: Record<number, { staleTime: number; gcTime: num
 
 export const DEFAULT_CACHE_CONFIG = { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000 }
 
+export function getBalanceQueryRefetchConfig() {
+  return {
+    refetchOnWindowFocus: 'always' as const,
+    refetchOnMount: false,
+    refetchOnReconnect: false
+  }
+}
+
 export function getChainCacheConfig(chainId: number) {
   return CHAIN_CACHE_CONFIG[chainId] || DEFAULT_CACHE_CONFIG
 }
