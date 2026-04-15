@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { ENSO_BALANCES_CACHE_CONTROL } from './cache'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 
@@ -46,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const data = await response.json()
 
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
+    res.setHeader('Cache-Control', ENSO_BALANCES_CACHE_CONTROL)
     return res.status(200).json(data)
   } catch (error) {
     console.error('Error proxying Enso request:', error)
