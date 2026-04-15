@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  AUTO_CONTINUE_SUCCESS_DELAY_MS,
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
+  shouldAutoContinueFromSuccessState,
   shouldRefetchNextStepAfterReceipt
 } from './transactionOverlay.helpers'
 
@@ -165,6 +167,29 @@ describe('shouldRefetchNextStepAfterReceipt', () => {
         currentStepLabel: 'Deposit',
         executedStepLabel: 'Approve',
         isStepReady: true
+      })
+    ).toBe(false)
+  })
+})
+
+describe('shouldAutoContinueFromSuccessState', () => {
+  it('shows a short success interstitial before auto-continuing to the next step', () => {
+    expect(
+      shouldAutoContinueFromSuccessState({
+        canShowSuccess: true,
+        executedStepAutoContinues: true,
+        wasLastStep: false
+      })
+    ).toBe(true)
+    expect(AUTO_CONTINUE_SUCCESS_DELAY_MS).toBeGreaterThanOrEqual(1000)
+  })
+
+  it('does not auto-continue from the interstitial for terminal steps', () => {
+    expect(
+      shouldAutoContinueFromSuccessState({
+        canShowSuccess: true,
+        executedStepAutoContinues: true,
+        wasLastStep: true
       })
     ).toBe(false)
   })

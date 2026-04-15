@@ -18,12 +18,14 @@ import { useAccount, useCallsStatus, useSignTypedData, useWriteContract } from '
 import { isConnectedToExecutionChain } from '@/config/tenderly'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
 import {
+  AUTO_CONTINUE_SUCCESS_DELAY_MS,
   type CompletionDeferral,
   type OverlayState,
   resolveCompletionDeferral,
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
+  shouldAutoContinueFromSuccessState,
   shouldAutoContinuePermitSuccess,
   shouldRefetchNextStepAfterReceipt,
   shouldRunDeferredCompletion
@@ -730,7 +732,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       (overlayState === 'pending' || overlayState === 'submitted') &&
       canShowSuccess
     ) {
-      if (executedStepLabel && executedStepAutoContinues && !wasLastStepRef.current) {
+      if (
+        shouldAutoContinueFromSuccessState({
+          canShowSuccess,
+          executedStepAutoContinues,
+          wasLastStep: wasLastStepRef.current
+        }) &&
+        executedStepLabel
+      ) {
         if (hasAdvancedFromStepRef.current === executedStepLabel) {
           return
         }
@@ -744,7 +753,15 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         hasAutoContinuedFromStepRef.current = executedStepLabel
         const nonceAtSchedule = autoContinueNonceRef.current
         setIsAutoContinuing(true)
+        finalizeSuccessState(false, executedStepRef.current)
         const advance = async () => {
+          await new Promise((resolve) => {
+            window.setTimeout(resolve, AUTO_CONTINUE_SUCCESS_DELAY_MS)
+          })
+          if (autoContinueNonceRef.current !== nonceAtSchedule) {
+            setIsAutoContinuing(false)
+            return
+          }
           await waitForAutoContinueBlock(executedStepLabel)
           if (autoContinueNonceRef.current !== nonceAtSchedule) {
             setIsAutoContinuing(false)
