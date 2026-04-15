@@ -25,6 +25,7 @@ import {
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
   shouldAutoContinuePermitSuccess,
+  shouldRefetchNextStepAfterReceipt,
   shouldRunDeferredCompletion
 } from './transactionOverlay.helpers'
 
@@ -846,13 +847,21 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   // When step 1 succeeds in a multi-step flow, the next step simulation may need a refetch
   // to pick up post-transaction state (e.g. unstake -> withdraw).
   useEffect(() => {
-    if (!isOpen || overlayState !== 'pending') return
-    if (!receipt.isSuccess || !receipt.data?.transactionHash) return
-    if (wasLastStepRef.current) return
-    if (!step?.label || step.label === executedStepRef.current?.label) return
-    if (isStepReady) return
+    if (
+      !shouldRefetchNextStepAfterReceipt({
+        isOpen,
+        overlayState,
+        hasReceiptTransactionHash: Boolean(receipt.data?.transactionHash),
+        wasLastStep: wasLastStepRef.current,
+        currentStepLabel: step?.label,
+        executedStepLabel: executedStepRef.current?.label,
+        isStepReady
+      })
+    ) {
+      return
+    }
 
-    const refetch = step.prepare.refetch
+    const refetch = step?.prepare.refetch
     if (!refetch) return
 
     void refetch()
@@ -863,15 +872,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     return () => {
       window.clearInterval(intervalId)
     }
-  }, [
-    isOpen,
-    overlayState,
-    receipt.isSuccess,
-    receipt.data?.transactionHash,
-    step?.label,
-    step?.prepare.refetch,
-    isStepReady
-  ])
+  }, [isOpen, overlayState, receipt.data?.transactionHash, step?.label, step?.prepare.refetch, isStepReady])
 
   return (
     <div
@@ -974,20 +975,22 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           {/* Submitted State */}
           {overlayState === 'submitted' && (
             <>
-              <AnimatedCheckmark isVisible />
+              <Spinner />
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction submitted</h3>
-              <p className="text-sm text-text-secondary whitespace-pre-line mb-6">
+              <p className="text-sm text-text-secondary whitespace-pre-line">
                 {`Your transaction has been submitted to your Safe.
 Execution may happen separately after the required confirmations are collected.`}
               </p>
-              <Button
-                onClick={handleClose}
-                variant="filled"
-                className="w-full max-w-xs"
-                classNameOverride="yearn--button--nextgen w-full"
-              >
-                Done
-              </Button>
+              {explorerTxUrl ? (
+                <a
+                  href={explorerTxUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 text-sm font-semibold text-text-primary underline"
+                >
+                  View on block explorer
+                </a>
+              ) : null}
             </>
           )}
 
