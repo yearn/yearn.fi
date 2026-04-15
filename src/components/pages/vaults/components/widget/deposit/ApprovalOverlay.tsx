@@ -1,14 +1,20 @@
 import { Button } from '@shared/components/Button'
-import { useSwitchChain, useWaitForTransactionReceipt } from '@shared/hooks/useAppWagmi'
+import { useChainId, useSwitchChain, useWaitForTransactionReceipt } from '@shared/hooks/useAppWagmi'
+import { useSafeTransactionDetails } from '@shared/hooks/useSafeTransactionDetails'
 import { getApproveAbi } from '@shared/utils/approve'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { maxUint256 } from 'viem'
-import { useAccount, useWriteContract } from 'wagmi'
+import { useAccount, useCallsStatus, useWriteContract } from 'wagmi'
 import { isConnectedToExecutionChain, resolveExecutionChainId } from '@/config/tenderly'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from '../shared/TransactionStateIndicators'
+import { resolveExecutionTrackingHash } from '../shared/transactionOverlay.helpers'
+import {
+  resolveApprovalOverlayConnectedChainId,
+  resolveApprovalOverlayPendingSafeState
+} from './ApprovalOverlay.helpers'
 
-type TxState = 'idle' | 'confirming' | 'pending' | 'success' | 'error'
+type TxState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'success' | 'error'
 
 interface ApprovalOverlayProps {
   isOpen: boolean
@@ -35,10 +41,40 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   const [txState, setTxState] = useState<TxState>('idle')
   const [errorMessage, setErrorMessage] = useState('')
 
-  const { address: account, chain } = useAccount()
+  const { address: account, chain, connector } = useAccount()
+  const currentChainId = useChainId()
+  const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false
+  const connectedChainId = resolveApprovalOverlayConnectedChainId({
+    accountChainId: chain?.id,
+    currentChainId,
+    targetChainId: chainId,
+    isWalletSafe
+  })
   const { switchChainAsync } = useSwitchChain()
   const { writeContractAsync, data: txHash, reset } = useWriteContract()
-  const receipt = useWaitForTransactionReceipt({ hash: txHash, chainId })
+  const safeTransactionDetails = useSafeTransactionDetails({
+    safeTxHash: isWalletSafe ? txHash : undefined,
+    enabled: Boolean(isWalletSafe && txHash && (txState === 'pending' || txState === 'submitted'))
+  })
+  const safeCallsStatus = useCallsStatus({
+    id: txHash || '0x',
+    query: {
+      enabled: Boolean(
+        isWalletSafe &&
+          txHash &&
+          (txState === 'pending' || txState === 'submitted') &&
+          !safeTransactionDetails.data?.executionTxHash
+      ),
+      refetchInterval: 1500
+    }
+  })
+  const executionTrackingHash = resolveExecutionTrackingHash({
+    isWalletSafe,
+    submittedTxHash: txHash,
+    safeExecutionTxHash: safeTransactionDetails.data?.executionTxHash,
+    callsReceiptTxHash: safeCallsStatus.data?.receipts?.[0]?.transactionHash
+  })
+  const receipt = useWaitForTransactionReceipt({ hash: executionTrackingHash, chainId })
 
   // Reset state when overlay closes
   useEffect(() => {
@@ -51,15 +87,43 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
   // Handle transaction success
   useEffect(() => {
-    if (receipt.isSuccess && txState === 'pending') {
+    if (receipt.isSuccess && (txState === 'pending' || txState === 'submitted')) {
       setTxState('success')
       reset()
     }
   }, [receipt.isSuccess, txState, reset])
 
+  useEffect(() => {
+    const nextTxState = resolveApprovalOverlayPendingSafeState({
+      txState,
+      isWalletSafe,
+      hasExecutionReceipt: Boolean(receipt.data?.transactionHash),
+      safeTxStatus: safeTransactionDetails.data?.txStatus,
+      callsStatus: safeCallsStatus.data?.status
+    })
+
+    if (nextTxState === 'submitted') {
+      setTxState('submitted')
+      return
+    }
+
+    if (nextTxState === 'error') {
+      setTxState('error')
+      setErrorMessage('Transaction failed in Safe. Please review your Safe queue and try again.')
+      reset()
+    }
+  }, [
+    txState,
+    isWalletSafe,
+    receipt.data?.transactionHash,
+    safeTransactionDetails.data?.txStatus,
+    safeCallsStatus.data?.status,
+    reset
+  ])
+
   // Handle transaction error
   useEffect(() => {
-    if (receipt.isError && txState === 'pending') {
+    if (receipt.isError && (txState === 'pending' || txState === 'submitted')) {
       setTxState('error')
       setErrorMessage('Transaction failed')
       reset()
@@ -79,12 +143,23 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
       setErrorMessage('')
 
       // Handle chain switch if needed
-      if (!isConnectedToExecutionChain(chain?.id, chainId)) {
+      if (!isConnectedToExecutionChain(connectedChainId, chainId)) {
         try {
           await switchChainAsync({ chainId })
-        } catch {
-          // User rejected chain switch - return to idle
-          setTxState('idle')
+        } catch (error: any) {
+          const isUserRejection =
+            error?.message?.toLowerCase().includes('rejected') ||
+            error?.message?.toLowerCase().includes('denied') ||
+            error?.code === 4001
+
+          if (isUserRejection) {
+            setTxState('idle')
+          } else {
+            setTxState('error')
+            setErrorMessage(
+              'Unable to switch networks for this approval. Please confirm your Safe is opened on the correct chain.'
+            )
+          }
           return
         }
       }
@@ -112,7 +187,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
         }
       }
     },
-    [chain?.id, chainId, tokenAddress, spenderAddress, writeContractAsync, switchChainAsync]
+    [connectedChainId, chainId, tokenAddress, spenderAddress, writeContractAsync, switchChainAsync]
   )
 
   const handleRevoke = useCallback(() => handleApprove(0n), [handleApprove])
@@ -198,6 +273,25 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
                 <AnimatedCheckmark isVisible />
                 <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Approval updated</h3>
                 <p className="text-sm text-text-secondary mb-6">Your token allowance has been changed</p>
+                <Button
+                  onClick={onClose}
+                  variant="filled"
+                  className="w-full max-w-xs"
+                  classNameOverride="yearn--button--nextgen w-full"
+                >
+                  Done
+                </Button>
+              </>
+            )}
+
+            {txState === 'submitted' && (
+              <>
+                <AnimatedCheckmark isVisible />
+                <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction submitted</h3>
+                <p className="text-sm text-text-secondary mb-6 whitespace-pre-line">
+                  {`Your approval transaction has been submitted to your Safe.
+Execution may happen separately after the required confirmations are collected.`}
+                </p>
                 <Button
                   onClick={onClose}
                   variant="filled"
