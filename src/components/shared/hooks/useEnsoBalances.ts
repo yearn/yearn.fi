@@ -6,6 +6,7 @@ import { SUPPORTED_NETWORKS } from '../utils/constants'
 import { toNormalizedBN } from '../utils/format'
 import { toAddress } from '../utils/tools.address'
 import { isZeroAddress } from '../utils/tools.is'
+import { getBalanceQueryRefetchConfig } from './balanceQueryConfig'
 
 /*******************************************************************************
  ** Enso API response types
@@ -36,7 +37,7 @@ export const ENSO_SUPPORTED_CHAINS = SUPPORTED_NETWORKS.map((n) => n.id).filter(
 async function fetchEnsoBalances(address: TAddress): Promise<TEnsoBalanceResponse[]> {
   const params = new URLSearchParams({ eoaAddress: address })
   const url = `/api/enso/balances?${params}`
-  const response = await fetch(url)
+  const response = await fetch(url, { cache: 'no-store' })
 
   if (!response.ok) {
     let details = ''
@@ -111,6 +112,7 @@ export function useEnsoBalances(
   chainErrorStatus: TNDict<boolean>
 } {
   const enabled = Boolean(options?.enabled !== false && userAddress && !isZeroAddress(userAddress))
+  const refetchConfig = getBalanceQueryRefetchConfig()
 
   const query = useQuery({
     queryKey: ['enso-balances', userAddress],
@@ -124,8 +126,7 @@ export function useEnsoBalances(
     enabled,
     staleTime: options?.staleTime ?? 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    ...refetchConfig,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
   })
