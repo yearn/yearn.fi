@@ -1,6 +1,7 @@
 import { VaultRiskScoreTag } from '@pages/vaults/components/table/VaultRiskScoreTag'
 import { getVaultInfo, getVaultKind, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
+import { isYvBtcVault } from '@pages/vaults/utils/yvBtc'
 import { isYvUsdVault, YVUSD_RISK_SCORE_ITEMS } from '@pages/vaults/utils/yvUsd'
 import { cl } from '@shared/utils'
 import { type ReactElement, useState } from 'react'
@@ -61,15 +62,19 @@ export function VaultRiskSection({ currentVault }: { currentVault: TKongVaultInp
   const info = getVaultInfo(currentVault)
   const hasRiskScore = (info.riskScore || []).reduce((sum, score) => sum + score, 0)
 
-  if (isYvUsdVault(currentVault)) {
-    return <YvUsdRiskScore />
+  if (isYvUsdVault(currentVault) || isYvBtcVault(currentVault)) {
+    return <YvUsdRiskScore vaultLabel={isYvBtcVault(currentVault) ? 'yvBTC' : 'yvUSD'} />
   }
 
   return <SimpleRiskScore hasRiskScore={hasRiskScore} currentVault={currentVault} />
 }
 
-function YvUsdRiskScore(): ReactElement {
+function YvUsdRiskScore({ vaultLabel }: { vaultLabel: 'yvUSD' | 'yvBTC' }): ReactElement {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const riskScoreItems = YVUSD_RISK_SCORE_ITEMS.map((item) => ({
+    ...item,
+    explanation: vaultLabel === 'yvBTC' ? item.explanation.replaceAll('yvUSD', 'yvBTC') : item.explanation
+  }))
 
   const toggleItem = (index: number): void => {
     setOpenIndex((current) => (current === index ? null : index))
@@ -78,7 +83,7 @@ function YvUsdRiskScore(): ReactElement {
   return (
     <div className={'grid grid-cols-1 gap-4 p-4 pt-0 md:grid-cols-12 md:gap-10 md:p-6 md:pt-0'}>
       <div className={'col-span-12 w-full space-y-1'}>
-        {YVUSD_RISK_SCORE_ITEMS.map((item, index) => (
+        {riskScoreItems.map((item, index) => (
           <RiskScoreItem
             key={item.label}
             label={item.label}
