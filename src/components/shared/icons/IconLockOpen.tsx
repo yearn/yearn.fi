@@ -12,7 +12,7 @@ export function IconLockOpen({ className, size = 16 }: TProps): ReactElement {
       alt=""
       width={size}
       height={size}
-      className={`${className || ''} aspect-square object-cover`}
+      className={`${className || ''} aspect-square object-contain`}
       aria-hidden="true"
     />
   )
