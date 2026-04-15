@@ -122,6 +122,7 @@ For LP-based vaults, the "token price" can be an LP token price rather than a pl
 | `holdings.ts` | Local | Build position timeline, calculate share balances |
 | `aggregator.ts` | Local | Orchestrate all services, main entry point |
 | `pnl.ts` | Local | Build family ledgers, FIFO lots, and PnL summaries |
+| `pnlSimple.ts` | Local | Build address-scoped protocol-return exposure ledgers without cost-basis reconstruction |
 
 ### Data Types
 
@@ -380,6 +381,70 @@ Notes:
 - Plain share transfers may leave some lots with unknown cost basis. Those vaults are returned with `costBasisStatus: "partial"`. In `strict` mode, the unmatched current portion is reported in `unknownCostBasisValueUsd`; in `zero_basis` and `windfall`, that value is zeroed and the economics are attributed according to `unknownTransferInPnlMode`.
 - The endpoint keeps families with non-zero current shares even if they only arrived through transfers, but transfer-only families with zero remaining shares may still be omitted. Those transfer-only holdings are marked partial and prioritized for current-value completeness over full historical price reconstruction.
 - `isComplete` becomes `false` when at least one returned vault still has partial / unknown basis.
+
+### GET `/api/holdings/pnl/simple`
+Protocol-return summary for the user’s vault exposure.
+
+This route is intentionally not a cost-basis PnL engine. It measures how much Yearn increased the user’s withdrawable underlying amount while the user held vault shares. Receipt-time token prices are used only to weight different assets into one portfolio percentage.
+
+It uses only address-scoped events, so it avoids transaction-hash enrichment, CoW receipt enrichment, and FIFO cost-basis classification. This makes it cheaper than `/api/holdings/pnl`, but it should be labeled as protocol return rather than accounting PnL.
+Like `/api/holdings/pnl`, it excludes vaults with `isHidden=true` in authoritative Kong metadata.
+
+```bash
+curl "http://localhost:3001/api/holdings/pnl/simple?address=0x..."
+curl "http://localhost:3001/api/holdings/pnl/simple?address=0x...&version=v3"
+curl "http://localhost:3001/api/holdings/pnl/simple?address=0x...&fetchType=parallel"
+```
+
+Query params:
+- `address` (required): Ethereum address
+- `version` (optional): `v2`, `v3`, or `all` (default: `all`)
+- `fetchType` (optional): `seq` or `parallel` (default: `seq`)
+- `paginationMode` (optional): `paged` or `all` (default: `paged`)
+
+Metric model:
+
+```text
+baselineUnderlying = shares received * PPS at receipt
+growthUnderlying = withdrawable underlying now-or-at-exit - baselineUnderlying
+baselineWeightUsd = baselineUnderlying * receiptTokenPriceUsd
+growthWeightUsd = growthUnderlying * receiptTokenPriceUsd
+protocolReturnPct = growthWeightUsd / baselineWeightUsd * 100
+```
+
+Because both numerator and denominator use the same receipt-time token price, later asset price movement does not affect `protocolReturnPct`.
+
+Response (abridged):
+
+```json
+{
+  "address": "0x...",
+  "version": "all",
+  "summary": {
+    "totalVaults": 5,
+    "completeVaults": 5,
+    "partialVaults": 0,
+    "baselineWeightUsd": 7000,
+    "growthWeightUsd": 700,
+    "protocolReturnPct": 10,
+    "isComplete": true
+  },
+  "vaults": [
+    {
+      "chainId": 1,
+      "vaultAddress": "0x...",
+      "status": "ok",
+      "baselineUnderlying": 1000,
+      "growthUnderlying": 100,
+      "baselineWeightUsd": 1000,
+      "growthWeightUsd": 100,
+      "protocolReturnPct": 10,
+      "receiptCount": 1,
+      "exitCount": 0
+    }
+  ]
+}
+```
 
 ### GET `/api/holdings/pnl/drilldown`
 Lot-level drilldown for the PnL engine. This is the "excessive" companion to `/api/holdings/pnl`.

@@ -68,9 +68,26 @@ const portfolioPnlSummarySchema = z.object({
   isComplete: z.boolean()
 })
 
+const portfolioProtocolReturnSummarySchema = z.object({
+  totalVaults: z.number(),
+  completeVaults: z.number(),
+  partialVaults: z.number(),
+  baselineWeightUsd: z.number(),
+  growthWeightUsd: z.number(),
+  realizedGrowthWeightUsd: z.number(),
+  unrealizedGrowthWeightUsd: z.number(),
+  protocolReturnPct: z.number().nullable(),
+  isComplete: z.boolean()
+})
+
 export const portfolioPnlResponseSchema = z.object({
   address: z.string(),
   summary: portfolioPnlSummarySchema
+})
+
+export const portfolioProtocolReturnResponseSchema = z.object({
+  address: z.string(),
+  summary: portfolioProtocolReturnSummarySchema
 })
 
 export type TPortfolioHistorySimpleResponse = z.infer<typeof portfolioHistorySimpleResponseSchema>
@@ -78,6 +95,8 @@ export type TPortfolioBreakdownResponse = z.infer<typeof portfolioBreakdownRespo
 export type TPortfolioBreakdownVault = z.infer<typeof portfolioBreakdownVaultSchema>
 export type TPortfolioPnlResponse = z.infer<typeof portfolioPnlResponseSchema>
 export type TPortfolioPnlSummary = z.infer<typeof portfolioPnlSummarySchema>
+export type TPortfolioProtocolReturnResponse = z.infer<typeof portfolioProtocolReturnResponseSchema>
+export type TPortfolioProtocolReturnSummary = z.infer<typeof portfolioProtocolReturnSummarySchema>
 export type TPortfolioHistoryChartData = Array<{
   date: string
   totalUsdValue: number

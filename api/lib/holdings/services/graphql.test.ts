@@ -1,3 +1,4 @@
+import { getAddress } from 'viem'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const USER = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
@@ -307,6 +308,8 @@ describe('fetchRawUserPnlEvents', () => {
       }
 
       if (query.includes('GetTransfersIn')) {
+        expect(query).toContain('receiver: { _eq: $receiver }')
+        expect(variables.receiver).toBe(getAddress(USER))
         expect(variables.limit).toBe(50000)
         expect(variables.offset).toBe(0)
 

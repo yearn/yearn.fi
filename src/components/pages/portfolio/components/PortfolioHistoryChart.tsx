@@ -198,12 +198,35 @@ export function PortfolioHistoryChart({
     openBreakdownModal(selectedPoint.date)
   }
 
+  const renderHeader = (showTimeframeControls = false): ReactElement => (
+    <div className={'flex items-center justify-between'}>
+      <h2 className={'text-xl font-semibold text-text-primary'}>{'Holdings History'}</h2>
+      {showTimeframeControls ? (
+        <div className={'flex gap-2'}>
+          {(['30d', '90d', '1y'] as const).map((tf) => (
+            <button
+              key={tf}
+              type={'button'}
+              onClick={() => setTimeframe(tf)}
+              className={cl(
+                'min-h-[44px] rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
+                timeframe === tf
+                  ? 'border-accent-500 bg-accent-500 text-white'
+                  : 'border-border bg-surface text-text-secondary hover:border-accent-500 hover:text-accent-500'
+              )}
+            >
+              {tf}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+
   if (isLoading) {
     return (
       <section className={sectionClassName}>
-        <div className={'flex items-center justify-between'}>
-          <h2 className={'text-xl font-semibold text-text-primary'}>Holdings History</h2>
-        </div>
+        {renderHeader()}
         <div className={'flex h-[300px] items-center justify-center'}>
           <IconSpinner className={'size-8 animate-spin text-text-secondary'} />
         </div>
@@ -214,9 +237,7 @@ export function PortfolioHistoryChart({
   if (error) {
     return (
       <section className={sectionClassName}>
-        <div className={'flex items-center justify-between'}>
-          <h2 className={'text-xl font-semibold text-text-primary'}>Holdings History</h2>
-        </div>
+        {renderHeader()}
         <div className={'flex h-[300px] items-center justify-center'}>
           <p className={'text-base text-text-secondary'}>Unable to load holdings history right now</p>
         </div>
@@ -227,9 +248,7 @@ export function PortfolioHistoryChart({
   if (isEmpty) {
     return (
       <section className={sectionClassName}>
-        <div className={'flex items-center justify-between'}>
-          <h2 className={'text-xl font-semibold text-text-primary'}>Holdings History</h2>
-        </div>
+        {renderHeader()}
         <div
           className={
             'relative h-[380px] overflow-hidden rounded-2xl border border-dashed border-border bg-surface-secondary sm:h-[320px]'
@@ -317,9 +336,7 @@ export function PortfolioHistoryChart({
   if (!data || data.length === 0) {
     return (
       <section className={sectionClassName}>
-        <div className={'flex items-center justify-between'}>
-          <h2 className={'text-xl font-semibold text-text-primary'}>Holdings History</h2>
-        </div>
+        {renderHeader()}
         <div className={'flex h-[300px] items-center justify-center'}>
           <p className={'text-base text-text-secondary'}>No holdings history available</p>
         </div>
@@ -329,26 +346,7 @@ export function PortfolioHistoryChart({
 
   return (
     <section className={sectionClassName}>
-      <div className={'flex items-center justify-between'}>
-        <h2 className={'text-xl font-semibold text-text-primary'}>Holdings History</h2>
-        <div className={'flex gap-2'}>
-          {(['30d', '90d', '1y'] as const).map((tf) => (
-            <button
-              key={tf}
-              type={'button'}
-              onClick={() => setTimeframe(tf)}
-              className={cl(
-                'min-h-[44px] rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
-                timeframe === tf
-                  ? 'border-accent-500 bg-accent-500 text-white'
-                  : 'border-border bg-surface text-text-secondary hover:border-accent-500 hover:text-accent-500'
-              )}
-            >
-              {tf}
-            </button>
-          ))}
-        </div>
-      </div>
+      {renderHeader(true)}
       <div className={'h-[300px]'}>
         <ChartContainer
           config={chartConfig}

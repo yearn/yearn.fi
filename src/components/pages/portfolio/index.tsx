@@ -45,8 +45,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
-import { usePortfolioPnL } from './hooks/usePortfolioPnL'
-import type { TPortfolioPnlSummary } from './types/api'
+import { usePortfolioProtocolReturn } from './hooks/usePortfolioProtocolReturn'
+import type { TPortfolioProtocolReturnSummary } from './types/api'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -91,8 +91,8 @@ type TPortfolioHeaderProps = Pick<
   | 'isSearchingBalances'
   | 'totalPortfolioValue'
 > & {
-  isPnlLoading: boolean
-  pnlSummary: TPortfolioPnlSummary | null
+  isProtocolReturnLoading: boolean
+  protocolReturnSummary: TPortfolioProtocolReturnSummary | null
 }
 
 type TPortfolioHoldingsProps = Pick<
@@ -153,26 +153,23 @@ function PortfolioHeaderSection({
   isActive,
   isHoldingsLoading,
   isSearchingBalances,
-  isPnlLoading,
-  pnlSummary,
+  isProtocolReturnLoading,
+  protocolReturnSummary,
   totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
-  const portfolioPnlTooltip = (
+  const usdGrowthTooltip = (
     <div className={metricTooltipContentClassName}>
-      <p>{'Market PnL on indexed Yearn vault positions.'}</p>
-      <p>
-        <span className="font-mono">{'totalPnlUsd = totalRealizedPnlUsd + totalUnrealizedPnlUsd'}</span>
-      </p>
+      <p>{'Approximate amount of USD Yearn has generated for you based on all your positions over time.'}</p>
+
+      <p>{'Protocol return only, price moves are excluded.'}</p>
     </div>
   )
 
-  const economicGainTooltip = (
+  const protocolReturnTooltip = (
     <div className={metricTooltipContentClassName}>
-      <p>{'Full economic benefit from the position.'}</p>
-      <p>
-        <span className="font-mono">{'totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd'}</span>
-      </p>
-      <p>{'Adds the receipt-time value of unknown-basis transfers on top of Portfolio PnL.'}</p>
+      <p>{'Percentage return Yearn has generated for you based on all your positions over time.'}</p>
+
+      <p>{'Protocol return only, price moves are excluded.'}</p>
     </div>
   )
 
@@ -221,7 +218,7 @@ function PortfolioHeaderSection({
   }
 
   function renderSignedCurrencyMetric(value: number | null): ReactElement {
-    if (isPnlLoading) return metricSpinner
+    if (isProtocolReturnLoading) return metricSpinner
     if (value === null) return <span>{'—'}</span>
 
     const toneClassName = value > 0 ? 'text-green-400' : value < 0 ? 'text-red-400' : 'text-text-primary'
@@ -229,37 +226,15 @@ function PortfolioHeaderSection({
     return <span className={toneClassName}>{formatSignedCurrency(value)}</span>
   }
 
-  function renderSignedCurrencyBreakdownValue(value: number): ReactElement {
-    const toneClassName = value > 0 ? 'text-green-400' : value < 0 ? 'text-red-400' : 'text-text-secondary'
-    return <span className={toneClassName}>{formatSignedCurrency(value)}</span>
-  }
+  function renderSignedPercentMetric(value: number | null | undefined): ReactElement {
+    if (isProtocolReturnLoading) return metricSpinner
+    if (value === null || value === undefined) return <span>{'—'}</span>
 
-  function renderPnlBreakdownLabel(values: {
-    stable: number | null | undefined
-    volatile: number | null | undefined
-  }): ReactElement | undefined {
-    if (
-      isPnlLoading ||
-      values.stable === null ||
-      values.stable === undefined ||
-      values.volatile === null ||
-      values.volatile === undefined
-    ) {
-      return undefined
-    }
+    const toneClassName = value > 0 ? 'text-green-400' : value < 0 ? 'text-red-400' : 'text-text-primary'
+    const absoluteValue = formatPercent(Math.abs(value), 2, 2, 10_000)
+    const signedValue = value > 0 ? `+${absoluteValue}` : value < 0 ? `-${absoluteValue}` : absoluteValue
 
-    return (
-      <div className={cl(METRIC_FOOTNOTE_CLASS, 'flex flex-wrap items-center gap-x-3 gap-y-1')}>
-        <span className="inline-flex items-center gap-1">
-          <span>{'Stable'}</span>
-          {renderSignedCurrencyBreakdownValue(values.stable)}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span>{'Volatile'}</span>
-          {renderSignedCurrencyBreakdownValue(values.volatile)}
-        </span>
-      </div>
-    )
+    return <span className={toneClassName}>{signedValue}</span>
   }
 
   const metrics: TMetricBlock[] = [
@@ -294,44 +269,33 @@ function PortfolioHeaderSection({
     }
   ]
 
-  const pnlMetrics: TMetricBlock[] = [
+  const protocolReturnMetrics: TMetricBlock[] = [
     {
-      key: 'portfolio-pnl',
-      header: <MetricHeader label="Portfolio PnL" mobileLabel="P&L" tooltip={portfolioPnlTooltip} />,
-      value: <span className={METRIC_VALUE_CLASS}>{renderSignedCurrencyMetric(pnlSummary?.totalPnlUsd ?? null)}</span>,
-      secondaryLabel: renderPnlBreakdownLabel({
-        stable: pnlSummary?.byCategory.stable.totalPnlUsd,
-        volatile: pnlSummary?.byCategory.volatile.totalPnlUsd
-      }),
+      key: 'usd-growth',
+      header: <MetricHeader label="USD Growth" mobileLabel="Growth" tooltip={usdGrowthTooltip} />,
+      value: (
+        <span className={METRIC_VALUE_CLASS}>
+          {renderSignedCurrencyMetric(protocolReturnSummary?.growthWeightUsd ?? null)}
+        </span>
+      ),
       footnote:
-        pnlSummary && !pnlSummary.isComplete ? (
+        protocolReturnSummary && !protocolReturnSummary.isComplete ? (
           <FootnoteWithTooltip
-            label={`${pnlSummary.partialVaults} ${pnlSummary.partialVaults === 1 ? 'vault has' : 'vaults have'} partial cost basis.`}
+            label={`${protocolReturnSummary.partialVaults} ${protocolReturnSummary.partialVaults === 1 ? 'vault is' : 'vaults are'} missing protocol-return data.`}
             tooltip={
-              'Partial cost basis means we know the current holding, but part of its acquisition history cannot be fully reconstructed. Current value is included, while PnL may be incomplete for those vaults.'
+              'Some vault rows are missing metadata, PPS, receipt price, or exit-matching data. The visible growth and return may be incomplete for those vaults.'
             }
           />
         ) : undefined
     },
     {
-      key: 'economic-gain',
-      header: <MetricHeader label="Economic Gain" mobileLabel="Gain" tooltip={economicGainTooltip} />,
+      key: 'protocol-return',
+      header: <MetricHeader label="Protocol Return" mobileLabel="Return" tooltip={protocolReturnTooltip} />,
       value: (
         <span className={METRIC_VALUE_CLASS}>
-          {renderSignedCurrencyMetric(pnlSummary?.totalEconomicGainUsd ?? null)}
+          {renderSignedPercentMetric(protocolReturnSummary?.protocolReturnPct)}
         </span>
-      ),
-      secondaryLabel: renderPnlBreakdownLabel({
-        stable: pnlSummary?.byCategory.stable.totalEconomicGainUsd,
-        volatile: pnlSummary?.byCategory.volatile.totalEconomicGainUsd
-      }),
-      footnote:
-        pnlSummary && Math.abs(pnlSummary.totalWindfallPnlUsd) > 0.005 ? (
-          <FootnoteWithTooltip
-            label={`Includes ${currencyFormatter.format(pnlSummary.totalWindfallPnlUsd)} windfall.`}
-            tooltip={'Windfall is value received from transfers with unknown original cost basis.'}
-          />
-        ) : undefined
+      )
     }
   ]
 
@@ -357,7 +321,7 @@ function PortfolioHeaderSection({
             mobileLayout="grid"
           />
           <MetricsCard
-            items={pnlMetrics}
+            items={protocolReturnMetrics}
             className="rounded-none border-x border-b border-border"
             mobileLayout="grid"
           />
@@ -1130,7 +1094,7 @@ function PortfolioPage(): ReactElement {
     error: historyError,
     isEmpty: historyEmpty
   } = usePortfolioHistory()
-  const { data: pnlSummary, isLoading: pnlLoading } = usePortfolioPnL()
+  const { data: protocolReturnSummary, isLoading: protocolReturnLoading } = usePortfolioProtocolReturn()
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
@@ -1242,8 +1206,8 @@ function PortfolioPage(): ReactElement {
             isHoldingsLoading={model.isHoldingsLoading}
             isSearchingBalances={model.isSearchingBalances}
             hasKatanaHoldings={model.hasKatanaHoldings}
-            isPnlLoading={pnlLoading}
-            pnlSummary={pnlSummary}
+            isProtocolReturnLoading={protocolReturnLoading}
+            protocolReturnSummary={protocolReturnSummary}
             totalPortfolioValue={model.totalPortfolioValue}
           />
           <PortfolioHistoryChart
