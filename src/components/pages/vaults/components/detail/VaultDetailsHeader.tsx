@@ -247,7 +247,7 @@ function VaultHeaderIdentity({
             )}
           >
             {isCompressed ? (
-              <div className={'inline-flex max-w-full min-w-0 items-start gap-1'}>
+              <div className={'inline-flex max-w-full min-w-0 items-start gap-2'}>
                 <div ref={titleSlotRef} className={'min-w-0'}>
                   <span
                     ref={titleMeasureRef}
@@ -463,9 +463,9 @@ function VaultOverviewCard({
   const hasInfinifiPoints = Boolean(yvUsdMetrics?.locked.hasInfinifiPoints || yvUsdMetrics?.unlocked.hasInfinifiPoints)
   const infinifiPointsNote = hasInfinifiPoints ? getYvUsdInfinifiPointsNote() : undefined
   const selectedApyIcon = isLockedApyVariant ? (
-    <IconLock className="size-4 text-text-secondary" />
+    <IconLock className="size-6 text-text-secondary" />
   ) : (
-    <IconLockOpen className="size-4 text-text-secondary" />
+    <IconLockOpen className="h-6 w-[30px] text-text-secondary" />
   )
   const apyToggleLabel = isLockedApyVariant ? 'Switch to unlocked APY display' : 'Switch to locked APY display'
   const toggleApyVariant = (): void => {
@@ -477,17 +477,19 @@ function VaultOverviewCard({
     setInternalYvUsdApyVariant(nextVariant)
   }
   const renderYvUsdApyValue = (value: number): ReactElement => (
-    <span className={cl('inline-flex items-center gap-2', METRIC_VALUE_CLASS)}>
+    <span className={cl('flex w-full min-w-0 items-center gap-2', METRIC_VALUE_CLASS)}>
+      <span className="inline-flex min-w-0 items-center gap-2">
+        {hasInfinifiPoints ? <IconInfinifiPoints className="size-3.5 shrink-0" aria-label="Infinifi points" /> : null}
+        <span>{formatApyDisplay(value)}</span>
+      </span>
       <button
         type="button"
         onClick={toggleApyVariant}
         aria-label={apyToggleLabel}
-        className="inline-flex items-center rounded-sm text-text-secondary transition-colors hover:text-text-primary"
+        className="ml-auto inline-flex shrink-0 mb-2 items-center rounded-sm text-text-secondary transition-colors hover:text-text-primary"
       >
         {selectedApyIcon}
       </button>
-      {hasInfinifiPoints ? <IconInfinifiPoints className="size-3.5 shrink-0" aria-label="Infinifi points" /> : null}
-      {formatApyDisplay(value)}
     </span>
   )
   const yvUsdEstApyTooltip = isYvUsd ? (
@@ -519,7 +521,12 @@ function VaultOverviewCard({
       key: 'est-apy',
       header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY based on underlying markets'} />,
       value: isYvUsd ? (
-        <Tooltip className={'gap-0 h-auto'} openDelayMs={150} tooltip={yvUsdEstApyTooltip ?? ''} align={'center'}>
+        <Tooltip
+          className={'h-auto w-full gap-0'}
+          openDelayMs={150}
+          tooltip={yvUsdEstApyTooltip ?? ''}
+          align={'center'}
+        >
           {renderYvUsdApyValue(selectedForwardApy)}
         </Tooltip>
       ) : (
@@ -537,7 +544,7 @@ function VaultOverviewCard({
       header: <MetricHeader label={'30 Day APY'} tooltip={'Average realized APY over the previous 30 days'} />,
       value: isYvUsd ? (
         <Tooltip
-          className={'gap-0 h-auto'}
+          className={'h-auto w-full gap-0'}
           openDelayMs={150}
           tooltip={yvUsdHistoricalApyTooltip ?? ''}
           align={'center'}
@@ -849,7 +856,7 @@ export function VaultDetailsHeaderPresentation({
                 <VaultHeaderIdentity
                   currentVault={currentVault}
                   isCompressed={isCompressed}
-                  className={'min-w-0 flex-[6] pl-6'}
+                  className={'min-w-0 flex-[5] pl-6'}
                   includeTourAttributes={includeTourAttributes}
                 />
                 <div className={'min-w-0 flex-[8] pl-4'}>

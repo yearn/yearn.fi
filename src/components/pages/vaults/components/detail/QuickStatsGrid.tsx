@@ -266,15 +266,7 @@ export function YvUsdApyStatBox({
         onKeyDown={handleCardKeyDown}
       >
         <p className={'text-[10px] min-[375px]:text-xs text-text-secondary truncate'}>{'Est. APY'}</p>
-        <div className={'mt-0.5 flex items-center gap-2'}>
-          <button
-            type={'button'}
-            onClick={handleToggle}
-            aria-label={toggleLabel}
-            className={'inline-flex size-5 items-center justify-center rounded-sm text-text-secondary'}
-          >
-            {isLockedVariant ? <IconLock className={'size-3.5'} /> : <IconLockOpen className={'size-3.5'} />}
-          </button>
+        <div className={'mt-0.5 flex w-full items-center gap-2'}>
           <div className={'flex min-w-0 flex-col'}>
             <span
               className={'inline-flex items-center gap-1.5 text-xs min-[375px]:text-sm font-semibold text-text-primary'}
@@ -286,6 +278,14 @@ export function YvUsdApyStatBox({
             </span>
             <span className={'text-[10px] min-[375px]:text-xs text-text-secondary'}>{selectedLabel}</span>
           </div>
+          <button
+            type={'button'}
+            onClick={handleToggle}
+            aria-label={toggleLabel}
+            className={'ml-auto inline-flex size-5 items-center justify-center rounded-sm text-text-secondary'}
+          >
+            {isLockedVariant ? <IconLock className={'size-3.5'} /> : <IconLockOpen className={'h-3.5 w-4'} />}
+          </button>
         </div>
       </div>
       <APYDetailsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={'yvUSD APY'}>

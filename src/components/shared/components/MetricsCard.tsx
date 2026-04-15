@@ -62,7 +62,7 @@ export function MetricsCard({
             <div
               key={item.key}
               className={cl(
-                'flex flex-1 flex-col gap-1 px-5 py-3',
+                'flex flex-1 flex-col gap-1 px-3 py-3',
                 isGrid ? 'bg-surface' : '',
                 index < items.length - 1 ? 'md:border-r md:border-border' : ''
               )}
