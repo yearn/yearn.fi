@@ -8,6 +8,7 @@ import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBan
 import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
 import type { WidgetActionType } from '@pages/vaults/types'
@@ -21,6 +22,7 @@ import {
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
+import { isYvBtcVault } from '@pages/vaults/utils/yvBtc'
 import {
   getYvUsdInfinifiPointsNote,
   getYvUsdSharePrice,
@@ -439,28 +441,34 @@ function VaultOverviewCard({
   const listKind = deriveListKind(currentVault)
   const isFactoryVault = listKind === 'factory'
   const isYvUsd = isYvUsdVault(currentVault)
+  const isYvBtc = isYvBtcVault(currentVault)
+  const isDualVariantVault = isYvUsd || isYvBtc
   const [internalYvUsdApyVariant, setInternalYvUsdApyVariant] = useState<TYvUsdVariant>('locked')
-  const { metrics: yvUsdMetrics, unlockedVault, lockedVault } = useYvUsdVaults()
+  const { metrics: yvUsdMetrics, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
+  const { metrics: yvBtcMetrics, unlockedVault: yvBtcUnlockedVault, lockedVault: yvBtcLockedVault } = useYvBtcVaults()
+  const dualMetrics = isYvBtc ? yvBtcMetrics : yvUsdMetrics
+  const unlockedVault = isYvBtc ? yvBtcUnlockedVault : yvUsdUnlockedVault
+  const lockedVault = isYvBtc ? yvBtcLockedVault : yvUsdLockedVault
   const isControlledYvUsdApyVariant = controlledYvUsdApyVariant !== undefined
   const yvUsdApyVariant = isControlledYvUsdApyVariant ? controlledYvUsdApyVariant : internalYvUsdApyVariant
   const unlockedForwardApy =
-    yvUsdMetrics?.unlocked.apy ?? (currentVault.apr?.forwardAPR?.netAPR || currentVault.apr?.netAPR || 0)
-  const lockedForwardApy = yvUsdMetrics?.locked.apy ?? lockedVault?.apr?.forwardAPR?.netAPR ?? 0
+    dualMetrics?.unlocked.apy ?? (currentVault.apr?.forwardAPR?.netAPR || currentVault.apr?.netAPR || 0)
+  const lockedForwardApy = dualMetrics?.locked.apy ?? lockedVault?.apr?.forwardAPR?.netAPR ?? 0
   const unlockedMonthly = unlockedVault?.apr?.points?.monthAgo ?? currentVault.apr.points.monthAgo
   const unlockedWeekly = unlockedVault?.apr?.points?.weekAgo ?? currentVault.apr.points.weekAgo
   const unlockedHistorical = getYvUsdHistoricalValue(unlockedMonthly, unlockedWeekly)
   const lockedMonthly = lockedVault?.apr?.points?.monthAgo ?? 0
   const lockedWeekly = lockedVault?.apr?.points?.weekAgo ?? 0
   const lockedHistorical = getYvUsdHistoricalValue(lockedMonthly, lockedWeekly)
-  const totalTvl = currentVault.tvl?.tvl ?? unlockedVault?.tvl?.tvl ?? yvUsdMetrics?.unlocked.tvl ?? 0
-  const lockedTvl = lockedVault?.tvl?.tvl ?? yvUsdMetrics?.locked.tvl ?? 0
+  const totalTvl = currentVault.tvl?.tvl ?? unlockedVault?.tvl?.tvl ?? dualMetrics?.unlocked.tvl ?? 0
+  const lockedTvl = lockedVault?.tvl?.tvl ?? dualMetrics?.locked.tvl ?? 0
   const tvlBreakdown = getYvUsdTvlBreakdown({ totalTvl, lockedTvl })
   const unlockedTvl = tvlBreakdown.unlockedTvl
   const combinedTvl = tvlBreakdown.totalTvl
   const isLockedApyVariant = yvUsdApyVariant === 'locked'
   const selectedForwardApy = isLockedApyVariant ? lockedForwardApy : unlockedForwardApy
   const selectedHistoricalApy = isLockedApyVariant ? lockedHistorical : unlockedHistorical
-  const hasInfinifiPoints = Boolean(yvUsdMetrics?.locked.hasInfinifiPoints || yvUsdMetrics?.unlocked.hasInfinifiPoints)
+  const hasInfinifiPoints = Boolean(dualMetrics?.locked.hasInfinifiPoints || dualMetrics?.unlocked.hasInfinifiPoints)
   const infinifiPointsNote = hasInfinifiPoints ? getYvUsdInfinifiPointsNote() : undefined
   const selectedApyIcon = isLockedApyVariant ? (
     <IconLock className="size-6 text-text-secondary" />
@@ -492,7 +500,7 @@ function VaultOverviewCard({
       </button>
     </span>
   )
-  const yvUsdEstApyTooltip = isYvUsd ? (
+  const yvUsdEstApyTooltip = isDualVariantVault ? (
     <YvUsdApyTooltipContent
       lockedValue={lockedForwardApy}
       unlockedValue={unlockedForwardApy}
@@ -500,7 +508,7 @@ function VaultOverviewCard({
       infinifiPointsNote={infinifiPointsNote}
     />
   ) : undefined
-  const yvUsdHistoricalApyTooltip = isYvUsd ? (
+  const yvUsdHistoricalApyTooltip = isDualVariantVault ? (
     <YvUsdApyTooltipContent
       lockedValue={lockedHistorical}
       unlockedValue={unlockedHistorical}
@@ -508,7 +516,7 @@ function VaultOverviewCard({
       infinifiPointsNote={infinifiPointsNote}
     />
   ) : undefined
-  const yvUsdTvlTooltip = isYvUsd ? (
+  const yvUsdTvlTooltip = isDualVariantVault ? (
     <YvUsdTvlTooltipContent
       lockedValue={lockedTvl}
       unlockedValue={unlockedTvl}
@@ -520,7 +528,7 @@ function VaultOverviewCard({
     {
       key: 'est-apy',
       header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY based on underlying markets'} />,
-      value: isYvUsd ? (
+      value: isDualVariantVault ? (
         <Tooltip
           className={'h-auto w-full gap-0'}
           openDelayMs={150}
@@ -542,7 +550,7 @@ function VaultOverviewCard({
     {
       key: 'historical-apy',
       header: <MetricHeader label={'30 Day APY'} tooltip={'Average realized APY over the previous 30 days'} />,
-      value: isYvUsd ? (
+      value: isDualVariantVault ? (
         <Tooltip
           className={'h-auto w-full gap-0'}
           openDelayMs={150}
@@ -564,7 +572,7 @@ function VaultOverviewCard({
     {
       key: 'tvl',
       header: <MetricHeader label={'TVL'} tooltip={'Total value currently deposited into this vault'} />,
-      value: isYvUsd ? (
+      value: isDualVariantVault ? (
         <span className={METRIC_VALUE_CLASS}>
           <RenderAmount
             value={combinedTvl || 0}
@@ -580,7 +588,7 @@ function VaultOverviewCard({
       ) : (
         <VaultTVL currentVault={currentVault} valueClassName={METRIC_VALUE_CLASS} />
       ),
-      footnote: isYvUsd ? (
+      footnote: isDualVariantVault ? (
         yvUsdTvlTooltip
       ) : (
         <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>

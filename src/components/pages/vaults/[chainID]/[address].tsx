@@ -23,6 +23,7 @@ import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
+import { YvBtcWidget } from '@pages/vaults/components/widget/yvBTC/YvBtcWidget'
 import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
 import { YvUsdApyTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
@@ -44,8 +45,10 @@ import { useVaultRecentReallocations } from '@pages/vaults/hooks/useVaultRecentR
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
+import { isYvBtcAddress, YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import {
   getYvUsdInfinifiPointsNote,
   getYvUsdSharePrice,
@@ -432,7 +435,16 @@ function Index(): ReactElement | null {
     lockedVault: yvUsdLockedVault,
     isLoading: isLoadingYvUsd
   } = useYvUsdVaults()
+  const {
+    listVault: yvBtcVault,
+    unlockedVault: yvBtcUnlockedVault,
+    lockedVault: yvBtcLockedVault,
+    metrics: yvBtcMetrics,
+    isLoading: isLoadingYvBtc
+  } = useYvBtcVaults()
   const isYvUsd = isYvUsdAddress(params.address)
+  const isYvBtc = isYvBtcAddress(params.address)
+  const isDualVariantVault = isYvUsd || isYvBtc
   const isLockedYvUsdRoute =
     chainId === YVUSD_CHAIN_ID && params.address ? toAddress(params.address) === YVUSD_LOCKED_ADDRESS : false
   const unlockedYvUsdPath = `/vaults/${YVUSD_CHAIN_ID}/${YVUSD_UNLOCKED_ADDRESS}${location.search}${location.hash}`
@@ -537,11 +549,11 @@ function Index(): ReactElement | null {
   const isSnapshotNotFound = (snapshotError as any)?.response?.status === 404
 
   const isYBold = useMemo(() => {
-    if (isYvUsd) return false
+    if (isDualVariantVault) return false
     if (!baseVault?.address && !params.address) return false
     const resolvedAddress = toAddress(baseVault?.address ?? params.address ?? '0x')
     return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
-  }, [isYvUsd, baseVault?.address, params.address])
+  }, [isDualVariantVault, baseVault?.address, params.address])
 
   const yBoldStakingVault = useMemo(() => {
     if (!isYBold) return undefined
@@ -590,7 +602,7 @@ function Index(): ReactElement | null {
   const snapshotShouldDisableStaking = mergedSnapshot?.meta?.shouldDisableStaking
   const hasTriggeredVaultListFetch = useEnsureVaultListFetch({
     hasVaultList,
-    isYvUsd,
+    isYvUsd: isDualVariantVault,
     snapshotVault,
     enableVaultListFetch
   })
@@ -605,9 +617,23 @@ function Index(): ReactElement | null {
     if (isYvUsd) {
       return yvUsdVault ?? yvUsdUnlockedVault ?? yvUsdLockedVault
     }
+    if (isYvBtc) {
+      return yvBtcVault ?? yvBtcUnlockedVault ?? yvBtcLockedVault
+    }
     if (!vaultViewInput) return undefined
     return getVaultView(vaultViewInput, mergedSnapshot)
-  }, [isYvUsd, yvUsdVault, yvUsdUnlockedVault, yvUsdLockedVault, vaultViewInput, mergedSnapshot])
+  }, [
+    isYvUsd,
+    isYvBtc,
+    yvUsdVault,
+    yvUsdUnlockedVault,
+    yvUsdLockedVault,
+    yvBtcVault,
+    yvBtcUnlockedVault,
+    yvBtcLockedVault,
+    vaultViewInput,
+    mergedSnapshot
+  ])
   const {
     panels: recentReallocationPanels,
     isLoading: isLoadingRecentReallocations,
@@ -620,8 +646,10 @@ function Index(): ReactElement | null {
     isV3Vault && (recentReallocationPanels.length > 0 || isLoadingRecentReallocations || hasRecentReallocationsError)
 
   const shouldBootstrapYvUsdVaultList = isYvUsd && !hasVaultList && !hasTriggeredVaultListFetch
-  const isLoadingVault = isYvUsd
-    ? isLoadingYvUsd || shouldBootstrapYvUsdVaultList
+  const shouldBootstrapYvBtcVaultList = isYvBtc && !hasVaultList && !hasTriggeredVaultListFetch
+  const isLoadingVault = isDualVariantVault
+    ? (isYvUsd && (isLoadingYvUsd || shouldBootstrapYvUsdVaultList)) ||
+      (isYvBtc && (isLoadingYvBtc || shouldBootstrapYvBtcVaultList))
     : !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
   const vaultApyData = useVaultApyData(currentVault ?? EMPTY_VAULT_FOR_APY_DATA)
   const stakingAddress = !isZeroAddress(currentVault?.staking?.address)
@@ -668,10 +696,12 @@ function Index(): ReactElement | null {
       return []
     }
 
-    if (isYvUsd) {
+    if (isDualVariantVault) {
+      const unlockedAddress = isYvBtc ? YVBTC_UNLOCKED_ADDRESS : YVUSD_UNLOCKED_ADDRESS
+      const lockedAddress = isYvBtc ? YVBTC_LOCKED_ADDRESS : YVUSD_LOCKED_ADDRESS
       const addresses: TVaultAddressItem[] = [
-        { address: YVUSD_UNLOCKED_ADDRESS, label: 'Unlocked Vault Contract Address' },
-        { address: YVUSD_LOCKED_ADDRESS, label: 'Locked Vault Contract Address' }
+        { address: unlockedAddress, label: 'Unlocked Vault Contract Address' },
+        { address: lockedAddress, label: 'Locked Vault Contract Address' }
       ]
       if (!isZeroAddress(currentVault.token.address)) {
         addresses.push({ address: toAddress(currentVault.token.address), label: 'Token Contract Address' })
@@ -692,22 +722,24 @@ function Index(): ReactElement | null {
       addresses.push({ address: toAddress(currentVault.staking.address), label: 'Staking Contract Address' })
     }
     return addresses
-  }, [currentVault, isYvUsd])
+  }, [currentVault, isDualVariantVault, isYvBtc])
   const additionalFeaturesContent = useMemo((): ReactNode => {
     if (!currentVault) {
       return null
     }
 
+    const dualUnlockedVault = isYvBtc ? yvBtcUnlockedVault : yvUsdVault
+    const dualLockedVault = isYvBtc ? yvBtcLockedVault : yvUsdLockedVault
     const unlockedApy =
-      yvUsdVault?.apr.forwardAPR.netAPR ?? currentVault.apr.forwardAPR.netAPR ?? currentVault.apr.netAPR ?? 0
-    const lockedApy = yvUsdLockedVault?.apr.forwardAPR.netAPR ?? yvUsdLockedVault?.apr.netAPR ?? 0
+      dualUnlockedVault?.apr.forwardAPR.netAPR ?? currentVault.apr.forwardAPR.netAPR ?? currentVault.apr.netAPR ?? 0
+    const lockedApy = dualLockedVault?.apr.forwardAPR.netAPR ?? dualLockedVault?.apr.netAPR ?? 0
 
-    const tooltipContent = isYvUsd ? (
+    const tooltipContent = isDualVariantVault ? (
       <YvUsdApyTooltipContent
         lockedValue={lockedApy}
         unlockedValue={unlockedApy}
         infinifiPointsNote={
-          currentVault.address === YVUSD_UNLOCKED_ADDRESS || currentVault.address === YVUSD_LOCKED_ADDRESS
+          isYvUsd && (currentVault.address === YVUSD_UNLOCKED_ADDRESS || currentVault.address === YVUSD_LOCKED_ADDRESS)
             ? getYvUsdInfinifiPointsNote()
             : undefined
         }
@@ -733,8 +765,12 @@ function Index(): ReactElement | null {
     })
   }, [
     currentVault,
+    isDualVariantVault,
+    isYvBtc,
     isYvUsd,
     vaultApyData,
+    yvBtcLockedVault,
+    yvBtcUnlockedVault,
     yvUsdLockedVault?.apr.forwardAPR.netAPR,
     yvUsdLockedVault?.apr.netAPR,
     yvUsdVault?.apr.forwardAPR.netAPR
@@ -1366,6 +1402,15 @@ function Index(): ReactElement | null {
   const mobileProductTypeLabel = getMobileProductTypeLabel()
   const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
+  const yvBtcMobileApyBox = (
+    <YvUsdApyStatBox
+      lockedApy={yvBtcMetrics.locked.apy}
+      unlockedApy={yvBtcMetrics.unlocked.apy}
+      activeVariant={yvUsdApyVariant}
+      onVariantChange={setYvUsdApyVariant}
+      title={'yvBTC APY'}
+    />
+  )
 
   function renderDetailCharts(chartHeightPx: number, chartHeightMdPx: number): ReactElement {
     if (isYvUsd) {
@@ -1393,6 +1438,20 @@ function Index(): ReactElement | null {
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
           onDepositVariantChange={setYvUsdApyVariant}
+          showTabs={false}
+          collapseDetails={shouldCollapseWidgetDetails}
+        />
+      )
+    }
+    if (isYvBtc) {
+      return (
+        <YvBtcWidget
+          chainId={chainId}
+          mode={resolvedWidgetMode}
+          onModeChange={setWidgetMode}
+          onOpenSettings={toggleWidgetSettings}
+          isSettingsOpen={isWidgetSettingsOpen}
+          onVariantChange={setYvUsdApyVariant}
           showTabs={false}
           collapseDetails={shouldCollapseWidgetDetails}
         />
@@ -1429,6 +1488,18 @@ function Index(): ReactElement | null {
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
           onDepositVariantChange={setYvUsdApyVariant}
+          showTabs={false}
+        />
+      )
+    }
+    if (isYvBtc) {
+      return (
+        <YvBtcWidget
+          chainId={chainId}
+          mode={mobileDrawerAction}
+          onOpenSettings={toggleWidgetSettings}
+          isSettingsOpen={isWidgetSettingsOpen}
+          onVariantChange={setYvUsdApyVariant}
           showTabs={false}
         />
       )
@@ -1571,6 +1642,13 @@ function Index(): ReactElement | null {
               currentVault={currentVault}
               apyVariant={yvUsdApyVariant}
               onApyVariantChange={setYvUsdApyVariant}
+            />
+          ) : isYvBtc ? (
+            <MobileKeyMetrics
+              currentVault={currentVault}
+              depositedValue={vaultUserData.depositedValue}
+              tokenPrice={currentVault.tvl.price || 0}
+              apyBox={yvBtcMobileApyBox}
             />
           ) : (
             <MobileKeyMetrics

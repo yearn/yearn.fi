@@ -210,7 +210,8 @@ export function YvUsdApyStatBox({
   activeVariant,
   onVariantChange,
   lockedHasInfinifiPoints = false,
-  unlockedHasInfinifiPoints = false
+  unlockedHasInfinifiPoints = false,
+  title = 'yvUSD APY'
 }: {
   lockedApy: number
   unlockedApy: number
@@ -218,6 +219,7 @@ export function YvUsdApyStatBox({
   onVariantChange?: (variant: TYvUsdVariant) => void
   lockedHasInfinifiPoints?: boolean
   unlockedHasInfinifiPoints?: boolean
+  title?: string
 }): ReactElement {
   const [internalVariant, setInternalVariant] = useState<TYvUsdVariant>('locked')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -261,7 +263,7 @@ export function YvUsdApyStatBox({
         }
         role={'button'}
         tabIndex={0}
-        aria-label={'Open yvUSD APY details'}
+        aria-label={`Open ${title} details`}
         onClick={() => setIsModalOpen(true)}
         onKeyDown={handleCardKeyDown}
       >
@@ -288,7 +290,7 @@ export function YvUsdApyStatBox({
           </button>
         </div>
       </div>
-      <APYDetailsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={'yvUSD APY'}>
+      <APYDetailsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={title}>
         <YvUsdApyDetailsContent
           lockedValue={lockedApy}
           unlockedValue={unlockedApy}
