@@ -4,6 +4,7 @@ import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoric
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
 import {
+  formatDuration,
   parseCooldownStatus,
   resolveCooldownWindowState,
   resolveYvUsdCooldownSummary
@@ -56,7 +57,16 @@ import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
-import { cl, formatApyDisplay, formatUSD, isZero, SELECTOR_BAR_STYLES, toAddress, toNormalizedBN } from '@shared/utils'
+import {
+  cl,
+  formatApyDisplay,
+  formatTAmount,
+  formatUSD,
+  isZero,
+  SELECTOR_BAR_STYLES,
+  toAddress,
+  toNormalizedBN
+} from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement, Ref } from 'react'
@@ -73,6 +83,9 @@ function noopSelectSection(_key: string): void {}
 
 const COMPRESSED_TITLE_FULL_SIZE_CLASS = 'md:text-[30px] md:leading-9'
 const COMPRESSED_TITLE_COMPACT_SIZE_CLASS = 'md:text-[20px] md:leading-6'
+const HEADER_METRIC_ITEM_CLASS = 'min-h-0'
+const HEADER_METRIC_HEADER_CLASS = 'min-h-4'
+const HEADER_METRIC_VALUE_CLASS = 'flex min-h-[30px] items-center'
 
 function getVaultProductTypeLabel(listKind: ReturnType<typeof deriveListKind>): string {
   if (listKind === 'allocator' || listKind === 'strategy') {
@@ -502,7 +515,7 @@ function VaultOverviewCard({
         type="button"
         onClick={toggleApyVariant}
         aria-label={apyToggleLabel}
-        className="ml-auto inline-flex shrink-0 mb-2 items-center rounded-sm text-text-secondary transition-colors hover:text-text-primary"
+        className="ml-auto inline-flex shrink-0 mb-1 items-center rounded-sm text-text-secondary transition-colors hover:text-text-primary"
       >
         {selectedApyIcon}
       </button>
@@ -622,8 +635,11 @@ function VaultOverviewCard({
         items={metrics}
         className={cl(
           'rounded-b-none',
-          isCompressed ? 'border-l border-border rounded-l-none' : 'border border-border'
+          isCompressed ? 'border-l border-border rounded-l-none' : 'px-2 border border-border'
         )}
+        itemClassName={HEADER_METRIC_ITEM_CLASS}
+        headerClassName={HEADER_METRIC_HEADER_CLASS}
+        valueClassName={HEADER_METRIC_VALUE_CLASS}
         footnoteDisplay={'tooltip'}
       />
     </div>
@@ -692,6 +708,12 @@ function YvUsdUserHoldingsCard({
     windowEnd: cooldownStatus.windowEnd,
     availableWithdrawLimit
   })
+  const cooldownRemainingSeconds = cooldownWindowState.isCooldownActive
+    ? Math.max(cooldownStatus.cooldownEnd - nowTimestamp, 0)
+    : 0
+  const withdrawalWindowRemainingSeconds = cooldownWindowState.isWithdrawalWindowOpen
+    ? Math.max(cooldownStatus.windowEnd - nowTimestamp, 0)
+    : 0
   const cooldownSummary = resolveYvUsdCooldownSummary({
     hasActiveCooldown,
     isCooldownActive: cooldownWindowState.isCooldownActive,
@@ -707,41 +729,46 @@ function YvUsdUserHoldingsCard({
     lockedUserData.depositedValue,
     lockedUserData.assetToken?.decimals ?? 18
   ).normalized
+  const sharesUnderCooldown = hasActiveCooldown ? cooldownStatus.shares : 0n
+  const lockedVaultDecimals = lockedUserData.vaultToken?.decimals ?? 18
+  const lockedAssetDecimals = lockedUserData.assetToken?.decimals ?? 18
+  const lockedAssetSymbol = lockedUserData.assetToken?.symbol ?? 'yvUSD'
+  const assetsUnderCooldown =
+    sharesUnderCooldown > 0n && lockedUserData.pricePerShare > 0n
+      ? (sharesUnderCooldown * lockedUserData.pricePerShare) / 10n ** BigInt(lockedVaultDecimals)
+      : 0n
   const unlockedAssetPrice =
     getPrice({ address: unlockedAssetAddress, chainID: YVUSD_CHAIN_ID }).normalized || unlockedVault?.tvl.price || 0
   const unlockedSharePrice = getYvUsdSharePrice(unlockedVault, unlockedAssetPrice)
   const unlockedValueUsd = unlockedAmount * unlockedAssetPrice
   const lockedValueUsd = lockedAmount * unlockedSharePrice
   const totalValueUsd = unlockedValueUsd + lockedValueUsd
-  const cooldownBadgeClassName =
-    cooldownSummary?.tone === 'ready'
-      ? 'border-[#00796D]/30 bg-[#00796D]/10 text-[#00796D]'
-      : cooldownSummary?.tone === 'expired'
-        ? 'border-[#C73203]/30 bg-[#C73203]/10 text-[#C73203]'
-        : 'border-[#C47B07]/30 bg-[#C47B07]/10 text-[#C47B07]'
-  const depositsHeaderLabel = (
-    <span className={'flex items-center gap-2'}>
-      <span>{'Your Deposits'}</span>
-      {cooldownSummary ? (
-        <span
-          className={cl(
-            'rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-            cooldownBadgeClassName
-          )}
-        >
-          {cooldownSummary.label}
-        </span>
-      ) : null}
-    </span>
-  )
+  const hasLockedDeposits = lockedUserData.depositedValue > 0n || hasActiveCooldown
+  const cooldownValueUsd = toNormalizedBN(assetsUnderCooldown, lockedAssetDecimals).normalized * unlockedSharePrice
+  const withdrawableValueUsd =
+    toNormalizedBN(availableWithdrawLimit, lockedAssetDecimals).normalized * unlockedSharePrice
+  const cooldownStatusLabel = cooldownSummary?.label ?? 'No active cooldown'
+  const cooldownPrimaryValueUsd = cooldownWindowState.isWithdrawalWindowOpen ? withdrawableValueUsd : cooldownValueUsd
+  const cooldownHeaderLabel = cooldownWindowState.isWithdrawalWindowOpen
+    ? 'WITHDRAWABLE'
+    : cooldownWindowState.isCooldownWindowExpired
+      ? 'EXPIRED COOLDOWN'
+      : 'IN COOLDOWN'
+  const cooldownTimerLabel = cooldownWindowState.isCooldownActive
+    ? formatDuration(cooldownRemainingSeconds)
+    : cooldownWindowState.isWithdrawalWindowOpen && withdrawalWindowRemainingSeconds > 0
+      ? `${formatDuration(withdrawalWindowRemainingSeconds)} left`
+      : cooldownWindowState.isCooldownWindowExpired
+        ? 'Window closed'
+        : 'Not started'
+  const cooldownAmountLabel = cooldownWindowState.isWithdrawalWindowOpen ? 'Withdrawable now' : 'In cooldown'
 
   const sections: TMetricBlock[] = [
     {
       key: 'deposited',
       header: (
         <MetricHeader
-          label={depositsHeaderLabel}
-          mobileLabel={depositsHeaderLabel}
+          label={'Your Deposits'}
           tooltip={'Review the USD value of everything you have supplied to this vault so far.'}
         />
       ),
@@ -752,12 +779,6 @@ function YvUsdUserHoldingsCard({
       ),
       footnote: (
         <div className={cl(METRIC_FOOTNOTE_CLASS, 'flex flex-col gap-1')} suppressHydrationWarning>
-          {cooldownSummary ? (
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-text-secondary">{'Locked status'}</span>
-              <span className="text-right text-text-primary">{cooldownSummary.label}</span>
-            </div>
-          ) : null}
           <div className="flex items-center justify-between gap-4">
             <span className="inline-flex items-center gap-2 text-text-secondary">
               <IconLock className="size-3" />
@@ -784,7 +805,57 @@ function YvUsdUserHoldingsCard({
           </div>
         </div>
       )
-    }
+    },
+    ...(hasLockedDeposits
+      ? [
+          {
+            key: 'cooldowns',
+            header: (
+              <MetricHeader
+                label={cooldownHeaderLabel}
+                tooltip={
+                  'Review the value currently cooling down and the value currently withdrawable from locked yvUSD.'
+                }
+              />
+            ),
+            value: (
+              <span
+                className={cl(
+                  METRIC_VALUE_CLASS,
+                  'inline-flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[18px] md:text-[20px]'
+                )}
+                suppressHydrationWarning
+              >
+                <span>{formatUSD(cooldownPrimaryValueUsd)}</span>
+                <span className={'text-[11px] font-normal leading-tight text-text-secondary md:text-xs'}>
+                  {cooldownTimerLabel}
+                </span>
+              </span>
+            ),
+            footnote: (
+              <div className={cl(METRIC_FOOTNOTE_CLASS, 'flex flex-col gap-1')} suppressHydrationWarning>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-text-secondary">{'Status'}</span>
+                  <span className="text-right text-text-primary">{cooldownStatusLabel}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-text-secondary">{cooldownAmountLabel}</span>
+                  <span className="text-right text-text-primary">
+                    {`${formatTAmount({
+                      value: cooldownWindowState.isWithdrawalWindowOpen ? availableWithdrawLimit : assetsUnderCooldown,
+                      decimals: lockedAssetDecimals
+                    })} ${lockedAssetSymbol}`}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-text-secondary">{'Timer'}</span>
+                  <span className="text-right text-text-primary">{cooldownTimerLabel}</span>
+                </div>
+              </div>
+            )
+          } satisfies TMetricBlock
+        ]
+      : [])
   ]
 
   return (
@@ -793,8 +864,11 @@ function YvUsdUserHoldingsCard({
         items={sections}
         className={cl(
           'rounded-b-none',
-          isCompressed ? 'rounded-tl-lg border-t border-x border-border' : 'border-t border-x border-border'
+          isCompressed ? 'px-2 rounded-tl-lg border-t border-x border-border' : 'px-2 border-t border-x border-border'
         )}
+        itemClassName={HEADER_METRIC_ITEM_CLASS}
+        headerClassName={HEADER_METRIC_HEADER_CLASS}
+        valueClassName={HEADER_METRIC_VALUE_CLASS}
         footnoteDisplay={'tooltip'}
       />
     </div>
@@ -859,7 +933,7 @@ function UserHoldingsCard({
         items={sections}
         className={cl(
           'rounded-b-none',
-          isCompressed ? 'rounded-tl-lg border-t border-x border-border' : 'border-t border-x border-border'
+          isCompressed ? 'px-2 rounded-tl-lg border-t border-x border-border' : 'px-2 border-t border-x border-border'
         )}
         footnoteDisplay={'tooltip'}
       />
