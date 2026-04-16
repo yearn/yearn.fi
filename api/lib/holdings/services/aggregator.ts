@@ -27,6 +27,17 @@ export interface HoldingsHistoryResponse {
   dataPoints: Array<{ date: string; timestamp: number; totalUsdValue: number }>
 }
 
+export type HoldingsHistoryDenomination = 'usd' | 'eth'
+
+export interface HoldingsHistoryChartResponse {
+  address: string
+  periodDays: number
+  denomination: HoldingsHistoryDenomination
+  dataPoints: Array<{ date: string; timestamp: number; value: number }>
+}
+
+const ETHEREUM_WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+
 export interface HoldingsBreakdownVaultResponse {
   chainId: number
   vaultAddress: string
@@ -369,6 +380,47 @@ export async function getHistoricalHoldings(
     address: userAddress,
     periodDays: days,
     dataPoints
+  }
+}
+
+export async function getHistoricalHoldingsChart(
+  userAddress: string,
+  version: VaultVersion = 'all',
+  fetchType: HoldingsEventFetchType = 'seq',
+  paginationMode: HoldingsEventPaginationMode = 'paged',
+  denomination: HoldingsHistoryDenomination = 'usd'
+): Promise<HoldingsHistoryChartResponse> {
+  const holdings = await getHistoricalHoldings(userAddress, version, fetchType, paginationMode)
+
+  if (denomination === 'usd') {
+    return {
+      address: holdings.address,
+      periodDays: holdings.periodDays,
+      denomination,
+      dataPoints: holdings.dataPoints.map((point) => ({
+        date: point.date,
+        timestamp: point.timestamp,
+        value: point.totalUsdValue
+      }))
+    }
+  }
+
+  const timestamps = holdings.dataPoints.map((point) => point.timestamp)
+  const ethPriceMap = await fetchHistoricalPrices([{ chainId: 1, address: ETHEREUM_WETH_ADDRESS }], timestamps)
+  const ethPrices = ethPriceMap.get(`${getChainPrefix(1)}:${ETHEREUM_WETH_ADDRESS.toLowerCase()}`)
+
+  return {
+    address: holdings.address,
+    periodDays: holdings.periodDays,
+    denomination,
+    dataPoints: holdings.dataPoints.map((point) => {
+      const ethPriceUsd = ethPrices ? getPriceAtTimestamp(ethPrices, point.timestamp) : 0
+      return {
+        date: point.date,
+        timestamp: point.timestamp,
+        value: ethPriceUsd > 0 ? point.totalUsdValue / ethPriceUsd : 0
+      }
+    })
   }
 }
 

@@ -127,6 +127,20 @@ protocolReturnPct = growthWeightUsd / baselineWeightUsd * 100
 
 Because both numerator and denominator use the same receipt-time price, later token price movement does not affect `protocolReturnPct`. The metric is driven by PPS / withdrawable-underlying growth only.
 
+The route now also exposes an annualized variant built from time-weighted baseline exposure:
+
+```text
+baselineExposureWeightUsdYears =
+  integral over time of (baselineUnderlying * receiptTokenPriceUsd)
+  ---------------------------------------------------------------
+                              seconds per year
+
+annualizedProtocolReturnPct =
+  growthWeightUsd / baselineExposureWeightUsdYears * 100
+```
+
+This is intended for high-turnover wallets where cumulative receipts can materially exceed the capital that was actually sitting in vaults at any one time.
+
 ## Vault Families
 
 The engine does not treat the staking wrapper as a separate investment from the underlying vault.

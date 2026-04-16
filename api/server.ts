@@ -8,13 +8,14 @@ import type {
 import {
   clearUserCache,
   deleteStaleCache,
-  getHistoricalHoldings,
+  getHistoricalHoldingsChart,
   getHoldingsBreakdown,
   getHoldingsPnL,
   getHoldingsPnLDrilldown,
   getHoldingsPnLSimple,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
+  type HoldingsHistoryDenomination,
   initializeSchema,
   isDatabaseEnabled,
   type UnknownTransferInPnlMode,
@@ -155,6 +156,10 @@ function parseHoldingsEventFetchType(value: string | null): HoldingsEventFetchTy
 
 function parseHoldingsEventPaginationMode(value: string | null): HoldingsEventPaginationMode {
   return value === 'all' ? 'all' : 'paged'
+}
+
+function parseHoldingsHistoryDenomination(value: string | null): HoldingsHistoryDenomination {
+  return value === 'eth' ? 'eth' : 'usd'
 }
 
 function parseUtcDateParam(value: string | null): number | null {
@@ -446,6 +451,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const versionParam = url.searchParams.get('version')
   const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
   const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+  const denomination = parseHoldingsHistoryDenomination(url.searchParams.get('denomination'))
   const debugEnabled =
     isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
   const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
@@ -488,14 +494,15 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
         })
 
         try {
-          const response = await getHistoricalHoldings(address, version, fetchType, paginationMode)
+          const response = await getHistoricalHoldingsChart(address, version, fetchType, paginationMode, denomination)
           debugLog('route', 'completed holdings history request', {
             version,
             fetchType,
             paginationMode,
+            denomination,
             refresh,
             points: response.dataPoints.length,
-            nonZeroPoints: response.dataPoints.filter((point) => point.totalUsdValue > 0).length
+            nonZeroPoints: response.dataPoints.filter((point) => point.value > 0).length
           })
           return response
         } catch (error) {
@@ -505,7 +512,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       }
     )
 
-    const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
+    const hasHoldings = holdings.dataPoints.some((dp) => dp.value > 0)
     if (!hasHoldings) {
       return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
@@ -514,9 +521,10 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       {
         address: holdings.address,
         version,
+        denomination,
         dataPoints: holdings.dataPoints.map((dp) => ({
           date: dp.date,
-          value: dp.totalUsdValue
+          value: dp.value
         }))
       },
       {

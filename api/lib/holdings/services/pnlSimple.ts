@@ -45,6 +45,8 @@ type TProtocolReturnLedger = {
   vaultAddress: string
   lots: TProtocolReturnLot[]
   baselineUnderlying: number
+  baselineExposureUnderlyingSeconds: number
+  baselineExposureWeightUsdSeconds: number
   realizedBaselineUnderlying: number
   realizedGrowthUnderlying: number
   realizedBaselineWeightUsd: number
@@ -59,6 +61,7 @@ type TProtocolReturnLedger = {
   transfersOut: number
   missingPps: boolean
   missingReceiptPrice: boolean
+  lastAccruedTimestamp: number | null
 }
 
 export type TSimpleReceiptPriceRequest = {
@@ -79,6 +82,8 @@ export interface HoldingsPnLSimpleVault {
   pricePerShare: number
   currentUnderlying: number
   baselineUnderlying: number
+  baselineExposureUnderlyingYears: number
+  baselineExposureWeightUsdYears: number
   realizedBaselineUnderlying: number
   unrealizedBaselineUnderlying: number
   realizedGrowthUnderlying: number
@@ -89,6 +94,7 @@ export interface HoldingsPnLSimpleVault {
   realizedGrowthWeightUsd: number
   unrealizedGrowthWeightUsd: number
   protocolReturnPct: number | null
+  annualizedProtocolReturnPct: number | null
   receiptCount: number
   exitCount: number
   deposits: number
@@ -115,13 +121,17 @@ export interface HoldingsPnLSimpleResponse {
     partialVaults: number
     baselineWeightUsd: number
     growthWeightUsd: number
+    baselineExposureWeightUsdYears: number
     realizedGrowthWeightUsd: number
     unrealizedGrowthWeightUsd: number
     protocolReturnPct: number | null
+    annualizedProtocolReturnPct: number | null
     isComplete: boolean
   }
   vaults: HoldingsPnLSimpleVault[]
 }
+
+const SECONDS_PER_YEAR = 365 * 24 * 60 * 60
 
 function emptyLedger(chainId: number, vaultAddress: string): TProtocolReturnLedger {
   return {
@@ -129,6 +139,8 @@ function emptyLedger(chainId: number, vaultAddress: string): TProtocolReturnLedg
     vaultAddress,
     lots: [],
     baselineUnderlying: 0,
+    baselineExposureUnderlyingSeconds: 0,
+    baselineExposureWeightUsdSeconds: 0,
     realizedBaselineUnderlying: 0,
     realizedGrowthUnderlying: 0,
     realizedBaselineWeightUsd: 0,
@@ -142,7 +154,8 @@ function emptyLedger(chainId: number, vaultAddress: string): TProtocolReturnLedg
     transfersIn: 0,
     transfersOut: 0,
     missingPps: false,
-    missingReceiptPrice: false
+    missingReceiptPrice: false,
+    lastAccruedTimestamp: null
   }
 }
 
@@ -156,6 +169,10 @@ function scaleNumber(value: number, numerator: bigint, denominator: bigint): num
 
 function protocolReturnPct(growth: number, baseline: number): number | null {
   return baseline > 0 ? (growth / baseline) * 100 : null
+}
+
+function annualizedProtocolReturnPct(growth: number, exposureYears: number): number | null {
+  return exposureYears > 0 ? (growth / exposureYears) * 100 : null
 }
 
 function getVaultIdentifiers(events: TRawPnlEvent[]): Array<{ chainId: number; vaultAddress: string }> {
@@ -368,6 +385,37 @@ function addReceipt(
   }
 }
 
+function getOutstandingBaselineUnderlying(lots: TProtocolReturnLot[]): number {
+  return lots.reduce((total, lot) => total + lot.baselineUnderlying, 0)
+}
+
+function getOutstandingBaselineWeightUsd(lots: TProtocolReturnLot[]): number {
+  return lots.reduce((total, lot) => total + lot.baselineUnderlying * lot.receiptPriceUsd, 0)
+}
+
+function accrueLedgerExposure(ledger: TProtocolReturnLedger, nextTimestamp: number): TProtocolReturnLedger {
+  if (ledger.lastAccruedTimestamp === null) {
+    return {
+      ...ledger,
+      lastAccruedTimestamp: nextTimestamp
+    }
+  }
+
+  const elapsedSeconds = Math.max(0, nextTimestamp - ledger.lastAccruedTimestamp)
+  if (elapsedSeconds === 0) {
+    return ledger
+  }
+
+  return {
+    ...ledger,
+    baselineExposureUnderlyingSeconds:
+      ledger.baselineExposureUnderlyingSeconds + getOutstandingBaselineUnderlying(ledger.lots) * elapsedSeconds,
+    baselineExposureWeightUsdSeconds:
+      ledger.baselineExposureWeightUsdSeconds + getOutstandingBaselineWeightUsd(ledger.lots) * elapsedSeconds,
+    lastAccruedTimestamp: nextTimestamp
+  }
+}
+
 function splitLot(lot: TProtocolReturnLot, shares: bigint): TProtocolReturnConsumedLot {
   return {
     shares,
@@ -509,7 +557,10 @@ function processEvent(
   const assetDecimals = metadata?.token.decimals ?? 18
   const shareDecimals = metadata?.decimals ?? 18
   const ppsMap = args.ppsData.get(vaultKey)
-  const currentLedger = ledgers.get(vaultKey) ?? emptyLedger(event.chainId, event.familyVaultAddress)
+  const currentLedger = accrueLedgerExposure(
+    ledgers.get(vaultKey) ?? emptyLedger(event.chainId, event.familyVaultAddress),
+    event.blockTimestamp
+  )
   const receiptPriceUsd = getReceiptPriceUsd(metadata, args.priceData, event.blockTimestamp)
 
   if (event.kind === 'deposit') {
@@ -583,9 +634,10 @@ export function buildProtocolReturnLedgers(args: {
   metadata: Map<string, VaultMetadata>
   ppsData: Map<string, Map<number, number>>
   priceData: Map<string, Map<number, number>>
+  currentTimestamp?: number
 }): Map<string, TProtocolReturnLedger> {
   const userAddress = lowerCaseAddress(args.userAddress)
-  return sortEvents(args.events).reduce(
+  const ledgers = sortEvents(args.events).reduce(
     (ledgers, event) =>
       processEvent(ledgers, event, {
         userAddress,
@@ -595,6 +647,15 @@ export function buildProtocolReturnLedgers(args: {
       }),
     new Map<string, TProtocolReturnLedger>()
   )
+
+  const finalTimestamp =
+    args.currentTimestamp ??
+    sortEvents(args.events).reduce((maxTimestamp, event) => Math.max(maxTimestamp, event.blockTimestamp), 0)
+
+  return Array.from(ledgers.entries()).reduce<Map<string, TProtocolReturnLedger>>((finalLedgers, [key, ledger]) => {
+    finalLedgers.set(key, accrueLedgerExposure(ledger, finalTimestamp))
+    return finalLedgers
+  }, new Map())
 }
 
 function ledgerIssues(args: {
@@ -652,6 +713,8 @@ export function materializeProtocolReturnVaults(args: {
     )
     const unrealizedGrowthUnderlying = currentUnderlying - unrealizedBaselineUnderlying
     const unrealizedGrowthWeightUsd = currentWeightUsd - unrealizedBaselineWeightUsd
+    const baselineExposureUnderlyingYears = ledger.baselineExposureUnderlyingSeconds / SECONDS_PER_YEAR
+    const baselineExposureWeightUsdYears = ledger.baselineExposureWeightUsdSeconds / SECONDS_PER_YEAR
     const baselineWeightUsd = ledger.realizedBaselineWeightUsd + unrealizedBaselineWeightUsd
     const growthWeightUsd = ledger.realizedGrowthWeightUsd + unrealizedGrowthWeightUsd
     const issues = ledgerIssues({ ledger, metadata, currentPps })
@@ -667,6 +730,8 @@ export function materializeProtocolReturnVaults(args: {
       pricePerShare: currentPps ?? 0,
       currentUnderlying,
       baselineUnderlying: ledger.realizedBaselineUnderlying + unrealizedBaselineUnderlying,
+      baselineExposureUnderlyingYears,
+      baselineExposureWeightUsdYears,
       realizedBaselineUnderlying: ledger.realizedBaselineUnderlying,
       unrealizedBaselineUnderlying,
       realizedGrowthUnderlying: ledger.realizedGrowthUnderlying,
@@ -677,6 +742,7 @@ export function materializeProtocolReturnVaults(args: {
       realizedGrowthWeightUsd: ledger.realizedGrowthWeightUsd,
       unrealizedGrowthWeightUsd,
       protocolReturnPct: protocolReturnPct(growthWeightUsd, baselineWeightUsd),
+      annualizedProtocolReturnPct: annualizedProtocolReturnPct(growthWeightUsd, baselineExposureWeightUsdYears),
       receiptCount: ledger.receiptCount,
       exitCount: ledger.exitCount,
       deposits: ledger.deposits,
@@ -698,6 +764,10 @@ export function materializeProtocolReturnVaults(args: {
 function buildSummary(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleResponse['summary'] {
   const baselineWeightUsd = vaults.reduce((total, vault) => total + vault.baselineWeightUsd, 0)
   const growthWeightUsd = vaults.reduce((total, vault) => total + vault.growthWeightUsd, 0)
+  const baselineExposureWeightUsdYears = vaults.reduce(
+    (total, vault) => total + vault.baselineExposureWeightUsdYears,
+    0
+  )
   const realizedGrowthWeightUsd = vaults.reduce((total, vault) => total + vault.realizedGrowthWeightUsd, 0)
   const unrealizedGrowthWeightUsd = vaults.reduce((total, vault) => total + vault.unrealizedGrowthWeightUsd, 0)
   const completeVaults = vaults.filter((vault) => vault.status === 'ok').length
@@ -709,9 +779,11 @@ function buildSummary(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleRespon
     partialVaults,
     baselineWeightUsd,
     growthWeightUsd,
+    baselineExposureWeightUsdYears,
     realizedGrowthWeightUsd,
     unrealizedGrowthWeightUsd,
     protocolReturnPct: protocolReturnPct(growthWeightUsd, baselineWeightUsd),
+    annualizedProtocolReturnPct: annualizedProtocolReturnPct(growthWeightUsd, baselineExposureWeightUsdYears),
     isComplete: partialVaults === 0
   }
 }
@@ -794,7 +866,8 @@ export async function getHoldingsPnLSimple(
     userAddress,
     metadata: vaultMetadata,
     ppsData,
-    priceData
+    priceData,
+    currentTimestamp
   })
   const vaults = materializeProtocolReturnVaults({
     ledgers,

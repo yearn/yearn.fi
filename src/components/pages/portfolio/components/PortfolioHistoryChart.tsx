@@ -20,32 +20,34 @@ import type { ReactElement } from 'react'
 import { useId, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
-import type { TPortfolioHistoryChartData } from '../types/api'
+import type { TPortfolioHistoryChartData, TPortfolioHistoryDenomination } from '../types/api'
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 
 type TTimeframe = '30d' | '90d' | '1y'
 
 type TPortfolioHistoryChartProps = {
   data: TPortfolioHistoryChartData | null
+  denomination: TPortfolioHistoryDenomination
+  onDenominationChange: (denomination: TPortfolioHistoryDenomination) => void
   isLoading: boolean
   isEmpty?: boolean
   error?: Error | null
   mergeWithHeader?: boolean
 }
 
-const EXAMPLE_PORTFOLIO_DATA: TPortfolioHistoryChartData = [
-  { date: '2025-05-01', totalUsdValue: 1800 },
-  { date: '2025-06-01', totalUsdValue: 2600 },
-  { date: '2025-07-01', totalUsdValue: 2450 },
-  { date: '2025-08-01', totalUsdValue: 3900 },
-  { date: '2025-09-01', totalUsdValue: 5100 },
-  { date: '2025-10-01', totalUsdValue: 6800 },
-  { date: '2025-11-01', totalUsdValue: 6400 },
-  { date: '2025-12-01', totalUsdValue: 8900 },
-  { date: '2026-01-01', totalUsdValue: 10450 },
-  { date: '2026-02-01', totalUsdValue: 12100 },
-  { date: '2026-03-01', totalUsdValue: 14800 },
-  { date: '2026-04-01', totalUsdValue: 17250 }
+const EXAMPLE_PORTFOLIO_USD_DATA: TPortfolioHistoryChartData = [
+  { date: '2025-05-01', value: 1800 },
+  { date: '2025-06-01', value: 2600 },
+  { date: '2025-07-01', value: 2450 },
+  { date: '2025-08-01', value: 3900 },
+  { date: '2025-09-01', value: 5100 },
+  { date: '2025-10-01', value: 6800 },
+  { date: '2025-11-01', value: 6400 },
+  { date: '2025-12-01', value: 8900 },
+  { date: '2026-01-01', value: 10450 },
+  { date: '2026-02-01', value: 12100 },
+  { date: '2026-03-01', value: 14800 },
+  { date: '2026-04-01', value: 17250 }
 ]
 
 type TPortfolioHistoryTooltipProps = {
@@ -54,7 +56,7 @@ type TPortfolioHistoryTooltipProps = {
     value?: unknown
     payload?: {
       date?: string
-      totalUsdValue?: unknown
+      value?: unknown
     }
   }>
   label?: string
@@ -64,14 +66,26 @@ type TActiveChartState = {
   activeLabel?: string | number
 }
 
-function PortfolioHistoryTooltip({ active, payload }: TPortfolioHistoryTooltipProps): ReactElement | null {
+function formatHistoryValue(value: number, denomination: TPortfolioHistoryDenomination): string {
+  if (denomination === 'eth') {
+    return `${value.toFixed(value >= 100 ? 2 : value >= 1 ? 3 : 4)} ETH`
+  }
+
+  return formatUSD(value, 2, 2)
+}
+
+function PortfolioHistoryTooltip({
+  active,
+  payload,
+  denomination
+}: TPortfolioHistoryTooltipProps & { denomination: TPortfolioHistoryDenomination }): ReactElement | null {
   if (!active || !payload?.length) {
     return null
   }
 
   const point = payload[0]?.payload
   const date = point?.date
-  const value = Number(payload[0]?.value ?? point?.totalUsdValue ?? 0)
+  const value = Number(payload[0]?.value ?? point?.value ?? 0)
 
   if (!date) {
     return null
@@ -87,7 +101,7 @@ function PortfolioHistoryTooltip({ active, payload }: TPortfolioHistoryTooltipPr
         <span className={'text-xs font-medium uppercase tracking-[0.12em] text-text-tertiary'}>
           {formatChartTooltipDate(date)}
         </span>
-        <span className={'text-sm font-semibold text-text-primary'}>{formatUSD(value, 2, 2)}</span>
+        <span className={'text-sm font-semibold text-text-primary'}>{formatHistoryValue(value, denomination)}</span>
       </div>
       <span className={'text-xs font-medium text-text-secondary'}>
         {value > 0 ? 'Click to see breakdown' : 'No breakdown available for this point'}
@@ -98,6 +112,8 @@ function PortfolioHistoryTooltip({ active, payload }: TPortfolioHistoryTooltipPr
 
 export function PortfolioHistoryChart({
   data,
+  denomination,
+  onDenominationChange,
   isLoading,
   isEmpty = false,
   error,
@@ -136,6 +152,14 @@ export function PortfolioHistoryChart({
     if (numericValue === 0) {
       return ''
     }
+
+    if (denomination === 'eth') {
+      if (numericValue >= 1_000) {
+        return `${(numericValue / 1_000).toFixed(1)}k`
+      }
+      return numericValue >= 10 ? numericValue.toFixed(0) : numericValue.toFixed(2)
+    }
+
     if (numericValue >= 1_000_000) {
       return `$${(numericValue / 1_000_000).toFixed(1)}M`
     }
@@ -147,21 +171,29 @@ export function PortfolioHistoryChart({
 
   const chartConfig = useMemo<ChartConfig>(() => {
     return {
-      totalUsdValue: {
-        label: 'Total Value',
+      value: {
+        label: denomination === 'eth' ? 'Total Value (ETH)' : 'Total Value (USD)',
         color: 'var(--chart-1)'
       }
     }
-  }, [])
+  }, [denomination])
 
   const exampleChartConfig = useMemo<ChartConfig>(() => {
     return {
-      totalUsdValue: {
-        label: 'Example Value',
+      value: {
+        label: denomination === 'eth' ? 'Example Value (ETH)' : 'Example Value (USD)',
         color: 'var(--color-neutral-400)'
       }
     }
-  }, [])
+  }, [denomination])
+
+  const exampleData = useMemo<TPortfolioHistoryChartData>(
+    () =>
+      denomination === 'eth'
+        ? EXAMPLE_PORTFOLIO_USD_DATA.map((point) => ({ ...point, value: point.value / 2500 }))
+        : EXAMPLE_PORTFOLIO_USD_DATA,
+    [denomination]
+  )
 
   const openBreakdownModal = (date: string): void => {
     setSelectedBreakdownDate(date)
@@ -191,7 +223,7 @@ export function PortfolioHistoryChart({
   const handleChartClick = (state?: TActiveChartState): void => {
     const clickedDate = typeof state?.activeLabel === 'string' ? state.activeLabel : hoveredBreakdownDate
     const selectedPoint = getBreakdownPoint(clickedDate)
-    if (!selectedPoint || selectedPoint.totalUsdValue <= 0) {
+    if (!selectedPoint || selectedPoint.value <= 0) {
       return
     }
 
@@ -199,10 +231,29 @@ export function PortfolioHistoryChart({
   }
 
   const renderHeader = (showTimeframeControls = false): ReactElement => (
-    <div className={'flex items-center justify-between'}>
-      <h2 className={'text-xl font-semibold text-text-primary'}>{'Holdings History'}</h2>
+    <div className={'flex flex-col gap-3 md:flex-row md:items-center md:justify-between'}>
+      <div className={'flex items-center justify-between gap-3'}>
+        <h2 className={'text-xl font-semibold text-text-primary'}>{'Holdings History'}</h2>
+        <div className={'flex rounded-lg border border-border bg-surface-secondary p-1'}>
+          {(['usd', 'eth'] as const).map((nextDenomination) => (
+            <button
+              key={nextDenomination}
+              type={'button'}
+              onClick={() => onDenominationChange(nextDenomination)}
+              className={cl(
+                'min-h-[36px] rounded-md px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] transition-colors',
+                denomination === nextDenomination
+                  ? 'bg-surface text-text-primary'
+                  : 'text-text-secondary hover:text-text-primary'
+              )}
+            >
+              {nextDenomination}
+            </button>
+          ))}
+        </div>
+      </div>
       {showTimeframeControls ? (
-        <div className={'flex gap-2'}>
+        <div className={'flex gap-2 self-start md:self-auto'}>
           {(['30d', '90d', '1y'] as const).map((tf) => (
             <button
               key={tf}
@@ -256,7 +307,7 @@ export function PortfolioHistoryChart({
         >
           <div className={'absolute inset-0 opacity-75'}>
             <ChartContainer config={exampleChartConfig} style={{ height: '100%', aspectRatio: 'unset' }}>
-              <ComposedChart data={EXAMPLE_PORTFOLIO_DATA} margin={CHART_WITH_AXES_MARGIN}>
+              <ComposedChart data={exampleData} margin={CHART_WITH_AXES_MARGIN}>
                 <defs>
                   <linearGradient id={`${gradientId}-example`} x1="0" x2="0" y1="0" y2="1">
                     <stop offset="0%" stopColor="var(--color-neutral-400)" stopOpacity={0.2} />
@@ -266,7 +317,7 @@ export function PortfolioHistoryChart({
                 <CartesianGrid vertical={false} strokeDasharray={'4 6'} stroke={'var(--color-border)'} />
                 <XAxis
                   dataKey={'date'}
-                  ticks={getChartMonthlyTicks(EXAMPLE_PORTFOLIO_DATA)}
+                  ticks={getChartMonthlyTicks(exampleData)}
                   tickFormatter={formatChartMonthYearLabel}
                   tick={{ fill: 'var(--color-text-tertiary)' }}
                   axisLine={{ stroke: 'var(--color-border)' }}
@@ -284,7 +335,7 @@ export function PortfolioHistoryChart({
                 />
                 <Area
                   type={'monotone'}
-                  dataKey={'totalUsdValue'}
+                  dataKey={'value'}
                   stroke="none"
                   fill={`url(#${gradientId}-example)`}
                   fillOpacity={1}
@@ -292,7 +343,7 @@ export function PortfolioHistoryChart({
                 />
                 <Line
                   type={'monotone'}
-                  dataKey={'totalUsdValue'}
+                  dataKey={'value'}
                   stroke={'var(--color-neutral-400)'}
                   strokeWidth={2}
                   strokeDasharray={'6 6'}
@@ -351,7 +402,7 @@ export function PortfolioHistoryChart({
         <ChartContainer
           config={chartConfig}
           style={{ height: '100%', aspectRatio: 'unset' }}
-          className={getBreakdownPoint(hoveredBreakdownDate)?.totalUsdValue ? 'cursor-pointer' : undefined}
+          className={getBreakdownPoint(hoveredBreakdownDate)?.value ? 'cursor-pointer' : undefined}
         >
           <ComposedChart
             data={filteredData}
@@ -362,8 +413,8 @@ export function PortfolioHistoryChart({
           >
             <defs>
               <linearGradient id={`${gradientId}-holdings`} x1="0" x2="0" y1="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-totalUsdValue)" stopOpacity={0.5} />
-                <stop offset="95%" stopColor="var(--color-totalUsdValue)" stopOpacity={0} />
+                <stop offset="5%" stopColor="var(--color-value)" stopOpacity={0.5} />
+                <stop offset="95%" stopColor="var(--color-value)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} />
@@ -387,11 +438,11 @@ export function PortfolioHistoryChart({
             />
             <ChartTooltip
               cursor={{ stroke: 'var(--chart-cursor-line)', strokeWidth: 1 }}
-              content={(props) => <PortfolioHistoryTooltip {...props} />}
+              content={(props) => <PortfolioHistoryTooltip {...props} denomination={denomination} />}
             />
             <Area
               type={'monotone'}
-              dataKey={'totalUsdValue'}
+              dataKey={'value'}
               stroke="none"
               fill={`url(#${gradientId}-holdings)`}
               fillOpacity={1}
@@ -401,11 +452,11 @@ export function PortfolioHistoryChart({
             />
             <Line
               type={'monotone'}
-              dataKey={'totalUsdValue'}
-              stroke="var(--color-totalUsdValue)"
+              dataKey={'value'}
+              stroke="var(--color-value)"
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 4, strokeWidth: 0, fill: 'var(--color-totalUsdValue)' }}
+              activeDot={{ r: 4, strokeWidth: 0, fill: 'var(--color-value)' }}
               isAnimationActive={false}
             />
           </ComposedChart>

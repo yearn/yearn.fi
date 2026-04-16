@@ -1,5 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { HoldingsEventFetchType, HoldingsEventPaginationMode, VaultVersion } from '../lib/holdings'
+import type {
+  HoldingsEventFetchType,
+  HoldingsEventPaginationMode,
+  HoldingsHistoryDenomination,
+  VaultVersion
+} from '../lib/holdings'
 import { checkRateLimit, ensureSchemaInitialized } from '../lib/holdings'
 
 function simpleHash(str: string): string {
@@ -35,6 +40,10 @@ function parseHoldingsEventFetchType(value: string | string[] | undefined): Hold
 
 function parseHoldingsEventPaginationMode(value: string | string[] | undefined): HoldingsEventPaginationMode {
   return value === 'all' ? 'all' : 'paged'
+}
+
+function parseHoldingsHistoryDenomination(value: string | string[] | undefined): HoldingsHistoryDenomination {
+  return value === 'eth' ? 'eth' : 'usd'
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -75,7 +84,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  const { address, version: versionParam, fetchType: fetchTypeParam, paginationMode: paginationModeParam } = req.query
+  const {
+    address,
+    version: versionParam,
+    fetchType: fetchTypeParam,
+    paginationMode: paginationModeParam,
+    denomination: denominationParam
+  } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -88,12 +103,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
+  const denomination = parseHoldingsHistoryDenomination(denominationParam)
 
   try {
-    const { getHistoricalHoldings } = await import('../lib/holdings')
-    const holdings = await getHistoricalHoldings(address, version, fetchType, paginationMode)
+    const { getHistoricalHoldingsChart } = await import('../lib/holdings')
+    const holdings = await getHistoricalHoldingsChart(address, version, fetchType, paginationMode, denomination)
 
-    const hasHoldings = holdings.dataPoints.some((dp) => dp.totalUsdValue > 0)
+    const hasHoldings = holdings.dataPoints.some((dp) => dp.value > 0)
     if (!hasHoldings) {
       return res.status(404).json({ error: 'No holdings found for address' })
     }
@@ -102,9 +118,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       address: holdings.address,
       version,
+      denomination,
       dataPoints: holdings.dataPoints.map((dp) => ({
         date: dp.date,
-        value: dp.totalUsdValue
+        value: dp.value
       }))
     })
   } catch (error) {

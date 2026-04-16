@@ -30,6 +30,7 @@ const portfolioPnlCategoryBreakdownSchema = z.object({
 
 export const portfolioHistorySimpleResponseSchema = z.object({
   address: z.string(),
+  denomination: z.enum(['usd', 'eth']).optional().default('usd'),
   dataPoints: z.array(portfolioHistorySimpleDataPointSchema)
 })
 
@@ -73,10 +74,12 @@ const portfolioProtocolReturnSummarySchema = z.object({
   completeVaults: z.number(),
   partialVaults: z.number(),
   baselineWeightUsd: z.number(),
+  baselineExposureWeightUsdYears: z.number(),
   growthWeightUsd: z.number(),
   realizedGrowthWeightUsd: z.number(),
   unrealizedGrowthWeightUsd: z.number(),
   protocolReturnPct: z.number().nullable(),
+  annualizedProtocolReturnPct: z.number().nullable(),
   isComplete: z.boolean()
 })
 
@@ -97,7 +100,8 @@ export type TPortfolioPnlResponse = z.infer<typeof portfolioPnlResponseSchema>
 export type TPortfolioPnlSummary = z.infer<typeof portfolioPnlSummarySchema>
 export type TPortfolioProtocolReturnResponse = z.infer<typeof portfolioProtocolReturnResponseSchema>
 export type TPortfolioProtocolReturnSummary = z.infer<typeof portfolioProtocolReturnSummarySchema>
+export type TPortfolioHistoryDenomination = z.infer<typeof portfolioHistorySimpleResponseSchema>['denomination']
 export type TPortfolioHistoryChartData = Array<{
   date: string
-  totalUsdValue: number
+  value: number
 }>

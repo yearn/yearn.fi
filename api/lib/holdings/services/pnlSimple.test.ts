@@ -65,18 +65,20 @@ function materializeVault(args: {
   priceData: Map<string, Map<number, number>>
   currentTimestamp?: number
 }): HoldingsPnLSimpleVault {
+  const currentTimestamp = args.currentTimestamp ?? 300
   const ledgers = buildProtocolReturnLedgers({
     events: args.events,
     userAddress: USER,
     metadata,
     ppsData: args.ppsData,
-    priceData: args.priceData
+    priceData: args.priceData,
+    currentTimestamp
   })
   return materializeProtocolReturnVaults({
     ledgers,
     metadata,
     ppsData: args.ppsData,
-    currentTimestamp: args.currentTimestamp ?? 300
+    currentTimestamp
   })[0]!
 }
 
@@ -146,6 +148,8 @@ describe('pnl simple protocol return', () => {
     expect(vault.baselineWeightUsd).toBe(200)
     expect(vault.growthWeightUsd).toBeCloseTo(20)
     expect(vault.protocolReturnPct).toBeCloseTo(10)
+    expect(vault.baselineExposureUnderlyingYears).toBeCloseTo(100 * (200 / (365 * 24 * 60 * 60)))
+    expect(vault.annualizedProtocolReturnPct).toBeCloseTo((20 / (200 * (200 / (365 * 24 * 60 * 60)))) * 100)
   })
 
   it('measures realized withdrawal growth without current asset repricing', () => {
@@ -179,6 +183,40 @@ describe('pnl simple protocol return', () => {
     expect(vault.unrealizedGrowthUnderlying).toBe(0)
     expect(vault.growthWeightUsd).toBe(20)
     expect(vault.protocolReturnPct).toBe(10)
+  })
+
+  it('annualizes using time-weighted baseline exposure for closed lots', () => {
+    const secondsPerYear = 365 * 24 * 60 * 60
+    const currentTimestamp = 100 + secondsPerYear
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit',
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'withdrawal',
+          blockTimestamp: currentTimestamp,
+          logIndex: 1,
+          shares: 100n * ONE,
+          assets: 110n * ONE,
+          owner: USER
+        })
+      ],
+      ppsData: new Map([[VAULT_KEY, new Map([[currentTimestamp, 1.1]])]]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]]),
+      currentTimestamp
+    })
+
+    expect(vault.baselineExposureUnderlyingYears).toBeCloseTo(100)
+    expect(vault.baselineExposureWeightUsdYears).toBeCloseTo(100)
+    expect(vault.growthWeightUsd).toBeCloseTo(10)
+    expect(vault.annualizedProtocolReturnPct).toBeCloseTo(10)
   })
 
   it('uses PPS for transfer-only receipts and exits', () => {

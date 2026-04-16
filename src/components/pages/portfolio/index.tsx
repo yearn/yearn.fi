@@ -46,7 +46,7 @@ import { useSearchParams } from 'react-router'
 import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { usePortfolioProtocolReturn } from './hooks/usePortfolioProtocolReturn'
-import type { TPortfolioProtocolReturnSummary } from './types/api'
+import type { TPortfolioHistoryDenomination, TPortfolioProtocolReturnSummary } from './types/api'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -165,11 +165,19 @@ function PortfolioHeaderSection({
     </div>
   )
 
-  const protocolReturnTooltip = (
+  const cumulativeProtocolReturnTooltip = (
     <div className={metricTooltipContentClassName}>
-      <p>{'Percentage return Yearn has generated for you based on all your positions over time.'}</p>
+      <p>{'Cumulative protocol return earned while funds were in your wallet.'}</p>
 
-      <p>{'Protocol return only, price moves are excluded.'}</p>
+      <p>{'Weighted by baseline vault receipts. Price moves are excluded.'}</p>
+    </div>
+  )
+
+  const annualizedProtocolReturnTooltip = (
+    <div className={metricTooltipContentClassName}>
+      <p>{'Annualized protocol return while funds were actually held in your wallet.'}</p>
+
+      <p>{'Time-weighted by baseline vault exposure. Price moves are excluded.'}</p>
     </div>
   )
 
@@ -289,11 +297,24 @@ function PortfolioHeaderSection({
         ) : undefined
     },
     {
-      key: 'protocol-return',
-      header: <MetricHeader label="Protocol Return" mobileLabel="Return" tooltip={protocolReturnTooltip} />,
+      key: 'cumulative-protocol-return',
+      header: (
+        <MetricHeader label="Cumulative Return" mobileLabel="Cum. Return" tooltip={cumulativeProtocolReturnTooltip} />
+      ),
       value: (
         <span className={METRIC_VALUE_CLASS}>
           {renderSignedPercentMetric(protocolReturnSummary?.protocolReturnPct)}
+        </span>
+      )
+    },
+    {
+      key: 'annualized-protocol-return',
+      header: (
+        <MetricHeader label="Annualized Return" mobileLabel="Ann. Return" tooltip={annualizedProtocolReturnTooltip} />
+      ),
+      value: (
+        <span className={METRIC_VALUE_CLASS}>
+          {renderSignedPercentMetric(protocolReturnSummary?.annualizedProtocolReturnPct)}
         </span>
       )
     }
@@ -1088,12 +1109,14 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
 
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
+  const [historyDenomination, setHistoryDenomination] = useState<TPortfolioHistoryDenomination>('usd')
   const {
     data: historyData,
+    denomination: resolvedHistoryDenomination,
     isLoading: historyLoading,
     error: historyError,
     isEmpty: historyEmpty
-  } = usePortfolioHistory()
+  } = usePortfolioHistory(historyDenomination)
   const { data: protocolReturnSummary, isLoading: protocolReturnLoading } = usePortfolioProtocolReturn()
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
@@ -1212,6 +1235,8 @@ function PortfolioPage(): ReactElement {
           />
           <PortfolioHistoryChart
             data={historyData}
+            denomination={resolvedHistoryDenomination}
+            onDenominationChange={setHistoryDenomination}
             isLoading={historyLoading}
             isEmpty={historyEmpty}
             error={historyError}

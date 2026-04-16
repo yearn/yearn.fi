@@ -1,18 +1,22 @@
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useFetch } from '@shared/hooks/useFetch'
 import { useMemo } from 'react'
-import type { TPortfolioHistoryChartData, TPortfolioHistorySimpleResponse } from '../types/api'
+import type {
+  TPortfolioHistoryChartData,
+  TPortfolioHistoryDenomination,
+  TPortfolioHistorySimpleResponse
+} from '../types/api'
 import { portfolioHistorySimpleResponseSchema } from '../types/api'
 
-export function usePortfolioHistory() {
+export function usePortfolioHistory(denomination: TPortfolioHistoryDenomination = 'usd') {
   const { address } = useWeb3()
 
   const endpoint = useMemo(() => {
     if (!address) {
       return null
     }
-    return `/api/holdings/history?address=${address}&debug=1&fetchType=parallel&paginationMode=all`
-  }, [address])
+    return `/api/holdings/history?address=${address}&denomination=${denomination}&debug=1&fetchType=parallel&paginationMode=all`
+  }, [address, denomination])
 
   const {
     data: rawData,
@@ -35,7 +39,7 @@ export function usePortfolioHistory() {
     }
     return rawData.dataPoints.map((point) => ({
       date: point.date,
-      totalUsdValue: point.value
+      value: point.value
     }))
   }, [rawData])
 
@@ -48,6 +52,7 @@ export function usePortfolioHistory() {
 
   return {
     data,
+    denomination,
     isLoading: isLoadingState,
     error: visibleError,
     isEmpty
