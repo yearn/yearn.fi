@@ -13,7 +13,7 @@ import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/co
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
-import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useVaultUserData, type VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
@@ -86,6 +86,17 @@ const COMPRESSED_TITLE_COMPACT_SIZE_CLASS = 'md:text-[20px] md:leading-6'
 const HEADER_METRIC_ITEM_CLASS = 'min-h-0'
 const HEADER_METRIC_HEADER_CLASS = 'min-h-4'
 const HEADER_METRIC_VALUE_CLASS = 'flex min-h-[30px] items-center'
+
+type TDualCooldownMetric = {
+  headerLabel: string
+  primaryValueUsd: number
+  timerLabel: string
+  statusLabel: string
+  amountLabel: string
+  amountValue: bigint
+  amountDecimals: number
+  amountSymbol: string
+}
 
 function getVaultProductTypeLabel(listKind: ReturnType<typeof deriveListKind>): string {
   if (listKind === 'allocator' || listKind === 'strategy') {
@@ -721,14 +732,6 @@ function YvUsdUserHoldingsCard({
     isCooldownWindowExpired: cooldownWindowState.isCooldownWindowExpired
   })
 
-  const unlockedAmount = toNormalizedBN(
-    unlockedUserData.depositedValue,
-    unlockedUserData.assetToken?.decimals ?? 6
-  ).normalized
-  const lockedAmount = toNormalizedBN(
-    lockedUserData.depositedValue,
-    lockedUserData.assetToken?.decimals ?? 18
-  ).normalized
   const sharesUnderCooldown = hasActiveCooldown ? cooldownStatus.shares : 0n
   const lockedVaultDecimals = lockedUserData.vaultToken?.decimals ?? 18
   const lockedAssetDecimals = lockedUserData.assetToken?.decimals ?? 18
@@ -740,9 +743,6 @@ function YvUsdUserHoldingsCard({
   const unlockedAssetPrice =
     getPrice({ address: unlockedAssetAddress, chainID: YVUSD_CHAIN_ID }).normalized || unlockedVault?.tvl.price || 0
   const unlockedSharePrice = getYvUsdSharePrice(unlockedVault, unlockedAssetPrice)
-  const unlockedValueUsd = unlockedAmount * unlockedAssetPrice
-  const lockedValueUsd = lockedAmount * unlockedSharePrice
-  const totalValueUsd = unlockedValueUsd + lockedValueUsd
   const hasLockedDeposits = lockedUserData.depositedValue > 0n || hasActiveCooldown
   const cooldownValueUsd = toNormalizedBN(assetsUnderCooldown, lockedAssetDecimals).normalized * unlockedSharePrice
   const withdrawableValueUsd =
@@ -762,6 +762,104 @@ function YvUsdUserHoldingsCard({
         ? 'Window closed'
         : 'Not started'
   const cooldownAmountLabel = cooldownWindowState.isWithdrawalWindowOpen ? 'Withdrawable now' : 'In cooldown'
+  const cooldownMetric = hasLockedDeposits
+    ? {
+        headerLabel: cooldownHeaderLabel,
+        primaryValueUsd: cooldownPrimaryValueUsd,
+        timerLabel: cooldownTimerLabel,
+        statusLabel: cooldownStatusLabel,
+        amountLabel: cooldownAmountLabel,
+        amountValue: cooldownWindowState.isWithdrawalWindowOpen ? availableWithdrawLimit : assetsUnderCooldown,
+        amountDecimals: lockedAssetDecimals,
+        amountSymbol: lockedAssetSymbol
+      }
+    : undefined
+
+  return (
+    <DualVariantUserHoldingsCard
+      isCompressed={isCompressed}
+      includeTourAttributes={includeTourAttributes}
+      unlockedUserData={unlockedUserData}
+      lockedUserData={lockedUserData}
+      unlockedValueUsdMultiplier={unlockedAssetPrice}
+      lockedValueUsdMultiplier={unlockedSharePrice}
+      cooldownMetric={cooldownMetric}
+    />
+  )
+}
+
+function YvBtcUserHoldingsCard({
+  isCompressed,
+  includeTourAttributes = true
+}: {
+  isCompressed: boolean
+  includeTourAttributes?: boolean
+}): ReactElement {
+  const { address } = useWeb3()
+  const { getPrice } = useYearn()
+  const { unlockedVault, lockedVault } = useYvBtcVaults()
+  const account = address ? toAddress(address) : undefined
+  const unlockedAssetAddress = toAddress(unlockedVault?.token.address)
+
+  const unlockedUserData = useVaultUserData({
+    vaultAddress: toAddress(unlockedVault?.address),
+    assetAddress: unlockedAssetAddress,
+    chainId: unlockedVault.chainID,
+    account
+  })
+  const lockedUserData = useVaultUserData({
+    vaultAddress: toAddress(lockedVault?.address),
+    assetAddress: unlockedAssetAddress,
+    chainId: lockedVault.chainID,
+    account
+  })
+  const unlockedAssetPrice =
+    getPrice({ address: unlockedAssetAddress, chainID: unlockedVault.chainID }).normalized ||
+    unlockedVault?.tvl.price ||
+    0
+  const unlockedSharePrice =
+    unlockedAssetPrice * (Number(unlockedUserData.pricePerShare) / 10 ** unlockedVault.decimals)
+
+  return (
+    <DualVariantUserHoldingsCard
+      isCompressed={isCompressed}
+      includeTourAttributes={includeTourAttributes}
+      unlockedUserData={unlockedUserData}
+      lockedUserData={lockedUserData}
+      unlockedValueUsdMultiplier={unlockedAssetPrice}
+      lockedValueUsdMultiplier={Number.isFinite(unlockedSharePrice) ? unlockedSharePrice : 0}
+    />
+  )
+}
+
+function DualVariantUserHoldingsCard({
+  isCompressed,
+  includeTourAttributes = true,
+  unlockedUserData,
+  lockedUserData,
+  unlockedValueUsdMultiplier,
+  lockedValueUsdMultiplier,
+  cooldownMetric
+}: {
+  isCompressed: boolean
+  includeTourAttributes?: boolean
+  unlockedUserData: VaultUserData
+  lockedUserData: VaultUserData
+  unlockedValueUsdMultiplier: number
+  lockedValueUsdMultiplier: number
+  cooldownMetric?: TDualCooldownMetric
+}): ReactElement {
+  const unlockedAmount = toNormalizedBN(
+    unlockedUserData.depositedValue,
+    unlockedUserData.assetToken?.decimals ?? 18
+  ).normalized
+  const lockedAmount = toNormalizedBN(
+    lockedUserData.depositedValue,
+    lockedUserData.assetToken?.decimals ?? 18
+  ).normalized
+  const unlockedValueUsd = unlockedAmount * unlockedValueUsdMultiplier
+  const lockedValueUsd = lockedAmount * lockedValueUsdMultiplier
+  const totalValueUsd = unlockedValueUsd + lockedValueUsd
 
   const sections: TMetricBlock[] = [
     {
@@ -806,15 +904,15 @@ function YvUsdUserHoldingsCard({
         </div>
       )
     },
-    ...(hasLockedDeposits
+    ...(cooldownMetric
       ? [
           {
             key: 'cooldowns',
             header: (
               <MetricHeader
-                label={cooldownHeaderLabel}
+                label={cooldownMetric.headerLabel}
                 tooltip={
-                  'Review the value currently cooling down and the value currently withdrawable from locked yvUSD.'
+                  'Review the value currently cooling down and the value currently withdrawable from the locked vault.'
                 }
               />
             ),
@@ -826,9 +924,9 @@ function YvUsdUserHoldingsCard({
                 )}
                 suppressHydrationWarning
               >
-                <span>{formatUSD(cooldownPrimaryValueUsd)}</span>
+                <span>{formatUSD(cooldownMetric.primaryValueUsd)}</span>
                 <span className={'text-[11px] font-normal leading-tight text-text-secondary md:text-xs'}>
-                  {cooldownTimerLabel}
+                  {cooldownMetric.timerLabel}
                 </span>
               </span>
             ),
@@ -836,20 +934,20 @@ function YvUsdUserHoldingsCard({
               <div className={cl(METRIC_FOOTNOTE_CLASS, 'flex flex-col gap-1')} suppressHydrationWarning>
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-text-secondary">{'Status'}</span>
-                  <span className="text-right text-text-primary">{cooldownStatusLabel}</span>
+                  <span className="text-right text-text-primary">{cooldownMetric.statusLabel}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-text-secondary">{cooldownAmountLabel}</span>
+                  <span className="text-text-secondary">{cooldownMetric.amountLabel}</span>
                   <span className="text-right text-text-primary">
                     {`${formatTAmount({
-                      value: cooldownWindowState.isWithdrawalWindowOpen ? availableWithdrawLimit : assetsUnderCooldown,
-                      decimals: lockedAssetDecimals
-                    })} ${lockedAssetSymbol}`}
+                      value: cooldownMetric.amountValue,
+                      decimals: cooldownMetric.amountDecimals
+                    })} ${cooldownMetric.amountSymbol}`}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-text-secondary">{'Timer'}</span>
-                  <span className="text-right text-text-primary">{cooldownTimerLabel}</span>
+                  <span className="text-right text-text-primary">{cooldownMetric.timerLabel}</span>
                 </div>
               </div>
             )
@@ -891,6 +989,9 @@ function UserHoldingsCard({
   const currentVault = getVaultView(currentVaultInput)
   if (isYvUsdVault(currentVault)) {
     return <YvUsdUserHoldingsCard isCompressed={isCompressed} includeTourAttributes={includeTourAttributes} />
+  }
+  if (isYvBtcVault(currentVault)) {
+    return <YvBtcUserHoldingsCard isCompressed={isCompressed} includeTourAttributes={includeTourAttributes} />
   }
 
   const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
