@@ -15,7 +15,7 @@ import {
   getTimeframeLimit
 } from '@pages/vaults/utils/charts'
 import { IconSpinner } from '@shared/icons/IconSpinner'
-import { cl, formatUSD } from '@shared/utils'
+import { cl, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useId, useMemo, useState } from 'react'
 import { Link } from 'react-router'
@@ -23,16 +23,19 @@ import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts
 import type { TPortfolioHistoryChartData, TPortfolioHistoryDenomination } from '../types/api'
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 
-type TTimeframe = '30d' | '90d' | '1y'
+export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
 
 type TPortfolioHistoryChartProps = {
   data: TPortfolioHistoryChartData | null
   denomination: TPortfolioHistoryDenomination
   onDenominationChange: (denomination: TPortfolioHistoryDenomination) => void
+  timeframe: TPortfolioHistoryChartTimeframe
+  onTimeframeChange: (timeframe: TPortfolioHistoryChartTimeframe) => void
   isLoading: boolean
   isEmpty?: boolean
   error?: Error | null
-  mergeWithHeader?: boolean
+  embedded?: boolean
+  className?: string
 }
 
 const EXAMPLE_PORTFOLIO_USD_DATA: TPortfolioHistoryChartData = [
@@ -114,20 +117,22 @@ export function PortfolioHistoryChart({
   data,
   denomination,
   onDenominationChange,
+  timeframe,
+  onTimeframeChange,
   isLoading,
   isEmpty = false,
   error,
-  mergeWithHeader
+  embedded = false,
+  className
 }: TPortfolioHistoryChartProps): ReactElement {
-  const [timeframe, setTimeframe] = useState<TTimeframe>('1y')
   const [hoveredBreakdownDate, setHoveredBreakdownDate] = useState<string | null>(null)
   const [selectedBreakdownDate, setSelectedBreakdownDate] = useState<string | null>(null)
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false)
   const gradientId = useId().replace(/:/g, '')
 
-  const sectionClassName = mergeWithHeader
-    ? 'flex flex-col gap-4 border-x border-border bg-surface p-6'
-    : 'flex flex-col gap-4 rounded-lg border border-border bg-surface p-6'
+  const sectionClassName = embedded
+    ? 'flex h-full flex-col gap-3 bg-surface px-5 py-4 md:px-6 md:pb-0 md:pt-5'
+    : 'flex h-full flex-col gap-4 rounded-lg border border-border bg-surface p-6'
 
   const filteredData = useMemo(() => {
     if (!data) {
@@ -231,42 +236,51 @@ export function PortfolioHistoryChart({
   }
 
   const renderHeader = (showTimeframeControls = false): ReactElement => (
-    <div className={'flex flex-col gap-3 md:flex-row md:items-center md:justify-between'}>
+    <div className={'flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between'}>
       <div className={'flex items-center justify-between gap-3'}>
-        <h2 className={'text-xl font-semibold text-text-primary'}>{'Holdings History'}</h2>
-        <div className={'flex rounded-lg border border-border bg-surface-secondary p-1'}>
+        <div className={'flex flex-col gap-0.5'}>
+          <h2 className={'text-xl font-semibold text-text-primary'}>{'Holdings History'}</h2>
+          <p className={'text-xs text-text-secondary'}>
+            {'Daily settled portfolio value across your current Yearn activity.'}
+          </p>
+        </div>
+        <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
           {(['usd', 'eth'] as const).map((nextDenomination) => (
             <button
               key={nextDenomination}
               type={'button'}
               onClick={() => onDenominationChange(nextDenomination)}
               className={cl(
-                'min-h-[36px] rounded-md px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] transition-colors',
+                'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                SELECTOR_BAR_STYLES.buttonBase,
                 denomination === nextDenomination
-                  ? 'bg-surface text-text-primary'
-                  : 'text-text-secondary hover:text-text-primary'
+                  ? SELECTOR_BAR_STYLES.buttonActive
+                  : SELECTOR_BAR_STYLES.buttonInactive
               )}
             >
-              {nextDenomination}
+              {nextDenomination.toUpperCase()}
             </button>
           ))}
         </div>
       </div>
       {showTimeframeControls ? (
-        <div className={'flex gap-2 self-start md:self-auto'}>
-          {(['30d', '90d', '1y'] as const).map((tf) => (
+        <div
+          className={cl('flex items-center gap-0.5 md:gap-1 self-start md:self-auto', SELECTOR_BAR_STYLES.container)}
+        >
+          {(['30d', '90d', '1y', 'all'] as const).map((tf) => (
             <button
               key={tf}
               type={'button'}
-              onClick={() => setTimeframe(tf)}
+              onClick={() => onTimeframeChange(tf)}
               className={cl(
-                'min-h-[44px] rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
-                timeframe === tf
-                  ? 'border-accent-500 bg-accent-500 text-white'
-                  : 'border-border bg-surface text-text-secondary hover:border-accent-500 hover:text-accent-500'
+                'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                SELECTOR_BAR_STYLES.buttonBase,
+                timeframe === tf ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
               )}
             >
-              {tf}
+              {tf.toUpperCase()}
             </button>
           ))}
         </div>
@@ -276,9 +290,9 @@ export function PortfolioHistoryChart({
 
   if (isLoading) {
     return (
-      <section className={sectionClassName}>
+      <section className={cl(sectionClassName, className)}>
         {renderHeader()}
-        <div className={'flex h-[300px] items-center justify-center'}>
+        <div className={'flex min-h-[240px] items-center justify-center'}>
           <IconSpinner className={'size-8 animate-spin text-text-secondary'} />
         </div>
       </section>
@@ -287,9 +301,9 @@ export function PortfolioHistoryChart({
 
   if (error) {
     return (
-      <section className={sectionClassName}>
+      <section className={cl(sectionClassName, className)}>
         {renderHeader()}
-        <div className={'flex h-[300px] items-center justify-center'}>
+        <div className={'flex min-h-[240px] items-center justify-center'}>
           <p className={'text-base text-text-secondary'}>Unable to load holdings history right now</p>
         </div>
       </section>
@@ -298,11 +312,11 @@ export function PortfolioHistoryChart({
 
   if (isEmpty) {
     return (
-      <section className={sectionClassName}>
+      <section className={cl(sectionClassName, className)}>
         {renderHeader()}
         <div
           className={
-            'relative h-[380px] overflow-hidden rounded-2xl border border-dashed border-border bg-surface-secondary sm:h-[320px]'
+            'relative h-[320px] overflow-hidden rounded-2xl border border-dashed border-border bg-surface-secondary sm:h-[280px]'
           }
         >
           <div className={'absolute inset-0 opacity-75'}>
@@ -386,9 +400,9 @@ export function PortfolioHistoryChart({
 
   if (!data || data.length === 0) {
     return (
-      <section className={sectionClassName}>
+      <section className={cl(sectionClassName, className)}>
         {renderHeader()}
-        <div className={'flex h-[300px] items-center justify-center'}>
+        <div className={'flex min-h-[240px] items-center justify-center'}>
           <p className={'text-base text-text-secondary'}>No holdings history available</p>
         </div>
       </section>
@@ -396,9 +410,9 @@ export function PortfolioHistoryChart({
   }
 
   return (
-    <section className={sectionClassName}>
+    <section className={cl(sectionClassName, className)}>
       {renderHeader(true)}
-      <div className={'h-[300px]'}>
+      <div className={'min-h-[240px] flex-1 pt-1'}>
         <ChartContainer
           config={chartConfig}
           style={{ height: '100%', aspectRatio: 'unset' }}

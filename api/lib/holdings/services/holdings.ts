@@ -113,6 +113,32 @@ export function generateDailyTimestamps(days: number, endOffsetDays = 0): number
   return timestamps
 }
 
+export function generateDailyTimestampsFromRange(startTimestamp: number, endTimestamp: number): number[] {
+  if (!Number.isFinite(startTimestamp) || !Number.isFinite(endTimestamp)) {
+    return []
+  }
+
+  const startDate = new Date(startTimestamp * 1000)
+  startDate.setUTCHours(0, 0, 0, 0)
+
+  const endDate = new Date(endTimestamp * 1000)
+  endDate.setUTCHours(0, 0, 0, 0)
+
+  if (startDate.getTime() > endDate.getTime()) {
+    return []
+  }
+
+  const timestamps: number[] = []
+  const cursor = new Date(startDate)
+
+  while (cursor.getTime() <= endDate.getTime()) {
+    timestamps.push(Math.floor(cursor.getTime() / 1000))
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  }
+
+  return timestamps
+}
+
 export function timestampToDateString(timestamp: number): string {
   const date = new Date(timestamp * 1000)
   return date.toISOString().split('T')[0]

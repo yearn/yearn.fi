@@ -24,7 +24,6 @@ import {
   METRIC_FOOTNOTE_CLASS,
   METRIC_VALUE_CLASS,
   MetricHeader,
-  MetricsCard,
   type TMetricBlock
 } from '@shared/components/MetricsCard'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
@@ -43,10 +42,15 @@ import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
+import type { TPortfolioHistoryChartTimeframe } from './components/PortfolioHistoryChart'
 import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { usePortfolioProtocolReturn } from './hooks/usePortfolioProtocolReturn'
-import type { TPortfolioHistoryDenomination, TPortfolioProtocolReturnSummary } from './types/api'
+import type {
+  TPortfolioHistoryDenomination,
+  TPortfolioHistoryTimeframe,
+  TPortfolioProtocolReturnSummary
+} from './types/api'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -55,25 +59,12 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2
 })
 
-function formatSignedCurrency(value: number): string {
-  const absoluteValue = currencyFormatter.format(Math.abs(value))
-
-  if (value > 0) {
-    return `+${absoluteValue}`
-  }
-
-  if (value < 0) {
-    return `-${absoluteValue}`
-  }
-
-  return absoluteValue
-}
-
 const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
 const footnoteTooltipClassName =
   'max-w-[260px] rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs leading-relaxed text-text-primary'
 const metricTooltipContentClassName = 'flex max-w-[280px] flex-col gap-1 leading-relaxed'
+const metricCardClassName = 'bg-surface px-5 py-3 md:px-5 md:py-2.5'
 const PORTFOLIO_TABS = [
   { key: 'positions', label: 'Your Vaults' },
   { key: 'activity', label: 'Activity' },
@@ -84,12 +75,7 @@ type TPortfolioTabKey = (typeof PORTFOLIO_TABS)[number]['key']
 
 type TPortfolioHeaderProps = Pick<
   TPortfolioModel,
-  | 'blendedMetrics'
-  | 'hasKatanaHoldings'
-  | 'isActive'
-  | 'isHoldingsLoading'
-  | 'isSearchingBalances'
-  | 'totalPortfolioValue'
+  'blendedMetrics' | 'hasKatanaHoldings' | 'isHoldingsLoading' | 'isSearchingBalances' | 'totalPortfolioValue'
 > & {
   isProtocolReturnLoading: boolean
   protocolReturnSummary: TPortfolioProtocolReturnSummary | null
@@ -150,24 +136,15 @@ function FootnoteWithTooltip({ label, tooltip }: { label: string; tooltip: strin
 function PortfolioHeaderSection({
   blendedMetrics,
   hasKatanaHoldings,
-  isActive,
   isHoldingsLoading,
   isSearchingBalances,
   isProtocolReturnLoading,
   protocolReturnSummary,
   totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
-  const usdGrowthTooltip = (
-    <div className={metricTooltipContentClassName}>
-      <p>{'Approximate amount of USD Yearn has generated for you based on all your positions over time.'}</p>
-
-      <p>{'Protocol return only, price moves are excluded.'}</p>
-    </div>
-  )
-
   const cumulativeProtocolReturnTooltip = (
     <div className={metricTooltipContentClassName}>
-      <p>{'Cumulative protocol return earned while funds were in your wallet.'}</p>
+      <p>{'All-time cumulative protocol return earned while funds were in your wallet.'}</p>
 
       <p>{'Weighted by baseline vault receipts. Price moves are excluded.'}</p>
     </div>
@@ -175,7 +152,7 @@ function PortfolioHeaderSection({
 
   const annualizedProtocolReturnTooltip = (
     <div className={metricTooltipContentClassName}>
-      <p>{'Annualized protocol return while funds were actually held in your wallet.'}</p>
+      <p>{'All-time annualized protocol return while funds were actually held in your wallet.'}</p>
 
       <p>{'Time-weighted by baseline vault exposure. Price moves are excluded.'}</p>
     </div>
@@ -225,24 +202,14 @@ function PortfolioHeaderSection({
     return <span>{currencyFormatter.format(value)}</span>
   }
 
-  function renderSignedCurrencyMetric(value: number | null): ReactElement {
-    if (isProtocolReturnLoading) return metricSpinner
-    if (value === null) return <span>{'—'}</span>
-
-    const toneClassName = value > 0 ? 'text-green-400' : value < 0 ? 'text-red-400' : 'text-text-primary'
-
-    return <span className={toneClassName}>{formatSignedCurrency(value)}</span>
-  }
-
   function renderSignedPercentMetric(value: number | null | undefined): ReactElement {
     if (isProtocolReturnLoading) return metricSpinner
     if (value === null || value === undefined) return <span>{'—'}</span>
 
-    const toneClassName = value > 0 ? 'text-green-400' : value < 0 ? 'text-red-400' : 'text-text-primary'
     const absoluteValue = formatPercent(Math.abs(value), 2, 2, 10_000)
     const signedValue = value > 0 ? `+${absoluteValue}` : value < 0 ? `-${absoluteValue}` : absoluteValue
 
-    return <span className={toneClassName}>{signedValue}</span>
+    return <span className={'text-text-primary'}>{signedValue}</span>
   }
 
   const metrics: TMetricBlock[] = [
@@ -274,16 +241,19 @@ function PortfolioHeaderSection({
       key: '30-day-apy',
       header: <MetricHeader label="30-day APY" tooltip="Blended 30-day performance using your current positions." />,
       value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedHistoricalAPY)}</span>
-    }
-  ]
-
-  const protocolReturnMetrics: TMetricBlock[] = [
+    },
     {
-      key: 'usd-growth',
-      header: <MetricHeader label="USD Growth" mobileLabel="Growth" tooltip={usdGrowthTooltip} />,
+      key: 'cumulative-protocol-return',
+      header: (
+        <MetricHeader
+          label="All-Time Cumulative Return"
+          mobileLabel="All-Time Cum."
+          tooltip={cumulativeProtocolReturnTooltip}
+        />
+      ),
       value: (
         <span className={METRIC_VALUE_CLASS}>
-          {renderSignedCurrencyMetric(protocolReturnSummary?.growthWeightUsd ?? null)}
+          {renderSignedPercentMetric(protocolReturnSummary?.protocolReturnPct)}
         </span>
       ),
       footnote:
@@ -297,20 +267,13 @@ function PortfolioHeaderSection({
         ) : undefined
     },
     {
-      key: 'cumulative-protocol-return',
-      header: (
-        <MetricHeader label="Cumulative Return" mobileLabel="Cum. Return" tooltip={cumulativeProtocolReturnTooltip} />
-      ),
-      value: (
-        <span className={METRIC_VALUE_CLASS}>
-          {renderSignedPercentMetric(protocolReturnSummary?.protocolReturnPct)}
-        </span>
-      )
-    },
-    {
       key: 'annualized-protocol-return',
       header: (
-        <MetricHeader label="Annualized Return" mobileLabel="Ann. Return" tooltip={annualizedProtocolReturnTooltip} />
+        <MetricHeader
+          label="All-Time Annualized Return"
+          mobileLabel="All-Time Ann."
+          tooltip={annualizedProtocolReturnTooltip}
+        />
       ),
       value: (
         <span className={METRIC_VALUE_CLASS}>
@@ -321,33 +284,17 @@ function PortfolioHeaderSection({
   ]
 
   return (
-    <section className={'flex flex-col gap-2'}>
-      <div className="px-1">
-        <Tooltip
-          className="h-auto justify-start gap-0"
-          openDelayMs={150}
-          side="top"
-          tooltip={
-            <div className={headingTooltipClassName}>{'Monitor your balances, returns, and discover new vaults.'}</div>
-          }
-        >
-          <h1 className="text-lg font-black text-text-primary md:text-3xl md:leading-10">{'Account Overview'}</h1>
-        </Tooltip>
+    <section className="h-full bg-surface">
+      <div className="grid gap-px bg-border">
+        {metrics.map((item) => (
+          <div key={item.key} className={metricCardClassName}>
+            <div className="flex items-center justify-between">{item.header}</div>
+            <div className="pt-0.5">{item.value}</div>
+            {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
+            {item.footnote ? <div className="pt-1.5">{item.footnote}</div> : null}
+          </div>
+        ))}
       </div>
-      {isActive && (
-        <div className="flex flex-col gap-0">
-          <MetricsCard
-            items={metrics}
-            className="rounded-t-lg rounded-b-none border border-border"
-            mobileLayout="grid"
-          />
-          <MetricsCard
-            items={protocolReturnMetrics}
-            className="rounded-none border-x border-b border-border"
-            mobileLayout="grid"
-          />
-        </div>
-      )}
     </section>
   )
 }
@@ -1110,13 +1057,15 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
   const [historyDenomination, setHistoryDenomination] = useState<TPortfolioHistoryDenomination>('usd')
+  const [historyTimeframe, setHistoryTimeframe] = useState<TPortfolioHistoryChartTimeframe>('1y')
+  const historyFetchTimeframe: TPortfolioHistoryTimeframe = historyTimeframe === 'all' ? 'all' : '1y'
   const {
     data: historyData,
     denomination: resolvedHistoryDenomination,
     isLoading: historyLoading,
     error: historyError,
     isEmpty: historyEmpty
-  } = usePortfolioHistory(historyDenomination)
+  } = usePortfolioHistory(historyDenomination, historyFetchTimeframe)
   const { data: protocolReturnSummary, isLoading: protocolReturnLoading } = usePortfolioProtocolReturn()
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
@@ -1180,11 +1129,53 @@ function PortfolioPage(): ReactElement {
     }
   }, [])
 
+  const overviewHeading = (
+    <Tooltip
+      className="h-auto justify-start gap-0"
+      openDelayMs={150}
+      side="top"
+      tooltip={
+        <div className={headingTooltipClassName}>{'Monitor your balances, returns, and discover new vaults.'}</div>
+      }
+    >
+      <h1 className="text-lg font-black text-text-primary md:text-3xl md:leading-10">{'Account Overview'}</h1>
+    </Tooltip>
+  )
+
   function renderTabContent(): ReactElement | null {
     switch (activeTab) {
       case 'positions':
         return (
           <div className="flex flex-col gap-6 sm:gap-8">
+            {model.isActive ? (
+              <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
+                <div className="grid items-stretch xl:grid-cols-[minmax(0,1fr)_340px]">
+                  <PortfolioHistoryChart
+                    data={historyData}
+                    denomination={resolvedHistoryDenomination}
+                    onDenominationChange={setHistoryDenomination}
+                    timeframe={historyTimeframe}
+                    onTimeframeChange={setHistoryTimeframe}
+                    isLoading={historyLoading}
+                    isEmpty={historyEmpty}
+                    error={historyError}
+                    embedded
+                    className="h-full bg-linear-to-b from-surface to-surface-secondary/20"
+                  />
+                  <div className="border-t border-border bg-linear-to-b from-surface to-surface-secondary/25 xl:border-t-0 xl:border-l">
+                    <PortfolioHeaderSection
+                      blendedMetrics={model.blendedMetrics}
+                      isHoldingsLoading={model.isHoldingsLoading}
+                      isSearchingBalances={model.isSearchingBalances}
+                      hasKatanaHoldings={model.hasKatanaHoldings}
+                      isProtocolReturnLoading={protocolReturnLoading}
+                      protocolReturnSummary={protocolReturnSummary}
+                      totalPortfolioValue={model.totalPortfolioValue}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <PortfolioHoldingsSection
               hasHoldings={model.hasHoldings}
               holdingsRows={model.holdingsRows}
@@ -1222,29 +1213,13 @@ function PortfolioPage(): ReactElement {
             ]}
           />
         </div>
-        <div className={cl('flex flex-col', model.isActive ? 'gap-0' : 'gap-4 sm:gap-8')}>
-          <PortfolioHeaderSection
-            blendedMetrics={model.blendedMetrics}
-            isActive={model.isActive}
-            isHoldingsLoading={model.isHoldingsLoading}
-            isSearchingBalances={model.isSearchingBalances}
-            hasKatanaHoldings={model.hasKatanaHoldings}
-            isProtocolReturnLoading={protocolReturnLoading}
-            protocolReturnSummary={protocolReturnSummary}
-            totalPortfolioValue={model.totalPortfolioValue}
-          />
-          <PortfolioHistoryChart
-            data={historyData}
-            denomination={resolvedHistoryDenomination}
-            onDenominationChange={setHistoryDenomination}
-            isLoading={historyLoading}
-            isEmpty={historyEmpty}
-            error={historyError}
-            mergeWithHeader={model.isActive}
-          />
-          <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} mergeWithHeader={model.isActive} />
+        <div className="flex flex-col gap-4 sm:gap-6">
+          <div className="flex flex-col gap-3">
+            <div className="px-1">{overviewHeading}</div>
+            <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} />
+          </div>
         </div>
-        <div className={'pt-4'} key={activeTab}>
+        <div className={'pt-2'} key={activeTab}>
           {renderTabContent()}
         </div>
       </div>

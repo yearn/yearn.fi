@@ -31,6 +31,7 @@ const portfolioPnlCategoryBreakdownSchema = z.object({
 export const portfolioHistorySimpleResponseSchema = z.object({
   address: z.string(),
   denomination: z.enum(['usd', 'eth']).optional().default('usd'),
+  timeframe: z.enum(['1y', 'all']).optional().default('1y'),
   dataPoints: z.array(portfolioHistorySimpleDataPointSchema)
 })
 
@@ -83,6 +84,19 @@ const portfolioProtocolReturnSummarySchema = z.object({
   isComplete: z.boolean()
 })
 
+const portfolioProtocolReturnVaultSchema = z.object({
+  chainId: z.number(),
+  vaultAddress: z.string(),
+  status: z.enum(['ok', 'missing_metadata', 'missing_pps', 'missing_receipt_price', 'partial']),
+  issues: z.array(z.enum(['missing_metadata', 'missing_pps', 'missing_receipt_price', 'unmatched_exit'])),
+  metadata: z.object({
+    symbol: z.string().nullable(),
+    decimals: z.number(),
+    assetDecimals: z.number(),
+    tokenAddress: z.string().nullable()
+  })
+})
+
 export const portfolioPnlResponseSchema = z.object({
   address: z.string(),
   summary: portfolioPnlSummarySchema
@@ -90,7 +104,8 @@ export const portfolioPnlResponseSchema = z.object({
 
 export const portfolioProtocolReturnResponseSchema = z.object({
   address: z.string(),
-  summary: portfolioProtocolReturnSummarySchema
+  summary: portfolioProtocolReturnSummarySchema,
+  vaults: z.array(portfolioProtocolReturnVaultSchema)
 })
 
 export type TPortfolioHistorySimpleResponse = z.infer<typeof portfolioHistorySimpleResponseSchema>
@@ -100,7 +115,9 @@ export type TPortfolioPnlResponse = z.infer<typeof portfolioPnlResponseSchema>
 export type TPortfolioPnlSummary = z.infer<typeof portfolioPnlSummarySchema>
 export type TPortfolioProtocolReturnResponse = z.infer<typeof portfolioProtocolReturnResponseSchema>
 export type TPortfolioProtocolReturnSummary = z.infer<typeof portfolioProtocolReturnSummarySchema>
+export type TPortfolioProtocolReturnVault = z.infer<typeof portfolioProtocolReturnVaultSchema>
 export type TPortfolioHistoryDenomination = z.infer<typeof portfolioHistorySimpleResponseSchema>['denomination']
+export type TPortfolioHistoryTimeframe = z.infer<typeof portfolioHistorySimpleResponseSchema>['timeframe']
 export type TPortfolioHistoryChartData = Array<{
   date: string
   value: number

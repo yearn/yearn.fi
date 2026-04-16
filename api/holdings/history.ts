@@ -3,6 +3,7 @@ import type {
   HoldingsEventFetchType,
   HoldingsEventPaginationMode,
   HoldingsHistoryDenomination,
+  HoldingsHistoryTimeframe,
   VaultVersion
 } from '../lib/holdings'
 import { checkRateLimit, ensureSchemaInitialized } from '../lib/holdings'
@@ -44,6 +45,10 @@ function parseHoldingsEventPaginationMode(value: string | string[] | undefined):
 
 function parseHoldingsHistoryDenomination(value: string | string[] | undefined): HoldingsHistoryDenomination {
   return value === 'eth' ? 'eth' : 'usd'
+}
+
+function parseHoldingsHistoryTimeframe(value: string | string[] | undefined): HoldingsHistoryTimeframe {
+  return value === 'all' ? 'all' : '1y'
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -89,7 +94,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     version: versionParam,
     fetchType: fetchTypeParam,
     paginationMode: paginationModeParam,
-    denomination: denominationParam
+    denomination: denominationParam,
+    timeframe: timeframeParam
   } = req.query
 
   if (!address || typeof address !== 'string') {
@@ -104,10 +110,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
   const denomination = parseHoldingsHistoryDenomination(denominationParam)
+  const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)
 
   try {
     const { getHistoricalHoldingsChart } = await import('../lib/holdings')
-    const holdings = await getHistoricalHoldingsChart(address, version, fetchType, paginationMode, denomination)
+    const holdings = await getHistoricalHoldingsChart(
+      address,
+      version,
+      fetchType,
+      paginationMode,
+      denomination,
+      timeframe
+    )
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.value > 0)
     if (!hasHoldings) {
@@ -119,6 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       address: holdings.address,
       version,
       denomination,
+      timeframe,
       dataPoints: holdings.dataPoints.map((dp) => ({
         date: dp.date,
         value: dp.value

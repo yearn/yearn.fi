@@ -4,19 +4,23 @@ import { useMemo } from 'react'
 import type {
   TPortfolioHistoryChartData,
   TPortfolioHistoryDenomination,
-  TPortfolioHistorySimpleResponse
+  TPortfolioHistorySimpleResponse,
+  TPortfolioHistoryTimeframe
 } from '../types/api'
 import { portfolioHistorySimpleResponseSchema } from '../types/api'
 
-export function usePortfolioHistory(denomination: TPortfolioHistoryDenomination = 'usd') {
+export function usePortfolioHistory(
+  denomination: TPortfolioHistoryDenomination = 'usd',
+  timeframe: TPortfolioHistoryTimeframe = '1y'
+) {
   const { address } = useWeb3()
 
   const endpoint = useMemo(() => {
     if (!address) {
       return null
     }
-    return `/api/holdings/history?address=${address}&denomination=${denomination}&debug=1&fetchType=parallel&paginationMode=all`
-  }, [address, denomination])
+    return `/api/holdings/history?address=${address}&denomination=${denomination}&timeframe=${timeframe}&debug=1&fetchType=parallel&paginationMode=all`
+  }, [address, denomination, timeframe])
 
   const {
     data: rawData,
@@ -53,6 +57,7 @@ export function usePortfolioHistory(denomination: TPortfolioHistoryDenomination 
   return {
     data,
     denomination,
+    timeframe,
     isLoading: isLoadingState,
     error: visibleError,
     isEmpty

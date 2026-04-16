@@ -8,7 +8,8 @@ export {
   type HoldingsBreakdownVaultResponse,
   type HoldingsHistoryChartResponse,
   type HoldingsHistoryDenomination,
-  type HoldingsHistoryResponse
+  type HoldingsHistoryResponse,
+  type HoldingsHistoryTimeframe
 } from './services/aggregator'
 export { clearUserCache, deleteStaleCache } from './services/cache'
 export {

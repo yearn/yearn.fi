@@ -16,6 +16,7 @@ import {
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
   type HoldingsHistoryDenomination,
+  type HoldingsHistoryTimeframe,
   initializeSchema,
   isDatabaseEnabled,
   type UnknownTransferInPnlMode,
@@ -160,6 +161,10 @@ function parseHoldingsEventPaginationMode(value: string | null): HoldingsEventPa
 
 function parseHoldingsHistoryDenomination(value: string | null): HoldingsHistoryDenomination {
   return value === 'eth' ? 'eth' : 'usd'
+}
+
+function parseHoldingsHistoryTimeframe(value: string | null): HoldingsHistoryTimeframe {
+  return value === 'all' ? 'all' : '1y'
 }
 
 function parseUtcDateParam(value: string | null): number | null {
@@ -452,6 +457,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
   const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
   const denomination = parseHoldingsHistoryDenomination(url.searchParams.get('denomination'))
+  const timeframe = parseHoldingsHistoryTimeframe(url.searchParams.get('timeframe'))
   const debugEnabled =
     isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
   const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
@@ -494,12 +500,20 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
         })
 
         try {
-          const response = await getHistoricalHoldingsChart(address, version, fetchType, paginationMode, denomination)
+          const response = await getHistoricalHoldingsChart(
+            address,
+            version,
+            fetchType,
+            paginationMode,
+            denomination,
+            timeframe
+          )
           debugLog('route', 'completed holdings history request', {
             version,
             fetchType,
             paginationMode,
             denomination,
+            timeframe,
             refresh,
             points: response.dataPoints.length,
             nonZeroPoints: response.dataPoints.filter((point) => point.value > 0).length
@@ -522,6 +536,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
         address: holdings.address,
         version,
         denomination,
+        timeframe,
         dataPoints: holdings.dataPoints.map((dp) => ({
           date: dp.date,
           value: dp.value
