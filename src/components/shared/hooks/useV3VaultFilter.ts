@@ -13,11 +13,13 @@ import {
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { getHoldingsAliasVaultAddress } from '@pages/vaults/domain/normalizeVault'
 import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
+import { getVaultFeeStructureKey } from '@pages/vaults/utils/vaultFees'
 import {
   deriveAssetCategory,
   deriveListKind,
   deriveV3Aggressiveness,
   expandUnderlyingAssetSelection,
+  hasTemporaryVisibilityOverride,
   isAllocatorVaultOverride,
   normalizeUnderlyingAssetSymbol,
   type TVaultAggressiveness
@@ -43,6 +45,7 @@ type TVaultIndexEntry = {
   kind: ReturnType<typeof deriveListKind>
   category: string
   aggressiveness: TVaultAggressiveness | null
+  feeStructureKey: string
   isHidden: boolean
   isFeatured: boolean
   isActive: boolean
@@ -80,6 +83,7 @@ export function useV3VaultFilter(
   underlyingAssets?: string[] | null,
   minTvl?: number,
   showHiddenVaults?: boolean,
+  feeStructureKey?: string | null,
   enabled?: boolean
 ): TV3VaultFilterResult {
   const { vaults, allVaults, getPrice, isLoadingVaultList } = useYearn()
@@ -181,6 +185,7 @@ export function useV3VaultFilter(
         kind,
         category: deriveAssetCategory(vault),
         aggressiveness: deriveV3Aggressiveness(vault),
+        feeStructureKey: getVaultFeeStructureKey(vault),
         isHidden: Boolean(info?.isHidden),
         isFeatured: Boolean(info?.isHighlighted),
         isActive: Boolean(updates.isActive),
@@ -279,6 +284,7 @@ export function useV3VaultFilter(
     const hasAggressivenessFilter = Boolean(aggressiveness?.length)
     const hasTypeFilter = Boolean(types?.length)
     const hasUnderlyingAssetFilter = normalizedUnderlyingAssets.size > 0
+    const hasFeeStructureFilter = Boolean(feeStructureKey)
 
     const matchesSearch = (searchableText: string): boolean => {
       if (!isSearchEnabled) {
@@ -298,6 +304,7 @@ export function useV3VaultFilter(
         kind,
         category,
         aggressiveness: aggressivenessScore,
+        feeStructureKey: entryFeeStructureKey,
         isHidden,
         isFeatured,
         isActive,
@@ -351,25 +358,26 @@ export function useV3VaultFilter(
         totalRetiredMatching++
       }
 
-      const shouldIncludeByCategory = hasUserHoldings || !hasCategoryFilter || Boolean(categories?.includes(category))
+      const shouldIncludeByCategory = !hasCategoryFilter || Boolean(categories?.includes(category))
       const isPinnedByUserContext = hasUserHoldings || isMigratableVault || isRetiredVault
       const isStrategy = kind === 'strategy'
-      const shouldIncludeByFeaturedGate = showHiddenVaults || isStrategy || isFeatured || isPinnedByUserContext
+      const shouldIncludeByFeaturedGate =
+        showHiddenVaults || isStrategy || isFeatured || isPinnedByUserContext || hasTemporaryVisibilityOverride(vault)
       const shouldIncludeByKind =
-        hasUserHoldings ||
         !hasTypeFilter ||
         (Boolean(types?.includes('multi')) && kind === 'allocator') ||
         (Boolean(types?.includes('single')) && kind === 'strategy')
       const shouldIncludeByAggressiveness =
-        hasUserHoldings ||
         !hasAggressivenessFilter ||
         (aggressivenessScore !== null && Boolean(aggressiveness?.includes(aggressivenessScore)))
+      const shouldIncludeByFeeStructure = !hasFeeStructureFilter || entryFeeStructureKey === feeStructureKey
 
       if (
         shouldIncludeByCategory &&
         shouldIncludeByFeaturedGate &&
         shouldIncludeByKind &&
-        shouldIncludeByAggressiveness
+        shouldIncludeByAggressiveness &&
+        shouldIncludeByFeeStructure
       ) {
         const assetKey = normalizeUnderlyingAssetSymbol(getVaultToken(vault)?.symbol)
         if (assetKey && !underlyingAssetVaults[assetKey]) {
@@ -379,8 +387,7 @@ export function useV3VaultFilter(
           availableUnderlyingAssets.add(assetKey)
         }
 
-        const matchesUnderlyingAsset =
-          hasUserHoldings || !hasUnderlyingAssetFilter || (assetKey && expandedUnderlyingAssets.has(assetKey))
+        const matchesUnderlyingAsset = !hasUnderlyingAssetFilter || (assetKey && expandedUnderlyingAssets.has(assetKey))
 
         if (matchesUnderlyingAsset) {
           filteredVaults.push(vault)
@@ -412,6 +419,7 @@ export function useV3VaultFilter(
     minTvlValue,
     holdingsVaults,
     showHiddenVaults,
+    feeStructureKey,
     searchRegex,
     lowercaseSearch,
     isSearchEnabled

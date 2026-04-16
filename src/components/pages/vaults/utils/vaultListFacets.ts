@@ -11,6 +11,7 @@ import {
   isAutomatedVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { isYvBtcVault } from '@pages/vaults/utils/yvBtc'
 import { toAddress } from '@shared/utils'
 
 export type TVaultAssetCategory = 'Stablecoin' | 'Volatile'
@@ -61,7 +62,10 @@ const KNOWN_STABLECOIN_SYMBOLS = new Set([
 ])
 
 const AGGRESSIVENESS_OVERRIDES: Record<string, TVaultAggressiveness> = {}
-const ALLOCATOR_VAULT_OVERRIDES = new Set([`1:${toAddress('0x27B5739e22ad9033bcBf192059122d163b60349D')}`])
+const ALLOCATOR_VAULT_OVERRIDES = new Set([
+  `1:${toAddress('0x27B5739e22ad9033bcBf192059122d163b60349D')}`,
+  `1:${toAddress('0xb8787E236e699654F910CAD14F338d0DdB529Fd7')}`
+])
 
 function getVaultKey(vault: TKongVaultInput): string {
   return `${getVaultChainID(vault)}:${toAddress(getVaultAddress(vault))}`
@@ -113,6 +117,10 @@ export function deriveListKind(vault: TKongVaultInput): TVaultListKind {
   if (name.includes('factory')) return 'factory'
   if (isAutomatedVault(vault)) return 'factory'
   return 'legacy'
+}
+
+export function hasTemporaryVisibilityOverride(vault: TKongVaultInput): boolean {
+  return isYvBtcVault(vault)
 }
 
 function getAggressivenessForRiskLevel(value: number): TVaultAggressiveness | null {

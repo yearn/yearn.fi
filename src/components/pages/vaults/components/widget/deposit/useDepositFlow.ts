@@ -53,6 +53,7 @@ export interface DepositFlowResult {
       minExpectedOut: bigint
       normalizedExpectedOut: bigint
       normalizedMinExpectedOut: bigint
+      routeHasSwap?: boolean
       isLoadingRoute: boolean
       isLoadingExpectedOutNormalization: boolean
       isCrossChain: boolean

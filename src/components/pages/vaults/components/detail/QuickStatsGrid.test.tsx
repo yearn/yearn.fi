@@ -1,13 +1,23 @@
 import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import { MobileKeyMetrics, YvUsdApyStatBox } from './QuickStatsGrid'
+
+Object.defineProperty(globalThis, 'location', {
+  value: {
+    href: 'http://localhost/'
+  },
+  configurable: true
+})
 
 vi.mock('@shared/contexts/useWeb3', () => ({
   useWeb3: () => ({
     address: undefined,
     isActive: false
   })
+}))
+
+vi.mock('@hooks/usePlausible', () => ({
+  usePlausible: () => vi.fn()
 }))
 
 vi.mock('@pages/vaults/components/table/VaultForwardAPY', () => ({
@@ -23,6 +33,8 @@ vi.mock('@pages/vaults/components/table/APYDetailsModal', () => ({
       </div>
     ) : null
 }))
+
+const { MobileKeyMetrics, YvUsdApyStatBox } = await import('./QuickStatsGrid')
 
 const TEST_VAULT = {
   version: '3.0.0',

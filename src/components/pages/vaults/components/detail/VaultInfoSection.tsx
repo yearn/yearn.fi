@@ -11,8 +11,10 @@ import {
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
+import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
+import { isYvBtcAddress, YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { isYvUsdAddress, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
@@ -227,6 +229,29 @@ function YvUsdPricePerShareRows(): ReactElement {
   )
 }
 
+function YvBtcPricePerShareRows(): ReactElement {
+  const { unlockedVault, lockedVault } = useYvBtcVaults()
+  const unlockedPricePerShare = getVaultAPR(unlockedVault).pricePerShare.today
+  const lockedPricePerShare = getVaultAPR(lockedVault).pricePerShare.today
+
+  return (
+    <>
+      <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+        <p className={INFO_LABEL_CLASS}>{'Unlocked Price Per Share'}</p>
+        <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
+          {unlockedPricePerShare}
+        </p>
+      </div>
+      <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+        <p className={INFO_LABEL_CLASS}>{'Locked Price Per Share'}</p>
+        <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
+          {lockedPricePerShare}
+        </p>
+      </div>
+    </>
+  )
+}
+
 export function VaultInfoSection({
   currentVault,
   inceptTime
@@ -237,6 +262,8 @@ export function VaultInfoSection({
   const chainID = getVaultChainID(currentVault)
   const vaultAddress = getVaultAddress(currentVault)
   const isYvUsd = isYvUsdAddress(vaultAddress)
+  const isYvBtc = isYvBtcAddress(vaultAddress)
+  const isDualVariantVault = isYvUsd || isYvBtc
   const token = getVaultToken(currentVault)
   const staking = getVaultStaking(currentVault)
   const info = getVaultInfo(currentVault)
@@ -279,15 +306,15 @@ export function VaultInfoSection({
   return (
     <div className={'grid w-full grid-cols-1 gap-10 p-4 md:p-6 md:pt-0'}>
       <div className={'col-span-1 grid w-full gap-1'}>
-        {isYvUsd ? (
+        {isDualVariantVault ? (
           <>
             <AddressLink
-              address={YVUSD_UNLOCKED_ADDRESS}
+              address={isYvBtc ? YVBTC_UNLOCKED_ADDRESS : YVUSD_UNLOCKED_ADDRESS}
               explorerUrl={explorerUrl}
               label={'Unlocked Vault Contract Address'}
             />
             <AddressLink
-              address={YVUSD_LOCKED_ADDRESS}
+              address={isYvBtc ? YVBTC_LOCKED_ADDRESS : YVUSD_LOCKED_ADDRESS}
               explorerUrl={explorerUrl}
               label={'Locked Vault Contract Address'}
             />
@@ -362,6 +389,8 @@ export function VaultInfoSection({
 
         {isYvUsd ? (
           <YvUsdPricePerShareRows />
+        ) : isYvBtc ? (
+          <YvBtcPricePerShareRows />
         ) : (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
             <p className={INFO_LABEL_CLASS}>{'Current Price Per Share'}</p>

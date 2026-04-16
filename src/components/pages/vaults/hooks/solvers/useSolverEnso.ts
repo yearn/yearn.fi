@@ -5,7 +5,7 @@ import { getApproveAbi } from '@shared/utils/approve'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
 import { useTokenAllowance } from '../useTokenAllowance'
-import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse } from './ensoRoute'
+import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
 
@@ -44,6 +44,7 @@ interface UseSolverEnsoReturn {
     allowance: bigint
     isAllowanceSufficient: boolean
     route: EnsoRouteResponse | undefined
+    routeHasSwap: boolean
     error: EnsoError | undefined
     isLoadingRoute: boolean
     isLoadingAllowance: boolean
@@ -82,6 +83,7 @@ export const useSolverEnso = ({
   const visibleRoute = resolvedRequestKey === requestKey ? route : undefined
   const visibleError = errorRequestKey === requestKey ? error : undefined
   const routerAddress = visibleRoute?.tx?.to
+  const visibleRouteHasSwap = routeHasSwapStep(visibleRoute)
 
   // Use known Enso router for pre-fetching allowance, fall back to actual router from route
   const knownRouterAddress = ENSO_ROUTER_ADDRESSES[chainId]
@@ -148,10 +150,22 @@ export const useSolverEnso = ({
 
         return
       }
+      const resolvedRoute = normalizedResponse.route
       setError(undefined)
-      setRoute(normalizedResponse.route)
+      setRoute(resolvedRoute)
       setResolvedRequestKey(requestKey)
       setErrorRequestKey(undefined)
+      if (import.meta.env.DEV && resolvedRoute) {
+        console.log('[ENSO] route response', {
+          chainId,
+          destinationChainId,
+          tokenIn,
+          tokenOut,
+          amountIn: amountIn.toString(),
+          routeHasSwap: routeHasSwapStep(resolvedRoute),
+          route: resolvedRoute.route
+        })
+      }
     } catch (err) {
       if (abortController.signal.aborted || routeRequestIdRef.current !== requestId) {
         return
@@ -249,6 +263,7 @@ export const useSolverEnso = ({
       allowance,
       isAllowanceSufficient,
       route: visibleRoute,
+      routeHasSwap: visibleRouteHasSwap,
       error: visibleError,
       isLoadingRoute: isLoadingCurrentRequest,
       isLoadingAllowance,

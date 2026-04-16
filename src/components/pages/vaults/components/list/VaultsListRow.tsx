@@ -24,7 +24,15 @@ import {
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
 import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
-import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
+import {
+  formatFeeStructureFilterAriaLabel,
+  formatFeeStructureLabel,
+  getFeeStructureKeyFromFees
+} from '@pages/vaults/utils/vaultFees'
+import {
+  deriveListKind,
+  hasTemporaryVisibilityOverride as hasTemporaryVaultVisibilityOverride
+} from '@pages/vaults/utils/vaultListFacets'
 import { getVaultPrimaryLogoSrc } from '@pages/vaults/utils/vaultLogo'
 import {
   getCategoryDescription,
@@ -34,7 +42,8 @@ import {
   HIDDEN_TAG_DESCRIPTION,
   MIGRATABLE_TAG_DESCRIPTION,
   NOT_YEARN_TAG_DESCRIPTION,
-  RETIRED_TAG_DESCRIPTION
+  RETIRED_TAG_DESCRIPTION,
+  TEMPORARY_OVERRIDE_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
 import {
   getYvUsdInfinifiPointsNote,
@@ -51,10 +60,11 @@ import { Tooltip } from '@shared/components/Tooltip'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
+import { IconAlertWarning } from '@shared/icons/IconAlertWarning'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
-import { cl, formatAmount, formatApyDisplay, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
+import { cl, formatApyDisplay, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -224,7 +234,9 @@ type TVaultsListRowProps = {
   onToggleCategory?: (category: string) => void
   onToggleType?: (type: string) => void
   activeProductType?: 'v3' | 'lp' | 'all'
+  activeFeeStructureKey?: string | null
   onToggleVaultType?: (type: 'v3' | 'lp') => void
+  onToggleFeeStructure?: (feeStructureKey: string) => void
   showStrategies?: boolean
   shouldCollapseChips?: boolean
   isExpanded?: boolean
@@ -249,7 +261,9 @@ function VaultsListRowComponent({
   onToggleCategory,
   onToggleType,
   activeProductType,
+  activeFeeStructureKey,
   onToggleVaultType,
+  onToggleFeeStructure,
   showStrategies = false,
   shouldCollapseChips = false,
   isExpanded: isExpandedProp,
@@ -374,6 +388,7 @@ function VaultsListRowComponent({
   }, [vaultAddress, chainID, queryClient])
 
   const isHiddenVault = Boolean(flags?.isHidden)
+  const hasTemporaryVisibilityOverride = hasTemporaryVaultVisibilityOverride(currentVault)
   const kindType = getVaultKindType(vaultKind, listKind)
   const kindLabel = getVaultKindLabel(kindType, vaultKind)
   const activeChainIds = activeChains ?? []
@@ -385,14 +400,10 @@ function VaultsListRowComponent({
   const productTypeDescription = getProductTypeDescription(listKind)
   const kindDescription = getKindDescription(kindType, kindLabel)
   const fees = apr?.fees
+  const feeStructureKey = getFeeStructureKeyFromFees(fees)
   const showFeesChip = Boolean(fees) && !isChipsCompressed
-  const feesChipLabel = fees
-    ? `Fees: ${formatAmount((fees.management || 0) * 100, 0, 2)}% | ${formatAmount(
-        (fees.performance || 0) * 100,
-        0,
-        2
-      )}%`
-    : ''
+  const feesChipLabel = formatFeeStructureLabel(fees)
+  const isFeesChipActive = activeFeeStructureKey === feeStructureKey
   const retiredIcon = <span className={'text-xs leading-none'}>{'⚠️'}</span>
   const holdingsIcon = (
     <svg
@@ -535,14 +546,13 @@ function VaultsListRowComponent({
           className={cl(
             leftColumnSpan,
             'z-10',
-            isYvUsd ? '-ml-2' : '',
             'flex flex-col items-start sm:pt-0 md:flex-row md:items-center md:justify-between'
           )}
         >
           <div
             className={cl(
               'flex w-full overflow-visible border-b border-border pb-2',
-              isYvUsd ? 'gap-4' : 'gap-6',
+              'gap-6',
               'md:border-none md:pb-0'
             )}
           >
@@ -555,7 +565,7 @@ function VaultsListRowComponent({
                   isCompareSelected ? `Remove ${vaultName} from comparison` : `Add ${vaultName} to comparison`
                 }
                 tabIndex={0}
-                className={cl('flex cursor-pointer items-center justify-center', isYvUsd ? 'ml-2' : '')}
+                className={'flex cursor-pointer items-center justify-center'}
                 onClick={(event): void => {
                   event.stopPropagation()
                   event.preventDefault()
@@ -586,17 +596,14 @@ function VaultsListRowComponent({
               </div>
             ) : null}
             <div
-              className={cl(
-                'relative flex items-center justify-center self-center',
-                isYvUsd ? 'size-12' : 'size-8',
-                'min-h-8 min-w-8'
-              )}
+              className={cl('relative flex items-center justify-center self-center', 'size-10', 'min-h-10 min-w-10')}
             >
-              {isYvUsd ? (
-                <TokenLogo src={tokenLogoSrc} tokenSymbol={'yvUSD'} width={48} height={48} />
-              ) : (
-                <TokenLogo src={tokenLogoSrc} tokenSymbol={vaultToken.symbol || ''} width={32} height={32} />
-              )}
+              <TokenLogo
+                src={tokenLogoSrc}
+                tokenSymbol={isYvUsd ? 'yvUSD' : vaultToken.symbol || ''}
+                width={40}
+                height={40}
+              />
               <div
                 className={
                   'absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface'
@@ -656,10 +663,13 @@ function VaultsListRowComponent({
                 {showFeesChip ? (
                   <VaultsListChip
                     label={feesChipLabel}
+                    isActive={isFeesChipActive}
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
-                    tooltipDescription={'Management fee | Performance fee'}
+                    tooltipDescription={'Filter vaults with this same management and performance fee structure.'}
+                    onClick={onToggleFeeStructure ? (): void => onToggleFeeStructure(feeStructureKey) : undefined}
                     onHoverChange={handleInteractiveHoverChange}
+                    ariaLabel={formatFeeStructureFilterAriaLabel(fees)}
                   />
                 ) : null}
                 {showKindChip && kindLabel ? (
@@ -672,6 +682,17 @@ function VaultsListRowComponent({
                     onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
                     onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={`Filter by ${kindLabel}`}
+                  />
+                ) : null}
+                {hasTemporaryVisibilityOverride ? (
+                  <VaultsListChip
+                    label={'Override'}
+                    icon={<IconAlertWarning className={'size-3.5 text-amber-400'} />}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={TEMPORARY_OVERRIDE_TAG_DESCRIPTION}
+                    onHoverChange={handleInteractiveHoverChange}
+                    ariaLabel={'Temporary visibility override'}
                   />
                 ) : null}
                 {flags?.isRetired ? (
@@ -910,6 +931,9 @@ function VaultsListRowComponent({
             showKindTag={showKindChip}
             showHiddenTag={isHiddenVault}
             isHidden={isHiddenVault}
+            apyDisplayVariant={apyDisplayVariant}
+            showBoostDetails={showBoostDetails}
+            expandedApyTooltip={isYvUsd ? yvUsdApyTooltip : undefined}
           />
         </Suspense>
       ) : null}

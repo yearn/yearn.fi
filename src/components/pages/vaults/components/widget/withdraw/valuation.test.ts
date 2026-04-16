@@ -47,4 +47,19 @@ describe('calculateWithdrawValueInfo', () => {
     expect(valueInfo.priceImpactPercentage).toBe(0)
     expect(valueInfo.worstCasePriceImpactPercentage).toBe(1)
   })
+
+  it('preserves favorable execution as negative price impact for UI display', () => {
+    const valueInfo = calculateWithdrawValueInfo({
+      withdrawAmountBn: 100n * ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1,
+      expectedOut: 105n * ONE_ETHER,
+      minExpectedOut: 102n * ONE_ETHER,
+      outputDecimals: 18,
+      outputUsdPrice: 1
+    })
+
+    expect(valueInfo.priceImpactPercentage).toBe(-5)
+    expect(valueInfo.worstCasePriceImpactPercentage).toBe(-2)
+  })
 })

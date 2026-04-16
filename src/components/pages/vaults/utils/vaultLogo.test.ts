@@ -1,6 +1,7 @@
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { describe, expect, it } from 'vitest'
 import { getVaultPrimaryLogoSrc } from './vaultLogo'
+import { YVBTC_UNLOCKED_ADDRESS } from './yvBtc'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from './yvUsd'
 
 const STANDARD_VAULT = {
@@ -15,25 +16,34 @@ const STANDARD_VAULT = {
 }
 
 describe('getVaultPrimaryLogoSrc', () => {
-  it('returns the yvUSD seal logo for the unlocked vault', () => {
+  it('returns the yvUSD primary logo for the unlocked vault', () => {
     expect(
       getVaultPrimaryLogoSrc({
         ...STANDARD_VAULT,
         address: YVUSD_UNLOCKED_ADDRESS
       } as unknown as TKongVaultInput)
-    ).toMatch(/yvUSD-seal\.png$/)
+    ).toMatch(/yvusd-128\.png$/)
   })
 
-  it('returns the yvUSD seal logo for the locked vault', () => {
+  it('returns the yvUSD primary logo for the locked vault', () => {
     expect(
       getVaultPrimaryLogoSrc({
         ...STANDARD_VAULT,
         address: YVUSD_LOCKED_ADDRESS
       } as unknown as TKongVaultInput)
-    ).toMatch(/yvUSD-seal\.png$/)
+    ).toMatch(/yvusd-128\.png$/)
   })
 
-  it('returns the standard token asset logo for non-yvUSD vaults', () => {
+  it('returns the yvBTC custom logo for the unlocked vault', () => {
+    expect(
+      getVaultPrimaryLogoSrc({
+        ...STANDARD_VAULT,
+        address: YVBTC_UNLOCKED_ADDRESS
+      } as unknown as TKongVaultInput)
+    ).toMatch(/yvBTC-1\.svg$/)
+  })
+
+  it('returns the standard token asset logo for non-product vaults', () => {
     expect(getVaultPrimaryLogoSrc(STANDARD_VAULT as unknown as TKongVaultInput)).toContain('logo-128.png')
   })
 })

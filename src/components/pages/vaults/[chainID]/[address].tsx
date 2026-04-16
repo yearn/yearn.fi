@@ -8,20 +8,23 @@ import {
   resolveDesktopWidgetHeaderOffset
 } from '@pages/vaults/components/detail/desktopWidgetSizing'
 import { MobileKeyMetrics, YvUsdApyStatBox } from '@pages/vaults/components/detail/QuickStatsGrid'
-import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
+import { type TVaultAddressItem, VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
 import { VaultChartsSection } from '@pages/vaults/components/detail/VaultChartsSection'
 import { VaultDetailsHeader, VaultDetailsHeaderPresentation } from '@pages/vaults/components/detail/VaultDetailsHeader'
 import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSection'
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
 import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
+import { resolveForwardApyDisplayConfig } from '@pages/vaults/components/table/apyDisplayConfig'
 import { VaultDetailsWelcomeTour } from '@pages/vaults/components/tour/VaultDetailsWelcomeTour'
 import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
+import { YvBtcWidget } from '@pages/vaults/components/widget/yvBTC/YvBtcWidget'
 import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
+import { YvUsdApyTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import {
   getVaultChainID,
@@ -37,11 +40,15 @@ import {
 } from '@pages/vaults/domain/normalizeVault'
 import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from '@pages/vaults/domain/vaultWarnings'
 import { useEnsureVaultListFetch } from '@pages/vaults/hooks/useEnsureVaultListFetch'
+import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
+import { isYvBtcAddress, YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import {
+  getYvUsdInfinifiPointsNote,
   getYvUsdSharePrice,
   isYvUsdAddress,
   type TYvUsdVariant,
@@ -57,8 +64,18 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
-import type { ReactElement } from 'react'
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import type { ReactElement, ReactNode } from 'react'
+import {
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import { isAddressEqual } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
@@ -88,6 +105,95 @@ const resolveHeaderOffset = (): number => {
 }
 
 const desktopWidgetHeightClassNames = getDesktopWidgetHeightClassNames()
+
+const EMPTY_VAULT_FOR_APY_DATA: TKongVaultView = {
+  address: '0x0000000000000000000000000000000000000000',
+  version: '0',
+  type: 'Standard',
+  kind: 'Single Strategy',
+  symbol: '',
+  name: '',
+  description: '',
+  category: '',
+  decimals: 18,
+  chainID: 1,
+  token: {
+    address: '0x0000000000000000000000000000000000000000',
+    name: '',
+    symbol: '',
+    description: '',
+    decimals: 18
+  },
+  tvl: {
+    tvl: 0,
+    totalAssets: 0n,
+    price: 0
+  },
+  apr: {
+    type: '',
+    netAPR: 0,
+    fees: {
+      performance: 0,
+      withdrawal: 0,
+      management: 0
+    },
+    extra: {
+      stakingRewardsAPR: 0,
+      gammaRewardAPR: 0
+    },
+    points: {
+      weekAgo: 0,
+      monthAgo: 0,
+      inception: 0
+    },
+    pricePerShare: {
+      today: 0,
+      weekAgo: null,
+      monthAgo: null
+    },
+    forwardAPR: {
+      type: '',
+      netAPR: 0,
+      composite: {
+        boost: 0,
+        poolAPY: 0,
+        boostedAPR: 0,
+        baseAPR: 0,
+        cvxAPR: 0,
+        rewardsAPR: 0,
+        v3OracleCurrentAPR: 0,
+        v3OracleStratRatioAPR: 0,
+        keepCRV: 0,
+        keepVELO: 0,
+        cvxKeepCRV: 0
+      }
+    }
+  },
+  featuringScore: 0,
+  strategies: [],
+  staking: {
+    address: '0x0000000000000000000000000000000000000000',
+    available: false,
+    source: '',
+    rewards: []
+  },
+  migration: {
+    available: false,
+    address: '0x0000000000000000000000000000000000000000',
+    contract: '0x0000000000000000000000000000000000000000'
+  },
+  info: {
+    sourceURL: '',
+    riskLevel: 0,
+    riskScore: [],
+    riskScoreComment: '',
+    uiNotice: '',
+    isRetired: false,
+    isBoosted: false,
+    isHighlighted: false,
+    isHidden: false
+  }
+}
 
 const RETIRED_VAULT_ALERT_MESSAGES = {
   noFunds: 'This vault is retired.',
@@ -327,7 +433,16 @@ function Index(): ReactElement | null {
     lockedVault: yvUsdLockedVault,
     isLoading: isLoadingYvUsd
   } = useYvUsdVaults()
+  const {
+    listVault: yvBtcVault,
+    unlockedVault: yvBtcUnlockedVault,
+    lockedVault: yvBtcLockedVault,
+    metrics: yvBtcMetrics,
+    isLoading: isLoadingYvBtc
+  } = useYvBtcVaults()
   const isYvUsd = isYvUsdAddress(params.address)
+  const isYvBtc = isYvBtcAddress(params.address)
+  const isDualVariantVault = isYvUsd || isYvBtc
   const isLockedYvUsdRoute =
     chainId === YVUSD_CHAIN_ID && params.address ? toAddress(params.address) === YVUSD_LOCKED_ADDRESS : false
   const unlockedYvUsdPath = `/vaults/${YVUSD_CHAIN_ID}/${YVUSD_UNLOCKED_ADDRESS}${location.search}${location.hash}`
@@ -378,6 +493,7 @@ function Index(): ReactElement | null {
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
   const [sectionScrollOffset, setSectionScrollOffset] = useState(0)
   const [isHeaderCompressed, setIsHeaderCompressed] = useState(false)
+  const [isHeaderAutoCompressed, setIsHeaderAutoCompressed] = useState(false)
   const [yvUsdApyVariant, setYvUsdApyVariant] = useState<TYvUsdVariant>('locked')
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const scrollPadding = 16
@@ -427,11 +543,11 @@ function Index(): ReactElement | null {
   const isSnapshotNotFound = (snapshotError as any)?.response?.status === 404
 
   const isYBold = useMemo(() => {
-    if (isYvUsd) return false
+    if (isDualVariantVault) return false
     if (!baseVault?.address && !params.address) return false
     const resolvedAddress = toAddress(baseVault?.address ?? params.address ?? '0x')
     return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
-  }, [isYvUsd, baseVault?.address, params.address])
+  }, [isDualVariantVault, baseVault?.address, params.address])
 
   const yBoldStakingVault = useMemo(() => {
     if (!isYBold) return undefined
@@ -480,7 +596,7 @@ function Index(): ReactElement | null {
   const snapshotShouldDisableStaking = mergedSnapshot?.meta?.shouldDisableStaking
   const hasTriggeredVaultListFetch = useEnsureVaultListFetch({
     hasVaultList,
-    isYvUsd,
+    isYvUsd: isDualVariantVault,
     snapshotVault,
     enableVaultListFetch
   })
@@ -495,14 +611,31 @@ function Index(): ReactElement | null {
     if (isYvUsd) {
       return yvUsdVault ?? yvUsdUnlockedVault ?? yvUsdLockedVault
     }
+    if (isYvBtc) {
+      return yvBtcVault ?? yvBtcUnlockedVault ?? yvBtcLockedVault
+    }
     if (!vaultViewInput) return undefined
     return getVaultView(vaultViewInput, mergedSnapshot)
-  }, [isYvUsd, yvUsdVault, yvUsdUnlockedVault, yvUsdLockedVault, vaultViewInput, mergedSnapshot])
+  }, [
+    isYvUsd,
+    isYvBtc,
+    yvUsdVault,
+    yvUsdUnlockedVault,
+    yvUsdLockedVault,
+    yvBtcVault,
+    yvBtcUnlockedVault,
+    yvBtcLockedVault,
+    vaultViewInput,
+    mergedSnapshot
+  ])
 
   const shouldBootstrapYvUsdVaultList = isYvUsd && !hasVaultList && !hasTriggeredVaultListFetch
-  const isLoadingVault = isYvUsd
-    ? isLoadingYvUsd || shouldBootstrapYvUsdVaultList
+  const shouldBootstrapYvBtcVaultList = isYvBtc && !hasVaultList && !hasTriggeredVaultListFetch
+  const isLoadingVault = isDualVariantVault
+    ? (isYvUsd && (isLoadingYvUsd || shouldBootstrapYvUsdVaultList)) ||
+      (isYvBtc && (isLoadingYvBtc || shouldBootstrapYvBtcVaultList))
     : !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
+  const vaultApyData = useVaultApyData(currentVault ?? EMPTY_VAULT_FOR_APY_DATA)
   const stakingAddress = !isZeroAddress(currentVault?.staking?.address)
     ? toAddress(currentVault?.staking?.address)
     : undefined
@@ -541,6 +674,90 @@ function Index(): ReactElement | null {
       snapshot: mergedSnapshot
     })
   }, [metadataVault, mergedSnapshot])
+  const vaultAddresses = useMemo((): TVaultAddressItem[] => {
+    if (!currentVault) {
+      return []
+    }
+
+    if (isDualVariantVault) {
+      const unlockedAddress = isYvBtc ? YVBTC_UNLOCKED_ADDRESS : YVUSD_UNLOCKED_ADDRESS
+      const lockedAddress = isYvBtc ? YVBTC_LOCKED_ADDRESS : YVUSD_LOCKED_ADDRESS
+      const addresses: TVaultAddressItem[] = [
+        { address: unlockedAddress, label: 'Unlocked Vault Contract Address' },
+        { address: lockedAddress, label: 'Locked Vault Contract Address' }
+      ]
+      if (!isZeroAddress(currentVault.token.address)) {
+        addresses.push({ address: toAddress(currentVault.token.address), label: 'Token Contract Address' })
+      }
+      if (currentVault.staking.available && !isZeroAddress(currentVault.staking.address)) {
+        addresses.push({ address: toAddress(currentVault.staking.address), label: 'Staking Contract Address' })
+      }
+      return addresses
+    }
+
+    const addresses: TVaultAddressItem[] = [
+      { address: toAddress(currentVault.address), label: 'Vault Contract Address' }
+    ]
+    if (!isZeroAddress(currentVault.token.address)) {
+      addresses.push({ address: toAddress(currentVault.token.address), label: 'Token Contract Address' })
+    }
+    if (currentVault.staking.available && !isZeroAddress(currentVault.staking.address)) {
+      addresses.push({ address: toAddress(currentVault.staking.address), label: 'Staking Contract Address' })
+    }
+    return addresses
+  }, [currentVault, isDualVariantVault, isYvBtc])
+  const additionalFeaturesContent = useMemo((): ReactNode => {
+    if (!currentVault) {
+      return null
+    }
+
+    const dualUnlockedVault = isYvBtc ? yvBtcUnlockedVault : yvUsdVault
+    const dualLockedVault = isYvBtc ? yvBtcLockedVault : yvUsdLockedVault
+    const unlockedApy =
+      dualUnlockedVault?.apr.forwardAPR.netAPR ?? currentVault.apr.forwardAPR.netAPR ?? currentVault.apr.netAPR ?? 0
+    const lockedApy = dualLockedVault?.apr.forwardAPR.netAPR ?? dualLockedVault?.apr.netAPR ?? 0
+
+    const tooltipContent = isDualVariantVault ? (
+      <YvUsdApyTooltipContent
+        lockedValue={lockedApy}
+        unlockedValue={unlockedApy}
+        infinifiPointsNote={
+          isYvUsd && (currentVault.address === YVUSD_UNLOCKED_ADDRESS || currentVault.address === YVUSD_LOCKED_ADDRESS)
+            ? getYvUsdInfinifiPointsNote()
+            : undefined
+        }
+      />
+    ) : (
+      resolveForwardApyDisplayConfig({
+        currentVault,
+        data: vaultApyData,
+        displayVariant: 'default',
+        showSubline: false,
+        showSublineTooltip: true,
+        showBoostDetails: true,
+        canOpenModal: false
+      }).displayConfig.tooltip?.content
+    )
+
+    if (!isValidElement<{ className?: string }>(tooltipContent)) {
+      return tooltipContent
+    }
+
+    return cloneElement(tooltipContent, {
+      className: `${tooltipContent.props.className ?? ''} bg-transparent border-0 shadow-none`
+    })
+  }, [
+    currentVault,
+    isDualVariantVault,
+    isYvBtc,
+    isYvUsd,
+    vaultApyData,
+    yvBtcLockedVault,
+    yvBtcUnlockedVault,
+    yvUsdLockedVault?.apr.forwardAPR.netAPR,
+    yvUsdLockedVault?.apr.netAPR,
+    yvUsdVault?.apr.forwardAPR.netAPR
+  ])
   const widgetActions = useMemo(() => {
     if (isRetired || isMigratable) {
       return canShowMigrateAction ? [WidgetActionType.Migrate, WidgetActionType.Withdraw] : [WidgetActionType.Withdraw]
@@ -779,7 +996,13 @@ function Index(): ReactElement | null {
         key: 'about' as const,
         shouldRender: true,
         ref: sectionRefs.about,
-        content: <VaultAboutSection currentVault={currentVault} />
+        content: (
+          <VaultAboutSection
+            currentVault={currentVault}
+            vaultAddresses={vaultAddresses}
+            additionalFeaturesContent={additionalFeaturesContent}
+          />
+        )
       },
       {
         key: 'strategies' as const,
@@ -800,7 +1023,15 @@ function Index(): ReactElement | null {
         content: <VaultInfoSection currentVault={currentVault} inceptTime={snapshotVault?.inceptTime ?? null} />
       }
     ]
-  }, [chainId, currentVault, isYvUsd, sectionRefs, snapshotVault?.inceptTime])
+  }, [
+    additionalFeaturesContent,
+    chainId,
+    currentVault,
+    isYvUsd,
+    sectionRefs,
+    snapshotVault?.inceptTime,
+    vaultAddresses
+  ])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const sectionTabs = renderableSections.map((section) => ({
@@ -1135,6 +1366,15 @@ function Index(): ReactElement | null {
   const mobileProductTypeLabel = getMobileProductTypeLabel()
   const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
+  const yvBtcMobileApyBox = (
+    <YvUsdApyStatBox
+      lockedApy={yvBtcMetrics.locked.apy}
+      unlockedApy={yvBtcMetrics.unlocked.apy}
+      activeVariant={yvUsdApyVariant}
+      onVariantChange={setYvUsdApyVariant}
+      title={'yvBTC APY'}
+    />
+  )
 
   function renderDetailCharts(chartHeightPx: number, chartHeightMdPx: number): ReactElement {
     if (isYvUsd) {
@@ -1162,6 +1402,20 @@ function Index(): ReactElement | null {
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
           onDepositVariantChange={setYvUsdApyVariant}
+          showTabs={false}
+          collapseDetails={shouldCollapseWidgetDetails}
+        />
+      )
+    }
+    if (isYvBtc) {
+      return (
+        <YvBtcWidget
+          chainId={chainId}
+          mode={resolvedWidgetMode}
+          onModeChange={setWidgetMode}
+          onOpenSettings={toggleWidgetSettings}
+          isSettingsOpen={isWidgetSettingsOpen}
+          onVariantChange={setYvUsdApyVariant}
           showTabs={false}
           collapseDetails={shouldCollapseWidgetDetails}
         />
@@ -1198,6 +1452,18 @@ function Index(): ReactElement | null {
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
           onDepositVariantChange={setYvUsdApyVariant}
+          showTabs={false}
+        />
+      )
+    }
+    if (isYvBtc) {
+      return (
+        <YvBtcWidget
+          chainId={chainId}
+          mode={mobileDrawerAction}
+          onOpenSettings={toggleWidgetSettings}
+          isSettingsOpen={isWidgetSettingsOpen}
+          onVariantChange={setYvUsdApyVariant}
           showTabs={false}
         />
       )
@@ -1288,6 +1554,10 @@ function Index(): ReactElement | null {
             onWidgetWalletOpen={openWidgetWallet}
             onWidgetCloseOverlays={closeWidgetOverlays}
             onCompressionChange={setIsHeaderCompressed}
+            onCompressionStateChange={({ isCompressed, isForceCompressed }): void => {
+              setIsHeaderCompressed(isCompressed)
+              setIsHeaderAutoCompressed(isForceCompressed)
+            }}
           />
         </header>
 
@@ -1336,6 +1606,13 @@ function Index(): ReactElement | null {
               currentVault={currentVault}
               apyVariant={yvUsdApyVariant}
               onApyVariantChange={setYvUsdApyVariant}
+            />
+          ) : isYvBtc ? (
+            <MobileKeyMetrics
+              currentVault={currentVault}
+              depositedValue={vaultUserData.depositedValue}
+              tokenPrice={currentVault.tvl.price || 0}
+              apyBox={yvBtcMobileApyBox}
             />
           ) : (
             <MobileKeyMetrics
@@ -1482,9 +1759,44 @@ function Index(): ReactElement | null {
                 section.key === 'risk' ||
                 section.key === 'strategies' ||
                 section.key === 'info'
-              if (isCollapsible) {
-                const typedKey = section.key as SectionKey
-                const isOpen = openSections[typedKey]
+              const needsScaledYvUsdBanner = isYvUsd && isHeaderAutoCompressed && section.key === 'charts'
+
+              const sectionNode = (() => {
+                if (isCollapsible) {
+                  const typedKey = section.key as SectionKey
+                  const isOpen = openSections[typedKey]
+
+                  return (
+                    <div
+                      key={section.key}
+                      ref={section.ref}
+                      data-scroll-spy-key={section.key}
+                      data-tour={sectionTourTargets[section.key as SectionKey]}
+                      className={'border border-border rounded-lg bg-surface'}
+                      style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
+                    >
+                      <button
+                        type={'button'}
+                        className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
+                        onClick={(): void =>
+                          setOpenSections((previous) => ({
+                            ...previous,
+                            [typedKey]: !previous[typedKey]
+                          }))
+                        }
+                      >
+                        <span className={'text-base font-semibold text-text-primary'}>
+                          {collapsibleTitles[typedKey]}
+                        </span>
+                        <IconChevron
+                          className={'size-4 text-text-secondary transition-transform duration-200'}
+                          direction={isOpen ? 'up' : 'down'}
+                        />
+                      </button>
+                      {isOpen ? <div>{section.content}</div> : null}
+                    </div>
+                  )
+                }
 
                 return (
                   <div
@@ -1495,39 +1807,22 @@ function Index(): ReactElement | null {
                     className={'border border-border rounded-lg bg-surface'}
                     style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
                   >
-                    <button
-                      type={'button'}
-                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
-                      onClick={(): void =>
-                        setOpenSections((previous) => ({
-                          ...previous,
-                          [typedKey]: !previous[typedKey]
-                        }))
-                      }
-                    >
-                      <span className={'text-base font-semibold text-text-primary'}>{collapsibleTitles[typedKey]}</span>
-                      <IconChevron
-                        className={'size-4 text-text-secondary transition-transform duration-200'}
-                        direction={isOpen ? 'up' : 'down'}
-                      />
-                    </button>
-                    {isOpen ? <div>{section.content}</div> : null}
+                    {section.content}
                   </div>
                 )
+              })()
+
+              if (!needsScaledYvUsdBanner) {
+                return sectionNode
               }
 
-              return (
-                <div
-                  key={section.key}
-                  ref={section.ref}
-                  data-scroll-spy-key={section.key}
-                  data-tour={sectionTourTargets[section.key as SectionKey]}
-                  className={'border border-border rounded-lg bg-surface'}
-                  style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
-                >
-                  {section.content}
-                </div>
-              )
+              return [
+                sectionNode,
+                <YvUsdHeaderBanner
+                  key={'yvusd-header-banner-compressed'}
+                  className={'w-full max-h-[72px] min-h-[72px]'}
+                />
+              ]
             })}
             {renderableSections.length > 0 ? <div aria-hidden className={'h-[65vh]'} /> : null}
           </div>

@@ -3,11 +3,18 @@ import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import { WidgetTabs } from '@pages/vaults/components/widget'
+import {
+  formatDuration,
+  parseCooldownStatus,
+  resolveCooldownWindowState,
+  resolveYvUsdCooldownSummary
+} from '@pages/vaults/components/widget/yvUSD/cooldownUtils'
 import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
-import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useVaultUserData, type VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
 import type { WidgetActionType } from '@pages/vaults/types'
@@ -21,6 +28,7 @@ import {
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
+import { isYvBtcVault } from '@pages/vaults/utils/yvBtc'
 import {
   getYvUsdInfinifiPointsNote,
   getYvUsdSharePrice,
@@ -42,11 +50,23 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
+import { useReadContract } from '@shared/hooks/useAppWagmi'
+import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
-import { cl, formatApyDisplay, formatUSD, isZero, SELECTOR_BAR_STYLES, toAddress, toNormalizedBN } from '@shared/utils'
+import {
+  cl,
+  formatApyDisplay,
+  formatTAmount,
+  formatUSD,
+  isZero,
+  SELECTOR_BAR_STYLES,
+  toAddress,
+  toNormalizedBN
+} from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement, Ref } from 'react'
@@ -60,6 +80,23 @@ function noop(): void {}
 function noopWidgetModeChange(_mode: WidgetActionType): void {}
 
 function noopSelectSection(_key: string): void {}
+
+const COMPRESSED_TITLE_FULL_SIZE_CLASS = 'md:text-[30px] md:leading-9'
+const COMPRESSED_TITLE_COMPACT_SIZE_CLASS = 'md:text-[20px] md:leading-6'
+const HEADER_METRIC_ITEM_CLASS = 'min-h-0'
+const HEADER_METRIC_HEADER_CLASS = 'min-h-4'
+const HEADER_METRIC_VALUE_CLASS = 'flex min-h-[30px] items-center'
+
+type TDualCooldownMetric = {
+  headerLabel: string
+  primaryValueUsd: number
+  timerLabel: string
+  statusLabel: string
+  amountLabel: string
+  amountValue: bigint
+  amountDecimals: number
+  amountSymbol: string
+}
 
 function getVaultProductTypeLabel(listKind: ReturnType<typeof deriveListKind>): string {
   if (listKind === 'allocator' || listKind === 'strategy') {
@@ -108,22 +145,12 @@ function getVaultKindLabel(kindType: TVaultKindType, fallbackKind: string | null
   return fallbackKind ?? undefined
 }
 
-function getVaultLogoSize({ isCompressed, isYvUsd }: { isCompressed: boolean; isYvUsd: boolean }): number {
-  if (isYvUsd) {
-    return 40
-  }
-
+function getVaultLogoSize({ isCompressed }: { isCompressed: boolean }): number {
   return isCompressed ? 32 : 40
 }
 
-function getVaultLogoContainerSizeClassName({
-  isCompressed,
-  isYvUsd
-}: {
-  isCompressed: boolean
-  isYvUsd: boolean
-}): string {
-  if (isYvUsd || !isCompressed) {
+function getVaultLogoContainerSizeClassName({ isCompressed }: { isCompressed: boolean }): string {
+  if (!isCompressed) {
     return 'size-10'
   }
 
@@ -147,7 +174,6 @@ function VaultHeaderIdentity({
 }): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
   const chainName = getNetwork(currentVault.chainID).name
-  const isYvUsd = isYvUsdVault(currentVault)
   const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
@@ -169,10 +195,11 @@ function VaultHeaderIdentity({
   const shouldShowMetadata =
     showChainChip || showCategoryChip || showKindChip || Boolean(productTypeLabel) || isMigratable || isRetired
   const [isTitleClipped, setIsTitleClipped] = useState(false)
-  const titleRef = useRef<HTMLSpanElement>(null)
+  const titleSlotRef = useRef<HTMLDivElement>(null)
+  const titleMeasureRef = useRef<HTMLSpanElement>(null)
   const vaultName = getVaultName(currentVault)
-  const tokenLogoSize = getVaultLogoSize({ isCompressed, isYvUsd })
-  const tokenLogoContainerSizeClassName = getVaultLogoContainerSizeClassName({ isCompressed, isYvUsd })
+  const tokenLogoSize = getVaultLogoSize({ isCompressed })
+  const tokenLogoContainerSizeClassName = getVaultLogoContainerSizeClassName({ isCompressed })
 
   useEffect(() => {
     // Preload chain logo so it appears instantly when the chip mounts
@@ -187,17 +214,34 @@ function VaultHeaderIdentity({
     }
 
     const measure = (): void => {
-      if (!titleRef.current) return
-      setIsTitleClipped(titleRef.current.scrollWidth > titleRef.current.clientWidth)
+      if (!titleSlotRef.current || !titleMeasureRef.current) {
+        return
+      }
+
+      setIsTitleClipped(titleMeasureRef.current.scrollWidth > titleSlotRef.current.clientWidth)
     }
 
     measure()
-    window.addEventListener('resize', measure)
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measure)
+      return () => {
+        window.removeEventListener('resize', measure)
+      }
+    }
+
+    const observer = new ResizeObserver(measure)
+    const titleSlotElement = titleSlotRef.current
+    const titleMeasureElement = titleMeasureRef.current
+    if (!titleSlotElement || !titleMeasureElement) {
+      return () => observer.disconnect()
+    }
+    observer.observe(titleSlotElement)
+    observer.observe(titleMeasureElement)
 
     return () => {
-      window.removeEventListener('resize', measure)
+      observer.disconnect()
     }
-  }, [isCompressed])
+  }, [isCompressed, vaultName])
 
   return (
     <div
@@ -227,37 +271,72 @@ function VaultHeaderIdentity({
             </div>
           ) : null}
         </div>
-        <div className={'flex flex-col'}>
-          <div className={cl('flex items-center gap-3', isCompressed && isTitleClipped ? 'relative group' : '')}>
-            <strong
-              ref={titleRef}
-              className={cl(
-                'text-lg font-black leading-tight md:text-3xl md:leading-10 text-text-primary',
-                isCompressed ? 'md:text-[30px] md:leading-9 max-w-[260px] truncate whitespace-nowrap' : ''
-              )}
-            >
-              {vaultName}
-            </strong>
-            {isCompressed && isTitleClipped ? (
-              <span
-                className={
-                  'pointer-events-none absolute left-0 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-app px-0 py-0 text-[30px] font-black leading-tight text-text-primary group-hover:block'
-                }
-              >
-                {vaultName}
-              </span>
-            ) : null}
-            {!isCompressed && explorerHref ? (
-              <a
-                href={explorerHref}
-                target={'_blank'}
-                rel={'noopener noreferrer'}
-                className={'text-text-secondary hover:text-text-primary transition-colors h-7 content-end'}
-                aria-label={'View vault on block explorer'}
-              >
-                <IconLinkOut className={'size-4 md:size-4'} />
-              </a>
-            ) : null}
+        <div className={cl('flex flex-col', isCompressed ? 'min-w-0 flex-1' : '')}>
+          <div
+            className={cl(
+              'flex',
+              isCompressed ? 'min-w-0' : 'items-center gap-3',
+              isCompressed && isTitleClipped ? 'items-start' : 'items-center',
+              isCompressed ? 'relative' : ''
+            )}
+          >
+            {isCompressed ? (
+              <div className={'inline-flex max-w-full min-w-0 items-start gap-2'}>
+                <div ref={titleSlotRef} className={'min-w-0'}>
+                  <span
+                    ref={titleMeasureRef}
+                    aria-hidden={true}
+                    className={cl(
+                      'pointer-events-none absolute opacity-0 whitespace-nowrap',
+                      'text-lg font-black leading-tight md:text-3xl md:leading-10',
+                      COMPRESSED_TITLE_FULL_SIZE_CLASS
+                    )}
+                  >
+                    {vaultName}
+                  </span>
+                  <strong
+                    className={cl(
+                      'block text-lg font-black leading-tight text-text-primary',
+                      isTitleClipped
+                        ? `${COMPRESSED_TITLE_COMPACT_SIZE_CLASS} md:[display:-webkit-box] md:[-webkit-box-orient:vertical] md:[-webkit-line-clamp:2] md:[text-wrap:balance] md:whitespace-normal`
+                        : `truncate whitespace-nowrap ${COMPRESSED_TITLE_FULL_SIZE_CLASS}`
+                    )}
+                  >
+                    {vaultName}
+                  </strong>
+                </div>
+                {explorerHref ? (
+                  <a
+                    href={explorerHref}
+                    target={'_blank'}
+                    rel={'noopener noreferrer'}
+                    className={'shrink-0 pt-[15px] text-text-secondary transition-colors hover:text-text-primary'}
+                    aria-label={'View vault on block explorer'}
+                  >
+                    <IconLinkOut className={'size-4 md:size-4'} />
+                  </a>
+                ) : null}
+              </div>
+            ) : (
+              <>
+                <div ref={titleSlotRef}>
+                  <strong className={'text-lg font-black leading-tight md:text-3xl md:leading-10 text-text-primary'}>
+                    {vaultName}
+                  </strong>
+                </div>
+                {explorerHref ? (
+                  <a
+                    href={explorerHref}
+                    target={'_blank'}
+                    rel={'noopener noreferrer'}
+                    className={'h-7 content-end text-text-secondary transition-colors hover:text-text-primary'}
+                    aria-label={'View vault on block explorer'}
+                  >
+                    <IconLinkOut className={'size-4 md:size-4'} />
+                  </a>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -316,19 +395,6 @@ function VaultHeaderIdentity({
               showCollapsedTooltip={isCompressed}
               tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}
             />
-          ) : null}
-          {isCompressed && explorerHref ? (
-            <a
-              href={explorerHref}
-              target={'_blank'}
-              rel={'noopener noreferrer'}
-              className={
-                'inline-flex items-center justify-center px-2 py-1 text-text-secondary hover:text-text-primary transition-colors'
-              }
-              aria-label={'View vault on block explorer'}
-            >
-              <IconLinkOut className={'size-4'} />
-            </a>
           ) : null}
         </div>
       ) : null}
@@ -407,33 +473,39 @@ function VaultOverviewCard({
   const listKind = deriveListKind(currentVault)
   const isFactoryVault = listKind === 'factory'
   const isYvUsd = isYvUsdVault(currentVault)
+  const isYvBtc = isYvBtcVault(currentVault)
+  const isDualVariantVault = isYvUsd || isYvBtc
   const [internalYvUsdApyVariant, setInternalYvUsdApyVariant] = useState<TYvUsdVariant>('locked')
-  const { metrics: yvUsdMetrics, unlockedVault, lockedVault } = useYvUsdVaults()
+  const { metrics: yvUsdMetrics, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
+  const { metrics: yvBtcMetrics, unlockedVault: yvBtcUnlockedVault, lockedVault: yvBtcLockedVault } = useYvBtcVaults()
+  const dualMetrics = isYvBtc ? yvBtcMetrics : yvUsdMetrics
+  const unlockedVault = isYvBtc ? yvBtcUnlockedVault : yvUsdUnlockedVault
+  const lockedVault = isYvBtc ? yvBtcLockedVault : yvUsdLockedVault
   const isControlledYvUsdApyVariant = controlledYvUsdApyVariant !== undefined
   const yvUsdApyVariant = isControlledYvUsdApyVariant ? controlledYvUsdApyVariant : internalYvUsdApyVariant
   const unlockedForwardApy =
-    yvUsdMetrics?.unlocked.apy ?? (currentVault.apr?.forwardAPR?.netAPR || currentVault.apr?.netAPR || 0)
-  const lockedForwardApy = yvUsdMetrics?.locked.apy ?? lockedVault?.apr?.forwardAPR?.netAPR ?? 0
+    dualMetrics?.unlocked.apy ?? (currentVault.apr?.forwardAPR?.netAPR || currentVault.apr?.netAPR || 0)
+  const lockedForwardApy = dualMetrics?.locked.apy ?? lockedVault?.apr?.forwardAPR?.netAPR ?? 0
   const unlockedMonthly = unlockedVault?.apr?.points?.monthAgo ?? currentVault.apr.points.monthAgo
   const unlockedWeekly = unlockedVault?.apr?.points?.weekAgo ?? currentVault.apr.points.weekAgo
   const unlockedHistorical = getYvUsdHistoricalValue(unlockedMonthly, unlockedWeekly)
   const lockedMonthly = lockedVault?.apr?.points?.monthAgo ?? 0
   const lockedWeekly = lockedVault?.apr?.points?.weekAgo ?? 0
   const lockedHistorical = getYvUsdHistoricalValue(lockedMonthly, lockedWeekly)
-  const totalTvl = currentVault.tvl?.tvl ?? unlockedVault?.tvl?.tvl ?? yvUsdMetrics?.unlocked.tvl ?? 0
-  const lockedTvl = lockedVault?.tvl?.tvl ?? yvUsdMetrics?.locked.tvl ?? 0
+  const totalTvl = currentVault.tvl?.tvl ?? unlockedVault?.tvl?.tvl ?? dualMetrics?.unlocked.tvl ?? 0
+  const lockedTvl = lockedVault?.tvl?.tvl ?? dualMetrics?.locked.tvl ?? 0
   const tvlBreakdown = getYvUsdTvlBreakdown({ totalTvl, lockedTvl })
   const unlockedTvl = tvlBreakdown.unlockedTvl
   const combinedTvl = tvlBreakdown.totalTvl
   const isLockedApyVariant = yvUsdApyVariant === 'locked'
   const selectedForwardApy = isLockedApyVariant ? lockedForwardApy : unlockedForwardApy
   const selectedHistoricalApy = isLockedApyVariant ? lockedHistorical : unlockedHistorical
-  const hasInfinifiPoints = Boolean(yvUsdMetrics?.locked.hasInfinifiPoints || yvUsdMetrics?.unlocked.hasInfinifiPoints)
+  const hasInfinifiPoints = Boolean(dualMetrics?.locked.hasInfinifiPoints || dualMetrics?.unlocked.hasInfinifiPoints)
   const infinifiPointsNote = hasInfinifiPoints ? getYvUsdInfinifiPointsNote() : undefined
   const selectedApyIcon = isLockedApyVariant ? (
-    <IconLock className="size-4 text-text-secondary" />
+    <IconLock className="size-6 text-text-secondary" />
   ) : (
-    <IconLockOpen className="size-4 text-text-secondary" />
+    <IconLockOpen className="h-6 w-[30px] text-text-secondary" />
   )
   const apyToggleLabel = isLockedApyVariant ? 'Switch to unlocked APY display' : 'Switch to locked APY display'
   const toggleApyVariant = (): void => {
@@ -445,20 +517,22 @@ function VaultOverviewCard({
     setInternalYvUsdApyVariant(nextVariant)
   }
   const renderYvUsdApyValue = (value: number): ReactElement => (
-    <span className={cl('inline-flex items-center gap-2', METRIC_VALUE_CLASS)}>
+    <span className={cl('flex w-full min-w-0 items-center gap-2', METRIC_VALUE_CLASS)}>
+      <span className="inline-flex min-w-0 items-center gap-2">
+        {hasInfinifiPoints ? <IconInfinifiPoints className="size-3.5 shrink-0" aria-label="Infinifi points" /> : null}
+        <span>{formatApyDisplay(value)}</span>
+      </span>
       <button
         type="button"
         onClick={toggleApyVariant}
         aria-label={apyToggleLabel}
-        className="inline-flex items-center rounded-sm text-text-secondary transition-colors hover:text-text-primary"
+        className="ml-auto inline-flex shrink-0 mb-1 items-center rounded-sm text-text-secondary transition-colors hover:text-text-primary"
       >
         {selectedApyIcon}
       </button>
-      {hasInfinifiPoints ? <IconInfinifiPoints className="size-3.5 shrink-0" aria-label="Infinifi points" /> : null}
-      {formatApyDisplay(value)}
     </span>
   )
-  const yvUsdEstApyTooltip = isYvUsd ? (
+  const yvUsdEstApyTooltip = isDualVariantVault ? (
     <YvUsdApyTooltipContent
       lockedValue={lockedForwardApy}
       unlockedValue={unlockedForwardApy}
@@ -466,7 +540,7 @@ function VaultOverviewCard({
       infinifiPointsNote={infinifiPointsNote}
     />
   ) : undefined
-  const yvUsdHistoricalApyTooltip = isYvUsd ? (
+  const yvUsdHistoricalApyTooltip = isDualVariantVault ? (
     <YvUsdApyTooltipContent
       lockedValue={lockedHistorical}
       unlockedValue={unlockedHistorical}
@@ -474,7 +548,7 @@ function VaultOverviewCard({
       infinifiPointsNote={infinifiPointsNote}
     />
   ) : undefined
-  const yvUsdTvlTooltip = isYvUsd ? (
+  const yvUsdTvlTooltip = isDualVariantVault ? (
     <YvUsdTvlTooltipContent
       lockedValue={lockedTvl}
       unlockedValue={unlockedTvl}
@@ -486,8 +560,13 @@ function VaultOverviewCard({
     {
       key: 'est-apy',
       header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY based on underlying markets'} />,
-      value: isYvUsd ? (
-        <Tooltip className={'gap-0 h-auto'} openDelayMs={150} tooltip={yvUsdEstApyTooltip ?? ''} align={'center'}>
+      value: isDualVariantVault ? (
+        <Tooltip
+          className={'h-auto w-full gap-0'}
+          openDelayMs={150}
+          tooltip={yvUsdEstApyTooltip ?? ''}
+          align={'center'}
+        >
           {renderYvUsdApyValue(selectedForwardApy)}
         </Tooltip>
       ) : (
@@ -503,9 +582,9 @@ function VaultOverviewCard({
     {
       key: 'historical-apy',
       header: <MetricHeader label={'30 Day APY'} tooltip={'Average realized APY over the previous 30 days'} />,
-      value: isYvUsd ? (
+      value: isDualVariantVault ? (
         <Tooltip
-          className={'gap-0 h-auto'}
+          className={'h-auto w-full gap-0'}
           openDelayMs={150}
           tooltip={yvUsdHistoricalApyTooltip ?? ''}
           align={'center'}
@@ -525,7 +604,7 @@ function VaultOverviewCard({
     {
       key: 'tvl',
       header: <MetricHeader label={'TVL'} tooltip={'Total value currently deposited into this vault'} />,
-      value: isYvUsd ? (
+      value: isDualVariantVault ? (
         <span className={METRIC_VALUE_CLASS}>
           <RenderAmount
             value={combinedTvl || 0}
@@ -541,7 +620,7 @@ function VaultOverviewCard({
       ) : (
         <VaultTVL currentVault={currentVault} valueClassName={METRIC_VALUE_CLASS} />
       ),
-      footnote: isYvUsd ? (
+      footnote: isDualVariantVault ? (
         yvUsdTvlTooltip
       ) : (
         <p className={METRIC_FOOTNOTE_CLASS} suppressHydrationWarning>
@@ -567,8 +646,11 @@ function VaultOverviewCard({
         items={metrics}
         className={cl(
           'rounded-b-none',
-          isCompressed ? 'border-l border-border rounded-l-none' : 'border border-border'
+          isCompressed ? 'border-l border-border rounded-l-none' : 'px-2 border border-border'
         )}
+        itemClassName={HEADER_METRIC_ITEM_CLASS}
+        headerClassName={HEADER_METRIC_HEADER_CLASS}
+        valueClassName={HEADER_METRIC_VALUE_CLASS}
         footnoteDisplay={'tooltip'}
       />
     </div>
@@ -600,20 +682,183 @@ function YvUsdUserHoldingsCard({
     chainId: YVUSD_CHAIN_ID,
     account
   })
+  const { data: rawCooldownStatus } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'getCooldownStatus',
+    args: account ? [toAddress(account)] : undefined,
+    chainId: YVUSD_CHAIN_ID,
+    query: {
+      enabled: !!account,
+      refetchInterval: account ? 30_000 : false
+    }
+  })
+  const { data: rawAvailableWithdrawLimit } = useReadContract({
+    address: YVUSD_LOCKED_ADDRESS,
+    abi: yvUsdLockedVaultAbi,
+    functionName: 'availableWithdrawLimit',
+    args: account ? [toAddress(account)] : undefined,
+    chainId: YVUSD_CHAIN_ID,
+    query: {
+      enabled: !!account,
+      refetchInterval: account ? 30_000 : false
+    }
+  })
 
+  const cooldownStatus = parseCooldownStatus(rawCooldownStatus)
+  const hasActiveCooldown = cooldownStatus.shares > 0n
+  const availableWithdrawLimit = typeof rawAvailableWithdrawLimit === 'bigint' ? rawAvailableWithdrawLimit : 0n
+  const { timestamp: nowTimestamp } = useChainTimestamp({
+    chainId: YVUSD_CHAIN_ID,
+    enabled: Boolean(account && hasActiveCooldown)
+  })
+  const cooldownWindowState = resolveCooldownWindowState({
+    hasActiveCooldown,
+    nowTimestamp,
+    cooldownEnd: cooldownStatus.cooldownEnd,
+    windowEnd: cooldownStatus.windowEnd,
+    availableWithdrawLimit
+  })
+  const cooldownRemainingSeconds = cooldownWindowState.isCooldownActive
+    ? Math.max(cooldownStatus.cooldownEnd - nowTimestamp, 0)
+    : 0
+  const withdrawalWindowRemainingSeconds = cooldownWindowState.isWithdrawalWindowOpen
+    ? Math.max(cooldownStatus.windowEnd - nowTimestamp, 0)
+    : 0
+  const cooldownSummary = resolveYvUsdCooldownSummary({
+    hasActiveCooldown,
+    isCooldownActive: cooldownWindowState.isCooldownActive,
+    isWithdrawalWindowOpen: cooldownWindowState.isWithdrawalWindowOpen,
+    isCooldownWindowExpired: cooldownWindowState.isCooldownWindowExpired
+  })
+
+  const sharesUnderCooldown = hasActiveCooldown ? cooldownStatus.shares : 0n
+  const lockedVaultDecimals = lockedUserData.vaultToken?.decimals ?? 18
+  const lockedAssetDecimals = lockedUserData.assetToken?.decimals ?? 18
+  const lockedAssetSymbol = lockedUserData.assetToken?.symbol ?? 'yvUSD'
+  const assetsUnderCooldown =
+    sharesUnderCooldown > 0n && lockedUserData.pricePerShare > 0n
+      ? (sharesUnderCooldown * lockedUserData.pricePerShare) / 10n ** BigInt(lockedVaultDecimals)
+      : 0n
+  const unlockedAssetPrice =
+    getPrice({ address: unlockedAssetAddress, chainID: YVUSD_CHAIN_ID }).normalized || unlockedVault?.tvl.price || 0
+  const unlockedSharePrice = getYvUsdSharePrice(unlockedVault, unlockedAssetPrice)
+  const hasLockedDeposits = lockedUserData.depositedValue > 0n || hasActiveCooldown
+  const cooldownValueUsd = toNormalizedBN(assetsUnderCooldown, lockedAssetDecimals).normalized * unlockedSharePrice
+  const withdrawableValueUsd =
+    toNormalizedBN(availableWithdrawLimit, lockedAssetDecimals).normalized * unlockedSharePrice
+  const cooldownStatusLabel = cooldownSummary?.label ?? 'No active cooldown'
+  const cooldownPrimaryValueUsd = cooldownWindowState.isWithdrawalWindowOpen ? withdrawableValueUsd : cooldownValueUsd
+  const cooldownHeaderLabel = cooldownWindowState.isWithdrawalWindowOpen
+    ? 'WITHDRAWABLE'
+    : cooldownWindowState.isCooldownWindowExpired
+      ? 'EXPIRED COOLDOWN'
+      : 'IN COOLDOWN'
+  const cooldownTimerLabel = cooldownWindowState.isCooldownActive
+    ? formatDuration(cooldownRemainingSeconds)
+    : cooldownWindowState.isWithdrawalWindowOpen && withdrawalWindowRemainingSeconds > 0
+      ? `${formatDuration(withdrawalWindowRemainingSeconds)} left`
+      : cooldownWindowState.isCooldownWindowExpired
+        ? 'Window closed'
+        : 'Not started'
+  const cooldownAmountLabel = cooldownWindowState.isWithdrawalWindowOpen ? 'Withdrawable now' : 'In cooldown'
+  const cooldownMetric = hasLockedDeposits
+    ? {
+        headerLabel: cooldownHeaderLabel,
+        primaryValueUsd: cooldownPrimaryValueUsd,
+        timerLabel: cooldownTimerLabel,
+        statusLabel: cooldownStatusLabel,
+        amountLabel: cooldownAmountLabel,
+        amountValue: cooldownWindowState.isWithdrawalWindowOpen ? availableWithdrawLimit : assetsUnderCooldown,
+        amountDecimals: lockedAssetDecimals,
+        amountSymbol: lockedAssetSymbol
+      }
+    : undefined
+
+  return (
+    <DualVariantUserHoldingsCard
+      isCompressed={isCompressed}
+      includeTourAttributes={includeTourAttributes}
+      unlockedUserData={unlockedUserData}
+      lockedUserData={lockedUserData}
+      unlockedValueUsdMultiplier={unlockedAssetPrice}
+      lockedValueUsdMultiplier={unlockedSharePrice}
+      cooldownMetric={cooldownMetric}
+    />
+  )
+}
+
+function YvBtcUserHoldingsCard({
+  isCompressed,
+  includeTourAttributes = true
+}: {
+  isCompressed: boolean
+  includeTourAttributes?: boolean
+}): ReactElement {
+  const { address } = useWeb3()
+  const { getPrice } = useYearn()
+  const { unlockedVault, lockedVault } = useYvBtcVaults()
+  const account = address ? toAddress(address) : undefined
+  const unlockedAssetAddress = toAddress(unlockedVault?.token.address)
+
+  const unlockedUserData = useVaultUserData({
+    vaultAddress: toAddress(unlockedVault?.address),
+    assetAddress: unlockedAssetAddress,
+    chainId: unlockedVault.chainID,
+    account
+  })
+  const lockedUserData = useVaultUserData({
+    vaultAddress: toAddress(lockedVault?.address),
+    assetAddress: unlockedAssetAddress,
+    chainId: lockedVault.chainID,
+    account
+  })
+  const unlockedAssetPrice =
+    getPrice({ address: unlockedAssetAddress, chainID: unlockedVault.chainID }).normalized ||
+    unlockedVault?.tvl.price ||
+    0
+  const unlockedSharePrice =
+    unlockedAssetPrice * (Number(unlockedUserData.pricePerShare) / 10 ** unlockedVault.decimals)
+
+  return (
+    <DualVariantUserHoldingsCard
+      isCompressed={isCompressed}
+      includeTourAttributes={includeTourAttributes}
+      unlockedUserData={unlockedUserData}
+      lockedUserData={lockedUserData}
+      unlockedValueUsdMultiplier={unlockedAssetPrice}
+      lockedValueUsdMultiplier={Number.isFinite(unlockedSharePrice) ? unlockedSharePrice : 0}
+    />
+  )
+}
+
+function DualVariantUserHoldingsCard({
+  isCompressed,
+  includeTourAttributes = true,
+  unlockedUserData,
+  lockedUserData,
+  unlockedValueUsdMultiplier,
+  lockedValueUsdMultiplier,
+  cooldownMetric
+}: {
+  isCompressed: boolean
+  includeTourAttributes?: boolean
+  unlockedUserData: VaultUserData
+  lockedUserData: VaultUserData
+  unlockedValueUsdMultiplier: number
+  lockedValueUsdMultiplier: number
+  cooldownMetric?: TDualCooldownMetric
+}): ReactElement {
   const unlockedAmount = toNormalizedBN(
     unlockedUserData.depositedValue,
-    unlockedUserData.assetToken?.decimals ?? 6
+    unlockedUserData.assetToken?.decimals ?? 18
   ).normalized
   const lockedAmount = toNormalizedBN(
     lockedUserData.depositedValue,
     lockedUserData.assetToken?.decimals ?? 18
   ).normalized
-  const unlockedAssetPrice =
-    getPrice({ address: unlockedAssetAddress, chainID: YVUSD_CHAIN_ID }).normalized || unlockedVault?.tvl.price || 0
-  const unlockedSharePrice = getYvUsdSharePrice(unlockedVault, unlockedAssetPrice)
-  const unlockedValueUsd = unlockedAmount * unlockedAssetPrice
-  const lockedValueUsd = lockedAmount * unlockedSharePrice
+  const unlockedValueUsd = unlockedAmount * unlockedValueUsdMultiplier
+  const lockedValueUsd = lockedAmount * lockedValueUsdMultiplier
   const totalValueUsd = unlockedValueUsd + lockedValueUsd
 
   const sections: TMetricBlock[] = [
@@ -658,7 +903,57 @@ function YvUsdUserHoldingsCard({
           </div>
         </div>
       )
-    }
+    },
+    ...(cooldownMetric
+      ? [
+          {
+            key: 'cooldowns',
+            header: (
+              <MetricHeader
+                label={cooldownMetric.headerLabel}
+                tooltip={
+                  'Review the value currently cooling down and the value currently withdrawable from the locked vault.'
+                }
+              />
+            ),
+            value: (
+              <span
+                className={cl(
+                  METRIC_VALUE_CLASS,
+                  'inline-flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[18px] md:text-[20px]'
+                )}
+                suppressHydrationWarning
+              >
+                <span>{formatUSD(cooldownMetric.primaryValueUsd)}</span>
+                <span className={'text-[11px] font-normal leading-tight text-text-secondary md:text-xs'}>
+                  {cooldownMetric.timerLabel}
+                </span>
+              </span>
+            ),
+            footnote: (
+              <div className={cl(METRIC_FOOTNOTE_CLASS, 'flex flex-col gap-1')} suppressHydrationWarning>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-text-secondary">{'Status'}</span>
+                  <span className="text-right text-text-primary">{cooldownMetric.statusLabel}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-text-secondary">{cooldownMetric.amountLabel}</span>
+                  <span className="text-right text-text-primary">
+                    {`${formatTAmount({
+                      value: cooldownMetric.amountValue,
+                      decimals: cooldownMetric.amountDecimals
+                    })} ${cooldownMetric.amountSymbol}`}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-text-secondary">{'Timer'}</span>
+                  <span className="text-right text-text-primary">{cooldownMetric.timerLabel}</span>
+                </div>
+              </div>
+            )
+          } satisfies TMetricBlock
+        ]
+      : [])
   ]
 
   return (
@@ -667,8 +962,11 @@ function YvUsdUserHoldingsCard({
         items={sections}
         className={cl(
           'rounded-b-none',
-          isCompressed ? 'rounded-tl-lg border-t border-x border-border' : 'border-t border-x border-border'
+          isCompressed ? 'px-2 rounded-tl-lg border-t border-x border-border' : 'px-2 border-t border-x border-border'
         )}
+        itemClassName={HEADER_METRIC_ITEM_CLASS}
+        headerClassName={HEADER_METRIC_HEADER_CLASS}
+        valueClassName={HEADER_METRIC_VALUE_CLASS}
         footnoteDisplay={'tooltip'}
       />
     </div>
@@ -691,6 +989,9 @@ function UserHoldingsCard({
   const currentVault = getVaultView(currentVaultInput)
   if (isYvUsdVault(currentVault)) {
     return <YvUsdUserHoldingsCard isCompressed={isCompressed} includeTourAttributes={includeTourAttributes} />
+  }
+  if (isYvBtcVault(currentVault)) {
+    return <YvBtcUserHoldingsCard isCompressed={isCompressed} includeTourAttributes={includeTourAttributes} />
   }
 
   const depositedAmount = toNormalizedBN(depositedValue, currentVault.token.decimals)
@@ -733,7 +1034,7 @@ function UserHoldingsCard({
         items={sections}
         className={cl(
           'rounded-b-none',
-          isCompressed ? 'rounded-tl-lg border-t border-x border-border' : 'border-t border-x border-border'
+          isCompressed ? 'px-2 rounded-tl-lg border-t border-x border-border' : 'px-2 border-t border-x border-border'
         )}
         footnoteDisplay={'tooltip'}
       />
@@ -812,24 +1113,26 @@ export function VaultDetailsHeaderPresentation({
               // 'border border-border',
             )}
           >
-            <div className={'grid grid-cols-13 gap-y-0 gap-x-6'}>
-              <VaultHeaderIdentity
-                currentVault={currentVault}
-                isCompressed={isCompressed}
-                className={'col-span-5 pl-6'}
-                includeTourAttributes={includeTourAttributes}
-              />
-              <div className={'col-span-8 pl-4'}>
-                <VaultOverviewCard
+            <div className={'flex flex-col'}>
+              <div className={'flex min-w-0'}>
+                <VaultHeaderIdentity
                   currentVault={currentVault}
                   isCompressed={isCompressed}
+                  className={'min-w-0 flex-[5] pl-6'}
                   includeTourAttributes={includeTourAttributes}
-                  yvUsdApyVariant={yvUsdApyVariant}
-                  onYvUsdApyVariantChange={onYvUsdApyVariantChange}
                 />
+                <div className={'min-w-0 flex-[8] pl-4'}>
+                  <VaultOverviewCard
+                    currentVault={currentVault}
+                    isCompressed={isCompressed}
+                    includeTourAttributes={includeTourAttributes}
+                    yvUsdApyVariant={yvUsdApyVariant}
+                    onYvUsdApyVariantChange={onYvUsdApyVariantChange}
+                  />
+                </div>
               </div>
               {sectionTabs.length > 0 ? (
-                <div className={'col-span-13'}>
+                <div>
                   <SectionSelectorBar
                     activeSectionKey={activeSectionKey}
                     onSelectSection={handleSelectSection}
@@ -929,10 +1232,12 @@ export function VaultDetailsHeaderPresentation({
 export function VaultDetailsHeader({
   isCollapsibleMode = true,
   onCompressionChange,
+  onCompressionStateChange,
   ...presentationProps
 }: TVaultDetailsHeaderBaseProps & {
   isCollapsibleMode?: boolean
   onCompressionChange?: (isCompressed: boolean) => void
+  onCompressionStateChange?: (state: { isCompressed: boolean; isForceCompressed: boolean }) => void
 }): ReactElement {
   const [forceCompressed, setForceCompressed] = useState(false)
   const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode, forceCompressed })
@@ -950,6 +1255,10 @@ export function VaultDetailsHeader({
   useEffect(() => {
     onCompressionChange?.(isCompressed)
   }, [isCompressed, onCompressionChange])
+
+  useEffect(() => {
+    onCompressionStateChange?.({ isCompressed, isForceCompressed: forceCompressed })
+  }, [isCompressed, forceCompressed, onCompressionStateChange])
 
   return <VaultDetailsHeaderPresentation {...presentationProps} isCompressed={isCompressed} />
 }
