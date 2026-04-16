@@ -27,6 +27,18 @@ vi.mock('@shared/contexts/useYearn', () => ({
   })
 }))
 
+vi.mock('@shared/hooks/useAppWagmi', () => ({
+  useReadContract: () => ({
+    data: undefined
+  })
+}))
+
+vi.mock('@shared/hooks/useChainTimestamp', () => ({
+  useChainTimestamp: () => ({
+    timestamp: 0
+  })
+}))
+
 vi.mock('@pages/vaults/hooks/useVaultUserData', () => ({
   useVaultUserData: () => ({
     depositedValue: 0n,
@@ -276,5 +288,18 @@ describe('VaultDetailsHeaderPresentation', () => {
 
     expect(html).toContain('View vault on block explorer')
     expect(html).toContain('/address/')
+  })
+
+  it('hides cooldown information when there is no locked yvUSD deposit', () => {
+    const html = renderToStaticMarkup(
+      <MemoryRouter>
+        <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={false} />
+      </MemoryRouter>
+    )
+
+    expect(html).toContain('Your Deposits')
+    expect(html).not.toContain('IN COOLDOWN')
+    expect(html).not.toContain('WITHDRAWABLE')
+    expect(html).not.toContain('EXPIRED COOLDOWN')
   })
 })
