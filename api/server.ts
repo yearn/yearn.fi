@@ -15,6 +15,7 @@ import {
   getHoldingsPnLSimple,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
+  type HoldingsPnlEventScope,
   initializeSchema,
   isDatabaseEnabled,
   type UnknownTransferInPnlMode,
@@ -157,6 +158,17 @@ function parseHoldingsEventFetchType(value: string | null): HoldingsEventFetchTy
 
 function parseHoldingsEventPaginationMode(value: string | null): HoldingsEventPaginationMode {
   return value === 'all' ? 'all' : 'paged'
+}
+
+function parseHoldingsPnlEventScope(value: string | null): HoldingsPnlEventScope {
+  return value === 'address_only' ||
+    value === 'address-only' ||
+    value === 'none' ||
+    value === 'disabled' ||
+    value === 'off' ||
+    value === 'false'
+    ? 'address_only'
+    : 'full'
 }
 
 function parseUtcDateParam(value: string | null): number | null {
@@ -637,6 +649,9 @@ async function handleHoldingsPnL(req: Request): Promise<Response> {
   const unknownTransferInPnlMode = parseUnknownTransferInPnlMode(url.searchParams.get('unknownMode'))
   const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
   const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+  const eventScope = parseHoldingsPnlEventScope(
+    url.searchParams.get('eventScope') ?? url.searchParams.get('enrichment')
+  )
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -661,18 +676,27 @@ async function handleHoldingsPnL(req: Request): Promise<Response> {
           unknownTransferInPnlMode,
           fetchType,
           paginationMode,
+          eventScope,
           debugLotsEnabled,
           debugVault: debugVault?.toLowerCase() ?? null,
           debugTx: debugTx?.toLowerCase() ?? null
         })
 
         try {
-          const response = await getHoldingsPnL(address, version, unknownTransferInPnlMode, fetchType, paginationMode)
+          const response = await getHoldingsPnL(
+            address,
+            version,
+            unknownTransferInPnlMode,
+            fetchType,
+            paginationMode,
+            eventScope
+          )
           debugLog('route', 'completed holdings pnl request', {
             version,
             unknownTransferInPnlMode,
             fetchType,
             paginationMode,
+            eventScope,
             totalVaults: response.summary.totalVaults,
             totalCurrentValueUsd: response.summary.totalCurrentValueUsd,
             totalPnlUsd: response.summary.totalPnlUsd,
@@ -684,7 +708,8 @@ async function handleHoldingsPnL(req: Request): Promise<Response> {
             version,
             unknownTransferInPnlMode,
             fetchType,
-            paginationMode
+            paginationMode,
+            eventScope
           })
           throw error
         }
@@ -800,6 +825,9 @@ async function handleHoldingsPnLDrilldown(req: Request): Promise<Response> {
   const unknownTransferInPnlMode = parseUnknownTransferInPnlMode(url.searchParams.get('unknownMode'))
   const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
   const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+  const eventScope = parseHoldingsPnlEventScope(
+    url.searchParams.get('eventScope') ?? url.searchParams.get('enrichment')
+  )
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -828,6 +856,7 @@ async function handleHoldingsPnLDrilldown(req: Request): Promise<Response> {
           unknownTransferInPnlMode,
           fetchType,
           paginationMode,
+          eventScope,
           vault: vault?.toLowerCase() ?? null,
           debugLotsEnabled,
           debugVault: debugVault?.toLowerCase() ?? null,
@@ -841,13 +870,15 @@ async function handleHoldingsPnLDrilldown(req: Request): Promise<Response> {
             unknownTransferInPnlMode,
             fetchType,
             paginationMode,
-            vault
+            vault,
+            eventScope
           )
           debugLog('route', 'completed holdings pnl drilldown request', {
             version,
             unknownTransferInPnlMode,
             fetchType,
             paginationMode,
+            eventScope,
             vault: vault?.toLowerCase() ?? null,
             totalVaults: response.summary.totalVaults,
             totalCurrentValueUsd: response.summary.totalCurrentValueUsd,
@@ -861,6 +892,7 @@ async function handleHoldingsPnLDrilldown(req: Request): Promise<Response> {
             unknownTransferInPnlMode,
             fetchType,
             paginationMode,
+            eventScope,
             vault: vault?.toLowerCase() ?? null
           })
           throw error

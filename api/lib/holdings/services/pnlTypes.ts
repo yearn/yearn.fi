@@ -1,4 +1,4 @@
-import type { VaultVersion } from './graphql'
+import type { HoldingsPnlEventScope, VaultVersion } from './graphql'
 
 export type TLocation = 'vault' | 'staked'
 
@@ -376,6 +376,7 @@ export interface HoldingsPnLResponse {
   address: string
   version: VaultVersion
   unknownTransferInPnlMode: UnknownTransferInPnlMode
+  eventScope: HoldingsPnlEventScope
   generatedAt: string
   summary: THoldingsPnlSummary
   vaults: HoldingsPnLVault[]
@@ -385,6 +386,7 @@ export interface HoldingsPnLDrilldownResponse {
   address: string
   version: VaultVersion
   unknownTransferInPnlMode: UnknownTransferInPnlMode
+  eventScope: HoldingsPnlEventScope
   generatedAt: string
   summary: THoldingsPnlSummary
   vaults: HoldingsPnLDrilldownVault[]

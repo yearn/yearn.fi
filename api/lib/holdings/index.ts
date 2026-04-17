@@ -12,6 +12,7 @@ export {
   fetchUserEvents,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
+  type HoldingsPnlEventScope,
   type VaultVersion
 } from './services/graphql'
 export {

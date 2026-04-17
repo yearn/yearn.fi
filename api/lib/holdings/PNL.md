@@ -74,7 +74,7 @@ Unknown-basis lots usually come from share transfers where the economic source c
 Think in this order:
 
 1. Build raw user-visible events from the indexer.
-2. Enrich those events with same-transaction context.
+2. Enrich those events with same-transaction context, unless `eventScope=address_only` is requested.
 3. Group events into vault families.
 4. Build FIFO lots for each family.
 5. Value remaining lots at current PPS and token price.
@@ -166,6 +166,8 @@ The PnL pipeline therefore also loads additional events from the same transactio
 Without that enrichment, many transfers would stay permanently ambiguous.
 
 For a small set of recognized Ethereum mainnet CoW settlement flows, the pipeline also inspects the transaction receipt and settlement logs so it can synthesize a known-basis acquisition instead of treating the received position as an unknown transfer-in.
+
+When `eventScope=address_only` is requested, this entire transaction-scoped layer is skipped. The route still returns the normal PnL response shape, including FIFO lots and drilldown journals, but the result is an approximate comparison view based only on events directly visible on the user address.
 
 ### 3. Kong PPS
 
@@ -376,6 +378,7 @@ The PnL endpoint also exposes event-loading controls for debugging and benchmark
 ```text
 fetchType=seq|parallel
 paginationMode=paged|all
+eventScope=full|address_only
 ```
 
 Defaults:
@@ -383,6 +386,7 @@ Defaults:
 ```text
 fetchType=seq
 paginationMode=paged
+eventScope=full
 ```
 
 ### `fetchType`
@@ -402,6 +406,15 @@ This only affects the address-scoped family fetch path. Transaction-hash enrichm
   - request each address-scoped and `transactionFrom` event family in a single query using a large hard limit instead of paging
 
 `all` is intended for experimentation. It bypasses the aggregate count preflight, but it uses a fixed single-query limit internally, so it should be treated as a benchmarking/debug option rather than a universally safe default.
+
+### `eventScope`
+
+- `full`
+  - fetch address-scoped events, `transactionFrom` events, same-transaction hash context, and supported CoW receipt enrichment
+- `address_only`
+  - fetch only address-scoped events, then run the same FIFO materialization pipeline on that smaller event set
+
+`address_only` is a comparison / debugging mode, not the default accounting model. It avoids the expensive transaction-hash expansion for wallets with many transfer events, but router deposits, staking moves, same-vault rollovers, CoW settlements, and vault-to-vault basis carrying may no longer be recognized. With `unknownMode=receipt_price`, those unresolved receipts can still be valued at receipt-time fair value, but the result should be labeled approximate. `enrichment=none|disabled|off|false` is accepted as an alias for `eventScope=address_only`.
 
 ### `strict`
 

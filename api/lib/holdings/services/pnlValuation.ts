@@ -1,6 +1,6 @@
 import type { VaultMetadata } from '../types'
 import { getPriceAtTimestamp } from './defillama'
-import type { VaultVersion } from './graphql'
+import type { HoldingsPnlEventScope, VaultVersion } from './graphql'
 import { getPPS } from './kong'
 import { formatAmount, sumShares } from './pnlShared'
 import type {
@@ -39,12 +39,14 @@ export function toHoldingsPnlEventCounts(vault: FamilyPnlLedger): HoldingsPnLVau
 export function createEmptyHoldingsPnlResponse(
   address: string,
   version: VaultVersion,
-  unknownTransferInPnlMode: UnknownTransferInPnlMode
+  unknownTransferInPnlMode: UnknownTransferInPnlMode,
+  eventScope: HoldingsPnlEventScope = 'full'
 ): HoldingsPnLResponse {
   return {
     address,
     version,
     unknownTransferInPnlMode,
+    eventScope,
     generatedAt: new Date().toISOString(),
     summary: {
       totalVaults: 0,

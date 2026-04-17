@@ -11,6 +11,7 @@ import {
   fetchRawUserPnlEvents,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
+  type HoldingsPnlEventScope,
   type RawPnlEventContext,
   type VaultVersion
 } from './graphql'
@@ -30,6 +31,8 @@ import {
   ZERO,
   ZERO_ADDRESS
 } from './pnlShared'
+
+export type { HoldingsPnlEventScope } from './graphql'
 
 export type {
   HoldingsPnLDrilldownResponse,
@@ -235,6 +238,7 @@ type TPnlComputationArtifacts = {
   userAddress: string
   version: VaultVersion
   unknownTransferInPnlMode: UnknownTransferInPnlMode
+  eventScope: HoldingsPnlEventScope
   currentTimestamp: number
   vaults: FamilyPnlLedger[]
   vaultMetadata: Map<string, VaultMetadata>
@@ -2269,11 +2273,19 @@ async function computeHoldingsPnLArtifacts(
   version: VaultVersion,
   unknownTransferInPnlMode: UnknownTransferInPnlMode,
   fetchType: HoldingsEventFetchType,
-  paginationMode: HoldingsEventPaginationMode
+  paginationMode: HoldingsEventPaginationMode,
+  eventScope: HoldingsPnlEventScope
 ): Promise<TPnlComputationArtifacts> {
-  debugLog('pnl', 'starting holdings pnl calculation', { version, unknownTransferInPnlMode, fetchType, paginationMode })
-  const rawContext = await fetchRawUserPnlEvents(userAddress, 'all', undefined, fetchType, paginationMode)
+  debugLog('pnl', 'starting holdings pnl calculation', {
+    version,
+    unknownTransferInPnlMode,
+    fetchType,
+    paginationMode,
+    eventScope
+  })
+  const rawContext = await fetchRawUserPnlEvents(userAddress, 'all', undefined, fetchType, paginationMode, eventScope)
   debugLog('pnl', 'loaded raw pnl event context', {
+    eventScope,
     addressDeposits: rawContext.addressEvents.deposits.length,
     addressWithdrawals: rawContext.addressEvents.withdrawals.length,
     addressTransfersIn: rawContext.addressEvents.transfersIn.length,
@@ -2282,7 +2294,11 @@ async function computeHoldingsPnLArtifacts(
     txWithdrawals: rawContext.transactionEvents.withdrawals.length,
     txTransfers: rawContext.transactionEvents.transfers.length
   })
-  const rawEvents = await enrichRawPnlEventsWithCowTradeAcquisitions(buildRawPnlEvents(rawContext), userAddress)
+  const normalizedRawEvents = buildRawPnlEvents(rawContext)
+  const rawEvents =
+    eventScope === 'full'
+      ? await enrichRawPnlEventsWithCowTradeAcquisitions(normalizedRawEvents, userAddress)
+      : normalizedRawEvents
   const rawVaultIdentifiers = Array.from(
     rawEvents.reduce<Map<string, { chainId: number; vaultAddress: string }>>((identifiers, event) => {
       const key = toVaultKey(event.chainId, event.familyVaultAddress)
@@ -2317,6 +2333,7 @@ async function computeHoldingsPnLArtifacts(
       userAddress,
       version,
       unknownTransferInPnlMode,
+      eventScope,
       currentTimestamp,
       vaults: [],
       vaultMetadata: new Map<string, VaultMetadata>(),
@@ -2358,6 +2375,7 @@ async function computeHoldingsPnLArtifacts(
       userAddress,
       version,
       unknownTransferInPnlMode,
+      eventScope,
       currentTimestamp,
       vaults: [],
       vaultMetadata,
@@ -2396,6 +2414,7 @@ async function computeHoldingsPnLArtifacts(
     userAddress,
     version,
     unknownTransferInPnlMode,
+    eventScope,
     currentTimestamp,
     vaults: filteredVaults,
     vaultMetadata,
@@ -2863,24 +2882,27 @@ export async function getHoldingsPnL(
   version: VaultVersion = 'all',
   unknownTransferInPnlMode: UnknownTransferInPnlMode = 'windfall',
   fetchType: HoldingsEventFetchType = 'seq',
-  paginationMode: HoldingsEventPaginationMode = 'paged'
+  paginationMode: HoldingsEventPaginationMode = 'paged',
+  eventScope: HoldingsPnlEventScope = 'full'
 ): Promise<HoldingsPnLResponse> {
   const artifacts = await computeHoldingsPnLArtifacts(
     userAddress,
     version,
     unknownTransferInPnlMode,
     fetchType,
-    paginationMode
+    paginationMode,
+    eventScope
   )
 
   if (artifacts.vaults.length === 0) {
-    return createEmptyHoldingsPnlResponse(userAddress, version, unknownTransferInPnlMode)
+    return createEmptyHoldingsPnlResponse(userAddress, version, unknownTransferInPnlMode, eventScope)
   }
 
   const pnlVaults = materializeHoldingsPnLVaults(artifacts)
   const summary = summarizePnlVaults(pnlVaults)
   debugLog('pnl', 'completed holdings pnl calculation', {
     unknownTransferInPnlMode,
+    eventScope,
     totalVaults: summary.totalVaults,
     totalCurrentValueUsd: summary.totalCurrentValueUsd,
     totalWindfallPnlUsd: summary.totalWindfallPnlUsd,
@@ -2895,6 +2917,7 @@ export async function getHoldingsPnL(
     address: userAddress,
     version,
     unknownTransferInPnlMode,
+    eventScope,
     generatedAt: new Date().toISOString(),
     summary,
     vaults: pnlVaults
@@ -2907,19 +2930,21 @@ export async function getHoldingsPnLDrilldown(
   unknownTransferInPnlMode: UnknownTransferInPnlMode = 'windfall',
   fetchType: HoldingsEventFetchType = 'seq',
   paginationMode: HoldingsEventPaginationMode = 'paged',
-  vaultFilter?: string | null
+  vaultFilter?: string | null,
+  eventScope: HoldingsPnlEventScope = 'full'
 ): Promise<HoldingsPnLDrilldownResponse> {
   const artifacts = await computeHoldingsPnLArtifacts(
     userAddress,
     version,
     unknownTransferInPnlMode,
     fetchType,
-    paginationMode
+    paginationMode,
+    eventScope
   )
 
   if (artifacts.vaults.length === 0) {
     return {
-      ...createEmptyHoldingsPnlResponse(userAddress, version, unknownTransferInPnlMode),
+      ...createEmptyHoldingsPnlResponse(userAddress, version, unknownTransferInPnlMode, eventScope),
       vaults: []
     }
   }
@@ -2939,6 +2964,7 @@ export async function getHoldingsPnLDrilldown(
 
   debugLog('pnl', 'completed holdings pnl drilldown calculation', {
     unknownTransferInPnlMode,
+    eventScope,
     vaultFilter: vaultFilter?.toLowerCase() ?? null,
     totalVaults: summary.totalVaults,
     totalCurrentValueUsd: summary.totalCurrentValueUsd,
@@ -2950,6 +2976,7 @@ export async function getHoldingsPnLDrilldown(
     address: userAddress,
     version,
     unknownTransferInPnlMode,
+    eventScope,
     generatedAt: new Date().toISOString(),
     summary,
     vaults: drilldownVaults

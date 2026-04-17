@@ -308,6 +308,7 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     const vault = response.vaults[0]
 
     expect(response.unknownTransferInPnlMode).toBe('windfall')
+    expect(response.eventScope).toBe('full')
     expect(response.summary.totalUnknownCostBasisValueUsd).toBe(0)
     expect(response.summary.totalWindfallPnlUsd).toBeCloseTo(200)
     expect(response.summary.totalUnrealizedPnlUsd).toBeCloseTo(130)
@@ -326,10 +327,21 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     const { getHoldingsPnL } = await importPnlModule()
 
     await getHoldingsPnL(USER)
-    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'seq', 'paged')
+    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'seq', 'paged', 'full')
 
     await getHoldingsPnL(USER, 'all', 'windfall', 'parallel', 'all')
-    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'parallel', 'all')
+    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'parallel', 'all', 'full')
+
+    const addressOnlyResponse = await getHoldingsPnL(USER, 'all', 'receipt_price', 'parallel', 'paged', 'address_only')
+    expect(addressOnlyResponse.eventScope).toBe('address_only')
+    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(
+      USER,
+      'all',
+      undefined,
+      'parallel',
+      'paged',
+      'address_only'
+    )
   })
 
   it('filters versioned pnl responses using authoritative vault metadata', async () => {
@@ -341,12 +353,12 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     const v2Response = await getHoldingsPnL(USER, 'v2')
     expect(v2Response.summary.totalVaults).toBe(0)
     expect(v2Response.vaults).toEqual([])
-    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'seq', 'paged')
+    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'seq', 'paged', 'full')
 
     const v3Response = await getHoldingsPnL(USER, 'v3')
     expect(v3Response.summary.totalVaults).toBe(1)
     expect(v3Response.vaults[0]?.vaultAddress).toBe(VAULT)
-    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'seq', 'paged')
+    expect(fetchRawUserPnlEventsMock).toHaveBeenLastCalledWith(USER, 'all', undefined, 'seq', 'paged', 'full')
   })
 
   it('excludes hidden vaults from pnl responses', async () => {

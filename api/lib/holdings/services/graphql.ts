@@ -753,6 +753,7 @@ function normalizeV2Withdraw(v2: V2WithdrawEvent): WithdrawEvent {
 export type VaultVersion = 'v2' | 'v3' | 'all'
 export type HoldingsEventFetchType = 'seq' | 'parallel'
 export type HoldingsEventPaginationMode = 'paged' | 'all'
+export type HoldingsPnlEventScope = 'full' | 'address_only'
 
 type AddressEventFetches = [
   Promise<DepositEvent[]>,
@@ -1058,24 +1059,26 @@ export async function fetchRawUserPnlEvents(
   version: VaultVersion = 'all',
   maxTimestamp?: number,
   fetchType: HoldingsEventFetchType = 'seq',
-  paginationMode: HoldingsEventPaginationMode = 'paged'
+  paginationMode: HoldingsEventPaginationMode = 'paged',
+  eventScope: HoldingsPnlEventScope = 'full'
 ): Promise<RawPnlEventContext> {
   const address = getGraphqlAddress(userAddress)
   const addressLower = address.toLowerCase()
   const addressEventsPromise = fetchAddressScopedEvents(address, maxTimestamp, fetchType, paginationMode)
-  const transactionFromEventsPromise = getTransactionFromEventFetches(address, maxTimestamp, paginationMode)
-
+  const transactionFromEventsPromise =
+    eventScope === 'full' ? getTransactionFromEventFetches(address, maxTimestamp, paginationMode) : null
+  const [addressEventFetches, transactionFromEventFetches] =
+    eventScope === 'full'
+      ? await Promise.all([addressEventsPromise, transactionFromEventsPromise!])
+      : ([await addressEventsPromise, null] as const)
   const [
-    [
-      addressV3Deposits,
-      addressV3Withdrawals,
-      addressV2DepositsRaw,
-      addressV2WithdrawalsRaw,
-      addressTransfersIn,
-      addressTransfersOut
-    ],
-    [txV3Deposits, txV3Withdrawals, txV2DepositsRaw, txV2WithdrawalsRaw, txTransfers]
-  ] = await Promise.all([addressEventsPromise, transactionFromEventsPromise])
+    addressV3Deposits,
+    addressV3Withdrawals,
+    addressV2DepositsRaw,
+    addressV2WithdrawalsRaw,
+    addressTransfersIn,
+    addressTransfersOut
+  ] = addressEventFetches
 
   const addressEvents = {
     deposits: getDepositsByVersion(addressV3Deposits, addressV2DepositsRaw, version),
@@ -1083,6 +1086,37 @@ export async function fetchRawUserPnlEvents(
     transfersIn: sortByBlock(addressTransfersIn),
     transfersOut: sortByBlock(addressTransfersOut)
   }
+
+  if (eventScope === 'address_only') {
+    const context = {
+      addressEvents,
+      transactionEvents: {
+        deposits: [],
+        withdrawals: [],
+        transfers: []
+      }
+    }
+    debugLog('graphql', 'fetched raw user pnl events without transaction enrichment', {
+      address: addressLower,
+      version,
+      eventScope,
+      addressDeposits: context.addressEvents.deposits.length,
+      addressWithdrawals: context.addressEvents.withdrawals.length,
+      addressTransfersIn: context.addressEvents.transfersIn.length,
+      addressTransfersOut: context.addressEvents.transfersOut.length,
+      txDeposits: 0,
+      txWithdrawals: 0,
+      txTransfers: 0,
+      maxTimestamp: maxTimestamp ?? null
+    })
+    return context
+  }
+
+  if (transactionFromEventFetches === null) {
+    throw new Error('Transaction event fetches are required when eventScope=full')
+  }
+
+  const [txV3Deposits, txV3Withdrawals, txV2DepositsRaw, txV2WithdrawalsRaw, txTransfers] = transactionFromEventFetches
   const addressTransactionHashes = collectAddressTransactionHashes(addressEvents)
   const [txHashV3Deposits, txHashV3Withdrawals, txHashV2DepositsRaw, txHashV2WithdrawalsRaw, txHashTransfers] =
     await Promise.all([
@@ -1139,6 +1173,7 @@ export async function fetchRawUserPnlEvents(
   debugLog('graphql', 'fetched raw user pnl events', {
     address: addressLower,
     version,
+    eventScope,
     addressDeposits: context.addressEvents.deposits.length,
     addressWithdrawals: context.addressEvents.withdrawals.length,
     addressTransfersIn: context.addressEvents.transfersIn.length,

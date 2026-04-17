@@ -188,6 +188,8 @@ That transaction-hash enrichment lets the PnL engine match same-transaction rout
 
 For some recognized Ethereum mainnet CoW settlement transactions, the PnL path also inspects the transaction receipt and settlement logs to synthesize a deposit-like acquisition with known basis. This reduces false partial-cost-basis cases for routed buys into vault asset/share positions.
 
+For benchmarking, `/api/holdings/pnl` and `/api/holdings/pnl/drilldown` accept `eventScope=address_only`. This disables transaction-hash / `transactionFrom` enrichment and CoW receipt enrichment while keeping the same FIFO materialization pipeline. It is useful for comparing speed and attribution, but it should be labeled approximate because router deposits, staking moves, and vault-to-vault rollovers may become plain transfers or receipt-price unknowns.
+
 ## API Endpoints
 
 ### GET `/api/holdings/history`
@@ -290,6 +292,7 @@ curl "http://localhost:3001/api/holdings/pnl?address=0x..."
 curl "http://localhost:3001/api/holdings/pnl?address=0x...&unknownMode=windfall"
 curl "http://localhost:3001/api/holdings/pnl?address=0x...&fetchType=parallel"
 curl "http://localhost:3001/api/holdings/pnl?address=0x...&paginationMode=all"
+curl "http://localhost:3001/api/holdings/pnl?address=0x...&unknownMode=receipt_price&eventScope=address_only"
 ```
 
 Query params:
@@ -298,6 +301,7 @@ Query params:
 - `unknownMode` (optional): `strict`, `zero_basis`, `receipt_price`, or `windfall` (default: `windfall`)
 - `fetchType` (optional): `seq` or `parallel` (default: `seq`)
 - `paginationMode` (optional): `paged` or `all` (default: `paged`)
+- `eventScope` (optional): `full` or `address_only` (default: `full`). `address_only` skips same-transaction and CoW enrichment for faster approximate comparisons. `enrichment=none|disabled|off|false` is accepted as an alias for `eventScope=address_only`.
 
 Response (abridged):
 ```json
@@ -305,6 +309,7 @@ Response (abridged):
   "address": "0x...",
   "version": "all",
   "unknownTransferInPnlMode": "windfall",
+  "eventScope": "full",
   "generatedAt": "2026-03-16T12:00:00.000Z",
   "summary": {
     "totalVaults": 5,
@@ -457,6 +462,7 @@ Like `/api/holdings/pnl`, it excludes vaults with `isHidden=true` in authoritati
 curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x..."
 curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x...&vault=0x..."
 curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x...&unknownMode=windfall"
+curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x...&vault=0x...&eventScope=address_only"
 ```
 
 Query params:
@@ -466,6 +472,7 @@ Query params:
 - `unknownMode` (optional): `strict`, `zero_basis`, `receipt_price`, or `windfall` (default: `windfall`)
 - `fetchType` (optional): `seq` or `parallel` (default: `seq`)
 - `paginationMode` (optional): `paged` or `all` (default: `paged`)
+- `eventScope` (optional): `full` or `address_only` (default: `full`). `address_only` skips same-transaction and CoW enrichment for faster approximate comparisons. `enrichment=none|disabled|off|false` is accepted as an alias for `eventScope=address_only`.
 
 Response additions per vault:
 - `currentLots.vault` and `currentLots.staked`

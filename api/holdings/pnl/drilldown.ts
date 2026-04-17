@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { HoldingsEventFetchType, HoldingsEventPaginationMode } from '../../lib/holdings'
+import type { HoldingsEventFetchType, HoldingsEventPaginationMode, HoldingsPnlEventScope } from '../../lib/holdings'
 import { checkRateLimit, ensureSchemaInitialized } from '../../lib/holdings'
 
 function simpleHash(str: string): string {
@@ -40,6 +40,18 @@ function parseHoldingsEventFetchType(value: string | string[] | undefined): Hold
 
 function parseHoldingsEventPaginationMode(value: string | string[] | undefined): HoldingsEventPaginationMode {
   return value === 'all' ? 'all' : 'paged'
+}
+
+function parseHoldingsPnlEventScope(value: string | string[] | undefined): HoldingsPnlEventScope {
+  const normalized = Array.isArray(value) ? value[0] : value
+  return normalized === 'address_only' ||
+    normalized === 'address-only' ||
+    normalized === 'none' ||
+    normalized === 'disabled' ||
+    normalized === 'off' ||
+    normalized === 'false'
+    ? 'address_only'
+    : 'full'
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -83,7 +95,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     version,
     unknownMode,
     fetchType: fetchTypeParam,
-    paginationMode: paginationModeParam
+    paginationMode: paginationModeParam,
+    eventScope: eventScopeParam,
+    enrichment
   } = req.query
 
   if (!address || typeof address !== 'string') {
@@ -100,6 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
+  const eventScope = parseHoldingsPnlEventScope(eventScopeParam ?? enrichment)
 
   try {
     const { getHoldingsPnLDrilldown } = await import('../../lib/holdings')
@@ -109,7 +124,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       parseUnknownTransferInPnlMode(Array.isArray(unknownMode) ? unknownMode[0] : unknownMode),
       fetchType,
       paginationMode,
-      vault
+      vault,
+      eventScope
     )
 
     if (pnl.summary.totalVaults === 0) {
