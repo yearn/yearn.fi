@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { VaultMetadata } from '../types'
 import { toVaultKey } from './pnlShared'
 import {
+  buildProtocolReturnHistorySeries,
   buildProtocolReturnLedgers,
   buildReceiptPriceRequests,
   type HoldingsPnLSimpleVault,
@@ -259,5 +260,55 @@ describe('pnl simple protocol return', () => {
     expect(vault.baselineWeightUsd).toBe(300)
     expect(vault.growthWeightUsd).toBeCloseTo(60)
     expect(vault.protocolReturnPct).toBeCloseTo(20)
+  })
+
+  it('builds a daily growth series without deposit jumps in growth', () => {
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit-1',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit-2',
+          blockTimestamp: 200,
+          logIndex: 1,
+          shares: 45454545454545454545n,
+          assets: 50n * ONE,
+          owner: USER,
+          sender: USER
+        })
+      ],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [150, 1.1],
+            [200, 1.1],
+            [250, 1.2]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      timestamps: [100, 150, 200, 250]
+    })
+
+    expect(history).toHaveLength(4)
+    expect(history[0]).toEqual({ date: '1970-01-01', timestamp: 100, growthWeightUsd: 0, protocolReturnPct: 0 })
+    expect(history[1]?.growthWeightUsd).toBeCloseTo(10)
+    expect(history[1]?.protocolReturnPct).toBeCloseTo(10)
+    expect(history[2]?.growthWeightUsd).toBeCloseTo(10)
+    expect(history[2]?.protocolReturnPct).toBeCloseTo(6.6666666667)
+    expect(history[3]?.growthWeightUsd).toBeCloseTo(24.5454545455)
+    expect(history[3]?.protocolReturnPct).toBeCloseTo(16.3636363636)
   })
 })

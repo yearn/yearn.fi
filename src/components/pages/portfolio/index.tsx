@@ -46,6 +46,7 @@ import type { TPortfolioHistoryChartTimeframe } from './components/PortfolioHist
 import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { usePortfolioProtocolReturn } from './hooks/usePortfolioProtocolReturn'
+import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
 import type {
   TPortfolioHistoryDenomination,
   TPortfolioHistoryTimeframe,
@@ -1066,6 +1067,12 @@ function PortfolioPage(): ReactElement {
     error: historyError,
     isEmpty: historyEmpty
   } = usePortfolioHistory(historyDenomination, historyFetchTimeframe)
+  const {
+    data: protocolReturnHistoryData,
+    isLoading: protocolReturnHistoryLoading,
+    error: protocolReturnHistoryError,
+    isEmpty: protocolReturnHistoryEmpty
+  } = usePortfolioProtocolReturnHistory(historyFetchTimeframe)
   const { data: protocolReturnSummary, isLoading: protocolReturnLoading } = usePortfolioProtocolReturn()
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
@@ -1151,14 +1158,18 @@ function PortfolioPage(): ReactElement {
               <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
                 <div className="grid items-stretch xl:grid-cols-[minmax(0,1fr)_340px]">
                   <PortfolioHistoryChart
-                    data={historyData}
+                    balanceData={historyData}
+                    protocolReturnData={protocolReturnHistoryData}
                     denomination={resolvedHistoryDenomination}
                     onDenominationChange={setHistoryDenomination}
                     timeframe={historyTimeframe}
                     onTimeframeChange={setHistoryTimeframe}
-                    isLoading={historyLoading}
-                    isEmpty={historyEmpty}
-                    error={historyError}
+                    balanceIsLoading={historyLoading}
+                    balanceIsEmpty={historyEmpty}
+                    balanceError={historyError}
+                    protocolReturnIsLoading={protocolReturnHistoryLoading}
+                    protocolReturnIsEmpty={protocolReturnHistoryEmpty}
+                    protocolReturnError={protocolReturnHistoryError}
                     embedded
                     className="h-full bg-linear-to-b from-surface to-surface-secondary/20"
                   />

@@ -29,6 +29,9 @@ export {
 } from './services/pnl'
 export {
   getHoldingsPnLSimple,
+  getHoldingsPnLSimpleHistory,
+  type HoldingsPnLSimpleHistoryPoint,
+  type HoldingsPnLSimpleHistoryResponse,
   type HoldingsPnLSimpleResponse,
   type HoldingsPnLSimpleVault,
   type THoldingsPnLSimpleStatus

@@ -1,4 +1,5 @@
 import { formatUnits } from 'viem'
+import { config } from '../config'
 import type { VaultMetadata } from '../types'
 import { debugError, debugLog } from './debug'
 import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
@@ -8,6 +9,7 @@ import {
   type HoldingsEventPaginationMode,
   type VaultVersion
 } from './graphql'
+import { generateDailyTimestamps, generateDailyTimestampsFromRange, timestampToDateString } from './holdings'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
 import { buildRawPnlEvents } from './pnl'
 import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
@@ -129,6 +131,27 @@ export interface HoldingsPnLSimpleResponse {
     isComplete: boolean
   }
   vaults: HoldingsPnLSimpleVault[]
+}
+
+export interface HoldingsPnLSimpleHistoryPoint {
+  date: string
+  timestamp: number
+  growthWeightUsd: number
+  protocolReturnPct: number | null
+}
+
+export interface HoldingsPnLSimpleHistoryResponse {
+  address: string
+  version: VaultVersion
+  timeframe: '1y' | 'all'
+  generatedAt: string
+  summary: {
+    totalVaults: number
+    completeVaults: number
+    partialVaults: number
+    isComplete: boolean
+  }
+  dataPoints: HoldingsPnLSimpleHistoryPoint[]
 }
 
 const SECONDS_PER_YEAR = 365 * 24 * 60 * 60
@@ -628,6 +651,20 @@ function processEvent(
   return ledgers
 }
 
+function getProtocolReturnTimestamps(events: TRawPnlEvent[], timeframe: '1y' | 'all'): number[] {
+  if (timeframe === '1y') {
+    return generateDailyTimestamps(config.historyDays, 1)
+  }
+
+  if (events.length === 0) {
+    return []
+  }
+
+  const latestSettledTimestamp = generateDailyTimestamps(1, 1)[0]
+  const firstEventTimestamp = sortEvents(events)[0]?.blockTimestamp ?? latestSettledTimestamp
+  return generateDailyTimestampsFromRange(firstEventTimestamp, latestSettledTimestamp)
+}
+
 export function buildProtocolReturnLedgers(args: {
   events: TRawPnlEvent[]
   userAddress: string
@@ -788,6 +825,52 @@ function buildSummary(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleRespon
   }
 }
 
+export function buildProtocolReturnHistorySeries(args: {
+  events: TRawPnlEvent[]
+  userAddress: string
+  metadata: Map<string, VaultMetadata>
+  ppsData: Map<string, Map<number, number>>
+  priceData: Map<string, Map<number, number>>
+  timestamps: number[]
+}): HoldingsPnLSimpleHistoryPoint[] {
+  const userAddress = lowerCaseAddress(args.userAddress)
+  const sorted = sortEvents(args.events)
+  let eventIndex = 0
+  let ledgers = new Map<string, TProtocolReturnLedger>()
+
+  return args.timestamps.map((timestamp) => {
+    while (eventIndex < sorted.length && sorted[eventIndex]!.blockTimestamp <= timestamp) {
+      ledgers = processEvent(ledgers, sorted[eventIndex]!, {
+        userAddress,
+        metadata: args.metadata,
+        ppsData: args.ppsData,
+        priceData: args.priceData
+      })
+      eventIndex += 1
+    }
+
+    ledgers = Array.from(ledgers.entries()).reduce<Map<string, TProtocolReturnLedger>>((nextLedgers, [key, ledger]) => {
+      nextLedgers.set(key, accrueLedgerExposure(ledger, timestamp))
+      return nextLedgers
+    }, new Map())
+
+    const vaults = materializeProtocolReturnVaults({
+      ledgers,
+      metadata: args.metadata,
+      ppsData: args.ppsData,
+      currentTimestamp: timestamp
+    })
+    const summary = buildSummary(vaults)
+
+    return {
+      date: timestampToDateString(timestamp),
+      timestamp,
+      growthWeightUsd: summary.growthWeightUsd,
+      protocolReturnPct: summary.protocolReturnPct
+    }
+  })
+}
+
 export async function getHoldingsPnLSimple(
   userAddress: string,
   version: VaultVersion = 'all',
@@ -892,5 +975,118 @@ export async function getHoldingsPnLSimple(
     generatedAt: new Date().toISOString(),
     summary,
     vaults
+  }
+}
+
+export async function getHoldingsPnLSimpleHistory(
+  userAddress: string,
+  version: VaultVersion = 'all',
+  fetchType: HoldingsEventFetchType = 'seq',
+  paginationMode: HoldingsEventPaginationMode = 'paged',
+  timeframe: '1y' | 'all' = '1y'
+): Promise<HoldingsPnLSimpleHistoryResponse> {
+  debugLog('pnl-simple-history', 'starting holdings simple pnl history calculation', {
+    version,
+    fetchType,
+    paginationMode,
+    timeframe
+  })
+
+  const addressEvents = await fetchUserEvents(userAddress, 'all', undefined, fetchType, paginationMode)
+  const rawEvents = buildRawPnlEvents({
+    addressEvents,
+    transactionEvents: {
+      deposits: [],
+      withdrawals: [],
+      transfers: []
+    }
+  })
+  const rawVaultIdentifiers = getVaultIdentifiers(rawEvents)
+  const resolvedVaultMetadata = await fetchMultipleVaultsMetadata(rawVaultIdentifiers)
+  const filteredEvents = filterEventsByAuthoritativeVersion(rawEvents, resolvedVaultMetadata, version)
+  const filteredVaultIdentifiers = getVaultIdentifiers(filteredEvents)
+  const vaultMetadata = filteredVaultIdentifiers.reduce<Map<string, VaultMetadata>>((filtered, vault) => {
+    const key = toVaultKey(vault.chainId, vault.vaultAddress)
+    const metadata = resolvedVaultMetadata.get(key)
+
+    if (metadata) {
+      filtered.set(key, metadata)
+    }
+
+    return filtered
+  }, new Map())
+
+  if (filteredEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
+    return {
+      address: lowerCaseAddress(userAddress),
+      version,
+      timeframe,
+      generatedAt: new Date().toISOString(),
+      summary: {
+        totalVaults: 0,
+        completeVaults: 0,
+        partialVaults: 0,
+        isComplete: true
+      },
+      dataPoints: []
+    }
+  }
+
+  const timestamps = getProtocolReturnTimestamps(filteredEvents, timeframe)
+  const latestTimestamp = timestamps[timestamps.length - 1] ?? Math.floor(Date.now() / 1000)
+  const receiptPriceRequests = buildReceiptPriceRequests({
+    events: filteredEvents,
+    metadata: vaultMetadata,
+    userAddress,
+    currentTimestamp: latestTimestamp
+  })
+
+  const [ppsData, priceData] = await Promise.all([
+    fetchMultipleVaultsPPS(filteredVaultIdentifiers),
+    fetchReceiptPrices(receiptPriceRequests)
+  ])
+
+  const finalLedgers = buildProtocolReturnLedgers({
+    events: filteredEvents,
+    userAddress,
+    metadata: vaultMetadata,
+    ppsData,
+    priceData,
+    currentTimestamp: latestTimestamp
+  })
+  const finalVaults = materializeProtocolReturnVaults({
+    ledgers: finalLedgers,
+    metadata: vaultMetadata,
+    ppsData,
+    currentTimestamp: latestTimestamp
+  })
+  const history = buildProtocolReturnHistorySeries({
+    events: filteredEvents,
+    userAddress,
+    metadata: vaultMetadata,
+    ppsData,
+    priceData,
+    timestamps
+  })
+
+  debugLog('pnl-simple-history', 'completed holdings simple pnl history calculation', {
+    version,
+    timeframe,
+    points: history.length,
+    totalVaults: finalVaults.length
+  })
+
+  return {
+    address: lowerCaseAddress(userAddress),
+    version,
+    timeframe,
+    generatedAt: new Date().toISOString(),
+    summary: {
+      totalVaults: finalVaults.length,
+      completeVaults: finalVaults.filter((vault) => vault.status === 'ok').length,
+      partialVaults: finalVaults.filter((vault) => vault.status !== 'ok').length,
+      isComplete: finalVaults.every((vault) => vault.status === 'ok')
+    },
+    dataPoints: history
   }
 }

@@ -14,6 +14,9 @@ interface DatabasePool {
 
 let pool: DatabasePool | null = null
 let schemaInitializationPromise: Promise<void> | null = null
+let databaseDisabled = false
+
+const DB_QUERY_TIMEOUT_MS = 5_000
 
 function normalizeUserAddress(userAddress: string): string {
   return userAddress.toLowerCase()
@@ -23,8 +26,41 @@ function toUserAddressHash(userAddress: string): string {
   return createHash('sha256').update(normalizeUserAddress(userAddress)).digest('hex')
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`))
+    }, timeoutMs)
+
+    promise.then(
+      (value) => {
+        clearTimeout(timeoutId)
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timeoutId)
+        reject(error)
+      }
+    )
+  })
+}
+
+function disableDatabase(reason: string, error?: unknown): void {
+  databaseDisabled = true
+  console.error(`[Holdings DB] Disabling database-backed cache: ${reason}`, error ?? '')
+
+  const currentPool = pool
+  pool = null
+
+  if (currentPool) {
+    Promise.resolve(currentPool.end()).catch((closeError) => {
+      console.error('[Holdings DB] Failed to close pool while disabling database cache:', closeError)
+    })
+  }
+}
+
 async function createPool(): Promise<DatabasePool | null> {
-  if (!config.databaseUrl) {
+  if (!config.databaseUrl || databaseDisabled) {
     return null
   }
 
@@ -34,8 +70,13 @@ async function createPool(): Promise<DatabasePool | null> {
 
     return {
       query: async <T>(text: string, params?: unknown[]) => {
-        const result = await neonPool.query(text, params)
-        return { rows: result.rows as T[], rowCount: result.rowCount ?? 0 }
+        try {
+          const result = await withTimeout(neonPool.query(text, params), DB_QUERY_TIMEOUT_MS, 'Holdings DB query')
+          return { rows: result.rows as T[], rowCount: result.rowCount ?? 0 }
+        } catch (error) {
+          disableDatabase('query failure', error)
+          throw error
+        }
       },
       end: () => neonPool.end()
     }
@@ -46,6 +87,10 @@ async function createPool(): Promise<DatabasePool | null> {
 }
 
 export async function getPool(): Promise<DatabasePool | null> {
+  if (databaseDisabled) {
+    return null
+  }
+
   if (pool === null && config.databaseUrl) {
     pool = await createPool()
   }
@@ -116,8 +161,7 @@ export async function initializeSchema(): Promise<void> {
     await migrateHoldingsTotalsAddressStorage(db)
     console.log('[Holdings DB] Schema initialized successfully')
   } catch (error) {
-    console.error('[Holdings DB] Failed to initialize schema:', error)
-    throw error
+    disableDatabase('schema initialization failed', error)
   }
 }
 
@@ -213,5 +257,5 @@ async function migrateHoldingsTotalsAddressStorage(db: DatabasePool): Promise<vo
 }
 
 export function isDatabaseEnabled(): boolean {
-  return config.databaseUrl !== null
+  return config.databaseUrl !== null && !databaseDisabled
 }

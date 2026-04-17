@@ -15,28 +15,63 @@ import {
   getTimeframeLimit
 } from '@pages/vaults/utils/charts'
 import { IconSpinner } from '@shared/icons/IconSpinner'
-import { cl, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
+import { cl, formatPercent, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useId, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
-import type { TPortfolioHistoryChartData, TPortfolioHistoryDenomination } from '../types/api'
+import type {
+  TPortfolioHistoryChartData,
+  TPortfolioHistoryDenomination,
+  TPortfolioProtocolReturnHistoryChartData
+} from '../types/api'
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
+type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'return'
 
 type TPortfolioHistoryChartProps = {
-  data: TPortfolioHistoryChartData | null
+  balanceData: TPortfolioHistoryChartData | null
+  protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
   denomination: TPortfolioHistoryDenomination
   onDenominationChange: (denomination: TPortfolioHistoryDenomination) => void
   timeframe: TPortfolioHistoryChartTimeframe
   onTimeframeChange: (timeframe: TPortfolioHistoryChartTimeframe) => void
-  isLoading: boolean
-  isEmpty?: boolean
-  error?: Error | null
+  balanceIsLoading: boolean
+  balanceIsEmpty?: boolean
+  balanceError?: Error | null
+  protocolReturnIsLoading: boolean
+  protocolReturnIsEmpty?: boolean
+  protocolReturnError?: Error | null
   embedded?: boolean
   className?: string
 }
+
+type TChartPoint = {
+  date: string
+  value: number | null
+}
+
+type TPortfolioHistoryTooltipProps = {
+  active?: boolean
+  payload?: Array<{
+    value?: unknown
+    payload?: {
+      date?: string
+      value?: unknown
+    }
+  }>
+}
+
+type TActiveChartState = {
+  activeLabel?: string | number
+}
+
+const CHART_TABS: Array<{ id: TPortfolioHistoryChartTab; label: string }> = [
+  { id: 'balance', label: 'Balance' },
+  { id: 'growth', label: 'Growth' },
+  { id: 'return', label: '% Return' }
+]
 
 const EXAMPLE_PORTFOLIO_USD_DATA: TPortfolioHistoryChartData = [
   { date: '2025-05-01', value: 1800 },
@@ -53,23 +88,7 @@ const EXAMPLE_PORTFOLIO_USD_DATA: TPortfolioHistoryChartData = [
   { date: '2026-04-01', value: 17250 }
 ]
 
-type TPortfolioHistoryTooltipProps = {
-  active?: boolean
-  payload?: Array<{
-    value?: unknown
-    payload?: {
-      date?: string
-      value?: unknown
-    }
-  }>
-  label?: string
-}
-
-type TActiveChartState = {
-  activeLabel?: string | number
-}
-
-function formatHistoryValue(value: number, denomination: TPortfolioHistoryDenomination): string {
+function formatBalanceValue(value: number, denomination: TPortfolioHistoryDenomination): string {
   if (denomination === 'eth') {
     return `${value.toFixed(value >= 100 ? 2 : value >= 1 ? 3 : 4)} ETH`
   }
@@ -77,11 +96,37 @@ function formatHistoryValue(value: number, denomination: TPortfolioHistoryDenomi
   return formatUSD(value, 2, 2)
 }
 
+function formatGrowthValue(value: number): string {
+  const absolute = formatUSD(Math.abs(value), 2, 2)
+  if (value > 0) {
+    return `+${absolute}`
+  }
+  if (value < 0) {
+    return `-${absolute}`
+  }
+  return absolute
+}
+
+function formatReturnValue(value: number): string {
+  const absolute = formatPercent(Math.abs(value), 2, 2, 10_000)
+  if (value > 0) {
+    return `+${absolute}`
+  }
+  if (value < 0) {
+    return `-${absolute}`
+  }
+  return absolute
+}
+
 function PortfolioHistoryTooltip({
   active,
   payload,
+  activeTab,
   denomination
-}: TPortfolioHistoryTooltipProps & { denomination: TPortfolioHistoryDenomination }): ReactElement | null {
+}: TPortfolioHistoryTooltipProps & {
+  activeTab: TPortfolioHistoryChartTab
+  denomination: TPortfolioHistoryDenomination
+}): ReactElement | null {
   if (!active || !payload?.length) {
     return null
   }
@@ -94,6 +139,13 @@ function PortfolioHistoryTooltip({
     return null
   }
 
+  const formattedValue =
+    activeTab === 'balance'
+      ? formatBalanceValue(value, denomination)
+      : activeTab === 'growth'
+        ? formatGrowthValue(value)
+        : formatReturnValue(value)
+
   return (
     <div
       className={
@@ -104,27 +156,70 @@ function PortfolioHistoryTooltip({
         <span className={'text-xs font-medium uppercase tracking-[0.12em] text-text-tertiary'}>
           {formatChartTooltipDate(date)}
         </span>
-        <span className={'text-sm font-semibold text-text-primary'}>{formatHistoryValue(value, denomination)}</span>
+        <span className={'text-sm font-semibold text-text-primary'}>{formattedValue}</span>
       </div>
-      <span className={'text-xs font-medium text-text-secondary'}>
-        {value > 0 ? 'Click to see breakdown' : 'No breakdown available for this point'}
-      </span>
+      {activeTab === 'balance' ? (
+        <span className={'text-xs font-medium text-text-secondary'}>
+          {value > 0 ? 'Click to see breakdown' : 'No breakdown available for this point'}
+        </span>
+      ) : null}
     </div>
   )
 }
 
+function getChartDescription(activeTab: TPortfolioHistoryChartTab): string {
+  if (activeTab === 'growth') {
+    return 'Cumulative protocol growth earned while funds were held in your wallet.'
+  }
+
+  if (activeTab === 'return') {
+    return 'Cumulative protocol return with deposits and withdrawals normalized out of the series.'
+  }
+
+  return 'Daily settled portfolio value across your current Yearn activity.'
+}
+
+function getChartTitle(activeTab: TPortfolioHistoryChartTab): string {
+  if (activeTab === 'growth') {
+    return 'Protocol Growth'
+  }
+
+  if (activeTab === 'return') {
+    return 'Protocol Return'
+  }
+
+  return 'Holdings History'
+}
+
+function getEmptyMessage(activeTab: TPortfolioHistoryChartTab): string {
+  if (activeTab === 'growth') {
+    return 'No protocol growth history available'
+  }
+
+  if (activeTab === 'return') {
+    return 'No protocol return history available'
+  }
+
+  return 'No holdings history available'
+}
+
 export function PortfolioHistoryChart({
-  data,
+  balanceData,
+  protocolReturnData,
   denomination,
   onDenominationChange,
   timeframe,
   onTimeframeChange,
-  isLoading,
-  isEmpty = false,
-  error,
+  balanceIsLoading,
+  balanceIsEmpty = false,
+  balanceError,
+  protocolReturnIsLoading,
+  protocolReturnIsEmpty = false,
+  protocolReturnError,
   embedded = false,
   className
 }: TPortfolioHistoryChartProps): ReactElement {
+  const [activeTab, setActiveTab] = useState<TPortfolioHistoryChartTab>('balance')
   const [hoveredBreakdownDate, setHoveredBreakdownDate] = useState<string | null>(null)
   const [selectedBreakdownDate, setSelectedBreakdownDate] = useState<string | null>(null)
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false)
@@ -134,54 +229,121 @@ export function PortfolioHistoryChart({
     ? 'flex h-full flex-col gap-3 bg-surface px-5 py-4 md:px-6 md:pb-0 md:pt-5'
     : 'flex h-full flex-col gap-4 rounded-lg border border-border bg-surface p-6'
 
-  const filteredData = useMemo(() => {
-    if (!data) {
+  const filteredBalanceData = useMemo<TChartPoint[]>(() => {
+    if (!balanceData) {
       return []
     }
+
     const limit = getTimeframeLimit(timeframe)
-    if (!Number.isFinite(limit) || limit >= data.length) {
-      return data
+    const points = !Number.isFinite(limit) || limit >= balanceData.length ? balanceData : balanceData.slice(-limit)
+    return points.map((point) => ({ date: point.date, value: point.value }))
+  }, [balanceData, timeframe])
+
+  const filteredGrowthData = useMemo<TChartPoint[]>(() => {
+    if (!protocolReturnData) {
+      return []
     }
-    return data.slice(-limit)
-  }, [data, timeframe])
+
+    const limit = getTimeframeLimit(timeframe)
+    const points =
+      !Number.isFinite(limit) || limit >= protocolReturnData.length
+        ? protocolReturnData
+        : protocolReturnData.slice(-limit)
+
+    return points.map((point) => ({
+      date: point.date,
+      value: point.growthWeightUsd
+    }))
+  }, [protocolReturnData, timeframe])
+
+  const filteredReturnData = useMemo<TChartPoint[]>(() => {
+    if (!protocolReturnData) {
+      return []
+    }
+
+    const limit = getTimeframeLimit(timeframe)
+    const points =
+      !Number.isFinite(limit) || limit >= protocolReturnData.length
+        ? protocolReturnData
+        : protocolReturnData.slice(-limit)
+
+    return points.map((point) => ({
+      date: point.date,
+      value: point.protocolReturnPct
+    }))
+  }, [protocolReturnData, timeframe])
+
+  const activeData =
+    activeTab === 'balance' ? filteredBalanceData : activeTab === 'growth' ? filteredGrowthData : filteredReturnData
+  const activeIsLoading = activeTab === 'balance' ? balanceIsLoading : protocolReturnIsLoading
+  const activeIsEmpty = activeTab === 'balance' ? balanceIsEmpty : protocolReturnIsEmpty
+  const activeError = activeTab === 'balance' ? balanceError : protocolReturnError
 
   const isShortTimeframe = timeframe === '30d'
   const ticks = useMemo(
-    () => (isShortTimeframe ? getChartWeeklyTicks(filteredData) : getChartMonthlyTicks(filteredData)),
-    [filteredData, isShortTimeframe]
+    () => (isShortTimeframe ? getChartWeeklyTicks(activeData) : getChartMonthlyTicks(activeData)),
+    [activeData, isShortTimeframe]
   )
   const tickFormatter = isShortTimeframe ? formatChartWeekLabel : formatChartMonthYearLabel
 
   const formatValueTick = (value: number | string) => {
     const numericValue = Number(value)
+    const absoluteValue = Math.abs(numericValue)
     if (numericValue === 0) {
-      return ''
+      return activeTab === 'return' ? '0%' : ''
     }
 
-    if (denomination === 'eth') {
-      if (numericValue >= 1_000) {
-        return `${(numericValue / 1_000).toFixed(1)}k`
+    if (activeTab === 'balance') {
+      if (denomination === 'eth') {
+        if (absoluteValue >= 1_000) {
+          return `${numericValue < 0 ? '-' : ''}${(absoluteValue / 1_000).toFixed(1)}k`
+        }
+        return numericValue >= 10 || numericValue <= -10 ? numericValue.toFixed(0) : numericValue.toFixed(2)
       }
-      return numericValue >= 10 ? numericValue.toFixed(0) : numericValue.toFixed(2)
+
+      if (absoluteValue >= 1_000_000) {
+        return `${numericValue < 0 ? '-' : ''}$${(absoluteValue / 1_000_000).toFixed(1)}M`
+      }
+      if (absoluteValue >= 1_000) {
+        return `${numericValue < 0 ? '-' : ''}$${(absoluteValue / 1_000).toFixed(1)}k`
+      }
+      return `${numericValue < 0 ? '-' : ''}$${absoluteValue.toFixed(0)}`
     }
 
-    if (numericValue >= 1_000_000) {
-      return `$${(numericValue / 1_000_000).toFixed(1)}M`
+    if (activeTab === 'growth') {
+      if (absoluteValue >= 1_000_000) {
+        return `${numericValue < 0 ? '-' : ''}$${(absoluteValue / 1_000_000).toFixed(1)}M`
+      }
+      if (absoluteValue >= 1_000) {
+        return `${numericValue < 0 ? '-' : ''}$${(absoluteValue / 1_000).toFixed(1)}k`
+      }
+      return `${numericValue < 0 ? '-' : ''}$${absoluteValue.toFixed(0)}`
     }
-    if (numericValue >= 1_000) {
-      return `$${(numericValue / 1_000).toFixed(1)}k`
+
+    if (absoluteValue >= 1000) {
+      return `${numericValue.toFixed(0)}%`
     }
-    return `$${numericValue.toFixed(0)}`
+    if (absoluteValue >= 10) {
+      return `${numericValue.toFixed(1)}%`
+    }
+    return `${numericValue.toFixed(2)}%`
   }
 
   const chartConfig = useMemo<ChartConfig>(() => {
     return {
       value: {
-        label: denomination === 'eth' ? 'Total Value (ETH)' : 'Total Value (USD)',
+        label:
+          activeTab === 'balance'
+            ? denomination === 'eth'
+              ? 'Total Value (ETH)'
+              : 'Total Value (USD)'
+            : activeTab === 'growth'
+              ? 'Protocol Growth (USD)'
+              : 'Protocol Return (%)',
         color: 'var(--chart-1)'
       }
     }
-  }, [denomination])
+  }, [activeTab, denomination])
 
   const exampleChartConfig = useMemo<ChartConfig>(() => {
     return {
@@ -200,98 +362,120 @@ export function PortfolioHistoryChart({
     [denomination]
   )
 
-  const openBreakdownModal = (date: string): void => {
-    setSelectedBreakdownDate(date)
-    setIsBreakdownModalOpen(true)
-  }
-
-  const closeBreakdownModal = (): void => {
-    setIsBreakdownModalOpen(false)
-  }
-
   const getBreakdownPoint = (date: string | null) => {
-    if (!date) {
+    if (!date || activeTab !== 'balance') {
       return null
     }
-    return filteredData.find((point) => point.date === date) ?? null
+
+    return filteredBalanceData.find((point) => point.date === date) ?? null
   }
 
   const handleChartMouseMove = (state: TActiveChartState | undefined): void => {
+    if (activeTab !== 'balance') {
+      return
+    }
+
     const nextDate = typeof state?.activeLabel === 'string' ? state.activeLabel : null
     setHoveredBreakdownDate((currentDate) => (currentDate === nextDate ? currentDate : nextDate))
   }
 
   const handleChartMouseLeave = (): void => {
+    if (activeTab !== 'balance') {
+      return
+    }
+
     setHoveredBreakdownDate(null)
   }
 
   const handleChartClick = (state?: TActiveChartState): void => {
-    const clickedDate = typeof state?.activeLabel === 'string' ? state.activeLabel : hoveredBreakdownDate
-    const selectedPoint = getBreakdownPoint(clickedDate)
-    if (!selectedPoint || selectedPoint.value <= 0) {
+    if (activeTab !== 'balance') {
       return
     }
 
-    openBreakdownModal(selectedPoint.date)
+    const clickedDate = typeof state?.activeLabel === 'string' ? state.activeLabel : hoveredBreakdownDate
+    const selectedPoint = getBreakdownPoint(clickedDate)
+    if (!selectedPoint || Number(selectedPoint.value ?? 0) <= 0) {
+      return
+    }
+
+    setSelectedBreakdownDate(selectedPoint.date)
+    setIsBreakdownModalOpen(true)
   }
 
-  const renderHeader = (showTimeframeControls = false): ReactElement => (
-    <div className={'flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between'}>
-      <div className={'flex items-center justify-between gap-3'}>
+  const renderHeader = (showControls = false): ReactElement => (
+    <div className={'flex flex-col gap-2.5 md:gap-3'}>
+      <div className={'flex items-start justify-between gap-3'}>
         <div className={'flex flex-col gap-0.5'}>
-          <h2 className={'text-xl font-semibold text-text-primary'}>{'Holdings History'}</h2>
-          <p className={'text-xs text-text-secondary'}>
-            {'Daily settled portfolio value across your current Yearn activity.'}
-          </p>
+          <h2 className={'text-xl font-semibold text-text-primary'}>{getChartTitle(activeTab)}</h2>
+          <p className={'text-xs text-text-secondary'}>{getChartDescription(activeTab)}</p>
         </div>
-        <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
-          {(['usd', 'eth'] as const).map((nextDenomination) => (
-            <button
-              key={nextDenomination}
-              type={'button'}
-              onClick={() => onDenominationChange(nextDenomination)}
-              className={cl(
-                'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                SELECTOR_BAR_STYLES.buttonBase,
-                denomination === nextDenomination
-                  ? SELECTOR_BAR_STYLES.buttonActive
-                  : SELECTOR_BAR_STYLES.buttonInactive
-              )}
-            >
-              {nextDenomination.toUpperCase()}
-            </button>
-          ))}
-        </div>
+        {activeTab === 'balance' ? (
+          <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
+            {(['usd', 'eth'] as const).map((nextDenomination) => (
+              <button
+                key={nextDenomination}
+                type={'button'}
+                onClick={() => onDenominationChange(nextDenomination)}
+                className={cl(
+                  'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                  'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                  SELECTOR_BAR_STYLES.buttonBase,
+                  denomination === nextDenomination
+                    ? SELECTOR_BAR_STYLES.buttonActive
+                    : SELECTOR_BAR_STYLES.buttonInactive
+                )}
+              >
+                {nextDenomination.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
-      {showTimeframeControls ? (
-        <div
-          className={cl('flex items-center gap-0.5 md:gap-1 self-start md:self-auto', SELECTOR_BAR_STYLES.container)}
-        >
-          {(['30d', '90d', '1y', 'all'] as const).map((tf) => (
-            <button
-              key={tf}
-              type={'button'}
-              onClick={() => onTimeframeChange(tf)}
-              className={cl(
-                'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                SELECTOR_BAR_STYLES.buttonBase,
-                timeframe === tf ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
-              )}
-            >
-              {tf.toUpperCase()}
-            </button>
-          ))}
+      {showControls ? (
+        <div className={'flex flex-col gap-2 md:flex-row md:items-center md:justify-between'}>
+          <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
+            {CHART_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type={'button'}
+                onClick={() => setActiveTab(tab.id)}
+                className={cl(
+                  'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold transition-all',
+                  'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                  SELECTOR_BAR_STYLES.buttonBase,
+                  activeTab === tab.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
+            {(['30d', '90d', '1y', 'all'] as const).map((tf) => (
+              <button
+                key={tf}
+                type={'button'}
+                onClick={() => onTimeframeChange(tf)}
+                className={cl(
+                  'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                  'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                  SELECTOR_BAR_STYLES.buttonBase,
+                  timeframe === tf ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
+                )}
+              >
+                {tf.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
     </div>
   )
 
-  if (isLoading) {
+  if (activeIsLoading) {
     return (
       <section className={cl(sectionClassName, className)}>
-        {renderHeader()}
+        {renderHeader(true)}
         <div className={'flex min-h-[240px] items-center justify-center'}>
           <IconSpinner className={'size-8 animate-spin text-text-secondary'} />
         </div>
@@ -299,21 +483,25 @@ export function PortfolioHistoryChart({
     )
   }
 
-  if (error) {
+  if (activeError) {
     return (
       <section className={cl(sectionClassName, className)}>
-        {renderHeader()}
+        {renderHeader(true)}
         <div className={'flex min-h-[240px] items-center justify-center'}>
-          <p className={'text-base text-text-secondary'}>Unable to load holdings history right now</p>
+          <p className={'text-base text-text-secondary'}>
+            {activeTab === 'balance'
+              ? 'Unable to load holdings history right now'
+              : 'Unable to load protocol return history right now'}
+          </p>
         </div>
       </section>
     )
   }
 
-  if (isEmpty) {
+  if (activeIsEmpty && activeTab === 'balance') {
     return (
       <section className={cl(sectionClassName, className)}>
-        {renderHeader()}
+        {renderHeader(true)}
         <div
           className={
             'relative h-[320px] overflow-hidden rounded-2xl border border-dashed border-border bg-surface-secondary sm:h-[280px]'
@@ -398,12 +586,12 @@ export function PortfolioHistoryChart({
     )
   }
 
-  if (!data || data.length === 0) {
+  if (activeIsEmpty || activeData.length === 0) {
     return (
       <section className={cl(sectionClassName, className)}>
-        {renderHeader()}
+        {renderHeader(true)}
         <div className={'flex min-h-[240px] items-center justify-center'}>
-          <p className={'text-base text-text-secondary'}>No holdings history available</p>
+          <p className={'text-base text-text-secondary'}>{getEmptyMessage(activeTab)}</p>
         </div>
       </section>
     )
@@ -416,17 +604,21 @@ export function PortfolioHistoryChart({
         <ChartContainer
           config={chartConfig}
           style={{ height: '100%', aspectRatio: 'unset' }}
-          className={getBreakdownPoint(hoveredBreakdownDate)?.value ? 'cursor-pointer' : undefined}
+          className={
+            activeTab === 'balance' && Number(getBreakdownPoint(hoveredBreakdownDate)?.value ?? 0) > 0
+              ? 'cursor-pointer'
+              : undefined
+          }
         >
           <ComposedChart
-            data={filteredData}
+            data={activeData}
             margin={CHART_WITH_AXES_MARGIN}
             onMouseMove={handleChartMouseMove}
             onMouseLeave={handleChartMouseLeave}
             onClick={handleChartClick}
           >
             <defs>
-              <linearGradient id={`${gradientId}-holdings`} x1="0" x2="0" y1="0" y2="1">
+              <linearGradient id={`${gradientId}-history`} x1="0" x2="0" y1="0" y2="1">
                 <stop offset="5%" stopColor="var(--color-value)" stopOpacity={0.5} />
                 <stop offset="95%" stopColor="var(--color-value)" stopOpacity={0} />
               </linearGradient>
@@ -441,7 +633,7 @@ export function PortfolioHistoryChart({
               tickLine={{ stroke: 'var(--chart-axis)' }}
             />
             <YAxis
-              domain={[0, 'auto']}
+              domain={['auto', 'auto']}
               tickFormatter={formatValueTick}
               mirror
               width={CHART_Y_AXIS_WIDTH}
@@ -452,13 +644,15 @@ export function PortfolioHistoryChart({
             />
             <ChartTooltip
               cursor={{ stroke: 'var(--chart-cursor-line)', strokeWidth: 1 }}
-              content={(props) => <PortfolioHistoryTooltip {...props} denomination={denomination} />}
+              content={(props) => (
+                <PortfolioHistoryTooltip {...props} activeTab={activeTab} denomination={denomination} />
+              )}
             />
             <Area
               type={'monotone'}
               dataKey={'value'}
               stroke="none"
-              fill={`url(#${gradientId}-holdings)`}
+              fill={`url(#${gradientId}-history)`}
               fillOpacity={1}
               connectNulls
               tooltipType={'none'}
@@ -471,6 +665,7 @@ export function PortfolioHistoryChart({
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4, strokeWidth: 0, fill: 'var(--color-value)' }}
+              connectNulls
               isAnimationActive={false}
             />
           </ComposedChart>
@@ -479,7 +674,7 @@ export function PortfolioHistoryChart({
       <PortfolioHistoryBreakdownModal
         date={selectedBreakdownDate}
         isOpen={isBreakdownModalOpen}
-        onClose={closeBreakdownModal}
+        onClose={() => setIsBreakdownModalOpen(false)}
       />
     </section>
   )

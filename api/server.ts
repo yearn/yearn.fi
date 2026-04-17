@@ -13,6 +13,7 @@ import {
   getHoldingsPnL,
   getHoldingsPnLDrilldown,
   getHoldingsPnLSimple,
+  getHoldingsPnLSimpleHistory,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
   type HoldingsHistoryDenomination,
@@ -808,6 +809,90 @@ async function handleHoldingsPnLSimple(req: Request): Promise<Response> {
   }
 }
 
+async function handleHoldingsPnLSimpleHistory(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const versionParam = url.searchParams.get('version')
+  const timeframe = parseHoldingsHistoryTimeframe(url.searchParams.get('timeframe'))
+  const debugEnabled =
+    isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
+  const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
+  const debugVault = url.searchParams.get('debugVault')
+  const debugTx = url.searchParams.get('debugTx')
+  const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
+  const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const history = await withHoldingsDebugContext(
+      createHoldingsDebugContext('pnl-simple-history', address, debugEnabled, {
+        lotsEnabled: debugLotsEnabled,
+        vaultFilter: debugVault,
+        txFilter: debugTx
+      }),
+      async () => {
+        debugLog('route', 'started holdings simple pnl history request', {
+          version,
+          timeframe,
+          fetchType,
+          paginationMode,
+          debugLotsEnabled,
+          debugVault: debugVault?.toLowerCase() ?? null,
+          debugTx: debugTx?.toLowerCase() ?? null
+        })
+
+        try {
+          const response = await getHoldingsPnLSimpleHistory(address, version, fetchType, paginationMode, timeframe)
+          debugLog('route', 'completed holdings simple pnl history request', {
+            version,
+            timeframe,
+            fetchType,
+            paginationMode,
+            totalVaults: response.summary.totalVaults,
+            points: response.dataPoints.length
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings simple pnl history request failed', error, {
+            version,
+            timeframe,
+            fetchType,
+            paginationMode
+          })
+          throw error
+        }
+      }
+    )
+
+    if (history.summary.totalVaults === 0) {
+      return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
+    }
+
+    return Response.json(history, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching holdings simple PnL history:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json(
+      { error: 'Failed to fetch holdings simple PnL history', message, stack, status: 502 },
+      { status: 502 }
+    )
+  }
+}
+
 async function handleHoldingsPnLDrilldown(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
@@ -1060,6 +1145,10 @@ async function main() {
           return withCors(await handleHoldingsPnLSimple(req))
         }
 
+        if (url.pathname === '/api/holdings/pnl/simple-history') {
+          return withCors(await handleHoldingsPnLSimpleHistory(req))
+        }
+
         if (url.pathname === '/api/holdings/pnl') {
           return withCors(await handleHoldingsPnL(req))
         }
@@ -1132,6 +1221,7 @@ async function main() {
   console.log('🧩 Holdings Breakdown API: http://localhost:3001/api/holdings/breakdown?address=0x...')
   console.log('💹 PnL API: http://localhost:3001/api/holdings/pnl?address=0x...')
   console.log('📈 Simple PnL API: http://localhost:3001/api/holdings/pnl/simple?address=0x...')
+  console.log('📊 Simple PnL History API: http://localhost:3001/api/holdings/pnl/simple-history?address=0x...')
   console.log('🧾 PnL Drilldown API: http://localhost:3001/api/holdings/pnl/drilldown?address=0x...')
 }
 

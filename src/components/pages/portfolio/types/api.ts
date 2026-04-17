@@ -5,6 +5,12 @@ const portfolioHistorySimpleDataPointSchema = z.object({
   value: z.number()
 })
 
+const portfolioProtocolReturnHistoryDataPointSchema = z.object({
+  date: z.string(),
+  growthWeightUsd: z.number(),
+  protocolReturnPct: z.number().nullable()
+})
+
 const portfolioBreakdownVaultSchema = z.object({
   chainId: z.number(),
   vaultAddress: z.string(),
@@ -33,6 +39,12 @@ export const portfolioHistorySimpleResponseSchema = z.object({
   denomination: z.enum(['usd', 'eth']).optional().default('usd'),
   timeframe: z.enum(['1y', 'all']).optional().default('1y'),
   dataPoints: z.array(portfolioHistorySimpleDataPointSchema)
+})
+
+export const portfolioProtocolReturnHistoryResponseSchema = z.object({
+  address: z.string(),
+  timeframe: z.enum(['1y', 'all']).optional().default('1y'),
+  dataPoints: z.array(portfolioProtocolReturnHistoryDataPointSchema)
 })
 
 export const portfolioBreakdownResponseSchema = z.object({
@@ -109,6 +121,7 @@ export const portfolioProtocolReturnResponseSchema = z.object({
 })
 
 export type TPortfolioHistorySimpleResponse = z.infer<typeof portfolioHistorySimpleResponseSchema>
+export type TPortfolioProtocolReturnHistoryResponse = z.infer<typeof portfolioProtocolReturnHistoryResponseSchema>
 export type TPortfolioBreakdownResponse = z.infer<typeof portfolioBreakdownResponseSchema>
 export type TPortfolioBreakdownVault = z.infer<typeof portfolioBreakdownVaultSchema>
 export type TPortfolioPnlResponse = z.infer<typeof portfolioPnlResponseSchema>
@@ -121,4 +134,9 @@ export type TPortfolioHistoryTimeframe = z.infer<typeof portfolioHistorySimpleRe
 export type TPortfolioHistoryChartData = Array<{
   date: string
   value: number
+}>
+export type TPortfolioProtocolReturnHistoryChartData = Array<{
+  date: string
+  growthWeightUsd: number
+  protocolReturnPct: number | null
 }>
