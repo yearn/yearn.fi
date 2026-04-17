@@ -4,7 +4,7 @@ import type { VaultMetadata } from '../types'
 import { debugError, debugLog } from './debug'
 import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
 import {
-  fetchUserEvents,
+  fetchRawUserPnlEvents,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
   type VaultVersion
@@ -708,6 +708,203 @@ function cloneEventWithShares(event: TRawPnlEvent, shares: bigint): TRawPnlEvent
   }
 }
 
+function cloneEventWithAdjustedAssets(
+  event: Extract<TRawPnlEvent, { kind: 'deposit' | 'withdrawal' }>,
+  assets: bigint,
+  idSuffix: string
+): TRawPnlEvent {
+  return {
+    ...event,
+    id: `${event.id}:${idSuffix}`,
+    assets
+  }
+}
+
+function splitAssetValuedEvent(
+  event: Extract<TRawPnlEvent, { kind: 'deposit' | 'withdrawal' }>,
+  matchedShares: bigint,
+  matchedAssets: bigint,
+  idPrefix: string
+): TRawPnlEvent[] {
+  if (matchedShares <= ZERO || matchedAssets <= ZERO) {
+    return [event]
+  }
+
+  if (matchedShares >= event.shares) {
+    return [cloneEventWithAdjustedAssets(event, matchedAssets, `${idPrefix}-matched`)]
+  }
+
+  const remainderShares = event.shares - matchedShares
+  return [
+    {
+      ...cloneEventWithShares(event, matchedShares),
+      id: `${event.id}:${idPrefix}-matched`,
+      assets: matchedAssets
+    },
+    {
+      ...cloneEventWithShares(event, remainderShares),
+      id: `${event.id}:${idPrefix}-remainder`
+    }
+  ]
+}
+
+function allocateAssetPoolAcrossEvents(
+  events: Array<Extract<TRawPnlEvent, { kind: 'deposit' | 'withdrawal' }>>,
+  totalMatchedShares: bigint,
+  totalMatchedAssets: bigint,
+  idPrefix: string
+): TRawPnlEvent[] {
+  if (events.length === 0 || totalMatchedShares <= ZERO || totalMatchedAssets <= ZERO) {
+    return events
+  }
+
+  let remainingMatchedShares = totalMatchedShares
+  let remainingMatchedAssets = totalMatchedAssets
+
+  return events.flatMap((event, index) => {
+    if (remainingMatchedShares <= ZERO || remainingMatchedAssets <= ZERO) {
+      return [event]
+    }
+
+    const matchedShares = minBigInt(event.shares, remainingMatchedShares)
+    if (matchedShares <= ZERO) {
+      return [event]
+    }
+
+    const matchedAssets =
+      index === events.length - 1 || matchedShares === remainingMatchedShares
+        ? remainingMatchedAssets
+        : scaleBigInt(remainingMatchedAssets, matchedShares, remainingMatchedShares)
+
+    remainingMatchedShares -= matchedShares
+    remainingMatchedAssets -= matchedAssets
+
+    return splitAssetValuedEvent(event, matchedShares, matchedAssets, idPrefix)
+  })
+}
+
+function buildEffectiveSimpleFamilyEvents(txFamilyEvents: TRawPnlEvent[], userAddress: string): TRawPnlEvent[] {
+  const firstEvent = txFamilyEvents[0]
+  if (!firstEvent) {
+    return []
+  }
+
+  const stakingVaultAddress = getStakingVaultAddress(firstEvent.chainId, firstEvent.familyVaultAddress)
+  const normalizedUserAddress = lowerCaseAddress(userAddress)
+  let addressEvents = sortEvents(txFamilyEvents.filter((event) => event.scopes.address))
+
+  if (!stakingVaultAddress) {
+    return addressEvents
+  }
+
+  const underlyingDeposits = txFamilyEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'deposit' }> =>
+      event.kind === 'deposit' &&
+      !event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress)
+  )
+  const underlyingWithdrawals = txFamilyEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'withdrawal' }> =>
+      event.kind === 'withdrawal' &&
+      !event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress)
+  )
+  const underlyingTransfersToStaking = txFamilyEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+      event.kind === 'transfer' &&
+      !event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress) &&
+      lowerCaseAddress(event.receiver) === stakingVaultAddress
+  )
+  const underlyingTransfersFromStaking = txFamilyEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+      event.kind === 'transfer' &&
+      !event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress) &&
+      lowerCaseAddress(event.sender) === stakingVaultAddress
+  )
+  const addressScopedStakingDeposits = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'deposit' }> =>
+      event.kind === 'deposit' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress &&
+      lowerCaseAddress(event.owner) === normalizedUserAddress
+  )
+  const addressScopedStakingWithdrawals = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'withdrawal' }> =>
+      event.kind === 'withdrawal' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress &&
+      lowerCaseAddress(event.owner) === normalizedUserAddress
+  )
+
+  const matchedStakeShares = minBigInt(
+    addressScopedStakingDeposits.reduce((total, event) => total + event.shares, ZERO),
+    minBigInt(
+      underlyingTransfersToStaking.reduce((total, event) => total + event.shares, ZERO),
+      underlyingDeposits.reduce((total, event) => total + event.shares, ZERO)
+    )
+  )
+  const matchedStakeAssets = scaleBigInt(
+    underlyingDeposits.reduce((total, event) => total + event.assets, ZERO),
+    matchedStakeShares,
+    underlyingDeposits.reduce((total, event) => total + event.shares, ZERO)
+  )
+
+  if (matchedStakeShares > ZERO && matchedStakeAssets > ZERO) {
+    const adjustedDepositIds = new Set(addressScopedStakingDeposits.map((event) => event.id))
+    const adjustedDeposits = allocateAssetPoolAcrossEvents(
+      addressScopedStakingDeposits,
+      matchedStakeShares,
+      matchedStakeAssets,
+      'stake-basis'
+    )
+
+    addressEvents = sortEvents([
+      ...addressEvents.filter((event) => !adjustedDepositIds.has(event.id)),
+      ...adjustedDeposits
+    ])
+  }
+
+  const matchedUnstakeShares = minBigInt(
+    addressScopedStakingWithdrawals.reduce((total, event) => total + event.shares, ZERO),
+    minBigInt(
+      underlyingTransfersFromStaking.reduce((total, event) => total + event.shares, ZERO),
+      underlyingWithdrawals.reduce((total, event) => total + event.shares, ZERO)
+    )
+  )
+  const matchedUnstakeAssets = scaleBigInt(
+    underlyingWithdrawals.reduce((total, event) => total + event.assets, ZERO),
+    matchedUnstakeShares,
+    underlyingWithdrawals.reduce((total, event) => total + event.shares, ZERO)
+  )
+
+  if (matchedUnstakeShares > ZERO && matchedUnstakeAssets > ZERO) {
+    const adjustedWithdrawalIds = new Set(addressScopedStakingWithdrawals.map((event) => event.id))
+    const adjustedWithdrawals = allocateAssetPoolAcrossEvents(
+      addressScopedStakingWithdrawals,
+      matchedUnstakeShares,
+      matchedUnstakeAssets,
+      'unstake-proceeds'
+    )
+
+    addressEvents = sortEvents([
+      ...addressEvents.filter((event) => !adjustedWithdrawalIds.has(event.id)),
+      ...adjustedWithdrawals
+    ])
+  }
+
+  return addressEvents
+}
+
+function buildEffectiveSimpleEvents(events: TRawPnlEvent[], userAddress: string): TRawPnlEvent[] {
+  return groupEventsByTransaction(events).flatMap((txEvents) =>
+    groupTransactionEventsByFamily(txEvents).flatMap((txFamilyEvents) =>
+      buildEffectiveSimpleFamilyEvents(txFamilyEvents, userAddress)
+    )
+  )
+}
+
 function stripMatchedShares(
   events: TRawPnlEvent[],
   matcher: (event: TRawPnlEvent) => boolean,
@@ -854,7 +1051,8 @@ export function buildProtocolReturnLedgers(args: {
   currentTimestamp?: number
 }): Map<string, TProtocolReturnLedger> {
   const userAddress = lowerCaseAddress(args.userAddress)
-  const ledgers = groupEventsByTransaction(args.events).reduce((nextLedgers, txEvents) => {
+  const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
+  const ledgers = groupEventsByTransaction(effectiveEvents).reduce((nextLedgers, txEvents) => {
     groupTransactionEventsByFamily(txEvents).forEach((txFamilyEvents) => {
       normalizeStakingWrapperEvents(txFamilyEvents, userAddress).forEach((event) => {
         processEvent(nextLedgers, event, {
@@ -870,7 +1068,7 @@ export function buildProtocolReturnLedgers(args: {
 
   const finalTimestamp =
     args.currentTimestamp ??
-    sortEvents(args.events).reduce((maxTimestamp, event) => Math.max(maxTimestamp, event.blockTimestamp), 0)
+    sortEvents(effectiveEvents).reduce((maxTimestamp, event) => Math.max(maxTimestamp, event.blockTimestamp), 0)
 
   return Array.from(ledgers.entries()).reduce<Map<string, TProtocolReturnLedger>>((finalLedgers, [key, ledger]) => {
     finalLedgers.set(key, accrueLedgerExposure(ledger, finalTimestamp))
@@ -1017,7 +1215,8 @@ export function buildProtocolReturnHistorySeries(args: {
   timestamps: number[]
 }): HoldingsPnLSimpleHistoryPoint[] {
   const userAddress = lowerCaseAddress(args.userAddress)
-  const groupedTransactions = groupEventsByTransaction(args.events)
+  const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
+  const groupedTransactions = groupEventsByTransaction(effectiveEvents)
   let transactionIndex = 0
   let ledgers = new Map<string, TProtocolReturnLedger>()
 
@@ -1068,19 +1267,15 @@ export async function getHoldingsPnLSimple(
   paginationMode: HoldingsEventPaginationMode = 'paged'
 ): Promise<HoldingsPnLSimpleResponse> {
   debugLog('pnl-simple', 'starting holdings simple pnl calculation', { version, fetchType, paginationMode })
-  const addressEvents = await fetchUserEvents(userAddress, 'all', undefined, fetchType, paginationMode)
-  const rawEvents = buildRawPnlEvents({
-    addressEvents,
-    transactionEvents: {
-      deposits: [],
-      withdrawals: [],
-      transfers: []
-    }
-  })
+  const rawContext = await fetchRawUserPnlEvents(userAddress, 'all', undefined, fetchType, paginationMode)
+  const rawEvents = buildRawPnlEvents(rawContext)
   const rawVaultIdentifiers = getVaultIdentifiers(rawEvents)
   const resolvedVaultMetadata = await fetchMultipleVaultsMetadata(rawVaultIdentifiers)
-  const filteredEvents = filterEventsByAuthoritativeVersion(rawEvents, resolvedVaultMetadata, version)
-  const filteredVaultIdentifiers = getVaultIdentifiers(filteredEvents)
+  const effectiveEvents = buildEffectiveSimpleEvents(
+    filterEventsByAuthoritativeVersion(rawEvents, resolvedVaultMetadata, version),
+    userAddress
+  )
+  const filteredVaultIdentifiers = getVaultIdentifiers(effectiveEvents)
   const vaultMetadata = filteredVaultIdentifiers.reduce<Map<string, VaultMetadata>>((filtered, vault) => {
     const key = toVaultKey(vault.chainId, vault.vaultAddress)
     const metadata = resolvedVaultMetadata.get(key)
@@ -1095,16 +1290,16 @@ export async function getHoldingsPnLSimple(
 
   debugLog('pnl-simple', 'loaded address-scoped events', {
     version,
-    addressDeposits: addressEvents.deposits.length,
-    addressWithdrawals: addressEvents.withdrawals.length,
-    addressTransfersIn: addressEvents.transfersIn.length,
-    addressTransfersOut: addressEvents.transfersOut.length,
+    addressDeposits: rawContext.addressEvents.deposits.length,
+    addressWithdrawals: rawContext.addressEvents.withdrawals.length,
+    addressTransfersIn: rawContext.addressEvents.transfersIn.length,
+    addressTransfersOut: rawContext.addressEvents.transfersOut.length,
     rawEvents: rawEvents.length,
-    filteredEvents: filteredEvents.length,
+    effectiveEvents: effectiveEvents.length,
     vaults: filteredVaultIdentifiers.length
   })
 
-  if (filteredEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
+  if (effectiveEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
     return {
       address: lowerCaseAddress(userAddress),
       version,
@@ -1115,7 +1310,7 @@ export async function getHoldingsPnLSimple(
   }
 
   const receiptPriceRequests = buildReceiptPriceRequests({
-    events: filteredEvents,
+    events: effectiveEvents,
     metadata: vaultMetadata,
     userAddress,
     currentTimestamp
@@ -1135,7 +1330,7 @@ export async function getHoldingsPnLSimple(
     fetchReceiptPrices(receiptPriceRequests)
   ])
   const ledgers = buildProtocolReturnLedgers({
-    events: filteredEvents,
+    events: effectiveEvents,
     userAddress,
     metadata: vaultMetadata,
     ppsData,
@@ -1182,19 +1377,15 @@ export async function getHoldingsPnLSimpleHistory(
     timeframe
   })
 
-  const addressEvents = await fetchUserEvents(userAddress, 'all', undefined, fetchType, paginationMode)
-  const rawEvents = buildRawPnlEvents({
-    addressEvents,
-    transactionEvents: {
-      deposits: [],
-      withdrawals: [],
-      transfers: []
-    }
-  })
+  const rawContext = await fetchRawUserPnlEvents(userAddress, 'all', undefined, fetchType, paginationMode)
+  const rawEvents = buildRawPnlEvents(rawContext)
   const rawVaultIdentifiers = getVaultIdentifiers(rawEvents)
   const resolvedVaultMetadata = await fetchMultipleVaultsMetadata(rawVaultIdentifiers)
-  const filteredEvents = filterEventsByAuthoritativeVersion(rawEvents, resolvedVaultMetadata, version)
-  const filteredVaultIdentifiers = getVaultIdentifiers(filteredEvents)
+  const effectiveEvents = buildEffectiveSimpleEvents(
+    filterEventsByAuthoritativeVersion(rawEvents, resolvedVaultMetadata, version),
+    userAddress
+  )
+  const filteredVaultIdentifiers = getVaultIdentifiers(effectiveEvents)
   const vaultMetadata = filteredVaultIdentifiers.reduce<Map<string, VaultMetadata>>((filtered, vault) => {
     const key = toVaultKey(vault.chainId, vault.vaultAddress)
     const metadata = resolvedVaultMetadata.get(key)
@@ -1206,7 +1397,7 @@ export async function getHoldingsPnLSimpleHistory(
     return filtered
   }, new Map())
 
-  if (filteredEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
+  if (effectiveEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
     return {
       address: lowerCaseAddress(userAddress),
       version,
@@ -1222,10 +1413,10 @@ export async function getHoldingsPnLSimpleHistory(
     }
   }
 
-  const timestamps = getProtocolReturnTimestamps(filteredEvents, timeframe)
+  const timestamps = getProtocolReturnTimestamps(effectiveEvents, timeframe)
   const latestTimestamp = timestamps[timestamps.length - 1] ?? Math.floor(Date.now() / 1000)
   const receiptPriceRequests = buildReceiptPriceRequests({
-    events: filteredEvents,
+    events: effectiveEvents,
     metadata: vaultMetadata,
     userAddress,
     currentTimestamp: latestTimestamp
@@ -1237,7 +1428,7 @@ export async function getHoldingsPnLSimpleHistory(
   ])
 
   const finalLedgers = buildProtocolReturnLedgers({
-    events: filteredEvents,
+    events: effectiveEvents,
     userAddress,
     metadata: vaultMetadata,
     ppsData,
@@ -1251,7 +1442,7 @@ export async function getHoldingsPnLSimpleHistory(
     currentTimestamp: latestTimestamp
   })
   const history = buildProtocolReturnHistorySeries({
-    events: filteredEvents,
+    events: effectiveEvents,
     userAddress,
     metadata: vaultMetadata,
     ppsData,

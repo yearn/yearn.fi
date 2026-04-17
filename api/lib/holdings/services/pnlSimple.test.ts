@@ -531,6 +531,116 @@ describe('pnl simple protocol return', () => {
     expect(bonusFirst.growthWeightUsd).toBeCloseTo(unwrapFirst.growthWeightUsd)
   })
 
+  it('uses tx-scoped underlying deposit assets as the basis for router-mediated staking receipts', () => {
+    const UNDERLYING_VAULT = '0x182863131F9a4630fF9E27830d945B1413e347E8'
+    const STAKING_VAULT = '0xd57aea3686d623da2dcebc87010a4f2f38ac7b15'
+    const STAKING_VAULT_KEY = toVaultKey(1, UNDERLYING_VAULT)
+    const stakingMetadata = new Map<string, VaultMetadata>([
+      [
+        STAKING_VAULT_KEY,
+        {
+          address: UNDERLYING_VAULT,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: ASSET,
+            symbol: 'TST',
+            decimals: 18
+          },
+          decimals: 18
+        }
+      ]
+    ])
+
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'router-underlying-deposit',
+          transactionHash: '0xrouter-stake',
+          vaultAddress: UNDERLYING_VAULT,
+          familyVaultAddress: UNDERLYING_VAULT,
+          isStakingVault: false,
+          blockTimestamp: 200,
+          blockNumber: 2,
+          logIndex: 0,
+          shares: 100n * ONE,
+          assets: 110n * ONE,
+          owner: OTHER,
+          sender: OTHER,
+          scopes: {
+            address: false,
+            tx: true
+          }
+        }),
+        baseEvent({
+          kind: 'transfer',
+          id: 'router-transfer-to-staking',
+          transactionHash: '0xrouter-stake',
+          vaultAddress: UNDERLYING_VAULT,
+          familyVaultAddress: UNDERLYING_VAULT,
+          isStakingVault: false,
+          blockTimestamp: 200,
+          blockNumber: 2,
+          logIndex: 1,
+          sender: OTHER,
+          receiver: STAKING_VAULT,
+          shares: 100n * ONE,
+          scopes: {
+            address: false,
+            tx: true
+          }
+        }),
+        baseEvent({
+          kind: 'deposit',
+          id: 'user-staking-deposit',
+          transactionHash: '0xrouter-stake',
+          vaultAddress: STAKING_VAULT,
+          familyVaultAddress: UNDERLYING_VAULT,
+          isStakingVault: true,
+          blockTimestamp: 200,
+          blockNumber: 2,
+          logIndex: 2,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: OTHER,
+          scopes: {
+            address: true,
+            tx: true
+          }
+        })
+      ],
+      userAddress: USER,
+      metadata: stakingMetadata,
+      ppsData: new Map([
+        [
+          STAKING_VAULT_KEY,
+          new Map([
+            [200, 1.1],
+            [250, 1.2]
+          ])
+        ]
+      ]),
+      priceData: new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [0, 1],
+            [200, 1]
+          ])
+        ]
+      ]),
+      timestamps: [200, 250]
+    })
+
+    expect(history[0]?.growthWeightUsd).toBeCloseTo(0)
+    expect(history[0]?.protocolReturnPct).toBeCloseTo(0)
+    expect(history[1]?.growthWeightUsd).toBeCloseTo(10)
+    expect(history[1]?.protocolReturnPct).toBeCloseTo(9.0909090909)
+  })
+
   it('does not over-assign deposit basis when a same-tx mint is partially forwarded out', () => {
     const vault = materializeVault({
       events: [
