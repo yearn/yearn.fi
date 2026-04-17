@@ -295,7 +295,7 @@ curl "http://localhost:3001/api/holdings/pnl?address=0x...&paginationMode=all"
 Query params:
 - `address` (required): Ethereum address
 - `version` (optional): `v2`, `v3`, or `all` (default: `all`)
-- `unknownMode` (optional): `strict`, `zero_basis`, or `windfall` (default: `windfall`)
+- `unknownMode` (optional): `strict`, `zero_basis`, `receipt_price`, or `windfall` (default: `windfall`)
 - `fetchType` (optional): `seq` or `parallel` (default: `seq`)
 - `paginationMode` (optional): `paged` or `all` (default: `paged`)
 
@@ -369,6 +369,7 @@ The live response also includes:
 Notes:
 - Deposits create FIFO lots using the indexed `assets` and `shares` values.
 - Known-basis USD PnL is true mark-to-market PnL: deposit lots keep their acquisition timestamp, and USD basis is valued using the underlying token price at deposit time.
+- Historical PnL token-price lookups are bucketed to the UTC day for cache efficiency. Current value still requests the current timestamp but is not persisted in the token-price cache, while deposit / receipt / withdrawal basis prices share one daily cache key per token.
 - Withdrawals realize PnL from the oldest remaining lots first.
 - `totalPnlUsd = totalRealizedPnlUsd + totalUnrealizedPnlUsd`.
 - `totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd`.
@@ -378,7 +379,7 @@ Notes:
 - Underlying vault `Deposit` and `Withdraw` events define cost basis and realized proceeds. Staking `Deposit` and `Withdraw` events are treated as stake or unstake moves, not as economic entries.
 - Same-transaction router flows can carry basis into or out of a staking vault family when the transfer can be matched to an indexed underlying vault deposit or withdrawal in the same transaction.
 - Recognized vault-to-vault rollover transactions can roll basis from a source family into a destination family, including known migrator flows, supported Enso-mediated rollovers on Ethereum mainnet, and supported compatible nested-vault paths where one Yearn vault token is the asset of another Yearn vault. The current compatible nested-vault allowlist includes the `ysyBOLD <-> yBOLD` path on Ethereum mainnet. When source basis cannot be reconstructed, the destination shares stay partial / unknown-basis.
-- Plain share transfers may leave some lots with unknown cost basis. Those vaults are returned with `costBasisStatus: "partial"`. In `strict` mode, the unmatched current portion is reported in `unknownCostBasisValueUsd`; in `zero_basis` and `windfall`, that value is zeroed and the economics are attributed according to `unknownTransferInPnlMode`.
+- Plain share transfers may leave some lots with unknown cost basis. Those vaults are returned with `costBasisStatus: "partial"`. In `strict` mode, the unmatched current portion is reported in `unknownCostBasisValueUsd`; in `zero_basis`, `receipt_price`, and `windfall`, that value is zeroed and the economics are attributed according to `unknownTransferInPnlMode`.
 - The endpoint keeps families with non-zero current shares even if they only arrived through transfers, but transfer-only families with zero remaining shares may still be omitted. Those transfer-only holdings are marked partial and prioritized for current-value completeness over full historical price reconstruction.
 - `isComplete` becomes `false` when at least one returned vault still has partial / unknown basis.
 
@@ -462,7 +463,7 @@ Query params:
 - `address` (required): Ethereum address
 - `vault` (optional): family vault or staking vault address to limit the response to one family
 - `version` (optional): `v2`, `v3`, or `all` (default: `all`)
-- `unknownMode` (optional): `strict`, `zero_basis`, or `windfall` (default: `windfall`)
+- `unknownMode` (optional): `strict`, `zero_basis`, `receipt_price`, or `windfall` (default: `windfall`)
 - `fetchType` (optional): `seq` or `parallel` (default: `seq`)
 - `paginationMode` (optional): `paged` or `all` (default: `paged`)
 
@@ -482,7 +483,7 @@ The drilldown response uses the same summary fields and top-level identity field
 
 ### Unknown Transfer-In Modes
 
-Unknown share transfers can be interpreted three ways:
+Unknown share transfers can be interpreted four ways:
 
 - `strict`
   - Unknown shares do not contribute to PnL.
@@ -490,15 +491,21 @@ Unknown share transfers can be interpreted three ways:
 - `zero_basis`
   - Unknown shares are treated as if they were acquired for zero cost.
   - Receipt-time value and any later market move both end up inside realized / unrealized PnL.
+- `receipt_price`
+  - Unknown shares are treated as if they were acquired at receipt-time fair value.
+  - Receipt-time fair value becomes an estimated cost basis, not `windfallPnlUsd`.
+  - Only market / PPS movement after receipt contributes to realized / unrealized PnL.
+  - Receipt-time token prices use the UTC-day bucket for that receipt timestamp.
 - `windfall` (default)
   - Unknown shares are still treated as free economically, but the gain is split into two parts.
   - Receipt-time fair value is isolated in `windfallPnlUsd`.
   - `totalPnlUsd` only tracks market movement after receipt.
   - `totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd`.
 
-`zero_basis` and `windfall` can report the same `totalEconomicGainUsd`. The difference is attribution:
+`zero_basis` and `windfall` can report the same `totalEconomicGainUsd`. `receipt_price` reports only post-receipt movement because it assumes the user paid receipt-time fair value. The difference is attribution:
 
 - `zero_basis` books the full gain as market PnL.
+- `receipt_price` books receipt-time fair value as estimated basis and only later movement as PnL.
 - `windfall` books receipt-time value as windfall and only the post-receipt move as market PnL.
 
 Example:
@@ -513,6 +520,10 @@ strict:
 zero_basis:
   totalPnlUsd = 1,150
   totalEconomicGainUsd = 1,150
+
+receipt_price:
+  totalPnlUsd = 150
+  totalEconomicGainUsd = 150
 
 windfall:
   totalWindfallPnlUsd = 1,000

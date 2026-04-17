@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RawPnlEventContext } from './graphql'
-import type { HoldingsPnLDrilldownResponse, HoldingsPnLResponse } from './pnl'
+import type { HoldingsPnLDrilldownResponse, HoldingsPnLResponse, UnknownTransferInPnlMode } from './pnl'
 
 const VAULT = '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204'
 const REWARD_DISTRIBUTOR = '0xb226c52eb411326cdb54824a88abafdaaff16d3d'
@@ -42,7 +42,8 @@ vi.mock('./defillama', async () => {
   const actual = await vi.importActual<typeof import('./defillama')>('./defillama')
   return {
     ...actual,
-    fetchHistoricalPrices: fetchHistoricalPricesMock
+    fetchHistoricalPrices: fetchHistoricalPricesMock,
+    fetchHistoricalPricesForTokenTimestamps: fetchHistoricalPricesMock
   }
 })
 
@@ -233,6 +234,7 @@ function configureServiceMocks(
   const prices =
     overrides?.prices ??
     new Map([
+      [0, 2],
       [100, 2],
       [200, 3],
       [300, 3]
@@ -270,7 +272,7 @@ async function importPnlModule() {
 
 async function getSingleVaultResponse(
   rawContext: RawPnlEventContext,
-  unknownMode?: 'strict' | 'zero_basis' | 'windfall',
+  unknownMode?: UnknownTransferInPnlMode,
   overrides?: Parameters<typeof configureServiceMocks>[1]
 ): Promise<HoldingsPnLResponse> {
   configureServiceMocks(rawContext, overrides)
@@ -282,7 +284,7 @@ async function getSingleVaultResponse(
 
 async function getSingleVaultDrilldownResponse(
   rawContext: RawPnlEventContext,
-  unknownMode?: 'strict' | 'zero_basis' | 'windfall',
+  unknownMode?: UnknownTransferInPnlMode,
   overrides?: Parameters<typeof configureServiceMocks>[1]
 ): Promise<HoldingsPnLDrilldownResponse> {
   configureServiceMocks(rawContext, overrides)
@@ -386,6 +388,25 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(vault.totalEconomicGainUsd).toBeCloseTo(330)
   })
 
+  it('treats unknown transfer-ins as receipt-price cost basis in receipt-price mode', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+
+    const response = await getSingleVaultResponse(createTransferInContext(), 'receipt_price')
+    const vault = response.vaults[0]
+
+    expect(response.unknownTransferInPnlMode).toBe('receipt_price')
+    expect(response.summary.totalUnknownCostBasisValueUsd).toBe(0)
+    expect(response.summary.totalWindfallPnlUsd).toBe(0)
+    expect(response.summary.totalUnrealizedPnlUsd).toBeCloseTo(130)
+    expect(response.summary.totalPnlUsd).toBeCloseTo(130)
+    expect(response.summary.totalEconomicGainUsd).toBeCloseTo(130)
+    expect(vault.costBasisStatus).toBe('partial')
+    expect(vault.windfallPnlUsd).toBe(0)
+    expect(vault.unrealizedPnlUsd).toBeCloseTo(130)
+    expect(vault.totalPnlUsd).toBeCloseTo(130)
+    expect(vault.totalEconomicGainUsd).toBeCloseTo(130)
+  })
+
   it('treats recognized reward transfer-ins as complete zero-basis lots in windfall mode', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(300_000)
 
@@ -445,21 +466,30 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     const zeroBasisResponse = await getSingleVaultResponse(createTransferOnlyContext(), 'zero_basis')
     const strictResponse = await getSingleVaultResponse(createTransferOnlyContext(), 'strict')
 
-    expect(fetchHistoricalPricesMock).toHaveBeenNthCalledWith(
-      1,
-      [{ chainId: 1, address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' }],
-      [300]
-    )
-    expect(fetchHistoricalPricesMock).toHaveBeenNthCalledWith(
-      2,
-      [{ chainId: 1, address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' }],
-      [300]
-    )
-    expect(fetchHistoricalPricesMock).toHaveBeenNthCalledWith(
-      3,
-      [{ chainId: 1, address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' }],
-      [300]
-    )
+    expect(fetchHistoricalPricesMock).toHaveBeenNthCalledWith(1, [
+      {
+        chainId: 1,
+        address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+        timestamps: [300],
+        uncachedTimestamps: [300]
+      }
+    ])
+    expect(fetchHistoricalPricesMock).toHaveBeenNthCalledWith(2, [
+      {
+        chainId: 1,
+        address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+        timestamps: [300],
+        uncachedTimestamps: [300]
+      }
+    ])
+    expect(fetchHistoricalPricesMock).toHaveBeenNthCalledWith(3, [
+      {
+        chainId: 1,
+        address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+        timestamps: [300],
+        uncachedTimestamps: [300]
+      }
+    ])
 
     expect(windfallResponse.summary.totalCurrentValueUsd).toBeCloseTo(330)
     expect(windfallResponse.summary.totalWindfallPnlUsd).toBeCloseTo(330)
@@ -477,21 +507,47 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(strictResponse.summary.totalEconomicGainUsd).toBe(0)
   })
 
-  it('computes realized pnl for unknown withdrawals in zero-basis and windfall modes', async () => {
+  it('values transfer-only current holdings at receipt price when requested', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+
+    const response = await getSingleVaultResponse(createTransferOnlyContext(), 'receipt_price')
+
+    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([
+      {
+        chainId: 1,
+        address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+        timestamps: [0, 300],
+        uncachedTimestamps: [300]
+      }
+    ])
+    expect(response.summary.totalCurrentValueUsd).toBeCloseTo(330)
+    expect(response.summary.totalWindfallPnlUsd).toBe(0)
+    expect(response.summary.totalUnrealizedPnlUsd).toBeCloseTo(130)
+    expect(response.summary.totalPnlUsd).toBeCloseTo(130)
+    expect(response.summary.totalEconomicGainUsd).toBeCloseTo(130)
+  })
+
+  it('computes realized pnl for unknown withdrawals in zero-basis, receipt-price, and windfall modes', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(300_000)
 
     const zeroBasisResponse = await getSingleVaultResponse(createUnknownWithdrawalContext(), 'zero_basis')
+    const receiptPriceResponse = await getSingleVaultResponse(createUnknownWithdrawalContext(), 'receipt_price')
     const windfallResponse = await getSingleVaultResponse(createUnknownWithdrawalContext(), 'windfall')
 
-    expect(zeroBasisResponse.summary.totalRealizedPnlUsd).toBeCloseTo(360)
+    expect(zeroBasisResponse.summary.totalRealizedPnlUsd).toBeCloseTo(240)
     expect(zeroBasisResponse.summary.totalWindfallPnlUsd).toBe(0)
-    expect(zeroBasisResponse.summary.totalPnlUsd).toBeCloseTo(360)
-    expect(zeroBasisResponse.summary.totalEconomicGainUsd).toBeCloseTo(360)
+    expect(zeroBasisResponse.summary.totalPnlUsd).toBeCloseTo(240)
+    expect(zeroBasisResponse.summary.totalEconomicGainUsd).toBeCloseTo(240)
+
+    expect(receiptPriceResponse.summary.totalRealizedPnlUsd).toBeCloseTo(40)
+    expect(receiptPriceResponse.summary.totalWindfallPnlUsd).toBe(0)
+    expect(receiptPriceResponse.summary.totalPnlUsd).toBeCloseTo(40)
+    expect(receiptPriceResponse.summary.totalEconomicGainUsd).toBeCloseTo(40)
 
     expect(windfallResponse.summary.totalWindfallPnlUsd).toBeCloseTo(200)
-    expect(windfallResponse.summary.totalRealizedPnlUsd).toBeCloseTo(160)
-    expect(windfallResponse.summary.totalPnlUsd).toBeCloseTo(160)
-    expect(windfallResponse.summary.totalEconomicGainUsd).toBeCloseTo(360)
+    expect(windfallResponse.summary.totalRealizedPnlUsd).toBeCloseTo(40)
+    expect(windfallResponse.summary.totalPnlUsd).toBeCloseTo(40)
+    expect(windfallResponse.summary.totalEconomicGainUsd).toBeCloseTo(240)
   })
 
   it('does not keep windfall on unknown shares that later leave through external transfers', async () => {
@@ -553,6 +609,7 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
         ]),
         priceKey: 'ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
         prices: new Map([
+          [0, 2000],
           [100, 2000],
           [300, 3000]
         ])
@@ -613,6 +670,7 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
         ]),
         priceKey: 'ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
         prices: new Map([
+          [0, 2000],
           [100, 2000],
           [300, 3000]
         ])

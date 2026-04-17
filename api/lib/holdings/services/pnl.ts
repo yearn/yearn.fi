@@ -1,7 +1,12 @@
 import type { DepositEvent, TransferEvent, VaultMetadata, WithdrawEvent } from '../types'
 import { enrichRawPnlEventsWithCowTradeAcquisitions } from './cow'
 import { debugLog, debugTable, getHoldingsDebugFilters } from './debug'
-import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
+import {
+  fetchHistoricalPricesForTokenTimestamps,
+  getChainPrefix,
+  getPriceAtTimestamp,
+  type THistoricalPriceRequest
+} from './defillama'
 import {
   fetchRawUserPnlEvents,
   type HoldingsEventFetchType,
@@ -58,6 +63,8 @@ import {
 import { getFamilyVaultAddress, getStakingVaultAddress, isStakingVault } from './staking'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
+const SECONDS_PER_DAY = 86_400
+
 function createLot(shares: bigint, costBasis: bigint | null, acquiredAt?: number): TLot {
   return acquiredAt === undefined ? { shares, costBasis } : { shares, costBasis, acquiredAt }
 }
@@ -105,20 +112,29 @@ function serializeLots(
 function getTokenPriceForTimestamp(
   tokenPriceMap: Map<number, number> | null,
   timestamp: number | undefined,
-  fallbackTokenPrice: number
+  fallbackTokenPrice: number,
+  normalizeTimestamp?: (timestamp: number) => number
 ): number {
   if (!timestamp || timestamp <= 0) {
     return fallbackTokenPrice
   }
 
-  return tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, timestamp) : fallbackTokenPrice
+  const priceTimestamp = normalizeTimestamp ? normalizeTimestamp(timestamp) : timestamp
+  if (!tokenPriceMap) {
+    return fallbackTokenPrice
+  }
+
+  return normalizeTimestamp
+    ? (tokenPriceMap.get(priceTimestamp) ?? 0)
+    : getPriceAtTimestamp(tokenPriceMap, priceTimestamp)
 }
 
 function getKnownLotsCostBasisUsd(
   lots: TLot[],
   assetDecimals: number,
   tokenPriceMap: Map<number, number> | null,
-  fallbackTokenPrice: number
+  fallbackTokenPrice: number,
+  normalizeTimestamp?: (timestamp: number) => number
 ): number {
   return lots.reduce((total, lot) => {
     if (lot.costBasis === null) {
@@ -128,9 +144,17 @@ function getKnownLotsCostBasisUsd(
     return (
       total +
       formatAmount(lot.costBasis, assetDecimals) *
-        getTokenPriceForTimestamp(tokenPriceMap, lot.acquiredAt, fallbackTokenPrice)
+        getTokenPriceForTimestamp(tokenPriceMap, lot.acquiredAt, fallbackTokenPrice, normalizeTimestamp)
     )
   }, 0)
+}
+
+function normalizePnlTokenPriceTimestamp(timestamp: number, currentTimestamp: number): number {
+  if (timestamp === currentTimestamp || timestamp <= 0) {
+    return timestamp
+  }
+
+  return Math.floor(timestamp / SECONDS_PER_DAY) * SECONDS_PER_DAY
 }
 
 function countTxEventsByKind(txFamilyEvents: TRawPnlEvent[]): string {
@@ -262,9 +286,19 @@ function serializeLotForResponse(args: {
   currentTokenPrice: number
   ppsMap: Map<number, number> | undefined
   tokenPriceMap: Map<number, number> | null
+  normalizePriceTimestamp?: (timestamp: number) => number
 }): HoldingsPnLDrilldownVault['currentLots']['vault'][number] {
-  const { lot, index, shareDecimals, assetDecimals, resolvedPricePerShare, currentTokenPrice, ppsMap, tokenPriceMap } =
-    args
+  const {
+    lot,
+    index,
+    shareDecimals,
+    assetDecimals,
+    resolvedPricePerShare,
+    currentTokenPrice,
+    ppsMap,
+    tokenPriceMap,
+    normalizePriceTimestamp
+  } = args
   const acquiredAt = lot.acquiredAt ?? null
   const sharesFormatted = formatAmount(lot.shares, shareDecimals)
   const costBasisFormatted = lot.costBasis === null ? null : formatAmount(lot.costBasis, assetDecimals)
@@ -275,7 +309,9 @@ function serializeLotForResponse(args: {
         ? (getPPS(ppsMap, acquiredAt) ?? resolvedPricePerShare)
         : resolvedPricePerShare
   const tokenPriceAtAcquisition =
-    acquiredAt === null ? currentTokenPrice : getTokenPriceForTimestamp(tokenPriceMap, acquiredAt, currentTokenPrice)
+    acquiredAt === null
+      ? currentTokenPrice
+      : getTokenPriceForTimestamp(tokenPriceMap, acquiredAt, currentTokenPrice, normalizePriceTimestamp)
   const currentUnderlying = sharesFormatted * resolvedPricePerShare
 
   return {
@@ -301,10 +337,31 @@ function serializeRealizedEntryForResponse(args: {
   tokenPriceMap: Map<number, number> | null
   resolvedPricePerShare: number
   ppsMap: Map<number, number> | undefined
+  normalizePriceTimestamp?: (timestamp: number) => number
 }): HoldingsPnLDrilldownVault['realizedEntries'][number] {
-  const { entry, shareDecimals, assetDecimals, currentTokenPrice, tokenPriceMap, resolvedPricePerShare, ppsMap } = args
-  const realizedTokenPrice = getTokenPriceForTimestamp(tokenPriceMap, entry.timestamp, currentTokenPrice)
-  const basisUsd = getKnownLotsCostBasisUsd(entry.consumedLots, assetDecimals, tokenPriceMap, currentTokenPrice)
+  const {
+    entry,
+    shareDecimals,
+    assetDecimals,
+    currentTokenPrice,
+    tokenPriceMap,
+    resolvedPricePerShare,
+    ppsMap,
+    normalizePriceTimestamp
+  } = args
+  const realizedTokenPrice = getTokenPriceForTimestamp(
+    tokenPriceMap,
+    entry.timestamp,
+    currentTokenPrice,
+    normalizePriceTimestamp
+  )
+  const basisUsd = getKnownLotsCostBasisUsd(
+    entry.consumedLots,
+    assetDecimals,
+    tokenPriceMap,
+    currentTokenPrice,
+    normalizePriceTimestamp
+  )
 
   return {
     timestamp: entry.timestamp,
@@ -326,7 +383,8 @@ function serializeRealizedEntryForResponse(args: {
         resolvedPricePerShare,
         currentTokenPrice,
         ppsMap,
-        tokenPriceMap
+        tokenPriceMap,
+        normalizePriceTimestamp
       })
     )
   }
@@ -339,12 +397,26 @@ function serializeUnknownTransferInEntryForResponse(args: {
   resolvedPricePerShare: number
   ppsMap: Map<number, number> | undefined
   tokenPriceMap: Map<number, number> | null
+  normalizePriceTimestamp?: (timestamp: number) => number
 }): HoldingsPnLDrilldownVault['unknownTransferInEntries'][number] {
-  const { entry, shareDecimals, currentTokenPrice, resolvedPricePerShare, ppsMap, tokenPriceMap } = args
+  const {
+    entry,
+    shareDecimals,
+    currentTokenPrice,
+    resolvedPricePerShare,
+    ppsMap,
+    tokenPriceMap,
+    normalizePriceTimestamp
+  } = args
   const pricePerShareAtReceipt = ppsMap
     ? (getPPS(ppsMap, entry.timestamp) ?? resolvedPricePerShare)
     : resolvedPricePerShare
-  const tokenPriceAtReceipt = getTokenPriceForTimestamp(tokenPriceMap, entry.timestamp, currentTokenPrice)
+  const tokenPriceAtReceipt = getTokenPriceForTimestamp(
+    tokenPriceMap,
+    entry.timestamp,
+    currentTokenPrice,
+    normalizePriceTimestamp
+  )
   const sharesFormatted = formatAmount(entry.shares, shareDecimals)
   const receiptUnderlying = sharesFormatted * pricePerShareAtReceipt
 
@@ -367,12 +439,26 @@ function serializeRewardTransferInEntryForResponse(args: {
   resolvedPricePerShare: number
   ppsMap: Map<number, number> | undefined
   tokenPriceMap: Map<number, number> | null
+  normalizePriceTimestamp?: (timestamp: number) => number
 }): HoldingsPnLDrilldownVault['rewardTransferInEntries'][number] {
-  const { entry, shareDecimals, currentTokenPrice, resolvedPricePerShare, ppsMap, tokenPriceMap } = args
+  const {
+    entry,
+    shareDecimals,
+    currentTokenPrice,
+    resolvedPricePerShare,
+    ppsMap,
+    tokenPriceMap,
+    normalizePriceTimestamp
+  } = args
   const pricePerShareAtReceipt = ppsMap
     ? (getPPS(ppsMap, entry.timestamp) ?? resolvedPricePerShare)
     : resolvedPricePerShare
-  const tokenPriceAtReceipt = getTokenPriceForTimestamp(tokenPriceMap, entry.timestamp, currentTokenPrice)
+  const tokenPriceAtReceipt = getTokenPriceForTimestamp(
+    tokenPriceMap,
+    entry.timestamp,
+    currentTokenPrice,
+    normalizePriceTimestamp
+  )
   const sharesFormatted = formatAmount(entry.shares, shareDecimals)
   const receiptUnderlying = sharesFormatted * pricePerShareAtReceipt
 
@@ -397,9 +483,24 @@ function serializeUnknownWithdrawalEntryForResponse(args: {
   tokenPriceMap: Map<number, number> | null
   resolvedPricePerShare: number
   ppsMap: Map<number, number> | undefined
+  normalizePriceTimestamp?: (timestamp: number) => number
 }): HoldingsPnLDrilldownVault['unknownWithdrawalEntries'][number] {
-  const { entry, shareDecimals, assetDecimals, currentTokenPrice, tokenPriceMap, resolvedPricePerShare, ppsMap } = args
-  const realizedTokenPrice = getTokenPriceForTimestamp(tokenPriceMap, entry.timestamp, currentTokenPrice)
+  const {
+    entry,
+    shareDecimals,
+    assetDecimals,
+    currentTokenPrice,
+    tokenPriceMap,
+    resolvedPricePerShare,
+    ppsMap,
+    normalizePriceTimestamp
+  } = args
+  const realizedTokenPrice = getTokenPriceForTimestamp(
+    tokenPriceMap,
+    entry.timestamp,
+    currentTokenPrice,
+    normalizePriceTimestamp
+  )
 
   return {
     timestamp: entry.timestamp,
@@ -417,7 +518,8 @@ function serializeUnknownWithdrawalEntryForResponse(args: {
         resolvedPricePerShare,
         currentTokenPrice,
         ppsMap,
-        tokenPriceMap
+        tokenPriceMap,
+        normalizePriceTimestamp
       })
     )
   }
@@ -940,6 +1042,123 @@ function isCurrentTransferOnlyHoldingsLedger(ledger: FamilyPnlLedger): boolean {
     ledger.unknownWithdrawalEntries.length === 0 &&
     [...ledger.vaultLots, ...ledger.stakedLots].every((lot) => lot.costBasis === null)
   )
+}
+
+function addTokenTimestampRequirement(
+  requestsByToken: Map<
+    string,
+    THistoricalPriceRequest & { timestampSet: Set<number>; uncachedTimestampSet: Set<number> }
+  >,
+  chainId: number,
+  address: string,
+  timestamp: number,
+  cacheable = true
+): void {
+  const normalizedAddress = address.toLowerCase()
+  const tokenKey = `${chainId}:${normalizedAddress}`
+  const existing = requestsByToken.get(tokenKey)
+
+  if (existing) {
+    existing.timestampSet.add(timestamp)
+    if (!cacheable) {
+      existing.uncachedTimestampSet.add(timestamp)
+    }
+    return
+  }
+
+  requestsByToken.set(tokenKey, {
+    chainId,
+    address: normalizedAddress,
+    timestamps: [],
+    timestampSet: new Set([timestamp]),
+    uncachedTimestampSet: cacheable ? new Set() : new Set([timestamp])
+  })
+}
+
+function addDefinedTokenTimestampRequirement(
+  requestsByToken: Map<
+    string,
+    THistoricalPriceRequest & { timestampSet: Set<number>; uncachedTimestampSet: Set<number> }
+  >,
+  chainId: number,
+  address: string,
+  timestamp: number | undefined
+): void {
+  if (timestamp !== undefined) {
+    addTokenTimestampRequirement(requestsByToken, chainId, address, timestamp)
+  }
+}
+
+function buildPnlPriceRequests(args: {
+  vaults: FamilyPnlLedger[]
+  vaultMetadata: Map<string, VaultMetadata>
+  currentTimestamp: number
+  unknownTransferInPnlMode: UnknownTransferInPnlMode
+}): THistoricalPriceRequest[] {
+  const { vaults, vaultMetadata, currentTimestamp, unknownTransferInPnlMode } = args
+  const requestsByToken = new Map<
+    string,
+    THistoricalPriceRequest & { timestampSet: Set<number>; uncachedTimestampSet: Set<number> }
+  >()
+
+  vaults.forEach((vault) => {
+    const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
+
+    if (!metadata) {
+      return
+    }
+
+    addTokenTimestampRequirement(requestsByToken, metadata.chainId, metadata.token.address, currentTimestamp, false)
+  })
+
+  const historicalPriceLedgers =
+    unknownTransferInPnlMode === 'receipt_price'
+      ? vaults
+      : vaults.filter((vault) => !isCurrentTransferOnlyHoldingsLedger(vault))
+
+  historicalPriceLedgers.forEach((vault) => {
+    const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
+
+    if (!metadata) {
+      return
+    }
+
+    const addTimestamp = (timestamp: number | undefined) => {
+      addDefinedTokenTimestampRequirement(
+        requestsByToken,
+        metadata.chainId,
+        metadata.token.address,
+        timestamp === undefined ? undefined : normalizePnlTokenPriceTimestamp(timestamp, currentTimestamp)
+      )
+    }
+
+    vault.realizedEntries.forEach((entry) => {
+      addTimestamp(entry.timestamp)
+      entry.consumedLots.forEach((lot) => {
+        addTimestamp(lot.acquiredAt)
+      })
+    })
+
+    const currentLots = [...vault.vaultLots, ...vault.stakedLots]
+    currentLots.forEach((lot) => {
+      addTimestamp(lot.acquiredAt)
+    })
+    vault.unknownTransferInEntries.forEach((entry) => {
+      addTimestamp(entry.timestamp)
+    })
+    vault.unknownWithdrawalEntries.forEach((entry) => {
+      addTimestamp(entry.timestamp)
+      entry.consumedLots.forEach((lot) => {
+        addTimestamp(lot.acquiredAt)
+      })
+    })
+  })
+
+  return Array.from(requestsByToken.values()).map(({ timestampSet, uncachedTimestampSet, ...request }) => ({
+    ...request,
+    timestamps: Array.from(timestampSet).sort((a, b) => a - b),
+    uncachedTimestamps: Array.from(uncachedTimestampSet).sort((a, b) => a - b)
+  }))
 }
 
 type TDetectedKnownMigration = {
@@ -2155,59 +2374,21 @@ async function computeHoldingsPnLArtifacts(
     ppsResolved: ppsData.size,
     emptyPpsTimelines: Array.from(ppsData.values()).filter((timeline) => timeline.size === 0).length
   })
-  const historicalPriceLedgers = filteredVaults.filter((vault) => !isCurrentTransferOnlyHoldingsLedger(vault))
-  const timestamps = [
-    ...new Set([
-      currentTimestamp,
-      ...historicalPriceLedgers.flatMap((vault) => vault.realizedEntries.map((entry) => entry.timestamp)),
-      ...historicalPriceLedgers.flatMap((vault) =>
-        [...vault.vaultLots, ...vault.stakedLots]
-          .map((lot) => lot.acquiredAt)
-          .filter((timestamp): timestamp is number => timestamp !== undefined)
-      ),
-      ...historicalPriceLedgers.flatMap((vault) =>
-        vault.realizedEntries.flatMap((entry) =>
-          entry.consumedLots
-            .map((lot) => lot.acquiredAt)
-            .filter((timestamp): timestamp is number => timestamp !== undefined)
-        )
-      ),
-      ...historicalPriceLedgers.flatMap((vault) => vault.unknownTransferInEntries.map((entry) => entry.timestamp)),
-      ...historicalPriceLedgers.flatMap((vault) => vault.unknownWithdrawalEntries.map((entry) => entry.timestamp)),
-      ...historicalPriceLedgers.flatMap((vault) =>
-        vault.unknownWithdrawalEntries.flatMap((entry) =>
-          entry.consumedLots
-            .map((lot) => lot.acquiredAt)
-            .filter((timestamp): timestamp is number => timestamp !== undefined)
-        )
-      )
-    ])
-  ].sort((a, b) => a - b)
-  const seenTokens = new Set<string>()
-  const tokens = filteredVaultIdentifiers.reduce<Array<{ chainId: number; address: string }>>((allTokens, vault) => {
-    const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
-
-    if (!metadata) {
-      return allTokens
-    }
-
-    const tokenKey = `${metadata.chainId}:${metadata.token.address.toLowerCase()}`
-
-    if (seenTokens.has(tokenKey)) {
-      return allTokens
-    }
-
-    seenTokens.add(tokenKey)
-    allTokens.push({
-      chainId: metadata.chainId,
-      address: metadata.token.address
-    })
-    return allTokens
-  }, [])
-  const priceData = await fetchHistoricalPrices(tokens, timestamps)
+  const priceRequests = buildPnlPriceRequests({
+    vaults: filteredVaults,
+    vaultMetadata,
+    currentTimestamp,
+    unknownTransferInPnlMode
+  })
+  const uniquePriceTimestamps = [...new Set(priceRequests.flatMap((request) => request.timestamps))].sort(
+    (a, b) => a - b
+  )
+  const pricePointCount = priceRequests.reduce((total, request) => total + request.timestamps.length, 0)
+  const priceData = await fetchHistoricalPricesForTokenTimestamps(priceRequests)
   debugLog('pnl', 'resolved token prices for pnl', {
-    tokens: tokens.length,
-    timestamps: timestamps.length,
+    tokens: priceRequests.length,
+    timestamps: uniquePriceTimestamps.length,
+    pricePointCount,
     priceKeys: priceData.size
   })
 
@@ -2232,7 +2413,8 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
   const pricePerShare = ppsMap ? getPPS(ppsMap, currentTimestamp) : null
   const priceKey = metadata ? `${getChainPrefix(vault.chainId)}:${metadata.token.address.toLowerCase()}` : null
   const tokenPriceMap = priceKey ? priceData.get(priceKey) : null
-  const tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, currentTimestamp) : 0
+  const tokenPrice = tokenPriceMap?.get(currentTimestamp) ?? 0
+  const normalizePriceTimestamp = (timestamp: number) => normalizePnlTokenPriceTimestamp(timestamp, currentTimestamp)
   const resolvedPricePerShare = pricePerShare ?? 0
   const vaultSharesRaw = sumShares(vault.vaultLots)
   const stakedSharesRaw = sumShares(vault.stakedLots)
@@ -2308,14 +2490,32 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
               unrealizedPnlUnderlying: currentUnknownUnderlying,
               unrealizedPnlUsd: currentValueUsd
             }
-          : {
-              unknownCostBasisValueUsd: 0,
-              windfallPnlUsd: currentValueUsd,
-              realizedPnlUnderlying: 0,
-              realizedPnlUsd: 0,
-              unrealizedPnlUnderlying: 0,
-              unrealizedPnlUsd: 0
-            }
+          : unknownTransferInPnlMode === 'receipt_price'
+            ? applyUnknownTransferInModeAdjustment({
+                unknownTransferInPnlMode,
+                vault,
+                unknownLots,
+                metadata,
+                ppsMap,
+                tokenPriceMap,
+                tokenPrice,
+                currentTimestamp,
+                resolvedPricePerShare,
+                currentUnknownUnderlying,
+                baseRealizedPnlUnderlying: 0,
+                baseRealizedPnlUsd: 0,
+                baseUnrealizedPnlUnderlying: 0,
+                baseUnrealizedPnlUsd: 0,
+                normalizePriceTimestamp
+              })
+            : {
+                unknownCostBasisValueUsd: 0,
+                windfallPnlUsd: currentValueUsd,
+                realizedPnlUnderlying: 0,
+                realizedPnlUsd: 0,
+                unrealizedPnlUnderlying: 0,
+                unrealizedPnlUsd: 0
+              }
 
     return {
       chainId: vault.chainId,
@@ -2368,15 +2568,27 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
     }
   }
 
-  const knownCostBasisUsd = getKnownLotsCostBasisUsd(knownLots, metadata.token.decimals, tokenPriceMap, tokenPrice)
+  const knownCostBasisUsd = getKnownLotsCostBasisUsd(
+    knownLots,
+    metadata.token.decimals,
+    tokenPriceMap,
+    tokenPrice,
+    normalizePriceTimestamp
+  )
   const baseRealizedPnlUnderlying = vault.realizedEntries.reduce(
     (total, entry) => total + formatAmount(entry.pnlAssets, metadata.token.decimals),
     0
   )
   const baseRealizedPnlUsd = vault.realizedEntries.reduce((total, entry) => {
-    const realizedTokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, entry.timestamp) : 0
+    const realizedTokenPrice = getTokenPriceForTimestamp(tokenPriceMap, entry.timestamp, 0, normalizePriceTimestamp)
     const proceedsUsd = formatAmount(entry.proceedsAssets, metadata.token.decimals) * realizedTokenPrice
-    const basisUsd = getKnownLotsCostBasisUsd(entry.consumedLots, metadata.token.decimals, tokenPriceMap, tokenPrice)
+    const basisUsd = getKnownLotsCostBasisUsd(
+      entry.consumedLots,
+      metadata.token.decimals,
+      tokenPriceMap,
+      tokenPrice,
+      normalizePriceTimestamp
+    )
     return total + (proceedsUsd - basisUsd)
   }, 0)
   const baseUnrealizedPnlUnderlying = pricePerShare === null ? 0 : currentKnownUnderlying - knownCostBasisUnderlying
@@ -2395,7 +2607,8 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
     baseRealizedPnlUnderlying,
     baseRealizedPnlUsd,
     baseUnrealizedPnlUnderlying,
-    baseUnrealizedPnlUsd
+    baseUnrealizedPnlUsd,
+    normalizePriceTimestamp
   })
   const costBasisStatus =
     vault.unknownCostBasisTransferInCount === 0 &&
@@ -2556,6 +2769,8 @@ function materializeHoldingsPnLDrilldownVault(
   const ppsMap = artifacts.ppsData.get(vaultKey)
   const priceKey = `${getChainPrefix(vault.chainId)}:${metadata.token.address.toLowerCase()}`
   const tokenPriceMap = artifacts.priceData.get(priceKey) ?? null
+  const normalizePriceTimestamp = (timestamp: number) =>
+    normalizePnlTokenPriceTimestamp(timestamp, artifacts.currentTimestamp)
 
   return {
     ...baseVault,
@@ -2569,7 +2784,8 @@ function materializeHoldingsPnLDrilldownVault(
           resolvedPricePerShare: baseVault.pricePerShare,
           currentTokenPrice: baseVault.tokenPrice,
           ppsMap,
-          tokenPriceMap
+          tokenPriceMap,
+          normalizePriceTimestamp
         })
       ),
       staked: vault.stakedLots.map((lot, index) =>
@@ -2581,7 +2797,8 @@ function materializeHoldingsPnLDrilldownVault(
           resolvedPricePerShare: baseVault.pricePerShare,
           currentTokenPrice: baseVault.tokenPrice,
           ppsMap,
-          tokenPriceMap
+          tokenPriceMap,
+          normalizePriceTimestamp
         })
       )
     },
@@ -2593,7 +2810,8 @@ function materializeHoldingsPnLDrilldownVault(
         currentTokenPrice: baseVault.tokenPrice,
         tokenPriceMap,
         resolvedPricePerShare: baseVault.pricePerShare,
-        ppsMap
+        ppsMap,
+        normalizePriceTimestamp
       })
     ),
     rewardTransferInEntries: vault.rewardTransferInEntries.map((entry) =>
@@ -2603,7 +2821,8 @@ function materializeHoldingsPnLDrilldownVault(
         currentTokenPrice: baseVault.tokenPrice,
         resolvedPricePerShare: baseVault.pricePerShare,
         ppsMap,
-        tokenPriceMap
+        tokenPriceMap,
+        normalizePriceTimestamp
       })
     ),
     unknownTransferInEntries: vault.unknownTransferInEntries.map((entry) =>
@@ -2613,7 +2832,8 @@ function materializeHoldingsPnLDrilldownVault(
         currentTokenPrice: baseVault.tokenPrice,
         resolvedPricePerShare: baseVault.pricePerShare,
         ppsMap,
-        tokenPriceMap
+        tokenPriceMap,
+        normalizePriceTimestamp
       })
     ),
     unknownWithdrawalEntries: vault.unknownWithdrawalEntries.map((entry) =>
@@ -2624,7 +2844,8 @@ function materializeHoldingsPnLDrilldownVault(
         currentTokenPrice: baseVault.tokenPrice,
         tokenPriceMap,
         resolvedPricePerShare: baseVault.pricePerShare,
-        ppsMap
+        ppsMap,
+        normalizePriceTimestamp
       })
     ),
     journal: vault.debugJournal.map((row) =>

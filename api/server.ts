@@ -146,7 +146,9 @@ function validateInvalidateBody(body: unknown): body is InvalidateRequestBody {
 }
 
 function parseUnknownTransferInPnlMode(value: string | null): UnknownTransferInPnlMode {
-  return value === 'strict' || value === 'zero_basis' || value === 'windfall' ? value : 'windfall'
+  return value === 'strict' || value === 'zero_basis' || value === 'receipt_price' || value === 'windfall'
+    ? value
+    : 'windfall'
 }
 
 function parseHoldingsEventFetchType(value: string | null): HoldingsEventFetchType {

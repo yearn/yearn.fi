@@ -44,7 +44,7 @@ export type TUnknownWithdrawalEntry = {
   consumedLots: TLot[]
 }
 
-export type UnknownTransferInPnlMode = 'strict' | 'zero_basis' | 'windfall'
+export type UnknownTransferInPnlMode = 'strict' | 'zero_basis' | 'receipt_price' | 'windfall'
 
 export type TPnlDebugJournalRow = {
   timestamp: number

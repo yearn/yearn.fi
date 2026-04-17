@@ -26,8 +26,10 @@ function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
 
-function parseUnknownTransferInPnlMode(value: unknown): 'strict' | 'zero_basis' | 'windfall' {
-  return value === 'strict' || value === 'zero_basis' || value === 'windfall' ? value : 'windfall'
+function parseUnknownTransferInPnlMode(value: unknown): 'strict' | 'zero_basis' | 'receipt_price' | 'windfall' {
+  return value === 'strict' || value === 'zero_basis' || value === 'receipt_price' || value === 'windfall'
+    ? value
+    : 'windfall'
 }
 
 function parseHoldingsEventFetchType(value: string | string[] | undefined): HoldingsEventFetchType {

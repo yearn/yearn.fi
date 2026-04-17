@@ -61,6 +61,8 @@ For known-basis lots, USD basis is derived later from:
 - the lot's acquisition timestamp
 - the underlying token price at that acquisition timestamp
 
+Historical token prices for PnL are requested and cached by UTC day. The engine still keeps the exact event timestamp in the lot / journal, but the USD price lookup for deposit, receipt, and withdrawal timestamps uses the event's UTC day bucket. Current value continues to use the request-time price, but that exact current timestamp is not persisted in the token-price cache.
+
 Known-basis lots come from indexed deposit / withdrawal context.
 Known-basis lots can also come from recognized synthetic acquisition flows, such as supported CoW settlement receipt enrichment on Ethereum mainnet.
 Known-basis lots can also come from recognized zero-basis reward receipts, where the engine can identify a distributor flow that should be treated as a reward rather than as an unknown transfer-in.
@@ -76,7 +78,7 @@ Think in this order:
 3. Group events into vault families.
 4. Build FIFO lots for each family.
 5. Value remaining lots at current PPS and token price.
-6. Apply an unknown-transfer policy: `strict`, `zero_basis`, or `windfall`.
+6. Apply an unknown-transfer policy: `strict`, `zero_basis`, `receipt_price`, or `windfall`.
 
 ## Simple Protocol Return
 
@@ -353,12 +355,12 @@ Today this path covers explicit known migrator flows, supported Enso-mediated va
 
 ## Unknown Transfer-In Modes
 
-The endpoint supports three policies for unknown transfer-ins.
+The endpoint supports four policies for unknown transfer-ins.
 
 Query param:
 
 ```text
-unknownMode=strict|zero_basis|windfall
+unknownMode=strict|zero_basis|receipt_price|windfall
 ```
 
 Default:
@@ -420,6 +422,18 @@ Behavior:
 - unknown-basis shares are treated as if basis were zero
 - the full value of those shares flows into realized or unrealized PnL
 
+### `receipt_price`
+
+Use this when you want to assume unknown transfers were paid for at receipt-time fair value.
+
+Behavior:
+
+- unknown-basis shares are valued at `shares * pricePerShareAtReceipt * tokenPriceAtReceipt`
+- that receipt-time value acts as estimated cost basis
+- only market / PPS movement after receipt flows into realized or unrealized PnL
+- no amount is attributed to `windfallPnlUsd`
+- receipt-time token price is resolved through the UTC-day price bucket for that receipt
+
 ### `windfall`
 
 This is the default because it preserves the same economic assumption as `zero_basis`, but with better attribution.
@@ -448,6 +462,10 @@ zero_basis:
   totalPnlUsd = 1,150
   totalEconomicGainUsd = 1,150
 
+receipt_price:
+  totalPnlUsd = 150
+  totalEconomicGainUsd = 150
+
 windfall:
   totalWindfallPnlUsd = 1,000
   totalPnlUsd = 150
@@ -475,7 +493,8 @@ That is intentional. The endpoint now reports full USD mark-to-market PnL for kn
 So:
 
 - `zero_basis` and `windfall` can have the same economic gain
-- they differ only in how that gain is classified
+- `receipt_price` reports only post-receipt movement because receipt-time value is treated as estimated basis
+- the modes differ in how much uncertainty is treated as gain vs assumed acquisition cost
 
 ## Response Fields
 
@@ -620,7 +639,7 @@ The main files are:
 - `api/lib/holdings/services/pnl.test.ts`
   - core lot, staking, migration, and ledger behavior
 - `api/lib/holdings/services/pnl.modes.test.ts`
-  - `strict`, `zero_basis`, and `windfall` behavior
+  - `strict`, `zero_basis`, `receipt_price`, and `windfall` behavior
 
 ## Bottom Line
 
@@ -633,4 +652,5 @@ When you read the output:
 
 - `strict` answers “what can we prove?”
 - `zero_basis` answers “what if unknown transfers were free?”
+- `receipt_price` answers “what if unknown transfers were bought at receipt-time fair value?”
 - `windfall` answers “what is the same economic gain, but split into receipt-time value and later market PnL?”
