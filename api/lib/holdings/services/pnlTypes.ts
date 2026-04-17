@@ -1,4 +1,4 @@
-import type { VaultVersion } from './graphql'
+import type { HoldingsPnlEventScope, VaultVersion } from './graphql'
 
 export type TLocation = 'vault' | 'staked'
 
@@ -44,7 +44,7 @@ export type TUnknownWithdrawalEntry = {
   consumedLots: TLot[]
 }
 
-export type UnknownTransferInPnlMode = 'strict' | 'zero_basis' | 'windfall'
+export type UnknownTransferInPnlMode = 'strict' | 'zero_basis' | 'receipt_price' | 'windfall'
 
 export type TPnlDebugJournalRow = {
   timestamp: number
@@ -376,6 +376,7 @@ export interface HoldingsPnLResponse {
   address: string
   version: VaultVersion
   unknownTransferInPnlMode: UnknownTransferInPnlMode
+  eventScope: HoldingsPnlEventScope
   generatedAt: string
   summary: THoldingsPnlSummary
   vaults: HoldingsPnLVault[]
@@ -385,6 +386,7 @@ export interface HoldingsPnLDrilldownResponse {
   address: string
   version: VaultVersion
   unknownTransferInPnlMode: UnknownTransferInPnlMode
+  eventScope: HoldingsPnlEventScope
   generatedAt: string
   summary: THoldingsPnlSummary
   vaults: HoldingsPnLDrilldownVault[]

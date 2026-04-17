@@ -1,6 +1,6 @@
 import type { VaultMetadata } from '../types'
 import { getPriceAtTimestamp } from './defillama'
-import type { VaultVersion } from './graphql'
+import type { HoldingsPnlEventScope, VaultVersion } from './graphql'
 import { getPPS } from './kong'
 import { formatAmount, sumShares } from './pnlShared'
 import type {
@@ -39,12 +39,14 @@ export function toHoldingsPnlEventCounts(vault: FamilyPnlLedger): HoldingsPnLVau
 export function createEmptyHoldingsPnlResponse(
   address: string,
   version: VaultVersion,
-  unknownTransferInPnlMode: UnknownTransferInPnlMode
+  unknownTransferInPnlMode: UnknownTransferInPnlMode,
+  eventScope: HoldingsPnlEventScope = 'full'
 ): HoldingsPnLResponse {
   return {
     address,
     version,
     unknownTransferInPnlMode,
+    eventScope,
     generatedAt: new Date().toISOString(),
     summary: {
       totalVaults: 0,
@@ -139,13 +141,18 @@ function getEstimatedUnknownUnderlyingAtReceipt(
 function getTokenPriceForTimestamp(
   tokenPriceMap: Map<number, number> | null,
   timestamp: number,
-  fallbackTokenPrice: number
+  fallbackTokenPrice: number,
+  normalizeTimestamp?: (timestamp: number) => number
 ): number {
-  return timestamp > 0
-    ? tokenPriceMap
-      ? getPriceAtTimestamp(tokenPriceMap, timestamp)
-      : fallbackTokenPrice
-    : fallbackTokenPrice
+  const priceTimestamp = normalizeTimestamp ? normalizeTimestamp(timestamp) : timestamp
+
+  if (timestamp <= 0 || !tokenPriceMap) {
+    return fallbackTokenPrice
+  }
+
+  return normalizeTimestamp
+    ? (tokenPriceMap.get(priceTimestamp) ?? 0)
+    : getPriceAtTimestamp(tokenPriceMap, priceTimestamp)
 }
 
 // Missing metadata is a hard stop for valuation, but we still surface the ledger so the caller
@@ -205,8 +212,8 @@ export function createMissingMetadataPnlVault(
 }
 
 // Unknown transfer-ins are the main heuristic branch in the whole pipeline.
-// We keep the strict / zero-basis / windfall behavior isolated here so the materialization
-// step reads as "compute known PnL, then apply the chosen unknown-lot policy".
+// We keep the strict / zero-basis / receipt-price / windfall behavior isolated here
+// so the materialization step reads as "compute known PnL, then apply the chosen unknown-lot policy".
 export function applyUnknownTransferInModeAdjustment(args: {
   unknownTransferInPnlMode: UnknownTransferInPnlMode
   vault: FamilyPnlLedger
@@ -222,6 +229,7 @@ export function applyUnknownTransferInModeAdjustment(args: {
   baseRealizedPnlUsd: number
   baseUnrealizedPnlUnderlying: number
   baseUnrealizedPnlUsd: number
+  normalizePriceTimestamp?: (timestamp: number) => number
 }): TPnlComputationState {
   const {
     unknownTransferInPnlMode,
@@ -237,7 +245,8 @@ export function applyUnknownTransferInModeAdjustment(args: {
     baseRealizedPnlUnderlying,
     baseRealizedPnlUsd,
     baseUnrealizedPnlUnderlying,
-    baseUnrealizedPnlUsd
+    baseUnrealizedPnlUsd,
+    normalizePriceTimestamp
   } = args
 
   const state: TPnlComputationState = {
@@ -258,7 +267,12 @@ export function applyUnknownTransferInModeAdjustment(args: {
     0
   )
   const unknownRealizedProceedsUsd = vault.unknownWithdrawalEntries.reduce((total, entry) => {
-    const realizedTokenPrice = getTokenPriceForTimestamp(tokenPriceMap, entry.timestamp, tokenPrice)
+    const realizedTokenPrice = getTokenPriceForTimestamp(
+      tokenPriceMap,
+      entry.timestamp,
+      tokenPrice,
+      normalizePriceTimestamp
+    )
     return total + formatAmount(entry.proceedsAssets, metadata.token.decimals) * realizedTokenPrice
   }, 0)
 
@@ -280,7 +294,12 @@ export function applyUnknownTransferInModeAdjustment(args: {
       ppsMap,
       resolvedPricePerShare
     )
-    const receiptTokenPrice = getTokenPriceForTimestamp(tokenPriceMap, lot.acquiredAt ?? currentTimestamp, tokenPrice)
+    const receiptTokenPrice = getTokenPriceForTimestamp(
+      tokenPriceMap,
+      lot.acquiredAt ?? currentTimestamp,
+      tokenPrice,
+      normalizePriceTimestamp
+    )
     return total + receiptUnderlying * receiptTokenPrice
   }, 0)
   const realizedUnknownReceiptValueUsd = vault.unknownWithdrawalEntries.reduce((total, entry) => {
@@ -297,7 +316,8 @@ export function applyUnknownTransferInModeAdjustment(args: {
         const receiptTokenPrice = getTokenPriceForTimestamp(
           tokenPriceMap,
           lot.acquiredAt ?? entry.timestamp,
-          tokenPrice
+          tokenPrice,
+          normalizePriceTimestamp
         )
         return entryTotal + receiptUnderlying * receiptTokenPrice
       }, 0)
@@ -305,6 +325,18 @@ export function applyUnknownTransferInModeAdjustment(args: {
   }, 0)
   const unknownRealizedMarketPnlUsd = unknownRealizedProceedsUsd - realizedUnknownReceiptValueUsd
   const unknownCurrentMarketPnlUsd = currentUnknownUnderlying * tokenPrice - currentUnknownReceiptValueUsd
+
+  if (unknownTransferInPnlMode === 'receipt_price') {
+    return {
+      ...state,
+      realizedPnlUnderlying:
+        state.realizedPnlUnderlying + (tokenPrice > 0 ? unknownRealizedMarketPnlUsd / tokenPrice : 0),
+      realizedPnlUsd: state.realizedPnlUsd + unknownRealizedMarketPnlUsd,
+      unrealizedPnlUnderlying:
+        state.unrealizedPnlUnderlying + (tokenPrice > 0 ? unknownCurrentMarketPnlUsd / tokenPrice : 0),
+      unrealizedPnlUsd: state.unrealizedPnlUsd + unknownCurrentMarketPnlUsd
+    }
+  }
 
   return {
     ...state,

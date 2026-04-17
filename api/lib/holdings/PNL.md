@@ -61,6 +61,8 @@ For known-basis lots, USD basis is derived later from:
 - the lot's acquisition timestamp
 - the underlying token price at that acquisition timestamp
 
+Historical token prices for PnL are requested and cached by UTC day. The engine still keeps the exact event timestamp in the lot / journal, but the USD price lookup for deposit, receipt, and withdrawal timestamps uses the event's UTC day bucket. Current value continues to use the request-time price, but that exact current timestamp is not persisted in the token-price cache.
+
 Known-basis lots come from indexed deposit / withdrawal context.
 Known-basis lots can also come from recognized synthetic acquisition flows, such as supported CoW settlement receipt enrichment on Ethereum mainnet.
 Known-basis lots can also come from recognized zero-basis reward receipts, where the engine can identify a distributor flow that should be treated as a reward rather than as an unknown transfer-in.
@@ -72,11 +74,11 @@ Unknown-basis lots usually come from share transfers where the economic source c
 Think in this order:
 
 1. Build raw user-visible events from the indexer.
-2. Enrich those events with same-transaction context.
+2. Enrich those events with same-transaction context, unless `eventScope=address_only` is requested.
 3. Group events into vault families.
 4. Build FIFO lots for each family.
 5. Value remaining lots at current PPS and token price.
-6. Apply an unknown-transfer policy: `strict`, `zero_basis`, or `windfall`.
+6. Apply an unknown-transfer policy: `strict`, `zero_basis`, `receipt_price`, or `windfall`.
 
 ## Simple Protocol Return
 
@@ -164,6 +166,8 @@ The PnL pipeline therefore also loads additional events from the same transactio
 Without that enrichment, many transfers would stay permanently ambiguous.
 
 For a small set of recognized Ethereum mainnet CoW settlement flows, the pipeline also inspects the transaction receipt and settlement logs so it can synthesize a known-basis acquisition instead of treating the received position as an unknown transfer-in.
+
+When `eventScope=address_only` is requested, this entire transaction-scoped layer is skipped. The route still returns the normal PnL response shape, including FIFO lots and drilldown journals, but the result is an approximate comparison view based only on events directly visible on the user address.
 
 ### 3. Kong PPS
 
@@ -353,12 +357,12 @@ Today this path covers explicit known migrator flows, supported Enso-mediated va
 
 ## Unknown Transfer-In Modes
 
-The endpoint supports three policies for unknown transfer-ins.
+The endpoint supports four policies for unknown transfer-ins.
 
 Query param:
 
 ```text
-unknownMode=strict|zero_basis|windfall
+unknownMode=strict|zero_basis|receipt_price|windfall
 ```
 
 Default:
@@ -374,6 +378,7 @@ The PnL endpoint also exposes event-loading controls for debugging and benchmark
 ```text
 fetchType=seq|parallel
 paginationMode=paged|all
+eventScope=full|address_only
 ```
 
 Defaults:
@@ -381,6 +386,7 @@ Defaults:
 ```text
 fetchType=seq
 paginationMode=paged
+eventScope=full
 ```
 
 ### `fetchType`
@@ -401,6 +407,15 @@ This only affects the address-scoped family fetch path. Transaction-hash enrichm
 
 `all` is intended for experimentation. It bypasses the aggregate count preflight, but it uses a fixed single-query limit internally, so it should be treated as a benchmarking/debug option rather than a universally safe default.
 
+### `eventScope`
+
+- `full`
+  - fetch address-scoped events, `transactionFrom` events, same-transaction hash context, and supported CoW receipt enrichment
+- `address_only`
+  - fetch only address-scoped events, then run the same FIFO materialization pipeline on that smaller event set
+
+`address_only` is a comparison / debugging mode, not the default accounting model. It avoids the expensive transaction-hash expansion for wallets with many transfer events, but router deposits, staking moves, same-vault rollovers, CoW settlements, and vault-to-vault basis carrying may no longer be recognized. With `unknownMode=receipt_price`, those unresolved receipts can still be valued at receipt-time fair value, but the result should be labeled approximate. `enrichment=none|disabled|off|false` is accepted as an alias for `eventScope=address_only`.
+
 ### `strict`
 
 Use this when you want the most conservative answer.
@@ -419,6 +434,18 @@ Behavior:
 
 - unknown-basis shares are treated as if basis were zero
 - the full value of those shares flows into realized or unrealized PnL
+
+### `receipt_price`
+
+Use this when you want to assume unknown transfers were paid for at receipt-time fair value.
+
+Behavior:
+
+- unknown-basis shares are valued at `shares * pricePerShareAtReceipt * tokenPriceAtReceipt`
+- that receipt-time value acts as estimated cost basis
+- only market / PPS movement after receipt flows into realized or unrealized PnL
+- no amount is attributed to `windfallPnlUsd`
+- receipt-time token price is resolved through the UTC-day price bucket for that receipt
 
 ### `windfall`
 
@@ -448,6 +475,10 @@ zero_basis:
   totalPnlUsd = 1,150
   totalEconomicGainUsd = 1,150
 
+receipt_price:
+  totalPnlUsd = 150
+  totalEconomicGainUsd = 150
+
 windfall:
   totalWindfallPnlUsd = 1,000
   totalPnlUsd = 150
@@ -475,7 +506,8 @@ That is intentional. The endpoint now reports full USD mark-to-market PnL for kn
 So:
 
 - `zero_basis` and `windfall` can have the same economic gain
-- they differ only in how that gain is classified
+- `receipt_price` reports only post-receipt movement because receipt-time value is treated as estimated basis
+- the modes differ in how much uncertainty is treated as gain vs assumed acquisition cost
 
 ## Response Fields
 
@@ -620,7 +652,7 @@ The main files are:
 - `api/lib/holdings/services/pnl.test.ts`
   - core lot, staking, migration, and ledger behavior
 - `api/lib/holdings/services/pnl.modes.test.ts`
-  - `strict`, `zero_basis`, and `windfall` behavior
+  - `strict`, `zero_basis`, `receipt_price`, and `windfall` behavior
 
 ## Bottom Line
 
@@ -633,4 +665,5 @@ When you read the output:
 
 - `strict` answers “what can we prove?”
 - `zero_basis` answers “what if unknown transfers were free?”
+- `receipt_price` answers “what if unknown transfers were bought at receipt-time fair value?”
 - `windfall` answers “what is the same economic gain, but split into receipt-time value and later market PnL?”

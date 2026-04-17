@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { HoldingsEventFetchType, HoldingsEventPaginationMode } from '../lib/holdings'
+import type { HoldingsEventFetchType, HoldingsEventPaginationMode, HoldingsPnlEventScope } from '../lib/holdings'
 import { checkRateLimit, ensureSchemaInitialized } from '../lib/holdings'
 
 function simpleHash(str: string): string {
@@ -26,8 +26,10 @@ function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
 
-function parseUnknownTransferInPnlMode(value: unknown): 'strict' | 'zero_basis' | 'windfall' {
-  return value === 'strict' || value === 'zero_basis' || value === 'windfall' ? value : 'windfall'
+function parseUnknownTransferInPnlMode(value: unknown): 'strict' | 'zero_basis' | 'receipt_price' | 'windfall' {
+  return value === 'strict' || value === 'zero_basis' || value === 'receipt_price' || value === 'windfall'
+    ? value
+    : 'windfall'
 }
 
 function parseHoldingsEventFetchType(value: string | string[] | undefined): HoldingsEventFetchType {
@@ -36,6 +38,18 @@ function parseHoldingsEventFetchType(value: string | string[] | undefined): Hold
 
 function parseHoldingsEventPaginationMode(value: string | string[] | undefined): HoldingsEventPaginationMode {
   return value === 'all' ? 'all' : 'paged'
+}
+
+function parseHoldingsPnlEventScope(value: string | string[] | undefined): HoldingsPnlEventScope {
+  const normalized = Array.isArray(value) ? value[0] : value
+  return normalized === 'address_only' ||
+    normalized === 'address-only' ||
+    normalized === 'none' ||
+    normalized === 'disabled' ||
+    normalized === 'off' ||
+    normalized === 'false'
+    ? 'address_only'
+    : 'full'
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -73,7 +87,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  const { address, version, unknownMode, fetchType: fetchTypeParam, paginationMode: paginationModeParam } = req.query
+  const {
+    address,
+    version,
+    unknownMode,
+    fetchType: fetchTypeParam,
+    paginationMode: paginationModeParam,
+    eventScope: eventScopeParam,
+    enrichment
+  } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -85,6 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
+  const eventScope = parseHoldingsPnlEventScope(eventScopeParam ?? enrichment)
 
   try {
     const { getHoldingsPnL } = await import('../lib/holdings')
@@ -93,7 +116,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       version === 'v2' || version === 'v3' ? version : 'all',
       parseUnknownTransferInPnlMode(Array.isArray(unknownMode) ? unknownMode[0] : unknownMode),
       fetchType,
-      paginationMode
+      paginationMode,
+      eventScope
     )
 
     if (pnl.summary.totalVaults === 0) {

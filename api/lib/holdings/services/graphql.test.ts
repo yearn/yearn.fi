@@ -171,6 +171,82 @@ describe('fetchRawUserPnlEvents', () => {
     ])
   })
 
+  it('can fetch address-only pnl events without transaction enrichment', async () => {
+    const fetchStub = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        query: string
+      }
+      const query = body.query
+
+      if (query.includes('ByTransactionFrom') || query.includes('ByTransactionHashes')) {
+        throw new Error(`Transaction enrichment should be skipped: ${query}`)
+      }
+
+      if (query.includes('GetTransfersIn')) {
+        return createGraphqlResponse({
+          Transfer: [
+            {
+              id: 'address-only-transfer-in',
+              vaultAddress: VAULT,
+              chainId: 1,
+              blockNumber: 2,
+              blockTimestamp: 200,
+              logIndex: 2,
+              transactionHash: TX_HASH,
+              transactionFrom: ROUTER,
+              sender: ROUTER,
+              receiver: USER,
+              value: '900'
+            }
+          ]
+        })
+      }
+
+      if (
+        query.includes('GetDeposits(') ||
+        query.includes('GetWithdrawals(') ||
+        query.includes('GetTransfersOut') ||
+        query.includes('GetV2Deposits(') ||
+        query.includes('GetV2Withdrawals(')
+      ) {
+        const resultKey = query.includes('V2Deposit')
+          ? 'V2Deposit'
+          : query.includes('V2Withdraw')
+            ? 'V2Withdraw'
+            : query.includes('Withdraw')
+              ? 'Withdraw'
+              : query.includes('Transfer')
+                ? 'Transfer'
+                : 'Deposit'
+
+        return createGraphqlResponse({ [resultKey]: [] })
+      }
+
+      throw new Error(`Unexpected query: ${query}`)
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const { fetchRawUserPnlEvents } = await importGraphqlModule()
+    const context = await fetchRawUserPnlEvents(USER, 'all', undefined, 'seq', 'paged', 'address_only')
+
+    expect(context.addressEvents.transfersIn).toEqual([
+      expect.objectContaining({
+        id: 'address-only-transfer-in'
+      })
+    ])
+    expect(context.transactionEvents).toEqual({
+      deposits: [],
+      withdrawals: [],
+      transfers: []
+    })
+    expect(
+      fetchStub.mock.calls.some(([, init]) =>
+        String((init as RequestInit | undefined)?.body ?? '').includes('ByTransaction')
+      )
+    ).toBe(false)
+  })
+
   it('falls back to sequential pagination when aggregate counts are unavailable', async () => {
     const transferBatches = [
       Array.from({ length: 1000 }, (_, index) => ({
