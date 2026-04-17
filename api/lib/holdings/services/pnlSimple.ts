@@ -14,6 +14,7 @@ import { fetchMultipleVaultsPPS, getPPS } from './kong'
 import { buildRawPnlEvents } from './pnl'
 import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
+import { getStakingVaultAddress } from './staking'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
 type TProtocolReturnIssue = 'missing_metadata' | 'missing_pps' | 'missing_receipt_price' | 'unmatched_exit'
@@ -584,9 +585,9 @@ function processEvent(
     ledgers.get(vaultKey) ?? emptyLedger(event.chainId, event.familyVaultAddress),
     event.blockTimestamp
   )
-  const receiptPriceUsd = getReceiptPriceUsd(metadata, args.priceData, event.blockTimestamp)
 
   if (event.kind === 'deposit') {
+    const receiptPriceUsd = getReceiptPriceUsd(metadata, args.priceData, event.blockTimestamp)
     ledgers.set(
       vaultKey,
       addReceipt(currentLedger, {
@@ -614,17 +615,23 @@ function processEvent(
   }
 
   if (event.sender === args.userAddress && event.receiver === args.userAddress) {
+    ledgers.set(vaultKey, currentLedger)
+    return ledgers
+  }
+
+  const pps = getEventPps(ppsMap, event.blockTimestamp)
+  if (pps === null) {
+    ledgers.set(vaultKey, { ...currentLedger, missingPps: true })
     return ledgers
   }
 
   if (event.receiver === args.userAddress) {
-    const pps = getEventPps(ppsMap, event.blockTimestamp)
-    const ledger = pps === null ? { ...currentLedger, missingPps: true } : currentLedger
+    const receiptPriceUsd = getReceiptPriceUsd(metadata, args.priceData, event.blockTimestamp)
     ledgers.set(
       vaultKey,
-      addReceipt(ledger, {
+      addReceipt(currentLedger, {
         shares: event.shares,
-        baselineUnderlying: pps === null ? 0 : formatAmount(event.shares, shareDecimals) * pps,
+        baselineUnderlying: formatAmount(event.shares, shareDecimals) * pps,
         receiptTimestamp: event.blockTimestamp,
         receiptPriceUsd,
         receiptKind: 'transfer_in',
@@ -635,20 +642,193 @@ function processEvent(
   }
 
   if (event.sender === args.userAddress) {
-    const pps = getEventPps(ppsMap, event.blockTimestamp)
-    const ledger = pps === null ? { ...currentLedger, missingPps: true } : currentLedger
     ledgers.set(
       vaultKey,
-      addExit(ledger, {
+      addExit(currentLedger, {
         shares: event.shares,
-        exitUnderlying: pps === null ? 0 : formatAmount(event.shares, shareDecimals) * pps,
+        exitUnderlying: formatAmount(event.shares, shareDecimals) * pps,
         exitKind: 'transfer_out'
       })
     )
     return ledgers
   }
 
+  ledgers.set(vaultKey, currentLedger)
   return ledgers
+}
+
+function groupEventsByTransaction(events: TRawPnlEvent[]): TRawPnlEvent[][] {
+  return Array.from(
+    sortEvents(events).reduce<Map<string, TRawPnlEvent[]>>((grouped, event) => {
+      const transactionKey = `${event.chainId}:${event.transactionHash}`
+      const bucket = grouped.get(transactionKey) ?? []
+      bucket.push(event)
+      grouped.set(transactionKey, bucket)
+      return grouped
+    }, new Map())
+  ).map(([, txEvents]) => txEvents)
+}
+
+function groupTransactionEventsByFamily(txEvents: TRawPnlEvent[]): TRawPnlEvent[][] {
+  return Array.from(
+    txEvents.reduce<Map<string, TRawPnlEvent[]>>((grouped, event) => {
+      const familyKey = toVaultKey(event.chainId, event.familyVaultAddress)
+      const bucket = grouped.get(familyKey) ?? []
+      bucket.push(event)
+      grouped.set(familyKey, bucket)
+      return grouped
+    }, new Map())
+  ).map(([, familyEvents]) => familyEvents)
+}
+
+function minBigInt(left: bigint, right: bigint): bigint {
+  return left < right ? left : right
+}
+
+function scaleBigInt(value: bigint, numerator: bigint, denominator: bigint): bigint {
+  if (value <= ZERO || numerator <= ZERO || denominator <= ZERO) {
+    return ZERO
+  }
+
+  return (value * numerator) / denominator
+}
+
+function cloneEventWithShares(event: TRawPnlEvent, shares: bigint): TRawPnlEvent {
+  if (event.kind === 'deposit' || event.kind === 'withdrawal') {
+    return {
+      ...event,
+      shares,
+      assets: scaleBigInt(event.assets, shares, event.shares)
+    }
+  }
+
+  return {
+    ...event,
+    shares
+  }
+}
+
+function stripMatchedShares(
+  events: TRawPnlEvent[],
+  matcher: (event: TRawPnlEvent) => boolean,
+  sharesToStrip: bigint
+): TRawPnlEvent[] {
+  if (sharesToStrip <= ZERO) {
+    return events
+  }
+
+  let remainingSharesToStrip = sharesToStrip
+
+  return events.flatMap((event) => {
+    if (!matcher(event) || remainingSharesToStrip <= ZERO) {
+      return [event]
+    }
+
+    const strippedShares = minBigInt(event.shares, remainingSharesToStrip)
+    remainingSharesToStrip -= strippedShares
+
+    if (strippedShares === event.shares) {
+      return []
+    }
+
+    return [cloneEventWithShares(event, event.shares - strippedShares)]
+  })
+}
+
+function normalizeStakingWrapperEvents(txFamilyEvents: TRawPnlEvent[], userAddress: string): TRawPnlEvent[] {
+  const firstEvent = txFamilyEvents[0]
+  if (!firstEvent) {
+    return txFamilyEvents
+  }
+
+  const familyVaultAddress = lowerCaseAddress(firstEvent.familyVaultAddress)
+  const stakingVaultAddress = getStakingVaultAddress(firstEvent.chainId, firstEvent.familyVaultAddress)
+  if (!stakingVaultAddress) {
+    return txFamilyEvents
+  }
+
+  const normalizedUserAddress = lowerCaseAddress(userAddress)
+  let remainingEvents = [...txFamilyEvents]
+
+  const unstakeWithdrawalShares = remainingEvents.reduce(
+    (total, event) =>
+      event.kind === 'withdrawal' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress
+        ? total + event.shares
+        : total,
+    ZERO
+  )
+  const unstakeTransferInShares = remainingEvents.reduce(
+    (total, event) =>
+      event.kind === 'transfer' &&
+      !event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === familyVaultAddress &&
+      lowerCaseAddress(event.sender) === stakingVaultAddress &&
+      lowerCaseAddress(event.receiver) === normalizedUserAddress
+        ? total + event.shares
+        : total,
+    ZERO
+  )
+  const matchedUnstakeShares = minBigInt(unstakeWithdrawalShares, unstakeTransferInShares)
+
+  remainingEvents = stripMatchedShares(
+    remainingEvents,
+    (event) =>
+      event.kind === 'withdrawal' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress,
+    matchedUnstakeShares
+  )
+  remainingEvents = stripMatchedShares(
+    remainingEvents,
+    (event) =>
+      event.kind === 'transfer' &&
+      !event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === familyVaultAddress &&
+      lowerCaseAddress(event.sender) === stakingVaultAddress &&
+      lowerCaseAddress(event.receiver) === normalizedUserAddress,
+    matchedUnstakeShares
+  )
+
+  const stakeTransferOutShares = remainingEvents.reduce(
+    (total, event) =>
+      event.kind === 'transfer' &&
+      !event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === familyVaultAddress &&
+      lowerCaseAddress(event.sender) === normalizedUserAddress &&
+      lowerCaseAddress(event.receiver) === stakingVaultAddress
+        ? total + event.shares
+        : total,
+    ZERO
+  )
+  const stakeDepositShares = remainingEvents.reduce(
+    (total, event) =>
+      event.kind === 'deposit' && event.isStakingVault && lowerCaseAddress(event.vaultAddress) === stakingVaultAddress
+        ? total + event.shares
+        : total,
+    ZERO
+  )
+  const matchedStakeShares = minBigInt(stakeTransferOutShares, stakeDepositShares)
+
+  remainingEvents = stripMatchedShares(
+    remainingEvents,
+    (event) =>
+      event.kind === 'transfer' &&
+      !event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === familyVaultAddress &&
+      lowerCaseAddress(event.sender) === normalizedUserAddress &&
+      lowerCaseAddress(event.receiver) === stakingVaultAddress,
+    matchedStakeShares
+  )
+  remainingEvents = stripMatchedShares(
+    remainingEvents,
+    (event) =>
+      event.kind === 'deposit' && event.isStakingVault && lowerCaseAddress(event.vaultAddress) === stakingVaultAddress,
+    matchedStakeShares
+  )
+
+  return remainingEvents
 }
 
 function getProtocolReturnTimestamps(events: TRawPnlEvent[], timeframe: '1y' | 'all'): number[] {
@@ -674,16 +854,19 @@ export function buildProtocolReturnLedgers(args: {
   currentTimestamp?: number
 }): Map<string, TProtocolReturnLedger> {
   const userAddress = lowerCaseAddress(args.userAddress)
-  const ledgers = sortEvents(args.events).reduce(
-    (ledgers, event) =>
-      processEvent(ledgers, event, {
-        userAddress,
-        metadata: args.metadata,
-        ppsData: args.ppsData,
-        priceData: args.priceData
-      }),
-    new Map<string, TProtocolReturnLedger>()
-  )
+  const ledgers = groupEventsByTransaction(args.events).reduce((nextLedgers, txEvents) => {
+    groupTransactionEventsByFamily(txEvents).forEach((txFamilyEvents) => {
+      normalizeStakingWrapperEvents(txFamilyEvents, userAddress).forEach((event) => {
+        processEvent(nextLedgers, event, {
+          userAddress,
+          metadata: args.metadata,
+          ppsData: args.ppsData,
+          priceData: args.priceData
+        })
+      })
+    })
+    return nextLedgers
+  }, new Map<string, TProtocolReturnLedger>())
 
   const finalTimestamp =
     args.currentTimestamp ??
@@ -834,19 +1017,26 @@ export function buildProtocolReturnHistorySeries(args: {
   timestamps: number[]
 }): HoldingsPnLSimpleHistoryPoint[] {
   const userAddress = lowerCaseAddress(args.userAddress)
-  const sorted = sortEvents(args.events)
-  let eventIndex = 0
+  const groupedTransactions = groupEventsByTransaction(args.events)
+  let transactionIndex = 0
   let ledgers = new Map<string, TProtocolReturnLedger>()
 
   return args.timestamps.map((timestamp) => {
-    while (eventIndex < sorted.length && sorted[eventIndex]!.blockTimestamp <= timestamp) {
-      ledgers = processEvent(ledgers, sorted[eventIndex]!, {
-        userAddress,
-        metadata: args.metadata,
-        ppsData: args.ppsData,
-        priceData: args.priceData
+    while (
+      transactionIndex < groupedTransactions.length &&
+      groupedTransactions[transactionIndex]![0]!.blockTimestamp <= timestamp
+    ) {
+      groupTransactionEventsByFamily(groupedTransactions[transactionIndex]!).forEach((txFamilyEvents) => {
+        normalizeStakingWrapperEvents(txFamilyEvents, userAddress).forEach((event) => {
+          processEvent(ledgers, event, {
+            userAddress,
+            metadata: args.metadata,
+            ppsData: args.ppsData,
+            priceData: args.priceData
+          })
+        })
       })
-      eventIndex += 1
+      transactionIndex += 1
     }
 
     ledgers = Array.from(ledgers.entries()).reduce<Map<string, TProtocolReturnLedger>>((nextLedgers, [key, ledger]) => {
