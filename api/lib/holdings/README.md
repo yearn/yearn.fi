@@ -389,9 +389,12 @@ Notes:
 - `isComplete` becomes `false` when at least one returned vault still has partial / unknown basis.
 
 ### GET `/api/holdings/pnl/simple`
-Protocol-return summary for the user’s vault exposure.
+Address-scoped performance summary for the user’s vault exposure.
 
-This route is intentionally not a cost-basis PnL engine. It measures how much Yearn increased the user’s withdrawable underlying amount while the user held vault shares. Receipt-time token prices are used only to weight different assets into one portfolio percentage.
+This route is intentionally not the full accounting PnL engine. It uses address-scoped receipt and exit lots to return two UI-oriented metrics:
+
+- price-based USD PnL, where deposits and transfer-ins get receipt-time fair-value basis and withdrawals and transfer-outs get exit-time fair-value proceeds
+- protocol return, which measures how much Yearn increased withdrawable underlying while the user held vault shares
 
 It uses only address-scoped events, so it avoids transaction-hash enrichment, CoW receipt enrichment, and FIFO cost-basis classification. This makes it cheaper than `/api/holdings/pnl`, but it should be labeled as protocol return rather than accounting PnL.
 Like `/api/holdings/pnl`, it excludes vaults with `isHidden=true` in authoritative Kong metadata.
@@ -415,7 +418,12 @@ baselineUnderlying = shares received * PPS at receipt
 growthUnderlying = withdrawable underlying now-or-at-exit - baselineUnderlying
 baselineWeightUsd = baselineUnderlying * receiptTokenPriceUsd
 growthWeightUsd = growthUnderlying * receiptTokenPriceUsd
+protocolReturnUsd = growthWeightUsd
 protocolReturnPct = growthWeightUsd / baselineWeightUsd * 100
+
+realizedPricePnlUsd = exitValueUsd - consumedBasisUsd
+unrealizedPricePnlUsd = currentValueUsd - remainingBasisUsd
+priceBasedPnlUsd = realizedPricePnlUsd + unrealizedPricePnlUsd
 ```
 
 Because both numerator and denominator use the same receipt-time token price, later asset price movement does not affect `protocolReturnPct`.
@@ -432,7 +440,13 @@ Response (abridged):
     "partialVaults": 0,
     "baselineWeightUsd": 7000,
     "growthWeightUsd": 700,
+    "protocolReturnUsd": 700,
     "protocolReturnPct": 10,
+    "totalCurrentValueUsd": 7700,
+    "estimatedBasisUsd": 7000,
+    "realizedPricePnlUsd": 0,
+    "unrealizedPricePnlUsd": 700,
+    "priceBasedPnlUsd": 700,
     "isComplete": true
   },
   "vaults": [
@@ -444,6 +458,12 @@ Response (abridged):
       "growthUnderlying": 100,
       "baselineWeightUsd": 1000,
       "growthWeightUsd": 100,
+      "protocolReturnUsd": 100,
+      "currentValueUsd": 1100,
+      "estimatedBasisUsd": 1000,
+      "realizedPricePnlUsd": 0,
+      "unrealizedPricePnlUsd": 100,
+      "priceBasedPnlUsd": 100,
       "protocolReturnPct": 10,
       "receiptCount": 1,
       "exitCount": 0

@@ -138,6 +138,36 @@ function createTransferOnlyContext(): RawPnlEventContext {
   }
 }
 
+function createTransferOnlyExitContext(): RawPnlEventContext {
+  return {
+    addressEvents: {
+      deposits: [],
+      withdrawals: [],
+      transfersIn: createTransferInContext().addressEvents.transfersIn,
+      transfersOut: [
+        {
+          id: 'transfer-only-exit',
+          vaultAddress: VAULT,
+          chainId: 1,
+          blockNumber: 2,
+          blockTimestamp: 200,
+          logIndex: 1,
+          transactionHash: '0xtransfer-only-exit',
+          transactionFrom: USER,
+          sender: USER,
+          receiver: ROUTER,
+          value: '100000000'
+        }
+      ]
+    },
+    transactionEvents: {
+      deposits: [],
+      withdrawals: [],
+      transfers: []
+    }
+  }
+}
+
 function createRewardTransferInContext(): RawPnlEventContext {
   const rewardTransferIn = {
     id: 'reward-transfer-in',
@@ -273,11 +303,12 @@ async function importPnlModule() {
 async function getSingleVaultResponse(
   rawContext: RawPnlEventContext,
   unknownMode?: UnknownTransferInPnlMode,
-  overrides?: Parameters<typeof configureServiceMocks>[1]
+  overrides?: Parameters<typeof configureServiceMocks>[1],
+  eventScope: 'full' | 'address_only' = 'full'
 ): Promise<HoldingsPnLResponse> {
   configureServiceMocks(rawContext, overrides)
   const { getHoldingsPnL } = await importPnlModule()
-  const response = await getHoldingsPnL(USER, 'all', unknownMode)
+  const response = await getHoldingsPnL(USER, 'all', unknownMode, 'seq', 'paged', eventScope)
   expect(response.vaults).toHaveLength(1)
   return response
 }
@@ -285,11 +316,12 @@ async function getSingleVaultResponse(
 async function getSingleVaultDrilldownResponse(
   rawContext: RawPnlEventContext,
   unknownMode?: UnknownTransferInPnlMode,
-  overrides?: Parameters<typeof configureServiceMocks>[1]
+  overrides?: Parameters<typeof configureServiceMocks>[1],
+  eventScope: 'full' | 'address_only' = 'full'
 ): Promise<HoldingsPnLDrilldownResponse> {
   configureServiceMocks(rawContext, overrides)
   const { getHoldingsPnLDrilldown } = await importPnlModule()
-  const response = await getHoldingsPnLDrilldown(USER, 'all', unknownMode)
+  const response = await getHoldingsPnLDrilldown(USER, 'all', unknownMode, 'seq', 'paged', undefined, eventScope)
   expect(response.vaults).toHaveLength(1)
   return response
 }
@@ -562,17 +594,119 @@ describe('getHoldingsPnL unknown transfer-in modes', () => {
     expect(windfallResponse.summary.totalEconomicGainUsd).toBeCloseTo(240)
   })
 
-  it('does not keep windfall on unknown shares that later leave through external transfers', async () => {
+  it('realizes unknown external transfer-outs as address-scoped disposals', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(300_000)
 
-    const zeroBasisResponse = await getSingleVaultResponse(createTransferOutContext(), 'zero_basis')
-    const windfallResponse = await getSingleVaultResponse(createTransferOutContext(), 'windfall')
+    const zeroBasisResponse = await getSingleVaultResponse(
+      createTransferOutContext(),
+      'zero_basis',
+      undefined,
+      'address_only'
+    )
+    const receiptPriceResponse = await getSingleVaultResponse(
+      createTransferOutContext(),
+      'receipt_price',
+      undefined,
+      'address_only'
+    )
+    const windfallResponse = await getSingleVaultResponse(
+      createTransferOutContext(),
+      'windfall',
+      undefined,
+      'address_only'
+    )
 
-    expect(zeroBasisResponse.summary.totalPnlUsd).toBe(0)
-    expect(zeroBasisResponse.summary.totalEconomicGainUsd).toBe(0)
-    expect(windfallResponse.summary.totalWindfallPnlUsd).toBe(0)
-    expect(windfallResponse.summary.totalPnlUsd).toBe(0)
-    expect(windfallResponse.summary.totalEconomicGainUsd).toBe(0)
+    expect(zeroBasisResponse.summary.totalRealizedPnlUsd).toBeCloseTo(240)
+    expect(zeroBasisResponse.summary.totalPnlUsd).toBeCloseTo(240)
+    expect(zeroBasisResponse.summary.totalEconomicGainUsd).toBeCloseTo(240)
+
+    expect(receiptPriceResponse.summary.totalRealizedPnlUsd).toBeCloseTo(40)
+    expect(receiptPriceResponse.summary.totalPnlUsd).toBeCloseTo(40)
+    expect(receiptPriceResponse.summary.totalEconomicGainUsd).toBeCloseTo(40)
+
+    expect(windfallResponse.summary.totalWindfallPnlUsd).toBeCloseTo(200)
+    expect(windfallResponse.summary.totalRealizedPnlUsd).toBeCloseTo(40)
+    expect(windfallResponse.summary.totalPnlUsd).toBeCloseTo(40)
+    expect(windfallResponse.summary.totalEconomicGainUsd).toBeCloseTo(240)
+  })
+
+  it('keeps transfer-only exits after the shares leave the address', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+
+    const response = await getSingleVaultResponse(
+      createTransferOnlyExitContext(),
+      'zero_basis',
+      undefined,
+      'address_only'
+    )
+
+    expect(response.summary.totalVaults).toBe(1)
+    expect(response.summary.totalCurrentValueUsd).toBe(0)
+    expect(response.summary.totalRealizedPnlUsd).toBeCloseTo(240)
+    expect(response.vaults[0]?.eventCounts.externalTransfersOut).toBe(1)
+  })
+
+  it('realizes known external transfer-outs at transfer-time fair value', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(300_000)
+
+    const response = await getSingleVaultDrilldownResponse(
+      {
+        addressEvents: {
+          deposits: [
+            {
+              id: 'known-deposit',
+              vaultAddress: VAULT,
+              chainId: 1,
+              blockNumber: 1,
+              blockTimestamp: 100,
+              logIndex: 1,
+              transactionHash: '0xknown-deposit',
+              transactionFrom: USER,
+              owner: USER,
+              sender: USER,
+              assets: '100000000',
+              shares: '100000000'
+            }
+          ],
+          withdrawals: [],
+          transfersIn: [],
+          transfersOut: [
+            {
+              id: 'known-transfer-out',
+              vaultAddress: VAULT,
+              chainId: 1,
+              blockNumber: 2,
+              blockTimestamp: 200,
+              logIndex: 1,
+              transactionHash: '0xknown-transfer-out',
+              transactionFrom: USER,
+              sender: USER,
+              receiver: ROUTER,
+              value: '100000000'
+            }
+          ]
+        },
+        transactionEvents: {
+          deposits: [],
+          withdrawals: [],
+          transfers: []
+        }
+      },
+      undefined,
+      undefined,
+      'address_only'
+    )
+    const vault = response.vaults[0]
+
+    expect(response.summary.totalCurrentValueUsd).toBe(0)
+    expect(response.summary.totalRealizedPnlUsd).toBeCloseTo(40)
+    expect(response.summary.totalPnlUsd).toBeCloseTo(40)
+    expect(vault.realizedEntries).toHaveLength(1)
+    expect(vault.realizedEntries[0]?.source).toBe('transfer_out')
+    expect(vault.realizedEntries[0]?.proceedsShares).toBe('100000000')
+    expect(vault.realizedEntries[0]?.proceedsUnderlying).toBeCloseTo(120)
+    expect(vault.realizedEntries[0]?.basisUnderlying).toBeCloseTo(100)
+    expect(vault.realizedEntries[0]?.pnlUsd).toBeCloseTo(40)
   })
 
   it('counts underlying token price appreciation for known-basis deposits in usd pnl', async () => {

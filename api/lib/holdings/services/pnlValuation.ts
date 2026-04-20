@@ -2,7 +2,7 @@ import type { VaultMetadata } from '../types'
 import { getPriceAtTimestamp } from './defillama'
 import type { HoldingsPnlEventScope, VaultVersion } from './graphql'
 import { getPPS } from './kong'
-import { formatAmount, sumShares } from './pnlShared'
+import { estimateAssetsFromShares, formatAmount, sumShares } from './pnlShared'
 import type {
   FamilyPnlLedger,
   HoldingsPnLCategoryBreakdown,
@@ -155,6 +155,33 @@ function getTokenPriceForTimestamp(
     : getPriceAtTimestamp(tokenPriceMap, priceTimestamp)
 }
 
+function getPricePerShareForTimestamp(
+  ppsMap: Map<number, number> | undefined,
+  timestamp: number,
+  fallbackPricePerShare: number
+): number {
+  return ppsMap ? (getPPS(ppsMap, timestamp) ?? fallbackPricePerShare) : fallbackPricePerShare
+}
+
+function getUnknownWithdrawalProceedsAssets(
+  entry: FamilyPnlLedger['unknownWithdrawalEntries'][number],
+  shareDecimals: number,
+  assetDecimals: number,
+  ppsMap: Map<number, number> | undefined,
+  fallbackPricePerShare: number
+): bigint {
+  if (entry.proceedsShares === undefined) {
+    return entry.proceedsAssets
+  }
+
+  return estimateAssetsFromShares(
+    entry.proceedsShares,
+    shareDecimals,
+    assetDecimals,
+    getPricePerShareForTimestamp(ppsMap, entry.timestamp, fallbackPricePerShare)
+  )
+}
+
 // Missing metadata is a hard stop for valuation, but we still surface the ledger so the caller
 // can see that shares exist and that the accounting path reached this family.
 export function createMissingMetadataPnlVault(
@@ -263,7 +290,18 @@ export function applyUnknownTransferInModeAdjustment(args: {
   }
 
   const unknownRealizedProceedsUnderlying = vault.unknownWithdrawalEntries.reduce(
-    (total, entry) => total + formatAmount(entry.proceedsAssets, metadata.token.decimals),
+    (total, entry) =>
+      total +
+      formatAmount(
+        getUnknownWithdrawalProceedsAssets(
+          entry,
+          metadata.decimals,
+          metadata.token.decimals,
+          ppsMap,
+          resolvedPricePerShare
+        ),
+        metadata.token.decimals
+      ),
     0
   )
   const unknownRealizedProceedsUsd = vault.unknownWithdrawalEntries.reduce((total, entry) => {
@@ -273,7 +311,14 @@ export function applyUnknownTransferInModeAdjustment(args: {
       tokenPrice,
       normalizePriceTimestamp
     )
-    return total + formatAmount(entry.proceedsAssets, metadata.token.decimals) * realizedTokenPrice
+    const proceedsAssets = getUnknownWithdrawalProceedsAssets(
+      entry,
+      metadata.decimals,
+      metadata.token.decimals,
+      ppsMap,
+      resolvedPricePerShare
+    )
+    return total + formatAmount(proceedsAssets, metadata.token.decimals) * realizedTokenPrice
   }, 0)
 
   if (unknownTransferInPnlMode === 'zero_basis') {

@@ -17,8 +17,10 @@ export type TLotSummary = {
 }
 
 export type TRealizedEntry = {
+  source?: 'withdrawal' | 'transfer_out'
   timestamp: number
   proceedsAssets: bigint
+  proceedsShares?: bigint
   basisAssets: bigint
   pnlAssets: bigint
   consumedLots: TLot[]
@@ -38,9 +40,11 @@ export type TRewardTransferInEntry = {
 }
 
 export type TUnknownWithdrawalEntry = {
+  source?: 'withdrawal' | 'transfer_out'
   timestamp: number
   shares: bigint
   proceedsAssets: bigint
+  proceedsShares?: bigint
   consumedLots: TLot[]
 }
 
@@ -263,7 +267,10 @@ export type THoldingsPnlLot = {
 }
 
 export type THoldingsPnlRealizedEntry = {
+  source?: 'withdrawal' | 'transfer_out'
   timestamp: number
+  proceedsShares?: string
+  proceedsSharesFormatted?: number
   proceedsAssets: string
   proceedsUnderlying: number
   proceedsUsd: number
@@ -300,9 +307,12 @@ export type THoldingsPnlRewardTransferInEntry = {
 }
 
 export type THoldingsPnlUnknownWithdrawalEntry = {
+  source?: 'withdrawal' | 'transfer_out'
   timestamp: number
   shares: string
   sharesFormatted: number
+  proceedsShares?: string
+  proceedsSharesFormatted?: number
   proceedsAssets: string
   proceedsUnderlying: number
   proceedsUsd: number

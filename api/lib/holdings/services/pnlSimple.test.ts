@@ -65,18 +65,21 @@ function materializeVault(args: {
   priceData: Map<string, Map<number, number>>
   currentTimestamp?: number
 }): HoldingsPnLSimpleVault {
+  const currentTimestamp = args.currentTimestamp ?? 300
   const ledgers = buildProtocolReturnLedgers({
     events: args.events,
     userAddress: USER,
     metadata,
     ppsData: args.ppsData,
-    priceData: args.priceData
+    priceData: args.priceData,
+    currentTimestamp
   })
   return materializeProtocolReturnVaults({
     ledgers,
     metadata,
     ppsData: args.ppsData,
-    currentTimestamp: args.currentTimestamp ?? 300
+    priceData: args.priceData,
+    currentTimestamp
   })[0]!
 }
 
@@ -145,7 +148,13 @@ describe('pnl simple protocol return', () => {
     expect(vault.growthUnderlying).toBeCloseTo(10)
     expect(vault.baselineWeightUsd).toBe(200)
     expect(vault.growthWeightUsd).toBeCloseTo(20)
+    expect(vault.protocolReturnUsd).toBeCloseTo(20)
     expect(vault.protocolReturnPct).toBeCloseTo(10)
+    expect(vault.currentValueUsd).toBeCloseTo(220)
+    expect(vault.estimatedBasisUsd).toBe(200)
+    expect(vault.realizedPricePnlUsd).toBe(0)
+    expect(vault.unrealizedPricePnlUsd).toBeCloseTo(20)
+    expect(vault.priceBasedPnlUsd).toBeCloseTo(20)
   })
 
   it('measures realized withdrawal growth without current asset repricing', () => {
@@ -178,6 +187,10 @@ describe('pnl simple protocol return', () => {
     expect(vault.realizedGrowthUnderlying).toBe(10)
     expect(vault.unrealizedGrowthUnderlying).toBe(0)
     expect(vault.growthWeightUsd).toBe(20)
+    expect(vault.realizedExitValueUsd).toBe(220)
+    expect(vault.realizedPricePnlUsd).toBe(20)
+    expect(vault.unrealizedPricePnlUsd).toBe(0)
+    expect(vault.priceBasedPnlUsd).toBe(20)
     expect(vault.protocolReturnPct).toBe(10)
   })
 
@@ -220,6 +233,80 @@ describe('pnl simple protocol return', () => {
     expect(vault.realizedGrowthUnderlying).toBeCloseTo(20)
     expect(vault.baselineWeightUsd).toBe(300)
     expect(vault.growthWeightUsd).toBeCloseTo(60)
+    expect(vault.realizedExitValueUsd).toBeCloseTo(360)
+    expect(vault.realizedPricePnlUsd).toBeCloseTo(60)
+    expect(vault.priceBasedPnlUsd).toBeCloseTo(60)
     expect(vault.protocolReturnPct).toBeCloseTo(20)
+  })
+
+  it('includes asset repricing in realized price pnl while protocol return stays PPS-based', () => {
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit',
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'withdrawal',
+          blockTimestamp: 200,
+          logIndex: 1,
+          shares: 100n * ONE,
+          assets: 110n * ONE,
+          owner: USER
+        })
+      ],
+      ppsData: new Map([[VAULT_KEY, new Map([[300, 1.1]])]]),
+      priceData: new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [100, 2],
+            [200, 3]
+          ])
+        ]
+      ])
+    })
+
+    expect(vault.protocolReturnUsd).toBe(20)
+    expect(vault.realizedExitValueUsd).toBe(330)
+    expect(vault.realizedBasisUsd).toBe(200)
+    expect(vault.realizedPricePnlUsd).toBe(130)
+    expect(vault.priceBasedPnlUsd).toBe(130)
+  })
+
+  it('includes current asset repricing in unrealized price pnl', () => {
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit',
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        })
+      ],
+      ppsData: new Map([[VAULT_KEY, new Map([[300, 1.1]])]]),
+      priceData: new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [100, 2],
+            [300, 3]
+          ])
+        ]
+      ])
+    })
+
+    expect(vault.protocolReturnUsd).toBeCloseTo(20)
+    expect(vault.currentValueUsd).toBeCloseTo(330)
+    expect(vault.unrealizedBasisUsd).toBe(200)
+    expect(vault.unrealizedPricePnlUsd).toBeCloseTo(130)
+    expect(vault.priceBasedPnlUsd).toBeCloseTo(130)
   })
 })

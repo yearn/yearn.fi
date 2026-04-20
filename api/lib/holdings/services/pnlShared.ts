@@ -1,4 +1,4 @@
-import { formatUnits } from 'viem'
+import { formatUnits, parseUnits } from 'viem'
 import type { TLot } from './pnlTypes'
 
 export const ZERO = 0n
@@ -69,6 +69,21 @@ export function formatAmount(value: bigint, decimals: number): number {
   const absoluteValue = value < ZERO ? -value : value
   const sign = value < ZERO ? -1 : 1
   return sign * parseFloat(formatUnits(absoluteValue, decimals))
+}
+
+export function estimateAssetsFromShares(
+  shares: bigint,
+  shareDecimals: number,
+  assetDecimals: number,
+  pricePerShare: number
+): bigint {
+  const assets = formatAmount(shares, shareDecimals) * pricePerShare
+
+  if (!Number.isFinite(assets)) {
+    return ZERO
+  }
+
+  return parseUnits(assets.toFixed(assetDecimals), assetDecimals)
 }
 
 export function sumShares(lots: TLot[]): bigint {

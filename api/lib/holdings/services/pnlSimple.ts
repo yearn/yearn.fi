@@ -1,7 +1,12 @@
 import { formatUnits } from 'viem'
 import type { VaultMetadata } from '../types'
 import { debugError, debugLog } from './debug'
-import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
+import {
+  fetchHistoricalPricesForTokenTimestamps,
+  getChainPrefix,
+  getPriceAtTimestamp,
+  type THistoricalPriceRequest
+} from './defillama'
 import {
   fetchUserEvents,
   type HoldingsEventFetchType,
@@ -14,20 +19,19 @@ import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
-type TProtocolReturnIssue = 'missing_metadata' | 'missing_pps' | 'missing_receipt_price' | 'unmatched_exit'
+type TProtocolReturnIssue = 'missing_metadata' | 'missing_pps' | 'missing_token_price' | 'unmatched_exit'
 
 type TProtocolReturnReceiptKind = 'deposit' | 'transfer_in'
 type TProtocolReturnExitKind = 'withdrawal' | 'transfer_out'
 
 const RECEIPT_PRICE_BUCKET_SECONDS = 24 * 60 * 60
-const RECEIPT_PRICE_FETCH_CONCURRENCY = 4
 
 type TProtocolReturnLot = {
   shares: bigint
   baselineUnderlying: number
+  basisUsd: number
   receiptTimestamp: number
   receiptPriceUsd: number
-  receiptPriceMissing: boolean
   receiptKind: TProtocolReturnReceiptKind
   transactionHash: string
 }
@@ -35,9 +39,9 @@ type TProtocolReturnLot = {
 type TProtocolReturnConsumedLot = {
   shares: bigint
   baselineUnderlying: number
+  basisUsd: number
   receiptTimestamp: number
   receiptPriceUsd: number
-  receiptPriceMissing: boolean
 }
 
 type TProtocolReturnLedger = {
@@ -49,6 +53,9 @@ type TProtocolReturnLedger = {
   realizedGrowthUnderlying: number
   realizedBaselineWeightUsd: number
   realizedGrowthWeightUsd: number
+  realizedBasisUsd: number
+  realizedExitValueUsd: number
+  realizedPricePnlUsd: number
   unmatchedExitShares: bigint
   unmatchedExitCount: number
   receiptCount: number
@@ -58,16 +65,12 @@ type TProtocolReturnLedger = {
   transfersIn: number
   transfersOut: number
   missingPps: boolean
-  missingReceiptPrice: boolean
+  missingTokenPrice: boolean
 }
 
-export type TSimpleReceiptPriceRequest = {
-  chainId: number
-  address: string
-  timestamps: number[]
-}
+export type TSimpleReceiptPriceRequest = THistoricalPriceRequest
 
-export type THoldingsPnLSimpleStatus = 'ok' | 'missing_metadata' | 'missing_pps' | 'missing_receipt_price' | 'partial'
+export type THoldingsPnLSimpleStatus = 'ok' | 'missing_metadata' | 'missing_pps' | 'missing_token_price' | 'partial'
 
 export interface HoldingsPnLSimpleVault {
   chainId: number
@@ -88,7 +91,16 @@ export interface HoldingsPnLSimpleVault {
   growthWeightUsd: number
   realizedGrowthWeightUsd: number
   unrealizedGrowthWeightUsd: number
+  protocolReturnUsd: number
   protocolReturnPct: number | null
+  currentValueUsd: number
+  estimatedBasisUsd: number
+  realizedBasisUsd: number
+  unrealizedBasisUsd: number
+  realizedExitValueUsd: number
+  realizedPricePnlUsd: number
+  unrealizedPricePnlUsd: number
+  priceBasedPnlUsd: number
   receiptCount: number
   exitCount: number
   deposits: number
@@ -117,7 +129,14 @@ export interface HoldingsPnLSimpleResponse {
     growthWeightUsd: number
     realizedGrowthWeightUsd: number
     unrealizedGrowthWeightUsd: number
+    protocolReturnUsd: number
     protocolReturnPct: number | null
+    totalCurrentValueUsd: number
+    estimatedBasisUsd: number
+    realizedExitValueUsd: number
+    realizedPricePnlUsd: number
+    unrealizedPricePnlUsd: number
+    priceBasedPnlUsd: number
     isComplete: boolean
   }
   vaults: HoldingsPnLSimpleVault[]
@@ -133,6 +152,9 @@ function emptyLedger(chainId: number, vaultAddress: string): TProtocolReturnLedg
     realizedGrowthUnderlying: 0,
     realizedBaselineWeightUsd: 0,
     realizedGrowthWeightUsd: 0,
+    realizedBasisUsd: 0,
+    realizedExitValueUsd: 0,
+    realizedPricePnlUsd: 0,
     unmatchedExitShares: ZERO,
     unmatchedExitCount: 0,
     receiptCount: 0,
@@ -142,7 +164,7 @@ function emptyLedger(chainId: number, vaultAddress: string): TProtocolReturnLedg
     transfersIn: 0,
     transfersOut: 0,
     missingPps: false,
-    missingReceiptPrice: false
+    missingTokenPrice: false
   }
 }
 
@@ -199,12 +221,6 @@ function tokenPriceMapKey(metadata: VaultMetadata): string {
   return `${getChainPrefix(metadata.chainId)}:${metadata.token.address.toLowerCase()}`
 }
 
-function chunkItems<T>(items: T[], chunkSize: number): T[][] {
-  return Array.from({ length: Math.ceil(items.length / chunkSize) }, (_value, index) =>
-    items.slice(index * chunkSize, index * chunkSize + chunkSize)
-  )
-}
-
 function getReceiptPriceBucketTimestamps(timestamp: number, currentTimestamp: number): number[] {
   const dayStart = Math.floor(timestamp / RECEIPT_PRICE_BUCKET_SECONDS) * RECEIPT_PRICE_BUCKET_SECONDS
   const nextDayStart = dayStart + RECEIPT_PRICE_BUCKET_SECONDS
@@ -216,6 +232,54 @@ function isReceiptEvent(event: TRawPnlEvent, userAddress: string): boolean {
   return event.kind === 'deposit' || (event.kind === 'transfer' && event.receiver === userAddress)
 }
 
+function isExitEvent(event: TRawPnlEvent, userAddress: string): boolean {
+  return event.kind === 'withdrawal' || (event.kind === 'transfer' && event.sender === userAddress)
+}
+
+type TPriceRequestDraft = {
+  chainId: number
+  address: string
+  timestamps: Set<number>
+  uncachedTimestamps: Set<number>
+}
+
+function addTokenPriceRequest(
+  requests: Map<string, TPriceRequestDraft>,
+  metadata: VaultMetadata,
+  timestamps: number[],
+  uncachedTimestamps: number[] = []
+): void {
+  const tokenKey = tokenPriceMapKey(metadata)
+  const request = requests.get(tokenKey) ?? {
+    chainId: metadata.chainId,
+    address: metadata.token.address,
+    timestamps: new Set<number>(),
+    uncachedTimestamps: new Set<number>()
+  }
+
+  timestamps.forEach((timestamp) => {
+    request.timestamps.add(timestamp)
+  })
+  uncachedTimestamps.forEach((timestamp) => {
+    request.timestamps.add(timestamp)
+    request.uncachedTimestamps.add(timestamp)
+  })
+  requests.set(tokenKey, request)
+}
+
+function materializeTokenPriceRequests(requests: Map<string, TPriceRequestDraft>): TSimpleReceiptPriceRequest[] {
+  return Array.from(requests.values()).map((request) => {
+    const uncachedTimestamps = Array.from(request.uncachedTimestamps).sort((a, b) => a - b)
+
+    return {
+      chainId: request.chainId,
+      address: request.address,
+      timestamps: Array.from(request.timestamps).sort((a, b) => a - b),
+      ...(uncachedTimestamps.length > 0 ? { uncachedTimestamps } : {})
+    }
+  })
+}
+
 export function buildReceiptPriceRequests(args: {
   events: TRawPnlEvent[]
   metadata: Map<string, VaultMetadata>
@@ -223,108 +287,101 @@ export function buildReceiptPriceRequests(args: {
   currentTimestamp: number
 }): TSimpleReceiptPriceRequest[] {
   const userAddress = lowerCaseAddress(args.userAddress)
-  return Array.from(
-    args.events
-      .filter((event) => isReceiptEvent(event, userAddress))
-      .reduce<Map<string, { chainId: number; address: string; timestamps: Set<number> }>>((requests, event) => {
-        const metadata = args.metadata.get(toVaultKey(event.chainId, event.familyVaultAddress))
+  const requests = args.events
+    .filter((event) => isReceiptEvent(event, userAddress))
+    .reduce<Map<string, TPriceRequestDraft>>((priceRequests, event) => {
+      const metadata = args.metadata.get(toVaultKey(event.chainId, event.familyVaultAddress))
 
-        if (!metadata) {
-          return requests
-        }
+      if (!metadata) {
+        return priceRequests
+      }
 
-        const tokenKey = tokenPriceMapKey(metadata)
-        const request = requests.get(tokenKey) ?? {
-          chainId: metadata.chainId,
-          address: metadata.token.address,
-          timestamps: new Set<number>()
-        }
+      addTokenPriceRequest(
+        priceRequests,
+        metadata,
+        getReceiptPriceBucketTimestamps(event.blockTimestamp, args.currentTimestamp)
+      )
+      return priceRequests
+    }, new Map())
 
-        getReceiptPriceBucketTimestamps(event.blockTimestamp, args.currentTimestamp).forEach((timestamp) => {
-          request.timestamps.add(timestamp)
-        })
-        requests.set(tokenKey, request)
-        return requests
-      }, new Map())
-      .values()
-  ).map((request) => ({
-    chainId: request.chainId,
-    address: request.address,
-    timestamps: Array.from(request.timestamps).sort((a, b) => a - b)
-  }))
+  return materializeTokenPriceRequests(requests)
 }
 
-function countReceiptPricePoints(requests: TSimpleReceiptPriceRequest[]): number {
+function buildSimplePriceRequests(args: {
+  events: TRawPnlEvent[]
+  metadata: Map<string, VaultMetadata>
+  userAddress: string
+  currentTimestamp: number
+}): TSimpleReceiptPriceRequest[] {
+  const userAddress = lowerCaseAddress(args.userAddress)
+  const requests = args.events.reduce<Map<string, TPriceRequestDraft>>((priceRequests, event) => {
+    const metadata = args.metadata.get(toVaultKey(event.chainId, event.familyVaultAddress))
+
+    if (!metadata) {
+      return priceRequests
+    }
+
+    if (isReceiptEvent(event, userAddress) || isExitEvent(event, userAddress)) {
+      addTokenPriceRequest(
+        priceRequests,
+        metadata,
+        getReceiptPriceBucketTimestamps(event.blockTimestamp, args.currentTimestamp)
+      )
+    }
+
+    return priceRequests
+  }, new Map())
+
+  args.metadata.forEach((metadata) => {
+    addTokenPriceRequest(requests, metadata, [], [args.currentTimestamp])
+  })
+
+  return materializeTokenPriceRequests(requests)
+}
+
+function countTokenPricePoints(requests: TSimpleReceiptPriceRequest[]): number {
   return requests.reduce((total, request) => total + request.timestamps.length, 0)
 }
 
-function mergePriceData(priceMaps: Array<Map<string, Map<number, number>>>): Map<string, Map<number, number>> {
-  return priceMaps.reduce<Map<string, Map<number, number>>>((merged, priceMap) => {
-    priceMap.forEach((prices, tokenKey) => {
-      const existingPrices = merged.get(tokenKey) ?? new Map<number, number>()
-
-      prices.forEach((price, timestamp) => {
-        existingPrices.set(timestamp, price)
-      })
-
-      merged.set(tokenKey, existingPrices)
-    })
-
-    return merged
-  }, new Map())
-}
-
-async function fetchReceiptPriceRequestGroup(
-  requests: TSimpleReceiptPriceRequest[]
-): Promise<Array<Map<string, Map<number, number>>>> {
-  const results = await Promise.allSettled(
-    requests.map((request) =>
-      fetchHistoricalPrices([{ chainId: request.chainId, address: request.address }], request.timestamps)
-    )
-  )
-
-  return results.flatMap((result, index) => {
-    if (result.status === 'fulfilled') {
-      return [result.value]
-    }
-
-    const request = requests[index]
-    debugError('pnl-simple', 'receipt price fetch failed, continuing with missing receipt price', result.reason, {
-      chainId: request?.chainId ?? null,
-      address: request?.address ?? null,
-      timestamps: request?.timestamps.length ?? 0
-    })
-    return []
-  })
-}
-
-async function fetchReceiptPrices(requests: TSimpleReceiptPriceRequest[]): Promise<Map<string, Map<number, number>>> {
+async function fetchTokenPrices(requests: TSimpleReceiptPriceRequest[]): Promise<Map<string, Map<number, number>>> {
   if (requests.length === 0) {
     return new Map()
   }
 
-  const priceMaps = await chunkItems(requests, RECEIPT_PRICE_FETCH_CONCURRENCY).reduce<
-    Promise<Array<Map<string, Map<number, number>>>>
-  >(async (previousPromise, requestGroup) => {
-    const previous = await previousPromise
-    const current = await fetchReceiptPriceRequestGroup(requestGroup)
-    return previous.concat(current)
-  }, Promise.resolve([]))
-
-  return mergePriceData(priceMaps)
+  try {
+    return await fetchHistoricalPricesForTokenTimestamps(requests)
+  } catch (error) {
+    debugError('pnl-simple', 'token price request failed, continuing with missing token price', error, {
+      tokens: requests.length,
+      pricePoints: countTokenPricePoints(requests)
+    })
+    return new Map()
+  }
 }
 
-function getReceiptPriceUsd(
+function getTokenPriceUsd(
   metadata: VaultMetadata | undefined,
   priceData: Map<string, Map<number, number>>,
-  timestamp: number
+  timestamp: number,
+  currentTimestamp?: number
 ): number {
   if (!metadata) {
     return 0
   }
 
   const priceMap = priceData.get(tokenPriceMapKey(metadata))
-  return priceMap ? getPriceAtTimestamp(priceMap, timestamp) : 0
+  if (!priceMap) {
+    return 0
+  }
+
+  if (currentTimestamp !== undefined && timestamp !== currentTimestamp && priceMap.has(currentTimestamp)) {
+    const historicalPrices = new Map(
+      Array.from(priceMap.entries()).filter(([priceTimestamp]) => priceTimestamp !== currentTimestamp)
+    )
+    return getPriceAtTimestamp(historicalPrices, timestamp)
+  }
+
+  return getPriceAtTimestamp(priceMap, timestamp)
 }
 
 function getEventPps(ppsMap: Map<number, number> | undefined, timestamp: number): number | null {
@@ -353,9 +410,9 @@ function addReceipt(
       {
         shares: args.shares,
         baselineUnderlying: args.baselineUnderlying,
+        basisUsd: args.baselineUnderlying * args.receiptPriceUsd,
         receiptTimestamp: args.receiptTimestamp,
         receiptPriceUsd: args.receiptPriceUsd,
-        receiptPriceMissing: args.receiptPriceUsd <= 0,
         receiptKind: args.receiptKind,
         transactionHash: args.transactionHash
       }
@@ -364,7 +421,7 @@ function addReceipt(
     receiptCount: ledger.receiptCount + 1,
     deposits: ledger.deposits + (args.receiptKind === 'deposit' ? 1 : 0),
     transfersIn: ledger.transfersIn + (args.receiptKind === 'transfer_in' ? 1 : 0),
-    missingReceiptPrice: ledger.missingReceiptPrice || args.receiptPriceUsd <= 0
+    missingTokenPrice: ledger.missingTokenPrice || args.receiptPriceUsd <= 0
   }
 }
 
@@ -372,9 +429,9 @@ function splitLot(lot: TProtocolReturnLot, shares: bigint): TProtocolReturnConsu
   return {
     shares,
     baselineUnderlying: scaleNumber(lot.baselineUnderlying, shares, lot.shares),
+    basisUsd: scaleNumber(lot.basisUsd, shares, lot.shares),
     receiptTimestamp: lot.receiptTimestamp,
-    receiptPriceUsd: lot.receiptPriceUsd,
-    receiptPriceMissing: lot.receiptPriceMissing
+    receiptPriceUsd: lot.receiptPriceUsd
   }
 }
 
@@ -403,9 +460,9 @@ function consumeLots(
         state.consumedLots.push({
           shares: lot.shares,
           baselineUnderlying: lot.baselineUnderlying,
+          basisUsd: lot.basisUsd,
           receiptTimestamp: lot.receiptTimestamp,
-          receiptPriceUsd: lot.receiptPriceUsd,
-          receiptPriceMissing: lot.receiptPriceMissing
+          receiptPriceUsd: lot.receiptPriceUsd
         })
         state.consumedShares += lot.shares
         return state
@@ -416,7 +473,8 @@ function consumeLots(
       const remainingLot: TProtocolReturnLot = {
         ...lot,
         shares: remainingShares,
-        baselineUnderlying: scaleNumber(lot.baselineUnderlying, remainingShares, lot.shares)
+        baselineUnderlying: scaleNumber(lot.baselineUnderlying, remainingShares, lot.shares),
+        basisUsd: scaleNumber(lot.basisUsd, remainingShares, lot.shares)
       }
 
       state.sharesToConsume = ZERO
@@ -445,6 +503,7 @@ function addExit(
   args: {
     shares: bigint
     exitUnderlying: number
+    exitPriceUsd: number
     exitKind: TProtocolReturnExitKind
   }
 ): TProtocolReturnLedger {
@@ -459,11 +518,13 @@ function addExit(
     (total, lot) => total + lot.baselineUnderlying * lot.receiptPriceUsd,
     0
   )
+  const consumedBasisUsd = consumed.consumedLots.reduce((total, lot) => total + lot.basisUsd, 0)
   const consumedExitWeightUsd = consumed.consumedLots.reduce(
     (total, lot) =>
       total + scaleNumber(matchedExitUnderlying, lot.shares, consumed.consumedShares) * lot.receiptPriceUsd,
     0
   )
+  const matchedExitValueUsd = matchedExitUnderlying * args.exitPriceUsd
   const unmatchedExitShares = args.shares - consumed.consumedShares
 
   return {
@@ -473,11 +534,15 @@ function addExit(
     realizedGrowthUnderlying: ledger.realizedGrowthUnderlying + (matchedExitUnderlying - consumedBaselineUnderlying),
     realizedBaselineWeightUsd: ledger.realizedBaselineWeightUsd + consumedBaselineWeightUsd,
     realizedGrowthWeightUsd: ledger.realizedGrowthWeightUsd + (consumedExitWeightUsd - consumedBaselineWeightUsd),
+    realizedBasisUsd: ledger.realizedBasisUsd + consumedBasisUsd,
+    realizedExitValueUsd: ledger.realizedExitValueUsd + matchedExitValueUsd,
+    realizedPricePnlUsd: ledger.realizedPricePnlUsd + (matchedExitValueUsd - consumedBasisUsd),
     unmatchedExitShares: ledger.unmatchedExitShares + unmatchedExitShares,
     unmatchedExitCount: ledger.unmatchedExitCount + (unmatchedExitShares > ZERO ? 1 : 0),
     exitCount: ledger.exitCount + 1,
     withdrawals: ledger.withdrawals + (args.exitKind === 'withdrawal' ? 1 : 0),
-    transfersOut: ledger.transfersOut + (args.exitKind === 'transfer_out' ? 1 : 0)
+    transfersOut: ledger.transfersOut + (args.exitKind === 'transfer_out' ? 1 : 0),
+    missingTokenPrice: ledger.missingTokenPrice || args.exitPriceUsd <= 0
   }
 }
 
@@ -502,6 +567,7 @@ function processEvent(
     metadata: Map<string, VaultMetadata>
     ppsData: Map<string, Map<number, number>>
     priceData: Map<string, Map<number, number>>
+    currentTimestamp?: number
   }
 ): Map<string, TProtocolReturnLedger> {
   const vaultKey = toVaultKey(event.chainId, event.familyVaultAddress)
@@ -510,7 +576,7 @@ function processEvent(
   const shareDecimals = metadata?.decimals ?? 18
   const ppsMap = args.ppsData.get(vaultKey)
   const currentLedger = ledgers.get(vaultKey) ?? emptyLedger(event.chainId, event.familyVaultAddress)
-  const receiptPriceUsd = getReceiptPriceUsd(metadata, args.priceData, event.blockTimestamp)
+  const eventTokenPriceUsd = getTokenPriceUsd(metadata, args.priceData, event.blockTimestamp, args.currentTimestamp)
 
   if (event.kind === 'deposit') {
     ledgers.set(
@@ -519,7 +585,7 @@ function processEvent(
         shares: event.shares,
         baselineUnderlying: formatAmount(event.assets, assetDecimals),
         receiptTimestamp: event.blockTimestamp,
-        receiptPriceUsd,
+        receiptPriceUsd: eventTokenPriceUsd,
         receiptKind: 'deposit',
         transactionHash: event.transactionHash
       })
@@ -533,6 +599,7 @@ function processEvent(
       addExit(currentLedger, {
         shares: event.shares,
         exitUnderlying: formatAmount(event.assets, assetDecimals),
+        exitPriceUsd: eventTokenPriceUsd,
         exitKind: 'withdrawal'
       })
     )
@@ -552,7 +619,7 @@ function processEvent(
         shares: event.shares,
         baselineUnderlying: pps === null ? 0 : formatAmount(event.shares, shareDecimals) * pps,
         receiptTimestamp: event.blockTimestamp,
-        receiptPriceUsd,
+        receiptPriceUsd: eventTokenPriceUsd,
         receiptKind: 'transfer_in',
         transactionHash: event.transactionHash
       })
@@ -568,6 +635,7 @@ function processEvent(
       addExit(ledger, {
         shares: event.shares,
         exitUnderlying: pps === null ? 0 : formatAmount(event.shares, shareDecimals) * pps,
+        exitPriceUsd: eventTokenPriceUsd,
         exitKind: 'transfer_out'
       })
     )
@@ -583,6 +651,7 @@ export function buildProtocolReturnLedgers(args: {
   metadata: Map<string, VaultMetadata>
   ppsData: Map<string, Map<number, number>>
   priceData: Map<string, Map<number, number>>
+  currentTimestamp?: number
 }): Map<string, TProtocolReturnLedger> {
   const userAddress = lowerCaseAddress(args.userAddress)
   return sortEvents(args.events).reduce(
@@ -591,7 +660,8 @@ export function buildProtocolReturnLedgers(args: {
         userAddress,
         metadata: args.metadata,
         ppsData: args.ppsData,
-        priceData: args.priceData
+        priceData: args.priceData,
+        currentTimestamp: args.currentTimestamp
       }),
     new Map<string, TProtocolReturnLedger>()
   )
@@ -601,11 +671,15 @@ function ledgerIssues(args: {
   ledger: TProtocolReturnLedger
   metadata: VaultMetadata | undefined
   currentPps: number | null
+  currentTokenPriceUsd: number
+  currentShares: bigint
 }): TProtocolReturnIssue[] {
   return [
     ...(args.metadata ? [] : (['missing_metadata'] as const)),
     ...(args.ledger.missingPps || args.currentPps === null ? (['missing_pps'] as const) : []),
-    ...(args.ledger.missingReceiptPrice ? (['missing_receipt_price'] as const) : []),
+    ...(args.ledger.missingTokenPrice || (args.currentShares > ZERO && args.currentTokenPriceUsd <= 0)
+      ? (['missing_token_price'] as const)
+      : []),
     ...(args.ledger.unmatchedExitShares > ZERO ? (['unmatched_exit'] as const) : [])
   ]
 }
@@ -619,8 +693,8 @@ function vaultStatus(issues: TProtocolReturnIssue[]): THoldingsPnLSimpleStatus {
     return 'missing_pps'
   }
 
-  if (issues.includes('missing_receipt_price')) {
-    return 'missing_receipt_price'
+  if (issues.includes('missing_token_price')) {
+    return 'missing_token_price'
   }
 
   return issues.includes('unmatched_exit') ? 'partial' : 'ok'
@@ -630,6 +704,7 @@ export function materializeProtocolReturnVaults(args: {
   ledgers: Map<string, TProtocolReturnLedger>
   metadata: Map<string, VaultMetadata>
   ppsData: Map<string, Map<number, number>>
+  priceData: Map<string, Map<number, number>>
   currentTimestamp: number
 }): HoldingsPnLSimpleVault[] {
   return Array.from(args.ledgers.values()).map((ledger) => {
@@ -641,11 +716,14 @@ export function materializeProtocolReturnVaults(args: {
     const currentShares = ledger.lots.reduce((total, lot) => total + lot.shares, ZERO)
     const sharesFormatted = formatAmount(currentShares, shareDecimals)
     const currentUnderlying = currentPps === null ? 0 : sharesFormatted * currentPps
+    const currentTokenPriceUsd = getTokenPriceUsd(metadata, args.priceData, args.currentTimestamp)
+    const currentValueUsd = currentUnderlying * currentTokenPriceUsd
     const unrealizedBaselineUnderlying = ledger.lots.reduce((total, lot) => total + lot.baselineUnderlying, 0)
     const unrealizedBaselineWeightUsd = ledger.lots.reduce(
       (total, lot) => total + lot.baselineUnderlying * lot.receiptPriceUsd,
       0
     )
+    const unrealizedBasisUsd = ledger.lots.reduce((total, lot) => total + lot.basisUsd, 0)
     const currentWeightUsd = ledger.lots.reduce(
       (total, lot) => total + scaleNumber(currentUnderlying, lot.shares, currentShares) * lot.receiptPriceUsd,
       0
@@ -654,7 +732,9 @@ export function materializeProtocolReturnVaults(args: {
     const unrealizedGrowthWeightUsd = currentWeightUsd - unrealizedBaselineWeightUsd
     const baselineWeightUsd = ledger.realizedBaselineWeightUsd + unrealizedBaselineWeightUsd
     const growthWeightUsd = ledger.realizedGrowthWeightUsd + unrealizedGrowthWeightUsd
-    const issues = ledgerIssues({ ledger, metadata, currentPps })
+    const unrealizedPricePnlUsd = currentValueUsd - unrealizedBasisUsd
+    const priceBasedPnlUsd = ledger.realizedPricePnlUsd + unrealizedPricePnlUsd
+    const issues = ledgerIssues({ ledger, metadata, currentPps, currentTokenPriceUsd, currentShares })
     const status = vaultStatus(issues)
 
     return {
@@ -676,7 +756,16 @@ export function materializeProtocolReturnVaults(args: {
       growthWeightUsd,
       realizedGrowthWeightUsd: ledger.realizedGrowthWeightUsd,
       unrealizedGrowthWeightUsd,
+      protocolReturnUsd: growthWeightUsd,
       protocolReturnPct: protocolReturnPct(growthWeightUsd, baselineWeightUsd),
+      currentValueUsd,
+      estimatedBasisUsd: ledger.realizedBasisUsd + unrealizedBasisUsd,
+      realizedBasisUsd: ledger.realizedBasisUsd,
+      unrealizedBasisUsd,
+      realizedExitValueUsd: ledger.realizedExitValueUsd,
+      realizedPricePnlUsd: ledger.realizedPricePnlUsd,
+      unrealizedPricePnlUsd,
+      priceBasedPnlUsd,
       receiptCount: ledger.receiptCount,
       exitCount: ledger.exitCount,
       deposits: ledger.deposits,
@@ -700,6 +789,12 @@ function buildSummary(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleRespon
   const growthWeightUsd = vaults.reduce((total, vault) => total + vault.growthWeightUsd, 0)
   const realizedGrowthWeightUsd = vaults.reduce((total, vault) => total + vault.realizedGrowthWeightUsd, 0)
   const unrealizedGrowthWeightUsd = vaults.reduce((total, vault) => total + vault.unrealizedGrowthWeightUsd, 0)
+  const totalCurrentValueUsd = vaults.reduce((total, vault) => total + vault.currentValueUsd, 0)
+  const estimatedBasisUsd = vaults.reduce((total, vault) => total + vault.estimatedBasisUsd, 0)
+  const realizedExitValueUsd = vaults.reduce((total, vault) => total + vault.realizedExitValueUsd, 0)
+  const realizedPricePnlUsd = vaults.reduce((total, vault) => total + vault.realizedPricePnlUsd, 0)
+  const unrealizedPricePnlUsd = vaults.reduce((total, vault) => total + vault.unrealizedPricePnlUsd, 0)
+  const priceBasedPnlUsd = vaults.reduce((total, vault) => total + vault.priceBasedPnlUsd, 0)
   const completeVaults = vaults.filter((vault) => vault.status === 'ok').length
   const partialVaults = vaults.length - completeVaults
 
@@ -711,7 +806,14 @@ function buildSummary(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleRespon
     growthWeightUsd,
     realizedGrowthWeightUsd,
     unrealizedGrowthWeightUsd,
+    protocolReturnUsd: growthWeightUsd,
     protocolReturnPct: protocolReturnPct(growthWeightUsd, baselineWeightUsd),
+    totalCurrentValueUsd,
+    estimatedBasisUsd,
+    realizedExitValueUsd,
+    realizedPricePnlUsd,
+    unrealizedPricePnlUsd,
+    priceBasedPnlUsd,
     isComplete: partialVaults === 0
   }
 }
@@ -769,37 +871,38 @@ export async function getHoldingsPnLSimple(
     }
   }
 
-  const receiptPriceRequests = buildReceiptPriceRequests({
+  const priceRequests = buildSimplePriceRequests({
     events: filteredEvents,
     metadata: vaultMetadata,
     userAddress,
     currentTimestamp
   })
-  const uniqueReceiptPriceTimestamps = new Set(receiptPriceRequests.flatMap((request) => request.timestamps))
+  const uniquePriceTimestamps = new Set(priceRequests.flatMap((request) => request.timestamps))
 
-  debugLog('pnl-simple', 'prepared targeted receipt price requests', {
-    tokens: receiptPriceRequests.length,
-    uniqueTimestamps: uniqueReceiptPriceTimestamps.size,
-    pricePoints: countReceiptPricePoints(receiptPriceRequests),
-    bucketSeconds: RECEIPT_PRICE_BUCKET_SECONDS,
-    fetchConcurrency: RECEIPT_PRICE_FETCH_CONCURRENCY
+  debugLog('pnl-simple', 'prepared targeted token price requests', {
+    tokens: priceRequests.length,
+    uniqueTimestamps: uniquePriceTimestamps.size,
+    pricePoints: countTokenPricePoints(priceRequests),
+    bucketSeconds: RECEIPT_PRICE_BUCKET_SECONDS
   })
 
   const [ppsData, priceData] = await Promise.all([
     fetchMultipleVaultsPPS(filteredVaultIdentifiers),
-    fetchReceiptPrices(receiptPriceRequests)
+    fetchTokenPrices(priceRequests)
   ])
   const ledgers = buildProtocolReturnLedgers({
     events: filteredEvents,
     userAddress,
     metadata: vaultMetadata,
     ppsData,
-    priceData
+    priceData,
+    currentTimestamp
   })
   const vaults = materializeProtocolReturnVaults({
     ledgers,
     metadata: vaultMetadata,
     ppsData,
+    priceData,
     currentTimestamp
   }).sort((a, b) => b.baselineWeightUsd - a.baselineWeightUsd)
   const summary = buildSummary(vaults)
@@ -809,6 +912,7 @@ export async function getHoldingsPnLSimple(
     totalVaults: summary.totalVaults,
     baselineWeightUsd: summary.baselineWeightUsd,
     growthWeightUsd: summary.growthWeightUsd,
+    priceBasedPnlUsd: summary.priceBasedPnlUsd,
     protocolReturnPct: summary.protocolReturnPct,
     isComplete: summary.isComplete
   })

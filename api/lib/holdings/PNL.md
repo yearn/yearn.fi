@@ -80,18 +80,17 @@ Think in this order:
 5. Value remaining lots at current PPS and token price.
 6. Apply an unknown-transfer policy: `strict`, `zero_basis`, `receipt_price`, or `windfall`.
 
-## Simple Protocol Return
+## Simple Address-Scoped Performance
 
-`GET /api/holdings/pnl/simple` is a separate metric, not a faster version of the full accounting route.
+`GET /api/holdings/pnl/simple` is an address-scoped performance route, not a faster version of the full accounting route.
 
 It answers:
 
-> How much did Yearn increase the user’s withdrawable underlying amount while the user held vault shares?
+> What is the address-scoped fair-value USD PnL, and how much did Yearn increase the user’s withdrawable underlying amount while the user held vault shares?
 
 It does not answer:
 
-- What was the user’s accounting cost basis?
-- What was the mark-to-market USD PnL after the asset price moved?
+- What was the fully classified tax/accounting cost basis after transaction-scoped enrichment?
 - Was every router / migrator / reward transfer classified for accounting purposes?
 
 The simple route uses only address-scoped events:
@@ -107,6 +106,7 @@ For each receipt, the simple route records:
 
 - shares received
 - baseline underlying amount
+- receipt-time fair-value USD basis
 - receipt timestamp
 - receipt-time token price
 
@@ -119,11 +119,20 @@ For each exit, the route consumes receipt lots FIFO and compares the exit withdr
 
 Open lots compare current withdrawable underlying to their receipt baseline.
 
+Price-based PnL uses the same FIFO lots:
+
+```text
+realizedPricePnlUsd = exitValueUsd - consumedBasisUsd
+unrealizedPricePnlUsd = currentValueUsd - remainingBasisUsd
+priceBasedPnlUsd = realizedPricePnlUsd + unrealizedPricePnlUsd
+```
+
 The percentage is weighted across assets with receipt-time token price:
 
 ```text
 baselineWeightUsd = baselineUnderlying * receiptTokenPriceUsd
 growthWeightUsd = growthUnderlying * receiptTokenPriceUsd
+protocolReturnUsd = growthWeightUsd
 protocolReturnPct = growthWeightUsd / baselineWeightUsd * 100
 ```
 
