@@ -8,9 +8,24 @@ const portfolioHistorySimpleDataPointSchema = z.object({
 const portfolioProtocolReturnHistoryDataPointSchema = z.object({
   date: z.string(),
   growthWeightUsd: z.number(),
+  growthWeightEth: z.number().nullable(),
   protocolReturnPct: z.number().nullable(),
   annualizedProtocolReturnPct: z.number().nullable(),
   growthIndex: z.number().nullable()
+})
+
+const portfolioProtocolReturnHistorySummarySchema = z.object({
+  totalVaults: z.number(),
+  completeVaults: z.number(),
+  partialVaults: z.number(),
+  recommendedGrowthDisplay: z.enum(['usd', 'eth', 'index']),
+  recommendedGrowthDisplayReason: z.enum(['stable_dominant', 'eth_dominant', 'mixed']),
+  openBaselineCompositionUsd: z.object({
+    stable: z.number(),
+    ethFamily: z.number(),
+    other: z.number()
+  }),
+  isComplete: z.boolean()
 })
 
 const portfolioProtocolReturnHistoryFamilyPointSchema = z.object({
@@ -61,6 +76,7 @@ export const portfolioHistorySimpleResponseSchema = z.object({
 export const portfolioProtocolReturnHistoryResponseSchema = z.object({
   address: z.string(),
   timeframe: z.enum(['1y', 'all']).optional().default('1y'),
+  summary: portfolioProtocolReturnHistorySummarySchema,
   dataPoints: z.array(portfolioProtocolReturnHistoryDataPointSchema),
   familySeries: z.array(portfolioProtocolReturnHistoryFamilySeriesSchema).optional().default([])
 })
@@ -140,6 +156,7 @@ export const portfolioProtocolReturnResponseSchema = z.object({
 
 export type TPortfolioHistorySimpleResponse = z.infer<typeof portfolioHistorySimpleResponseSchema>
 export type TPortfolioProtocolReturnHistoryResponse = z.infer<typeof portfolioProtocolReturnHistoryResponseSchema>
+export type TPortfolioProtocolReturnHistorySummary = z.infer<typeof portfolioProtocolReturnHistorySummarySchema>
 export type TPortfolioBreakdownResponse = z.infer<typeof portfolioBreakdownResponseSchema>
 export type TPortfolioBreakdownVault = z.infer<typeof portfolioBreakdownVaultSchema>
 export type TPortfolioPnlResponse = z.infer<typeof portfolioPnlResponseSchema>
@@ -156,6 +173,7 @@ export type TPortfolioHistoryChartData = Array<{
 export type TPortfolioProtocolReturnHistoryChartData = Array<{
   date: string
   growthWeightUsd: number
+  growthWeightEth: number | null
   protocolReturnPct: number | null
   annualizedProtocolReturnPct: number | null
   growthIndex: number | null

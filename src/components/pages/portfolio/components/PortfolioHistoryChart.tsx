@@ -27,16 +27,20 @@ import type {
   TPortfolioHistoryChartData,
   TPortfolioHistoryDenomination,
   TPortfolioProtocolReturnHistoryChartData,
-  TPortfolioProtocolReturnHistoryFamilySeries
+  TPortfolioProtocolReturnHistoryFamilySeries,
+  TPortfolioProtocolReturnHistorySummary
 } from '../types/api'
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
-type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'return' | 'annualized' | 'index'
+type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'return' | 'annualized'
+type TGrowthDisplayMode = 'auto' | 'index' | 'usd' | 'eth'
+type TResolvedGrowthDisplayMode = Exclude<TGrowthDisplayMode, 'auto'>
 
 type TPortfolioHistoryChartProps = {
   balanceData: TPortfolioHistoryChartData | null
   protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
+  protocolReturnSummary: TPortfolioProtocolReturnHistorySummary | null
   protocolReturnFamilySeries: TPortfolioProtocolReturnHistoryFamilySeries
   denomination: TPortfolioHistoryDenomination
   onDenominationChange: (denomination: TPortfolioHistoryDenomination) => void
@@ -89,8 +93,13 @@ const CHART_TABS: Array<{ id: TPortfolioHistoryChartTab; label: string }> = [
   { id: 'balance', label: 'Balance' },
   { id: 'growth', label: 'Growth' },
   { id: 'return', label: 'Cumulative %' },
-  { id: 'annualized', label: 'Annualized %' },
-  { id: 'index', label: 'Growth Index' }
+  { id: 'annualized', label: 'Annualized %' }
+]
+const GROWTH_DISPLAY_MODES: Array<{ id: TGrowthDisplayMode; label: string }> = [
+  { id: 'auto', label: 'Auto' },
+  { id: 'index', label: 'Index' },
+  { id: 'usd', label: 'USD' },
+  { id: 'eth', label: 'ETH' }
 ]
 
 const INDEX_SERIES_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5'] as const
@@ -118,7 +127,30 @@ function formatBalanceValue(value: number, denomination: TPortfolioHistoryDenomi
   return formatUSD(value, 2, 2)
 }
 
-function formatGrowthValue(value: number): string {
+function formatEthValue(value: number): string {
+  const absoluteValue = Math.abs(value)
+  const formattedValue =
+    absoluteValue >= 100
+      ? absoluteValue.toFixed(2)
+      : absoluteValue >= 1
+        ? absoluteValue.toFixed(3)
+        : absoluteValue.toFixed(4)
+
+  return `${formattedValue} ETH`
+}
+
+function formatGrowthValue(value: number, mode: TResolvedGrowthDisplayMode): string {
+  if (mode === 'eth') {
+    const absolute = formatEthValue(value)
+    if (value > 0) {
+      return `+${absolute}`
+    }
+    if (value < 0) {
+      return `-${absolute}`
+    }
+    return absolute
+  }
+
   const absolute = formatUSD(Math.abs(value), 2, 2)
   if (value > 0) {
     return `+${absolute}`
@@ -142,6 +174,35 @@ function formatReturnValue(value: number): string {
 
 function formatIndexValue(value: number): string {
   return value >= 1000 ? value.toFixed(0) : value >= 100 ? value.toFixed(1) : value.toFixed(2)
+}
+
+function resolveGrowthDisplayMode(
+  selectedMode: TGrowthDisplayMode,
+  summary: TPortfolioProtocolReturnHistorySummary | null,
+  protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
+): TResolvedGrowthDisplayMode {
+  const recommendedMode = selectedMode === 'auto' ? (summary?.recommendedGrowthDisplay ?? 'index') : selectedMode
+  const hasEthSeries = Boolean(protocolReturnData?.some((point) => point.growthWeightEth !== null))
+
+  return recommendedMode === 'eth' && !hasEthSeries ? 'index' : recommendedMode
+}
+
+function getAutoGrowthDisplayExplanation(args: {
+  summary: TPortfolioProtocolReturnHistorySummary | null
+  resolvedMode: TResolvedGrowthDisplayMode
+}): string | null {
+  const summary = args.summary
+  if (!summary) {
+    return null
+  }
+
+  return summary.recommendedGrowthDisplayReason === 'stable_dominant'
+    ? 'Auto: stable-dominant portfolio, showing USD'
+    : summary.recommendedGrowthDisplayReason === 'eth_dominant'
+      ? args.resolvedMode === 'eth'
+        ? 'Auto: ETH-dominant portfolio, showing ETH'
+        : 'Auto: ETH-dominant portfolio, ETH history unavailable, showing Index'
+      : 'Auto: mixed portfolio, showing Index'
 }
 
 function buildIndexedFamilySeries(
@@ -243,10 +304,12 @@ function PortfolioHistoryTooltip({
   active,
   payload,
   activeTab,
-  denomination
+  denomination,
+  growthDisplayMode
 }: TPortfolioHistoryTooltipProps & {
   activeTab: TPortfolioHistoryChartTab
   denomination: TPortfolioHistoryDenomination
+  growthDisplayMode: TResolvedGrowthDisplayMode
 }): ReactElement | null {
   if (!active || !payload?.length) {
     return null
@@ -264,7 +327,7 @@ function PortfolioHistoryTooltip({
     activeTab === 'balance'
       ? formatBalanceValue(value, denomination)
       : activeTab === 'growth'
-        ? formatGrowthValue(value)
+        ? formatGrowthValue(value, growthDisplayMode)
         : formatReturnValue(value)
 
   return (
@@ -288,9 +351,16 @@ function PortfolioHistoryTooltip({
   )
 }
 
-function getChartDescription(activeTab: TPortfolioHistoryChartTab): string {
+function getChartDescription(
+  activeTab: TPortfolioHistoryChartTab,
+  growthDisplayMode: TResolvedGrowthDisplayMode
+): string {
   if (activeTab === 'growth') {
-    return 'Cumulative protocol growth earned while funds were held in your wallet.'
+    return growthDisplayMode === 'index'
+      ? 'Normalized protocol-return index. Each line starts at 100 at the beginning of the selected timeframe.'
+      : growthDisplayMode === 'eth'
+        ? 'Cumulative protocol growth earned while funds were held in your wallet, shown in receipt-time ETH equivalent.'
+        : 'Cumulative protocol growth earned while funds were held in your wallet, shown in receipt-time USD equivalent.'
   }
 
   if (activeTab === 'return') {
@@ -301,16 +371,12 @@ function getChartDescription(activeTab: TPortfolioHistoryChartTab): string {
     return 'Annualized protocol return based on time-weighted baseline exposure up to each point.'
   }
 
-  if (activeTab === 'index') {
-    return 'Normalized protocol-return index. Each line starts at 100 at the beginning of the selected timeframe.'
-  }
-
   return 'Daily settled portfolio value across your current Yearn activity.'
 }
 
-function getChartTitle(activeTab: TPortfolioHistoryChartTab): string {
+function getChartTitle(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: TResolvedGrowthDisplayMode): string {
   if (activeTab === 'growth') {
-    return 'Protocol Growth'
+    return growthDisplayMode === 'index' ? 'Growth Index' : 'Protocol Growth'
   }
 
   if (activeTab === 'return') {
@@ -321,16 +387,16 @@ function getChartTitle(activeTab: TPortfolioHistoryChartTab): string {
     return 'Annualized Return'
   }
 
-  if (activeTab === 'index') {
-    return 'Growth Index'
-  }
-
   return 'Holdings History'
 }
 
-function getEmptyMessage(activeTab: TPortfolioHistoryChartTab): string {
+function getEmptyMessage(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: TResolvedGrowthDisplayMode): string {
   if (activeTab === 'growth') {
-    return 'No protocol growth history available'
+    return growthDisplayMode === 'index'
+      ? 'No growth index history available'
+      : growthDisplayMode === 'eth'
+        ? 'No ETH-equivalent protocol growth history available'
+        : 'No protocol growth history available'
   }
 
   if (activeTab === 'return') {
@@ -341,16 +407,13 @@ function getEmptyMessage(activeTab: TPortfolioHistoryChartTab): string {
     return 'No annualized return history available'
   }
 
-  if (activeTab === 'index') {
-    return 'No growth index history available'
-  }
-
   return 'No holdings history available'
 }
 
 export function PortfolioHistoryChart({
   balanceData,
   protocolReturnData,
+  protocolReturnSummary,
   protocolReturnFamilySeries,
   denomination,
   onDenominationChange,
@@ -367,10 +430,20 @@ export function PortfolioHistoryChart({
 }: TPortfolioHistoryChartProps): ReactElement {
   const { allVaults } = useYearn()
   const [activeTab, setActiveTab] = useState<TPortfolioHistoryChartTab>('balance')
+  const [growthDisplayMode, setGrowthDisplayMode] = useState<TGrowthDisplayMode>('auto')
   const [hoveredBreakdownDate, setHoveredBreakdownDate] = useState<string | null>(null)
   const [selectedBreakdownDate, setSelectedBreakdownDate] = useState<string | null>(null)
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false)
   const gradientId = useId().replace(/:/g, '')
+  const resolvedGrowthDisplayMode = resolveGrowthDisplayMode(
+    growthDisplayMode,
+    protocolReturnSummary,
+    protocolReturnData
+  )
+  const autoGrowthDisplayExplanation =
+    growthDisplayMode === 'auto'
+      ? getAutoGrowthDisplayExplanation({ summary: protocolReturnSummary, resolvedMode: resolvedGrowthDisplayMode })
+      : null
 
   const sectionClassName = embedded
     ? 'flex h-full flex-col gap-3 bg-surface px-5 py-4 md:px-6 md:pb-0 md:pt-5'
@@ -386,7 +459,7 @@ export function PortfolioHistoryChart({
     return points.map((point) => ({ date: point.date, value: point.value }))
   }, [balanceData, timeframe])
 
-  const filteredGrowthData = useMemo<TChartPoint[]>(() => {
+  const filteredGrowthUsdData = useMemo<TChartPoint[]>(() => {
     if (!protocolReturnData) {
       return []
     }
@@ -400,6 +473,23 @@ export function PortfolioHistoryChart({
     return points.map((point) => ({
       date: point.date,
       value: point.growthWeightUsd
+    }))
+  }, [protocolReturnData, timeframe])
+
+  const filteredGrowthEthData = useMemo<TChartPoint[]>(() => {
+    if (!protocolReturnData) {
+      return []
+    }
+
+    const limit = getTimeframeLimit(timeframe)
+    const points =
+      !Number.isFinite(limit) || limit >= protocolReturnData.length
+        ? protocolReturnData
+        : protocolReturnData.slice(-limit)
+
+    return points.map((point) => ({
+      date: point.date,
+      value: point.growthWeightEth
     }))
   }, [protocolReturnData, timeframe])
 
@@ -448,13 +538,18 @@ export function PortfolioHistoryChart({
     activeTab === 'balance'
       ? filteredBalanceData
       : activeTab === 'growth'
-        ? filteredGrowthData
+        ? resolvedGrowthDisplayMode === 'eth'
+          ? filteredGrowthEthData
+          : resolvedGrowthDisplayMode === 'usd'
+            ? filteredGrowthUsdData
+            : []
         : activeTab === 'return'
           ? filteredReturnData
           : filteredAnnualizedReturnData
   const activeIsLoading = activeTab === 'balance' ? balanceIsLoading : protocolReturnIsLoading
   const activeIsEmpty = activeTab === 'balance' ? balanceIsEmpty : protocolReturnIsEmpty
   const activeError = activeTab === 'balance' ? balanceError : protocolReturnError
+  const activeHasRenderableValue = activeData.some((point) => point.value !== null)
   const tickSourceData = activeData
 
   const isShortTimeframe = timeframe === '30d'
@@ -489,6 +584,18 @@ export function PortfolioHistoryChart({
     }
 
     if (activeTab === 'growth') {
+      if (resolvedGrowthDisplayMode === 'eth') {
+        if (absoluteValue >= 1_000) {
+          return `${numericValue < 0 ? '-' : ''}${(absoluteValue / 1_000).toFixed(1)}k`
+        }
+
+        return absoluteValue >= 10
+          ? `${numericValue.toFixed(1)}`
+          : absoluteValue >= 1
+            ? `${numericValue.toFixed(2)}`
+            : `${numericValue.toFixed(3)}`
+      }
+
       if (absoluteValue >= 1_000_000) {
         return `${numericValue < 0 ? '-' : ''}$${(absoluteValue / 1_000_000).toFixed(1)}M`
       }
@@ -516,12 +623,14 @@ export function PortfolioHistoryChart({
               ? 'Total Value (ETH)'
               : 'Total Value (USD)'
             : activeTab === 'growth'
-              ? 'Protocol Growth (USD)'
+              ? resolvedGrowthDisplayMode === 'eth'
+                ? 'Protocol Growth (ETH)'
+                : 'Protocol Growth (USD)'
               : 'Protocol Return (%)',
         color: 'var(--chart-1)'
       }
     }
-  }, [activeTab, denomination])
+  }, [activeTab, denomination, resolvedGrowthDisplayMode])
 
   const exampleChartConfig = useMemo<ChartConfig>(() => {
     return {
@@ -584,8 +693,15 @@ export function PortfolioHistoryChart({
     <div className={'flex flex-col gap-2.5 md:gap-3'}>
       <div className={'flex items-start justify-between gap-3'}>
         <div className={'flex flex-col gap-0.5'}>
-          <h2 className={'text-xl font-semibold text-text-primary'}>{getChartTitle(activeTab)}</h2>
-          <p className={'text-xs text-text-secondary'}>{getChartDescription(activeTab)}</p>
+          <h2 className={'text-xl font-semibold text-text-primary'}>
+            {getChartTitle(activeTab, resolvedGrowthDisplayMode)}
+          </h2>
+          <p className={'text-xs text-text-secondary'}>{getChartDescription(activeTab, resolvedGrowthDisplayMode)}</p>
+          {activeTab === 'growth' && autoGrowthDisplayExplanation ? (
+            <p className={'text-[11px] font-medium uppercase tracking-[0.08em] text-text-tertiary'}>
+              {autoGrowthDisplayExplanation}
+            </p>
+          ) : null}
         </div>
         {activeTab === 'balance' ? (
           <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
@@ -604,6 +720,24 @@ export function PortfolioHistoryChart({
                 )}
               >
                 {nextDenomination.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        ) : activeTab === 'growth' ? (
+          <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
+            {GROWTH_DISPLAY_MODES.map((mode) => (
+              <button
+                key={mode.id}
+                type={'button'}
+                onClick={() => setGrowthDisplayMode(mode.id)}
+                className={cl(
+                  'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                  'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                  SELECTOR_BAR_STYLES.buttonBase,
+                  growthDisplayMode === mode.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
+                )}
+              >
+                {mode.label}
               </button>
             ))}
           </div>
@@ -764,18 +898,21 @@ export function PortfolioHistoryChart({
     )
   }
 
-  if (activeIsEmpty || activeData.length === 0) {
+  if (
+    (activeIsEmpty || activeData.length === 0 || !activeHasRenderableValue) &&
+    !(activeTab === 'growth' && resolvedGrowthDisplayMode === 'index')
+  ) {
     return (
       <section className={cl(sectionClassName, className)}>
         {renderHeader(true)}
         <div className={'flex min-h-[240px] items-center justify-center'}>
-          <p className={'text-base text-text-secondary'}>{getEmptyMessage(activeTab)}</p>
+          <p className={'text-base text-text-secondary'}>{getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}</p>
         </div>
       </section>
     )
   }
 
-  if (activeTab === 'index') {
+  if (activeTab === 'growth' && resolvedGrowthDisplayMode === 'index') {
     const indexedFamilySeries = buildIndexedFamilySeries(protocolReturnFamilySeries, timeframe, familyLabelByVaultKey)
     const limit = getTimeframeLimit(timeframe)
     const aggregatePoints =
@@ -803,7 +940,7 @@ export function PortfolioHistoryChart({
         <section className={cl(sectionClassName, className)}>
           {renderHeader(true)}
           <div className={'flex min-h-[240px] items-center justify-center'}>
-            <p className={'text-base text-text-secondary'}>{getEmptyMessage(activeTab)}</p>
+            <p className={'text-base text-text-secondary'}>{getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}</p>
           </div>
         </section>
       )
@@ -931,7 +1068,12 @@ export function PortfolioHistoryChart({
             <ChartTooltip
               cursor={{ stroke: 'var(--chart-cursor-line)', strokeWidth: 1 }}
               content={(props) => (
-                <PortfolioHistoryTooltip {...props} activeTab={activeTab} denomination={denomination} />
+                <PortfolioHistoryTooltip
+                  {...props}
+                  activeTab={activeTab}
+                  denomination={denomination}
+                  growthDisplayMode={resolvedGrowthDisplayMode}
+                />
               )}
             />
             <Area

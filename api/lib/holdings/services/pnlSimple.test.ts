@@ -302,6 +302,13 @@ describe('pnl simple protocol return', () => {
         ]
       ]),
       priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      ethPriceData: new Map([
+        [0, 2],
+        [100, 2],
+        [150, 2],
+        [200, 2],
+        [250, 2]
+      ]),
       timestamps: [100, 150, 200, 250]
     })
 
@@ -310,18 +317,22 @@ describe('pnl simple protocol return', () => {
       date: '1970-01-01',
       timestamp: 100,
       growthWeightUsd: 0,
+      growthWeightEth: 0,
       protocolReturnPct: 0,
       annualizedProtocolReturnPct: null,
       growthIndex: 100
     })
     expect(history[1]?.growthWeightUsd).toBeCloseTo(10)
+    expect(history[1]?.growthWeightEth).toBeCloseTo(5)
     expect(history[1]?.protocolReturnPct).toBeCloseTo(10)
     expect(history[1]?.annualizedProtocolReturnPct).not.toBeNull()
     expect(history[1]?.growthIndex).toBeCloseTo(110)
     expect(history[2]?.growthWeightUsd).toBeCloseTo(10)
+    expect(history[2]?.growthWeightEth).toBeCloseTo(5)
     expect(history[2]?.protocolReturnPct).toBeCloseTo(6.6666666667)
     expect(history[2]?.growthIndex).toBeCloseTo(110)
     expect(history[3]?.growthWeightUsd).toBeCloseTo(24.5454545455)
+    expect(history[3]?.growthWeightEth).toBeCloseTo(12.2727272727)
     expect(history[3]?.protocolReturnPct).toBeCloseTo(16.3636363636)
     expect(history[3]?.growthIndex).toBeCloseTo(120.6666666667)
   })
@@ -496,12 +507,22 @@ describe('pnl simple protocol return', () => {
         ]
       ]),
       priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      ethPriceData: new Map([
+        [0, 2],
+        [100, 2],
+        [150, 2],
+        [200, 2],
+        [250, 2]
+      ]),
       timestamps: [100, 150, 200, 250]
     })
 
     expect(history[1]?.growthWeightUsd).toBeCloseTo(10)
+    expect(history[1]?.growthWeightEth).toBeCloseTo(5)
     expect(history[2]?.growthWeightUsd).toBeCloseTo(10)
+    expect(history[2]?.growthWeightEth).toBeCloseTo(5)
     expect(history[3]?.growthWeightUsd).toBeCloseTo(20)
+    expect(history[3]?.growthWeightEth).toBeCloseTo(10)
     expect(history[2]?.protocolReturnPct).toBeCloseTo(10)
   })
 
@@ -739,13 +760,20 @@ describe('pnl simple protocol return', () => {
           ])
         ]
       ]),
+      ethPriceData: new Map([
+        [0, 2],
+        [200, 2],
+        [250, 2]
+      ]),
       timestamps: [200, 250]
     })
 
     expect(history[0]?.growthWeightUsd).toBeCloseTo(0)
+    expect(history[0]?.growthWeightEth).toBeCloseTo(0)
     expect(history[0]?.protocolReturnPct).toBeCloseTo(0)
     expect(history[0]?.growthIndex).toBeCloseTo(100)
     expect(history[1]?.growthWeightUsd).toBeCloseTo(10)
+    expect(history[1]?.growthWeightEth).toBeCloseTo(5)
     expect(history[1]?.protocolReturnPct).toBeCloseTo(9.0909090909)
     expect(history[1]?.growthIndex).toBeCloseTo(109.0909090909)
   })
