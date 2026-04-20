@@ -1069,6 +1069,7 @@ function PortfolioPage(): ReactElement {
   } = usePortfolioHistory(historyDenomination, historyFetchTimeframe)
   const {
     data: protocolReturnHistoryData,
+    familySeries: protocolReturnHistoryFamilySeries,
     isLoading: protocolReturnHistoryLoading,
     error: protocolReturnHistoryError,
     isEmpty: protocolReturnHistoryEmpty
@@ -1160,6 +1161,7 @@ function PortfolioPage(): ReactElement {
                   <PortfolioHistoryChart
                     balanceData={historyData}
                     protocolReturnData={protocolReturnHistoryData}
+                    protocolReturnFamilySeries={protocolReturnHistoryFamilySeries}
                     denomination={resolvedHistoryDenomination}
                     onDenominationChange={setHistoryDenomination}
                     timeframe={historyTimeframe}

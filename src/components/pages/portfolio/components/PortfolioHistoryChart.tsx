@@ -6,6 +6,7 @@ import {
   CHART_Y_AXIS_TICK_STYLE,
   CHART_Y_AXIS_WIDTH
 } from '@pages/vaults/components/detail/charts/chartLayout'
+import { getVaultAddress } from '@pages/vaults/domain/kongVaultSelectors'
 import {
   formatChartMonthYearLabel,
   formatChartTooltipDate,
@@ -14,8 +15,10 @@ import {
   getChartWeeklyTicks,
   getTimeframeLimit
 } from '@pages/vaults/utils/charts'
+import { useYearn } from '@shared/contexts/useYearn'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { cl, formatPercent, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
+import { getVaultName as getDisplayVaultName } from '@shared/utils/helpers'
 import type { ReactElement } from 'react'
 import { useId, useMemo, useState } from 'react'
 import { Link } from 'react-router'
@@ -23,16 +26,18 @@ import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts
 import type {
   TPortfolioHistoryChartData,
   TPortfolioHistoryDenomination,
-  TPortfolioProtocolReturnHistoryChartData
+  TPortfolioProtocolReturnHistoryChartData,
+  TPortfolioProtocolReturnHistoryFamilySeries
 } from '../types/api'
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
-type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'return'
+type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'return' | 'annualized' | 'index'
 
 type TPortfolioHistoryChartProps = {
   balanceData: TPortfolioHistoryChartData | null
   protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
+  protocolReturnFamilySeries: TPortfolioProtocolReturnHistoryFamilySeries
   denomination: TPortfolioHistoryDenomination
   onDenominationChange: (denomination: TPortfolioHistoryDenomination) => void
   timeframe: TPortfolioHistoryChartTimeframe
@@ -50,6 +55,19 @@ type TPortfolioHistoryChartProps = {
 type TChartPoint = {
   date: string
   value: number | null
+}
+
+type TIndexChartPoint = {
+  date: string
+  aggregate: number | null
+  [seriesKey: string]: string | number | null
+}
+
+type TIndexedFamilySeries = {
+  key: string
+  label: string
+  color: string
+  points: TChartPoint[]
 }
 
 type TPortfolioHistoryTooltipProps = {
@@ -70,8 +88,12 @@ type TActiveChartState = {
 const CHART_TABS: Array<{ id: TPortfolioHistoryChartTab; label: string }> = [
   { id: 'balance', label: 'Balance' },
   { id: 'growth', label: 'Growth' },
-  { id: 'return', label: '% Return' }
+  { id: 'return', label: 'Cumulative %' },
+  { id: 'annualized', label: 'Annualized %' },
+  { id: 'index', label: 'Growth Index' }
 ]
+
+const INDEX_SERIES_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5'] as const
 
 const EXAMPLE_PORTFOLIO_USD_DATA: TPortfolioHistoryChartData = [
   { date: '2025-05-01', value: 1800 },
@@ -116,6 +138,105 @@ function formatReturnValue(value: number): string {
     return `-${absolute}`
   }
   return absolute
+}
+
+function formatIndexValue(value: number): string {
+  return value >= 1000 ? value.toFixed(0) : value >= 100 ? value.toFixed(1) : value.toFixed(2)
+}
+
+function buildIndexedFamilySeries(
+  familySeries: TPortfolioProtocolReturnHistoryFamilySeries,
+  timeframe: TPortfolioHistoryChartTimeframe,
+  labelByVaultKey: Record<string, string>
+): TIndexedFamilySeries[] {
+  const limit = getTimeframeLimit(timeframe)
+
+  return familySeries
+    .map((series) => {
+      const points =
+        !Number.isFinite(limit) || limit >= series.dataPoints.length
+          ? series.dataPoints
+          : series.dataPoints.slice(-limit)
+
+      return {
+        series,
+        points: points.map((point) => ({ date: point.date, value: point.growthIndex }))
+      }
+    })
+    .filter(({ points }) => points.some((point) => point.value !== null))
+    .slice(0, INDEX_SERIES_COLORS.length - 1)
+    .map(({ series, points }, index) => ({
+      key: `family_${index}`,
+      label:
+        labelByVaultKey[`${series.chainId}:${series.vaultAddress.toLowerCase()}`] ??
+        series.symbol ??
+        `${series.vaultAddress.slice(0, 6)}…${series.vaultAddress.slice(-4)}`,
+      color: INDEX_SERIES_COLORS[index + 1],
+      points
+    }))
+}
+
+function PortfolioGrowthIndexTooltip({
+  active,
+  payload,
+  indexSeriesLabels
+}: TPortfolioHistoryTooltipProps & {
+  indexSeriesLabels: Record<string, string>
+}): ReactElement | null {
+  if (!active || !payload?.length) {
+    return null
+  }
+
+  const date = payload[0]?.payload?.date
+  if (!date) {
+    return null
+  }
+
+  const rows = payload
+    .flatMap((entry) => {
+      const dataKey =
+        typeof (entry as { dataKey?: unknown }).dataKey === 'string' ? (entry as { dataKey: string }).dataKey : ''
+      const value = typeof entry.value === 'number' ? entry.value : Number(entry.value ?? NaN)
+      if (!Number.isFinite(value)) {
+        return []
+      }
+
+      return [
+        {
+          key: dataKey,
+          label: indexSeriesLabels[dataKey] ?? dataKey,
+          value,
+          color:
+            typeof (entry as { color?: unknown }).color === 'string'
+              ? ((entry as { color: string }).color as string)
+              : 'var(--color-text-primary)'
+        }
+      ]
+    })
+    .sort((left, right) => (left.key === 'aggregate' ? -1 : right.key === 'aggregate' ? 1 : 0))
+
+  return (
+    <div
+      className={
+        'pointer-events-none flex min-w-[13rem] flex-col gap-2 rounded-xl border border-border bg-surface px-3 py-3 shadow-xl'
+      }
+    >
+      <span className={'text-xs font-medium uppercase tracking-[0.12em] text-text-tertiary'}>
+        {formatChartTooltipDate(date)}
+      </span>
+      <div className={'flex flex-col gap-1.5'}>
+        {rows.map((row) => (
+          <div key={row.key} className={'flex items-center justify-between gap-3'}>
+            <span className={'inline-flex items-center gap-2 text-xs text-text-secondary'}>
+              <span className={'size-2 rounded-full'} style={{ backgroundColor: row.color }} />
+              <span>{row.label}</span>
+            </span>
+            <span className={'text-sm font-semibold text-text-primary'}>{formatIndexValue(row.value)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function PortfolioHistoryTooltip({
@@ -176,6 +297,14 @@ function getChartDescription(activeTab: TPortfolioHistoryChartTab): string {
     return 'Cumulative protocol return with deposits and withdrawals normalized out of the series.'
   }
 
+  if (activeTab === 'annualized') {
+    return 'Annualized protocol return based on time-weighted baseline exposure up to each point.'
+  }
+
+  if (activeTab === 'index') {
+    return 'Normalized protocol-return index. Each line starts at 100 at the beginning of the selected timeframe.'
+  }
+
   return 'Daily settled portfolio value across your current Yearn activity.'
 }
 
@@ -185,7 +314,15 @@ function getChartTitle(activeTab: TPortfolioHistoryChartTab): string {
   }
 
   if (activeTab === 'return') {
-    return 'Protocol Return'
+    return 'Cumulative Return'
+  }
+
+  if (activeTab === 'annualized') {
+    return 'Annualized Return'
+  }
+
+  if (activeTab === 'index') {
+    return 'Growth Index'
   }
 
   return 'Holdings History'
@@ -200,12 +337,21 @@ function getEmptyMessage(activeTab: TPortfolioHistoryChartTab): string {
     return 'No protocol return history available'
   }
 
+  if (activeTab === 'annualized') {
+    return 'No annualized return history available'
+  }
+
+  if (activeTab === 'index') {
+    return 'No growth index history available'
+  }
+
   return 'No holdings history available'
 }
 
 export function PortfolioHistoryChart({
   balanceData,
   protocolReturnData,
+  protocolReturnFamilySeries,
   denomination,
   onDenominationChange,
   timeframe,
@@ -219,6 +365,7 @@ export function PortfolioHistoryChart({
   embedded = false,
   className
 }: TPortfolioHistoryChartProps): ReactElement {
+  const { allVaults } = useYearn()
   const [activeTab, setActiveTab] = useState<TPortfolioHistoryChartTab>('balance')
   const [hoveredBreakdownDate, setHoveredBreakdownDate] = useState<string | null>(null)
   const [selectedBreakdownDate, setSelectedBreakdownDate] = useState<string | null>(null)
@@ -273,16 +420,47 @@ export function PortfolioHistoryChart({
     }))
   }, [protocolReturnData, timeframe])
 
+  const filteredAnnualizedReturnData = useMemo<TChartPoint[]>(() => {
+    if (!protocolReturnData) {
+      return []
+    }
+
+    const limit = getTimeframeLimit(timeframe)
+    const points =
+      !Number.isFinite(limit) || limit >= protocolReturnData.length
+        ? protocolReturnData
+        : protocolReturnData.slice(-limit)
+
+    return points.map((point) => ({
+      date: point.date,
+      value: point.annualizedProtocolReturnPct
+    }))
+  }, [protocolReturnData, timeframe])
+
+  const familyLabelByVaultKey = useMemo<Record<string, string>>(() => {
+    return Object.values(allVaults).reduce<Record<string, string>>((labels, vault) => {
+      labels[`${vault.chainId}:${getVaultAddress(vault).toLowerCase()}`] = getDisplayVaultName(vault)
+      return labels
+    }, {})
+  }, [allVaults])
+
   const activeData =
-    activeTab === 'balance' ? filteredBalanceData : activeTab === 'growth' ? filteredGrowthData : filteredReturnData
+    activeTab === 'balance'
+      ? filteredBalanceData
+      : activeTab === 'growth'
+        ? filteredGrowthData
+        : activeTab === 'return'
+          ? filteredReturnData
+          : filteredAnnualizedReturnData
   const activeIsLoading = activeTab === 'balance' ? balanceIsLoading : protocolReturnIsLoading
   const activeIsEmpty = activeTab === 'balance' ? balanceIsEmpty : protocolReturnIsEmpty
   const activeError = activeTab === 'balance' ? balanceError : protocolReturnError
+  const tickSourceData = activeData
 
   const isShortTimeframe = timeframe === '30d'
   const ticks = useMemo(
-    () => (isShortTimeframe ? getChartWeeklyTicks(activeData) : getChartMonthlyTicks(activeData)),
-    [activeData, isShortTimeframe]
+    () => (isShortTimeframe ? getChartWeeklyTicks(tickSourceData) : getChartMonthlyTicks(tickSourceData)),
+    [tickSourceData, isShortTimeframe]
   )
   const tickFormatter = isShortTimeframe ? formatChartWeekLabel : formatChartMonthYearLabel
 
@@ -593,6 +771,114 @@ export function PortfolioHistoryChart({
         <div className={'flex min-h-[240px] items-center justify-center'}>
           <p className={'text-base text-text-secondary'}>{getEmptyMessage(activeTab)}</p>
         </div>
+      </section>
+    )
+  }
+
+  if (activeTab === 'index') {
+    const indexedFamilySeries = buildIndexedFamilySeries(protocolReturnFamilySeries, timeframe, familyLabelByVaultKey)
+    const limit = getTimeframeLimit(timeframe)
+    const aggregatePoints =
+      !protocolReturnData || !Number.isFinite(limit) || limit >= protocolReturnData.length
+        ? (protocolReturnData ?? [])
+        : protocolReturnData.slice(-limit)
+    const aggregateIndexPoints = aggregatePoints.map((point) => ({ date: point.date, value: point.growthIndex }))
+    const indexData: TIndexChartPoint[] = aggregateIndexPoints.map((point, index) => {
+      const row: TIndexChartPoint = { date: point.date, aggregate: point.value }
+      indexedFamilySeries.forEach((family) => {
+        row[family.key] = family.points[index]?.value ?? null
+      })
+      return row
+    })
+    const indexTicks = isShortTimeframe
+      ? getChartWeeklyTicks(aggregateIndexPoints)
+      : getChartMonthlyTicks(aggregateIndexPoints)
+    const indexSeriesLabels: Record<string, string> = {
+      aggregate: 'Wallet',
+      ...Object.fromEntries(indexedFamilySeries.map((series) => [series.key, series.label]))
+    }
+
+    if (indexData.length === 0) {
+      return (
+        <section className={cl(sectionClassName, className)}>
+          {renderHeader(true)}
+          <div className={'flex min-h-[240px] items-center justify-center'}>
+            <p className={'text-base text-text-secondary'}>{getEmptyMessage(activeTab)}</p>
+          </div>
+        </section>
+      )
+    }
+
+    return (
+      <section className={cl(sectionClassName, className)}>
+        {renderHeader(true)}
+        <div className={'min-h-[240px] flex-1 pt-1'}>
+          <ChartContainer
+            config={{ aggregate: { label: 'Wallet', color: INDEX_SERIES_COLORS[0] } }}
+            style={{ height: '100%', aspectRatio: 'unset' }}
+          >
+            <ComposedChart data={indexData} margin={CHART_WITH_AXES_MARGIN}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey={'date'}
+                ticks={indexTicks}
+                tickFormatter={tickFormatter}
+                tick={{ fill: 'var(--chart-axis)' }}
+                axisLine={{ stroke: 'var(--chart-axis)' }}
+                tickLine={{ stroke: 'var(--chart-axis)' }}
+              />
+              <YAxis
+                domain={['auto', 'auto']}
+                tickFormatter={(value: number | string) => {
+                  const numericValue = Number(value)
+                  const absoluteValue = Math.abs(numericValue)
+                  return absoluteValue >= 1000 ? numericValue.toFixed(0) : numericValue.toFixed(1)
+                }}
+                mirror
+                width={CHART_Y_AXIS_WIDTH}
+                tickMargin={CHART_Y_AXIS_TICK_MARGIN}
+                tick={CHART_Y_AXIS_TICK_STYLE}
+                axisLine={{ stroke: 'var(--chart-axis)' }}
+                tickLine={{ stroke: 'var(--chart-axis)' }}
+              />
+              <ChartTooltip
+                cursor={{ stroke: 'var(--chart-cursor-line)', strokeWidth: 1 }}
+                content={(props) => <PortfolioGrowthIndexTooltip {...props} indexSeriesLabels={indexSeriesLabels} />}
+              />
+              <Line
+                type={'monotone'}
+                dataKey={'aggregate'}
+                name={'Wallet'}
+                stroke={INDEX_SERIES_COLORS[0]}
+                strokeWidth={2.5}
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 0, fill: INDEX_SERIES_COLORS[0] }}
+                connectNulls
+                isAnimationActive={false}
+              />
+              {indexedFamilySeries.map((series) => (
+                <Line
+                  key={series.key}
+                  type={'monotone'}
+                  dataKey={series.key}
+                  name={series.label}
+                  stroke={series.color}
+                  strokeWidth={1.75}
+                  strokeOpacity={0.9}
+                  dot={false}
+                  activeDot={{ r: 3.5, strokeWidth: 0, fill: series.color }}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+              ))}
+            </ComposedChart>
+          </ChartContainer>
+        </div>
+        <PortfolioHistoryBreakdownModal
+          date={selectedBreakdownDate}
+          isOpen={isBreakdownModalOpen}
+          onClose={() => setIsBreakdownModalOpen(false)}
+        />
       </section>
     )
   }

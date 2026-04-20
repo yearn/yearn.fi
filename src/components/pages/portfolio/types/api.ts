@@ -8,7 +8,24 @@ const portfolioHistorySimpleDataPointSchema = z.object({
 const portfolioProtocolReturnHistoryDataPointSchema = z.object({
   date: z.string(),
   growthWeightUsd: z.number(),
-  protocolReturnPct: z.number().nullable()
+  protocolReturnPct: z.number().nullable(),
+  annualizedProtocolReturnPct: z.number().nullable(),
+  growthIndex: z.number().nullable()
+})
+
+const portfolioProtocolReturnHistoryFamilyPointSchema = z.object({
+  date: z.string(),
+  timestamp: z.number(),
+  protocolReturnPct: z.number().nullable(),
+  growthIndex: z.number().nullable()
+})
+
+const portfolioProtocolReturnHistoryFamilySeriesSchema = z.object({
+  chainId: z.number(),
+  vaultAddress: z.string(),
+  symbol: z.string().nullable(),
+  status: z.enum(['ok', 'missing_metadata', 'missing_pps', 'missing_receipt_price', 'partial']),
+  dataPoints: z.array(portfolioProtocolReturnHistoryFamilyPointSchema)
 })
 
 const portfolioBreakdownVaultSchema = z.object({
@@ -44,7 +61,8 @@ export const portfolioHistorySimpleResponseSchema = z.object({
 export const portfolioProtocolReturnHistoryResponseSchema = z.object({
   address: z.string(),
   timeframe: z.enum(['1y', 'all']).optional().default('1y'),
-  dataPoints: z.array(portfolioProtocolReturnHistoryDataPointSchema)
+  dataPoints: z.array(portfolioProtocolReturnHistoryDataPointSchema),
+  familySeries: z.array(portfolioProtocolReturnHistoryFamilySeriesSchema).optional().default([])
 })
 
 export const portfolioBreakdownResponseSchema = z.object({
@@ -139,4 +157,18 @@ export type TPortfolioProtocolReturnHistoryChartData = Array<{
   date: string
   growthWeightUsd: number
   protocolReturnPct: number | null
+  annualizedProtocolReturnPct: number | null
+  growthIndex: number | null
+}>
+export type TPortfolioProtocolReturnHistoryFamilySeries = Array<{
+  chainId: number
+  vaultAddress: string
+  symbol: string | null
+  status: 'ok' | 'missing_metadata' | 'missing_pps' | 'missing_receipt_price' | 'partial'
+  dataPoints: Array<{
+    date: string
+    timestamp: number
+    protocolReturnPct: number | null
+    growthIndex: number | null
+  }>
 }>

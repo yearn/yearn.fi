@@ -5,6 +5,7 @@ import {
   portfolioProtocolReturnHistoryResponseSchema,
   type TPortfolioHistoryTimeframe,
   type TPortfolioProtocolReturnHistoryChartData,
+  type TPortfolioProtocolReturnHistoryFamilySeries,
   type TPortfolioProtocolReturnHistoryResponse
 } from '../types/api'
 
@@ -37,9 +38,13 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
     return data.dataPoints.map((point) => ({
       date: point.date,
       growthWeightUsd: point.growthWeightUsd,
-      protocolReturnPct: point.protocolReturnPct
+      protocolReturnPct: point.protocolReturnPct,
+      annualizedProtocolReturnPct: point.annualizedProtocolReturnPct,
+      growthIndex: point.growthIndex
     }))
   }, [data])
+
+  const familySeries = useMemo<TPortfolioProtocolReturnHistoryFamilySeries>(() => data?.familySeries ?? [], [data])
 
   const isLoadingState = isLoading || isFetching
   const errorStatus =
@@ -51,6 +56,7 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
 
   return {
     data: history,
+    familySeries,
     timeframe,
     isLoading: isLoadingState,
     error: visibleError,

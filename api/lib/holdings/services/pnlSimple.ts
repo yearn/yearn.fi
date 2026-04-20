@@ -24,6 +24,7 @@ type TProtocolReturnExitKind = 'withdrawal' | 'transfer_out'
 
 const RECEIPT_PRICE_BUCKET_SECONDS = 24 * 60 * 60
 const RECEIPT_PRICE_FETCH_CONCURRENCY = 4
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 type TProtocolReturnLot = {
   shares: bigint
@@ -139,6 +140,23 @@ export interface HoldingsPnLSimpleHistoryPoint {
   timestamp: number
   growthWeightUsd: number
   protocolReturnPct: number | null
+  annualizedProtocolReturnPct: number | null
+  growthIndex: number | null
+}
+
+export interface HoldingsPnLSimpleHistoryFamilyPoint {
+  date: string
+  timestamp: number
+  protocolReturnPct: number | null
+  growthIndex: number | null
+}
+
+export interface HoldingsPnLSimpleHistoryFamilySeries {
+  chainId: number
+  vaultAddress: string
+  symbol: string | null
+  status: THoldingsPnLSimpleStatus
+  dataPoints: HoldingsPnLSimpleHistoryFamilyPoint[]
 }
 
 export interface HoldingsPnLSimpleHistoryResponse {
@@ -153,6 +171,7 @@ export interface HoldingsPnLSimpleHistoryResponse {
     isComplete: boolean
   }
   dataPoints: HoldingsPnLSimpleHistoryPoint[]
+  familySeries: HoldingsPnLSimpleHistoryFamilySeries[]
 }
 
 const SECONDS_PER_YEAR = 365 * 24 * 60 * 60
@@ -197,6 +216,31 @@ function protocolReturnPct(growth: number, baseline: number): number | null {
 
 function annualizedProtocolReturnPct(growth: number, exposureYears: number): number | null {
   return exposureYears > 0 ? (growth / exposureYears) * 100 : null
+}
+
+function advanceGrowthIndex(args: {
+  previousIndex: number | null
+  deltaGrowthWeightUsd: number
+  deltaExposureWeightUsdYears: number
+  deltaSeconds: number
+  hasCapital: boolean
+}): number | null {
+  if (args.previousIndex === null) {
+    return args.hasCapital ? 100 : null
+  }
+
+  if (args.deltaExposureWeightUsdYears <= 0 || args.deltaSeconds <= 0) {
+    return args.previousIndex
+  }
+
+  const intervalYears = args.deltaSeconds / SECONDS_PER_YEAR
+  if (intervalYears <= 0) {
+    return args.previousIndex
+  }
+
+  const intervalReturn = (args.deltaGrowthWeightUsd * intervalYears) / args.deltaExposureWeightUsdYears
+  const nextIndex = args.previousIndex * (1 + intervalReturn)
+  return Number.isFinite(nextIndex) ? nextIndex : args.previousIndex
 }
 
 function getVaultIdentifiers(events: TRawPnlEvent[]): Array<{ chainId: number; vaultAddress: string }> {
@@ -783,6 +827,84 @@ function allocateAssetPoolAcrossEvents(
   })
 }
 
+function splitTransferIntoWithdrawalEvents(
+  event: Extract<TRawPnlEvent, { kind: 'transfer' }>,
+  matchedShares: bigint,
+  matchedAssets: bigint,
+  idPrefix: string,
+  userAddress: string
+): TRawPnlEvent[] {
+  if (matchedShares <= ZERO || matchedAssets <= ZERO) {
+    return [event]
+  }
+
+  const matchedWithdrawal: Extract<TRawPnlEvent, { kind: 'withdrawal' }> = {
+    kind: 'withdrawal',
+    id: `${event.id}:${idPrefix}-matched`,
+    chainId: event.chainId,
+    vaultAddress: event.vaultAddress,
+    familyVaultAddress: event.familyVaultAddress,
+    isStakingVault: event.isStakingVault,
+    blockNumber: event.blockNumber,
+    blockTimestamp: event.blockTimestamp,
+    logIndex: event.logIndex,
+    transactionHash: event.transactionHash,
+    transactionFrom: event.transactionFrom,
+    owner: userAddress,
+    shares: matchedShares,
+    assets: matchedAssets,
+    scopes: event.scopes
+  }
+
+  if (matchedShares >= event.shares) {
+    return [matchedWithdrawal]
+  }
+
+  return [
+    matchedWithdrawal,
+    {
+      ...cloneEventWithShares(event, event.shares - matchedShares),
+      id: `${event.id}:${idPrefix}-remainder`
+    }
+  ]
+}
+
+function allocateWithdrawalPoolAcrossTransferEvents(
+  events: Array<Extract<TRawPnlEvent, { kind: 'transfer' }>>,
+  totalMatchedShares: bigint,
+  totalMatchedAssets: bigint,
+  idPrefix: string,
+  userAddress: string
+): TRawPnlEvent[] {
+  if (events.length === 0 || totalMatchedShares <= ZERO || totalMatchedAssets <= ZERO) {
+    return events
+  }
+
+  let remainingMatchedShares = totalMatchedShares
+  let remainingMatchedAssets = totalMatchedAssets
+
+  return events.flatMap((event, index) => {
+    if (remainingMatchedShares <= ZERO || remainingMatchedAssets <= ZERO) {
+      return [event]
+    }
+
+    const matchedShares = minBigInt(event.shares, remainingMatchedShares)
+    if (matchedShares <= ZERO) {
+      return [event]
+    }
+
+    const matchedAssets =
+      index === events.length - 1 || matchedShares === remainingMatchedShares
+        ? remainingMatchedAssets
+        : scaleBigInt(remainingMatchedAssets, matchedShares, remainingMatchedShares)
+
+    remainingMatchedShares -= matchedShares
+    remainingMatchedAssets -= matchedAssets
+
+    return splitTransferIntoWithdrawalEvents(event, matchedShares, matchedAssets, idPrefix, userAddress)
+  })
+}
+
 function buildEffectiveSimpleFamilyEvents(txFamilyEvents: TRawPnlEvent[], userAddress: string): TRawPnlEvent[] {
   const firstEvent = txFamilyEvents[0]
   if (!firstEvent) {
@@ -792,6 +914,99 @@ function buildEffectiveSimpleFamilyEvents(txFamilyEvents: TRawPnlEvent[], userAd
   const stakingVaultAddress = getStakingVaultAddress(firstEvent.chainId, firstEvent.familyVaultAddress)
   const normalizedUserAddress = lowerCaseAddress(userAddress)
   let addressEvents = sortEvents(txFamilyEvents.filter((event) => event.scopes.address))
+
+  const addressScopedMintTransfers = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+      event.kind === 'transfer' &&
+      lowerCaseAddress(event.sender) === ZERO_ADDRESS &&
+      lowerCaseAddress(event.receiver) === normalizedUserAddress &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress)
+  )
+  const sameVaultDeposits = txFamilyEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'deposit' }> =>
+      event.kind === 'deposit' &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress)
+  )
+  const matchedDirectDepositShares = minBigInt(
+    addressScopedMintTransfers.reduce((total, event) => total + event.shares, ZERO),
+    sameVaultDeposits.reduce((total, event) => total + event.shares, ZERO)
+  )
+
+  addressEvents = stripMatchedShares(
+    addressEvents,
+    (event) =>
+      event.kind === 'transfer' &&
+      lowerCaseAddress(event.sender) === ZERO_ADDRESS &&
+      lowerCaseAddress(event.receiver) === normalizedUserAddress &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress),
+    matchedDirectDepositShares
+  )
+
+  const addressScopedBurnTransfers = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+      event.kind === 'transfer' &&
+      lowerCaseAddress(event.sender) === normalizedUserAddress &&
+      lowerCaseAddress(event.receiver) === ZERO_ADDRESS &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress)
+  )
+  const sameVaultWithdrawals = txFamilyEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'withdrawal' }> =>
+      event.kind === 'withdrawal' &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress)
+  )
+  const matchedDirectWithdrawalShares = minBigInt(
+    addressScopedBurnTransfers.reduce((total, event) => total + event.shares, ZERO),
+    sameVaultWithdrawals.reduce((total, event) => total + event.shares, ZERO)
+  )
+
+  addressEvents = stripMatchedShares(
+    addressEvents,
+    (event) =>
+      event.kind === 'transfer' &&
+      lowerCaseAddress(event.sender) === normalizedUserAddress &&
+      lowerCaseAddress(event.receiver) === ZERO_ADDRESS &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress),
+    matchedDirectWithdrawalShares
+  )
+
+  const addressScopedTransferOuts = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+      event.kind === 'transfer' &&
+      lowerCaseAddress(event.sender) === normalizedUserAddress &&
+      lowerCaseAddress(event.receiver) !== normalizedUserAddress
+  )
+  const txScopedUnderlyingWithdrawals = txFamilyEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'withdrawal' }> =>
+      event.kind === 'withdrawal' &&
+      !event.isStakingVault &&
+      !event.scopes.address &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress)
+  )
+  const matchedIntermediaryExitShares = minBigInt(
+    addressScopedTransferOuts.reduce((total, event) => total + event.shares, ZERO),
+    txScopedUnderlyingWithdrawals.reduce((total, event) => total + event.shares, ZERO)
+  )
+  const matchedIntermediaryExitAssets = scaleBigInt(
+    txScopedUnderlyingWithdrawals.reduce((total, event) => total + event.assets, ZERO),
+    matchedIntermediaryExitShares,
+    txScopedUnderlyingWithdrawals.reduce((total, event) => total + event.shares, ZERO)
+  )
+
+  if (matchedIntermediaryExitShares > ZERO && matchedIntermediaryExitAssets > ZERO) {
+    const adjustedTransferOutIds = new Set(addressScopedTransferOuts.map((event) => event.id))
+    const adjustedExits = allocateWithdrawalPoolAcrossTransferEvents(
+      addressScopedTransferOuts,
+      matchedIntermediaryExitShares,
+      matchedIntermediaryExitAssets,
+      'intermediary-exit',
+      normalizedUserAddress
+    )
+
+    addressEvents = sortEvents([
+      ...addressEvents.filter((event) => !adjustedTransferOutIds.has(event.id)),
+      ...adjustedExits
+    ])
+  }
 
   if (!stakingVaultAddress) {
     return addressEvents
@@ -1206,6 +1421,13 @@ function buildSummary(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleRespon
   }
 }
 
+function selectHistoryFamilies(vaults: HoldingsPnLSimpleVault[], limit = 5): HoldingsPnLSimpleVault[] {
+  return vaults
+    .filter((vault) => vault.baselineWeightUsd > 0 && vault.protocolReturnPct !== null)
+    .sort((left, right) => right.baselineWeightUsd - left.baselineWeightUsd)
+    .slice(0, limit)
+}
+
 export function buildProtocolReturnHistorySeries(args: {
   events: TRawPnlEvent[]
   userAddress: string
@@ -1219,6 +1441,10 @@ export function buildProtocolReturnHistorySeries(args: {
   const groupedTransactions = groupEventsByTransaction(effectiveEvents)
   let transactionIndex = 0
   let ledgers = new Map<string, TProtocolReturnLedger>()
+  let previousTimestamp: number | null = null
+  let previousGrowthWeightUsd = 0
+  let previousExposureWeightUsdYears = 0
+  let growthIndex: number | null = null
 
   return args.timestamps.map((timestamp) => {
     while (
@@ -1250,13 +1476,158 @@ export function buildProtocolReturnHistorySeries(args: {
       currentTimestamp: timestamp
     })
     const summary = buildSummary(vaults)
+    growthIndex = advanceGrowthIndex({
+      previousIndex: growthIndex,
+      deltaGrowthWeightUsd: summary.growthWeightUsd - previousGrowthWeightUsd,
+      deltaExposureWeightUsdYears: summary.baselineExposureWeightUsdYears - previousExposureWeightUsdYears,
+      deltaSeconds: previousTimestamp === null ? 0 : Math.max(0, timestamp - previousTimestamp),
+      hasCapital: summary.baselineWeightUsd > 0 || summary.growthWeightUsd !== 0
+    })
+    previousTimestamp = timestamp
+    previousGrowthWeightUsd = summary.growthWeightUsd
+    previousExposureWeightUsdYears = summary.baselineExposureWeightUsdYears
 
     return {
       date: timestampToDateString(timestamp),
       timestamp,
       growthWeightUsd: summary.growthWeightUsd,
-      protocolReturnPct: summary.protocolReturnPct
+      protocolReturnPct: summary.protocolReturnPct,
+      annualizedProtocolReturnPct: summary.annualizedProtocolReturnPct,
+      growthIndex
     }
+  })
+}
+
+export function buildProtocolReturnFamilyHistorySeries(args: {
+  events: TRawPnlEvent[]
+  userAddress: string
+  metadata: Map<string, VaultMetadata>
+  ppsData: Map<string, Map<number, number>>
+  priceData: Map<string, Map<number, number>>
+  timestamps: number[]
+  selectedVaults: HoldingsPnLSimpleVault[]
+}): HoldingsPnLSimpleHistoryFamilySeries[] {
+  if (args.selectedVaults.length === 0) {
+    return []
+  }
+
+  const userAddress = lowerCaseAddress(args.userAddress)
+  const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
+  const groupedTransactions = groupEventsByTransaction(effectiveEvents)
+  const selectedVaultKeys = new Set(args.selectedVaults.map((vault) => toVaultKey(vault.chainId, vault.vaultAddress)))
+  const selectedVaultsByKey = new Map(
+    args.selectedVaults.map((vault) => [toVaultKey(vault.chainId, vault.vaultAddress), vault] as const)
+  )
+  const familyPointMap = new Map<string, HoldingsPnLSimpleHistoryFamilyPoint[]>(
+    Array.from(selectedVaultKeys, (key) => [key, []] as const)
+  )
+
+  let transactionIndex = 0
+  let ledgers = new Map<string, TProtocolReturnLedger>()
+  const familyIndexState = new Map<
+    string,
+    {
+      previousTimestamp: number | null
+      previousGrowthWeightUsd: number
+      previousExposureWeightUsdYears: number
+      growthIndex: number | null
+    }
+  >(
+    Array.from(
+      selectedVaultKeys,
+      (key) =>
+        [
+          key,
+          {
+            previousTimestamp: null,
+            previousGrowthWeightUsd: 0,
+            previousExposureWeightUsdYears: 0,
+            growthIndex: null
+          }
+        ] as const
+    )
+  )
+
+  args.timestamps.forEach((timestamp) => {
+    while (
+      transactionIndex < groupedTransactions.length &&
+      groupedTransactions[transactionIndex]![0]!.blockTimestamp <= timestamp
+    ) {
+      groupTransactionEventsByFamily(groupedTransactions[transactionIndex]!).forEach((txFamilyEvents) => {
+        normalizeStakingWrapperEvents(txFamilyEvents, userAddress).forEach((event) => {
+          processEvent(ledgers, event, {
+            userAddress,
+            metadata: args.metadata,
+            ppsData: args.ppsData,
+            priceData: args.priceData
+          })
+        })
+      })
+      transactionIndex += 1
+    }
+
+    ledgers = Array.from(ledgers.entries()).reduce<Map<string, TProtocolReturnLedger>>((nextLedgers, [key, ledger]) => {
+      nextLedgers.set(key, accrueLedgerExposure(ledger, timestamp))
+      return nextLedgers
+    }, new Map())
+
+    const vaultsByKey = new Map(
+      materializeProtocolReturnVaults({
+        ledgers,
+        metadata: args.metadata,
+        ppsData: args.ppsData,
+        currentTimestamp: timestamp
+      }).map((vault) => [toVaultKey(vault.chainId, vault.vaultAddress), vault] as const)
+    )
+
+    selectedVaultKeys.forEach((vaultKey) => {
+      const familyVault = vaultsByKey.get(vaultKey)
+      const state = familyIndexState.get(vaultKey)
+
+      if (!state) {
+        return
+      }
+
+      const hasOpenPosition = (familyVault?.sharesFormatted ?? 0) > 0
+
+      state.growthIndex = advanceGrowthIndex({
+        previousIndex: state.growthIndex,
+        deltaGrowthWeightUsd: (familyVault?.growthWeightUsd ?? 0) - state.previousGrowthWeightUsd,
+        deltaExposureWeightUsdYears:
+          (familyVault?.baselineExposureWeightUsdYears ?? 0) - state.previousExposureWeightUsdYears,
+        deltaSeconds: state.previousTimestamp === null ? 0 : Math.max(0, timestamp - state.previousTimestamp),
+        hasCapital: (familyVault?.baselineWeightUsd ?? 0) > 0 || (familyVault?.growthWeightUsd ?? 0) !== 0
+      })
+      state.previousTimestamp = timestamp
+      state.previousGrowthWeightUsd = familyVault?.growthWeightUsd ?? 0
+      state.previousExposureWeightUsdYears = familyVault?.baselineExposureWeightUsdYears ?? 0
+
+      familyPointMap.get(vaultKey)?.push({
+        date: timestampToDateString(timestamp),
+        timestamp,
+        protocolReturnPct: hasOpenPosition ? (familyVault?.protocolReturnPct ?? null) : null,
+        growthIndex: hasOpenPosition ? state.growthIndex : null
+      })
+    })
+  })
+
+  return Array.from(selectedVaultKeys).flatMap((vaultKey) => {
+    const selectedVault = selectedVaultsByKey.get(vaultKey)
+    const points = familyPointMap.get(vaultKey)
+
+    if (!selectedVault || !points) {
+      return []
+    }
+
+    return [
+      {
+        chainId: selectedVault.chainId,
+        vaultAddress: selectedVault.vaultAddress,
+        symbol: selectedVault.metadata.symbol,
+        status: selectedVault.status,
+        dataPoints: points
+      }
+    ]
   })
 }
 
@@ -1409,7 +1780,8 @@ export async function getHoldingsPnLSimpleHistory(
         partialVaults: 0,
         isComplete: true
       },
-      dataPoints: []
+      dataPoints: [],
+      familySeries: []
     }
   }
 
@@ -1441,6 +1813,7 @@ export async function getHoldingsPnLSimpleHistory(
     ppsData,
     currentTimestamp: latestTimestamp
   })
+  const selectedHistoryFamilies = selectHistoryFamilies(finalVaults)
   const history = buildProtocolReturnHistorySeries({
     events: effectiveEvents,
     userAddress,
@@ -1448,6 +1821,15 @@ export async function getHoldingsPnLSimpleHistory(
     ppsData,
     priceData,
     timestamps
+  })
+  const familySeries = buildProtocolReturnFamilyHistorySeries({
+    events: effectiveEvents,
+    userAddress,
+    metadata: vaultMetadata,
+    ppsData,
+    priceData,
+    timestamps,
+    selectedVaults: selectedHistoryFamilies
   })
 
   debugLog('pnl-simple-history', 'completed holdings simple pnl history calculation', {
@@ -1468,6 +1850,7 @@ export async function getHoldingsPnLSimpleHistory(
       partialVaults: finalVaults.filter((vault) => vault.status !== 'ok').length,
       isComplete: finalVaults.every((vault) => vault.status === 'ok')
     },
-    dataPoints: history
+    dataPoints: history,
+    familySeries
   }
 }
