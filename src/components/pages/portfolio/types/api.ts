@@ -76,7 +76,14 @@ const portfolioProtocolReturnSummarySchema = z.object({
   growthWeightUsd: z.number(),
   realizedGrowthWeightUsd: z.number(),
   unrealizedGrowthWeightUsd: z.number(),
+  protocolReturnUsd: z.number(),
   protocolReturnPct: z.number().nullable(),
+  totalCurrentValueUsd: z.number(),
+  estimatedBasisUsd: z.number(),
+  realizedExitValueUsd: z.number(),
+  realizedPricePnlUsd: z.number(),
+  unrealizedPricePnlUsd: z.number(),
+  priceBasedPnlUsd: z.number(),
   isComplete: z.boolean()
 })
 

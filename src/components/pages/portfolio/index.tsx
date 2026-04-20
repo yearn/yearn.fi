@@ -157,11 +157,11 @@ function PortfolioHeaderSection({
   protocolReturnSummary,
   totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
-  const usdGrowthTooltip = (
+  const pricePnlTooltip = (
     <div className={metricTooltipContentClassName}>
-      <p>{'Approximate amount of USD Yearn has generated for you based on all your positions over time.'}</p>
+      <p>{'Estimated USD PnL from realized exits and current open positions.'}</p>
 
-      <p>{'Protocol return only, price moves are excluded.'}</p>
+      <p>{'This includes asset price movement and is separate from protocol growth.'}</p>
     </div>
   )
 
@@ -271,11 +271,11 @@ function PortfolioHeaderSection({
 
   const protocolReturnMetrics: TMetricBlock[] = [
     {
-      key: 'usd-growth',
-      header: <MetricHeader label="USD Growth" mobileLabel="Growth" tooltip={usdGrowthTooltip} />,
+      key: 'protocol-growth',
+      header: <MetricHeader label="Protocol Growth" mobileLabel="Growth" tooltip={protocolReturnTooltip} />,
       value: (
         <span className={METRIC_VALUE_CLASS}>
-          {renderSignedCurrencyMetric(protocolReturnSummary?.growthWeightUsd ?? null)}
+          {renderSignedPercentMetric(protocolReturnSummary?.protocolReturnPct)}
         </span>
       ),
       footnote:
@@ -289,11 +289,11 @@ function PortfolioHeaderSection({
         ) : undefined
     },
     {
-      key: 'protocol-return',
-      header: <MetricHeader label="Protocol Return" mobileLabel="Return" tooltip={protocolReturnTooltip} />,
+      key: 'price-pnl',
+      header: <MetricHeader label="PnL" mobileLabel="PnL" tooltip={pricePnlTooltip} />,
       value: (
         <span className={METRIC_VALUE_CLASS}>
-          {renderSignedPercentMetric(protocolReturnSummary?.protocolReturnPct)}
+          {renderSignedCurrencyMetric(protocolReturnSummary?.priceBasedPnlUsd ?? null)}
         </span>
       )
     }
