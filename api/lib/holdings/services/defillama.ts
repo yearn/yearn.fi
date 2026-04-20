@@ -36,6 +36,11 @@ const MAX_REQUESTED_PRICE_DISTANCE_SECONDS = 60 * 60
 const SPLITTABLE_GET_STATUS_CODES = new Set([414, 431, 505])
 
 type TCoinRequest = { chain: string; address: string; timestamps: number[] }
+type TMissingPriceFetchGroup = {
+  label: 'cacheable' | 'uncached'
+  cacheResults: boolean
+  coins: TCoinRequest[]
+}
 type TDefiLlamaFetchTuning = {
   useProApi: boolean
   timeoutMs: number
@@ -291,6 +296,54 @@ function filterCacheableTimestamps(
   tokenKey: string
 ): number[] {
   return timestamps.filter((timestamp) => !uncachedTimestampKeys.has(toTimestampCacheKey(tokenKey, timestamp)))
+}
+
+function splitMissingCoinsByCacheability(
+  coins: TCoinRequest[],
+  missingByToken: Map<string, number[]>,
+  uncachedTimestampKeys: Set<string>
+): TMissingPriceFetchGroup[] {
+  const groups: TMissingPriceFetchGroup[] = [
+    {
+      label: 'cacheable',
+      cacheResults: true,
+      coins: []
+    },
+    {
+      label: 'uncached',
+      cacheResults: false,
+      coins: []
+    }
+  ]
+
+  coins.forEach((coin) => {
+    const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
+    const missingTimestamps = missingByToken.get(tokenKey) ?? []
+    const cacheableTimestamps = missingTimestamps.filter(
+      (timestamp) => !uncachedTimestampKeys.has(toTimestampCacheKey(tokenKey, timestamp))
+    )
+    const uncachedTimestamps = missingTimestamps.filter((timestamp) =>
+      uncachedTimestampKeys.has(toTimestampCacheKey(tokenKey, timestamp))
+    )
+
+    if (cacheableTimestamps.length > 0) {
+      groups[0].coins.push({
+        chain: coin.chain,
+        address: coin.address,
+        timestamps: cacheableTimestamps
+      })
+    }
+
+    if (uncachedTimestamps.length > 0) {
+      groups[1].coins.push({
+        chain: coin.chain,
+        address: coin.address,
+        timestamps: uncachedTimestamps
+      })
+    }
+  })
+
+  return groups.filter((group) => group.coins.length > 0)
 }
 
 function buildCoinsParam(coins: TCoinRequest[]): Record<string, number[]> {
@@ -683,93 +736,90 @@ export async function fetchHistoricalPricesForTokenTimestamps(
     return result
   }
 
-  const tokensToFetch = coins.filter((coin) => missingByToken.has(`${coin.chain}:${coin.address.toLowerCase()}`))
-  const allMissingTimestamps = [...new Set([...missingByToken.values()].flat())].sort((a, b) => a - b)
-  const missingPricePoints = [...missingByToken.values()].reduce(
-    (total, missingTimestamps) => total + missingTimestamps.length,
-    0
-  )
   const newPrices: CachedPrice[] = []
   const newPriceMisses: CachedPriceMiss[] = []
-  const tokenRequests = buildTokenRequests(
-    tokensToFetch.map((coin) => {
-      const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
-      return {
-        chain: coin.chain,
-        address: coin.address,
-        timestamps: missingByToken.get(tokenKey) ?? []
-      }
-    }),
-    tuning.timestampBatchSize
-  )
-  const batches = buildRequestBatches(tokenRequests, tuning)
-  const batchGroups = chunkItems(batches, tuning.parallelRequests)
   const fetchStats = { successfulBatches: 0 }
-  debugLog('defillama', 'prepared price fetch batches', {
-    tokensToFetch: tokensToFetch.length,
-    missingTokens: missingByToken.size,
-    uniqueTimestamps: allMissingTimestamps.length,
-    missingPricePoints,
-    tokenRequests: tokenRequests.length,
-    batches: batches.length,
-    batchGroups: batchGroups.length,
-    maxTokensPerBatch: tuning.maxTokensPerBatch,
-    maxPricePointsPerBatch: tuning.maxPricePointsPerBatch,
-    maxTimestampsPerTokenPerBatch: tuning.maxTimestampsPerTokenPerBatch,
-    maxRequestUrlLength: tuning.maxRequestUrlLength,
-    useProApi: tuning.useProApi
-  })
+  const missingFetchGroups = splitMissingCoinsByCacheability(coins, missingByToken, uncachedTimestampKeys)
+  const fetchMissingPriceGroup = async (fetchGroup: TMissingPriceFetchGroup): Promise<void> => {
+    const tokenRequests = buildTokenRequests(fetchGroup.coins, tuning.timestampBatchSize)
+    const batches = buildRequestBatches(tokenRequests, tuning)
+    const batchGroups = chunkItems(batches, tuning.parallelRequests)
+    const allMissingTimestamps = [...new Set(fetchGroup.coins.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
+    const missingPricePoints = countRequestedPricePoints(fetchGroup.coins)
 
-  await batchGroups.reduce<Promise<void>>(async (previousGroupPromise, batchGroup, groupIndex) => {
-    await previousGroupPromise
-
-    const batchResults = await Promise.allSettled(batchGroup.map((batch) => fetchBatch(batch.coinBatch, tuning)))
-
-    batchResults.forEach((batchResult, batchIndex) => {
-      const batch = batchGroup[batchIndex]
-
-      if (batchResult.status === 'rejected') {
-        const batchTimestamps = [...new Set(batch.coinBatch.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
-        const batchPricePoints = batch.coinBatch.reduce((total, coin) => total + coin.timestamps.length, 0)
-        console.error(
-          `[DefiLlama] Failed to fetch prices for ${batch.coinBatch.length} tokens and ${batchPricePoints} token-timestamp pairs:`,
-          batchResult.reason
-        )
-        debugError('defillama', 'price batch group member failed', batchResult.reason, {
-          tokenCount: batch.coinBatch.length,
-          timestampCount: batchTimestamps.length,
-          pricePointCount: batchPricePoints,
-          firstTimestamp: batchTimestamps[0] ?? null,
-          lastTimestamp: batchTimestamps.at(-1) ?? null
-        })
-        return
-      }
-
-      fetchStats.successfulBatches += 1
-
-      const materializedPrices = materializeRequestedPrices(batch.coinBatch, batchResult.value)
-      const materializedPriceMisses = materializeRequestedPriceMisses(batch.coinBatch, batchResult.value)
-      materializedPrices.forEach(({ tokenKey, timestamp, price }) => {
-        if (!result.has(tokenKey)) {
-          result.set(tokenKey, new Map())
-        }
-
-        const existingMap = result.get(tokenKey)!
-        existingMap.set(timestamp, price)
-        if (!uncachedTimestampKeys.has(toTimestampCacheKey(tokenKey, timestamp))) {
-          newPrices.push({ tokenKey, timestamp, price })
-        }
-      })
-      newPriceMisses.push(
-        ...materializedPriceMisses.filter(
-          ({ tokenKey, timestamp }) => !uncachedTimestampKeys.has(toTimestampCacheKey(tokenKey, timestamp))
-        )
-      )
+    debugLog('defillama', 'prepared price fetch batches', {
+      fetchGroup: fetchGroup.label,
+      cacheResults: fetchGroup.cacheResults,
+      tokensToFetch: fetchGroup.coins.length,
+      missingTokens: fetchGroup.coins.length,
+      uniqueTimestamps: allMissingTimestamps.length,
+      missingPricePoints,
+      tokenRequests: tokenRequests.length,
+      batches: batches.length,
+      batchGroups: batchGroups.length,
+      maxTokensPerBatch: tuning.maxTokensPerBatch,
+      maxPricePointsPerBatch: tuning.maxPricePointsPerBatch,
+      maxTimestampsPerTokenPerBatch: tuning.maxTimestampsPerTokenPerBatch,
+      maxRequestUrlLength: tuning.maxRequestUrlLength,
+      useProApi: tuning.useProApi
     })
 
-    if (groupIndex < batchGroups.length - 1 && tuning.interGroupDelayMs > 0) {
-      await wait(tuning.interGroupDelayMs)
-    }
+    await batchGroups.reduce<Promise<void>>(async (previousGroupPromise, batchGroup, groupIndex) => {
+      await previousGroupPromise
+
+      const batchResults = await Promise.allSettled(batchGroup.map((batch) => fetchBatch(batch.coinBatch, tuning)))
+
+      batchResults.forEach((batchResult, batchIndex) => {
+        const batch = batchGroup[batchIndex]
+
+        if (batchResult.status === 'rejected') {
+          const batchTimestamps = [...new Set(batch.coinBatch.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
+          const batchPricePoints = batch.coinBatch.reduce((total, coin) => total + coin.timestamps.length, 0)
+          console.error(
+            `[DefiLlama] Failed to fetch prices for ${batch.coinBatch.length} tokens and ${batchPricePoints} token-timestamp pairs:`,
+            batchResult.reason
+          )
+          debugError('defillama', 'price batch group member failed', batchResult.reason, {
+            fetchGroup: fetchGroup.label,
+            tokenCount: batch.coinBatch.length,
+            timestampCount: batchTimestamps.length,
+            pricePointCount: batchPricePoints,
+            firstTimestamp: batchTimestamps[0] ?? null,
+            lastTimestamp: batchTimestamps.at(-1) ?? null
+          })
+          return
+        }
+
+        fetchStats.successfulBatches += 1
+
+        const materializedPrices = materializeRequestedPrices(batch.coinBatch, batchResult.value)
+        const materializedPriceMisses = materializeRequestedPriceMisses(batch.coinBatch, batchResult.value)
+        materializedPrices.forEach(({ tokenKey, timestamp, price }) => {
+          if (!result.has(tokenKey)) {
+            result.set(tokenKey, new Map())
+          }
+
+          const existingMap = result.get(tokenKey)!
+          existingMap.set(timestamp, price)
+          if (fetchGroup.cacheResults) {
+            newPrices.push({ tokenKey, timestamp, price })
+          }
+        })
+
+        if (fetchGroup.cacheResults) {
+          newPriceMisses.push(...materializedPriceMisses)
+        }
+      })
+
+      if (groupIndex < batchGroups.length - 1 && tuning.interGroupDelayMs > 0) {
+        await wait(tuning.interGroupDelayMs)
+      }
+    }, Promise.resolve())
+  }
+
+  await missingFetchGroups.reduce<Promise<void>>(async (previousGroupPromise, fetchGroup) => {
+    await previousGroupPromise
+    await fetchMissingPriceGroup(fetchGroup)
   }, Promise.resolve())
 
   if (fetchStats.successfulBatches === 0 && countPricePoints(result) === 0) {
