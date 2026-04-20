@@ -141,6 +141,13 @@ annualizedProtocolReturnPct =
 
 This is intended for high-turnover wallets where cumulative receipts can materially exceed the capital that was actually sitting in vaults at any one time.
 
+Short explainers for the chart surfaces live in:
+
+- [docs/simple-protocol-return-growth-chart.md](../../../docs/simple-protocol-return-growth-chart.md)
+- [docs/simple-protocol-return-cumulative-return-chart.md](../../../docs/simple-protocol-return-cumulative-return-chart.md)
+- [docs/simple-protocol-return-annualized-return-chart.md](../../../docs/simple-protocol-return-annualized-return-chart.md)
+- [docs/simple-protocol-return-growth-index-chart.md](../../../docs/simple-protocol-return-growth-index-chart.md)
+
 ## Vault Families
 
 The engine does not treat the staking wrapper as a separate investment from the underlying vault.
