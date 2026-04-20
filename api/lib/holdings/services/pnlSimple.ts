@@ -1501,18 +1501,18 @@ function buildGrowthWeightEthSummary(args: {
   ppsData: Map<string, Map<number, number>>
   currentTimestamp: number
 }): number | null {
-  const perVaultGrowthWeightEth = Array.from(args.ledgers.values()).map((ledger) =>
-    computeVaultGrowthWeightEth({
+  const perVaultGrowthWeightEth = Array.from(args.ledgers.values()).flatMap((ledger) => {
+    const growthWeightEth = computeVaultGrowthWeightEth({
       ledger,
       metadata: args.metadata.get(toVaultKey(ledger.chainId, ledger.vaultAddress)),
       ppsData: args.ppsData,
       currentTimestamp: args.currentTimestamp
     })
-  )
 
-  return perVaultGrowthWeightEth.every((value) => value !== null)
-    ? perVaultGrowthWeightEth.reduce((total, value) => total + (value ?? 0), 0)
-    : null
+    return growthWeightEth === null ? [] : [growthWeightEth]
+  })
+
+  return perVaultGrowthWeightEth.length > 0 ? perVaultGrowthWeightEth.reduce((total, value) => total + value, 0) : null
 }
 
 function buildOpenBaselineCompositionUsd(args: {

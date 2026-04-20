@@ -337,6 +337,86 @@ describe('pnl simple protocol return', () => {
     expect(history[3]?.growthIndex).toBeCloseTo(120.6666666667)
   })
 
+  it('keeps ETH growth history available when another vault is missing receipt prices', () => {
+    const MISSING_VAULT = '0x5555555555555555555555555555555555555555'
+    const MISSING_ASSET = '0x6666666666666666666666666666666666666666'
+    const MISSING_VAULT_KEY = toVaultKey(1, MISSING_VAULT)
+    const mixedMetadata = new Map<string, VaultMetadata>([
+      ...metadata.entries(),
+      [
+        MISSING_VAULT_KEY,
+        {
+          address: MISSING_VAULT,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: MISSING_ASSET,
+            symbol: 'MISS',
+            decimals: 18
+          },
+          decimals: 18
+        }
+      ]
+    ])
+
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'good-deposit',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'deposit',
+          id: 'missing-price-deposit',
+          vaultAddress: MISSING_VAULT,
+          familyVaultAddress: MISSING_VAULT,
+          blockTimestamp: 100,
+          logIndex: 1,
+          transactionHash: '0xmissing-price-deposit',
+          shares: 50n * ONE,
+          assets: 50n * ONE,
+          owner: USER,
+          sender: USER
+        })
+      ],
+      userAddress: USER,
+      metadata: mixedMetadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.1]
+          ])
+        ],
+        [
+          MISSING_VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.1]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      ethPriceData: new Map([
+        [0, 2],
+        [100, 2],
+        [200, 2]
+      ]),
+      timestamps: [100, 200]
+    })
+
+    expect(history[0]?.growthWeightEth).toBeCloseTo(0)
+    expect(history[1]?.growthWeightUsd).toBeCloseTo(10)
+    expect(history[1]?.growthWeightEth).toBeCloseTo(5)
+  })
+
   it('does not double count the ERC4626 mint transfer alongside a deposit event', () => {
     const vault = materializeVault({
       events: [
