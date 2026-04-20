@@ -14,6 +14,13 @@ import {
   type VaultVersion
 } from './graphql'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
+import {
+  deriveNestedVaultAssetPriceData,
+  expandNestedVaultAssetPriceRequests,
+  getAssetVaultMetadataLookupIdentifiers,
+  getNestedVaultPpsIdentifiersFromPriceRequests,
+  mergeVaultIdentifiers
+} from './nestedVaultPrices'
 import { buildRawPnlEvents } from './pnl'
 import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
@@ -836,6 +843,13 @@ export async function getHoldingsPnLSimple(
   })
   const rawVaultIdentifiers = getVaultIdentifiers(rawEvents)
   const resolvedVaultMetadata = await fetchMultipleVaultsMetadata(rawVaultIdentifiers)
+  const assetVaultMetadata = await fetchMultipleVaultsMetadata(
+    getAssetVaultMetadataLookupIdentifiers(resolvedVaultMetadata),
+    { skipSnapshotFallback: true }
+  )
+  assetVaultMetadata.forEach((metadata, key) => {
+    resolvedVaultMetadata.set(key, metadata)
+  })
   const filteredEvents = filterEventsByAuthoritativeVersion(rawEvents, resolvedVaultMetadata, version)
   const filteredVaultIdentifiers = getVaultIdentifiers(filteredEvents)
   const vaultMetadata = filteredVaultIdentifiers.reduce<Map<string, VaultMetadata>>((filtered, vault) => {
@@ -848,6 +862,14 @@ export async function getHoldingsPnLSimple(
 
     return filtered
   }, new Map())
+  getAssetVaultMetadataLookupIdentifiers(vaultMetadata).forEach((vault) => {
+    const key = toVaultKey(vault.chainId, vault.vaultAddress)
+    const metadata = resolvedVaultMetadata.get(key)
+
+    if (metadata) {
+      vaultMetadata.set(key, metadata)
+    }
+  })
   const currentTimestamp = Math.floor(Date.now() / 1000)
 
   debugLog('pnl-simple', 'loaded address-scoped events', {
@@ -871,25 +893,37 @@ export async function getHoldingsPnLSimple(
     }
   }
 
-  const priceRequests = buildSimplePriceRequests({
+  const basePriceRequests = buildSimplePriceRequests({
     events: filteredEvents,
     metadata: vaultMetadata,
     userAddress,
     currentTimestamp
   })
+  const priceRequests = expandNestedVaultAssetPriceRequests(basePriceRequests, vaultMetadata)
+  const ppsIdentifiers = mergeVaultIdentifiers([
+    ...filteredVaultIdentifiers,
+    ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, vaultMetadata)
+  ])
   const uniquePriceTimestamps = new Set(priceRequests.flatMap((request) => request.timestamps))
 
   debugLog('pnl-simple', 'prepared targeted token price requests', {
     tokens: priceRequests.length,
     uniqueTimestamps: uniquePriceTimestamps.size,
     pricePoints: countTokenPricePoints(priceRequests),
+    nestedVaultPriceDependencies: ppsIdentifiers.length - filteredVaultIdentifiers.length,
     bucketSeconds: RECEIPT_PRICE_BUCKET_SECONDS
   })
 
-  const [ppsData, priceData] = await Promise.all([
-    fetchMultipleVaultsPPS(filteredVaultIdentifiers),
+  const [ppsData, fetchedPriceData] = await Promise.all([
+    fetchMultipleVaultsPPS(ppsIdentifiers),
     fetchTokenPrices(priceRequests)
   ])
+  const priceData = deriveNestedVaultAssetPriceData({
+    priceData: fetchedPriceData,
+    priceRequests,
+    vaultMetadata,
+    ppsData
+  })
   const ledgers = buildProtocolReturnLedgers({
     events: filteredEvents,
     userAddress,
