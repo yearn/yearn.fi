@@ -4,7 +4,8 @@ import * as z from 'zod'
 const yvUsdAprServiceStrategySchema = z
   .object({
     address: addressSchema.optional().catch(undefined),
-    points: z.boolean().optional().default(false).catch(false)
+    points: z.boolean().optional().default(false).catch(false),
+    debt: z.string().optional().default('0').catch('0')
   })
   .passthrough()
 
