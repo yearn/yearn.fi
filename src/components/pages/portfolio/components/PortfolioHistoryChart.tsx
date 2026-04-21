@@ -33,7 +33,7 @@ import type {
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
-type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'return' | 'annualized' | 'index'
+type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'annualized' | 'index'
 type TGrowthDisplayMode = 'auto' | 'index' | 'usd' | 'eth'
 type TResolvedGrowthDisplayMode = Exclude<TGrowthDisplayMode, 'auto'>
 
@@ -92,7 +92,6 @@ type TActiveChartState = {
 const CHART_TABS: Array<{ id: TPortfolioHistoryChartTab; label: string }> = [
   { id: 'balance', label: 'Balance' },
   { id: 'growth', label: 'Growth' },
-  { id: 'return', label: 'Cumulative %' },
   { id: 'annualized', label: 'Annualized %' },
   { id: 'index', label: 'Growth Index' }
 ]
@@ -372,10 +371,6 @@ function getChartDescription(
     return 'Wallet growth index plus vault comparison lines. Each line starts at 100 at the beginning of the selected timeframe.'
   }
 
-  if (activeTab === 'return') {
-    return 'Cumulative protocol return with deposits and withdrawals normalized out of the series.'
-  }
-
   if (activeTab === 'annualized') {
     return 'Annualized protocol return based on time-weighted baseline exposure up to each point.'
   }
@@ -386,10 +381,6 @@ function getChartDescription(
 function getChartTitle(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: TResolvedGrowthDisplayMode): string {
   if (activeTab === 'growth') {
     return growthDisplayMode === 'index' ? 'Growth Index' : 'Protocol Growth'
-  }
-
-  if (activeTab === 'return') {
-    return 'Cumulative Return'
   }
 
   if (activeTab === 'annualized') {
@@ -410,10 +401,6 @@ function getEmptyMessage(activeTab: TPortfolioHistoryChartTab, growthDisplayMode
       : growthDisplayMode === 'eth'
         ? 'No ETH-equivalent protocol growth history available'
         : 'No protocol growth history available'
-  }
-
-  if (activeTab === 'return') {
-    return 'No protocol return history available'
   }
 
   if (activeTab === 'annualized') {
@@ -527,23 +514,6 @@ export function PortfolioHistoryChart({
     }))
   }, [protocolReturnData, timeframe])
 
-  const filteredReturnData = useMemo<TChartPoint[]>(() => {
-    if (!protocolReturnData) {
-      return []
-    }
-
-    const limit = getTimeframeLimit(timeframe)
-    const points =
-      !Number.isFinite(limit) || limit >= protocolReturnData.length
-        ? protocolReturnData
-        : protocolReturnData.slice(-limit)
-
-    return points.map((point) => ({
-      date: point.date,
-      value: point.protocolReturnPct
-    }))
-  }, [protocolReturnData, timeframe])
-
   const filteredAnnualizedReturnData = useMemo<TChartPoint[]>(() => {
     if (!protocolReturnData) {
       return []
@@ -579,9 +549,7 @@ export function PortfolioHistoryChart({
             : filteredGrowthIndexData
         : activeTab === 'index'
           ? filteredGrowthIndexData
-          : activeTab === 'return'
-            ? filteredReturnData
-            : filteredAnnualizedReturnData
+          : filteredAnnualizedReturnData
   const activeIsLoading = activeTab === 'balance' ? balanceIsLoading : protocolReturnIsLoading
   const activeIsEmpty = activeTab === 'balance' ? balanceIsEmpty : protocolReturnIsEmpty
   const activeError = activeTab === 'balance' ? balanceError : protocolReturnError
@@ -599,7 +567,7 @@ export function PortfolioHistoryChart({
     const numericValue = Number(value)
     const absoluteValue = Math.abs(numericValue)
     if (numericValue === 0) {
-      return activeTab === 'return' ? '0%' : ''
+      return ''
     }
 
     if (activeTab === 'balance') {
