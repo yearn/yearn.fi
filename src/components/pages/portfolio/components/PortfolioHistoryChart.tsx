@@ -758,63 +758,65 @@ export function PortfolioHistoryChart({
 
   const renderHeader = (showControls = false): ReactElement => (
     <div className={'flex flex-col gap-2.5 md:gap-3'}>
-      <div className={'flex items-start justify-between gap-3'}>
-        <div className={'flex min-w-0 flex-1 flex-col gap-0.5'}>
-          <h2 className={'text-xl font-semibold text-text-primary'}>
+      <div className={'flex flex-col gap-px'}>
+        <div className={'flex items-center justify-between gap-3 h-[36px] max-md:h-[54px]'}>
+          <h2 className={'text-xl font-semibold leading-tight text-text-primary'}>
             {getChartTitle(activeTab, resolvedGrowthDisplayMode)}
           </h2>
-          <p className={'text-xs text-text-secondary min-h-[2lh]'}>
-            {getChartDescription(activeTab, resolvedGrowthDisplayMode)}
-          </p>
-          <p
-            aria-hidden={!autoGrowthDisplayExplanation}
-            className={cl(
-              'text-[11px] font-medium uppercase tracking-[0.08em] text-text-tertiary',
-              autoGrowthDisplayExplanation ? '' : 'invisible'
-            )}
-          >
-            {autoGrowthDisplayExplanation ?? 'Auto: stable-dominant portfolio, showing USD'}
-          </p>
+          {activeTab === 'balance' ? (
+            <div className={cl('flex shrink-0 items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
+              {(['usd', 'eth'] as const).map((nextDenomination) => (
+                <button
+                  key={nextDenomination}
+                  type={'button'}
+                  onClick={() => onDenominationChange(nextDenomination)}
+                  className={cl(
+                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                    SELECTOR_BAR_STYLES.buttonBase,
+                    denomination === nextDenomination
+                      ? SELECTOR_BAR_STYLES.buttonActive
+                      : SELECTOR_BAR_STYLES.buttonInactive
+                  )}
+                >
+                  {nextDenomination.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          ) : activeTab === 'growth' ? (
+            <div className={cl('flex shrink-0 items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
+              {GROWTH_DISPLAY_MODES.map((mode) => (
+                <button
+                  key={mode.id}
+                  type={'button'}
+                  onClick={() => setGrowthDisplayMode(mode.id)}
+                  className={cl(
+                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                    SELECTOR_BAR_STYLES.buttonBase,
+                    growthDisplayMode === mode.id
+                      ? SELECTOR_BAR_STYLES.buttonActive
+                      : SELECTOR_BAR_STYLES.buttonInactive
+                  )}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
-        {activeTab === 'balance' ? (
-          <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
-            {(['usd', 'eth'] as const).map((nextDenomination) => (
-              <button
-                key={nextDenomination}
-                type={'button'}
-                onClick={() => onDenominationChange(nextDenomination)}
-                className={cl(
-                  'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                  'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                  SELECTOR_BAR_STYLES.buttonBase,
-                  denomination === nextDenomination
-                    ? SELECTOR_BAR_STYLES.buttonActive
-                    : SELECTOR_BAR_STYLES.buttonInactive
-                )}
-              >
-                {nextDenomination.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        ) : activeTab === 'growth' ? (
-          <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
-            {GROWTH_DISPLAY_MODES.map((mode) => (
-              <button
-                key={mode.id}
-                type={'button'}
-                onClick={() => setGrowthDisplayMode(mode.id)}
-                className={cl(
-                  'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                  'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                  SELECTOR_BAR_STYLES.buttonBase,
-                  growthDisplayMode === mode.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
-                )}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
+        <p className={'min-h-[2lh] text-xs text-text-secondary'}>
+          {getChartDescription(activeTab, resolvedGrowthDisplayMode)}
+        </p>
+        <p
+          aria-hidden={!autoGrowthDisplayExplanation}
+          className={cl(
+            'text-[11px] font-medium uppercase tracking-[0.08em] text-text-tertiary',
+            autoGrowthDisplayExplanation ? '' : 'invisible'
+          )}
+        >
+          {autoGrowthDisplayExplanation ?? 'Auto: stable-dominant portfolio, showing USD'}
+        </p>
       </div>
       {showControls ? (
         <div className={'flex flex-col gap-2 md:flex-row md:items-center md:justify-between'}>
