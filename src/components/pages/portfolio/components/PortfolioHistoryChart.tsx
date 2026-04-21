@@ -177,6 +177,23 @@ function formatIndexValue(value: number): string {
   return value >= 1000 ? value.toFixed(0) : value >= 100 ? value.toFixed(1) : value.toFixed(2)
 }
 
+function rebaseIndexPoints(points: TChartPoint[]): TChartPoint[] {
+  const baseValue = points.find(
+    (point): point is { date: string; value: number } =>
+      typeof point.value === 'number' && Number.isFinite(point.value) && point.value !== 0
+  )?.value
+
+  if (!baseValue) {
+    return points
+  }
+
+  return points.map((point) => ({
+    date: point.date,
+    value:
+      typeof point.value === 'number' && Number.isFinite(point.value) ? (point.value / baseValue) * 100 : point.value
+  }))
+}
+
 function resolveGrowthDisplayMode(
   selectedMode: TGrowthDisplayMode,
   summary: TPortfolioProtocolReturnHistorySummary | null,
@@ -222,7 +239,7 @@ function buildIndexedFamilySeries(
 
       return {
         series,
-        points: points.map((point) => ({ date: point.date, value: point.growthIndex }))
+        points: rebaseIndexPoints(points.map((point) => ({ date: point.date, value: point.growthIndex })))
       }
     })
     .filter(({ points }) => points.some((point) => point.value !== null))
@@ -521,10 +538,12 @@ export function PortfolioHistoryChart({
         ? protocolReturnData
         : protocolReturnData.slice(-limit)
 
-    return points.map((point) => ({
-      date: point.date,
-      value: point.growthIndex
-    }))
+    return rebaseIndexPoints(
+      points.map((point) => ({
+        date: point.date,
+        value: point.growthIndex
+      }))
+    )
   }, [protocolReturnData, timeframe])
 
   const filteredReturnData = useMemo<TChartPoint[]>(() => {
@@ -964,7 +983,9 @@ export function PortfolioHistoryChart({
       !protocolReturnData || !Number.isFinite(limit) || limit >= protocolReturnData.length
         ? (protocolReturnData ?? [])
         : protocolReturnData.slice(-limit)
-    const aggregateIndexPoints = aggregatePoints.map((point) => ({ date: point.date, value: point.growthIndex }))
+    const aggregateIndexPoints = rebaseIndexPoints(
+      aggregatePoints.map((point) => ({ date: point.date, value: point.growthIndex }))
+    )
     const indexData: TIndexChartPoint[] = aggregateIndexPoints.map((point, index) => {
       const row: TIndexChartPoint = { date: point.date, aggregate: point.value }
       indexedFamilySeries.forEach((family) => {
