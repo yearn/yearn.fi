@@ -292,7 +292,15 @@ function PortfolioGrowthIndexTooltip({
         }
       ]
     })
-    .sort((left, right) => (left.key === 'aggregate' ? -1 : right.key === 'aggregate' ? 1 : 0))
+    .sort((left, right) => {
+      if (left.key === 'aggregate') {
+        return -1
+      }
+      if (right.key === 'aggregate') {
+        return 1
+      }
+      return right.value - left.value
+    })
 
   return (
     <div
