@@ -3,6 +3,7 @@ const net = require('net')
 const DEFAULT_CLIENT_PORT = 3000
 const DEFAULT_API_PORT = 3001
 const DEFAULT_HOST = '127.0.0.1'
+const DEFAULT_API_PROXY_HOST = '127.0.0.1'
 const MAX_PORT_ATTEMPTS = 100
 
 function isPositiveInteger(value) {
@@ -89,10 +90,10 @@ async function resolveOpenPort(startPort, host, reservedPorts = new Set()) {
   }
 }
 
-function createEnv({ apiPort, apiProxyTarget, host }) {
+function createEnv({ apiPort, apiProxyHost, apiProxyTarget }) {
   return {
     ...process.env,
-    API_PROXY_HOST: host,
+    API_PROXY_HOST: apiProxyHost,
     API_PROXY_TARGET: apiProxyTarget,
     ...(apiPort ? { API_SERVER_PORT: String(apiPort) } : {})
   }
@@ -122,7 +123,8 @@ async function waitForChildren(children) {
 }
 
 async function resolveStartupConfig() {
-  const host = process.env.HOST || process.env.API_PROXY_HOST || DEFAULT_HOST
+  const host = process.env.HOST || DEFAULT_HOST
+  const apiProxyHost = process.env.API_PROXY_HOST || DEFAULT_API_PROXY_HOST
   const explicitClientPort = process.env.PORT
   const explicitApiPort = process.env.API_SERVER_PORT
   const explicitApiProxyTarget = process.env.API_PROXY_TARGET?.trim()
@@ -140,7 +142,8 @@ async function resolveStartupConfig() {
 
   return {
     apiPort,
-    apiProxyTarget: explicitApiProxyTarget || `http://${host}:${apiPort}`,
+    apiProxyHost,
+    apiProxyTarget: explicitApiProxyTarget || `http://${apiProxyHost}:${apiPort}`,
     clientPort,
     host,
     shouldStartLocalApi: Boolean(apiPort)
@@ -153,9 +156,9 @@ async function main() {
     throw new Error('Usage: bun scripts/run-local.js <dev|preview>')
   }
 
-  const { apiPort, apiProxyTarget, clientPort, host, shouldStartLocalApi } = await resolveStartupConfig()
+  const { apiPort, apiProxyHost, apiProxyTarget, clientPort, host, shouldStartLocalApi } = await resolveStartupConfig()
   const env = {
-    ...createEnv({ apiPort, apiProxyTarget, host }),
+    ...createEnv({ apiPort, apiProxyHost, apiProxyTarget }),
     HOST: host,
     ...(clientPort ? { PORT: String(clientPort) } : {})
   }
