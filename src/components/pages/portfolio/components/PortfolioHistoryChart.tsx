@@ -759,16 +759,22 @@ export function PortfolioHistoryChart({
   const renderHeader = (showControls = false): ReactElement => (
     <div className={'flex flex-col gap-2.5 md:gap-3'}>
       <div className={'flex items-start justify-between gap-3'}>
-        <div className={'flex flex-col gap-0.5'}>
+        <div className={'flex min-w-0 flex-1 flex-col gap-0.5'}>
           <h2 className={'text-xl font-semibold text-text-primary'}>
             {getChartTitle(activeTab, resolvedGrowthDisplayMode)}
           </h2>
-          <p className={'text-xs text-text-secondary'}>{getChartDescription(activeTab, resolvedGrowthDisplayMode)}</p>
-          {activeTab === 'growth' && autoGrowthDisplayExplanation ? (
-            <p className={'text-[11px] font-medium uppercase tracking-[0.08em] text-text-tertiary'}>
-              {autoGrowthDisplayExplanation}
-            </p>
-          ) : null}
+          <p className={'text-xs text-text-secondary min-h-[2lh]'}>
+            {getChartDescription(activeTab, resolvedGrowthDisplayMode)}
+          </p>
+          <p
+            aria-hidden={!autoGrowthDisplayExplanation}
+            className={cl(
+              'text-[11px] font-medium uppercase tracking-[0.08em] text-text-tertiary',
+              autoGrowthDisplayExplanation ? '' : 'invisible'
+            )}
+          >
+            {autoGrowthDisplayExplanation ?? 'Auto: stable-dominant portfolio, showing USD'}
+          </p>
         </div>
         {activeTab === 'balance' ? (
           <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
