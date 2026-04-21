@@ -2,6 +2,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import { defineConfig, loadEnv } from 'vite'
 
+const DEFAULT_HOST = '127.0.0.1'
 const DEFAULT_API_SERVER_PORT = '3001'
 const API_HEALTHCHECK_PATH = '/api/enso/balances'
 const API_HEALTHCHECK_EXPECTED_ERROR = 'Missing eoaAddress'
@@ -10,7 +11,16 @@ const API_HEALTHCHECK_RETRIES = 10
 const API_HEALTHCHECK_DELAY_MS = 300
 
 function resolveApiProxyTarget(env: Record<string, string>) {
-  return env.API_PROXY_TARGET || `http://localhost:${env.API_SERVER_PORT || DEFAULT_API_SERVER_PORT}`
+  return env.API_PROXY_TARGET || `http://${env.API_PROXY_HOST || DEFAULT_HOST}:${env.API_SERVER_PORT || DEFAULT_API_SERVER_PORT}`
+}
+
+function resolveClientHost(env: Record<string, string>) {
+  return env.HOST || DEFAULT_HOST
+}
+
+function resolveClientPort(env: Record<string, string>) {
+  const configuredPort = Number(env.PORT)
+  return Number.isInteger(configuredPort) && configuredPort > 0 ? configuredPort : 3000
 }
 
 function buildProxy(apiProxyTarget: string) {
@@ -71,6 +81,8 @@ function previewApiGuard(apiProxyTarget: string) {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiProxyTarget = resolveApiProxyTarget(env)
+  const host = resolveClientHost(env)
+  const port = resolveClientPort(env)
   const proxy = buildProxy(apiProxyTarget)
 
   return {
@@ -90,10 +102,13 @@ export default defineConfig(({ mode }) => {
       global: 'globalThis'
     },
     server: {
-      port: 3000,
+      host,
+      port,
       proxy
     },
     preview: {
+      host,
+      port,
       proxy
     },
     build: {
