@@ -11,7 +11,10 @@ const API_HEALTHCHECK_RETRIES = 10
 const API_HEALTHCHECK_DELAY_MS = 300
 
 function resolveApiProxyTarget(env: Record<string, string>) {
-  return env.API_PROXY_TARGET || `http://${env.API_PROXY_HOST || DEFAULT_HOST}:${env.API_SERVER_PORT || DEFAULT_API_SERVER_PORT}`
+  return (
+    env.API_PROXY_TARGET ||
+    `http://${env.API_PROXY_HOST || DEFAULT_HOST}:${env.API_SERVER_PORT || DEFAULT_API_SERVER_PORT}`
+  )
 }
 
 function resolveClientHost(env: Record<string, string>) {

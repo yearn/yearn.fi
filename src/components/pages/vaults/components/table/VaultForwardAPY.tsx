@@ -1,13 +1,7 @@
-import { KATANA_CHAIN_ID, SPECTRA_MARKET_VAULT_ADDRESSES } from '@pages/vaults/constants/addresses'
-import {
-  getVaultAddress,
-  getVaultChainID,
-  getVaultStaking,
-  type TKongVaultInput
-} from '@pages/vaults/domain/kongVaultSelectors'
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import { cl, formatAmount, formatApyDisplay } from '@shared/utils'
-import type { ReactElement, ReactNode } from 'react'
+import { cl } from '@shared/utils'
+import type { ReactElement } from 'react'
 import { Fragment, forwardRef, useCallback, useImperativeHandle, useState } from 'react'
 import { APYDetailsModal } from './APYDetailsModal'
 import { ApyDisplay } from './ApyDisplay'
@@ -18,13 +12,6 @@ export type TVaultForwardAPYVariant = 'default' | 'factory-list'
 export type TVaultForwardAPYHandle = {
   openModal: () => void
 }
-
-const INLINE_DETAILS_CONTAINER_CLASS =
-  'w-full rounded-lg border border-border bg-surface-secondary p-3 text-text-primary'
-const INLINE_DETAILS_STACK_CLASS = 'flex flex-col gap-2'
-const INLINE_DETAILS_LINK_CLASS =
-  'font-bold underline sm:decoration-neutral-600/30 decoration-dotted underline-offset-4 ' +
-  'transition-opacity hover:decoration-neutral-600'
 
 type TVaultForwardAPYProps = {
   currentVault: TKongVaultInput
@@ -38,25 +25,6 @@ type TVaultForwardAPYProps = {
   onInteractiveHoverChange?: (isHovering: boolean) => void
   containerClassName?: string
   isContainerInteractive?: boolean
-}
-
-type TVaultForwardAPYInlineDetailsProps = {
-  currentVault: TKongVaultInput
-  showBoostDetails?: boolean
-}
-
-type TInlineDetailRowProps = {
-  label: string
-  value: ReactNode
-}
-
-function InlineDetailRow({ label, value }: TInlineDetailRowProps): ReactElement {
-  return (
-    <div className={'flex items-center justify-between'}>
-      <p className={'text-xs text-text-primary'}>{label}</p>
-      <span className={'font-number'}>{value}</span>
-    </div>
-  )
 }
 
 export const VaultForwardAPY = forwardRef<TVaultForwardAPYHandle, TVaultForwardAPYProps>(function VaultForwardAPY(
@@ -164,154 +132,3 @@ export const VaultForwardAPY = forwardRef<TVaultForwardAPYHandle, TVaultForwardA
     </Fragment>
   )
 })
-
-// Inline details for mobile accordion rendering controlled by parent
-export function VaultForwardAPYInlineDetails({
-  currentVault,
-  showBoostDetails = true
-}: TVaultForwardAPYInlineDetailsProps): ReactElement | null {
-  const data = useVaultApyData(currentVault)
-  const katanaExtras = data.katanaExtras
-  const chainID = getVaultChainID(currentVault)
-  const vaultAddress = getVaultAddress(currentVault)
-  const staking = getVaultStaking(currentVault)
-
-  // Check if vault is eligible for Spectra boost (Katana chain only)
-  const isEligibleForSpectraBoost =
-    chainID === KATANA_CHAIN_ID && SPECTRA_MARKET_VAULT_ADDRESSES.includes(vaultAddress.toLowerCase())
-
-  const hasKatanaDetails = chainID === KATANA_CHAIN_ID && katanaExtras && data.katanaEstApr !== undefined
-
-  if (hasKatanaDetails && katanaExtras) {
-    const steerPointsPerDollar = katanaExtras.steerPointsPerDollar ?? 0
-    const hasSteerPoints = steerPointsPerDollar > 0
-    const fixedRateKatanaRewards = katanaExtras.fixedRateKatanaRewards ?? 0
-    const hasFixedRateRewards = fixedRateKatanaRewards > 0
-    const katanaAppRewardsAPR = katanaExtras.katanaAppRewardsAPR ?? 0
-    const hasAppRewards = katanaAppRewardsAPR > 0
-    return (
-      <div className={INLINE_DETAILS_CONTAINER_CLASS}>
-        <div className={INLINE_DETAILS_STACK_CLASS}>
-          <InlineDetailRow label={'Est. Native APY'} value={formatApyDisplay(data.baseForwardApr)} />
-          {hasFixedRateRewards ? (
-            <InlineDetailRow label={'Base Rewards APR'} value={formatApyDisplay(fixedRateKatanaRewards)} />
-          ) : null}
-          {hasAppRewards ? (
-            <InlineDetailRow label={'App Rewards APR'} value={formatApyDisplay(katanaAppRewardsAPR)} />
-          ) : null}
-          {hasSteerPoints ? (
-            <InlineDetailRow label={'Steer Points / $'} value={steerPointsPerDollar.toFixed(2)} />
-          ) : null}
-          <div className={'mt-2 p-3 pb-0 text-text-secondary md:text-xs text-bold'}>
-            <p className={'-mt-1 mb-2 w-full text-left text-xs break-words'}>
-              {'Read more about KAT tokenomics '}
-              <a
-                href={'https://katana.network/blog/the-network-is-katana-the-token-is-kat'}
-                target={'_blank'}
-                rel={'noopener noreferrer'}
-                className={INLINE_DETAILS_LINK_CLASS}
-              >
-                {'here.'}
-              </a>
-            </p>
-            {hasFixedRateRewards ? (
-              <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words'}>
-                {'* claimable after 28 days, subject to the Katana '}
-                <a
-                  href={'https://x.com/katana/status/1961475531188126178'}
-                  target={'_blank'}
-                  rel={'noopener noreferrer'}
-                  className={INLINE_DETAILS_LINK_CLASS}
-                >
-                  {'haircut schedule'}
-                </a>
-                {'.'}
-              </p>
-            ) : null}
-            {isEligibleForSpectraBoost && (
-              <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words whitespace-normal'}>
-                {'Earn boosted yield on Spectra if you '}
-                <a
-                  href={'https://app.spectra.finance/pools?networks=katana'}
-                  target={'_blank'}
-                  rel={'noopener noreferrer'}
-                  className={INLINE_DETAILS_LINK_CLASS}
-                >
-                  {'deposit to their protocol'}
-                </a>
-                {'.'}
-              </p>
-            )}
-            {hasSteerPoints ? (
-              <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words whitespace-normal'}>
-                {'This vault earns Steer Points, but you must '}
-                <a
-                  href={'https://app.steer.finance/points'}
-                  target={'_blank'}
-                  rel={'noopener noreferrer'}
-                  className={INLINE_DETAILS_LINK_CLASS}
-                >
-                  {'register here to earn them.'}
-                </a>
-              </p>
-            ) : null}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (data.mode === 'noForward' || chainID === KATANA_CHAIN_ID) {
-    if (data.rewardsAprSum > 0) {
-      return (
-        <div className={INLINE_DETAILS_CONTAINER_CLASS}>
-          <div className={INLINE_DETAILS_STACK_CLASS}>
-            <InlineDetailRow label={'Base APY'} value={formatApyDisplay(data.netApr)} />
-            <InlineDetailRow label={'Rewards APR'} value={formatApyDisplay(data.rewardsAprSum)} />
-          </div>
-        </div>
-      )
-    }
-    return null
-  }
-
-  if (data.mode === 'boosted' && data.isBoosted) {
-    const unBoostedAPY = data.unboostedApr || 0
-    return showBoostDetails ? (
-      <div className={INLINE_DETAILS_CONTAINER_CLASS}>
-        <div className={INLINE_DETAILS_STACK_CLASS}>
-          <InlineDetailRow label={'Base APY'} value={formatApyDisplay(unBoostedAPY)} />
-          <InlineDetailRow label={'Boost'} value={`${formatAmount(data.boost || 0, 2, 2)}x`} />
-        </div>
-      </div>
-    ) : null
-  }
-
-  if (data.mode === 'rewards') {
-    const isSourceVeYFI = staking.source === 'VeYFI'
-    const veYFIRange = data.veYfiRange
-    return (
-      <div className={INLINE_DETAILS_CONTAINER_CLASS}>
-        <div className={INLINE_DETAILS_STACK_CLASS}>
-          <InlineDetailRow label={'Base APY'} value={formatApyDisplay(data.baseForwardApr)} />
-          {isSourceVeYFI && veYFIRange ? (
-            <InlineDetailRow
-              label={'Rewards APR'}
-              value={
-                <>
-                  {formatApyDisplay(veYFIRange[0])}
-                  {' → '}
-                  {formatApyDisplay(veYFIRange[1])}
-                </>
-              }
-            />
-          ) : (
-            <InlineDetailRow label={'Rewards APR'} value={formatApyDisplay(data.rewardsAprSum)} />
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  return null
-}

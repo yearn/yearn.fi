@@ -160,7 +160,9 @@ async function main() {
     ...(clientPort ? { PORT: String(clientPort) } : {})
   }
 
-  console.log(`${mode} startup using API ${env.API_PROXY_TARGET}${clientPort ? ` and client http://${host}:${clientPort}` : ''}`)
+  console.log(
+    `${mode} startup using API ${env.API_PROXY_TARGET}${clientPort ? ` and client http://${host}:${clientPort}` : ''}`
+  )
 
   const clientPortArgs = clientPort ? ['--port', String(clientPort)] : []
   const clientCommand =
