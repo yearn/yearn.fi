@@ -89,12 +89,12 @@ async function resolveOpenPort(startPort, host, reservedPorts = new Set()) {
   }
 }
 
-function createEnv({ apiPort, host }) {
+function createEnv({ apiPort, apiProxyTarget, host }) {
   return {
     ...process.env,
     API_PROXY_HOST: host,
-    API_PROXY_TARGET: `http://${host}:${apiPort}`,
-    API_SERVER_PORT: String(apiPort)
+    API_PROXY_TARGET: apiProxyTarget,
+    ...(apiPort ? { API_SERVER_PORT: String(apiPort) } : {})
   }
 }
 
@@ -125,17 +125,26 @@ async function resolveStartupConfig() {
   const host = process.env.HOST || process.env.API_PROXY_HOST || DEFAULT_HOST
   const explicitClientPort = process.env.PORT
   const explicitApiPort = process.env.API_SERVER_PORT
+  const explicitApiProxyTarget = process.env.API_PROXY_TARGET?.trim()
 
   const clientPort = explicitClientPort ? resolvePort(explicitClientPort, DEFAULT_CLIENT_PORT) : undefined
   const apiPort = explicitApiPort
     ? resolvePort(explicitApiPort, DEFAULT_API_PORT)
-    : await resolveOpenPort(DEFAULT_API_PORT, host, clientPort ? new Set([clientPort]) : new Set())
+    : explicitApiProxyTarget
+      ? undefined
+      : await resolveOpenPort(DEFAULT_API_PORT, host, clientPort ? new Set([clientPort]) : new Set())
 
-  if (clientPort && apiPort === clientPort) {
+  if (clientPort && apiPort && apiPort === clientPort) {
     throw new Error(`Client and API ports must be different. Both resolved to ${clientPort}`)
   }
 
-  return { apiPort, clientPort, host }
+  return {
+    apiPort,
+    apiProxyTarget: explicitApiProxyTarget || `http://${host}:${apiPort}`,
+    clientPort,
+    host,
+    shouldStartLocalApi: Boolean(apiPort)
+  }
 }
 
 async function main() {
@@ -144,32 +153,33 @@ async function main() {
     throw new Error('Usage: bun scripts/run-local.js <dev|preview>')
   }
 
-  const { apiPort, clientPort, host } = await resolveStartupConfig()
+  const { apiPort, apiProxyTarget, clientPort, host, shouldStartLocalApi } = await resolveStartupConfig()
   const env = {
-    ...createEnv({ apiPort, host }),
+    ...createEnv({ apiPort, apiProxyTarget, host }),
     HOST: host,
     ...(clientPort ? { PORT: String(clientPort) } : {})
   }
 
   console.log(`${mode} startup using API ${env.API_PROXY_TARGET}${clientPort ? ` and client http://${host}:${clientPort}` : ''}`)
 
-  const apiCommand = mode === 'dev' ? ['bun', '--watch', 'api/server.ts'] : ['bun', 'api/server.ts']
   const clientPortArgs = clientPort ? ['--port', String(clientPort)] : []
   const clientCommand =
     mode === 'dev'
       ? ['bunx', 'vite', '--host', host, ...clientPortArgs]
       : ['bunx', 'vite', 'preview', '--host', host, ...clientPortArgs]
 
-  const apiChild = spawnChild(apiCommand, env)
+  const apiChild = shouldStartLocalApi
+    ? spawnChild(mode === 'dev' ? ['bun', '--watch', 'api/server.ts'] : ['bun', 'api/server.ts'], env)
+    : undefined
   const clientChild = spawnChild(clientCommand, env)
 
   ;['SIGINT', 'SIGTERM'].forEach((signal) => {
     process.on(signal, () => {
-      ;[apiChild, clientChild].forEach(terminateChild)
+      ;[apiChild, clientChild].filter(Boolean).forEach(terminateChild)
     })
   })
 
-  await waitForChildren([apiChild, clientChild])
+  await waitForChildren([apiChild, clientChild].filter(Boolean))
 }
 
 main().catch((error) => {
