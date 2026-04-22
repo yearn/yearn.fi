@@ -17,12 +17,26 @@ type TVaultRecentReallocationsSectionProps = {
 }
 
 type TRibbon = {
+  id: string
   color: string
   path: string
+  sourceId: string
   sourceName: string
+  targetId: string
   targetName: string
   value: number
 }
+
+type THoverTarget =
+  | {
+      type: 'node'
+      id: string
+    }
+  | {
+      type: 'ribbon'
+      id: string
+    }
+  | null
 
 const VIEWBOX_WIDTH = 1000
 const VIEWBOX_HEIGHT = 675
@@ -179,6 +193,7 @@ function ReallocationSankeyChart({
   const graph = useMemo(() => {
     return buildStateTransitionSankeyGraph(panel.beforeState.strategies, panel.afterState.strategies)
   }, [panel.afterState.strategies, panel.beforeState.strategies])
+  const [hoverTarget, setHoverTarget] = useState<THoverTarget>(null)
 
   const nodeById = useMemo(() => {
     return new Map(graph.nodes.map((node) => [node.id, node]))
@@ -229,7 +244,10 @@ function ReallocationSankeyChart({
                 targetTop: CHART_TOP + (targetNode.localY + targetOffsetRatio) * chartHeight,
                 targetBottom: CHART_TOP + (targetNode.localY + targetOffsetRatio + targetHeightRatio) * chartHeight
               }),
+              id: `${link.source}->${link.target}`,
               sourceName: sourceNode.displayName,
+              sourceId: sourceNode.id,
+              targetId: targetNode.id,
               targetName: targetNode.displayName,
               value: link.value
             }
@@ -243,6 +261,55 @@ function ReallocationSankeyChart({
       }
     ).ribbons
   }, [chartHeight, colorByStrategyId, graph.links, nodeById])
+  const hoverState = useMemo(() => {
+    if (!isActive || !hoverTarget) {
+      return null
+    }
+
+    const focusedRibbonIds = new Set<string>()
+    const focusedNodeIds = new Set<string>()
+
+    if (hoverTarget.type === 'node') {
+      focusedNodeIds.add(hoverTarget.id)
+
+      ribbons.forEach((ribbon) => {
+        if (ribbon.sourceId === hoverTarget.id || ribbon.targetId === hoverTarget.id) {
+          focusedRibbonIds.add(ribbon.id)
+          focusedNodeIds.add(ribbon.sourceId)
+          focusedNodeIds.add(ribbon.targetId)
+        }
+      })
+    } else {
+      const focusedRibbon = ribbons.find((ribbon) => ribbon.id === hoverTarget.id)
+      if (focusedRibbon) {
+        focusedRibbonIds.add(focusedRibbon.id)
+        focusedNodeIds.add(focusedRibbon.sourceId)
+        focusedNodeIds.add(focusedRibbon.targetId)
+      }
+    }
+
+    return {
+      focusedRibbonIds,
+      focusedNodeIds
+    }
+  }, [hoverTarget, isActive, ribbons])
+  const visibleRibbons = useMemo(() => {
+    if (!hoverState) {
+      return ribbons
+    }
+
+    return [...ribbons].sort((firstRibbon, secondRibbon) => {
+      const firstIsFocused = hoverState.focusedRibbonIds.has(firstRibbon.id)
+      const secondIsFocused = hoverState.focusedRibbonIds.has(secondRibbon.id)
+      return Number(firstIsFocused) - Number(secondIsFocused)
+    })
+  }, [hoverState, ribbons])
+
+  useEffect(() => {
+    if (!isActive) {
+      setHoverTarget(null)
+    }
+  }, [isActive, panel.id])
 
   if (graph.nodes.length === 0 || ribbons.length === 0) {
     return (
@@ -261,6 +328,7 @@ function ReallocationSankeyChart({
       className="h-full w-full"
       role="img"
       aria-label="Recent reallocation sankey chart"
+      onMouseLeave={() => setHoverTarget(null)}
     >
       {isActive ? (
         <>
@@ -279,36 +347,115 @@ function ReallocationSankeyChart({
         </>
       ) : null}
 
-      {ribbons.map((ribbon) => (
-        <path
-          key={`${ribbon.path}-${ribbon.value}`}
-          d={ribbon.path}
-          fill={withAlpha(ribbon.color, isActive ? (isDark ? 0.34 : 0.22) : isDark ? 0.22 : 0.14)}
-          stroke={withAlpha(ribbon.color, isActive ? (isDark ? 0.5 : 0.34) : isDark ? 0.34 : 0.2)}
-          strokeWidth={1}
-        >
-          <title>{`${ribbon.sourceName} → ${ribbon.targetName} • ${formatPercent(ribbon.value, 2, 2)}`}</title>
-        </path>
-      ))}
+      {visibleRibbons.map((ribbon) => {
+        const isRibbonFocused = hoverState?.focusedRibbonIds.has(ribbon.id) ?? false
+        const hasHover = Boolean(hoverState)
+        const fillOpacity = isActive ? (isDark ? 0.34 : 0.22) : isDark ? 0.22 : 0.14
+        const strokeOpacity = isActive ? (isDark ? 0.5 : 0.34) : isDark ? 0.34 : 0.2
+        const isHoveredRibbon = hoverTarget?.type === 'ribbon' && hoverTarget.id === ribbon.id
+
+        return (
+          <path
+            key={ribbon.id}
+            d={ribbon.path}
+            onMouseEnter={() => {
+              if (isActive) {
+                setHoverTarget({ type: 'ribbon', id: ribbon.id })
+              }
+            }}
+            onMouseLeave={() => {
+              setHoverTarget((currentHoverTarget) =>
+                currentHoverTarget?.type === 'ribbon' && currentHoverTarget.id === ribbon.id ? null : currentHoverTarget
+              )
+            }}
+            fill={withAlpha(
+              ribbon.color,
+              hasHover
+                ? isRibbonFocused
+                  ? fillOpacity + (isHoveredRibbon ? 0.16 : 0.1)
+                  : fillOpacity * 0.3
+                : fillOpacity
+            )}
+            stroke={withAlpha(
+              ribbon.color,
+              hasHover
+                ? isRibbonFocused
+                  ? strokeOpacity + (isHoveredRibbon ? 0.2 : 0.12)
+                  : strokeOpacity * 0.3
+                : strokeOpacity
+            )}
+            strokeWidth={1}
+            style={{
+              cursor: isActive ? 'pointer' : 'default',
+              opacity: hasHover ? (isRibbonFocused ? (isHoveredRibbon ? 1 : 0.92) : 0.16) : 1,
+              transition: 'opacity 180ms ease, fill 180ms ease, stroke 180ms ease'
+            }}
+          >
+            <title>{`${ribbon.sourceName} → ${ribbon.targetName} • ${formatPercent(ribbon.value, 2, 2)}`}</title>
+          </path>
+        )
+      })}
 
       {graph.nodes.map((node) => {
         const color = colorByStrategyId.get(node.id.replace(`${node.side}:`, '')) ?? '#9ca3af'
         const x = node.side === 'before' ? BEFORE_NODE_X : AFTER_NODE_X
         const y = CHART_TOP + node.localY * chartHeight
         const height = node.heightRatio * chartHeight
+        const hasHover = Boolean(hoverState)
+        const isHoveredNode = hoverTarget?.type === 'node' && hoverTarget.id === node.id
+        const isFocusedNode = hoverState?.focusedNodeIds.has(node.id) ?? false
+        const nodeOpacity = hasHover ? (isFocusedNode ? (isHoveredNode ? 1 : 0.94) : 0.16) : 1
+        const labelOpacity = hasHover ? (isFocusedNode ? (isHoveredNode ? 1 : 0.9) : 0.14) : 1
+        const nodeStrokeColor = isHoveredNode ? withAlpha(textColor, isDark ? 0.92 : 0.72) : borderColor
+        const nodeStrokeWidth = isHoveredNode ? 2 : 1
 
         return (
-          <g key={node.id}>
-            <rect x={x} y={y} width={NODE_WIDTH} height={height} fill={color} stroke={borderColor} strokeWidth={1}>
+          <g
+            key={node.id}
+            onMouseEnter={() => {
+              if (isActive) {
+                setHoverTarget({ type: 'node', id: node.id })
+              }
+            }}
+            onMouseLeave={() => {
+              setHoverTarget((currentHoverTarget) =>
+                currentHoverTarget?.type === 'node' && currentHoverTarget.id === node.id ? null : currentHoverTarget
+              )
+            }}
+            style={{
+              cursor: isActive ? 'pointer' : 'default',
+              opacity: nodeOpacity,
+              transition: 'opacity 180ms ease'
+            }}
+          >
+            <rect
+              x={x}
+              y={y}
+              width={NODE_WIDTH}
+              height={height}
+              fill={color}
+              stroke={nodeStrokeColor}
+              strokeWidth={nodeStrokeWidth}
+              style={{
+                transition: 'stroke 180ms ease, stroke-width 180ms ease'
+              }}
+            >
               <title>{`${node.displayName} • ${formatPercent(node.value, 2, 2)}`}</title>
             </rect>
             {isActive ? (
-              <SankeyNodeLabel
-                node={node}
-                textColor={textColor}
-                mutedTextColor={mutedTextColor}
-                backgroundStrokeColor={backgroundStrokeColor}
-              />
+              <g
+                style={{
+                  opacity: labelOpacity,
+                  transition: 'opacity 180ms ease'
+                }}
+              >
+                <SankeyNodeLabel
+                  node={node}
+                  textColor={textColor}
+                  mutedTextColor={mutedTextColor}
+                  backgroundStrokeColor={backgroundStrokeColor}
+                />
+              </g>
             ) : null}
           </g>
         )
