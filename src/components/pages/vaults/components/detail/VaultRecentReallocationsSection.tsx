@@ -25,7 +25,7 @@ type TRibbon = {
 }
 
 const VIEWBOX_WIDTH = 1000
-const VIEWBOX_HEIGHT = 800
+const VIEWBOX_HEIGHT = 675
 const NODE_WIDTH = 22
 const BEFORE_NODE_X = 44
 const AFTER_NODE_X = VIEWBOX_WIDTH - BEFORE_NODE_X - NODE_WIDTH
@@ -443,7 +443,7 @@ function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: bo
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="relative h-[440px] w-full overflow-hidden md:h-[620px]">
+      <div className="relative h-[440px] w-full overflow-hidden md:h-[500px]">
         <TimelineControls activeIndex={activeIndex} panelCount={panels.length} onOlder={goOlder} onNewer={goNewer} />
 
         {windowPanels.map((panel, windowIndex) => {

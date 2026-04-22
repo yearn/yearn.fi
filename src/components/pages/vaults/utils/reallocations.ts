@@ -490,6 +490,55 @@ function buildProposalState(change: TNormalizedReallocationChange): TReallocatio
   }
 }
 
+function getStateStrategyIdentity(strategy: TReallocationStateStrategy): string {
+  return strategy.isUnallocated ? UNALLOCATED_STRATEGY_ID : strategy.strategyId
+}
+
+function alignStateStrategyOrder(
+  previousState: TReallocationState | undefined,
+  nextState: TReallocationState
+): TReallocationState {
+  if (!previousState) {
+    return {
+      ...nextState,
+      strategies: [...nextState.strategies]
+    }
+  }
+
+  const nextByStrategyId = new Map(
+    nextState.strategies.map((strategy) => [getStateStrategyIdentity(strategy), strategy] as const)
+  )
+  const carriedStrategyIds = new Set<string>()
+
+  const carriedStrategies = previousState.strategies.flatMap((strategy) => {
+    const strategyId = getStateStrategyIdentity(strategy)
+    const nextStrategy = nextByStrategyId.get(strategyId)
+
+    if (!nextStrategy || carriedStrategyIds.has(strategyId)) {
+      return []
+    }
+
+    carriedStrategyIds.add(strategyId)
+    return [nextStrategy]
+  })
+
+  const remainingStrategies = nextState.strategies.filter(
+    (strategy) => !carriedStrategyIds.has(getStateStrategyIdentity(strategy))
+  )
+
+  return {
+    ...nextState,
+    strategies: [...carriedStrategies, ...remainingStrategies]
+  }
+}
+
+function alignChronologicalStateStrategies(states: readonly TReallocationState[]): TReallocationState[] {
+  return states.reduce((orderedStates, state) => {
+    orderedStates.push(alignStateStrategyOrder(orderedStates[orderedStates.length - 1], state))
+    return orderedStates
+  }, [] as TReallocationState[])
+}
+
 function panelHasAllocations(panel: TReallocationPanel): boolean {
   return [...panel.beforeState.strategies, ...panel.afterState.strategies].some((strategy) =>
     isPositive(strategy.allocationPct)
@@ -503,32 +552,36 @@ export function buildReallocationPanels(
   const dedupedHistory = dedupeVaultHistory(optimizations)
   const normalizedHistory = dedupedHistory.map((optimization) => normalizeChange(optimization, strategyNamesByAddress))
   const chronologicalHistory = normalizedHistory.slice().reverse()
+  const chronologicalSnapshotStates = alignChronologicalStateStrategies(chronologicalHistory.map(buildSnapshotState))
 
-  const historicalPanels = chronologicalHistory.slice(1).map((change, index) => {
-    const beforeChange = chronologicalHistory[index]
+  const historicalPanels = chronologicalSnapshotStates.slice(1).map((afterState, index) => {
+    const beforeState = chronologicalSnapshotStates[index]
 
     return {
-      id: `historical:${beforeChange.sourceKey}->${change.sourceKey}`,
-      beforeState: buildSnapshotState(beforeChange),
-      afterState: buildSnapshotState(change),
-      beforeTimestampUtc: beforeChange.timestampUtc,
-      afterTimestampUtc: change.timestampUtc,
+      id: `historical:${beforeState.id}->${afterState.id}`,
+      beforeState,
+      afterState,
+      beforeTimestampUtc: beforeState.timestampUtc,
+      afterTimestampUtc: afterState.timestampUtc,
       kind: 'historical' as const
     }
   })
 
   const latestChange = normalizedHistory[0]
+  const latestSnapshotState = chronologicalSnapshotStates[chronologicalSnapshotStates.length - 1]
   const proposalPanel = latestChange
-    ? [
-        {
-          id: `proposal:${latestChange.sourceKey}`,
-          beforeState: buildSnapshotState(latestChange),
-          afterState: buildProposalState(latestChange),
-          beforeTimestampUtc: latestChange.timestampUtc,
-          afterTimestampUtc: latestChange.timestampUtc,
-          kind: 'proposal' as const
-        }
-      ]
+    ? latestSnapshotState
+      ? [
+          {
+            id: `proposal:${latestChange.sourceKey}`,
+            beforeState: latestSnapshotState,
+            afterState: alignStateStrategyOrder(latestSnapshotState, buildProposalState(latestChange)),
+            beforeTimestampUtc: latestSnapshotState.timestampUtc,
+            afterTimestampUtc: latestChange.timestampUtc,
+            kind: 'proposal' as const
+          }
+        ]
+      : []
     : []
 
   return [...historicalPanels, ...proposalPanel].filter(panelHasAllocations)
@@ -637,25 +690,9 @@ export function buildStateTransitionSankeyGraph(
       strategyId: strategy.isUnallocated ? UNALLOCATED_STRATEGY_ID : strategy.strategyId
     }))
 
-  const afterByStrategyId = new Map(indexedAfterStrategies.map((strategy) => [strategy.strategyId, strategy]))
-  const matchedBeforeStrategies = indexedBeforeStrategies.filter((strategy) =>
-    afterByStrategyId.has(strategy.strategyId)
-  )
-  const matchedStrategyIds = new Set(matchedBeforeStrategies.map((strategy) => strategy.strategyId))
-  const beforeOnlyStrategies = indexedBeforeStrategies.filter(
-    (strategy) => !matchedStrategyIds.has(strategy.strategyId)
-  )
-  const afterOnlyStrategies = indexedAfterStrategies.filter((strategy) => !matchedStrategyIds.has(strategy.strategyId))
-  const orderedAfterStrategies = [
-    ...matchedBeforeStrategies
-      .map((strategy) => afterByStrategyId.get(strategy.strategyId))
-      .filter((strategy): strategy is (typeof indexedAfterStrategies)[number] => Boolean(strategy)),
-    ...afterOnlyStrategies
-  ]
-
   const nodes = [
     ...buildOrderedNodes(
-      [...matchedBeforeStrategies, ...beforeOnlyStrategies].map((strategy) => ({
+      indexedBeforeStrategies.map((strategy) => ({
         strategyId: strategy.strategyId,
         name: strategy.name,
         allocationPct: strategy.allocationPct
@@ -663,7 +700,7 @@ export function buildStateTransitionSankeyGraph(
       'before'
     ),
     ...buildOrderedNodes(
-      orderedAfterStrategies.map((strategy) => ({
+      indexedAfterStrategies.map((strategy) => ({
         strategyId: strategy.strategyId,
         name: strategy.name,
         allocationPct: strategy.allocationPct
