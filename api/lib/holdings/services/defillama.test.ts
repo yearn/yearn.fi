@@ -1,14 +1,27 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { DefiLlamaBatchResponse } from '../types'
 import { getCachedPriceMisses, getCachedPrices, saveCachedPriceMisses, saveCachedPrices } from './cache'
-import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp, parseDefiLlamaResponse } from './defillama'
+import {
+  fetchHistoricalPrices,
+  fetchHistoricalPricesForTokenTimestamps,
+  getChainPrefix,
+  getPriceAtTimestamp,
+  parseDefiLlamaResponse
+} from './defillama'
 
-vi.mock('./cache', () => ({
-  getCachedPriceMisses: vi.fn(async () => new Map()),
-  getCachedPrices: vi.fn(async () => new Map()),
-  saveCachedPriceMisses: vi.fn(async () => {}),
-  saveCachedPrices: vi.fn(async () => {})
-}))
+vi.mock('./cache', () => {
+  const getCachedPriceMisses = vi.fn(async () => new Map())
+  const getCachedPrices = vi.fn(async () => new Map())
+
+  return {
+    getCachedPriceMisses,
+    getCachedPriceMissesForTokenTimestamps: getCachedPriceMisses,
+    getCachedPrices,
+    getCachedPricesForTokenTimestamps: getCachedPrices,
+    saveCachedPriceMisses: vi.fn(async () => {}),
+    saveCachedPrices: vi.fn(async () => {})
+  }
+})
 
 function createBatchResponse(response: DefiLlamaBatchResponse): Response {
   return new Response(JSON.stringify(response), {
@@ -585,5 +598,42 @@ describe('parseDefiLlamaResponse', () => {
       { tokenKey: usdcKey, timestamp: 1700000000 },
       { tokenKey: usdcKey, timestamp: 1700003600 }
     ])
+  })
+
+  it('does not read or write cache for uncached timestamp requests', async () => {
+    const tokenAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    const tokenKey = `ethereum:${tokenAddress}`
+    const fetchStub = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        createBatchResponse({
+          coins: {
+            [tokenKey]: {
+              symbol: 'USDC',
+              prices: [
+                { timestamp: 1700000000, price: 1, confidence: 0.99 },
+                { timestamp: 1700003600, price: 1.001, confidence: 0.99 }
+              ]
+            }
+          }
+        })
+      )
+    )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPricesForTokenTimestamps([
+      {
+        chainId: 1,
+        address: tokenAddress,
+        timestamps: [1700000000, 1700003600],
+        uncachedTimestamps: [1700003600]
+      }
+    ])
+
+    expect(getCachedPrices).toHaveBeenCalledWith([{ tokenKey, timestamps: [1700000000] }])
+    expect(getCachedPriceMisses).toHaveBeenCalledWith([{ tokenKey, timestamps: [1700000000] }])
+    expect(saveCachedPrices).toHaveBeenCalledWith([{ tokenKey, timestamp: 1700000000, price: 1 }])
+    expect(saveCachedPriceMisses).not.toHaveBeenCalled()
+    expect(prices.get(tokenKey)?.get(1700003600)).toBe(1.001)
   })
 })

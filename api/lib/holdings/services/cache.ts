@@ -19,6 +19,11 @@ export interface CachedPriceMiss {
   timestamp: number
 }
 
+export interface CachedPriceLookup {
+  tokenKey: string
+  timestamps: number[]
+}
+
 const PRICE_MISS_TTL_MS = 7 * 24 * 60 * 60 * 1_000
 
 function normalizeUserAddress(userAddress: string): string {
@@ -27,6 +32,37 @@ function normalizeUserAddress(userAddress: string): string {
 
 function getUserAddressCacheKey(userAddress: string): string {
   return createHash('sha256').update(normalizeUserAddress(userAddress)).digest('hex')
+}
+
+function chunkItems<T>(items: T[], chunkSize: number): T[][] {
+  return Array.from({ length: Math.ceil(items.length / chunkSize) }, (_value, index) =>
+    items.slice(index * chunkSize, index * chunkSize + chunkSize)
+  )
+}
+
+function normalizeCachedPriceLookups(lookups: CachedPriceLookup[]): CachedPriceLookup[] {
+  const timestampsByToken = lookups.reduce<Map<string, Set<number>>>((result, lookup) => {
+    if (lookup.timestamps.length === 0) {
+      return result
+    }
+
+    const tokenKey = lookup.tokenKey.toLowerCase()
+    const timestampSet = result.get(tokenKey) ?? new Set<number>()
+    lookup.timestamps.forEach((timestamp) => {
+      timestampSet.add(timestamp)
+    })
+    result.set(tokenKey, timestampSet)
+    return result
+  }, new Map())
+
+  return Array.from(timestampsByToken.entries()).map(([tokenKey, timestampSet]) => ({
+    tokenKey,
+    timestamps: Array.from(timestampSet).sort((a, b) => a - b)
+  }))
+}
+
+function countCachedPriceLookupPoints(lookups: CachedPriceLookup[]): number {
+  return lookups.reduce((total, lookup) => total + lookup.timestamps.length, 0)
 }
 
 export async function getCachedTotals(
@@ -124,13 +160,21 @@ export async function getCachedPrices(
   tokenKeys: string[],
   timestamps: number[]
 ): Promise<Map<string, Map<number, number>>> {
-  const result = new Map<string, Map<number, number>>()
+  return getCachedPricesForTokenTimestamps(tokenKeys.map((tokenKey) => ({ tokenKey, timestamps })))
+}
 
-  if (!isDatabaseEnabled() || tokenKeys.length === 0 || timestamps.length === 0) {
-    if (tokenKeys.length > 0 && timestamps.length > 0) {
+export async function getCachedPricesForTokenTimestamps(
+  lookups: CachedPriceLookup[]
+): Promise<Map<string, Map<number, number>>> {
+  const result = new Map<string, Map<number, number>>()
+  const normalizedLookups = normalizeCachedPriceLookups(lookups)
+  const pricePoints = countCachedPriceLookupPoints(normalizedLookups)
+
+  if (!isDatabaseEnabled() || normalizedLookups.length === 0 || pricePoints === 0) {
+    if (normalizedLookups.length > 0 && pricePoints > 0) {
       debugLog('cache', 'skipping cached prices lookup because database is disabled', {
-        tokenKeys: tokenKeys.length,
-        timestamps: timestamps.length
+        tokenKeys: normalizedLookups.length,
+        pricePoints
       })
     }
     return result
@@ -139,35 +183,43 @@ export async function getCachedPrices(
   const pool = await getPool()
   if (!pool) {
     debugLog('cache', 'skipping cached prices lookup because database pool is unavailable', {
-      tokenKeys: tokenKeys.length,
-      timestamps: timestamps.length
+      tokenKeys: normalizedLookups.length,
+      pricePoints
     })
     return result
   }
 
   try {
-    debugLog('cache', 'loading cached prices', { tokenKeys: tokenKeys.length, timestamps: timestamps.length })
-    const tokenPlaceholders = tokenKeys.map((_, i) => `$${i + 1}`).join(', ')
-    const timestampPlaceholders = timestamps.map((_, i) => `$${tokenKeys.length + i + 1}`).join(', ')
+    debugLog('cache', 'loading cached prices', { tokenKeys: normalizedLookups.length, pricePoints })
+    const lookupPairs = normalizedLookups.flatMap((lookup) =>
+      lookup.timestamps.map((timestamp) => ({ tokenKey: lookup.tokenKey, timestamp }))
+    )
 
-    const query = `
-      SELECT token_key, timestamp, price
-      FROM token_prices
-      WHERE token_key IN (${tokenPlaceholders})
-        AND timestamp IN (${timestampPlaceholders})
-    `
+    await chunkItems(lookupPairs, 5_000).reduce<Promise<void>>(async (previousPromise, batch) => {
+      await previousPromise
 
-    const queryResult = await pool.query<{ token_key: string; timestamp: number; price: string }>(query, [
-      ...tokenKeys,
-      ...timestamps
-    ])
+      const values = batch.flatMap((pair) => [pair.tokenKey, pair.timestamp])
+      const placeholders = batch.map((_, index) => `($${index * 2 + 1}::text, $${index * 2 + 2}::integer)`).join(', ')
 
-    for (const row of queryResult.rows) {
-      if (!result.has(row.token_key)) {
-        result.set(row.token_key, new Map())
-      }
-      result.get(row.token_key)!.set(row.timestamp, parseFloat(row.price))
-    }
+      const query = `
+        WITH requested(token_key, price_timestamp) AS (
+          VALUES ${placeholders}
+        )
+        SELECT token_prices.token_key, token_prices.timestamp, token_prices.price
+        FROM token_prices
+        INNER JOIN requested
+          ON requested.token_key = token_prices.token_key
+          AND requested.price_timestamp = token_prices.timestamp
+      `
+
+      const queryResult = await pool.query<{ token_key: string; timestamp: number; price: string }>(query, values)
+
+      queryResult.rows.forEach((row) => {
+        const tokenPrices = result.get(row.token_key) ?? new Map<number, number>()
+        tokenPrices.set(row.timestamp, parseFloat(row.price))
+        result.set(row.token_key, tokenPrices)
+      })
+    }, Promise.resolve())
 
     const cachedPoints = Array.from(result.values()).reduce((total, priceMap) => total + priceMap.size, 0)
     debugLog('cache', 'loaded cached prices', {
@@ -177,8 +229,8 @@ export async function getCachedPrices(
   } catch (error) {
     console.error('[Cache] Failed to get cached prices:', error)
     debugError('cache', 'cached prices lookup failed', error, {
-      tokenKeys: tokenKeys.length,
-      timestamps: timestamps.length
+      tokenKeys: normalizedLookups.length,
+      pricePoints
     })
   }
 
@@ -189,13 +241,21 @@ export async function getCachedPriceMisses(
   tokenKeys: string[],
   timestamps: number[]
 ): Promise<Map<string, Set<number>>> {
-  const result = new Map<string, Set<number>>()
+  return getCachedPriceMissesForTokenTimestamps(tokenKeys.map((tokenKey) => ({ tokenKey, timestamps })))
+}
 
-  if (!isDatabaseEnabled() || tokenKeys.length === 0 || timestamps.length === 0) {
-    if (tokenKeys.length > 0 && timestamps.length > 0) {
+export async function getCachedPriceMissesForTokenTimestamps(
+  lookups: CachedPriceLookup[]
+): Promise<Map<string, Set<number>>> {
+  const result = new Map<string, Set<number>>()
+  const normalizedLookups = normalizeCachedPriceLookups(lookups)
+  const pricePoints = countCachedPriceLookupPoints(normalizedLookups)
+
+  if (!isDatabaseEnabled() || normalizedLookups.length === 0 || pricePoints === 0) {
+    if (normalizedLookups.length > 0 && pricePoints > 0) {
       debugLog('cache', 'skipping cached price misses lookup because database is disabled', {
-        tokenKeys: tokenKeys.length,
-        timestamps: timestamps.length
+        tokenKeys: normalizedLookups.length,
+        pricePoints
       })
     }
     return result
@@ -204,33 +264,44 @@ export async function getCachedPriceMisses(
   const pool = await getPool()
   if (!pool) {
     debugLog('cache', 'skipping cached price misses lookup because database pool is unavailable', {
-      tokenKeys: tokenKeys.length,
-      timestamps: timestamps.length
+      tokenKeys: normalizedLookups.length,
+      pricePoints
     })
     return result
   }
 
   try {
-    debugLog('cache', 'loading cached price misses', { tokenKeys: tokenKeys.length, timestamps: timestamps.length })
-    const tokenPlaceholders = tokenKeys.map((_, i) => `$${i + 1}`).join(', ')
-    const timestampPlaceholders = timestamps.map((_, i) => `$${tokenKeys.length + i + 1}`).join(', ')
+    debugLog('cache', 'loading cached price misses', { tokenKeys: normalizedLookups.length, pricePoints })
+    const lookupPairs = normalizedLookups.flatMap((lookup) =>
+      lookup.timestamps.map((timestamp) => ({ tokenKey: lookup.tokenKey, timestamp }))
+    )
 
-    const query = `
-      SELECT token_key, timestamp
-      FROM token_price_misses
-      WHERE token_key IN (${tokenPlaceholders})
-        AND timestamp IN (${timestampPlaceholders})
-        AND expires_at > NOW()
-    `
+    await chunkItems(lookupPairs, 5_000).reduce<Promise<void>>(async (previousPromise, batch) => {
+      await previousPromise
 
-    const queryResult = await pool.query<{ token_key: string; timestamp: number }>(query, [...tokenKeys, ...timestamps])
+      const values = batch.flatMap((pair) => [pair.tokenKey, pair.timestamp])
+      const placeholders = batch.map((_, index) => `($${index * 2 + 1}::text, $${index * 2 + 2}::integer)`).join(', ')
 
-    for (const row of queryResult.rows) {
-      if (!result.has(row.token_key)) {
-        result.set(row.token_key, new Set<number>())
-      }
-      result.get(row.token_key)!.add(row.timestamp)
-    }
+      const query = `
+        WITH requested(token_key, price_timestamp) AS (
+          VALUES ${placeholders}
+        )
+        SELECT token_price_misses.token_key, token_price_misses.timestamp
+        FROM token_price_misses
+        INNER JOIN requested
+          ON requested.token_key = token_price_misses.token_key
+          AND requested.price_timestamp = token_price_misses.timestamp
+        WHERE token_price_misses.expires_at > NOW()
+      `
+
+      const queryResult = await pool.query<{ token_key: string; timestamp: number }>(query, values)
+
+      queryResult.rows.forEach((row) => {
+        const tokenMisses = result.get(row.token_key) ?? new Set<number>()
+        tokenMisses.add(row.timestamp)
+        result.set(row.token_key, tokenMisses)
+      })
+    }, Promise.resolve())
 
     const cachedMissPoints = Array.from(result.values()).reduce((total, timestampSet) => total + timestampSet.size, 0)
     debugLog('cache', 'loaded cached price misses', {
@@ -240,8 +311,8 @@ export async function getCachedPriceMisses(
   } catch (error) {
     console.error('[Cache] Failed to get cached price misses:', error)
     debugError('cache', 'cached price misses lookup failed', error, {
-      tokenKeys: tokenKeys.length,
-      timestamps: timestamps.length
+      tokenKeys: normalizedLookups.length,
+      pricePoints
     })
   }
 

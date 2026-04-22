@@ -509,7 +509,8 @@ export async function fetchVaultMetadata(chainId: number, vaultAddress: string):
 }
 
 export async function fetchMultipleVaultsMetadata(
-  vaults: Array<{ chainId: number; vaultAddress: string }>
+  vaults: Array<{ chainId: number; vaultAddress: string }>,
+  options?: { skipSnapshotFallback?: boolean }
 ): Promise<Map<string, VaultMetadata>> {
   debugLog('vaults', 'resolving metadata for request', { requested: vaults.length })
   const loadError = await loadVaultList()
@@ -535,7 +536,7 @@ export async function fetchMultipleVaultsMetadata(
     ({ chainId, vaultAddress }) => !results.has(`${chainId}:${vaultAddress.toLowerCase()}`)
   )
 
-  if (missingVaults.length > 0) {
+  if (missingVaults.length > 0 && !options?.skipSnapshotFallback) {
     debugLog('vaults', 'metadata missing from global cache, falling back to snapshots', {
       missing: missingVaults.length
     })
@@ -545,7 +546,7 @@ export async function fetchMultipleVaultsMetadata(
     })
   }
 
-  if (results.size === 0 && loadError) {
+  if (results.size === 0 && loadError && !options?.skipSnapshotFallback) {
     throw loadError
   }
 

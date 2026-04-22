@@ -3,7 +3,12 @@ import type { VaultMetadata } from '../types'
 import type { CachedTotal } from './cache'
 import { checkCacheStaleness, clearUserCache, getCachedTotalsWithTimestamp, saveCachedTotals } from './cache'
 import { debugLog } from './debug'
-import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
+import {
+  fetchHistoricalPrices,
+  fetchHistoricalPricesForTokenTimestamps,
+  getChainPrefix,
+  getPriceAtTimestamp
+} from './defillama'
 import {
   fetchUserEvents,
   type HoldingsEventFetchType,
@@ -19,6 +24,13 @@ import {
   timestampToDateString
 } from './holdings'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
+import {
+  deriveNestedVaultAssetPriceData,
+  expandNestedVaultAssetPriceRequests,
+  getAssetVaultMetadataLookupIdentifiers,
+  getNestedVaultPpsIdentifiersFromPriceRequests,
+  mergeVaultIdentifiers
+} from './nestedVaultPrices'
 import { toVaultKey } from './pnlShared'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
@@ -41,6 +53,19 @@ export interface HoldingsHistoryChartResponse {
 }
 
 const ETHEREUM_WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+
+async function resolveNestedVaultAssetMetadata(
+  vaultMetadata: Map<string, VaultMetadata>
+): Promise<Map<string, VaultMetadata>> {
+  const assetVaultIdentifiers = getAssetVaultMetadataLookupIdentifiers(vaultMetadata)
+
+  if (assetVaultIdentifiers.length === 0) {
+    return vaultMetadata
+  }
+
+  const assetVaultMetadata = await fetchMultipleVaultsMetadata(assetVaultIdentifiers, { skipSnapshotFallback: true })
+  return new Map([...vaultMetadata, ...assetVaultMetadata])
+}
 
 export interface HoldingsBreakdownVaultResponse {
   chainId: number
@@ -218,7 +243,8 @@ export async function getHistoricalHoldings(
   }
 
   const rawVaults = timeline.length > 0 ? getUniqueVaults(timeline) : []
-  const vaultMetadata = rawVaults.length > 0 ? await fetchMultipleVaultsMetadata(rawVaults) : new Map()
+  const baseVaultMetadata = rawVaults.length > 0 ? await fetchMultipleVaultsMetadata(rawVaults) : new Map()
+  const vaultMetadata = await resolveNestedVaultAssetMetadata(baseVaultMetadata)
   const vaults = filterVaultsByAuthoritativeVersion(rawVaults, vaultMetadata, version)
   debugLog('history', 'resolved authoritative vault versions for history', {
     version,
@@ -292,17 +318,6 @@ export async function getHistoricalHoldings(
         }))
       }
     } else {
-      const ppsData = await fetchMultipleVaultsPPS(vaults)
-      debugLog('history', 'resolved metadata and PPS for history', {
-        version,
-        fetchType,
-        paginationMode,
-        vaults: vaults.length,
-        metadataResolved: vaultMetadata.size,
-        ppsResolved: ppsData.size,
-        emptyPpsTimelines: Array.from(ppsData.values()).filter((timeline) => timeline.size === 0).length
-      })
-
       const seenTokens = new Set<string>()
       const underlyingTokens: Array<{ chainId: number; address: string }> = []
       for (const vault of vaults) {
@@ -321,12 +336,39 @@ export async function getHistoricalHoldings(
         }
       }
 
-      const priceData = await fetchHistoricalPrices(underlyingTokens, missingTimestamps)
+      const basePriceRequests = underlyingTokens.map((token) => ({
+        ...token,
+        timestamps: missingTimestamps
+      }))
+      const priceRequests = expandNestedVaultAssetPriceRequests(basePriceRequests, vaultMetadata)
+      const ppsIdentifiers = mergeVaultIdentifiers([
+        ...vaults,
+        ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, vaultMetadata)
+      ])
+      const [ppsData, fetchedPriceData] = await Promise.all([
+        fetchMultipleVaultsPPS(ppsIdentifiers),
+        fetchHistoricalPricesForTokenTimestamps(priceRequests)
+      ])
+      const priceData = deriveNestedVaultAssetPriceData({
+        priceData: fetchedPriceData,
+        priceRequests,
+        vaultMetadata,
+        ppsData
+      })
+      debugLog('history', 'resolved metadata and PPS for history', {
+        version,
+        fetchType,
+        paginationMode,
+        vaults: ppsIdentifiers.length,
+        metadataResolved: vaultMetadata.size,
+        ppsResolved: ppsData.size,
+        emptyPpsTimelines: Array.from(ppsData.values()).filter((timeline) => timeline.size === 0).length
+      })
       debugLog('history', 'resolved historical token prices', {
         version,
         fetchType,
         paginationMode,
-        tokens: underlyingTokens.length,
+        tokens: priceRequests.length,
         priceKeys: priceData.size,
         missingTimestamps: missingTimestamps.length
       })
@@ -494,7 +536,8 @@ export async function getHoldingsBreakdown(
   }
 
   const rawVaults = getUniqueVaults(timeline)
-  const vaultMetadata = rawVaults.length > 0 ? await fetchMultipleVaultsMetadata(rawVaults) : new Map()
+  const baseVaultMetadata = rawVaults.length > 0 ? await fetchMultipleVaultsMetadata(rawVaults) : new Map()
+  const vaultMetadata = await resolveNestedVaultAssetMetadata(baseVaultMetadata)
   const vaults = filterVaultsByAuthoritativeVersion(rawVaults, vaultMetadata, version)
   debugLog('breakdown', 'resolved authoritative vault versions for breakdown', {
     version,
@@ -514,7 +557,6 @@ export async function getHoldingsBreakdown(
     return buildEmptyBreakdownResponse(userAddress, version, breakdownTimestamp, 'No matching holdings found')
   }
 
-  const ppsData = await fetchMultipleVaultsPPS(vaults)
   const seenTokens = new Set<string>()
   const underlyingTokens: Array<{ chainId: number; address: string }> = []
   for (const vault of vaults) {
@@ -533,16 +575,33 @@ export async function getHoldingsBreakdown(
     }
   }
 
-  const priceData =
-    underlyingTokens.length > 0 ? await fetchHistoricalPrices(underlyingTokens, [breakdownTimestamp]) : new Map()
+  const basePriceRequests = underlyingTokens.map((token) => ({
+    ...token,
+    timestamps: [breakdownTimestamp]
+  }))
+  const priceRequests = expandNestedVaultAssetPriceRequests(basePriceRequests, vaultMetadata)
+  const ppsIdentifiers = mergeVaultIdentifiers([
+    ...vaults,
+    ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, vaultMetadata)
+  ])
+  const [ppsData, fetchedPriceData] = await Promise.all([
+    fetchMultipleVaultsPPS(ppsIdentifiers),
+    fetchHistoricalPricesForTokenTimestamps(priceRequests)
+  ])
+  const priceData = deriveNestedVaultAssetPriceData({
+    priceData: fetchedPriceData,
+    priceRequests,
+    vaultMetadata,
+    ppsData
+  })
   debugLog('breakdown', 'resolved metadata, PPS, and prices for breakdown', {
     version,
     fetchType,
     paginationMode,
-    vaults: vaults.length,
+    vaults: ppsIdentifiers.length,
     metadataResolved: vaultMetadata.size,
     ppsResolved: ppsData.size,
-    tokens: underlyingTokens.length,
+    tokens: priceRequests.length,
     priceKeys: priceData.size,
     timestamp: breakdownTimestamp
   })
