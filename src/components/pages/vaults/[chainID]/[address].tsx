@@ -12,6 +12,7 @@ import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSec
 import { VaultChartsSection } from '@pages/vaults/components/detail/VaultChartsSection'
 import { VaultDetailsHeader, VaultDetailsHeaderPresentation } from '@pages/vaults/components/detail/VaultDetailsHeader'
 import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSection'
+import { VaultRecentReallocationsSection } from '@pages/vaults/components/detail/VaultRecentReallocationsSection'
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
 import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
@@ -37,6 +38,7 @@ import {
 } from '@pages/vaults/domain/normalizeVault'
 import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from '@pages/vaults/domain/vaultWarnings'
 import { useEnsureVaultListFetch } from '@pages/vaults/hooks/useEnsureVaultListFetch'
+import { useVaultRecentReallocations } from '@pages/vaults/hooks/useVaultRecentReallocations'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
@@ -310,7 +312,7 @@ function YvUsdMobileKeyMetrics({
 }
 
 function Index(): ReactElement | null {
-  type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'info'
+  type SectionKey = 'charts' | 'about' | 'risk' | 'strategies' | 'reallocations' | 'info'
   const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
 
@@ -350,6 +352,7 @@ function Index(): ReactElement | null {
   const aboutRef = useRef<HTMLDivElement>(null)
   const riskRef = useRef<HTMLDivElement>(null)
   const strategiesRef = useRef<HTMLDivElement>(null)
+  const reallocationsRef = useRef<HTMLDivElement>(null)
   const infoRef = useRef<HTMLDivElement>(null)
   const sectionRefs = useMemo(
     () => ({
@@ -357,6 +360,7 @@ function Index(): ReactElement | null {
       about: aboutRef,
       risk: riskRef,
       strategies: strategiesRef,
+      reallocations: reallocationsRef,
       info: infoRef
     }),
     []
@@ -365,6 +369,7 @@ function Index(): ReactElement | null {
     about: true,
     risk: true,
     strategies: true,
+    reallocations: true,
     info: true,
     charts: true
   })
@@ -372,6 +377,7 @@ function Index(): ReactElement | null {
     about: 'Vault Info',
     risk: 'Risk',
     strategies: 'Strategies',
+    reallocations: 'Recent Reallocations',
     info: 'More Info',
     charts: 'Performance'
   }
@@ -498,6 +504,16 @@ function Index(): ReactElement | null {
     if (!vaultViewInput) return undefined
     return getVaultView(vaultViewInput, mergedSnapshot)
   }, [isYvUsd, yvUsdVault, yvUsdUnlockedVault, yvUsdLockedVault, vaultViewInput, mergedSnapshot])
+  const {
+    panels: recentReallocationPanels,
+    isLoading: isLoadingRecentReallocations,
+    hasUnexpectedError: hasRecentReallocationsError
+  } = useVaultRecentReallocations({
+    currentVault
+  })
+  const isV3Vault = Boolean(currentVault?.version?.startsWith('3') || currentVault?.version?.startsWith('~3'))
+  const shouldShowRecentReallocationsSection =
+    isV3Vault && (recentReallocationPanels.length > 0 || isLoadingRecentReallocations || hasRecentReallocationsError)
 
   const shouldBootstrapYvUsdVaultList = isYvUsd && !hasVaultList && !hasTriggeredVaultListFetch
   const isLoadingVault = isYvUsd
@@ -788,6 +804,18 @@ function Index(): ReactElement | null {
         content: <VaultStrategiesSection currentVault={currentVault} />
       },
       {
+        key: 'reallocations' as const,
+        shouldRender: shouldShowRecentReallocationsSection,
+        ref: sectionRefs.reallocations,
+        content: (
+          <VaultRecentReallocationsSection
+            panels={recentReallocationPanels}
+            isLoading={isLoadingRecentReallocations}
+            hasError={hasRecentReallocationsError}
+          />
+        )
+      },
+      {
         key: 'risk' as const,
         shouldRender: true,
         ref: sectionRefs.risk,
@@ -800,7 +828,17 @@ function Index(): ReactElement | null {
         content: <VaultInfoSection currentVault={currentVault} inceptTime={snapshotVault?.inceptTime ?? null} />
       }
     ]
-  }, [chainId, currentVault, isYvUsd, sectionRefs, snapshotVault?.inceptTime])
+  }, [
+    chainId,
+    currentVault,
+    hasRecentReallocationsError,
+    isLoadingRecentReallocations,
+    isYvUsd,
+    recentReallocationPanels,
+    sectionRefs,
+    shouldShowRecentReallocationsSection,
+    snapshotVault?.inceptTime
+  ])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const sectionTabs = renderableSections.map((section) => ({
@@ -1481,6 +1519,7 @@ function Index(): ReactElement | null {
                 section.key === 'about' ||
                 section.key === 'risk' ||
                 section.key === 'strategies' ||
+                section.key === 'reallocations' ||
                 section.key === 'info'
               if (isCollapsible) {
                 const typedKey = section.key as SectionKey
