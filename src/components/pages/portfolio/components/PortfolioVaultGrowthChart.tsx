@@ -683,7 +683,7 @@ export function PortfolioVaultGrowthChart({
                     strokeOpacity={0.9}
                     dot={false}
                     activeDot={{ r: 4, strokeWidth: 0, fill: vaultSeries.color }}
-                    connectNulls={activeMode === 'position'}
+                    connectNulls
                     isAnimationActive={false}
                   />
                 ))}
