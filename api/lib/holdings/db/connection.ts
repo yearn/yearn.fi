@@ -12,11 +12,31 @@ interface DatabasePool {
   end: () => Promise<void>
 }
 
+type DatabaseQueryError = Error & {
+  code?: string
+  status?: number
+}
+
 let pool: DatabasePool | null = null
 let schemaInitializationPromise: Promise<void> | null = null
 let databaseDisabled = false
 
 const DB_QUERY_TIMEOUT_MS = 5_000
+const RETRYABLE_CONNECTION_ERROR_CODES = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ConnectionRefused',
+  'ETIMEDOUT',
+  'EAI_AGAIN',
+  'UND_ERR_SOCKET',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_ABORTED',
+  '57P01',
+  '57P02',
+  '57P03',
+  '53300'
+])
 
 function normalizeUserAddress(userAddress: string): string {
   return userAddress.toLowerCase()
@@ -59,6 +79,28 @@ function disableDatabase(reason: string, error?: unknown): void {
   }
 }
 
+export function shouldDisableDatabaseOnQueryError(error: unknown): boolean {
+  const databaseError = error as Partial<DatabaseQueryError>
+  const code = typeof databaseError?.code === 'string' ? databaseError.code : null
+  const status = typeof databaseError?.status === 'number' ? databaseError.status : null
+  const message =
+    typeof databaseError?.message === 'string'
+      ? databaseError.message.toLowerCase()
+      : error instanceof Error
+        ? error.message.toLowerCase()
+        : String(error).toLowerCase()
+
+  if (code !== null && (RETRYABLE_CONNECTION_ERROR_CODES.has(code) || code.startsWith('08'))) {
+    return true
+  }
+
+  if (status !== null && status >= 500) {
+    return true
+  }
+
+  return message.includes('timed out') || message.includes('timeout') || message.includes('failed to fetch')
+}
+
 async function createPool(): Promise<DatabasePool | null> {
   if (!config.databaseUrl || databaseDisabled) {
     return null
@@ -74,7 +116,9 @@ async function createPool(): Promise<DatabasePool | null> {
           const result = await withTimeout(neonPool.query(text, params), DB_QUERY_TIMEOUT_MS, 'Holdings DB query')
           return { rows: result.rows as T[], rowCount: result.rowCount ?? 0 }
         } catch (error) {
-          disableDatabase('query failure', error)
+          if (shouldDisableDatabaseOnQueryError(error)) {
+            disableDatabase('query failure', error)
+          }
           throw error
         }
       },
@@ -161,7 +205,15 @@ export async function initializeSchema(): Promise<void> {
     await migrateHoldingsTotalsAddressStorage(db)
     console.log('[Holdings DB] Schema initialized successfully')
   } catch (error) {
-    disableDatabase('schema initialization failed', error)
+    if (shouldDisableDatabaseOnQueryError(error)) {
+      disableDatabase('schema initialization failed', error)
+      return
+    }
+
+    console.warn(
+      '[Holdings DB] Schema initialization skipped; continuing with existing database access:',
+      error instanceof Error ? error.message : error
+    )
   }
 }
 

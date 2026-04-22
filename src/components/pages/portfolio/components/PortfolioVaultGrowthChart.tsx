@@ -485,7 +485,7 @@ export function PortfolioVaultGrowthChart({
             ) : null}
           </div>
         ) : null}
-        <p className={'text-xs text-text-secondary'}>{MODE_COPY[activeMode]}</p>
+        {showModeToggle ? <p className={'text-xs text-text-secondary'}>{MODE_COPY[activeMode]}</p> : null}
       </div>
 
       {!hasRenderableValue ? (

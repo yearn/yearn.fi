@@ -143,14 +143,6 @@ function PortfolioHeaderSection({
   protocolReturnSummary,
   totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
-  const cumulativeProtocolReturnTooltip = (
-    <div className={metricTooltipContentClassName}>
-      <p>{'All-time cumulative protocol return earned while funds were in your wallet.'}</p>
-
-      <p>{'Weighted by baseline vault receipts. Price moves are excluded.'}</p>
-    </div>
-  )
-
   const annualizedProtocolReturnTooltip = (
     <div className={metricTooltipContentClassName}>
       <p>{'All-time annualized protocol return while funds were actually held in your wallet.'}</p>
@@ -244,30 +236,6 @@ function PortfolioHeaderSection({
       value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedHistoricalAPY)}</span>
     },
     {
-      key: 'cumulative-protocol-return',
-      header: (
-        <MetricHeader
-          label="All-Time Cumulative Return"
-          mobileLabel="All-Time Cum."
-          tooltip={cumulativeProtocolReturnTooltip}
-        />
-      ),
-      value: (
-        <span className={METRIC_VALUE_CLASS}>
-          {renderSignedPercentMetric(protocolReturnSummary?.protocolReturnPct)}
-        </span>
-      ),
-      footnote:
-        protocolReturnSummary && !protocolReturnSummary.isComplete ? (
-          <FootnoteWithTooltip
-            label={`${protocolReturnSummary.partialVaults} ${protocolReturnSummary.partialVaults === 1 ? 'vault is' : 'vaults are'} missing protocol-return data.`}
-            tooltip={
-              'Some vault rows are missing metadata, PPS, receipt price, or exit-matching data. The visible growth and return may be incomplete for those vaults.'
-            }
-          />
-        ) : undefined
-    },
-    {
       key: 'annualized-protocol-return',
       header: (
         <MetricHeader
@@ -280,7 +248,16 @@ function PortfolioHeaderSection({
         <span className={METRIC_VALUE_CLASS}>
           {renderSignedPercentMetric(protocolReturnSummary?.annualizedProtocolReturnPct)}
         </span>
-      )
+      ),
+      footnote:
+        protocolReturnSummary && !protocolReturnSummary.isComplete ? (
+          <FootnoteWithTooltip
+            label={`${protocolReturnSummary.partialVaults} ${protocolReturnSummary.partialVaults === 1 ? 'vault is' : 'vaults are'} missing protocol-return data.`}
+            tooltip={
+              'Some vault rows are missing metadata, PPS, receipt price, or exit-matching data. The visible growth and return may be incomplete for those vaults.'
+            }
+          />
+        ) : undefined
     }
   ]
 

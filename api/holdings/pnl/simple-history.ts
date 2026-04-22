@@ -80,6 +80,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const {
     address,
+    chainId: chainIdParam,
+    vault: vaultParam,
     version: versionParam,
     fetchType: fetchTypeParam,
     paginationMode: paginationModeParam,
@@ -94,6 +96,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid Ethereum address' })
   }
 
+  if (vaultParam !== undefined && typeof vaultParam !== 'string') {
+    return res.status(400).json({ error: 'Invalid vault address' })
+  }
+
+  if (vaultParam && !isValidAddress(vaultParam)) {
+    return res.status(400).json({ error: 'Invalid vault address' })
+  }
+
+  if (vaultParam && (!chainIdParam || typeof chainIdParam !== 'string' || !Number.isInteger(Number(chainIdParam)))) {
+    return res.status(400).json({ error: 'Missing or invalid chainId for vault filter' })
+  }
+
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
@@ -101,7 +115,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { getHoldingsPnLSimpleHistory } = await import('../../lib/holdings')
-    const history = await getHoldingsPnLSimpleHistory(address, version, fetchType, paginationMode, timeframe)
+    const history = await getHoldingsPnLSimpleHistory(
+      address,
+      version,
+      fetchType,
+      paginationMode,
+      timeframe,
+      vaultParam,
+      vaultParam ? Number(chainIdParam) : undefined
+    )
 
     if (history.summary.totalVaults === 0) {
       return res.status(404).json({ error: 'No holdings found for address' })

@@ -337,6 +337,45 @@ describe('pnl simple protocol return', () => {
     expect(history[3]?.growthIndex).toBeCloseTo(120.6666666667)
   })
 
+  it('includes current underlying and growth fields for single-vault history points', () => {
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        })
+      ],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.1]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      timestamps: [100, 200],
+      selectedVaultKey: VAULT_KEY
+    })
+
+    expect(history[0]?.currentUnderlying).toBeCloseTo(100)
+    expect(history[0]?.growthUnderlying).toBeCloseTo(0)
+    expect(history[0]?.sharesFormatted).toBeCloseTo(100)
+    expect(history[0]?.pricePerShare).toBeCloseTo(1)
+    expect(history[1]?.currentUnderlying).toBeCloseTo(110)
+    expect(history[1]?.growthUnderlying).toBeCloseTo(10)
+    expect(history[1]?.sharesFormatted).toBeCloseTo(100)
+    expect(history[1]?.pricePerShare).toBeCloseTo(1.1)
+  })
+
   it('keeps ETH growth history available when another vault is missing receipt prices', () => {
     const MISSING_VAULT = '0x5555555555555555555555555555555555555555'
     const MISSING_ASSET = '0x6666666666666666666666666666666666666666'

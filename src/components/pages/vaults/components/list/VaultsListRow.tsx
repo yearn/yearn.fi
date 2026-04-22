@@ -414,6 +414,7 @@ function VaultsListRowComponent({
     </svg>
   )
   const hasHoldings = Boolean(flags?.hasHoldings)
+  const showUserViews = hasHoldings && !isYvUsd
   const showHoldingsChip = showHoldingsChipOverride ?? hasHoldings
   const showHoldingsValue = hasHoldings
   const holdingsFormatOptions = isYvUsd ? YVUSD_HOLDINGS_FORMAT_OPTIONS : undefined
@@ -449,6 +450,16 @@ function VaultsListRowComponent({
       setExpandedView('strategies')
     }
   }, [isExpanded])
+
+  useEffect(() => {
+    if (showUserViews) {
+      return
+    }
+
+    if (expandedView === 'user-balance' || expandedView === 'user-growth') {
+      setExpandedView('strategies')
+    }
+  }, [expandedView, showUserViews])
 
   return (
     <div
@@ -910,6 +921,7 @@ function VaultsListRowComponent({
             showKindTag={showKindChip}
             showHiddenTag={isHiddenVault}
             isHidden={isHiddenVault}
+            showUserViews={showUserViews}
           />
         </Suspense>
       ) : null}

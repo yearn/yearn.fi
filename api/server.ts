@@ -812,7 +812,9 @@ async function handleHoldingsPnLSimple(req: Request): Promise<Response> {
 async function handleHoldingsPnLSimpleHistory(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
+  const chainIdParam = url.searchParams.get('chainId')
   const versionParam = url.searchParams.get('version')
+  const vault = url.searchParams.get('vault')
   const timeframe = parseHoldingsHistoryTimeframe(url.searchParams.get('timeframe'))
   const debugEnabled =
     isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
@@ -830,6 +832,14 @@ async function handleHoldingsPnLSimpleHistory(req: Request): Promise<Response> {
     return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
   }
 
+  if (vault !== null && !isValidAddress(vault)) {
+    return Response.json({ error: 'Invalid vault address', status: 400 }, { status: 400 })
+  }
+
+  if (vault !== null && (!chainIdParam || !Number.isInteger(Number(chainIdParam)))) {
+    return Response.json({ error: 'Missing or invalid chainId for vault filter', status: 400 }, { status: 400 })
+  }
+
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
@@ -843,6 +853,8 @@ async function handleHoldingsPnLSimpleHistory(req: Request): Promise<Response> {
         debugLog('route', 'started holdings simple pnl history request', {
           version,
           timeframe,
+          vault: vault?.toLowerCase() ?? null,
+          chainId: vault !== null ? Number(chainIdParam) : null,
           fetchType,
           paginationMode,
           debugLotsEnabled,
@@ -851,10 +863,20 @@ async function handleHoldingsPnLSimpleHistory(req: Request): Promise<Response> {
         })
 
         try {
-          const response = await getHoldingsPnLSimpleHistory(address, version, fetchType, paginationMode, timeframe)
+          const response = await getHoldingsPnLSimpleHistory(
+            address,
+            version,
+            fetchType,
+            paginationMode,
+            timeframe,
+            vault ?? undefined,
+            vault !== null ? Number(chainIdParam) : undefined
+          )
           debugLog('route', 'completed holdings simple pnl history request', {
             version,
             timeframe,
+            vault: vault?.toLowerCase() ?? null,
+            chainId: vault !== null ? Number(chainIdParam) : null,
             fetchType,
             paginationMode,
             totalVaults: response.summary.totalVaults,
@@ -865,6 +887,8 @@ async function handleHoldingsPnLSimpleHistory(req: Request): Promise<Response> {
           debugError('route', 'holdings simple pnl history request failed', error, {
             version,
             timeframe,
+            vault: vault?.toLowerCase() ?? null,
+            chainId: vault !== null ? Number(chainIdParam) : null,
             fetchType,
             paginationMode
           })
