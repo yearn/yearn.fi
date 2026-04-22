@@ -1,7 +1,7 @@
 import { cl, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement } from 'react'
 
-export type TVaultsExpandedView = 'apy' | 'performance' | 'tvl' | 'strategies' | 'user-balance' | 'user-growth'
+export type TVaultsExpandedView = 'apy' | 'performance' | 'tvl' | 'strategies'
 
 type Props = {
   activeView: TVaultsExpandedView

@@ -233,6 +233,7 @@ type TVaultsListRowProps = {
   showHoldingsChipOverride?: boolean
   showProductTypeChipOverride?: boolean
   mobileSecondaryMetric?: 'tvl' | 'holdings'
+  expandedChartVariant?: 'default' | 'portfolio-user-tvl-overlay'
 }
 
 function VaultsListRowComponent({
@@ -257,7 +258,8 @@ function VaultsListRowComponent({
   showHoldingsChipOverride,
   showProductTypeChipOverride,
   mobileSecondaryMetric = 'tvl',
-  showAllocatorChip = true
+  showAllocatorChip = true,
+  expandedChartVariant = 'default'
 }: TVaultsListRowProps): ReactElement {
   const navigate = useNavigate()
   const trackEvent = usePlausible()
@@ -277,9 +279,11 @@ function VaultsListRowComponent({
   const { address } = useWeb3()
   const { getVaultHoldingsUsd, getBalance, isLoading: isWalletLoading } = useWallet()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
+  const defaultExpandedView: TVaultsExpandedView =
+    expandedChartVariant === 'portfolio-user-tvl-overlay' ? 'tvl' : 'strategies'
   const [isExpandedState, setIsExpandedState] = useState(false)
   const isExpanded = isExpandedProp ?? isExpandedState
-  const [expandedView, setExpandedView] = useState<TVaultsExpandedView>('strategies')
+  const [expandedView, setExpandedView] = useState<TVaultsExpandedView>(defaultExpandedView)
   const [interactiveHoverCount, setInteractiveHoverCount] = useState(0)
   const [isYvUsdModalOpen, setIsYvUsdModalOpen] = useState(false)
   const queryClient = useQueryClient()
@@ -447,19 +451,9 @@ function VaultsListRowComponent({
 
   useEffect(() => {
     if (isExpanded) {
-      setExpandedView('strategies')
+      setExpandedView(defaultExpandedView)
     }
-  }, [isExpanded])
-
-  useEffect(() => {
-    if (showUserViews) {
-      return
-    }
-
-    if (expandedView === 'user-balance' || expandedView === 'user-growth') {
-      setExpandedView('strategies')
-    }
-  }, [expandedView, showUserViews])
+  }, [defaultExpandedView, isExpanded])
 
   return (
     <div
@@ -922,6 +916,7 @@ function VaultsListRowComponent({
             showHiddenTag={isHiddenVault}
             isHidden={isHiddenVault}
             showUserViews={showUserViews}
+            chartVariant={expandedChartVariant}
           />
         </Suspense>
       ) : null}

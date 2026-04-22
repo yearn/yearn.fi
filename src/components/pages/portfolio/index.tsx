@@ -20,12 +20,7 @@ import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
-import {
-  METRIC_FOOTNOTE_CLASS,
-  METRIC_VALUE_CLASS,
-  MetricHeader,
-  type TMetricBlock
-} from '@shared/components/MetricsCard'
+import { METRIC_VALUE_CLASS, MetricHeader, type TMetricBlock } from '@shared/components/MetricsCard'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
@@ -33,7 +28,6 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
-import { IconQuestion } from '@shared/icons/IconQuestion'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS } from '@shared/utils'
@@ -62,8 +56,6 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 
 const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
-const footnoteTooltipClassName =
-  'max-w-[260px] rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs leading-relaxed text-text-primary'
 const metricTooltipContentClassName = 'flex max-w-[280px] flex-col gap-1 leading-relaxed'
 const metricCardClassName = 'bg-surface px-5 py-3 md:px-5 md:py-2.5'
 const PORTFOLIO_TABS = [
@@ -107,30 +99,6 @@ function PortfolioPageLayout({ children }: { children: ReactElement }): ReactEle
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
       <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16'}>{children}</div>
     </div>
-  )
-}
-
-function FootnoteWithTooltip({ label, tooltip }: { label: string; tooltip: string }): ReactElement {
-  return (
-    <span className={cl(METRIC_FOOTNOTE_CLASS, 'inline-flex items-center gap-1.5')}>
-      <span>{label}</span>
-      <Tooltip
-        className={'h-auto w-auto justify-start gap-0'}
-        openDelayMs={150}
-        side={'top'}
-        tooltip={<div className={footnoteTooltipClassName}>{tooltip}</div>}
-      >
-        <button
-          type={'button'}
-          aria-label={tooltip}
-          className={
-            'inline-flex h-4 w-4 items-center justify-center rounded-full text-text-secondary transition-colors hover:text-text-primary'
-          }
-        >
-          <IconQuestion className={'size-3.5'} />
-        </button>
-      </Tooltip>
-    </span>
   )
 }
 
@@ -248,16 +216,7 @@ function PortfolioHeaderSection({
         <span className={METRIC_VALUE_CLASS}>
           {renderSignedPercentMetric(protocolReturnSummary?.annualizedProtocolReturnPct)}
         </span>
-      ),
-      footnote:
-        protocolReturnSummary && !protocolReturnSummary.isComplete ? (
-          <FootnoteWithTooltip
-            label={`${protocolReturnSummary.partialVaults} ${protocolReturnSummary.partialVaults === 1 ? 'vault is' : 'vaults are'} missing protocol-return data.`}
-            tooltip={
-              'Some vault rows are missing metadata, PPS, receipt price, or exit-matching data. The visible growth and return may be incomplete for those vaults.'
-            }
-          />
-        ) : undefined
+      )
     }
   ]
 
@@ -913,6 +872,7 @@ function PortfolioHoldingsSection({
             showProductTypeChipOverride={true}
             showHoldingsChipOverride={false}
             mobileSecondaryMetric="holdings"
+            expandedChartVariant="portfolio-user-tvl-overlay"
           />
         ))}
       </div>

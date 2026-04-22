@@ -37,14 +37,12 @@ import { useMemo } from 'react'
 import { type TVaultsExpandedView, VaultsExpandedSelector } from './VaultsExpandedSelector'
 
 const EXPANDED_VIEW_TO_CHART_TAB: Record<
-  Extract<TVaultsExpandedView, 'apy' | 'performance' | 'tvl' | 'user-balance' | 'user-growth'>,
+  Extract<TVaultsExpandedView, 'apy' | 'performance' | 'tvl'>,
   TVaultChartTab
 > = {
   apy: 'historical-apy',
   performance: 'historical-pps',
-  tvl: 'historical-tvl',
-  'user-balance': 'user-balance',
-  'user-growth': 'user-growth'
+  tvl: 'historical-tvl'
 }
 
 type TExpandedChartView = keyof typeof EXPANDED_VIEW_TO_CHART_TAB
@@ -63,6 +61,7 @@ type TVaultsListRowExpandedContentProps = {
   showHiddenTag?: boolean
   isHidden?: boolean
   showUserViews?: boolean
+  chartVariant?: 'default' | 'portfolio-user-tvl-overlay'
 }
 
 export default function VaultsListRowExpandedContent({
@@ -73,7 +72,8 @@ export default function VaultsListRowExpandedContent({
   showKindTag = true,
   showHiddenTag = false,
   isHidden,
-  showUserViews = false
+  showUserViews = false,
+  chartVariant = 'default'
 }: TVaultsListRowExpandedContentProps): ReactElement {
   const trackEvent = usePlausible()
   const chartTimeframe: TVaultChartTimeframe = '1y'
@@ -90,20 +90,15 @@ export default function VaultsListRowExpandedContent({
     chartTab === 'historical-apy' || chartTab === 'historical-pps' || chartTab === 'historical-tvl'
       ? chartTab
       : undefined
+  const shouldUsePortfolioUserTvlOverlay = chartVariant === 'portfolio-user-tvl-overlay' && showUserViews && !isYvUsd
   const viewOptions = useMemo<Array<{ id: TVaultsExpandedView; label: string }>>(
     () => [
       { id: 'strategies', label: 'Strategies' },
       { id: 'apy', label: 'APY' },
       { id: 'performance', label: 'Performance' },
-      { id: 'tvl', label: 'TVL' },
-      ...(showUserViews && !isYvUsd
-        ? ([
-            { id: 'user-balance', label: 'Your Balance' },
-            { id: 'user-growth', label: 'Your Growth' }
-          ] as const)
-        : [])
+      { id: 'tvl', label: shouldUsePortfolioUserTvlOverlay ? 'Your Position' : 'TVL' }
     ],
-    [showUserViews, isYvUsd]
+    [shouldUsePortfolioUserTvlOverlay]
   )
 
   const handleGoToVault = (event: MouseEvent<HTMLButtonElement>): void => {
@@ -167,8 +162,9 @@ export default function VaultsListRowExpandedContent({
                   timeframe={chartTimeframe}
                   chartHeightPx={200}
                   chartHeightMdPx={200}
-                  enableUserCharts={showUserViews}
+                  enableUserCharts={false}
                   userUnitLabel={snapshotMergedVault.token?.symbol || snapshotMergedVault.symbol || 'assets'}
+                  overlayUserPositionOnTvlTab={shouldUsePortfolioUserTvlOverlay}
                 />
               )
             ) : (

@@ -256,6 +256,21 @@ function renderVaultGrowthModeTooltip(mode: TPortfolioVaultGrowthChartMode): Rea
   )
 }
 
+function renderChartTitleTooltip(
+  activeTab: TPortfolioHistoryChartTab,
+  growthDisplayMode: TGrowthDisplayMode
+): ReactElement {
+  return (
+    <div
+      className={
+        'max-w-[260px] rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs leading-relaxed text-text-primary'
+      }
+    >
+      {getChartDescription(activeTab, growthDisplayMode)}
+    </div>
+  )
+}
+
 function resolveGrowthDisplayMode(
   selectedMode: TGrowthDisplayMode,
   protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
@@ -699,9 +714,16 @@ export function PortfolioHistoryChart({
     <div className={'flex flex-col gap-2.5 md:gap-3'}>
       <div className={'flex flex-col gap-px'}>
         <div className={'flex items-center justify-between gap-3 h-[36px] max-md:h-[54px]'}>
-          <h2 className={'text-xl font-semibold leading-tight text-text-primary'}>
-            {getChartTitle(activeTab, resolvedGrowthDisplayMode)}
-          </h2>
+          <Tooltip
+            className={'h-auto w-auto justify-start gap-0'}
+            openDelayMs={150}
+            side={'top'}
+            tooltip={renderChartTitleTooltip(activeTab, resolvedGrowthDisplayMode)}
+          >
+            <h2 className={'text-xl font-semibold leading-tight text-text-primary'}>
+              {getChartTitle(activeTab, resolvedGrowthDisplayMode)}
+            </h2>
+          </Tooltip>
           {activeTab === 'balance' ? (
             <div className={cl('flex shrink-0 items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
               {(['usd', 'eth'] as const).map((nextDenomination) => (
@@ -778,9 +800,6 @@ export function PortfolioHistoryChart({
             </div>
           ) : null}
         </div>
-        <p className={'min-h-[2lh] text-xs text-text-secondary'}>
-          {getChartDescription(activeTab, resolvedGrowthDisplayMode)}
-        </p>
       </div>
       {showControls ? (
         <div className={'flex flex-col gap-2 md:flex-row md:items-center md:justify-between'}>
