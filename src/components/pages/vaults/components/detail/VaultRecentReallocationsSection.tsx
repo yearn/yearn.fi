@@ -35,6 +35,8 @@ const NODE_LABEL_PADDING = 20
 const MAX_VISIBLE_PANELS = 3
 const PANEL_WIDTH_PERCENT = 92
 const PANEL_STEP_PERCENT = 82
+const PANEL_TRANSITION_DURATION_MS = 300
+const INCOMING_PANEL_EDGE_MASK_PERCENT = 12
 const SWIPE_THRESHOLD_PX = 40
 
 const timestampFormatter = new Intl.DateTimeFormat('en-US', {
@@ -389,25 +391,91 @@ function TimelineControls({
 
 function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: boolean }): ReactElement {
   const [activePanelIndex, setActivePanelIndex] = useState(Math.max(panels.length - 1, 0))
+  const [animationState, setAnimationState] = useState<{
+    fromIndex: number
+    toIndex: number
+    windowStart: number
+  } | null>(null)
+  const [isIncomingPanelRevealActive, setIsIncomingPanelRevealActive] = useState(false)
   const touchStartXRef = useRef<number | null>(null)
+  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const animationFrameRef = useRef<number | null>(null)
   const latestPanelId = panels[panels.length - 1]?.id ?? 'empty'
   const colorByStrategyId = useMemo(() => buildColorByStrategyId(panels, isDark), [isDark, panels])
 
   useEffect(() => {
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current)
+      animationTimeoutRef.current = null
+    }
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+
+    setAnimationState(null)
+    setIsIncomingPanelRevealActive(false)
     setActivePanelIndex(Math.max(panels.length - 1, 0))
   }, [latestPanelId, panels.length])
 
+  useEffect(() => {
+    return () => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current)
+      }
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
+    }
+  }, [])
+
   const activeIndex = clamp(activePanelIndex, 0, Math.max(0, panels.length - 1))
-  const windowStart = getWindowStart(activeIndex, panels.length)
+  // Keep the existing 3-panel window mounted while the slide runs. Swapping the
+  // window immediately causes a fresh edge preview panel to pop in mid-transition.
+  const windowStart = animationState?.windowStart ?? getWindowStart(activeIndex, panels.length)
   const windowPanels = panels.slice(windowStart, windowStart + MAX_VISIBLE_PANELS)
-  const activeWindowIndex = activeIndex - windowStart
+  const activeWindowIndex = (animationState?.toIndex ?? activeIndex) - windowStart
+
+  const transitionToPanel = (nextIndex: number): void => {
+    const clampedNextIndex = clamp(nextIndex, 0, Math.max(0, panels.length - 1))
+    if (clampedNextIndex === activeIndex) {
+      return
+    }
+
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current)
+    }
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+
+    setIsIncomingPanelRevealActive(false)
+    setAnimationState({
+      fromIndex: activeIndex,
+      toIndex: clampedNextIndex,
+      windowStart: getWindowStart(activeIndex, panels.length)
+    })
+    setActivePanelIndex(clampedNextIndex)
+    animationFrameRef.current = requestAnimationFrame(() => {
+      animationFrameRef.current = requestAnimationFrame(() => {
+        setIsIncomingPanelRevealActive(true)
+        animationFrameRef.current = null
+      })
+    })
+    animationTimeoutRef.current = setTimeout(() => {
+      setAnimationState(null)
+      setIsIncomingPanelRevealActive(false)
+      animationTimeoutRef.current = null
+    }, PANEL_TRANSITION_DURATION_MS)
+  }
 
   const goOlder = (): void => {
-    setActivePanelIndex((currentIndex) => clamp(currentIndex - 1, 0, Math.max(0, panels.length - 1)))
+    transitionToPanel(activeIndex - 1)
   }
 
   const goNewer = (): void => {
-    setActivePanelIndex((currentIndex) => clamp(currentIndex + 1, 0, Math.max(0, panels.length - 1)))
+    transitionToPanel(activeIndex + 1)
   }
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>): void => {
@@ -438,11 +506,7 @@ function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: bo
   }
 
   return (
-    <div
-      className="border-t border-border bg-surface-secondary"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className="bg-surface-primary" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <div className="relative h-[440px] w-full overflow-hidden md:h-[500px]">
         <TimelineControls activeIndex={activeIndex} panelCount={panels.length} onOlder={goOlder} onNewer={goNewer} />
 
@@ -452,16 +516,39 @@ function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: bo
           const offsetFromActive = windowIndex - activeWindowIndex
           const leftPercent =
             panels.length === 1 ? 0 : 50 - PANEL_WIDTH_PERCENT / 2 + offsetFromActive * PANEL_STEP_PERCENT
+          const zIndex = animationState
+            ? panelIndex === animationState.fromIndex
+              ? 3
+              : panelIndex === animationState.toIndex
+                ? 2
+                : 1
+            : isActive
+              ? 2
+              : 1
+          const opacity = animationState
+            ? panelIndex === animationState.fromIndex || panelIndex === animationState.toIndex
+              ? 1
+              : 0.72
+            : isActive
+              ? 1
+              : 0.72
+          const isIncomingPanel = panelIndex === animationState?.toIndex
+          const incomingMaskEdge =
+            animationState && isIncomingPanel
+              ? animationState.toIndex > animationState.fromIndex
+                ? 'left'
+                : 'right'
+              : null
 
           return (
             <div
               key={panel.id}
-              className="absolute top-0 h-full transition-[left,opacity] duration-300 ease-out"
+              className="absolute top-0 h-full overflow-hidden bg-surface-primary transition-[left,opacity] duration-300 ease-out"
               style={{
                 width: panels.length === 1 ? '100%' : `${PANEL_WIDTH_PERCENT}%`,
                 left: `${leftPercent}%`,
-                opacity: isActive ? 1 : 0.72,
-                zIndex: isActive ? 2 : 1
+                opacity,
+                zIndex
               }}
             >
               <ReallocationSankeyChart
@@ -470,6 +557,17 @@ function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: bo
                 isDark={isDark}
                 isActive={isActive}
               />
+              {incomingMaskEdge ? (
+                <div
+                  className={cl(
+                    'pointer-events-none absolute inset-y-0 z-10 bg-surface-primary transition-[width] duration-300 ease-out',
+                    incomingMaskEdge === 'left' ? 'left-0' : 'right-0'
+                  )}
+                  style={{
+                    width: isIncomingPanelRevealActive ? '0%' : `${INCOMING_PANEL_EDGE_MASK_PERCENT}%`
+                  }}
+                />
+              ) : null}
             </div>
           )
         })}
