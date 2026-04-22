@@ -139,6 +139,12 @@ export function generateDailyTimestampsFromRange(startTimestamp: number, endTime
   return timestamps
 }
 
+export function toSettledDayTimestamp(timestamp: number): number {
+  const date = new Date(timestamp * 1000)
+  date.setUTCHours(23, 59, 59, 0)
+  return Math.floor(date.getTime() / 1000)
+}
+
 export function timestampToDateString(timestamp: number): string {
   const date = new Date(timestamp * 1000)
   return date.toISOString().split('T')[0]

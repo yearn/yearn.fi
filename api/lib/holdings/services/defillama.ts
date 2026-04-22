@@ -223,16 +223,14 @@ function materializeRequestedPriceMisses(
 ): CachedPriceMiss[] {
   return coins.flatMap((coin) => {
     const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
-    const fetchedPriceMap = fetchedPrices.get(tokenKey)
+    const fetchedPriceMap = fetchedPrices.get(tokenKey) ?? new Map<number, number>()
 
-    if ((fetchedPriceMap?.size ?? 0) > 0) {
-      return []
-    }
-
-    return coin.timestamps.map((timestamp) => ({
-      tokenKey,
-      timestamp
-    }))
+    return coin.timestamps
+      .filter((timestamp) => getPriceAtTimestamp(fetchedPriceMap, timestamp) === 0)
+      .map((timestamp) => ({
+        tokenKey,
+        timestamp
+      }))
   })
 }
 
@@ -701,11 +699,13 @@ export function getPriceAtTimestamp(priceMap: Map<number, number>, targetTimesta
     return 0
   }
 
-  const closest = timestamps.reduce((bestTimestamp, currentTimestamp) => {
-    const bestDiff = Math.abs(targetTimestamp - bestTimestamp)
-    const currentDiff = Math.abs(targetTimestamp - currentTimestamp)
-    return currentDiff < bestDiff ? currentTimestamp : bestTimestamp
-  }, timestamps[0])
+  let closestPriorTimestamp: number | null = null
+  for (const timestamp of timestamps) {
+    if (timestamp > targetTimestamp) {
+      break
+    }
+    closestPriorTimestamp = timestamp
+  }
 
-  return priceMap.get(closest) || 0
+  return closestPriorTimestamp !== null ? priceMap.get(closestPriorTimestamp) || 0 : 0
 }

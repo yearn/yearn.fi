@@ -11,7 +11,7 @@ export function usePortfolioBreakdown(date: string | null, enabled = true) {
       return null
     }
 
-    return `/api/holdings/breakdown?address=${address}&date=${date}&debug=1&fetchType=parallel&paginationMode=all`
+    return `/api/holdings/breakdown?address=${address}&date=${date}&debug=1&fetchType=parallel`
   }, [address, date, enabled])
 
   const { data, isLoading, isFetching, error } = useFetch<TPortfolioBreakdownResponse>({

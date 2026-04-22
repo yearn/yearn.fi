@@ -9,7 +9,12 @@ import {
   type HoldingsEventPaginationMode,
   type VaultVersion
 } from './graphql'
-import { generateDailyTimestamps, generateDailyTimestampsFromRange, timestampToDateString } from './holdings'
+import {
+  generateDailyTimestamps,
+  generateDailyTimestampsFromRange,
+  timestampToDateString,
+  toSettledDayTimestamp
+} from './holdings'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
 import { buildRawPnlEvents } from './pnl'
 import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
@@ -1426,7 +1431,7 @@ function normalizeStakingWrapperEvents(txFamilyEvents: TRawPnlEvent[], userAddre
 
 function getProtocolReturnTimestamps(events: TRawPnlEvent[], timeframe: '1y' | 'all'): number[] {
   if (timeframe === '1y') {
-    return generateDailyTimestamps(config.historyDays, 1)
+    return generateDailyTimestamps(config.historyDays, 1).map((timestamp) => toSettledDayTimestamp(timestamp))
   }
 
   if (events.length === 0) {
@@ -1435,7 +1440,9 @@ function getProtocolReturnTimestamps(events: TRawPnlEvent[], timeframe: '1y' | '
 
   const latestSettledTimestamp = generateDailyTimestamps(1, 1)[0]
   const firstEventTimestamp = sortEvents(events)[0]?.blockTimestamp ?? latestSettledTimestamp
-  return generateDailyTimestampsFromRange(firstEventTimestamp, latestSettledTimestamp)
+  return generateDailyTimestampsFromRange(firstEventTimestamp, latestSettledTimestamp).map((timestamp) =>
+    toSettledDayTimestamp(timestamp)
+  )
 }
 
 export function buildProtocolReturnLedgers(args: {

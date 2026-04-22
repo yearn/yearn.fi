@@ -91,9 +91,12 @@ export function VaultChartsSection({
     () => [...VAULT_CHART_TABS, ...(enableUserCharts ? USER_VAULT_CHART_TABS : [])],
     [enableUserCharts]
   )
-  const activeTabIsUserChart = isUserChartTab(activeTab)
-  const shouldOverlayUserPositionOnTvlTab = overlayUserPositionOnTvlTab && activeTab === 'historical-tvl'
-  const showApyDisclaimer = shouldRenderSelectors && activeTab === 'historical-apy' && chainId === KATANA_CHAIN_ID
+  const fallbackTab = availableTabs[0]?.id ?? 'historical-apy'
+  const resolvedActiveTab = availableTabs.some((tab) => tab.id === activeTab) ? activeTab : fallbackTab
+  const activeTabIsUserChart = isUserChartTab(resolvedActiveTab)
+  const shouldOverlayUserPositionOnTvlTab = overlayUserPositionOnTvlTab && resolvedActiveTab === 'historical-tvl'
+  const showApyDisclaimer =
+    shouldRenderSelectors && resolvedActiveTab === 'historical-apy' && chainId === KATANA_CHAIN_ID
   const {
     balanceData: userBalanceData,
     growthData: userGrowthData,
@@ -108,12 +111,12 @@ export function VaultChartsSection({
   })
 
   useEffect(() => {
-    if (availableTabs.some((tab) => tab.id === activeTab)) {
+    if (resolvedActiveTab === activeTab) {
       return
     }
 
-    setActiveTab('historical-apy')
-  }, [activeTab, availableTabs, setActiveTab])
+    setActiveTab(resolvedActiveTab)
+  }, [activeTab, resolvedActiveTab, setActiveTab])
 
   const vaultChartsLoading = isLoading || !transformed.aprApyData || !transformed.ppsData || !transformed.tvlData
   const chartsLoading = shouldOverlayUserPositionOnTvlTab
@@ -142,7 +145,7 @@ export function VaultChartsSection({
                     'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold transition-all',
                     'min-h-[36px] md:min-h-0 active:scale-[0.98]',
                     SELECTOR_BAR_STYLES.buttonBase,
-                    activeTab === tab.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
+                    resolvedActiveTab === tab.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
                   )}
                 >
                   {tab.label}
@@ -200,7 +203,7 @@ export function VaultChartsSection({
         <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx} className={'mx-4'}>
           <ChartErrorBoundary>
             <Suspense fallback={<ChartSkeleton />}>
-              {activeTab === 'user-position' && (userBalanceData || userGrowthData) ? (
+              {resolvedActiveTab === 'user-position' && (userBalanceData || userGrowthData) ? (
                 <VaultTvlGrowthChart
                   balanceData={userBalanceData}
                   growthData={userGrowthData}
@@ -208,13 +211,13 @@ export function VaultChartsSection({
                   unitLabel={userUnitLabel}
                 />
               ) : null}
-              {activeTab === 'historical-pps' && transformed.ppsData ? (
+              {resolvedActiveTab === 'historical-pps' && transformed.ppsData ? (
                 <PPSChart chartData={transformed.ppsData} timeframe={activeTimeframe} />
               ) : null}
-              {activeTab === 'historical-apy' && transformed.aprApyData ? (
+              {resolvedActiveTab === 'historical-apy' && transformed.aprApyData ? (
                 <APYChart chartData={transformed.aprApyData} timeframe={activeTimeframe} />
               ) : null}
-              {activeTab === 'historical-tvl' ? (
+              {resolvedActiveTab === 'historical-tvl' ? (
                 shouldOverlayUserPositionOnTvlTab ? (
                   userBalanceData || userGrowthData ? (
                     <VaultTvlGrowthChart

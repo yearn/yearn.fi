@@ -356,11 +356,13 @@ export async function deleteStaleCache(): Promise<number> {
   }
 
   try {
-    const [staleTotalsResult, expiredMissesResult] = await Promise.all([
+    const [staleTotalsResult, expiredMissesResult, staleRateLimitsResult] = await Promise.all([
       pool.query(`DELETE FROM holdings_totals WHERE date < NOW() - INTERVAL '366 days'`),
-      pool.query(`DELETE FROM token_price_misses WHERE expires_at <= NOW()`)
+      pool.query(`DELETE FROM token_price_misses WHERE expires_at <= NOW()`),
+      pool.query(`DELETE FROM rate_limits WHERE window_start < NOW() - INTERVAL '1 day'`)
     ])
-    const deletedCount = (staleTotalsResult.rowCount ?? 0) + (expiredMissesResult.rowCount ?? 0)
+    const deletedCount =
+      (staleTotalsResult.rowCount ?? 0) + (expiredMissesResult.rowCount ?? 0) + (staleRateLimitsResult.rowCount ?? 0)
     console.log(`[Cache] Deleted ${deletedCount} stale cache rows`)
     return deletedCount
   } catch (error) {

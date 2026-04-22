@@ -179,12 +179,21 @@ function parseUtcDateParam(value: string | null): number | null {
   }
 
   const [, year, month, day] = match
-  const timestamp = Math.floor(Date.UTC(Number(year), Number(month) - 1, Number(day)) / 1000)
-  if (!Number.isFinite(timestamp)) {
+  const yearNumber = Number(year)
+  const monthNumber = Number(month)
+  const dayNumber = Number(day)
+  const utcDate = new Date(Date.UTC(yearNumber, monthNumber - 1, dayNumber))
+
+  if (
+    utcDate.getUTCFullYear() !== yearNumber ||
+    utcDate.getUTCMonth() !== monthNumber - 1 ||
+    utcDate.getUTCDate() !== dayNumber
+  ) {
     return null
   }
 
-  return timestamp
+  const timestamp = Math.floor(utcDate.getTime() / 1000)
+  return Number.isFinite(timestamp) ? timestamp : null
 }
 
 async function parseJsonBody<T>(req: Request): Promise<T> {
