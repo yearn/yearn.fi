@@ -173,6 +173,7 @@ export interface HoldingsPnLSimpleHistoryFamilyPoint {
   date: string
   timestamp: number
   protocolReturnPct: number | null
+  growthWeightUsd: number | null
   growthIndex: number | null
 }
 
@@ -1847,6 +1848,7 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
         date: timestampToDateString(timestamp),
         timestamp,
         protocolReturnPct: hasOpenPosition ? (familyVault?.protocolReturnPct ?? null) : null,
+        growthWeightUsd: hasOpenPosition ? (familyVault?.growthWeightUsd ?? null) : null,
         growthIndex: hasOpenPosition ? state.growthIndex : null
       })
     })

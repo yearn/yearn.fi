@@ -31,10 +31,12 @@ import type {
   TPortfolioProtocolReturnHistorySummary
 } from '../types/api'
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
+import type { TPortfolioVaultGrowthChartMode, TPortfolioVaultGrowthChartSeries } from './PortfolioVaultGrowthChart'
+import { PortfolioVaultGrowthChart } from './PortfolioVaultGrowthChart'
 
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
 type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'return' | 'annualized' | 'index'
-type TGrowthDisplayMode = 'auto' | 'index' | 'usd' | 'eth'
+type TGrowthDisplayMode = 'auto' | 'usd' | 'eth'
 type TResolvedGrowthDisplayMode = Exclude<TGrowthDisplayMode, 'auto'>
 
 type TPortfolioHistoryChartProps = {
@@ -61,19 +63,6 @@ type TChartPoint = {
   value: number | null
 }
 
-type TIndexChartPoint = {
-  date: string
-  aggregate: number | null
-  [seriesKey: string]: string | number | null
-}
-
-type TIndexedFamilySeries = {
-  key: string
-  label: string
-  color: string
-  points: TChartPoint[]
-}
-
 type TPortfolioHistoryTooltipProps = {
   active?: boolean
   payload?: Array<{
@@ -81,6 +70,7 @@ type TPortfolioHistoryTooltipProps = {
     payload?: {
       date?: string
       value?: unknown
+      [key: string]: unknown
     }
   }>
 }
@@ -98,9 +88,12 @@ const CHART_TABS: Array<{ id: TPortfolioHistoryChartTab; label: string }> = [
 ]
 const GROWTH_DISPLAY_MODES: Array<{ id: TGrowthDisplayMode; label: string }> = [
   { id: 'auto', label: 'Auto' },
-  { id: 'index', label: 'Index' },
   { id: 'usd', label: 'USD' },
   { id: 'eth', label: 'ETH' }
+]
+const VAULT_GROWTH_MODES: Array<{ id: TPortfolioVaultGrowthChartMode; label: string }> = [
+  { id: 'position', label: 'Position' },
+  { id: 'index', label: 'Index' }
 ]
 
 const INDEX_SERIES_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5'] as const
@@ -173,36 +166,19 @@ function formatReturnValue(value: number): string {
   return absolute
 }
 
-function formatIndexValue(value: number): string {
-  return value >= 1000 ? value.toFixed(0) : value >= 100 ? value.toFixed(1) : value.toFixed(2)
-}
-
-function rebaseIndexPoints(points: TChartPoint[]): TChartPoint[] {
-  const baseValue = points.find(
-    (point): point is { date: string; value: number } =>
-      typeof point.value === 'number' && Number.isFinite(point.value) && point.value !== 0
-  )?.value
-
-  if (!baseValue) {
-    return points
-  }
-
-  return points.map((point) => ({
-    date: point.date,
-    value:
-      typeof point.value === 'number' && Number.isFinite(point.value) ? (point.value / baseValue) * 100 : point.value
-  }))
-}
-
 function resolveGrowthDisplayMode(
   selectedMode: TGrowthDisplayMode,
   summary: TPortfolioProtocolReturnHistorySummary | null,
   protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
 ): TResolvedGrowthDisplayMode {
-  const recommendedMode = selectedMode === 'auto' ? (summary?.recommendedGrowthDisplay ?? 'index') : selectedMode
+  const recommendedMode = selectedMode === 'auto' ? (summary?.recommendedGrowthDisplay ?? 'usd') : selectedMode
   const hasEthSeries = Boolean(protocolReturnData?.some((point) => point.growthWeightEth !== null))
 
-  return recommendedMode === 'eth' && !hasEthSeries ? 'index' : recommendedMode
+  if (recommendedMode === 'eth') {
+    return hasEthSeries ? 'eth' : 'usd'
+  }
+
+  return 'usd'
 }
 
 function getAutoGrowthDisplayExplanation(args: {
@@ -219,111 +195,27 @@ function getAutoGrowthDisplayExplanation(args: {
     : summary.recommendedGrowthDisplayReason === 'eth_dominant'
       ? args.resolvedMode === 'eth'
         ? 'Auto: ETH-dominant portfolio, showing ETH'
-        : 'Auto: ETH-dominant portfolio, ETH history unavailable, showing Index'
-      : 'Auto: mixed portfolio, showing Index'
+        : 'Auto: ETH-dominant portfolio, ETH history unavailable, showing USD'
+      : 'Auto: mixed portfolio, showing USD'
 }
 
-function buildIndexedFamilySeries(
+function buildPortfolioVaultGrowthSeries(
   familySeries: TPortfolioProtocolReturnHistoryFamilySeries,
-  timeframe: TPortfolioHistoryChartTimeframe,
   labelByVaultKey: Record<string, string>
-): TIndexedFamilySeries[] {
-  const limit = getTimeframeLimit(timeframe)
-
-  return familySeries
-    .map((series) => {
-      const points =
-        !Number.isFinite(limit) || limit >= series.dataPoints.length
-          ? series.dataPoints
-          : series.dataPoints.slice(-limit)
-
-      return {
-        series,
-        points: rebaseIndexPoints(points.map((point) => ({ date: point.date, value: point.growthIndex })))
-      }
-    })
-    .filter(({ points }) => points.some((point) => point.value !== null))
-    .slice(0, INDEX_SERIES_COLORS.length - 1)
-    .map(({ series, points }, index) => ({
-      key: `family_${index}`,
-      label:
-        labelByVaultKey[`${series.chainId}:${series.vaultAddress.toLowerCase()}`] ??
-        series.symbol ??
-        `${series.vaultAddress.slice(0, 6)}…${series.vaultAddress.slice(-4)}`,
-      color: INDEX_SERIES_COLORS[index + 1],
-      points
+): TPortfolioVaultGrowthChartSeries[] {
+  return familySeries.map((series) => ({
+    vaultAddress: series.vaultAddress,
+    vaultName:
+      labelByVaultKey[`${series.chainId}:${series.vaultAddress.toLowerCase()}`] ??
+      series.symbol ??
+      `${series.vaultAddress.slice(0, 6)}…${series.vaultAddress.slice(-4)}`,
+    symbol: series.symbol,
+    points: series.dataPoints.map((point) => ({
+      timestamp: point.timestamp,
+      positionValueUsd: point.growthWeightUsd,
+      indexValue: point.growthIndex
     }))
-}
-
-function PortfolioGrowthIndexTooltip({
-  active,
-  payload,
-  indexSeriesLabels
-}: TPortfolioHistoryTooltipProps & {
-  indexSeriesLabels: Record<string, string>
-}): ReactElement | null {
-  if (!active || !payload?.length) {
-    return null
-  }
-
-  const date = payload[0]?.payload?.date
-  if (!date) {
-    return null
-  }
-
-  const rows = payload
-    .flatMap((entry) => {
-      const dataKey =
-        typeof (entry as { dataKey?: unknown }).dataKey === 'string' ? (entry as { dataKey: string }).dataKey : ''
-      const value = typeof entry.value === 'number' ? entry.value : Number(entry.value ?? NaN)
-      if (!Number.isFinite(value)) {
-        return []
-      }
-
-      return [
-        {
-          key: dataKey,
-          label: indexSeriesLabels[dataKey] ?? dataKey,
-          value,
-          color:
-            typeof (entry as { color?: unknown }).color === 'string'
-              ? ((entry as { color: string }).color as string)
-              : 'var(--color-text-primary)'
-        }
-      ]
-    })
-    .sort((left, right) => {
-      if (left.key === 'aggregate') {
-        return -1
-      }
-      if (right.key === 'aggregate') {
-        return 1
-      }
-      return right.value - left.value
-    })
-
-  return (
-    <div
-      className={
-        'pointer-events-none flex min-w-[13rem] flex-col gap-2 rounded-xl border border-border bg-surface px-3 py-3 shadow-xl'
-      }
-    >
-      <span className={'text-xs font-medium uppercase tracking-[0.12em] text-text-tertiary'}>
-        {formatChartTooltipDate(date)}
-      </span>
-      <div className={'flex flex-col gap-1.5'}>
-        {rows.map((row) => (
-          <div key={row.key} className={'flex items-center justify-between gap-3'}>
-            <span className={'inline-flex items-center gap-2 text-xs text-text-secondary'}>
-              <span className={'size-2 rounded-full'} style={{ backgroundColor: row.color }} />
-              <span>{row.label}</span>
-            </span>
-            <span className={'text-sm font-semibold text-text-primary'}>{formatIndexValue(row.value)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+  }))
 }
 
 function PortfolioHistoryTooltip({
@@ -353,12 +245,8 @@ function PortfolioHistoryTooltip({
     activeTab === 'balance'
       ? formatBalanceValue(value, denomination)
       : activeTab === 'growth'
-        ? growthDisplayMode === 'index'
-          ? formatIndexValue(value)
-          : formatGrowthValue(value, growthDisplayMode)
-        : activeTab === 'index'
-          ? formatIndexValue(value)
-          : formatReturnValue(value)
+        ? formatGrowthValue(value, growthDisplayMode)
+        : formatReturnValue(value)
 
   return (
     <div
@@ -386,15 +274,13 @@ function getChartDescription(
   growthDisplayMode: TResolvedGrowthDisplayMode
 ): string {
   if (activeTab === 'growth') {
-    return growthDisplayMode === 'index'
-      ? 'Normalized protocol-return index for the whole wallet. Starts at 100 at the beginning of the selected timeframe.'
-      : growthDisplayMode === 'eth'
-        ? 'Cumulative protocol growth earned while funds were held in your wallet, shown in receipt-time ETH equivalent.'
-        : 'Cumulative protocol growth earned while funds were held in your wallet, shown in receipt-time USD equivalent.'
+    return growthDisplayMode === 'eth'
+      ? 'Cumulative protocol growth earned while funds were held in your wallet, shown in receipt-time ETH equivalent.'
+      : 'Cumulative protocol growth earned while funds were held in your wallet, shown in receipt-time USD equivalent.'
   }
 
   if (activeTab === 'index') {
-    return 'Wallet growth index plus vault comparison lines. Each line starts at 100 at the beginning of the selected timeframe.'
+    return 'Compare actual vault contribution with normalized vault performance.'
   }
 
   if (activeTab === 'return') {
@@ -410,7 +296,7 @@ function getChartDescription(
 
 function getChartTitle(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: TResolvedGrowthDisplayMode): string {
   if (activeTab === 'growth') {
-    return growthDisplayMode === 'index' ? 'Growth Index' : 'Protocol Growth'
+    return growthDisplayMode === 'eth' ? 'ETH Growth' : 'USD Growth'
   }
 
   if (activeTab === 'return') {
@@ -430,11 +316,9 @@ function getChartTitle(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: 
 
 function getEmptyMessage(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: TResolvedGrowthDisplayMode): string {
   if (activeTab === 'growth') {
-    return growthDisplayMode === 'index'
-      ? 'No growth index history available'
-      : growthDisplayMode === 'eth'
-        ? 'No ETH-equivalent protocol growth history available'
-        : 'No protocol growth history available'
+    return growthDisplayMode === 'eth'
+      ? 'No ETH-equivalent protocol growth history available'
+      : 'No protocol growth history available'
   }
 
   if (activeTab === 'return') {
@@ -473,6 +357,7 @@ export function PortfolioHistoryChart({
   const { allVaults } = useYearn()
   const [activeTab, setActiveTab] = useState<TPortfolioHistoryChartTab>('balance')
   const [growthDisplayMode, setGrowthDisplayMode] = useState<TGrowthDisplayMode>('auto')
+  const [vaultGrowthMode, setVaultGrowthMode] = useState<TPortfolioVaultGrowthChartMode>('position')
   const [hoveredBreakdownDate, setHoveredBreakdownDate] = useState<string | null>(null)
   const [selectedBreakdownDate, setSelectedBreakdownDate] = useState<string | null>(null)
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false)
@@ -535,25 +420,6 @@ export function PortfolioHistoryChart({
     }))
   }, [protocolReturnData, timeframe])
 
-  const filteredGrowthIndexData = useMemo<TChartPoint[]>(() => {
-    if (!protocolReturnData) {
-      return []
-    }
-
-    const limit = getTimeframeLimit(timeframe)
-    const points =
-      !Number.isFinite(limit) || limit >= protocolReturnData.length
-        ? protocolReturnData
-        : protocolReturnData.slice(-limit)
-
-    return rebaseIndexPoints(
-      points.map((point) => ({
-        date: point.date,
-        value: point.growthIndex
-      }))
-    )
-  }, [protocolReturnData, timeframe])
-
   const filteredReturnData = useMemo<TChartPoint[]>(() => {
     if (!protocolReturnData) {
       return []
@@ -601,11 +467,9 @@ export function PortfolioHistoryChart({
       : activeTab === 'growth'
         ? resolvedGrowthDisplayMode === 'eth'
           ? filteredGrowthEthData
-          : resolvedGrowthDisplayMode === 'usd'
-            ? filteredGrowthUsdData
-            : filteredGrowthIndexData
+          : filteredGrowthUsdData
         : activeTab === 'index'
-          ? filteredGrowthIndexData
+          ? filteredReturnData
           : activeTab === 'return'
             ? filteredReturnData
             : filteredAnnualizedReturnData
@@ -647,10 +511,6 @@ export function PortfolioHistoryChart({
     }
 
     if (activeTab === 'growth') {
-      if (resolvedGrowthDisplayMode === 'index') {
-        return formatIndexValue(numericValue)
-      }
-
       if (resolvedGrowthDisplayMode === 'eth') {
         if (absoluteValue >= 1_000) {
           return `${numericValue < 0 ? '-' : ''}${(absoluteValue / 1_000).toFixed(1)}k`
@@ -672,10 +532,6 @@ export function PortfolioHistoryChart({
       return `${numericValue < 0 ? '-' : ''}$${absoluteValue.toFixed(0)}`
     }
 
-    if (activeTab === 'index') {
-      return formatIndexValue(numericValue)
-    }
-
     if (absoluteValue >= 1000) {
       return `${numericValue.toFixed(0)}%`
     }
@@ -694,11 +550,9 @@ export function PortfolioHistoryChart({
               ? 'Total Value (ETH)'
               : 'Total Value (USD)'
             : activeTab === 'growth'
-              ? resolvedGrowthDisplayMode === 'index'
-                ? 'Growth Index'
-                : resolvedGrowthDisplayMode === 'eth'
-                  ? 'Protocol Growth (ETH)'
-                  : 'Protocol Growth (USD)'
+              ? resolvedGrowthDisplayMode === 'eth'
+                ? 'Protocol Growth (ETH)'
+                : 'Protocol Growth (USD)'
               : activeTab === 'index'
                 ? 'Growth Index'
                 : 'Protocol Return (%)',
@@ -805,6 +659,24 @@ export function PortfolioHistoryChart({
                     growthDisplayMode === mode.id
                       ? SELECTOR_BAR_STYLES.buttonActive
                       : SELECTOR_BAR_STYLES.buttonInactive
+                  )}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          ) : activeTab === 'index' ? (
+            <div className={cl('flex shrink-0 items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
+              {VAULT_GROWTH_MODES.map((mode) => (
+                <button
+                  key={mode.id}
+                  type={'button'}
+                  onClick={() => setVaultGrowthMode(mode.id)}
+                  className={cl(
+                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                    SELECTOR_BAR_STYLES.buttonBase,
+                    vaultGrowthMode === mode.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
                   )}
                 >
                   {mode.label}
@@ -993,106 +865,24 @@ export function PortfolioHistoryChart({
   }
 
   if (activeTab === 'index') {
-    const indexedFamilySeries = buildIndexedFamilySeries(protocolReturnFamilySeries, timeframe, familyLabelByVaultKey)
-    const limit = getTimeframeLimit(timeframe)
-    const aggregatePoints =
-      !protocolReturnData || !Number.isFinite(limit) || limit >= protocolReturnData.length
-        ? (protocolReturnData ?? [])
-        : protocolReturnData.slice(-limit)
-    const aggregateIndexPoints = rebaseIndexPoints(
-      aggregatePoints.map((point) => ({ date: point.date, value: point.growthIndex }))
-    )
-    const indexData: TIndexChartPoint[] = aggregateIndexPoints.map((point, index) => {
-      const row: TIndexChartPoint = { date: point.date, aggregate: point.value }
-      indexedFamilySeries.forEach((family) => {
-        row[family.key] = family.points[index]?.value ?? null
-      })
-      return row
-    })
-    const indexTicks = isShortTimeframe
-      ? getChartWeeklyTicks(aggregateIndexPoints)
-      : getChartMonthlyTicks(aggregateIndexPoints)
-    const indexSeriesLabels: Record<string, string> = {
-      aggregate: 'Wallet',
-      ...Object.fromEntries(indexedFamilySeries.map((series) => [series.key, series.label]))
-    }
-
-    if (indexData.length === 0) {
-      return (
-        <section className={cl(sectionClassName, className)}>
-          {renderHeader(true)}
-          <div className={'flex min-h-[240px] items-center justify-center'}>
-            <p className={'text-base text-text-secondary'}>{getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}</p>
-          </div>
-        </section>
-      )
-    }
+    const vaultGrowthSeries = buildPortfolioVaultGrowthSeries(protocolReturnFamilySeries, familyLabelByVaultKey)
 
     return (
       <section className={cl(sectionClassName, className)}>
         {renderHeader(true)}
-        <div className={'min-h-[240px] flex-1 pt-1'}>
-          <ChartContainer
-            config={{ aggregate: { label: 'Wallet', color: INDEX_SERIES_COLORS[0] } }}
-            style={{ height: '100%', aspectRatio: 'unset' }}
-          >
-            <ComposedChart data={indexData} margin={CHART_WITH_AXES_MARGIN}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey={'date'}
-                ticks={indexTicks}
-                tickFormatter={tickFormatter}
-                tick={{ fill: 'var(--chart-axis)' }}
-                axisLine={{ stroke: 'var(--chart-axis)' }}
-                tickLine={{ stroke: 'var(--chart-axis)' }}
-              />
-              <YAxis
-                domain={['auto', 'auto']}
-                tickFormatter={(value: number | string) => {
-                  const numericValue = Number(value)
-                  const absoluteValue = Math.abs(numericValue)
-                  return absoluteValue >= 1000 ? numericValue.toFixed(0) : numericValue.toFixed(1)
-                }}
-                mirror
-                width={CHART_Y_AXIS_WIDTH}
-                tickMargin={CHART_Y_AXIS_TICK_MARGIN}
-                tick={CHART_Y_AXIS_TICK_STYLE}
-                axisLine={{ stroke: 'var(--chart-axis)' }}
-                tickLine={{ stroke: 'var(--chart-axis)' }}
-              />
-              <ChartTooltip
-                cursor={{ stroke: 'var(--chart-cursor-line)', strokeWidth: 1 }}
-                content={(props) => <PortfolioGrowthIndexTooltip {...props} indexSeriesLabels={indexSeriesLabels} />}
-              />
-              <Line
-                type={'monotone'}
-                dataKey={'aggregate'}
-                name={'Wallet'}
-                stroke={INDEX_SERIES_COLORS[0]}
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{ r: 4, strokeWidth: 0, fill: INDEX_SERIES_COLORS[0] }}
-                connectNulls
-                isAnimationActive={false}
-              />
-              {indexedFamilySeries.map((series) => (
-                <Line
-                  key={series.key}
-                  type={'monotone'}
-                  dataKey={series.key}
-                  name={series.label}
-                  stroke={series.color}
-                  strokeWidth={1.75}
-                  strokeOpacity={0.9}
-                  dot={false}
-                  activeDot={{ r: 3.5, strokeWidth: 0, fill: series.color }}
-                  connectNulls
-                  isAnimationActive={false}
-                />
-              ))}
-            </ComposedChart>
-          </ChartContainer>
-        </div>
+        <PortfolioVaultGrowthChart
+          series={vaultGrowthSeries}
+          mode={vaultGrowthMode}
+          onModeChange={setVaultGrowthMode}
+          timeframe={timeframe}
+          maxVaults={INDEX_SERIES_COLORS.length - 1}
+          colors={[...INDEX_SERIES_COLORS.slice(1)]}
+          title={''}
+          height={260}
+          showModeToggle={false}
+          className={'pt-1'}
+          emptyMessage={getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}
+        />
         <PortfolioHistoryBreakdownModal
           date={selectedBreakdownDate}
           isOpen={isBreakdownModalOpen}
