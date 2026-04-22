@@ -1198,6 +1198,68 @@ function buildEffectiveSimpleFamilyEvents(txFamilyEvents: TRawPnlEvent[], userAd
     return addressEvents
   }
 
+  const addressScopedStakingMintTransfers = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+      event.kind === 'transfer' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.sender) === ZERO_ADDRESS &&
+      lowerCaseAddress(event.receiver) === normalizedUserAddress &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress
+  )
+  const addressScopedStakingDepositReceipts = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'deposit' }> =>
+      event.kind === 'deposit' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress &&
+      lowerCaseAddress(event.owner) === normalizedUserAddress
+  )
+  const matchedStakingDepositMintShares = minBigInt(
+    addressScopedStakingMintTransfers.reduce((total, event) => total + event.shares, ZERO),
+    addressScopedStakingDepositReceipts.reduce((total, event) => total + event.shares, ZERO)
+  )
+
+  addressEvents = stripMatchedShares(
+    addressEvents,
+    (event) =>
+      event.kind === 'transfer' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.sender) === ZERO_ADDRESS &&
+      lowerCaseAddress(event.receiver) === normalizedUserAddress &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress,
+    matchedStakingDepositMintShares
+  )
+
+  const addressScopedStakingBurnTransfers = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+      event.kind === 'transfer' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.sender) === normalizedUserAddress &&
+      lowerCaseAddress(event.receiver) === ZERO_ADDRESS &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress
+  )
+  const addressScopedStakingWithdrawalReceipts = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'withdrawal' }> =>
+      event.kind === 'withdrawal' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress &&
+      lowerCaseAddress(event.owner) === normalizedUserAddress
+  )
+  const matchedStakingWithdrawalBurnShares = minBigInt(
+    addressScopedStakingBurnTransfers.reduce((total, event) => total + event.shares, ZERO),
+    addressScopedStakingWithdrawalReceipts.reduce((total, event) => total + event.shares, ZERO)
+  )
+
+  addressEvents = stripMatchedShares(
+    addressEvents,
+    (event) =>
+      event.kind === 'transfer' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.sender) === normalizedUserAddress &&
+      lowerCaseAddress(event.receiver) === ZERO_ADDRESS &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress,
+    matchedStakingWithdrawalBurnShares
+  )
+
   const underlyingDeposits = txFamilyEvents.filter(
     (event): event is Extract<TRawPnlEvent, { kind: 'deposit' }> =>
       event.kind === 'deposit' &&

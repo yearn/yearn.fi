@@ -857,6 +857,24 @@ describe('pnl simple protocol return', () => {
             address: true,
             tx: true
           }
+        }),
+        baseEvent({
+          kind: 'transfer',
+          id: 'user-staking-mint-transfer',
+          transactionHash: '0xrouter-stake',
+          vaultAddress: STAKING_VAULT,
+          familyVaultAddress: UNDERLYING_VAULT,
+          isStakingVault: true,
+          blockTimestamp: 200,
+          blockNumber: 2,
+          logIndex: 3,
+          sender: ZERO_ADDRESS,
+          receiver: USER,
+          shares: 100n * ONE,
+          scopes: {
+            address: true,
+            tx: true
+          }
         })
       ],
       userAddress: USER,
