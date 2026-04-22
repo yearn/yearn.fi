@@ -143,4 +143,95 @@ describe('buildReallocationPanels', () => {
     ])
     expect(graph.links.map((link) => link.value)).toEqual([50, 40, 10])
   })
+
+  it('keeps a shared snapshot ordered consistently across adjacent panels', () => {
+    const latestTimestamp = '2026-04-22 10:00:00 UTC'
+    const olderTimestamp = '2026-04-20 08:30:00 UTC'
+    const olderSnapshot = makeOptimizationRecord({
+      key: 'doa:optimizations:1:1771317000',
+      timestampUtc: olderTimestamp,
+      strategies: [
+        {
+          strategy: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          name: 'Alpha',
+          currentRatio: 5000,
+          targetRatio: 5000,
+          currentApr: 210,
+          targetApr: 220
+        },
+        {
+          strategy: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          name: 'Beta',
+          currentRatio: 3000,
+          targetRatio: 3000,
+          currentApr: 170,
+          targetApr: 180
+        },
+        {
+          strategy: '0xcccccccccccccccccccccccccccccccccccccccc',
+          name: 'Gamma',
+          currentRatio: 2000,
+          targetRatio: 2000,
+          currentApr: 160,
+          targetApr: 165
+        }
+      ]
+    })
+    const latestSnapshot = makeOptimizationRecord({
+      key: 'doa:optimizations:1:latest',
+      latestMatchedTimestampUtc: latestTimestamp,
+      strategies: [
+        {
+          strategy: '0xcccccccccccccccccccccccccccccccccccccccc',
+          name: 'Gamma',
+          currentRatio: 2500,
+          targetRatio: 2000,
+          currentApr: 160,
+          targetApr: 170
+        },
+        {
+          strategy: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          name: 'Alpha',
+          currentRatio: 5500,
+          targetRatio: 5000,
+          currentApr: 210,
+          targetApr: 225
+        },
+        {
+          strategy: '0xdddddddddddddddddddddddddddddddddddddddd',
+          name: 'Delta',
+          currentRatio: 2000,
+          targetRatio: 3000,
+          currentApr: 190,
+          targetApr: 240
+        }
+      ]
+    })
+
+    const panels = buildReallocationPanels([latestSnapshot, olderSnapshot])
+
+    expect(panels).toHaveLength(2)
+    expect(panels[0]?.afterState.strategies.map((strategy) => strategy.name)).toEqual(['Alpha', 'Gamma', 'Delta'])
+    expect(panels[1]?.beforeState.strategies.map((strategy) => strategy.name)).toEqual(['Alpha', 'Gamma', 'Delta'])
+
+    const historicalGraph = buildStateTransitionSankeyGraph(
+      panels[0]!.beforeState.strategies,
+      panels[0]!.afterState.strategies
+    )
+    const proposalGraph = buildStateTransitionSankeyGraph(
+      panels[1]!.beforeState.strategies,
+      panels[1]!.afterState.strategies
+    )
+
+    expect(historicalGraph.nodes.filter((node) => node.side === 'after').map((node) => node.displayName)).toEqual([
+      'Alpha',
+      'Gamma',
+      'Delta'
+    ])
+    expect(proposalGraph.nodes.filter((node) => node.side === 'before').map((node) => node.displayName)).toEqual([
+      'Alpha',
+      'Gamma',
+      'Delta'
+    ])
+  })
 })
