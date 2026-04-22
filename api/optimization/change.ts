@@ -1,18 +1,20 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { OPTIMIZATION_GET_CORS_HEADERS, setCorsHeaders } from './_lib/cors'
 import {
   findVaultOptimization,
   isRedisAuthenticationError,
   isRedisConnectivityError,
+  REDIS_AUTHENTICATION_ERROR_MESSAGE,
+  REDIS_CONNECTIVITY_ERROR_MESSAGE,
   readOptimizations
 } from './_lib/redis'
 
 const CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setCorsHeaders(res, OPTIMIZATION_GET_CORS_HEADERS)
+
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'GET')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
     return res.status(204).send(null)
   }
 
@@ -33,29 +35,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ error: `Vault not found in optimization payload: ${requestedVault}` })
       }
 
-      return res
-        .status(200)
-        .setHeader('Cache-Control', CACHE_CONTROL)
-        .setHeader('Access-Control-Allow-Origin', '*')
-        .json(selected)
+      return res.status(200).setHeader('Cache-Control', CACHE_CONTROL).json(selected)
     }
 
-    return res
-      .status(200)
-      .setHeader('Cache-Control', CACHE_CONTROL)
-      .setHeader('Access-Control-Allow-Origin', '*')
-      .json(optimizations)
+    return res.status(200).setHeader('Cache-Control', CACHE_CONTROL).json(optimizations)
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
       return res.status(500).json({
-        error:
-          'Backend Redis authentication failed. Check UPSTASH_REDIS_REST_USERNAME and UPSTASH_REDIS_REST_TOKEN credentials.'
+        error: REDIS_AUTHENTICATION_ERROR_MESSAGE
       })
     }
 
     if (isRedisConnectivityError(error)) {
       return res.status(503).json({
-        error: 'Backend connectivity unavailable. Unable to access Redis.'
+        error: REDIS_CONNECTIVITY_ERROR_MESSAGE
       })
     }
 

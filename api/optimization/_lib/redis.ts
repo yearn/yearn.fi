@@ -7,6 +7,11 @@ const OPTIMIZATIONS_KEY_REGEX = /^doa:optimizations:(\d+):(.+)$/
 const MIN_UNIX_SECONDS = 946684800
 const MAX_UNIX_SECONDS = 4102444800
 const LOCAL_CACHE_TTL_MS = 60 * 1000
+export const REDIS_MISSING_CONFIGURATION_MESSAGE =
+  'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must both be set'
+export const REDIS_AUTHENTICATION_ERROR_MESSAGE =
+  'Backend Redis authentication failed. Check UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN credentials.'
+export const REDIS_CONNECTIVITY_ERROR_MESSAGE = 'Backend connectivity unavailable. Unable to access Redis.'
 
 interface OptimizationKeyInfo {
   key: string
@@ -47,10 +52,9 @@ let optimizationsInFlight: Promise<VaultOptimizationRecord[] | null> | null = nu
 function getClient(): Redis {
   if (!client) {
     const url = process.env.UPSTASH_REDIS_REST_URL
-    const username = process.env.UPSTASH_REDIS_REST_USERNAME
     const token = process.env.UPSTASH_REDIS_REST_TOKEN
-    if (!url || (username && !token) || (!username && token)) {
-      throw new RedisConnectivityError('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must both be set')
+    if (!url || !token) {
+      throw new RedisConnectivityError(REDIS_MISSING_CONFIGURATION_MESSAGE)
     }
 
     client = new Redis({ url, token })
