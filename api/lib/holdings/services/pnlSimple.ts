@@ -167,6 +167,10 @@ export interface HoldingsPnLSimpleHistoryPoint {
   protocolReturnPct: number | null
   annualizedProtocolReturnPct: number | null
   growthIndex: number | null
+  currentUnderlying?: number
+  growthUnderlying?: number
+  sharesFormatted?: number
+  pricePerShare?: number
 }
 
 export interface HoldingsPnLSimpleHistoryFamilyPoint {
@@ -352,6 +356,35 @@ function getVaultIdentifiers(events: TRawPnlEvent[]): Array<{ chainId: number; v
       return identifiers
     }, new Map())
   ).map(([, identifier]) => identifier)
+}
+
+function filterEventsByRequestedVault(
+  events: TRawPnlEvent[],
+  requestedVault?: { chainId: number; vaultAddress: string }
+): TRawPnlEvent[] {
+  if (!requestedVault) {
+    return events
+  }
+
+  return events.filter(
+    (event) =>
+      event.chainId === requestedVault.chainId &&
+      event.familyVaultAddress === lowerCaseAddress(requestedVault.vaultAddress)
+  )
+}
+
+function filterVaultIdentifiersByRequestedVault(
+  vaults: Array<{ chainId: number; vaultAddress: string }>,
+  requestedVault?: { chainId: number; vaultAddress: string }
+): Array<{ chainId: number; vaultAddress: string }> {
+  if (!requestedVault) {
+    return vaults
+  }
+
+  const requestedVaultAddress = lowerCaseAddress(requestedVault.vaultAddress)
+  return vaults.filter(
+    (vault) => vault.chainId === requestedVault.chainId && vault.vaultAddress === requestedVaultAddress
+  )
 }
 
 function filterEventsByAuthoritativeVersion(
@@ -1666,6 +1699,7 @@ export function buildProtocolReturnHistorySeries(args: {
   priceData: Map<string, Map<number, number>>
   ethPriceData?: Map<number, number>
   timestamps: number[]
+  selectedVaultKey?: string
 }): HoldingsPnLSimpleHistoryPoint[] {
   const userAddress = lowerCaseAddress(args.userAddress)
   const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
@@ -1707,6 +1741,9 @@ export function buildProtocolReturnHistorySeries(args: {
       ppsData: args.ppsData,
       currentTimestamp: timestamp
     })
+    const selectedVault = args.selectedVaultKey
+      ? vaults.find((vault) => toVaultKey(vault.chainId, vault.vaultAddress) === args.selectedVaultKey)
+      : null
     const summary = buildSummary(vaults)
     const growthWeightEth = buildGrowthWeightEthSummary({
       ledgers,
@@ -1732,7 +1769,15 @@ export function buildProtocolReturnHistorySeries(args: {
       growthWeightEth,
       protocolReturnPct: summary.protocolReturnPct,
       annualizedProtocolReturnPct: summary.annualizedProtocolReturnPct,
-      growthIndex
+      growthIndex,
+      ...(args.selectedVaultKey
+        ? {
+            currentUnderlying: selectedVault?.currentUnderlying ?? 0,
+            growthUnderlying: selectedVault?.growthUnderlying ?? 0,
+            sharesFormatted: selectedVault?.sharesFormatted ?? 0,
+            pricePerShare: selectedVault?.pricePerShare ?? 0
+          }
+        : {})
     }
   })
 }
@@ -1980,7 +2025,9 @@ export async function getHoldingsPnLSimpleHistory(
   version: VaultVersion = 'all',
   fetchType: HoldingsEventFetchType = 'seq',
   paginationMode: HoldingsEventPaginationMode = 'paged',
-  timeframe: '1y' | 'all' = '1y'
+  timeframe: '1y' | 'all' = '1y',
+  vaultAddress?: string,
+  vaultChainId?: number
 ): Promise<HoldingsPnLSimpleHistoryResponse> {
   debugLog('pnl-simple-history', 'starting holdings simple pnl history calculation', {
     version,
@@ -1989,15 +2036,26 @@ export async function getHoldingsPnLSimpleHistory(
     timeframe
   })
 
+  const requestedVault =
+    vaultAddress && Number.isInteger(vaultChainId)
+      ? {
+          chainId: Number(vaultChainId),
+          vaultAddress: lowerCaseAddress(vaultAddress)
+        }
+      : undefined
   const rawContext = await fetchRawUserPnlEvents(userAddress, 'all', undefined, fetchType, paginationMode)
   const rawEvents = buildRawPnlEvents(rawContext)
   const rawVaultIdentifiers = getVaultIdentifiers(rawEvents)
   const resolvedVaultMetadata = await fetchMultipleVaultsMetadata(rawVaultIdentifiers)
-  const effectiveEvents = buildEffectiveSimpleEvents(
-    filterEventsByAuthoritativeVersion(rawEvents, resolvedVaultMetadata, version),
-    userAddress
+  const versionFilteredEvents = filterEventsByAuthoritativeVersion(rawEvents, resolvedVaultMetadata, version)
+  const effectiveEvents = filterEventsByRequestedVault(
+    buildEffectiveSimpleEvents(versionFilteredEvents, userAddress),
+    requestedVault
   )
-  const filteredVaultIdentifiers = getVaultIdentifiers(effectiveEvents)
+  const filteredVaultIdentifiers = filterVaultIdentifiersByRequestedVault(
+    getVaultIdentifiers(effectiveEvents),
+    requestedVault
+  )
   const vaultMetadata = filteredVaultIdentifiers.reduce<Map<string, VaultMetadata>>((filtered, vault) => {
     const key = toVaultKey(vault.chainId, vault.vaultAddress)
     const metadata = resolvedVaultMetadata.get(key)
@@ -2074,7 +2132,11 @@ export async function getHoldingsPnLSimpleHistory(
     ppsData,
     priceData,
     ethPriceData,
-    timestamps
+    timestamps,
+    selectedVaultKey:
+      requestedVault && filteredVaultIdentifiers.length > 0
+        ? toVaultKey(filteredVaultIdentifiers[0]!.chainId, filteredVaultIdentifiers[0]!.vaultAddress)
+        : undefined
   })
   const familySeries = buildProtocolReturnFamilyHistorySeries({
     events: effectiveEvents,
@@ -2084,7 +2146,7 @@ export async function getHoldingsPnLSimpleHistory(
     priceData,
     ethPriceData,
     timestamps,
-    selectedVaults: selectedHistoryFamilies
+    selectedVaults: requestedVault ? [] : selectedHistoryFamilies
   })
   const openBaselineCompositionUsd = buildOpenBaselineCompositionUsd({
     ledgers: finalLedgers,

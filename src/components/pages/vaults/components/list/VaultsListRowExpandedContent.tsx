@@ -37,12 +37,14 @@ import { useMemo } from 'react'
 import { type TVaultsExpandedView, VaultsExpandedSelector } from './VaultsExpandedSelector'
 
 const EXPANDED_VIEW_TO_CHART_TAB: Record<
-  Extract<TVaultsExpandedView, 'apy' | 'performance' | 'tvl'>,
+  Extract<TVaultsExpandedView, 'apy' | 'performance' | 'tvl' | 'user-balance' | 'user-growth'>,
   TVaultChartTab
 > = {
   apy: 'historical-apy',
   performance: 'historical-pps',
-  tvl: 'historical-tvl'
+  tvl: 'historical-tvl',
+  'user-balance': 'user-balance',
+  'user-growth': 'user-growth'
 }
 
 type TExpandedChartView = keyof typeof EXPANDED_VIEW_TO_CHART_TAB
@@ -60,6 +62,7 @@ type TVaultsListRowExpandedContentProps = {
   showKindTag?: boolean
   showHiddenTag?: boolean
   isHidden?: boolean
+  showUserViews?: boolean
 }
 
 export default function VaultsListRowExpandedContent({
@@ -69,7 +72,8 @@ export default function VaultsListRowExpandedContent({
   onNavigateToVault,
   showKindTag = true,
   showHiddenTag = false,
-  isHidden
+  isHidden,
+  showUserViews = false
 }: TVaultsListRowExpandedContentProps): ReactElement {
   const trackEvent = usePlausible()
   const chartTimeframe: TVaultChartTimeframe = '1y'
@@ -82,6 +86,25 @@ export default function VaultsListRowExpandedContent({
   })
   const snapshotMergedVault = useMemo(() => getVaultView(currentVault, snapshotVault), [currentVault, snapshotVault])
   const chartTab = isExpandedChartView(expandedView) ? EXPANDED_VIEW_TO_CHART_TAB[expandedView] : undefined
+  const yvUsdChartTab =
+    chartTab === 'historical-apy' || chartTab === 'historical-pps' || chartTab === 'historical-tvl'
+      ? chartTab
+      : undefined
+  const viewOptions = useMemo<Array<{ id: TVaultsExpandedView; label: string }>>(
+    () => [
+      { id: 'strategies', label: 'Strategies' },
+      { id: 'apy', label: 'APY' },
+      { id: 'performance', label: 'Performance' },
+      { id: 'tvl', label: 'TVL' },
+      ...(showUserViews && !isYvUsd
+        ? ([
+            { id: 'user-balance', label: 'Your Balance' },
+            { id: 'user-growth', label: 'Your Growth' }
+          ] as const)
+        : [])
+    ],
+    [showUserViews, isYvUsd]
+  )
 
   const handleGoToVault = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation()
@@ -113,6 +136,7 @@ export default function VaultsListRowExpandedContent({
             <VaultsExpandedSelector
               activeView={expandedView}
               onViewChange={onExpandedViewChange}
+              viewOptions={viewOptions}
               rightElement={
                 <button
                   type={'button'}
@@ -129,7 +153,7 @@ export default function VaultsListRowExpandedContent({
               isYvUsd ? (
                 <YvUsdChartsSection
                   shouldRenderSelectors={false}
-                  chartTab={chartTab}
+                  chartTab={yvUsdChartTab}
                   timeframe={chartTimeframe}
                   chartHeightPx={200}
                   chartHeightMdPx={200}
@@ -143,6 +167,8 @@ export default function VaultsListRowExpandedContent({
                   timeframe={chartTimeframe}
                   chartHeightPx={200}
                   chartHeightMdPx={200}
+                  enableUserCharts={showUserViews}
+                  userUnitLabel={snapshotMergedVault.token?.symbol || snapshotMergedVault.symbol || 'assets'}
                 />
               )
             ) : (

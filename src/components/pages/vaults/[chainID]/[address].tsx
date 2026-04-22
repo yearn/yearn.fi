@@ -772,6 +772,8 @@ function Index(): ReactElement | null {
             vaultAddress={currentVault.address}
             chartHeightPx={180}
             chartHeightMdPx={230}
+            enableUserCharts={hasUserFundsInVault}
+            userUnitLabel={currentVault.token?.symbol || currentVault.symbol || 'assets'}
           />
         )
       },

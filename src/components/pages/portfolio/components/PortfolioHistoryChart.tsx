@@ -15,12 +15,14 @@ import {
   getChartWeeklyTicks,
   getTimeframeLimit
 } from '@pages/vaults/utils/charts'
+import { Tooltip } from '@shared/components/Tooltip'
+import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { cl, formatPercent, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
 import { getVaultName as getDisplayVaultName } from '@shared/utils/helpers'
 import type { ReactElement } from 'react'
-import { useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 import type {
@@ -34,8 +36,7 @@ import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal
 
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
 type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'annualized' | 'index'
-type TGrowthDisplayMode = 'auto' | 'index' | 'usd' | 'eth'
-type TResolvedGrowthDisplayMode = Exclude<TGrowthDisplayMode, 'auto'>
+type TGrowthDisplayMode = 'index' | 'usd' | 'eth'
 
 type TPortfolioHistoryChartProps = {
   balanceData: TPortfolioHistoryChartData | null
@@ -96,11 +97,24 @@ const CHART_TABS: Array<{ id: TPortfolioHistoryChartTab; label: string }> = [
   { id: 'index', label: 'Growth Index' }
 ]
 const GROWTH_DISPLAY_MODES: Array<{ id: TGrowthDisplayMode; label: string }> = [
-  { id: 'auto', label: 'Auto' },
   { id: 'index', label: 'Index' },
   { id: 'usd', label: 'USD' },
   { id: 'eth', label: 'ETH' }
 ]
+const GROWTH_DISPLAY_TOOLTIP_COPY: Record<TGrowthDisplayMode, { title: string; body: string }> = {
+  index: {
+    title: 'Index',
+    body: 'Normalized protocol-return index that starts at 100 for the selected timeframe. Best for mixed-asset wallets.'
+  },
+  usd: {
+    title: 'USD',
+    body: 'Cumulative protocol growth in receipt-time USD equivalent. Best when the wallet is mostly dollar-denominated.'
+  },
+  eth: {
+    title: 'ETH',
+    body: 'Cumulative protocol growth in receipt-time ETH equivalent. Best when the wallet is mostly ETH-denominated.'
+  }
+}
 
 const INDEX_SERIES_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5'] as const
 
@@ -139,7 +153,7 @@ function formatEthValue(value: number): string {
   return `${formattedValue} ETH`
 }
 
-function formatGrowthValue(value: number, mode: TResolvedGrowthDisplayMode): string {
+function formatGrowthValue(value: number, mode: TGrowthDisplayMode): string {
   if (mode === 'eth') {
     const absolute = formatEthValue(value)
     if (value > 0) {
@@ -176,33 +190,28 @@ function formatIndexValue(value: number): string {
   return value >= 1000 ? value.toFixed(0) : value >= 100 ? value.toFixed(1) : value.toFixed(2)
 }
 
-function resolveGrowthDisplayMode(
-  selectedMode: TGrowthDisplayMode,
-  summary: TPortfolioProtocolReturnHistorySummary | null,
-  protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
-): TResolvedGrowthDisplayMode {
-  const recommendedMode = selectedMode === 'auto' ? (summary?.recommendedGrowthDisplay ?? 'index') : selectedMode
-  const hasEthSeries = Boolean(protocolReturnData?.some((point) => point.growthWeightEth !== null))
+function renderGrowthDisplayTooltip(mode: TGrowthDisplayMode): ReactElement {
+  const copy = GROWTH_DISPLAY_TOOLTIP_COPY[mode]
 
-  return recommendedMode === 'eth' && !hasEthSeries ? 'index' : recommendedMode
+  return (
+    <div
+      className={
+        'max-w-[240px] rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs leading-relaxed text-text-primary'
+      }
+    >
+      <p className={'font-semibold text-text-primary'}>{copy.title}</p>
+      <p>{copy.body}</p>
+    </div>
+  )
 }
 
-function getAutoGrowthDisplayExplanation(args: {
-  summary: TPortfolioProtocolReturnHistorySummary | null
-  resolvedMode: TResolvedGrowthDisplayMode
-}): string | null {
-  const summary = args.summary
-  if (!summary) {
-    return null
-  }
+function resolveGrowthDisplayMode(
+  selectedMode: TGrowthDisplayMode,
+  protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
+): TGrowthDisplayMode {
+  const hasEthSeries = Boolean(protocolReturnData?.some((point) => point.growthWeightEth !== null))
 
-  return summary.recommendedGrowthDisplayReason === 'stable_dominant'
-    ? 'Auto: stable-dominant portfolio, showing USD'
-    : summary.recommendedGrowthDisplayReason === 'eth_dominant'
-      ? args.resolvedMode === 'eth'
-        ? 'Auto: ETH-dominant portfolio, showing ETH'
-        : 'Auto: ETH-dominant portfolio, ETH history unavailable, showing Index'
-      : 'Auto: mixed portfolio, showing Index'
+  return selectedMode === 'eth' && !hasEthSeries ? 'index' : selectedMode
 }
 
 function buildIndexedFamilySeries(
@@ -309,7 +318,7 @@ function PortfolioHistoryTooltip({
 }: TPortfolioHistoryTooltipProps & {
   activeTab: TPortfolioHistoryChartTab
   denomination: TPortfolioHistoryDenomination
-  growthDisplayMode: TResolvedGrowthDisplayMode
+  growthDisplayMode: TGrowthDisplayMode
 }): ReactElement | null {
   if (!active || !payload?.length) {
     return null
@@ -355,10 +364,7 @@ function PortfolioHistoryTooltip({
   )
 }
 
-function getChartDescription(
-  activeTab: TPortfolioHistoryChartTab,
-  growthDisplayMode: TResolvedGrowthDisplayMode
-): string {
+function getChartDescription(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: TGrowthDisplayMode): string {
   if (activeTab === 'growth') {
     return growthDisplayMode === 'index'
       ? 'Normalized protocol-return index for the whole wallet. Starts at 100 at the beginning of the selected timeframe.'
@@ -378,7 +384,7 @@ function getChartDescription(
   return 'Daily settled portfolio value across your current Yearn activity.'
 }
 
-function getChartTitle(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: TResolvedGrowthDisplayMode): string {
+function getChartTitle(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: TGrowthDisplayMode): string {
   if (activeTab === 'growth') {
     return growthDisplayMode === 'index' ? 'Growth Index' : 'Protocol Growth'
   }
@@ -394,7 +400,7 @@ function getChartTitle(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: 
   return 'Holdings History'
 }
 
-function getEmptyMessage(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: TResolvedGrowthDisplayMode): string {
+function getEmptyMessage(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: TGrowthDisplayMode): string {
   if (activeTab === 'growth') {
     return growthDisplayMode === 'index'
       ? 'No growth index history available'
@@ -432,22 +438,26 @@ export function PortfolioHistoryChart({
   embedded = false,
   className
 }: TPortfolioHistoryChartProps): ReactElement {
+  const { address } = useWeb3()
   const { allVaults } = useYearn()
   const [activeTab, setActiveTab] = useState<TPortfolioHistoryChartTab>('balance')
-  const [growthDisplayMode, setGrowthDisplayMode] = useState<TGrowthDisplayMode>('auto')
+  const [growthDisplayModeOverride, setGrowthDisplayModeOverride] = useState<TGrowthDisplayMode | null>(null)
   const [hoveredBreakdownDate, setHoveredBreakdownDate] = useState<string | null>(null)
   const [selectedBreakdownDate, setSelectedBreakdownDate] = useState<string | null>(null)
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false)
   const gradientId = useId().replace(/:/g, '')
-  const resolvedGrowthDisplayMode = resolveGrowthDisplayMode(
-    growthDisplayMode,
-    protocolReturnSummary,
+  const recommendedGrowthDisplayMode = resolveGrowthDisplayMode(
+    protocolReturnSummary?.recommendedGrowthDisplay ?? 'index',
     protocolReturnData
   )
-  const autoGrowthDisplayExplanation =
-    growthDisplayMode === 'auto'
-      ? getAutoGrowthDisplayExplanation({ summary: protocolReturnSummary, resolvedMode: resolvedGrowthDisplayMode })
-      : null
+  const resolvedGrowthDisplayMode = resolveGrowthDisplayMode(
+    growthDisplayModeOverride ?? recommendedGrowthDisplayMode,
+    protocolReturnData
+  )
+
+  useEffect(() => {
+    setGrowthDisplayModeOverride(null)
+  }, [address])
 
   const sectionClassName = embedded
     ? 'flex h-full flex-col gap-3 bg-surface px-5 py-4 md:px-6 md:pb-0 md:pt-5'
@@ -713,11 +723,6 @@ export function PortfolioHistoryChart({
             {getChartTitle(activeTab, resolvedGrowthDisplayMode)}
           </h2>
           <p className={'text-xs text-text-secondary'}>{getChartDescription(activeTab, resolvedGrowthDisplayMode)}</p>
-          {activeTab === 'growth' && autoGrowthDisplayExplanation ? (
-            <p className={'text-[11px] font-medium uppercase tracking-[0.08em] text-text-tertiary'}>
-              {autoGrowthDisplayExplanation}
-            </p>
-          ) : null}
         </div>
         {activeTab === 'balance' ? (
           <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
@@ -742,19 +747,28 @@ export function PortfolioHistoryChart({
         ) : activeTab === 'growth' ? (
           <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
             {GROWTH_DISPLAY_MODES.map((mode) => (
-              <button
+              <Tooltip
                 key={mode.id}
-                type={'button'}
-                onClick={() => setGrowthDisplayMode(mode.id)}
-                className={cl(
-                  'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                  'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                  SELECTOR_BAR_STYLES.buttonBase,
-                  growthDisplayMode === mode.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
-                )}
+                className={'h-auto w-auto justify-start gap-0'}
+                openDelayMs={150}
+                side={'top'}
+                tooltip={renderGrowthDisplayTooltip(mode.id)}
               >
-                {mode.label}
-              </button>
+                <button
+                  type={'button'}
+                  onClick={() => setGrowthDisplayModeOverride(mode.id)}
+                  className={cl(
+                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                    SELECTOR_BAR_STYLES.buttonBase,
+                    resolvedGrowthDisplayMode === mode.id
+                      ? SELECTOR_BAR_STYLES.buttonActive
+                      : SELECTOR_BAR_STYLES.buttonInactive
+                  )}
+                >
+                  {mode.label}
+                </button>
+              </Tooltip>
             ))}
           </div>
         ) : null}
