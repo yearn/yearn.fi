@@ -167,4 +167,76 @@ describe('optimization handlers', () => {
     expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
     expect(res.body).toEqual({ error: 'vault parameter required' })
   })
+
+  it('returns vault history when change history query is enabled', async () => {
+    const targetVault = '0x1111111111111111111111111111111111111111'
+    const targetHistory = [
+      {
+        vault: targetVault,
+        strategyDebtRatios: [],
+        currentApr: 250,
+        proposedApr: 275,
+        explain: 'latest explain',
+        source: {
+          key: 'doa:optimizations:1:latest',
+          chainId: 1,
+          revision: 'latest',
+          isLatestAlias: true,
+          timestampUtc: null,
+          latestMatchedTimestampUtc: '2026-04-22 10:00:00 UTC'
+        }
+      },
+      {
+        vault: targetVault,
+        strategyDebtRatios: [],
+        currentApr: 200,
+        proposedApr: 240,
+        explain: 'older explain',
+        source: {
+          key: 'doa:optimizations:1:1713776400',
+          chainId: 1,
+          revision: '1713776400',
+          isLatestAlias: false,
+          timestampUtc: '2024-04-22 09:00:00 UTC',
+          latestMatchedTimestampUtc: null
+        }
+      }
+    ]
+
+    readOptimizationsMock.mockResolvedValue([
+      ...targetHistory,
+      {
+        vault: '0x2222222222222222222222222222222222222222',
+        strategyDebtRatios: [],
+        currentApr: 100,
+        proposedApr: 110,
+        explain: 'other vault',
+        source: {
+          key: 'doa:optimizations:1:latest',
+          chainId: 1,
+          revision: 'latest',
+          isLatestAlias: true,
+          timestampUtc: null,
+          latestMatchedTimestampUtc: '2026-04-22 10:00:00 UTC'
+        }
+      }
+    ])
+    const res = createMockResponse()
+
+    await changeHandler(
+      {
+        method: 'GET',
+        query: {
+          vault: targetVault,
+          history: '1'
+        }
+      } as VercelRequest,
+      res
+    )
+
+    expect(res.statusCode).toBe(200)
+    expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
+    expect(res.body).toEqual(targetHistory)
+    expect(findVaultOptimizationMock).not.toHaveBeenCalled()
+  })
 })

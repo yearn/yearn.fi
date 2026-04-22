@@ -61,6 +61,10 @@ const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
 
+function isHistoryQueryEnabled(historyParam: string | null): boolean {
+  return historyParam === '1' || historyParam === 'true'
+}
+
 function resolveApiServerPort(env: NodeJS.ProcessEnv): number {
   const configuredPort = env.API_SERVER_PORT
   if (configuredPort) {
@@ -547,6 +551,23 @@ async function handleOptimizationChange(req: Request): Promise<Response> {
     const url = new URL(req.url)
     const requestedVault = url.searchParams.get('vault')
     if (requestedVault) {
+      if (isHistoryQueryEnabled(url.searchParams.get('history'))) {
+        const selectedHistory = optimizations.filter((optimization) => {
+          return optimization.vault.toLowerCase() === requestedVault.toLowerCase()
+        })
+        if (selectedHistory.length === 0) {
+          return jsonWithCors(
+            { error: `Vault not found in optimization payload: ${requestedVault}` },
+            404,
+            OPTIMIZATION_GET_CORS_HEADERS
+          )
+        }
+
+        return jsonWithCors(selectedHistory, 200, OPTIMIZATION_GET_CORS_HEADERS, {
+          'Cache-Control': CHANGE_CACHE_CONTROL
+        })
+      }
+
       const selected = findVaultOptimization(optimizations, requestedVault)
       if (!selected) {
         return jsonWithCors(

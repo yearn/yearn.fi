@@ -11,6 +11,11 @@ import {
 
 const CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
 
+function isHistoryQueryEnabled(historyParam: string | string[] | undefined): boolean {
+  const value = Array.isArray(historyParam) ? historyParam[0] : historyParam
+  return value === '1' || value === 'true'
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res, OPTIMIZATION_GET_CORS_HEADERS)
 
@@ -30,6 +35,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const requestedVault = req.query.vault as string | undefined
     if (requestedVault) {
+      if (isHistoryQueryEnabled(req.query.history)) {
+        const selectedHistory = optimizations.filter((optimization) => {
+          return optimization.vault.toLowerCase() === requestedVault.toLowerCase()
+        })
+        if (selectedHistory.length === 0) {
+          return res.status(404).json({ error: `Vault not found in optimization payload: ${requestedVault}` })
+        }
+
+        return res.status(200).setHeader('Cache-Control', CACHE_CONTROL).json(selectedHistory)
+      }
+
       const selected = findVaultOptimization(optimizations, requestedVault)
       if (!selected) {
         return res.status(404).json({ error: `Vault not found in optimization payload: ${requestedVault}` })
