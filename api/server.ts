@@ -6,12 +6,15 @@ import type {
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
+import { OPTIMIZATION_GET_CORS_HEADERS, OPTIMIZATION_POST_CORS_HEADERS } from './optimization/_lib/cors'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
 import { parseExplainMetadata } from './optimization/_lib/explain-parse'
 import {
   findVaultOptimization,
   isRedisAuthenticationError,
   isRedisConnectivityError,
+  REDIS_AUTHENTICATION_ERROR_MESSAGE,
+  REDIS_CONNECTIVITY_ERROR_MESSAGE,
   readOptimizations
 } from './optimization/_lib/redis'
 import { fetchVaultOnChainState } from './optimization/_lib/rpc'
@@ -86,6 +89,22 @@ type TTenderlyJsonRpcError = {
     message: string
     data?: unknown
   }
+}
+
+function withCorsHeaders(headers: HeadersInit | undefined, corsHeaders: Readonly<Record<string, string>>): HeadersInit {
+  return { ...corsHeaders, ...(headers ?? {}) }
+}
+
+function jsonWithCors(
+  body: unknown,
+  status: number,
+  corsHeaders: Readonly<Record<string, string>>,
+  headers?: HeadersInit
+): Response {
+  return Response.json(body, {
+    status,
+    headers: withCorsHeaders(headers, corsHeaders)
+  })
 }
 
 async function handleYvUsdAprs(req: Request): Promise<Response> {
@@ -507,25 +526,22 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
 }
 
 const CHANGE_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
-const CHANGE_CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET',
-  'Access-Control-Allow-Headers': 'Content-Type'
-}
+const ALIGNMENT_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const VAULT_STATE_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 
 async function handleOptimizationChange(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CHANGE_CORS_HEADERS })
+    return new Response(null, { status: 204, headers: OPTIMIZATION_GET_CORS_HEADERS })
   }
 
   if (req.method !== 'GET') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_GET_CORS_HEADERS)
   }
 
   try {
     const optimizations = await readOptimizations()
     if (!optimizations || optimizations.length === 0) {
-      return Response.json({ error: 'No optimization data available' }, { status: 404 })
+      return jsonWithCors({ error: 'No optimization data available' }, 404, OPTIMIZATION_GET_CORS_HEADERS)
     }
 
     const url = new URL(req.url)
@@ -533,62 +549,64 @@ async function handleOptimizationChange(req: Request): Promise<Response> {
     if (requestedVault) {
       const selected = findVaultOptimization(optimizations, requestedVault)
       if (!selected) {
-        return Response.json({ error: `Vault not found in optimization payload: ${requestedVault}` }, { status: 404 })
+        return jsonWithCors(
+          { error: `Vault not found in optimization payload: ${requestedVault}` },
+          404,
+          OPTIMIZATION_GET_CORS_HEADERS
+        )
       }
 
-      return Response.json(selected, {
-        headers: { ...CHANGE_CORS_HEADERS, 'Cache-Control': CHANGE_CACHE_CONTROL }
+      return jsonWithCors(selected, 200, OPTIMIZATION_GET_CORS_HEADERS, {
+        'Cache-Control': CHANGE_CACHE_CONTROL
       })
     }
 
-    return Response.json(optimizations, {
-      headers: { ...CHANGE_CORS_HEADERS, 'Cache-Control': CHANGE_CACHE_CONTROL }
+    return jsonWithCors(optimizations, 200, OPTIMIZATION_GET_CORS_HEADERS, {
+      'Cache-Control': CHANGE_CACHE_CONTROL
     })
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
-      return Response.json(
-        {
-          error:
-            'Backend Redis authentication failed. Check UPSTASH_REDIS_REST_USERNAME and UPSTASH_REDIS_REST_TOKEN credentials.'
-        },
-        { status: 500 }
-      )
+      return jsonWithCors({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, 500, OPTIMIZATION_GET_CORS_HEADERS)
     }
 
     if (isRedisConnectivityError(error)) {
-      return Response.json({ error: 'Backend connectivity unavailable. Unable to access Redis.' }, { status: 503 })
+      return jsonWithCors({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, 503, OPTIMIZATION_GET_CORS_HEADERS)
     }
 
     const message = error instanceof Error ? error.message : String(error)
-    return Response.json({ error: message }, { status: 500 })
+    return jsonWithCors({ error: message }, 500, OPTIMIZATION_GET_CORS_HEADERS)
   }
 }
 
 async function handleOptimizationAlignment(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: OPTIMIZATION_GET_CORS_HEADERS })
+  }
+
   if (req.method !== 'GET') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_GET_CORS_HEADERS)
   }
 
   const url = new URL(req.url)
   const vault = url.searchParams.get('vault')
   if (!vault) {
-    return Response.json({ error: 'vault parameter required' }, { status: 400 })
+    return jsonWithCors({ error: 'vault parameter required' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
   }
 
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
-    return Response.json({ error: 'ENVIO_GRAPHQL_URL not configured' }, { status: 503 })
+    return jsonWithCors({ error: 'ENVIO_GRAPHQL_URL not configured' }, 503, OPTIMIZATION_GET_CORS_HEADERS)
   }
 
   try {
     const optimizations = await readOptimizations()
     if (!optimizations || optimizations.length === 0) {
-      return Response.json({ error: 'No optimization data available' }, { status: 404 })
+      return jsonWithCors({ error: 'No optimization data available' }, 404, OPTIMIZATION_GET_CORS_HEADERS)
     }
 
     const optimization = findVaultOptimization(optimizations, vault)
     if (!optimization) {
-      return Response.json({ error: `Vault not found: ${vault}` }, { status: 404 })
+      return jsonWithCors({ error: `Vault not found: ${vault}` }, 404, OPTIMIZATION_GET_CORS_HEADERS)
     }
 
     let chainId = optimization.source.chainId
@@ -597,12 +615,12 @@ async function handleOptimizationAlignment(req: Request): Promise<Response> {
       chainId = metadata.chainId
     }
     if (!chainId) {
-      return Response.json({ error: 'Could not determine chain ID for vault' }, { status: 400 })
+      return jsonWithCors({ error: 'Could not determine chain ID for vault' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
     }
 
     const timestampStr = optimization.source.latestMatchedTimestampUtc ?? optimization.source.timestampUtc
     if (!timestampStr) {
-      return Response.json({ error: 'No timestamp available for vault snapshot' }, { status: 400 })
+      return jsonWithCors({ error: 'No timestamp available for vault snapshot' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
     }
     const fromTs = Math.floor(new Date(timestampStr.replace(' UTC', 'Z').replace(' ', 'T')).getTime() / 1000)
     const numStrategies = optimization.strategyDebtRatios.length
@@ -620,28 +638,40 @@ async function handleOptimizationAlignment(req: Request): Promise<Response> {
       decimals
     )
 
-    return Response.json(events, {
-      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30' }
+    return jsonWithCors(events, 200, OPTIMIZATION_GET_CORS_HEADERS, {
+      'Cache-Control': ALIGNMENT_CACHE_CONTROL
     })
   } catch (error) {
+    if (isRedisAuthenticationError(error)) {
+      return jsonWithCors({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    if (isRedisConnectivityError(error)) {
+      return jsonWithCors({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, 503, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
     const message = error instanceof Error ? error.message : String(error)
-    return Response.json({ error: message }, { status: 500 })
+    return jsonWithCors({ error: message }, 500, OPTIMIZATION_GET_CORS_HEADERS)
   }
 }
 
 async function handleOptimizationVaultState(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: OPTIMIZATION_POST_CORS_HEADERS })
+  }
+
   if (req.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_POST_CORS_HEADERS)
   }
 
   let body: unknown
   try {
     body = await req.json()
   } catch {
-    return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+    return jsonWithCors({ error: 'Invalid JSON body' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
   }
 
-  const payload = body as Record<string, unknown>
+  const payload = body && typeof body === 'object' ? (body as Record<string, unknown>) : {}
   const vault = typeof payload.vault === 'string' ? payload.vault : null
   const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
   const strategies = Array.isArray(payload.strategies)
@@ -649,13 +679,13 @@ async function handleOptimizationVaultState(req: Request): Promise<Response> {
     : []
 
   if (!vault || !/^0x[a-fA-F0-9]{40}$/.test(vault)) {
-    return Response.json({ error: 'Invalid vault address' }, { status: 400 })
+    return jsonWithCors({ error: 'Invalid vault address' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
   }
   if (chainId === null || !Number.isFinite(chainId)) {
-    return Response.json({ error: 'Invalid chainId' }, { status: 400 })
+    return jsonWithCors({ error: 'Invalid chainId' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
   }
   if (strategies.length === 0) {
-    return Response.json({ error: 'No strategy addresses provided' }, { status: 400 })
+    return jsonWithCors({ error: 'No strategy addresses provided' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
   }
 
   try {
@@ -666,17 +696,19 @@ async function handleOptimizationVaultState(req: Request): Promise<Response> {
       strategyDebts[addr] = debt.toString()
     }
 
-    return Response.json(
+    return jsonWithCors(
       {
         totalAssets: state.totalAssets.toString(),
         strategyDebts,
         unallocatedBps: state.unallocatedBps
       },
-      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30' } }
+      200,
+      OPTIMIZATION_POST_CORS_HEADERS,
+      { 'Cache-Control': VAULT_STATE_CACHE_CONTROL }
     )
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    return Response.json({ error: message }, { status: 503 })
+    return jsonWithCors({ error: message }, 503, OPTIMIZATION_POST_CORS_HEADERS)
   }
 }
 

@@ -1,10 +1,26 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getVaultDecimals } from './_lib/assetLogos'
+import { OPTIMIZATION_GET_CORS_HEADERS, setCorsHeaders } from './_lib/cors'
 import { fetchAlignedEvents } from './_lib/envio'
 import { parseExplainMetadata } from './_lib/explain-parse'
-import { findVaultOptimization, readOptimizations } from './_lib/redis'
+import {
+  findVaultOptimization,
+  isRedisAuthenticationError,
+  isRedisConnectivityError,
+  REDIS_AUTHENTICATION_ERROR_MESSAGE,
+  REDIS_CONNECTIVITY_ERROR_MESSAGE,
+  readOptimizations
+} from './_lib/redis'
+
+const CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setCorsHeaders(res, OPTIMIZATION_GET_CORS_HEADERS)
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).send(null)
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -59,8 +75,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       decimals
     )
 
-    return res.status(200).setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30').json(events)
+    return res.status(200).setHeader('Cache-Control', CACHE_CONTROL).json(events)
   } catch (error) {
+    if (isRedisAuthenticationError(error)) {
+      return res.status(500).json({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE })
+    }
+
+    if (isRedisConnectivityError(error)) {
+      return res.status(503).json({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE })
+    }
+
     const message = error instanceof Error ? error.message : String(error)
     return res.status(500).json({ error: message })
   }

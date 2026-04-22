@@ -115,7 +115,8 @@ function decodeMulticallAggregateResult(hex: string): { blockNumber: bigint; res
   for (let i = 0; i < arrayLength; i++) {
     const offsetPos = returnDataStart + 64 + i * 64
     const elementOffset = Number(BigInt('0x' + clean.slice(offsetPos, offsetPos + 64)))
-    const elementStart = returnDataStart + elementOffset * 2
+    // bytes[] offsets are relative to the array body, immediately after the length slot.
+    const elementStart = returnDataStart + 64 + elementOffset * 2
 
     const bytesLength = Number(BigInt('0x' + clean.slice(elementStart, elementStart + 64)))
     const bytesData = clean.slice(elementStart + 64, elementStart + 64 + bytesLength * 2)

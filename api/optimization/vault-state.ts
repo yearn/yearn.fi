@@ -1,14 +1,21 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { OPTIMIZATION_POST_CORS_HEADERS, setCorsHeaders } from './_lib/cors'
 import { fetchVaultOnChainState } from './_lib/rpc'
 
 const CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setCorsHeaders(res, OPTIMIZATION_POST_CORS_HEADERS)
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).send(null)
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const payload = req.body as Record<string, unknown>
+  const payload = req.body && typeof req.body === 'object' ? (req.body as Record<string, unknown>) : {}
   const vault = typeof payload.vault === 'string' ? payload.vault : null
   const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
   const strategies = Array.isArray(payload.strategies)
