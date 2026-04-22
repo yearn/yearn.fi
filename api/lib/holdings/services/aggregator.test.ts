@@ -142,10 +142,11 @@ describe('getHistoricalHoldings', () => {
     const { getHistoricalHoldings } = await import('./aggregator')
     const response = await getHistoricalHoldings(userAddress, 'v2', 'parallel', 'all')
 
-    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86500, 'parallel', 'all')
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86501, 'parallel', 'all')
     expect(getCachedTotalsWithTimestampMock).toHaveBeenCalledWith(userAddress, 'v2', 'date-100', 'date-100')
     expect(fetchMultipleVaultsPPSMock).toHaveBeenCalledWith([vaults[0]])
     expect(saveCachedTotalsMock).toHaveBeenCalledWith(userAddress, 'v2', [{ date: 'date-100', usdValue: 2 }])
+    expect(response.hasActivity).toBe(true)
     expect(response.dataPoints).toEqual([{ date: 'date-100', timestamp: 101, totalUsdValue: 2 }])
   })
 
@@ -167,7 +168,7 @@ describe('getHistoricalHoldings', () => {
     const { getHistoricalHoldings } = await import('./aggregator')
     await getHistoricalHoldings(userAddress, 'all')
 
-    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86500, 'seq', 'paged')
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86501, 'seq', 'paged')
   })
 
   it('returns fully cached history after validating cache staleness', async () => {
@@ -215,7 +216,7 @@ describe('getHistoricalHoldings', () => {
     const { getHistoricalHoldings } = await import('./aggregator')
     const response = await getHistoricalHoldings(userAddress, 'all')
 
-    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86600, 'seq', 'paged')
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86601, 'seq', 'paged')
     expect(fetchMultipleVaultsMetadataMock).toHaveBeenCalled()
     expect(checkCacheStalenessMock).toHaveBeenCalledWith(
       [{ address: vaultAddress, chainId: 1 }],
@@ -422,10 +423,39 @@ describe('getHistoricalHoldings', () => {
       { date: 'date-200', usdValue: 1 }
     ])
     expect(response.timeframe).toBe('all')
+    expect(response.hasActivity).toBe(true)
     expect(response.dataPoints).toEqual([
       { date: 'date-50', timestamp: 51, value: 1 },
       { date: 'date-100', timestamp: 101, value: 1 },
       { date: 'date-200', timestamp: 201, value: 1 }
+    ])
+  })
+
+  it('marks history as active even when only unsettled same-day events exist', async () => {
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+    const sameDayTimeline = [{ blockTimestamp: 250, blockNumber: 2 }]
+
+    generateDailyTimestampsMock.mockReturnValue([100, 200])
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    getCachedTotalsWithTimestampMock.mockResolvedValue({ totals: [], oldestUpdatedAt: null })
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+    buildPositionTimelineMock.mockReturnValue(sameDayTimeline)
+    getUniqueVaultsMock.mockReturnValue([])
+    generateDailyTimestampsFromRangeMock.mockReturnValue([])
+
+    const { getHistoricalHoldingsChart } = await import('./aggregator')
+    const response = await getHistoricalHoldingsChart(userAddress, 'all', 'seq', 'paged', 'usd', '1y')
+
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86601, 'seq', 'paged')
+    expect(response.hasActivity).toBe(true)
+    expect(response.dataPoints).toEqual([
+      { date: 'date-100', timestamp: 101, value: 0 },
+      { date: 'date-200', timestamp: 201, value: 0 }
     ])
   })
 

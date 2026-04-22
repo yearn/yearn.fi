@@ -48,6 +48,7 @@ interface KongVaultSnapshot {
 type TVaultListState = {
   vaultListCache: Map<string, VaultMetadata> | null
   stakingToVaultMap: Map<string, VaultMetadata> | null
+  hasLoadedGlobalVaultList: boolean
   loadPromise: Promise<void> | null
 }
 
@@ -93,6 +94,7 @@ const KNOWN_STABLECOIN_SYMBOLS = new Set([
 const vaultListState: TVaultListState = {
   vaultListCache: null,
   stakingToVaultMap: null,
+  hasLoadedGlobalVaultList: false,
   loadPromise: null
 }
 
@@ -469,7 +471,13 @@ async function fetchFallbackMetadata(
 }
 
 async function loadVaultList(): Promise<void> {
-  if (vaultListState.vaultListCache !== null && vaultListState.stakingToVaultMap !== null) return
+  if (
+    vaultListState.hasLoadedGlobalVaultList &&
+    vaultListState.vaultListCache !== null &&
+    vaultListState.stakingToVaultMap !== null
+  ) {
+    return
+  }
 
   if (vaultListState.loadPromise !== null) {
     return vaultListState.loadPromise
@@ -480,6 +488,7 @@ async function loadVaultList(): Promise<void> {
       const maps = buildMetadataMaps(vaults)
       vaultListState.vaultListCache = maps.vaultListCache
       vaultListState.stakingToVaultMap = maps.stakingToVaultMap
+      vaultListState.hasLoadedGlobalVaultList = true
       debugLog('vaults', 'stored global vault metadata maps', {
         vaults: maps.vaultListCache.size,
         stakingVaults: maps.stakingToVaultMap.size
@@ -488,10 +497,6 @@ async function loadVaultList(): Promise<void> {
     .catch((error) => {
       console.error('[Kong] Error fetching vault list:', error)
       debugError('vaults', 'global vault metadata load failed', error)
-
-      if (vaultListState.vaultListCache !== null && vaultListState.stakingToVaultMap !== null) {
-        return
-      }
 
       const message = error instanceof Error ? error.message : String(error)
       throw new Error(`Failed to load vault metadata from Kong: ${message}`)
