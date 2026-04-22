@@ -98,11 +98,11 @@ const GROWTH_DISPLAY_TOOLTIP_COPY: Record<TGrowthDisplayMode, { title: string; b
   },
   usd: {
     title: 'USD',
-    body: 'Cumulative protocol growth in receipt-time USD equivalent. Best when the wallet is mostly dollar-denominated.'
+    body: 'Protocol growth during the selected timeframe in receipt-time USD equivalent.'
   },
   eth: {
     title: 'ETH',
-    body: 'Cumulative protocol growth in receipt-time ETH equivalent. Best when the wallet is mostly ETH-denominated.'
+    body: 'Protocol growth during the selected timeframe in receipt-time ETH equivalent.'
   }
 }
 const VAULT_GROWTH_MODES: Array<{ id: TPortfolioVaultGrowthChartMode; label: string }> = [
@@ -112,7 +112,7 @@ const VAULT_GROWTH_MODES: Array<{ id: TPortfolioVaultGrowthChartMode; label: str
 const VAULT_GROWTH_MODE_TOOLTIP_COPY: Record<TPortfolioVaultGrowthChartMode, { title: string; body: string }> = {
   position: {
     title: 'Position',
-    body: 'Shows actual protocol gain from your deposited positions.'
+    body: 'Shows actual protocol gain from your deposited positions during the selected timeframe.'
   },
   index: {
     title: 'Index',
@@ -208,6 +208,21 @@ function rebaseIndexPoints(points: TChartPoint[]): TChartPoint[] {
     date: point.date,
     value:
       typeof point.value === 'number' && Number.isFinite(point.value) ? (point.value / baseValue) * 100 : point.value
+  }))
+}
+
+function rebaseDeltaPoints(points: TChartPoint[]): TChartPoint[] {
+  const baseValue = points.find(
+    (point): point is { date: string; value: number } => typeof point.value === 'number' && Number.isFinite(point.value)
+  )?.value
+
+  if (baseValue === undefined) {
+    return points
+  }
+
+  return points.map((point) => ({
+    date: point.date,
+    value: typeof point.value === 'number' && Number.isFinite(point.value) ? point.value - baseValue : point.value
   }))
 }
 
@@ -327,8 +342,8 @@ function getChartDescription(activeTab: TPortfolioHistoryChartTab, growthDisplay
     return growthDisplayMode === 'index'
       ? 'Normalized protocol-return index for the whole wallet. Starts at 100 at the beginning of the selected timeframe.'
       : growthDisplayMode === 'eth'
-        ? 'Cumulative protocol growth earned while funds were held in your wallet, shown in receipt-time ETH equivalent.'
-        : 'Cumulative protocol growth earned while funds were held in your wallet, shown in receipt-time USD equivalent.'
+        ? 'Protocol growth earned during the selected timeframe, shown in receipt-time ETH equivalent.'
+        : 'Protocol growth earned during the selected timeframe, shown in receipt-time USD equivalent.'
   }
 
   if (activeTab === 'index') {
@@ -443,10 +458,12 @@ export function PortfolioHistoryChart({
         ? protocolReturnData
         : protocolReturnData.slice(-limit)
 
-    return points.map((point) => ({
-      date: point.date,
-      value: point.growthWeightUsd
-    }))
+    return rebaseDeltaPoints(
+      points.map((point) => ({
+        date: point.date,
+        value: point.growthWeightUsd
+      }))
+    )
   }, [protocolReturnData, timeframe])
 
   const filteredGrowthEthData = useMemo<TChartPoint[]>(() => {
@@ -460,10 +477,12 @@ export function PortfolioHistoryChart({
         ? protocolReturnData
         : protocolReturnData.slice(-limit)
 
-    return points.map((point) => ({
-      date: point.date,
-      value: point.growthWeightEth
-    }))
+    return rebaseDeltaPoints(
+      points.map((point) => ({
+        date: point.date,
+        value: point.growthWeightEth
+      }))
+    )
   }, [protocolReturnData, timeframe])
 
   const filteredGrowthIndexData = useMemo<TChartPoint[]>(() => {

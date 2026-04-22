@@ -99,9 +99,10 @@ type TTooltipProps = {
 }
 
 const DEFAULT_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5', '#f472b6', '#f97316']
+const MIN_RELEVANCE_SCORE = 0.000001
 
 const MODE_COPY: Record<TPortfolioVaultGrowthChartMode, string> = {
-  position: 'Shows actual protocol gain from your deposited positions.',
+  position: 'Shows actual protocol gain from your deposited positions during the selected timeframe.',
   index: 'Shows vault performance normalized to 100, ignoring position size.'
 }
 
@@ -117,49 +118,168 @@ function isFinitePositive(value: number): boolean {
   return Number.isFinite(value) && value > 0
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
 function getValidShareBalance(point: TPortfolioVaultGrowthChartPoint): number {
   return Number.isFinite(point.userShareBalance) && point.userShareBalance > 0 ? point.userShareBalance : 0
 }
 
+function hasRawExposure(points: TPortfolioVaultGrowthChartPoint[]): boolean {
+  return points.some((point) => getValidShareBalance(point) > 0)
+}
+
+function hasPrecomputedExposure(points: TPortfolioVaultGrowthChartSeriesPoint[]): boolean {
+  return points.some((point) => isFiniteNumber(point.positionValueUsd) || isFiniteNumber(point.indexValue))
+}
+
 function buildPositionPoints(points: TPortfolioVaultGrowthChartPoint[]): TTransformedPoint[] {
-  let cumulativeGrowthUsd = 0
-  let previousPricePerShare: number | null = null
-  let previousShareBalance = 0
+  return points.reduce<{
+    points: TTransformedPoint[]
+    cumulativeGrowthUsd: number
+    previousPricePerShare: number | null
+    previousShareBalance: number
+    hasSeenExposure: boolean
+  }>(
+    (state, point) => {
+      const timestamp = normalizeTimestamp(point.timestamp)
+      const shareBalance = getValidShareBalance(point)
+      const hasValidPrices = isFinitePositive(point.pricePerShare) && isFinitePositive(point.underlyingUsdPrice)
 
-  return points.map((point) => {
-    const timestamp = normalizeTimestamp(point.timestamp)
-    const shareBalance = getValidShareBalance(point)
-    const hasValidPrices = isFinitePositive(point.pricePerShare) && isFinitePositive(point.underlyingUsdPrice)
+      if (!hasValidPrices) {
+        state.points.push({ timestamp, date: formatUnixTimestamp(timestamp), value: null })
+        return state
+      }
 
-    if (!hasValidPrices) {
-      return { timestamp, date: formatUnixTimestamp(timestamp), value: null }
+      const cumulativeGrowthUsd =
+        state.previousPricePerShare !== null
+          ? state.cumulativeGrowthUsd +
+            state.previousShareBalance * (point.pricePerShare - state.previousPricePerShare) * point.underlyingUsdPrice
+          : state.cumulativeGrowthUsd
+      const hasSeenExposure = state.hasSeenExposure || state.previousShareBalance > 0 || shareBalance > 0
+
+      state.points.push({
+        timestamp,
+        date: formatUnixTimestamp(timestamp),
+        value: hasSeenExposure ? cumulativeGrowthUsd : null
+      })
+
+      return {
+        points: state.points,
+        cumulativeGrowthUsd,
+        previousPricePerShare: point.pricePerShare,
+        previousShareBalance: shareBalance,
+        hasSeenExposure
+      }
+    },
+    {
+      points: [],
+      cumulativeGrowthUsd: 0,
+      previousPricePerShare: null,
+      previousShareBalance: 0,
+      hasSeenExposure: false
     }
-
-    if (previousPricePerShare !== null) {
-      // Position mode measures protocol PPS gain on shares held during the interval, not deposit size changes.
-      cumulativeGrowthUsd +=
-        previousShareBalance * (point.pricePerShare - previousPricePerShare) * point.underlyingUsdPrice
-    }
-
-    previousPricePerShare = point.pricePerShare
-    previousShareBalance = shareBalance
-
-    return { timestamp, date: formatUnixTimestamp(timestamp), value: cumulativeGrowthUsd }
-  })
+  ).points
 }
 
 function buildIndexPoints(points: TPortfolioVaultGrowthChartPoint[], indexBase: number): TTransformedPoint[] {
-  const basePricePerShare = points.find((point) => isFinitePositive(point.pricePerShare))?.pricePerShare
+  const basePricePerShare = points.find(
+    (point) => getValidShareBalance(point) > 0 && isFinitePositive(point.pricePerShare)
+  )?.pricePerShare
 
   return points.map((point) => {
     const timestamp = normalizeTimestamp(point.timestamp)
+    const hasOpenPosition = getValidShareBalance(point) > 0
     const value =
-      basePricePerShare && isFinitePositive(point.pricePerShare)
+      hasOpenPosition && basePricePerShare && isFinitePositive(point.pricePerShare)
         ? (point.pricePerShare / basePricePerShare) * indexBase
         : null
 
     return { timestamp, date: formatUnixTimestamp(timestamp), value }
   })
+}
+
+function getFiniteValues(points: TTransformedPoint[]): number[] {
+  return points.flatMap((point) => (isFiniteNumber(point.value) ? [point.value] : []))
+}
+
+function getPositionRelevance(points: TTransformedPoint[]): number {
+  return Math.max(0, ...getFiniteValues(points).map((value) => Math.abs(value)))
+}
+
+function getIndexRelevance(points: TTransformedPoint[], indexBase: number): number {
+  return Math.max(0, ...getFiniteValues(points).map((value) => Math.abs(value - indexBase)))
+}
+
+function selectRelevantSeries(args: {
+  series: TTransformedSeries[]
+  maxVaults?: number
+  indexBase: number
+}): TTransformedSeries[] {
+  const scoredSeries = args.series.map((vaultSeries) => {
+    const positionScore = getPositionRelevance(vaultSeries.positionPoints)
+    const indexScore = getIndexRelevance(vaultSeries.indexPoints, args.indexBase)
+    return {
+      vaultSeries,
+      positionScore,
+      indexScore,
+      combinedScore: positionScore + indexScore
+    }
+  })
+  const hasRelevantSeries = scoredSeries.some(
+    (series) => series.positionScore > MIN_RELEVANCE_SCORE || series.indexScore > MIN_RELEVANCE_SCORE
+  )
+  const candidates = hasRelevantSeries
+    ? scoredSeries.filter(
+        (series) => series.positionScore > MIN_RELEVANCE_SCORE || series.indexScore > MIN_RELEVANCE_SCORE
+      )
+    : scoredSeries
+
+  if (typeof args.maxVaults !== 'number' || candidates.length <= args.maxVaults) {
+    return candidates.map((series) => series.vaultSeries)
+  }
+
+  const maxVaults = args.maxVaults
+  const selectedKeys = new Set<string>()
+  const selectedSeries: TTransformedSeries[] = []
+  const addSeries = (vaultSeries: TTransformedSeries): void => {
+    if (selectedSeries.length >= maxVaults || selectedKeys.has(vaultSeries.vaultAddress.toLowerCase())) {
+      return
+    }
+    selectedKeys.add(vaultSeries.vaultAddress.toLowerCase())
+    selectedSeries.push(vaultSeries)
+  }
+  const positionTarget = Math.ceil(maxVaults / 2)
+
+  candidates
+    .toSorted((left, right) => right.positionScore - left.positionScore || right.combinedScore - left.combinedScore)
+    .slice(0, positionTarget)
+    .forEach((series) => {
+      addSeries(series.vaultSeries)
+    })
+
+  candidates
+    .toSorted((left, right) => right.indexScore - left.indexScore || right.combinedScore - left.combinedScore)
+    .forEach((series) => {
+      addSeries(series.vaultSeries)
+    })
+
+  candidates
+    .toSorted((left, right) => right.combinedScore - left.combinedScore)
+    .forEach((series) => {
+      addSeries(series.vaultSeries)
+    })
+
+  return selectedSeries
+}
+
+function applySeriesPresentation(series: TTransformedSeries[], colors: string[]): TTransformedSeries[] {
+  return series.map((vaultSeries, index) => ({
+    ...vaultSeries,
+    key: `vault_${index}`,
+    color: colors[index % colors.length] ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length]
+  }))
 }
 
 function groupVaultPoints(points: TPortfolioVaultGrowthChartPoint[]): Map<string, TPortfolioVaultGrowthChartPoint[]> {
@@ -185,10 +305,9 @@ function buildSeries(args: {
   const orderedKeys = args.vaultOrder?.length
     ? args.vaultOrder.map(getVaultKey).filter((key) => grouped.has(key))
     : groupedKeys
-  const selectedKeys = typeof args.maxVaults === 'number' ? orderedKeys.slice(0, args.maxVaults) : orderedKeys
   const limit = getTimeframeLimit(args.timeframe)
 
-  return selectedKeys.flatMap((vaultKey, index) => {
+  const transformedSeries = orderedKeys.flatMap((vaultKey) => {
     const rawPoints = grouped.get(vaultKey)
     if (!rawPoints?.length) {
       return []
@@ -197,53 +316,71 @@ function buildSeries(args: {
     const sortedPoints = rawPoints.toSorted((left, right) => left.timestamp - right.timestamp)
     const points = !Number.isFinite(limit) || limit >= sortedPoints.length ? sortedPoints : sortedPoints.slice(-limit)
     const firstPoint = points[0]
+    if (!firstPoint || !hasRawExposure(points)) {
+      return []
+    }
 
     return [
       {
-        key: `vault_${index}`,
+        key: vaultKey,
         vaultAddress: firstPoint.vaultAddress,
         label: firstPoint.vaultName || firstPoint.symbol || firstPoint.vaultAddress,
-        color: args.colors[index % args.colors.length] ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length],
+        color: args.colors[0] ?? DEFAULT_COLORS[0],
         positionPoints: buildPositionPoints(points),
         indexPoints: buildIndexPoints(points, args.indexBase)
       }
     ]
   })
+
+  return applySeriesPresentation(
+    selectRelevantSeries({ series: transformedSeries, maxVaults: args.maxVaults, indexBase: args.indexBase }),
+    args.colors
+  )
 }
 
 function buildPrecomputedIndexPoints(
   points: TPortfolioVaultGrowthChartSeriesPoint[],
   indexBase: number
 ): TTransformedPoint[] {
-  const baseValue = points.find(
-    (point) => typeof point.indexValue === 'number' && Number.isFinite(point.indexValue)
-  )?.indexValue
+  const baseValue = points.find((point) => isFiniteNumber(point.indexValue))?.indexValue
 
   return points.map((point) => {
     const timestamp = normalizeTimestamp(point.timestamp)
-    const value =
-      baseValue && typeof point.indexValue === 'number' && Number.isFinite(point.indexValue)
-        ? (point.indexValue / baseValue) * indexBase
-        : null
+    const value = baseValue && isFiniteNumber(point.indexValue) ? (point.indexValue / baseValue) * indexBase : null
 
     return { timestamp, date: formatUnixTimestamp(timestamp), value }
   })
 }
 
 function buildPrecomputedPositionPoints(points: TPortfolioVaultGrowthChartSeriesPoint[]): TTransformedPoint[] {
-  const baseValue =
-    points.find((point) => typeof point.positionValueUsd === 'number' && Number.isFinite(point.positionValueUsd))
-      ?.positionValueUsd ?? 0
+  return points.reduce<{
+    points: TTransformedPoint[]
+    baseValue: number | null
+    lastValue: number | null
+  }>(
+    (state, point) => {
+      const timestamp = normalizeTimestamp(point.timestamp)
+      const nextLastValue = isFiniteNumber(point.positionValueUsd) ? point.positionValueUsd : state.lastValue
+      const nextBaseValue = state.baseValue ?? nextLastValue
 
-  return points.map((point) => {
-    const timestamp = normalizeTimestamp(point.timestamp)
-    const value =
-      typeof point.positionValueUsd === 'number' && Number.isFinite(point.positionValueUsd)
-        ? point.positionValueUsd - baseValue
-        : null
+      state.points.push({
+        timestamp,
+        date: formatUnixTimestamp(timestamp),
+        value: nextBaseValue !== null && nextLastValue !== null ? nextLastValue - nextBaseValue : null
+      })
 
-    return { timestamp, date: formatUnixTimestamp(timestamp), value }
-  })
+      return {
+        points: state.points,
+        baseValue: nextBaseValue,
+        lastValue: nextLastValue
+      }
+    },
+    {
+      points: [],
+      baseValue: null,
+      lastValue: null
+    }
+  ).points
 }
 
 function buildSeriesFromPrecomputed(args: {
@@ -260,10 +397,9 @@ function buildSeriesFromPrecomputed(args: {
   const orderedKeys = args.vaultOrder?.length
     ? args.vaultOrder.map(getVaultKey).filter((key) => seriesByVaultKey.has(key))
     : Array.from(seriesByVaultKey.keys())
-  const selectedKeys = typeof args.maxVaults === 'number' ? orderedKeys.slice(0, args.maxVaults) : orderedKeys
   const limit = getTimeframeLimit(args.timeframe)
 
-  return selectedKeys.flatMap((vaultKey, index) => {
+  const transformedSeries = orderedKeys.flatMap((vaultKey) => {
     const vaultSeries = seriesByVaultKey.get(vaultKey)
     if (!vaultSeries?.points.length) {
       return []
@@ -273,18 +409,26 @@ function buildSeriesFromPrecomputed(args: {
       .map((point) => ({ ...point, timestamp: normalizeTimestamp(point.timestamp) }))
       .toSorted((left, right) => left.timestamp - right.timestamp)
     const points = !Number.isFinite(limit) || limit >= sortedPoints.length ? sortedPoints : sortedPoints.slice(-limit)
+    if (!hasPrecomputedExposure(points)) {
+      return []
+    }
 
     return [
       {
-        key: `vault_${index}`,
+        key: vaultKey,
         vaultAddress: vaultSeries.vaultAddress,
         label: vaultSeries.vaultName || vaultSeries.symbol || vaultSeries.vaultAddress,
-        color: args.colors[index % args.colors.length] ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length],
+        color: args.colors[0] ?? DEFAULT_COLORS[0],
         positionPoints: buildPrecomputedPositionPoints(points),
         indexPoints: buildPrecomputedIndexPoints(points, args.indexBase)
       }
     ]
   })
+
+  return applySeriesPresentation(
+    selectRelevantSeries({ series: transformedSeries, maxVaults: args.maxVaults, indexBase: args.indexBase }),
+    args.colors
+  )
 }
 
 function buildChartData(series: TTransformedSeries[], mode: TPortfolioVaultGrowthChartMode): TChartPoint[] {
@@ -358,23 +502,25 @@ function PortfolioVaultGrowthTooltip({
     return null
   }
 
-  const rows = payload.flatMap((entry) => {
-    const dataKey = typeof entry.dataKey === 'string' ? entry.dataKey : ''
-    const value = typeof entry.value === 'number' ? entry.value : Number(entry.value ?? NaN)
+  const rows = payload
+    .flatMap((entry) => {
+      const dataKey = typeof entry.dataKey === 'string' ? entry.dataKey : ''
+      const value = typeof entry.value === 'number' ? entry.value : Number(entry.value ?? NaN)
 
-    if (!Number.isFinite(value)) {
-      return []
-    }
-
-    return [
-      {
-        key: dataKey,
-        label: seriesLabels[dataKey] ?? dataKey,
-        value,
-        color: typeof entry.color === 'string' ? entry.color : 'var(--color-text-primary)'
+      if (!Number.isFinite(value)) {
+        return []
       }
-    ]
-  })
+
+      return [
+        {
+          key: dataKey,
+          label: seriesLabels[dataKey] ?? dataKey,
+          value,
+          color: typeof entry.color === 'string' ? entry.color : 'var(--color-text-primary)'
+        }
+      ]
+    })
+    .toSorted((left, right) => right.value - left.value)
 
   return (
     <div
@@ -537,7 +683,7 @@ export function PortfolioVaultGrowthChart({
                     strokeOpacity={0.9}
                     dot={false}
                     activeDot={{ r: 4, strokeWidth: 0, fill: vaultSeries.color }}
-                    connectNulls
+                    connectNulls={activeMode === 'position'}
                     isAnimationActive={false}
                   />
                 ))}
