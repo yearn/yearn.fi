@@ -146,7 +146,8 @@ async function resolveStartupConfig() {
     apiProxyTarget: explicitApiProxyTarget || `http://${apiProxyHost}:${apiPort}`,
     clientPort,
     host,
-    shouldStartLocalApi: Boolean(apiPort)
+    shouldStartLocalApi: Boolean(apiPort),
+    usesConfiguredApiProxyTarget: Boolean(explicitApiProxyTarget)
   }
 }
 
@@ -156,7 +157,8 @@ async function main() {
     throw new Error('Usage: bun scripts/run-local.js <dev|preview>')
   }
 
-  const { apiPort, apiProxyHost, apiProxyTarget, clientPort, host, shouldStartLocalApi } = await resolveStartupConfig()
+  const { apiPort, apiProxyHost, apiProxyTarget, clientPort, host, shouldStartLocalApi, usesConfiguredApiProxyTarget } =
+    await resolveStartupConfig()
   const env = {
     ...createEnv({ apiPort, apiProxyHost, apiProxyTarget }),
     HOST: host,
@@ -164,7 +166,7 @@ async function main() {
   }
 
   console.log(
-    `${mode} startup using API ${env.API_PROXY_TARGET}${clientPort ? ` and client http://${host}:${clientPort}` : ''}`
+    `${mode} startup using ${usesConfiguredApiProxyTarget ? 'the configured API proxy target' : 'the local API server'}`
   )
 
   const clientPortArgs = clientPort ? ['--port', String(clientPort)] : []
