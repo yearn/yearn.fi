@@ -606,8 +606,8 @@ export function PortfolioVaultGrowthChart({
 
   return (
     <section className={cl('flex flex-col gap-3', className)}>
-      <div className={'flex flex-col gap-2'}>
-        {title || showModeToggle ? (
+      {title || showModeToggle ? (
+        <div className={'flex flex-col gap-2'}>
           <div className={'flex flex-col gap-2 md:flex-row md:items-center md:justify-between'}>
             {title ? <h3 className={'text-base font-semibold text-text-primary'}>{title}</h3> : null}
             {showModeToggle ? (
@@ -630,9 +630,9 @@ export function PortfolioVaultGrowthChart({
               </div>
             ) : null}
           </div>
-        ) : null}
-        {showModeToggle ? <p className={'text-xs text-text-secondary'}>{MODE_COPY[activeMode]}</p> : null}
-      </div>
+          {showModeToggle ? <p className={'text-xs text-text-secondary'}>{MODE_COPY[activeMode]}</p> : null}
+        </div>
+      ) : null}
 
       {!hasRenderableValue ? (
         <div
@@ -643,62 +643,52 @@ export function PortfolioVaultGrowthChart({
           <p className={'text-sm text-text-secondary'}>{emptyMessage}</p>
         </div>
       ) : (
-        <>
-          <div style={{ height }}>
-            <ChartContainer config={chartConfig} style={{ height: '100%', aspectRatio: 'unset' }}>
-              <ComposedChart data={chartData} margin={CHART_WITH_AXES_MARGIN}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey={'date'}
-                  ticks={ticks}
-                  tickFormatter={tickFormatter}
-                  tick={{ fill: 'var(--chart-axis)' }}
-                  axisLine={{ stroke: 'var(--chart-axis)' }}
-                  tickLine={{ stroke: 'var(--chart-axis)' }}
+        <div style={{ height }}>
+          <ChartContainer config={chartConfig} style={{ height: '100%', aspectRatio: 'unset' }}>
+            <ComposedChart data={chartData} margin={CHART_WITH_AXES_MARGIN}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey={'date'}
+                ticks={ticks}
+                tickFormatter={tickFormatter}
+                tick={{ fill: 'var(--chart-axis)' }}
+                axisLine={{ stroke: 'var(--chart-axis)' }}
+                tickLine={{ stroke: 'var(--chart-axis)' }}
+              />
+              <YAxis
+                domain={['auto', 'auto']}
+                tickFormatter={activeMode === 'position' ? formatPositionTick : formatIndexTick}
+                mirror
+                width={CHART_Y_AXIS_WIDTH}
+                tickMargin={CHART_Y_AXIS_TICK_MARGIN}
+                tick={CHART_Y_AXIS_TICK_STYLE}
+                axisLine={{ stroke: 'var(--chart-axis)' }}
+                tickLine={{ stroke: 'var(--chart-axis)' }}
+              />
+              <ChartTooltip
+                cursor={{ stroke: 'var(--chart-cursor-line)', strokeWidth: 1 }}
+                content={(props) => (
+                  <PortfolioVaultGrowthTooltip {...props} mode={activeMode} seriesLabels={seriesLabels} />
+                )}
+              />
+              {series.map((vaultSeries) => (
+                <Line
+                  key={vaultSeries.key}
+                  type={'monotone'}
+                  dataKey={vaultSeries.key}
+                  name={vaultSeries.label}
+                  stroke={vaultSeries.color}
+                  strokeWidth={2}
+                  strokeOpacity={0.9}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 0, fill: vaultSeries.color }}
+                  connectNulls
+                  isAnimationActive={false}
                 />
-                <YAxis
-                  domain={['auto', 'auto']}
-                  tickFormatter={activeMode === 'position' ? formatPositionTick : formatIndexTick}
-                  mirror
-                  width={CHART_Y_AXIS_WIDTH}
-                  tickMargin={CHART_Y_AXIS_TICK_MARGIN}
-                  tick={CHART_Y_AXIS_TICK_STYLE}
-                  axisLine={{ stroke: 'var(--chart-axis)' }}
-                  tickLine={{ stroke: 'var(--chart-axis)' }}
-                />
-                <ChartTooltip
-                  cursor={{ stroke: 'var(--chart-cursor-line)', strokeWidth: 1 }}
-                  content={(props) => (
-                    <PortfolioVaultGrowthTooltip {...props} mode={activeMode} seriesLabels={seriesLabels} />
-                  )}
-                />
-                {series.map((vaultSeries) => (
-                  <Line
-                    key={vaultSeries.key}
-                    type={'monotone'}
-                    dataKey={vaultSeries.key}
-                    name={vaultSeries.label}
-                    stroke={vaultSeries.color}
-                    strokeWidth={2}
-                    strokeOpacity={0.9}
-                    dot={false}
-                    activeDot={{ r: 4, strokeWidth: 0, fill: vaultSeries.color }}
-                    connectNulls
-                    isAnimationActive={false}
-                  />
-                ))}
-              </ComposedChart>
-            </ChartContainer>
-          </div>
-          <div className={'flex flex-wrap items-center gap-x-4 gap-y-2'}>
-            {series.map((vaultSeries) => (
-              <span key={vaultSeries.key} className={'inline-flex items-center gap-2 text-xs text-text-secondary'}>
-                <span className={'size-2 rounded-full'} style={{ backgroundColor: vaultSeries.color }} />
-                <span>{vaultSeries.label}</span>
-              </span>
-            ))}
-          </div>
-        </>
+              ))}
+            </ComposedChart>
+          </ChartContainer>
+        </div>
       )}
     </section>
   )

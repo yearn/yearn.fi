@@ -962,7 +962,7 @@ export function PortfolioHistoryChart({
           maxVaults={INDEX_SERIES_COLORS.length - 1}
           colors={[...INDEX_SERIES_COLORS.slice(1)]}
           title={''}
-          height={260}
+          height={236}
           showModeToggle={false}
           className={'pt-1'}
           emptyMessage={getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}
