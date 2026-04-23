@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const TEST_ADDRESS = '0x2222222222222222222222222222222222222222'
+
 const ensureSchemaInitializedMock = vi.fn()
 const checkRateLimitMock = vi.fn()
 const getHoldingsActivityMock = vi.fn()
@@ -53,7 +55,7 @@ describe('holdings activity route', () => {
 
   it('returns indexed activity entries for a wallet', async () => {
     getHoldingsActivityMock.mockResolvedValue({
-      address: '0x96A489A533bA0913dD8E507e6D985a45BC783566',
+      address: TEST_ADDRESS,
       version: 'all',
       limit: 10,
       offset: 0,
@@ -83,7 +85,7 @@ describe('holdings activity route', () => {
     const req = {
       method: 'GET',
       query: {
-        address: '0x96A489A533bA0913dD8E507e6D985a45BC783566',
+        address: TEST_ADDRESS,
         limit: '10',
         offset: '0'
       },
@@ -93,10 +95,10 @@ describe('holdings activity route', () => {
 
     await handler(req, res as any)
 
-    expect(getHoldingsActivityMock).toHaveBeenCalledWith('0x96A489A533bA0913dD8E507e6D985a45BC783566', 'all', 10, 0)
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0)
     expect(res.statusCode).toBe(200)
     expect(res.body).toEqual({
-      address: '0x96A489A533bA0913dD8E507e6D985a45BC783566',
+      address: TEST_ADDRESS,
       version: 'all',
       limit: 10,
       offset: 0,
@@ -125,7 +127,7 @@ describe('holdings activity route', () => {
 
   it('returns an empty collection when no indexed activity exists', async () => {
     getHoldingsActivityMock.mockResolvedValue({
-      address: '0x96A489A533bA0913dD8E507e6D985a45BC783566',
+      address: TEST_ADDRESS,
       version: 'all',
       limit: 10,
       offset: 0,
@@ -140,7 +142,7 @@ describe('holdings activity route', () => {
     const req = {
       method: 'GET',
       query: {
-        address: '0x96A489A533bA0913dD8E507e6D985a45BC783566'
+        address: TEST_ADDRESS
       },
       headers: {}
     } as any
@@ -150,7 +152,7 @@ describe('holdings activity route', () => {
 
     expect(res.statusCode).toBe(200)
     expect(res.body).toEqual({
-      address: '0x96A489A533bA0913dD8E507e6D985a45BC783566',
+      address: TEST_ADDRESS,
       version: 'all',
       limit: 10,
       offset: 0,
