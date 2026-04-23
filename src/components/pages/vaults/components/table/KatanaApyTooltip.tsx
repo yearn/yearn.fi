@@ -147,20 +147,15 @@ export function KatanaApyTooltipContent({
         {hasSteerPoints ? (
           <>
             <div className={'my-2 h-px w-full bg-surface-tertiary/60'} />
-            <p className={KATANA_SECTION_TITLE_CLASS}>{'Steer Points'}</p>
             <p className={'-mt-1 mb-2 w-full text-left text-sm text-text-secondary wrap-break-word whitespace-normal'}>
-              {
-                'The Steer Points program concludes on 23 Apr 2026. No action is required. Your liquidity will continue earning points until the final snapshot at 12:00 UTC.'
-              }
-              <br />
-              {' If you registered,'}
+              {'The Steer Points program has concluded.'}
               <a
                 href={'https://app.steer.finance/points'}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 className={KATANA_SECONDARY_LINK_CLASS}
               >
-                {' you can see your Steer Points here.'}
+                {' You can view your Steer Points here.'}
               </a>
             </p>
           </>
