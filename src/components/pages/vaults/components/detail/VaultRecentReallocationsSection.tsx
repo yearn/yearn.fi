@@ -87,6 +87,14 @@ function formatPanelTimestamp(timestamp: string | null): string {
   return `${timestampFormatter.format(parsedDate)} UTC`
 }
 
+function getReallocationTypeLabel(panel: TReallocationPanel): string | null {
+  return panel.reallocationType === 'automatic'
+    ? 'Automatic reallocation'
+    : panel.reallocationType === 'manual'
+      ? 'Manual reallocation'
+      : null
+}
+
 function toSvgSafeId(value: string): string {
   return value.replace(/[^a-zA-Z0-9_-]/g, '-')
 }
@@ -522,11 +530,13 @@ function ErrorState(): ReactElement {
 }
 
 function TimelineControls({
+  activePanel,
   activeIndex,
   panelCount,
   onOlder,
   onNewer
 }: {
+  activePanel: TReallocationPanel
   activeIndex: number
   panelCount: number
   onOlder: () => void
@@ -536,42 +546,55 @@ function TimelineControls({
     return null
   }
 
+  const reallocationTypeLabel = getReallocationTypeLabel(activePanel)
+
   return (
     <div className="pointer-events-none absolute inset-x-0 top-4 z-20 flex justify-center px-4">
-      <div className="pointer-events-auto flex items-center gap-2 rounded-lg border border-border bg-surface/90 p-1 shadow-sm backdrop-blur">
-        <span className="px-2 text-xs tabular-nums text-text-tertiary">{`${activeIndex + 1} / ${panelCount}`}</span>
-        <div className={cl('flex items-center gap-1', SELECTOR_BAR_STYLES.container)}>
-          <button
-            type="button"
-            onClick={onOlder}
-            disabled={activeIndex === 0}
-            className={cl(
-              'inline-flex min-h-[34px] items-center gap-1 rounded-sm border px-3 py-2 text-xs font-semibold transition-all md:min-h-0 md:py-1',
-              SELECTOR_BAR_STYLES.buttonBase,
-              activeIndex === 0
-                ? 'cursor-not-allowed border-transparent text-text-tertiary opacity-50'
-                : SELECTOR_BAR_STYLES.buttonInactive
-            )}
-          >
-            <IconChevron direction="left" className="size-3" />
-            {'Older'}
-          </button>
-          <button
-            type="button"
-            onClick={onNewer}
-            disabled={activeIndex >= panelCount - 1}
-            className={cl(
-              'inline-flex min-h-[34px] items-center gap-1 rounded-sm border px-3 py-2 text-xs font-semibold transition-all md:min-h-0 md:py-1',
-              SELECTOR_BAR_STYLES.buttonBase,
-              activeIndex >= panelCount - 1
-                ? 'cursor-not-allowed border-transparent text-text-tertiary opacity-50'
-                : SELECTOR_BAR_STYLES.buttonInactive
-            )}
-          >
-            {'Newer'}
-            <IconChevron direction="right" className="size-3" />
-          </button>
+      <div className="flex flex-col items-center gap-2">
+        <div className="pointer-events-auto flex items-center gap-2 rounded-lg border border-border bg-surface/90 p-1 shadow-sm backdrop-blur">
+          <span className="px-2 text-xs tabular-nums text-text-tertiary">{`${activeIndex + 1} / ${panelCount}`}</span>
+          <div className={cl('flex items-center gap-1', SELECTOR_BAR_STYLES.container)}>
+            <button
+              type="button"
+              onClick={onOlder}
+              disabled={activeIndex === 0}
+              className={cl(
+                'inline-flex min-h-[34px] items-center gap-1 rounded-sm border px-3 py-2 text-xs font-semibold transition-all md:min-h-0 md:py-1',
+                SELECTOR_BAR_STYLES.buttonBase,
+                activeIndex === 0
+                  ? 'cursor-not-allowed border-transparent text-text-tertiary opacity-50'
+                  : SELECTOR_BAR_STYLES.buttonInactive
+              )}
+            >
+              <IconChevron direction="left" className="size-3" />
+              {'Older'}
+            </button>
+            <button
+              type="button"
+              onClick={onNewer}
+              disabled={activeIndex >= panelCount - 1}
+              className={cl(
+                'inline-flex min-h-[34px] items-center gap-1 rounded-sm border px-3 py-2 text-xs font-semibold transition-all md:min-h-0 md:py-1',
+                SELECTOR_BAR_STYLES.buttonBase,
+                activeIndex >= panelCount - 1
+                  ? 'cursor-not-allowed border-transparent text-text-tertiary opacity-50'
+                  : SELECTOR_BAR_STYLES.buttonInactive
+              )}
+            >
+              {'Newer'}
+              <IconChevron direction="right" className="size-3" />
+            </button>
+          </div>
         </div>
+
+        {reallocationTypeLabel ? (
+          <div className="text-center text-xs font-semibold text-text-secondary">
+            <span>{reallocationTypeLabel}</span>
+            <span className="ml-1" aria-hidden="true">
+              {activePanel.reallocationType === 'automatic' ? '🤖' : '👷'}
+            </span>
+          </div>
+        ) : null}
       </div>
     </div>
   )
@@ -696,7 +719,13 @@ function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: bo
   return (
     <div className="bg-surface-primary" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <div className="relative h-[440px] w-full overflow-hidden md:h-[500px]">
-        <TimelineControls activeIndex={activeIndex} panelCount={panels.length} onOlder={goOlder} onNewer={goNewer} />
+        <TimelineControls
+          activePanel={panels[activeIndex]!}
+          activeIndex={activeIndex}
+          panelCount={panels.length}
+          onOlder={goOlder}
+          onNewer={goNewer}
+        />
 
         {windowPanels.map((panel, windowIndex) => {
           const panelIndex = windowStart + windowIndex

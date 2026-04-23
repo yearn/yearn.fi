@@ -1,3 +1,4 @@
+import type { TArchiveAllocationHistoryRecord } from '@shared/utils/schemas/archiveAllocationHistorySchema'
 import type {
   TDoaOptimizationRecord,
   TDoaOptimizationStrategyDebtRatio
@@ -65,8 +66,12 @@ export type TCurrentAllocationInput = {
 export type TReallocationState = {
   id: string
   timestampUtc: string | null
+  origin: 'redis' | 'archive' | 'current' | 'proposal'
   strategies: TReallocationStateStrategy[]
 }
+
+export type TReallocationPanelAnnotationTone = 'automatic' | 'selector'
+export type TReallocationType = 'automatic' | 'manual'
 
 export type TReallocationPanel = {
   id: string
@@ -74,6 +79,13 @@ export type TReallocationPanel = {
   afterState: TReallocationState
   beforeTimestampUtc: string | null
   afterTimestampUtc: string | null
+  annotation: string | null
+  annotationTone: TReallocationPanelAnnotationTone | null
+  reallocationType: TReallocationType | null
+  inputSelector: string | null
+  txHash: string | null
+  createdBy: `0x${string}` | null
+  to: `0x${string}` | null
   kind: 'historical' | 'proposal' | 'current'
 }
 
@@ -552,6 +564,7 @@ function buildSnapshotState(change: TNormalizedReallocationChange): TReallocatio
   return {
     id: `snapshot:${change.sourceKey}`,
     timestampUtc: change.timestampUtc,
+    origin: 'redis',
     strategies: change.strategies.map((strategy) => ({
       strategyId: strategy.strategyId,
       strategyAddress: strategy.strategyAddress,
@@ -566,6 +579,7 @@ function buildProposalState(change: TNormalizedReallocationChange): TReallocatio
   return {
     id: `proposal:${change.sourceKey}`,
     timestampUtc: change.timestampUtc,
+    origin: 'proposal',
     strategies: change.strategies.map((strategy) => ({
       strategyId: strategy.strategyId,
       strategyAddress: strategy.strategyAddress,
@@ -576,10 +590,22 @@ function buildProposalState(change: TNormalizedReallocationChange): TReallocatio
   }
 }
 
-function buildCurrentAllocationState(
-  currentAllocation: TCurrentAllocationInput,
+type TAllocationStateInput = {
+  id: string
+  origin: TReallocationState['origin']
+  timestampUtc: string
+  strategies: ReadonlyArray<{
+    strategyAddress: `0x${string}`
+    name: string
+    allocationPct: number
+  }>
+}
+
+function buildAllocationState(
+  allocation: TAllocationStateInput,
   referenceState?: TReallocationState
 ): TReallocationState {
+  const { id, origin, strategies: allocationStrategies, timestampUtc } = allocation
   const referenceStrategies = referenceState?.strategies ?? []
   const referenceByAddress = new Map(
     referenceStrategies.flatMap((strategy) => {
@@ -602,7 +628,7 @@ function buildCurrentAllocationState(
     return nextState
   }, new Map<string, TReallocationStateStrategy[]>())
 
-  const resolvedStrategies = currentAllocation.strategies.reduce(
+  const resolvedStrategies = allocationStrategies.reduce(
     (state, strategy, index) => {
       const normalizedAddress = strategy.strategyAddress.toLowerCase()
       if (state.seenAddresses.has(normalizedAddress)) {
@@ -666,10 +692,46 @@ function buildCurrentAllocationState(
       : resolvedStrategies
 
   return {
-    id: `current:${currentAllocation.timestampUtc}`,
-    timestampUtc: currentAllocation.timestampUtc,
+    id,
+    timestampUtc,
+    origin,
     strategies: strategiesWithUnallocated
   }
+}
+
+function buildCurrentAllocationState(
+  currentAllocation: TCurrentAllocationInput,
+  referenceState?: TReallocationState
+): TReallocationState {
+  return buildAllocationState(
+    {
+      id: `current:${currentAllocation.timestampUtc}`,
+      origin: 'current',
+      timestampUtc: currentAllocation.timestampUtc,
+      strategies: currentAllocation.strategies
+    },
+    referenceState
+  )
+}
+
+function buildArchiveAllocationState(
+  record: TArchiveAllocationHistoryRecord,
+  strategyNamesByAddress: TStrategyNameMap,
+  referenceState?: TReallocationState
+): TReallocationState {
+  return buildAllocationState(
+    {
+      id: record.id,
+      origin: 'archive',
+      timestampUtc: record.timestampUtc,
+      strategies: record.strategies.map((strategy, index) => ({
+        strategyAddress: strategy.strategyAddress,
+        name: strategyNamesByAddress[strategy.strategyAddress.toLowerCase()] ?? `Strategy ${index + 1}`,
+        allocationPct: strategy.allocationPct
+      }))
+    },
+    referenceState
+  )
 }
 
 function getStateStrategyIdentity(strategy: TReallocationStateStrategy): string {
@@ -721,6 +783,43 @@ function alignChronologicalStateStrategies(states: readonly TReallocationState[]
   }, [] as TReallocationState[])
 }
 
+function getStateTimestampMs(state: TReallocationState): number {
+  if (!state.timestampUtc) {
+    return 0
+  }
+
+  return new Date(state.timestampUtc.replace(' UTC', 'Z').replace(' ', 'T')).getTime()
+}
+
+function getHistoricalStateSortOrder(state: TReallocationState): number {
+  return state.origin === 'redis' ? 0 : 1
+}
+
+function mergeHistoricalStates(
+  snapshotStates: readonly TReallocationState[],
+  archiveStates: readonly TReallocationState[]
+): TReallocationState[] {
+  const sortedStates = [...snapshotStates, ...archiveStates].sort((leftState, rightState) => {
+    const timestampDiff = getStateTimestampMs(leftState) - getStateTimestampMs(rightState)
+    if (timestampDiff !== 0) {
+      return timestampDiff
+    }
+
+    return getHistoricalStateSortOrder(leftState) - getHistoricalStateSortOrder(rightState)
+  })
+
+  return sortedStates.reduce((mergedStates, state) => {
+    const alignedState = alignStateStrategyOrder(mergedStates[mergedStates.length - 1], state)
+    const previousState = mergedStates[mergedStates.length - 1]
+    if (previousState && statesMatch(previousState, alignedState)) {
+      return mergedStates
+    }
+
+    mergedStates.push(alignedState)
+    return mergedStates
+  }, [] as TReallocationState[])
+}
+
 function buildStateAllocationMap(state: TReallocationState): Map<string, number> {
   return state.strategies.reduce((allocationByStrategyId, strategy) => {
     const nextAllocationByStrategyId = new Map(allocationByStrategyId)
@@ -750,15 +849,31 @@ function panelHasAllocations(panel: TReallocationPanel): boolean {
 export function buildReallocationPanels(
   optimizations: readonly TDoaOptimizationRecord[],
   strategyNamesByAddress: TStrategyNameMap = {},
-  currentAllocation?: TCurrentAllocationInput
+  currentAllocation?: TCurrentAllocationInput,
+  archiveHistory: readonly TArchiveAllocationHistoryRecord[] = []
 ): TReallocationPanel[] {
   const dedupedHistory = dedupeVaultHistory(optimizations)
   const normalizedHistory = dedupedHistory.map((optimization) => normalizeChange(optimization, strategyNamesByAddress))
   const chronologicalHistory = normalizedHistory.slice().reverse()
   const chronologicalSnapshotStates = alignChronologicalStateStrategies(chronologicalHistory.map(buildSnapshotState))
+  const chronologicalArchiveStates = archiveHistory
+    .slice()
+    .sort((leftRecord, rightRecord) => {
+      return (
+        new Date(leftRecord.timestampUtc).getTime() - new Date(rightRecord.timestampUtc).getTime() ||
+        leftRecord.blockNumber - rightRecord.blockNumber
+      )
+    })
+    .reduce((archiveStates, record) => {
+      archiveStates.push(
+        buildArchiveAllocationState(record, strategyNamesByAddress, archiveStates[archiveStates.length - 1])
+      )
+      return archiveStates
+    }, [] as TReallocationState[])
+  const chronologicalHistoricalStates = mergeHistoricalStates(chronologicalSnapshotStates, chronologicalArchiveStates)
 
-  const historicalPanels = chronologicalSnapshotStates.slice(1).map((afterState, index) => {
-    const beforeState = chronologicalSnapshotStates[index]
+  const historicalPanels = chronologicalHistoricalStates.slice(1).map((afterState, index) => {
+    const beforeState = chronologicalHistoricalStates[index]
 
     return {
       id: `historical:${beforeState.id}->${afterState.id}`,
@@ -766,26 +881,41 @@ export function buildReallocationPanels(
       afterState,
       beforeTimestampUtc: beforeState.timestampUtc,
       afterTimestampUtc: afterState.timestampUtc,
+      annotation: afterState.origin === 'archive' ? 'On-chain update' : null,
+      annotationTone: null,
+      reallocationType: null,
+      inputSelector: null,
+      txHash: null,
+      createdBy: null,
+      to: null,
       kind: 'historical' as const
     }
   })
 
   const latestChange = normalizedHistory[0]
   const latestSnapshotState = chronologicalSnapshotStates[chronologicalSnapshotStates.length - 1]
+  const latestHistoricalState = chronologicalHistoricalStates[chronologicalHistoricalStates.length - 1]
   const currentPanel =
-    latestSnapshotState && currentAllocation
+    latestHistoricalState && currentAllocation
       ? (() => {
           const alignedCurrentState = alignStateStrategyOrder(
-            latestSnapshotState,
-            buildCurrentAllocationState(currentAllocation, latestSnapshotState)
+            latestHistoricalState,
+            buildCurrentAllocationState(currentAllocation, latestHistoricalState)
           )
 
           return {
-            id: `current:${latestSnapshotState.id}->${alignedCurrentState.id}`,
-            beforeState: latestSnapshotState,
+            id: `current:${latestHistoricalState.id}->${alignedCurrentState.id}`,
+            beforeState: latestHistoricalState,
             afterState: alignedCurrentState,
-            beforeTimestampUtc: latestSnapshotState.timestampUtc,
+            beforeTimestampUtc: latestHistoricalState.timestampUtc,
             afterTimestampUtc: currentAllocation.timestampUtc,
+            annotation: null,
+            annotationTone: null,
+            reallocationType: null,
+            inputSelector: null,
+            txHash: null,
+            createdBy: null,
+            to: null,
             kind: 'current' as const
           }
         })()
@@ -799,6 +929,13 @@ export function buildReallocationPanels(
             afterState: alignStateStrategyOrder(latestSnapshotState, buildProposalState(latestChange)),
             beforeTimestampUtc: latestSnapshotState.timestampUtc,
             afterTimestampUtc: latestChange.timestampUtc,
+            annotation: null,
+            annotationTone: null,
+            reallocationType: null,
+            inputSelector: null,
+            txHash: null,
+            createdBy: null,
+            to: null,
             kind: 'proposal' as const
           }
         ]
@@ -834,6 +971,59 @@ export function buildReallocationPanels(
     : proposalPanel
 
   return [...adjustedHistoricalPanels, ...terminalPanels].filter(panelHasAllocations)
+}
+
+export function appendCurrentAllocationPanel(
+  panels: readonly TReallocationPanel[],
+  currentAllocation?: TCurrentAllocationInput
+): TReallocationPanel[] {
+  if (!currentAllocation || panels.length === 0 || panels[panels.length - 1]?.kind === 'current') {
+    return [...panels]
+  }
+
+  const latestPanel = panels[panels.length - 1]
+  if (!latestPanel) {
+    return [...panels]
+  }
+
+  const latestState = latestPanel.afterState
+  const currentState = alignStateStrategyOrder(latestState, buildCurrentAllocationState(currentAllocation, latestState))
+
+  if (statesMatch(latestState, currentState)) {
+    return panels.map((panel, index) => {
+      if (index !== panels.length - 1) {
+        return panel
+      }
+
+      return {
+        ...panel,
+        afterState: {
+          ...panel.afterState,
+          timestampUtc: currentAllocation.timestampUtc
+        },
+        afterTimestampUtc: currentAllocation.timestampUtc
+      }
+    })
+  }
+
+  return [
+    ...panels,
+    {
+      id: `current:${latestState.id}->${currentState.id}`,
+      beforeState: latestState,
+      afterState: currentState,
+      beforeTimestampUtc: latestState.timestampUtc,
+      afterTimestampUtc: currentAllocation.timestampUtc,
+      annotation: null,
+      annotationTone: null,
+      reallocationType: null,
+      inputSelector: null,
+      txHash: null,
+      createdBy: null,
+      to: null,
+      kind: 'current'
+    }
+  ]
 }
 
 function getNodeLabel(side: 'before' | 'after'): TSankeyNodeLabel {
