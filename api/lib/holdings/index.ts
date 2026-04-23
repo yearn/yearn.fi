@@ -1,6 +1,12 @@
 export { config, validateConfig } from './config'
 export { ensureSchemaInitialized, initializeSchema, isDatabaseEnabled } from './db/connection'
 export {
+  getHoldingsActivity,
+  type HoldingsActivityAction,
+  type HoldingsActivityEntry,
+  type HoldingsActivityResponse
+} from './services/activity'
+export {
   getHistoricalHoldings,
   getHistoricalHoldingsChart,
   getHoldingsBreakdown,
@@ -13,6 +19,7 @@ export {
 } from './services/aggregator'
 export { clearUserCache, deleteStaleCache } from './services/cache'
 export {
+  fetchRecentAddressScopedActivityEvents,
   fetchUserEvents,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,

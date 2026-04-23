@@ -131,6 +131,33 @@ const portfolioProtocolReturnSummarySchema = z.object({
   isComplete: z.boolean()
 })
 
+const portfolioActivityEntrySchema = z.object({
+  chainId: z.number(),
+  txHash: z.string(),
+  timestamp: z.number(),
+  action: z.enum(['deposit', 'withdraw', 'stake', 'unstake']),
+  vaultAddress: z.string(),
+  familyVaultAddress: z.string(),
+  assetSymbol: z.string().nullable(),
+  assetAmount: z.string(),
+  assetAmountFormatted: z.number().nullable(),
+  shareAmount: z.string(),
+  shareAmountFormatted: z.number().nullable(),
+  status: z.enum(['ok', 'missing_metadata'])
+})
+
+export const portfolioActivityResponseSchema = z.object({
+  address: z.string(),
+  version: z.enum(['all', 'v2', 'v3']).optional().default('all'),
+  limit: z.number(),
+  offset: z.number(),
+  pageInfo: z.object({
+    hasMore: z.boolean(),
+    nextOffset: z.number().nullable()
+  }),
+  entries: z.array(portfolioActivityEntrySchema)
+})
+
 const portfolioProtocolReturnVaultSchema = z.object({
   chainId: z.number(),
   vaultAddress: z.string(),
@@ -165,6 +192,8 @@ export type TPortfolioPnlSummary = z.infer<typeof portfolioPnlSummarySchema>
 export type TPortfolioProtocolReturnResponse = z.infer<typeof portfolioProtocolReturnResponseSchema>
 export type TPortfolioProtocolReturnSummary = z.infer<typeof portfolioProtocolReturnSummarySchema>
 export type TPortfolioProtocolReturnVault = z.infer<typeof portfolioProtocolReturnVaultSchema>
+export type TPortfolioActivityResponse = z.infer<typeof portfolioActivityResponseSchema>
+export type TPortfolioActivityEntry = z.infer<typeof portfolioActivityEntrySchema>
 export type TPortfolioHistoryDenomination = z.infer<typeof portfolioHistorySimpleResponseSchema>['denomination']
 export type TPortfolioHistoryTimeframe = z.infer<typeof portfolioHistorySimpleResponseSchema>['timeframe']
 export type TPortfolioHistoryChartData = Array<{

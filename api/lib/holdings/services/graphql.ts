@@ -117,6 +117,79 @@ const V2_WITHDRAWALS_QUERY = `
   }
 `
 
+const RECENT_DEPOSITS_QUERY = `
+  query GetRecentDeposits($owner: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Deposit(where: { owner: { _eq: $owner }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: desc }, { blockNumber: desc }, { logIndex: desc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      owner
+      sender
+      assets
+      shares
+    }
+  }
+`
+
+const RECENT_WITHDRAWALS_QUERY = `
+  query GetRecentWithdrawals($owner: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Withdraw(where: { owner: { _eq: $owner }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: desc }, { blockNumber: desc }, { logIndex: desc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      owner
+      assets
+      shares
+    }
+  }
+`
+
+const RECENT_V2_DEPOSITS_QUERY = `
+  query GetRecentV2Deposits($recipient: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    V2Deposit(where: { recipient: { _eq: $recipient }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: desc }, { blockNumber: desc }, { logIndex: desc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      recipient
+      amount
+      shares
+    }
+  }
+`
+
+const RECENT_V2_WITHDRAWALS_QUERY = `
+  query GetRecentV2Withdrawals($recipient: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    V2Withdraw(where: { recipient: { _eq: $recipient }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: desc }, { blockNumber: desc }, { logIndex: desc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      recipient
+      amount
+      shares
+    }
+  }
+`
+
 const DEPOSITS_BY_TX_FROM_QUERY = `
   query GetDepositsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
     Deposit(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
@@ -797,6 +870,14 @@ function sortByBlock<T extends { blockTimestamp: number; blockNumber: number; lo
   )
 }
 
+function sortByBlockDesc<T extends { blockTimestamp: number; blockNumber: number; logIndex: number }>(
+  events: T[]
+): T[] {
+  return [...events].sort(
+    (a, b) => b.blockTimestamp - a.blockTimestamp || b.blockNumber - a.blockNumber || b.logIndex - a.logIndex
+  )
+}
+
 function getDepositsByVersion(
   v3Deposits: DepositEvent[],
   v2DepositsRaw: V2DepositEvent[],
@@ -871,6 +952,53 @@ async function fetchAllSingleQuery<T>(
       address,
       maxTimestamp: ts,
       limit: SINGLE_QUERY_LIMIT
+    })
+    throw error
+  }
+}
+
+async function fetchRecentLimited<T>(
+  query: string,
+  variableKey: string,
+  address: string,
+  resultKey: string,
+  limit: number,
+  offset = 0,
+  maxTimestamp?: number
+): Promise<T[]> {
+  const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
+  const startedAt = Date.now()
+  const variables: Record<string, unknown> = {
+    [variableKey]: address,
+    limit,
+    offset,
+    maxTimestamp: ts
+  }
+
+  try {
+    const data = await executeQuery<Record<string, T[]>>(query, variables)
+    const results = data[resultKey] || []
+
+    debugLog('graphql', 'fetched recent limited event set', {
+      resultKey,
+      variableKey,
+      address,
+      count: results.length,
+      durationMs: Date.now() - startedAt,
+      maxTimestamp: ts,
+      limit,
+      offset
+    })
+
+    return results
+  } catch (error) {
+    debugError('graphql', 'recent limited event fetch failed', error, {
+      resultKey,
+      variableKey,
+      address,
+      maxTimestamp: ts,
+      limit,
+      offset
     })
     throw error
   }
@@ -1051,6 +1179,88 @@ export async function fetchUserEvents(
     maxTimestamp: maxTimestamp ?? null
   })
   return processed
+}
+
+export interface RecentAddressActivityEvents {
+  deposits: DepositEvent[]
+  withdrawals: WithdrawEvent[]
+  hasMoreDeposits: boolean
+  hasMoreWithdrawals: boolean
+}
+
+export async function fetchRecentAddressScopedActivityEvents(
+  userAddress: string,
+  version: VaultVersion = 'all',
+  limitPerSource = 25,
+  maxTimestamp?: number
+): Promise<RecentAddressActivityEvents> {
+  const address = getGraphqlAddress(userAddress)
+  const addressLower = address.toLowerCase()
+  const boundedLimit = Math.max(1, limitPerSource)
+
+  const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw] = await Promise.all([
+    fetchRecentLimited<DepositEvent>(RECENT_DEPOSITS_QUERY, 'owner', address, 'Deposit', boundedLimit, 0, maxTimestamp),
+    fetchRecentLimited<WithdrawEvent>(
+      RECENT_WITHDRAWALS_QUERY,
+      'owner',
+      address,
+      'Withdraw',
+      boundedLimit,
+      0,
+      maxTimestamp
+    ),
+    fetchRecentLimited<V2DepositEvent>(
+      RECENT_V2_DEPOSITS_QUERY,
+      'recipient',
+      address,
+      'V2Deposit',
+      boundedLimit,
+      0,
+      maxTimestamp
+    ),
+    fetchRecentLimited<V2WithdrawEvent>(
+      RECENT_V2_WITHDRAWALS_QUERY,
+      'recipient',
+      address,
+      'V2Withdraw',
+      boundedLimit,
+      0,
+      maxTimestamp
+    )
+  ])
+
+  const deposits = sortByBlockDesc(getDepositsByVersion(v3Deposits, v2DepositsRaw, version))
+  const withdrawals = sortByBlockDesc(getWithdrawalsByVersion(v3Withdrawals, v2WithdrawalsRaw, version))
+  const hasMoreDeposits =
+    version === 'v3'
+      ? v3Deposits.length === boundedLimit
+      : version === 'v2'
+        ? v2DepositsRaw.length === boundedLimit
+        : v3Deposits.length === boundedLimit || v2DepositsRaw.length === boundedLimit
+  const hasMoreWithdrawals =
+    version === 'v3'
+      ? v3Withdrawals.length === boundedLimit
+      : version === 'v2'
+        ? v2WithdrawalsRaw.length === boundedLimit
+        : v3Withdrawals.length === boundedLimit || v2WithdrawalsRaw.length === boundedLimit
+
+  debugLog('graphql', 'fetched recent address-scoped activity events', {
+    address: addressLower,
+    version,
+    limitPerSource: boundedLimit,
+    deposits: deposits.length,
+    withdrawals: withdrawals.length,
+    hasMoreDeposits,
+    hasMoreWithdrawals,
+    maxTimestamp: maxTimestamp ?? null
+  })
+
+  return {
+    deposits,
+    withdrawals,
+    hasMoreDeposits,
+    hasMoreWithdrawals
+  }
 }
 
 export async function fetchRawUserPnlEvents(
