@@ -1,6 +1,6 @@
 import type { TDoaOptimizationRecord } from '@shared/utils/schemas/doaOptimizationSchema'
 import { describe, expect, it } from 'vitest'
-import { buildReallocationPanels, buildStateTransitionSankeyGraph } from './reallocations'
+import { buildReallocationPanels, buildStateTransitionSankeyGraph, type TCurrentAllocationInput } from './reallocations'
 
 function makeOptimizationRecord({
   currentApr = 250,
@@ -39,6 +39,182 @@ function makeOptimizationRecord({
 }
 
 describe('buildReallocationPanels', () => {
+  it('replaces the proposal tail with a live current panel when kong matches the latest redis snapshot', () => {
+    const latestTimestamp = '2026-04-22 10:00:00 UTC'
+    const currentTimestamp = '2026-04-23T14:30:00.000Z'
+    const optimization = makeOptimizationRecord({
+      key: 'doa:optimizations:1:latest',
+      latestMatchedTimestampUtc: latestTimestamp,
+      strategies: [
+        {
+          strategy: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          name: 'Alpha',
+          currentRatio: 6000,
+          targetRatio: 4500,
+          currentApr: 220,
+          targetApr: 260
+        },
+        {
+          strategy: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          name: 'Beta',
+          currentRatio: 4000,
+          targetRatio: 5500,
+          currentApr: 180,
+          targetApr: 240
+        }
+      ]
+    })
+    const currentAllocation: TCurrentAllocationInput = {
+      timestampUtc: currentTimestamp,
+      strategies: [
+        {
+          strategyAddress: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          name: 'Alpha',
+          allocationPct: 60
+        },
+        {
+          strategyAddress: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          name: 'Beta',
+          allocationPct: 40
+        }
+      ]
+    }
+
+    const panels = buildReallocationPanels([optimization], {}, currentAllocation)
+
+    expect(panels).toHaveLength(1)
+    expect(panels[0]?.kind).toBe('current')
+    expect(panels[0]?.beforeTimestampUtc).toBe(latestTimestamp)
+    expect(panels[0]?.afterTimestampUtc).toBe(currentTimestamp)
+    expect(panels[0]?.beforeState.strategies.map((strategy) => strategy.allocationPct)).toEqual([60, 40])
+    expect(panels[0]?.afterState.strategies.map((strategy) => strategy.allocationPct)).toEqual([60, 40])
+  })
+
+  it('adds a live final panel from the latest redis snapshot to the current kong allocation when they diverge', () => {
+    const latestTimestamp = '2026-04-22 10:00:00 UTC'
+    const currentTimestamp = '2026-04-23T14:30:00.000Z'
+    const optimization = makeOptimizationRecord({
+      key: 'doa:optimizations:1:latest',
+      latestMatchedTimestampUtc: latestTimestamp,
+      strategies: [
+        {
+          strategy: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          name: 'Alpha',
+          currentRatio: 6000,
+          targetRatio: 4500,
+          currentApr: 220,
+          targetApr: 260
+        },
+        {
+          strategy: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          name: 'Beta',
+          currentRatio: 4000,
+          targetRatio: 5500,
+          currentApr: 180,
+          targetApr: 240
+        }
+      ]
+    })
+    const currentAllocation: TCurrentAllocationInput = {
+      timestampUtc: currentTimestamp,
+      strategies: [
+        {
+          strategyAddress: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          name: 'Alpha',
+          allocationPct: 45
+        },
+        {
+          strategyAddress: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          name: 'Beta',
+          allocationPct: 55
+        }
+      ]
+    }
+
+    const panels = buildReallocationPanels([optimization], {}, currentAllocation)
+
+    expect(panels).toHaveLength(1)
+    expect(panels[0]?.kind).toBe('current')
+    expect(panels[0]?.beforeState.strategies.map((strategy) => strategy.allocationPct)).toEqual([60, 40])
+    expect(panels[0]?.afterState.strategies.map((strategy) => strategy.allocationPct)).toEqual([45, 55])
+
+    const graph = buildStateTransitionSankeyGraph(panels[0]!.beforeState.strategies, panels[0]!.afterState.strategies)
+    expect(graph.links.map((link) => link.value)).toEqual([45, 40, 15])
+  })
+
+  it('updates the latest historical panel timestamp instead of appending a no-op current panel when kong matches', () => {
+    const olderTimestamp = '2026-04-20 08:30:00 UTC'
+    const latestTimestamp = '2026-04-22 10:00:00 UTC'
+    const currentTimestamp = '2026-04-23T14:30:00.000Z'
+    const olderSnapshot = makeOptimizationRecord({
+      key: 'doa:optimizations:1:1771317000',
+      timestampUtc: olderTimestamp,
+      strategies: [
+        {
+          strategy: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          name: 'Alpha',
+          currentRatio: 7000,
+          targetRatio: 7000,
+          currentApr: 220,
+          targetApr: 220
+        },
+        {
+          strategy: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          name: 'Beta',
+          currentRatio: 3000,
+          targetRatio: 3000,
+          currentApr: 180,
+          targetApr: 180
+        }
+      ]
+    })
+    const latestSnapshot = makeOptimizationRecord({
+      key: 'doa:optimizations:1:latest',
+      latestMatchedTimestampUtc: latestTimestamp,
+      strategies: [
+        {
+          strategy: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          name: 'Alpha',
+          currentRatio: 6000,
+          targetRatio: 4500,
+          currentApr: 220,
+          targetApr: 260
+        },
+        {
+          strategy: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          name: 'Beta',
+          currentRatio: 4000,
+          targetRatio: 5500,
+          currentApr: 180,
+          targetApr: 240
+        }
+      ]
+    })
+    const currentAllocation: TCurrentAllocationInput = {
+      timestampUtc: currentTimestamp,
+      strategies: [
+        {
+          strategyAddress: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          name: 'Alpha',
+          allocationPct: 60
+        },
+        {
+          strategyAddress: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          name: 'Beta',
+          allocationPct: 40
+        }
+      ]
+    }
+
+    const panels = buildReallocationPanels([latestSnapshot, olderSnapshot], {}, currentAllocation)
+
+    expect(panels).toHaveLength(1)
+    expect(panels[0]?.kind).toBe('historical')
+    expect(panels[0]?.beforeTimestampUtc).toBe(olderTimestamp)
+    expect(panels[0]?.afterTimestampUtc).toBe(currentTimestamp)
+    expect(panels[0]?.afterState.strategies.map((strategy) => strategy.allocationPct)).toEqual([60, 40])
+  })
+
   it('builds a proposal panel for a single optimizer snapshot and applies strategy name overrides', () => {
     const optimization = makeOptimizationRecord({
       key: 'doa:optimizations:1:latest',
