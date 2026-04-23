@@ -25,6 +25,7 @@ import type { ReactElement } from 'react'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
+import type { TPortfolioAllocationScatterPoint } from '../hooks/usePortfolioModel'
 import type {
   TPortfolioHistoryChartData,
   TPortfolioHistoryDenomination,
@@ -35,9 +36,10 @@ import type {
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 import type { TPortfolioVaultGrowthChartMode, TPortfolioVaultGrowthChartSeries } from './PortfolioVaultGrowthChart'
 import { PortfolioVaultGrowthChart } from './PortfolioVaultGrowthChart'
+import { VaultAllocationScatter } from './VaultAllocationScatter'
 
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
-type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'annualized' | 'index'
+type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'annualized' | 'index' | 'scatter'
 type TGrowthDisplayMode = 'index' | 'usd' | 'eth'
 
 type TPortfolioHistoryChartProps = {
@@ -45,6 +47,8 @@ type TPortfolioHistoryChartProps = {
   protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
   protocolReturnSummary: TPortfolioProtocolReturnHistorySummary | null
   protocolReturnFamilySeries: TPortfolioProtocolReturnHistoryFamilySeries
+  allocationScatterPoints: TPortfolioAllocationScatterPoint[]
+  allocationScatterIsLoading?: boolean
   denomination: TPortfolioHistoryDenomination
   onDenominationChange: (denomination: TPortfolioHistoryDenomination) => void
   timeframe: TPortfolioHistoryChartTimeframe
@@ -84,7 +88,8 @@ const CHART_TABS: Array<{ id: TPortfolioHistoryChartTab; label: string }> = [
   { id: 'balance', label: 'Balance' },
   { id: 'growth', label: 'Growth' },
   { id: 'annualized', label: 'Annualized %' },
-  { id: 'index', label: 'Growth Index' }
+  { id: 'index', label: 'Growth Index' },
+  { id: 'scatter', label: 'Scatter' }
 ]
 const GROWTH_DISPLAY_MODES: Array<{ id: TGrowthDisplayMode; label: string }> = [
   { id: 'index', label: 'Index' },
@@ -365,6 +370,10 @@ function getChartDescription(activeTab: TPortfolioHistoryChartTab, growthDisplay
     return 'Compare actual vault contribution with normalized vault performance.'
   }
 
+  if (activeTab === 'scatter') {
+    return 'Snapshot of current allocation against vault Net APY. Bubble size reflects vault TVL.'
+  }
+
   if (activeTab === 'annualized') {
     return 'Annualized protocol return based on time-weighted baseline exposure up to each point.'
   }
@@ -383,6 +392,10 @@ function getChartTitle(activeTab: TPortfolioHistoryChartTab, growthDisplayMode: 
 
   if (activeTab === 'index') {
     return 'Growth Index'
+  }
+
+  if (activeTab === 'scatter') {
+    return 'Allocation vs Performance'
   }
 
   return 'Holdings History'
@@ -405,6 +418,10 @@ function getEmptyMessage(activeTab: TPortfolioHistoryChartTab, growthDisplayMode
     return 'No growth index history available'
   }
 
+  if (activeTab === 'scatter') {
+    return 'No visible vaults have Net APY data'
+  }
+
   return 'No holdings history available'
 }
 
@@ -413,6 +430,8 @@ export function PortfolioHistoryChart({
   protocolReturnData,
   protocolReturnSummary,
   protocolReturnFamilySeries,
+  allocationScatterPoints,
+  allocationScatterIsLoading = false,
   denomination,
   onDenominationChange,
   timeframe,
@@ -554,10 +573,22 @@ export function PortfolioHistoryChart({
             : filteredGrowthIndexData
         : activeTab === 'index'
           ? filteredGrowthIndexData
-          : filteredAnnualizedReturnData
-  const activeIsLoading = activeTab === 'balance' ? balanceIsLoading : protocolReturnIsLoading
-  const activeIsEmpty = activeTab === 'balance' ? balanceIsEmpty : protocolReturnIsEmpty
-  const activeError = activeTab === 'balance' ? balanceError : protocolReturnError
+          : activeTab === 'scatter'
+            ? []
+            : filteredAnnualizedReturnData
+  const activeIsLoading =
+    activeTab === 'balance'
+      ? balanceIsLoading
+      : activeTab === 'scatter'
+        ? allocationScatterIsLoading
+        : protocolReturnIsLoading
+  const activeIsEmpty =
+    activeTab === 'balance'
+      ? balanceIsEmpty
+      : activeTab === 'scatter'
+        ? allocationScatterPoints.length === 0
+        : protocolReturnIsEmpty
+  const activeError = activeTab === 'balance' ? balanceError : activeTab === 'scatter' ? null : protocolReturnError
   const activeHasRenderableValue = activeData.some((point) => point.value !== null)
   const tickSourceData = activeData
 
@@ -820,23 +851,25 @@ export function PortfolioHistoryChart({
               </button>
             ))}
           </div>
-          <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
-            {(['30d', '90d', '1y', 'all'] as const).map((tf) => (
-              <button
-                key={tf}
-                type={'button'}
-                onClick={() => onTimeframeChange(tf)}
-                className={cl(
-                  'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                  'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                  SELECTOR_BAR_STYLES.buttonBase,
-                  timeframe === tf ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
-                )}
-              >
-                {tf.toUpperCase()}
-              </button>
-            ))}
-          </div>
+          {activeTab !== 'scatter' ? (
+            <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
+              {(['30d', '90d', '1y', 'all'] as const).map((tf) => (
+                <button
+                  key={tf}
+                  type={'button'}
+                  onClick={() => onTimeframeChange(tf)}
+                  className={cl(
+                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                    SELECTOR_BAR_STYLES.buttonBase,
+                    timeframe === tf ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
+                  )}
+                >
+                  {tf.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -956,7 +989,11 @@ export function PortfolioHistoryChart({
     )
   }
 
-  if ((activeIsEmpty || activeData.length === 0 || !activeHasRenderableValue) && activeTab !== 'index') {
+  if (
+    (activeIsEmpty || activeData.length === 0 || !activeHasRenderableValue) &&
+    activeTab !== 'index' &&
+    activeTab !== 'scatter'
+  ) {
     return (
       <section className={cl(sectionClassName, className)}>
         {renderHeader(true)}
@@ -986,6 +1023,20 @@ export function PortfolioHistoryChart({
           className={'pt-1'}
           emptyMessage={getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}
         />
+        <PortfolioHistoryBreakdownModal
+          date={selectedBreakdownDate}
+          isOpen={isBreakdownModalOpen}
+          onClose={() => setIsBreakdownModalOpen(false)}
+        />
+      </section>
+    )
+  }
+
+  if (activeTab === 'scatter') {
+    return (
+      <section className={cl(sectionClassName, className)}>
+        {renderHeader(true)}
+        <VaultAllocationScatter points={allocationScatterPoints} embedded height={236} />
         <PortfolioHistoryBreakdownModal
           date={selectedBreakdownDate}
           isOpen={isBreakdownModalOpen}

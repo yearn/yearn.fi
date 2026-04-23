@@ -19,6 +19,7 @@ import { cl, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
+import { PORTFOLIO_VAULT_CHART_COLORS } from './portfolioChartColors'
 
 export type TPortfolioVaultGrowthChartMode = 'position' | 'index'
 export type TPortfolioVaultGrowthChartTimeframe = '30d' | '90d' | '1y' | 'all'
@@ -56,7 +57,7 @@ export type TPortfolioVaultGrowthChartProps = {
   vaultOrder?: string[]
   maxVaults?: number
   indexBase?: number
-  colors?: string[]
+  colors?: readonly string[]
   title?: string
   height?: number
   showModeToggle?: boolean
@@ -98,7 +99,6 @@ type TTooltipProps = {
   }>
 }
 
-const DEFAULT_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5', '#f472b6', '#f97316']
 const MIN_RELEVANCE_SCORE = 0.000001
 
 const MODE_COPY: Record<TPortfolioVaultGrowthChartMode, string> = {
@@ -274,11 +274,11 @@ function selectRelevantSeries(args: {
   return selectedSeries
 }
 
-function applySeriesPresentation(series: TTransformedSeries[], colors: string[]): TTransformedSeries[] {
+function applySeriesPresentation(series: TTransformedSeries[], colors: readonly string[]): TTransformedSeries[] {
   return series.map((vaultSeries, index) => ({
     ...vaultSeries,
     key: `vault_${index}`,
-    color: colors[index % colors.length] ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length]
+    color: colors[index % colors.length] ?? PORTFOLIO_VAULT_CHART_COLORS[index % PORTFOLIO_VAULT_CHART_COLORS.length]
   }))
 }
 
@@ -298,7 +298,7 @@ function buildSeries(args: {
   vaultOrder?: string[]
   maxVaults?: number
   indexBase: number
-  colors: string[]
+  colors: readonly string[]
 }): TTransformedSeries[] {
   const grouped = groupVaultPoints(args.points)
   const groupedKeys = Array.from(grouped.keys())
@@ -325,7 +325,7 @@ function buildSeries(args: {
         key: vaultKey,
         vaultAddress: firstPoint.vaultAddress,
         label: firstPoint.vaultName || firstPoint.symbol || firstPoint.vaultAddress,
-        color: args.colors[0] ?? DEFAULT_COLORS[0],
+        color: args.colors[0] ?? PORTFOLIO_VAULT_CHART_COLORS[0],
         positionPoints: buildPositionPoints(points),
         indexPoints: buildIndexPoints(points, args.indexBase)
       }
@@ -389,7 +389,7 @@ function buildSeriesFromPrecomputed(args: {
   vaultOrder?: string[]
   maxVaults?: number
   indexBase: number
-  colors: string[]
+  colors: readonly string[]
 }): TTransformedSeries[] {
   const seriesByVaultKey = new Map(
     args.series.map((vaultSeries) => [getVaultKey(vaultSeries.vaultAddress), vaultSeries])
@@ -418,7 +418,7 @@ function buildSeriesFromPrecomputed(args: {
         key: vaultKey,
         vaultAddress: vaultSeries.vaultAddress,
         label: vaultSeries.vaultName || vaultSeries.symbol || vaultSeries.vaultAddress,
-        color: args.colors[0] ?? DEFAULT_COLORS[0],
+        color: args.colors[0] ?? PORTFOLIO_VAULT_CHART_COLORS[0],
         positionPoints: buildPrecomputedPositionPoints(points),
         indexPoints: buildPrecomputedIndexPoints(points, args.indexBase)
       }
@@ -558,7 +558,7 @@ export function PortfolioVaultGrowthChart({
   vaultOrder,
   maxVaults,
   indexBase = 100,
-  colors = DEFAULT_COLORS,
+  colors = PORTFOLIO_VAULT_CHART_COLORS,
   title = 'Vault Growth',
   height = 300,
   showModeToggle = true,

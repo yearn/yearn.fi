@@ -1102,6 +1102,8 @@ function PortfolioPage(): ReactElement {
                     protocolReturnData={protocolReturnHistoryData}
                     protocolReturnSummary={protocolReturnHistorySummary}
                     protocolReturnFamilySeries={protocolReturnHistoryFamilySeries}
+                    allocationScatterPoints={model.allocationScatterPoints}
+                    allocationScatterIsLoading={model.isHoldingsLoading}
                     denomination={resolvedHistoryDenomination}
                     onDenominationChange={setHistoryDenomination}
                     timeframe={historyTimeframe}

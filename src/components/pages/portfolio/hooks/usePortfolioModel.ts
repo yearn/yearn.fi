@@ -2,11 +2,15 @@ import { useTokenSuggestions } from '@pages/portfolio/hooks/useTokenSuggestions'
 import { useVaultSuggestions } from '@pages/portfolio/hooks/useVaultSuggestions'
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import {
+  getVaultAPR,
   getVaultAddress,
   getVaultChainID,
   getVaultInfo,
   getVaultMigration,
+  getVaultName,
+  getVaultSymbol,
   getVaultStaking,
+  getVaultTVL,
   type TKongVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
@@ -54,6 +58,7 @@ export type TPortfolioBlendedMetrics = {
 }
 
 export type TPortfolioModel = {
+  allocationScatterPoints: TPortfolioAllocationScatterPoint[]
   blendedMetrics: TPortfolioBlendedMetrics
   hasHoldings: boolean
   holdingsRows: THoldingsRow[]
@@ -69,6 +74,18 @@ export type TPortfolioModel = {
   vaultFlags: Record<string, TVaultFlags>
   setSortBy: TSortStateSetter<TPossibleSortBy>
   setSortDirection: TSortStateSetter<TSortDirection>
+}
+
+export type TPortfolioAllocationScatterPoint = {
+  vaultAddress: `0x${string}`
+  vaultName: string
+  symbol: string
+  chainId: number
+  currentPositionUsd: number
+  roiPct: number | null
+  netApyPct: number | null
+  tvlUsd: number
+  asOfTimestamp: number
 }
 
 type TSortStateSetter<T> = (value: T | ((previous: T) => T)) => void
@@ -398,7 +415,49 @@ export function usePortfolioModel(): TPortfolioModel {
     return { blendedCurrentAPY, blendedHistoricalAPY, estimatedAnnualReturn }
   }, [getVaultEstimatedAPY, getVaultHistoricalAPY, getVaultValue, holdingsVaults, totalPortfolioValue])
 
+  const allocationScatterPoints = useMemo<TPortfolioAllocationScatterPoint[]>(() => {
+    const asOfTimestamp = Date.now()
+
+    return visibleHoldingsVaults
+      .reduce<TPortfolioAllocationScatterPoint[]>((points, vault) => {
+        const currentPositionUsd = getVaultValue(vault)
+        if (!Number.isFinite(currentPositionUsd) || currentPositionUsd <= 0) {
+          return points
+        }
+
+        const netApy = getVaultHistoricalAPY(vault)
+        const apr = getVaultAPR(vault)
+        const currentPricePerShare = apr.pricePerShare.today
+        const monthAgoPricePerShare = apr.pricePerShare.monthAgo
+        const vaultTvl = getVaultTVL(vault).tvl
+        const roiPct =
+          isYvUsdVault(vault) ||
+          !Number.isFinite(currentPricePerShare) ||
+          !Number.isFinite(monthAgoPricePerShare) ||
+          !monthAgoPricePerShare ||
+          monthAgoPricePerShare <= 0
+            ? null
+            : (currentPricePerShare / monthAgoPricePerShare - 1) * 100
+
+        points.push({
+          vaultAddress: getVaultAddress(vault),
+          vaultName: getVaultName(vault),
+          symbol: getVaultSymbol(vault),
+          chainId: getVaultChainID(vault),
+          currentPositionUsd,
+          roiPct,
+          netApyPct: typeof netApy === 'number' && Number.isFinite(netApy) ? netApy * 100 : null,
+          tvlUsd: Number.isFinite(vaultTvl) ? vaultTvl : 0,
+          asOfTimestamp
+        })
+
+        return points
+      }, [])
+      .toSorted((left, right) => right.currentPositionUsd - left.currentPositionUsd)
+  }, [getVaultHistoricalAPY, getVaultValue, visibleHoldingsVaults])
+
   return {
+    allocationScatterPoints,
     blendedMetrics,
     hasHoldings,
     holdingsRows,
