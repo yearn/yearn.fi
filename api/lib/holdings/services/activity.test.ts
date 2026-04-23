@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchRecentAddressScopedActivityEventsMock = vi.fn()
+const fetchActivityEventsByTransactionHashesMock = vi.fn()
 const fetchMultipleVaultsMetadataMock = vi.fn()
 
 vi.mock('./graphql', () => ({
-  fetchRecentAddressScopedActivityEvents: fetchRecentAddressScopedActivityEventsMock
+  fetchRecentAddressScopedActivityEvents: fetchRecentAddressScopedActivityEventsMock,
+  fetchActivityEventsByTransactionHashes: fetchActivityEventsByTransactionHashesMock
 }))
 
 vi.mock('./vaults', () => ({
@@ -15,6 +17,8 @@ const UNDERLYING_VAULT = '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204'
 const STAKING_VAULT = '0x622fa41799406b120f9a40da843d358b7b2cfee3'
 const HIDDEN_VAULT = '0x0000000000000000000000000000000000000123'
 const UNKNOWN_VAULT = '0x0000000000000000000000000000000000000456'
+const USER_ADDRESS = '0x96A489A533bA0913dD8E507e6D985a45BC783566'
+const INTERMEDIARY = '0x4Fe93ebC4Ce6Ae4f81601cC7Ce7139023919E003'
 
 function createDepositEvent(args: {
   id: string
@@ -33,9 +37,9 @@ function createDepositEvent(args: {
     blockTimestamp: args.blockTimestamp,
     logIndex: args.logIndex,
     transactionHash: args.transactionHash,
-    transactionFrom: '0x96A489A533bA0913dD8E507e6D985a45BC783566',
-    owner: '0x96A489A533bA0913dD8E507e6D985a45BC783566',
-    sender: '0x96A489A533bA0913dD8E507e6D985a45BC783566',
+    transactionFrom: USER_ADDRESS,
+    owner: USER_ADDRESS,
+    sender: USER_ADDRESS,
     assets: args.assets,
     shares: args.shares ?? args.assets
   }
@@ -58,10 +62,35 @@ function createWithdrawalEvent(args: {
     blockTimestamp: args.blockTimestamp,
     logIndex: args.logIndex,
     transactionHash: args.transactionHash,
-    transactionFrom: '0x96A489A533bA0913dD8E507e6D985a45BC783566',
-    owner: '0x96A489A533bA0913dD8E507e6D985a45BC783566',
+    transactionFrom: USER_ADDRESS,
+    owner: USER_ADDRESS,
     assets: args.assets,
     shares: args.shares ?? args.assets
+  }
+}
+
+function createTransferEvent(args: {
+  id: string
+  vaultAddress: string
+  transactionHash: string
+  blockTimestamp: number
+  logIndex: number
+  value: string
+  sender: string
+  receiver: string
+}) {
+  return {
+    id: args.id,
+    vaultAddress: args.vaultAddress,
+    chainId: 1,
+    blockNumber: args.blockTimestamp,
+    blockTimestamp: args.blockTimestamp,
+    logIndex: args.logIndex,
+    transactionHash: args.transactionHash,
+    transactionFrom: USER_ADDRESS,
+    sender: args.sender,
+    receiver: args.receiver,
+    value: args.value
   }
 }
 
@@ -69,6 +98,11 @@ describe('getHoldingsActivity', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
+    fetchActivityEventsByTransactionHashesMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfers: []
+    })
   })
 
   it('aggregates recent events, classifies staking actions, and filters hidden vaults', async () => {
@@ -119,8 +153,12 @@ describe('getHoldingsActivity', () => {
           assets: '1000000000000000000'
         })
       ],
+      transfersIn: [],
+      transfersOut: [],
       hasMoreDeposits: false,
-      hasMoreWithdrawals: false
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
     })
 
     fetchMultipleVaultsMetadataMock.mockResolvedValue(
@@ -175,13 +213,9 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity('0x96A489A533bA0913dD8E507e6D985a45BC783566', 'all', 4)
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 4)
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(
-      '0x96A489A533bA0913dD8E507e6D985a45BC783566',
-      'all',
-      20
-    )
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 20)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -245,13 +279,17 @@ describe('getHoldingsActivity', () => {
           assets: '123456789'
         })
       ],
+      transfersIn: [],
+      transfersOut: [],
       hasMoreDeposits: false,
-      hasMoreWithdrawals: false
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
     })
     fetchMultipleVaultsMetadataMock.mockResolvedValue(new Map())
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity('0x96A489A533bA0913dD8E507e6D985a45BC783566', 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
 
     expect(response.entries).toEqual([
       {
@@ -307,8 +345,12 @@ describe('getHoldingsActivity', () => {
         })
       ],
       withdrawals: [],
+      transfersIn: [],
+      transfersOut: [],
       hasMoreDeposits: true,
-      hasMoreWithdrawals: false
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
     })
 
     fetchMultipleVaultsMetadataMock.mockResolvedValue(
@@ -332,13 +374,9 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity('0x96A489A533bA0913dD8E507e6D985a45BC783566', 'all', 1, 1)
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 1)
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(
-      '0x96A489A533bA0913dD8E507e6D985a45BC783566',
-      'all',
-      20
-    )
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 20)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -359,5 +397,95 @@ describe('getHoldingsActivity', () => {
       hasMore: true,
       nextOffset: 2
     })
+  })
+
+  it('recovers routed withdrawals from address transfers plus tx-scoped withdraw events', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: [
+        createTransferEvent({
+          id: 'transfer-out-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xroute',
+          blockTimestamp: 400,
+          logIndex: 1,
+          value: '849068037733633594470',
+          sender: USER_ADDRESS,
+          receiver: INTERMEDIARY
+        })
+      ],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchActivityEventsByTransactionHashesMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [
+        createWithdrawalEvent({
+          id: 'withdraw-route-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xroute',
+          blockTimestamp: 400,
+          logIndex: 5,
+          assets: '1072609',
+          shares: '849068037733633594470'
+        })
+      ],
+      transfers: [
+        createTransferEvent({
+          id: 'transfer-burn-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xroute',
+          blockTimestamp: 400,
+          logIndex: 4,
+          value: '849068037733633594470',
+          sender: INTERMEDIARY,
+          receiver: '0x0000000000000000000000000000000000000000'
+        })
+      ]
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+              symbol: 'USDC',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(fetchActivityEventsByTransactionHashesMock).toHaveBeenCalledWith(new Map([[1, ['0xroute']]]), 'all')
+    expect(response.entries).toEqual([
+      {
+        chainId: 1,
+        txHash: '0xroute',
+        timestamp: 400,
+        action: 'withdraw',
+        vaultAddress: UNDERLYING_VAULT,
+        familyVaultAddress: UNDERLYING_VAULT,
+        assetSymbol: 'USDC',
+        assetAmount: '1072609',
+        assetAmountFormatted: 1.072609,
+        shareAmount: '849068037733633594470',
+        shareAmountFormatted: 849.0680377336336,
+        status: 'ok'
+      }
+    ])
   })
 })

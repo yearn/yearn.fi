@@ -1,6 +1,6 @@
-import { useInfiniteQuery } from '@tanstack/react-query'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema } from '@shared/hooks/useFetch'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import {
   portfolioActivityResponseSchema,
   type TPortfolioActivityEntry,

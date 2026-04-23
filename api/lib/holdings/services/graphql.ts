@@ -190,6 +190,42 @@ const RECENT_V2_WITHDRAWALS_QUERY = `
   }
 `
 
+const RECENT_TRANSFERS_IN_QUERY = `
+  query GetRecentTransfersIn($receiver: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Transfer(where: { receiver: { _eq: $receiver }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: desc }, { blockNumber: desc }, { logIndex: desc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      sender
+      receiver
+      value
+    }
+  }
+`
+
+const RECENT_TRANSFERS_OUT_QUERY = `
+  query GetRecentTransfersOut($sender: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
+    Transfer(where: { sender: { _eq: $sender }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: desc }, { blockNumber: desc }, { logIndex: desc }], limit: $limit, offset: $offset) {
+      id
+      vaultAddress
+      chainId
+      blockNumber
+      blockTimestamp
+      logIndex
+      transactionHash
+      transactionFrom
+      sender
+      receiver
+      value
+    }
+  }
+`
+
 const DEPOSITS_BY_TX_FROM_QUERY = `
   query GetDepositsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
     Deposit(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
@@ -1184,8 +1220,18 @@ export async function fetchUserEvents(
 export interface RecentAddressActivityEvents {
   deposits: DepositEvent[]
   withdrawals: WithdrawEvent[]
+  transfersIn: TransferEvent[]
+  transfersOut: TransferEvent[]
   hasMoreDeposits: boolean
   hasMoreWithdrawals: boolean
+  hasMoreTransfersIn: boolean
+  hasMoreTransfersOut: boolean
+}
+
+export interface TransactionActivityEvents {
+  deposits: DepositEvent[]
+  withdrawals: WithdrawEvent[]
+  transfers: TransferEvent[]
 }
 
 export async function fetchRecentAddressScopedActivityEvents(
@@ -1198,7 +1244,7 @@ export async function fetchRecentAddressScopedActivityEvents(
   const addressLower = address.toLowerCase()
   const boundedLimit = Math.max(1, limitPerSource)
 
-  const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw] = await Promise.all([
+  const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] = await Promise.all([
     fetchRecentLimited<DepositEvent>(RECENT_DEPOSITS_QUERY, 'owner', address, 'Deposit', boundedLimit, 0, maxTimestamp),
     fetchRecentLimited<WithdrawEvent>(
       RECENT_WITHDRAWALS_QUERY,
@@ -1226,11 +1272,31 @@ export async function fetchRecentAddressScopedActivityEvents(
       boundedLimit,
       0,
       maxTimestamp
+    ),
+    fetchRecentLimited<TransferEvent>(
+      RECENT_TRANSFERS_IN_QUERY,
+      'receiver',
+      address,
+      'Transfer',
+      boundedLimit,
+      0,
+      maxTimestamp
+    ),
+    fetchRecentLimited<TransferEvent>(
+      RECENT_TRANSFERS_OUT_QUERY,
+      'sender',
+      address,
+      'Transfer',
+      boundedLimit,
+      0,
+      maxTimestamp
     )
   ])
 
   const deposits = sortByBlockDesc(getDepositsByVersion(v3Deposits, v2DepositsRaw, version))
   const withdrawals = sortByBlockDesc(getWithdrawalsByVersion(v3Withdrawals, v2WithdrawalsRaw, version))
+  const sortedTransfersIn = sortByBlockDesc(transfersIn)
+  const sortedTransfersOut = sortByBlockDesc(transfersOut)
   const hasMoreDeposits =
     version === 'v3'
       ? v3Deposits.length === boundedLimit
@@ -1243,6 +1309,8 @@ export async function fetchRecentAddressScopedActivityEvents(
       : version === 'v2'
         ? v2WithdrawalsRaw.length === boundedLimit
         : v3Withdrawals.length === boundedLimit || v2WithdrawalsRaw.length === boundedLimit
+  const hasMoreTransfersIn = transfersIn.length === boundedLimit
+  const hasMoreTransfersOut = transfersOut.length === boundedLimit
 
   debugLog('graphql', 'fetched recent address-scoped activity events', {
     address: addressLower,
@@ -1250,16 +1318,72 @@ export async function fetchRecentAddressScopedActivityEvents(
     limitPerSource: boundedLimit,
     deposits: deposits.length,
     withdrawals: withdrawals.length,
+    transfersIn: sortedTransfersIn.length,
+    transfersOut: sortedTransfersOut.length,
     hasMoreDeposits,
     hasMoreWithdrawals,
+    hasMoreTransfersIn,
+    hasMoreTransfersOut,
     maxTimestamp: maxTimestamp ?? null
   })
 
   return {
     deposits,
     withdrawals,
+    transfersIn: sortedTransfersIn,
+    transfersOut: sortedTransfersOut,
     hasMoreDeposits,
-    hasMoreWithdrawals
+    hasMoreWithdrawals,
+    hasMoreTransfersIn,
+    hasMoreTransfersOut
+  }
+}
+
+export async function fetchActivityEventsByTransactionHashes(
+  transactionHashesByChain: Map<number, string[]>,
+  version: VaultVersion = 'all',
+  maxTimestamp?: number
+): Promise<TransactionActivityEvents> {
+  const [txHashV3Deposits, txHashV3Withdrawals, txHashV2DepositsRaw, txHashV2WithdrawalsRaw, txHashTransfers] =
+    await Promise.all([
+      fetchAllByTransactionHashes<DepositEvent>(
+        DEPOSITS_BY_TX_HASHES_QUERY,
+        transactionHashesByChain,
+        'Deposit',
+        maxTimestamp
+      ),
+      fetchAllByTransactionHashes<WithdrawEvent>(
+        WITHDRAWALS_BY_TX_HASHES_QUERY,
+        transactionHashesByChain,
+        'Withdraw',
+        maxTimestamp
+      ),
+      fetchAllByTransactionHashes<V2DepositEvent>(
+        V2_DEPOSITS_BY_TX_HASHES_QUERY,
+        transactionHashesByChain,
+        'V2Deposit',
+        maxTimestamp
+      ),
+      fetchAllByTransactionHashes<V2WithdrawEvent>(
+        V2_WITHDRAWALS_BY_TX_HASHES_QUERY,
+        transactionHashesByChain,
+        'V2Withdraw',
+        maxTimestamp
+      ),
+      fetchAllByTransactionHashes<TransferEvent>(
+        TRANSFERS_BY_TX_HASHES_QUERY,
+        transactionHashesByChain,
+        'Transfer',
+        maxTimestamp
+      )
+    ])
+
+  return {
+    deposits: sortByBlock(dedupeById([...getDepositsByVersion(txHashV3Deposits, txHashV2DepositsRaw, version)])),
+    withdrawals: sortByBlock(
+      dedupeById([...getWithdrawalsByVersion(txHashV3Withdrawals, txHashV2WithdrawalsRaw, version)])
+    ),
+    transfers: sortByBlock(dedupeById(txHashTransfers))
   }
 }
 

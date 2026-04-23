@@ -460,7 +460,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       return (
         <div className="flex flex-col items-center justify-center gap-2 py-6 text-sm text-text-secondary">
           <IconSpinner className="size-5 animate-spin text-text-secondary" />
-          <span>{'Loading indexed activity...'}</span>
+          <span>{'Loading activity...'}</span>
         </div>
       )
     }
@@ -468,7 +468,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     if (indexedError) {
       return (
         <div className="py-6 text-center">
-          <p className="text-sm font-medium text-red-600">{'Error loading indexed activity'}</p>
+          <p className="text-sm font-medium text-red-600">{'Error loading activity'}</p>
           <p className="mt-2 text-xs text-text-secondary">{indexedError.message}</p>
         </div>
       )
@@ -481,10 +481,30 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     return (
       <div className="flex flex-col gap-4">
         {indexedEntries.map((entry) => {
-          const resolvedVault =
-            allVaults[toAddress(entry.familyVaultAddress)] ?? allVaults[toAddress(entry.vaultAddress)]
-          const displayName = resolvedVault ? getVaultName(resolvedVault) : truncateHex(entry.familyVaultAddress, 5)
-          const shareSymbol = resolvedVault ? getVaultSymbol(resolvedVault) : entry.assetSymbol
+          const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
+          const activityVault = allVaults[toAddress(entry.vaultAddress)]
+          const familyVaultSymbol = familyVault
+            ? getVaultSymbol(familyVault)
+            : activityVault
+              ? getVaultSymbol(activityVault)
+              : entry.assetSymbol
+          const displayName = familyVault
+            ? getVaultName(familyVault)
+            : activityVault
+              ? getVaultName(activityVault)
+              : truncateHex(entry.familyVaultAddress, 5)
+          const shareSymbol =
+            entry.action === 'stake' || entry.action === 'unstake'
+              ? familyVaultSymbol
+                ? `st-${familyVaultSymbol}`
+                : entry.assetSymbol
+                  ? `st-${entry.assetSymbol}`
+                  : null
+              : familyVault
+                ? getVaultSymbol(familyVault)
+                : activityVault
+                  ? getVaultSymbol(activityVault)
+                  : entry.assetSymbol
 
           return (
             <IndexedActivityRow
