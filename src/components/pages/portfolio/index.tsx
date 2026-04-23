@@ -996,27 +996,10 @@ function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
   const [historyDenomination, setHistoryDenomination] = useState<TPortfolioHistoryDenomination>('usd')
   const [historyTimeframe, setHistoryTimeframe] = useState<TPortfolioHistoryChartTimeframe>('1y')
-  const historyFetchTimeframe: TPortfolioHistoryTimeframe = historyTimeframe === 'all' ? 'all' : '1y'
-  const {
-    data: historyData,
-    denomination: resolvedHistoryDenomination,
-    isLoading: historyLoading,
-    error: historyError,
-    isEmpty: historyEmpty
-  } = usePortfolioHistory(historyDenomination, historyFetchTimeframe)
-  const {
-    data: protocolReturnHistoryData,
-    summary: protocolReturnHistorySummary,
-    familySeries: protocolReturnHistoryFamilySeries,
-    isLoading: protocolReturnHistoryLoading,
-    error: protocolReturnHistoryError,
-    isEmpty: protocolReturnHistoryEmpty
-  } = usePortfolioProtocolReturnHistory(historyFetchTimeframe)
-  const { data: protocolReturnSummary, isLoading: protocolReturnLoading } = usePortfolioProtocolReturn()
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
-
+  const historyFetchTimeframe: TPortfolioHistoryTimeframe = historyTimeframe === 'all' ? 'all' : '1y'
   const activeTab = useMemo((): TPortfolioTabKey => {
     const tabParam = searchParams.get('tab')
     if (tabParam === 'activity' || tabParam === 'claim-rewards' || tabParam === 'positions') {
@@ -1024,6 +1007,24 @@ function PortfolioPage(): ReactElement {
     }
     return 'positions'
   }, [searchParams])
+  const shouldLoadPositionsHistory = activeTab === 'positions' && model.isActive
+  const {
+    data: historyData,
+    denomination: resolvedHistoryDenomination,
+    isLoading: historyLoading,
+    error: historyError,
+    isEmpty: historyEmpty
+  } = usePortfolioHistory(historyDenomination, historyFetchTimeframe, shouldLoadPositionsHistory)
+  const {
+    data: protocolReturnHistoryData,
+    summary: protocolReturnHistorySummary,
+    familySeries: protocolReturnHistoryFamilySeries,
+    isLoading: protocolReturnHistoryLoading,
+    error: protocolReturnHistoryError,
+    isEmpty: protocolReturnHistoryEmpty
+  } = usePortfolioProtocolReturnHistory(historyFetchTimeframe, shouldLoadPositionsHistory)
+  const { data: protocolReturnSummary, isLoading: protocolReturnLoading } =
+    usePortfolioProtocolReturn(shouldLoadPositionsHistory)
 
   const handleTabSelect = useCallback(
     (tab: TPortfolioTabKey) => {

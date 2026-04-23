@@ -11,16 +11,17 @@ import { portfolioHistorySimpleResponseSchema } from '../types/api'
 
 export function usePortfolioHistory(
   denomination: TPortfolioHistoryDenomination = 'usd',
-  timeframe: TPortfolioHistoryTimeframe = '1y'
+  timeframe: TPortfolioHistoryTimeframe = '1y',
+  enabled = true
 ) {
   const { address } = useWeb3()
 
   const endpoint = useMemo(() => {
-    if (!address) {
+    if (!address || !enabled) {
       return null
     }
-    return `/api/holdings/history?address=${address}&denomination=${denomination}&timeframe=${timeframe}&debug=1&fetchType=parallel&paginationMode=all`
-  }, [address, denomination, timeframe])
+    return `/api/holdings/history?address=${address}&denomination=${denomination}&timeframe=${timeframe}&debug=1&fetchType=parallel`
+  }, [address, denomination, enabled, timeframe])
 
   const {
     data: rawData,
@@ -31,7 +32,7 @@ export function usePortfolioHistory(
     endpoint,
     schema: portfolioHistorySimpleResponseSchema,
     config: {
-      cacheDuration: 4 * 60 * 60 * 1000, // 4 hours
+      cacheDuration: 5 * 60 * 1000,
       keepPreviousData: false,
       timeout: 2 * 60 * 1000 // 2 minutes for large holdings requests
     }

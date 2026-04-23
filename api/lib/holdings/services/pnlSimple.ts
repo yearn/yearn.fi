@@ -14,7 +14,12 @@ import {
   type HoldingsEventPaginationMode,
   type VaultVersion
 } from './graphql'
-import { generateDailyTimestamps, generateDailyTimestampsFromRange, timestampToDateString } from './holdings'
+import {
+  generateDailyTimestamps,
+  generateDailyTimestampsFromRange,
+  timestampToDateString,
+  toSettledDayTimestamp
+} from './holdings'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
 import {
   deriveNestedVaultAssetPriceData,
@@ -1169,6 +1174,68 @@ function buildEffectiveSimpleFamilyEvents(txFamilyEvents: TRawPnlEvent[], userAd
     return addressEvents
   }
 
+  const addressScopedStakingMintTransfers = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+      event.kind === 'transfer' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.sender) === ZERO_ADDRESS &&
+      lowerCaseAddress(event.receiver) === normalizedUserAddress &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress
+  )
+  const addressScopedStakingDepositReceipts = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'deposit' }> =>
+      event.kind === 'deposit' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress &&
+      lowerCaseAddress(event.owner) === normalizedUserAddress
+  )
+  const matchedStakingDepositMintShares = minBigInt(
+    addressScopedStakingMintTransfers.reduce((total, event) => total + event.shares, ZERO),
+    addressScopedStakingDepositReceipts.reduce((total, event) => total + event.shares, ZERO)
+  )
+
+  addressEvents = stripMatchedShares(
+    addressEvents,
+    (event) =>
+      event.kind === 'transfer' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.sender) === ZERO_ADDRESS &&
+      lowerCaseAddress(event.receiver) === normalizedUserAddress &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress,
+    matchedStakingDepositMintShares
+  )
+
+  const addressScopedStakingBurnTransfers = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+      event.kind === 'transfer' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.sender) === normalizedUserAddress &&
+      lowerCaseAddress(event.receiver) === ZERO_ADDRESS &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress
+  )
+  const addressScopedStakingWithdrawalReceipts = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'withdrawal' }> =>
+      event.kind === 'withdrawal' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress &&
+      lowerCaseAddress(event.owner) === normalizedUserAddress
+  )
+  const matchedStakingWithdrawalBurnShares = minBigInt(
+    addressScopedStakingBurnTransfers.reduce((total, event) => total + event.shares, ZERO),
+    addressScopedStakingWithdrawalReceipts.reduce((total, event) => total + event.shares, ZERO)
+  )
+
+  addressEvents = stripMatchedShares(
+    addressEvents,
+    (event) =>
+      event.kind === 'transfer' &&
+      event.isStakingVault &&
+      lowerCaseAddress(event.sender) === normalizedUserAddress &&
+      lowerCaseAddress(event.receiver) === ZERO_ADDRESS &&
+      lowerCaseAddress(event.vaultAddress) === stakingVaultAddress,
+    matchedStakingWithdrawalBurnShares
+  )
+
   const underlyingDeposits = txFamilyEvents.filter(
     (event): event is Extract<TRawPnlEvent, { kind: 'deposit' }> =>
       event.kind === 'deposit' &&
@@ -1402,7 +1469,7 @@ function normalizeStakingWrapperEvents(txFamilyEvents: TRawPnlEvent[], userAddre
 
 function getProtocolReturnTimestamps(events: TRawPnlEvent[], timeframe: '1y' | 'all'): number[] {
   if (timeframe === '1y') {
-    return generateDailyTimestamps(config.historyDays, 1)
+    return generateDailyTimestamps(config.historyDays, 1).map((timestamp) => toSettledDayTimestamp(timestamp))
   }
 
   if (events.length === 0) {
@@ -1411,7 +1478,9 @@ function getProtocolReturnTimestamps(events: TRawPnlEvent[], timeframe: '1y' | '
 
   const latestSettledTimestamp = generateDailyTimestamps(1, 1)[0]
   const firstEventTimestamp = sortEvents(events)[0]?.blockTimestamp ?? latestSettledTimestamp
-  return generateDailyTimestampsFromRange(firstEventTimestamp, latestSettledTimestamp)
+  return generateDailyTimestampsFromRange(firstEventTimestamp, latestSettledTimestamp).map((timestamp) =>
+    toSettledDayTimestamp(timestamp)
+  )
 }
 
 export function buildProtocolReturnLedgers(args: {

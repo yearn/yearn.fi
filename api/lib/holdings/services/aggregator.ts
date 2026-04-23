@@ -21,7 +21,8 @@ import {
   generateDailyTimestampsFromRange,
   getShareBalanceAtTimestamp,
   getUniqueVaults,
-  timestampToDateString
+  timestampToDateString,
+  toSettledDayTimestamp
 } from './holdings'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
 import {
@@ -38,6 +39,7 @@ export interface HoldingsHistoryResponse {
   address: string
   periodDays: number
   timeframe: HoldingsHistoryTimeframe
+  hasActivity: boolean
   dataPoints: Array<{ date: string; timestamp: number; totalUsdValue: number }>
 }
 
@@ -49,6 +51,7 @@ export interface HoldingsHistoryChartResponse {
   periodDays: number
   timeframe: HoldingsHistoryTimeframe
   denomination: HoldingsHistoryDenomination
+  hasActivity: boolean
   dataPoints: Array<{ date: string; timestamp: number; value: number }>
 }
 
@@ -163,9 +166,9 @@ export async function getHistoricalHoldings(
   timeframe: HoldingsHistoryTimeframe = '1y'
 ): Promise<HoldingsHistoryResponse> {
   const defaultDays = config.historyDays
-  const defaultTimestamps = generateDailyTimestamps(defaultDays, 1)
-  const latestSettledTimestamp = defaultTimestamps[defaultTimestamps.length - 1]
-  let timestamps = timeframe === 'all' ? [] : defaultTimestamps
+  const dayTimestamps = generateDailyTimestamps(defaultDays, 1)
+  const latestSettledDayTimestamp = dayTimestamps[dayTimestamps.length - 1]
+  let timestamps = timeframe === 'all' ? [] : dayTimestamps
   let periodDays = defaultDays
   debugLog('history', 'starting historical holdings aggregation', {
     version,
@@ -174,7 +177,7 @@ export async function getHistoricalHoldings(
     timeframe,
     days: periodDays,
     timestamps: timestamps.length,
-    latestSettledDate: timestampToDateString(latestSettledTimestamp)
+    latestSettledDate: timestampToDateString(latestSettledDayTimestamp)
   })
 
   // Fetch cached totals with timestamp info for staleness check
@@ -194,34 +197,13 @@ export async function getHistoricalHoldings(
     oldestUpdatedAt: oldestUpdatedAt?.toISOString() ?? null
   })
 
-  const cachedByDate = new Map(cachedTotals.map((total) => [total.date, total.usdValue]))
-  const hasFullCacheCoverage =
-    timestamps.length > 0 && timestamps.every((timestamp) => cachedByDate.has(timestampToDateString(timestamp)))
-
-  if (hasFullCacheCoverage) {
-    const dataPoints = timestamps.map((timestamp) => ({
-      date: timestampToDateString(timestamp),
-      timestamp,
-      totalUsdValue: cachedByDate.get(timestampToDateString(timestamp)) ?? 0
-    }))
-    debugLog('history', 'serving fully cached historical holdings', {
-      version,
-      dataPoints: dataPoints.length,
-      oldestUpdatedAt: oldestUpdatedAt?.toISOString() ?? null
-    })
-
-    return {
-      address: userAddress,
-      periodDays,
-      timeframe,
-      dataPoints
-    }
-  }
+  let cachedByDate = new Map(cachedTotals.map((total) => [total.date, total.usdValue]))
 
   // Always fetch the full event set, then filter vaults by authoritative Kong metadata version.
-  const maxTimestamp = latestSettledTimestamp + 86400
+  const maxTimestamp = toSettledDayTimestamp(latestSettledDayTimestamp + 86400)
   const events = await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
   const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
+  const hasActivity = timeline.length > 0
   debugLog('history', 'built position timeline', {
     fetchType,
     paginationMode,
@@ -234,7 +216,7 @@ export async function getHistoricalHoldings(
 
   if (timeframe === 'all' && timeline.length > 0) {
     const firstEventTimestamp = timeline[0]?.blockTimestamp ?? timestamps[0]
-    const allTimestamps = generateDailyTimestampsFromRange(firstEventTimestamp, latestSettledTimestamp)
+    const allTimestamps = generateDailyTimestampsFromRange(firstEventTimestamp, latestSettledDayTimestamp)
 
     if (allTimestamps.length > 0) {
       timestamps = allTimestamps
@@ -272,6 +254,31 @@ export async function getHistoricalHoldings(
       await clearUserCache(userAddress, version)
       cachedTotals = []
       oldestUpdatedAt = null
+      cachedByDate = new Map()
+    }
+  }
+
+  const hasFullCacheCoverage =
+    timestamps.length > 0 && timestamps.every((timestamp) => cachedByDate.has(timestampToDateString(timestamp)))
+
+  if (hasFullCacheCoverage) {
+    const dataPoints = timestamps.map((timestamp) => ({
+      date: timestampToDateString(timestamp),
+      timestamp: toSettledDayTimestamp(timestamp),
+      totalUsdValue: cachedByDate.get(timestampToDateString(timestamp)) ?? 0
+    }))
+    debugLog('history', 'serving fully cached historical holdings', {
+      version,
+      dataPoints: dataPoints.length,
+      oldestUpdatedAt: oldestUpdatedAt?.toISOString() ?? null
+    })
+
+    return {
+      address: userAddress,
+      periodDays,
+      timeframe,
+      hasActivity,
+      dataPoints
     }
   }
 
@@ -295,9 +302,10 @@ export async function getHistoricalHoldings(
         address: userAddress,
         periodDays,
         timeframe,
+        hasActivity,
         dataPoints: timestamps.map((ts) => ({
           date: timestampToDateString(ts),
-          timestamp: ts,
+          timestamp: toSettledDayTimestamp(ts),
           totalUsdValue: 0
         }))
       }
@@ -311,9 +319,10 @@ export async function getHistoricalHoldings(
         address: userAddress,
         periodDays,
         timeframe,
+        hasActivity,
         dataPoints: timestamps.map((ts) => ({
           date: timestampToDateString(ts),
-          timestamp: ts,
+          timestamp: toSettledDayTimestamp(ts),
           totalUsdValue: 0
         }))
       }
@@ -336,9 +345,10 @@ export async function getHistoricalHoldings(
         }
       }
 
+      const valuationTimestamps = missingTimestamps.map((timestamp) => toSettledDayTimestamp(timestamp))
       const basePriceRequests = underlyingTokens.map((token) => ({
         ...token,
-        timestamps: missingTimestamps
+        timestamps: valuationTimestamps
       }))
       const priceRequests = expandNestedVaultAssetPriceRequests(basePriceRequests, vaultMetadata)
       const ppsIdentifiers = mergeVaultIdentifiers([
@@ -374,6 +384,7 @@ export async function getHistoricalHoldings(
       })
 
       for (const timestamp of missingTimestamps) {
+        const valuationTimestamp = toSettledDayTimestamp(timestamp)
         let dayTotal = 0
 
         for (const vault of vaults) {
@@ -382,18 +393,18 @@ export async function getHistoricalHoldings(
 
           if (!metadata) continue
 
-          const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, timestamp)
+          const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, valuationTimestamp)
 
           if (shares === BigInt(0)) continue
 
           const ppsMap = ppsData.get(vaultKey)
-          const pps = ppsMap ? getPPS(ppsMap, timestamp) : null
+          const pps = ppsMap ? getPPS(ppsMap, valuationTimestamp) : null
 
           if (pps === null) continue
 
           const priceKey = `${getChainPrefix(vault.chainId)}:${metadata.token.address.toLowerCase()}`
           const tokenPriceMap = priceData.get(priceKey)
-          const tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, timestamp) : 0
+          const tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, valuationTimestamp) : 0
 
           const sharesFloat = Number(shares) / 10 ** metadata.decimals
           const usdValue = sharesFloat * pps * tokenPrice
@@ -431,7 +442,7 @@ export async function getHistoricalHoldings(
 
   const dataPoints = timestamps.map((ts) => ({
     date: timestampToDateString(ts),
-    timestamp: ts,
+    timestamp: toSettledDayTimestamp(ts),
     totalUsdValue: cachedByDate.get(timestampToDateString(ts)) ?? 0
   }))
   debugLog('history', 'completed historical holdings aggregation', {
@@ -446,6 +457,7 @@ export async function getHistoricalHoldings(
     address: userAddress,
     periodDays,
     timeframe,
+    hasActivity,
     dataPoints
   }
 }
@@ -466,6 +478,7 @@ export async function getHistoricalHoldingsChart(
       periodDays: holdings.periodDays,
       timeframe: holdings.timeframe,
       denomination,
+      hasActivity: holdings.hasActivity,
       dataPoints: holdings.dataPoints.map((point) => ({
         date: point.date,
         timestamp: point.timestamp,
@@ -483,6 +496,7 @@ export async function getHistoricalHoldingsChart(
     periodDays: holdings.periodDays,
     timeframe: holdings.timeframe,
     denomination,
+    hasActivity: holdings.hasActivity,
     dataPoints: holdings.dataPoints.map((point) => {
       const ethPriceUsd = ethPrices ? getPriceAtTimestamp(ethPrices, point.timestamp) : 0
       return {
@@ -502,7 +516,8 @@ export async function getHoldingsBreakdown(
   targetTimestamp?: number
 ): Promise<HoldingsBreakdownResponse> {
   const timestamps = generateDailyTimestamps(config.historyDays, 1)
-  const breakdownTimestamp = targetTimestamp ?? timestamps[timestamps.length - 1]
+  const breakdownDayTimestamp = targetTimestamp ?? timestamps[timestamps.length - 1]
+  const breakdownTimestamp = toSettledDayTimestamp(breakdownDayTimestamp)
   const breakdownDate = timestampToDateString(breakdownTimestamp)
   debugLog('breakdown', 'starting holdings breakdown', {
     version,
@@ -512,7 +527,7 @@ export async function getHoldingsBreakdown(
     date: breakdownDate
   })
 
-  const maxTimestamp = breakdownTimestamp + 86400
+  const maxTimestamp = breakdownDayTimestamp + 86400
   const events = await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
   const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
   debugLog('breakdown', 'built position timeline for breakdown', {

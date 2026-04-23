@@ -220,19 +220,24 @@ function getPriceAtTimestampWithinTolerance(
     return { price: priceMap.get(targetTimestamp)!, timestamp: targetTimestamp }
   }
 
-  const closest = Array.from(priceMap.keys()).reduce<{ timestamp: number | null; distance: number }>(
-    (best, timestamp) => {
-      const distance = Math.abs(timestamp - targetTimestamp)
-      return distance < best.distance ? { timestamp, distance } : best
-    },
-    { timestamp: null, distance: Number.POSITIVE_INFINITY }
-  )
+  const closestPriorTimestamp = Array.from(priceMap.keys())
+    .sort((left, right) => left - right)
+    .reduce<number | null>((bestTimestamp, timestamp) => {
+      if (timestamp > targetTimestamp) {
+        return bestTimestamp
+      }
 
-  if (closest.timestamp === null || closest.distance > MAX_REQUESTED_PRICE_DISTANCE_SECONDS) {
+      return timestamp
+    }, null)
+
+  if (
+    closestPriorTimestamp === null ||
+    targetTimestamp - closestPriorTimestamp > MAX_REQUESTED_PRICE_DISTANCE_SECONDS
+  ) {
     return null
   }
 
-  return { price: priceMap.get(closest.timestamp)!, timestamp: closest.timestamp }
+  return { price: priceMap.get(closestPriorTimestamp)!, timestamp: closestPriorTimestamp }
 }
 
 function materializeRequestedPrices(
@@ -264,7 +269,7 @@ function materializeRequestedPriceMisses(
 ): CachedPriceMiss[] {
   return coins.flatMap((coin) => {
     const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
-    const fetchedPriceMap = fetchedPrices.get(tokenKey)
+    const fetchedPriceMap = fetchedPrices.get(tokenKey) ?? new Map<number, number>()
 
     if (!fetchedPriceMap || fetchedPriceMap.size === 0) {
       return coin.timestamps.map((timestamp) => ({
@@ -848,11 +853,13 @@ export function getPriceAtTimestamp(priceMap: Map<number, number>, targetTimesta
     return 0
   }
 
-  const closest = timestamps.reduce((bestTimestamp, currentTimestamp) => {
-    const bestDiff = Math.abs(targetTimestamp - bestTimestamp)
-    const currentDiff = Math.abs(targetTimestamp - currentTimestamp)
-    return currentDiff < bestDiff ? currentTimestamp : bestTimestamp
-  }, timestamps[0])
+  let closestPriorTimestamp: number | null = null
+  for (const timestamp of timestamps) {
+    if (timestamp > targetTimestamp) {
+      break
+    }
+    closestPriorTimestamp = timestamp
+  }
 
-  return priceMap.get(closest) || 0
+  return closestPriorTimestamp !== null ? priceMap.get(closestPriorTimestamp) || 0 : 0
 }

@@ -123,8 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       timeframe
     )
 
-    const hasHoldings = holdings.dataPoints.some((dp) => dp.value > 0)
-    if (!hasHoldings) {
+    if (!holdings.hasActivity) {
       return res.status(404).json({ error: 'No holdings found for address' })
     }
 

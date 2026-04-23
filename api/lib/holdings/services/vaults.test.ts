@@ -145,4 +145,37 @@ describe('fetchMultipleVaultsMetadata', () => {
       decimals: 6
     })
   })
+
+  it('retries the global vault list after snapshot fallback seeded the metadata cache', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    let listAttempts = 0
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input)
+
+      if (url.includes('/list/vaults?origin=yearn')) {
+        listAttempts += 1
+        if (listAttempts === 1) {
+          throw Object.assign(new Error('socket closed'), { code: 'ECONNRESET' })
+        }
+        return createVaultListResponse()
+      }
+
+      if (url.includes(`/snapshot/1/${UNDERLYING_VAULT}`)) {
+        return createVaultSnapshotResponse()
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const { fetchMultipleVaultsMetadata } = await importVaultsModule()
+
+    const first = await fetchMultipleVaultsMetadata([{ chainId: 1, vaultAddress: UNDERLYING_VAULT }])
+    expect(first.get(`1:${UNDERLYING_VAULT}`)?.token.symbol).toBe('USDC')
+
+    const second = await fetchMultipleVaultsMetadata([{ chainId: 1, vaultAddress: UNDERLYING_VAULT }])
+    expect(second.get(`1:${UNDERLYING_VAULT}`)?.token.symbol).toBe('USDC')
+    expect(listAttempts).toBe(2)
+  })
 })

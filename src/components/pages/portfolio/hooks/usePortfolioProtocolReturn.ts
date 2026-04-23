@@ -8,16 +8,16 @@ import {
   type TPortfolioProtocolReturnVault
 } from '../types/api'
 
-export function usePortfolioProtocolReturn() {
+export function usePortfolioProtocolReturn(enabled = true) {
   const { address } = useWeb3()
 
   const endpoint = useMemo(() => {
-    if (!address) {
+    if (!address || !enabled) {
       return null
     }
 
-    return `/api/holdings/pnl/simple?address=${address}&debug=1&fetchType=parallel&paginationMode=all`
-  }, [address])
+    return `/api/holdings/pnl/simple?address=${address}&debug=1&fetchType=parallel`
+  }, [address, enabled])
 
   const { data, isLoading, isFetching, error } = useFetch<TPortfolioProtocolReturnResponse>({
     endpoint,

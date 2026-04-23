@@ -36,7 +36,7 @@ export function useVaultUserHistory({ chainId, vaultAddress, timeframe, enabled 
       return null
     }
 
-    return `/api/holdings/pnl/simple-history?address=${address}&chainId=${chainId}&vault=${vaultAddress}&timeframe=${apiTimeframe}&debug=1&fetchType=parallel&paginationMode=all`
+    return `/api/holdings/pnl/simple-history?address=${address}&chainId=${chainId}&vault=${vaultAddress}&timeframe=${apiTimeframe}&debug=1&fetchType=parallel`
   }, [address, apiTimeframe, chainId, enabled, vaultAddress])
 
   const { data, isLoading, isFetching, error } = useFetch({

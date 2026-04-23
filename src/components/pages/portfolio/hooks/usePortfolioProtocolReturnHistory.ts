@@ -10,16 +10,16 @@ import {
   type TPortfolioProtocolReturnHistorySummary
 } from '../types/api'
 
-export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTimeframe = '1y') {
+export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTimeframe = '1y', enabled = true) {
   const { address } = useWeb3()
 
   const endpoint = useMemo(() => {
-    if (!address) {
+    if (!address || !enabled) {
       return null
     }
 
-    return `/api/holdings/pnl/simple-history?address=${address}&timeframe=${timeframe}&debug=1&fetchType=parallel&paginationMode=all`
-  }, [address, timeframe])
+    return `/api/holdings/pnl/simple-history?address=${address}&timeframe=${timeframe}&debug=1&fetchType=parallel`
+  }, [address, enabled, timeframe])
 
   const { data, isLoading, isFetching, error } = useFetch<TPortfolioProtocolReturnHistoryResponse>({
     endpoint,

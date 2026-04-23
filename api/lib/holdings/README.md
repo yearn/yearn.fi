@@ -133,7 +133,7 @@ interface HoldingsHistoryResponse {
   periodDays: number
   dataPoints: Array<{
     date: string        // "2024-01-15"
-    timestamp: number   // Unix timestamp (midnight UTC)
+    timestamp: number   // Unix timestamp (end of the settled UTC day)
     totalUsdValue: number
   }>
 }
@@ -653,7 +653,7 @@ CREATE TABLE IF NOT EXISTS holdings_totals (
 -- Token price cache (shared across all users)
 CREATE TABLE IF NOT EXISTS token_prices (
   token_key  VARCHAR(100) NOT NULL,  -- e.g., "ethereum:0xa0b8..."
-  timestamp  INTEGER NOT NULL,        -- Unix timestamp (midnight UTC)
+  timestamp  INTEGER NOT NULL,        -- Unix timestamp (end of the settled UTC day)
   price      NUMERIC NOT NULL,
   created_at TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (token_key, timestamp)

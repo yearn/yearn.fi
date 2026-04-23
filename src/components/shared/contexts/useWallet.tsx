@@ -11,9 +11,12 @@ import { getCanonicalHoldingsVaultAddress } from '@pages/vaults/domain/normalize
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdSharePrice, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { useDeepCompareMemo } from '@react-hookz/web'
+import type { QueryKey } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useDeferredValue, useMemo, useRef } from 'react'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
+import type { TFetchQueryKey } from '../hooks/useFetch'
 import { useBalancesCombined } from '../hooks/useBalancesCombined'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
 import { useStakingAssetConversions } from '../hooks/useStakingAssetConversions'
@@ -100,6 +103,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   children: ReactElement
   shouldWorkOnTestnet?: boolean
 }): ReactElement {
+  const queryClient = useQueryClient()
   const { vaults, allVaults, isLoadingVaultList, getPrice } = useYearn()
   const { unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
   const { address: userAddress } = useWeb3()
@@ -157,14 +161,44 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
 
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
+      const invalidateHoldingsQueries = async (): Promise<void> => {
+        if (!userAddress) {
+          return
+        }
+
+        const normalizedUserAddress = userAddress.toLowerCase()
+        await queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey as TFetchQueryKey | QueryKey
+            if (!Array.isArray(queryKey) || queryKey[0] !== 'fetch' || typeof queryKey[1] !== 'string') {
+              return false
+            }
+
+            const endpoint = queryKey[1]
+            if (!endpoint.includes('/api/holdings/')) {
+              return false
+            }
+
+            try {
+              const url = new URL(endpoint, 'http://localhost')
+              return url.searchParams.get('address')?.toLowerCase() === normalizedUserAddress
+            } catch {
+              return false
+            }
+          }
+        })
+      }
+
       if (tokenToUpdate) {
         const updatedBalances = await onUpdateSome(tokenToUpdate)
+        await invalidateHoldingsQueries()
         return updatedBalances as TYChainTokens
       }
       const updatedBalances = await onUpdate(true)
+      await invalidateHoldingsQueries()
       return updatedBalances as TYChainTokens
     },
-    [onUpdate, onUpdateSome]
+    [onUpdate, onUpdateSome, queryClient, userAddress]
   )
 
   /**************************************************************************

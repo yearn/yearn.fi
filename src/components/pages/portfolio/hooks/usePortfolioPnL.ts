@@ -11,7 +11,7 @@ export function usePortfolioPnL() {
       return null
     }
 
-    return `/api/holdings/pnl?address=${address}&debug=1&fetchType=parallel&paginationMode=all`
+    return `/api/holdings/pnl?address=${address}&debug=1&fetchType=parallel`
   }, [address])
 
   const { data, isLoading, isFetching, error } = useFetch({

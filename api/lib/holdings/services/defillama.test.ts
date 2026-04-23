@@ -97,6 +97,17 @@ describe('parseDefiLlamaResponse', () => {
     expect(getPriceAtTimestamp(priceMap ?? new Map(), 1773260546)).toBe(0.9966185770862551)
   })
 
+  it('only uses historical prices at or before the requested timestamp', () => {
+    const priceMap = new Map<number, number>([
+      [1700000102, 0.999211],
+      [1773260095, 0.9966185770862551]
+    ])
+
+    expect(getPriceAtTimestamp(priceMap, 1700000101)).toBe(0)
+    expect(getPriceAtTimestamp(priceMap, 1700000102)).toBe(0.999211)
+    expect(getPriceAtTimestamp(priceMap, 1773260546)).toBe(0.9966185770862551)
+  })
+
   it('retries bun connection refused errors and returns fetched prices', async () => {
     const fetchStub = vi
       .fn()
@@ -546,7 +557,7 @@ describe('parseDefiLlamaResponse', () => {
     })
   })
 
-  it('caches prices under the requested timestamps even when DefiLlama returns shifted timestamps', async () => {
+  it('only caches shifted prices for requested timestamps that have a historical quote available', async () => {
     const usdcKey = 'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
     const requestedTimestamps = [1700000000, 1700003600]
     const fetchStub = vi.fn().mockResolvedValue(
@@ -570,12 +581,12 @@ describe('parseDefiLlamaResponse', () => {
       requestedTimestamps
     )
 
-    expect(prices.get(usdcKey)?.get(1700000000)).toBe(1.001)
+    expect(prices.get(usdcKey)?.get(1700000000)).toBeUndefined()
     expect(prices.get(usdcKey)?.get(1700003600)).toBe(0.999)
     expect(vi.mocked(saveCachedPrices)).toHaveBeenCalledWith([
-      { tokenKey: usdcKey, timestamp: 1700000000, price: 1.001 },
       { tokenKey: usdcKey, timestamp: 1700003600, price: 0.999 }
     ])
+    expect(vi.mocked(saveCachedPriceMisses)).toHaveBeenCalledWith([{ tokenKey: usdcKey, timestamp: 1700000000 }])
   })
 
   it('caches exact token-timestamp misses when DefiLlama returns no prices for a token', async () => {
@@ -635,5 +646,33 @@ describe('parseDefiLlamaResponse', () => {
     expect(saveCachedPrices).toHaveBeenCalledWith([{ tokenKey, timestamp: 1700000000, price: 1 }])
     expect(saveCachedPriceMisses).not.toHaveBeenCalled()
     expect(prices.get(tokenKey)?.get(1700003600)).toBe(1.001)
+  })
+
+  it('records misses for timestamps that only have future quotes available', async () => {
+    const usdcKey = 'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    const fetchStub = vi.fn().mockResolvedValue(
+      createBatchResponse({
+        coins: {
+          [usdcKey]: {
+            symbol: 'USDC',
+            prices: [{ timestamp: 1700003600, price: 1.001, confidence: 0.99 }]
+          }
+        }
+      })
+    )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPrices(
+      [{ chainId: 1, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' }],
+      [1700000000, 1700003600]
+    )
+
+    expect(prices.get(usdcKey)?.get(1700000000)).toBeUndefined()
+    expect(prices.get(usdcKey)?.get(1700003600)).toBe(1.001)
+    expect(vi.mocked(saveCachedPrices)).toHaveBeenCalledWith([
+      { tokenKey: usdcKey, timestamp: 1700003600, price: 1.001 }
+    ])
+    expect(vi.mocked(saveCachedPriceMisses)).toHaveBeenCalledWith([{ tokenKey: usdcKey, timestamp: 1700000000 }])
   })
 })
