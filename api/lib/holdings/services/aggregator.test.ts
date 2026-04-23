@@ -51,6 +51,7 @@ vi.mock('./kong', () => ({
 
 vi.mock('./defillama', () => ({
   fetchHistoricalPrices: fetchHistoricalPricesMock,
+  fetchHistoricalPricesForTokenTimestamps: fetchHistoricalPricesMock,
   getChainPrefix: getChainPrefixMock,
   getPriceAtTimestamp: getPriceAtTimestampMock
 }))
@@ -303,7 +304,9 @@ describe('getHistoricalHoldings', () => {
 
     expect(clearUserCacheMock).toHaveBeenCalledWith(userAddress, 'all')
     expect(fetchMultipleVaultsPPSMock).toHaveBeenCalled()
-    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress }], [101, 201])
+    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([
+      { chainId: 1, address: tokenAddress, timestamps: [101, 201] }
+    ])
     expect(getShareBalanceAtTimestampMock).toHaveBeenNthCalledWith(1, [{ id: 'stale-entry' }], vaultAddress, 1, 101)
     expect(getShareBalanceAtTimestampMock).toHaveBeenNthCalledWith(2, [{ id: 'stale-entry' }], vaultAddress, 1, 201)
     expect(response.dataPoints).toEqual([
@@ -507,7 +510,7 @@ describe('getHistoricalHoldings', () => {
     const response = await getHoldingsBreakdown(userAddress, 'all', 'parallel', 'all')
 
     expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86600, 'parallel', 'all')
-    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress }], [201])
+    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress, timestamps: [201] }])
     expect(getShareBalanceAtTimestampMock).toHaveBeenCalledWith(timeline, vaultAddress, 1, 201)
     expect(response).toEqual({
       address: userAddress,
@@ -593,7 +596,7 @@ describe('getHistoricalHoldings', () => {
     const response = await getHoldingsBreakdown(userAddress, 'all', 'seq', 'paged', 100)
 
     expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86500, 'seq', 'paged')
-    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress }], [101])
+    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress, timestamps: [101] }])
     expect(getShareBalanceAtTimestampMock).toHaveBeenCalledWith(timeline, vaultAddress, 1, 101)
     expect(response.date).toBe('date-101')
     expect(response.timestamp).toBe(101)

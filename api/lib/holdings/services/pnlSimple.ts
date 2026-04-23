@@ -2,7 +2,12 @@ import { formatUnits } from 'viem'
 import { config } from '../config'
 import type { VaultMetadata } from '../types'
 import { debugError, debugLog } from './debug'
-import { fetchHistoricalPrices, getChainPrefix, getPriceAtTimestamp } from './defillama'
+import {
+  fetchHistoricalPricesForTokenTimestamps,
+  getChainPrefix,
+  getPriceAtTimestamp,
+  type THistoricalPriceRequest
+} from './defillama'
 import {
   fetchRawUserPnlEvents,
   type HoldingsEventFetchType,
@@ -16,6 +21,13 @@ import {
   toSettledDayTimestamp
 } from './holdings'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
+import {
+  deriveNestedVaultAssetPriceData,
+  expandNestedVaultAssetPriceRequests,
+  getAssetVaultMetadataLookupIdentifiers,
+  getNestedVaultPpsIdentifiersFromPriceRequests,
+  mergeVaultIdentifiers
+} from './nestedVaultPrices'
 import { buildRawPnlEvents } from './pnl'
 import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
@@ -28,7 +40,6 @@ type TProtocolReturnReceiptKind = 'deposit' | 'transfer_in'
 type TProtocolReturnExitKind = 'withdrawal' | 'transfer_out'
 
 const RECEIPT_PRICE_BUCKET_SECONDS = 24 * 60 * 60
-const RECEIPT_PRICE_FETCH_CONCURRENCY = 4
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 const ETHEREUM_WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 const ETHEREUM_WETH_PRICE_KEY = `${getChainPrefix(1)}:${ETHEREUM_WETH_ADDRESS.toLowerCase()}`
@@ -95,11 +106,7 @@ type TProtocolReturnLedger = {
   lastAccruedTimestamp: number | null
 }
 
-export type TSimpleReceiptPriceRequest = {
-  chainId: number
-  address: string
-  timestamps: number[]
-}
+export type TSimpleReceiptPriceRequest = THistoricalPriceRequest
 
 export type THoldingsPnLSimpleStatus = 'ok' | 'missing_metadata' | 'missing_pps' | 'missing_receipt_price' | 'partial'
 export type TGrowthDisplay = 'usd' | 'eth' | 'index'
@@ -417,12 +424,6 @@ function tokenPriceMapKey(metadata: VaultMetadata): string {
   return `${getChainPrefix(metadata.chainId)}:${metadata.token.address.toLowerCase()}`
 }
 
-function chunkItems<T>(items: T[], chunkSize: number): T[][] {
-  return Array.from({ length: Math.ceil(items.length / chunkSize) }, (_value, index) =>
-    items.slice(index * chunkSize, index * chunkSize + chunkSize)
-  )
-}
-
 function getReceiptPriceBucketTimestamps(timestamp: number, currentTimestamp: number): number[] {
   const dayStart = Math.floor(timestamp / RECEIPT_PRICE_BUCKET_SECONDS) * RECEIPT_PRICE_BUCKET_SECONDS
   const nextDayStart = dayStart + RECEIPT_PRICE_BUCKET_SECONDS
@@ -472,48 +473,21 @@ export function buildReceiptPriceRequests(args: {
   }))
 }
 
+async function resolveNestedVaultAssetMetadata(
+  vaultMetadata: Map<string, VaultMetadata>
+): Promise<Map<string, VaultMetadata>> {
+  const assetVaultIdentifiers = getAssetVaultMetadataLookupIdentifiers(vaultMetadata)
+
+  if (assetVaultIdentifiers.length === 0) {
+    return vaultMetadata
+  }
+
+  const assetVaultMetadata = await fetchMultipleVaultsMetadata(assetVaultIdentifiers, { skipSnapshotFallback: true })
+  return new Map([...vaultMetadata, ...assetVaultMetadata])
+}
+
 function countReceiptPricePoints(requests: TSimpleReceiptPriceRequest[]): number {
   return requests.reduce((total, request) => total + request.timestamps.length, 0)
-}
-
-function mergePriceData(priceMaps: Array<Map<string, Map<number, number>>>): Map<string, Map<number, number>> {
-  return priceMaps.reduce<Map<string, Map<number, number>>>((merged, priceMap) => {
-    priceMap.forEach((prices, tokenKey) => {
-      const existingPrices = merged.get(tokenKey) ?? new Map<number, number>()
-
-      prices.forEach((price, timestamp) => {
-        existingPrices.set(timestamp, price)
-      })
-
-      merged.set(tokenKey, existingPrices)
-    })
-
-    return merged
-  }, new Map())
-}
-
-async function fetchReceiptPriceRequestGroup(
-  requests: TSimpleReceiptPriceRequest[]
-): Promise<Array<Map<string, Map<number, number>>>> {
-  const results = await Promise.allSettled(
-    requests.map((request) =>
-      fetchHistoricalPrices([{ chainId: request.chainId, address: request.address }], request.timestamps)
-    )
-  )
-
-  return results.flatMap((result, index) => {
-    if (result.status === 'fulfilled') {
-      return [result.value]
-    }
-
-    const request = requests[index]
-    debugError('pnl-simple', 'receipt price fetch failed, continuing with missing receipt price', result.reason, {
-      chainId: request?.chainId ?? null,
-      address: request?.address ?? null,
-      timestamps: request?.timestamps.length ?? 0
-    })
-    return []
-  })
 }
 
 async function fetchReceiptPrices(requests: TSimpleReceiptPriceRequest[]): Promise<Map<string, Map<number, number>>> {
@@ -521,15 +495,15 @@ async function fetchReceiptPrices(requests: TSimpleReceiptPriceRequest[]): Promi
     return new Map()
   }
 
-  const priceMaps = await chunkItems(requests, RECEIPT_PRICE_FETCH_CONCURRENCY).reduce<
-    Promise<Array<Map<string, Map<number, number>>>>
-  >(async (previousPromise, requestGroup) => {
-    const previous = await previousPromise
-    const current = await fetchReceiptPriceRequestGroup(requestGroup)
-    return previous.concat(current)
-  }, Promise.resolve([]))
-
-  return mergePriceData(priceMaps)
+  try {
+    return await fetchHistoricalPricesForTokenTimestamps(requests)
+  } catch (error) {
+    debugError('pnl-simple', 'receipt price fetch failed, continuing with missing receipt prices', error, {
+      tokens: requests.length,
+      pricePoints: countReceiptPricePoints(requests)
+    })
+    return new Map()
+  }
 }
 
 async function fetchEthReceiptPrices(timestamps: number[]): Promise<Map<number, number>> {
@@ -538,7 +512,9 @@ async function fetchEthReceiptPrices(timestamps: number[]): Promise<Map<number, 
   }
 
   try {
-    const priceData = await fetchHistoricalPrices([{ chainId: 1, address: ETHEREUM_WETH_ADDRESS }], timestamps)
+    const priceData = await fetchHistoricalPricesForTokenTimestamps([
+      { chainId: 1, address: ETHEREUM_WETH_ADDRESS, timestamps }
+    ])
     return priceData.get(ETHEREUM_WETH_PRICE_KEY) ?? new Map()
   } catch (error) {
     debugError('pnl-simple', 'eth receipt price fetch failed, continuing with missing eth receipt price', error, {
@@ -2004,7 +1980,7 @@ export async function getHoldingsPnLSimple(
     userAddress
   )
   const filteredVaultIdentifiers = getVaultIdentifiers(effectiveEvents)
-  const vaultMetadata = filteredVaultIdentifiers.reduce<Map<string, VaultMetadata>>((filtered, vault) => {
+  const baseVaultMetadata = filteredVaultIdentifiers.reduce<Map<string, VaultMetadata>>((filtered, vault) => {
     const key = toVaultKey(vault.chainId, vault.vaultAddress)
     const metadata = resolvedVaultMetadata.get(key)
 
@@ -2014,6 +1990,7 @@ export async function getHoldingsPnLSimple(
 
     return filtered
   }, new Map())
+  const vaultMetadata = await resolveNestedVaultAssetMetadata(baseVaultMetadata)
   const currentTimestamp = Math.floor(Date.now() / 1000)
 
   debugLog('pnl-simple', 'loaded address-scoped events', {
@@ -2037,26 +2014,36 @@ export async function getHoldingsPnLSimple(
     }
   }
 
-  const receiptPriceRequests = buildReceiptPriceRequests({
+  const baseReceiptPriceRequests = buildReceiptPriceRequests({
     events: effectiveEvents,
     metadata: vaultMetadata,
     userAddress,
     currentTimestamp
   })
+  const receiptPriceRequests = expandNestedVaultAssetPriceRequests(baseReceiptPriceRequests, vaultMetadata)
   const uniqueReceiptPriceTimestamps = new Set(receiptPriceRequests.flatMap((request) => request.timestamps))
 
   debugLog('pnl-simple', 'prepared targeted receipt price requests', {
     tokens: receiptPriceRequests.length,
     uniqueTimestamps: uniqueReceiptPriceTimestamps.size,
     pricePoints: countReceiptPricePoints(receiptPriceRequests),
-    bucketSeconds: RECEIPT_PRICE_BUCKET_SECONDS,
-    fetchConcurrency: RECEIPT_PRICE_FETCH_CONCURRENCY
+    bucketSeconds: RECEIPT_PRICE_BUCKET_SECONDS
   })
 
-  const [ppsData, priceData] = await Promise.all([
-    fetchMultipleVaultsPPS(filteredVaultIdentifiers),
+  const ppsIdentifiers = mergeVaultIdentifiers([
+    ...filteredVaultIdentifiers,
+    ...getNestedVaultPpsIdentifiersFromPriceRequests(baseReceiptPriceRequests, vaultMetadata)
+  ])
+  const [ppsData, fetchedPriceData] = await Promise.all([
+    fetchMultipleVaultsPPS(ppsIdentifiers),
     fetchReceiptPrices(receiptPriceRequests)
   ])
+  const priceData = deriveNestedVaultAssetPriceData({
+    priceData: fetchedPriceData,
+    priceRequests: receiptPriceRequests,
+    vaultMetadata,
+    ppsData
+  })
   const ledgers = buildProtocolReturnLedgers({
     events: effectiveEvents,
     userAddress,
@@ -2127,7 +2114,7 @@ export async function getHoldingsPnLSimpleHistory(
     getVaultIdentifiers(effectiveEvents),
     requestedVault
   )
-  const vaultMetadata = filteredVaultIdentifiers.reduce<Map<string, VaultMetadata>>((filtered, vault) => {
+  const baseVaultMetadata = filteredVaultIdentifiers.reduce<Map<string, VaultMetadata>>((filtered, vault) => {
     const key = toVaultKey(vault.chainId, vault.vaultAddress)
     const metadata = resolvedVaultMetadata.get(key)
 
@@ -2137,6 +2124,7 @@ export async function getHoldingsPnLSimpleHistory(
 
     return filtered
   }, new Map())
+  const vaultMetadata = await resolveNestedVaultAssetMetadata(baseVaultMetadata)
 
   if (effectiveEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
     return {
@@ -2164,21 +2152,32 @@ export async function getHoldingsPnLSimpleHistory(
 
   const timestamps = getProtocolReturnTimestamps(effectiveEvents, timeframe)
   const latestTimestamp = timestamps[timestamps.length - 1] ?? Math.floor(Date.now() / 1000)
-  const receiptPriceRequests = buildReceiptPriceRequests({
+  const baseReceiptPriceRequests = buildReceiptPriceRequests({
     events: effectiveEvents,
     metadata: vaultMetadata,
     userAddress,
     currentTimestamp: latestTimestamp
   })
+  const receiptPriceRequests = expandNestedVaultAssetPriceRequests(baseReceiptPriceRequests, vaultMetadata)
   const ethReceiptPriceTimestamps = Array.from(
     new Set(receiptPriceRequests.flatMap((request) => request.timestamps))
   ).sort((left, right) => left - right)
 
-  const [ppsData, priceData, ethPriceData] = await Promise.all([
-    fetchMultipleVaultsPPS(filteredVaultIdentifiers),
+  const ppsIdentifiers = mergeVaultIdentifiers([
+    ...filteredVaultIdentifiers,
+    ...getNestedVaultPpsIdentifiersFromPriceRequests(baseReceiptPriceRequests, vaultMetadata)
+  ])
+  const [ppsData, fetchedPriceData, ethPriceData] = await Promise.all([
+    fetchMultipleVaultsPPS(ppsIdentifiers),
     fetchReceiptPrices(receiptPriceRequests),
     fetchEthReceiptPrices(ethReceiptPriceTimestamps)
   ])
+  const priceData = deriveNestedVaultAssetPriceData({
+    priceData: fetchedPriceData,
+    priceRequests: receiptPriceRequests,
+    vaultMetadata,
+    ppsData
+  })
 
   const finalLedgers = buildProtocolReturnLedgers({
     events: effectiveEvents,
