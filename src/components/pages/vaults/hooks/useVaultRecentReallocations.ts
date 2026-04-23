@@ -1,5 +1,9 @@
 import type { TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
-import { buildReallocationPanels, type TReallocationPanel } from '@pages/vaults/utils/reallocations'
+import {
+  buildReallocationPanels,
+  type TCurrentAllocationInput,
+  type TReallocationPanel
+} from '@pages/vaults/utils/reallocations'
 import { fetchWithSchema } from '@shared/hooks/useFetch'
 import { doaOptimizationHistorySchema } from '@shared/utils/schemas/doaOptimizationSchema'
 import { useQuery } from '@tanstack/react-query'
@@ -43,6 +47,21 @@ export function useVaultRecentReallocations({
     }, {})
   }, [currentVault?.strategies])
 
+  const currentAllocation = useMemo<TCurrentAllocationInput | undefined>(() => {
+    if (!currentVault?.address || !isV3Vault) {
+      return undefined
+    }
+
+    return {
+      timestampUtc: new Date().toISOString(),
+      strategies: (currentVault.strategies ?? []).map((strategy, index) => ({
+        strategyAddress: strategy.address,
+        name: strategy.name?.trim() || `Strategy ${index + 1}`,
+        allocationPct: (strategy.details?.debtRatio ?? 0) / 100
+      }))
+    }
+  }, [currentVault?.address, currentVault?.strategies, isV3Vault])
+
   const { data, error, isLoading } = useQuery({
     queryKey: ['vault-reallocations', currentVault?.address?.toLowerCase() ?? null],
     enabled: Boolean(endpoint),
@@ -74,8 +93,8 @@ export function useVaultRecentReallocations({
   })
 
   const panels = useMemo(() => {
-    return buildReallocationPanels(data ?? [], strategyNamesByAddress)
-  }, [data, strategyNamesByAddress])
+    return buildReallocationPanels(data ?? [], strategyNamesByAddress, currentAllocation)
+  }, [currentAllocation, data, strategyNamesByAddress])
 
   return {
     panels,

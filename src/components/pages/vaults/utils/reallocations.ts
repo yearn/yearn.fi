@@ -9,9 +9,9 @@ const FLOW_EPSILON = 1e-9
 const DEFAULT_NODE_GAP_RATIO = 12 / 390
 const UNALLOCATED_STRATEGY_ID = 'unallocated'
 const UNALLOCATED_COLOR = '#9ca3af'
-
-const LIGHT_PANEL_COLORS = ['#0f4ccf', '#1d63e0', '#3479ee', '#4b8ff6', '#63a5ff', '#7abaff', '#90cffd', '#3f5fb3']
-const DARK_PANEL_COLORS = ['#8fb7ff', '#70a3ff', '#4f8dff', '#3178ff', '#6fa7ff', '#a3c6ff', '#c8dcff', '#5876c7']
+const DEFAULT_PRIMARY_HUE = 220
+const DEFAULT_PRIMARY_SATURATION = 95
+const DEFAULT_PRIMARY_LIGHTNESS = 50
 
 const FILTERED_NO_CHANGE_LINE_PATTERN = /^\s{2}(.+?):\s*(-?\d+(?:\.\d+)?)%\s*=>\s*no change \(filtered\)\s*$/i
 const STRATEGY_APR_LINE_PATTERN = /^\s*\((-?\d+(?:\.\d+)?)%\)\s*\((-?\d+(?:\.\d+)?)%\s*=>\s*(-?\d+(?:\.\d+)?)%\)\s*$/
@@ -51,6 +51,17 @@ export type TReallocationStateStrategy = {
   allocationPct: number
 }
 
+export type TCurrentAllocationStrategyInput = {
+  strategyAddress: `0x${string}`
+  name: string
+  allocationPct: number
+}
+
+export type TCurrentAllocationInput = {
+  timestampUtc: string
+  strategies: readonly TCurrentAllocationStrategyInput[]
+}
+
 export type TReallocationState = {
   id: string
   timestampUtc: string | null
@@ -63,7 +74,7 @@ export type TReallocationPanel = {
   afterState: TReallocationState
   beforeTimestampUtc: string | null
   afterTimestampUtc: string | null
-  kind: 'historical' | 'proposal'
+  kind: 'historical' | 'proposal' | 'current'
 }
 
 export interface TSankeyNodeLabel {
@@ -142,8 +153,83 @@ function wrapLabelText(value: string, maxLineLength = 18): string {
   return [...state.lines, ...(state.currentLine ? [state.currentLine] : [])].join('\n') || value
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
+function normalizeStrategyName(value: string): string {
+  return value.trim().toLowerCase()
+}
+
+function parseHslColor(value: string): { hue: number; saturation: number; lightness: number } | null {
+  const match = value
+    .trim()
+    .match(/^hsl\(\s*([-\d.]+)(?:deg)?(?:\s+|,\s*)([-\d.]+)%(?:\s+|,\s*)([-\d.]+)%(?:\s*\/\s*[-\d.]+%?)?\s*\)$/i)
+  if (!match) {
+    return null
+  }
+
+  const hue = Number.parseFloat(match[1])
+  const saturation = Number.parseFloat(match[2])
+  const lightness = Number.parseFloat(match[3])
+
+  if (!Number.isFinite(hue) || !Number.isFinite(saturation) || !Number.isFinite(lightness)) {
+    return null
+  }
+
+  return { hue, saturation, lightness }
+}
+
+function getPrimaryColorChannels(): { hue: number; saturation: number; lightness: number } {
+  if (typeof window === 'undefined') {
+    return {
+      hue: DEFAULT_PRIMARY_HUE,
+      saturation: DEFAULT_PRIMARY_SATURATION,
+      lightness: DEFAULT_PRIMARY_LIGHTNESS
+    }
+  }
+
+  const primaryValue = window.getComputedStyle(document.documentElement).getPropertyValue('--color-primary')
+  return (
+    parseHslColor(primaryValue) ?? {
+      hue: DEFAULT_PRIMARY_HUE,
+      saturation: DEFAULT_PRIMARY_SATURATION,
+      lightness: DEFAULT_PRIMARY_LIGHTNESS
+    }
+  )
+}
+
+function buildPanelPalette(isDark: boolean): string[] {
+  const { hue, saturation, lightness } = getPrimaryColorChannels()
+  const paletteSteps = isDark
+    ? [
+        { saturationOffset: 0, lightnessOffset: 0 },
+        { saturationOffset: -8, lightnessOffset: 8 },
+        { saturationOffset: 4, lightnessOffset: -8 },
+        { saturationOffset: -10, lightnessOffset: 16 },
+        { saturationOffset: 6, lightnessOffset: -14 },
+        { saturationOffset: -12, lightnessOffset: 24 },
+        { saturationOffset: 8, lightnessOffset: -18 },
+        { saturationOffset: -14, lightnessOffset: 30 }
+      ]
+    : [
+        { saturationOffset: 0, lightnessOffset: 0 },
+        { saturationOffset: -8, lightnessOffset: 8 },
+        { saturationOffset: 4, lightnessOffset: -8 },
+        { saturationOffset: -10, lightnessOffset: 16 },
+        { saturationOffset: 6, lightnessOffset: -14 },
+        { saturationOffset: -12, lightnessOffset: 22 },
+        { saturationOffset: 8, lightnessOffset: -18 },
+        { saturationOffset: -14, lightnessOffset: 28 }
+      ]
+
+  return paletteSteps.map(({ saturationOffset, lightnessOffset }) => {
+    return `hsl(${hue} ${clamp(saturation + saturationOffset, 56, 100)}% ${clamp(lightness + lightnessOffset, 24, 86)}%)`
+  })
+}
+
 function getPanelPalette(isDark: boolean): string[] {
-  return isDark ? DARK_PANEL_COLORS : LIGHT_PANEL_COLORS
+  return buildPanelPalette(isDark)
 }
 
 function getTimestampKey(optimization: TDoaOptimizationRecord): string {
@@ -490,6 +576,102 @@ function buildProposalState(change: TNormalizedReallocationChange): TReallocatio
   }
 }
 
+function buildCurrentAllocationState(
+  currentAllocation: TCurrentAllocationInput,
+  referenceState?: TReallocationState
+): TReallocationState {
+  const referenceStrategies = referenceState?.strategies ?? []
+  const referenceByAddress = new Map(
+    referenceStrategies.flatMap((strategy) => {
+      if (!strategy.strategyAddress) {
+        return []
+      }
+
+      return [[strategy.strategyAddress.toLowerCase(), strategy] as const]
+    })
+  )
+  const referenceByName = referenceStrategies.reduce((state, strategy) => {
+    const normalizedName = normalizeStrategyName(strategy.name)
+    if (!normalizedName) {
+      return state
+    }
+
+    const nextMatches = [...(state.get(normalizedName) ?? []), strategy]
+    const nextState = new Map(state)
+    nextState.set(normalizedName, nextMatches)
+    return nextState
+  }, new Map<string, TReallocationStateStrategy[]>())
+
+  const resolvedStrategies = currentAllocation.strategies.reduce(
+    (state, strategy, index) => {
+      const normalizedAddress = strategy.strategyAddress.toLowerCase()
+      if (state.seenAddresses.has(normalizedAddress)) {
+        return state
+      }
+
+      const referenceMatchByAddress = referenceByAddress.get(normalizedAddress)
+      const normalizedName = normalizeStrategyName(strategy.name)
+      const referenceMatchByName =
+        normalizedName && !referenceMatchByAddress
+          ? (referenceByName.get(normalizedName) ?? []).find(
+              (candidate) => !state.usedReferenceIds.has(candidate.strategyId)
+            )
+          : undefined
+      const referenceMatch = referenceMatchByAddress ?? referenceMatchByName
+      const resolvedStrategyId = referenceMatch?.strategyId ?? normalizedAddress
+      const fallbackName = strategy.name.trim() || `Strategy ${index + 1}`
+      const resolvedName = referenceMatch?.name ?? fallbackName
+      const nextSeenAddresses = new Set(state.seenAddresses)
+      nextSeenAddresses.add(normalizedAddress)
+      const nextUsedReferenceIds = referenceMatch
+        ? new Set([...state.usedReferenceIds, referenceMatch.strategyId])
+        : state.usedReferenceIds
+
+      return {
+        seenAddresses: nextSeenAddresses,
+        usedReferenceIds: nextUsedReferenceIds,
+        strategies: [
+          ...state.strategies,
+          {
+            strategyId: resolvedStrategyId,
+            strategyAddress: strategy.strategyAddress,
+            name: resolvedName,
+            isUnallocated: false,
+            allocationPct: strategy.allocationPct
+          }
+        ]
+      }
+    },
+    {
+      seenAddresses: new Set<string>(),
+      usedReferenceIds: new Set<string>(),
+      strategies: [] as TReallocationStateStrategy[]
+    }
+  ).strategies
+
+  const totalAllocationBps = resolvedStrategies.reduce((sum, strategy) => sum + percentToBps(strategy.allocationPct), 0)
+  const unallocatedBps = Math.max(0, TOTAL_BPS - totalAllocationBps)
+  const strategiesWithUnallocated =
+    unallocatedBps > NORMALIZATION_TOLERANCE_BPS
+      ? [
+          ...resolvedStrategies,
+          {
+            strategyId: UNALLOCATED_STRATEGY_ID,
+            strategyAddress: null,
+            name: 'Unallocated',
+            isUnallocated: true,
+            allocationPct: unallocatedBps / 100
+          }
+        ]
+      : resolvedStrategies
+
+  return {
+    id: `current:${currentAllocation.timestampUtc}`,
+    timestampUtc: currentAllocation.timestampUtc,
+    strategies: strategiesWithUnallocated
+  }
+}
+
 function getStateStrategyIdentity(strategy: TReallocationStateStrategy): string {
   return strategy.isUnallocated ? UNALLOCATED_STRATEGY_ID : strategy.strategyId
 }
@@ -539,6 +721,26 @@ function alignChronologicalStateStrategies(states: readonly TReallocationState[]
   }, [] as TReallocationState[])
 }
 
+function buildStateAllocationMap(state: TReallocationState): Map<string, number> {
+  return state.strategies.reduce((allocationByStrategyId, strategy) => {
+    const nextAllocationByStrategyId = new Map(allocationByStrategyId)
+    nextAllocationByStrategyId.set(getStateStrategyIdentity(strategy), percentToBps(strategy.allocationPct))
+    return nextAllocationByStrategyId
+  }, new Map<string, number>())
+}
+
+function statesMatch(leftState: TReallocationState, rightState: TReallocationState): boolean {
+  const leftAllocationByStrategyId = buildStateAllocationMap(leftState)
+  const rightAllocationByStrategyId = buildStateAllocationMap(rightState)
+  const allStrategyIds = new Set([...leftAllocationByStrategyId.keys(), ...rightAllocationByStrategyId.keys()])
+
+  return [...allStrategyIds].every((strategyId) => {
+    const leftAllocation = leftAllocationByStrategyId.get(strategyId) ?? 0
+    const rightAllocation = rightAllocationByStrategyId.get(strategyId) ?? 0
+    return Math.abs(leftAllocation - rightAllocation) <= NORMALIZATION_TOLERANCE_BPS
+  })
+}
+
 function panelHasAllocations(panel: TReallocationPanel): boolean {
   return [...panel.beforeState.strategies, ...panel.afterState.strategies].some((strategy) =>
     isPositive(strategy.allocationPct)
@@ -547,7 +749,8 @@ function panelHasAllocations(panel: TReallocationPanel): boolean {
 
 export function buildReallocationPanels(
   optimizations: readonly TDoaOptimizationRecord[],
-  strategyNamesByAddress: TStrategyNameMap = {}
+  strategyNamesByAddress: TStrategyNameMap = {},
+  currentAllocation?: TCurrentAllocationInput
 ): TReallocationPanel[] {
   const dedupedHistory = dedupeVaultHistory(optimizations)
   const normalizedHistory = dedupedHistory.map((optimization) => normalizeChange(optimization, strategyNamesByAddress))
@@ -569,6 +772,24 @@ export function buildReallocationPanels(
 
   const latestChange = normalizedHistory[0]
   const latestSnapshotState = chronologicalSnapshotStates[chronologicalSnapshotStates.length - 1]
+  const currentPanel =
+    latestSnapshotState && currentAllocation
+      ? (() => {
+          const alignedCurrentState = alignStateStrategyOrder(
+            latestSnapshotState,
+            buildCurrentAllocationState(currentAllocation, latestSnapshotState)
+          )
+
+          return {
+            id: `current:${latestSnapshotState.id}->${alignedCurrentState.id}`,
+            beforeState: latestSnapshotState,
+            afterState: alignedCurrentState,
+            beforeTimestampUtc: latestSnapshotState.timestampUtc,
+            afterTimestampUtc: currentAllocation.timestampUtc,
+            kind: 'current' as const
+          }
+        })()
+      : null
   const proposalPanel = latestChange
     ? latestSnapshotState
       ? [
@@ -584,7 +805,35 @@ export function buildReallocationPanels(
       : []
     : []
 
-  return [...historicalPanels, ...proposalPanel].filter(panelHasAllocations)
+  const currentMatchesLatestSnapshot = currentPanel
+    ? statesMatch(currentPanel.beforeState, currentPanel.afterState)
+    : false
+  const adjustedHistoricalPanels =
+    currentMatchesLatestSnapshot && historicalPanels.length > 0 && currentAllocation
+      ? historicalPanels.map((panel, index) => {
+          if (index !== historicalPanels.length - 1) {
+            return panel
+          }
+
+          return {
+            ...panel,
+            afterState: {
+              ...panel.afterState,
+              timestampUtc: currentAllocation.timestampUtc
+            },
+            afterTimestampUtc: currentAllocation.timestampUtc
+          }
+        })
+      : historicalPanels
+  const terminalPanels = currentPanel
+    ? currentMatchesLatestSnapshot
+      ? historicalPanels.length > 0
+        ? []
+        : [currentPanel]
+      : [currentPanel]
+    : proposalPanel
+
+  return [...adjustedHistoricalPanels, ...terminalPanels].filter(panelHasAllocations)
 }
 
 function getNodeLabel(side: 'before' | 'after'): TSankeyNodeLabel {

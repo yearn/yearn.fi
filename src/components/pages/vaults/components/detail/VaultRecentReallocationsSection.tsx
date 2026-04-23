@@ -2,7 +2,7 @@ import { useDarkMode } from '@shared/components/AllocationChart'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, formatPercent, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement, TouchEvent } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   buildColorByStrategyId,
   buildStateTransitionSankeyGraph,
@@ -18,10 +18,11 @@ type TVaultRecentReallocationsSectionProps = {
 
 type TRibbon = {
   id: string
-  color: string
   path: string
+  sourceColor: string
   sourceId: string
   sourceName: string
+  targetColor: string
   targetId: string
   targetName: string
   value: number
@@ -86,6 +87,10 @@ function formatPanelTimestamp(timestamp: string | null): string {
   return `${timestampFormatter.format(parsedDate)} UTC`
 }
 
+function toSvgSafeId(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_-]/g, '-')
+}
+
 function withAlpha(color: string, alpha: number): string {
   if (!color.startsWith('#')) {
     return color
@@ -137,19 +142,24 @@ function SankeyNodeLabel({
   node,
   textColor,
   mutedTextColor,
-  backgroundStrokeColor
+  backgroundStrokeColor,
+  fontSize = 18,
+  lineHeight = 22,
+  strokeWidth = 5
 }: {
   node: TSankeyNode
   textColor: string
   mutedTextColor: string
   backgroundStrokeColor: string
+  fontSize?: number
+  lineHeight?: number
+  strokeWidth?: number
 }): ReactElement {
   const chartHeight = VIEWBOX_HEIGHT - CHART_TOP - CHART_BOTTOM
   const centerY = CHART_TOP + (node.localY + node.heightRatio / 2) * chartHeight
   const labelLines = [...node.labelText.split('\n'), formatPercent(node.value, 1, 1)]
   const x = node.side === 'before' ? BEFORE_NODE_X + NODE_WIDTH + NODE_LABEL_PADDING : AFTER_NODE_X - NODE_LABEL_PADDING
   const textAnchor = node.side === 'before' ? 'start' : 'end'
-  const lineHeight = 22
   const startY = centerY - ((labelLines.length - 1) * lineHeight) / 2
 
   return (
@@ -157,10 +167,10 @@ function SankeyNodeLabel({
       x={x}
       y={startY}
       textAnchor={textAnchor}
-      fontSize={18}
+      fontSize={fontSize}
       fill={textColor}
       stroke={backgroundStrokeColor}
-      strokeWidth={5}
+      strokeWidth={strokeWidth}
       paintOrder="stroke"
     >
       {labelLines.map((line, index) => (
@@ -194,6 +204,7 @@ function ReallocationSankeyChart({
     return buildStateTransitionSankeyGraph(panel.beforeState.strategies, panel.afterState.strategies)
   }, [panel.afterState.strategies, panel.beforeState.strategies])
   const [hoverTarget, setHoverTarget] = useState<THoverTarget>(null)
+  const gradientPrefix = useId().replace(/:/g, '-')
 
   const nodeById = useMemo(() => {
     return new Map(graph.nodes.map((node) => [node.id, node]))
@@ -224,10 +235,8 @@ function ReallocationSankeyChart({
         const nextTargetOffsets = new Map(state.targetOffsets)
         nextTargetOffsets.set(link.target, targetOffsetRatio + targetHeightRatio)
 
-        const color =
-          colorByStrategyId.get(sourceNode.id.replace('before:', '')) ??
-          colorByStrategyId.get(targetNode.id.replace('after:', '')) ??
-          '#9ca3af'
+        const sourceColor = colorByStrategyId.get(sourceNode.id.replace('before:', '')) ?? '#9ca3af'
+        const targetColor = colorByStrategyId.get(targetNode.id.replace('after:', '')) ?? '#9ca3af'
 
         return {
           sourceOffsets: nextSourceOffsets,
@@ -235,7 +244,6 @@ function ReallocationSankeyChart({
           ribbons: [
             ...state.ribbons,
             {
-              color,
               path: buildRibbonPath({
                 sourceLeft: BEFORE_NODE_X,
                 sourceTop: CHART_TOP + (sourceNode.localY + sourceOffsetRatio) * chartHeight,
@@ -245,8 +253,10 @@ function ReallocationSankeyChart({
                 targetBottom: CHART_TOP + (targetNode.localY + targetOffsetRatio + targetHeightRatio) * chartHeight
               }),
               id: `${link.source}->${link.target}`,
+              sourceColor,
               sourceName: sourceNode.displayName,
               sourceId: sourceNode.id,
+              targetColor,
               targetId: targetNode.id,
               targetName: targetNode.displayName,
               value: link.value
@@ -304,6 +314,9 @@ function ReallocationSankeyChart({
       return Number(firstIsFocused) - Number(secondIsFocused)
     })
   }, [hoverState, ribbons])
+  const gradientIdByRibbonId = useMemo(() => {
+    return new Map(ribbons.map((ribbon) => [ribbon.id, `${gradientPrefix}-${toSvgSafeId(ribbon.id)}`]))
+  }, [gradientPrefix, ribbons])
 
   useEffect(() => {
     if (!isActive) {
@@ -319,8 +332,8 @@ function ReallocationSankeyChart({
     )
   }
 
-  const beforeHeading = panel.kind === 'proposal' ? 'Current' : 'Before'
-  const afterHeading = panel.kind === 'proposal' ? 'Proposed' : 'After'
+  const beforeHeading = panel.kind === 'proposal' ? 'Current' : panel.kind === 'current' ? 'Last Seen' : 'Before'
+  const afterHeading = panel.kind === 'proposal' ? 'Proposed' : panel.kind === 'current' ? 'Current' : 'After'
 
   return (
     <svg
@@ -347,12 +360,37 @@ function ReallocationSankeyChart({
         </>
       ) : null}
 
+      <defs>
+        {ribbons.map((ribbon) => {
+          const gradientId = gradientIdByRibbonId.get(ribbon.id)
+          if (!gradientId) {
+            return null
+          }
+
+          return (
+            <linearGradient
+              key={gradientId}
+              id={gradientId}
+              gradientUnits="userSpaceOnUse"
+              x1={BEFORE_NODE_X + NODE_WIDTH}
+              y1={0}
+              x2={AFTER_NODE_X}
+              y2={0}
+            >
+              <stop offset="0%" stopColor={ribbon.sourceColor} />
+              <stop offset="100%" stopColor={ribbon.targetColor} />
+            </linearGradient>
+          )
+        })}
+      </defs>
+
       {visibleRibbons.map((ribbon) => {
         const isRibbonFocused = hoverState?.focusedRibbonIds.has(ribbon.id) ?? false
         const hasHover = Boolean(hoverState)
         const fillOpacity = isActive ? (isDark ? 0.34 : 0.22) : isDark ? 0.22 : 0.14
         const strokeOpacity = isActive ? (isDark ? 0.5 : 0.34) : isDark ? 0.34 : 0.2
         const isHoveredRibbon = hoverTarget?.type === 'ribbon' && hoverTarget.id === ribbon.id
+        const gradientId = gradientIdByRibbonId.get(ribbon.id)
 
         return (
           <path
@@ -368,27 +406,23 @@ function ReallocationSankeyChart({
                 currentHoverTarget?.type === 'ribbon' && currentHoverTarget.id === ribbon.id ? null : currentHoverTarget
               )
             }}
-            fill={withAlpha(
-              ribbon.color,
-              hasHover
-                ? isRibbonFocused
-                  ? fillOpacity + (isHoveredRibbon ? 0.16 : 0.1)
-                  : fillOpacity * 0.3
-                : fillOpacity
-            )}
-            stroke={withAlpha(
-              ribbon.color,
-              hasHover
-                ? isRibbonFocused
-                  ? strokeOpacity + (isHoveredRibbon ? 0.2 : 0.12)
-                  : strokeOpacity * 0.3
-                : strokeOpacity
-            )}
+            fill={gradientId ? `url(#${gradientId})` : ribbon.sourceColor}
+            stroke={gradientId ? `url(#${gradientId})` : ribbon.sourceColor}
             strokeWidth={1}
             style={{
               cursor: isActive ? 'pointer' : 'default',
+              fillOpacity: hasHover
+                ? isRibbonFocused
+                  ? fillOpacity + (isHoveredRibbon ? 0.16 : 0.1)
+                  : fillOpacity * 0.3
+                : fillOpacity,
+              strokeOpacity: hasHover
+                ? isRibbonFocused
+                  ? strokeOpacity + (isHoveredRibbon ? 0.2 : 0.12)
+                  : strokeOpacity * 0.3
+                : strokeOpacity,
               opacity: hasHover ? (isRibbonFocused ? (isHoveredRibbon ? 1 : 0.92) : 0.16) : 1,
-              transition: 'opacity 180ms ease, fill 180ms ease, stroke 180ms ease'
+              transition: 'opacity 180ms ease, fill-opacity 180ms ease, stroke-opacity 180ms ease'
             }}
           >
             <title>{`${ribbon.sourceName} → ${ribbon.targetName} • ${formatPercent(ribbon.value, 2, 2)}`}</title>
@@ -406,6 +440,10 @@ function ReallocationSankeyChart({
         const isFocusedNode = hoverState?.focusedNodeIds.has(node.id) ?? false
         const nodeOpacity = hasHover ? (isFocusedNode ? (isHoveredNode ? 1 : 0.94) : 0.16) : 1
         const labelOpacity = hasHover ? (isFocusedNode ? (isHoveredNode ? 1 : 0.9) : 0.14) : 1
+        const labelScale = hasHover ? (isHoveredNode ? 1.18 : isFocusedNode ? 1.08 : 1) : 1
+        const labelFontSize = 18 * labelScale
+        const labelLineHeight = 22 * labelScale
+        const labelStrokeWidth = 5 * (1 + (labelScale - 1) * 0.85)
         const nodeStrokeColor = isHoveredNode ? withAlpha(textColor, isDark ? 0.92 : 0.72) : borderColor
         const nodeStrokeWidth = isHoveredNode ? 2 : 1
 
@@ -454,6 +492,9 @@ function ReallocationSankeyChart({
                   textColor={textColor}
                   mutedTextColor={mutedTextColor}
                   backgroundStrokeColor={backgroundStrokeColor}
+                  fontSize={labelFontSize}
+                  lineHeight={labelLineHeight}
+                  strokeWidth={labelStrokeWidth}
                 />
               </g>
             ) : null}
