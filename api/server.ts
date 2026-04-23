@@ -9,6 +9,7 @@ import {
   clearUserCache,
   deleteStaleCache,
   getHistoricalHoldingsChart,
+  getHoldingsActivity,
   getHoldingsBreakdown,
   getHoldingsPnL,
   getHoldingsPnLDrilldown,
@@ -166,6 +167,26 @@ function parseHoldingsHistoryDenomination(value: string | null): HoldingsHistory
 
 function parseHoldingsHistoryTimeframe(value: string | null): HoldingsHistoryTimeframe {
   return value === 'all' ? 'all' : '1y'
+}
+
+function parseHoldingsActivityLimit(value: string | null): number {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed)) {
+    return 10
+  }
+
+  return Math.min(Math.max(parsed, 1), 50)
+}
+
+function parseHoldingsActivityOffset(value: string | null): number {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed)) {
+    return 0
+  }
+
+  return Math.max(parsed, 0)
 }
 
 function parseUtcDateParam(value: string | null): number | null {
@@ -563,6 +584,39 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
     const message = error instanceof Error ? error.message : String(error)
     const stack = error instanceof Error ? error.stack : undefined
     return Response.json({ error: 'Failed to fetch historical holdings', message, stack, status: 502 }, { status: 502 })
+  }
+}
+
+async function handleHoldingsActivity(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const versionParam = url.searchParams.get('version')
+  const limit = parseHoldingsActivityLimit(url.searchParams.get('limit'))
+  const offset = parseHoldingsActivityOffset(url.searchParams.get('offset'))
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const activity = await getHoldingsActivity(address, version, limit, offset)
+
+    return Response.json(activity, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching holdings activity:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json({ error: 'Failed to fetch holdings activity', message, stack, status: 502 }, { status: 502 })
   }
 }
 
@@ -1166,6 +1220,10 @@ async function main() {
           return withCors(await handleHoldingsHistory(req))
         }
 
+        if (url.pathname === '/api/holdings/activity') {
+          return withCors(await handleHoldingsActivity(req))
+        }
+
         if (url.pathname === '/api/holdings/breakdown') {
           return withCors(await handleHoldingsBreakdown(req))
         }
@@ -1251,6 +1309,7 @@ async function main() {
 
   console.log('🚀 API server running on http://localhost:3001')
   console.log('📊 Holdings API: http://localhost:3001/api/holdings/history?address=0x...')
+  console.log('🗂️ Holdings Activity API: http://localhost:3001/api/holdings/activity?address=0x...')
   console.log('🧩 Holdings Breakdown API: http://localhost:3001/api/holdings/breakdown?address=0x...')
   console.log('💹 PnL API: http://localhost:3001/api/holdings/pnl?address=0x...')
   console.log('📈 Simple PnL API: http://localhost:3001/api/holdings/pnl/simple?address=0x...')

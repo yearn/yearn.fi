@@ -13,7 +13,9 @@ import { TransactionOverlay, type TransactionStep } from '@pages/vaults/componen
 import {
   getVaultAddress,
   getVaultChainID,
+  getVaultName,
   getVaultStaking,
+  getVaultSymbol,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
@@ -22,6 +24,7 @@ import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { METRIC_VALUE_CLASS, MetricHeader, type TMetricBlock } from '@shared/components/MetricsCard'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
+import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -30,18 +33,21 @@ import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
-import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS } from '@shared/utils'
+import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
+import Link from '/src/components/Link'
 import type { TPortfolioHistoryChartTimeframe } from './components/PortfolioHistoryChart'
 import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
+import { usePortfolioActivity } from './hooks/usePortfolioActivity'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { usePortfolioProtocolReturn } from './hooks/usePortfolioProtocolReturn'
 import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
 import type {
+  TPortfolioActivityEntry,
   TPortfolioHistoryDenomination,
   TPortfolioHistoryTimeframe,
   TPortfolioProtocolReturnSummary
@@ -93,6 +99,157 @@ type TPortfolioSuggestedProps = Pick<TPortfolioModel, 'suggestedRows'>
 type TPortfolioActivityProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'>
 
 type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'>
+
+const ACTIVITY_ACTION_LABELS: Record<TPortfolioActivityEntry['action'], string> = {
+  deposit: 'Deposit',
+  withdraw: 'Withdraw',
+  stake: 'Stake',
+  unstake: 'Unstake'
+}
+
+function formatActivityDisplayAmount(amountFormatted: number | null, symbol: string | null): string {
+  if (amountFormatted === null) {
+    return symbol ? `Unknown ${symbol}` : 'Unknown amount'
+  }
+
+  return `${amountFormatted.toLocaleString(undefined, { maximumFractionDigits: 6 })} ${symbol ?? ''}`.trim()
+}
+
+function getActivityExplorerUrl(chainId: number, txHash: string): string | null {
+  const network = SUPPORTED_NETWORKS.find((item) => item.id === chainId)
+  const explorerBaseUrl = network?.blockExplorers?.default?.url
+
+  return explorerBaseUrl ? `${explorerBaseUrl}/tx/${txHash}` : null
+}
+
+function getActivityAddressExplorerUrl(chainId: number, address: string): string | null {
+  const network = SUPPORTED_NETWORKS.find((item) => item.id === chainId)
+  const explorerBaseUrl = network?.blockExplorers?.default?.url
+
+  return explorerBaseUrl ? `${explorerBaseUrl}/address/${address}` : null
+}
+
+function getActivityChainName(chainId: number): string {
+  return SUPPORTED_NETWORKS.find((item) => item.id === chainId)?.name ?? `Chain ${chainId}`
+}
+
+function formatIndexedActivityDate(timestamp: number): string {
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric'
+  })
+}
+
+function IndexedActivityRow({
+  entry,
+  displayName,
+  shareSymbol
+}: {
+  entry: TPortfolioActivityEntry
+  displayName: string
+  shareSymbol: string | null
+}): ReactElement {
+  const explorerUrl = getActivityExplorerUrl(entry.chainId, entry.txHash)
+  const vaultExplorerUrl = getActivityAddressExplorerUrl(entry.chainId, entry.familyVaultAddress)
+  const activityTitle = ACTIVITY_ACTION_LABELS[entry.action]
+  const activityLogoAddress = entry.familyVaultAddress || entry.vaultAddress
+  const isExitAction = entry.action === 'withdraw' || entry.action === 'unstake'
+
+  return (
+    <div className="group relative h-fit origin-top rounded-lg border border-border bg-card p-4">
+      <div className="relative z-20">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="font-medium text-text-primary">{activityTitle}</p>
+          <div className="flex items-center justify-center self-start rounded-lg bg-[#00796D] px-4 py-2 text-xs text-white">
+            {'Success'}
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          <div className="flex flex-col items-center gap-3">
+            <TokenLogo
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${activityLogoAddress.toLowerCase()}/logo-32.png`}
+              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${activityLogoAddress.toLowerCase()}/logo-32.png`}
+              tokenSymbol={shareSymbol ?? entry.assetSymbol ?? ACTIVITY_ACTION_LABELS[entry.action]}
+              chainId={entry.chainId}
+              width={32}
+              height={32}
+              className="rounded-full"
+              loading="eager"
+            />
+          </div>
+          <div className="flex-1">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-text-primary">
+              {isExitAction ? (
+                <>
+                  <p>{'Redeem:'}</p>
+                  <p className="text-right font-bold">
+                    {formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)}
+                  </p>
+                  <p>{'Receive:'}</p>
+                  <p className="text-right font-bold">
+                    {formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p>{'Token:'}</p>
+                  <p className="text-right font-bold">
+                    {formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)}
+                  </p>
+                  <p>{'Vault:'}</p>
+                  <p className="text-right font-bold">
+                    {vaultExplorerUrl ? (
+                      <Link
+                        href={vaultExplorerUrl}
+                        target={'_blank'}
+                        rel={'noopener noreferrer'}
+                        aria-label={`View vault ${entry.familyVaultAddress} on explorer`}
+                        className={'font-bold text-text-primary underline hover:text-text-secondary'}
+                      >
+                        {displayName}
+                      </Link>
+                    ) : (
+                      displayName
+                    )}
+                  </p>
+                  <p>{'Receive:'}</p>
+                  <p className="text-right font-bold">
+                    {formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)}
+                  </p>
+                </>
+              )}
+              <p>{'Chain:'}</p>
+              <p className="text-right font-bold">{getActivityChainName(entry.chainId)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-text-primary">
+          <div className="flex gap-4">
+            <span className="font-bold">{formatIndexedActivityDate(entry.timestamp)}</span>
+          </div>
+          {explorerUrl ? (
+            <Link
+              href={explorerUrl}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              aria-label={`View transaction ${entry.txHash} on explorer`}
+              className={'text-text-primary hover:text-text-secondary'}
+            >
+              <button className={'text-xs font-medium underline'}>{'View tx'}</button>
+            </Link>
+          ) : (
+            <span className="text-xs text-text-secondary">{'Explorer unavailable'}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function PortfolioPageLayout({ children }: { children: ReactElement }): ReactElement {
   return (
@@ -277,11 +434,29 @@ function PortfolioTabSelector({
 }
 
 function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivityProps): ReactElement {
-  const { cachedEntries, isLoading, error } = useNotifications()
-  const hasEntries = cachedEntries.length > 0
+  const { allVaults } = useYearn()
+  const { cachedEntries, isLoading: notificationsLoading, error: notificationsError } = useNotifications()
+  const {
+    data: indexedEntries,
+    isLoading: indexedLoading,
+    isLoadingMore: indexedLoadingMore,
+    error: indexedError,
+    isEmpty: indexedEmpty,
+    hasMore: indexedHasMore,
+    loadMore: loadMoreIndexedActivity
+  } = usePortfolioActivity(10, isActive)
+  const unresolvedLocalEntries = useMemo(
+    () =>
+      cachedEntries
+        .filter((entry) => entry.status !== 'success')
+        .toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)),
+    [cachedEntries]
+  )
+  const hasUnresolvedLocalEntries = unresolvedLocalEntries.length > 0
+  const hasIndexedEntries = indexedEntries.length > 0
 
-  function renderActivityContent(): ReactElement {
-    if (isLoading) {
+  function renderIndexedActivity(): ReactElement {
+    if (indexedLoading) {
       return (
         <div className="flex flex-col items-center justify-center gap-2 py-6 text-sm text-text-secondary">
           <IconSpinner className="size-5 animate-spin text-text-secondary" />
@@ -289,22 +464,120 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         </div>
       )
     }
-    if (error) {
+
+    if (indexedError) {
       return (
         <div className="py-6 text-center">
           <p className="text-sm font-medium text-red-600">{'Error loading activity'}</p>
-          <p className="mt-2 text-xs text-text-secondary">{error}</p>
+          <p className="mt-2 text-xs text-text-secondary">{indexedError.message}</p>
         </div>
       )
     }
-    if (!hasEntries) {
+
+    if (indexedEmpty) {
+      return <div className="py-6 text-center text-sm text-text-secondary">{'No indexed activity to show.'}</div>
+    }
+
+    return (
+      <div className="flex flex-col gap-4">
+        {indexedEntries.map((entry) => {
+          const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
+          const activityVault = allVaults[toAddress(entry.vaultAddress)]
+          const familyVaultSymbol = familyVault
+            ? getVaultSymbol(familyVault)
+            : activityVault
+              ? getVaultSymbol(activityVault)
+              : entry.assetSymbol
+          const displayName = familyVault
+            ? getVaultName(familyVault)
+            : activityVault
+              ? getVaultName(activityVault)
+              : truncateHex(entry.familyVaultAddress, 5)
+          const shareSymbol =
+            entry.action === 'stake' || entry.action === 'unstake'
+              ? familyVaultSymbol
+                ? `st-${familyVaultSymbol}`
+                : entry.assetSymbol
+                  ? `st-${entry.assetSymbol}`
+                  : null
+              : familyVault
+                ? getVaultSymbol(familyVault)
+                : activityVault
+                  ? getVaultSymbol(activityVault)
+                  : entry.assetSymbol
+
+          return (
+            <IndexedActivityRow
+              key={`${entry.txHash}:${entry.vaultAddress}:${entry.action}`}
+              entry={entry}
+              displayName={displayName}
+              shareSymbol={shareSymbol}
+            />
+          )
+        })}
+      </div>
+    )
+  }
+
+  function renderActivityContent(): ReactElement {
+    if (notificationsLoading && indexedLoading && !hasUnresolvedLocalEntries) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-2 py-6 text-sm text-text-secondary">
+          <IconSpinner className="size-5 animate-spin text-text-secondary" />
+          <span>{'Loading activity...'}</span>
+        </div>
+      )
+    }
+
+    if (notificationsError && !hasUnresolvedLocalEntries && !hasIndexedEntries && indexedEmpty) {
+      return (
+        <div className="py-6 text-center">
+          <p className="text-sm font-medium text-red-600">{'Error loading activity'}</p>
+          <p className="mt-2 text-xs text-text-secondary">{notificationsError}</p>
+        </div>
+      )
+    }
+
+    if (!hasUnresolvedLocalEntries && !hasIndexedEntries && indexedEmpty) {
       return <div className="py-6 text-center text-sm text-text-secondary">{'No transactions to show.'}</div>
     }
+
     return (
-      <div className="flex flex-col">
-        {cachedEntries.toReversed().map((entry) => (
-          <Notification key={`notification-${entry.id}`} notification={entry} variant="v3" />
-        ))}
+      <div className="flex flex-col gap-6">
+        {hasUnresolvedLocalEntries && (
+          <div className="flex flex-col gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-text-primary">{'Pending local transactions'}</h3>
+              <p className="text-xs text-text-secondary">
+                {'These entries come from this browser and may appear before the indexer catches up.'}
+              </p>
+            </div>
+            <div className="flex flex-col">
+              {unresolvedLocalEntries.map((entry) => (
+                <Notification key={`notification-${entry.id}`} notification={entry} variant="v3" />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-3">
+          <div>{renderIndexedActivity()}</div>
+          {indexedHasMore && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => void loadMoreIndexedActivity()}
+                disabled={indexedLoadingMore}
+                className={cl(
+                  'rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text-primary transition-colors',
+                  indexedLoadingMore ? 'cursor-wait opacity-60' : 'hover:bg-surface-secondary'
+                )}
+              >
+                {indexedLoadingMore ? 'Loading more...' : 'Load more'}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
@@ -318,7 +591,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       {!isActive ? (
         <EmptySectionCard
           title="Connect a wallet to view activity"
-          description="Track deposits, withdrawals, and claims in one place."
+          description="Review your recent Yearn transactions."
           ctaLabel="Connect wallet"
           onClick={openLoginModal}
         />

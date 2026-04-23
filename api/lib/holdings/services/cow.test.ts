@@ -4,7 +4,7 @@ import type { TransferEvent, VaultMetadata } from '../types'
 import { enrichRawPnlEventsWithCowTradeAcquisitions, type RpcTransactionReceipt } from './cow'
 import { buildRawPnlEvents, processRawPnlEvents } from './pnl'
 
-const USER = '0x96a489a533ba0913dd8e507e6d985a45bc783566'
+const USER = '0x2222222222222222222222222222222222222222'
 const SOLVER = '0x6bf97afe2d2c790999cded2a8523009eb8a0823f'
 const GPV2_SETTLEMENT = '0x9008d19f58aabd9ed0d60971565aa8510560ab41'
 const DAI = '0x6b175474e89094c44da98b954eedeac495271d0f'
