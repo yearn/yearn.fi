@@ -52,6 +52,16 @@ export function getAllRpcEndpoints(chainId: number): string[] {
   return [config.primary, ...config.fallbacks]
 }
 
+export function getArchiveRpcEndpoints(chainId: number, env: NodeJS.ProcessEnv = process.env): string[] {
+  const mainnetDrpc = chainId === 1 ? env.MAINNET_DRPC?.trim() : undefined
+  const tenderlyAdminRpc = env[`TENDERLY_ADMIN_RPC_URI_FOR_${chainId}`]?.trim()
+  const tenderlyRpc = env[`VITE_TENDERLY_RPC_URI_FOR_${chainId}`]?.trim()
+
+  return [
+    ...new Set([mainnetDrpc, tenderlyAdminRpc, tenderlyRpc, ...getAllRpcEndpoints(chainId)].filter(Boolean) as string[])
+  ]
+}
+
 export function getRandomRpcEndpoint(chainId: number): string | undefined {
   const endpoints = getAllRpcEndpoints(chainId)
   if (endpoints.length === 0) return undefined
@@ -133,7 +143,7 @@ interface JsonRpcResponse<T = unknown> {
   error?: { code: number; message: string }
 }
 
-async function jsonRpcCall<T>(endpoint: string, method: string, params: unknown[]): Promise<T> {
+export async function jsonRpcCall<T>(endpoint: string, method: string, params: unknown[]): Promise<T> {
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -156,6 +166,48 @@ async function jsonRpcCall<T>(endpoint: string, method: string, params: unknown[
   return data.result
 }
 
+export async function jsonRpcBatchCall<T>(
+  endpoint: string,
+  calls: Array<{ method: string; params: unknown[] }>
+): Promise<T[]> {
+  if (calls.length === 0) {
+    return []
+  }
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(
+      calls.map((call, index) => ({
+        jsonrpc: '2.0',
+        id: index + 1,
+        method: call.method,
+        params: call.params
+      }))
+    )
+  })
+
+  if (!response.ok) {
+    throw new Error(`RPC HTTP ${response.status}`)
+  }
+
+  const payload = (await response.json()) as Array<JsonRpcResponse<T>> | JsonRpcResponse<T>
+  const results = Array.isArray(payload) ? payload : [payload]
+  const sortedResults = [...results].sort((left, right) => left.id - right.id)
+
+  return sortedResults.map((result) => {
+    if (result.error) {
+      throw new Error(`RPC error ${result.error.code}: ${result.error.message}`)
+    }
+
+    if (result.result === undefined) {
+      throw new Error('RPC returned undefined result')
+    }
+
+    return result.result
+  })
+}
+
 function decodeUint256(hex: string): bigint {
   return BigInt(hex)
 }
@@ -166,10 +218,13 @@ function extractCurrentDebtFromStrategiesResult(hex: string): bigint {
   return decodeUint256(currentDebtHex)
 }
 
+export type TRpcBlockTag = 'latest' | `0x${string}`
+
 async function fetchVaultStateViaMulticall(
   endpoint: string,
   vaultAddress: string,
-  strategyAddresses: string[]
+  strategyAddresses: string[],
+  blockTag: TRpcBlockTag
 ): Promise<{ totalAssets: bigint; strategyDebts: Map<string, bigint> }> {
   const calls = [
     { target: vaultAddress, callData: VAULT_SELECTORS.totalAssets },
@@ -180,7 +235,7 @@ async function fetchVaultStateViaMulticall(
   ]
 
   const calldata = encodeMulticallAggregate(calls)
-  const result = await jsonRpcCall<string>(endpoint, 'eth_call', [{ to: MULTICALL3_ADDRESS, data: calldata }, 'latest'])
+  const result = await jsonRpcCall<string>(endpoint, 'eth_call', [{ to: MULTICALL3_ADDRESS, data: calldata }, blockTag])
 
   const decoded = decodeMulticallAggregateResult(result)
 
@@ -202,22 +257,66 @@ async function fetchVaultStateViaMulticall(
 async function fetchVaultStateSequential(
   endpoint: string,
   vaultAddress: string,
-  strategyAddresses: string[]
+  strategyAddresses: string[],
+  blockTag: TRpcBlockTag
 ): Promise<{ totalAssets: bigint; strategyDebts: Map<string, bigint> }> {
   const totalAssetsResult = await jsonRpcCall<string>(endpoint, 'eth_call', [
     { to: vaultAddress, data: VAULT_SELECTORS.totalAssets },
-    'latest'
+    blockTag
   ])
   const totalAssets = decodeUint256(totalAssetsResult)
 
   const strategyDebts = new Map<string, bigint>()
   for (const strategy of strategyAddresses) {
     const data = VAULT_SELECTORS.strategies + encodeAddressParam(strategy)
-    const result = await jsonRpcCall<string>(endpoint, 'eth_call', [{ to: vaultAddress, data }, 'latest'])
+    const result = await jsonRpcCall<string>(endpoint, 'eth_call', [{ to: vaultAddress, data }, blockTag])
     strategyDebts.set(strategy.toLowerCase(), extractCurrentDebtFromStrategiesResult(result))
   }
 
   return { totalAssets, strategyDebts }
+}
+
+async function fetchVaultOnChainStateFromEndpoints(
+  endpoints: string[],
+  vaultAddress: string,
+  strategyAddresses: string[],
+  blockTag: TRpcBlockTag
+): Promise<{
+  totalAssets: bigint
+  strategyDebts: Map<string, bigint>
+  unallocatedBps: number
+}> {
+  if (endpoints.length === 0) {
+    throw new Error('No RPC endpoints configured')
+  }
+
+  let lastError: Error | undefined
+
+  for (const endpoint of endpoints) {
+    try {
+      const { totalAssets, strategyDebts } = await fetchVaultStateViaMulticall(
+        endpoint,
+        vaultAddress,
+        strategyAddresses,
+        blockTag
+      )
+      return computeUnallocated(totalAssets, strategyDebts)
+    } catch {
+      try {
+        const { totalAssets, strategyDebts } = await fetchVaultStateSequential(
+          endpoint,
+          vaultAddress,
+          strategyAddresses,
+          blockTag
+        )
+        return computeUnallocated(totalAssets, strategyDebts)
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err))
+      }
+    }
+  }
+
+  throw lastError ?? new Error('All RPC endpoints failed')
 }
 
 export async function fetchVaultOnChainState(
@@ -234,31 +333,26 @@ export async function fetchVaultOnChainState(
     throw new Error(`No RPC endpoints configured for chain ${chainId}`)
   }
 
-  let lastError: Error | undefined
+  return fetchVaultOnChainStateFromEndpoints(endpoints, vaultAddress, strategyAddresses, 'latest')
+}
 
-  for (const endpoint of endpoints) {
-    try {
-      const { totalAssets, strategyDebts } = await fetchVaultStateViaMulticall(
-        endpoint,
-        vaultAddress,
-        strategyAddresses
-      )
-      return computeUnallocated(totalAssets, strategyDebts)
-    } catch {
-      try {
-        const { totalAssets, strategyDebts } = await fetchVaultStateSequential(
-          endpoint,
-          vaultAddress,
-          strategyAddresses
-        )
-        return computeUnallocated(totalAssets, strategyDebts)
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error(String(err))
-      }
-    }
+export async function fetchVaultOnChainStateAtBlock(
+  chainId: number,
+  vaultAddress: string,
+  strategyAddresses: string[],
+  blockTag: TRpcBlockTag,
+  env: NodeJS.ProcessEnv = process.env
+): Promise<{
+  totalAssets: bigint
+  strategyDebts: Map<string, bigint>
+  unallocatedBps: number
+}> {
+  const endpoints = getArchiveRpcEndpoints(chainId, env)
+  if (endpoints.length === 0) {
+    throw new Error(`No archive RPC endpoints configured for chain ${chainId}`)
   }
 
-  throw lastError ?? new Error('All RPC endpoints failed')
+  return fetchVaultOnChainStateFromEndpoints(endpoints, vaultAddress, strategyAddresses, blockTag)
 }
 
 function computeUnallocated(
