@@ -12,6 +12,7 @@ import {
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
   type RawPnlEventContext,
+  type TransactionActivityEvents,
   type VaultVersion
 } from './graphql'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
@@ -734,6 +735,37 @@ export function buildAddressScopedRawPnlEvents(addressEvents: UserEvents): TRawP
       mergeRawEvent(merged, event, scope)
     })
   })
+
+  return Array.from(merged.values()).sort(compareRawEvents)
+}
+
+export function mergeAddressScopedRawPnlEventsWithTransactionActivity(
+  addressEvents: TRawPnlEvent[],
+  transactionEvents: TransactionActivityEvents,
+  allowedFamilyKeys?: Set<string>
+): TRawPnlEvent[] {
+  const merged = new Map<string, TRawPnlEvent>()
+
+  addressEvents.forEach((event) => {
+    merged.set(`${event.kind}:${event.id}`, {
+      ...event,
+      scopes: { ...event.scopes }
+    })
+  })
+
+  const txEventSources: Array<Omit<TRawPnlEvent, 'scopes'>> = [
+    ...transactionEvents.deposits.map(normalizeDeposit),
+    ...transactionEvents.withdrawals.map(normalizeWithdrawal),
+    ...transactionEvents.transfers.map(normalizeTransfer)
+  ]
+
+  txEventSources
+    .filter((event) =>
+      allowedFamilyKeys ? allowedFamilyKeys.has(toVaultKey(event.chainId, event.familyVaultAddress)) : true
+    )
+    .forEach((event) => {
+      mergeRawEvent(merged, event, 'tx')
+    })
 
   return Array.from(merged.values()).sort(compareRawEvents)
 }
