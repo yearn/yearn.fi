@@ -1,6 +1,6 @@
 import { ethers } from 'ethers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchVaultOnChainState } from './rpc'
+import { fetchVaultOnChainState, getArchiveRpcEndpoints } from './rpc'
 
 const VAULT_ADDRESS = '0x1111111111111111111111111111111111111111'
 const STRATEGY_ADDRESSES = ['0x2222222222222222222222222222222222222222', '0x3333333333333333333333333333333333333333']
@@ -42,5 +42,32 @@ describe('fetchVaultOnChainState', () => {
     })
     expect(state.unallocatedBps).toBe(6000)
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('getArchiveRpcEndpoints', () => {
+  it('uses the server-side chain RPC env var for archive reads without accessing legacy RPC env vars', () => {
+    const accessedEnvKeys: string[] = []
+    const legacyDrpcEnvVar = ['MAINNET', 'DRPC'].join('_')
+    const legacyEthereumRpcEnvVar = ['ETHEREUM', 'RPC', 'URL'].join('_')
+    const env = new Proxy(
+      {
+        RPC_URI_FOR_1: 'https://rpc.yearn.fi/chain/1',
+        [legacyEthereumRpcEnvVar]: 'https://legacy-rpc.example',
+        [legacyDrpcEnvVar]: 'https://drpc.example'
+      },
+      {
+        get(target, property) {
+          accessedEnvKeys.push(String(property))
+          return target[property as keyof typeof target]
+        }
+      }
+    )
+
+    const endpoints = getArchiveRpcEndpoints(1, env)
+
+    expect(endpoints[0]).toBe('https://rpc.yearn.fi/chain/1')
+    expect(accessedEnvKeys).not.toContain(legacyEthereumRpcEnvVar)
+    expect(accessedEnvKeys).not.toContain(legacyDrpcEnvVar)
   })
 })
