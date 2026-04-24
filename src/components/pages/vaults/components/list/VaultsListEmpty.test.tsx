@@ -24,6 +24,7 @@ describe('VaultsListEmpty', () => {
     expect(html).toContain('Show legacy vaults (+2)')
     expect(html).toContain('Show single asset strategies (+1)')
     expect(html).toContain('Search')
+    expect(html).toContain('min-h-96')
     expect(html).not.toContain('Show all results')
   })
 
