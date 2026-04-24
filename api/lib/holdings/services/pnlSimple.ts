@@ -422,7 +422,7 @@ async function fetchReceiptPrices(requests: TSimpleReceiptPriceRequest[]): Promi
   }
 
   try {
-    return await fetchHistoricalPricesForTokenTimestamps(requests)
+    return await fetchHistoricalPricesForTokenTimestamps(requests, { resolution: 'utc_day' })
   } catch (error) {
     debugError('pnl-simple', 'receipt price fetch failed, continuing with missing receipt prices', error, {
       tokens: requests.length,
@@ -438,9 +438,10 @@ async function fetchEthReceiptPrices(timestamps: number[]): Promise<Map<number, 
   }
 
   try {
-    const priceData = await fetchHistoricalPricesForTokenTimestamps([
-      { chainId: 1, address: ETHEREUM_WETH_ADDRESS, timestamps }
-    ])
+    const priceData = await fetchHistoricalPricesForTokenTimestamps(
+      [{ chainId: 1, address: ETHEREUM_WETH_ADDRESS, timestamps }],
+      { resolution: 'utc_day' }
+    )
     return priceData.get(ETHEREUM_WETH_PRICE_KEY) ?? new Map()
   } catch (error) {
     debugError('pnl-simple', 'eth receipt price fetch failed, continuing with missing eth receipt price', error, {
