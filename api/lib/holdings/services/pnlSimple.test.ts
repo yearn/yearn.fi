@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { VaultMetadata } from '../types'
+import type { TransactionActivityEvents } from './graphql'
+import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnl'
 import { toVaultKey } from './pnlShared'
 import {
   buildProtocolReturnFamilyHistorySeries,
@@ -907,6 +909,141 @@ describe('pnl simple protocol return', () => {
 
     expect(history[0]?.growthWeightUsd).toBeCloseTo(0)
     expect(history[0]?.growthWeightEth).toBeCloseTo(0)
+    expect(history[0]?.protocolReturnPct).toBeCloseTo(0)
+    expect(history[0]?.growthIndex).toBeCloseTo(100)
+    expect(history[1]?.growthWeightUsd).toBeCloseTo(10)
+    expect(history[1]?.growthWeightEth).toBeCloseTo(5)
+    expect(history[1]?.protocolReturnPct).toBeCloseTo(9.0909090909)
+    expect(history[1]?.growthIndex).toBeCloseTo(109.0909090909)
+  })
+
+  it('recovers router-mediated staking basis when tx activity is merged into address-scoped simple-history events', () => {
+    const UNDERLYING_VAULT = '0x182863131F9a4630fF9E27830d945B1413e347E8'
+    const STAKING_VAULT = '0xd57aea3686d623da2dcebc87010a4f2f38ac7b15'
+    const STAKING_VAULT_KEY = toVaultKey(1, UNDERLYING_VAULT)
+    const stakingMetadata = new Map<string, VaultMetadata>([
+      [
+        STAKING_VAULT_KEY,
+        {
+          address: UNDERLYING_VAULT,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: ASSET,
+            symbol: 'TST',
+            decimals: 18
+          },
+          decimals: 18
+        }
+      ]
+    ])
+
+    const addressEvents = [
+      baseEvent({
+        kind: 'deposit',
+        id: 'user-staking-deposit',
+        transactionHash: '0xrouter-stake',
+        vaultAddress: STAKING_VAULT,
+        familyVaultAddress: UNDERLYING_VAULT,
+        isStakingVault: true,
+        blockTimestamp: 200,
+        blockNumber: 2,
+        logIndex: 2,
+        shares: 100n * ONE,
+        assets: 100n * ONE,
+        owner: USER,
+        sender: OTHER,
+        scopes: {
+          address: true,
+          tx: false
+        }
+      }),
+      baseEvent({
+        kind: 'transfer',
+        id: 'user-staking-mint-transfer',
+        transactionHash: '0xrouter-stake',
+        vaultAddress: STAKING_VAULT,
+        familyVaultAddress: UNDERLYING_VAULT,
+        isStakingVault: true,
+        blockTimestamp: 200,
+        blockNumber: 2,
+        logIndex: 3,
+        sender: ZERO_ADDRESS,
+        receiver: USER,
+        shares: 100n * ONE,
+        scopes: {
+          address: true,
+          tx: false
+        }
+      })
+    ]
+    const transactionEvents: TransactionActivityEvents = {
+      deposits: [
+        {
+          id: 'router-underlying-deposit',
+          vaultAddress: UNDERLYING_VAULT,
+          chainId: 1,
+          blockNumber: 2,
+          blockTimestamp: 200,
+          logIndex: 0,
+          transactionHash: '0xrouter-stake',
+          transactionFrom: OTHER,
+          owner: OTHER,
+          sender: OTHER,
+          assets: (110n * ONE).toString(),
+          shares: (100n * ONE).toString()
+        }
+      ],
+      withdrawals: [],
+      transfers: [
+        {
+          id: 'router-transfer-to-staking',
+          vaultAddress: UNDERLYING_VAULT,
+          chainId: 1,
+          blockNumber: 2,
+          blockTimestamp: 200,
+          logIndex: 1,
+          transactionHash: '0xrouter-stake',
+          transactionFrom: OTHER,
+          sender: OTHER,
+          receiver: STAKING_VAULT,
+          value: (100n * ONE).toString()
+        }
+      ]
+    }
+
+    const history = buildProtocolReturnHistorySeries({
+      events: mergeAddressScopedRawPnlEventsWithTransactionActivity(addressEvents, transactionEvents),
+      userAddress: USER,
+      metadata: stakingMetadata,
+      ppsData: new Map([
+        [
+          STAKING_VAULT_KEY,
+          new Map([
+            [200, 1.1],
+            [250, 1.2]
+          ])
+        ]
+      ]),
+      priceData: new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [0, 1],
+            [200, 1]
+          ])
+        ]
+      ]),
+      ethPriceData: new Map([
+        [0, 2],
+        [200, 2],
+        [250, 2]
+      ]),
+      timestamps: [200, 250]
+    })
+
+    expect(history[0]?.growthWeightUsd).toBeCloseTo(0)
     expect(history[0]?.protocolReturnPct).toBeCloseTo(0)
     expect(history[0]?.growthIndex).toBeCloseTo(100)
     expect(history[1]?.growthWeightUsd).toBeCloseTo(10)

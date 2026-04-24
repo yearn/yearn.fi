@@ -9,6 +9,7 @@ import {
   type THistoricalPriceRequest
 } from './defillama'
 import {
+  fetchActivityEventsByTransactionHashes,
   fetchRawUserPnlEvents,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
@@ -27,7 +28,7 @@ import {
   getNestedVaultPpsIdentifiersFromPriceRequests,
   mergeVaultIdentifiers
 } from './nestedVaultPrices'
-import { buildRawPnlEvents } from './pnl'
+import { buildRawPnlEvents, mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnl'
 import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
 import {
@@ -1411,6 +1412,63 @@ function getProtocolReturnTimestamps(events: TRawPnlEvent[], timeframe: '1y' | '
   )
 }
 
+function buildTransactionHashesByChain(events: TRawPnlEvent[]): Map<number, string[]> {
+  return events.reduce<Map<number, string[]>>((grouped, event) => {
+    const transactionHash = lowerCaseAddress(event.transactionHash)
+    const existing = grouped.get(event.chainId) ?? []
+
+    if (existing.includes(transactionHash)) {
+      return grouped
+    }
+
+    grouped.set(event.chainId, [...existing, transactionHash])
+    return grouped
+  }, new Map())
+}
+
+async function enrichSimpleHistoryRawEvents(args: {
+  events: TRawPnlEvent[]
+  version: VaultVersion
+  maxTimestamp: number
+}): Promise<TRawPnlEvent[]> {
+  if (args.events.length === 0) {
+    return args.events
+  }
+
+  const transactionHashesByChain = buildTransactionHashesByChain(args.events)
+  const requestedTransactions = Array.from(transactionHashesByChain.values()).reduce(
+    (total, transactionHashes) => total + transactionHashes.length,
+    0
+  )
+
+  if (requestedTransactions === 0) {
+    return args.events
+  }
+
+  const allowedFamilyKeys = new Set(args.events.map((event) => toVaultKey(event.chainId, event.familyVaultAddress)))
+  const transactionEvents = await fetchActivityEventsByTransactionHashes(
+    transactionHashesByChain,
+    args.version,
+    args.maxTimestamp
+  )
+  const enrichedEvents = mergeAddressScopedRawPnlEventsWithTransactionActivity(
+    args.events,
+    transactionEvents,
+    allowedFamilyKeys
+  )
+
+  debugLog('pnl-simple-history', 'enriched simple-history raw events with same-family tx context', {
+    addressEvents: args.events.length,
+    enrichedEvents: enrichedEvents.length,
+    requestedTransactions,
+    txDeposits: transactionEvents.deposits.length,
+    txWithdrawals: transactionEvents.withdrawals.length,
+    txTransfers: transactionEvents.transfers.length
+  })
+
+  return enrichedEvents
+}
+
 export function buildProtocolReturnLedgers(args: {
   events: TRawPnlEvent[]
   userAddress: string
@@ -2036,8 +2094,13 @@ export async function getHoldingsPnLSimpleHistory(
     paginationMode,
     requestedVault
   })
-  const effectiveEvents = settledContext.selectedEvents
-  const filteredVaultIdentifiers = settledContext.selectedVaultIdentifiers
+  const rawEvents = await enrichSimpleHistoryRawEvents({
+    events: settledContext.selectedEvents,
+    version,
+    maxTimestamp: settledContext.maxTimestamp
+  })
+  const effectiveEvents = rawEvents
+  const filteredVaultIdentifiers = getVaultIdentifiers(effectiveEvents)
   const vaultMetadata = settledContext.vaultMetadata
 
   if (effectiveEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
