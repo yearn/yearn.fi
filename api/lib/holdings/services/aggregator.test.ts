@@ -500,7 +500,7 @@ describe('getHistoricalHoldings', () => {
       ])
     )
     fetchMultipleVaultsPPSMock.mockResolvedValue(new Map([[`1:${vaultAddress}`, new Map([[201, 1.5]])]]))
-    fetchHistoricalPricesMock.mockResolvedValue(new Map([[`ethereum:${tokenAddress}`, new Map([[201, 2]])]]))
+    fetchHistoricalPricesMock.mockResolvedValue(new Map([[`ethereum:${tokenAddress}`, new Map([[200, 2]])]]))
     getChainPrefixMock.mockReturnValue('ethereum')
     getPPSMock.mockReturnValue(1.5)
     getPriceAtTimestampMock.mockReturnValue(2)
@@ -510,7 +510,9 @@ describe('getHistoricalHoldings', () => {
     const response = await getHoldingsBreakdown(userAddress, 'all', 'parallel', 'all')
 
     expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86600, 'parallel', 'all')
-    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress, timestamps: [201] }])
+    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress, timestamps: [200] }], {
+      resolution: 'utc_day'
+    })
     expect(getShareBalanceAtTimestampMock).toHaveBeenCalledWith(timeline, vaultAddress, 1, 201)
     expect(response).toEqual({
       address: userAddress,
@@ -586,7 +588,7 @@ describe('getHistoricalHoldings', () => {
       ])
     )
     fetchMultipleVaultsPPSMock.mockResolvedValue(new Map([[`1:${vaultAddress}`, new Map([[101, 3]])]]))
-    fetchHistoricalPricesMock.mockResolvedValue(new Map([[`ethereum:${tokenAddress}`, new Map([[101, 4]])]]))
+    fetchHistoricalPricesMock.mockResolvedValue(new Map([[`ethereum:${tokenAddress}`, new Map([[100, 4]])]]))
     getChainPrefixMock.mockReturnValue('ethereum')
     getPPSMock.mockReturnValue(3)
     getPriceAtTimestampMock.mockReturnValue(4)
@@ -596,7 +598,9 @@ describe('getHistoricalHoldings', () => {
     const response = await getHoldingsBreakdown(userAddress, 'all', 'seq', 'paged', 100)
 
     expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86500, 'seq', 'paged')
-    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress, timestamps: [101] }])
+    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress, timestamps: [100] }], {
+      resolution: 'utc_day'
+    })
     expect(getShareBalanceAtTimestampMock).toHaveBeenCalledWith(timeline, vaultAddress, 1, 101)
     expect(response.date).toBe('date-101')
     expect(response.timestamp).toBe(101)
