@@ -40,7 +40,8 @@ _app
 .sentryclirc
 
 # docs
-scratch
+/docs
+AGENTS.md
 
 # playwright
 .playwright-mcp

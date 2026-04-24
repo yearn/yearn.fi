@@ -4,14 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const {
   MockRedisAuthenticationError,
   MockRedisConnectivityError,
-  fetchArchiveAllocationHistoryMock,
   fetchAlignedEventsMock,
   fetchVaultOnChainStateMock,
   findVaultOptimizationMock,
   getVaultDecimalsMock,
   parseExplainMetadataMock,
-  readLocalArchiveAllocationHistoryArtifactMock,
-  readLocalSankeyMockupPanelsMock,
   readOptimizationsMock
 } = vi.hoisted(() => {
   class MockRedisAuthenticationError extends Error {}
@@ -20,14 +17,11 @@ const {
   return {
     MockRedisAuthenticationError,
     MockRedisConnectivityError,
-    fetchArchiveAllocationHistoryMock: vi.fn(),
     fetchAlignedEventsMock: vi.fn(),
     fetchVaultOnChainStateMock: vi.fn(),
     findVaultOptimizationMock: vi.fn(),
     getVaultDecimalsMock: vi.fn(),
     parseExplainMetadataMock: vi.fn(),
-    readLocalArchiveAllocationHistoryArtifactMock: vi.fn().mockResolvedValue(null),
-    readLocalSankeyMockupPanelsMock: vi.fn().mockResolvedValue(null),
     readOptimizationsMock: vi.fn()
   }
 })
@@ -38,18 +32,6 @@ vi.mock('./_lib/assetLogos', () => ({
 
 vi.mock('./_lib/envio', () => ({
   fetchAlignedEvents: fetchAlignedEventsMock
-}))
-
-vi.mock('./_lib/archiveHistory', () => ({
-  fetchArchiveAllocationHistory: fetchArchiveAllocationHistoryMock
-}))
-
-vi.mock('./_lib/localArchiveHistory', () => ({
-  readLocalArchiveAllocationHistoryArtifact: readLocalArchiveAllocationHistoryArtifactMock
-}))
-
-vi.mock('./_lib/localSankeyMockup', () => ({
-  readLocalSankeyMockupPanels: readLocalSankeyMockupPanelsMock
 }))
 
 vi.mock('./_lib/explain-parse', () => ({
@@ -71,9 +53,7 @@ vi.mock('./_lib/rpc', () => ({
 }))
 
 import alignmentHandler from './alignment'
-import archiveHistoryHandler from './archive-history'
 import changeHandler from './change'
-import sankeyFeedHandler from './sankey-feed'
 import vaultStateHandler from './vault-state'
 
 type TMockVercelResponse = VercelResponse & {
@@ -120,8 +100,6 @@ describe('optimization handlers', () => {
   afterEach(() => {
     vi.clearAllMocks()
     vi.unstubAllEnvs()
-    readLocalArchiveAllocationHistoryArtifactMock.mockResolvedValue(null)
-    readLocalSankeyMockupPanelsMock.mockResolvedValue(null)
   })
 
   it('returns POST preflight headers for vault-state', async () => {
@@ -260,180 +238,5 @@ describe('optimization handlers', () => {
     expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
     expect(res.body).toEqual(targetHistory)
     expect(findVaultOptimizationMock).not.toHaveBeenCalled()
-  })
-
-  it('validates archive-history requests', async () => {
-    const res = createMockResponse()
-
-    await archiveHistoryHandler({ method: 'GET', query: {} } as VercelRequest, res)
-
-    expect(res.statusCode).toBe(400)
-    expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
-    expect(res.body).toEqual({ error: 'Invalid vault address' })
-  })
-
-  it('returns local sankey feed panels when available', async () => {
-    readLocalSankeyMockupPanelsMock.mockResolvedValue([
-      {
-        id: 'historical:one->two',
-        beforeState: {
-          id: 'one',
-          timestampUtc: '2026-04-18T00:00:00.000Z',
-          origin: 'archive',
-          strategies: []
-        },
-        afterState: {
-          id: 'two',
-          timestampUtc: '2026-04-18T01:00:00.000Z',
-          origin: 'archive',
-          strategies: []
-        },
-        beforeTimestampUtc: '2026-04-18T00:00:00.000Z',
-        afterTimestampUtc: '2026-04-18T01:00:00.000Z',
-        annotation: 'Selector 0x6a761202',
-        annotationTone: 'selector',
-        reallocationType: 'manual',
-        inputSelector: '0x6a761202',
-        txHash: '0x1111111111111111111111111111111111111111111111111111111111111111',
-        createdBy: '0x1111111111111111111111111111111111111111',
-        to: '0x2222222222222222222222222222222222222222',
-        kind: 'historical'
-      }
-    ])
-    const res = createMockResponse()
-
-    await sankeyFeedHandler(
-      {
-        method: 'GET',
-        query: {
-          chainId: '1',
-          vault: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204'
-        }
-      } as VercelRequest,
-      res
-    )
-
-    expect(res.statusCode).toBe(200)
-    expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
-    expect(res.body).toEqual([
-      expect.objectContaining({
-        annotation: 'Selector 0x6a761202',
-        annotationTone: 'selector',
-        reallocationType: 'manual'
-      })
-    ])
-  })
-
-  it('returns archive-backed history for supported vaults', async () => {
-    fetchArchiveAllocationHistoryMock.mockResolvedValue([
-      {
-        id: 'archive:1',
-        timestampUtc: '2026-04-21T12:00:00.000Z',
-        blockNumber: 123,
-        txHash: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-        inputSelector: '0x6a761202',
-        strategies: [
-          {
-            strategyAddress: '0x2222222222222222222222222222222222222222',
-            allocationPct: 55
-          }
-        ]
-      }
-    ])
-    const res = createMockResponse()
-
-    await archiveHistoryHandler(
-      {
-        method: 'GET',
-        query: {
-          chainId: '1',
-          fromTimestamp: '2026-04-18 23:19:40 UTC',
-          strategies: '0x2222222222222222222222222222222222222222',
-          vault: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204'
-        }
-      } as VercelRequest,
-      res
-    )
-
-    expect(res.statusCode).toBe(200)
-    expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
-    expect(res.body).toEqual([
-      {
-        id: 'archive:1',
-        timestampUtc: '2026-04-21T12:00:00.000Z',
-        blockNumber: 123,
-        txHash: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-        inputSelector: '0x6a761202',
-        strategies: [
-          {
-            strategyAddress: '0x2222222222222222222222222222222222222222',
-            allocationPct: 55
-          }
-        ]
-      }
-    ])
-    expect(fetchArchiveAllocationHistoryMock).toHaveBeenCalledWith({
-      chainId: 1,
-      vaultAddress: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
-      strategyAddresses: ['0x2222222222222222222222222222222222222222'],
-      fromTimestampUtc: '2026-04-18 23:19:40 UTC'
-    })
-  })
-
-  it('prefers a saved local archive artifact when present', async () => {
-    readLocalArchiveAllocationHistoryArtifactMock.mockResolvedValue({
-      chainId: 1,
-      vaultAddress: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
-      generatedAt: '2026-04-23T17:00:00.000Z',
-      fromTimestampUtc: '2026-04-18 23:19:40 UTC',
-      strategyAddresses: ['0x2222222222222222222222222222222222222222'],
-      records: [
-        {
-          id: 'archive:local-1',
-          timestampUtc: '2026-04-21T12:00:00.000Z',
-          blockNumber: 123,
-          txHash: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
-          inputSelector: '0x6a761202',
-          strategies: [
-            {
-              strategyAddress: '0x2222222222222222222222222222222222222222',
-              allocationPct: 55
-            }
-          ]
-        }
-      ]
-    })
-    const res = createMockResponse()
-
-    await archiveHistoryHandler(
-      {
-        method: 'GET',
-        query: {
-          chainId: '1',
-          fromTimestamp: '2026-04-18 23:19:40 UTC',
-          strategies: '0x2222222222222222222222222222222222222222',
-          vault: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204'
-        }
-      } as VercelRequest,
-      res
-    )
-
-    expect(res.statusCode).toBe(200)
-    expect(res.body).toEqual([
-      {
-        id: 'archive:local-1',
-        timestampUtc: '2026-04-21T12:00:00.000Z',
-        blockNumber: 123,
-        txHash: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
-        inputSelector: '0x6a761202',
-        strategies: [
-          {
-            strategyAddress: '0x2222222222222222222222222222222222222222',
-            allocationPct: 55
-          }
-        ]
-      }
-    ])
-    expect(fetchArchiveAllocationHistoryMock).not.toHaveBeenCalled()
   })
 })
