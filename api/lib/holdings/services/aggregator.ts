@@ -519,12 +519,14 @@ export async function getHoldingsBreakdown(
   const breakdownDayTimestamp = targetTimestamp ?? timestamps[timestamps.length - 1]
   const breakdownTimestamp = toSettledDayTimestamp(breakdownDayTimestamp)
   const breakdownDate = timestampToDateString(breakdownTimestamp)
+  const breakdownPriceTimestamp = breakdownDayTimestamp
   debugLog('breakdown', 'starting holdings breakdown', {
     version,
     fetchType,
     paginationMode,
     timestamp: breakdownTimestamp,
-    date: breakdownDate
+    date: breakdownDate,
+    priceTimestamp: breakdownPriceTimestamp
   })
 
   const maxTimestamp = breakdownDayTimestamp + 86400
@@ -572,9 +574,34 @@ export async function getHoldingsBreakdown(
     return buildEmptyBreakdownResponse(userAddress, version, breakdownTimestamp, 'No matching holdings found')
   }
 
+  const activeVaults = vaults.reduce<
+    Array<{
+      chainId: number
+      vaultAddress: string
+      shares: bigint
+      sharesFormatted: number
+    }>
+  >((active, vault) => {
+    const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
+    const decimals = metadata?.decimals ?? 18
+    const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, breakdownTimestamp)
+
+    if (shares <= BigInt(0)) {
+      return active
+    }
+
+    active.push({
+      chainId: vault.chainId,
+      vaultAddress: vault.vaultAddress,
+      shares,
+      sharesFormatted: Number(shares) / 10 ** decimals
+    })
+    return active
+  }, [])
+
   const seenTokens = new Set<string>()
   const underlyingTokens: Array<{ chainId: number; address: string }> = []
-  for (const vault of vaults) {
+  for (const vault of activeVaults) {
     const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
     if (!metadata) {
       continue
@@ -592,16 +619,18 @@ export async function getHoldingsBreakdown(
 
   const basePriceRequests = underlyingTokens.map((token) => ({
     ...token,
-    timestamps: [breakdownTimestamp]
+    timestamps: [breakdownPriceTimestamp]
   }))
   const priceRequests = expandNestedVaultAssetPriceRequests(basePriceRequests, vaultMetadata)
   const ppsIdentifiers = mergeVaultIdentifiers([
-    ...vaults,
+    ...activeVaults,
     ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, vaultMetadata)
   ])
   const [ppsData, fetchedPriceData] = await Promise.all([
-    fetchMultipleVaultsPPS(ppsIdentifiers),
-    fetchHistoricalPricesForTokenTimestamps(priceRequests)
+    ppsIdentifiers.length > 0 ? fetchMultipleVaultsPPS(ppsIdentifiers) : Promise.resolve(new Map()),
+    priceRequests.length > 0
+      ? fetchHistoricalPricesForTokenTimestamps(priceRequests, { resolution: 'utc_day' })
+      : Promise.resolve(new Map())
   ])
   const priceData = deriveNestedVaultAssetPriceData({
     priceData: fetchedPriceData,
@@ -618,19 +647,18 @@ export async function getHoldingsBreakdown(
     ppsResolved: ppsData.size,
     tokens: priceRequests.length,
     priceKeys: priceData.size,
-    timestamp: breakdownTimestamp
+    timestamp: breakdownTimestamp,
+    priceTimestamp: breakdownPriceTimestamp,
+    activeVaults: activeVaults.length
   })
 
   const results: HoldingsBreakdownVaultResponse[] = []
 
-  for (const vault of vaults) {
+  for (const vault of activeVaults) {
     const vaultKey = toVaultKey(vault.chainId, vault.vaultAddress)
     const metadata = vaultMetadata.get(vaultKey)
-    const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, breakdownTimestamp)
     const ppsMap = ppsData.get(vaultKey)
     const pps = ppsMap ? getPPS(ppsMap, breakdownTimestamp) : null
-    const decimals = metadata?.decimals ?? 18
-    const sharesFormatted = Number(shares) / 10 ** decimals
 
     let tokenPrice: number | null = null
     let usdValue: number | null = null
@@ -638,8 +666,8 @@ export async function getHoldingsBreakdown(
     if (metadata) {
       const priceKey = `${getChainPrefix(metadata.chainId)}:${metadata.token.address.toLowerCase()}`
       const tokenPriceMap = priceData.get(priceKey)
-      tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, breakdownTimestamp) : 0
-      usdValue = pps ? sharesFormatted * pps * tokenPrice : 0
+      tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, breakdownPriceTimestamp) : 0
+      usdValue = pps ? vault.sharesFormatted * pps * tokenPrice : 0
     }
 
     let status: HoldingsBreakdownVaultResponse['status'] = 'ok'
@@ -654,8 +682,8 @@ export async function getHoldingsBreakdown(
     results.push({
       chainId: vault.chainId,
       vaultAddress: vault.vaultAddress,
-      shares: shares.toString(),
-      sharesFormatted,
+      shares: vault.shares.toString(),
+      sharesFormatted: vault.sharesFormatted,
       pricePerShare: pps,
       tokenPrice,
       usdValue,

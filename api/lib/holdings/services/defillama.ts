@@ -33,6 +33,7 @@ const DEFAULT_MAX_RETRIES = 2
 const DEFAULT_RETRY_DELAY_MS = 200
 const DEFAULT_MAX_REQUEST_URL_LENGTH = 3_500
 const MAX_REQUESTED_PRICE_DISTANCE_SECONDS = 60 * 60
+const MAX_DAILY_PRICE_DISTANCE_SECONDS = 60 * 60 * 24
 const SPLITTABLE_GET_STATUS_CODES = new Set([414, 431, 505])
 
 type TCoinRequest = { chain: string; address: string; timestamps: number[] }
@@ -66,6 +67,13 @@ export type THistoricalPriceRequest = {
   address: string
   timestamps: number[]
   uncachedTimestamps?: number[]
+}
+
+type TPriceTimestampMatch = { price: number; timestamp: number } | null
+type TPriceTimestampMatcher = (priceMap: Map<number, number>, targetTimestamp: number) => TPriceTimestampMatch
+type THistoricalPriceFetchResolution = 'strict' | 'utc_day'
+type THistoricalPriceFetchOptions = {
+  resolution?: THistoricalPriceFetchResolution
 }
 
 export function getChainPrefix(chainId: number): string {
@@ -240,9 +248,57 @@ function getPriceAtTimestampWithinTolerance(
   return { price: priceMap.get(closestPriorTimestamp)!, timestamp: closestPriorTimestamp }
 }
 
+function getPriceAtTimestampWithinDayWindow(
+  priceMap: Map<number, number>,
+  targetTimestamp: number
+): { price: number; timestamp: number } | null {
+  if (priceMap.has(targetTimestamp)) {
+    return { price: priceMap.get(targetTimestamp)!, timestamp: targetTimestamp }
+  }
+
+  const bestMatch = Array.from(priceMap.keys()).reduce<{
+    timestamp: number | null
+    distance: number
+  }>(
+    (best, timestamp) => {
+      const distance = Math.abs(timestamp - targetTimestamp)
+
+      if (distance > MAX_DAILY_PRICE_DISTANCE_SECONDS) {
+        return best
+      }
+
+      if (
+        best.timestamp === null ||
+        distance < best.distance ||
+        (distance === best.distance && timestamp < targetTimestamp && (best.timestamp ?? Infinity) >= targetTimestamp)
+      ) {
+        return {
+          timestamp,
+          distance
+        }
+      }
+
+      return best
+    },
+    {
+      timestamp: null,
+      distance: Infinity
+    }
+  )
+
+  return bestMatch.timestamp === null
+    ? null
+    : { price: priceMap.get(bestMatch.timestamp)!, timestamp: bestMatch.timestamp }
+}
+
+function getRequestedPriceMatcher(resolution: THistoricalPriceFetchResolution): TPriceTimestampMatcher {
+  return resolution === 'utc_day' ? getPriceAtTimestampWithinDayWindow : getPriceAtTimestampWithinTolerance
+}
+
 function materializeRequestedPrices(
   coins: TCoinRequest[],
-  fetchedPrices: Map<string, Map<number, number>>
+  fetchedPrices: Map<string, Map<number, number>>,
+  matchPriceAtTimestamp: TPriceTimestampMatcher
 ): CachedPrice[] {
   return coins.flatMap((coin) => {
     const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
@@ -250,7 +306,7 @@ function materializeRequestedPrices(
 
     return coin.timestamps
       .map((timestamp) => {
-        const matchedPrice = getPriceAtTimestampWithinTolerance(fetchedPriceMap, timestamp)
+        const matchedPrice = matchPriceAtTimestamp(fetchedPriceMap, timestamp)
         return matchedPrice === null
           ? null
           : {
@@ -265,7 +321,8 @@ function materializeRequestedPrices(
 
 function materializeRequestedPriceMisses(
   coins: TCoinRequest[],
-  fetchedPrices: Map<string, Map<number, number>>
+  fetchedPrices: Map<string, Map<number, number>>,
+  matchPriceAtTimestamp: TPriceTimestampMatcher
 ): CachedPriceMiss[] {
   return coins.flatMap((coin) => {
     const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
@@ -279,7 +336,7 @@ function materializeRequestedPriceMisses(
     }
 
     return coin.timestamps
-      .filter((timestamp) => getPriceAtTimestampWithinTolerance(fetchedPriceMap, timestamp) === null)
+      .filter((timestamp) => matchPriceAtTimestamp(fetchedPriceMap, timestamp) === null)
       .map((timestamp) => ({
         tokenKey,
         timestamp
@@ -631,8 +688,12 @@ async function fetchBatch(
 }
 
 export async function fetchHistoricalPricesForTokenTimestamps(
-  requests: THistoricalPriceRequest[]
+  requests: THistoricalPriceRequest[],
+  options: THistoricalPriceFetchOptions = {}
 ): Promise<Map<string, Map<number, number>>> {
+  const resolution = options.resolution ?? 'strict'
+  const matchPriceAtTimestamp = getRequestedPriceMatcher(resolution)
+  const useCachedPriceMisses = resolution === 'strict'
   const tuning = getDefiLlamaFetchTuning()
   const uncachedTimestampKeys = requests.reduce<Set<string>>((uncachedKeys, request) => {
     const tokenKey = `${getChainPrefix(request.chainId)}:${request.address.toLowerCase()}`
@@ -658,6 +719,7 @@ export async function fetchHistoricalPricesForTokenTimestamps(
     tokens: tokenKeys.length,
     timestamps: requestedTimestamps.length,
     pricePointCount: requestedPricePoints,
+    resolution,
     useProApi: tuning.useProApi,
     parallelRequests: tuning.parallelRequests
   })
@@ -683,11 +745,12 @@ export async function fetchHistoricalPricesForTokenTimestamps(
 
   const [cachedPrices, cachedPriceMisses] = await Promise.all([
     getCachedPricesForTokenTimestamps(cacheableLookups),
-    getCachedPriceMissesForTokenTimestamps(cacheableLookups)
+    useCachedPriceMisses ? getCachedPriceMissesForTokenTimestamps(cacheableLookups) : Promise.resolve(new Map())
   ])
   const cachedPricePoints = countPricePoints(cachedPrices)
   debugLog('defillama', 'loaded cached price points', {
-    cachedPoints: cachedPricePoints
+    cachedPoints: cachedPricePoints,
+    resolution
   })
   const missingByToken = coins.reduce<Map<string, number[]>>((missing, coin) => {
     const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
@@ -717,7 +780,8 @@ export async function fetchHistoricalPricesForTokenTimestamps(
     debugLog('defillama', 'historical prices fully satisfied by cache', {
       tokens: tokenKeys.length,
       timestamps: requestedTimestamps.length,
-      pricePointCount: requestedPricePoints
+      pricePointCount: requestedPricePoints,
+      resolution
     })
     return result
   }
@@ -778,8 +842,12 @@ export async function fetchHistoricalPricesForTokenTimestamps(
 
         fetchStats.successfulBatches += 1
 
-        const materializedPrices = materializeRequestedPrices(batch.coinBatch, batchResult.value)
-        const materializedPriceMisses = materializeRequestedPriceMisses(batch.coinBatch, batchResult.value)
+        const materializedPrices = materializeRequestedPrices(batch.coinBatch, batchResult.value, matchPriceAtTimestamp)
+        const materializedPriceMisses = materializeRequestedPriceMisses(
+          batch.coinBatch,
+          batchResult.value,
+          matchPriceAtTimestamp
+        )
         materializedPrices.forEach(({ tokenKey, timestamp, price }) => {
           if (!result.has(tokenKey)) {
             result.set(tokenKey, new Map())
@@ -824,7 +892,8 @@ export async function fetchHistoricalPricesForTokenTimestamps(
     successfulBatches: fetchStats.successfulBatches,
     totalPricePoints: countPricePoints(result),
     newPrices: newPrices.length,
-    newPriceMisses: newPriceMisses.length
+    newPriceMisses: newPriceMisses.length,
+    resolution
   })
 
   return result
