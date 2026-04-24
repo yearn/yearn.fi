@@ -28,11 +28,15 @@ import { fetchMultipleVaultsPPS, getPPS } from './kong'
 import {
   deriveNestedVaultAssetPriceData,
   expandNestedVaultAssetPriceRequests,
-  getAssetVaultMetadataLookupIdentifiers,
   getNestedVaultPpsIdentifiersFromPriceRequests,
   mergeVaultIdentifiers
 } from './nestedVaultPrices'
 import { toVaultKey } from './pnlShared'
+import {
+  getSettledAddressScopedContext,
+  getSettledVersionedPpsContext,
+  resolveNestedVaultAssetMetadata
+} from './settledHoldingsContext'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
 export interface HoldingsHistoryResponse {
@@ -56,19 +60,6 @@ export interface HoldingsHistoryChartResponse {
 }
 
 const ETHEREUM_WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-
-async function resolveNestedVaultAssetMetadata(
-  vaultMetadata: Map<string, VaultMetadata>
-): Promise<Map<string, VaultMetadata>> {
-  const assetVaultIdentifiers = getAssetVaultMetadataLookupIdentifiers(vaultMetadata)
-
-  if (assetVaultIdentifiers.length === 0) {
-    return vaultMetadata
-  }
-
-  const assetVaultMetadata = await fetchMultipleVaultsMetadata(assetVaultIdentifiers, { skipSnapshotFallback: true })
-  return new Map([...vaultMetadata, ...assetVaultMetadata])
-}
 
 export interface HoldingsBreakdownVaultResponse {
   chainId: number
@@ -166,8 +157,13 @@ export async function getHistoricalHoldings(
   timeframe: HoldingsHistoryTimeframe = '1y'
 ): Promise<HoldingsHistoryResponse> {
   const defaultDays = config.historyDays
+  const baseContext = await getSettledAddressScopedContext({
+    userAddress,
+    fetchType,
+    paginationMode
+  })
   const dayTimestamps = generateDailyTimestamps(defaultDays, 1)
-  const latestSettledDayTimestamp = dayTimestamps[dayTimestamps.length - 1]
+  const latestSettledDayTimestamp = baseContext.latestSettledDayTimestamp
   let timestamps = timeframe === 'all' ? [] : dayTimestamps
   let periodDays = defaultDays
   debugLog('history', 'starting historical holdings aggregation', {
@@ -199,18 +195,15 @@ export async function getHistoricalHoldings(
 
   let cachedByDate = new Map(cachedTotals.map((total) => [total.date, total.usdValue]))
 
-  // Always fetch the full event set, then filter vaults by authoritative Kong metadata version.
-  const maxTimestamp = toSettledDayTimestamp(latestSettledDayTimestamp + 86400)
-  const events = await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
-  const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
-  const hasActivity = timeline.length > 0
+  const timeline = baseContext.timeline
+  const hasActivity = baseContext.hasActivity
   debugLog('history', 'built position timeline', {
     fetchType,
     paginationMode,
-    deposits: events.deposits.length,
-    withdrawals: events.withdrawals.length,
-    transfersIn: events.transfersIn.length,
-    transfersOut: events.transfersOut.length,
+    deposits: baseContext.events.deposits.length,
+    withdrawals: baseContext.events.withdrawals.length,
+    transfersIn: baseContext.events.transfersIn.length,
+    transfersOut: baseContext.events.transfersOut.length,
     timelineEntries: timeline.length
   })
 
@@ -224,15 +217,13 @@ export async function getHistoricalHoldings(
     }
   }
 
-  const rawVaults = timeline.length > 0 ? getUniqueVaults(timeline) : []
-  const baseVaultMetadata = rawVaults.length > 0 ? await fetchMultipleVaultsMetadata(rawVaults) : new Map()
-  const vaultMetadata = await resolveNestedVaultAssetMetadata(baseVaultMetadata)
-  const vaults = filterVaultsByAuthoritativeVersion(rawVaults, vaultMetadata, version)
+  const vaultMetadata = baseContext.vaultMetadata
+  const vaults = filterVaultsByAuthoritativeVersion(baseContext.rawVaultIdentifiers, vaultMetadata, version)
   debugLog('history', 'resolved authoritative vault versions for history', {
     version,
     fetchType,
     paginationMode,
-    rawVaults: rawVaults.length,
+    rawVaults: baseContext.rawVaultIdentifiers.length,
     filteredVaults: vaults.length,
     metadataResolved: vaultMetadata.size
   })
@@ -327,24 +318,35 @@ export async function getHistoricalHoldings(
         }))
       }
     } else {
-      const seenTokens = new Set<string>()
-      const underlyingTokens: Array<{ chainId: number; address: string }> = []
-      for (const vault of vaults) {
-        const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
-        if (!metadata) {
-          continue
-        }
+      const ppsContext = await getSettledVersionedPpsContext({
+        userAddress,
+        version,
+        fetchType,
+        paginationMode,
+        vaultIdentifiers: vaults,
+        context: baseContext
+      })
+      const underlyingTokens = Array.from(
+        vaults
+          .reduce<Map<string, { chainId: number; address: string }>>((tokens, vault) => {
+            const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
 
-        const tokenKey = `${metadata.chainId}:${metadata.token.address.toLowerCase()}`
-        if (!seenTokens.has(tokenKey)) {
-          seenTokens.add(tokenKey)
-          underlyingTokens.push({
-            chainId: metadata.chainId,
-            address: metadata.token.address
-          })
-        }
-      }
+            if (!metadata) {
+              return tokens
+            }
 
+            const tokenKey = `${metadata.chainId}:${metadata.token.address.toLowerCase()}`
+            if (!tokens.has(tokenKey)) {
+              tokens.set(tokenKey, {
+                chainId: metadata.chainId,
+                address: metadata.token.address
+              })
+            }
+
+            return tokens
+          }, new Map())
+          .values()
+      )
       const valuationTimestamps = missingTimestamps.map((timestamp) => toSettledDayTimestamp(timestamp))
       const basePriceRequests = underlyingTokens.map((token) => ({
         ...token,
@@ -355,15 +357,12 @@ export async function getHistoricalHoldings(
         ...vaults,
         ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, vaultMetadata)
       ])
-      const [ppsData, fetchedPriceData] = await Promise.all([
-        fetchMultipleVaultsPPS(ppsIdentifiers),
-        fetchHistoricalPricesForTokenTimestamps(priceRequests)
-      ])
+      const fetchedPriceData = await fetchHistoricalPricesForTokenTimestamps(priceRequests)
       const priceData = deriveNestedVaultAssetPriceData({
         priceData: fetchedPriceData,
         priceRequests,
         vaultMetadata,
-        ppsData
+        ppsData: ppsContext.ppsData
       })
       debugLog('history', 'resolved metadata and PPS for history', {
         version,
@@ -371,8 +370,8 @@ export async function getHistoricalHoldings(
         paginationMode,
         vaults: ppsIdentifiers.length,
         metadataResolved: vaultMetadata.size,
-        ppsResolved: ppsData.size,
-        emptyPpsTimelines: Array.from(ppsData.values()).filter((timeline) => timeline.size === 0).length
+        ppsResolved: ppsContext.ppsData.size,
+        emptyPpsTimelines: Array.from(ppsContext.ppsData.values()).filter((timeline) => timeline.size === 0).length
       })
       debugLog('history', 'resolved historical token prices', {
         version,
@@ -397,7 +396,7 @@ export async function getHistoricalHoldings(
 
           if (shares === BigInt(0)) continue
 
-          const ppsMap = ppsData.get(vaultKey)
+          const ppsMap = ppsContext.ppsData.get(vaultKey)
           const pps = ppsMap ? getPPS(ppsMap, valuationTimestamp) : null
 
           if (pps === null) continue
