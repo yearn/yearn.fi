@@ -33,6 +33,19 @@ import {
   isHoldingsDebugRequested,
   withHoldingsDebugContext
 } from './lib/holdings/services/debug'
+import { getVaultDecimals } from './optimization/_lib/assetLogos'
+import { OPTIMIZATION_GET_CORS_HEADERS, OPTIMIZATION_POST_CORS_HEADERS } from './optimization/_lib/cors'
+import { fetchAlignedEvents } from './optimization/_lib/envio'
+import { parseExplainMetadata } from './optimization/_lib/explain-parse'
+import {
+  findVaultOptimization,
+  isRedisAuthenticationError,
+  isRedisConnectivityError,
+  REDIS_AUTHENTICATION_ERROR_MESSAGE,
+  REDIS_CONNECTIVITY_ERROR_MESSAGE,
+  readOptimizations
+} from './optimization/_lib/redis'
+import { fetchVaultOnChainState } from './optimization/_lib/rpc'
 import {
   buildTenderlyPanelStatus,
   buildTenderlyRevertResponse,
@@ -43,9 +56,28 @@ import {
 import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+const DEFAULT_API_SERVER_PORT = '3001'
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
+
+function isHistoryQueryEnabled(historyParam: string | null): boolean {
+  return historyParam === '1' || historyParam === 'true'
+}
+
+function resolveApiServerPort(env: NodeJS.ProcessEnv): number {
+  const configuredPort = env.API_SERVER_PORT
+  if (configuredPort) {
+    const parsedConfiguredPort = Number(configuredPort)
+    if (Number.isInteger(parsedConfiguredPort) && parsedConfiguredPort > 0) {
+      return parsedConfiguredPort
+    }
+  }
+
+  return Number(DEFAULT_API_SERVER_PORT)
+}
+
+const API_SERVER_PORT = resolveApiServerPort(process.env)
 
 type TTenderlyJsonRpcSuccess = {
   id: string | number | null
@@ -61,6 +93,22 @@ type TTenderlyJsonRpcError = {
     message: string
     data?: unknown
   }
+}
+
+function withCorsHeaders(headers: HeadersInit | undefined, corsHeaders: Readonly<Record<string, string>>): HeadersInit {
+  return { ...corsHeaders, ...(headers ?? {}) }
+}
+
+function jsonWithCors(
+  body: unknown,
+  status: number,
+  corsHeaders: Readonly<Record<string, string>>,
+  headers?: HeadersInit
+): Response {
+  return Response.json(body, {
+    status,
+    headers: withCorsHeaders(headers, corsHeaders)
+  })
 }
 
 async function handleYvUsdAprs(req: Request): Promise<Response> {
@@ -478,6 +526,210 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
   } catch (error) {
     console.error('Error proxying Enso request:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+const CHANGE_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
+const ALIGNMENT_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const VAULT_STATE_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+
+async function handleOptimizationChange(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: OPTIMIZATION_GET_CORS_HEADERS })
+  }
+
+  if (req.method !== 'GET') {
+    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_GET_CORS_HEADERS)
+  }
+
+  try {
+    const optimizations = await readOptimizations()
+    if (!optimizations || optimizations.length === 0) {
+      return jsonWithCors({ error: 'No optimization data available' }, 404, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    const url = new URL(req.url)
+    const requestedVault = url.searchParams.get('vault')
+    if (requestedVault) {
+      if (isHistoryQueryEnabled(url.searchParams.get('history'))) {
+        const selectedHistory = optimizations.filter((optimization) => {
+          return optimization.vault.toLowerCase() === requestedVault.toLowerCase()
+        })
+        if (selectedHistory.length === 0) {
+          return jsonWithCors(
+            { error: `Vault not found in optimization payload: ${requestedVault}` },
+            404,
+            OPTIMIZATION_GET_CORS_HEADERS
+          )
+        }
+
+        return jsonWithCors(selectedHistory, 200, OPTIMIZATION_GET_CORS_HEADERS, {
+          'Cache-Control': CHANGE_CACHE_CONTROL
+        })
+      }
+
+      const selected = findVaultOptimization(optimizations, requestedVault)
+      if (!selected) {
+        return jsonWithCors(
+          { error: `Vault not found in optimization payload: ${requestedVault}` },
+          404,
+          OPTIMIZATION_GET_CORS_HEADERS
+        )
+      }
+
+      return jsonWithCors(selected, 200, OPTIMIZATION_GET_CORS_HEADERS, {
+        'Cache-Control': CHANGE_CACHE_CONTROL
+      })
+    }
+
+    return jsonWithCors(optimizations, 200, OPTIMIZATION_GET_CORS_HEADERS, {
+      'Cache-Control': CHANGE_CACHE_CONTROL
+    })
+  } catch (error) {
+    if (isRedisAuthenticationError(error)) {
+      return jsonWithCors({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    if (isRedisConnectivityError(error)) {
+      return jsonWithCors({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, 503, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    const message = error instanceof Error ? error.message : String(error)
+    return jsonWithCors({ error: message }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+  }
+}
+
+async function handleOptimizationAlignment(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: OPTIMIZATION_GET_CORS_HEADERS })
+  }
+
+  if (req.method !== 'GET') {
+    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_GET_CORS_HEADERS)
+  }
+
+  const url = new URL(req.url)
+  const vault = url.searchParams.get('vault')
+  if (!vault) {
+    return jsonWithCors({ error: 'vault parameter required' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
+  }
+
+  const envioUrl = process.env.ENVIO_GRAPHQL_URL
+  if (!envioUrl) {
+    return jsonWithCors({ error: 'ENVIO_GRAPHQL_URL not configured' }, 503, OPTIMIZATION_GET_CORS_HEADERS)
+  }
+
+  try {
+    const optimizations = await readOptimizations()
+    if (!optimizations || optimizations.length === 0) {
+      return jsonWithCors({ error: 'No optimization data available' }, 404, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    const optimization = findVaultOptimization(optimizations, vault)
+    if (!optimization) {
+      return jsonWithCors({ error: `Vault not found: ${vault}` }, 404, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    let chainId = optimization.source.chainId
+    if (!chainId) {
+      const metadata = parseExplainMetadata(optimization.explain)
+      chainId = metadata.chainId
+    }
+    if (!chainId) {
+      return jsonWithCors({ error: 'Could not determine chain ID for vault' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    const timestampStr = optimization.source.latestMatchedTimestampUtc ?? optimization.source.timestampUtc
+    if (!timestampStr) {
+      return jsonWithCors({ error: 'No timestamp available for vault snapshot' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+    const fromTs = Math.floor(new Date(timestampStr.replace(' UTC', 'Z').replace(' ', 'T')).getTime() / 1000)
+    const numStrategies = optimization.strategyDebtRatios.length
+    const toTs = fromTs + numStrategies * 10 * 60 * 2
+
+    const decimals = getVaultDecimals(vault)
+
+    const events = await fetchAlignedEvents(
+      envioUrl,
+      vault,
+      chainId,
+      optimization.strategyDebtRatios,
+      fromTs,
+      toTs,
+      decimals
+    )
+
+    return jsonWithCors(events, 200, OPTIMIZATION_GET_CORS_HEADERS, {
+      'Cache-Control': ALIGNMENT_CACHE_CONTROL
+    })
+  } catch (error) {
+    if (isRedisAuthenticationError(error)) {
+      return jsonWithCors({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    if (isRedisConnectivityError(error)) {
+      return jsonWithCors({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, 503, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    const message = error instanceof Error ? error.message : String(error)
+    return jsonWithCors({ error: message }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+  }
+}
+
+async function handleOptimizationVaultState(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: OPTIMIZATION_POST_CORS_HEADERS })
+  }
+
+  if (req.method !== 'POST') {
+    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_POST_CORS_HEADERS)
+  }
+
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return jsonWithCors({ error: 'Invalid JSON body' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
+  }
+
+  const payload = body && typeof body === 'object' ? (body as Record<string, unknown>) : {}
+  const vault = typeof payload.vault === 'string' ? payload.vault : null
+  const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
+  const strategies = Array.isArray(payload.strategies)
+    ? payload.strategies.filter((s: unknown): s is string => typeof s === 'string')
+    : []
+
+  if (!vault || !/^0x[a-fA-F0-9]{40}$/.test(vault)) {
+    return jsonWithCors({ error: 'Invalid vault address' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
+  }
+  if (chainId === null || !Number.isFinite(chainId)) {
+    return jsonWithCors({ error: 'Invalid chainId' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
+  }
+  if (strategies.length === 0) {
+    return jsonWithCors({ error: 'No strategy addresses provided' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
+  }
+
+  try {
+    const state = await fetchVaultOnChainState(chainId, vault, strategies)
+
+    const strategyDebts: Record<string, string> = {}
+    for (const [addr, debt] of state.strategyDebts) {
+      strategyDebts[addr] = debt.toString()
+    }
+
+    return jsonWithCors(
+      {
+        totalAssets: state.totalAssets.toString(),
+        strategyDebts,
+        unallocatedBps: state.unallocatedBps
+      },
+      200,
+      OPTIMIZATION_POST_CORS_HEADERS,
+      { 'Cache-Control': VAULT_STATE_CACHE_CONTROL }
+    )
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return jsonWithCors({ error: message }, 503, OPTIMIZATION_POST_CORS_HEADERS)
   }
 }
 
@@ -1256,6 +1508,18 @@ async function main() {
           return withCors(await handleYvUsdAprs(req))
         }
 
+        if (url.pathname === '/api/optimization/change') {
+          return withCors(await handleOptimizationChange(req))
+        }
+
+        if (url.pathname === '/api/optimization/alignment') {
+          return withCors(await handleOptimizationAlignment(req))
+        }
+
+        if (url.pathname === '/api/optimization/vault-state') {
+          return withCors(await handleOptimizationVaultState(req))
+        }
+
         if (url.pathname === '/api/tenderly/status') {
           return withCors(handleTenderlyStatus(req))
         }
@@ -1303,18 +1567,20 @@ async function main() {
         )
       }
     },
-    port: 3001,
+    port: API_SERVER_PORT,
     idleTimeout: 120
   })
 
-  console.log('🚀 API server running on http://localhost:3001')
-  console.log('📊 Holdings API: http://localhost:3001/api/holdings/history?address=0x...')
-  console.log('🗂️ Holdings Activity API: http://localhost:3001/api/holdings/activity?address=0x...')
-  console.log('🧩 Holdings Breakdown API: http://localhost:3001/api/holdings/breakdown?address=0x...')
-  console.log('💹 PnL API: http://localhost:3001/api/holdings/pnl?address=0x...')
-  console.log('📈 Simple PnL API: http://localhost:3001/api/holdings/pnl/simple?address=0x...')
-  console.log('📊 Simple PnL History API: http://localhost:3001/api/holdings/pnl/simple-history?address=0x...')
-  console.log('🧾 PnL Drilldown API: http://localhost:3001/api/holdings/pnl/drilldown?address=0x...')
+  console.log(`🚀 API server running on http://localhost:${API_SERVER_PORT}`)
+  console.log(`📊 Holdings API: http://localhost:${API_SERVER_PORT}/api/holdings/history?address=0x...`)
+  console.log(`🗂️ Holdings Activity API: http://localhost:${API_SERVER_PORT}/api/holdings/activity?address=0x...`)
+  console.log(`🧩 Holdings Breakdown API: http://localhost:${API_SERVER_PORT}/api/holdings/breakdown?address=0x...`)
+  console.log(`💹 PnL API: http://localhost:${API_SERVER_PORT}/api/holdings/pnl?address=0x...`)
+  console.log(`📈 Simple PnL API: http://localhost:${API_SERVER_PORT}/api/holdings/pnl/simple?address=0x...`)
+  console.log(
+    `📊 Simple PnL History API: http://localhost:${API_SERVER_PORT}/api/holdings/pnl/simple-history?address=0x...`
+  )
+  console.log(`🧾 PnL Drilldown API: http://localhost:${API_SERVER_PORT}/api/holdings/pnl/drilldown?address=0x...`)
 }
 
 main().catch((error) => {

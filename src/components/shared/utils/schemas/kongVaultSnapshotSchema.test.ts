@@ -34,4 +34,24 @@ describe('kongVaultSnapshotSchema', () => {
     expect(parsed.performance?.estimated?.components?.fixedRateKatanaRewards).toBe(0.35)
     expect(parsed.performance?.estimated?.components?.FixedRateKatanaRewards).toBe(0.36)
   })
+
+  it('retains oracle net APR and net APY fields', () => {
+    const parsed = kongVaultSnapshotSchema.parse({
+      address: '0x0000000000000000000000000000000000000001',
+      chainId: 1,
+      performance: {
+        oracle: {
+          apr: 0.0375,
+          apy: 0.038197965598908645,
+          netAPR: 0.03375,
+          netAPY: 0.03431466938555827
+        }
+      }
+    })
+
+    expect(parsed.performance?.oracle?.apr).toBe(0.0375)
+    expect(parsed.performance?.oracle?.apy).toBe(0.038197965598908645)
+    expect(parsed.performance?.oracle?.netAPR).toBe(0.03375)
+    expect(parsed.performance?.oracle?.netAPY).toBe(0.03431466938555827)
+  })
 })

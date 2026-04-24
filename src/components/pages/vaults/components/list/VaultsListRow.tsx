@@ -267,6 +267,7 @@ function VaultsListRowComponent({
   const vaultAddress = getVaultAddress(currentVault)
   const vaultSymbol = getVaultSymbol(currentVault)
   const vaultName = getVaultDisplayName(currentVault)
+  const isYvUsd = isYvUsdAddress(vaultAddress)
   const vaultToken = getVaultToken(currentVault)
   const apr = getVaultAPR(currentVault)
   const vaultKind = getVaultKind(currentVault)
@@ -274,7 +275,6 @@ function VaultsListRowComponent({
   const href = hrefOverride ?? `/vaults/${chainID}/${toAddress(vaultAddress)}`
   const network = getNetwork(chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
-  const isYvUsd = isYvUsdAddress(vaultAddress)
   const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
   const { address } = useWeb3()
   const { getVaultHoldingsUsd, getBalance, isLoading: isWalletLoading } = useWallet()

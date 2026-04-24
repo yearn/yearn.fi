@@ -114,6 +114,57 @@ describe('getVaultAPR', () => {
 
     expect(apr.pricePerShare.today).toBeCloseTo(1.05, 8)
   })
+
+  it('prefers oracle.netAPY over oracle.apy for v3 vault forward APR values', () => {
+    const apr = getVaultAPR({
+      chainId: 1,
+      address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
+      name: 'Vault',
+      symbol: 'yvUSDC',
+      decimals: 18,
+      asset: {
+        address: '0x2222222222222222222222222222222222222222',
+        name: 'USDC',
+        symbol: 'USDC',
+        decimals: 6
+      },
+      tvl: 1000,
+      performance: {
+        oracle: {
+          apr: 0.0375,
+          apy: 0.038197965598908645,
+          netAPR: 0.03375,
+          netAPY: 0.03431466938555827
+        },
+        estimated: null,
+        historical: {
+          net: 0.03393884843735706,
+          weeklyNet: 0.041561734471399214,
+          monthlyNet: 0.03393884843735706,
+          inceptionNet: 0.04906557243862686
+        }
+      },
+      fees: {
+        managementFee: 0,
+        performanceFee: 0.1
+      },
+      category: 'Stablecoin',
+      type: 'Standard',
+      kind: 'Single Strategy',
+      v3: true,
+      yearn: true,
+      isRetired: false,
+      isHidden: false,
+      isBoosted: false,
+      isHighlighted: false,
+      strategiesCount: 1,
+      riskLevel: 1,
+      staking: null,
+      pricePerShare: '1000000'
+    } as any)
+
+    expect(apr.forwardAPR.netAPR).toBe(0.03431466938555827)
+  })
 })
 
 describe('getVaultStrategies', () => {
@@ -151,7 +202,7 @@ describe('getVaultStrategies', () => {
     expect(strategies[0]?.estimatedAPY).toBe(0.12)
   })
 
-  it('falls back to composition oracle apy when estimated apy is missing', () => {
+  it('falls back to composition oracle net APY when estimated apy is missing', () => {
     const strategies = getVaultStrategies(vault, {
       totalAssets: '1000000',
       composition: [
@@ -169,17 +220,19 @@ describe('getVaultStrategies', () => {
             },
             oracle: {
               apr: 0.08,
-              apy: 0.09
+              apy: 0.09,
+              netAPR: 0.07,
+              netAPY: 0.075
             }
           }
         }
       ]
     } as any)
 
-    expect(strategies[0]?.estimatedAPY).toBe(0.09)
+    expect(strategies[0]?.estimatedAPY).toBe(0.075)
   })
 
-  it('leaves estimated apy unset when neither estimated nor oracle apy exists', () => {
+  it('leaves estimated apy unset when neither estimated nor oracle APY values exist', () => {
     const strategies = getVaultStrategies(vault, {
       totalAssets: '1000000',
       composition: [
@@ -206,7 +259,7 @@ describe('getVaultStrategies', () => {
     expect(strategies[0]?.estimatedAPY).toBeUndefined()
   })
 
-  it('uses oracle apy as base for katana strategies — estimated apr is KAT rewards only', () => {
+  it('uses oracle APY as base for katana strategies when netAPY is unavailable — estimated apr is KAT rewards only', () => {
     const strategies = getVaultStrategies(vault, {
       totalAssets: '1000000',
       composition: [
@@ -230,7 +283,7 @@ describe('getVaultStrategies', () => {
       ]
     } as any)
 
-    // estimatedAPY should be oracle.apy (base yield), not estimated.apr (KAT rewards)
+    // estimatedAPY should use the oracle APY fallback (base yield), not estimated.apr (KAT rewards)
     expect(strategies[0]?.estimatedAPY).toBe(0.04)
     expect(strategies[0]?.katRewardsAPR).toBe(0.0028)
   })
