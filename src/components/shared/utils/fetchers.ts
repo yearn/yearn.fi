@@ -86,8 +86,8 @@ export async function curveFetcher<T>(url: string): Promise<T> {
   return json?.data as T
 }
 
-export async function baseFetcher<T>(url: string): Promise<T> {
-  const response = await fetchWithTimeout(url)
+export async function baseFetcher<T>(url: string, options?: { timeout?: number }): Promise<T> {
+  const response = await fetchWithTimeout(url, { timeout: options?.timeout })
   if (!response.ok) {
     throw new FetcherError(`HTTP error: ${response.status}`, { status: response.status, url })
   }
