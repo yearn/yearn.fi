@@ -95,7 +95,7 @@ export function VaultsListEmpty({
   if (hasSearch && (hasBlockingFilterActions || hasHiddenByFiltersResults)) {
     const hiddenByFiltersLabel = `${hiddenByFiltersCount} vault${hiddenByFiltersCount > 1 ? 's' : ''}`
     return (
-      <div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-2 px-10 py-2 md:w-3/4'}>
+      <div className={'mx-auto flex min-h-96 w-full flex-col items-center justify-center gap-2 px-10 py-10 md:w-3/4'}>
         <b className={'text-center text-lg font-normal'}>{'No vaults found'}</b>
         <p className={'text-center text-neutral-600'}>{`No results for "${currentSearch}" with current filters.`}</p>
         {hiddenByFiltersCount > 0 ? (
