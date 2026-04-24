@@ -53,12 +53,12 @@ export function getAllRpcEndpoints(chainId: number): string[] {
 }
 
 export function getArchiveRpcEndpoints(chainId: number, env: NodeJS.ProcessEnv = process.env): string[] {
-  const mainnetDrpc = chainId === 1 ? env.MAINNET_DRPC?.trim() : undefined
+  const archiveRpc = env[`RPC_URI_FOR_${chainId}`]?.trim()
   const tenderlyAdminRpc = env[`TENDERLY_ADMIN_RPC_URI_FOR_${chainId}`]?.trim()
   const tenderlyRpc = env[`VITE_TENDERLY_RPC_URI_FOR_${chainId}`]?.trim()
 
   return [
-    ...new Set([mainnetDrpc, tenderlyAdminRpc, tenderlyRpc, ...getAllRpcEndpoints(chainId)].filter(Boolean) as string[])
+    ...new Set([archiveRpc, tenderlyAdminRpc, tenderlyRpc, ...getAllRpcEndpoints(chainId)].filter(Boolean) as string[])
   ]
 }
 
