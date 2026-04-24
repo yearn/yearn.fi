@@ -20,7 +20,7 @@ export function usePortfolioHistory(
     if (!address || !enabled) {
       return null
     }
-    return `/api/holdings/history?address=${address}&denomination=${denomination}&timeframe=${timeframe}&debug=1&fetchType=parallel`
+    return `/api/holdings/history?address=${address}&denomination=${denomination}&timeframe=${timeframe}&fetchType=parallel`
   }, [address, denomination, enabled, timeframe])
 
   const {
