@@ -1,4 +1,4 @@
-import type { DepositEvent, TransferEvent, VaultMetadata, WithdrawEvent } from '../types'
+import type { DepositEvent, TransferEvent, UserEvents, VaultMetadata, WithdrawEvent } from '../types'
 import { enrichRawPnlEventsWithCowTradeAcquisitions } from './cow'
 import { debugLog, debugTable, getHoldingsDebugFilters } from './debug'
 import {
@@ -709,6 +709,24 @@ export function buildRawPnlEvents(context: RawPnlEventContext): TRawPnlEvent[] {
     { events: context.transactionEvents.deposits.map(normalizeDeposit), scope: 'tx' },
     { events: context.transactionEvents.withdrawals.map(normalizeWithdrawal), scope: 'tx' },
     { events: context.transactionEvents.transfers.map(normalizeTransfer), scope: 'tx' }
+  ]
+
+  eventSources.forEach(({ events, scope }) => {
+    events.forEach((event) => {
+      mergeRawEvent(merged, event, scope)
+    })
+  })
+
+  return Array.from(merged.values()).sort(compareRawEvents)
+}
+
+export function buildAddressScopedRawPnlEvents(addressEvents: UserEvents): TRawPnlEvent[] {
+  const merged = new Map<string, TRawPnlEvent>()
+  const eventSources: Array<{ events: Array<Omit<TRawPnlEvent, 'scopes'>>; scope: keyof TRawScopes }> = [
+    { events: addressEvents.deposits.map(normalizeDeposit), scope: 'address' },
+    { events: addressEvents.withdrawals.map(normalizeWithdrawal), scope: 'address' },
+    { events: addressEvents.transfersIn.map(normalizeTransfer), scope: 'address' },
+    { events: addressEvents.transfersOut.map(normalizeTransfer), scope: 'address' }
   ]
 
   eventSources.forEach(({ events, scope }) => {
