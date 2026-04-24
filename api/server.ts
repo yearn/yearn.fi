@@ -1,18 +1,14 @@
 import { serve } from 'bun'
-import { supportsArchiveAllocationHistory } from '../src/components/shared/constants/archiveAllocationHistory'
 import type {
   TTenderlyFundRequest,
   TTenderlyIncreaseTimeRequest,
   TTenderlyRevertRequest,
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
-import { fetchArchiveAllocationHistory } from './optimization/_lib/archiveHistory'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
 import { OPTIMIZATION_GET_CORS_HEADERS, OPTIMIZATION_POST_CORS_HEADERS } from './optimization/_lib/cors'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
 import { parseExplainMetadata } from './optimization/_lib/explain-parse'
-import { readLocalArchiveAllocationHistoryArtifact } from './optimization/_lib/localArchiveHistory'
-import { readLocalSankeyMockupPanels } from './optimization/_lib/localSankeyMockup'
 import {
   findVaultOptimization,
   isRedisAuthenticationError,
@@ -390,16 +386,7 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
 
 const CHANGE_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
 const ALIGNMENT_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
-const ARCHIVE_HISTORY_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
-const SANKEY_FEED_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 const VAULT_STATE_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
-
-function parseStrategyQueryParam(value: string | null): `0x${string}`[] {
-  return (value ?? '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter((item): item is `0x${string}` => /^0x[a-fA-F0-9]{40}$/.test(item))
-}
 
 async function handleOptimizationChange(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
@@ -544,108 +531,6 @@ async function handleOptimizationAlignment(req: Request): Promise<Response> {
   }
 }
 
-async function handleOptimizationArchiveHistory(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: OPTIMIZATION_GET_CORS_HEADERS })
-  }
-
-  if (req.method !== 'GET') {
-    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_GET_CORS_HEADERS)
-  }
-
-  const url = new URL(req.url)
-  const vault = url.searchParams.get('vault')
-  const fromTimestamp = url.searchParams.get('fromTimestamp')
-  const rawChainId = url.searchParams.get('chainId')
-  const chainId = rawChainId ? Number(rawChainId) : NaN
-  const strategies = parseStrategyQueryParam(url.searchParams.get('strategies'))
-
-  if (!vault || !/^0x[a-fA-F0-9]{40}$/.test(vault)) {
-    return jsonWithCors({ error: 'Invalid vault address' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
-  }
-  if (!Number.isInteger(chainId) || chainId <= 0) {
-    return jsonWithCors({ error: 'Invalid chainId' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
-  }
-  if (!fromTimestamp) {
-    return jsonWithCors({ error: 'fromTimestamp parameter required' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
-  }
-  if (strategies.length === 0) {
-    return jsonWithCors({ error: 'No strategy addresses provided' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
-  }
-  if (!supportsArchiveAllocationHistory(chainId, vault)) {
-    return jsonWithCors([], 404, OPTIMIZATION_GET_CORS_HEADERS)
-  }
-
-  try {
-    const localArtifact = await readLocalArchiveAllocationHistoryArtifact({
-      chainId,
-      vaultAddress: vault as `0x${string}`
-    })
-
-    if (localArtifact) {
-      return jsonWithCors(localArtifact.records, 200, OPTIMIZATION_GET_CORS_HEADERS, {
-        'Cache-Control': ARCHIVE_HISTORY_CACHE_CONTROL
-      })
-    }
-
-    const history = await fetchArchiveAllocationHistory({
-      chainId,
-      vaultAddress: vault as `0x${string}`,
-      strategyAddresses: strategies,
-      fromTimestampUtc: fromTimestamp
-    })
-
-    return jsonWithCors(history, 200, OPTIMIZATION_GET_CORS_HEADERS, {
-      'Cache-Control': ARCHIVE_HISTORY_CACHE_CONTROL
-    })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    return jsonWithCors({ error: message }, 503, OPTIMIZATION_GET_CORS_HEADERS)
-  }
-}
-
-async function handleOptimizationSankeyFeed(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: OPTIMIZATION_GET_CORS_HEADERS })
-  }
-
-  if (req.method !== 'GET') {
-    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_GET_CORS_HEADERS)
-  }
-
-  const url = new URL(req.url)
-  const vault = url.searchParams.get('vault')
-  const rawChainId = url.searchParams.get('chainId')
-  const chainId = rawChainId ? Number(rawChainId) : NaN
-
-  if (!vault || !/^0x[a-fA-F0-9]{40}$/.test(vault)) {
-    return jsonWithCors({ error: 'Invalid vault address' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
-  }
-  if (!Number.isInteger(chainId) || chainId <= 0) {
-    return jsonWithCors({ error: 'Invalid chainId' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
-  }
-  if (!supportsArchiveAllocationHistory(chainId, vault)) {
-    return jsonWithCors([], 404, OPTIMIZATION_GET_CORS_HEADERS)
-  }
-
-  try {
-    const panels = await readLocalSankeyMockupPanels({
-      vaultAddress: vault as `0x${string}`
-    })
-
-    if (!panels) {
-      return jsonWithCors([], 404, OPTIMIZATION_GET_CORS_HEADERS)
-    }
-
-    return jsonWithCors(panels, 200, OPTIMIZATION_GET_CORS_HEADERS, {
-      'Cache-Control': SANKEY_FEED_CACHE_CONTROL
-    })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    return jsonWithCors({ error: message }, 503, OPTIMIZATION_GET_CORS_HEADERS)
-  }
-}
-
 async function handleOptimizationVaultState(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: OPTIMIZATION_POST_CORS_HEADERS })
@@ -765,14 +650,6 @@ serve({
 
     if (url.pathname === '/api/optimization/alignment') {
       return handleOptimizationAlignment(req)
-    }
-
-    if (url.pathname === '/api/optimization/archive-history') {
-      return handleOptimizationArchiveHistory(req)
-    }
-
-    if (url.pathname === '/api/optimization/sankey-feed') {
-      return handleOptimizationSankeyFeed(req)
     }
 
     if (url.pathname === '/api/optimization/vault-state') {
