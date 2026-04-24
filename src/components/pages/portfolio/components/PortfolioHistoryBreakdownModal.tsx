@@ -14,10 +14,10 @@ import { IconClose } from '@shared/icons/IconClose'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { cl, formatUSD, SUPPORTED_NETWORKS, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
-import { Fragment, useEffect, useMemo } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { usePortfolioBreakdown } from '../hooks/usePortfolioBreakdown'
-import type { TPortfolioBreakdownVault } from '../types/api'
+import type { TPortfolioBreakdownResponse, TPortfolioBreakdownVault } from '../types/api'
 
 type TPortfolioHistoryBreakdownModalProps = {
   date: string | null
@@ -148,6 +148,20 @@ export function PortfolioHistoryBreakdownModal({
 }: TPortfolioHistoryBreakdownModalProps): ReactElement {
   const { allVaults } = useYearn()
   const { data, isLoading, error } = usePortfolioBreakdown(date, isOpen)
+  const [closingDataSnapshot, setClosingDataSnapshot] = useState<{
+    date: string | null
+    data: TPortfolioBreakdownResponse
+  } | null>(null)
+
+  useEffect(() => {
+    if (!isOpen || !data) {
+      return
+    }
+
+    setClosingDataSnapshot({ date, data })
+  }, [data, date, isOpen])
+
+  const resolvedData = !isOpen && closingDataSnapshot?.date === date ? closingDataSnapshot.data : data
 
   useEffect(() => {
     if (!isOpen) {
@@ -188,7 +202,7 @@ export function PortfolioHistoryBreakdownModal({
   }, [isOpen])
 
   const enrichedVaults = useMemo<TEnrichedBreakdownVault[]>(() => {
-    const displayedVaults = getBreakdownDisplayVaults(data?.vaults ?? [])
+    const displayedVaults = getBreakdownDisplayVaults(resolvedData?.vaults ?? [])
     const yvUsdDisplayVault = allVaults[YVUSD_UNLOCKED_ADDRESS] as TKongVaultInput | undefined
 
     return displayedVaults
@@ -223,7 +237,7 @@ export function PortfolioHistoryBreakdownModal({
         }
       })
       .sort((leftVault, rightVault) => rightVault.usdValue - leftVault.usdValue)
-  }, [allVaults, data?.vaults])
+  }, [allVaults, resolvedData?.vaults])
 
   const title = `Vault breakdown on ${formatBreakdownDate(date)}`
   const issueCount = enrichedVaults.filter((vault) => vault.status !== 'ok').length
@@ -264,9 +278,9 @@ export function PortfolioHistoryBreakdownModal({
                     <Dialog.Title className={'text-lg font-semibold text-text-primary sm:text-xl'}>
                       {title}
                     </Dialog.Title>
-                    {data ? (
+                    {resolvedData ? (
                       <p className={'mt-1 text-sm text-text-secondary'}>
-                        {`${enrichedVaults.length} vault${enrichedVaults.length === 1 ? '' : 's'} • ${formatUSD(data.summary.totalUsdValue, 2, 2)}`}
+                        {`${enrichedVaults.length} vault${enrichedVaults.length === 1 ? '' : 's'} • ${formatUSD(resolvedData.summary.totalUsdValue, 2, 2)}`}
                       </p>
                     ) : null}
                   </div>
@@ -292,7 +306,7 @@ export function PortfolioHistoryBreakdownModal({
                     <div className={'flex min-h-[240px] items-center justify-center'}>
                       <p className={'text-sm text-text-secondary'}>{'Unable to load vault breakdown right now.'}</p>
                     </div>
-                  ) : data && enrichedVaults.length > 0 ? (
+                  ) : resolvedData && enrichedVaults.length > 0 ? (
                     <div className={'flex max-h-[70vh] flex-col gap-3 overflow-y-auto overscroll-contain pr-1'}>
                       {issueCount > 0 ? (
                         <div
@@ -362,7 +376,7 @@ export function PortfolioHistoryBreakdownModal({
                   ) : (
                     <div className={'flex min-h-[240px] items-center justify-center'}>
                       <p className={'max-w-md text-center text-sm text-text-secondary'}>
-                        {data?.message || 'No vault breakdown available for this date.'}
+                        {resolvedData?.message || 'No vault breakdown available for this date.'}
                       </p>
                     </div>
                   )}
