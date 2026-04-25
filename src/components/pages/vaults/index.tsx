@@ -101,8 +101,8 @@ export default function Index(): ReactElement {
     hiddenByFiltersCount,
     blockingFilterActions
   } = data
-  const { activeChains, activeCategories, activeProductType } = activeFilters
-  const { onToggleChain, onToggleCategory, onToggleType, onToggleVaultType } = handlers
+  const { activeChains, activeCategories, activeProductType, activeFeeStructureKey } = activeFilters
+  const { onToggleChain, onToggleCategory, onToggleType, onToggleVaultType, onToggleFeeStructure } = handlers
 
   const [compareVaultKeys, setCompareVaultKeys] = useState<string[]>([])
   const [isCompareOpen, setIsCompareOpen] = useState(false)
@@ -366,10 +366,12 @@ export default function Index(): ReactElement {
             activeChains={activeChains}
             activeCategories={activeCategories}
             activeProductType={activeProductType}
+            activeFeeStructureKey={activeFeeStructureKey}
             onToggleChain={onToggleChain}
             onToggleCategory={onToggleCategory}
             onToggleType={listVaultType === 'v3' ? onToggleType : undefined}
             onToggleVaultType={onToggleVaultType}
+            onToggleFeeStructure={onToggleFeeStructure}
             shouldCollapseChips={shouldCollapseChips}
             showStrategies={displayedShowStrategies}
             expandedVaultKeys={expandedVaultKeys}
@@ -395,10 +397,12 @@ export default function Index(): ReactElement {
                   activeChains={activeChains}
                   activeCategories={activeCategories}
                   activeProductType={activeProductType}
+                  activeFeeStructureKey={activeFeeStructureKey}
                   onToggleChain={onToggleChain}
                   onToggleCategory={onToggleCategory}
                   onToggleType={listVaultType === 'v3' ? onToggleType : undefined}
                   onToggleVaultType={onToggleVaultType}
+                  onToggleFeeStructure={onToggleFeeStructure}
                   shouldCollapseChips={shouldCollapseChips}
                   showStrategies={displayedShowStrategies}
                   isExpanded={Boolean(expandedVaultKeys[key])}
@@ -420,6 +424,7 @@ export default function Index(): ReactElement {
   }, [
     activeCategories,
     activeChains,
+    activeFeeStructureKey,
     activeProductType,
     blockingFilterActions,
     compareVaultKeys,
@@ -436,6 +441,7 @@ export default function Index(): ReactElement {
     onResetFilters,
     onToggleCategory,
     onToggleChain,
+    onToggleFeeStructure,
     onToggleType,
     onToggleVaultType,
     pinnedSections,

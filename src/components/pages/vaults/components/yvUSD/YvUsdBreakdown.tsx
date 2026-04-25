@@ -11,6 +11,7 @@ type TYvUsdTooltipProps = {
   unlockedValue: number
   className?: string
   iconClassName?: string
+  unlockedIconClassName?: string
   infinifiPointsNote?: string
 }
 
@@ -48,8 +49,10 @@ export function YvUsdApyTooltipContent({
   unlockedValue,
   className,
   iconClassName = 'size-3',
+  unlockedIconClassName,
   infinifiPointsNote
 }: TYvUsdTooltipProps): ReactElement {
+  const resolvedUnlockedIconClassName = unlockedIconClassName ?? iconClassName.replace(/size-(\S+)/, 'h-$1 w-4')
   return (
     <div
       className={cl('rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary', className)}
@@ -63,7 +66,7 @@ export function YvUsdApyTooltipContent({
           options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
         />
         <YvUsdTooltipRow
-          icon={<IconLockOpen className={iconClassName} />}
+          icon={<IconLockOpen className={resolvedUnlockedIconClassName} />}
           label="Unlocked APY"
           value={unlockedValue}
           symbol="percent"
@@ -86,8 +89,10 @@ export function YvUsdTvlTooltipContent({
   lockedValue,
   unlockedValue,
   className,
-  iconClassName = 'size-3'
+  iconClassName = 'size-3',
+  unlockedIconClassName
 }: TYvUsdTooltipProps): ReactElement {
+  const resolvedUnlockedIconClassName = unlockedIconClassName ?? iconClassName.replace(/size-(\S+)/, 'h-$1 w-4')
   return (
     <div
       className={cl('rounded-xl border border-border bg-surface-secondary p-2 text-xs text-text-primary', className)}
@@ -101,7 +106,7 @@ export function YvUsdTvlTooltipContent({
           options={{ shouldCompactValue: true, maximumFractionDigits: 2, minimumFractionDigits: 0 }}
         />
         <YvUsdTooltipRow
-          icon={<IconLockOpen className={iconClassName} />}
+          icon={<IconLockOpen className={resolvedUnlockedIconClassName} />}
           label="Unlocked TVL"
           value={unlockedValue}
           symbol="USD"

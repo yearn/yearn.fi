@@ -14,6 +14,7 @@ import {
   selectVaultsByType,
   V3_ASSET_CATEGORIES
 } from '@pages/vaults/utils/constants'
+import { getVaultFeeStructureKey } from '@pages/vaults/utils/vaultFees'
 import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
@@ -23,11 +24,7 @@ import { useV3VaultFilter } from '@shared/hooks/useV3VaultFilter'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
 import { useMemo } from 'react'
-
-type TVaultsPinnedSection = {
-  key: string
-  vaults: TKongVaultInput[]
-}
+import { getProductPinnedSections, type TVaultsPinnedSection } from './useVaultsListModel.helpers'
 
 type TVaultsListModelArgs = {
   enabled?: boolean
@@ -37,6 +34,7 @@ type TVaultsListModelArgs = {
   listCategories: string[] | null
   listAggressiveness: string[] | null
   listUnderlyingAssets: string[] | null
+  listFeeStructureKey: string | null
   listMinTvl: number
   listShowLegacyVaults: boolean
   listShowHiddenVaults: boolean
@@ -67,6 +65,7 @@ function matchesYvUsdFilters({
   isV3View,
   listChains,
   listCategories,
+  listFeeStructureKey,
   listMinTvl,
   searchValue,
   yvUsdVault
@@ -74,6 +73,7 @@ function matchesYvUsdFilters({
   isV3View: boolean
   listChains: number[] | null
   listCategories: string[]
+  listFeeStructureKey: string | null
   listMinTvl: number
   searchValue: string
   yvUsdVault?: TKongVaultView
@@ -90,10 +90,11 @@ function matchesYvUsdFilters({
     `${yvUsdVault.name} ${yvUsdVault.symbol} ${yvUsdVault.token.symbol} ${yvUsdVault.token.name} ${yvUsdVault.address}`
       .toLowerCase()
       .includes(trimmedSearch)
+  const matchesFeeStructure = !listFeeStructureKey || getVaultFeeStructureKey(yvUsdVault) === listFeeStructureKey
   const minTvlValue = Number.isFinite(listMinTvl) ? Math.max(0, listMinTvl || 0) : 0
   const meetsMinTvl = (yvUsdVault.tvl?.tvl ?? 0) >= minTvlValue
 
-  return matchesChain && matchesCategory && matchesSearch && meetsMinTvl
+  return matchesChain && matchesCategory && matchesSearch && matchesFeeStructure && meetsMinTvl
 }
 
 function isYvUsdVariantVault(vault: TKongVaultInput): boolean {
@@ -131,6 +132,7 @@ export function useVaultsListModel({
   listCategories,
   listAggressiveness,
   listUnderlyingAssets,
+  listFeeStructureKey,
   listMinTvl,
   listShowLegacyVaults,
   listShowHiddenVaults,
@@ -171,11 +173,12 @@ export function useVaultsListModel({
         isV3View,
         listChains,
         listCategories: listCategoriesSanitized,
+        listFeeStructureKey,
         listMinTvl,
         searchValue,
         yvUsdVault
       }),
-    [isV3View, listChains, listCategoriesSanitized, listMinTvl, searchValue, yvUsdVault]
+    [isV3View, listChains, listCategoriesSanitized, listFeeStructureKey, listMinTvl, searchValue, yvUsdVault]
   )
 
   const yvUsdHasHoldings = useMemo(() => {
@@ -192,6 +195,7 @@ export function useVaultsListModel({
     isV3View ? listUnderlyingAssets : null,
     listMinTvl,
     isV3View ? listShowHiddenVaults : undefined,
+    listFeeStructureKey,
     isV3View
   )
 
@@ -204,6 +208,7 @@ export function useVaultsListModel({
     isV2View ? listUnderlyingAssets : null,
     listMinTvl,
     listShowHiddenVaults,
+    listFeeStructureKey,
     isV2View
   )
 
@@ -216,6 +221,7 @@ export function useVaultsListModel({
     isV2View ? listUnderlyingAssets : null,
     listMinTvl,
     listShowHiddenVaults,
+    listFeeStructureKey,
     isV2View
   )
 
@@ -313,6 +319,7 @@ export function useVaultsListModel({
     isV3View ? listUnderlyingAssets : null,
     listMinTvl,
     isV3View ? listShowHiddenVaults : undefined,
+    listFeeStructureKey,
     isV3View
   )
 
@@ -346,8 +353,10 @@ export function useVaultsListModel({
   const sortedSuggestedV2Candidates = useSortVaults(filteredV2VaultsAllChains, 'featuringScore', 'desc')
 
   const pinnedSections = useMemo(() => {
-    const sections: TVaultsPinnedSection[] = []
-    const seen = new Set<string>()
+    const sections: TVaultsPinnedSection[] = [
+      ...getProductPinnedSections({ sortedVaults, shouldShowYvUsd, yvUsdVault })
+    ]
+    const seen = new Set(sections.flatMap((section) => section.vaults.map((vault) => getVaultKey(vault))))
     const takeUnseenVaults = (vaults: TKongVaultInput[]): TKongVaultInput[] =>
       vaults.filter((vault) => {
         const key = getVaultKey(vault)
@@ -357,16 +366,6 @@ export function useVaultsListModel({
         seen.add(key)
         return true
       })
-
-    if (shouldShowYvUsd && yvUsdVault) {
-      const yvUsdSectionVaults = takeUnseenVaults([yvUsdVault])
-      if (yvUsdSectionVaults.length > 0) {
-        sections.push({
-          key: 'yvUSD',
-          vaults: yvUsdSectionVaults
-        })
-      }
-    }
 
     if (isAvailablePinned) {
       const availableSectionVaults = takeUnseenVaults(sortedAvailableVaults)
@@ -398,6 +397,7 @@ export function useVaultsListModel({
     sortedHoldingsVaults,
     sortedHoldingsVaultsByDeposited,
     sortedAvailableVaults,
+    sortedVaults,
     shouldShowYvUsd,
     yvUsdVault
   ])

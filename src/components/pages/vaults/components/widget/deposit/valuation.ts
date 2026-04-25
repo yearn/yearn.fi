@@ -17,9 +17,7 @@ function calculatePriceImpactPercentage({
   inputUsdValue: number
   outputUsdValue: number
 }): number {
-  return inputUsdValue > 0 && outputUsdValue > 0
-    ? Math.max(0, ((inputUsdValue - outputUsdValue) / inputUsdValue) * 100)
-    : 0
+  return inputUsdValue > 0 && outputUsdValue > 0 ? ((inputUsdValue - outputUsdValue) / inputUsdValue) * 100 : 0
 }
 
 export function resolveValuationShareCount({

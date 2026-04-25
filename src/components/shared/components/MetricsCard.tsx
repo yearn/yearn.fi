@@ -1,6 +1,6 @@
 import { Tooltip } from '@shared/components/Tooltip'
 import { cl } from '@shared/utils'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 export const METRIC_VALUE_CLASS = 'font-semibold text-[20px] leading-tight md:text-[22px]'
 export const METRIC_FOOTNOTE_CLASS = 'text-xs text-text-secondary'
@@ -18,13 +18,19 @@ export function MetricsCard({
   hideFootnotes = false,
   items,
   className,
-  mobileLayout = 'stack'
+  mobileLayout = 'stack',
+  itemClassName,
+  headerClassName,
+  valueClassName
 }: {
   items: TMetricBlock[]
   footnoteDisplay?: 'inline' | 'tooltip'
   hideFootnotes?: boolean
   className?: string
   mobileLayout?: 'stack' | 'grid'
+  itemClassName?: string
+  headerClassName?: string
+  valueClassName?: string
 }): ReactElement {
   const isGrid = mobileLayout === 'grid'
 
@@ -62,13 +68,16 @@ export function MetricsCard({
             <div
               key={item.key}
               className={cl(
-                'flex flex-1 flex-col gap-1 px-5 py-3',
+                'flex flex-1 flex-col gap-1 px-3 py-3',
                 isGrid ? 'bg-surface' : '',
-                index < items.length - 1 ? 'md:border-r md:border-border' : ''
+                index < items.length - 1 ? 'md:border-r md:border-border' : '',
+                itemClassName
               )}
             >
-              <div className={'flex items-center justify-between'}>{item.header}</div>
-              <div className={'[&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>{valueContent}</div>
+              <div className={cl('flex items-center justify-between', headerClassName)}>{item.header}</div>
+              <div className={cl('[&_b.yearn--table-data-section-item-value]:text-left font-semibold', valueClassName)}>
+                {valueContent}
+              </div>
               {showFootnote && footnoteDisplay === 'inline' ? <div>{item.footnote}</div> : null}
             </div>
           )
@@ -83,8 +92,8 @@ export function MetricHeader({
   mobileLabel,
   tooltip
 }: {
-  label: string
-  mobileLabel?: string
+  label: ReactNode
+  mobileLabel?: ReactNode
   tooltip?: string
 }): ReactElement {
   const tooltipContent = (

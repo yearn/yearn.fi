@@ -1,3 +1,4 @@
+import { YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { describe, expect, it } from 'vitest'
 import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from './vaultWarnings'
 
@@ -30,6 +31,18 @@ describe('isNonYearnErc4626Vault', () => {
         } as any
       })
     ).toBe(true)
+  })
+
+  it('returns false for yvBTC while Kong metadata is incomplete', () => {
+    expect(
+      isNonYearnErc4626Vault({
+        vault: {
+          address: YVBTC_UNLOCKED_ADDRESS,
+          origin: null,
+          inclusion: {}
+        } as any
+      })
+    ).toBe(false)
   })
 
   it('returns true when the list origin is not yearn', () => {
