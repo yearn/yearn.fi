@@ -7,6 +7,7 @@ import {
   getVaultKind,
   getVaultSymbol,
   getVaultToken,
+  getVaultYieldSplitter,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
@@ -104,20 +105,46 @@ export function VaultAboutSection({
   const vaultKind = getVaultKind(currentVault)
   const vaultCategory = getVaultCategory(currentVault)
   const vaultSymbol = getVaultSymbol(currentVault)
+  const yieldSplitter = getVaultYieldSplitter(currentVault)
   const description = getVaultDescription(currentVault)
   const chainName = getNetwork(chainID).name
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const listKind = deriveListKind(currentVault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
-  const baseKindType: 'multi' | 'single' | undefined =
-    vaultKind === 'Multi Strategy' ? 'multi' : vaultKind === 'Single Strategy' ? 'single' : undefined
-  const fallbackKindType: 'multi' | 'single' | undefined =
-    listKind === 'allocator' ? 'multi' : listKind === 'strategy' ? 'single' : undefined
+  const productTypeLabel =
+    listKind === 'yieldSplitter'
+      ? 'Yield Splitter'
+      : isAllocatorVault
+        ? 'Single Asset'
+        : isLegacyVault
+          ? 'Legacy'
+          : 'LP Token'
+  const baseKindType: 'multi' | 'single' | 'route' | undefined =
+    listKind === 'yieldSplitter'
+      ? 'route'
+      : vaultKind === 'Multi Strategy'
+        ? 'multi'
+        : vaultKind === 'Single Strategy'
+          ? 'single'
+          : undefined
+  const fallbackKindType: 'multi' | 'single' | 'route' | undefined =
+    listKind === 'yieldSplitter'
+      ? 'route'
+      : listKind === 'allocator'
+        ? 'multi'
+        : listKind === 'strategy'
+          ? 'single'
+          : undefined
   const kindType = baseKindType ?? fallbackKindType
   const kindLabel: string | undefined =
-    kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : vaultKind
+    kindType === 'multi'
+      ? 'Allocator'
+      : kindType === 'single'
+        ? 'Strategy'
+        : kindType === 'route'
+          ? 'Vault-to-Vault'
+          : vaultKind
   const shouldShowKind = showKindTag && Boolean(kindLabel)
   const vaultTypeLabel = [productTypeLabel, shouldShowKind ? kindLabel : null].filter(Boolean).join(' | ')
   const chainDescription = getChainDescription(chainID)
@@ -134,7 +161,13 @@ export function VaultAboutSection({
   const explorerBase = getNetwork(chainID).defaultBlockExplorer
   const explorerHref = explorerBase ? `${explorerBase}/address/${vaultAddress}` : ''
 
-  const rawDescription = description?.trim() ? description : token.description?.trim() ? token.description : ''
+  const rawDescription = description?.trim()
+    ? description
+    : yieldSplitter?.uiDescription?.trim()
+      ? yieldSplitter.uiDescription
+      : token.description?.trim()
+        ? token.description
+        : ''
   const descriptionText = rawDescription ? rawDescription.replaceAll('{{token}}', vaultSymbol) : ''
 
   return (
