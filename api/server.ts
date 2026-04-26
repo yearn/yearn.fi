@@ -6,19 +6,6 @@ import type {
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
 import { ENSO_BALANCES_CACHE_CONTROL } from './enso/cache'
-import { getVaultDecimals } from './optimization/_lib/assetLogos'
-import { OPTIMIZATION_GET_CORS_HEADERS, OPTIMIZATION_POST_CORS_HEADERS } from './optimization/_lib/cors'
-import { fetchAlignedEvents } from './optimization/_lib/envio'
-import { parseExplainMetadata } from './optimization/_lib/explain-parse'
-import {
-  findVaultOptimization,
-  isRedisAuthenticationError,
-  isRedisConnectivityError,
-  REDIS_AUTHENTICATION_ERROR_MESSAGE,
-  REDIS_CONNECTIVITY_ERROR_MESSAGE,
-  readOptimizations
-} from './optimization/_lib/redis'
-import { fetchVaultOnChainState } from './optimization/_lib/rpc'
 import {
   clearUserCache,
   deleteStaleCache,
@@ -47,6 +34,19 @@ import {
   isHoldingsDebugRequested,
   withHoldingsDebugContext
 } from './lib/holdings/services/debug'
+import { getVaultDecimals } from './optimization/_lib/assetLogos'
+import { OPTIMIZATION_GET_CORS_HEADERS, OPTIMIZATION_POST_CORS_HEADERS } from './optimization/_lib/cors'
+import { fetchAlignedEvents } from './optimization/_lib/envio'
+import { parseExplainMetadata } from './optimization/_lib/explain-parse'
+import {
+  findVaultOptimization,
+  isRedisAuthenticationError,
+  isRedisConnectivityError,
+  REDIS_AUTHENTICATION_ERROR_MESSAGE,
+  REDIS_CONNECTIVITY_ERROR_MESSAGE,
+  readOptimizations
+} from './optimization/_lib/redis'
+import { fetchVaultOnChainState } from './optimization/_lib/rpc'
 import {
   buildTenderlyPanelStatus,
   buildTenderlyRevertResponse,

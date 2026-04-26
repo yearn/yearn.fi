@@ -10,8 +10,8 @@ import {
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
   SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS,
-  shouldAutoContinuePermitSuccess,
   shouldAutoContinueFromSuccessState,
+  shouldAutoContinuePermitSuccess,
   shouldRefetchNextStepAfterReceipt,
   shouldRunDeferredCompletion
 } from './transactionOverlay.helpers'
