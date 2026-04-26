@@ -318,7 +318,7 @@ function Index(): ReactElement | null {
   const location = useLocation()
   const navigate = useNavigate()
   const chainId = Number(params.chainID)
-  const { getBalance, onRefresh } = useWallet()
+  const { getBalance, onRefresh, isLoading: isWalletLoading } = useWallet()
   const { address } = useWeb3()
   const { vaults, allVaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const {
@@ -531,6 +531,7 @@ function Index(): ReactElement | null {
   const canShowMigrateAction = isMigratable && vaultShareBalance > 0n
   const isRetired = Boolean(currentVault?.info?.isRetired)
   const hasUserFundsInVault = vaultShareBalance > 0n || stakingShareBalance > 0n
+  const canShowUserCharts = !isWalletLoading && hasUserFundsInVault
   const retiredVaultAlertMessage = useMemo(() => {
     if (!isRetired || !currentVault) return null
     return getRetiredVaultAlertMessage({ vault: currentVault, hasUserFundsInVault })
@@ -768,10 +769,13 @@ function Index(): ReactElement | null {
           <YvUsdChartsSection chartHeightPx={180} chartHeightMdPx={230} />
         ) : (
           <VaultChartsSection
+            key={`${currentVault.address}-${address ?? 'disconnected'}`}
             chainId={chainId}
             vaultAddress={currentVault.address}
             chartHeightPx={180}
             chartHeightMdPx={230}
+            enableUserCharts={canShowUserCharts}
+            userUnitLabel={currentVault.token?.symbol || currentVault.symbol || 'assets'}
           />
         )
       },

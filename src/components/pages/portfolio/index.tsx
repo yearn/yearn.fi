@@ -13,15 +13,18 @@ import { TransactionOverlay, type TransactionStep } from '@pages/vaults/componen
 import {
   getVaultAddress,
   getVaultChainID,
+  getVaultName,
   getVaultStaking,
+  getVaultSymbol,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
-import { METRIC_VALUE_CLASS, MetricHeader, MetricsCard, type TMetricBlock } from '@shared/components/MetricsCard'
+import { METRIC_VALUE_CLASS, MetricHeader, type TMetricBlock } from '@shared/components/MetricsCard'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
+import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -30,12 +33,25 @@ import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
-import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS } from '@shared/utils'
+import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
+import Link from '/src/components/Link'
+import type { TPortfolioHistoryChartTimeframe } from './components/PortfolioHistoryChart'
+import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
+import { usePortfolioActivity } from './hooks/usePortfolioActivity'
+import { usePortfolioHistory } from './hooks/usePortfolioHistory'
+import { usePortfolioProtocolReturn } from './hooks/usePortfolioProtocolReturn'
+import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
+import type {
+  TPortfolioActivityEntry,
+  TPortfolioHistoryDenomination,
+  TPortfolioHistoryTimeframe,
+  TPortfolioProtocolReturnSummary
+} from './types/api'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -46,6 +62,8 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 
 const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
+const metricTooltipContentClassName = 'flex max-w-[280px] flex-col gap-1 leading-relaxed'
+const metricCardClassName = 'bg-surface px-5 py-3 md:px-5 md:py-2.5'
 const PORTFOLIO_TABS = [
   { key: 'positions', label: 'Your Vaults' },
   { key: 'activity', label: 'Activity' },
@@ -56,13 +74,11 @@ type TPortfolioTabKey = (typeof PORTFOLIO_TABS)[number]['key']
 
 type TPortfolioHeaderProps = Pick<
   TPortfolioModel,
-  | 'blendedMetrics'
-  | 'hasKatanaHoldings'
-  | 'isActive'
-  | 'isHoldingsLoading'
-  | 'isSearchingBalances'
-  | 'totalPortfolioValue'
->
+  'blendedMetrics' | 'hasKatanaHoldings' | 'isHoldingsLoading' | 'isSearchingBalances' | 'totalPortfolioValue'
+> & {
+  isProtocolReturnLoading: boolean
+  protocolReturnSummary: TPortfolioProtocolReturnSummary | null
+}
 
 type TPortfolioHoldingsProps = Pick<
   TPortfolioModel,
@@ -84,6 +100,157 @@ type TPortfolioActivityProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModa
 
 type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'>
 
+const ACTIVITY_ACTION_LABELS: Record<TPortfolioActivityEntry['action'], string> = {
+  deposit: 'Deposit',
+  withdraw: 'Withdraw',
+  stake: 'Stake',
+  unstake: 'Unstake'
+}
+
+function formatActivityDisplayAmount(amountFormatted: number | null, symbol: string | null): string {
+  if (amountFormatted === null) {
+    return symbol ? `Unknown ${symbol}` : 'Unknown amount'
+  }
+
+  return `${amountFormatted.toLocaleString(undefined, { maximumFractionDigits: 6 })} ${symbol ?? ''}`.trim()
+}
+
+function getActivityExplorerUrl(chainId: number, txHash: string): string | null {
+  const network = SUPPORTED_NETWORKS.find((item) => item.id === chainId)
+  const explorerBaseUrl = network?.blockExplorers?.default?.url
+
+  return explorerBaseUrl ? `${explorerBaseUrl}/tx/${txHash}` : null
+}
+
+function getActivityAddressExplorerUrl(chainId: number, address: string): string | null {
+  const network = SUPPORTED_NETWORKS.find((item) => item.id === chainId)
+  const explorerBaseUrl = network?.blockExplorers?.default?.url
+
+  return explorerBaseUrl ? `${explorerBaseUrl}/address/${address}` : null
+}
+
+function getActivityChainName(chainId: number): string {
+  return SUPPORTED_NETWORKS.find((item) => item.id === chainId)?.name ?? `Chain ${chainId}`
+}
+
+function formatIndexedActivityDate(timestamp: number): string {
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric'
+  })
+}
+
+function IndexedActivityRow({
+  entry,
+  displayName,
+  shareSymbol
+}: {
+  entry: TPortfolioActivityEntry
+  displayName: string
+  shareSymbol: string | null
+}): ReactElement {
+  const explorerUrl = getActivityExplorerUrl(entry.chainId, entry.txHash)
+  const vaultExplorerUrl = getActivityAddressExplorerUrl(entry.chainId, entry.familyVaultAddress)
+  const activityTitle = ACTIVITY_ACTION_LABELS[entry.action]
+  const activityLogoAddress = entry.familyVaultAddress || entry.vaultAddress
+  const isExitAction = entry.action === 'withdraw' || entry.action === 'unstake'
+
+  return (
+    <div className="group relative h-fit origin-top rounded-lg border border-border bg-card p-4">
+      <div className="relative z-20">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="font-medium text-text-primary">{activityTitle}</p>
+          <div className="flex items-center justify-center self-start rounded-lg bg-[#00796D] px-4 py-2 text-xs text-white">
+            {'Success'}
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          <div className="flex flex-col items-center gap-3">
+            <TokenLogo
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${activityLogoAddress.toLowerCase()}/logo-32.png`}
+              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${activityLogoAddress.toLowerCase()}/logo-32.png`}
+              tokenSymbol={shareSymbol ?? entry.assetSymbol ?? ACTIVITY_ACTION_LABELS[entry.action]}
+              chainId={entry.chainId}
+              width={32}
+              height={32}
+              className="rounded-full"
+              loading="eager"
+            />
+          </div>
+          <div className="flex-1">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-text-primary">
+              {isExitAction ? (
+                <>
+                  <p>{'Redeem:'}</p>
+                  <p className="text-right font-bold">
+                    {formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)}
+                  </p>
+                  <p>{'Receive:'}</p>
+                  <p className="text-right font-bold">
+                    {formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p>{'Token:'}</p>
+                  <p className="text-right font-bold">
+                    {formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)}
+                  </p>
+                  <p>{'Vault:'}</p>
+                  <p className="text-right font-bold">
+                    {vaultExplorerUrl ? (
+                      <Link
+                        href={vaultExplorerUrl}
+                        target={'_blank'}
+                        rel={'noopener noreferrer'}
+                        aria-label={`View vault ${entry.familyVaultAddress} on explorer`}
+                        className={'font-bold text-text-primary underline hover:text-text-secondary'}
+                      >
+                        {displayName}
+                      </Link>
+                    ) : (
+                      displayName
+                    )}
+                  </p>
+                  <p>{'Receive:'}</p>
+                  <p className="text-right font-bold">
+                    {formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)}
+                  </p>
+                </>
+              )}
+              <p>{'Chain:'}</p>
+              <p className="text-right font-bold">{getActivityChainName(entry.chainId)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-text-primary">
+          <div className="flex gap-4">
+            <span className="font-bold">{formatIndexedActivityDate(entry.timestamp)}</span>
+          </div>
+          {explorerUrl ? (
+            <Link
+              href={explorerUrl}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              aria-label={`View transaction ${entry.txHash} on explorer`}
+              className={'text-text-primary hover:text-text-secondary'}
+            >
+              <button className={'text-xs font-medium underline'}>{'View tx'}</button>
+            </Link>
+          ) : (
+            <span className="text-xs text-text-secondary">{'Explorer unavailable'}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PortfolioPageLayout({ children }: { children: ReactElement }): ReactElement {
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
@@ -95,11 +262,20 @@ function PortfolioPageLayout({ children }: { children: ReactElement }): ReactEle
 function PortfolioHeaderSection({
   blendedMetrics,
   hasKatanaHoldings,
-  isActive,
   isHoldingsLoading,
   isSearchingBalances,
+  isProtocolReturnLoading,
+  protocolReturnSummary,
   totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
+  const annualizedProtocolReturnTooltip = (
+    <div className={metricTooltipContentClassName}>
+      <p>{'All-time annualized protocol return while funds were actually held in your wallet.'}</p>
+
+      <p>{'Time-weighted by baseline vault exposure. Price moves are excluded.'}</p>
+    </div>
+  )
+
   const katanaTooltipContent = (
     <div className={headingTooltipClassName}>
       <p>{'*One or more vaults are receiving extra incentives.'}</p>
@@ -144,6 +320,16 @@ function PortfolioHeaderSection({
     return <span>{currencyFormatter.format(value)}</span>
   }
 
+  function renderSignedPercentMetric(value: number | null | undefined): ReactElement {
+    if (isProtocolReturnLoading) return metricSpinner
+    if (value === null || value === undefined) return <span>{'—'}</span>
+
+    const absoluteValue = formatPercent(Math.abs(value), 2, 2, 10_000)
+    const signedValue = value > 0 ? `+${absoluteValue}` : value < 0 ? `-${absoluteValue}` : absoluteValue
+
+    return <span className={'text-text-primary'}>{signedValue}</span>
+  }
+
   const metrics: TMetricBlock[] = [
     {
       key: 'total-balance',
@@ -173,26 +359,36 @@ function PortfolioHeaderSection({
       key: '30-day-apy',
       header: <MetricHeader label="30-day APY" tooltip="Blended 30-day performance using your current positions." />,
       value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedHistoricalAPY)}</span>
+    },
+    {
+      key: 'annualized-protocol-return',
+      header: (
+        <MetricHeader
+          label="All-Time Annualized Return"
+          mobileLabel="All-Time Ann."
+          tooltip={annualizedProtocolReturnTooltip}
+        />
+      ),
+      value: (
+        <span className={METRIC_VALUE_CLASS}>
+          {renderSignedPercentMetric(protocolReturnSummary?.annualizedProtocolReturnPct)}
+        </span>
+      )
     }
   ]
 
   return (
-    <section className={'flex flex-col gap-2'}>
-      <div className="px-1">
-        <Tooltip
-          className="h-auto justify-start gap-0"
-          openDelayMs={150}
-          side="top"
-          tooltip={
-            <div className={headingTooltipClassName}>{'Monitor your balances, returns, and discover new vaults.'}</div>
-          }
-        >
-          <h1 className="text-lg font-black text-text-primary md:text-3xl md:leading-10">{'Account Overview'}</h1>
-        </Tooltip>
+    <section className="h-full bg-surface">
+      <div className="grid gap-px bg-border">
+        {metrics.map((item) => (
+          <div key={item.key} className={metricCardClassName}>
+            <div className="flex items-center justify-between">{item.header}</div>
+            <div className="pt-0.5">{item.value}</div>
+            {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
+            {item.footnote ? <div className="pt-1.5">{item.footnote}</div> : null}
+          </div>
+        ))}
       </div>
-      {isActive && (
-        <MetricsCard items={metrics} className="rounded-t-lg rounded-b-none border border-border" mobileLayout="grid" />
-      )}
     </section>
   )
 }
@@ -238,11 +434,29 @@ function PortfolioTabSelector({
 }
 
 function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivityProps): ReactElement {
-  const { cachedEntries, isLoading, error } = useNotifications()
-  const hasEntries = cachedEntries.length > 0
+  const { allVaults } = useYearn()
+  const { cachedEntries, isLoading: notificationsLoading, error: notificationsError } = useNotifications()
+  const {
+    data: indexedEntries,
+    isLoading: indexedLoading,
+    isLoadingMore: indexedLoadingMore,
+    error: indexedError,
+    isEmpty: indexedEmpty,
+    hasMore: indexedHasMore,
+    loadMore: loadMoreIndexedActivity
+  } = usePortfolioActivity(10, isActive)
+  const unresolvedLocalEntries = useMemo(
+    () =>
+      cachedEntries
+        .filter((entry) => entry.status !== 'success')
+        .toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)),
+    [cachedEntries]
+  )
+  const hasUnresolvedLocalEntries = unresolvedLocalEntries.length > 0
+  const hasIndexedEntries = indexedEntries.length > 0
 
-  function renderActivityContent(): ReactElement {
-    if (isLoading) {
+  function renderIndexedActivity(): ReactElement {
+    if (indexedLoading) {
       return (
         <div className="flex flex-col items-center justify-center gap-2 py-6 text-sm text-text-secondary">
           <IconSpinner className="size-5 animate-spin text-text-secondary" />
@@ -250,22 +464,120 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         </div>
       )
     }
-    if (error) {
+
+    if (indexedError) {
       return (
         <div className="py-6 text-center">
           <p className="text-sm font-medium text-red-600">{'Error loading activity'}</p>
-          <p className="mt-2 text-xs text-text-secondary">{error}</p>
+          <p className="mt-2 text-xs text-text-secondary">{indexedError.message}</p>
         </div>
       )
     }
-    if (!hasEntries) {
+
+    if (indexedEmpty) {
+      return <div className="py-6 text-center text-sm text-text-secondary">{'No indexed activity to show.'}</div>
+    }
+
+    return (
+      <div className="flex flex-col gap-4">
+        {indexedEntries.map((entry) => {
+          const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
+          const activityVault = allVaults[toAddress(entry.vaultAddress)]
+          const familyVaultSymbol = familyVault
+            ? getVaultSymbol(familyVault)
+            : activityVault
+              ? getVaultSymbol(activityVault)
+              : entry.assetSymbol
+          const displayName = familyVault
+            ? getVaultName(familyVault)
+            : activityVault
+              ? getVaultName(activityVault)
+              : truncateHex(entry.familyVaultAddress, 5)
+          const shareSymbol =
+            entry.action === 'stake' || entry.action === 'unstake'
+              ? familyVaultSymbol
+                ? `st-${familyVaultSymbol}`
+                : entry.assetSymbol
+                  ? `st-${entry.assetSymbol}`
+                  : null
+              : familyVault
+                ? getVaultSymbol(familyVault)
+                : activityVault
+                  ? getVaultSymbol(activityVault)
+                  : entry.assetSymbol
+
+          return (
+            <IndexedActivityRow
+              key={`${entry.txHash}:${entry.vaultAddress}:${entry.action}`}
+              entry={entry}
+              displayName={displayName}
+              shareSymbol={shareSymbol}
+            />
+          )
+        })}
+      </div>
+    )
+  }
+
+  function renderActivityContent(): ReactElement {
+    if (notificationsLoading && indexedLoading && !hasUnresolvedLocalEntries) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-2 py-6 text-sm text-text-secondary">
+          <IconSpinner className="size-5 animate-spin text-text-secondary" />
+          <span>{'Loading activity...'}</span>
+        </div>
+      )
+    }
+
+    if (notificationsError && !hasUnresolvedLocalEntries && !hasIndexedEntries && indexedEmpty) {
+      return (
+        <div className="py-6 text-center">
+          <p className="text-sm font-medium text-red-600">{'Error loading activity'}</p>
+          <p className="mt-2 text-xs text-text-secondary">{notificationsError}</p>
+        </div>
+      )
+    }
+
+    if (!hasUnresolvedLocalEntries && !hasIndexedEntries && indexedEmpty) {
       return <div className="py-6 text-center text-sm text-text-secondary">{'No transactions to show.'}</div>
     }
+
     return (
-      <div className="flex flex-col">
-        {cachedEntries.toReversed().map((entry) => (
-          <Notification key={`notification-${entry.id}`} notification={entry} variant="v3" />
-        ))}
+      <div className="flex flex-col gap-6">
+        {hasUnresolvedLocalEntries && (
+          <div className="flex flex-col gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-text-primary">{'Pending local transactions'}</h3>
+              <p className="text-xs text-text-secondary">
+                {'These entries come from this browser and may appear before the indexer catches up.'}
+              </p>
+            </div>
+            <div className="flex flex-col">
+              {unresolvedLocalEntries.map((entry) => (
+                <Notification key={`notification-${entry.id}`} notification={entry} variant="v3" />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-3">
+          <div>{renderIndexedActivity()}</div>
+          {indexedHasMore && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => void loadMoreIndexedActivity()}
+                disabled={indexedLoadingMore}
+                className={cl(
+                  'rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text-primary transition-colors',
+                  indexedLoadingMore ? 'cursor-wait opacity-60' : 'hover:bg-surface-secondary'
+                )}
+              >
+                {indexedLoadingMore ? 'Loading more...' : 'Load more'}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
@@ -279,7 +591,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       {!isActive ? (
         <EmptySectionCard
           title="Connect a wallet to view activity"
-          description="Track deposits, withdrawals, and claims in one place."
+          description="Review your recent Yearn transactions."
           ctaLabel="Connect wallet"
           onClick={openLoginModal}
         />
@@ -833,6 +1145,7 @@ function PortfolioHoldingsSection({
             showProductTypeChipOverride={true}
             showHoldingsChipOverride={false}
             mobileSecondaryMetric="holdings"
+            expandedChartVariant="portfolio-user-tvl-overlay"
           />
         ))}
       </div>
@@ -954,10 +1267,12 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
 
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
+  const [historyDenomination, setHistoryDenomination] = useState<TPortfolioHistoryDenomination>('usd')
+  const [historyTimeframe, setHistoryTimeframe] = useState<TPortfolioHistoryChartTimeframe>('1y')
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
-
+  const historyFetchTimeframe: TPortfolioHistoryTimeframe = historyTimeframe === 'all' ? 'all' : '1y'
   const activeTab = useMemo((): TPortfolioTabKey => {
     const tabParam = searchParams.get('tab')
     if (tabParam === 'activity' || tabParam === 'claim-rewards' || tabParam === 'positions') {
@@ -965,6 +1280,24 @@ function PortfolioPage(): ReactElement {
     }
     return 'positions'
   }, [searchParams])
+  const shouldLoadPositionsHistory = activeTab === 'positions' && model.isActive
+  const {
+    data: historyData,
+    denomination: resolvedHistoryDenomination,
+    isLoading: historyLoading,
+    error: historyError,
+    isEmpty: historyEmpty
+  } = usePortfolioHistory(historyDenomination, historyFetchTimeframe, shouldLoadPositionsHistory)
+  const {
+    data: protocolReturnHistoryData,
+    summary: protocolReturnHistorySummary,
+    familySeries: protocolReturnHistoryFamilySeries,
+    isLoading: protocolReturnHistoryLoading,
+    error: protocolReturnHistoryError,
+    isEmpty: protocolReturnHistoryEmpty
+  } = usePortfolioProtocolReturnHistory(historyFetchTimeframe, shouldLoadPositionsHistory)
+  const { data: protocolReturnSummary, isLoading: protocolReturnLoading } =
+    usePortfolioProtocolReturn(shouldLoadPositionsHistory)
 
   const handleTabSelect = useCallback(
     (tab: TPortfolioTabKey) => {
@@ -1016,11 +1349,59 @@ function PortfolioPage(): ReactElement {
     }
   }, [])
 
+  const overviewHeading = (
+    <Tooltip
+      className="h-auto justify-start gap-0"
+      openDelayMs={150}
+      side="top"
+      tooltip={
+        <div className={headingTooltipClassName}>{'Monitor your balances, returns, and discover new vaults.'}</div>
+      }
+    >
+      <h1 className="text-lg font-black text-text-primary md:text-3xl md:leading-10">{'Account Overview'}</h1>
+    </Tooltip>
+  )
+
   function renderTabContent(): ReactElement | null {
     switch (activeTab) {
       case 'positions':
         return (
           <div className="flex flex-col gap-6 sm:gap-8">
+            {model.isActive ? (
+              <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
+                <div className="grid items-stretch xl:grid-cols-[minmax(0,1fr)_340px]">
+                  <PortfolioHistoryChart
+                    balanceData={historyData}
+                    protocolReturnData={protocolReturnHistoryData}
+                    protocolReturnSummary={protocolReturnHistorySummary}
+                    protocolReturnFamilySeries={protocolReturnHistoryFamilySeries}
+                    denomination={resolvedHistoryDenomination}
+                    onDenominationChange={setHistoryDenomination}
+                    timeframe={historyTimeframe}
+                    onTimeframeChange={setHistoryTimeframe}
+                    balanceIsLoading={historyLoading}
+                    balanceIsEmpty={historyEmpty}
+                    balanceError={historyError}
+                    protocolReturnIsLoading={protocolReturnHistoryLoading}
+                    protocolReturnIsEmpty={protocolReturnHistoryEmpty}
+                    protocolReturnError={protocolReturnHistoryError}
+                    embedded
+                    className="h-full bg-linear-to-b from-surface to-surface-secondary/20"
+                  />
+                  <div className="border-t border-border bg-linear-to-b from-surface to-surface-secondary/25 xl:border-t-0 xl:border-l">
+                    <PortfolioHeaderSection
+                      blendedMetrics={model.blendedMetrics}
+                      isHoldingsLoading={model.isHoldingsLoading}
+                      isSearchingBalances={model.isSearchingBalances}
+                      hasKatanaHoldings={model.hasKatanaHoldings}
+                      isProtocolReturnLoading={protocolReturnLoading}
+                      protocolReturnSummary={protocolReturnSummary}
+                      totalPortfolioValue={model.totalPortfolioValue}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <PortfolioHoldingsSection
               hasHoldings={model.hasHoldings}
               holdingsRows={model.holdingsRows}
@@ -1048,7 +1429,7 @@ function PortfolioPage(): ReactElement {
   return (
     <PortfolioPageLayout>
       <div ref={varsRef} className="flex flex-col" style={{ '--portfolio-breadcrumbs-height': '0px' } as CSSProperties}>
-        <div ref={breadcrumbsRef} className="sticky top-[var(--header-height)] z-40 bg-app pb-2">
+        <div ref={breadcrumbsRef} className="sticky top-(--header-height) z-40 bg-app pb-2">
           <Breadcrumbs
             className="px-1"
             items={[
@@ -1058,18 +1439,13 @@ function PortfolioPage(): ReactElement {
             ]}
           />
         </div>
-        <div className={cl('flex flex-col', model.isActive ? 'gap-0' : 'gap-4 sm:gap-8')}>
-          <PortfolioHeaderSection
-            blendedMetrics={model.blendedMetrics}
-            isActive={model.isActive}
-            isHoldingsLoading={model.isHoldingsLoading}
-            isSearchingBalances={model.isSearchingBalances}
-            hasKatanaHoldings={model.hasKatanaHoldings}
-            totalPortfolioValue={model.totalPortfolioValue}
-          />
-          <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} mergeWithHeader={model.isActive} />
+        <div className="flex flex-col gap-4 sm:gap-6">
+          <div className="flex flex-col gap-3">
+            <div className="px-1">{overviewHeading}</div>
+            <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} />
+          </div>
         </div>
-        <div className={'pt-4'} key={activeTab}>
+        <div className={'pt-2'} key={activeTab}>
           {renderTabContent()}
         </div>
       </div>

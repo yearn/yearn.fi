@@ -1,6 +1,6 @@
 import { Tooltip } from '@shared/components/Tooltip'
 import { cl } from '@shared/utils'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 export const METRIC_VALUE_CLASS = 'font-semibold text-[20px] leading-tight md:text-[22px]'
 export const METRIC_FOOTNOTE_CLASS = 'text-xs text-text-secondary'
@@ -69,6 +69,7 @@ export function MetricsCard({
             >
               <div className={'flex items-center justify-between'}>{item.header}</div>
               <div className={'[&_b.yearn--table-data-section-item-value]:text-left font-semibold'}>{valueContent}</div>
+              {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
               {showFootnote && footnoteDisplay === 'inline' ? <div>{item.footnote}</div> : null}
             </div>
           )
@@ -85,7 +86,7 @@ export function MetricHeader({
 }: {
   label: string
   mobileLabel?: string
-  tooltip?: string
+  tooltip?: ReactNode
 }): ReactElement {
   const tooltipContent = (
     <div className={'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'}>
