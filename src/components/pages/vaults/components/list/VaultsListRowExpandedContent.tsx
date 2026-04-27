@@ -60,6 +60,8 @@ type TVaultsListRowExpandedContentProps = {
   showKindTag?: boolean
   showHiddenTag?: boolean
   isHidden?: boolean
+  showUserViews?: boolean
+  chartVariant?: 'default' | 'portfolio-user-tvl-overlay'
 }
 
 export default function VaultsListRowExpandedContent({
@@ -69,7 +71,9 @@ export default function VaultsListRowExpandedContent({
   onNavigateToVault,
   showKindTag = true,
   showHiddenTag = false,
-  isHidden
+  isHidden,
+  showUserViews = false,
+  chartVariant = 'default'
 }: TVaultsListRowExpandedContentProps): ReactElement {
   const trackEvent = usePlausible()
   const chartTimeframe: TVaultChartTimeframe = '1y'
@@ -82,6 +86,20 @@ export default function VaultsListRowExpandedContent({
   })
   const snapshotMergedVault = useMemo(() => getVaultView(currentVault, snapshotVault), [currentVault, snapshotVault])
   const chartTab = isExpandedChartView(expandedView) ? EXPANDED_VIEW_TO_CHART_TAB[expandedView] : undefined
+  const yvUsdChartTab =
+    chartTab === 'historical-apy' || chartTab === 'historical-pps' || chartTab === 'historical-tvl'
+      ? chartTab
+      : undefined
+  const shouldUsePortfolioUserTvlOverlay = chartVariant === 'portfolio-user-tvl-overlay' && showUserViews && !isYvUsd
+  const viewOptions = useMemo<Array<{ id: TVaultsExpandedView; label: string }>>(
+    () => [
+      { id: 'strategies', label: 'Strategies' },
+      { id: 'apy', label: 'APY' },
+      { id: 'performance', label: 'Performance' },
+      { id: 'tvl', label: shouldUsePortfolioUserTvlOverlay ? 'Your Position' : 'TVL' }
+    ],
+    [shouldUsePortfolioUserTvlOverlay]
+  )
 
   const handleGoToVault = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation()
@@ -113,6 +131,7 @@ export default function VaultsListRowExpandedContent({
             <VaultsExpandedSelector
               activeView={expandedView}
               onViewChange={onExpandedViewChange}
+              viewOptions={viewOptions}
               rightElement={
                 <button
                   type={'button'}
@@ -129,7 +148,7 @@ export default function VaultsListRowExpandedContent({
               isYvUsd ? (
                 <YvUsdChartsSection
                   shouldRenderSelectors={false}
-                  chartTab={chartTab}
+                  chartTab={yvUsdChartTab}
                   timeframe={chartTimeframe}
                   chartHeightPx={200}
                   chartHeightMdPx={200}
@@ -143,6 +162,9 @@ export default function VaultsListRowExpandedContent({
                   timeframe={chartTimeframe}
                   chartHeightPx={200}
                   chartHeightMdPx={200}
+                  enableUserCharts={false}
+                  userUnitLabel={snapshotMergedVault.token?.symbol || snapshotMergedVault.symbol || 'assets'}
+                  overlayUserPositionOnTvlTab={shouldUsePortfolioUserTvlOverlay}
                 />
               )
             ) : (

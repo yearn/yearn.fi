@@ -22,6 +22,11 @@ export type TAprApyChartData = Array<
 
 export type TTvlChartData = Array<TChartDataPoint & { TVL: number | null }>
 export type TPpsChartData = Array<TChartDataPoint & { PPS: number | null }>
+export type TVaultUserHistoryChartData = Array<
+  TChartDataPoint & {
+    value: number | null
+  }
+>
 
 export type TTransformedChartData = {
   aprApyData: TAprApyChartData | null
