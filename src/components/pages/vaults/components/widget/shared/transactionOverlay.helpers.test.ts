@@ -8,7 +8,8 @@ import {
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
   shouldAutoContinuePermitSuccess,
-  shouldRunDeferredCompletion
+  shouldRunDeferredCompletion,
+  shouldRefetchNextStepAfterReceipt
 } from './transactionOverlay.helpers'
 
 describe('resolveOverlayConnectedChainId', () => {
@@ -240,5 +241,35 @@ describe('resolveExecutionTrackingHash', () => {
         callsReceiptTxHash: '0xfallback'
       })
     ).toBe('0xnormal')
+  })
+})
+
+describe('shouldRefetchNextStepAfterReceipt', () => {
+  it('refetches the next step after a Safe-submitted approval execution receipt arrives', () => {
+    expect(
+      shouldRefetchNextStepAfterReceipt({
+        isOpen: true,
+        overlayState: 'submitted',
+        hasReceiptTransactionHash: true,
+        wasLastStep: false,
+        currentStepLabel: 'Deposit',
+        executedStepLabel: 'Approve',
+        isStepReady: false
+      })
+    ).toBe(true)
+  })
+
+  it('does not refetch when the next step is already ready', () => {
+    expect(
+      shouldRefetchNextStepAfterReceipt({
+        isOpen: true,
+        overlayState: 'submitted',
+        hasReceiptTransactionHash: true,
+        wasLastStep: false,
+        currentStepLabel: 'Deposit',
+        executedStepLabel: 'Approve',
+        isStepReady: true
+      })
+    ).toBe(false)
   })
 })
