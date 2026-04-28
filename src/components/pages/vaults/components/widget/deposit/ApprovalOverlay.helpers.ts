@@ -1,3 +1,5 @@
+import type { SafeTransactionStatus } from '../shared/transactionOverlay.helpers'
+
 export function resolveApprovalOverlayConnectedChainId(params: {
   accountChainId: number | undefined
   currentChainId: number
@@ -18,14 +20,19 @@ export function resolveApprovalOverlayConnectedChainId(params: {
 export function resolveApprovalOverlayPendingSafeState(params: {
   txState: 'idle' | 'confirming' | 'pending' | 'submitted' | 'success' | 'error'
   isWalletSafe: boolean
-  hasReceiptTransactionHash: boolean
+  hasExecutionReceipt: boolean
+  safeTxStatus?: SafeTransactionStatus
   callsStatus?: 'pending' | 'success' | 'failure'
 }): 'idle' | 'confirming' | 'pending' | 'submitted' | 'success' | 'error' {
-  const { txState, isWalletSafe, hasReceiptTransactionHash, callsStatus } = params
+  const { txState, isWalletSafe, hasExecutionReceipt, safeTxStatus, callsStatus } = params
 
   if (txState !== 'pending' && txState !== 'submitted') return txState
   if (!isWalletSafe) return txState
-  if (hasReceiptTransactionHash) return txState
+  if (hasExecutionReceipt) return txState
+
+  if (safeTxStatus === 'FAILED' || safeTxStatus === 'CANCELLED') return 'error'
+  if (safeTxStatus === 'AWAITING_CONFIRMATIONS' || safeTxStatus === 'AWAITING_EXECUTION') return 'submitted'
+
   if (callsStatus === 'failure') return 'error'
   if (callsStatus === 'pending') return 'submitted'
 
