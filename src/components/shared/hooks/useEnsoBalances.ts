@@ -36,7 +36,7 @@ export const ENSO_SUPPORTED_CHAINS = SUPPORTED_NETWORKS.map((n) => n.id).filter(
 async function fetchEnsoBalances(address: TAddress): Promise<TEnsoBalanceResponse[]> {
   const params = new URLSearchParams({ eoaAddress: address })
   const url = `/api/enso/balances?${params}`
-  const response = await fetch(url)
+  const response = await fetch(url, { cache: 'no-store' })
 
   if (!response.ok) {
     let details = ''
