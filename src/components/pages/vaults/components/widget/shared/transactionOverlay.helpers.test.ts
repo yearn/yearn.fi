@@ -5,8 +5,22 @@ import {
   resolveCompletionDeferral,
   shouldAutoContinuePermitSuccess,
   shouldRunDeferredCompletion,
+  resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState
 } from './transactionOverlay.helpers'
+
+describe('resolveOverlayConnectedChainId', () => {
+  it('prefers the target chain for Safe sessions when account.chain is missing', () => {
+    expect(
+      resolveOverlayConnectedChainId({
+        accountChainId: undefined,
+        currentChainId: 1,
+        targetChainId: 747474,
+        isWalletSafe: true
+      })
+    ).toBe(747474)
+  })
+})
 
 describe('transactionOverlay.helpers', () => {
   it('formats pending transaction function names from onchain requests', () => {

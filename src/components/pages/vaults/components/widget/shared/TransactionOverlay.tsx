@@ -21,6 +21,7 @@ import {
   getPendingTransactionTitle,
   type OverlayState,
   resolveCompletionDeferral,
+  resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
   shouldAutoContinuePermitSuccess,
   shouldRunDeferredCompletion
@@ -183,6 +184,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>()
   const { address: account, chain, connector } = useAccount()
   const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false
+  const connectedChainId = resolveOverlayConnectedChainId({
+    accountChainId: chain?.id,
+    currentChainId,
+    targetChainId: ((step?.prepare.data?.request as any)?.chainId as number | undefined) ?? undefined,
+    isWalletSafe
+  })
 
   // Notification system integration
   const { createNotification, updateNotification } = useNotificationsActions()
@@ -441,14 +448,25 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
       const request = currentStep.prepare.data.request as any
       const txChainId = request.chainId
-      const wrongNetwork = txChainId && !isConnectedToExecutionChain(chain?.id, txChainId)
+      const wrongNetwork = txChainId && !isConnectedToExecutionChain(connectedChainId, txChainId)
 
       if (wrongNetwork && txChainId) {
         try {
           await switchChainAsync({ chainId: txChainId })
-        } catch {
-          console.warn('[TransactionOverlay] Chain switch rejected', { to: txChainId, step: currentStep.label })
-          onClose()
+        } catch (error: any) {
+          if (isUserRejectionError(error)) {
+            onClose()
+            return
+          }
+          console.warn('[TransactionOverlay] Chain switch failed', {
+            to: txChainId,
+            step: currentStep.label,
+            error: error?.message || error
+          })
+          setOverlayState('error')
+          setErrorMessage(
+            'Unable to switch networks for this transaction. Please confirm your Safe is opened on the correct chain.'
+          )
           return
         }
       }
@@ -515,7 +533,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       }
     },
     [
-      chain?.id,
+      connectedChainId,
       finalizeSuccessState,
       handleCreateNotification,
       isLastStep,

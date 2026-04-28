@@ -42,8 +42,24 @@ export function getPendingTransactionTitle(params: {
   if (!pendingFunctionName) {
     return 'Transaction pending'
   }
-
   return `${pendingFunctionName} transaction pending`
+}
+
+export function resolveOverlayConnectedChainId(params: {
+  accountChainId: number | undefined
+  currentChainId: number
+  targetChainId: number | undefined
+  isWalletSafe: boolean
+}): number {
+  if (params.accountChainId) {
+    return params.accountChainId
+  }
+
+  if (params.isWalletSafe && params.targetChainId) {
+    return params.targetChainId
+  }
+
+  return params.currentChainId
 }
 
 export function resolvePendingSafeOverlayState(params: {
