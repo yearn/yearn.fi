@@ -426,7 +426,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Update notification with new status/receipt
   const handleUpdateNotification = useCallback(
-    async (params: { status?: 'pending' | 'submitted' | 'success' | 'error'; receipt?: any }) => {
+    async (params: {
+      status?: 'pending' | 'submitted' | 'success' | 'error'
+      receipt?: any
+      awaitingExecution?: boolean
+    }) => {
       if (!notificationId) return
 
       try {
@@ -731,8 +735,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
     if (nextOverlayState === 'submitted') {
       setOverlayState('submitted')
-      void handleUpdateNotification({ status: 'submitted' })
-      setNotificationId(undefined)
+      void handleUpdateNotification({ status: 'submitted', awaitingExecution: true })
       return
     }
 
