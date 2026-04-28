@@ -40,6 +40,7 @@ export type TNotification = {
   txHash?: Hash
   timeFinished?: number
   blockNumber?: bigint
+  awaitingExecution?: boolean
   status: TNotificationStatus
 }
 
@@ -73,6 +74,7 @@ export type TUpdateNotificationParams = {
   txHash?: Hash
   status?: TNotificationStatus
   receipt?: TransactionReceipt
+  awaitingExecution?: boolean
 }
 
 export type TNotificationsActionsContext = {

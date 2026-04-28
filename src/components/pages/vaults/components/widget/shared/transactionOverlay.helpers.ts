@@ -1,5 +1,8 @@
-export type OverlayState = 'idle' | 'confirming' | 'pending' | 'refreshing' | 'success' | 'error'
+export type OverlayState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'refreshing' | 'success' | 'error'
 export type CompletionDeferral = 'none' | 'immediate' | 'after-close' | 'after-confetti'
+export type SafeTransactionStatus = 'AWAITING_CONFIRMATIONS' | 'AWAITING_EXECUTION' | 'CANCELLED' | 'FAILED' | 'SUCCESS'
+export const AUTO_CONTINUE_SUCCESS_DELAY_MS = 1600
+export const SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS = 700
 
 function capitalizeWord(value: string): string {
   if (!value) return value
@@ -42,8 +45,59 @@ export function getPendingTransactionTitle(params: {
   if (!pendingFunctionName) {
     return 'Transaction pending'
   }
-
   return `${pendingFunctionName} transaction pending`
+}
+
+export function resolveOverlayConnectedChainId(params: {
+  accountChainId: number | undefined
+  currentChainId: number
+  targetChainId: number | undefined
+  isWalletSafe: boolean
+}): number {
+  if (params.accountChainId) {
+    return params.accountChainId
+  }
+
+  if (params.isWalletSafe && params.targetChainId) {
+    return params.targetChainId
+  }
+
+  return params.currentChainId
+}
+
+export function resolvePendingSafeOverlayState(params: {
+  overlayState: OverlayState
+  isWalletSafe: boolean
+  hasExecutionReceipt: boolean
+  safeTxStatus?: SafeTransactionStatus
+  callsStatus?: 'pending' | 'success' | 'failure'
+}): OverlayState {
+  const { overlayState, isWalletSafe, hasExecutionReceipt, safeTxStatus, callsStatus } = params
+
+  if (overlayState !== 'pending' && overlayState !== 'submitted') return overlayState
+  if (!isWalletSafe) return overlayState
+  if (hasExecutionReceipt) return overlayState
+
+  if (safeTxStatus === 'FAILED' || safeTxStatus === 'CANCELLED') return 'error'
+  if (safeTxStatus === 'AWAITING_CONFIRMATIONS' || safeTxStatus === 'AWAITING_EXECUTION') return 'submitted'
+
+  if (callsStatus === 'failure') return 'error'
+  if (callsStatus === 'pending') return 'submitted'
+
+  return overlayState
+}
+
+export function resolveExecutionTrackingHash(params: {
+  isWalletSafe: boolean
+  submittedTxHash?: `0x${string}`
+  safeExecutionTxHash?: `0x${string}`
+  callsReceiptTxHash?: `0x${string}`
+}): `0x${string}` | undefined {
+  if (!params.isWalletSafe) {
+    return params.submittedTxHash
+  }
+
+  return params.safeExecutionTxHash ?? params.callsReceiptTxHash
 }
 
 export function shouldAutoContinuePermitSuccess(params: {
@@ -79,6 +133,37 @@ export function shouldAutoContinuePermitSuccess(params: {
   if (hasAutoContinuedFromStep === executedStepLabel) return false
 
   return true
+}
+
+export function shouldRefetchNextStepAfterReceipt(params: {
+  isOpen: boolean
+  overlayState: OverlayState
+  hasReceiptTransactionHash: boolean
+  wasLastStep: boolean
+  currentStepLabel?: string
+  executedStepLabel?: string
+  isStepReady: boolean
+}): boolean {
+  if (!params.isOpen) return false
+  if (params.overlayState !== 'pending' && params.overlayState !== 'submitted') return false
+  if (!params.hasReceiptTransactionHash) return false
+  if (params.wasLastStep) return false
+  if (!params.currentStepLabel || params.currentStepLabel === params.executedStepLabel) return false
+  if (params.isStepReady) return false
+
+  return true
+}
+
+export function shouldAutoContinueFromSuccessState(params: {
+  canShowSuccess: boolean
+  executedStepAutoContinues: boolean
+  wasLastStep: boolean
+}): boolean {
+  return params.canShowSuccess && params.executedStepAutoContinues && !params.wasLastStep
+}
+
+export function getAutoContinueConfirmDelayMs(params: { isWalletSafe: boolean }): number {
+  return params.isWalletSafe ? SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS : 0
 }
 
 export function resolveCompletionDeferral(params: {
