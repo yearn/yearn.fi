@@ -23,9 +23,10 @@ export function resolveApprovalOverlayPendingSafeState(params: {
 }): 'idle' | 'confirming' | 'pending' | 'submitted' | 'success' | 'error' {
   const { txState, isWalletSafe, hasReceiptTransactionHash, callsStatus } = params
 
-  if (txState !== 'pending') return txState
+  if (txState !== 'pending' && txState !== 'submitted') return txState
   if (!isWalletSafe) return txState
   if (hasReceiptTransactionHash) return txState
+  if (callsStatus === 'failure') return 'error'
   if (callsStatus === 'pending') return 'submitted'
 
   return txState

@@ -70,7 +70,7 @@ export function resolvePendingSafeOverlayState(params: {
 }): OverlayState {
   const { overlayState, isWalletSafe, hasReceiptTransactionHash, callsStatus } = params
 
-  if (overlayState !== 'pending') return overlayState
+  if (overlayState !== 'pending' && overlayState !== 'submitted') return overlayState
   if (!isWalletSafe) return overlayState
   if (hasReceiptTransactionHash) return overlayState
   if (callsStatus === 'failure') return 'error'

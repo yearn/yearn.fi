@@ -61,4 +61,15 @@ describe('resolveApprovalOverlayPendingSafeState', () => {
       })
     ).toBe('pending')
   })
+
+  it('lets submitted Safe approval overlays surface failures too', () => {
+    expect(
+      resolveApprovalOverlayPendingSafeState({
+        txState: 'submitted',
+        isWalletSafe: true,
+        hasReceiptTransactionHash: false,
+        callsStatus: 'failure'
+      })
+    ).toBe('error')
+  })
 })
