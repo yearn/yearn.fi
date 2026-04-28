@@ -124,13 +124,6 @@ function getActivityExplorerUrl(chainId: number, txHash: string): string | null 
   return explorerBaseUrl ? `${explorerBaseUrl}/tx/${txHash}` : null
 }
 
-function getActivityAddressExplorerUrl(chainId: number, address: string): string | null {
-  const network = SUPPORTED_NETWORKS.find((item) => item.id === chainId)
-  const explorerBaseUrl = network?.blockExplorers?.default?.url
-
-  return explorerBaseUrl ? `${explorerBaseUrl}/address/${address}` : null
-}
-
 function getActivityChainName(chainId: number): string {
   return SUPPORTED_NETWORKS.find((item) => item.id === chainId)?.name ?? `Chain ${chainId}`
 }
@@ -200,25 +193,33 @@ function IndexedActivityRow({
   const preferredVaultAddress =
     entry.familyVaultAddress && !isZeroAddress(entry.familyVaultAddress) ? entry.familyVaultAddress : entry.vaultAddress
   const normalizedAssetAddress = assetAddress && !isZeroAddress(assetAddress) ? toAddress(assetAddress) : null
+  const normalizedInputTokenAddress =
+    entry.inputTokenAddress && !isZeroAddress(entry.inputTokenAddress) ? toAddress(entry.inputTokenAddress) : null
+  const tokenAddress = normalizedInputTokenAddress ?? normalizedAssetAddress
   const vaultPageUrl = `/vaults/${entry.chainId}/${toAddress(preferredVaultAddress)}`
-  const assetExplorerUrl = normalizedAssetAddress
-    ? getActivityAddressExplorerUrl(entry.chainId, normalizedAssetAddress)
-    : null
   const activityTitle = ACTIVITY_ACTION_LABELS[entry.action]
   const isExitAction = entry.action === 'withdraw' || entry.action === 'unstake'
   const chainName = getActivityChainName(entry.chainId)
   const formattedDate = formatIndexedActivityDate(entry.timestamp)
-  const summaryAssetSymbol = entry.assetSymbol ?? shareSymbol
-  const summaryAssetAmount = formatActivityDisplayAmount(entry.assetAmountFormatted, summaryAssetSymbol)
+  const primaryTokenSymbol = entry.inputTokenSymbol ?? entry.assetSymbol
+  const primaryTokenAmount =
+    entry.inputTokenAmountFormatted !== null ? entry.inputTokenAmountFormatted : entry.assetAmountFormatted
+  const summaryAssetSymbol = primaryTokenSymbol ?? shareSymbol
+  const summaryAssetAmount = formatActivityDisplayAmount(primaryTokenAmount, summaryAssetSymbol)
   const primaryAmount = isExitAction
     ? formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
-    : formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)
+    : formatActivityDisplayAmount(primaryTokenAmount, primaryTokenSymbol)
   const secondaryAmount = isExitAction
     ? formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)
     : formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
-  const primaryLabel = entry.action === 'withdraw' ? 'Redeem' : entry.action === 'unstake' ? 'Unstake' : activityTitle
-  const assetDisplayLabel =
-    summaryAssetSymbol ?? (normalizedAssetAddress ? truncateHex(normalizedAssetAddress, 5) : 'Unknown asset')
+  const primaryLabel =
+    entry.action === 'withdraw'
+      ? 'Redeem'
+      : entry.action === 'stake'
+        ? 'Stake'
+        : entry.action === 'unstake'
+          ? 'Unstake'
+          : 'Token'
   const metadataStatus = entry.status === 'ok' ? 'Indexed' : 'Limited metadata'
   const actionAccentClassName = {
     deposit: 'bg-emerald-500/12 text-emerald-600',
@@ -254,10 +255,10 @@ function IndexedActivityRow({
               <p className="max-w-[220px] truncate text-base font-semibold leading-tight text-text-primary md:text-lg">
                 {summaryAssetAmount}
               </p>
-              {normalizedAssetAddress ? (
+              {tokenAddress ? (
                 <TokenLogo
-                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${normalizedAssetAddress.toLowerCase()}/logo-32.png`}
-                  altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${normalizedAssetAddress.toLowerCase()}/logo-32.png`}
+                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                  altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                   tokenSymbol={summaryAssetSymbol ?? activityTitle}
                   width={24}
                   height={24}
@@ -276,24 +277,6 @@ function IndexedActivityRow({
       {isExpanded ? (
         <div className="border-t border-border px-3 pb-3 pt-3 md:px-4">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <ActivityDetailItem
-              label="Asset"
-              value={
-                assetExplorerUrl ? (
-                  <Link
-                    href={assetExplorerUrl}
-                    target={'_blank'}
-                    rel={'noopener noreferrer'}
-                    aria-label={`View asset ${normalizedAssetAddress} on explorer`}
-                    className={'underline hover:text-text-secondary'}
-                  >
-                    {assetDisplayLabel}
-                  </Link>
-                ) : (
-                  assetDisplayLabel
-                )
-              }
-            />
             <ActivityDetailItem label={primaryLabel} value={primaryAmount} />
             <ActivityDetailItem label="Receive" value={secondaryAmount} />
             <ActivityDetailItem

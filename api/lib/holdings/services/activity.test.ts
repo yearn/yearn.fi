@@ -1,3 +1,4 @@
+import { encodeAbiParameters, encodeEventTopics, encodeFunctionResult, erc20Abi, parseAbiItem } from 'viem'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchRecentAddressScopedActivityEventsMock = vi.fn()
@@ -19,6 +20,8 @@ const HIDDEN_VAULT = '0x0000000000000000000000000000000000000123'
 const UNKNOWN_VAULT = '0x0000000000000000000000000000000000000456'
 const USER_ADDRESS = '0x2222222222222222222222222222222222222222'
 const INTERMEDIARY = '0x4Fe93ebC4Ce6Ae4f81601cC7Ce7139023919E003'
+const USDT0 = '0x5555555555555555555555555555555555555555'
+const TRANSFER_EVENT = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)')
 
 function createDepositEvent(args: {
   id: string
@@ -28,6 +31,7 @@ function createDepositEvent(args: {
   logIndex: number
   assets: string
   shares?: string
+  sender?: string
 }) {
   return {
     id: args.id,
@@ -39,7 +43,7 @@ function createDepositEvent(args: {
     transactionHash: args.transactionHash,
     transactionFrom: USER_ADDRESS,
     owner: USER_ADDRESS,
-    sender: USER_ADDRESS,
+    sender: args.sender ?? USER_ADDRESS,
     assets: args.assets,
     shares: args.shares ?? args.assets
   }
@@ -94,10 +98,80 @@ function createTransferEvent(args: {
   }
 }
 
+function createTransferLog(args: { tokenAddress: string; from: string; to: string; value: bigint }) {
+  return {
+    address: args.tokenAddress,
+    data: encodeAbiParameters([{ type: 'uint256' }], [args.value]),
+    topics: encodeEventTopics({
+      abi: [TRANSFER_EVENT],
+      eventName: 'Transfer',
+      args: {
+        from: args.from,
+        to: args.to
+      }
+    }),
+    logIndex: '0x1'
+  }
+}
+
+function mockReceiptEnrichmentRpc(args: { tokenAddress: string; tokenSymbol: string; tokenDecimals: number }) {
+  process.env.VITE_RPC_URI_FOR_1 = 'https://rpc.example'
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        method?: string
+        params?: Array<{ data?: string }>
+      }
+
+      if (body.method === 'eth_getTransactionReceipt') {
+        return new Response(
+          JSON.stringify({
+            result: {
+              logs: [
+                createTransferLog({
+                  tokenAddress: args.tokenAddress,
+                  from: USER_ADDRESS,
+                  to: INTERMEDIARY,
+                  value: 230000n
+                })
+              ]
+            }
+          })
+        )
+      }
+
+      if (body.method === 'eth_call') {
+        const data = body.params?.[0]?.data
+
+        return new Response(
+          JSON.stringify({
+            result:
+              data === '0x95d89b41'
+                ? encodeFunctionResult({
+                    abi: erc20Abi,
+                    functionName: 'symbol',
+                    result: args.tokenSymbol
+                  })
+                : encodeFunctionResult({
+                    abi: erc20Abi,
+                    functionName: 'decimals',
+                    result: args.tokenDecimals
+                  })
+          })
+        )
+      }
+
+      return new Response(JSON.stringify({ result: null }))
+    })
+  )
+}
+
 describe('getHoldingsActivity', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
+    vi.unstubAllGlobals()
     fetchActivityEventsByTransactionHashesMock.mockResolvedValue({
       deposits: [],
       withdrawals: [],
@@ -227,6 +301,10 @@ describe('getHoldingsActivity', () => {
         assetSymbol: 'USDC',
         assetAmount: '2000000',
         assetAmountFormatted: 2,
+        inputTokenAddress: null,
+        inputTokenSymbol: null,
+        inputTokenAmount: null,
+        inputTokenAmountFormatted: null,
         shareAmount: '2000000000000000000',
         shareAmountFormatted: 2,
         status: 'ok'
@@ -241,6 +319,10 @@ describe('getHoldingsActivity', () => {
         assetSymbol: 'yvUSDC',
         assetAmount: '2000000000000000000',
         assetAmountFormatted: 2,
+        inputTokenAddress: null,
+        inputTokenSymbol: null,
+        inputTokenAmount: null,
+        inputTokenAmountFormatted: null,
         shareAmount: '2000000000000000000',
         shareAmountFormatted: 2,
         status: 'ok'
@@ -255,6 +337,10 @@ describe('getHoldingsActivity', () => {
         assetSymbol: 'yvUSDC',
         assetAmount: '1000000000000000000',
         assetAmountFormatted: 1,
+        inputTokenAddress: null,
+        inputTokenSymbol: null,
+        inputTokenAmount: null,
+        inputTokenAmountFormatted: null,
         shareAmount: '1000000000000000000',
         shareAmountFormatted: 1,
         status: 'ok'
@@ -264,6 +350,78 @@ describe('getHoldingsActivity', () => {
       hasMore: false,
       nextOffset: null
     })
+  })
+
+  it('enriches router-mediated deposits with the user input token from the tx receipt', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [
+        createDepositEvent({
+          id: 'enso-deposit',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xenso',
+          blockTimestamp: 230,
+          logIndex: 2,
+          assets: '230118',
+          shares: '202094',
+          sender: INTERMEDIARY
+        })
+      ],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+              symbol: 'USDC',
+              decimals: 6
+            },
+            decimals: 6
+          }
+        ]
+      ])
+    )
+    mockReceiptEnrichmentRpc({
+      tokenAddress: USDT0,
+      tokenSymbol: 'USDT0',
+      tokenDecimals: 6
+    })
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(response.entries).toEqual([
+      {
+        chainId: 1,
+        txHash: '0xenso',
+        timestamp: 230,
+        action: 'deposit',
+        vaultAddress: UNDERLYING_VAULT,
+        familyVaultAddress: UNDERLYING_VAULT,
+        assetSymbol: 'USDC',
+        assetAmount: '230118',
+        assetAmountFormatted: 0.230118,
+        inputTokenAddress: USDT0.toLowerCase(),
+        inputTokenSymbol: 'USDT0',
+        inputTokenAmount: '230000',
+        inputTokenAmountFormatted: 0.23,
+        shareAmount: '202094',
+        shareAmountFormatted: 0.202094,
+        status: 'ok'
+      }
+    ])
   })
 
   it('keeps entries with missing metadata and null formatted amount', async () => {
@@ -302,6 +460,10 @@ describe('getHoldingsActivity', () => {
         assetSymbol: null,
         assetAmount: '123456789',
         assetAmountFormatted: null,
+        inputTokenAddress: null,
+        inputTokenSymbol: null,
+        inputTokenAmount: null,
+        inputTokenAmountFormatted: null,
         shareAmount: '123456789',
         shareAmountFormatted: null,
         status: 'missing_metadata'
@@ -388,6 +550,10 @@ describe('getHoldingsActivity', () => {
         assetSymbol: 'USDC',
         assetAmount: '2000000',
         assetAmountFormatted: 2,
+        inputTokenAddress: null,
+        inputTokenSymbol: null,
+        inputTokenAmount: null,
+        inputTokenAmountFormatted: null,
         shareAmount: '2000000000000000000',
         shareAmountFormatted: 2,
         status: 'ok'
@@ -482,6 +648,10 @@ describe('getHoldingsActivity', () => {
         assetSymbol: 'USDC',
         assetAmount: '1072609',
         assetAmountFormatted: 1.072609,
+        inputTokenAddress: null,
+        inputTokenSymbol: null,
+        inputTokenAmount: null,
+        inputTokenAmountFormatted: null,
         shareAmount: '849068037733633594470',
         shareAmountFormatted: 849.0680377336336,
         status: 'ok'
