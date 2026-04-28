@@ -41,8 +41,13 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
   const { address: account, chain, connector } = useAccount()
   const currentChainId = useChainId()
-  const connectedChainId = resolveApprovalOverlayConnectedChainId({ accountChainId: chain?.id, currentChainId })
   const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false
+  const connectedChainId = resolveApprovalOverlayConnectedChainId({
+    accountChainId: chain?.id,
+    currentChainId,
+    targetChainId: chainId,
+    isWalletSafe
+  })
   const { switchChainAsync } = useSwitchChain()
   const { writeContractAsync, data: txHash, reset } = useWriteContract()
   const receipt = useWaitForTransactionReceipt({ hash: txHash, chainId })
@@ -109,9 +114,20 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
       if (!isConnectedToExecutionChain(connectedChainId, chainId)) {
         try {
           await switchChainAsync({ chainId })
-        } catch {
-          // User rejected chain switch - return to idle
-          setTxState('idle')
+        } catch (error: any) {
+          const isUserRejection =
+            error?.message?.toLowerCase().includes('rejected') ||
+            error?.message?.toLowerCase().includes('denied') ||
+            error?.code === 4001
+
+          if (isUserRejection) {
+            setTxState('idle')
+          } else {
+            setTxState('error')
+            setErrorMessage(
+              'Unable to switch networks for this approval. Please confirm your Safe is opened on the correct chain.'
+            )
+          }
           return
         }
       }

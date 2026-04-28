@@ -1,8 +1,18 @@
 export function resolveApprovalOverlayConnectedChainId(params: {
   accountChainId: number | undefined
   currentChainId: number
+  targetChainId: number
+  isWalletSafe: boolean
 }): number {
-  return params.accountChainId ?? params.currentChainId
+  if (params.accountChainId) {
+    return params.accountChainId
+  }
+
+  if (params.isWalletSafe) {
+    return params.targetChainId
+  }
+
+  return params.currentChainId
 }
 
 export function resolveApprovalOverlayPendingSafeState(params: {
