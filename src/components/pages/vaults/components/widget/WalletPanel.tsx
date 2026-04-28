@@ -1,6 +1,7 @@
 import {
   getVaultDecimals,
   getVaultSymbol,
+  getVaultToken,
   getVaultTVL,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
@@ -14,6 +15,7 @@ import {
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
 import { useNotifications } from '@shared/contexts/useNotifications'
+import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
@@ -35,9 +37,10 @@ import {
   truncateHex
 } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi/utils'
-import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { type FC, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { getAwaitingExecutionEntries } from './WalletPanel.helpers'
+import { getAwaitingExecutionEntries, getNewlyCompletedAwaitingExecutionEntries } from './WalletPanel.helpers'
 import { formatDuration, parseCooldownStatus, resolveCooldownWindowState } from './yvUSD/cooldownUtils'
 
 type WalletPanelProps = {
@@ -235,7 +238,9 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   vaultUserData
 }) => {
   const { address, isActive: isWalletActive, openLoginModal } = useWeb3()
+  const { onRefresh: refreshWalletBalances } = useWallet()
   const { cachedEntries } = useNotifications()
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { getPrice } = useYearn()
   const [activeTab, setActiveTab] = useState<WalletTabKey>('balances')
@@ -247,7 +252,8 @@ export const WalletPanel: FC<WalletPanelProps> = ({
     depositedShares,
     pricePerShare,
     stakingWithdrawableAssets,
-    isLoading
+    isLoading,
+    refetch: refetchVaultUserData
   } = vaultUserData
   const isYvUsd = isYvUsdVault(currentVault)
   const vaultDecimals = getVaultDecimals(currentVault)
@@ -355,6 +361,39 @@ export const WalletPanel: FC<WalletPanelProps> = ({
     () => relatedEntries.filter((entry) => entry.status === 'pending' || entry.awaitingExecution),
     [relatedEntries]
   )
+  const previousRelatedEntriesRef = useRef<TNotification[]>(relatedEntries)
+  const walletRefreshTokens = useMemo(() => {
+    const tokens = [
+      { address: toAddress(assetToken?.address ?? getVaultToken(currentVault).address), chainID: chainId },
+      { address: vaultAddress, chainID: chainId }
+    ]
+
+    if (stakingAddress) {
+      tokens.push({ address: stakingAddress, chainID: chainId })
+    }
+
+    return tokens
+  }, [assetToken?.address, chainId, currentVault, stakingAddress, vaultAddress])
+
+  useEffect(() => {
+    const newlyCompletedEntries = getNewlyCompletedAwaitingExecutionEntries(
+      previousRelatedEntriesRef.current,
+      relatedEntries
+    )
+    previousRelatedEntriesRef.current = relatedEntries
+
+    if (!address || newlyCompletedEntries.length === 0) {
+      return
+    }
+
+    void (async () => {
+      await queryClient.invalidateQueries()
+      refetchVaultUserData()
+      await refreshWalletBalances(walletRefreshTokens).catch((error) => {
+        console.error('Failed to refresh wallet balances after Safe execution:', error)
+      })
+    })()
+  }, [address, queryClient, refetchVaultUserData, refreshWalletBalances, relatedEntries, walletRefreshTokens])
 
   return (
     <div
