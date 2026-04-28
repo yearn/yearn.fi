@@ -1,5 +1,5 @@
 import { Button } from '@shared/components/Button'
-import { useSwitchChain, useWaitForTransactionReceipt } from '@shared/hooks/useAppWagmi'
+import { useChainId, useSwitchChain, useWaitForTransactionReceipt } from '@shared/hooks/useAppWagmi'
 import { getApproveAbi } from '@shared/utils/approve'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { maxUint256 } from 'viem'
@@ -7,6 +7,7 @@ import { useAccount, useWriteContract } from 'wagmi'
 import { isConnectedToExecutionChain, resolveExecutionChainId } from '@/config/tenderly'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from '../shared/TransactionStateIndicators'
+import { resolveApprovalOverlayConnectedChainId } from './ApprovalOverlay.helpers'
 
 type TxState = 'idle' | 'confirming' | 'pending' | 'success' | 'error'
 
@@ -36,6 +37,8 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   const [errorMessage, setErrorMessage] = useState('')
 
   const { address: account, chain } = useAccount()
+  const currentChainId = useChainId()
+  const connectedChainId = resolveApprovalOverlayConnectedChainId({ accountChainId: chain?.id, currentChainId })
   const { switchChainAsync } = useSwitchChain()
   const { writeContractAsync, data: txHash, reset } = useWriteContract()
   const receipt = useWaitForTransactionReceipt({ hash: txHash, chainId })
@@ -79,7 +82,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
       setErrorMessage('')
 
       // Handle chain switch if needed
-      if (!isConnectedToExecutionChain(chain?.id, chainId)) {
+      if (!isConnectedToExecutionChain(connectedChainId, chainId)) {
         try {
           await switchChainAsync({ chainId })
         } catch {
@@ -112,7 +115,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
         }
       }
     },
-    [chain?.id, chainId, tokenAddress, spenderAddress, writeContractAsync, switchChainAsync]
+    [connectedChainId, chainId, tokenAddress, spenderAddress, writeContractAsync, switchChainAsync]
   )
 
   const handleRevoke = useCallback(() => handleApprove(0n), [handleApprove])
