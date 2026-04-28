@@ -222,7 +222,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const autoContinueNonceRef = useRef(0)
   const writeContractResetRef = useRef(writeContract.reset)
   const pendingCompletionRef = useRef<CompletionDeferral>('none')
+  const handledConfettiRequestRef = useRef(0)
   const [isAutoContinuing, setIsAutoContinuing] = useState(false)
+  const [confettiRequestNonce, setConfettiRequestNonce] = useState(0)
 
   useEffect(() => {
     writeContractResetRef.current = writeContract.reset
@@ -255,6 +257,53 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
     onAnimationComplete: () => runAllCompleteIfPending('confetti')
   })
+
+  const requestConfetti = useCallback(() => {
+    setConfettiRequestNonce((nonce) => nonce + 1)
+  }, [])
+
+  useEffect(() => {
+    if (
+      !isOpen ||
+      overlayState !== 'success' ||
+      confettiRequestNonce === 0 ||
+      handledConfettiRequestRef.current === confettiRequestNonce
+    ) {
+      return
+    }
+
+    let animationFrameId: number | undefined
+    let isCancelled = false
+
+    const runWhenTargetExists = (attempt = 0) => {
+      if (isCancelled) {
+        return
+      }
+
+      if (document.getElementById(confettiId)) {
+        handledConfettiRequestRef.current = confettiRequestNonce
+        reward()
+        return
+      }
+
+      if (attempt >= 5) {
+        handledConfettiRequestRef.current = confettiRequestNonce
+        runAllCompleteIfPending('confetti')
+        return
+      }
+
+      animationFrameId = window.requestAnimationFrame(() => runWhenTargetExists(attempt + 1))
+    }
+
+    animationFrameId = window.requestAnimationFrame(() => runWhenTargetExists())
+
+    return () => {
+      isCancelled = true
+      if (animationFrameId !== undefined) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+    }
+  }, [confettiId, confettiRequestNonce, isOpen, overlayState, reward, runAllCompleteIfPending])
 
   const finalizeSuccessState = useCallback(
     (completedAllSteps: boolean, completedStep?: TransactionStep | null) => {
@@ -320,6 +369,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       pendingCompletionRef.current = 'none'
       autoContinueNonceRef.current += 1
       setIsAutoContinuing(false)
+      handledConfettiRequestRef.current = 0
+      setConfettiRequestNonce(0)
     }
   }, [isOpen, resetTxState, runAllCompleteIfPending])
 
@@ -400,7 +451,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         finalizeSuccessState(completedAllSteps, currentStep)
 
         if (currentStep.showConfetti) {
-          setTimeout(() => reward(), 100)
+          requestConfetti()
         }
       } catch (error: any) {
         if (isUserRejectionError(error)) {
@@ -412,7 +463,15 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         setErrorMessage('Failed to sign permit. Please try again.')
       }
     },
-    [finalizeSuccessState, isLastStep, onClose, onStepSuccess, reward, setStepExecutionContext, signTypedDataAsync]
+    [
+      finalizeSuccessState,
+      isLastStep,
+      onClose,
+      onStepSuccess,
+      requestConfetti,
+      setStepExecutionContext,
+      signTypedDataAsync
+    ]
   )
 
   const executeContractStep = useCallback(
@@ -455,12 +514,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
           if (isCrossChain) {
             await handleCreateNotification(result.hash, currentStep.notification, txChainId, 'submitted')
-            if (currentStep.showConfetti) {
-              setTimeout(() => reward(), 100)
-            }
             setNotificationId(undefined)
             const completedAllSteps = executedStepRef.current?.completesFlow ?? wasLastStepRef.current
             finalizeSuccessState(completedAllSteps, currentStep)
+            if (currentStep.showConfetti) {
+              requestConfetti()
+            }
             return
           }
 
@@ -509,7 +568,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       handleCreateNotification,
       isLastStep,
       onClose,
-      reward,
+      requestConfetti,
       setStepExecutionContext,
       switchChainAsync,
       writeContract
@@ -685,13 +744,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           await new Promise((resolve) => setTimeout(resolve, 500))
           finalizeSuccessState(completedAllSteps, capturedStep)
           if (capturedStep?.showConfetti) {
-            setTimeout(() => reward(), 100)
+            requestConfetti()
           }
         })()
       } else {
         finalizeSuccessState(completedAllSteps, capturedStep)
         if (capturedStep?.showConfetti) {
-          setTimeout(() => reward(), 100)
+          requestConfetti()
         }
       }
     }
@@ -699,7 +758,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     receipt.isSuccess,
     receipt.data?.transactionHash,
     overlayState,
-    reward,
+    requestConfetti,
     handleUpdateNotification,
     onStepSuccess,
     onBeforeSuccess,
