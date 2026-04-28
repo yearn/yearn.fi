@@ -33,6 +33,7 @@ import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { useTokenList } from '@shared/contexts/WithTokenList'
 import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconChevron } from '@shared/icons/IconChevron'
@@ -207,6 +208,7 @@ function IndexedActivityRow({
   const primaryTokenSymbol = entry.inputTokenSymbol ?? entry.assetSymbol
   const primaryTokenAmount =
     entry.inputTokenAmountFormatted !== null ? entry.inputTokenAmountFormatted : entry.assetAmountFormatted
+  const isZap = Boolean(entry.inputTokenAddress && entry.inputTokenAmount)
   const summaryAssetSymbol = primaryTokenSymbol ?? shareSymbol
   const summaryAssetAmount = formatActivityDisplayAmount(primaryTokenAmount, summaryAssetSymbol)
   const primaryAmount = isExitAction
@@ -245,7 +247,18 @@ function IndexedActivityRow({
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-text-primary">{activityTitle}</p>
+              <div className="flex min-w-0 items-center gap-2">
+                <p className="truncate text-sm font-semibold text-text-primary">{activityTitle}</p>
+                {isZap ? (
+                  <span
+                    aria-label="Zap transaction"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-primary"
+                  >
+                    <span aria-hidden="true">⚡</span>
+                    <span>Zap</span>
+                  </span>
+                ) : null}
+              </div>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-secondary">
                 <span className="truncate">{displayName}</span>
                 <span className="hidden size-1 rounded-full bg-text-secondary/50 md:inline-block" aria-hidden="true" />
@@ -524,6 +537,7 @@ function PortfolioTabSelector({
 
 function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivityProps): ReactElement {
   const { allVaults } = useYearn()
+  const { getToken } = useTokenList()
   const { cachedEntries, isLoading: notificationsLoading, error: notificationsError } = useNotifications()
   const {
     data: indexedEntries,
@@ -587,13 +601,17 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
             : activityVault
               ? getVaultName(activityVault)
               : truncateHex(entry.familyVaultAddress, 5)
+          const stakingToken =
+            entry.action === 'stake' || entry.action === 'unstake'
+              ? getToken({ address: toAddress(entry.vaultAddress), chainID: entry.chainId })
+              : null
+          const stakingTokenSymbol =
+            stakingToken && toAddress(stakingToken.address) === toAddress(entry.vaultAddress)
+              ? stakingToken.symbol || null
+              : null
           const shareSymbol =
             entry.action === 'stake' || entry.action === 'unstake'
-              ? familyVaultSymbol
-                ? `st-${familyVaultSymbol}`
-                : entry.assetSymbol
-                  ? `st-${entry.assetSymbol}`
-                  : null
+              ? (stakingTokenSymbol ?? familyVaultSymbol)
               : familyVault
                 ? getVaultSymbol(familyVault)
                 : activityVault
