@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest'
 import {
   AUTO_CONTINUE_SUCCESS_DELAY_MS,
   formatPendingTransactionFunctionName,
+  getAutoContinueConfirmDelayMs,
   getInitialOverlayState,
   getPendingTransactionTitle,
   resolveCompletionDeferral,
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
+  SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS,
   shouldAutoContinuePermitSuccess,
   shouldAutoContinueFromSuccessState,
   shouldRunDeferredCompletion,
@@ -285,7 +287,7 @@ describe('shouldAutoContinueFromSuccessState', () => {
         wasLastStep: false
       })
     ).toBe(true)
-    expect(AUTO_CONTINUE_SUCCESS_DELAY_MS).toBeGreaterThanOrEqual(1000)
+    expect(AUTO_CONTINUE_SUCCESS_DELAY_MS).toBeGreaterThanOrEqual(1500)
   })
 
   it('does not auto-continue from the interstitial for terminal steps', () => {
@@ -296,5 +298,16 @@ describe('shouldAutoContinueFromSuccessState', () => {
         wasLastStep: true
       })
     ).toBe(false)
+  })
+})
+
+describe('getAutoContinueConfirmDelayMs', () => {
+  it('adds a short confirm interstitial before auto-continued Safe prompts', () => {
+    expect(getAutoContinueConfirmDelayMs({ isWalletSafe: true })).toBe(SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS)
+    expect(SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS).toBeGreaterThan(0)
+  })
+
+  it('does not delay the confirm screen for non-Safe flows', () => {
+    expect(getAutoContinueConfirmDelayMs({ isWalletSafe: false })).toBe(0)
   })
 })

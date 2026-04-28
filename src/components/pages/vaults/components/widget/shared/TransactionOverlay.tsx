@@ -22,6 +22,7 @@ import {
   type CompletionDeferral,
   getInitialOverlayState,
   getPendingTransactionTitle,
+  getAutoContinueConfirmDelayMs,
   type OverlayState,
   resolveCompletionDeferral,
   resolveExecutionTrackingHash,
@@ -825,6 +826,17 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           if (autoContinueNonceRef.current !== nonceAtSchedule) {
             setIsAutoContinuing(false)
             return
+          }
+          const confirmDelayMs = getAutoContinueConfirmDelayMs({ isWalletSafe })
+          if (confirmDelayMs > 0) {
+            setOverlayState('confirming')
+            await new Promise((resolve) => {
+              window.setTimeout(resolve, confirmDelayMs)
+            })
+            if (autoContinueNonceRef.current !== nonceAtSchedule) {
+              setIsAutoContinuing(false)
+              return
+            }
           }
           await waitForAutoContinueBlock(executedStepLabel)
           if (autoContinueNonceRef.current !== nonceAtSchedule) {
