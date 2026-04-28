@@ -10,7 +10,11 @@ import {
 } from './graphql'
 import { buildPositionTimeline, generateDailyTimestamps, getUniqueVaults, toSettledDayTimestamp } from './holdings'
 import { fetchMultipleVaultsPPS, type PPSTimeline } from './kong'
-import { getNestedVaultPpsIdentifiersFromPriceRequests, mergeVaultIdentifiers } from './nestedVaultPrices'
+import {
+  getNestedVaultPpsIdentifiersFromPriceRequests,
+  mergeVaultIdentifiers,
+  resolveNestedVaultAssetMetadata
+} from './nestedVaultPrices'
 import { buildAddressScopedRawPnlEvents } from './pnlEvents'
 import { lowerCaseAddress, toVaultKey } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
@@ -123,24 +127,6 @@ export function filterEventsByAuthoritativeVersion(
 
     return eventMetadata?.version === version
   })
-}
-
-export async function resolveNestedVaultAssetMetadata(
-  vaultMetadata: Map<string, VaultMetadata>
-): Promise<Map<string, VaultMetadata>> {
-  const assetVaultIdentifiers = mergeVaultIdentifiers(
-    Array.from(vaultMetadata.values()).map((metadata) => ({
-      chainId: metadata.chainId,
-      vaultAddress: metadata.token.address
-    }))
-  )
-
-  if (assetVaultIdentifiers.length === 0) {
-    return vaultMetadata
-  }
-
-  const assetVaultMetadata = await fetchMultipleVaultsMetadata(assetVaultIdentifiers, { skipSnapshotFallback: true })
-  return new Map([...vaultMetadata, ...assetVaultMetadata])
 }
 
 function buildUnderlyingTokenRequests(

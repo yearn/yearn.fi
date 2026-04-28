@@ -29,14 +29,11 @@ import {
   deriveNestedVaultAssetPriceData,
   expandNestedVaultAssetPriceRequests,
   getNestedVaultPpsIdentifiersFromPriceRequests,
-  mergeVaultIdentifiers
+  mergeVaultIdentifiers,
+  resolveNestedVaultAssetMetadata
 } from './nestedVaultPrices'
 import { toVaultKey } from './pnlShared'
-import {
-  getSettledAddressScopedContext,
-  getSettledVersionedPpsContext,
-  resolveNestedVaultAssetMetadata
-} from './settledHoldingsContext'
+import { getSettledAddressScopedContext, getSettledVersionedPpsContext } from './settledHoldingsContext'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
 export interface HoldingsHistoryResponse {
