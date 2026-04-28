@@ -1,4 +1,4 @@
-export type OverlayState = 'idle' | 'confirming' | 'pending' | 'refreshing' | 'success' | 'error'
+export type OverlayState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'refreshing' | 'success' | 'error'
 export type CompletionDeferral = 'none' | 'immediate' | 'after-close' | 'after-confetti'
 
 function capitalizeWord(value: string): string {
@@ -44,6 +44,23 @@ export function getPendingTransactionTitle(params: {
   }
 
   return `${pendingFunctionName} transaction pending`
+}
+
+export function resolvePendingSafeOverlayState(params: {
+  overlayState: OverlayState
+  isWalletSafe: boolean
+  hasReceiptTransactionHash: boolean
+  callsStatus?: 'pending' | 'success' | 'failure'
+}): OverlayState {
+  const { overlayState, isWalletSafe, hasReceiptTransactionHash, callsStatus } = params
+
+  if (overlayState !== 'pending') return overlayState
+  if (!isWalletSafe) return overlayState
+  if (hasReceiptTransactionHash) return overlayState
+  if (callsStatus === 'failure') return 'error'
+  if (callsStatus === 'pending') return 'submitted'
+
+  return overlayState
 }
 
 export function shouldAutoContinuePermitSuccess(params: {

@@ -13,7 +13,7 @@ import { getPublicClient } from '@wagmi/core'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useReward } from 'react-rewards'
 import type { TypedData, TypedDataDomain } from 'viem'
-import { useAccount, useSignTypedData, useWriteContract } from 'wagmi'
+import { useAccount, useCallsStatus, useSignTypedData, useWriteContract } from 'wagmi'
 import { isConnectedToExecutionChain } from '@/config/tenderly'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
 import {
@@ -21,6 +21,7 @@ import {
   getPendingTransactionTitle,
   type OverlayState,
   resolveCompletionDeferral,
+  resolvePendingSafeOverlayState,
   shouldAutoContinuePermitSuccess,
   shouldRunDeferredCompletion
 } from './transactionOverlay.helpers'
@@ -180,7 +181,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const currentChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>()
-  const { address: account, chain } = useAccount()
+  const { address: account, chain, connector } = useAccount()
+  const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false
 
   // Notification system integration
   const { createNotification, updateNotification } = useNotificationsActions()
@@ -195,8 +197,17 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const explorerChainId =
     ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? undefined
   const receipt = useWaitForTransactionReceipt({ hash: txHash, chainId: explorerChainId, confirmations })
+  const safeCallsStatus = useCallsStatus({
+    id: txHash || '0x',
+    query: {
+      enabled: Boolean(isWalletSafe && txHash && overlayState === 'pending' && !receipt.data?.transactionHash),
+      refetchInterval: 1500
+    }
+  })
   const blockExplorer = getNetwork(explorerChainId ?? currentChainId).defaultBlockExplorer
-  const explorerTxUrl = txHash && blockExplorer ? `${blockExplorer}/tx/${txHash}` : ''
+  const explorerTransactionHash =
+    safeCallsStatus.data?.receipts?.[0]?.transactionHash ?? (!isWalletSafe ? txHash : undefined)
+  const explorerTxUrl = explorerTransactionHash && blockExplorer ? `${blockExplorer}/tx/${explorerTransactionHash}` : ''
 
   // Track if the executed step was the last step (captured at execution time)
   const wasLastStepRef = useRef(false)
@@ -351,7 +362,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Update notification with new status/receipt
   const handleUpdateNotification = useCallback(
-    async (params: { status?: 'pending' | 'success' | 'error'; receipt?: any }) => {
+    async (params: { status?: 'pending' | 'submitted' | 'success' | 'error'; receipt?: any }) => {
       if (!notificationId) return
 
       try {
@@ -627,6 +638,37 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     }
   }, [isOpen, overlayState, step, executeStep])
 
+  useEffect(() => {
+    const nextOverlayState = resolvePendingSafeOverlayState({
+      overlayState,
+      isWalletSafe,
+      hasReceiptTransactionHash: Boolean(receipt.data?.transactionHash),
+      callsStatus: safeCallsStatus.data?.status
+    })
+
+    if (nextOverlayState === 'submitted') {
+      setOverlayState('submitted')
+      void handleUpdateNotification({ status: 'submitted' })
+      setNotificationId(undefined)
+      return
+    }
+
+    if (nextOverlayState === 'error') {
+      setOverlayState('error')
+      setErrorMessage('Transaction failed in Safe. Please review your Safe queue and try again.')
+      resetTxState()
+      void handleUpdateNotification({ status: 'error' })
+      setNotificationId(undefined)
+    }
+  }, [
+    overlayState,
+    isWalletSafe,
+    receipt.data?.transactionHash,
+    safeCallsStatus.data?.status,
+    handleUpdateNotification,
+    resetTxState
+  ])
+
   // Handle transaction success
   useEffect(() => {
     // For multi-step flows, wait until next step is ready before showing success
@@ -812,8 +854,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         )}
       >
-        {/* Close button - only shown in success/error states */}
-        {(overlayState === 'success' || overlayState === 'error') && (
+        {/* Close button - only shown in success/error/submitted states */}
+        {(overlayState === 'success' || overlayState === 'error' || overlayState === 'submitted') && (
           <button
             onClick={handleClose}
             className="absolute top-4 right-4 p-1 hover:bg-surface-secondary rounded-lg transition-colors z-10"
@@ -886,6 +928,26 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
                   View on block explorer
                 </a>
               ) : null}
+            </>
+          )}
+
+          {/* Submitted State */}
+          {overlayState === 'submitted' && (
+            <>
+              <AnimatedCheckmark isVisible />
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction submitted</h3>
+              <p className="text-sm text-text-secondary whitespace-pre-line mb-6">
+                Your transaction has been submitted to your Safe.\nExecution may happen separately after the required
+                confirmations are collected.
+              </p>
+              <Button
+                onClick={handleClose}
+                variant="filled"
+                className="w-full max-w-xs"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                Done
+              </Button>
             </>
           )}
 
