@@ -16,7 +16,7 @@ import { truncateHex } from '@shared/utils/tools.address'
 import type { KeyboardEvent, MouseEvent, ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
-import { useAccount } from 'wagmi'
+import { useAccount, useSwitchChain } from 'wagmi'
 import {
   canToggleTenderlyMode,
   isTenderlyModeConfigured,
@@ -121,6 +121,7 @@ function getConfiguredTenderlyMappingsLabel(): string {
 function TenderlyBadge(): ReactElement | null {
   const { isPanelAvailable, isOpen, togglePanel } = useTenderlyPanel()
   const { chain } = useAccount()
+  const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain()
   const isTenderlyConfigured = isTenderlyModeConfigured()
 
   if (!isTenderlyConfigured && !isTenderlyModeEnabled()) {
@@ -152,15 +153,24 @@ function TenderlyBadge(): ReactElement | null {
     }
   }
 
-  const handleToggleMode = (event: KeyboardEvent<HTMLButtonElement> | MouseEvent<HTMLButtonElement>): void => {
+  const handleToggleMode = async (
+    event: KeyboardEvent<HTMLButtonElement> | MouseEvent<HTMLButtonElement>
+  ): Promise<void> => {
     event.stopPropagation()
+    if (isSwitchingChain) {
+      return
+    }
 
     if (isTenderlyActive && connectedTenderlyExecutionChain) {
-      toast({
-        content: `Switch your wallet back to ${connectedTenderlyExecutionChain.canonicalChainName} before turning Tenderly off`,
-        type: 'warning'
-      })
-      return
+      try {
+        await switchChainAsync({ chainId: connectedTenderlyExecutionChain.canonicalChainId })
+      } catch {
+        toast({
+          content: `Switch to ${connectedTenderlyExecutionChain.canonicalChainName} was cancelled. Tenderly is still on.`,
+          type: 'warning'
+        })
+        return
+      }
     }
 
     persistTenderlyModeEnabled(!isTenderlyActive)
@@ -196,9 +206,12 @@ function TenderlyBadge(): ReactElement | null {
           }}
           role="switch"
           aria-checked={isTenderlyActive}
+          aria-busy={isSwitchingChain}
           aria-label={isTenderlyActive ? 'Disable Tenderly mode' : 'Enable Tenderly mode'}
+          disabled={isSwitchingChain}
           className={cl(
             'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors',
+            isSwitchingChain ? 'cursor-wait opacity-70' : '',
             isTenderlyActive ? 'border-text-primary/70 bg-text-primary/15' : 'border-border bg-surface'
           )}
         >
