@@ -154,7 +154,7 @@ function ActivityActionIcon({ action }: { action: TPortfolioActivityEntry['actio
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
-      style={{ transform: isInboundAction ? 'rotate(0deg)' : 'rotate(180deg)' }}
+      style={{ transform: isInboundAction ? 'rotate(180deg)' : 'rotate(0deg)' }}
     >
       <path d="M9 3.5V10.75" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
       <path
@@ -225,9 +225,9 @@ function IndexedActivityRow({
   const metadataStatus = entry.status === 'ok' ? 'Indexed' : 'Limited metadata'
   const actionAccentClassName = {
     deposit: 'bg-emerald-500/12 text-emerald-600',
-    stake: 'bg-cyan-500/12 text-cyan-600',
+    stake: 'bg-blue-500/12 text-blue-600',
     withdraw: 'bg-amber-500/12 text-amber-700',
-    unstake: 'bg-orange-500/12 text-orange-700'
+    unstake: 'bg-neutral-500/12 text-neutral-500'
   }[entry.action]
 
   return (
