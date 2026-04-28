@@ -1,6 +1,7 @@
 export type OverlayState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'refreshing' | 'success' | 'error'
 export type CompletionDeferral = 'none' | 'immediate' | 'after-close' | 'after-confetti'
 export type SafeTransactionStatus = 'AWAITING_CONFIRMATIONS' | 'AWAITING_EXECUTION' | 'CANCELLED' | 'FAILED' | 'SUCCESS'
+export const AUTO_CONTINUE_SUCCESS_DELAY_MS = 1200
 
 function capitalizeWord(value: string): string {
   if (!value) return value
@@ -150,6 +151,14 @@ export function shouldRefetchNextStepAfterReceipt(params: {
   if (params.isStepReady) return false
 
   return true
+}
+
+export function shouldAutoContinueFromSuccessState(params: {
+  canShowSuccess: boolean
+  executedStepAutoContinues: boolean
+  wasLastStep: boolean
+}): boolean {
+  return params.canShowSuccess && params.executedStepAutoContinues && !params.wasLastStep
 }
 
 export function resolveCompletionDeferral(params: {
