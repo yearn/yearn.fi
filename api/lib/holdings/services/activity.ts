@@ -1,4 +1,5 @@
-import type { DepositEvent, TransferEvent, WithdrawEvent } from '../types'
+import type { DepositEvent, TransferEvent, VaultMetadata, WithdrawEvent } from '../types'
+import { fetchRouterInputAssetForActivity, type TActivityInputAsset } from './activityReceiptEnrichment'
 import type { TransactionActivityEvents, VaultVersion } from './graphql'
 import { fetchActivityEventsByTransactionHashes, fetchRecentAddressScopedActivityEvents } from './graphql'
 import { formatAmount, lowerCaseAddress, minBigInt, toVaultKey, ZERO } from './pnlShared'
@@ -17,6 +18,10 @@ export interface HoldingsActivityEntry {
   assetSymbol: string | null
   assetAmount: string
   assetAmountFormatted: number | null
+  inputTokenAddress: string | null
+  inputTokenSymbol: string | null
+  inputTokenAmount: string | null
+  inputTokenAmountFormatted: number | null
   shareAmount: string
   shareAmountFormatted: number | null
   status: 'ok' | 'missing_metadata'
@@ -51,6 +56,8 @@ type TActivityEvent =
       blockTimestamp: number
       logIndex: number
       transactionHash: string
+      owner: string
+      sender: string
       assets: bigint
       shares: bigint
       scopes: TActivityScopes
@@ -98,6 +105,9 @@ type TResolvedActivityEvent = {
   action: HoldingsActivityAction
   assets: bigint
   shares: bigint
+  owner: string | null
+  sender: string | null
+  inputAsset: TActivityInputAsset | null
 }
 
 type TRecentActivityWindow = {
@@ -149,6 +159,8 @@ function normalizeDepositEvent(event: DepositEvent, scope: 'address' | 'tx'): TA
     blockTimestamp: event.blockTimestamp,
     logIndex: event.logIndex,
     transactionHash: lowerCaseAddress(event.transactionHash),
+    owner: lowerCaseAddress(event.owner),
+    sender: lowerCaseAddress(event.sender),
     assets: BigInt(event.assets),
     shares: BigInt(event.shares),
     scopes: createScopes(scope)
@@ -315,7 +327,10 @@ function createResolvedActivityEvent(args: {
     familyVaultAddress: args.event.familyVaultAddress,
     action: args.action,
     assets: args.assetAmount,
-    shares: args.shareAmount
+    shares: args.shareAmount,
+    owner: args.event.kind === 'deposit' ? args.event.owner : null,
+    sender: args.event.kind === 'deposit' ? args.event.sender : null,
+    inputAsset: null
   }
 }
 
@@ -524,6 +539,45 @@ function normalizeTransactionActivityEvents(transactionEvents: TransactionActivi
   ]
 }
 
+function shouldFetchInputAsset(event: TResolvedActivityEvent, userAddress: string): boolean {
+  const normalizedUserAddress = lowerCaseAddress(userAddress)
+
+  return (
+    event.action === 'deposit' &&
+    event.owner === normalizedUserAddress &&
+    event.sender !== null &&
+    event.sender !== event.owner
+  )
+}
+
+async function enrichActivityInputAssets(
+  events: TResolvedActivityEvent[],
+  userAddress: string,
+  metadata: Map<string, VaultMetadata>
+): Promise<TResolvedActivityEvent[]> {
+  return Promise.all(
+    events.map(async (event) => {
+      if (!shouldFetchInputAsset(event, userAddress)) {
+        return event
+      }
+
+      const eventMetadata = metadata.get(toVaultKey(event.chainId, event.vaultAddress)) ?? null
+      const inputAsset = await fetchRouterInputAssetForActivity({
+        chainId: event.chainId,
+        transactionHash: event.txHash,
+        userAddress,
+        excludedTokenAddresses: [
+          event.vaultAddress,
+          event.familyVaultAddress,
+          ...(eventMetadata ? [eventMetadata.token.address] : [])
+        ]
+      })
+
+      return inputAsset ? { ...event, inputAsset } : event
+    })
+  )
+}
+
 export async function getHoldingsActivity(
   userAddress: string,
   version: VaultVersion = 'all',
@@ -570,29 +624,31 @@ export async function getHoldingsActivity(
     []
   )
   const metadata = vaultIdentifiers.length > 0 ? await fetchMultipleVaultsMetadata(vaultIdentifiers) : new Map()
-  const entries = classifiedEvents.flatMap<HoldingsActivityEntry>((event) => {
+  const visibleEvents = classifiedEvents.filter(
+    (event) => !metadata.get(toVaultKey(event.chainId, event.vaultAddress))?.isHidden
+  )
+  const enrichedEvents = await enrichActivityInputAssets(visibleEvents, userAddress, metadata)
+  const entries = enrichedEvents.map<HoldingsActivityEntry>((event) => {
     const eventMetadata = metadata.get(toVaultKey(event.chainId, event.vaultAddress)) ?? null
 
-    if (eventMetadata?.isHidden) {
-      return []
+    return {
+      chainId: event.chainId,
+      txHash: event.txHash,
+      timestamp: event.timestamp,
+      action: event.action,
+      vaultAddress: event.vaultAddress,
+      familyVaultAddress: event.familyVaultAddress,
+      assetSymbol: eventMetadata?.token.symbol ?? null,
+      assetAmount: event.assets.toString(),
+      assetAmountFormatted: eventMetadata ? formatAmount(event.assets, eventMetadata.token.decimals) : null,
+      inputTokenAddress: event.inputAsset?.tokenAddress ?? null,
+      inputTokenSymbol: event.inputAsset?.tokenSymbol ?? null,
+      inputTokenAmount: event.inputAsset?.amount ?? null,
+      inputTokenAmountFormatted: event.inputAsset?.amountFormatted ?? null,
+      shareAmount: event.shares.toString(),
+      shareAmountFormatted: eventMetadata ? formatAmount(event.shares, eventMetadata.decimals) : null,
+      status: eventMetadata ? 'ok' : 'missing_metadata'
     }
-
-    return [
-      {
-        chainId: event.chainId,
-        txHash: event.txHash,
-        timestamp: event.timestamp,
-        action: event.action,
-        vaultAddress: event.vaultAddress,
-        familyVaultAddress: event.familyVaultAddress,
-        assetSymbol: eventMetadata?.token.symbol ?? null,
-        assetAmount: event.assets.toString(),
-        assetAmountFormatted: eventMetadata ? formatAmount(event.assets, eventMetadata.token.decimals) : null,
-        shareAmount: event.shares.toString(),
-        shareAmountFormatted: eventMetadata ? formatAmount(event.shares, eventMetadata.decimals) : null,
-        status: eventMetadata ? 'ok' : 'missing_metadata'
-      }
-    ]
   })
   const hasMore =
     selectedTransactionKeys.length > boundedOffset + boundedLimit ||
