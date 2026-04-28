@@ -6,6 +6,7 @@ import {
   useSwitchChain,
   useWaitForTransactionReceipt
 } from '@shared/hooks/useAppWagmi'
+import { useSafeTransactionDetails } from '@shared/hooks/useSafeTransactionDetails'
 import type { TCreateNotificationParams } from '@shared/types/notifications'
 import { cl } from '@shared/utils'
 import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
@@ -21,6 +22,7 @@ import {
   getPendingTransactionTitle,
   type OverlayState,
   resolveCompletionDeferral,
+  resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
   shouldAutoContinuePermitSuccess,
@@ -203,7 +205,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   const explorerChainId =
     ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? undefined
-  const receipt = useWaitForTransactionReceipt({ hash: txHash, chainId: explorerChainId, confirmations })
+  const safeTransactionDetails = useSafeTransactionDetails({
+    safeTxHash: isWalletSafe ? txHash : undefined,
+    enabled: Boolean(isWalletSafe && txHash && (overlayState === 'pending' || overlayState === 'submitted'))
+  })
   const safeCallsStatus = useCallsStatus({
     id: txHash || '0x',
     query: {
@@ -211,15 +216,20 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         isWalletSafe &&
           txHash &&
           (overlayState === 'pending' || overlayState === 'submitted') &&
-          !receipt.data?.transactionHash
+          !safeTransactionDetails.data?.executionTxHash
       ),
       refetchInterval: 1500
     }
   })
+  const executionTrackingHash = resolveExecutionTrackingHash({
+    isWalletSafe,
+    submittedTxHash: txHash,
+    safeExecutionTxHash: safeTransactionDetails.data?.executionTxHash,
+    callsReceiptTxHash: safeCallsStatus.data?.receipts?.[0]?.transactionHash
+  })
+  const receipt = useWaitForTransactionReceipt({ hash: executionTrackingHash, chainId: explorerChainId, confirmations })
   const blockExplorer = getNetwork(explorerChainId ?? currentChainId).defaultBlockExplorer
-  const explorerTransactionHash =
-    safeCallsStatus.data?.receipts?.[0]?.transactionHash ?? (!isWalletSafe ? txHash : undefined)
-  const explorerTxUrl = explorerTransactionHash && blockExplorer ? `${blockExplorer}/tx/${explorerTransactionHash}` : ''
+  const explorerTxUrl = executionTrackingHash && blockExplorer ? `${blockExplorer}/tx/${executionTrackingHash}` : ''
 
   // Track if the executed step was the last step (captured at execution time)
   const wasLastStepRef = useRef(false)
@@ -670,7 +680,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     const nextOverlayState = resolvePendingSafeOverlayState({
       overlayState,
       isWalletSafe,
-      hasReceiptTransactionHash: Boolean(receipt.data?.transactionHash),
+      hasExecutionReceipt: Boolean(receipt.data?.transactionHash),
+      safeTxStatus: safeTransactionDetails.data?.txStatus,
       callsStatus: safeCallsStatus.data?.status
     })
 
@@ -691,6 +702,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     overlayState,
     isWalletSafe,
     receipt.data?.transactionHash,
+    safeTransactionDetails.data?.txStatus,
     safeCallsStatus.data?.status,
     handleUpdateNotification,
     resetTxState

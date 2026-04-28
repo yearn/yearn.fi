@@ -1,5 +1,6 @@
 export type OverlayState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'refreshing' | 'success' | 'error'
 export type CompletionDeferral = 'none' | 'immediate' | 'after-close' | 'after-confetti'
+export type SafeTransactionStatus = 'AWAITING_CONFIRMATIONS' | 'AWAITING_EXECUTION' | 'CANCELLED' | 'FAILED' | 'SUCCESS'
 
 function capitalizeWord(value: string): string {
   if (!value) return value
@@ -65,18 +66,36 @@ export function resolveOverlayConnectedChainId(params: {
 export function resolvePendingSafeOverlayState(params: {
   overlayState: OverlayState
   isWalletSafe: boolean
-  hasReceiptTransactionHash: boolean
+  hasExecutionReceipt: boolean
+  safeTxStatus?: SafeTransactionStatus
   callsStatus?: 'pending' | 'success' | 'failure'
 }): OverlayState {
-  const { overlayState, isWalletSafe, hasReceiptTransactionHash, callsStatus } = params
+  const { overlayState, isWalletSafe, hasExecutionReceipt, safeTxStatus, callsStatus } = params
 
   if (overlayState !== 'pending' && overlayState !== 'submitted') return overlayState
   if (!isWalletSafe) return overlayState
-  if (hasReceiptTransactionHash) return overlayState
+  if (hasExecutionReceipt) return overlayState
+
+  if (safeTxStatus === 'FAILED' || safeTxStatus === 'CANCELLED') return 'error'
+  if (safeTxStatus === 'AWAITING_CONFIRMATIONS' || safeTxStatus === 'AWAITING_EXECUTION') return 'submitted'
+
   if (callsStatus === 'failure') return 'error'
   if (callsStatus === 'pending') return 'submitted'
 
   return overlayState
+}
+
+export function resolveExecutionTrackingHash(params: {
+  isWalletSafe: boolean
+  submittedTxHash?: `0x${string}`
+  safeExecutionTxHash?: `0x${string}`
+  callsReceiptTxHash?: `0x${string}`
+}): `0x${string}` | undefined {
+  if (!params.isWalletSafe) {
+    return params.submittedTxHash
+  }
+
+  return params.safeExecutionTxHash ?? params.callsReceiptTxHash
 }
 
 export function shouldAutoContinuePermitSuccess(params: {
