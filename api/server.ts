@@ -43,24 +43,23 @@ import {
 import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
-const DEFAULT_API_SERVER_PORT = '3001'
+const DEFAULT_API_PORT = 3001
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
 
-function resolveApiServerPort(env: NodeJS.ProcessEnv): number {
-  const configuredPort = env.API_SERVER_PORT
-  if (configuredPort) {
-    const parsedConfiguredPort = Number(configuredPort)
-    if (Number.isInteger(parsedConfiguredPort) && parsedConfiguredPort > 0) {
-      return parsedConfiguredPort
-    }
+function resolveApiPort(env: NodeJS.ProcessEnv): number {
+  const rawPort = env.API_PORT?.trim() || env.API_SERVER_PORT?.trim() || String(DEFAULT_API_PORT)
+  const port = Number(rawPort)
+
+  if (!Number.isInteger(port) || port <= 0) {
+    throw new Error(`Invalid API port value: ${rawPort}`)
   }
 
-  return Number(DEFAULT_API_SERVER_PORT)
+  return port
 }
 
-const API_SERVER_PORT = resolveApiServerPort(process.env)
+const API_PORT = resolveApiPort(process.env)
 
 type TTenderlyJsonRpcSuccess = {
   id: string | number | null
@@ -1318,18 +1317,18 @@ async function main() {
         )
       }
     },
-    port: 3001,
+    port: API_PORT,
     idleTimeout: 120
   })
 
-  console.log('🚀 API server running on http://localhost:3001')
-  console.log('📊 Holdings API: http://localhost:3001/api/holdings/history?address=0x...')
-  console.log('🗂️ Holdings Activity API: http://localhost:3001/api/holdings/activity?address=0x...')
-  console.log('🧩 Holdings Breakdown API: http://localhost:3001/api/holdings/breakdown?address=0x...')
-  console.log('💹 PnL API: http://localhost:3001/api/holdings/pnl?address=0x...')
-  console.log('📈 Simple PnL API: http://localhost:3001/api/holdings/pnl/simple?address=0x...')
-  console.log('📊 Simple PnL History API: http://localhost:3001/api/holdings/pnl/simple-history?address=0x...')
-  console.log('🧾 PnL Drilldown API: http://localhost:3001/api/holdings/pnl/drilldown?address=0x...')
+  console.log(`🚀 API server running on http://localhost:${API_PORT}`)
+  console.log(`📊 Holdings API: http://localhost:${API_PORT}/api/holdings/history?address=0x...`)
+  console.log(`🗂️ Holdings Activity API: http://localhost:${API_PORT}/api/holdings/activity?address=0x...`)
+  console.log(`🧩 Holdings Breakdown API: http://localhost:${API_PORT}/api/holdings/breakdown?address=0x...`)
+  console.log(`💹 PnL API: http://localhost:${API_PORT}/api/holdings/pnl?address=0x...`)
+  console.log(`📈 Simple PnL API: http://localhost:${API_PORT}/api/holdings/pnl/simple?address=0x...`)
+  console.log(`📊 Simple PnL History API: http://localhost:${API_PORT}/api/holdings/pnl/simple-history?address=0x...`)
+  console.log(`🧾 PnL Drilldown API: http://localhost:${API_PORT}/api/holdings/pnl/drilldown?address=0x...`)
 }
 
 main().catch((error) => {
