@@ -1,12 +1,18 @@
 import { useNotifications } from '@shared/contexts/useNotifications'
+import { useWallet } from '@shared/contexts/useWallet'
+import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchSafeTransactionDetails } from '@shared/hooks/useSafeTransactionDetails'
 import type { TNotification } from '@shared/types/notifications'
 import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
+import { useQueryClient } from '@tanstack/react-query'
 import { getConnectorClient } from '@wagmi/core'
 import { useCallback, useEffect, useRef } from 'react'
 import { getCallsStatus } from 'viem/actions'
 import { getBlock, waitForTransactionReceipt } from 'wagmi/actions'
-import { shouldPollNotificationStatus } from './transactionStatusPoller.helpers'
+import {
+  shouldPollNotificationStatus,
+  shouldRefreshBeforeNotificationSettlement
+} from './transactionStatusPoller.helpers'
 
 /************************************************************************************************
  * Custom hook to poll transaction status for pending notifications every minute.
@@ -17,7 +23,19 @@ import { shouldPollNotificationStatus } from './transactionStatusPoller.helpers'
  ************************************************************************************************/
 export function useTransactionStatusPoller(notification: TNotification): void {
   const { updateEntry } = useNotifications()
+  const { onRefresh } = useWallet()
+  const { address } = useWeb3()
+  const queryClient = useQueryClient()
   const pollIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
+
+  const refreshBeforeSettlement = useCallback(async (): Promise<void> => {
+    await queryClient.invalidateQueries()
+    if (address) {
+      await onRefresh().catch((error) => {
+        console.error('Failed to refresh wallet balances after Safe execution:', error)
+      })
+    }
+  }, [address, onRefresh, queryClient])
 
   /************************************************************************************************
    * Function to check the transaction status and update the notification accordingly.
@@ -87,6 +105,16 @@ export function useTransactionStatusPoller(notification: TNotification): void {
                 blockNumber: receipt.blockNumber
               })
 
+              if (
+                shouldRefreshBeforeNotificationSettlement({
+                  currentStatus: notification.status,
+                  awaitingExecution: notification.awaitingExecution,
+                  nextStatus: receipt.status === 'success' ? 'success' : 'error'
+                })
+              ) {
+                await refreshBeforeSettlement()
+              }
+
               await updateEntry(
                 {
                   status: receipt.status === 'success' ? 'success' : 'error',
@@ -143,6 +171,16 @@ export function useTransactionStatusPoller(notification: TNotification): void {
           blockNumber: receipt.blockNumber
         })
 
+        if (
+          shouldRefreshBeforeNotificationSettlement({
+            currentStatus: notification.status,
+            awaitingExecution: notification.awaitingExecution,
+            nextStatus: receipt.status === 'success' ? 'success' : 'error'
+          })
+        ) {
+          await refreshBeforeSettlement()
+        }
+
         await updateEntry(
           {
             status: receipt.status === 'success' ? 'success' : 'error',
@@ -193,7 +231,7 @@ export function useTransactionStatusPoller(notification: TNotification): void {
         console.warn('Transaction status check failed:', error.message)
       }
     }
-  }, [notification, updateEntry])
+  }, [notification, refreshBeforeSettlement, updateEntry])
 
   /************************************************************************************************
    * Effect to set up polling for pending transactions. Polls every minute (60000ms) to check
