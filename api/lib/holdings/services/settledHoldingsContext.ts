@@ -58,6 +58,7 @@ export interface TSettledVersionedPpsContext extends TSettledAddressScopedContex
 
 const inFlightSettledAddressScopedContexts = new Map<string, Promise<TSettledAddressScopedContext>>()
 const inFlightSettledVersionedPpsContexts = new Map<string, Promise<TSettledVersionedPpsContext>>()
+const CURRENT_DAY_LOOKAHEAD_SECONDS = 24 * 60 * 60
 
 function getContextKey(args: {
   userAddress: string
@@ -196,7 +197,14 @@ export async function getSettledAddressScopedContext(args: {
     const settledTimestamps = generateDailyTimestamps(holdingsConfig.historyDays, 1)
     const latestSettledDayTimestamp = settledTimestamps[settledTimestamps.length - 1] ?? 0
     const maxTimestamp = toSettledDayTimestamp(latestSettledDayTimestamp)
-    const events = await fetchUserEvents(args.userAddress, 'all', maxTimestamp, args.fetchType, args.paginationMode)
+    const activityMaxTimestamp = maxTimestamp + CURRENT_DAY_LOOKAHEAD_SECONDS
+    const events = await fetchUserEvents(
+      args.userAddress,
+      'all',
+      activityMaxTimestamp,
+      args.fetchType,
+      args.paginationMode
+    )
     const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
     const rawEvents = buildAddressScopedRawPnlEvents(events)
     const rawVaultIdentifiers = timeline.length > 0 ? getUniqueVaults(timeline) : getVaultIdentifiers(rawEvents)

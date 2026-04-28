@@ -18,6 +18,7 @@ const getPPSMock = vi.fn()
 const fetchHistoricalPricesMock = vi.fn()
 const getChainPrefixMock = vi.fn()
 const getPriceAtTimestampMock = vi.fn()
+const CURRENT_DAY_LOOKAHEAD_SECONDS = 24 * 60 * 60
 
 vi.mock('./cache', () => ({
   getCachedTotalsWithTimestamp: getCachedTotalsWithTimestampMock,
@@ -143,7 +144,13 @@ describe('getHistoricalHoldings', () => {
     const { getHistoricalHoldings } = await import('./aggregator')
     const response = await getHistoricalHoldings(userAddress, 'v2', 'parallel', 'all')
 
-    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 101, 'parallel', 'all')
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(
+      userAddress,
+      'all',
+      101 + CURRENT_DAY_LOOKAHEAD_SECONDS,
+      'parallel',
+      'all'
+    )
     expect(getCachedTotalsWithTimestampMock).toHaveBeenCalledWith(userAddress, 'v2', 'date-100', 'date-100')
     expect(fetchMultipleVaultsPPSMock).toHaveBeenCalledWith([vaults[0]])
     expect(saveCachedTotalsMock).toHaveBeenCalledWith(userAddress, 'v2', [{ date: 'date-100', usdValue: 2 }])
@@ -169,7 +176,13 @@ describe('getHistoricalHoldings', () => {
     const { getHistoricalHoldings } = await import('./aggregator')
     await getHistoricalHoldings(userAddress, 'all')
 
-    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 101, 'seq', 'paged')
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(
+      userAddress,
+      'all',
+      101 + CURRENT_DAY_LOOKAHEAD_SECONDS,
+      'seq',
+      'paged'
+    )
   })
 
   it('filters historical chart calculations to requested vaults without using aggregate cache', async () => {
@@ -286,7 +299,13 @@ describe('getHistoricalHoldings', () => {
     const { getHistoricalHoldings } = await import('./aggregator')
     const response = await getHistoricalHoldings(userAddress, 'all')
 
-    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 201, 'seq', 'paged')
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(
+      userAddress,
+      'all',
+      201 + CURRENT_DAY_LOOKAHEAD_SECONDS,
+      'seq',
+      'paged'
+    )
     expect(fetchMultipleVaultsMetadataMock).toHaveBeenCalled()
     expect(checkCacheStalenessMock).toHaveBeenCalledWith(
       [{ address: vaultAddress, chainId: 1 }],
@@ -505,25 +524,52 @@ describe('getHistoricalHoldings', () => {
 
   it('marks history as active even when only unsettled same-day events exist', async () => {
     const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
-    const sameDayTimeline = [{ blockTimestamp: 250, blockNumber: 2 }]
+    const vaultAddress = '0x00000000000000000000000000000000000000e1'
+    const sameDayDeposit = {
+      id: 'same-day-deposit',
+      vaultAddress,
+      chainId: 1,
+      blockNumber: 2,
+      blockTimestamp: 250,
+      logIndex: 0,
+      transactionHash: '0x123',
+      transactionFrom: userAddress,
+      owner: userAddress,
+      sender: userAddress,
+      shares: '1000000000000000000',
+      assets: '1000000000000000000'
+    }
 
     generateDailyTimestampsMock.mockReturnValue([100, 200])
     timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
     getCachedTotalsWithTimestampMock.mockResolvedValue({ totals: [], oldestUpdatedAt: null })
-    fetchUserEventsMock.mockResolvedValue({
-      deposits: [],
-      withdrawals: [],
-      transfersIn: [],
-      transfersOut: []
+    fetchUserEventsMock.mockImplementation((_address: string, _version: string, maxTimestamp?: number) =>
+      Promise.resolve({
+        deposits: (maxTimestamp ?? 0) >= sameDayDeposit.blockTimestamp ? [sameDayDeposit] : [],
+        withdrawals: [],
+        transfersIn: [],
+        transfersOut: []
+      })
+    )
+    buildPositionTimelineMock.mockImplementation((deposits: Array<{ blockTimestamp: number; blockNumber: number }>) => {
+      return deposits.map((deposit) => ({
+        blockTimestamp: deposit.blockTimestamp,
+        blockNumber: deposit.blockNumber
+      }))
     })
-    buildPositionTimelineMock.mockReturnValue(sameDayTimeline)
     getUniqueVaultsMock.mockReturnValue([])
     generateDailyTimestampsFromRangeMock.mockReturnValue([])
 
     const { getHistoricalHoldingsChart } = await import('./aggregator')
     const response = await getHistoricalHoldingsChart(userAddress, 'all', 'seq', 'paged', 'usd', '1y')
 
-    expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 201, 'seq', 'paged')
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(
+      userAddress,
+      'all',
+      201 + CURRENT_DAY_LOOKAHEAD_SECONDS,
+      'seq',
+      'paged'
+    )
     expect(response.hasActivity).toBe(true)
     expect(response.dataPoints).toEqual([
       { date: 'date-100', timestamp: 101, value: 0 },

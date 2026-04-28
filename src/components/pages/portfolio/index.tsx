@@ -40,8 +40,17 @@ import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import Link from '/src/components/Link'
-import type { TPortfolioHistoryChartTimeframe } from './components/PortfolioHistoryChart'
-import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
+import type {
+  TGrowthDisplayMode,
+  TPortfolioHistoryChartTab,
+  TPortfolioHistoryChartTimeframe
+} from './components/PortfolioHistoryChart'
+import {
+  PortfolioHistoryChart,
+  PortfolioHistoryChartControls,
+  resolvePortfolioGrowthDisplayMode
+} from './components/PortfolioHistoryChart'
+import type { TPortfolioVaultGrowthChartMode } from './components/PortfolioVaultGrowthChart'
 import { usePortfolioActivity } from './hooks/usePortfolioActivity'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
@@ -59,7 +68,7 @@ const headingTooltipClassName =
 const metricTooltipContentClassName = 'flex max-w-[280px] flex-col gap-1 leading-relaxed'
 const metricCardClassName = 'bg-surface px-5 py-3 md:px-5 md:py-2.5'
 const PORTFOLIO_TABS = [
-  { key: 'positions', label: 'Your Vaults' },
+  { key: 'positions', label: 'Account Overview' },
   { key: 'activity', label: 'Activity' },
   { key: 'claim-rewards', label: 'Claim Rewards' }
 ] as const
@@ -1144,10 +1153,6 @@ function PortfolioHoldingsSection({
 
   return (
     <section className="flex flex-col gap-2">
-      <div>
-        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">{'Your Vaults'}</h2>
-        <p className="text-xs text-text-secondary sm:text-sm">{'Track every Yearn position you currently hold.'}</p>
-      </div>
       {!isActive ? (
         <EmptySectionCard
           title="Connect a wallet to view your vaults"
@@ -1259,6 +1264,11 @@ function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
   const [historyDenomination, setHistoryDenomination] = useState<TPortfolioHistoryDenomination>('usd')
   const [historyTimeframe, setHistoryTimeframe] = useState<TPortfolioHistoryChartTimeframe>('1y')
+  const [historyChartTab, setHistoryChartTab] = useState<TPortfolioHistoryChartTab>('balance')
+  const [historyGrowthDisplayModeOverride, setHistoryGrowthDisplayModeOverride] = useState<TGrowthDisplayMode | null>(
+    null
+  )
+  const [historyVaultGrowthMode, setHistoryVaultGrowthMode] = useState<TPortfolioVaultGrowthChartMode>('position')
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
@@ -1287,6 +1297,10 @@ function PortfolioPage(): ReactElement {
     isEmpty: protocolReturnHistoryEmpty
   } = usePortfolioProtocolReturnHistory(historyFetchTimeframe, shouldLoadPositionsHistory)
   const annualizedProtocolReturnPct = protocolReturnHistoryData?.at(-1)?.annualizedProtocolReturnPct
+  const resolvedGrowthDisplayMode = resolvePortfolioGrowthDisplayMode(
+    historyGrowthDisplayModeOverride ?? protocolReturnHistorySummary?.recommendedGrowthDisplay ?? 'index',
+    protocolReturnHistoryData
+  )
 
   const handleTabSelect = useCallback(
     (tab: TPortfolioTabKey) => {
@@ -1347,7 +1361,7 @@ function PortfolioPage(): ReactElement {
         <div className={headingTooltipClassName}>{'Monitor your balances, returns, and discover new vaults.'}</div>
       }
     >
-      <h1 className="text-lg font-black text-text-primary md:text-3xl md:leading-10">{'Account Overview'}</h1>
+      <h1 className="text-lg font-black text-text-primary md:text-3xl md:leading-10">{'Portfolio'}</h1>
     </Tooltip>
   )
 
@@ -1357,7 +1371,20 @@ function PortfolioPage(): ReactElement {
         return (
           <div className="flex flex-col gap-6 sm:gap-8">
             {model.isActive ? (
-              <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
+              <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
+                <PortfolioHistoryChartControls
+                  activeTab={historyChartTab}
+                  onActiveTabChange={setHistoryChartTab}
+                  denomination={resolvedHistoryDenomination}
+                  onDenominationChange={setHistoryDenomination}
+                  timeframe={historyTimeframe}
+                  onTimeframeChange={setHistoryTimeframe}
+                  resolvedGrowthDisplayMode={resolvedGrowthDisplayMode}
+                  onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
+                  vaultGrowthMode={historyVaultGrowthMode}
+                  onVaultGrowthModeChange={setHistoryVaultGrowthMode}
+                  className="border-b border-border bg-surface-secondary/35 px-4 py-3 md:px-6"
+                />
                 <div className="grid items-stretch xl:grid-cols-[minmax(0,1fr)_340px]">
                   <PortfolioHistoryChart
                     balanceData={historyData}
@@ -1365,9 +1392,12 @@ function PortfolioPage(): ReactElement {
                     protocolReturnSummary={protocolReturnHistorySummary}
                     protocolReturnFamilySeries={protocolReturnHistoryFamilySeries}
                     denomination={resolvedHistoryDenomination}
-                    onDenominationChange={setHistoryDenomination}
                     timeframe={historyTimeframe}
-                    onTimeframeChange={setHistoryTimeframe}
+                    activeTab={historyChartTab}
+                    growthDisplayModeOverride={historyGrowthDisplayModeOverride}
+                    onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
+                    vaultGrowthMode={historyVaultGrowthMode}
+                    onVaultGrowthModeChange={setHistoryVaultGrowthMode}
                     balanceIsLoading={historyLoading}
                     balanceIsEmpty={historyEmpty}
                     balanceError={historyError}
