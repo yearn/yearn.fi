@@ -74,11 +74,11 @@ const DESKTOP_CHART_LAYOUT: TChartLayout = {
 
 const MOBILE_CHART_LAYOUT: TChartLayout = {
   viewBoxWidth: 560,
-  viewBoxHeight: 600,
+  viewBoxHeight: 520,
   nodeWidth: 18,
   beforeNodeX: 22,
   afterNodeX: 520,
-  chartTop: 145,
+  chartTop: 58,
   chartBottom: 38,
   nodeLabelPadding: 12,
   nodeLabelMaxLineLength: 12,
@@ -98,6 +98,7 @@ const SWIPE_THRESHOLD_PX = 40
 const timestampFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
+  year: 'numeric',
   hour: 'numeric',
   minute: '2-digit',
   timeZone: 'UTC'
@@ -126,6 +127,13 @@ function formatPanelTimestamp(timestamp: string | null): string {
   }
 
   return `${timestampFormatter.format(parsedDate)} UTC`
+}
+
+function getPanelHeadings(panel: TReallocationPanel): { beforeHeading: string; afterHeading: string } {
+  return {
+    beforeHeading: panel.kind === 'proposal' ? 'Current' : panel.kind === 'current' ? 'Last Seen' : 'Before',
+    afterHeading: panel.kind === 'proposal' ? 'Proposed' : panel.kind === 'current' ? 'Current' : 'After'
+  }
 }
 
 function wrapChartLabelText(value: string, maxLineLength: number): string {
@@ -426,8 +434,7 @@ function ReallocationSankeyChart({
     )
   }
 
-  const beforeHeading = panel.kind === 'proposal' ? 'Current' : panel.kind === 'current' ? 'Last Seen' : 'Before'
-  const afterHeading = panel.kind === 'proposal' ? 'Proposed' : panel.kind === 'current' ? 'Current' : 'After'
+  const { beforeHeading, afterHeading } = getPanelHeadings(panel)
 
   return (
     <svg
@@ -437,7 +444,7 @@ function ReallocationSankeyChart({
       aria-label="Recent reallocation sankey chart"
       onMouseLeave={() => setHoverTarget(null)}
     >
-      {isActive ? (
+      {isActive && !isMobile ? (
         <>
           <text x={layout.beforeNodeX} y={42} fontSize={layout.headingFontSize} fontWeight={700} fill={textColor}>
             {beforeHeading}
@@ -633,28 +640,43 @@ function TimelineControls({
   activeIndex,
   panelCount,
   onOlder,
-  onNewer
+  onNewer,
+  isMobile
 }: {
   activeIndex: number
   panelCount: number
   onOlder: () => void
   onNewer: () => void
+  isMobile: boolean
 }): ReactElement | null {
   if (panelCount <= 1) {
     return null
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-4 z-20 flex justify-center px-4">
-      <div className="pointer-events-auto flex items-center gap-2 rounded-lg border border-border bg-surface/90 p-1 shadow-sm backdrop-blur">
-        <span className="px-2 text-xs tabular-nums text-text-tertiary">{`${activeIndex + 1} / ${panelCount}`}</span>
-        <div className={cl('flex items-center gap-1', SELECTOR_BAR_STYLES.container)}>
+    <div
+      className={cl(
+        'z-20 px-4',
+        isMobile ? 'relative w-full pt-4' : 'pointer-events-none absolute inset-x-0 top-4 flex justify-center'
+      )}
+    >
+      <div
+        className={cl(
+          'pointer-events-auto flex items-center gap-2 rounded-lg border border-border bg-surface/90 p-1 shadow-sm backdrop-blur',
+          isMobile ? 'w-full justify-between' : ''
+        )}
+      >
+        <span
+          className={cl('px-2 text-xs tabular-nums text-text-tertiary', isMobile ? 'shrink-0 text-sm' : '')}
+        >{`${activeIndex + 1} / ${panelCount}`}</span>
+        <div className={cl('flex items-center gap-1', SELECTOR_BAR_STYLES.container, isMobile ? 'min-w-0 flex-1' : '')}>
           <button
             type="button"
             onClick={onOlder}
             disabled={activeIndex === 0}
             className={cl(
-              'inline-flex min-h-[34px] items-center gap-1 rounded-sm border px-3 py-2 text-xs font-semibold transition-all md:min-h-0 md:py-1',
+              'inline-flex min-h-[34px] items-center justify-center gap-1 rounded-sm border px-3 py-2 text-xs font-semibold transition-all md:min-h-0 md:py-1',
+              isMobile ? 'flex-1' : '',
               SELECTOR_BAR_STYLES.buttonBase,
               activeIndex === 0
                 ? 'cursor-not-allowed border-transparent text-text-tertiary opacity-50'
@@ -669,7 +691,8 @@ function TimelineControls({
             onClick={onNewer}
             disabled={activeIndex >= panelCount - 1}
             className={cl(
-              'inline-flex min-h-[34px] items-center gap-1 rounded-sm border px-3 py-2 text-xs font-semibold transition-all md:min-h-0 md:py-1',
+              'inline-flex min-h-[34px] items-center justify-center gap-1 rounded-sm border px-3 py-2 text-xs font-semibold transition-all md:min-h-0 md:py-1',
+              isMobile ? 'flex-1' : '',
               SELECTOR_BAR_STYLES.buttonBase,
               activeIndex >= panelCount - 1
                 ? 'cursor-not-allowed border-transparent text-text-tertiary opacity-50'
@@ -680,6 +703,27 @@ function TimelineControls({
             <IconChevron direction="right" className="size-3" />
           </button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function MobilePanelHeader({ panel }: { panel: TReallocationPanel }): ReactElement {
+  const { beforeHeading, afterHeading } = getPanelHeadings(panel)
+
+  return (
+    <div className="grid grid-cols-2 gap-4 px-4 pb-2 pt-4 md:hidden">
+      <div className="min-w-0">
+        <p className="text-base font-bold text-text-primary">{beforeHeading}</p>
+        <p className="mt-1 text-sm leading-5 text-text-secondary [overflow-wrap:anywhere]">
+          {formatPanelTimestamp(panel.beforeTimestampUtc)}
+        </p>
+      </div>
+      <div className="min-w-0 text-right">
+        <p className="text-base font-bold text-text-primary">{afterHeading}</p>
+        <p className="mt-1 text-sm leading-5 text-text-secondary [overflow-wrap:anywhere]">
+          {formatPanelTimestamp(panel.afterTimestampUtc)}
+        </p>
       </div>
     </div>
   )
@@ -727,6 +771,7 @@ function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: bo
   }, [])
 
   const activeIndex = clamp(activePanelIndex, 0, Math.max(0, panels.length - 1))
+  const activePanel = panels[activeIndex]
   // Keep the existing 3-panel window mounted while the slide runs. Swapping the
   // window immediately causes a fresh edge preview panel to pop in mid-transition.
   const windowStart = animationState?.windowStart ?? getWindowStart(activeIndex, panels.length)
@@ -806,8 +851,28 @@ function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: bo
 
   return (
     <div className="bg-surface-primary" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-      <div className="relative h-[500px] w-full overflow-hidden md:h-[500px]">
-        <TimelineControls activeIndex={activeIndex} panelCount={panels.length} onOlder={goOlder} onNewer={goNewer} />
+      {isMobile ? (
+        <>
+          <TimelineControls
+            activeIndex={activeIndex}
+            panelCount={panels.length}
+            onOlder={goOlder}
+            onNewer={goNewer}
+            isMobile={isMobile}
+          />
+          {activePanel ? <MobilePanelHeader panel={activePanel} /> : null}
+        </>
+      ) : null}
+      <div className="relative h-[430px] w-full overflow-hidden md:h-[500px]">
+        {!isMobile ? (
+          <TimelineControls
+            activeIndex={activeIndex}
+            panelCount={panels.length}
+            onOlder={goOlder}
+            onNewer={goNewer}
+            isMobile={isMobile}
+          />
+        ) : null}
 
         {windowPanels.map((panel, windowIndex) => {
           const panelIndex = windowStart + windowIndex
