@@ -57,6 +57,7 @@ const SWIPE_THRESHOLD_PX = 40
 const timestampFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
+  year: 'numeric',
   hour: 'numeric',
   minute: '2-digit',
   timeZone: 'UTC'
