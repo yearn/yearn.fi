@@ -1,3 +1,4 @@
+import { useMediaQuery } from '@react-hookz/web'
 import { useDarkMode } from '@shared/components/AllocationChart'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, formatPercent, SELECTOR_BAR_STYLES } from '@shared/utils'
@@ -39,14 +40,54 @@ type THoverTarget =
     }
   | null
 
-const VIEWBOX_WIDTH = 1000
-const VIEWBOX_HEIGHT = 675
-const NODE_WIDTH = 22
-const BEFORE_NODE_X = 44
-const AFTER_NODE_X = VIEWBOX_WIDTH - BEFORE_NODE_X - NODE_WIDTH
-const CHART_TOP = 150
-const CHART_BOTTOM = 50
-const NODE_LABEL_PADDING = 20
+type TChartLayout = {
+  viewBoxWidth: number
+  viewBoxHeight: number
+  nodeWidth: number
+  beforeNodeX: number
+  afterNodeX: number
+  chartTop: number
+  chartBottom: number
+  nodeLabelPadding: number
+  nodeLabelMaxLineLength: number
+  nodeLabelFontSize: number
+  nodeLabelLineHeight: number
+  headingFontSize: number
+  timestampFontSize: number
+}
+
+const DESKTOP_CHART_LAYOUT: TChartLayout = {
+  viewBoxWidth: 1000,
+  viewBoxHeight: 675,
+  nodeWidth: 22,
+  beforeNodeX: 44,
+  afterNodeX: 934,
+  chartTop: 150,
+  chartBottom: 50,
+  nodeLabelPadding: 20,
+  nodeLabelMaxLineLength: 18,
+  nodeLabelFontSize: 18,
+  nodeLabelLineHeight: 22,
+  headingFontSize: 18,
+  timestampFontSize: 16
+}
+
+const MOBILE_CHART_LAYOUT: TChartLayout = {
+  viewBoxWidth: 560,
+  viewBoxHeight: 600,
+  nodeWidth: 18,
+  beforeNodeX: 22,
+  afterNodeX: 520,
+  chartTop: 145,
+  chartBottom: 38,
+  nodeLabelPadding: 12,
+  nodeLabelMaxLineLength: 12,
+  nodeLabelFontSize: 18,
+  nodeLabelLineHeight: 22,
+  headingFontSize: 17,
+  timestampFontSize: 15
+}
+
 const MAX_VISIBLE_PANELS = 3
 const PANEL_WIDTH_PERCENT = 92
 const PANEL_STEP_PERCENT = 82
@@ -57,6 +98,7 @@ const SWIPE_THRESHOLD_PX = 40
 const timestampFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
+  year: 'numeric',
   hour: 'numeric',
   minute: '2-digit',
   timeZone: 'UTC'
@@ -87,6 +129,43 @@ function formatPanelTimestamp(timestamp: string | null): string {
   return `${timestampFormatter.format(parsedDate)} UTC`
 }
 
+function wrapChartLabelText(value: string, maxLineLength: number): string {
+  const words = value.trim().split(/\s+/).filter(Boolean)
+  const state = words.reduce(
+    (acc, word) => {
+      if (word.length > maxLineLength) {
+        return {
+          lines: [
+            ...acc.lines,
+            ...(acc.currentLine ? [acc.currentLine] : []),
+            ...word.match(new RegExp(`.{1,${maxLineLength}}`, 'g'))!
+          ],
+          currentLine: ''
+        }
+      }
+
+      const nextLine = acc.currentLine ? `${acc.currentLine} ${word}` : word
+      if (nextLine.length <= maxLineLength) {
+        return {
+          lines: acc.lines,
+          currentLine: nextLine
+        }
+      }
+
+      return {
+        lines: [...acc.lines, ...(acc.currentLine ? [acc.currentLine] : [])],
+        currentLine: word
+      }
+    },
+    {
+      lines: [] as string[],
+      currentLine: ''
+    }
+  )
+
+  return [...state.lines, ...(state.currentLine ? [state.currentLine] : [])].join('\n') || value
+}
+
 function toSvgSafeId(value: string): string {
   return value.replace(/[^a-zA-Z0-9_-]/g, '-')
 }
@@ -115,7 +194,8 @@ function buildRibbonPath({
   sourceBottom,
   targetLeft,
   targetTop,
-  targetBottom
+  targetBottom,
+  nodeWidth
 }: {
   sourceLeft: number
   sourceTop: number
@@ -123,8 +203,9 @@ function buildRibbonPath({
   targetLeft: number
   targetTop: number
   targetBottom: number
+  nodeWidth: number
 }): string {
-  const sourceRight = sourceLeft + NODE_WIDTH
+  const sourceRight = sourceLeft + nodeWidth
   const curveDelta = (targetLeft - sourceRight) * 0.42
   const sourceControlX = sourceRight + curveDelta
   const targetControlX = targetLeft - curveDelta
@@ -140,25 +221,33 @@ function buildRibbonPath({
 
 function SankeyNodeLabel({
   node,
+  layout,
   textColor,
   mutedTextColor,
   backgroundStrokeColor,
-  fontSize = 18,
-  lineHeight = 22,
+  fontSize,
+  lineHeight,
   strokeWidth = 5
 }: {
   node: TSankeyNode
+  layout: TChartLayout
   textColor: string
   mutedTextColor: string
   backgroundStrokeColor: string
-  fontSize?: number
-  lineHeight?: number
+  fontSize: number
+  lineHeight: number
   strokeWidth?: number
 }): ReactElement {
-  const chartHeight = VIEWBOX_HEIGHT - CHART_TOP - CHART_BOTTOM
-  const centerY = CHART_TOP + (node.localY + node.heightRatio / 2) * chartHeight
-  const labelLines = [...node.labelText.split('\n'), formatPercent(node.value, 1, 1)]
-  const x = node.side === 'before' ? BEFORE_NODE_X + NODE_WIDTH + NODE_LABEL_PADDING : AFTER_NODE_X - NODE_LABEL_PADDING
+  const chartHeight = layout.viewBoxHeight - layout.chartTop - layout.chartBottom
+  const centerY = layout.chartTop + (node.localY + node.heightRatio / 2) * chartHeight
+  const labelLines = [
+    ...wrapChartLabelText(node.displayName, layout.nodeLabelMaxLineLength).split('\n'),
+    formatPercent(node.value, 1, 1)
+  ]
+  const x =
+    node.side === 'before'
+      ? layout.beforeNodeX + layout.nodeWidth + layout.nodeLabelPadding
+      : layout.afterNodeX - layout.nodeLabelPadding
   const textAnchor = node.side === 'before' ? 'start' : 'end'
   const startY = centerY - ((labelLines.length - 1) * lineHeight) / 2
 
@@ -193,12 +282,14 @@ function ReallocationSankeyChart({
   panel,
   colorByStrategyId,
   isDark,
-  isActive
+  isActive,
+  isMobile
 }: {
   panel: TReallocationPanel
   colorByStrategyId: Map<string, string>
   isDark: boolean
   isActive: boolean
+  isMobile: boolean
 }): ReactElement {
   const graph = useMemo(() => {
     return buildStateTransitionSankeyGraph(panel.beforeState.strategies, panel.afterState.strategies)
@@ -210,7 +301,8 @@ function ReallocationSankeyChart({
     return new Map(graph.nodes.map((node) => [node.id, node]))
   }, [graph.nodes])
 
-  const chartHeight = VIEWBOX_HEIGHT - CHART_TOP - CHART_BOTTOM
+  const layout = isMobile ? MOBILE_CHART_LAYOUT : DESKTOP_CHART_LAYOUT
+  const chartHeight = layout.viewBoxHeight - layout.chartTop - layout.chartBottom
   const textColor = isDark ? '#f9fafb' : '#111827'
   const mutedTextColor = isDark ? '#9ca3af' : '#6b7280'
   const borderColor = isDark ? '#111827' : '#e5e7eb'
@@ -245,12 +337,15 @@ function ReallocationSankeyChart({
             ...state.ribbons,
             {
               path: buildRibbonPath({
-                sourceLeft: BEFORE_NODE_X,
-                sourceTop: CHART_TOP + (sourceNode.localY + sourceOffsetRatio) * chartHeight,
-                sourceBottom: CHART_TOP + (sourceNode.localY + sourceOffsetRatio + sourceHeightRatio) * chartHeight,
-                targetLeft: AFTER_NODE_X,
-                targetTop: CHART_TOP + (targetNode.localY + targetOffsetRatio) * chartHeight,
-                targetBottom: CHART_TOP + (targetNode.localY + targetOffsetRatio + targetHeightRatio) * chartHeight
+                sourceLeft: layout.beforeNodeX,
+                sourceTop: layout.chartTop + (sourceNode.localY + sourceOffsetRatio) * chartHeight,
+                sourceBottom:
+                  layout.chartTop + (sourceNode.localY + sourceOffsetRatio + sourceHeightRatio) * chartHeight,
+                targetLeft: layout.afterNodeX,
+                targetTop: layout.chartTop + (targetNode.localY + targetOffsetRatio) * chartHeight,
+                targetBottom:
+                  layout.chartTop + (targetNode.localY + targetOffsetRatio + targetHeightRatio) * chartHeight,
+                nodeWidth: layout.nodeWidth
               }),
               id: `${link.source}->${link.target}`,
               sourceColor,
@@ -270,7 +365,7 @@ function ReallocationSankeyChart({
         ribbons: [] as TRibbon[]
       }
     ).ribbons
-  }, [chartHeight, colorByStrategyId, graph.links, nodeById])
+  }, [chartHeight, colorByStrategyId, graph.links, layout, nodeById])
   const hoverState = useMemo(() => {
     if (!isActive || !hoverTarget) {
       return null
@@ -337,7 +432,7 @@ function ReallocationSankeyChart({
 
   return (
     <svg
-      viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+      viewBox={`0 0 ${layout.viewBoxWidth} ${layout.viewBoxHeight}`}
       className="h-full w-full"
       role="img"
       aria-label="Recent reallocation sankey chart"
@@ -345,16 +440,29 @@ function ReallocationSankeyChart({
     >
       {isActive ? (
         <>
-          <text x={44} y={42} fontSize={18} fontWeight={700} fill={textColor}>
+          <text x={layout.beforeNodeX} y={42} fontSize={layout.headingFontSize} fontWeight={700} fill={textColor}>
             {beforeHeading}
           </text>
-          <text x={44} y={68} fontSize={16} fill={mutedTextColor}>
+          <text x={layout.beforeNodeX} y={68} fontSize={layout.timestampFontSize} fill={mutedTextColor}>
             {formatPanelTimestamp(panel.beforeTimestampUtc)}
           </text>
-          <text x={VIEWBOX_WIDTH - 44} y={42} textAnchor="end" fontSize={18} fontWeight={700} fill={textColor}>
+          <text
+            x={layout.viewBoxWidth - layout.beforeNodeX}
+            y={42}
+            textAnchor="end"
+            fontSize={layout.headingFontSize}
+            fontWeight={700}
+            fill={textColor}
+          >
             {afterHeading}
           </text>
-          <text x={VIEWBOX_WIDTH - 44} y={68} textAnchor="end" fontSize={16} fill={mutedTextColor}>
+          <text
+            x={layout.viewBoxWidth - layout.beforeNodeX}
+            y={68}
+            textAnchor="end"
+            fontSize={layout.timestampFontSize}
+            fill={mutedTextColor}
+          >
             {formatPanelTimestamp(panel.afterTimestampUtc)}
           </text>
         </>
@@ -372,9 +480,9 @@ function ReallocationSankeyChart({
               key={gradientId}
               id={gradientId}
               gradientUnits="userSpaceOnUse"
-              x1={BEFORE_NODE_X + NODE_WIDTH}
+              x1={layout.beforeNodeX + layout.nodeWidth}
               y1={0}
-              x2={AFTER_NODE_X}
+              x2={layout.afterNodeX}
               y2={0}
             >
               <stop offset="0%" stopColor={ribbon.sourceColor} />
@@ -432,8 +540,8 @@ function ReallocationSankeyChart({
 
       {graph.nodes.map((node) => {
         const color = colorByStrategyId.get(node.id.replace(`${node.side}:`, '')) ?? '#9ca3af'
-        const x = node.side === 'before' ? BEFORE_NODE_X : AFTER_NODE_X
-        const y = CHART_TOP + node.localY * chartHeight
+        const x = node.side === 'before' ? layout.beforeNodeX : layout.afterNodeX
+        const y = layout.chartTop + node.localY * chartHeight
         const height = node.heightRatio * chartHeight
         const hasHover = Boolean(hoverState)
         const isHoveredNode = hoverTarget?.type === 'node' && hoverTarget.id === node.id
@@ -441,8 +549,8 @@ function ReallocationSankeyChart({
         const nodeOpacity = hasHover ? (isFocusedNode ? (isHoveredNode ? 1 : 0.94) : 0.16) : 1
         const labelOpacity = hasHover ? (isFocusedNode ? (isHoveredNode ? 1 : 0.9) : 0.14) : 1
         const labelScale = hasHover ? (isHoveredNode ? 1.18 : isFocusedNode ? 1.08 : 1) : 1
-        const labelFontSize = 18 * labelScale
-        const labelLineHeight = 22 * labelScale
+        const labelFontSize = layout.nodeLabelFontSize * labelScale
+        const labelLineHeight = layout.nodeLabelLineHeight * labelScale
         const labelStrokeWidth = 5 * (1 + (labelScale - 1) * 0.85)
         const nodeStrokeColor = isHoveredNode ? withAlpha(textColor, isDark ? 0.92 : 0.72) : borderColor
         const nodeStrokeWidth = isHoveredNode ? 2 : 1
@@ -469,7 +577,7 @@ function ReallocationSankeyChart({
             <rect
               x={x}
               y={y}
-              width={NODE_WIDTH}
+              width={layout.nodeWidth}
               height={height}
               fill={color}
               stroke={nodeStrokeColor}
@@ -489,6 +597,7 @@ function ReallocationSankeyChart({
               >
                 <SankeyNodeLabel
                   node={node}
+                  layout={layout}
                   textColor={textColor}
                   mutedTextColor={mutedTextColor}
                   backgroundStrokeColor={backgroundStrokeColor}
@@ -508,7 +617,7 @@ function ReallocationSankeyChart({
 function LoadingState(): ReactElement {
   return (
     <div className="border-t border-border bg-surface-secondary">
-      <div className="h-[440px] w-full animate-pulse bg-surface-secondary md:h-[620px]" />
+      <div className="h-[500px] w-full animate-pulse bg-surface-secondary md:h-[620px]" />
     </div>
   )
 }
@@ -578,6 +687,7 @@ function TimelineControls({
 }
 
 function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: boolean }): ReactElement {
+  const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const [activePanelIndex, setActivePanelIndex] = useState(Math.max(panels.length - 1, 0))
   const [animationState, setAnimationState] = useState<{
     fromIndex: number
@@ -623,6 +733,8 @@ function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: bo
   const windowStart = animationState?.windowStart ?? getWindowStart(activeIndex, panels.length)
   const windowPanels = panels.slice(windowStart, windowStart + MAX_VISIBLE_PANELS)
   const activeWindowIndex = (animationState?.toIndex ?? activeIndex) - windowStart
+  const panelWidthPercent = isMobile ? 100 : PANEL_WIDTH_PERCENT
+  const panelStepPercent = isMobile ? 100 : PANEL_STEP_PERCENT
 
   const transitionToPanel = (nextIndex: number): void => {
     const clampedNextIndex = clamp(nextIndex, 0, Math.max(0, panels.length - 1))
@@ -695,15 +807,14 @@ function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: bo
 
   return (
     <div className="bg-surface-primary" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-      <div className="relative h-[440px] w-full overflow-hidden md:h-[500px]">
+      <div className="relative h-[500px] w-full overflow-hidden md:h-[500px]">
         <TimelineControls activeIndex={activeIndex} panelCount={panels.length} onOlder={goOlder} onNewer={goNewer} />
 
         {windowPanels.map((panel, windowIndex) => {
           const panelIndex = windowStart + windowIndex
           const isActive = panelIndex === activeIndex
           const offsetFromActive = windowIndex - activeWindowIndex
-          const leftPercent =
-            panels.length === 1 ? 0 : 50 - PANEL_WIDTH_PERCENT / 2 + offsetFromActive * PANEL_STEP_PERCENT
+          const leftPercent = panels.length === 1 ? 0 : 50 - panelWidthPercent / 2 + offsetFromActive * panelStepPercent
           const zIndex = animationState
             ? panelIndex === animationState.fromIndex
               ? 3
@@ -733,7 +844,7 @@ function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: bo
               key={panel.id}
               className="absolute top-0 h-full overflow-hidden bg-surface-primary transition-[left,opacity] duration-300 ease-out"
               style={{
-                width: panels.length === 1 ? '100%' : `${PANEL_WIDTH_PERCENT}%`,
+                width: panels.length === 1 ? '100%' : `${panelWidthPercent}%`,
                 left: `${leftPercent}%`,
                 opacity,
                 zIndex
@@ -744,6 +855,7 @@ function Timeline({ panels, isDark }: { panels: TReallocationPanel[]; isDark: bo
                 colorByStrategyId={colorByStrategyId}
                 isDark={isDark}
                 isActive={isActive}
+                isMobile={isMobile}
               />
               {incomingMaskEdge ? (
                 <div
