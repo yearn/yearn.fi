@@ -15,6 +15,7 @@ import {
   getHoldingsPnLDrilldown,
   getHoldingsPnLSimple,
   getHoldingsPnLSimpleHistory,
+  type HoldingsActivityTypeFilter,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
   type HoldingsHistoryDenomination,
@@ -43,24 +44,9 @@ import {
 import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
-const DEFAULT_API_SERVER_PORT = '3001'
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
-
-function resolveApiServerPort(env: NodeJS.ProcessEnv): number {
-  const configuredPort = env.API_SERVER_PORT
-  if (configuredPort) {
-    const parsedConfiguredPort = Number(configuredPort)
-    if (Number.isInteger(parsedConfiguredPort) && parsedConfiguredPort > 0) {
-      return parsedConfiguredPort
-    }
-  }
-
-  return Number(DEFAULT_API_SERVER_PORT)
-}
-
-const API_SERVER_PORT = resolveApiServerPort(process.env)
 
 type TTenderlyJsonRpcSuccess = {
   id: string | number | null
@@ -202,6 +188,26 @@ function parseHoldingsActivityOffset(value: string | null): number {
   }
 
   return Math.max(parsed, 0)
+}
+
+function parseHoldingsActivityType(value: string | null): HoldingsActivityTypeFilter {
+  return value === 'deposit' || value === 'withdraw' || value === 'stake' || value === 'unstake' ? value : 'all'
+}
+
+function parseHoldingsActivityChainId(value: string | null): number | null {
+  const parsed = Number(value)
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null
+}
+
+function parseHoldingsActivityTimestamp(value: string | null): number | null {
+  if (!value) {
+    return null
+  }
+
+  const parsed = Number(value)
+
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null
 }
 
 function parseUtcDateParam(value: string | null): number | null {
@@ -608,6 +614,10 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const versionParam = url.searchParams.get('version')
   const limit = parseHoldingsActivityLimit(url.searchParams.get('limit'))
   const offset = parseHoldingsActivityOffset(url.searchParams.get('offset'))
+  const type = parseHoldingsActivityType(url.searchParams.get('type'))
+  const chainId = parseHoldingsActivityChainId(url.searchParams.get('chainId'))
+  const startTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('startTimestamp'))
+  const endTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('endTimestamp'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -620,7 +630,12 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const activity = await getHoldingsActivity(address, version, limit, offset)
+    const activity = await getHoldingsActivity(address, version, limit, offset, {
+      type,
+      chainId,
+      startTimestamp,
+      endTimestamp
+    })
 
     return Response.json(activity, {
       headers: {

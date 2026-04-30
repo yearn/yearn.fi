@@ -4,7 +4,9 @@ export {
   getHoldingsActivity,
   type HoldingsActivityAction,
   type HoldingsActivityEntry,
-  type HoldingsActivityResponse
+  type HoldingsActivityFilters,
+  type HoldingsActivityResponse,
+  type HoldingsActivityTypeFilter
 } from './services/activity'
 export {
   getHistoricalHoldings,

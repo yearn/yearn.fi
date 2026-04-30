@@ -1,4 +1,5 @@
-import type { DepositEvent, TransferEvent, WithdrawEvent } from '../types'
+import type { DepositEvent, TransferEvent, VaultMetadata, WithdrawEvent } from '../types'
+import { fetchRouterInputAssetForActivity, type TActivityInputAsset } from './activityReceiptEnrichment'
 import type { TransactionActivityEvents, VaultVersion } from './graphql'
 import { fetchActivityEventsByTransactionHashes, fetchRecentAddressScopedActivityEvents } from './graphql'
 import { formatAmount, lowerCaseAddress, minBigInt, toVaultKey, ZERO } from './pnlShared'
@@ -6,6 +7,14 @@ import { getFamilyVaultAddress, isStakingVault } from './staking'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
 export type HoldingsActivityAction = 'deposit' | 'withdraw' | 'stake' | 'unstake'
+export type HoldingsActivityTypeFilter = HoldingsActivityAction | 'all'
+
+export interface HoldingsActivityFilters {
+  type?: HoldingsActivityTypeFilter
+  chainId?: number | null
+  startTimestamp?: number | null
+  endTimestamp?: number | null
+}
 
 export interface HoldingsActivityEntry {
   chainId: number
@@ -17,6 +26,10 @@ export interface HoldingsActivityEntry {
   assetSymbol: string | null
   assetAmount: string
   assetAmountFormatted: number | null
+  inputTokenAddress: string | null
+  inputTokenSymbol: string | null
+  inputTokenAmount: string | null
+  inputTokenAmountFormatted: number | null
   shareAmount: string
   shareAmountFormatted: number | null
   status: 'ok' | 'missing_metadata'
@@ -51,6 +64,8 @@ type TActivityEvent =
       blockTimestamp: number
       logIndex: number
       transactionHash: string
+      owner: string
+      sender: string
       assets: bigint
       shares: bigint
       scopes: TActivityScopes
@@ -98,6 +113,9 @@ type TResolvedActivityEvent = {
   action: HoldingsActivityAction
   assets: bigint
   shares: bigint
+  owner: string | null
+  sender: string | null
+  inputAsset: TActivityInputAsset | null
 }
 
 type TRecentActivityWindow = {
@@ -109,6 +127,22 @@ type TDepositWithdrawalSums = {
   assets: bigint
   shares: bigint
   latestEvent: Extract<TActivityEvent, { kind: 'deposit' | 'withdrawal' }> | null
+}
+
+type TNormalizedActivityFilters = {
+  type: HoldingsActivityTypeFilter
+  chainId: number | null
+  startTimestamp: number | null
+  endTimestamp: number | null
+}
+
+const MAX_FILTERED_ACTIVITY_TRANSACTIONS = 500
+const MAX_FILTERED_ACTIVITY_ATTEMPTS = 5
+const DEFAULT_ACTIVITY_FILTERS: TNormalizedActivityFilters = {
+  type: 'all',
+  chainId: null,
+  startTimestamp: null,
+  endTimestamp: null
 }
 
 function compareStringDesc(a: string, b: string): number {
@@ -149,6 +183,8 @@ function normalizeDepositEvent(event: DepositEvent, scope: 'address' | 'tx'): TA
     blockTimestamp: event.blockTimestamp,
     logIndex: event.logIndex,
     transactionHash: lowerCaseAddress(event.transactionHash),
+    owner: lowerCaseAddress(event.owner),
+    sender: lowerCaseAddress(event.sender),
     assets: BigInt(event.assets),
     shares: BigInt(event.shares),
     scopes: createScopes(scope)
@@ -226,6 +262,44 @@ function buildTransactionHashesByChain(transactionKeys: string[]): Map<number, s
 
     return existing.includes(txHash) ? grouped : new Map(grouped).set(chainId, [...existing, txHash])
   }, new Map<number, string[]>())
+}
+
+function emptyTransactionActivityEvents(): TransactionActivityEvents {
+  return {
+    deposits: [],
+    withdrawals: [],
+    transfers: []
+  }
+}
+
+function normalizeActivityTimestamp(timestamp: number | null | undefined): number | null {
+  return typeof timestamp === 'number' && Number.isInteger(timestamp) && timestamp >= 0 ? timestamp : null
+}
+
+function normalizeActivityFilters(filters: HoldingsActivityFilters): TNormalizedActivityFilters {
+  const chainId =
+    typeof filters.chainId === 'number' && Number.isInteger(filters.chainId) && filters.chainId > 0
+      ? filters.chainId
+      : null
+  const startTimestamp = normalizeActivityTimestamp(filters.startTimestamp)
+  const endTimestamp = normalizeActivityTimestamp(filters.endTimestamp)
+  const hasInvertedRange = startTimestamp !== null && endTimestamp !== null && startTimestamp > endTimestamp
+
+  return {
+    type: filters.type ?? DEFAULT_ACTIVITY_FILTERS.type,
+    chainId,
+    startTimestamp: hasInvertedRange ? endTimestamp : startTimestamp,
+    endTimestamp: hasInvertedRange ? startTimestamp : endTimestamp
+  }
+}
+
+function hasActiveActivityFilters(filters: TNormalizedActivityFilters): boolean {
+  return (
+    filters.type !== 'all' ||
+    filters.chainId !== null ||
+    filters.startTimestamp !== null ||
+    filters.endTimestamp !== null
+  )
 }
 
 function mergeActivityEvents(events: TActivityEvent[]): TActivityEvent[] {
@@ -315,7 +389,10 @@ function createResolvedActivityEvent(args: {
     familyVaultAddress: args.event.familyVaultAddress,
     action: args.action,
     assets: args.assetAmount,
-    shares: args.shareAmount
+    shares: args.shareAmount,
+    owner: args.event.kind === 'deposit' ? args.event.owner : null,
+    sender: args.event.kind === 'deposit' ? args.event.sender : null,
+    inputAsset: null
   }
 }
 
@@ -524,14 +601,153 @@ function normalizeTransactionActivityEvents(transactionEvents: TransactionActivi
   ]
 }
 
-export async function getHoldingsActivity(
+function shouldFetchInputAsset(event: TResolvedActivityEvent, userAddress: string): boolean {
+  const normalizedUserAddress = lowerCaseAddress(userAddress)
+
+  return (
+    event.action === 'deposit' &&
+    event.owner === normalizedUserAddress &&
+    event.sender !== null &&
+    event.sender !== event.owner
+  )
+}
+
+async function enrichActivityInputAssets(
+  events: TResolvedActivityEvent[],
   userAddress: string,
-  version: VaultVersion = 'all',
-  limit = 10,
-  offset = 0
-): Promise<HoldingsActivityResponse> {
-  const boundedLimit = Math.max(1, limit)
-  const boundedOffset = Math.max(0, offset)
+  metadata: Map<string, VaultMetadata>
+): Promise<TResolvedActivityEvent[]> {
+  return Promise.all(
+    events.map(async (event) => {
+      if (!shouldFetchInputAsset(event, userAddress)) {
+        return event
+      }
+
+      const eventMetadata = metadata.get(toVaultKey(event.chainId, event.vaultAddress)) ?? null
+      const inputAsset = await fetchRouterInputAssetForActivity({
+        chainId: event.chainId,
+        transactionHash: event.txHash,
+        userAddress,
+        excludedTokenAddresses: [
+          event.vaultAddress,
+          event.familyVaultAddress,
+          ...(eventMetadata ? [eventMetadata.token.address] : [])
+        ]
+      })
+
+      return inputAsset ? { ...event, inputAsset } : event
+    })
+  )
+}
+
+function matchesActivityFilters(event: TResolvedActivityEvent, filters: TNormalizedActivityFilters): boolean {
+  if (filters.type !== 'all' && event.action !== filters.type) {
+    return false
+  }
+
+  if (filters.chainId !== null && event.chainId !== filters.chainId) {
+    return false
+  }
+
+  if (filters.startTimestamp !== null && event.timestamp < filters.startTimestamp) {
+    return false
+  }
+
+  if (filters.endTimestamp !== null && event.timestamp > filters.endTimestamp) {
+    return false
+  }
+
+  return true
+}
+
+async function classifyActivityForTransactionKeys(
+  userAddress: string,
+  version: VaultVersion,
+  candidateEvents: TActivityEvent[],
+  transactionKeys: string[]
+): Promise<TResolvedActivityEvent[]> {
+  const selectedTransactionKeySet = new Set(transactionKeys)
+  const selectedAddressEvents = candidateEvents.filter((event) => selectedTransactionKeySet.has(toTxKey(event)))
+  const transactionEvents =
+    transactionKeys.length > 0
+      ? await fetchActivityEventsByTransactionHashes(buildTransactionHashesByChain(transactionKeys), version)
+      : emptyTransactionActivityEvents()
+  const selectedEvents = mergeActivityEvents([
+    ...selectedAddressEvents,
+    ...normalizeTransactionActivityEvents(transactionEvents)
+  ])
+
+  return classifyActivityEvents(selectedEvents, userAddress)
+}
+
+function getVaultIdentifiers(events: TResolvedActivityEvent[]): Array<{ chainId: number; vaultAddress: string }> {
+  return events.reduce<Array<{ chainId: number; vaultAddress: string }>>((identifiers, event) => {
+    const alreadyIncluded = identifiers.some(
+      (identifier) => identifier.chainId === event.chainId && identifier.vaultAddress === event.vaultAddress
+    )
+
+    if (!alreadyIncluded) {
+      identifiers.push({ chainId: event.chainId, vaultAddress: event.vaultAddress })
+    }
+
+    return identifiers
+  }, [])
+}
+
+function filterVisibleActivityEvents(
+  events: TResolvedActivityEvent[],
+  metadata: Map<string, VaultMetadata>
+): TResolvedActivityEvent[] {
+  return events.filter((event) => !metadata.get(toVaultKey(event.chainId, event.vaultAddress))?.isHidden)
+}
+
+function toHoldingsActivityEntry(
+  event: TResolvedActivityEvent,
+  metadata: Map<string, VaultMetadata>
+): HoldingsActivityEntry {
+  const eventMetadata = metadata.get(toVaultKey(event.chainId, event.vaultAddress)) ?? null
+
+  return {
+    chainId: event.chainId,
+    txHash: event.txHash,
+    timestamp: event.timestamp,
+    action: event.action,
+    vaultAddress: event.vaultAddress,
+    familyVaultAddress: event.familyVaultAddress,
+    assetSymbol: eventMetadata?.token.symbol ?? null,
+    assetAmount: event.assets.toString(),
+    assetAmountFormatted: eventMetadata ? formatAmount(event.assets, eventMetadata.token.decimals) : null,
+    inputTokenAddress: event.inputAsset?.tokenAddress ?? null,
+    inputTokenSymbol: event.inputAsset?.tokenSymbol ?? null,
+    inputTokenAmount: event.inputAsset?.amount ?? null,
+    inputTokenAmountFormatted: event.inputAsset?.amountFormatted ?? null,
+    shareAmount: event.shares.toString(),
+    shareAmountFormatted: eventMetadata ? formatAmount(event.shares, eventMetadata.decimals) : null,
+    status: eventMetadata ? 'ok' : 'missing_metadata'
+  }
+}
+
+async function buildActivityEntries(
+  userAddress: string,
+  events: TResolvedActivityEvent[]
+): Promise<{ entries: HoldingsActivityEntry[]; metadata: Map<string, VaultMetadata> }> {
+  const vaultIdentifiers = getVaultIdentifiers(events)
+  const metadata = vaultIdentifiers.length > 0 ? await fetchMultipleVaultsMetadata(vaultIdentifiers) : new Map()
+  const visibleEvents = filterVisibleActivityEvents(events, metadata)
+  const enrichedEvents = await enrichActivityInputAssets(visibleEvents, userAddress, metadata)
+
+  return {
+    entries: enrichedEvents.map((event) => toHoldingsActivityEntry(event, metadata)),
+    metadata
+  }
+}
+
+async function getUnfilteredHoldingsActivity(
+  userAddress: string,
+  version: VaultVersion,
+  boundedLimit: number,
+  boundedOffset: number
+): Promise<Pick<HoldingsActivityResponse, 'entries' | 'pageInfo'>> {
   const targetTransactionCount = boundedOffset + boundedLimit + 1
   const { candidateEvents, hasPotentialMore } = await loadRecentActivityWindow(
     userAddress,
@@ -540,60 +756,13 @@ export async function getHoldingsActivity(
   )
   const selectedTransactionKeys = getSelectedTransactionKeys(candidateEvents, targetTransactionCount)
   const pageTransactionKeys = selectedTransactionKeys.slice(boundedOffset, boundedOffset + boundedLimit)
-  const selectedTransactionKeySet = new Set(pageTransactionKeys)
-  const selectedAddressEvents = candidateEvents.filter((event) => selectedTransactionKeySet.has(toTxKey(event)))
-  const transactionEvents =
-    pageTransactionKeys.length > 0
-      ? await fetchActivityEventsByTransactionHashes(buildTransactionHashesByChain(pageTransactionKeys), version)
-      : {
-          deposits: [],
-          withdrawals: [],
-          transfers: []
-        }
-  const selectedEvents = mergeActivityEvents([
-    ...selectedAddressEvents,
-    ...normalizeTransactionActivityEvents(transactionEvents)
-  ])
-  const classifiedEvents = classifyActivityEvents(selectedEvents, userAddress)
-  const vaultIdentifiers = classifiedEvents.reduce<Array<{ chainId: number; vaultAddress: string }>>(
-    (identifiers, event) => {
-      const alreadyIncluded = identifiers.some(
-        (identifier) => identifier.chainId === event.chainId && identifier.vaultAddress === event.vaultAddress
-      )
-
-      if (!alreadyIncluded) {
-        identifiers.push({ chainId: event.chainId, vaultAddress: event.vaultAddress })
-      }
-
-      return identifiers
-    },
-    []
+  const classifiedEvents = await classifyActivityForTransactionKeys(
+    userAddress,
+    version,
+    candidateEvents,
+    pageTransactionKeys
   )
-  const metadata = vaultIdentifiers.length > 0 ? await fetchMultipleVaultsMetadata(vaultIdentifiers) : new Map()
-  const entries = classifiedEvents.flatMap<HoldingsActivityEntry>((event) => {
-    const eventMetadata = metadata.get(toVaultKey(event.chainId, event.vaultAddress)) ?? null
-
-    if (eventMetadata?.isHidden) {
-      return []
-    }
-
-    return [
-      {
-        chainId: event.chainId,
-        txHash: event.txHash,
-        timestamp: event.timestamp,
-        action: event.action,
-        vaultAddress: event.vaultAddress,
-        familyVaultAddress: event.familyVaultAddress,
-        assetSymbol: eventMetadata?.token.symbol ?? null,
-        assetAmount: event.assets.toString(),
-        assetAmountFormatted: eventMetadata ? formatAmount(event.assets, eventMetadata.token.decimals) : null,
-        shareAmount: event.shares.toString(),
-        shareAmountFormatted: eventMetadata ? formatAmount(event.shares, eventMetadata.decimals) : null,
-        status: eventMetadata ? 'ok' : 'missing_metadata'
-      }
-    ]
-  })
+  const { entries } = await buildActivityEntries(userAddress, classifiedEvents)
   const hasMore =
     selectedTransactionKeys.length > boundedOffset + boundedLimit ||
     (pageTransactionKeys.length === boundedLimit &&
@@ -601,14 +770,95 @@ export async function getHoldingsActivity(
       hasPotentialMore)
 
   return {
+    entries,
+    pageInfo: {
+      hasMore,
+      nextOffset: hasMore ? boundedOffset + boundedLimit : null
+    }
+  }
+}
+
+async function getFilteredHoldingsActivity(
+  userAddress: string,
+  version: VaultVersion,
+  boundedLimit: number,
+  boundedOffset: number,
+  filters: TNormalizedActivityFilters
+): Promise<Pick<HoldingsActivityResponse, 'entries' | 'pageInfo'>> {
+  const requestedEntryCount = boundedOffset + boundedLimit + 1
+  let targetTransactionCount = Math.min(Math.max(requestedEntryCount * 4, 20), MAX_FILTERED_ACTIVITY_TRANSACTIONS)
+  let attempt = 0
+  let filteredEvents: TResolvedActivityEvent[] = []
+  let metadata = new Map<string, VaultMetadata>()
+  let hasUnscannedTransactions = false
+
+  while (attempt < MAX_FILTERED_ACTIVITY_ATTEMPTS) {
+    const { candidateEvents, hasPotentialMore } = await loadRecentActivityWindow(
+      userAddress,
+      version,
+      targetTransactionCount
+    )
+    const selectedTransactionKeys = getSelectedTransactionKeys(candidateEvents, targetTransactionCount)
+    const classifiedEvents = await classifyActivityForTransactionKeys(
+      userAddress,
+      version,
+      candidateEvents,
+      selectedTransactionKeys
+    )
+    const matchingEvents = classifiedEvents.filter((event) => matchesActivityFilters(event, filters))
+    const vaultIdentifiers = getVaultIdentifiers(matchingEvents)
+    metadata = vaultIdentifiers.length > 0 ? await fetchMultipleVaultsMetadata(vaultIdentifiers) : new Map()
+    filteredEvents = filterVisibleActivityEvents(matchingEvents, metadata)
+    hasUnscannedTransactions = hasPotentialMore && selectedTransactionKeys.length >= targetTransactionCount
+
+    if (
+      filteredEvents.length >= requestedEntryCount ||
+      !hasUnscannedTransactions ||
+      targetTransactionCount >= MAX_FILTERED_ACTIVITY_TRANSACTIONS
+    ) {
+      break
+    }
+
+    targetTransactionCount = Math.min(targetTransactionCount * 2, MAX_FILTERED_ACTIVITY_TRANSACTIONS)
+    attempt += 1
+  }
+
+  const pageEvents = filteredEvents.slice(boundedOffset, boundedOffset + boundedLimit)
+  const enrichedEvents = await enrichActivityInputAssets(pageEvents, userAddress, metadata)
+  const entries = enrichedEvents.map((event) => toHoldingsActivityEntry(event, metadata))
+  const hasMore =
+    filteredEvents.length > boundedOffset + boundedLimit ||
+    (pageEvents.length === boundedLimit && hasUnscannedTransactions)
+
+  return {
+    entries,
+    pageInfo: {
+      hasMore,
+      nextOffset: hasMore ? boundedOffset + boundedLimit : null
+    }
+  }
+}
+
+export async function getHoldingsActivity(
+  userAddress: string,
+  version: VaultVersion = 'all',
+  limit = 10,
+  offset = 0,
+  filters: HoldingsActivityFilters = DEFAULT_ACTIVITY_FILTERS
+): Promise<HoldingsActivityResponse> {
+  const boundedLimit = Math.max(1, limit)
+  const boundedOffset = Math.max(0, offset)
+  const normalizedFilters = normalizeActivityFilters(filters)
+  const activityPage = !hasActiveActivityFilters(normalizedFilters)
+    ? await getUnfilteredHoldingsActivity(userAddress, version, boundedLimit, boundedOffset)
+    : await getFilteredHoldingsActivity(userAddress, version, boundedLimit, boundedOffset, normalizedFilters)
+
+  return {
     address: lowerCaseAddress(userAddress),
     version,
     limit: boundedLimit,
     offset: boundedOffset,
-    pageInfo: {
-      hasMore,
-      nextOffset: hasMore ? boundedOffset + boundedLimit : null
-    },
-    entries
+    pageInfo: activityPage.pageInfo,
+    entries: activityPage.entries
   }
 }

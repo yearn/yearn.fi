@@ -1,7 +1,18 @@
+import {
+  Dialog,
+  Listbox,
+  ListboxButton,
+  ListboxOption,
+  ListboxOptions,
+  Transition,
+  TransitionChild
+} from '@headlessui/react'
 import { usePlausible } from '@hooks/usePlausible'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
 import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
 import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
+import { type TVaultsChainButton, VaultsChainSelector } from '@pages/vaults/components/filters/VaultsChainSelector'
+import { VaultsFiltersButton } from '@pages/vaults/components/filters/VaultsFiltersButton'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { Notification } from '@pages/vaults/components/notifications/Notification'
@@ -16,11 +27,13 @@ import {
   getVaultName,
   getVaultStaking,
   getVaultSymbol,
+  getVaultToken,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
+import { resolveNextSingleChainSelection } from '@pages/vaults/utils/chainSelection'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { METRIC_VALUE_CLASS, MetricHeader, type TMetricBlock } from '@shared/components/MetricsCard'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
@@ -29,15 +42,20 @@ import { Tooltip } from '@shared/components/Tooltip'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { useTokenList } from '@shared/contexts/WithTokenList'
 import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
+import { useChainOptions } from '@shared/hooks/useChains'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
+import { IconChevron } from '@shared/icons/IconChevron'
+import { IconCross } from '@shared/icons/IconCross'
 import { IconSpinner } from '@shared/icons/IconSpinner'
+import { LogoYearn } from '@shared/icons/LogoYearn'
 import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { CSSProperties, ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import Link from '/src/components/Link'
 import type { TPortfolioHistoryChartTimeframe } from './components/PortfolioHistoryChart'
@@ -48,6 +66,7 @@ import { usePortfolioProtocolReturn } from './hooks/usePortfolioProtocolReturn'
 import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
 import type {
   TPortfolioActivityEntry,
+  TPortfolioActivityTypeFilter,
   TPortfolioHistoryDenomination,
   TPortfolioHistoryTimeframe,
   TPortfolioProtocolReturnSummary
@@ -106,6 +125,25 @@ const ACTIVITY_ACTION_LABELS: Record<TPortfolioActivityEntry['action'], string> 
   stake: 'Stake',
   unstake: 'Unstake'
 }
+const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: string }> = [
+  { key: 'all', label: 'All' },
+  { key: 'deposit', label: 'Deposit' },
+  { key: 'withdraw', label: 'Withdraw' },
+  { key: 'stake', label: 'Stake' },
+  { key: 'unstake', label: 'Unstake' }
+]
+
+type TActivityModalFilters = {
+  type: TPortfolioActivityTypeFilter
+  startDate: string
+  endDate: string
+}
+
+const DEFAULT_ACTIVITY_MODAL_FILTERS: TActivityModalFilters = {
+  type: 'all',
+  startDate: '',
+  endDate: ''
+}
 
 function formatActivityDisplayAmount(amountFormatted: number | null, symbol: string | null): string {
   if (amountFormatted === null) {
@@ -122,15 +160,12 @@ function getActivityExplorerUrl(chainId: number, txHash: string): string | null 
   return explorerBaseUrl ? `${explorerBaseUrl}/tx/${txHash}` : null
 }
 
-function getActivityAddressExplorerUrl(chainId: number, address: string): string | null {
-  const network = SUPPORTED_NETWORKS.find((item) => item.id === chainId)
-  const explorerBaseUrl = network?.blockExplorers?.default?.url
-
-  return explorerBaseUrl ? `${explorerBaseUrl}/address/${address}` : null
-}
-
 function getActivityChainName(chainId: number): string {
   return SUPPORTED_NETWORKS.find((item) => item.id === chainId)?.name ?? `Chain ${chainId}`
+}
+
+function getActivityChainLogoUrl(chainId: number): string {
+  return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
 }
 
 function formatIndexedActivityDate(timestamp: number): string {
@@ -143,110 +178,521 @@ function formatIndexedActivityDate(timestamp: number): string {
   })
 }
 
+function getActivityDateBoundaryTimestamp(date: string, boundary: 'start' | 'end'): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
+  if (!match) {
+    return null
+  }
+
+  const [, year, month, day] = match
+  const yearNumber = Number(year)
+  const monthIndex = Number(month) - 1
+  const dayNumber = Number(day)
+  const dateValue =
+    boundary === 'start'
+      ? new Date(yearNumber, monthIndex, dayNumber, 0, 0, 0, 0)
+      : new Date(yearNumber, monthIndex, dayNumber, 23, 59, 59, 999)
+
+  if (
+    dateValue.getFullYear() !== yearNumber ||
+    dateValue.getMonth() !== monthIndex ||
+    dateValue.getDate() !== dayNumber
+  ) {
+    return null
+  }
+
+  return Math.floor(dateValue.getTime() / 1000)
+}
+
+function normalizeActivityModalFilters(filters: TActivityModalFilters): TActivityModalFilters {
+  if (filters.startDate && filters.endDate && filters.startDate > filters.endDate) {
+    return {
+      ...filters,
+      startDate: filters.endDate,
+      endDate: filters.startDate
+    }
+  }
+
+  return filters
+}
+
+function ActivityActionIcon({ action }: { action: TPortfolioActivityEntry['action'] }): ReactElement {
+  const isInboundAction = action === 'deposit' || action === 'stake'
+
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      style={{ transform: isInboundAction ? 'rotate(180deg)' : 'rotate(0deg)' }}
+    >
+      <path d="M9 3.5V10.75" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M5.75 8.5L9 11.75L12.25 8.5"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M4.75 14.5H13.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ActivityDetailItem({ label, value }: { label: string; value: ReactElement | string }): ReactElement {
+  return (
+    <div className="flex flex-col gap-1 rounded-lg border border-border bg-surface px-3 py-2">
+      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-text-secondary">{label}</span>
+      <div className="text-sm text-text-primary">{value}</div>
+    </div>
+  )
+}
+
+function ActivityFilterRadio<T extends string>({
+  checked,
+  description,
+  label,
+  name,
+  onChange,
+  value
+}: {
+  checked: boolean
+  description?: string
+  label: string
+  name: string
+  onChange: (value: T) => void
+  value: T
+}): ReactElement {
+  return (
+    <label
+      className={cl(
+        'flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors',
+        checked ? 'border-border bg-surface-tertiary/80' : 'border-border hover:bg-surface-tertiary/40'
+      )}
+    >
+      <span className="min-w-0">
+        <span className="block text-sm font-medium text-text-primary">{label}</span>
+        {description ? <span className="block text-xs text-text-secondary">{description}</span> : null}
+      </span>
+      <input
+        type="radio"
+        name={name}
+        className="radio accent-blue-500"
+        checked={checked}
+        onChange={() => onChange(value)}
+      />
+    </label>
+  )
+}
+
+function ActivityFiltersModal({
+  filters,
+  isOpen,
+  onApply,
+  onClose
+}: {
+  filters: TActivityModalFilters
+  isOpen: boolean
+  onApply: (filters: TActivityModalFilters) => void
+  onClose: () => void
+}): ReactElement {
+  const [pendingFilters, setPendingFilters] = useState<TActivityModalFilters>(filters)
+
+  useEffect(() => {
+    if (isOpen) {
+      setPendingFilters(filters)
+    }
+  }, [filters, isOpen])
+
+  function handleClear(): void {
+    setPendingFilters(DEFAULT_ACTIVITY_MODAL_FILTERS)
+  }
+
+  function handleSave(): void {
+    onApply(normalizeActivityModalFilters(pendingFilters))
+    onClose()
+  }
+
+  return (
+    <Transition show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-70" onClose={onClose}>
+        <TransitionChild
+          as={Fragment}
+          enter="duration-200 ease-out"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="duration-150 ease-in"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/40" />
+        </TransitionChild>
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <TransitionChild
+              as={Fragment}
+              enter="duration-200 ease-out"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="duration-150 ease-in"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="w-full max-w-3xl rounded-3xl border border-border bg-surface p-6 text-text-primary shadow-lg">
+                <div className="flex items-start justify-between gap-4">
+                  <Dialog.Title className="text-lg font-semibold text-text-primary">{'Filters'}</Dialog.Title>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="inline-flex size-8 items-center justify-center rounded-full border border-transparent text-text-secondary hover:border-border hover:text-text-primary"
+                    aria-label="Close filters"
+                  >
+                    <IconCross className="size-4" />
+                  </button>
+                </div>
+
+                <div className="relative mt-4 grid gap-6 md:grid-cols-2">
+                  <div>
+                    <p className="mb-2 text-sm text-text-secondary">{'Type'}</p>
+                    <div className="space-y-2">
+                      {ACTIVITY_TYPE_FILTERS.map((filter) => (
+                        <ActivityFilterRadio
+                          key={filter.key}
+                          name="activity-type-filter"
+                          label={filter.label}
+                          value={filter.key}
+                          checked={pendingFilters.type === filter.key}
+                          onChange={(type) => setPendingFilters((previous) => ({ ...previous, type }))}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-sm text-text-secondary">{'Date range'}</p>
+                    <div className="grid gap-3">
+                      <label className="flex flex-col gap-1 rounded-lg border border-border px-3 py-2">
+                        <span className="text-sm font-medium text-text-primary">{'Start date'}</span>
+                        <input
+                          type="date"
+                          value={pendingFilters.startDate}
+                          max={pendingFilters.endDate || undefined}
+                          onChange={(event) =>
+                            setPendingFilters((previous) => ({ ...previous, startDate: event.target.value }))
+                          }
+                          className="w-full bg-transparent text-sm text-text-primary outline-none"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1 rounded-lg border border-border px-3 py-2">
+                        <span className="text-sm font-medium text-text-primary">{'End date'}</span>
+                        <input
+                          type="date"
+                          value={pendingFilters.endDate}
+                          min={pendingFilters.startDate || undefined}
+                          onChange={(event) =>
+                            setPendingFilters((previous) => ({ ...previous, endDate: event.target.value }))
+                          }
+                          className="w-full bg-transparent text-sm text-text-primary outline-none"
+                        />
+                      </label>
+                      <p className="text-xs leading-relaxed text-text-secondary">
+                        {'Dates are inclusive and use your browser timezone.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    className="rounded-full border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-border-hover"
+                    onClick={handleClear}
+                  >
+                    {'Clear'}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-surface transition-colors hover:bg-neutral-800"
+                    onClick={handleSave}
+                  >
+                    {'Save'}
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
+  )
+}
+
+function ActivityMobileChainDropdown({
+  chainButtons,
+  areAllChainsSelected,
+  allChainsLabel,
+  onSelectAllChains,
+  onSelectChain
+}: {
+  chainButtons: TVaultsChainButton[]
+  areAllChainsSelected: boolean
+  allChainsLabel: string
+  onSelectAllChains: () => void
+  onSelectChain: (chainId: number) => void
+}): ReactElement {
+  const selectedChain = areAllChainsSelected ? null : (chainButtons.find((chain) => chain.isSelected) ?? null)
+
+  function handleChange(chainId: number | null): void {
+    if (chainId === null) {
+      onSelectAllChains()
+      return
+    }
+
+    onSelectChain(chainId)
+  }
+
+  return (
+    <Listbox value={selectedChain?.id ?? null} onChange={handleChange}>
+      <div className="relative">
+        <ListboxButton className="flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-text-primary transition-colors hover:border-hover">
+          <div className="flex min-w-0 items-center gap-2">
+            {selectedChain ? (
+              <>
+                {selectedChain.icon ? (
+                  <span className="size-5 shrink-0 overflow-hidden rounded-full">{selectedChain.icon}</span>
+                ) : null}
+                <span className="truncate">{selectedChain.label}</span>
+              </>
+            ) : (
+              <>
+                <span className="size-5 shrink-0 overflow-hidden rounded-full">
+                  <LogoYearn className="size-full" back="text-text-primary" front="text-surface" />
+                </span>
+                <span className="truncate">{allChainsLabel}</span>
+              </>
+            )}
+          </div>
+          <IconChevron className="size-4 shrink-0 text-text-secondary" />
+        </ListboxButton>
+        <Transition
+          as={Fragment}
+          enter="transition ease-out duration-100"
+          enterFrom="opacity-0 scale-95"
+          enterTo="opacity-100 scale-100"
+          leave="transition ease-in duration-75"
+          leaveFrom="opacity-100 scale-100"
+          leaveTo="opacity-0 scale-95"
+        >
+          <ListboxOptions className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-border bg-surface-secondary py-1 shadow-lg scrollbar-themed">
+            <ListboxOption
+              value={null}
+              className={({ active, selected }) =>
+                cl(
+                  'flex cursor-pointer items-center gap-2 px-3 py-2 text-sm',
+                  active ? 'bg-surface' : '',
+                  selected ? 'font-semibold text-text-primary' : 'text-text-secondary'
+                )
+              }
+            >
+              <span className="size-5 shrink-0 overflow-hidden rounded-full">
+                <LogoYearn className="size-full" back="text-text-primary" front="text-surface" />
+              </span>
+              <span>{allChainsLabel}</span>
+            </ListboxOption>
+            {chainButtons.map((chain) => (
+              <ListboxOption
+                key={chain.id}
+                value={chain.id}
+                className={({ active, selected }) =>
+                  cl(
+                    'flex cursor-pointer items-center gap-2 px-3 py-2 text-sm',
+                    active ? 'bg-surface' : '',
+                    selected ? 'font-semibold text-text-primary' : 'text-text-secondary'
+                  )
+                }
+              >
+                {chain.icon ? <span className="size-5 shrink-0 overflow-hidden rounded-full">{chain.icon}</span> : null}
+                <span>{chain.label}</span>
+              </ListboxOption>
+            ))}
+          </ListboxOptions>
+        </Transition>
+      </div>
+    </Listbox>
+  )
+}
+
 function IndexedActivityRow({
   entry,
   displayName,
-  shareSymbol
+  shareSymbol,
+  assetAddress
 }: {
   entry: TPortfolioActivityEntry
   displayName: string
   shareSymbol: string | null
+  assetAddress: string | null
 }): ReactElement {
+  const [isExpanded, setIsExpanded] = useState(false)
   const explorerUrl = getActivityExplorerUrl(entry.chainId, entry.txHash)
-  const vaultExplorerUrl = getActivityAddressExplorerUrl(entry.chainId, entry.familyVaultAddress)
+  const preferredVaultAddress =
+    entry.familyVaultAddress && !isZeroAddress(entry.familyVaultAddress) ? entry.familyVaultAddress : entry.vaultAddress
+  const normalizedAssetAddress = assetAddress && !isZeroAddress(assetAddress) ? toAddress(assetAddress) : null
+  const normalizedInputTokenAddress =
+    entry.inputTokenAddress && !isZeroAddress(entry.inputTokenAddress) ? toAddress(entry.inputTokenAddress) : null
+  const tokenAddress = normalizedInputTokenAddress ?? normalizedAssetAddress
+  const vaultPageUrl = `/vaults/${entry.chainId}/${toAddress(preferredVaultAddress)}`
   const activityTitle = ACTIVITY_ACTION_LABELS[entry.action]
-  const activityLogoAddress = entry.familyVaultAddress || entry.vaultAddress
   const isExitAction = entry.action === 'withdraw' || entry.action === 'unstake'
+  const chainName = getActivityChainName(entry.chainId)
+  const formattedDate = formatIndexedActivityDate(entry.timestamp)
+  const primaryTokenSymbol = entry.inputTokenSymbol ?? entry.assetSymbol
+  const primaryTokenAmount =
+    entry.inputTokenAmountFormatted !== null ? entry.inputTokenAmountFormatted : entry.assetAmountFormatted
+  const isZap = Boolean(entry.inputTokenAddress && entry.inputTokenAmount)
+  const summaryAssetSymbol = primaryTokenSymbol ?? shareSymbol
+  const summaryAssetAmount = formatActivityDisplayAmount(primaryTokenAmount, summaryAssetSymbol)
+  const primaryAmount = isExitAction
+    ? formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
+    : formatActivityDisplayAmount(primaryTokenAmount, primaryTokenSymbol)
+  const secondaryAmount = isExitAction
+    ? formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)
+    : formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
+  const primaryLabel =
+    entry.action === 'withdraw'
+      ? 'Redeem'
+      : entry.action === 'stake'
+        ? 'Stake'
+        : entry.action === 'unstake'
+          ? 'Unstake'
+          : 'Token'
+  const metadataStatus = entry.status === 'ok' ? 'Indexed' : 'Limited metadata'
+  const actionAccentClassName = {
+    deposit: 'bg-emerald-500/12 text-emerald-600',
+    stake: 'bg-blue-500/12 text-blue-600',
+    withdraw: 'bg-amber-500/12 text-amber-700',
+    unstake: 'bg-neutral-500/12 text-neutral-500'
+  }[entry.action]
 
   return (
-    <div className="group relative h-fit origin-top rounded-lg border border-border bg-card p-4">
-      <div className="relative z-20">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <p className="font-medium text-text-primary">{activityTitle}</p>
-          <div className="flex items-center justify-center self-start rounded-lg bg-[#00796D] px-4 py-2 text-xs text-white">
-            {'Success'}
-          </div>
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <button
+        type="button"
+        onClick={() => setIsExpanded((previous) => !previous)}
+        aria-expanded={isExpanded}
+        className="flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-surface-secondary/40 md:px-4"
+      >
+        <div className={cl('flex size-10 shrink-0 items-center justify-center rounded-2xl', actionAccentClassName)}>
+          <ActivityActionIcon action={entry.action} />
         </div>
-
-        <div className="flex gap-4">
-          <div className="flex flex-col items-center gap-3">
-            <TokenLogo
-              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${activityLogoAddress.toLowerCase()}/logo-32.png`}
-              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${activityLogoAddress.toLowerCase()}/logo-32.png`}
-              tokenSymbol={shareSymbol ?? entry.assetSymbol ?? ACTIVITY_ACTION_LABELS[entry.action]}
-              chainId={entry.chainId}
-              width={32}
-              height={32}
-              className="rounded-full"
-              loading="eager"
-            />
-          </div>
-          <div className="flex-1">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-text-primary">
-              {isExitAction ? (
-                <>
-                  <p>{'Redeem:'}</p>
-                  <p className="text-right font-bold">
-                    {formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)}
-                  </p>
-                  <p>{'Receive:'}</p>
-                  <p className="text-right font-bold">
-                    {formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p>{'Token:'}</p>
-                  <p className="text-right font-bold">
-                    {formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)}
-                  </p>
-                  <p>{'Vault:'}</p>
-                  <p className="text-right font-bold">
-                    {vaultExplorerUrl ? (
-                      <Link
-                        href={vaultExplorerUrl}
-                        target={'_blank'}
-                        rel={'noopener noreferrer'}
-                        aria-label={`View vault ${entry.familyVaultAddress} on explorer`}
-                        className={'font-bold text-text-primary underline hover:text-text-secondary'}
-                      >
-                        {displayName}
-                      </Link>
-                    ) : (
-                      displayName
-                    )}
-                  </p>
-                  <p>{'Receive:'}</p>
-                  <p className="text-right font-bold">
-                    {formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)}
-                  </p>
-                </>
-              )}
-              <p>{'Chain:'}</p>
-              <p className="text-right font-bold">{getActivityChainName(entry.chainId)}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-center gap-2">
+                <p className="truncate text-sm font-semibold text-text-primary">{activityTitle}</p>
+                {isZap ? (
+                  <span
+                    aria-label="Zap transaction"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-primary"
+                  >
+                    <span aria-hidden="true">⚡</span>
+                    <span>Zap</span>
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+                <span className="truncate">{displayName}</span>
+                <span className="hidden size-1 rounded-full bg-text-secondary/50 md:inline-block" aria-hidden="true" />
+                <span className="hidden md:inline">{chainName}</span>
+                <span className="hidden size-1 rounded-full bg-text-secondary/50 lg:inline-block" aria-hidden="true" />
+                <span className="hidden lg:inline">{formattedDate}</span>
+              </div>
+            </div>
+            <div className="flex shrink-0 self-center items-center gap-2.5 text-right">
+              <p className="max-w-[220px] truncate text-base font-semibold leading-tight text-text-primary md:text-lg">
+                {summaryAssetAmount}
+              </p>
+              {tokenAddress ? (
+                <TokenLogo
+                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                  altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                  tokenSymbol={summaryAssetSymbol ?? activityTitle}
+                  width={24}
+                  height={24}
+                  className="rounded-full"
+                  loading="lazy"
+                />
+              ) : null}
             </div>
           </div>
         </div>
-
-        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-text-primary">
-          <div className="flex gap-4">
-            <span className="font-bold">{formatIndexedActivityDate(entry.timestamp)}</span>
-          </div>
-          {explorerUrl ? (
-            <Link
-              href={explorerUrl}
-              target={'_blank'}
-              rel={'noopener noreferrer'}
-              aria-label={`View transaction ${entry.txHash} on explorer`}
-              className={'text-text-primary hover:text-text-secondary'}
-            >
-              <button className={'text-xs font-medium underline'}>{'View tx'}</button>
-            </Link>
-          ) : (
-            <span className="text-xs text-text-secondary">{'Explorer unavailable'}</span>
-          )}
+        <div className="flex shrink-0 items-center gap-2">
+          <IconChevron className="size-4 text-text-secondary" direction={isExpanded ? 'up' : 'down'} />
         </div>
-      </div>
+      </button>
+
+      {isExpanded ? (
+        <div className="border-t border-border px-3 pb-3 pt-3 md:px-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <ActivityDetailItem label={primaryLabel} value={primaryAmount} />
+            <ActivityDetailItem label="Receive" value={secondaryAmount} />
+            <ActivityDetailItem
+              label="Vault"
+              value={
+                vaultPageUrl ? (
+                  <Link
+                    href={vaultPageUrl}
+                    aria-label={`Open vault ${preferredVaultAddress}`}
+                    className={'underline hover:text-text-secondary'}
+                  >
+                    {displayName}
+                  </Link>
+                ) : (
+                  displayName
+                )
+              }
+            />
+            <ActivityDetailItem
+              label="Chain"
+              value={
+                <span className="inline-flex items-center gap-2">
+                  <img
+                    src={getActivityChainLogoUrl(entry.chainId)}
+                    alt={chainName}
+                    className="size-4 rounded-full"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span>{chainName}</span>
+                </span>
+              }
+            />
+            <ActivityDetailItem label="Confirmed" value={formattedDate} />
+            <ActivityDetailItem label="Status" value={metadataStatus} />
+            <ActivityDetailItem
+              label="Transaction"
+              value={
+                explorerUrl ? (
+                  <Link
+                    href={explorerUrl}
+                    target={'_blank'}
+                    rel={'noopener noreferrer'}
+                    aria-label={`View transaction ${entry.txHash} on explorer`}
+                    className={'underline hover:text-text-secondary'}
+                  >
+                    <span className="text-sm">{'View on explorer'}</span>
+                  </Link>
+                ) : (
+                  <span className="text-sm text-text-secondary">{'Explorer unavailable'}</span>
+                )
+              }
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -435,7 +881,19 @@ function PortfolioTabSelector({
 
 function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivityProps): ReactElement {
   const { allVaults } = useYearn()
+  const { getToken } = useTokenList()
   const { cachedEntries, isLoading: notificationsLoading, error: notificationsError } = useNotifications()
+  const [activityFilters, setActivityFilters] = useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
+  const [activityChainId, setActivityChainId] = useState<number | null>(null)
+  const [isActivityFiltersOpen, setIsActivityFiltersOpen] = useState(false)
+  const activityStartTimestamp = useMemo(
+    () => getActivityDateBoundaryTimestamp(activityFilters.startDate, 'start'),
+    [activityFilters.startDate]
+  )
+  const activityEndTimestamp = useMemo(
+    () => getActivityDateBoundaryTimestamp(activityFilters.endDate, 'end'),
+    [activityFilters.endDate]
+  )
   const {
     data: indexedEntries,
     isLoading: indexedLoading,
@@ -444,7 +902,28 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     isEmpty: indexedEmpty,
     hasMore: indexedHasMore,
     loadMore: loadMoreIndexedActivity
-  } = usePortfolioActivity(10, isActive)
+  } = usePortfolioActivity(10, isActive, {
+    type: activityFilters.type,
+    chainId: activityChainId,
+    startTimestamp: activityStartTimestamp,
+    endTimestamp: activityEndTimestamp
+  })
+  const selectedActivityChains = useMemo(() => (activityChainId === null ? null : [activityChainId]), [activityChainId])
+  const activityChainOptions = useChainOptions(selectedActivityChains)
+  const activityChainButtons = useMemo<TVaultsChainButton[]>(
+    () =>
+      SUPPORTED_NETWORKS.map((network) => {
+        const chainOption = activityChainOptions.find((option) => option.value === network.id)
+
+        return {
+          id: network.id,
+          label: network.name,
+          icon: chainOption?.icon,
+          isSelected: activityChainId === network.id
+        }
+      }),
+    [activityChainId, activityChainOptions]
+  )
   const unresolvedLocalEntries = useMemo(
     () =>
       cachedEntries
@@ -454,6 +933,55 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   )
   const hasUnresolvedLocalEntries = unresolvedLocalEntries.length > 0
   const hasIndexedEntries = indexedEntries.length > 0
+  const hasActiveIndexedFilters =
+    activityChainId !== null ||
+    activityFilters.type !== 'all' ||
+    activityFilters.startDate !== '' ||
+    activityFilters.endDate !== ''
+  const activityFiltersCount =
+    Number(activityFilters.type !== DEFAULT_ACTIVITY_MODAL_FILTERS.type) +
+    Number(activityFilters.startDate !== '' || activityFilters.endDate !== '')
+
+  function handleActivityChainSelect(chainId: number): void {
+    setActivityChainId(resolveNextSingleChainSelection(selectedActivityChains, chainId)?.[0] ?? null)
+  }
+
+  function renderActivityFilters(): ReactElement {
+    return (
+      <>
+        <div className="flex w-full items-center gap-2 md:gap-3">
+          <div className="min-w-0 flex-1 md:hidden">
+            <ActivityMobileChainDropdown
+              chainButtons={activityChainButtons}
+              areAllChainsSelected={activityChainId === null}
+              allChainsLabel="All Chains"
+              onSelectAllChains={() => setActivityChainId(null)}
+              onSelectChain={handleActivityChainSelect}
+            />
+          </div>
+          <div className="hidden w-fit max-w-full md:block">
+            <VaultsChainSelector
+              chainButtons={activityChainButtons}
+              areAllChainsSelected={activityChainId === null}
+              allChainsLabel="All Chains"
+              showMoreChainsButton={false}
+              enableResponsiveLayout={true}
+              onSelectAllChains={() => setActivityChainId(null)}
+              onSelectChain={handleActivityChainSelect}
+              onOpenChainModal={() => undefined}
+            />
+          </div>
+          <VaultsFiltersButton filtersCount={activityFiltersCount} onClick={() => setIsActivityFiltersOpen(true)} />
+        </div>
+        <ActivityFiltersModal
+          isOpen={isActivityFiltersOpen}
+          filters={activityFilters}
+          onApply={setActivityFilters}
+          onClose={() => setIsActivityFiltersOpen(false)}
+        />
+      </>
+    )
+  }
 
   function renderIndexedActivity(): ReactElement {
     if (indexedLoading) {
@@ -475,7 +1003,11 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     }
 
     if (indexedEmpty) {
-      return <div className="py-6 text-center text-sm text-text-secondary">{'No indexed activity to show.'}</div>
+      return (
+        <div className="py-6 text-center text-sm text-text-secondary">
+          {hasActiveIndexedFilters ? 'No indexed activity matches these filters.' : 'No indexed activity to show.'}
+        </div>
+      )
     }
 
     return (
@@ -483,6 +1015,11 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         {indexedEntries.map((entry) => {
           const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
           const activityVault = allVaults[toAddress(entry.vaultAddress)]
+          const assetToken = familyVault
+            ? getVaultToken(familyVault)
+            : activityVault
+              ? getVaultToken(activityVault)
+              : null
           const familyVaultSymbol = familyVault
             ? getVaultSymbol(familyVault)
             : activityVault
@@ -493,18 +1030,34 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
             : activityVault
               ? getVaultName(activityVault)
               : truncateHex(entry.familyVaultAddress, 5)
+          const stakingToken =
+            entry.action === 'stake' || entry.action === 'unstake'
+              ? getToken({ address: toAddress(entry.vaultAddress), chainID: entry.chainId })
+              : null
+          const stakingTokenSymbol =
+            stakingToken && toAddress(stakingToken.address) === toAddress(entry.vaultAddress)
+              ? stakingToken.symbol || null
+              : null
           const shareSymbol =
             entry.action === 'stake' || entry.action === 'unstake'
-              ? familyVaultSymbol
-                ? `st-${familyVaultSymbol}`
-                : entry.assetSymbol
-                  ? `st-${entry.assetSymbol}`
-                  : null
+              ? (stakingTokenSymbol ?? familyVaultSymbol)
               : familyVault
                 ? getVaultSymbol(familyVault)
                 : activityVault
                   ? getVaultSymbol(activityVault)
                   : entry.assetSymbol
+          const fallbackLogoAddress =
+            entry.familyVaultAddress && !isZeroAddress(entry.familyVaultAddress)
+              ? entry.familyVaultAddress
+              : entry.vaultAddress
+          const assetAddress =
+            (entry.action === 'deposit' || entry.action === 'withdraw') &&
+            assetToken &&
+            !isZeroAddress(assetToken.address)
+              ? assetToken.address
+              : fallbackLogoAddress && !isZeroAddress(fallbackLogoAddress)
+                ? fallbackLogoAddress
+                : null
 
           return (
             <IndexedActivityRow
@@ -512,6 +1065,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
               entry={entry}
               displayName={displayName}
               shareSymbol={shareSymbol}
+              assetAddress={assetAddress}
             />
           )
         })}
@@ -538,7 +1092,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       )
     }
 
-    if (!hasUnresolvedLocalEntries && !hasIndexedEntries && indexedEmpty) {
+    if (!hasUnresolvedLocalEntries && !hasIndexedEntries && indexedEmpty && !hasActiveIndexedFilters) {
       return <div className="py-6 text-center text-sm text-text-secondary">{'No transactions to show.'}</div>
     }
 
@@ -561,6 +1115,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         )}
 
         <div className="flex flex-col gap-3">
+          {renderActivityFilters()}
           <div>{renderIndexedActivity()}</div>
           {indexedHasMore && (
             <div className="flex justify-center">
