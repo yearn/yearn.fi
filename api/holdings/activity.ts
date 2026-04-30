@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { VaultVersion } from '../lib/holdings'
+import type { HoldingsActivityTypeFilter, VaultVersion } from '../lib/holdings'
 import { checkRateLimit, ensureSchemaInitialized } from '../lib/holdings'
 
 function simpleHash(str: string): string {
@@ -52,6 +52,32 @@ function parseOffset(value: string | string[] | undefined): number {
   return Math.max(parsedValue, 0)
 }
 
+function parseType(value: string | string[] | undefined): HoldingsActivityTypeFilter {
+  const rawValue = Array.isArray(value) ? value[0] : value
+
+  return rawValue === 'deposit' || rawValue === 'withdraw' || rawValue === 'stake' || rawValue === 'unstake'
+    ? rawValue
+    : 'all'
+}
+
+function parseChainId(value: string | string[] | undefined): number | null {
+  const rawValue = Array.isArray(value) ? value[0] : value
+  const parsedValue = Number(rawValue)
+
+  return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : null
+}
+
+function parseTimestamp(value: string | string[] | undefined): number | null {
+  const rawValue = Array.isArray(value) ? value[0] : value
+  if (!rawValue) {
+    return null
+  }
+
+  const parsedValue = Number(rawValue)
+
+  return Number.isInteger(parsedValue) && parsedValue >= 0 ? parsedValue : null
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -87,7 +113,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  const { address, version: versionParam, limit: limitParam, offset: offsetParam } = req.query
+  const {
+    address,
+    version: versionParam,
+    limit: limitParam,
+    offset: offsetParam,
+    type: typeParam,
+    chainId: chainIdParam,
+    startTimestamp: startTimestampParam,
+    endTimestamp: endTimestampParam
+  } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -103,7 +138,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       address,
       parseVersion(versionParam),
       parseLimit(limitParam),
-      parseOffset(offsetParam)
+      parseOffset(offsetParam),
+      {
+        type: parseType(typeParam),
+        chainId: parseChainId(chainIdParam),
+        startTimestamp: parseTimestamp(startTimestampParam),
+        endTimestamp: parseTimestamp(endTimestampParam)
+      }
     )
 
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')

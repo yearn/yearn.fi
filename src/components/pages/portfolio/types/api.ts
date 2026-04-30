@@ -198,6 +198,7 @@ export type TPortfolioProtocolReturnSummary = z.infer<typeof portfolioProtocolRe
 export type TPortfolioProtocolReturnVault = z.infer<typeof portfolioProtocolReturnVaultSchema>
 export type TPortfolioActivityResponse = z.infer<typeof portfolioActivityResponseSchema>
 export type TPortfolioActivityEntry = z.infer<typeof portfolioActivityEntrySchema>
+export type TPortfolioActivityTypeFilter = TPortfolioActivityEntry['action'] | 'all'
 export type TPortfolioHistoryDenomination = z.infer<typeof portfolioHistorySimpleResponseSchema>['denomination']
 export type TPortfolioHistoryTimeframe = z.infer<typeof portfolioHistorySimpleResponseSchema>['timeframe']
 export type TPortfolioHistoryChartData = Array<{

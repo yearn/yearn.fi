@@ -1,7 +1,10 @@
+import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { usePlausible } from '@hooks/usePlausible'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
 import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
 import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
+import { type TVaultsChainButton, VaultsChainSelector } from '@pages/vaults/components/filters/VaultsChainSelector'
+import { VaultsFiltersButton } from '@pages/vaults/components/filters/VaultsFiltersButton'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { Notification } from '@pages/vaults/components/notifications/Notification'
@@ -22,6 +25,7 @@ import {
 import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
+import { resolveNextSingleChainSelection } from '@pages/vaults/utils/chainSelection'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { METRIC_VALUE_CLASS, MetricHeader, type TMetricBlock } from '@shared/components/MetricsCard'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
@@ -32,15 +36,17 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
+import { useChainOptions } from '@shared/hooks/useChains'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconChevron } from '@shared/icons/IconChevron'
+import { IconCross } from '@shared/icons/IconCross'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { CSSProperties, ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import Link from '/src/components/Link'
 import type { TPortfolioHistoryChartTimeframe } from './components/PortfolioHistoryChart'
@@ -51,6 +57,7 @@ import { usePortfolioProtocolReturn } from './hooks/usePortfolioProtocolReturn'
 import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
 import type {
   TPortfolioActivityEntry,
+  TPortfolioActivityTypeFilter,
   TPortfolioHistoryDenomination,
   TPortfolioHistoryTimeframe,
   TPortfolioProtocolReturnSummary
@@ -109,6 +116,25 @@ const ACTIVITY_ACTION_LABELS: Record<TPortfolioActivityEntry['action'], string> 
   stake: 'Stake',
   unstake: 'Unstake'
 }
+const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: string }> = [
+  { key: 'all', label: 'All' },
+  { key: 'deposit', label: 'Deposit' },
+  { key: 'withdraw', label: 'Withdraw' },
+  { key: 'stake', label: 'Stake' },
+  { key: 'unstake', label: 'Unstake' }
+]
+
+type TActivityModalFilters = {
+  type: TPortfolioActivityTypeFilter
+  startDate: string
+  endDate: string
+}
+
+const DEFAULT_ACTIVITY_MODAL_FILTERS: TActivityModalFilters = {
+  type: 'all',
+  startDate: '',
+  endDate: ''
+}
 
 function formatActivityDisplayAmount(amountFormatted: number | null, symbol: string | null): string {
   if (amountFormatted === null) {
@@ -143,6 +169,44 @@ function formatIndexedActivityDate(timestamp: number): string {
   })
 }
 
+function getActivityDateBoundaryTimestamp(date: string, boundary: 'start' | 'end'): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
+  if (!match) {
+    return null
+  }
+
+  const [, year, month, day] = match
+  const yearNumber = Number(year)
+  const monthIndex = Number(month) - 1
+  const dayNumber = Number(day)
+  const dateValue =
+    boundary === 'start'
+      ? new Date(yearNumber, monthIndex, dayNumber, 0, 0, 0, 0)
+      : new Date(yearNumber, monthIndex, dayNumber, 23, 59, 59, 999)
+
+  if (
+    dateValue.getFullYear() !== yearNumber ||
+    dateValue.getMonth() !== monthIndex ||
+    dateValue.getDate() !== dayNumber
+  ) {
+    return null
+  }
+
+  return Math.floor(dateValue.getTime() / 1000)
+}
+
+function normalizeActivityModalFilters(filters: TActivityModalFilters): TActivityModalFilters {
+  if (filters.startDate && filters.endDate && filters.startDate > filters.endDate) {
+    return {
+      ...filters,
+      startDate: filters.endDate,
+      endDate: filters.startDate
+    }
+  }
+
+  return filters
+}
+
 function ActivityActionIcon({ action }: { action: TPortfolioActivityEntry['action'] }): ReactElement {
   const isInboundAction = action === 'deposit' || action === 'stake'
 
@@ -175,6 +239,185 @@ function ActivityDetailItem({ label, value }: { label: string; value: ReactEleme
       <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-text-secondary">{label}</span>
       <div className="text-sm text-text-primary">{value}</div>
     </div>
+  )
+}
+
+function ActivityFilterRadio<T extends string>({
+  checked,
+  description,
+  label,
+  name,
+  onChange,
+  value
+}: {
+  checked: boolean
+  description?: string
+  label: string
+  name: string
+  onChange: (value: T) => void
+  value: T
+}): ReactElement {
+  return (
+    <label
+      className={cl(
+        'flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors',
+        checked ? 'border-border bg-surface-tertiary/80' : 'border-border hover:bg-surface-tertiary/40'
+      )}
+    >
+      <span className="min-w-0">
+        <span className="block text-sm font-medium text-text-primary">{label}</span>
+        {description ? <span className="block text-xs text-text-secondary">{description}</span> : null}
+      </span>
+      <input
+        type="radio"
+        name={name}
+        className="radio accent-blue-500"
+        checked={checked}
+        onChange={() => onChange(value)}
+      />
+    </label>
+  )
+}
+
+function ActivityFiltersModal({
+  filters,
+  isOpen,
+  onApply,
+  onClose
+}: {
+  filters: TActivityModalFilters
+  isOpen: boolean
+  onApply: (filters: TActivityModalFilters) => void
+  onClose: () => void
+}): ReactElement {
+  const [pendingFilters, setPendingFilters] = useState<TActivityModalFilters>(filters)
+
+  useEffect(() => {
+    if (isOpen) {
+      setPendingFilters(filters)
+    }
+  }, [filters, isOpen])
+
+  function handleClear(): void {
+    setPendingFilters(DEFAULT_ACTIVITY_MODAL_FILTERS)
+  }
+
+  function handleSave(): void {
+    onApply(normalizeActivityModalFilters(pendingFilters))
+    onClose()
+  }
+
+  return (
+    <Transition show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-70" onClose={onClose}>
+        <TransitionChild
+          as={Fragment}
+          enter="duration-200 ease-out"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="duration-150 ease-in"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black/40" />
+        </TransitionChild>
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <TransitionChild
+              as={Fragment}
+              enter="duration-200 ease-out"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="duration-150 ease-in"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="w-full max-w-3xl rounded-3xl border border-border bg-surface p-6 text-text-primary shadow-lg">
+                <div className="flex items-start justify-between gap-4">
+                  <Dialog.Title className="text-lg font-semibold text-text-primary">{'Filters'}</Dialog.Title>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="inline-flex size-8 items-center justify-center rounded-full border border-transparent text-text-secondary hover:border-border hover:text-text-primary"
+                    aria-label="Close filters"
+                  >
+                    <IconCross className="size-4" />
+                  </button>
+                </div>
+
+                <div className="relative mt-4 grid gap-6 md:grid-cols-2">
+                  <div>
+                    <p className="mb-2 text-sm text-text-secondary">{'Type'}</p>
+                    <div className="space-y-2">
+                      {ACTIVITY_TYPE_FILTERS.map((filter) => (
+                        <ActivityFilterRadio
+                          key={filter.key}
+                          name="activity-type-filter"
+                          label={filter.label}
+                          value={filter.key}
+                          checked={pendingFilters.type === filter.key}
+                          onChange={(type) => setPendingFilters((previous) => ({ ...previous, type }))}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-sm text-text-secondary">{'Date range'}</p>
+                    <div className="grid gap-3">
+                      <label className="flex flex-col gap-1 rounded-lg border border-border px-3 py-2">
+                        <span className="text-sm font-medium text-text-primary">{'Start date'}</span>
+                        <input
+                          type="date"
+                          value={pendingFilters.startDate}
+                          max={pendingFilters.endDate || undefined}
+                          onChange={(event) =>
+                            setPendingFilters((previous) => ({ ...previous, startDate: event.target.value }))
+                          }
+                          className="w-full bg-transparent text-sm text-text-primary outline-none"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1 rounded-lg border border-border px-3 py-2">
+                        <span className="text-sm font-medium text-text-primary">{'End date'}</span>
+                        <input
+                          type="date"
+                          value={pendingFilters.endDate}
+                          min={pendingFilters.startDate || undefined}
+                          onChange={(event) =>
+                            setPendingFilters((previous) => ({ ...previous, endDate: event.target.value }))
+                          }
+                          className="w-full bg-transparent text-sm text-text-primary outline-none"
+                        />
+                      </label>
+                      <p className="text-xs leading-relaxed text-text-secondary">
+                        {'Dates are inclusive and use your browser timezone.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    className="rounded-full border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-border-hover"
+                    onClick={handleClear}
+                  >
+                    {'Clear'}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-surface transition-colors hover:bg-neutral-800"
+                    onClick={handleSave}
+                  >
+                    {'Save'}
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
   )
 }
 
@@ -536,6 +779,17 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   const { allVaults } = useYearn()
   const { getToken } = useTokenList()
   const { cachedEntries, isLoading: notificationsLoading, error: notificationsError } = useNotifications()
+  const [activityFilters, setActivityFilters] = useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
+  const [activityChainId, setActivityChainId] = useState<number | null>(null)
+  const [isActivityFiltersOpen, setIsActivityFiltersOpen] = useState(false)
+  const activityStartTimestamp = useMemo(
+    () => getActivityDateBoundaryTimestamp(activityFilters.startDate, 'start'),
+    [activityFilters.startDate]
+  )
+  const activityEndTimestamp = useMemo(
+    () => getActivityDateBoundaryTimestamp(activityFilters.endDate, 'end'),
+    [activityFilters.endDate]
+  )
   const {
     data: indexedEntries,
     isLoading: indexedLoading,
@@ -544,7 +798,28 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     isEmpty: indexedEmpty,
     hasMore: indexedHasMore,
     loadMore: loadMoreIndexedActivity
-  } = usePortfolioActivity(10, isActive)
+  } = usePortfolioActivity(10, isActive, {
+    type: activityFilters.type,
+    chainId: activityChainId,
+    startTimestamp: activityStartTimestamp,
+    endTimestamp: activityEndTimestamp
+  })
+  const selectedActivityChains = useMemo(() => (activityChainId === null ? null : [activityChainId]), [activityChainId])
+  const activityChainOptions = useChainOptions(selectedActivityChains)
+  const activityChainButtons = useMemo<TVaultsChainButton[]>(
+    () =>
+      SUPPORTED_NETWORKS.map((network) => {
+        const chainOption = activityChainOptions.find((option) => option.value === network.id)
+
+        return {
+          id: network.id,
+          label: network.name,
+          icon: chainOption?.icon,
+          isSelected: activityChainId === network.id
+        }
+      }),
+    [activityChainId, activityChainOptions]
+  )
   const unresolvedLocalEntries = useMemo(
     () =>
       cachedEntries
@@ -554,6 +829,46 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   )
   const hasUnresolvedLocalEntries = unresolvedLocalEntries.length > 0
   const hasIndexedEntries = indexedEntries.length > 0
+  const hasActiveIndexedFilters =
+    activityChainId !== null ||
+    activityFilters.type !== 'all' ||
+    activityFilters.startDate !== '' ||
+    activityFilters.endDate !== ''
+  const activityFiltersCount =
+    Number(activityFilters.type !== DEFAULT_ACTIVITY_MODAL_FILTERS.type) +
+    Number(activityFilters.startDate !== '' || activityFilters.endDate !== '')
+
+  function handleActivityChainSelect(chainId: number): void {
+    setActivityChainId(resolveNextSingleChainSelection(selectedActivityChains, chainId)?.[0] ?? null)
+  }
+
+  function renderActivityFilters(): ReactElement {
+    return (
+      <>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="w-fit max-w-full">
+            <VaultsChainSelector
+              chainButtons={activityChainButtons}
+              areAllChainsSelected={activityChainId === null}
+              allChainsLabel="All Chains"
+              showMoreChainsButton={false}
+              enableResponsiveLayout={true}
+              onSelectAllChains={() => setActivityChainId(null)}
+              onSelectChain={handleActivityChainSelect}
+              onOpenChainModal={() => undefined}
+            />
+          </div>
+          <VaultsFiltersButton filtersCount={activityFiltersCount} onClick={() => setIsActivityFiltersOpen(true)} />
+        </div>
+        <ActivityFiltersModal
+          isOpen={isActivityFiltersOpen}
+          filters={activityFilters}
+          onApply={setActivityFilters}
+          onClose={() => setIsActivityFiltersOpen(false)}
+        />
+      </>
+    )
+  }
 
   function renderIndexedActivity(): ReactElement {
     if (indexedLoading) {
@@ -575,7 +890,11 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     }
 
     if (indexedEmpty) {
-      return <div className="py-6 text-center text-sm text-text-secondary">{'No indexed activity to show.'}</div>
+      return (
+        <div className="py-6 text-center text-sm text-text-secondary">
+          {hasActiveIndexedFilters ? 'No indexed activity matches these filters.' : 'No indexed activity to show.'}
+        </div>
+      )
     }
 
     return (
@@ -660,7 +979,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       )
     }
 
-    if (!hasUnresolvedLocalEntries && !hasIndexedEntries && indexedEmpty) {
+    if (!hasUnresolvedLocalEntries && !hasIndexedEntries && indexedEmpty && !hasActiveIndexedFilters) {
       return <div className="py-6 text-center text-sm text-text-secondary">{'No transactions to show.'}</div>
     }
 
@@ -683,6 +1002,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         )}
 
         <div className="flex flex-col gap-3">
+          {renderActivityFilters()}
           <div>{renderIndexedActivity()}</div>
           {indexedHasMore && (
             <div className="flex justify-center">
