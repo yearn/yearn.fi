@@ -565,6 +565,256 @@ describe('getHoldingsActivity', () => {
     })
   })
 
+  it('filters activity by action before paginating', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [
+        createDepositEvent({
+          id: 'deposit-filter-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xaaa',
+          blockTimestamp: 300,
+          logIndex: 2,
+          assets: '1000000'
+        }),
+        createDepositEvent({
+          id: 'deposit-filter-2',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xbbb',
+          blockTimestamp: 290,
+          logIndex: 2,
+          assets: '2000000'
+        })
+      ],
+      withdrawals: [
+        createWithdrawalEvent({
+          id: 'withdraw-filter-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xccc',
+          blockTimestamp: 280,
+          logIndex: 2,
+          assets: '3000000'
+        })
+      ],
+      transfersIn: [],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+              symbol: 'USDC',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, { type: 'withdraw' })
+
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 80)
+    expect(response.entries).toEqual([
+      {
+        chainId: 1,
+        txHash: '0xccc',
+        timestamp: 280,
+        action: 'withdraw',
+        vaultAddress: UNDERLYING_VAULT,
+        familyVaultAddress: UNDERLYING_VAULT,
+        assetSymbol: 'USDC',
+        assetAmount: '3000000',
+        assetAmountFormatted: 3,
+        inputTokenAddress: null,
+        inputTokenSymbol: null,
+        inputTokenAmount: null,
+        inputTokenAmountFormatted: null,
+        shareAmount: '3000000',
+        shareAmountFormatted: 0.000000000003,
+        status: 'ok'
+      }
+    ])
+    expect(response.pageInfo).toEqual({
+      hasMore: false,
+      nextOffset: null
+    })
+  })
+
+  it('filters activity by chain before paginating', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [
+        createDepositEvent({
+          id: 'deposit-chain-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xaaa',
+          blockTimestamp: 300,
+          logIndex: 2,
+          assets: '1000000'
+        }),
+        {
+          ...createDepositEvent({
+            id: 'deposit-chain-2',
+            vaultAddress: UNDERLYING_VAULT,
+            transactionHash: '0xbbb',
+            blockTimestamp: 290,
+            logIndex: 2,
+            assets: '2000000'
+          }),
+          chainId: 137
+        }
+      ],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `137:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 137,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+              symbol: 'USDC',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, { chainId: 137 })
+
+    expect(response.entries).toEqual([
+      {
+        chainId: 137,
+        txHash: '0xbbb',
+        timestamp: 290,
+        action: 'deposit',
+        vaultAddress: UNDERLYING_VAULT,
+        familyVaultAddress: UNDERLYING_VAULT,
+        assetSymbol: 'USDC',
+        assetAmount: '2000000',
+        assetAmountFormatted: 2,
+        inputTokenAddress: null,
+        inputTokenSymbol: null,
+        inputTokenAmount: null,
+        inputTokenAmountFormatted: null,
+        shareAmount: '2000000',
+        shareAmountFormatted: 0.000000000002,
+        status: 'ok'
+      }
+    ])
+  })
+
+  it('filters activity by timestamp range before paginating', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [
+        createDepositEvent({
+          id: 'deposit-range-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xaaa',
+          blockTimestamp: 300,
+          logIndex: 2,
+          assets: '1000000'
+        }),
+        createDepositEvent({
+          id: 'deposit-range-2',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xbbb',
+          blockTimestamp: 250,
+          logIndex: 2,
+          assets: '2000000'
+        }),
+        createDepositEvent({
+          id: 'deposit-range-3',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xccc',
+          blockTimestamp: 200,
+          logIndex: 2,
+          assets: '3000000'
+        })
+      ],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+              symbol: 'USDC',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, {
+      startTimestamp: 240,
+      endTimestamp: 260
+    })
+
+    expect(response.entries).toEqual([
+      {
+        chainId: 1,
+        txHash: '0xbbb',
+        timestamp: 250,
+        action: 'deposit',
+        vaultAddress: UNDERLYING_VAULT,
+        familyVaultAddress: UNDERLYING_VAULT,
+        assetSymbol: 'USDC',
+        assetAmount: '2000000',
+        assetAmountFormatted: 2,
+        inputTokenAddress: null,
+        inputTokenSymbol: null,
+        inputTokenAmount: null,
+        inputTokenAmountFormatted: null,
+        shareAmount: '2000000',
+        shareAmountFormatted: 0.000000000002,
+        status: 'ok'
+      }
+    ])
+  })
+
   it('recovers routed withdrawals from address transfers plus tx-scoped withdraw events', async () => {
     fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
       deposits: [],

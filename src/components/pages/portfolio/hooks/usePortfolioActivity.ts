@@ -4,23 +4,53 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import {
   portfolioActivityResponseSchema,
   type TPortfolioActivityEntry,
-  type TPortfolioActivityResponse
+  type TPortfolioActivityResponse,
+  type TPortfolioActivityTypeFilter
 } from '../types/api'
 
-export function usePortfolioActivity(limit = 10, enabled = true) {
+type TPortfolioActivityFilters = {
+  type?: TPortfolioActivityTypeFilter
+  chainId?: number | null
+  startTimestamp?: number | null
+  endTimestamp?: number | null
+}
+
+export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortfolioActivityFilters = {}) {
   const { address } = useWeb3()
   const isEnabled = Boolean(address) && enabled
+  const type = filters.type ?? 'all'
+  const chainId = filters.chainId ?? null
+  const startTimestamp = filters.startTimestamp ?? null
+  const endTimestamp = filters.endTimestamp ?? null
 
   const query = useInfiniteQuery<TPortfolioActivityResponse, Error>({
-    queryKey: ['portfolio-activity', address, limit],
+    queryKey: ['portfolio-activity', address, limit, type, chainId, startTimestamp, endTimestamp],
     enabled: isEnabled,
     initialPageParam: 0,
-    queryFn: ({ pageParam }) =>
-      fetchWithSchema(
-        `/api/holdings/activity?address=${address}&limit=${limit}&offset=${Number(pageParam) || 0}`,
-        portfolioActivityResponseSchema,
-        { timeout: 30 * 1000 }
-      ),
+    queryFn: ({ pageParam }) => {
+      const params = new URLSearchParams({
+        address: address ?? '',
+        limit: String(limit),
+        offset: String(Number(pageParam) || 0),
+        type
+      })
+
+      if (chainId !== null) {
+        params.set('chainId', String(chainId))
+      }
+
+      if (startTimestamp !== null) {
+        params.set('startTimestamp', String(startTimestamp))
+      }
+
+      if (endTimestamp !== null) {
+        params.set('endTimestamp', String(endTimestamp))
+      }
+
+      return fetchWithSchema(`/api/holdings/activity?${params}`, portfolioActivityResponseSchema, {
+        timeout: 30 * 1000
+      })
+    },
     getNextPageParam: (lastPage) => lastPage.pageInfo.nextOffset ?? undefined,
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false
