@@ -1,4 +1,12 @@
-import { Dialog, Transition, TransitionChild } from '@headlessui/react'
+import {
+  Dialog,
+  Listbox,
+  ListboxButton,
+  ListboxOption,
+  ListboxOptions,
+  Transition,
+  TransitionChild
+} from '@headlessui/react'
 import { usePlausible } from '@hooks/usePlausible'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
 import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
@@ -41,6 +49,7 @@ import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSpinner } from '@shared/icons/IconSpinner'
+import { LogoYearn } from '@shared/icons/LogoYearn'
 import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
@@ -418,6 +427,101 @@ function ActivityFiltersModal({
         </div>
       </Dialog>
     </Transition>
+  )
+}
+
+function ActivityMobileChainDropdown({
+  chainButtons,
+  areAllChainsSelected,
+  allChainsLabel,
+  onSelectAllChains,
+  onSelectChain
+}: {
+  chainButtons: TVaultsChainButton[]
+  areAllChainsSelected: boolean
+  allChainsLabel: string
+  onSelectAllChains: () => void
+  onSelectChain: (chainId: number) => void
+}): ReactElement {
+  const selectedChain = areAllChainsSelected ? null : (chainButtons.find((chain) => chain.isSelected) ?? null)
+
+  function handleChange(chainId: number | null): void {
+    if (chainId === null) {
+      onSelectAllChains()
+      return
+    }
+
+    onSelectChain(chainId)
+  }
+
+  return (
+    <Listbox value={selectedChain?.id ?? null} onChange={handleChange}>
+      <div className="relative">
+        <ListboxButton className="flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-text-primary transition-colors hover:border-hover">
+          <div className="flex min-w-0 items-center gap-2">
+            {selectedChain ? (
+              <>
+                {selectedChain.icon ? (
+                  <span className="size-5 shrink-0 overflow-hidden rounded-full">{selectedChain.icon}</span>
+                ) : null}
+                <span className="truncate">{selectedChain.label}</span>
+              </>
+            ) : (
+              <>
+                <span className="size-5 shrink-0 overflow-hidden rounded-full">
+                  <LogoYearn className="size-full" back="text-text-primary" front="text-surface" />
+                </span>
+                <span className="truncate">{allChainsLabel}</span>
+              </>
+            )}
+          </div>
+          <IconChevron className="size-4 shrink-0 text-text-secondary" />
+        </ListboxButton>
+        <Transition
+          as={Fragment}
+          enter="transition ease-out duration-100"
+          enterFrom="opacity-0 scale-95"
+          enterTo="opacity-100 scale-100"
+          leave="transition ease-in duration-75"
+          leaveFrom="opacity-100 scale-100"
+          leaveTo="opacity-0 scale-95"
+        >
+          <ListboxOptions className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-border bg-surface-secondary py-1 shadow-lg scrollbar-themed">
+            <ListboxOption
+              value={null}
+              className={({ active, selected }) =>
+                cl(
+                  'flex cursor-pointer items-center gap-2 px-3 py-2 text-sm',
+                  active ? 'bg-surface' : '',
+                  selected ? 'font-semibold text-text-primary' : 'text-text-secondary'
+                )
+              }
+            >
+              <span className="size-5 shrink-0 overflow-hidden rounded-full">
+                <LogoYearn className="size-full" back="text-text-primary" front="text-surface" />
+              </span>
+              <span>{allChainsLabel}</span>
+            </ListboxOption>
+            {chainButtons.map((chain) => (
+              <ListboxOption
+                key={chain.id}
+                value={chain.id}
+                className={({ active, selected }) =>
+                  cl(
+                    'flex cursor-pointer items-center gap-2 px-3 py-2 text-sm',
+                    active ? 'bg-surface' : '',
+                    selected ? 'font-semibold text-text-primary' : 'text-text-secondary'
+                  )
+                }
+              >
+                {chain.icon ? <span className="size-5 shrink-0 overflow-hidden rounded-full">{chain.icon}</span> : null}
+                <span>{chain.label}</span>
+              </ListboxOption>
+            ))}
+          </ListboxOptions>
+        </Transition>
+      </div>
+    </Listbox>
   )
 }
 
@@ -845,8 +949,17 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   function renderActivityFilters(): ReactElement {
     return (
       <>
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <div className="w-fit max-w-full">
+        <div className="flex w-full items-center gap-2 md:gap-3">
+          <div className="min-w-0 flex-1 md:hidden">
+            <ActivityMobileChainDropdown
+              chainButtons={activityChainButtons}
+              areAllChainsSelected={activityChainId === null}
+              allChainsLabel="All Chains"
+              onSelectAllChains={() => setActivityChainId(null)}
+              onSelectChain={handleActivityChainSelect}
+            />
+          </div>
+          <div className="hidden w-fit max-w-full md:block">
             <VaultsChainSelector
               chainButtons={activityChainButtons}
               areAllChainsSelected={activityChainId === null}
