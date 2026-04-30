@@ -1,9 +1,7 @@
 import {
   getVaultAddress,
-  getVaultAPR,
   getVaultChainID,
   getVaultStaking,
-  getVaultToken,
   getVaultVersion,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
@@ -32,41 +30,6 @@ import { useTokenList } from './WithTokenList'
 const USE_ENSO_BALANCES = import.meta.env.VITE_BALANCE_SOURCE !== 'multicall'
 
 type TTokenAndChain = { address: TAddress; chainID: number }
-
-function getTrackedBalanceUsdValue({
-  vault,
-  tokenValue,
-  balanceNormalized,
-  getPrice
-}: {
-  vault: TKongVaultInput
-  tokenValue?: number
-  balanceNormalized: number
-  getPrice: ReturnType<typeof useYearn>['getPrice']
-}): number {
-  if (Number.isFinite(tokenValue) && (tokenValue || 0) > 0) {
-    return tokenValue || 0
-  }
-
-  if (!Number.isFinite(balanceNormalized) || balanceNormalized <= 0) {
-    return 0
-  }
-
-  const chainID = getVaultChainID(vault)
-  const sharePriceUsd = getPrice({ address: getVaultAddress(vault), chainID }).normalized
-  if (sharePriceUsd > 0) {
-    return balanceNormalized * sharePriceUsd
-  }
-
-  const assetToken = getVaultToken(vault)
-  const assetPrice = getPrice({ address: assetToken.address, chainID }).normalized
-  const pricePerShare = getVaultAPR(vault).pricePerShare.today
-  if (assetPrice > 0 && pricePerShare > 0) {
-    return balanceNormalized * assetPrice * pricePerShare
-  }
-
-  return 0
-}
 
 type TWalletContext = {
   getToken: ({ address, chainID }: TTokenAndChain) => TToken
@@ -292,12 +255,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         if (countedVaults.has(vaultKey)) continue
         countedVaults.add(vaultKey)
 
-        const tokenValue = getTrackedBalanceUsdValue({
-          vault: vaultDetails,
-          tokenValue: tokenData.value,
-          balanceNormalized: tokenData.balance.normalized,
-          getPrice
-        })
+        const tokenValue = getVaultHoldingsUsd(vaultDetails)
         const vaultVersion = getVaultVersion(vaultDetails)
         const isV3 = vaultVersion.startsWith('3') || vaultVersion.startsWith('~3')
 

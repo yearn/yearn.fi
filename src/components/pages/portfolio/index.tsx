@@ -44,14 +44,8 @@ import type { TPortfolioHistoryChartTimeframe } from './components/PortfolioHist
 import { PortfolioHistoryChart } from './components/PortfolioHistoryChart'
 import { usePortfolioActivity } from './hooks/usePortfolioActivity'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
-import { usePortfolioProtocolReturn } from './hooks/usePortfolioProtocolReturn'
 import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
-import type {
-  TPortfolioActivityEntry,
-  TPortfolioHistoryDenomination,
-  TPortfolioHistoryTimeframe,
-  TPortfolioProtocolReturnSummary
-} from './types/api'
+import type { TPortfolioActivityEntry, TPortfolioHistoryDenomination, TPortfolioHistoryTimeframe } from './types/api'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -77,7 +71,7 @@ type TPortfolioHeaderProps = Pick<
   'blendedMetrics' | 'hasKatanaHoldings' | 'isHoldingsLoading' | 'isSearchingBalances' | 'totalPortfolioValue'
 > & {
   isProtocolReturnLoading: boolean
-  protocolReturnSummary: TPortfolioProtocolReturnSummary | null
+  annualizedProtocolReturnPct: number | null | undefined
 }
 
 type TPortfolioHoldingsProps = Pick<
@@ -265,7 +259,7 @@ function PortfolioHeaderSection({
   isHoldingsLoading,
   isSearchingBalances,
   isProtocolReturnLoading,
-  protocolReturnSummary,
+  annualizedProtocolReturnPct,
   totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
   const annualizedProtocolReturnTooltip = (
@@ -369,11 +363,7 @@ function PortfolioHeaderSection({
           tooltip={annualizedProtocolReturnTooltip}
         />
       ),
-      value: (
-        <span className={METRIC_VALUE_CLASS}>
-          {renderSignedPercentMetric(protocolReturnSummary?.annualizedProtocolReturnPct)}
-        </span>
-      )
+      value: <span className={METRIC_VALUE_CLASS}>{renderSignedPercentMetric(annualizedProtocolReturnPct)}</span>
     }
   ]
 
@@ -1296,8 +1286,7 @@ function PortfolioPage(): ReactElement {
     error: protocolReturnHistoryError,
     isEmpty: protocolReturnHistoryEmpty
   } = usePortfolioProtocolReturnHistory(historyFetchTimeframe, shouldLoadPositionsHistory)
-  const { data: protocolReturnSummary, isLoading: protocolReturnLoading } =
-    usePortfolioProtocolReturn(shouldLoadPositionsHistory)
+  const annualizedProtocolReturnPct = protocolReturnHistoryData?.at(-1)?.annualizedProtocolReturnPct
 
   const handleTabSelect = useCallback(
     (tab: TPortfolioTabKey) => {
@@ -1394,8 +1383,8 @@ function PortfolioPage(): ReactElement {
                       isHoldingsLoading={model.isHoldingsLoading}
                       isSearchingBalances={model.isSearchingBalances}
                       hasKatanaHoldings={model.hasKatanaHoldings}
-                      isProtocolReturnLoading={protocolReturnLoading}
-                      protocolReturnSummary={protocolReturnSummary}
+                      isProtocolReturnLoading={protocolReturnHistoryLoading}
+                      annualizedProtocolReturnPct={annualizedProtocolReturnPct}
                       totalPortfolioValue={model.totalPortfolioValue}
                     />
                   </div>

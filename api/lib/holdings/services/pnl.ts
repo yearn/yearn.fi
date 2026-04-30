@@ -1,4 +1,4 @@
-import type { DepositEvent, TransferEvent, VaultMetadata, WithdrawEvent } from '../types'
+import type { DepositEvent, TransferEvent, UserEvents, VaultMetadata, WithdrawEvent } from '../types'
 import { enrichRawPnlEventsWithCowTradeAcquisitions } from './cow'
 import { debugLog, debugTable, getHoldingsDebugFilters } from './debug'
 import {
@@ -12,6 +12,7 @@ import {
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
   type RawPnlEventContext,
+  type TransactionActivityEvents,
   type VaultVersion
 } from './graphql'
 import { fetchMultipleVaultsPPS, getPPS } from './kong'
@@ -716,6 +717,55 @@ export function buildRawPnlEvents(context: RawPnlEventContext): TRawPnlEvent[] {
       mergeRawEvent(merged, event, scope)
     })
   })
+
+  return Array.from(merged.values()).sort(compareRawEvents)
+}
+
+export function buildAddressScopedRawPnlEvents(addressEvents: UserEvents): TRawPnlEvent[] {
+  const merged = new Map<string, TRawPnlEvent>()
+  const eventSources: Array<{ events: Array<Omit<TRawPnlEvent, 'scopes'>>; scope: keyof TRawScopes }> = [
+    { events: addressEvents.deposits.map(normalizeDeposit), scope: 'address' },
+    { events: addressEvents.withdrawals.map(normalizeWithdrawal), scope: 'address' },
+    { events: addressEvents.transfersIn.map(normalizeTransfer), scope: 'address' },
+    { events: addressEvents.transfersOut.map(normalizeTransfer), scope: 'address' }
+  ]
+
+  eventSources.forEach(({ events, scope }) => {
+    events.forEach((event) => {
+      mergeRawEvent(merged, event, scope)
+    })
+  })
+
+  return Array.from(merged.values()).sort(compareRawEvents)
+}
+
+export function mergeAddressScopedRawPnlEventsWithTransactionActivity(
+  addressEvents: TRawPnlEvent[],
+  transactionEvents: TransactionActivityEvents,
+  allowedFamilyKeys?: Set<string>
+): TRawPnlEvent[] {
+  const merged = new Map<string, TRawPnlEvent>()
+
+  addressEvents.forEach((event) => {
+    merged.set(`${event.kind}:${event.id}`, {
+      ...event,
+      scopes: { ...event.scopes }
+    })
+  })
+
+  const txEventSources: Array<Omit<TRawPnlEvent, 'scopes'>> = [
+    ...transactionEvents.deposits.map(normalizeDeposit),
+    ...transactionEvents.withdrawals.map(normalizeWithdrawal),
+    ...transactionEvents.transfers.map(normalizeTransfer)
+  ]
+
+  txEventSources
+    .filter((event) =>
+      allowedFamilyKeys ? allowedFamilyKeys.has(toVaultKey(event.chainId, event.familyVaultAddress)) : true
+    )
+    .forEach((event) => {
+      mergeRawEvent(merged, event, 'tx')
+    })
 
   return Array.from(merged.values()).sort(compareRawEvents)
 }
