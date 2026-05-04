@@ -35,6 +35,10 @@
       "destination": "/api/vault/meta?chainId=$1&address=$2"
     },
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }

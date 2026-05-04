@@ -14,6 +14,9 @@ import {
 } from './tenderly.helpers'
 import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
+import { buildSitemap, buildVaultMarkdown, buildVaultsMarkdown, KONG_REST_BASE } from './lib/aio'
+import type { TVaultListEntry, TVaultSnapshot } from './lib/aio'
+
 const ENSO_API_BASE = 'https://api.enso.finance'
 const DEFAULT_API_SERVER_PORT = '3001'
 const YVUSD_APR_SERVICE_API = (
@@ -236,6 +239,86 @@ async function handleTenderlyFund(req: Request): Promise<Response> {
   }
 }
 
+async function handleSitemap(req: Request): Promise<Response> {
+  if (req.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+  try {
+    const upstream = await fetch(`${KONG_REST_BASE}/list/vaults`, { headers: { Accept: 'application/json' } })
+    const vaults: TVaultListEntry[] = upstream.ok ? ((await upstream.json()) as TVaultListEntry[]) : []
+    return new Response(buildSitemap(vaults), {
+      headers: {
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600'
+      }
+    })
+  } catch (error) {
+    console.error('Error generating sitemap:', error)
+    return new Response(
+      '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>',
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/xml; charset=utf-8' }
+      }
+    )
+  }
+}
+
+async function handleVaultsMarkdown(req: Request): Promise<Response> {
+  if (req.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+  const chainIdParam = new URL(req.url).searchParams.get('chainId')
+  const chainId = chainIdParam && /^\d+$/.test(chainIdParam) ? Number(chainIdParam) : undefined
+  try {
+    const upstream = await fetch(`${KONG_REST_BASE}/list/vaults`, { headers: { Accept: 'application/json' } })
+    if (!upstream.ok) return Response.json({ error: 'Failed to fetch vault list from upstream' }, { status: 502 })
+    const vaults = (await upstream.json()) as TVaultListEntry[]
+    return new Response(buildVaultsMarkdown(vaults, chainId), {
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error generating vaults markdown:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+async function handleVaultMarkdown(req: Request): Promise<Response> {
+  if (req.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+  const params = new URL(req.url).searchParams
+  const chainId = params.get('chainId')
+  const address = params.get('address')
+  if (!chainId || !address) return Response.json({ error: 'Missing chainId or address' }, { status: 400 })
+  if (!/^\d+$/.test(chainId)) return Response.json({ error: 'Invalid chainId' }, { status: 400 })
+  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return Response.json({ error: 'Invalid address' }, { status: 400 })
+  try {
+    const upstream = await fetch(`${KONG_REST_BASE}/snapshot/${chainId}/${address}`, {
+      headers: { Accept: 'application/json' }
+    })
+    if (!upstream.ok) {
+      return Response.json(
+        { error: upstream.status === 404 ? 'Vault not found' : 'Upstream error' },
+        { status: upstream.status === 404 ? 404 : 502 }
+      )
+    }
+    const snapshot = (await upstream.json()) as TVaultSnapshot
+    return new Response(buildVaultMarkdown(snapshot, Number(chainId), address), {
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error generating vault markdown:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 function handleEnsoStatus(): Response {
   const apiKey = process.env.ENSO_API_KEY
   return Response.json({ configured: !!apiKey })
@@ -354,6 +437,18 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
 serve({
   async fetch(req, server) {
     const url = new URL(req.url)
+
+    if (url.pathname === '/api/sitemap') {
+      return handleSitemap(req)
+    }
+
+    if (url.pathname === '/api/vaults/markdown') {
+      return handleVaultsMarkdown(req)
+    }
+
+    if (url.pathname === '/api/vault/markdown') {
+      return handleVaultMarkdown(req)
+    }
 
     if (url.pathname === '/api/enso/status') {
       return handleEnsoStatus()
