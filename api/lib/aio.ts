@@ -69,7 +69,7 @@ export type TVaultSnapshot = {
 // --- Formatters ---
 
 function escapeMdPipe(str: string): string {
-  return str.replace(/\|/g, '\\|')
+  return str.replace(/\\/g, '\\\\').replace(/\|/g, '\\|')
 }
 
 function sanitizeStrategyText(str: string): string {
@@ -192,7 +192,9 @@ export function buildVaultMarkdown(snapshot: TVaultSnapshot, chainId: number, ad
     allStrategies.length > 0
       ? allStrategies
           .map((s) => {
-            const name = sanitizeStrategyText(s.name ?? 'Unnamed').replace(/\*/g, '\\*')
+            const name = sanitizeStrategyText(s.name ?? 'Unnamed')
+              .replace(/\\/g, '\\\\')
+              .replace(/\*/g, '\\*')
             const status = s.status ? ` (${sanitizeStrategyText(s.status)})` : ''
             const desc = s.description ? `\n  ${sanitizeStrategyText(s.description)}` : ''
             return `- **${name}**${status} — \`${s.address ?? 'N/A'}\`${desc}`
