@@ -3,7 +3,7 @@ import path from 'path'
 import { defineConfig, loadEnv } from 'vite'
 
 const DEFAULT_HOST = '127.0.0.1'
-const DEFAULT_API_SERVER_PORT = '3001'
+const DEFAULT_API_PORT = '3001'
 const API_HEALTHCHECK_PATH = '/api/enso/balances'
 const API_HEALTHCHECK_EXPECTED_ERROR = 'Missing eoaAddress'
 const API_HEALTHCHECK_TIMEOUT_MS = 500
@@ -11,10 +11,14 @@ const API_HEALTHCHECK_RETRIES = 10
 const API_HEALTHCHECK_DELAY_MS = 300
 
 function resolveApiProxyTarget(env: Record<string, string>) {
-  return (
-    env.API_PROXY_TARGET ||
-    `http://${env.API_PROXY_HOST || DEFAULT_HOST}:${env.API_SERVER_PORT || DEFAULT_API_SERVER_PORT}`
-  )
+  const explicitTarget = env.API_PROXY_TARGET?.trim() || env.VITE_API_PROXY_TARGET?.trim()
+  if (explicitTarget) {
+    return explicitTarget.replace(/\/$/, '')
+  }
+
+  const host = env.API_PROXY_HOST || DEFAULT_HOST
+  const apiPort = env.API_PORT?.trim() || env.VITE_API_PORT?.trim() || env.API_SERVER_PORT?.trim() || DEFAULT_API_PORT
+  return `http://${host}:${apiPort}`
 }
 
 function resolveClientHost(env: Record<string, string>) {
@@ -82,7 +86,12 @@ function previewApiGuard(apiProxyTarget: string) {
 }
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = {
+    ...loadEnv(mode, process.cwd(), ''),
+    ...Object.fromEntries(
+      Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+    )
+  }
   const apiProxyTarget = resolveApiProxyTarget(env)
   const host = resolveClientHost(env)
   const port = resolveClientPort(env)

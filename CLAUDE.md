@@ -6,7 +6,8 @@ Yearn Finance vaults interface — React 19 + TypeScript SPA (Vite, TanStack Que
 
 ```bash
 bun install                              # Install dependencies
-bun run dev                              # Vite dev server (3000) + API server (3001)
+bun run dev                              # Vite dev server + Bun API server; prompts for an API port when needed
+bun run preview                          # Vite preview + Bun API server; prompts for an API port when needed
 bun run build                            # TypeScript check + Vite build
 bun run test                             # Full Vitest suite
 bunx vitest run src/path/to/test.ts      # Single test file
@@ -75,7 +76,7 @@ When writing a new `useEffect`, add a brief comment explaining why an alternativ
 **Key patterns:**
 - Context provider chain defined in `App.tsx` — read that file for the full order
 - Vault data flows through `useYearn` context → filtered/sorted via hooks in `@shared/hooks/`
-- Dual server: Vite (3000) proxies `/api/*` to Bun API server (3001). In prod, `api/` runs as Vercel serverless functions.
+- Dual server: `bun run dev` starts Vite plus a Bun API server and keeps `/api/*` proxied to the selected API port. In prod, `api/` runs as Vercel serverless functions.
 
 ## Multi-Chain
 
