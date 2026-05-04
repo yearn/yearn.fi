@@ -58,6 +58,7 @@ import {
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
+import { JsonLd } from '@shared/components/JsonLd'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -1531,11 +1532,33 @@ function Index(): ReactElement | null {
   }
 
   return (
-    <div
-      className={
-        'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-[calc(7rem+env(safe-area-inset-bottom,0px))] sm:pb-8'
-      }
-    >
+    <>
+      <JsonLd
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'FinancialProduct',
+          name: currentVault.name,
+          description:
+            currentVault.description || `Deposit ${currentVault.token.symbol} to earn automated yield on Yearn Finance.`,
+          url: `https://yearn.fi/vaults/${currentVault.chainID}/${currentVault.address}`,
+          annualPercentageRate: `${(currentVault.apr.netAPR * 100).toFixed(2)}%`,
+          provider: {
+            '@type': 'Organization',
+            name: 'Yearn Finance',
+            url: 'https://yearn.fi'
+          },
+          offers: {
+            '@type': 'Offer',
+            category: 'Yield Vault',
+            description: `Automated yield vault for ${currentVault.token.symbol} on chain ${currentVault.chainID}`
+          }
+        }}
+      />
+      <div
+        className={
+          'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-[calc(7rem+env(safe-area-inset-bottom,0px))] sm:pb-8'
+        }
+      >
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         {isCollapsibleMode ? (
           <div
@@ -1910,7 +1933,8 @@ function Index(): ReactElement | null {
         {renderMobileWidget()}
       </BottomDrawer>
       <VaultDetailsWelcomeTour onTourStateChange={setVaultTourState} />
-    </div>
+      </div>
+    </>
   )
 }
 
