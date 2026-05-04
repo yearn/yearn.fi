@@ -1,0 +1,41 @@
+# Yearn Finance
+
+> Yearn Finance is a decentralized finance (DeFi) yield aggregator that automatically maximizes yields on deposited assets through battle-tested on-chain strategies. Yearn operates vaults on Ethereum, Optimism, Polygon, Fantom, Base, Arbitrum, Sonic, and Katana.
+
+## Overview
+
+Yearn vaults (also called "yvTokens") accept ERC-20 token deposits and automatically route funds to the highest-yielding strategies, compounding returns over time. The protocol is non-custodial and permissionless — deposits are held entirely in smart contracts.
+
+## Main Pages
+
+- [Home](https://yearn.fi/): Landing page and product overview
+- [Vaults](https://yearn.fi/vaults): Browse all available yield vaults across supported chains
+- [Portfolio](https://yearn.fi/portfolio): View deposited assets and accumulated earnings
+
+## Machine-Readable Vault Data
+
+- [All Vaults (Markdown)](https://yearn.fi/api/vaults/markdown): Structured list of all active vaults with APY, TVL, and metadata
+- [All Vaults Filtered by Chain](https://yearn.fi/api/vaults/markdown?chainId=1): Pass a numeric `chainId` to filter by chain
+- [Single Vault (Markdown)](https://yearn.fi/api/vault/markdown?chainId=1&address=0x...): Detailed markdown for a specific vault — replace `chainId` and `address`
+- [Sitemap](https://yearn.fi/sitemap.xml): XML sitemap listing all vault URLs
+
+## External Resources
+
+- [Yearn Docs](https://docs.yearn.fi): Technical documentation, strategy explanations, and developer guides
+- [GitHub](https://github.com/yearn): Open-source smart contracts and tooling
+- [Blog](https://blog.yearn.fi): Protocol updates and announcements
+- [Governance Forum](https://gov.yearn.fi): On-chain governance proposals and discussion
+- [Kong API (JSON)](https://kong.yearn.fi/api/rest/list/vaults): Raw JSON vault list from Yearn's data API
+
+## Supported Chains
+
+| Chain | Chain ID |
+|-------|----------|
+| Ethereum | 1 |
+| Optimism | 10 |
+| Polygon | 137 |
+| Fantom | 250 |
+| Base | 8453 |
+| Arbitrum | 42161 |
+| Sonic | 146 |
+| Katana | 747474 |
