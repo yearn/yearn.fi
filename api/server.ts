@@ -5,6 +5,7 @@ import type {
   TTenderlyRevertRequest,
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
+import { ENSO_BALANCES_CACHE_CONTROL } from './enso/cache'
 import {
   clearUserCache,
   deleteStaleCache,
@@ -487,7 +488,7 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
     const data = await response.json()
     return Response.json(data, {
       headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+        'Cache-Control': ENSO_BALANCES_CACHE_CONTROL
       }
     })
   } catch (error) {

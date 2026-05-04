@@ -5,7 +5,7 @@ import { resolveExecutionChainId } from '@/config/tenderly'
 import type { TAddress } from '../types/address'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { isZeroAddress } from '../utils/tools.is'
-import { getChainConfig } from './balanceQueryConfig'
+import { getBalanceQueryRefetchConfig, getChainConfig } from './balanceQueryConfig'
 import { getBalances, type TUseBalancesTokens } from './useBalances.multichains'
 import { mergeStagedQueryData, partitionTokensByQueryStage } from './useBalancesQueries.helpers'
 import { balanceQueryKeys } from './useBalancesQuery'
@@ -26,6 +26,7 @@ function buildBalanceQueryOptions(
     const chainId = Number(chainIdStr)
     const executionChainId = resolveExecutionChainId(chainId)
     const config = getChainConfig(chainId)
+    const refetchConfig = getBalanceQueryRefetchConfig()
     const tokenAddresses = chainTokens.map((t) => t.address)
     const queryKey = balanceQueryKeys.byTokens(chainId, executionChainId, userAddress, tokenAddresses)
 
@@ -36,9 +37,7 @@ function buildBalanceQueryOptions(
       staleTime: config.cache.staleTime,
       gcTime: config.cache.gcTime,
       refetchInterval: false,
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      refetchOnReconnect: false,
+      ...refetchConfig,
       retry: 3,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
     }
