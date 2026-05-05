@@ -87,23 +87,18 @@ function App(): ReactElement {
         schema={{
           '@context': 'https://schema.org',
           '@type': 'Organization',
-          name: 'Yearn Finance',
+          name: 'Yearn',
           url: 'https://yearn.fi',
-          logo: 'https://yearn.fi/yearn-logo.svg',
+          logo: 'https://yearn.fi/logo.svg',
           description: 'DeFi yield aggregator — automatically maximize returns on deposited digital assets.',
-          sameAs: [
-            'https://twitter.com/yearnfinance',
-            'https://github.com/yearn',
-            'https://discord.com/invite/yearn',
-            'https://gov.yearn.fi'
-          ]
+          sameAs: ['https://x.com/yearnfi', 'https://github.com/yearn', 'https://discord.gg/yearn/']
         }}
       />
       <JsonLd
         schema={{
           '@context': 'https://schema.org',
           '@type': 'WebSite',
-          name: 'Yearn Finance',
+          name: 'Yearn',
           url: 'https://yearn.fi',
           description: 'Browse and deposit into automated yield vaults across Ethereum and EVM chains.',
           potentialAction: {

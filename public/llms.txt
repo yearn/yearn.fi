@@ -1,6 +1,6 @@
-# Yearn Finance
+# Yearn
 
-> Yearn Finance is a decentralized finance (DeFi) yield aggregator that automatically maximizes yields on deposited assets through battle-tested on-chain strategies. Yearn operates vaults on Ethereum, Optimism, Polygon, Fantom, Base, Arbitrum, Sonic, and Katana.
+> Yearn is a decentralized finance (DeFi) yield aggregator that automatically maximizes yields on deposited assets through battle-tested on-chain strategies. Yearn operates vaults on Ethereum, Optimism, Polygon, Fantom, Base, Arbitrum, Sonic, and Katana.
 
 ## Overview
 

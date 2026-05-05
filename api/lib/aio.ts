@@ -150,16 +150,16 @@ export function buildVaultsMarkdown(vaults: TVaultListEntry[], chainId?: number)
     .join('\n\n')
 
   return `---
-title: Yearn Finance Vaults${chainLabel}
-description: Active yield vaults operated by Yearn Finance with APY, TVL, and on-chain addresses
+title: Yearn Vaults${chainLabel}
+description: Active yield vaults operated by Yearn with APY, TVL, and on-chain addresses
 source: ${KONG_REST_BASE}/list/vaults
 updated: ${new Date().toISOString()}
 total_vaults: ${filtered.length}
 ---
 
-# Yearn Finance Vaults${chainLabel}
+# Yearn Vaults${chainLabel}
 
-Yearn Finance operates automated yield vaults across multiple EVM-compatible chains. Each vault accepts a specific ERC-20 token and routes funds to the highest-yielding on-chain strategies, compounding returns automatically.
+Yearn operates automated yield vaults across multiple EVM-compatible chains. Each vault accepts a specific ERC-20 token and routes funds to the highest-yielding on-chain strategies, compounding returns automatically.
 
 Vault URLs follow the pattern: \`${SITE_URL}/vaults/{chainId}/{address}\`
 
