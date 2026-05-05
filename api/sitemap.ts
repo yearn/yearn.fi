@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { TVaultListEntry } from './lib/aio'
-import { buildSitemap, KONG_REST_BASE } from './lib/aio'
+import { buildSitemap, KONG_VAULT_LIST_URL } from './lib/aio'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -8,7 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const response = await fetch(`${KONG_REST_BASE}/list/vaults`, {
+    const response = await fetch(KONG_VAULT_LIST_URL, {
       headers: { Accept: 'application/json' }
     })
     const vaults: TVaultListEntry[] = response.ok ? ((await response.json()) as TVaultListEntry[]) : []

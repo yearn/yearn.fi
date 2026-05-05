@@ -1,5 +1,8 @@
 export const KONG_REST_BASE = (process.env.VITE_KONG_REST_URL || 'https://kong.yearn.fi/api/rest').replace(/\/$/, '')
 export const SITE_URL = 'https://yearn.fi'
+export const KONG_VAULT_LIST_URL = `${KONG_REST_BASE}/list/vaults`
+export const KONG_SNAPSHOT_URL_PATTERN = `${KONG_REST_BASE}/snapshot/{chainId}/{address}`
+export const VAULT_PAGE_URL_PATTERN = `${SITE_URL}/vaults/{chainId}/{address}`
 
 export const CHAIN_NAMES: Record<number, string> = {
   1: 'Ethereum',
@@ -25,23 +28,34 @@ export type TVaultListEntry = {
   address: string
   name?: string
   symbol?: string | null
+  apiVersion?: string | null
   asset?: { symbol: string; name: string } | null
   tvl?: number | null
   performance?: {
-    estimated?: { apy?: number | null } | null
-    oracle?: { apy?: number | null } | null
-    historical?: { monthlyNet?: number | null } | null
+    estimated?: {
+      apr?: number | null
+      apy?: number | null
+      netAPR?: number | null
+      netAPY?: number | null
+      components?: { netAPR?: number | null; netAPY?: number | null } | null
+    } | null
+    oracle?: { apr?: number | null; apy?: number | null; netAPR?: number | null; netAPY?: number | null } | null
+    historical?: { net?: number | null; monthlyNet?: number | null } | null
   } | null
   isHidden?: boolean
   isRetired?: boolean
   v3?: boolean
+  type?: string | null
   kind?: string | null
+  inclusion?: Record<string, boolean>
+  origin?: string | null
 }
 
 export type TSnapshotStrategy = {
   name?: string
   address?: string
-  status?: string
+  strategy?: string
+  status?: string | number
   description?: string
 }
 
@@ -61,7 +75,7 @@ export type TVaultSnapshot = {
   } | null
   fees?: { managementFee?: number | null; performanceFee?: number | null } | null
   risk?: { riskLevel?: number | null } | null
-  strategies?: TSnapshotStrategy[] | null
+  strategies?: Array<TSnapshotStrategy | string> | null
   composition?: TSnapshotStrategy[] | null
   meta?: { description?: string; isRetired?: boolean; isBoosted?: boolean } | null
 }
@@ -74,6 +88,10 @@ function escapeMdPipe(str: string): string {
 
 function sanitizeStrategyText(str: string): string {
   return str.replace(/[\r\n]+/g, ' ').trim()
+}
+
+function normalizeSnapshotStrategy(strategy: TSnapshotStrategy | string): TSnapshotStrategy {
+  return typeof strategy === 'string' ? { address: strategy } : strategy
 }
 
 export function formatUsd(value: number | null | undefined): string {
@@ -90,12 +108,59 @@ export function formatPct(value: number | null | undefined): string {
 }
 
 export function resolveVaultApy(vault: TVaultListEntry): number | null {
-  return (
-    vault.performance?.oracle?.apy ??
-    vault.performance?.estimated?.apy ??
-    vault.performance?.historical?.monthlyNet ??
-    null
-  )
+  const values = [
+    vault.performance?.oracle?.netAPY,
+    vault.performance?.oracle?.apy,
+    vault.performance?.oracle?.netAPR,
+    vault.performance?.oracle?.apr,
+    vault.performance?.estimated?.netAPY,
+    vault.performance?.estimated?.apy,
+    vault.performance?.estimated?.components?.netAPY,
+    vault.performance?.estimated?.components?.netAPR,
+    vault.performance?.estimated?.netAPR,
+    vault.performance?.estimated?.apr,
+    vault.performance?.historical?.monthlyNet,
+    vault.performance?.historical?.net
+  ]
+  return values.find((value): value is number => typeof value === 'number' && Number.isFinite(value)) ?? null
+}
+
+function isCatalogYearnVault(vault: TVaultListEntry): boolean {
+  return vault.origin === 'yearn' && vault.inclusion?.isYearn !== false
+}
+
+function isV3VaultListEntry(vault: TVaultListEntry): boolean {
+  const version = vault.apiVersion ?? (vault.v3 ? '3' : '')
+  return version.startsWith('3') || version.startsWith('~3')
+}
+
+function isAutomatedVaultListEntry(vault: TVaultListEntry): boolean {
+  return vault.type === 'Automated' || vault.type === 'Automated Yearn Vault'
+}
+
+export function getVaultMarkdownListKind(vault: TVaultListEntry): 'lp' | 'singleAsset' | 'strategy' | 'legacy' {
+  if (isV3VaultListEntry(vault)) {
+    return vault.kind === 'Multi Strategy' ? 'singleAsset' : 'strategy'
+  }
+
+  const name = String(vault.name || '').toLowerCase()
+  if (name.includes('factory') || isAutomatedVaultListEntry(vault)) {
+    return 'lp'
+  }
+
+  return 'legacy'
+}
+
+export function shouldIncludeVaultsMarkdownEntry(vault: TVaultListEntry): boolean {
+  if (!isCatalogYearnVault(vault)) {
+    return false
+  }
+  if (vault.isHidden || vault.isRetired) {
+    return false
+  }
+
+  const kind = getVaultMarkdownListKind(vault)
+  return kind === 'singleAsset' || kind === 'lp'
 }
 
 // --- Builders ---
@@ -125,7 +190,7 @@ ${vaultUrls}
 
 export function buildVaultsMarkdown(vaults: TVaultListEntry[], chainId?: number): string {
   const filtered = vaults.filter((v) => {
-    if (v.isHidden || v.isRetired) return false
+    if (!shouldIncludeVaultsMarkdownEntry(v)) return false
     if (chainId != null) return v.chainId === chainId
     return true
   })
@@ -145,23 +210,30 @@ export function buildVaultsMarkdown(vaults: TVaultListEntry[], chainId?: number)
           return `| [${name}](${url}) | ${token} | ${formatUsd(v.tvl)} | ${formatPct(resolveVaultApy(v))} | \`${v.address}\` |`
         })
         .join('\n')
-      return `### ${chainName} (Chain ID: ${id})\n\n| Vault | Token | TVL | APY (net) | Address |\n|-------|-------|-----|-----------|---------|${rows ? `\n${rows}` : ''}`
+      return `### ${chainName} (Chain ID: ${id})\n\n| Vault | Token | TVL | APY/APR (net) | Address |\n|-------|-------|-----|---------------|---------|${rows ? `\n${rows}` : ''}`
     })
     .join('\n\n')
 
   return `---
 title: Yearn Vaults${chainLabel}
-description: Active yield vaults operated by Yearn with APY, TVL, and on-chain addresses
-source: ${KONG_REST_BASE}/list/vaults
+description: Kong-derived active public Yearn single asset and LP vault summary with APY, TVL, and on-chain addresses
+source: ${KONG_VAULT_LIST_URL}
+canonical_data: ${KONG_VAULT_LIST_URL}
+derived_from_kong: true
 updated: ${new Date().toISOString()}
 total_vaults: ${filtered.length}
 ---
 
 # Yearn Vaults${chainLabel}
 
-Yearn operates automated yield vaults across multiple EVM-compatible chains. Each vault accepts a specific ERC-20 token and routes funds to the highest-yielding on-chain strategies, compounding returns automatically.
+Yearn operates automated yield vaults across multiple EVM-compatible chains. Each vault accepts a specific ERC-20 token and routes funds to on-chain strategies, compounding returns automatically.
 
-Vault URLs follow the pattern: \`${SITE_URL}/vaults/{chainId}/{address}\`
+This markdown is generated live from Kong REST for discovery convenience. Use \`${KONG_VAULT_LIST_URL}\` as the canonical source for current vault data.
+
+Vault page URLs follow the pattern: \`${VAULT_PAGE_URL_PATTERN}\`
+Vault snapshots follow the pattern: \`${KONG_SNAPSHOT_URL_PATTERN}\`
+
+Included vaults match the public Yearn vault catalog: \`origin\` is \`yearn\`, \`inclusion.isYearn\` is not false, \`isHidden\` and \`isRetired\` are false, and the vault is either a Single Asset vault or an LP Token vault. Legacy vaults, underlying single-strategy entries, and non-Yearn entries are excluded. No TVL minimum is applied. APY and TVL are time-sensitive; refresh from Kong at retrieval time.
 
 ## Vaults
 
@@ -186,8 +258,9 @@ export function buildVaultMarkdown(snapshot: TVaultSnapshot, chainId: number, ad
   const riskLevel = snapshot.risk?.riskLevel ?? 'N/A'
   const description = snapshot.meta?.description ?? `Automated yield vault for ${tokenName} (${token}) on ${chainName}.`
   const vaultUrl = `${SITE_URL}/vaults/${chainId}/${address}`
+  const sourceUrl = `${KONG_REST_BASE}/snapshot/${chainId}/${address}`
 
-  const allStrategies = [...(snapshot.strategies ?? []), ...(snapshot.composition ?? [])]
+  const allStrategies = [...(snapshot.strategies ?? []), ...(snapshot.composition ?? [])].map(normalizeSnapshotStrategy)
   const strategiesSection =
     allStrategies.length > 0
       ? allStrategies
@@ -195,9 +268,9 @@ export function buildVaultMarkdown(snapshot: TVaultSnapshot, chainId: number, ad
             const name = sanitizeStrategyText(s.name ?? 'Unnamed')
               .replace(/\\/g, '\\\\')
               .replace(/\*/g, '\\*')
-            const status = s.status ? ` (${sanitizeStrategyText(s.status)})` : ''
+            const status = s.status ? ` (${sanitizeStrategyText(String(s.status))})` : ''
             const desc = s.description ? `\n  ${sanitizeStrategyText(s.description)}` : ''
-            return `- **${name}**${status} — \`${s.address ?? 'N/A'}\`${desc}`
+            return `- **${name}**${status} — \`${s.address ?? s.strategy ?? 'N/A'}\`${desc}`
           })
           .join('\n')
       : '_No strategy data available._'
@@ -211,6 +284,9 @@ token: ${token}
 tvl: ${tvl}
 apy_net: ${netApy}
 url: ${vaultUrl}
+source: ${sourceUrl}
+canonical_data: ${sourceUrl}
+derived_from_kong: true
 updated: ${new Date().toISOString()}
 ---
 
@@ -219,6 +295,9 @@ updated: ${new Date().toISOString()}
 ${description}
 
 **URL:** ${vaultUrl}
+**Canonical data:** ${sourceUrl}
+
+This markdown is generated live from Kong REST for discovery convenience. Use the canonical JSON snapshot for current APY, TVL, strategy composition, fees, and availability.
 
 ## Overview
 

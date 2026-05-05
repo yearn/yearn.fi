@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { TVaultListEntry } from '../lib/aio'
-import { buildVaultsMarkdown, KONG_REST_BASE } from '../lib/aio'
+import { buildVaultsMarkdown, KONG_VAULT_LIST_URL } from '../lib/aio'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -12,7 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     chainIdParam && typeof chainIdParam === 'string' && /^\d+$/.test(chainIdParam) ? Number(chainIdParam) : undefined
 
   try {
-    const response = await fetch(`${KONG_REST_BASE}/list/vaults`, {
+    const response = await fetch(KONG_VAULT_LIST_URL, {
       headers: { Accept: 'application/json' }
     })
 

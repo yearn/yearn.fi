@@ -7,7 +7,7 @@ import type {
 } from '../src/components/shared/types/tenderly'
 import { ENSO_BALANCES_CACHE_CONTROL } from './enso/cache'
 import type { TVaultListEntry, TVaultSnapshot } from './lib/aio'
-import { buildSitemap, buildVaultMarkdown, buildVaultsMarkdown, KONG_REST_BASE } from './lib/aio'
+import { buildSitemap, buildVaultMarkdown, buildVaultsMarkdown, KONG_REST_BASE, KONG_VAULT_LIST_URL } from './lib/aio'
 import { getVercelCdnCacheHeaders } from './lib/cacheHeaders'
 import {
   clearUserCache,
@@ -484,7 +484,7 @@ async function handleSitemap(req: Request): Promise<Response> {
     return Response.json({ error: 'Method not allowed' }, { status: 405 })
   }
   try {
-    const upstream = await fetch(`${KONG_REST_BASE}/list/vaults`, { headers: { Accept: 'application/json' } })
+    const upstream = await fetch(KONG_VAULT_LIST_URL, { headers: { Accept: 'application/json' } })
     const vaults: TVaultListEntry[] = upstream.ok ? ((await upstream.json()) as TVaultListEntry[]) : []
     return new Response(buildSitemap(vaults), {
       headers: {
@@ -511,7 +511,7 @@ async function handleVaultsMarkdown(req: Request): Promise<Response> {
   const chainIdParam = new URL(req.url).searchParams.get('chainId')
   const chainId = chainIdParam && /^\d+$/.test(chainIdParam) ? Number(chainIdParam) : undefined
   try {
-    const upstream = await fetch(`${KONG_REST_BASE}/list/vaults`, { headers: { Accept: 'application/json' } })
+    const upstream = await fetch(KONG_VAULT_LIST_URL, { headers: { Accept: 'application/json' } })
     if (!upstream.ok) return Response.json({ error: 'Failed to fetch vault list from upstream' }, { status: 502 })
     const vaults = (await upstream.json()) as TVaultListEntry[]
     return new Response(buildVaultsMarkdown(vaults, chainId), {
