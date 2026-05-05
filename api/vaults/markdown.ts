@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { buildVaultsMarkdown, KONG_REST_BASE } from '../lib/aio'
 import type { TVaultListEntry } from '../lib/aio'
+import { buildVaultsMarkdown, KONG_REST_BASE } from '../lib/aio'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

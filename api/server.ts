@@ -5,6 +5,8 @@ import type {
   TTenderlyRevertRequest,
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
+import type { TVaultListEntry, TVaultSnapshot } from './lib/aio'
+import { buildSitemap, buildVaultMarkdown, buildVaultsMarkdown, KONG_REST_BASE } from './lib/aio'
 import {
   buildTenderlyPanelStatus,
   buildTenderlyRevertResponse,
@@ -13,9 +15,6 @@ import {
   resolveTenderlyFundRpcRequest
 } from './tenderly.helpers'
 import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
-
-import { buildSitemap, buildVaultMarkdown, buildVaultsMarkdown, KONG_REST_BASE } from './lib/aio'
-import type { TVaultListEntry, TVaultSnapshot } from './lib/aio'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 const DEFAULT_API_SERVER_PORT = '3001'
