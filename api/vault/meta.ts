@@ -37,16 +37,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const organizationSchema = safeJson({
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: 'Yearn Finance',
+      name: 'Yearn',
       url: 'https://yearn.fi',
-      logo: 'https://yearn.fi/yearn-logo.svg',
+      logo: 'https://yearn.fi/logo.svg',
       description: 'DeFi yield aggregator — automatically maximize returns on deposited digital assets.',
-      sameAs: [
-        'https://twitter.com/yearnfinance',
-        'https://github.com/yearn',
-        'https://discord.com/invite/yearn',
-        'https://gov.yearn.fi'
-      ]
+      sameAs: ['https://x.com/yearnfi', 'https://github.com/yearn', 'https://discord.gg/yearn/']
     })
 
     const vaultSchema = safeJson({
@@ -55,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       name: title,
       description,
       url: canonicalUrl,
-      provider: { '@type': 'Organization', name: 'Yearn Finance', url: 'https://yearn.fi' }
+      provider: { '@type': 'Organization', name: 'Yearn', url: 'https://yearn.fi' }
     })
 
     // Inject meta tags
