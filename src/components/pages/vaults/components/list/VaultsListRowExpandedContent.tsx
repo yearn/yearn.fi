@@ -19,7 +19,7 @@ import {
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
-import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
+import { isYvUsdAddress, YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import {
   AllocationChart,
   DARK_MODE_COLORS,
@@ -86,11 +86,22 @@ export default function VaultsListRowExpandedContent({
   })
   const snapshotMergedVault = useMemo(() => getVaultView(currentVault, snapshotVault), [currentVault, snapshotVault])
   const chartTab = isExpandedChartView(expandedView) ? EXPANDED_VIEW_TO_CHART_TAB[expandedView] : undefined
+  const shouldUsePortfolioUserTvlOverlay = chartVariant === 'portfolio-user-tvl-overlay' && showUserViews
   const yvUsdChartTab =
-    chartTab === 'historical-apy' || chartTab === 'historical-pps' || chartTab === 'historical-tvl'
-      ? chartTab
-      : undefined
-  const shouldUsePortfolioUserTvlOverlay = chartVariant === 'portfolio-user-tvl-overlay' && showUserViews && !isYvUsd
+    shouldUsePortfolioUserTvlOverlay && chartTab === 'historical-tvl'
+      ? 'user-position'
+      : chartTab === 'historical-apy' || chartTab === 'historical-pps' || chartTab === 'historical-tvl'
+        ? chartTab
+        : undefined
+  const yvUsdUserHistoryVaults = useMemo(
+    () => [
+      { chainId: YVUSD_CHAIN_ID, vaultAddress: YVUSD_UNLOCKED_ADDRESS },
+      { chainId: YVUSD_CHAIN_ID, vaultAddress: YVUSD_LOCKED_ADDRESS }
+    ],
+    []
+  )
+  const nonYvUsdUserHistoryVaults = useMemo(() => [{ chainId: chainID, vaultAddress }], [chainID, vaultAddress])
+  const vaultUserHistoryVaults = isYvUsd ? yvUsdUserHistoryVaults : nonYvUsdUserHistoryVaults
   const viewOptions = useMemo<Array<{ id: TVaultsExpandedView; label: string }>>(
     () => [
       { id: 'strategies', label: 'Strategies' },
@@ -152,6 +163,7 @@ export default function VaultsListRowExpandedContent({
                   timeframe={chartTimeframe}
                   chartHeightPx={200}
                   chartHeightMdPx={200}
+                  enableUserPositionChart={shouldUsePortfolioUserTvlOverlay}
                 />
               ) : (
                 <VaultChartsSection
@@ -165,6 +177,7 @@ export default function VaultsListRowExpandedContent({
                   enableUserCharts={false}
                   userUnitLabel={snapshotMergedVault.token?.symbol || snapshotMergedVault.symbol || 'assets'}
                   overlayUserPositionOnTvlTab={shouldUsePortfolioUserTvlOverlay}
+                  userHistoryVaults={vaultUserHistoryVaults}
                 />
               )
             ) : (

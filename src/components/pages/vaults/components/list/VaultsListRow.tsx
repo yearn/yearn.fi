@@ -418,7 +418,7 @@ function VaultsListRowComponent({
     </svg>
   )
   const hasHoldings = Boolean(flags?.hasHoldings)
-  const showUserViews = hasHoldings && !isYvUsd
+  const showUserViews = hasHoldings
   const showHoldingsChip = showHoldingsChipOverride ?? hasHoldings
   const showHoldingsValue = hasHoldings
   const holdingsFormatOptions = isYvUsd ? YVUSD_HOLDINGS_FORMAT_OPTIONS : undefined

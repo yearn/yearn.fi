@@ -141,6 +141,50 @@ function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
 
+function parseVaultFilters(url: URL): Array<{ chainId: number; vaultAddress: string }> | null | undefined {
+  const vaults = url.searchParams.get('vaults')
+
+  if (vaults !== null) {
+    const entries = vaults
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+    const parsedEntries = entries.map((entry) => {
+      const [entryChainId, entryVaultAddress] = entry.split(':')
+      const parsedChainId = Number(entryChainId)
+
+      if (
+        !entryChainId ||
+        !entryVaultAddress ||
+        !Number.isInteger(parsedChainId) ||
+        !isValidAddress(entryVaultAddress)
+      ) {
+        return null
+      }
+
+      return { chainId: parsedChainId, vaultAddress: entryVaultAddress }
+    })
+
+    if (parsedEntries.some((entry) => entry === null)) {
+      return null
+    }
+
+    return parsedEntries.filter((entry): entry is { chainId: number; vaultAddress: string } => entry !== null)
+  }
+
+  const vault = url.searchParams.get('vault')
+  if (vault === null) {
+    return undefined
+  }
+
+  const chainId = url.searchParams.get('chainId')
+  if (!isValidAddress(vault) || !chainId || !Number.isInteger(Number(chainId))) {
+    return null
+  }
+
+  return [{ chainId: Number(chainId), vaultAddress: vault }]
+}
+
 interface InvalidateRequestBody {
   vaults: Array<{ address: string; chainId: number }>
 }
@@ -496,6 +540,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
   const denomination = parseHoldingsHistoryDenomination(url.searchParams.get('denomination'))
   const timeframe = parseHoldingsHistoryTimeframe(url.searchParams.get('timeframe'))
+  const vaultFilters = parseVaultFilters(url)
   const debugEnabled =
     isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
   const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
@@ -510,6 +555,10 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
 
   if (!isValidAddress(address)) {
     return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  if (vaultFilters === null) {
+    return Response.json({ error: 'Invalid vault filter', status: 400 }, { status: 400 })
   }
 
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
@@ -544,7 +593,8 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
             fetchType,
             paginationMode,
             denomination,
-            timeframe
+            timeframe,
+            vaultFilters
           )
           debugLog('route', 'completed holdings history request', {
             version,
@@ -720,9 +770,8 @@ async function handleHoldingsBreakdown(req: Request): Promise<Response> {
 async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
-  const chainIdParam = url.searchParams.get('chainId')
   const versionParam = url.searchParams.get('version')
-  const vault = url.searchParams.get('vault')
+  const vaultFilters = parseVaultFilters(url)
   const timeframe = parseHoldingsHistoryTimeframe(url.searchParams.get('timeframe'))
   const debugEnabled =
     isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
@@ -740,12 +789,8 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
     return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
   }
 
-  if (vault !== null && !isValidAddress(vault)) {
-    return Response.json({ error: 'Invalid vault address', status: 400 }, { status: 400 })
-  }
-
-  if (vault !== null && (!chainIdParam || !Number.isInteger(Number(chainIdParam)))) {
-    return Response.json({ error: 'Missing or invalid chainId for vault filter', status: 400 }, { status: 400 })
+  if (vaultFilters === null) {
+    return Response.json({ error: 'Invalid vault filter', status: 400 }, { status: 400 })
   }
 
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
@@ -761,8 +806,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
         debugLog('route', 'started holdings protocol return history request', {
           version,
           timeframe,
-          vault: vault?.toLowerCase() ?? null,
-          chainId: vault !== null ? Number(chainIdParam) : null,
+          vaults: vaultFilters?.map((vault) => `${vault.chainId}:${vault.vaultAddress.toLowerCase()}`) ?? null,
           fetchType,
           paginationMode,
           debugLotsEnabled,
@@ -777,14 +821,12 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
             fetchType,
             paginationMode,
             timeframe,
-            vault ?? undefined,
-            vault !== null ? Number(chainIdParam) : undefined
+            vaultFilters
           )
           debugLog('route', 'completed holdings protocol return history request', {
             version,
             timeframe,
-            vault: vault?.toLowerCase() ?? null,
-            chainId: vault !== null ? Number(chainIdParam) : null,
+            vaults: vaultFilters?.map((vault) => `${vault.chainId}:${vault.vaultAddress.toLowerCase()}`) ?? null,
             fetchType,
             paginationMode,
             totalVaults: response.summary.totalVaults,
@@ -795,8 +837,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
           debugError('route', 'holdings protocol return history request failed', error, {
             version,
             timeframe,
-            vault: vault?.toLowerCase() ?? null,
-            chainId: vault !== null ? Number(chainIdParam) : null,
+            vaults: vaultFilters?.map((vault) => `${vault.chainId}:${vault.vaultAddress.toLowerCase()}`) ?? null,
             fetchType,
             paginationMode
           })
@@ -1036,13 +1077,13 @@ async function main() {
     idleTimeout: 120
   })
 
-  console.log(`🚀 API server running on http://localhost:${API_SERVER_PORT}`)
-  console.log(`📊 Holdings API: http://localhost:${API_SERVER_PORT}/api/holdings/history?address=0x...`)
-  console.log(`🗂️ Holdings Activity API: http://localhost:${API_SERVER_PORT}/api/holdings/activity?address=0x...`)
-  console.log(`🧩 Holdings Breakdown API: http://localhost:${API_SERVER_PORT}/api/holdings/breakdown?address=0x...`)
-  console.log(
-    `📈 Protocol Return History API: http://localhost:${API_SERVER_PORT}/api/holdings/protocol-return/history?address=0x...`
-  )
+  const apiServerUrl = `http://localhost:${API_SERVER_PORT}`
+  console.log(`🚀 API server running on ${apiServerUrl}`)
+  console.log(`📊 Holdings API: ${apiServerUrl}/api/holdings/history?address=0x...`)
+  console.log(`🗂️ Holdings Activity API: ${apiServerUrl}/api/holdings/activity?address=0x...`)
+  console.log(`🧩 Holdings Breakdown API: ${apiServerUrl}/api/holdings/breakdown?address=0x...`)
+  console.log(`📈 Protocol Return History API: ${apiServerUrl}/api/holdings/protocol-return/history?address=0x...`)
+  console.log(`📊 Simple PnL History Alias: ${apiServerUrl}/api/holdings/pnl/simple-history?address=0x...`)
 }
 
 main().catch((error) => {

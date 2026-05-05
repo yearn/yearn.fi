@@ -15,7 +15,8 @@ export {
   type HoldingsHistoryChartResponse,
   type HoldingsHistoryDenomination,
   type HoldingsHistoryResponse,
-  type HoldingsHistoryTimeframe
+  type HoldingsHistoryTimeframe,
+  type HoldingsVaultFilter
 } from './services/aggregator'
 export { clearUserCache, deleteStaleCache } from './services/cache'
 export {

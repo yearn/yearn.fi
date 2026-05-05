@@ -389,6 +389,94 @@ describe('pnl simple protocol return', () => {
     expect(history[1]?.pricePerShare).toBeCloseTo(1.1)
   })
 
+  it('combines current underlying and growth fields for multi-vault history points', () => {
+    const combinedMetadata = new Map<string, VaultMetadata>([
+      ...metadata,
+      [
+        YVUSD_UNLOCKED_KEY,
+        {
+          address: YVUSD_UNLOCKED,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: YVUSD_UNDERLYING,
+            symbol: 'USDC',
+            decimals: 6
+          },
+          decimals: 6
+        }
+      ],
+      [
+        YVUSD_LOCKED_KEY,
+        {
+          address: YVUSD_LOCKED,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: YVUSD_UNLOCKED,
+            symbol: 'yvUSD',
+            decimals: 6
+          },
+          decimals: 18
+        }
+      ]
+    ])
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'unlocked-deposit',
+          vaultAddress: YVUSD_UNLOCKED,
+          familyVaultAddress: YVUSD_UNLOCKED,
+          blockTimestamp: 100,
+          shares: 100n * YVUSD_ONE,
+          assets: 100n * YVUSD_ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'deposit',
+          id: 'locked-deposit',
+          vaultAddress: YVUSD_LOCKED,
+          familyVaultAddress: YVUSD_LOCKED,
+          blockTimestamp: 100,
+          shares: 2n * ONE,
+          assets: 200n * YVUSD_ONE,
+          owner: USER,
+          sender: USER
+        })
+      ],
+      userAddress: USER,
+      metadata: combinedMetadata,
+      ppsData: new Map([
+        [
+          YVUSD_UNLOCKED_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.1]
+          ])
+        ],
+        [
+          YVUSD_LOCKED_KEY,
+          new Map([
+            [100, 100],
+            [200, 110]
+          ])
+        ]
+      ]),
+      priceData: new Map([[`ethereum:${YVUSD_UNDERLYING}`, new Map([[100, 1]])]]),
+      timestamps: [100, 200],
+      selectedVaultKeys: [YVUSD_UNLOCKED_KEY, YVUSD_LOCKED_KEY]
+    })
+
+    expect(history[0]?.currentUnderlying).toBeCloseTo(300)
+    expect(history[0]?.growthUnderlying).toBeCloseTo(0)
+    expect(history[1]?.currentUnderlying).toBeCloseTo(330)
+    expect(history[1]?.growthUnderlying).toBeCloseTo(30)
+  })
+
   it('keeps ETH growth history available when another vault is missing receipt prices', () => {
     const MISSING_VAULT = '0x5555555555555555555555555555555555555555'
     const MISSING_ASSET = '0x6666666666666666666666666666666666666666'

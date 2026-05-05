@@ -65,17 +65,23 @@ function getContextKey(args: {
   fetchType: HoldingsEventFetchType
   paginationMode: HoldingsEventPaginationMode
   requestedVault?: TRequestedVault
+  vaultIdentifiers?: TVaultIdentifier[]
 }): string {
-  const normalizedRequestedVault = args.requestedVault
-    ? `${args.requestedVault.chainId}:${lowerCaseAddress(args.requestedVault.vaultAddress)}`
-    : 'all'
+  const normalizedVaultScope = args.vaultIdentifiers?.length
+    ? args.vaultIdentifiers
+        .map((vault) => `${vault.chainId}:${lowerCaseAddress(vault.vaultAddress)}`)
+        .sort()
+        .join(',')
+    : args.requestedVault
+      ? `${args.requestedVault.chainId}:${lowerCaseAddress(args.requestedVault.vaultAddress)}`
+      : 'all'
 
   return [
     lowerCaseAddress(args.userAddress),
     args.version ?? 'all',
     args.fetchType,
     args.paginationMode,
-    normalizedRequestedVault
+    normalizedVaultScope
   ].join(':')
 }
 

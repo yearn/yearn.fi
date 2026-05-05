@@ -172,6 +172,75 @@ describe('getHistoricalHoldings', () => {
     expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 101, 'seq', 'paged')
   })
 
+  it('filters historical chart calculations to requested vaults without using aggregate cache', async () => {
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+    const firstVaultAddress = '0x00000000000000000000000000000000000000a1'
+    const secondVaultAddress = '0x00000000000000000000000000000000000000a2'
+    const excludedVaultAddress = '0x00000000000000000000000000000000000000a3'
+    const tokenAddress = '0x0000000000000000000000000000000000000aa1'
+    const timeline = [{ blockTimestamp: 100, blockNumber: 1 }]
+    const vaults = [
+      { chainId: 1, vaultAddress: firstVaultAddress },
+      { chainId: 1, vaultAddress: secondVaultAddress },
+      { chainId: 1, vaultAddress: excludedVaultAddress }
+    ]
+
+    generateDailyTimestampsMock.mockReturnValue([100])
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+    buildPositionTimelineMock.mockReturnValue(timeline)
+    getUniqueVaultsMock.mockReturnValue(vaults)
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map(
+        vaults.map((vault) => [
+          `1:${vault.vaultAddress}`,
+          {
+            address: vault.vaultAddress,
+            chainId: 1,
+            version: 'v3',
+            token: {
+              address: tokenAddress,
+              symbol: 'TKN',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ])
+      )
+    )
+    fetchMultipleVaultsPPSMock.mockImplementation(async (requestedVaults: typeof vaults) => {
+      return new Map(requestedVaults.map((vault) => [`1:${vault.vaultAddress}`, new Map([[101, 1]])]))
+    })
+    fetchHistoricalPricesMock.mockResolvedValue(new Map([[`ethereum:${tokenAddress}`, new Map([[101, 1]])]]))
+    getChainPrefixMock.mockReturnValue('ethereum')
+    getPPSMock.mockReturnValue(1)
+    getPriceAtTimestampMock.mockReturnValue(1)
+    getShareBalanceAtTimestampMock.mockImplementation((_timeline: unknown, vaultAddress: string) => {
+      if (vaultAddress === firstVaultAddress) return 2n * 10n ** 18n
+      if (vaultAddress === secondVaultAddress) return 3n * 10n ** 18n
+      return 100n * 10n ** 18n
+    })
+
+    const { getHistoricalHoldingsChart } = await import('./aggregator')
+    const response = await getHistoricalHoldingsChart(userAddress, 'all', 'parallel', 'all', 'usd', '1y', [
+      { chainId: 1, vaultAddress: firstVaultAddress },
+      { chainId: 1, vaultAddress: secondVaultAddress }
+    ])
+
+    expect(getCachedTotalsWithTimestampMock).not.toHaveBeenCalled()
+    expect(saveCachedTotalsMock).not.toHaveBeenCalled()
+    expect(fetchMultipleVaultsPPSMock).toHaveBeenCalledWith([
+      { chainId: 1, vaultAddress: firstVaultAddress },
+      { chainId: 1, vaultAddress: secondVaultAddress }
+    ])
+    expect(response.dataPoints).toEqual([{ date: 'date-100', timestamp: 101, value: 5 }])
+  })
+
   it('returns fully cached history after validating cache staleness', async () => {
     const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
     const vaultAddress = '0x00000000000000000000000000000000000000dd'

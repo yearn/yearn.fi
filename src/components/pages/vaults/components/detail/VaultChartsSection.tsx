@@ -30,6 +30,7 @@ type VaultChartsSectionProps = {
   enableUserCharts?: boolean
   userUnitLabel?: string
   overlayUserPositionOnTvlTab?: boolean
+  userHistoryVaults?: Array<{ chainId: number; vaultAddress: string }>
 }
 
 export const VAULT_CHART_TIMEFRAME_OPTIONS = [
@@ -71,7 +72,8 @@ export function VaultChartsSection({
   chartHeightMdPx,
   enableUserCharts = false,
   userUnitLabel = 'assets',
-  overlayUserPositionOnTvlTab = false
+  overlayUserPositionOnTvlTab = false,
+  userHistoryVaults
 }: VaultChartsSectionProps): ReactElement {
   const { data, error, isLoading } = useVaultChartTimeseries({
     chainId,
@@ -106,6 +108,7 @@ export function VaultChartsSection({
   } = useVaultUserHistory({
     chainId,
     vaultAddress,
+    vaults: userHistoryVaults,
     timeframe: activeTimeframe,
     enabled: (enableUserCharts && activeTabIsUserChart) || shouldOverlayUserPositionOnTvlTab
   })
