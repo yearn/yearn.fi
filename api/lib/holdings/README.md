@@ -1,6 +1,6 @@
 # Holdings APIs
 
-Calculates historical USD values and portfolio PnL for a user's Yearn vault positions.
+Calculates historical USD values, per-day breakdowns, activity, and protocol-return history for a user's Yearn vault positions.
 
 ## Architecture
 
@@ -117,12 +117,11 @@ For LP-based vaults, the "token price" can be an LP token price rather than a pl
 | `kong.ts` | Kong API | Fetch historical Price Per Share timeseries |
 | `vaults.ts` | Kong API | Fetch vault metadata (token info, decimals, staking) |
 | `defillama.ts` | DefiLlama API | Fetch historical token prices |
-| `cow.ts` | Ethereum RPC + CoW settlement logs | Synthesize known-basis acquisitions for recognized CoW settlement flows |
 | `cache.ts` | PostgreSQL | Cache daily USD totals per user + positive token prices + exact price misses |
 | `holdings.ts` | Local | Build position timeline, calculate share balances |
 | `aggregator.ts` | Local | Orchestrate all services, main entry point |
-| `pnl.ts` | Local | Build family ledgers, FIFO lots, and PnL summaries |
-| `pnlSimple.ts` | Local | Build address-scoped protocol-return exposure ledgers without cost-basis reconstruction |
+| `pnlEvents.ts` | Local | Normalize indexed events into shared raw event records |
+| `pnlSimple.ts` | Local | Build protocol-return exposure history without cost-basis reconstruction |
 
 ### Data Types
 
@@ -177,23 +176,23 @@ Transfer events track vault shares moving between addresses (not through deposit
 
 Staking vault positions are tracked via the `stakingToVaultMap` in `vaults.ts`. When a user deposits into a staking contract, the system maps the staking address to its underlying vault metadata for proper valuation.
 
-### PnL-Specific Event Enrichment
+### Protocol Return Event Context
 
-The PnL endpoint fetches more context than the history endpoint:
+Protocol-return history starts from the same settled address-scoped context as holdings history:
 
 1. Address-scoped events for the user
-2. Additional transaction-scoped events for the same transaction hashes
+2. Vault metadata, including staking-to-family mapping
+3. PPS timelines with in-flight request dedupe
+4. Historical token prices using the shared UTC-day price cache
 
-That transaction-hash enrichment lets the PnL engine match same-transaction router flows, staking stake/unstake moves, and known migration rollovers even when the economically relevant event was not emitted directly on the user's address filter.
-
-For some recognized Ethereum mainnet CoW settlement transactions, the PnL path also inspects the transaction receipt and settlement logs to synthesize a deposit-like acquisition with known basis. This reduces false partial-cost-basis cases for routed buys into vault asset/share positions.
+For protocol-return history, transaction-scoped enrichment is limited to the event context needed to match stake/unstake and same-transaction vault share movements. It does not build FIFO cost-basis lots or accounting PnL.
 
 ## API Endpoints
 
 ### GET `/api/holdings/history`
 Holdings history for charts (date + total value).
 
-The history series ends at the latest settled UTC day, not an intraday "today" point. This keeps the daily series cacheable and avoids recomputing a moving final point on every request. For current portfolio value, use `/api/holdings/pnl`.
+The history series ends at the latest settled UTC day, not an intraday "today" point. This keeps the daily series cacheable and avoids recomputing a moving final point on every request.
 Vaults with `isHidden=true` in authoritative Kong metadata are excluded from history totals and do not contribute to chart points.
 
 ```bash
@@ -279,126 +278,26 @@ Response (abridged):
 }
 ```
 
-### GET `/api/holdings/pnl`
-FIFO-based realized and unrealized PnL for the user’s vault activity.
+### GET `/api/holdings/protocol-return/history`
+Protocol-return history for the user’s vault exposure.
 
-For the dedicated accounting-model walkthrough, see [`PNL.md`](./PNL.md).
-Vaults with `isHidden=true` in authoritative Kong metadata are excluded from both returned rows and summary totals.
+This route is not a cost-basis PnL engine. It measures how much Yearn increased the user’s withdrawable underlying amount while the user held vault shares. Receipt-time token prices are used only to weight different assets into one portfolio percentage.
+
+The old `/api/holdings/pnl/simple-history` path is kept as a temporary compatibility alias.
+Vaults with `isHidden=true` in authoritative Kong metadata are excluded.
 
 ```bash
-curl "http://localhost:3001/api/holdings/pnl?address=0x..."
-curl "http://localhost:3001/api/holdings/pnl?address=0x...&unknownMode=windfall"
-curl "http://localhost:3001/api/holdings/pnl?address=0x...&fetchType=parallel"
-curl "http://localhost:3001/api/holdings/pnl?address=0x...&paginationMode=all"
+curl "http://localhost:3001/api/holdings/protocol-return/history?address=0x..."
+curl "http://localhost:3001/api/holdings/protocol-return/history?address=0x...&version=v3"
+curl "http://localhost:3001/api/holdings/protocol-return/history?address=0x...&timeframe=all"
+curl "http://localhost:3001/api/holdings/protocol-return/history?address=0x...&chainId=1&vault=0x..."
 ```
 
 Query params:
 - `address` (required): Ethereum address
 - `version` (optional): `v2`, `v3`, or `all` (default: `all`)
-- `unknownMode` (optional): `strict`, `zero_basis`, or `windfall` (default: `windfall`)
-- `fetchType` (optional): `seq` or `parallel` (default: `seq`)
-- `paginationMode` (optional): `paged` or `all` (default: `paged`)
-
-Response (abridged):
-```json
-{
-  "address": "0x...",
-  "version": "all",
-  "unknownTransferInPnlMode": "windfall",
-  "generatedAt": "2026-03-16T12:00:00.000Z",
-  "summary": {
-    "totalVaults": 5,
-    "completeVaults": 4,
-    "partialVaults": 1,
-    "totalCurrentValueUsd": 1500.0,
-    "totalUnknownCostBasisValueUsd": 0,
-    "totalWindfallPnlUsd": 100.0,
-    "totalRealizedPnlUsd": 20.5,
-    "totalUnrealizedPnlUsd": 45.25,
-    "totalPnlUsd": 65.75,
-    "totalEconomicGainUsd": 165.75,
-    "byCategory": {
-      "stable": {
-        "totalPnlUsd": 40.0,
-        "totalEconomicGainUsd": 60.0
-      },
-      "volatile": {
-        "totalPnlUsd": 25.75,
-        "totalEconomicGainUsd": 105.75
-      }
-    },
-    "isComplete": false
-  },
-  "vaults": [
-    {
-      "chainId": 1,
-      "vaultAddress": "0x...",
-      "status": "ok",
-      "costBasisStatus": "partial",
-      "unknownTransferInPnlMode": "windfall",
-      "currentUnderlying": 105.0,
-      "knownCostBasisUnderlying": 100.0,
-      "knownCostBasisUsd": 100.0,
-      "unknownCostBasisValueUsd": 0,
-      "windfallPnlUsd": 100.0,
-      "realizedPnlUsd": 12.5,
-      "unrealizedPnlUsd": 4.25,
-      "totalPnlUsd": 16.75,
-      "totalEconomicGainUsd": 116.75,
-      "currentValueUsd": 105.0,
-      "metadata": {
-        "symbol": "USDC",
-        "decimals": 6,
-        "assetDecimals": 6,
-        "tokenAddress": "0x...",
-        "category": "stable"
-      }
-    }
-  ]
-}
-```
-
-The live response also includes:
-
-- share balances
-- vault-share vs staked-share splits
-- per-vault event counts
-- explicit underlying amounts (`currentUnderlying`, `vaultUnderlying`, `stakedUnderlying`)
-- explicit known-basis metrics (`knownCostBasisUnderlying`, `knownCostBasisUsd`, `currentKnownUnderlying`, `currentUnknownUnderlying`)
-
-Notes:
-- Deposits create FIFO lots using the indexed `assets` and `shares` values.
-- Known-basis USD PnL is true mark-to-market PnL: deposit lots keep their acquisition timestamp, and USD basis is valued using the underlying token price at deposit time.
-- Withdrawals realize PnL from the oldest remaining lots first.
-- `totalPnlUsd = totalRealizedPnlUsd + totalUnrealizedPnlUsd`.
-- `totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd`.
-- Some recognized reward-distribution flows are treated as explicit zero-basis reward receipts rather than unknown transfers. Those shares are considered economically free, but they stay `costBasisStatus: "complete"` and contribute to normal realized / unrealized PnL instead of `windfallPnlUsd`.
-- `summary.byCategory.stable` and `summary.byCategory.volatile` split `totalPnlUsd` and `totalEconomicGainUsd` by Kong vault category while the top-level summary remains the portfolio-wide total.
-- Staking wrappers are collapsed into the underlying vault family. Staked shares and directly held vault shares share the same FIFO lots and only change location.
-- Underlying vault `Deposit` and `Withdraw` events define cost basis and realized proceeds. Staking `Deposit` and `Withdraw` events are treated as stake or unstake moves, not as economic entries.
-- Same-transaction router flows can carry basis into or out of a staking vault family when the transfer can be matched to an indexed underlying vault deposit or withdrawal in the same transaction.
-- Recognized vault-to-vault rollover transactions can roll basis from a source family into a destination family, including known migrator flows, supported Enso-mediated rollovers on Ethereum mainnet, and supported compatible nested-vault paths where one Yearn vault token is the asset of another Yearn vault. The current compatible nested-vault allowlist includes the `ysyBOLD <-> yBOLD` path on Ethereum mainnet. When source basis cannot be reconstructed, the destination shares stay partial / unknown-basis.
-- Plain share transfers may leave some lots with unknown cost basis. Those vaults are returned with `costBasisStatus: "partial"`. In `strict` mode, the unmatched current portion is reported in `unknownCostBasisValueUsd`; in `zero_basis` and `windfall`, that value is zeroed and the economics are attributed according to `unknownTransferInPnlMode`.
-- The endpoint keeps families with non-zero current shares even if they only arrived through transfers, but transfer-only families with zero remaining shares may still be omitted. Those transfer-only holdings are marked partial and prioritized for current-value completeness over full historical price reconstruction.
-- `isComplete` becomes `false` when at least one returned vault still has partial / unknown basis.
-
-### GET `/api/holdings/pnl/simple`
-Protocol-return summary for the user’s vault exposure.
-
-This route is intentionally not a cost-basis PnL engine. It measures how much Yearn increased the user’s withdrawable underlying amount while the user held vault shares. Receipt-time token prices are used only to weight different assets into one portfolio percentage.
-
-It uses only address-scoped events, so it avoids transaction-hash enrichment, CoW receipt enrichment, and FIFO cost-basis classification. This makes it cheaper than `/api/holdings/pnl`, but it should be labeled as protocol return rather than accounting PnL.
-Like `/api/holdings/pnl`, it excludes vaults with `isHidden=true` in authoritative Kong metadata.
-
-```bash
-curl "http://localhost:3001/api/holdings/pnl/simple?address=0x..."
-curl "http://localhost:3001/api/holdings/pnl/simple?address=0x...&version=v3"
-curl "http://localhost:3001/api/holdings/pnl/simple?address=0x...&fetchType=parallel"
-```
-
-Query params:
-- `address` (required): Ethereum address
-- `version` (optional): `v2`, `v3`, or `all` (default: `all`)
+- `timeframe` (optional): `1y` or `all` (default: `1y`)
+- `vault` + `chainId` (optional): limit response to one vault family
 - `fetchType` (optional): `seq` or `parallel` (default: `seq`)
 - `paginationMode` (optional): `paged` or `all` (default: `paged`)
 
@@ -420,104 +319,27 @@ Response (abridged):
 {
   "address": "0x...",
   "version": "all",
+  "timeframe": "1y",
   "summary": {
     "totalVaults": 5,
     "completeVaults": 5,
     "partialVaults": 0,
-    "baselineWeightUsd": 7000,
-    "growthWeightUsd": 700,
-    "protocolReturnPct": 10,
+    "recommendedGrowthDisplay": "usd",
+    "recommendedGrowthDisplayReason": "stable_dominant",
     "isComplete": true
   },
-  "vaults": [
+  "dataPoints": [
     {
-      "chainId": 1,
-      "vaultAddress": "0x...",
-      "status": "ok",
-      "baselineUnderlying": 1000,
-      "growthUnderlying": 100,
-      "baselineWeightUsd": 1000,
+      "date": "2026-04-07",
+      "timestamp": 1775529600,
       "growthWeightUsd": 100,
+      "growthWeightEth": null,
       "protocolReturnPct": 10,
-      "receiptCount": 1,
-      "exitCount": 0
+      "annualizedProtocolReturnPct": 12,
+      "growthIndex": 1.1
     }
   ]
 }
-```
-
-### GET `/api/holdings/pnl/drilldown`
-Lot-level drilldown for the PnL engine. This is the "excessive" companion to `/api/holdings/pnl`.
-
-Use it when the frontend needs current lots, realized lot consumption, unknown-basis receipts / withdrawals, or a transaction journal showing how the family lot state changed over time.
-Like `/api/holdings/pnl`, it excludes vaults with `isHidden=true` in authoritative Kong metadata.
-
-```bash
-curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x..."
-curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x...&vault=0x..."
-curl "http://localhost:3001/api/holdings/pnl/drilldown?address=0x...&unknownMode=windfall"
-```
-
-Query params:
-- `address` (required): Ethereum address
-- `vault` (optional): family vault or staking vault address to limit the response to one family
-- `version` (optional): `v2`, `v3`, or `all` (default: `all`)
-- `unknownMode` (optional): `strict`, `zero_basis`, or `windfall` (default: `windfall`)
-- `fetchType` (optional): `seq` or `parallel` (default: `seq`)
-- `paginationMode` (optional): `paged` or `all` (default: `paged`)
-
-Response additions per vault:
-- `currentLots.vault` and `currentLots.staked`
-- `realizedEntries` with consumed lots and USD/underlying proceeds/basis/PnL
-- `rewardTransferInEntries` for recognized zero-basis reward receipts
-- `unknownTransferInEntries` with receipt-time valuation
-- `unknownWithdrawalEntries` with proceeds and consumed unknown lots
-- `journal` rows with before/after lot summaries for vault-share and staked-share locations
-
-Notes:
-- `rewardTransferInEntries` are known-basis receipts with `costBasis = 0`, so they are not affected by `unknownMode`.
-- The drilldown journal includes `rewardInVaultShares` / `rewardInStakedShares` and the transaction hash. If the UI wants explorer links for reward rows, it should join the reward entry to the matching journal row.
-
-The drilldown response uses the same summary fields and top-level identity fields as `/api/holdings/pnl`, but each vault row is expanded for UI drilldown rather than table rendering.
-
-### Unknown Transfer-In Modes
-
-Unknown share transfers can be interpreted three ways:
-
-- `strict`
-  - Unknown shares do not contribute to PnL.
-  - Their current value is reported in `unknownCostBasisValueUsd`.
-- `zero_basis`
-  - Unknown shares are treated as if they were acquired for zero cost.
-  - Receipt-time value and any later market move both end up inside realized / unrealized PnL.
-- `windfall` (default)
-  - Unknown shares are still treated as free economically, but the gain is split into two parts.
-  - Receipt-time fair value is isolated in `windfallPnlUsd`.
-  - `totalPnlUsd` only tracks market movement after receipt.
-  - `totalEconomicGainUsd = totalPnlUsd + totalWindfallPnlUsd`.
-
-`zero_basis` and `windfall` can report the same `totalEconomicGainUsd`. The difference is attribution:
-
-- `zero_basis` books the full gain as market PnL.
-- `windfall` books receipt-time value as windfall and only the post-receipt move as market PnL.
-
-Example:
-
-```text
-Unknown shares received at $1,000 value and later worth $1,150
-
-strict:
-  totalPnlUsd = 0
-  unknownCostBasisValueUsd = 1,150
-
-zero_basis:
-  totalPnlUsd = 1,150
-  totalEconomicGainUsd = 1,150
-
-windfall:
-  totalWindfallPnlUsd = 1,000
-  totalPnlUsd = 150
-  totalEconomicGainUsd = 1,150
 ```
 
 ## Supported Chains
@@ -537,7 +359,6 @@ windfall:
 | `ENVIO_PASSWORD` | No | `''` (empty) | Envio Hasura admin secret (header skipped if empty or 'testing') |
 | `DATABASE_URL_PREVIEW` | No | `null` | Preview PostgreSQL connection string. Used in preference to `DATABASE_URL` when set. |
 | `DATABASE_URL` | No | `null` | Default PostgreSQL connection string (caching disabled if neither DB env var is set) |
-| `ETHEREUM_RPC_URL` | No | `https://ethereum-rpc.publicnode.com` | Mainnet RPC used for receipt-level enrichment such as CoW settlement decoding |
 | `DEFILLAMA_API_KEY` | No | `''` (empty) | Enables the paid DefiLlama GET route at `https://pro-api.llama.fi/{key}/coins/batchHistorical?coins=...` |
 | `ADMIN_SECRET` | No | `null` | Secret for admin endpoints (cache invalidation). Use 32+ char random string. |
 
@@ -567,9 +388,9 @@ Query: User has 3,500 transfers
 
 All 6 event types (V3 deposits/withdrawals, V2 deposits/withdrawals, transfers in/out) are fetched in parallel, but each type paginates sequentially within itself.
 
-### PnL Fetch Controls
+### Event Fetch Controls
 
-The PnL endpoint exposes request-time controls for benchmarking alternate address-scoped fetch strategies:
+Holdings routes expose request-time controls for benchmarking alternate address-scoped fetch strategies:
 
 - `fetchType=seq|parallel`
   - `seq`: normal `1000`-row sequential pagination
@@ -626,7 +447,7 @@ The cache stores **daily USD totals per user** (not per-vault breakdowns).
 └─────────────────────────────────────────────────────────────┘
 ```
 
-The history series ends at the latest settled UTC day rather than an intraday moving "today" point. Current portfolio value should come from `/api/holdings/pnl`.
+The history series ends at the latest settled UTC day rather than an intraday moving "today" point.
 
 ### Cache Layers
 

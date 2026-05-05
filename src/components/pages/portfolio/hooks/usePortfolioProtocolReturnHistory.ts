@@ -18,7 +18,7 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
       return null
     }
 
-    return `/api/holdings/pnl/simple-history?address=${address}&timeframe=${timeframe}&debug=1&fetchType=parallel`
+    return `/api/holdings/protocol-return/history?address=${address}&timeframe=${timeframe}&debug=1&fetchType=parallel`
   }, [address, enabled, timeframe])
 
   const { data, isLoading, isFetching, error } = useFetch<TPortfolioProtocolReturnHistoryResponse>({

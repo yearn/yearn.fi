@@ -62,11 +62,6 @@ const portfolioBreakdownVaultSchema = z.object({
   status: z.enum(['ok', 'missing_metadata', 'missing_pps', 'missing_price'])
 })
 
-const portfolioPnlCategoryBreakdownSchema = z.object({
-  totalPnlUsd: z.number(),
-  totalEconomicGainUsd: z.number()
-})
-
 export const portfolioHistorySimpleResponseSchema = z.object({
   address: z.string(),
   denomination: z.enum(['usd', 'eth']).optional().default('usd'),
@@ -104,33 +99,6 @@ export const portfolioBreakdownResponseSchema = z.object({
   message: z.string().optional()
 })
 
-const portfolioPnlSummarySchema = z.object({
-  totalVaults: z.number(),
-  partialVaults: z.number(),
-  totalWindfallPnlUsd: z.number(),
-  totalPnlUsd: z.number(),
-  totalEconomicGainUsd: z.number(),
-  byCategory: z.object({
-    stable: portfolioPnlCategoryBreakdownSchema,
-    volatile: portfolioPnlCategoryBreakdownSchema
-  }),
-  isComplete: z.boolean()
-})
-
-const portfolioProtocolReturnSummarySchema = z.object({
-  totalVaults: z.number(),
-  completeVaults: z.number(),
-  partialVaults: z.number(),
-  baselineWeightUsd: z.number(),
-  baselineExposureWeightUsdYears: z.number(),
-  growthWeightUsd: z.number(),
-  realizedGrowthWeightUsd: z.number(),
-  unrealizedGrowthWeightUsd: z.number(),
-  protocolReturnPct: z.number().nullable(),
-  annualizedProtocolReturnPct: z.number().nullable(),
-  isComplete: z.boolean()
-})
-
 const portfolioActivityEntrySchema = z.object({
   chainId: z.number(),
   txHash: z.string(),
@@ -158,40 +126,11 @@ export const portfolioActivityResponseSchema = z.object({
   entries: z.array(portfolioActivityEntrySchema)
 })
 
-const portfolioProtocolReturnVaultSchema = z.object({
-  chainId: z.number(),
-  vaultAddress: z.string(),
-  status: z.enum(['ok', 'missing_metadata', 'missing_pps', 'missing_receipt_price', 'partial']),
-  issues: z.array(z.enum(['missing_metadata', 'missing_pps', 'missing_receipt_price', 'unmatched_exit'])),
-  metadata: z.object({
-    symbol: z.string().nullable(),
-    decimals: z.number(),
-    assetDecimals: z.number(),
-    tokenAddress: z.string().nullable()
-  })
-})
-
-export const portfolioPnlResponseSchema = z.object({
-  address: z.string(),
-  summary: portfolioPnlSummarySchema
-})
-
-export const portfolioProtocolReturnResponseSchema = z.object({
-  address: z.string(),
-  summary: portfolioProtocolReturnSummarySchema,
-  vaults: z.array(portfolioProtocolReturnVaultSchema)
-})
-
 export type TPortfolioHistorySimpleResponse = z.infer<typeof portfolioHistorySimpleResponseSchema>
 export type TPortfolioProtocolReturnHistoryResponse = z.infer<typeof portfolioProtocolReturnHistoryResponseSchema>
 export type TPortfolioProtocolReturnHistorySummary = z.infer<typeof portfolioProtocolReturnHistorySummarySchema>
 export type TPortfolioBreakdownResponse = z.infer<typeof portfolioBreakdownResponseSchema>
 export type TPortfolioBreakdownVault = z.infer<typeof portfolioBreakdownVaultSchema>
-export type TPortfolioPnlResponse = z.infer<typeof portfolioPnlResponseSchema>
-export type TPortfolioPnlSummary = z.infer<typeof portfolioPnlSummarySchema>
-export type TPortfolioProtocolReturnResponse = z.infer<typeof portfolioProtocolReturnResponseSchema>
-export type TPortfolioProtocolReturnSummary = z.infer<typeof portfolioProtocolReturnSummarySchema>
-export type TPortfolioProtocolReturnVault = z.infer<typeof portfolioProtocolReturnVaultSchema>
 export type TPortfolioActivityResponse = z.infer<typeof portfolioActivityResponseSchema>
 export type TPortfolioActivityEntry = z.infer<typeof portfolioActivityEntrySchema>
 export type TPortfolioHistoryDenomination = z.infer<typeof portfolioHistorySimpleResponseSchema>['denomination']

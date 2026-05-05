@@ -11,7 +11,7 @@ import {
 import { buildPositionTimeline, generateDailyTimestamps, getUniqueVaults, toSettledDayTimestamp } from './holdings'
 import { fetchMultipleVaultsPPS, type PPSTimeline } from './kong'
 import { getNestedVaultPpsIdentifiersFromPriceRequests, mergeVaultIdentifiers } from './nestedVaultPrices'
-import { buildAddressScopedRawPnlEvents } from './pnl'
+import { buildAddressScopedRawPnlEvents } from './pnlEvents'
 import { lowerCaseAddress, toVaultKey } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
 import { fetchMultipleVaultsMetadata } from './vaults'

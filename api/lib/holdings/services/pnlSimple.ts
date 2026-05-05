@@ -10,7 +10,6 @@ import {
 } from './defillama'
 import {
   fetchActivityEventsByTransactionHashes,
-  fetchRawUserPnlEvents,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
   type VaultVersion
@@ -21,24 +20,13 @@ import {
   timestampToDateString,
   toSettledDayTimestamp
 } from './holdings'
-import { fetchMultipleVaultsPPS, getPPS } from './kong'
-import {
-  deriveNestedVaultAssetPriceData,
-  expandNestedVaultAssetPriceRequests,
-  getNestedVaultPpsIdentifiersFromPriceRequests,
-  mergeVaultIdentifiers
-} from './nestedVaultPrices'
-import { buildRawPnlEvents, mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnl'
+import { getPPS } from './kong'
+import { deriveNestedVaultAssetPriceData, expandNestedVaultAssetPriceRequests } from './nestedVaultPrices'
+import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnlEvents'
 import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
-import {
-  filterEventsByAuthoritativeVersion,
-  getSettledVersionedPpsContext,
-  getVaultIdentifiers,
-  resolveNestedVaultAssetMetadata
-} from './settledHoldingsContext'
+import { getSettledVersionedPpsContext, getVaultIdentifiers } from './settledHoldingsContext'
 import { getStakingVaultAddress } from './staking'
-import { fetchMultipleVaultsMetadata } from './vaults'
 
 type TProtocolReturnIssue = 'missing_metadata' | 'missing_pps' | 'missing_receipt_price' | 'unmatched_exit'
 
@@ -1457,7 +1445,7 @@ async function enrichSimpleHistoryRawEvents(args: {
     allowedFamilyKeys
   )
 
-  debugLog('pnl-simple-history', 'enriched simple-history raw events with same-family tx context', {
+  debugLog('protocol-return-history', 'enriched protocol return raw events with same-family tx context', {
     addressEvents: args.events.length,
     enrichedEvents: enrichedEvents.length,
     requestedTransactions,
@@ -1950,121 +1938,7 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
   })
 }
 
-export async function getHoldingsPnLSimple(
-  userAddress: string,
-  version: VaultVersion = 'all',
-  fetchType: HoldingsEventFetchType = 'seq',
-  paginationMode: HoldingsEventPaginationMode = 'paged'
-): Promise<HoldingsPnLSimpleResponse> {
-  debugLog('pnl-simple', 'starting holdings simple pnl calculation', { version, fetchType, paginationMode })
-  const rawContext = await fetchRawUserPnlEvents(userAddress, 'all', undefined, fetchType, paginationMode)
-  const rawEvents = buildRawPnlEvents(rawContext)
-  const rawVaultIdentifiers = getVaultIdentifiers(rawEvents)
-  const resolvedVaultMetadata = await fetchMultipleVaultsMetadata(rawVaultIdentifiers)
-  const effectiveEvents = buildEffectiveSimpleEvents(
-    filterEventsByAuthoritativeVersion(rawEvents, resolvedVaultMetadata, version),
-    userAddress
-  )
-  const filteredVaultIdentifiers = getVaultIdentifiers(effectiveEvents)
-  const baseVaultMetadata = filteredVaultIdentifiers.reduce<Map<string, VaultMetadata>>((filtered, vault) => {
-    const key = toVaultKey(vault.chainId, vault.vaultAddress)
-    const metadata = resolvedVaultMetadata.get(key)
-
-    if (metadata) {
-      filtered.set(key, metadata)
-    }
-
-    return filtered
-  }, new Map())
-  const vaultMetadata = await resolveNestedVaultAssetMetadata(baseVaultMetadata)
-  const currentTimestamp = Math.floor(Date.now() / 1000)
-
-  debugLog('pnl-simple', 'loaded address-scoped events', {
-    version,
-    addressDeposits: rawContext.addressEvents.deposits.length,
-    addressWithdrawals: rawContext.addressEvents.withdrawals.length,
-    addressTransfersIn: rawContext.addressEvents.transfersIn.length,
-    addressTransfersOut: rawContext.addressEvents.transfersOut.length,
-    rawEvents: rawEvents.length,
-    effectiveEvents: effectiveEvents.length,
-    vaults: filteredVaultIdentifiers.length
-  })
-
-  if (effectiveEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
-    return {
-      address: lowerCaseAddress(userAddress),
-      version,
-      generatedAt: new Date().toISOString(),
-      summary: buildSummary([]),
-      vaults: []
-    }
-  }
-
-  const baseReceiptPriceRequests = buildReceiptPriceRequests({
-    events: effectiveEvents,
-    metadata: vaultMetadata,
-    userAddress,
-    currentTimestamp
-  })
-  const receiptPriceRequests = expandNestedVaultAssetPriceRequests(baseReceiptPriceRequests, vaultMetadata)
-  const uniqueReceiptPriceTimestamps = new Set(receiptPriceRequests.flatMap((request) => request.timestamps))
-
-  debugLog('pnl-simple', 'prepared targeted receipt price requests', {
-    tokens: receiptPriceRequests.length,
-    uniqueTimestamps: uniqueReceiptPriceTimestamps.size,
-    pricePoints: countReceiptPricePoints(receiptPriceRequests),
-    bucketSeconds: RECEIPT_PRICE_BUCKET_SECONDS
-  })
-
-  const ppsIdentifiers = mergeVaultIdentifiers([
-    ...filteredVaultIdentifiers,
-    ...getNestedVaultPpsIdentifiersFromPriceRequests(baseReceiptPriceRequests, vaultMetadata)
-  ])
-  const [ppsData, fetchedPriceData] = await Promise.all([
-    fetchMultipleVaultsPPS(ppsIdentifiers),
-    fetchReceiptPrices(receiptPriceRequests)
-  ])
-  const priceData = deriveNestedVaultAssetPriceData({
-    priceData: fetchedPriceData,
-    priceRequests: receiptPriceRequests,
-    vaultMetadata,
-    ppsData
-  })
-  const ledgers = buildProtocolReturnLedgers({
-    events: effectiveEvents,
-    userAddress,
-    metadata: vaultMetadata,
-    ppsData,
-    priceData,
-    currentTimestamp
-  })
-  const vaults = materializeProtocolReturnVaults({
-    ledgers,
-    metadata: vaultMetadata,
-    ppsData,
-    currentTimestamp
-  }).sort((a, b) => b.baselineWeightUsd - a.baselineWeightUsd)
-  const summary = buildSummary(vaults)
-
-  debugLog('pnl-simple', 'completed holdings simple pnl calculation', {
-    version,
-    totalVaults: summary.totalVaults,
-    baselineWeightUsd: summary.baselineWeightUsd,
-    growthWeightUsd: summary.growthWeightUsd,
-    protocolReturnPct: summary.protocolReturnPct,
-    isComplete: summary.isComplete
-  })
-
-  return {
-    address: lowerCaseAddress(userAddress),
-    version,
-    generatedAt: new Date().toISOString(),
-    summary,
-    vaults
-  }
-}
-
-export async function getHoldingsPnLSimpleHistory(
+export async function getHoldingsProtocolReturnHistory(
   userAddress: string,
   version: VaultVersion = 'all',
   fetchType: HoldingsEventFetchType = 'seq',
@@ -2073,7 +1947,7 @@ export async function getHoldingsPnLSimpleHistory(
   vaultAddress?: string,
   vaultChainId?: number
 ): Promise<HoldingsPnLSimpleHistoryResponse> {
-  debugLog('pnl-simple-history', 'starting holdings simple pnl history calculation', {
+  debugLog('protocol-return-history', 'starting holdings protocol return history calculation', {
     version,
     fetchType,
     paginationMode,
@@ -2140,10 +2014,6 @@ export async function getHoldingsPnLSimpleHistory(
     new Set(receiptPriceRequests.flatMap((request) => request.timestamps))
   ).sort((left, right) => left - right)
 
-  const ppsIdentifiers = mergeVaultIdentifiers([
-    ...filteredVaultIdentifiers,
-    ...getNestedVaultPpsIdentifiersFromPriceRequests(baseReceiptPriceRequests, vaultMetadata)
-  ])
   const [fetchedPriceData, ethPriceData] = await Promise.all([
     fetchReceiptPrices(receiptPriceRequests),
     fetchEthReceiptPrices(ethReceiptPriceTimestamps)
@@ -2201,7 +2071,7 @@ export async function getHoldingsPnLSimpleHistory(
   const { recommendedGrowthDisplay, recommendedGrowthDisplayReason } =
     resolveRecommendedGrowthDisplay(openBaselineCompositionUsd)
 
-  debugLog('pnl-simple-history', 'completed holdings simple pnl history calculation', {
+  debugLog('protocol-return-history', 'completed holdings protocol return history calculation', {
     version,
     timeframe,
     points: history.length,
@@ -2211,7 +2081,7 @@ export async function getHoldingsPnLSimpleHistory(
     addressTransfersIn: settledContext.events.transfersIn.length,
     addressTransfersOut: settledContext.events.transfersOut.length,
     ppsResolved: settledContext.ppsData.size,
-    ppsRequested: ppsIdentifiers.length,
+    ppsRequested: settledContext.ppsIdentifiers.length,
     recommendedGrowthDisplay,
     recommendedGrowthDisplayReason
   })

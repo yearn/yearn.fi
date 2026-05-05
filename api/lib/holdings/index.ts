@@ -26,21 +26,9 @@ export {
   type VaultVersion
 } from './services/graphql'
 export {
-  getHoldingsPnL,
-  getHoldingsPnLDrilldown,
-  type HoldingsPnLDrilldownResponse,
-  type HoldingsPnLDrilldownVault,
-  type HoldingsPnLResponse,
-  type HoldingsPnLVault,
-  type UnknownTransferInPnlMode
-} from './services/pnl'
-export {
-  getHoldingsPnLSimple,
-  getHoldingsPnLSimpleHistory,
+  getHoldingsProtocolReturnHistory,
   type HoldingsPnLSimpleHistoryPoint,
   type HoldingsPnLSimpleHistoryResponse,
-  type HoldingsPnLSimpleResponse,
-  type HoldingsPnLSimpleVault,
   type THoldingsPnLSimpleStatus
 } from './services/pnlSimple'
 export { checkRateLimit } from './services/ratelimit'

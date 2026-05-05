@@ -1,6 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { HoldingsEventFetchType, HoldingsEventPaginationMode } from '../lib/holdings'
-import { checkRateLimit, ensureSchemaInitialized } from '../lib/holdings'
+import type {
+  HoldingsEventFetchType,
+  HoldingsEventPaginationMode,
+  HoldingsHistoryTimeframe,
+  VaultVersion
+} from '../../lib/holdings'
+import { checkRateLimit, ensureSchemaInitialized } from '../../lib/holdings'
 
 function simpleHash(str: string): string {
   const hash = Array.from(str).reduce((currentHash, char) => {
@@ -26,16 +31,16 @@ function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
 
-function parseUnknownTransferInPnlMode(value: unknown): 'strict' | 'zero_basis' | 'windfall' {
-  return value === 'strict' || value === 'zero_basis' || value === 'windfall' ? value : 'windfall'
-}
-
 function parseHoldingsEventFetchType(value: string | string[] | undefined): HoldingsEventFetchType {
   return value === 'parallel' ? 'parallel' : 'seq'
 }
 
 function parseHoldingsEventPaginationMode(value: string | string[] | undefined): HoldingsEventPaginationMode {
   return value === 'all' ? 'all' : 'paged'
+}
+
+function parseHoldingsHistoryTimeframe(value: string | string[] | undefined): HoldingsHistoryTimeframe {
+  return value === 'all' ? 'all' : '1y'
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -54,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await ensureSchemaInitialized()
   } catch (error) {
-    console.error('Holdings PnL schema initialization error:', error)
+    console.error('Holdings protocol return history schema initialization error:', error)
     return res.status(500).json({ error: 'Failed to initialize holdings storage' })
   }
 
@@ -68,12 +73,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
     return res.status(503).json({
-      error: 'Holdings PnL API not configured',
+      error: 'Holdings protocol return history API not configured',
       details: 'ENVIO_GRAPHQL_URL environment variable is not set. This feature requires a running Envio indexer.'
     })
   }
 
-  const { address, version, unknownMode, fetchType: fetchTypeParam, paginationMode: paginationModeParam } = req.query
+  const {
+    address,
+    chainId: chainIdParam,
+    vault: vaultParam,
+    version: versionParam,
+    fetchType: fetchTypeParam,
+    paginationMode: paginationModeParam,
+    timeframe: timeframeParam
+  } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -83,38 +96,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid Ethereum address' })
   }
 
+  if (vaultParam !== undefined && typeof vaultParam !== 'string') {
+    return res.status(400).json({ error: 'Invalid vault address' })
+  }
+
+  if (vaultParam && !isValidAddress(vaultParam)) {
+    return res.status(400).json({ error: 'Invalid vault address' })
+  }
+
+  if (vaultParam && (!chainIdParam || typeof chainIdParam !== 'string' || !Number.isInteger(Number(chainIdParam)))) {
+    return res.status(400).json({ error: 'Missing or invalid chainId for vault filter' })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
+  const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)
 
   try {
-    const { getHoldingsPnL } = await import('../lib/holdings')
-    const pnl = await getHoldingsPnL(
+    const { getHoldingsProtocolReturnHistory } = await import('../../../lib/holdings')
+    const history = await getHoldingsProtocolReturnHistory(
       address,
-      version === 'v2' || version === 'v3' ? version : 'all',
-      parseUnknownTransferInPnlMode(Array.isArray(unknownMode) ? unknownMode[0] : unknownMode),
+      version,
       fetchType,
-      paginationMode
+      paginationMode,
+      timeframe,
+      vaultParam,
+      vaultParam ? Number(chainIdParam) : undefined
     )
 
-    if (pnl.summary.totalVaults === 0) {
+    if (history.summary.totalVaults === 0) {
       return res.status(404).json({ error: 'No holdings found for address' })
     }
 
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-    return res.status(200).json(pnl)
+    return res.status(200).json(history)
   } catch (error) {
-    console.error('Holdings PnL error:', error)
+    console.error('Holdings protocol return history error:', error)
 
     if (process.env.NODE_ENV === 'development') {
       const message = error instanceof Error ? error.message : String(error)
       const stack = error instanceof Error ? error.stack : undefined
       return res.status(502).json({
-        error: 'Failed to fetch holdings PnL',
+        error: 'Failed to fetch holdings protocol return history',
         message,
         stack
       })
     }
 
-    return res.status(502).json({ error: 'Failed to fetch holdings PnL' })
+    return res.status(502).json({ error: 'Failed to fetch holdings protocol return history' })
   }
 }

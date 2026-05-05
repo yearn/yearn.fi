@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { VaultMetadata } from '../types'
 import type { TransactionActivityEvents } from './graphql'
-import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnl'
+import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnlEvents'
 import { toVaultKey } from './pnlShared'
 import {
   buildProtocolReturnFamilyHistorySeries,
