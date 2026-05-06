@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const ensureSchemaInitializedMock = vi.fn()
 const checkRateLimitMock = vi.fn()
-const getHistoricalHoldingsChartMock = vi.fn()
+const getHoldingsProtocolReturnHistoryMock = vi.fn()
 
-vi.mock('../lib/holdings', () => ({
+vi.mock('../../lib/holdings', () => ({
   ensureSchemaInitialized: ensureSchemaInitializedMock,
   checkRateLimit: checkRateLimitMock,
-  getHistoricalHoldingsChart: getHistoricalHoldingsChartMock
+  getHoldingsProtocolReturnHistory: getHoldingsProtocolReturnHistoryMock
 }))
 
 type TMockResponse = {
@@ -42,7 +42,7 @@ function createMockResponse(): TMockResponse {
   }
 }
 
-describe('holdings history route', () => {
+describe('holdings simple pnl history route', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
@@ -51,55 +51,30 @@ describe('holdings history route', () => {
     process.env.ENVIO_GRAPHQL_URL = 'https://envio.example/graphql'
   })
 
-  it('returns zero-filled settled history for wallets that only have same-day activity', async () => {
-    getHistoricalHoldingsChartMock.mockResolvedValue({
-      address: '0xA7b6f3d18db39F65C8056d0892Af76c07d15Fc5a',
-      periodDays: 365,
-      timeframe: '1y',
-      denomination: 'usd',
-      hasActivity: true,
-      dataPoints: [
-        { date: '2026-04-20', timestamp: 1776729599, value: 0 },
-        { date: '2026-04-21', timestamp: 1776815999, value: 0 }
-      ]
-    })
-
-    const { default: handler } = await import('./history')
-    const req = {
-      method: 'GET',
-      query: {
-        address: '0xA7b6f3d18db39F65C8056d0892Af76c07d15Fc5a'
-      },
-      headers: {}
-    } as any
-    const res = createMockResponse()
-
-    await handler(req, res as any)
-
-    expect(res.statusCode).toBe(200)
-    expect(res.body).toEqual({
-      address: '0xA7b6f3d18db39F65C8056d0892Af76c07d15Fc5a',
+  it('passes multi-vault filters through the simple history alias', async () => {
+    getHoldingsProtocolReturnHistoryMock.mockResolvedValue({
+      address: '0xa7b6f3d18db39f65c8056d0892af76c07d15fc5a',
       version: 'all',
-      denomination: 'usd',
       timeframe: '1y',
-      dataPoints: [
-        { date: '2026-04-20', value: 0 },
-        { date: '2026-04-21', value: 0 }
-      ]
+      generatedAt: '2026-04-28T00:00:00.000Z',
+      summary: {
+        totalVaults: 2,
+        completeVaults: 2,
+        partialVaults: 0,
+        recommendedGrowthDisplay: 'index',
+        recommendedGrowthDisplayReason: 'mixed',
+        openBaselineCompositionUsd: {
+          stable: 0,
+          ethFamily: 0,
+          other: 0
+        },
+        isComplete: true
+      },
+      dataPoints: [],
+      familySeries: []
     })
-  })
 
-  it('passes multi-vault filters to historical holdings chart', async () => {
-    getHistoricalHoldingsChartMock.mockResolvedValue({
-      address: '0xA7b6f3d18db39F65C8056d0892Af76c07d15Fc5a',
-      periodDays: 365,
-      timeframe: '1y',
-      denomination: 'usd',
-      hasActivity: true,
-      dataPoints: [{ date: '2026-04-21', timestamp: 1776815999, value: 42 }]
-    })
-
-    const { default: handler } = await import('./history')
+    const { default: handler } = await import('./simple-history')
     const req = {
       method: 'GET',
       query: {
@@ -113,12 +88,11 @@ describe('holdings history route', () => {
     await handler(req, res as any)
 
     expect(res.statusCode).toBe(200)
-    expect(getHistoricalHoldingsChartMock).toHaveBeenCalledWith(
+    expect(getHoldingsProtocolReturnHistoryMock).toHaveBeenCalledWith(
       '0xA7b6f3d18db39F65C8056d0892Af76c07d15Fc5a',
       'all',
       'seq',
       'paged',
-      'usd',
       '1y',
       [
         { chainId: 1, vaultAddress: '0x696d02Db93291651ED510704c9b286841d506987' },

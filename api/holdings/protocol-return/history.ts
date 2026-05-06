@@ -31,6 +31,62 @@ function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
 
+function parseVaultFilters({
+  vault,
+  chainId,
+  vaults
+}: {
+  vault: string | string[] | undefined
+  chainId: string | string[] | undefined
+  vaults: string | string[] | undefined
+}): Array<{ chainId: number; vaultAddress: string }> | null | undefined {
+  if (vaults !== undefined) {
+    if (typeof vaults !== 'string') {
+      return null
+    }
+
+    const entries = vaults
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+    const parsedEntries = entries.map((entry) => {
+      const [entryChainId, entryVaultAddress] = entry.split(':')
+      const parsedChainId = Number(entryChainId)
+
+      if (
+        !entryChainId ||
+        !entryVaultAddress ||
+        !Number.isInteger(parsedChainId) ||
+        !isValidAddress(entryVaultAddress)
+      ) {
+        return null
+      }
+
+      return { chainId: parsedChainId, vaultAddress: entryVaultAddress }
+    })
+
+    if (parsedEntries.some((entry) => entry === null)) {
+      return null
+    }
+
+    return parsedEntries.filter((entry): entry is { chainId: number; vaultAddress: string } => entry !== null)
+  }
+
+  if (vault === undefined) {
+    return undefined
+  }
+
+  if (typeof vault !== 'string' || !isValidAddress(vault)) {
+    return null
+  }
+
+  if (!chainId || typeof chainId !== 'string' || !Number.isInteger(Number(chainId))) {
+    return null
+  }
+
+  return [{ chainId: Number(chainId), vaultAddress: vault }]
+}
+
 function parseHoldingsEventFetchType(value: string | string[] | undefined): HoldingsEventFetchType {
   return value === 'parallel' ? 'parallel' : 'seq'
 }
@@ -82,6 +138,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     address,
     chainId: chainIdParam,
     vault: vaultParam,
+    vaults: vaultsParam,
     version: versionParam,
     fetchType: fetchTypeParam,
     paginationMode: paginationModeParam,
@@ -96,16 +153,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid Ethereum address' })
   }
 
-  if (vaultParam !== undefined && typeof vaultParam !== 'string') {
-    return res.status(400).json({ error: 'Invalid vault address' })
-  }
+  const vaultFilters = parseVaultFilters({
+    vault: vaultParam,
+    chainId: chainIdParam,
+    vaults: vaultsParam
+  })
 
-  if (vaultParam && !isValidAddress(vaultParam)) {
-    return res.status(400).json({ error: 'Invalid vault address' })
-  }
-
-  if (vaultParam && (!chainIdParam || typeof chainIdParam !== 'string' || !Number.isInteger(Number(chainIdParam)))) {
-    return res.status(400).json({ error: 'Missing or invalid chainId for vault filter' })
+  if (vaultFilters === null) {
+    return res.status(400).json({ error: 'Invalid vault filter' })
   }
 
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
@@ -114,15 +169,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)
 
   try {
-    const { getHoldingsProtocolReturnHistory } = await import('../../../lib/holdings')
+    const { getHoldingsProtocolReturnHistory } = await import('../../lib/holdings')
     const history = await getHoldingsProtocolReturnHistory(
       address,
       version,
       fetchType,
       paginationMode,
       timeframe,
-      vaultParam,
-      vaultParam ? Number(chainIdParam) : undefined
+      vaultFilters
     )
 
     if (history.summary.totalVaults === 0) {

@@ -267,7 +267,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       }
     }
     return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults]
-  }, [allVaults, balances, getPrice, yvUsdLockedSharePrice, yvUsdUnlockedSharePrice])
+  }, [allVaults, balances, getPrice, getVaultHoldingsUsd, yvUsdLockedSharePrice, yvUsdUnlockedSharePrice])
 
   /***************************************************************************
    **	Setup and render the Context provider to use in the app.

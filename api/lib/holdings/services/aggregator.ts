@@ -29,14 +29,11 @@ import {
   deriveNestedVaultAssetPriceData,
   expandNestedVaultAssetPriceRequests,
   getNestedVaultPpsIdentifiersFromPriceRequests,
-  mergeVaultIdentifiers
+  mergeVaultIdentifiers,
+  resolveNestedVaultAssetMetadata
 } from './nestedVaultPrices'
 import { toVaultKey } from './pnlShared'
-import {
-  getSettledAddressScopedContext,
-  getSettledVersionedPpsContext,
-  resolveNestedVaultAssetMetadata
-} from './settledHoldingsContext'
+import { getSettledAddressScopedContext, getSettledVersionedPpsContext } from './settledHoldingsContext'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
 export interface HoldingsHistoryResponse {
@@ -49,6 +46,7 @@ export interface HoldingsHistoryResponse {
 
 export type HoldingsHistoryDenomination = 'usd' | 'eth'
 export type HoldingsHistoryTimeframe = '1y' | 'all'
+export type HoldingsVaultFilter = { chainId: number; vaultAddress: string }
 
 export interface HoldingsHistoryChartResponse {
   address: string
@@ -120,6 +118,20 @@ function filterVaultsByAuthoritativeVersion<
   })
 }
 
+function filterVaultsByRequestedVault<TVault extends { chainId: number; vaultAddress: string }>(
+  vaults: TVault[],
+  requestedVaults?: HoldingsVaultFilter[]
+): TVault[] {
+  if (!requestedVaults?.length) {
+    return vaults
+  }
+
+  const requestedVaultKeys = new Set(
+    requestedVaults.map((vault) => toVaultKey(vault.chainId, vault.vaultAddress.toLowerCase()))
+  )
+  return vaults.filter((vault) => requestedVaultKeys.has(toVaultKey(vault.chainId, vault.vaultAddress)))
+}
+
 function buildEmptyBreakdownResponse(
   userAddress: string,
   version: VaultVersion,
@@ -154,7 +166,8 @@ export async function getHistoricalHoldings(
   version: VaultVersion = 'all',
   fetchType: HoldingsEventFetchType = 'seq',
   paginationMode: HoldingsEventPaginationMode = 'paged',
-  timeframe: HoldingsHistoryTimeframe = '1y'
+  timeframe: HoldingsHistoryTimeframe = '1y',
+  requestedVaults?: HoldingsVaultFilter[]
 ): Promise<HoldingsHistoryResponse> {
   const defaultDays = config.historyDays
   const baseContext = await getSettledAddressScopedContext({
@@ -179,7 +192,9 @@ export async function getHistoricalHoldings(
   // Fetch cached totals with timestamp info for staleness check
   let cachedTotals: CachedTotal[] = []
   let oldestUpdatedAt: Date | null = null
-  if (timeframe !== 'all') {
+  const shouldReadCache = timeframe !== 'all' && !requestedVaults?.length
+  const shouldWriteCache = !requestedVaults?.length
+  if (shouldReadCache) {
     const startDate = timestampToDateString(timestamps[0])
     const endDate = timestampToDateString(timestamps[timestamps.length - 1])
     const cachedResult = await getCachedTotalsWithTimestamp(userAddress, version, startDate, endDate)
@@ -218,7 +233,12 @@ export async function getHistoricalHoldings(
   }
 
   const vaultMetadata = baseContext.vaultMetadata
-  const vaults = filterVaultsByAuthoritativeVersion(baseContext.rawVaultIdentifiers, vaultMetadata, version)
+  const versionFilteredVaults = filterVaultsByAuthoritativeVersion(
+    baseContext.rawVaultIdentifiers,
+    vaultMetadata,
+    version
+  )
+  const vaults = filterVaultsByRequestedVault(versionFilteredVaults, requestedVaults)
   debugLog('history', 'resolved authoritative vault versions for history', {
     version,
     fetchType,
@@ -229,7 +249,7 @@ export async function getHistoricalHoldings(
   })
 
   // Check if any vaults have been invalidated since cache was written
-  if (cachedTotals.length > 0 && vaults.length > 0) {
+  if (shouldReadCache && cachedTotals.length > 0 && vaults.length > 0) {
     const vaultIdentifiers = vaults.map((v) => ({ address: v.vaultAddress, chainId: v.chainId }))
     const isStale = await checkCacheStaleness(vaultIdentifiers, oldestUpdatedAt)
     debugLog('history', 'completed cache staleness check', {
@@ -423,7 +443,7 @@ export async function getHistoricalHoldings(
       })
     }
 
-    if (newTotals.length > 0) {
+    if (shouldWriteCache && newTotals.length > 0) {
       await saveCachedTotals(userAddress, version, newTotals)
       debugLog('history', 'saved recalculated totals to cache', {
         version,
@@ -467,9 +487,17 @@ export async function getHistoricalHoldingsChart(
   fetchType: HoldingsEventFetchType = 'seq',
   paginationMode: HoldingsEventPaginationMode = 'paged',
   denomination: HoldingsHistoryDenomination = 'usd',
-  timeframe: HoldingsHistoryTimeframe = '1y'
+  timeframe: HoldingsHistoryTimeframe = '1y',
+  requestedVaults?: HoldingsVaultFilter[]
 ): Promise<HoldingsHistoryChartResponse> {
-  const holdings = await getHistoricalHoldings(userAddress, version, fetchType, paginationMode, timeframe)
+  const holdings = await getHistoricalHoldings(
+    userAddress,
+    version,
+    fetchType,
+    paginationMode,
+    timeframe,
+    requestedVaults
+  )
 
   if (denomination === 'usd') {
     return {
