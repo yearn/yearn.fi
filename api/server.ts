@@ -43,24 +43,9 @@ import {
 import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
-const DEFAULT_API_SERVER_PORT = '3001'
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
-
-function resolveApiServerPort(env: NodeJS.ProcessEnv): number {
-  const configuredPort = env.API_SERVER_PORT
-  if (configuredPort) {
-    const parsedConfiguredPort = Number(configuredPort)
-    if (Number.isInteger(parsedConfiguredPort) && parsedConfiguredPort > 0) {
-      return parsedConfiguredPort
-    }
-  }
-
-  return Number(DEFAULT_API_SERVER_PORT)
-}
-
-const API_SERVER_PORT = resolveApiServerPort(process.env)
 
 type TTenderlyJsonRpcSuccess = {
   id: string | number | null
@@ -393,6 +378,7 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
   const tokenOut = url.searchParams.get('tokenOut')
   const amountIn = url.searchParams.get('amountIn')
   const slippage = url.searchParams.get('slippage') || '100'
+  const routingStrategy = url.searchParams.get('routingStrategy')
   const destinationChainId = url.searchParams.get('destinationChainId')
   const receiver = url.searchParams.get('receiver')
 
@@ -420,6 +406,9 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
   }
   if (receiver) {
     params.set('receiver', receiver)
+  }
+  if (routingStrategy) {
+    params.set('routingStrategy', routingStrategy)
   }
 
   const ensoUrl = `${ENSO_API_BASE}/api/v1/shortcuts/route?${params}`

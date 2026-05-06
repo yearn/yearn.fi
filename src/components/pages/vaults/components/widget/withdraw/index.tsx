@@ -22,6 +22,7 @@ import { WidgetHeader } from '../shared/WidgetHeader'
 import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
 import { getPriorityTokens } from './constants'
 import { SourceSelector } from './SourceSelector'
+import { buildSafeWithdrawBatch } from './safeWithdrawBatch'
 import type { WithdrawalSource, WithdrawWidgetProps } from './types'
 import { useWithdrawError } from './useWithdrawError'
 import { useWithdrawFlow } from './useWithdrawFlow'
@@ -126,8 +127,17 @@ export function WidgetWithdraw({
   const bootstrapEnsoQuoteDebugRef = useRef<Record<string, unknown> | null>(null)
   const lastBootstrapEnsoQuoteDebugKeyRef = useRef<string | null>(null)
   const lastProtectedEnsoQuoteDebugKeyRef = useRef<string | null>(null)
-  const { account, openLoginModal, refreshWalletBalances, getToken, zapSlippage, getPrice, trackEvent, ensoEnabled } =
-    useWidgetContext({ chainId, vaultAddress })
+  const {
+    account,
+    openLoginModal,
+    refreshWalletBalances,
+    getToken,
+    zapSlippage,
+    getPrice,
+    trackEvent,
+    ensoEnabled,
+    isWalletSafe
+  } = useWidgetContext({ chainId, vaultAddress })
 
   const resolvedDisplayAssetAddress = displayAssetAddress ?? assetAddress
 
@@ -366,7 +376,8 @@ export function WidgetWithdraw({
     withdrawalSource,
     isUnstake,
     isDebouncing: disableFlow ? false : withdrawAmount.isDebouncing,
-    useErc4626: usesErc4626
+    useErc4626: usesErc4626,
+    ensoRoutingStrategy: isWalletSafe ? 'router' : undefined
   })
   const effectiveDirectWithdrawPrepare = blockDirectWithdrawStep
     ? undefined
@@ -719,6 +730,41 @@ export function WidgetWithdraw({
   })
   const formattedRequiredShares = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
   const formattedApprovalAmount = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
+  const safeWithdrawBatch = useMemo(() => {
+    if (!isWalletSafe || !approvalState.needsApproval) {
+      return undefined
+    }
+
+    return buildSafeWithdrawBatch({
+      routeType,
+      account,
+      sourceToken: toAddress(sourceToken),
+      amount: effectiveRequiredShares,
+      currentAllowance: activeFlow.periphery.allowance,
+      chainId,
+      approvalSpenderAddress: approvalState.spenderAddress,
+      routerAddress: activeFlow.periphery.routerAddress ? toAddress(activeFlow.periphery.routerAddress) : undefined,
+      ensoTx: activeFlow.periphery.tx
+        ? {
+            to: toAddress(activeFlow.periphery.tx.to),
+            data: activeFlow.periphery.tx.data,
+            value: activeFlow.periphery.tx.value
+          }
+        : undefined
+    })
+  }, [
+    account,
+    activeFlow.periphery.allowance,
+    activeFlow.periphery.routerAddress,
+    activeFlow.periphery.tx,
+    approvalState.needsApproval,
+    approvalState.spenderAddress,
+    chainId,
+    effectiveRequiredShares,
+    isWalletSafe,
+    routeType,
+    sourceToken
+  ])
 
   const currentStep: TransactionStep | undefined = useMemo(
     () =>
@@ -740,7 +786,8 @@ export function WidgetWithdraw({
         stakingTokenSymbol: stakingToken?.symbol,
         approveNotificationParams,
         unstakeNotificationParams,
-        withdrawNotificationParams
+        withdrawNotificationParams,
+        safeWithdrawBatch
       }),
     [
       approvalState.needsApproval,
@@ -760,7 +807,8 @@ export function WidgetWithdraw({
       stakingToken?.symbol,
       approveNotificationParams,
       unstakeNotificationParams,
-      withdrawNotificationParams
+      withdrawNotificationParams,
+      safeWithdrawBatch
     ]
   )
 

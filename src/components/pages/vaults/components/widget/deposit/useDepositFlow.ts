@@ -3,11 +3,12 @@ import { useDirectDeposit } from '@pages/vaults/hooks/actions/useDirectDeposit'
 import { useDirectStake } from '@pages/vaults/hooks/actions/useDirectStake'
 import { useEnsoDeposit } from '@pages/vaults/hooks/actions/useEnsoDeposit'
 import { useYvUsdLockedZapDeposit } from '@pages/vaults/hooks/actions/useYvUsdLockedZapDeposit'
+import type { EnsoRoutingStrategy } from '@pages/vaults/hooks/solvers/useSolverEnso'
 import { YVUSD_LOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { toAddress } from '@shared/utils'
 import { toBasisPoints } from '@shared/utils/slippage'
 import { useMemo } from 'react'
-import { type Address, isAddressEqual } from 'viem'
+import { type Address, type Hex, isAddressEqual } from 'viem'
 import { useReadContract } from 'wagmi'
 import type { DepositRouteType } from './types'
 import { useDepositRoute } from './useDepositRoute'
@@ -34,6 +35,7 @@ interface UseDepositFlowProps {
   vaultDecimals: number
   // Settings
   slippage: number
+  ensoRoutingStrategy?: EnsoRoutingStrategy
   stakingSource?: string
 }
 
@@ -57,6 +59,13 @@ export interface DepositFlowResult {
       isLoadingExpectedOutNormalization: boolean
       isCrossChain: boolean
       routerAddress?: string
+      tx?: {
+        to: Address
+        data: Hex
+        value: string
+        from: Address
+      }
+      gas?: string
       error?: unknown
     }
   }
@@ -78,6 +87,7 @@ export const useDepositFlow = ({
   inputDecimals,
   vaultDecimals,
   slippage,
+  ensoRoutingStrategy,
   stakingSource
 }: UseDepositFlowProps): DepositFlowResult => {
   // Determine routing type
@@ -142,7 +152,8 @@ export const useDepositFlow = ({
     destinationChainId,
     decimalsOut: vaultDecimals,
     enabled: routeType === 'ENSO' && !!depositToken && amount > 0n && currentAmount > 0n,
-    slippage: toBasisPoints(slippage)
+    slippage: toBasisPoints(slippage),
+    routingStrategy: ensoRoutingStrategy
   })
 
   // Select active flow based on routing type
@@ -153,7 +164,7 @@ export const useDepositFlow = ({
     if (routeType === 'DIRECT_STAKE') return directStake
     return ensoFlow
   }, [routeType, isYvUsdLockedZapDeposit, yvUsdLockedZapDeposit, directDeposit, directStake, ensoFlow])
-
+  console.log('activeFlow', activeFlow)
   const shouldNormalizeExpectedOut =
     !!stakingAddress && isAddressEqual(destinationToken, stakingAddress) && activeFlow.periphery.expectedOut > 0n
   const shouldNormalizeMinExpectedOut =

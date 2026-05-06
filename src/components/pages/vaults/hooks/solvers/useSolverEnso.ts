@@ -8,6 +8,7 @@ import { useTokenAllowance } from '../useTokenAllowance'
 import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse } from './ensoRoute'
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
+export type EnsoRoutingStrategy = 'router' | 'delegate' | 'router-legacy' | 'delegate-legacy' | 'ensowallet'
 
 // Known Enso router addresses per chain for pre-fetching allowance
 const ENSO_ROUTER_ADDRESSES: Record<number, Address> = {
@@ -28,6 +29,7 @@ interface UseSolverEnsoProps {
   chainId: number
   destinationChainId?: number
   slippage?: number // in basis points (e.g., 100 = 1%)
+  routingStrategy?: EnsoRoutingStrategy
   requestKey?: string
   enabled?: boolean
   decimalsOut?: number
@@ -66,6 +68,7 @@ export const useSolverEnso = ({
   chainId,
   destinationChainId,
   slippage = 100, // 1% default
+  routingStrategy,
   requestKey = 'default',
   decimalsOut = 18,
   enabled = true
@@ -116,6 +119,7 @@ export const useSolverEnso = ({
         tokenOut,
         amountIn: amountIn.toString(),
         slippage: normalizedSlippage.toString(),
+        ...(routingStrategy && { routingStrategy }),
         ...(isCrossChain && { destinationChainId: destinationChainId!.toString() }),
         ...(receiver && { receiver })
       })
@@ -188,6 +192,7 @@ export const useSolverEnso = ({
     chainId,
     destinationChainId,
     slippage,
+    routingStrategy,
     requestKey,
     enabled,
     isCrossChain

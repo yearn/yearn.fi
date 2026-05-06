@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import {
-  getPendingTransactionTitle,
-  resolveCompletionDeferral,
-  shouldAutoContinuePermitSuccess,
-  shouldRunDeferredCompletion,
   AUTO_CONTINUE_SUCCESS_DELAY_MS,
   getAutoContinueConfirmDelayMs,
+  getPendingTransactionTitle,
+  resolveCompletionDeferral,
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
   SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS,
   shouldAutoContinueFromSuccessState,
-  shouldRefetchNextStepAfterReceipt
+  shouldAutoContinuePermitSuccess,
+  shouldRefetchNextStepAfterReceipt,
+  shouldRunDeferredCompletion
 } from './transactionOverlay.helpers'
 
 describe('resolveOverlayConnectedChainId', () => {
