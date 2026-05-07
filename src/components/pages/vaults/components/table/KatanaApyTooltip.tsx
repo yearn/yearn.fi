@@ -136,7 +136,7 @@ export function KatanaApyTooltipContent({
         {hasSteerPoints ? (
           <>
             <div className={'my-2 h-px w-full bg-surface-tertiary/60'} />
-            <p className={'-mt-1 mb-2 w-full text-left text-sm text-text-secondary wrap-break-word whitespace-normal'}>
+            <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word whitespace-normal'}>
               {'The Steer Points program has concluded.'}
               <a
                 href={'https://app.steer.finance/points'}
