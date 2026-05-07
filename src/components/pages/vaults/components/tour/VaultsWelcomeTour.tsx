@@ -181,29 +181,18 @@ export function VaultsWelcomeTour({ onTourStateChange }: VaultsWelcomeTourProps)
                 </div>
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2 ">
+            <div className="mt-3 flex w-full flex-col gap-2">
               <Button
                 variant="filled"
                 onClick={handleStartTour}
-                classNameOverride="yearn--button--nextgen yearn--button-smaller font-semibold!"
+                classNameOverride="yearn--button--nextgen yearn--button-smaller w-full font-semibold!"
               >
                 {'Take a tour'}
               </Button>
               <Button
-                as="a"
-                href="https://legacy.yearn.fi/v3"
-                target="_blank"
-                rel="noreferrer noopener"
                 variant="outlined"
                 onClick={handleDismiss}
-                classNameOverride="yearn--button--nextgen yearn--button-smaller font-semibold"
-              >
-                {'Legacy site'}
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={handleDismiss}
-                classNameOverride="yearn--button--nextgen yearn--button-smaller font-semibold"
+                classNameOverride="yearn--button--nextgen yearn--button-smaller w-full font-semibold"
               >
                 {'Dismiss'}
               </Button>
