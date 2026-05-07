@@ -1440,8 +1440,7 @@ function getProtocolReturnTimestamps(events: TRawPnlEvent[], timeframe: '1y' | '
 
   const settledTimestamps = generateDailyTimestamps(config.historyDays, 1)
   const latestSettledTimestamp = settledTimestamps[settledTimestamps.length - 1] ?? 0
-  const firstEventTimestamp = sortEvents(events)[0]?.blockTimestamp ?? latestSettledTimestamp
-  return generateDailyTimestampsFromRange(firstEventTimestamp, latestSettledTimestamp).map((timestamp) =>
+  return generateDailyTimestampsFromRange(config.historyStartTimestamp, latestSettledTimestamp).map((timestamp) =>
     toSettledDayTimestamp(timestamp)
   )
 }

@@ -97,6 +97,173 @@ describe('parseDefiLlamaResponse', () => {
     expect(getPriceAtTimestamp(priceMap ?? new Map(), 1773260546)).toBe(0.9966185770862551)
   })
 
+  it('uses yearn-prices when selected and maps UTC day-end prices back to requested timestamps', async () => {
+    vi.stubEnv('HOLDINGS_PRICE_PROVIDER', 'yearn-prices')
+    vi.stubEnv('YEARN_PRICES_BASE_URL', 'https://prices.example')
+    vi.stubEnv('YEARN_PRICES_API_KEY', 'test-yearn-prices-key')
+
+    const tokenAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    const tokenKey = `ethereum:${tokenAddress}`
+    const requestedTimestamp = 1700000000
+    const normalizedTimestamp = 1700006399
+    const fetchStub = vi.fn().mockResolvedValue(
+      createBatchResponse({
+        coins: {
+          [tokenKey]: {
+            symbol: 'USDC',
+            prices: [{ timestamp: normalizedTimestamp, price: 1.002, confidence: 0.99 }]
+          }
+        }
+      })
+    )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPricesForTokenTimestamps([
+      {
+        chainId: 1,
+        address: tokenAddress,
+        timestamps: [requestedTimestamp]
+      }
+    ])
+
+    expect(fetchStub).toHaveBeenCalledTimes(1)
+
+    const [requestInput, requestInit] = fetchStub.mock.calls[0] ?? []
+    const requestUrl = new URL(String(requestInput))
+    const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+      string,
+      number[]
+    >
+
+    expect(requestUrl.origin).toBe('https://prices.example')
+    expect(requestUrl.pathname).toBe('/api/prices/batchHistorical')
+    expect(coinsParam).toEqual({
+      [tokenKey]: [normalizedTimestamp]
+    })
+    expect(requestInit).toEqual({
+      headers: {
+        Authorization: 'Bearer test-yearn-prices-key'
+      },
+      signal: expect.any(AbortSignal)
+    })
+    expect(prices.get(tokenKey)?.get(requestedTimestamp)).toBe(1.002)
+    expect(saveCachedPrices).toHaveBeenCalledWith([{ tokenKey, timestamp: requestedTimestamp, price: 1.002 }])
+    expect(saveCachedPriceMisses).not.toHaveBeenCalled()
+  })
+
+  it('uses API_KEY_PORTFOLIO as the default yearn-prices bearer token', async () => {
+    vi.stubEnv('API_KEY_PORTFOLIO', 'portfolio-test-key')
+
+    const tokenAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    const tokenKey = `ethereum:${tokenAddress}`
+    const requestedTimestamp = 1700000000
+    const normalizedTimestamp = 1700006399
+    const fetchStub = vi.fn().mockResolvedValue(
+      createBatchResponse({
+        coins: {
+          [tokenKey]: {
+            symbol: 'USDC',
+            prices: [{ timestamp: normalizedTimestamp, price: 1.002, confidence: 0.99 }]
+          }
+        }
+      })
+    )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    await fetchHistoricalPricesForTokenTimestamps([
+      {
+        chainId: 1,
+        address: tokenAddress,
+        timestamps: [requestedTimestamp]
+      }
+    ])
+
+    const [requestInput, requestInit] = fetchStub.mock.calls[0] ?? []
+    const requestUrl = new URL(String(requestInput))
+
+    expect(requestUrl.origin).toBe('https://prices.yearn.dev')
+    expect(requestInit).toEqual({
+      headers: {
+        Authorization: 'Bearer portfolio-test-key'
+      },
+      signal: expect.any(AbortSignal)
+    })
+  })
+
+  it('uses yearn-prices range requests for contiguous daily timestamp history', async () => {
+    vi.stubEnv('API_KEY_PORTFOLIO', 'portfolio-test-key')
+
+    const firstTokenAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    const secondTokenAddress = '0xc2d3d421e23149b78d1843d0d59530dc0bd5add4'
+    const firstTokenKey = `ethereum:${firstTokenAddress}`
+    const secondTokenKey = `ethereum:${secondTokenAddress}`
+    const firstTimestamp = 1704153599
+    const secondTimestamp = 1704239999
+    const fetchStub = vi.fn().mockResolvedValue(
+      createBatchResponse({
+        coins: {
+          [firstTokenKey]: {
+            symbol: 'USDC',
+            prices: [
+              { timestamp: firstTimestamp, price: 1.001, confidence: 0.99 },
+              { timestamp: secondTimestamp, price: 1.002, confidence: 0.99 }
+            ]
+          },
+          [secondTokenKey]: {
+            symbol: 'TKN',
+            prices: [
+              { timestamp: firstTimestamp, price: 2.001, confidence: 0.99 },
+              { timestamp: secondTimestamp, price: 2.002, confidence: 0.99 }
+            ]
+          }
+        }
+      })
+    )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await fetchHistoricalPricesForTokenTimestamps([
+      {
+        chainId: 1,
+        address: firstTokenAddress,
+        timestamps: [firstTimestamp, secondTimestamp]
+      },
+      {
+        chainId: 1,
+        address: secondTokenAddress,
+        timestamps: [firstTimestamp, secondTimestamp]
+      }
+    ])
+
+    expect(fetchStub).toHaveBeenCalledTimes(1)
+
+    const [requestInput, requestInit] = fetchStub.mock.calls[0] ?? []
+    const requestUrl = new URL(String(requestInput))
+    const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+      string,
+      [number, number]
+    >
+
+    expect(requestUrl.origin).toBe('https://prices.yearn.dev')
+    expect(requestUrl.pathname).toBe('/api/prices/rangeHistorical')
+    expect(coinsParam).toEqual({
+      [firstTokenKey]: [firstTimestamp, secondTimestamp],
+      [secondTokenKey]: [firstTimestamp, secondTimestamp]
+    })
+    expect(requestInit).toEqual({
+      headers: {
+        Authorization: 'Bearer portfolio-test-key'
+      },
+      signal: expect.any(AbortSignal)
+    })
+    expect(prices.get(firstTokenKey)?.get(firstTimestamp)).toBe(1.001)
+    expect(prices.get(firstTokenKey)?.get(secondTimestamp)).toBe(1.002)
+    expect(prices.get(secondTokenKey)?.get(firstTimestamp)).toBe(2.001)
+    expect(prices.get(secondTokenKey)?.get(secondTimestamp)).toBe(2.002)
+  })
+
   it('only uses historical prices at or before the requested timestamp', () => {
     const priceMap = new Map<number, number>([
       [1700000102, 0.999211],

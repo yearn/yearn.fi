@@ -428,7 +428,7 @@ describe('getHistoricalHoldings', () => {
     expect(response.dataPoints).toEqual([{ date: 'date-100', timestamp: 101, totalUsdValue: 0 }])
   })
 
-  it('expands all timeframe from the first wallet event to the latest settled day', async () => {
+  it('expands all timeframe from the supported history start to the latest settled day', async () => {
     const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
     const vaultAddress = '0x00000000000000000000000000000000000000b2'
     const tokenAddress = '0x0000000000000000000000000000000000000bb2'
@@ -487,8 +487,8 @@ describe('getHistoricalHoldings', () => {
     const { getHistoricalHoldingsChart } = await import('./aggregator')
     const response = await getHistoricalHoldingsChart(userAddress, 'all', 'parallel', 'all', 'usd', 'all')
 
-    expect(generateDailyTimestampsFromRangeMock).toHaveBeenCalledWith(50, 200)
-    expect(getCachedTotalsWithTimestampMock).not.toHaveBeenCalled()
+    expect(generateDailyTimestampsFromRangeMock).toHaveBeenCalledWith(1_704_067_200, 200)
+    expect(getCachedTotalsWithTimestampMock).toHaveBeenCalledWith(userAddress, 'all', 'date-50', 'date-200')
     expect(saveCachedTotalsMock).toHaveBeenCalledWith(userAddress, 'all', [
       { date: 'date-50', usdValue: 1 },
       { date: 'date-100', usdValue: 1 },

@@ -15,6 +15,12 @@ type TDefiLlamaError = Error & {
   status?: number
 }
 
+type THistoricalPriceProvider = 'defillama' | 'yearn-prices'
+type THistoricalPriceProviderConfig = {
+  provider: THistoricalPriceProvider
+  label: string
+}
+
 const RETRYABLE_ERROR_CODES = new Set([
   'ECONNRESET',
   'ECONNREFUSED',
@@ -29,9 +35,12 @@ const RETRYABLE_ERROR_CODES = new Set([
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504])
 const DEFAULT_TIMEOUT_MS = 4_000
 const DEFAULT_PRO_TIMEOUT_MS = 12_000
+const DEFAULT_YEARN_PRICES_TIMEOUT_MS = 8_000
 const DEFAULT_MAX_RETRIES = 2
 const DEFAULT_RETRY_DELAY_MS = 200
 const DEFAULT_MAX_REQUEST_URL_LENGTH = 3_500
+const DEFAULT_YEARN_PRICES_MAX_REQUEST_URL_LENGTH = 8_000
+const YEARN_PRICES_MAX_RANGE_DAYS = 366
 const MAX_REQUESTED_PRICE_DISTANCE_SECONDS = 60 * 60
 const MAX_DAILY_PRICE_DISTANCE_SECONDS = 60 * 60 * 24
 const SPLITTABLE_GET_STATUS_CODES = new Set([414, 431, 505])
@@ -43,6 +52,7 @@ type TMissingPriceFetchGroup = {
   coins: TCoinRequest[]
 }
 type TDefiLlamaFetchTuning = {
+  provider: THistoricalPriceProvider
   useProApi: boolean
   timeoutMs: number
   maxRetries: number
@@ -59,7 +69,7 @@ type TDefiLlamaFetchTuning = {
 type TDefiLlamaBatchRequest = {
   url: string
   init: RequestInit
-  variant: 'free_get' | 'pro_get'
+  variant: 'free_get' | 'pro_get' | 'yearn_prices_get' | 'yearn_prices_range_get'
 }
 
 export type THistoricalPriceRequest = {
@@ -79,6 +89,74 @@ type THistoricalPriceFetchOptions = {
 export function getChainPrefix(chainId: number): string {
   const chain = SUPPORTED_CHAINS.find((c) => c.id === chainId)
   return chain?.defillamaPrefix || 'ethereum'
+}
+
+function normalizeToUtcDayEnd(timestamp: number): number {
+  return Math.floor(timestamp / 86_400) * 86_400 + 86_399
+}
+
+function getNormalizedUtcDayEndTimestamps(timestamps: number[]): number[] {
+  return [...new Set(timestamps.map((timestamp) => normalizeToUtcDayEnd(timestamp)))].sort((a, b) => a - b)
+}
+
+function getContiguousUtcDayEndRange(timestamps: number[]): [number, number] | null {
+  const dayEndTimestamps = getNormalizedUtcDayEndTimestamps(timestamps)
+
+  if (dayEndTimestamps.length === 0 || dayEndTimestamps.length > YEARN_PRICES_MAX_RANGE_DAYS) {
+    return null
+  }
+
+  const isContiguous = dayEndTimestamps.every((timestamp, index) => {
+    if (index === 0) {
+      return true
+    }
+
+    return timestamp - dayEndTimestamps[index - 1]! === 86_400
+  })
+
+  return isContiguous ? [dayEndTimestamps[0]!, dayEndTimestamps[dayEndTimestamps.length - 1]!] : null
+}
+
+function shouldUseYearnPricesRangeRequest(coins: TCoinRequest[]): boolean {
+  return (
+    coins.some((coin) => getNormalizedUtcDayEndTimestamps(coin.timestamps).length > 1) &&
+    coins.every((coin) => getContiguousUtcDayEndRange(coin.timestamps) !== null)
+  )
+}
+
+function normalizeRequestedPriceProvider(value: string | undefined): 'auto' | THistoricalPriceProvider {
+  const normalized = (value ?? 'auto').trim().toLowerCase()
+
+  if (normalized === 'yearn' || normalized === 'yearn-prices' || normalized === 'yearn_prices') {
+    return 'yearn-prices'
+  }
+
+  if (normalized === 'defillama' || normalized === 'llama') {
+    return 'defillama'
+  }
+
+  return 'auto'
+}
+
+function getHistoricalPriceProviderConfig(): THistoricalPriceProviderConfig {
+  const requestedProvider = normalizeRequestedPriceProvider(process.env.HOLDINGS_PRICE_PROVIDER)
+  const hasYearnPricesConfig = config.yearnPricesBaseUrl.length > 0 && config.yearnPricesApiKey.length > 0
+
+  if (requestedProvider === 'yearn-prices') {
+    if (!hasYearnPricesConfig) {
+      throw new Error(
+        'yearn-prices provider requires YEARN_PRICES_BASE_URL and YEARN_PRICES_API_KEY or API_KEY_PORTFOLIO'
+      )
+    }
+
+    return { provider: 'yearn-prices', label: 'yearn-prices' }
+  }
+
+  if (requestedProvider === 'auto' && hasYearnPricesConfig) {
+    return { provider: 'yearn-prices', label: 'yearn-prices' }
+  }
+
+  return { provider: 'defillama', label: 'DefiLlama' }
 }
 
 function wait(delayMs: number): Promise<void> {
@@ -189,7 +267,12 @@ function buildRequestBatches(
     const nextBatchUrlLength =
       tuning.maxRequestUrlLength === null
         ? 0
-        : (tuning.useProApi ? buildProBatchHistoricalGetUrl(nextBatch) : buildBatchHistoricalUrl(nextBatch)).length
+        : (tuning.provider === 'yearn-prices'
+            ? buildYearnPricesRequest(nextBatch).url
+            : tuning.useProApi
+              ? buildProBatchHistoricalGetUrl(nextBatch)
+              : buildBatchHistoricalUrl(nextBatch)
+          ).length
 
     if (
       currentBatch.length > 0 &&
@@ -399,9 +482,28 @@ function splitMissingCoinsByCacheability(
   return [groups.cacheable, groups.uncached].filter((group) => group.coins.length > 0)
 }
 
-function buildCoinsParam(coins: TCoinRequest[]): Record<string, number[]> {
+function buildCoinsParam(
+  coins: TCoinRequest[],
+  options: { normalizeTimestampsToDayEnd?: boolean } = {}
+): Record<string, number[]> {
   return coins.reduce<Record<string, number[]>>((accumulator, coin) => {
-    accumulator[`${coin.chain}:${coin.address.toLowerCase()}`] = coin.timestamps
+    const timestamps = options.normalizeTimestampsToDayEnd
+      ? getNormalizedUtcDayEndTimestamps(coin.timestamps)
+      : coin.timestamps
+
+    accumulator[`${coin.chain}:${coin.address.toLowerCase()}`] = timestamps
+    return accumulator
+  }, {})
+}
+
+function buildRangeCoinsParam(coins: TCoinRequest[]): Record<string, [number, number]> {
+  return coins.reduce<Record<string, [number, number]>>((accumulator, coin) => {
+    const range = getContiguousUtcDayEndRange(coin.timestamps)
+
+    if (range !== null) {
+      accumulator[`${coin.chain}:${coin.address.toLowerCase()}`] = range
+    }
+
     return accumulator
   }, {})
 }
@@ -416,7 +518,52 @@ function buildProBatchHistoricalGetUrl(coins: TCoinRequest[]): string {
   return `${config.defillamaProBaseUrl}/${config.defillamaApiKey}/coins/batchHistorical?coins=${encodedCoins}`
 }
 
-function buildBatchHistoricalRequests(coins: TCoinRequest[]): TDefiLlamaBatchRequest[] {
+function buildYearnPricesBatchHistoricalUrl(coins: TCoinRequest[]): string {
+  const encodedCoins = encodeURIComponent(JSON.stringify(buildCoinsParam(coins, { normalizeTimestampsToDayEnd: true })))
+  const apiBaseUrl = config.yearnPricesBaseUrl.endsWith('/api')
+    ? config.yearnPricesBaseUrl
+    : `${config.yearnPricesBaseUrl}/api`
+  return `${apiBaseUrl}/prices/batchHistorical?coins=${encodedCoins}`
+}
+
+function buildYearnPricesRangeHistoricalUrl(coins: TCoinRequest[]): string {
+  const encodedCoins = encodeURIComponent(JSON.stringify(buildRangeCoinsParam(coins)))
+  const apiBaseUrl = config.yearnPricesBaseUrl.endsWith('/api')
+    ? config.yearnPricesBaseUrl
+    : `${config.yearnPricesBaseUrl}/api`
+  return `${apiBaseUrl}/prices/rangeHistorical?coins=${encodedCoins}`
+}
+
+function buildYearnPricesRequest(coins: TCoinRequest[]): Pick<TDefiLlamaBatchRequest, 'url' | 'variant'> {
+  if (shouldUseYearnPricesRangeRequest(coins)) {
+    return {
+      url: buildYearnPricesRangeHistoricalUrl(coins),
+      variant: 'yearn_prices_range_get'
+    }
+  }
+
+  return {
+    url: buildYearnPricesBatchHistoricalUrl(coins),
+    variant: 'yearn_prices_get'
+  }
+}
+
+function buildBatchHistoricalRequests(coins: TCoinRequest[], tuning: TDefiLlamaFetchTuning): TDefiLlamaBatchRequest[] {
+  if (tuning.provider === 'yearn-prices') {
+    const request = buildYearnPricesRequest(coins)
+    return [
+      {
+        url: request.url,
+        init: {
+          headers: {
+            Authorization: `Bearer ${config.yearnPricesApiKey}`
+          }
+        },
+        variant: request.variant
+      }
+    ]
+  }
+
   if (config.defillamaApiKey.length === 0) {
     return [
       {
@@ -504,9 +651,27 @@ function splitCoinBatch(
   }
 }
 
-function getDefiLlamaFetchTuning(): TDefiLlamaFetchTuning {
+function getDefiLlamaFetchTuning(providerConfig: THistoricalPriceProviderConfig): TDefiLlamaFetchTuning {
+  if (providerConfig.provider === 'yearn-prices') {
+    return {
+      provider: 'yearn-prices',
+      useProApi: false,
+      timeoutMs: DEFAULT_YEARN_PRICES_TIMEOUT_MS,
+      maxRetries: DEFAULT_MAX_RETRIES,
+      retryDelayMs: DEFAULT_RETRY_DELAY_MS,
+      timestampBatchSize: 90,
+      maxTokensPerBatch: 50,
+      maxTimestampsPerTokenPerBatch: 90,
+      maxPricePointsPerBatch: 4_500,
+      maxRequestUrlLength: DEFAULT_YEARN_PRICES_MAX_REQUEST_URL_LENGTH,
+      parallelRequests: 8,
+      interGroupDelayMs: 0
+    }
+  }
+
   if (config.defillamaApiKey.length > 0) {
     return {
+      provider: 'defillama',
       useProApi: true,
       timeoutMs: DEFAULT_PRO_TIMEOUT_MS,
       maxRetries: DEFAULT_MAX_RETRIES,
@@ -522,6 +687,7 @@ function getDefiLlamaFetchTuning(): TDefiLlamaFetchTuning {
   }
 
   return {
+    provider: 'defillama',
     useProApi: false,
     timeoutMs: DEFAULT_TIMEOUT_MS,
     maxRetries: DEFAULT_MAX_RETRIES,
@@ -558,15 +724,16 @@ async function fetchBatch(
 ): Promise<Map<string, Map<number, number>>> {
   const uniqueTimestamps = [...new Set(coinBatch.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
   const requestedPricePoints = countRequestedPricePoints(coinBatch)
-  const requests = buildBatchHistoricalRequests(coinBatch)
+  const requests = buildBatchHistoricalRequests(coinBatch, tuning)
   const batchDebugSummary = buildBatchDebugSummary(coinBatch, uniqueTimestamps)
   const requestDetails = requests.map((request) => ({
     variant: request.variant,
     method: request.init.method ?? 'GET',
     urlLength: request.url.length
   }))
-  debugLog('defillama', 'fetching price batch', {
+  debugLog('prices', 'fetching price batch', {
     attempt: attempt + 1,
+    provider: tuning.provider,
     tokenCount: coinBatch.length,
     timestampCount: uniqueTimestamps.length,
     pricePointCount: requestedPricePoints,
@@ -600,12 +767,13 @@ async function fetchBatch(
           const data = (await response.json()) as DefiLlamaBatchResponse
           return parseDefiLlamaResponse(data, uniqueTimestamps)
         } catch (error) {
-          if ((request.variant === 'pro_get' || request.variant === 'free_get') && isSplittableGetError(error)) {
+          if (isSplittableGetError(error)) {
             const splitBatch = splitCoinBatch(coinBatch)
 
             if (splitBatch !== null) {
-              debugError('defillama', 'splitting price batch after get request failed', error, {
+              debugError('prices', 'splitting price batch after get request failed', error, {
                 attempt: attempt + 1,
+                provider: tuning.provider,
                 tokenCount: coinBatch.length,
                 timestampCount: uniqueTimestamps.length,
                 pricePointCount: requestedPricePoints,
@@ -625,8 +793,9 @@ async function fetchBatch(
           }
 
           if (requestIndex < requests.length - 1) {
-            debugError('defillama', 'price batch request variant failed', error, {
+            debugError('prices', 'price batch request variant failed', error, {
               attempt: attempt + 1,
+              provider: tuning.provider,
               tokenCount: coinBatch.length,
               timestampCount: uniqueTimestamps.length,
               pricePointCount: requestedPricePoints,
@@ -649,8 +818,9 @@ async function fetchBatch(
       throw new Error('DefiLlama batch request resolved without a response')
     }
 
-    debugLog('defillama', 'fetched price batch', {
+    debugLog('prices', 'fetched price batch', {
       attempt: attempt + 1,
+      provider: tuning.provider,
       tokenCount: coinBatch.length,
       timestampCount: uniqueTimestamps.length,
       pricePointCount: requestedPricePoints,
@@ -663,8 +833,9 @@ async function fetchBatch(
     return parsed
   } catch (error) {
     if (attempt >= tuning.maxRetries || !isRetryableError(error)) {
-      debugError('defillama', 'price batch failed', error, {
+      debugError('prices', 'price batch failed', error, {
         attempt: attempt + 1,
+        provider: tuning.provider,
         tokenCount: coinBatch.length,
         timestampCount: uniqueTimestamps.length,
         pricePointCount: requestedPricePoints,
@@ -674,8 +845,9 @@ async function fetchBatch(
       throw error
     }
 
-    debugError('defillama', 'retrying price batch', error, {
+    debugError('prices', 'retrying price batch', error, {
       nextAttempt: attempt + 2,
+      provider: tuning.provider,
       tokenCount: coinBatch.length,
       timestampCount: uniqueTimestamps.length,
       pricePointCount: requestedPricePoints,
@@ -691,10 +863,14 @@ export async function fetchHistoricalPricesForTokenTimestamps(
   requests: THistoricalPriceRequest[],
   options: THistoricalPriceFetchOptions = {}
 ): Promise<Map<string, Map<number, number>>> {
+  const providerConfig = getHistoricalPriceProviderConfig()
   const resolution = options.resolution ?? 'strict'
-  const matchPriceAtTimestamp = getRequestedPriceMatcher(resolution)
-  const useCachedPriceMisses = resolution === 'strict'
-  const tuning = getDefiLlamaFetchTuning()
+  const matchPriceAtTimestamp =
+    providerConfig.provider === 'yearn-prices'
+      ? getPriceAtTimestampWithinDayWindow
+      : getRequestedPriceMatcher(resolution)
+  const useCachedPriceMisses = resolution === 'strict' && providerConfig.provider === 'defillama'
+  const tuning = getDefiLlamaFetchTuning(providerConfig)
   const uncachedTimestampKeys = requests.reduce<Set<string>>((uncachedKeys, request) => {
     const tokenKey = `${getChainPrefix(request.chainId)}:${request.address.toLowerCase()}`
     request.uncachedTimestamps?.forEach((timestamp) => {
@@ -715,7 +891,8 @@ export async function fetchHistoricalPricesForTokenTimestamps(
   const requestedTimestamps = [...new Set(coins.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
   const requestedPricePoints = countRequestedPricePoints(coins)
 
-  debugLog('defillama', 'starting historical price fetch', {
+  debugLog('prices', 'starting historical price fetch', {
+    provider: providerConfig.provider,
     tokens: tokenKeys.length,
     timestamps: requestedTimestamps.length,
     pricePointCount: requestedPricePoints,
@@ -748,7 +925,8 @@ export async function fetchHistoricalPricesForTokenTimestamps(
     useCachedPriceMisses ? getCachedPriceMissesForTokenTimestamps(cacheableLookups) : Promise.resolve(new Map())
   ])
   const cachedPricePoints = countPricePoints(cachedPrices)
-  debugLog('defillama', 'loaded cached price points', {
+  debugLog('prices', 'loaded cached price points', {
+    provider: providerConfig.provider,
     cachedPoints: cachedPricePoints,
     resolution
   })
@@ -777,7 +955,8 @@ export async function fetchHistoricalPricesForTokenTimestamps(
   }, new Map<string, number[]>())
 
   if (missingByToken.size === 0) {
-    debugLog('defillama', 'historical prices fully satisfied by cache', {
+    debugLog('prices', 'historical prices fully satisfied by cache', {
+      provider: providerConfig.provider,
       tokens: tokenKeys.length,
       timestamps: requestedTimestamps.length,
       pricePointCount: requestedPricePoints,
@@ -791,13 +970,24 @@ export async function fetchHistoricalPricesForTokenTimestamps(
   const fetchStats = { successfulBatches: 0 }
   const missingFetchGroups = splitMissingCoinsByCacheability(coins, missingByToken, uncachedTimestampKeys)
   const fetchMissingPriceGroup = async (fetchGroup: TMissingPriceFetchGroup): Promise<void> => {
-    const tokenRequests = buildTokenRequests(fetchGroup.coins, tuning.timestampBatchSize)
-    const batches = buildRequestBatches(tokenRequests, tuning)
-    const batchGroups = chunkItems(batches, tuning.parallelRequests)
+    const shouldUseRangeRequests =
+      tuning.provider === 'yearn-prices' && shouldUseYearnPricesRangeRequest(fetchGroup.coins)
+    const effectiveTuning = shouldUseRangeRequests
+      ? {
+          ...tuning,
+          timestampBatchSize: YEARN_PRICES_MAX_RANGE_DAYS,
+          maxTimestampsPerTokenPerBatch: YEARN_PRICES_MAX_RANGE_DAYS,
+          maxPricePointsPerBatch: tuning.maxTokensPerBatch * YEARN_PRICES_MAX_RANGE_DAYS
+        }
+      : tuning
+    const tokenRequests = buildTokenRequests(fetchGroup.coins, effectiveTuning.timestampBatchSize)
+    const batches = buildRequestBatches(tokenRequests, effectiveTuning)
+    const batchGroups = chunkItems(batches, effectiveTuning.parallelRequests)
     const allMissingTimestamps = [...new Set(fetchGroup.coins.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
     const missingPricePoints = countRequestedPricePoints(fetchGroup.coins)
 
-    debugLog('defillama', 'prepared price fetch batches', {
+    debugLog('prices', 'prepared price fetch batches', {
+      provider: providerConfig.provider,
       fetchGroup: fetchGroup.label,
       cacheResults: fetchGroup.cacheResults,
       tokensToFetch: fetchGroup.coins.length,
@@ -807,17 +997,20 @@ export async function fetchHistoricalPricesForTokenTimestamps(
       tokenRequests: tokenRequests.length,
       batches: batches.length,
       batchGroups: batchGroups.length,
-      maxTokensPerBatch: tuning.maxTokensPerBatch,
-      maxPricePointsPerBatch: tuning.maxPricePointsPerBatch,
-      maxTimestampsPerTokenPerBatch: tuning.maxTimestampsPerTokenPerBatch,
-      maxRequestUrlLength: tuning.maxRequestUrlLength,
-      useProApi: tuning.useProApi
+      maxTokensPerBatch: effectiveTuning.maxTokensPerBatch,
+      maxPricePointsPerBatch: effectiveTuning.maxPricePointsPerBatch,
+      maxTimestampsPerTokenPerBatch: effectiveTuning.maxTimestampsPerTokenPerBatch,
+      maxRequestUrlLength: effectiveTuning.maxRequestUrlLength,
+      useProApi: effectiveTuning.useProApi,
+      useRangeRequests: shouldUseRangeRequests
     })
 
     await batchGroups.reduce<Promise<void>>(async (previousGroupPromise, batchGroup, groupIndex) => {
       await previousGroupPromise
 
-      const batchResults = await Promise.allSettled(batchGroup.map((batch) => fetchBatch(batch.coinBatch, tuning)))
+      const batchResults = await Promise.allSettled(
+        batchGroup.map((batch) => fetchBatch(batch.coinBatch, effectiveTuning))
+      )
 
       batchResults.forEach((batchResult, batchIndex) => {
         const batch = batchGroup[batchIndex]
@@ -826,10 +1019,11 @@ export async function fetchHistoricalPricesForTokenTimestamps(
           const batchTimestamps = [...new Set(batch.coinBatch.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
           const batchPricePoints = batch.coinBatch.reduce((total, coin) => total + coin.timestamps.length, 0)
           console.error(
-            `[DefiLlama] Failed to fetch prices for ${batch.coinBatch.length} tokens and ${batchPricePoints} token-timestamp pairs:`,
+            `[${providerConfig.label}] Failed to fetch prices for ${batch.coinBatch.length} tokens and ${batchPricePoints} token-timestamp pairs:`,
             batchResult.reason
           )
-          debugError('defillama', 'price batch group member failed', batchResult.reason, {
+          debugError('prices', 'price batch group member failed', batchResult.reason, {
+            provider: providerConfig.provider,
             fetchGroup: fetchGroup.label,
             tokenCount: batch.coinBatch.length,
             timestampCount: batchTimestamps.length,
@@ -865,8 +1059,8 @@ export async function fetchHistoricalPricesForTokenTimestamps(
         }
       })
 
-      if (groupIndex < batchGroups.length - 1 && tuning.interGroupDelayMs > 0) {
-        await wait(tuning.interGroupDelayMs)
+      if (groupIndex < batchGroups.length - 1 && effectiveTuning.interGroupDelayMs > 0) {
+        await wait(effectiveTuning.interGroupDelayMs)
       }
     }, Promise.resolve())
   }
@@ -877,18 +1071,19 @@ export async function fetchHistoricalPricesForTokenTimestamps(
   }, Promise.resolve())
 
   if (fetchStats.successfulBatches === 0 && countPricePoints(result) === 0) {
-    throw new Error('Failed to fetch token prices from DefiLlama')
+    throw new Error(`Failed to fetch token prices from ${providerConfig.label}`)
   }
 
   if (newPrices.length > 0) {
     saveCachedPrices(newPrices).catch(() => {})
   }
 
-  if (newPriceMisses.length > 0) {
+  if (useCachedPriceMisses && newPriceMisses.length > 0) {
     saveCachedPriceMisses(newPriceMisses).catch(() => {})
   }
 
-  debugLog('defillama', 'completed historical price fetch', {
+  debugLog('prices', 'completed historical price fetch', {
+    provider: providerConfig.provider,
     successfulBatches: fetchStats.successfulBatches,
     totalPricePoints: countPricePoints(result),
     newPrices: newPrices.length,

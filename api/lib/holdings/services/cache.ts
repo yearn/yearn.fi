@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { config } from '../config'
 import { getPool, isDatabaseEnabled } from '../db/connection'
 import { debugError, debugLog } from './debug'
 import type { VaultVersion } from './graphql'
@@ -25,6 +26,10 @@ export interface CachedPriceLookup {
 }
 
 const PRICE_MISS_TTL_MS = 7 * 24 * 60 * 60 * 1_000
+
+function getSupportedHistoryStartDate(): string {
+  return new Date(config.historyStartTimestamp * 1000).toISOString().split('T')[0]
+}
 
 function normalizeUserAddress(userAddress: string): string {
   return userAddress.toLowerCase()
@@ -427,8 +432,9 @@ export async function deleteStaleCache(): Promise<number> {
   }
 
   try {
+    const historyStartDate = getSupportedHistoryStartDate()
     const [staleTotalsResult, expiredMissesResult, staleRateLimitsResult] = await Promise.all([
-      pool.query(`DELETE FROM holdings_totals WHERE date < NOW() - INTERVAL '366 days'`),
+      pool.query('DELETE FROM holdings_totals WHERE date < $1::date', [historyStartDate]),
       pool.query(`DELETE FROM token_price_misses WHERE expires_at <= NOW()`),
       pool.query(`DELETE FROM rate_limits WHERE window_start < NOW() - INTERVAL '1 day'`)
     ])

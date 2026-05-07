@@ -177,8 +177,11 @@ export async function getHistoricalHoldings(
   })
   const dayTimestamps = generateDailyTimestamps(defaultDays, 1)
   const latestSettledDayTimestamp = baseContext.latestSettledDayTimestamp
-  let timestamps = timeframe === 'all' ? [] : dayTimestamps
-  let periodDays = defaultDays
+  const timestamps =
+    timeframe === 'all'
+      ? generateDailyTimestampsFromRange(config.historyStartTimestamp, latestSettledDayTimestamp)
+      : dayTimestamps
+  const periodDays = timestamps.length
   debugLog('history', 'starting historical holdings aggregation', {
     version,
     fetchType,
@@ -192,8 +195,8 @@ export async function getHistoricalHoldings(
   // Fetch cached totals with timestamp info for staleness check
   let cachedTotals: CachedTotal[] = []
   let oldestUpdatedAt: Date | null = null
-  const shouldReadCache = timeframe !== 'all' && !requestedVaults?.length
-  const shouldWriteCache = !requestedVaults?.length
+  const shouldReadCache = timestamps.length > 0 && !requestedVaults?.length
+  const shouldWriteCache = timestamps.length > 0 && !requestedVaults?.length
   if (shouldReadCache) {
     const startDate = timestampToDateString(timestamps[0])
     const endDate = timestampToDateString(timestamps[timestamps.length - 1])
@@ -221,16 +224,6 @@ export async function getHistoricalHoldings(
     transfersOut: baseContext.events.transfersOut.length,
     timelineEntries: timeline.length
   })
-
-  if (timeframe === 'all' && timeline.length > 0) {
-    const firstEventTimestamp = timeline[0]?.blockTimestamp ?? timestamps[0]
-    const allTimestamps = generateDailyTimestampsFromRange(firstEventTimestamp, latestSettledDayTimestamp)
-
-    if (allTimestamps.length > 0) {
-      timestamps = allTimestamps
-      periodDays = allTimestamps.length
-    }
-  }
 
   const vaultMetadata = baseContext.vaultMetadata
   const versionFilteredVaults = filterVaultsByAuthoritativeVersion(
