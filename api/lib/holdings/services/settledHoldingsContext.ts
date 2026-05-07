@@ -1,4 +1,4 @@
-import { config } from '../config'
+import { holdingsConfig } from '../config'
 import type { UserEvents, VaultMetadata } from '../types'
 import { debugLog } from './debug'
 import type { THistoricalPriceRequest } from './defillama'
@@ -193,7 +193,7 @@ export async function getSettledAddressScopedContext(args: {
   }
 
   const request = (async () => {
-    const settledTimestamps = generateDailyTimestamps(config.historyDays, 1)
+    const settledTimestamps = generateDailyTimestamps(holdingsConfig.historyDays, 1)
     const latestSettledDayTimestamp = settledTimestamps[settledTimestamps.length - 1] ?? 0
     const maxTimestamp = toSettledDayTimestamp(latestSettledDayTimestamp)
     const events = await fetchUserEvents(args.userAddress, 'all', maxTimestamp, args.fetchType, args.paginationMode)

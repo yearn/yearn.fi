@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { Pool } from '@neondatabase/serverless'
-import { config } from '../config'
+import { holdingsConfig } from '../config'
 
 interface QueryResult<T> {
   rows: T[]
@@ -102,13 +102,13 @@ export function shouldDisableDatabaseOnQueryError(error: unknown): boolean {
 }
 
 async function createPool(): Promise<DatabasePool | null> {
-  if (!config.databaseUrl || databaseDisabled) {
+  if (!holdingsConfig.databaseUrl || databaseDisabled) {
     return null
   }
 
   try {
-    Pool.poolQueryViaFetch = true
-    const neonPool = new Pool({ connectionString: config.databaseUrl })
+    ;(Pool as typeof Pool & { poolQueryViaFetch?: boolean }).poolQueryViaFetch = true
+    const neonPool = new Pool({ connectionString: holdingsConfig.databaseUrl })
 
     return {
       query: async <T>(text: string, params?: unknown[]) => {
@@ -135,7 +135,7 @@ export async function getPool(): Promise<DatabasePool | null> {
     return null
   }
 
-  if (pool === null && config.databaseUrl) {
+  if (pool === null && holdingsConfig.databaseUrl) {
     pool = await createPool()
   }
   return pool
@@ -309,5 +309,5 @@ async function migrateHoldingsTotalsAddressStorage(db: DatabasePool): Promise<vo
 }
 
 export function isDatabaseEnabled(): boolean {
-  return config.databaseUrl !== null && !databaseDisabled
+  return holdingsConfig.databaseUrl !== null && !databaseDisabled
 }

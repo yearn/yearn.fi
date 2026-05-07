@@ -1,4 +1,4 @@
-import { config } from '../config'
+import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
 import type { CachedTotal } from './cache'
 import { checkCacheStaleness, clearUserCache, getCachedTotalsWithTimestamp, saveCachedTotals } from './cache'
@@ -169,7 +169,7 @@ export async function getHistoricalHoldings(
   timeframe: HoldingsHistoryTimeframe = '1y',
   requestedVaults?: HoldingsVaultFilter[]
 ): Promise<HoldingsHistoryResponse> {
-  const defaultDays = config.historyDays
+  const defaultDays = holdingsConfig.historyDays
   const baseContext = await getSettledAddressScopedContext({
     userAddress,
     fetchType,
@@ -179,7 +179,7 @@ export async function getHistoricalHoldings(
   const latestSettledDayTimestamp = baseContext.latestSettledDayTimestamp
   const timestamps =
     timeframe === 'all'
-      ? generateDailyTimestampsFromRange(config.historyStartTimestamp, latestSettledDayTimestamp)
+      ? generateDailyTimestampsFromRange(holdingsConfig.historyStartTimestamp, latestSettledDayTimestamp)
       : dayTimestamps
   const periodDays = timestamps.length
   debugLog('history', 'starting historical holdings aggregation', {
@@ -535,7 +535,7 @@ export async function getHoldingsBreakdown(
   paginationMode: HoldingsEventPaginationMode = 'paged',
   targetTimestamp?: number
 ): Promise<HoldingsBreakdownResponse> {
-  const timestamps = generateDailyTimestamps(config.historyDays, 1)
+  const timestamps = generateDailyTimestamps(holdingsConfig.historyDays, 1)
   const breakdownDayTimestamp = targetTimestamp ?? timestamps[timestamps.length - 1]
   const breakdownTimestamp = toSettledDayTimestamp(breakdownDayTimestamp)
   const breakdownDate = timestampToDateString(breakdownTimestamp)

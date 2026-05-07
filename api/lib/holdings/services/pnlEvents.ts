@@ -90,7 +90,7 @@ function mergeRawEvent(
       address: scope === 'address',
       tx: scope === 'tx'
     }
-  })
+  } as TRawPnlEvent)
 }
 
 export function buildAddressScopedRawPnlEvents(addressEvents: UserEvents): TRawPnlEvent[] {

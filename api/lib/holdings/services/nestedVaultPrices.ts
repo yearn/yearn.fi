@@ -34,7 +34,7 @@ function getPriceAtTimestamp(priceMap: Map<number, number>, targetTimestamp: num
   const closestPriorTimestamp = Array.from(priceMap.keys())
     .sort((left, right) => left - right)
     .filter((timestamp) => timestamp <= targetTimestamp)
-    .at(-1)
+    .pop()
 
   return closestPriorTimestamp === undefined ? 0 : priceMap.get(closestPriorTimestamp) || 0
 }
@@ -268,7 +268,7 @@ export function deriveNestedVaultAssetPriceData(args: {
 }): Map<string, Map<number, number>> {
   const maxDepth = args.maxDepth ?? DEFAULT_MAX_NESTED_VAULT_DEPTH
 
-  return Array.from({ length: Math.max(1, maxDepth) }).reduce(
+  return Array.from({ length: Math.max(1, maxDepth) }).reduce<Map<string, Map<number, number>>>(
     (priceData) =>
       deriveNestedVaultAssetPriceDataOnce({
         priceData,

@@ -1,4 +1,4 @@
-import { config } from '../config'
+import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
 import { debugError, debugLog } from './debug'
 import { getUnderlyingVault, isStakingVault } from './staking'
@@ -308,7 +308,7 @@ function storeStakingMetadata(key: string, metadata: VaultMetadata): void {
 }
 
 async function fetchVaultList(attempt = 0): Promise<KongVault[]> {
-  const url = `${config.kongBaseUrl}/api/rest/list/vaults?origin=yearn`
+  const url = `${holdingsConfig.kongBaseUrl}/api/rest/list/vaults?origin=yearn`
   debugLog('vaults', 'fetching global vault list', { attempt: attempt + 1, url })
 
   try {
@@ -335,7 +335,7 @@ async function fetchVaultList(attempt = 0): Promise<KongVault[]> {
 }
 
 async function fetchVaultSnapshot(chainId: number, vaultAddress: string, attempt = 0): Promise<KongVaultSnapshot> {
-  const url = `${config.kongBaseUrl}/api/rest/snapshot/${chainId}/${vaultAddress}`
+  const url = `${holdingsConfig.kongBaseUrl}/api/rest/snapshot/${chainId}/${vaultAddress}`
   debugLog('vaults', 'fetching vault snapshot fallback', {
     attempt: attempt + 1,
     chainId,

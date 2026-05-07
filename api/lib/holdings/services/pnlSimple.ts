@@ -1,5 +1,5 @@
 import { formatUnits } from 'viem'
-import { config } from '../config'
+import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
 import { debugError, debugLog } from './debug'
 import {
@@ -861,6 +861,15 @@ function scaleBigInt(value: bigint, numerator: bigint, denominator: bigint): big
   return (value * numerator) / denominator
 }
 
+function cloneEventWithShares(
+  event: Extract<TRawPnlEvent, { kind: 'deposit' | 'withdrawal' }>,
+  shares: bigint
+): Extract<TRawPnlEvent, { kind: 'deposit' | 'withdrawal' }>
+function cloneEventWithShares(
+  event: Extract<TRawPnlEvent, { kind: 'transfer' }>,
+  shares: bigint
+): Extract<TRawPnlEvent, { kind: 'transfer' }>
+function cloneEventWithShares(event: TRawPnlEvent, shares: bigint): TRawPnlEvent
 function cloneEventWithShares(event: TRawPnlEvent, shares: bigint): TRawPnlEvent {
   if (event.kind === 'deposit' || event.kind === 'withdrawal') {
     return {
@@ -1431,17 +1440,17 @@ function normalizeStakingWrapperEvents(txFamilyEvents: TRawPnlEvent[], userAddre
 
 function getProtocolReturnTimestamps(events: TRawPnlEvent[], timeframe: '1y' | 'all'): number[] {
   if (timeframe === '1y') {
-    return generateDailyTimestamps(config.historyDays, 1).map((timestamp) => toSettledDayTimestamp(timestamp))
+    return generateDailyTimestamps(holdingsConfig.historyDays, 1).map((timestamp) => toSettledDayTimestamp(timestamp))
   }
 
   if (events.length === 0) {
     return []
   }
 
-  const settledTimestamps = generateDailyTimestamps(config.historyDays, 1)
+  const settledTimestamps = generateDailyTimestamps(holdingsConfig.historyDays, 1)
   const latestSettledTimestamp = settledTimestamps[settledTimestamps.length - 1] ?? 0
-  return generateDailyTimestampsFromRange(config.historyStartTimestamp, latestSettledTimestamp).map((timestamp) =>
-    toSettledDayTimestamp(timestamp)
+  return generateDailyTimestampsFromRange(holdingsConfig.historyStartTimestamp, latestSettledTimestamp).map(
+    (timestamp) => toSettledDayTimestamp(timestamp)
   )
 }
 

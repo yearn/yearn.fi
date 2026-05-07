@@ -15,7 +15,7 @@ export interface HoldingsConfig {
 const HISTORY_START_TIMESTAMP = 1_704_067_200 // 2024-01-01T00:00:00Z
 const YEARN_PRICES_BASE_URL = 'https://prices.yearn.dev'
 
-export const config: HoldingsConfig = {
+export const holdingsConfig: HoldingsConfig = {
   get envioGraphqlUrl() {
     return process.env.ENVIO_GRAPHQL_URL ?? 'http://localhost:8080/v1/graphql'
   },

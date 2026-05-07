@@ -1,4 +1,4 @@
-import { config } from '../config'
+import { holdingsConfig } from '../config'
 import { type DefiLlamaBatchResponse, SUPPORTED_CHAINS } from '../types'
 import {
   type CachedPrice,
@@ -140,7 +140,8 @@ function normalizeRequestedPriceProvider(value: string | undefined): 'auto' | TH
 
 function getHistoricalPriceProviderConfig(): THistoricalPriceProviderConfig {
   const requestedProvider = normalizeRequestedPriceProvider(process.env.HOLDINGS_PRICE_PROVIDER)
-  const hasYearnPricesConfig = config.yearnPricesBaseUrl.length > 0 && config.yearnPricesApiKey.length > 0
+  const hasYearnPricesConfig =
+    holdingsConfig.yearnPricesBaseUrl.length > 0 && holdingsConfig.yearnPricesApiKey.length > 0
 
   if (requestedProvider === 'yearn-prices') {
     if (!hasYearnPricesConfig) {
@@ -510,27 +511,27 @@ function buildRangeCoinsParam(coins: TCoinRequest[]): Record<string, [number, nu
 
 export function buildBatchHistoricalUrl(coins: TCoinRequest[]): string {
   const encodedCoins = encodeURIComponent(JSON.stringify(buildCoinsParam(coins)))
-  return `${config.defillamaBaseUrl}/batchHistorical?coins=${encodedCoins}`
+  return `${holdingsConfig.defillamaBaseUrl}/batchHistorical?coins=${encodedCoins}`
 }
 
 function buildProBatchHistoricalGetUrl(coins: TCoinRequest[]): string {
   const encodedCoins = encodeURIComponent(JSON.stringify(buildCoinsParam(coins)))
-  return `${config.defillamaProBaseUrl}/${config.defillamaApiKey}/coins/batchHistorical?coins=${encodedCoins}`
+  return `${holdingsConfig.defillamaProBaseUrl}/${holdingsConfig.defillamaApiKey}/coins/batchHistorical?coins=${encodedCoins}`
 }
 
 function buildYearnPricesBatchHistoricalUrl(coins: TCoinRequest[]): string {
   const encodedCoins = encodeURIComponent(JSON.stringify(buildCoinsParam(coins, { normalizeTimestampsToDayEnd: true })))
-  const apiBaseUrl = config.yearnPricesBaseUrl.endsWith('/api')
-    ? config.yearnPricesBaseUrl
-    : `${config.yearnPricesBaseUrl}/api`
+  const apiBaseUrl = holdingsConfig.yearnPricesBaseUrl.endsWith('/api')
+    ? holdingsConfig.yearnPricesBaseUrl
+    : `${holdingsConfig.yearnPricesBaseUrl}/api`
   return `${apiBaseUrl}/prices/batchHistorical?coins=${encodedCoins}`
 }
 
 function buildYearnPricesRangeHistoricalUrl(coins: TCoinRequest[]): string {
   const encodedCoins = encodeURIComponent(JSON.stringify(buildRangeCoinsParam(coins)))
-  const apiBaseUrl = config.yearnPricesBaseUrl.endsWith('/api')
-    ? config.yearnPricesBaseUrl
-    : `${config.yearnPricesBaseUrl}/api`
+  const apiBaseUrl = holdingsConfig.yearnPricesBaseUrl.endsWith('/api')
+    ? holdingsConfig.yearnPricesBaseUrl
+    : `${holdingsConfig.yearnPricesBaseUrl}/api`
   return `${apiBaseUrl}/prices/rangeHistorical?coins=${encodedCoins}`
 }
 
@@ -556,7 +557,7 @@ function buildBatchHistoricalRequests(coins: TCoinRequest[], tuning: TDefiLlamaF
         url: request.url,
         init: {
           headers: {
-            Authorization: `Bearer ${config.yearnPricesApiKey}`
+            Authorization: `Bearer ${holdingsConfig.yearnPricesApiKey}`
           }
         },
         variant: request.variant
@@ -564,7 +565,7 @@ function buildBatchHistoricalRequests(coins: TCoinRequest[], tuning: TDefiLlamaF
     ]
   }
 
-  if (config.defillamaApiKey.length === 0) {
+  if (holdingsConfig.defillamaApiKey.length === 0) {
     return [
       {
         url: buildBatchHistoricalUrl(coins),
@@ -608,19 +609,19 @@ function buildBatchDebugSummary(
   lastToken: string | null
 } {
   const firstCoin = coinBatch[0]
-  const lastCoin = coinBatch.at(-1)
+  const lastCoin = coinBatch.length > 0 ? coinBatch[coinBatch.length - 1] : undefined
 
   return {
     firstTimestamp: uniqueTimestamps[0] ?? null,
-    lastTimestamp: uniqueTimestamps.at(-1) ?? null,
+    lastTimestamp: uniqueTimestamps.length > 0 ? uniqueTimestamps[uniqueTimestamps.length - 1] : null,
     firstToken: firstCoin ? abbreviateTokenAddress(firstCoin.address) : null,
     lastToken: lastCoin ? abbreviateTokenAddress(lastCoin.address) : null
   }
 }
 
 function isSplittableGetError(error: unknown): boolean {
-  const status =
-    typeof (error as Partial<TDefiLlamaError>)?.status === 'number' ? (error as Partial<TDefiLlamaError>).status : null
+  const errorStatus = (error as Partial<TDefiLlamaError>)?.status
+  const status = typeof errorStatus === 'number' ? errorStatus : null
 
   return status !== null && SPLITTABLE_GET_STATUS_CODES.has(status)
 }
@@ -669,7 +670,7 @@ function getDefiLlamaFetchTuning(providerConfig: THistoricalPriceProviderConfig)
     }
   }
 
-  if (config.defillamaApiKey.length > 0) {
+  if (holdingsConfig.defillamaApiKey.length > 0) {
     return {
       provider: 'defillama',
       useProApi: true,
@@ -1029,7 +1030,7 @@ export async function fetchHistoricalPricesForTokenTimestamps(
             timestampCount: batchTimestamps.length,
             pricePointCount: batchPricePoints,
             firstTimestamp: batchTimestamps[0] ?? null,
-            lastTimestamp: batchTimestamps.at(-1) ?? null
+            lastTimestamp: batchTimestamps.length > 0 ? batchTimestamps[batchTimestamps.length - 1] : null
           })
           return
         }
