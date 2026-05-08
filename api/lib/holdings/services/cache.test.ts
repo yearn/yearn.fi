@@ -29,7 +29,7 @@ describe('deleteStaleCache', () => {
     const { deleteStaleCache } = await import('./cache')
     const deletedCount = await deleteStaleCache()
 
-    expect(queryMock).toHaveBeenNthCalledWith(1, expect.stringContaining('DELETE FROM holdings_totals'))
+    expect(queryMock).toHaveBeenNthCalledWith(1, 'DELETE FROM holdings_totals WHERE date < $1::date', ['2024-01-01'])
     expect(queryMock).toHaveBeenNthCalledWith(2, expect.stringContaining('DELETE FROM token_price_misses'))
     expect(queryMock).toHaveBeenNthCalledWith(3, expect.stringContaining('DELETE FROM rate_limits'))
     expect(deletedCount).toBe(9)

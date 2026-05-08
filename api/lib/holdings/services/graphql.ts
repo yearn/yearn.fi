@@ -1,5 +1,5 @@
 import { getAddress } from 'viem'
-import { config } from '../config'
+import { holdingsConfig } from '../config'
 import type { DepositEvent, TransferEvent, UserEvents, V2DepositEvent, V2WithdrawEvent, WithdrawEvent } from '../types'
 import { debugError, debugLog } from './debug'
 
@@ -382,12 +382,12 @@ async function executeQuery<T>(query: string, variables: Record<string, unknown>
   }
 
   // Only add admin secret if explicitly configured (not the default 'testing' value)
-  const password = config.envioPassword
+  const password = holdingsConfig.envioPassword
   if (password && password !== 'testing') {
     headers['x-hasura-admin-secret'] = password
   }
 
-  const response = await fetch(config.envioGraphqlUrl, {
+  const response = await fetch(holdingsConfig.envioGraphqlUrl, {
     method: 'POST',
     headers,
     body: JSON.stringify({ query, variables })
