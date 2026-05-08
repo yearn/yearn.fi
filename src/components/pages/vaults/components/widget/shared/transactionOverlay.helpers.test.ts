@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { getInitialOverlayState } from './transactionOverlay.helpers'
 import {
   formatPendingTransactionFunctionName,
+  getInitialOverlayState,
   getPendingTransactionTitle,
   resolveCompletionDeferral,
   shouldAutoContinuePermitSuccess,
