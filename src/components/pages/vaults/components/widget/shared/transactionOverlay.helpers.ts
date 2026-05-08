@@ -1,6 +1,10 @@
 export type OverlayState = 'idle' | 'confirming' | 'pending' | 'refreshing' | 'success' | 'error'
 export type CompletionDeferral = 'none' | 'immediate' | 'after-close' | 'after-confetti'
 
+export function getInitialOverlayState(): OverlayState {
+  return 'idle'
+}
+
 function capitalizeWord(value: string): string {
   if (!value) return value
   return `${value[0]?.toUpperCase() || ''}${value.slice(1)}`
