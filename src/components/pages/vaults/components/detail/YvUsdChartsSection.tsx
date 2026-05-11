@@ -9,7 +9,7 @@ import ChartSkeleton from './charts/ChartSkeleton'
 import ChartsLoader from './charts/ChartsLoader'
 import { FixedHeightChartContainer } from './charts/FixedHeightChartContainer'
 import { YvUsdApyChart, YvUsdChartLegend, YvUsdPerformanceChart, YvUsdTvlChart } from './charts/YvUsdDualLineChart'
-import { VAULT_CHART_TABS, VAULT_CHART_TIMEFRAME_OPTIONS } from './VaultChartsSection'
+import { VAULT_CHART_TABS, type VAULT_CHART_TIMEFRAME_OPTIONS, VaultChartTimeframeDropdown } from './VaultChartsSection'
 
 const VaultTvlGrowthChart = lazy(() =>
   import('./charts/VaultTvlGrowthChart').then((m) => ({ default: m.VaultTvlGrowthChart }))
@@ -155,26 +155,8 @@ export function YvUsdChartsSection({
               ))}
             </div>
           </div>
-          <div className={'hidden md:flex flex-wrap gap-2 md:gap-3'}>
-            <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
-              {VAULT_CHART_TIMEFRAME_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type={'button'}
-                  className={cl(
-                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                    SELECTOR_BAR_STYLES.buttonBase,
-                    option.value === activeTimeframe
-                      ? SELECTOR_BAR_STYLES.buttonActive
-                      : SELECTOR_BAR_STYLES.buttonInactive
-                  )}
-                  onClick={() => setActiveTimeframe(option.value)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+          <div className={'hidden w-full items-center justify-end md:flex md:w-auto'}>
+            <VaultChartTimeframeDropdown timeframe={activeTimeframe} onTimeframeChange={setActiveTimeframe} />
           </div>
         </div>
       ) : null}
