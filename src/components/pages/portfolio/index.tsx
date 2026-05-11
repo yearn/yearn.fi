@@ -36,6 +36,7 @@ import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
+import { getNetwork } from '@shared/utils/wagmi'
 import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
@@ -1236,22 +1237,34 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
         side="top"
         tooltip={<div className={headingTooltipClassName}>{tooltipText}</div>}
       >
-        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">{'You might like'}</h2>
+        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">{'Other vaults you might like:'}</h2>
       </Tooltip>
       <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         {suggestedRows.map((row) => {
           if (row.type === 'external') {
+            const matchedChainName =
+              row.matchedChainID === getVaultChainID(row.vault) ? getNetwork(row.matchedChainID).name : undefined
             return (
               <SuggestedVaultCard
                 key={row.key}
                 vault={row.vault}
                 matchedSymbol={row.underlyingSymbol}
                 externalProtocol={row.externalProtocol}
+                matchedChainName={matchedChainName}
               />
             )
           }
           if (row.type === 'personalized') {
-            return <SuggestedVaultCard key={row.key} vault={row.vault} matchedSymbol={row.matchedSymbol} />
+            const matchedChainName =
+              row.matchedChainID === getVaultChainID(row.vault) ? getNetwork(row.matchedChainID).name : undefined
+            return (
+              <SuggestedVaultCard
+                key={row.key}
+                vault={row.vault}
+                matchedSymbol={row.matchedSymbol}
+                matchedChainName={matchedChainName}
+              />
+            )
           }
           return <SuggestedVaultCard key={row.key} vault={row.vault} />
         })}

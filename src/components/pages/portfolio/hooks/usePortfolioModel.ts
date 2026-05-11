@@ -43,8 +43,15 @@ type THoldingsRow = {
 }
 
 export type TSuggestedItem =
-  | { type: 'external'; key: string; vault: TKongVault; externalProtocol: string; underlyingSymbol: string }
-  | { type: 'personalized'; key: string; vault: TKongVault; matchedSymbol: string }
+  | {
+      type: 'external'
+      key: string
+      vault: TKongVault
+      externalProtocol: string
+      underlyingSymbol: string
+      matchedChainID: number
+    }
+  | { type: 'personalized'; key: string; vault: TKongVault; matchedSymbol: string; matchedChainID: number }
   | { type: 'generic'; key: string; vault: TKongVault }
 
 export type TPortfolioBlendedMetrics = {
@@ -296,7 +303,8 @@ export function usePortfolioModel(): TPortfolioModel {
           key: `ext-${getVaultKey(ext.vault)}`,
           vault: ext.vault,
           externalProtocol: ext.externalProtocol,
-          underlyingSymbol: ext.underlyingSymbol
+          underlyingSymbol: ext.underlyingSymbol,
+          matchedChainID: ext.matchedChainID
         },
         vaultKey: getVaultKey(ext.vault)
       })),
@@ -305,7 +313,8 @@ export function usePortfolioModel(): TPortfolioModel {
           type: 'personalized' as const,
           key: `pers-${getVaultKey(ps.vault)}`,
           vault: ps.vault,
-          matchedSymbol: ps.matchedSymbol
+          matchedSymbol: ps.matchedSymbol,
+          matchedChainID: ps.matchedChainID
         },
         vaultKey: getVaultKey(ps.vault)
       })),
