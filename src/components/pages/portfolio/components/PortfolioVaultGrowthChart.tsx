@@ -136,6 +136,10 @@ type TTooltipProps = {
 }
 
 const DEFAULT_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5', '#f472b6', '#f97316']
+const PORTFOLIO_VAULT_GROWTH_CHART_MARGIN = {
+  ...CHART_WITH_AXES_MARGIN,
+  bottom: 4
+}
 const MIN_RELEVANCE_SCORE = 0.000001
 
 const MODE_COPY: Record<TPortfolioVaultGrowthChartMode, string> = {
@@ -504,7 +508,11 @@ function formatIndexValue(value: number): string {
   return value >= 1000 ? value.toFixed(0) : value >= 100 ? value.toFixed(1) : value.toFixed(2)
 }
 
-function formatPositionTick(value: number | string): string {
+function formatPositionTick(value: number | string, index?: number): string {
+  if (index === 0) {
+    return ''
+  }
+
   const numericValue = Number(value)
   const absoluteValue = Math.abs(numericValue)
   if (absoluteValue >= 1_000_000) {
@@ -516,7 +524,11 @@ function formatPositionTick(value: number | string): string {
   return `${numericValue < 0 ? '-' : ''}$${absoluteValue.toFixed(0)}`
 }
 
-function formatIndexTick(value: number | string): string {
+function formatIndexTick(value: number | string, index?: number): string {
+  if (index === 0) {
+    return ''
+  }
+
   const numericValue = Number(value)
   return Math.abs(numericValue) >= 1000 ? numericValue.toFixed(0) : numericValue.toFixed(1)
 }
@@ -702,7 +714,7 @@ export function PortfolioVaultGrowthChart({
       ) : (
         <div className={'min-h-0 flex-1'} style={{ height }}>
           <ChartContainer config={chartConfig} style={{ height: '100%', aspectRatio: 'unset' }}>
-            <ComposedChart data={chartData} margin={CHART_WITH_AXES_MARGIN}>
+            <ComposedChart data={chartData} margin={PORTFOLIO_VAULT_GROWTH_CHART_MARGIN}>
               <CartesianGrid vertical={false} />
               <XAxis
                 dataKey={'date'}

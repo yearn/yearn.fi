@@ -15,9 +15,9 @@ import {
   getChartWeeklyTicks,
   getTimeframeLimit
 } from '@pages/vaults/utils/charts'
-import { Tooltip } from '@shared/components/Tooltip'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { IconChevron } from '@shared/icons/IconChevron'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { cl, formatPercent, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
 import { getVaultName as getDisplayVaultName } from '@shared/utils/helpers'
@@ -40,6 +40,7 @@ import { PortfolioVaultGrowthChart } from './PortfolioVaultGrowthChart'
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
 export type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'annualized' | 'index'
 export type TGrowthDisplayMode = 'index' | 'usd' | 'eth'
+type TPortfolioHistoryValueType = TGrowthDisplayMode | 'percent'
 
 type TPortfolioHistoryChartProps = {
   balanceData: TPortfolioHistoryChartData | null
@@ -148,11 +149,18 @@ const CHART_TABS: Array<{ id: TPortfolioHistoryChartTab; label: string }> = [
   { id: 'annualized', label: 'Annualized %' },
   { id: 'index', label: 'Growth Index' }
 ]
+const TIMEFRAME_OPTIONS: Array<{ id: TPortfolioHistoryChartTimeframe; label: string }> = [
+  { id: '30d', label: '30D' },
+  { id: '90d', label: '90D' },
+  { id: '1y', label: '1Y' },
+  { id: 'all', label: 'ALL' }
+]
 const GROWTH_DISPLAY_MODES: Array<{ id: TGrowthDisplayMode; label: string }> = [
   { id: 'index', label: 'Index' },
   { id: 'usd', label: 'USD' },
   { id: 'eth', label: 'ETH' }
 ]
+const ANNUALIZED_VALUE_TYPE = { id: 'percent', label: '%' } as const
 const HISTORY_LOADING_PROGRESS_STEPS = [
   { delayMs: 0, value: 12 },
   { delayMs: 700, value: 28 },
@@ -161,21 +169,11 @@ const HISTORY_LOADING_PROGRESS_STEPS = [
   { delayMs: 5200, value: 78 },
   { delayMs: 7600, value: 88 }
 ] as const
-const GROWTH_DISPLAY_TOOLTIP_COPY: Record<TGrowthDisplayMode, { title: string; body: string }> = {
-  index: {
-    title: 'Index',
-    body: 'Normalized protocol-return index that starts at 100 for the selected timeframe. Best for mixed-asset wallets.'
-  },
-  usd: {
-    title: 'USD',
-    body: 'Protocol growth during the selected timeframe in receipt-time USD equivalent.'
-  },
-  eth: {
-    title: 'ETH',
-    body: 'Protocol growth during the selected timeframe in receipt-time ETH equivalent.'
-  }
-}
 const INDEX_SERIES_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5'] as const
+const PORTFOLIO_CHART_MARGIN = {
+  ...CHART_WITH_AXES_MARGIN,
+  bottom: 4
+}
 
 const EXAMPLE_PORTFOLIO_USD_DATA: TPortfolioHistoryChartData = [
   { date: '2025-05-01', value: 1800 },
@@ -281,18 +279,45 @@ function rebaseDeltaPoints(points: TChartPoint[]): TChartPoint[] {
   }))
 }
 
-function renderGrowthDisplayTooltip(mode: TGrowthDisplayMode): ReactElement {
-  const copy = GROWTH_DISPLAY_TOOLTIP_COPY[mode]
-
+function PortfolioChartDropdown<TValue extends string>({
+  label,
+  value,
+  options,
+  onChange
+}: {
+  label: string
+  value: TValue | ''
+  options: Array<{ id: TValue; label: string }>
+  onChange: (value: TValue) => void
+}): ReactElement {
   return (
-    <div
-      className={
-        'max-w-[240px] rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs leading-relaxed text-text-primary'
-      }
-    >
-      <p className={'font-semibold text-text-primary'}>{copy.title}</p>
-      <p>{copy.body}</p>
-    </div>
+    <label className={'relative min-w-[92px]'}>
+      <span className={'sr-only'}>{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value as TValue)}
+        className={cl(
+          'h-10 w-full appearance-none rounded-lg border border-border bg-surface-secondary py-2 pr-8 pl-3 md:h-8 md:py-1',
+          'text-xs font-semibold uppercase text-text-primary shadow-inner transition-colors',
+          'hover:border-text-tertiary focus:border-primary focus:outline-none'
+        )}
+        aria-label={label}
+      >
+        {value === '' ? (
+          <option value={''} disabled>
+            {'Value'}
+          </option>
+        ) : null}
+        {options.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <IconChevron
+        className={'pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-text-secondary'}
+      />
+    </label>
   )
 }
 
@@ -396,8 +421,23 @@ export function PortfolioHistoryChartControls({
 
     return { ...mode, isActive, isAvailable }
   })
+  const valueTypeOptions: Array<{ id: TPortfolioHistoryValueType; label: string }> =
+    activeTab === 'annualized'
+      ? [ANNUALIZED_VALUE_TYPE]
+      : unitOptions
+          .filter((mode) => mode.isAvailable)
+          .map((mode) => ({
+            id: mode.id,
+            label: mode.label
+          }))
+  const activeUnitValue: TPortfolioHistoryValueType | '' =
+    activeTab === 'annualized' ? ANNUALIZED_VALUE_TYPE.id : (unitOptions.find((mode) => mode.isActive)?.id ?? '')
 
-  const handleUnitChange = (mode: TGrowthDisplayMode): void => {
+  const handleValueTypeChange = (mode: TPortfolioHistoryValueType): void => {
+    if (mode === 'percent') {
+      return
+    }
+
     if (activeTab === 'balance') {
       if (mode === 'usd' || mode === 'eth') {
         onDenominationChange(mode)
@@ -444,54 +484,22 @@ export function PortfolioHistoryChartControls({
             </button>
           ))}
         </div>
-        <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
-          {(['30d', '90d', '1y', 'all'] as const).map((tf) => (
-            <button
-              key={tf}
-              type={'button'}
-              onClick={() => onTimeframeChange(tf)}
-              className={cl(
-                'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                SELECTOR_BAR_STYLES.buttonBase,
-                timeframe === tf ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
-              )}
-            >
-              {tf.toUpperCase()}
-            </button>
-          ))}
+        <div className={'flex w-full items-center justify-end gap-2 md:w-auto'}>
+          <PortfolioChartDropdown
+            label={'Chart timeframe'}
+            value={timeframe}
+            options={TIMEFRAME_OPTIONS}
+            onChange={onTimeframeChange}
+          />
+          <PortfolioChartDropdown
+            label={'Asset value type'}
+            value={activeUnitValue}
+            options={valueTypeOptions}
+            onChange={handleValueTypeChange}
+          />
         </div>
       </div>
       {children}
-      <div className={'absolute inset-x-0 bottom-1 z-10 flex justify-center px-4 py-1 md:px-6'}>
-        <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
-          {unitOptions.map((mode) => (
-            <Tooltip
-              key={mode.id}
-              className={'h-auto w-auto justify-start gap-0'}
-              openDelayMs={150}
-              side={'top'}
-              tooltip={renderGrowthDisplayTooltip(mode.id)}
-            >
-              <button
-                type={'button'}
-                onClick={() => handleUnitChange(mode.id)}
-                disabled={!mode.isAvailable}
-                aria-disabled={!mode.isAvailable}
-                className={cl(
-                  'rounded-sm px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                  'min-h-[28px] disabled:cursor-not-allowed disabled:opacity-40',
-                  mode.isAvailable ? 'active:scale-[0.98]' : '',
-                  SELECTOR_BAR_STYLES.buttonBase,
-                  mode.isActive ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
-                )}
-              >
-                {mode.label}
-              </button>
-            </Tooltip>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }
@@ -633,7 +641,7 @@ export function PortfolioHistoryChart({
 
   const sectionClassName = embedded
     ? reserveControlSpace
-      ? 'flex h-full min-h-0 flex-col bg-surface px-5 pb-7 pt-16 md:px-6 md:pb-8 md:pt-16'
+      ? 'flex h-full min-h-0 flex-col bg-surface px-5 pt-24 pb-2 md:px-6 md:pt-16 md:pb-3'
       : 'flex h-full min-h-0 flex-col bg-surface p-5 md:p-6'
     : 'flex h-full flex-col gap-4 rounded-lg border border-border bg-surface p-6'
 
@@ -766,7 +774,11 @@ export function PortfolioHistoryChart({
   )
   const tickFormatter = isShortTimeframe ? formatChartWeekLabel : formatChartMonthYearLabel
 
-  const formatValueTick = (value: number | string) => {
+  const formatValueTick = (value: number | string, index?: number) => {
+    if (index === 0) {
+      return ''
+    }
+
     const numericValue = Number(value)
     const absoluteValue = Math.abs(numericValue)
     if (numericValue === 0) {
@@ -1062,7 +1074,7 @@ export function PortfolioHistoryChart({
         >
           <ComposedChart
             data={activeData}
-            margin={CHART_WITH_AXES_MARGIN}
+            margin={PORTFOLIO_CHART_MARGIN}
             onMouseMove={handleChartMouseMove}
             onMouseLeave={handleChartMouseLeave}
             onClick={handleChartClick}
