@@ -15,10 +15,10 @@ import {
   getChartWeeklyTicks,
   getTimeframeLimit
 } from '@pages/vaults/utils/charts'
+import { YearnLogoSpinner } from '@shared/components/YearnLogoSpinner'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
-import { IconSpinner } from '@shared/icons/IconSpinner'
 import { cl, formatPercent, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
 import { getVaultName as getDisplayVaultName } from '@shared/utils/helpers'
 import type { ReactElement } from 'react'
@@ -369,7 +369,7 @@ function PortfolioHistoryChartLoading({
         'flex h-full min-h-[240px] flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16'
       }
     >
-      <IconSpinner className={'size-5 text-text-secondary sm:size-6'} />
+      <YearnLogoSpinner className={'size-12'} logoClassName={'size-8'} />
       <span>{displayedMessage}</span>
       {detail ? <span className={'text-xs text-text-tertiary'}>{detail}</span> : null}
       <div

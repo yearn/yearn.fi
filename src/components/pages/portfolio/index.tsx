@@ -26,6 +26,7 @@ import { METRIC_VALUE_CLASS, MetricHeader, type TMetricBlock } from '@shared/com
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
+import { YearnLogoSpinner } from '@shared/components/YearnLogoSpinner'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -1115,7 +1116,7 @@ function PortfolioHoldingsSection({
     if (isHoldingsLoading) {
       return (
         <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16">
-          <IconSpinner className="size-5 text-text-secondary sm:size-6" />
+          <YearnLogoSpinner className="size-12" logoClassName="size-8" />
           <span>{'Searching for Yearn balances...'}</span>
         </div>
       )
