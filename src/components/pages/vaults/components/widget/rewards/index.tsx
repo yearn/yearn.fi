@@ -192,7 +192,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
               </div>
             ) : isRewardsLoading ? (
               <div className="flex items-center gap-2 text-sm text-text-secondary">
-                <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-border border-t-text-secondary" />
+                <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />
                 {'Loading rewards...'}
               </div>
             ) : !hasAnyRewards ? (

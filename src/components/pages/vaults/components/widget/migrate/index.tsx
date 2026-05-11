@@ -422,7 +422,7 @@ export const WidgetMigrate: FC<Props> = ({
       <div className="flex flex-col border border-border rounded-lg relative h-full">
         <WidgetHeader title="Migrate" />
         <div className="flex items-center justify-center flex-1 p-6">
-          <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-border border-t-primary rounded-full animate-spin" />
         </div>
       </div>
     )

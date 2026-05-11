@@ -1126,6 +1126,7 @@ function PortfolioHoldingsSection({
           title="No vault positions yet"
           description="Deposit into a Yearn vault to see it here."
           ctaLabel="Browse vaults"
+          ctaClassName="yearn--button--nextgen min-h-[44px] px-6"
           href="/vaults"
         />
       )
@@ -1315,6 +1316,37 @@ function PortfolioPage(): ReactElement {
     protocolReturnHistoryData
   )
   const isEthGrowthAvailable = Boolean(protocolReturnHistoryData?.some((point) => point.growthWeightEth !== null))
+  const hasNoYearnPositions = model.isActive && !model.isHoldingsLoading && !model.hasHoldings
+  const displayedHistoryChartTab = hasNoYearnPositions ? 'balance' : historyChartTab
+  const historyChartLoadingMessage =
+    model.hasHoldings && !model.isHoldingsLoading ? 'fetching historical user data' : 'Searching for Yearn balances...'
+  const historyChartElement = (
+    <PortfolioHistoryChart
+      balanceData={historyData}
+      protocolReturnData={protocolReturnHistoryData}
+      protocolReturnSummary={protocolReturnHistorySummary}
+      protocolReturnFamilySeries={protocolReturnHistoryFamilySeries}
+      denomination={resolvedHistoryDenomination}
+      timeframe={historyTimeframe}
+      activeTab={displayedHistoryChartTab}
+      growthDisplayModeOverride={historyGrowthDisplayModeOverride}
+      onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
+      vaultGrowthMode={historyVaultGrowthMode}
+      onVaultGrowthModeChange={setHistoryVaultGrowthMode}
+      balanceIsLoading={historyLoading}
+      balanceIsEmpty={historyEmpty}
+      balanceError={historyError}
+      protocolReturnIsLoading={protocolReturnHistoryLoading}
+      protocolReturnIsEmpty={protocolReturnHistoryEmpty}
+      protocolReturnError={protocolReturnHistoryError}
+      embedded
+      reserveControlSpace={!hasNoYearnPositions}
+      loadingMessage={historyChartLoadingMessage}
+      className={
+        hasNoYearnPositions ? 'h-full min-h-0 bg-linear-to-b from-surface to-surface-secondary/20' : 'min-h-0 flex-1'
+      }
+    />
+  )
 
   const handleTabSelect = useCallback(
     (tab: TPortfolioTabKey) => {
@@ -1387,41 +1419,25 @@ function PortfolioPage(): ReactElement {
             {model.isActive ? (
               <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
                 <div className="grid items-stretch min-[920px]:grid-cols-[minmax(640px,1fr)_minmax(200px,340px)]">
-                  <PortfolioHistoryChartControls
-                    activeTab={historyChartTab}
-                    onActiveTabChange={setHistoryChartTab}
-                    denomination={resolvedHistoryDenomination}
-                    onDenominationChange={setHistoryDenomination}
-                    timeframe={historyTimeframe}
-                    onTimeframeChange={setHistoryTimeframe}
-                    resolvedGrowthDisplayMode={resolvedGrowthDisplayMode}
-                    onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
-                    onVaultGrowthModeChange={setHistoryVaultGrowthMode}
-                    isEthGrowthAvailable={isEthGrowthAvailable}
-                    className="h-full bg-linear-to-b from-surface to-surface-secondary/20"
-                  >
-                    <PortfolioHistoryChart
-                      balanceData={historyData}
-                      protocolReturnData={protocolReturnHistoryData}
-                      protocolReturnSummary={protocolReturnHistorySummary}
-                      protocolReturnFamilySeries={protocolReturnHistoryFamilySeries}
-                      denomination={resolvedHistoryDenomination}
-                      timeframe={historyTimeframe}
+                  {hasNoYearnPositions ? (
+                    historyChartElement
+                  ) : (
+                    <PortfolioHistoryChartControls
                       activeTab={historyChartTab}
-                      growthDisplayModeOverride={historyGrowthDisplayModeOverride}
+                      onActiveTabChange={setHistoryChartTab}
+                      denomination={resolvedHistoryDenomination}
+                      onDenominationChange={setHistoryDenomination}
+                      timeframe={historyTimeframe}
+                      onTimeframeChange={setHistoryTimeframe}
+                      resolvedGrowthDisplayMode={resolvedGrowthDisplayMode}
                       onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
-                      vaultGrowthMode={historyVaultGrowthMode}
                       onVaultGrowthModeChange={setHistoryVaultGrowthMode}
-                      balanceIsLoading={historyLoading}
-                      balanceIsEmpty={historyEmpty}
-                      balanceError={historyError}
-                      protocolReturnIsLoading={protocolReturnHistoryLoading}
-                      protocolReturnIsEmpty={protocolReturnHistoryEmpty}
-                      protocolReturnError={protocolReturnHistoryError}
-                      embedded
-                      className="min-h-0 flex-1"
-                    />
-                  </PortfolioHistoryChartControls>
+                      isEthGrowthAvailable={isEthGrowthAvailable}
+                      className="h-full bg-linear-to-b from-surface to-surface-secondary/20"
+                    >
+                      {historyChartElement}
+                    </PortfolioHistoryChartControls>
+                  )}
                   <div className="border-t border-border bg-linear-to-b from-surface to-surface-secondary/25 min-[920px]:border-t-0 min-[920px]:border-l">
                     <PortfolioHeaderSection
                       blendedMetrics={model.blendedMetrics}

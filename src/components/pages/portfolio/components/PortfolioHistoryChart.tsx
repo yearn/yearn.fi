@@ -60,6 +60,8 @@ type TPortfolioHistoryChartProps = {
   protocolReturnIsEmpty?: boolean
   protocolReturnError?: Error | null
   embedded?: boolean
+  reserveControlSpace?: boolean
+  loadingMessage?: string
   className?: string
 }
 
@@ -540,6 +542,8 @@ export function PortfolioHistoryChart({
   protocolReturnIsEmpty = false,
   protocolReturnError,
   embedded = false,
+  reserveControlSpace = true,
+  loadingMessage = 'Searching for Yearn balances...',
   className
 }: TPortfolioHistoryChartProps): ReactElement {
   const { address } = useWeb3()
@@ -562,7 +566,9 @@ export function PortfolioHistoryChart({
   }, [address, onGrowthDisplayModeOverrideChange])
 
   const sectionClassName = embedded
-    ? 'flex h-full min-h-0 flex-col bg-surface px-5 pb-7 pt-16 md:px-6 md:pb-8 md:pt-16'
+    ? reserveControlSpace
+      ? 'flex h-full min-h-0 flex-col bg-surface px-5 pb-7 pt-16 md:px-6 md:pb-8 md:pt-16'
+      : 'flex h-full min-h-0 flex-col bg-surface p-5 md:p-6'
     : 'flex h-full flex-col gap-4 rounded-lg border border-border bg-surface p-6'
 
   const filteredBalanceData = useMemo<TChartPoint[]>(() => {
@@ -783,7 +789,7 @@ export function PortfolioHistoryChart({
     return {
       value: {
         label: denomination === 'eth' ? 'Example Value (ETH)' : 'Example Value (USD)',
-        color: 'var(--color-neutral-400)'
+        color: 'var(--chart-1)'
       }
     }
   }, [denomination])
@@ -839,8 +845,13 @@ export function PortfolioHistoryChart({
   if (activeIsLoading) {
     return (
       <section className={cl(sectionClassName, className)}>
-        <div className={'flex h-full min-h-[240px] items-center justify-center'}>
-          <IconSpinner className={'size-8 animate-spin text-text-secondary'} />
+        <div
+          className={
+            'flex h-full min-h-[240px] flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16'
+          }
+        >
+          <IconSpinner className={'size-5 text-text-secondary sm:size-6'} />
+          <span>{loadingMessage}</span>
         </div>
       </section>
     )
@@ -873,8 +884,8 @@ export function PortfolioHistoryChart({
               <ComposedChart data={exampleData} margin={CHART_WITH_AXES_MARGIN}>
                 <defs>
                   <linearGradient id={`${gradientId}-example`} x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="var(--color-neutral-400)" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="var(--color-neutral-400)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--color-value)" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="var(--color-value)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid vertical={false} strokeDasharray={'4 6'} stroke={'var(--color-border)'} />
@@ -907,7 +918,7 @@ export function PortfolioHistoryChart({
                 <Line
                   type={'monotone'}
                   dataKey={'value'}
-                  stroke={'var(--color-neutral-400)'}
+                  stroke={'var(--color-value)'}
                   strokeWidth={2}
                   strokeDasharray={'6 6'}
                   dot={false}
@@ -924,17 +935,11 @@ export function PortfolioHistoryChart({
           />
           <div className={'relative z-10 flex h-full flex-col justify-between p-6 sm:p-7'}>
             <div className={'max-w-lg'}>
-              <p className={'text-sm font-medium text-text-secondary'}>
-                {'This is what your portfolio history can look like.'}
-              </p>
-              <h3 className={'mt-2 max-w-md text-2xl font-semibold tracking-tight text-text-primary sm:text-[2rem]'}>
-                {'Your Yearn deposits, yield, and vault rotations will start drawing a story here.'}
-              </h3>
-              <p className={'mt-3 max-w-md text-sm leading-relaxed text-text-secondary sm:text-base'}>
+              <h3 className={'mt-2 max-w-md text-2xl font-semibold tracking-tight text-text-primary sm:text-[1.5rem]'}>
                 {
-                  'Once you hold a Yearn vault, this chart will turn into a live timeline of your daily portfolio value.'
+                  'Once you have a deposit in a Yearn Vault, you’ll see your portfolio balances and growth over time here.'
                 }
-              </p>
+              </h3>
             </div>
             <div className={'flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between'}>
               <Link to={'/vaults'} className={'yearn--button--nextgen min-h-[44px] px-5'} data-variant={'filled'}>

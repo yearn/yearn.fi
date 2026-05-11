@@ -7,7 +7,7 @@ export default function ChartsLoader({ loadingState = 'Loading charts' }: Charts
     <div className={'absolute inset-0 flex items-center rounded-lg justify-center bg-white/30 backdrop-blur-sm z-10'}>
       <div className={'flex flex-col items-center rounded-lg text-text-secondary'}>
         <div className={'relative flex h-12 w-12 items-center justify-center'}>
-          <div className={'absolute inset-0 rounded-full border-2 border-border border-t-transparent animate-spin'} />
+          <div className={'absolute inset-0 rounded-full border-2 border-border border-t-primary animate-spin'} />
           <img src={'/logo.svg'} alt={'Yearn Finance'} width={32} height={32} className={'z-10'} />
         </div>
         <p className={'mt-3 text-xs font-medium uppercase tracking-wide'}>{loadingState}</p>
