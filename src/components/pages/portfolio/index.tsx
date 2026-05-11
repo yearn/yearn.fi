@@ -378,7 +378,7 @@ function PortfolioHeaderSection({
 
   return (
     <section className="h-full bg-surface">
-      <div className="grid gap-px bg-border">
+      <div className="grid h-full grid-rows-5 gap-px bg-border">
         {metrics.map((item) => (
           <div key={item.key} className={metricCardClassName}>
             <div className="flex items-center justify-between">{item.header}</div>
@@ -1301,6 +1301,7 @@ function PortfolioPage(): ReactElement {
     historyGrowthDisplayModeOverride ?? protocolReturnHistorySummary?.recommendedGrowthDisplay ?? 'index',
     protocolReturnHistoryData
   )
+  const isEthGrowthAvailable = Boolean(protocolReturnHistoryData?.some((point) => point.growthWeightEth !== null))
 
   const handleTabSelect = useCallback(
     (tab: TPortfolioTabKey) => {
@@ -1369,45 +1370,46 @@ function PortfolioPage(): ReactElement {
     switch (activeTab) {
       case 'positions':
         return (
-          <div className="flex flex-col gap-6 sm:gap-8">
+          <div className="flex flex-col gap-6 sm:gap-4">
             {model.isActive ? (
               <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
-                <PortfolioHistoryChartControls
-                  activeTab={historyChartTab}
-                  onActiveTabChange={setHistoryChartTab}
-                  denomination={resolvedHistoryDenomination}
-                  onDenominationChange={setHistoryDenomination}
-                  timeframe={historyTimeframe}
-                  onTimeframeChange={setHistoryTimeframe}
-                  resolvedGrowthDisplayMode={resolvedGrowthDisplayMode}
-                  onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
-                  vaultGrowthMode={historyVaultGrowthMode}
-                  onVaultGrowthModeChange={setHistoryVaultGrowthMode}
-                  className="border-b border-border bg-surface-secondary/35 px-4 py-3 md:px-6"
-                />
-                <div className="grid items-stretch xl:grid-cols-[minmax(0,1fr)_340px]">
-                  <PortfolioHistoryChart
-                    balanceData={historyData}
-                    protocolReturnData={protocolReturnHistoryData}
-                    protocolReturnSummary={protocolReturnHistorySummary}
-                    protocolReturnFamilySeries={protocolReturnHistoryFamilySeries}
-                    denomination={resolvedHistoryDenomination}
-                    timeframe={historyTimeframe}
+                <div className="grid items-stretch min-[920px]:grid-cols-[minmax(640px,1fr)_minmax(200px,340px)]">
+                  <PortfolioHistoryChartControls
                     activeTab={historyChartTab}
-                    growthDisplayModeOverride={historyGrowthDisplayModeOverride}
+                    onActiveTabChange={setHistoryChartTab}
+                    denomination={resolvedHistoryDenomination}
+                    onDenominationChange={setHistoryDenomination}
+                    timeframe={historyTimeframe}
+                    onTimeframeChange={setHistoryTimeframe}
+                    resolvedGrowthDisplayMode={resolvedGrowthDisplayMode}
                     onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
-                    vaultGrowthMode={historyVaultGrowthMode}
                     onVaultGrowthModeChange={setHistoryVaultGrowthMode}
-                    balanceIsLoading={historyLoading}
-                    balanceIsEmpty={historyEmpty}
-                    balanceError={historyError}
-                    protocolReturnIsLoading={protocolReturnHistoryLoading}
-                    protocolReturnIsEmpty={protocolReturnHistoryEmpty}
-                    protocolReturnError={protocolReturnHistoryError}
-                    embedded
+                    isEthGrowthAvailable={isEthGrowthAvailable}
                     className="h-full bg-linear-to-b from-surface to-surface-secondary/20"
-                  />
-                  <div className="border-t border-border bg-linear-to-b from-surface to-surface-secondary/25 xl:border-t-0 xl:border-l">
+                  >
+                    <PortfolioHistoryChart
+                      balanceData={historyData}
+                      protocolReturnData={protocolReturnHistoryData}
+                      protocolReturnSummary={protocolReturnHistorySummary}
+                      protocolReturnFamilySeries={protocolReturnHistoryFamilySeries}
+                      denomination={resolvedHistoryDenomination}
+                      timeframe={historyTimeframe}
+                      activeTab={historyChartTab}
+                      growthDisplayModeOverride={historyGrowthDisplayModeOverride}
+                      onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
+                      vaultGrowthMode={historyVaultGrowthMode}
+                      onVaultGrowthModeChange={setHistoryVaultGrowthMode}
+                      balanceIsLoading={historyLoading}
+                      balanceIsEmpty={historyEmpty}
+                      balanceError={historyError}
+                      protocolReturnIsLoading={protocolReturnHistoryLoading}
+                      protocolReturnIsEmpty={protocolReturnHistoryEmpty}
+                      protocolReturnError={protocolReturnHistoryError}
+                      embedded
+                      className="min-h-0 flex-1"
+                    />
+                  </PortfolioHistoryChartControls>
+                  <div className="border-t border-border bg-linear-to-b from-surface to-surface-secondary/25 min-[920px]:border-t-0 min-[920px]:border-l">
                     <PortfolioHeaderSection
                       blendedMetrics={model.blendedMetrics}
                       isHoldingsLoading={model.isHoldingsLoading}
@@ -1464,7 +1466,7 @@ function PortfolioPage(): ReactElement {
             <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} />
           </div>
         </div>
-        <div className={'pt-2'} key={activeTab}>
+        <div className={'pt-4'} key={activeTab}>
           {renderTabContent()}
         </div>
       </div>

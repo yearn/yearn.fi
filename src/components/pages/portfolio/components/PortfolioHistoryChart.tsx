@@ -129,8 +129,9 @@ type TPortfolioHistoryChartControlsProps = {
   onTimeframeChange: (timeframe: TPortfolioHistoryChartTimeframe) => void
   resolvedGrowthDisplayMode: TGrowthDisplayMode
   onGrowthDisplayModeOverrideChange: (mode: TGrowthDisplayMode | null) => void
-  vaultGrowthMode: TPortfolioVaultGrowthChartMode
   onVaultGrowthModeChange: (mode: TPortfolioVaultGrowthChartMode) => void
+  isEthGrowthAvailable?: boolean
+  children?: ReactElement
   className?: string
 }
 
@@ -159,21 +160,6 @@ const GROWTH_DISPLAY_TOOLTIP_COPY: Record<TGrowthDisplayMode, { title: string; b
     body: 'Protocol growth during the selected timeframe in receipt-time ETH equivalent.'
   }
 }
-const VAULT_GROWTH_MODES: Array<{ id: TPortfolioVaultGrowthChartMode; label: string }> = [
-  { id: 'position', label: 'Position' },
-  { id: 'index', label: 'Index' }
-]
-const VAULT_GROWTH_MODE_TOOLTIP_COPY: Record<TPortfolioVaultGrowthChartMode, { title: string; body: string }> = {
-  position: {
-    title: 'Position',
-    body: 'Shows actual protocol gain from your deposited positions during the selected timeframe.'
-  },
-  index: {
-    title: 'Index',
-    body: 'Shows vault performance normalized to 100, ignoring position size.'
-  }
-}
-
 const INDEX_SERIES_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5'] as const
 
 const EXAMPLE_PORTFOLIO_USD_DATA: TPortfolioHistoryChartData = [
@@ -295,21 +281,6 @@ function renderGrowthDisplayTooltip(mode: TGrowthDisplayMode): ReactElement {
   )
 }
 
-function renderVaultGrowthModeTooltip(mode: TPortfolioVaultGrowthChartMode): ReactElement {
-  const copy = VAULT_GROWTH_MODE_TOOLTIP_COPY[mode]
-
-  return (
-    <div
-      className={
-        'max-w-[240px] rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs leading-relaxed text-text-primary'
-      }
-    >
-      <p className={'font-semibold text-text-primary'}>{copy.title}</p>
-      <p>{copy.body}</p>
-    </div>
-  )
-}
-
 function resolveGrowthDisplayMode(
   selectedMode: TGrowthDisplayMode,
   protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
@@ -335,19 +306,66 @@ export function PortfolioHistoryChartControls({
   onTimeframeChange,
   resolvedGrowthDisplayMode,
   onGrowthDisplayModeOverrideChange,
-  vaultGrowthMode,
   onVaultGrowthModeChange,
+  isEthGrowthAvailable = true,
+  children,
   className
 }: TPortfolioHistoryChartControlsProps): ReactElement {
+  const unitOptions = GROWTH_DISPLAY_MODES.map((mode) => {
+    const isAvailable =
+      activeTab === 'balance'
+        ? mode.id !== 'index'
+        : activeTab === 'growth'
+          ? mode.id !== 'eth' || isEthGrowthAvailable
+          : activeTab === 'index'
+            ? mode.id === 'index'
+            : false
+    const isActive =
+      activeTab === 'balance'
+        ? denomination === mode.id
+        : activeTab === 'growth'
+          ? resolvedGrowthDisplayMode === mode.id
+          : activeTab === 'index' && mode.id === 'index'
+
+    return { ...mode, isActive, isAvailable }
+  })
+
+  const handleUnitChange = (mode: TGrowthDisplayMode): void => {
+    if (activeTab === 'balance') {
+      if (mode === 'usd' || mode === 'eth') {
+        onDenominationChange(mode)
+      }
+      return
+    }
+
+    if (activeTab === 'growth') {
+      onGrowthDisplayModeOverrideChange(mode)
+      return
+    }
+
+    if (activeTab === 'index') {
+      onVaultGrowthModeChange('index')
+    }
+  }
+
   return (
-    <div className={cl('flex flex-col gap-2 md:flex-row md:items-center md:justify-between', className)}>
-      <div className={'flex flex-col gap-2 md:flex-row md:items-center'}>
+    <div className={cl('relative min-h-0', className)}>
+      <div
+        className={
+          'absolute inset-x-0 top-0 z-10 flex flex-col gap-2 p-4 md:flex-row md:items-center md:justify-between md:px-6'
+        }
+      >
         <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
           {CHART_TABS.map((tab) => (
             <button
               key={tab.id}
               type={'button'}
-              onClick={() => onActiveTabChange(tab.id)}
+              onClick={() => {
+                onActiveTabChange(tab.id)
+                if (tab.id === 'index') {
+                  onVaultGrowthModeChange('index')
+                }
+              }}
               className={cl(
                 'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold transition-all',
                 'min-h-[36px] md:min-h-0 active:scale-[0.98]',
@@ -359,96 +377,53 @@ export function PortfolioHistoryChartControls({
             </button>
           ))}
         </div>
-        {activeTab === 'balance' ? (
-          <div className={cl('flex shrink-0 items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
-            {(['usd', 'eth'] as const).map((nextDenomination) => (
+        <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
+          {(['30d', '90d', '1y', 'all'] as const).map((tf) => (
+            <button
+              key={tf}
+              type={'button'}
+              onClick={() => onTimeframeChange(tf)}
+              className={cl(
+                'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                SELECTOR_BAR_STYLES.buttonBase,
+                timeframe === tf ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
+              )}
+            >
+              {tf.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+      {children}
+      <div className={'absolute inset-x-0 bottom-1 z-10 flex justify-center px-4 py-1 md:px-6'}>
+        <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
+          {unitOptions.map((mode) => (
+            <Tooltip
+              key={mode.id}
+              className={'h-auto w-auto justify-start gap-0'}
+              openDelayMs={150}
+              side={'top'}
+              tooltip={renderGrowthDisplayTooltip(mode.id)}
+            >
               <button
-                key={nextDenomination}
                 type={'button'}
-                onClick={() => onDenominationChange(nextDenomination)}
+                onClick={() => handleUnitChange(mode.id)}
+                disabled={!mode.isAvailable}
+                aria-disabled={!mode.isAvailable}
                 className={cl(
-                  'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                  'min-h-[36px] md:min-h-0 active:scale-[0.98]',
+                  'rounded-sm px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-all',
+                  'min-h-[28px] disabled:cursor-not-allowed disabled:opacity-40',
+                  mode.isAvailable ? 'active:scale-[0.98]' : '',
                   SELECTOR_BAR_STYLES.buttonBase,
-                  denomination === nextDenomination
-                    ? SELECTOR_BAR_STYLES.buttonActive
-                    : SELECTOR_BAR_STYLES.buttonInactive
+                  mode.isActive ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
                 )}
               >
-                {nextDenomination.toUpperCase()}
+                {mode.label}
               </button>
-            ))}
-          </div>
-        ) : activeTab === 'growth' ? (
-          <div className={cl('flex shrink-0 items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
-            {GROWTH_DISPLAY_MODES.map((mode) => (
-              <Tooltip
-                key={mode.id}
-                className={'h-auto w-auto justify-start gap-0'}
-                openDelayMs={150}
-                side={'top'}
-                tooltip={renderGrowthDisplayTooltip(mode.id)}
-              >
-                <button
-                  type={'button'}
-                  onClick={() => onGrowthDisplayModeOverrideChange(mode.id)}
-                  className={cl(
-                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                    SELECTOR_BAR_STYLES.buttonBase,
-                    resolvedGrowthDisplayMode === mode.id
-                      ? SELECTOR_BAR_STYLES.buttonActive
-                      : SELECTOR_BAR_STYLES.buttonInactive
-                  )}
-                >
-                  {mode.label}
-                </button>
-              </Tooltip>
-            ))}
-          </div>
-        ) : activeTab === 'index' ? (
-          <div className={cl('flex shrink-0 items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
-            {VAULT_GROWTH_MODES.map((mode) => (
-              <Tooltip
-                key={mode.id}
-                className={'h-auto w-auto justify-start gap-0'}
-                openDelayMs={150}
-                side={'top'}
-                tooltip={renderVaultGrowthModeTooltip(mode.id)}
-              >
-                <button
-                  type={'button'}
-                  onClick={() => onVaultGrowthModeChange(mode.id)}
-                  className={cl(
-                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                    SELECTOR_BAR_STYLES.buttonBase,
-                    vaultGrowthMode === mode.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
-                  )}
-                >
-                  {mode.label}
-                </button>
-              </Tooltip>
-            ))}
-          </div>
-        ) : null}
-      </div>
-      <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
-        {(['30d', '90d', '1y', 'all'] as const).map((tf) => (
-          <button
-            key={tf}
-            type={'button'}
-            onClick={() => onTimeframeChange(tf)}
-            className={cl(
-              'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-              'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-              SELECTOR_BAR_STYLES.buttonBase,
-              timeframe === tf ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
-            )}
-          >
-            {tf.toUpperCase()}
-          </button>
-        ))}
+            </Tooltip>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -587,7 +562,7 @@ export function PortfolioHistoryChart({
   }, [address, onGrowthDisplayModeOverrideChange])
 
   const sectionClassName = embedded
-    ? 'flex h-full min-h-0 flex-col bg-surface px-5 py-4 md:px-6 md:py-5'
+    ? 'flex h-full min-h-0 flex-col bg-surface px-5 pb-7 pt-16 md:px-6 md:pb-8 md:pt-16'
     : 'flex h-full flex-col gap-4 rounded-lg border border-border bg-surface p-6'
 
   const filteredBalanceData = useMemo<TChartPoint[]>(() => {
