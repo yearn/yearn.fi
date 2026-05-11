@@ -651,6 +651,48 @@ describe('pnl simple protocol return', () => {
     expect(vault.exitCount).toBe(1)
   })
 
+  it('nets same-transaction transfer-ins that are immediately withdrawn', () => {
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'transfer',
+          id: 'router-transfer-in',
+          blockTimestamp: 100,
+          transactionHash: '0xrouter-exit',
+          sender: OTHER,
+          receiver: USER,
+          shares: 40n * ONE
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'router-withdrawal',
+          blockTimestamp: 100,
+          transactionHash: '0xrouter-exit',
+          logIndex: 1,
+          shares: 30n * ONE,
+          assets: 30n * ONE,
+          owner: USER
+        })
+      ],
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1.1],
+            [300, 1.2]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]])
+    })
+
+    expect(vault.sharesFormatted).toBeCloseTo(10)
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(0)
+    expect(vault.unrealizedBaselineUnderlying).toBeCloseTo(11)
+    expect(vault.growthUnderlying).toBeCloseTo(1)
+    expect(vault.exitCount).toBe(0)
+  })
+
   it('preserves accumulated growth across same-family staking unwrap transactions', () => {
     const UNDERLYING_VAULT = '0x182863131F9a4630fF9E27830d945B1413e347E8'
     const STAKING_VAULT = '0xd57aea3686d623da2dcebc87010a4f2f38ac7b15'

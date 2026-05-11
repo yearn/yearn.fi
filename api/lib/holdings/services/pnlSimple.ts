@@ -1107,6 +1107,46 @@ function buildEffectiveSimpleFamilyEvents(txFamilyEvents: TRawPnlEvent[], userAd
     matchedDirectWithdrawalShares
   )
 
+  const addressScopedTransferIns = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
+      event.kind === 'transfer' &&
+      lowerCaseAddress(event.sender) !== ZERO_ADDRESS &&
+      lowerCaseAddress(event.sender) !== normalizedUserAddress &&
+      lowerCaseAddress(event.receiver) === normalizedUserAddress &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress)
+  )
+  const addressScopedWithdrawals = addressEvents.filter(
+    (event): event is Extract<TRawPnlEvent, { kind: 'withdrawal' }> =>
+      event.kind === 'withdrawal' &&
+      !event.isStakingVault &&
+      lowerCaseAddress(event.owner) === normalizedUserAddress &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress)
+  )
+  const matchedSameTxTransferInWithdrawalShares = minBigInt(
+    addressScopedTransferIns.reduce((total, event) => total + event.shares, ZERO),
+    addressScopedWithdrawals.reduce((total, event) => total + event.shares, ZERO)
+  )
+
+  addressEvents = stripMatchedShares(
+    addressEvents,
+    (event) =>
+      event.kind === 'transfer' &&
+      lowerCaseAddress(event.sender) !== ZERO_ADDRESS &&
+      lowerCaseAddress(event.sender) !== normalizedUserAddress &&
+      lowerCaseAddress(event.receiver) === normalizedUserAddress &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress),
+    matchedSameTxTransferInWithdrawalShares
+  )
+  addressEvents = stripMatchedShares(
+    addressEvents,
+    (event) =>
+      event.kind === 'withdrawal' &&
+      !event.isStakingVault &&
+      lowerCaseAddress(event.owner) === normalizedUserAddress &&
+      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress),
+    matchedSameTxTransferInWithdrawalShares
+  )
+
   const addressScopedTransferOuts = addressEvents.filter(
     (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
       event.kind === 'transfer' &&
