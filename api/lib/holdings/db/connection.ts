@@ -37,6 +37,11 @@ const RETRYABLE_CONNECTION_ERROR_CODES = new Set([
   '57P03',
   '53300'
 ])
+const DISABLING_CONFIGURATION_ERROR_CODES = new Set([
+  '28P01', // invalid_password
+  '28000', // invalid_authorization_specification
+  '3D000' // invalid_catalog_name
+])
 
 function normalizeUserAddress(userAddress: string): string {
   return userAddress.toLowerCase()
@@ -94,11 +99,20 @@ export function shouldDisableDatabaseOnQueryError(error: unknown): boolean {
     return true
   }
 
+  if (code !== null && DISABLING_CONFIGURATION_ERROR_CODES.has(code)) {
+    return true
+  }
+
   if (status !== null && status >= 500) {
     return true
   }
 
-  return message.includes('timed out') || message.includes('timeout') || message.includes('failed to fetch')
+  return (
+    message.includes('timed out') ||
+    message.includes('timeout') ||
+    message.includes('failed to fetch') ||
+    message.includes('password authentication failed')
+  )
 }
 
 async function createPool(): Promise<DatabasePool | null> {
