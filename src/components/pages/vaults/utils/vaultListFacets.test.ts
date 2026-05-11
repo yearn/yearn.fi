@@ -2,7 +2,7 @@ import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { describe, expect, it } from 'vitest'
 
-import { deriveListKind, hasTemporaryVisibilityOverride } from './vaultListFacets'
+import { deriveListKind } from './vaultListFacets'
 
 const STANDARD_V3_VAULT = {
   version: '3.0.4',
@@ -22,7 +22,7 @@ const STANDARD_V3_VAULT = {
 } as unknown as TKongVaultInput
 
 describe('deriveListKind', () => {
-  it('treats yvBTC as an allocator vault so it can be pinned with allocator vaults', () => {
+  it('keeps yvBTC as a strategy before launch so it is not pinned with allocator vaults', () => {
     expect(
       deriveListKind({
         ...STANDARD_V3_VAULT,
@@ -30,27 +30,10 @@ describe('deriveListKind', () => {
         name: 'BTC yVault',
         symbol: 'yvBTC'
       })
-    ).toBe('allocator')
+    ).toBe('strategy')
   })
 
   it('keeps ordinary v3 vaults with no multi-strategy kind as strategies', () => {
     expect(deriveListKind(STANDARD_V3_VAULT)).toBe('strategy')
-  })
-})
-
-describe('hasTemporaryVisibilityOverride', () => {
-  it('returns true for yvBTC while Kong and CMS metadata are incomplete', () => {
-    expect(
-      hasTemporaryVisibilityOverride({
-        ...STANDARD_V3_VAULT,
-        address: YVBTC_UNLOCKED_ADDRESS,
-        name: 'BTC yVault',
-        symbol: 'yvBTC'
-      })
-    ).toBe(true)
-  })
-
-  it('returns false for ordinary vaults', () => {
-    expect(hasTemporaryVisibilityOverride(STANDARD_V3_VAULT)).toBe(false)
   })
 })

@@ -17,6 +17,7 @@ import {
 import { getVaultFeeStructureKey } from '@pages/vaults/utils/vaultFees'
 import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
+import { isYvBtcVault } from '@pages/vaults/utils/yvBtc'
 import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useV2VaultFilter } from '@shared/hooks/useV2VaultFilter'
@@ -109,6 +110,10 @@ function isYvUsdVariantVault(vault: TKongVaultInput): boolean {
 
 function removeRawYvUsdVariants<TVault extends TKongVaultInput>(vaults: TVault[]): TVault[] {
   return vaults.filter((vault) => !isYvUsdVariantVault(vault))
+}
+
+function removePrelaunchYvBtcVaults<TVault extends TKongVaultInput>(vaults: TVault[]): TVault[] {
+  return vaults.filter((vault) => !isYvBtcVault(vault))
 }
 
 function appendUniqueVault(vaults: TKongVaultInput[], vaultToAppend?: TKongVaultInput): TKongVaultInput[] {
@@ -226,17 +231,17 @@ export function useVaultsListModel({
   )
 
   const sanitizedV3FilteredVaults = useMemo(
-    () => removeRawYvUsdVariants(v3FilterResult.filteredVaults),
+    () => removePrelaunchYvBtcVaults(removeRawYvUsdVariants(v3FilterResult.filteredVaults)),
     [v3FilterResult.filteredVaults]
   )
 
   const sanitizedV3HoldingsVaults = useMemo(
-    () => removeRawYvUsdVariants(v3FilterResult.holdingsVaults),
+    () => removePrelaunchYvBtcVaults(removeRawYvUsdVariants(v3FilterResult.holdingsVaults)),
     [v3FilterResult.holdingsVaults]
   )
 
   const sanitizedV3AvailableVaults = useMemo(
-    () => removeRawYvUsdVariants(v3FilterResult.availableVaults),
+    () => removePrelaunchYvBtcVaults(removeRawYvUsdVariants(v3FilterResult.availableVaults)),
     [v3FilterResult.availableVaults]
   )
 
@@ -346,16 +351,14 @@ export function useVaultsListModel({
   )
 
   const sortedSuggestedV3Candidates = useSortVaults(
-    removeRawYvUsdVariants(filteredVaultsAllChains),
+    removePrelaunchYvBtcVaults(removeRawYvUsdVariants(filteredVaultsAllChains)),
     'featuringScore',
     'desc'
   )
   const sortedSuggestedV2Candidates = useSortVaults(filteredV2VaultsAllChains, 'featuringScore', 'desc')
 
   const pinnedSections = useMemo(() => {
-    const sections: TVaultsPinnedSection[] = [
-      ...getProductPinnedSections({ sortedVaults, shouldShowYvUsd, yvUsdVault })
-    ]
+    const sections: TVaultsPinnedSection[] = [...getProductPinnedSections({ shouldShowYvUsd, yvUsdVault })]
     const seen = new Set(sections.flatMap((section) => section.vaults.map((vault) => getVaultKey(vault))))
     const takeUnseenVaults = (vaults: TKongVaultInput[]): TKongVaultInput[] =>
       vaults.filter((vault) => {

@@ -1,5 +1,4 @@
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
-import { isYvBtcVault } from '@pages/vaults/utils/yvBtc'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 
 export type TVaultsPinnedSection = {
@@ -8,11 +7,9 @@ export type TVaultsPinnedSection = {
 }
 
 export function getProductPinnedSections({
-  sortedVaults,
   shouldShowYvUsd,
   yvUsdVault
 }: {
-  sortedVaults: TKongVaultInput[]
   shouldShowYvUsd: boolean
   yvUsdVault?: TKongVaultInput
 }): TVaultsPinnedSection[] {
@@ -28,14 +25,6 @@ export function getProductPinnedSections({
       seen.add(key)
       return true
     })
-
-  const yvBtcSectionVaults = takeUnseenVaults(sortedVaults.filter((vault) => isYvBtcVault(vault)).slice(0, 1))
-  if (yvBtcSectionVaults.length > 0) {
-    sections.push({
-      key: 'yvBTC',
-      vaults: yvBtcSectionVaults
-    })
-  }
 
   if (shouldShowYvUsd && yvUsdVault) {
     const yvUsdSectionVaults = takeUnseenVaults([yvUsdVault])

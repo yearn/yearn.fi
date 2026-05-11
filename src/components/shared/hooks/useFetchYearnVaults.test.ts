@@ -36,9 +36,9 @@ describe('isCatalogYearnVault', () => {
     expect(isCatalogYearnVault(makeVault({ origin: 'yearn', inclusion: { isYearn: false } as never }))).toBe(false)
   })
 
-  it('keeps yvBTC in the public catalog while Kong metadata is incomplete', () => {
+  it('does not include yvBTC in the public catalog before launch without Yearn metadata', () => {
     expect(
       isCatalogYearnVault(makeVault({ address: YVBTC_UNLOCKED_ADDRESS, origin: null, inclusion: {} as never }))
-    ).toBe(true)
+    ).toBe(false)
   })
 })

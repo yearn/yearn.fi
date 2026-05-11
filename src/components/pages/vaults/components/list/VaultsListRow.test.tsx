@@ -470,7 +470,7 @@ describe('VaultsListRow', () => {
     expect(mockUseVaultSnapshot).not.toHaveBeenCalled()
   })
 
-  it('shows a temporary override chip for yvBTC rows', () => {
+  it('does not show a temporary override chip for yvBTC rows before launch', () => {
     const vault = {
       version: '3.0.4',
       chainID: 1,
@@ -495,8 +495,8 @@ describe('VaultsListRow', () => {
 
     const html = renderRowHtml(vault)
 
-    expect(html).toContain('Override')
-    expect(html).toContain('Temporary visibility override')
+    expect(html).not.toContain('Override')
+    expect(html).not.toContain('Temporary visibility override')
   })
 
   it('renders the fees chip as an active exact fee-structure filter', () => {
