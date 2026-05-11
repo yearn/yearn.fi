@@ -29,6 +29,7 @@ import {
   isHoldingsDebugRequested,
   withHoldingsDebugContext
 } from './lib/holdings/services/debug'
+import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
 import {
   buildTenderlyPanelStatus,
   buildTenderlyRevertResponse,
@@ -134,6 +135,21 @@ function handleCorsPreFlight(): Response {
   return new Response(null, {
     status: 204,
     headers: CORS_HEADERS
+  })
+}
+
+function handleHoldingsProgress(req: Request): Response {
+  const url = new URL(req.url)
+  const progress = getHoldingsProgress(url.searchParams.get('id'))
+
+  if (!progress) {
+    return Response.json({ error: 'Progress not found', status: 404 }, { status: 404 })
+  }
+
+  return Response.json(progress, {
+    headers: {
+      'Cache-Control': 'no-store'
+    }
   })
 }
 
@@ -547,6 +563,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const debugVault = url.searchParams.get('debugVault')
   const debugTx = url.searchParams.get('debugTx')
   const refreshParam = url.searchParams.get('refresh')
+  const progressId = url.searchParams.get('progressId')
   const refresh = refreshParam === 'true' || refreshParam === '1'
 
   if (!address) {
@@ -564,6 +581,13 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
+    const activeProgressId = startHoldingsProgress({
+      id: progressId,
+      route: 'history',
+      address,
+      message: 'Fetching historical user data'
+    })
+
     if (refresh) {
       const cleared = await clearUserCache(address, version)
       console.log(`[Server] Cleared ${cleared} cached entries for ${address}`)
@@ -573,7 +597,8 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       createHoldingsDebugContext('history', address, debugEnabled, {
         lotsEnabled: debugLotsEnabled,
         vaultFilter: debugVault,
-        txFilter: debugTx
+        txFilter: debugTx,
+        progressId: activeProgressId
       }),
       async () => {
         debugLog('route', 'started holdings history request', {
@@ -616,8 +641,21 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.value > 0)
     if (!hasHoldings) {
+      updateHoldingsProgress(activeProgressId, {
+        status: 'complete',
+        progress: 100,
+        message: 'No historical holdings found',
+        detail: null
+      })
       return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
+
+    updateHoldingsProgress(activeProgressId, {
+      status: 'complete',
+      progress: 100,
+      message: 'Historical user data ready',
+      detail: `${holdings.dataPoints.length} chart points`
+    })
 
     return Response.json(
       {
@@ -637,6 +675,11 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       }
     )
   } catch (error) {
+    updateHoldingsProgress(progressId, {
+      status: 'error',
+      message: 'Failed to fetch historical user data',
+      detail: error instanceof Error ? error.message : String(error)
+    })
     console.error('Error fetching holdings history:', error)
     const message = error instanceof Error ? error.message : String(error)
     const stack = error instanceof Error ? error.stack : undefined
@@ -780,6 +823,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
   const debugTx = url.searchParams.get('debugTx')
   const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
   const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+  const progressId = url.searchParams.get('progressId')
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -796,11 +840,19 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
+    const activeProgressId = startHoldingsProgress({
+      id: progressId,
+      route: 'pnl-simple-history',
+      address,
+      message: 'Fetching historical user data'
+    })
+
     const history = await withHoldingsDebugContext(
       createHoldingsDebugContext('protocol-return-history', address, debugEnabled, {
         lotsEnabled: debugLotsEnabled,
         vaultFilter: debugVault,
-        txFilter: debugTx
+        txFilter: debugTx,
+        progressId: activeProgressId
       }),
       async () => {
         debugLog('route', 'started holdings protocol return history request', {
@@ -847,8 +899,21 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
     )
 
     if (history.summary.totalVaults === 0) {
+      updateHoldingsProgress(activeProgressId, {
+        status: 'complete',
+        progress: 100,
+        message: 'No historical holdings found',
+        detail: null
+      })
       return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
+
+    updateHoldingsProgress(activeProgressId, {
+      status: 'complete',
+      progress: 100,
+      message: 'Historical user data ready',
+      detail: `${history.dataPoints.length} chart points`
+    })
 
     return Response.json(history, {
       headers: {
@@ -856,6 +921,11 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
       }
     })
   } catch (error) {
+    updateHoldingsProgress(progressId, {
+      status: 'error',
+      message: 'Failed to fetch historical user data',
+      detail: error instanceof Error ? error.message : String(error)
+    })
     console.error('Error fetching holdings protocol return history:', error)
     const message = error instanceof Error ? error.message : String(error)
     const stack = error instanceof Error ? error.stack : undefined
@@ -997,6 +1067,10 @@ async function main() {
 
         if (url.pathname === '/api/holdings/history') {
           return withCors(await handleHoldingsHistory(req))
+        }
+
+        if (url.pathname === '/api/holdings/progress') {
+          return withCors(handleHoldingsProgress(req))
         }
 
         if (url.pathname === '/api/holdings/activity') {

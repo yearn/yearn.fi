@@ -77,6 +77,29 @@ export const portfolioProtocolReturnHistoryResponseSchema = z.object({
   familySeries: z.array(portfolioProtocolReturnHistoryFamilySeriesSchema).optional().default([])
 })
 
+export const portfolioHistoryProgressResponseSchema = z.object({
+  id: z.string(),
+  route: z.string(),
+  address: z.string(),
+  status: z.enum(['running', 'complete', 'error']),
+  progress: z.number(),
+  message: z.string(),
+  detail: z.string().nullable(),
+  startedAt: z.number(),
+  updatedAt: z.number(),
+  logs: z
+    .array(
+      z.object({
+        elapsedMs: z.number(),
+        scope: z.string(),
+        message: z.string(),
+        payload: z.record(z.string(), z.unknown()).optional()
+      })
+    )
+    .optional()
+    .default([])
+})
+
 export const portfolioBreakdownResponseSchema = z.object({
   address: z.string(),
   version: z.string(),
@@ -128,6 +151,7 @@ export const portfolioActivityResponseSchema = z.object({
 
 export type TPortfolioHistorySimpleResponse = z.infer<typeof portfolioHistorySimpleResponseSchema>
 export type TPortfolioProtocolReturnHistoryResponse = z.infer<typeof portfolioProtocolReturnHistoryResponseSchema>
+export type TPortfolioHistoryProgressResponse = z.infer<typeof portfolioHistoryProgressResponseSchema>
 export type TPortfolioProtocolReturnHistorySummary = z.infer<typeof portfolioProtocolReturnHistorySummarySchema>
 export type TPortfolioBreakdownResponse = z.infer<typeof portfolioBreakdownResponseSchema>
 export type TPortfolioBreakdownVault = z.infer<typeof portfolioBreakdownVaultSchema>

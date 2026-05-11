@@ -1299,6 +1299,7 @@ function PortfolioPage(): ReactElement {
     data: historyData,
     denomination: resolvedHistoryDenomination,
     isLoading: historyLoading,
+    progress: historyProgress,
     error: historyError,
     isEmpty: historyEmpty
   } = usePortfolioHistory(historyDenomination, historyFetchTimeframe, shouldLoadPositionsHistory)
@@ -1307,6 +1308,7 @@ function PortfolioPage(): ReactElement {
     summary: protocolReturnHistorySummary,
     familySeries: protocolReturnHistoryFamilySeries,
     isLoading: protocolReturnHistoryLoading,
+    progress: protocolReturnHistoryProgress,
     error: protocolReturnHistoryError,
     isEmpty: protocolReturnHistoryEmpty
   } = usePortfolioProtocolReturnHistory(historyFetchTimeframe, shouldLoadPositionsHistory)
@@ -1320,6 +1322,7 @@ function PortfolioPage(): ReactElement {
   const displayedHistoryChartTab = hasNoYearnPositions ? 'balance' : historyChartTab
   const historyChartLoadingMessage =
     model.hasHoldings && !model.isHoldingsLoading ? 'fetching historical user data' : 'Searching for Yearn balances...'
+  const historyChartProgress = displayedHistoryChartTab === 'balance' ? historyProgress : protocolReturnHistoryProgress
   const historyChartElement = (
     <PortfolioHistoryChart
       balanceData={historyData}
@@ -1342,6 +1345,7 @@ function PortfolioPage(): ReactElement {
       embedded
       reserveControlSpace={!hasNoYearnPositions}
       loadingMessage={historyChartLoadingMessage}
+      loadingProgress={historyChartProgress}
       className={
         hasNoYearnPositions ? 'h-full min-h-0 bg-linear-to-b from-surface to-surface-secondary/20' : 'min-h-0 flex-1'
       }

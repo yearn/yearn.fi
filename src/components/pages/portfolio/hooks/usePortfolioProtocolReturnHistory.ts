@@ -9,17 +9,23 @@ import {
   type TPortfolioProtocolReturnHistoryResponse,
   type TPortfolioProtocolReturnHistorySummary
 } from '../types/api'
+import { createPortfolioHistoryProgressId, usePortfolioHistoryProgress } from './usePortfolioHistoryProgress'
 
 export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTimeframe = '1y', enabled = true) {
   const { address } = useWeb3()
+  const progressId = useMemo(
+    () =>
+      address && enabled ? createPortfolioHistoryProgressId(['portfolio-protocol-history', address, timeframe]) : null,
+    [address, enabled, timeframe]
+  )
 
   const endpoint = useMemo(() => {
-    if (!address || !enabled) {
+    if (!address || !enabled || !progressId) {
       return null
     }
 
-    return `/api/holdings/protocol-return/history?address=${address}&timeframe=${timeframe}&debug=1&fetchType=parallel`
-  }, [address, enabled, timeframe])
+    return `/api/holdings/protocol-return/history?address=${address}&timeframe=${timeframe}&debug=1&fetchType=parallel&progressId=${encodeURIComponent(progressId)}`
+  }, [address, enabled, progressId, timeframe])
 
   const { data, isLoading, isFetching, error } = useFetch<TPortfolioProtocolReturnHistoryResponse>({
     endpoint,
@@ -56,6 +62,7 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
   const isEmpty =
     !isLoadingState && Boolean(address) && (errorStatus === 404 || Boolean(history && history.length === 0))
   const visibleError = isEmpty ? null : error
+  const progress = usePortfolioHistoryProgress(progressId, isLoadingState)
 
   return {
     data: history,
@@ -63,6 +70,7 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
     familySeries,
     timeframe,
     isLoading: isLoadingState,
+    progress,
     error: visibleError,
     isEmpty
   }

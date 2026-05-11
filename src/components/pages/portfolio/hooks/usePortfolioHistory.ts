@@ -8,6 +8,7 @@ import type {
   TPortfolioHistoryTimeframe
 } from '../types/api'
 import { portfolioHistorySimpleResponseSchema } from '../types/api'
+import { createPortfolioHistoryProgressId, usePortfolioHistoryProgress } from './usePortfolioHistoryProgress'
 
 export function usePortfolioHistory(
   denomination: TPortfolioHistoryDenomination = 'usd',
@@ -15,13 +16,20 @@ export function usePortfolioHistory(
   enabled = true
 ) {
   const { address } = useWeb3()
+  const progressId = useMemo(
+    () =>
+      address && enabled
+        ? createPortfolioHistoryProgressId(['portfolio-history', address, denomination, timeframe])
+        : null,
+    [address, denomination, enabled, timeframe]
+  )
 
   const endpoint = useMemo(() => {
-    if (!address || !enabled) {
+    if (!address || !enabled || !progressId) {
       return null
     }
-    return `/api/holdings/history?address=${address}&denomination=${denomination}&timeframe=${timeframe}&fetchType=parallel`
-  }, [address, denomination, enabled, timeframe])
+    return `/api/holdings/history?address=${address}&denomination=${denomination}&timeframe=${timeframe}&fetchType=parallel&progressId=${encodeURIComponent(progressId)}`
+  }, [address, denomination, enabled, progressId, timeframe])
 
   const {
     data: rawData,
@@ -54,12 +62,14 @@ export function usePortfolioHistory(
     (error as { status?: number } | null)?.status
   const isEmpty = !isLoadingState && Boolean(address) && (errorStatus === 404 || Boolean(data && data.length === 0))
   const visibleError = isEmpty ? null : error
+  const progress = usePortfolioHistoryProgress(progressId, isLoadingState)
 
   return {
     data,
     denomination,
     timeframe,
     isLoading: isLoadingState,
+    progress,
     error: visibleError,
     isEmpty
   }

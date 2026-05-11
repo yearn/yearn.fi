@@ -1,7 +1,7 @@
 import { formatUnits } from 'viem'
 import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
-import { debugError, debugLog } from './debug'
+import { debugError, debugLog, reportHoldingsProgress } from './debug'
 import {
   fetchHistoricalPricesForTokenTimestamps,
   getChainPrefix,
@@ -21,7 +21,12 @@ import {
   toSettledDayTimestamp
 } from './holdings'
 import { getPPS } from './kong'
-import { deriveNestedVaultAssetPriceData, expandNestedVaultAssetPriceRequests } from './nestedVaultPrices'
+import {
+  deriveNestedVaultAssetPriceData,
+  expandNestedVaultAssetPriceRequests,
+  getNestedVaultPpsIdentifiersFromPriceRequests,
+  mergeVaultIdentifiers
+} from './nestedVaultPrices'
 import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnlEvents'
 import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
@@ -2010,6 +2015,7 @@ export async function getHoldingsProtocolReturnHistory(
     paginationMode,
     timeframe
   })
+  reportHoldingsProgress(12, 'Fetching historical user data', 'Starting protocol return history')
 
   const requestedVaults = normalizeProtocolReturnVaultFilters(requestedVaultFilters, legacyVaultChainId)
   const singleRequestedVault = requestedVaults?.length === 1 ? requestedVaults[0] : undefined
@@ -2022,11 +2028,17 @@ export async function getHoldingsProtocolReturnHistory(
     vaultIdentifiers: requestedVaults
   })
   const selectedEvents = filterEventsByRequestedVaults(settledContext.selectedEvents, requestedVaults)
+  reportHoldingsProgress(
+    30,
+    'Loaded wallet events and vault share prices',
+    `${settledContext.selectedEvents.length} events`
+  )
   const rawEvents = await enrichSimpleHistoryRawEvents({
     events: selectedEvents,
     version,
     maxTimestamp: settledContext.maxTimestamp
   })
+  reportHoldingsProgress(40, 'Enriched historical wallet events', `${rawEvents.length} events`)
   const effectiveEvents = rawEvents
   const filteredVaultIdentifiers = filterVaultIdentifiersByRequestedVaults(
     getVaultIdentifiers(effectiveEvents),
@@ -2035,6 +2047,7 @@ export async function getHoldingsProtocolReturnHistory(
   const vaultMetadata = settledContext.vaultMetadata
 
   if (effectiveEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
+    reportHoldingsProgress(94, 'No historical protocol return events found', null)
     return {
       address: lowerCaseAddress(userAddress),
       version,
@@ -2071,10 +2084,20 @@ export async function getHoldingsProtocolReturnHistory(
     new Set(receiptPriceRequests.flatMap((request) => request.timestamps))
   ).sort((left, right) => left - right)
 
+  const ppsIdentifiers = mergeVaultIdentifiers([
+    ...filteredVaultIdentifiers,
+    ...getNestedVaultPpsIdentifiersFromPriceRequests(baseReceiptPriceRequests, vaultMetadata)
+  ])
+  reportHoldingsProgress(
+    52,
+    'Prepared historical price requests',
+    `${receiptPriceRequests.length} receipt price series, ${ethReceiptPriceTimestamps.length} ETH price points, ${ppsIdentifiers.length} PPS series`
+  )
   const [fetchedPriceData, ethPriceData] = await Promise.all([
     fetchReceiptPrices(receiptPriceRequests),
     fetchEthReceiptPrices(ethReceiptPriceTimestamps)
   ])
+  reportHoldingsProgress(72, 'Fetched historical receipt prices', `${receiptPriceRequests.length} price series`)
   const priceData = deriveNestedVaultAssetPriceData({
     priceData: fetchedPriceData,
     priceRequests: receiptPriceRequests,
@@ -2097,6 +2120,7 @@ export async function getHoldingsProtocolReturnHistory(
     ppsData: settledContext.ppsData,
     currentTimestamp: latestTimestamp
   })
+  reportHoldingsProgress(82, 'Calculated protocol return ledgers', `${finalVaults.length} vaults`)
   const selectedHistoryFamilies = selectHistoryFamilies(finalVaults)
   const history = buildProtocolReturnHistorySeries({
     events: effectiveEvents,
@@ -2120,6 +2144,7 @@ export async function getHoldingsProtocolReturnHistory(
     timestamps,
     selectedVaults: requestedVaults ? [] : selectedHistoryFamilies
   })
+  reportHoldingsProgress(92, 'Built historical chart series', `${history.length} chart points`)
   const openBaselineCompositionUsd = buildOpenBaselineCompositionUsd({
     ledgers: finalLedgers,
     metadata: vaultMetadata

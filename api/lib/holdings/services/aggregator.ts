@@ -2,7 +2,7 @@ import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
 import type { CachedTotal } from './cache'
 import { checkCacheStaleness, clearUserCache, getCachedTotalsWithTimestamp, saveCachedTotals } from './cache'
-import { debugLog } from './debug'
+import { debugLog, reportHoldingsProgress } from './debug'
 import {
   fetchHistoricalPrices,
   fetchHistoricalPricesForTokenTimestamps,
@@ -175,6 +175,7 @@ export async function getHistoricalHoldings(
     fetchType,
     paginationMode
   })
+  reportHoldingsProgress(18, 'Loaded wallet events', null)
   const dayTimestamps = generateDailyTimestamps(defaultDays, 1)
   const latestSettledDayTimestamp = baseContext.latestSettledDayTimestamp
   const timestamps =
@@ -210,6 +211,7 @@ export async function getHistoricalHoldings(
     cachedTotals: cachedTotals.length,
     oldestUpdatedAt: oldestUpdatedAt?.toISOString() ?? null
   })
+  reportHoldingsProgress(28, 'Checked cached historical totals', `${cachedTotals.length} cached days`)
 
   let cachedByDate = new Map(cachedTotals.map((total) => [total.date, total.usdValue]))
 
@@ -224,6 +226,7 @@ export async function getHistoricalHoldings(
     transfersOut: baseContext.events.transfersOut.length,
     timelineEntries: timeline.length
   })
+  reportHoldingsProgress(36, 'Built historical position timeline', `${timeline.length} timeline entries`)
 
   const vaultMetadata = baseContext.vaultMetadata
   const versionFilteredVaults = filterVaultsByAuthoritativeVersion(
@@ -240,6 +243,7 @@ export async function getHistoricalHoldings(
     filteredVaults: vaults.length,
     metadataResolved: vaultMetadata.size
   })
+  reportHoldingsProgress(44, 'Resolved vault metadata', `${vaults.length} vaults`)
 
   // Check if any vaults have been invalidated since cache was written
   if (shouldReadCache && cachedTotals.length > 0 && vaults.length > 0) {
@@ -276,6 +280,7 @@ export async function getHistoricalHoldings(
       dataPoints: dataPoints.length,
       oldestUpdatedAt: oldestUpdatedAt?.toISOString() ?? null
     })
+    reportHoldingsProgress(94, 'Loaded cached historical chart data', `${dataPoints.length} chart points`)
 
     return {
       address: userAddress,
@@ -293,6 +298,7 @@ export async function getHistoricalHoldings(
     cachedDates: cachedByDate.size,
     missingTimestamps: missingTimestamps.length
   })
+  reportHoldingsProgress(52, 'Computed missing historical days', `${missingTimestamps.length} days need valuation`)
 
   const newTotals: CachedTotal[] = []
 
@@ -339,6 +345,7 @@ export async function getHistoricalHoldings(
         vaultIdentifiers: vaults,
         context: baseContext
       })
+      reportHoldingsProgress(62, 'Loaded vault share price history', `${vaults.length} vaults`)
       const underlyingTokens = Array.from(
         vaults
           .reduce<Map<string, { chainId: number; address: string }>>((tokens, vault) => {
@@ -371,6 +378,7 @@ export async function getHistoricalHoldings(
         ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, vaultMetadata)
       ])
       const fetchedPriceData = await fetchHistoricalPricesForTokenTimestamps(priceRequests)
+      reportHoldingsProgress(76, 'Fetched historical token prices', `${priceRequests.length} price series`)
       const priceData = deriveNestedVaultAssetPriceData({
         priceData: fetchedPriceData,
         priceRequests,
@@ -434,6 +442,7 @@ export async function getHistoricalHoldings(
         newTotals: newTotals.length,
         nonZeroTotals: newTotals.filter((total) => total.usdValue > 0).length
       })
+      reportHoldingsProgress(88, 'Calculated uncached chart history', `${newTotals.length} daily totals`)
     }
 
     if (shouldWriteCache && newTotals.length > 0) {
@@ -444,6 +453,7 @@ export async function getHistoricalHoldings(
         paginationMode,
         newTotals: newTotals.length
       })
+      reportHoldingsProgress(92, 'Saved historical chart cache', `${newTotals.length} daily totals`)
     }
   }
 
@@ -464,6 +474,7 @@ export async function getHistoricalHoldings(
     dataPoints: dataPoints.length,
     nonZeroPoints: dataPoints.filter((point) => point.totalUsdValue > 0).length
   })
+  reportHoldingsProgress(96, 'Prepared historical chart data', `${dataPoints.length} chart points`)
 
   return {
     address: userAddress,

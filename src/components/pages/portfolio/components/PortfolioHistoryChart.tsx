@@ -62,6 +62,11 @@ type TPortfolioHistoryChartProps = {
   embedded?: boolean
   reserveControlSpace?: boolean
   loadingMessage?: string
+  loadingProgress?: {
+    progress: number
+    message: string
+    detail: string | null
+  } | null
   className?: string
 }
 
@@ -148,6 +153,14 @@ const GROWTH_DISPLAY_MODES: Array<{ id: TGrowthDisplayMode; label: string }> = [
   { id: 'usd', label: 'USD' },
   { id: 'eth', label: 'ETH' }
 ]
+const HISTORY_LOADING_PROGRESS_STEPS = [
+  { delayMs: 0, value: 12 },
+  { delayMs: 700, value: 28 },
+  { delayMs: 1800, value: 46 },
+  { delayMs: 3300, value: 63 },
+  { delayMs: 5200, value: 78 },
+  { delayMs: 7600, value: 88 }
+] as const
 const GROWTH_DISPLAY_TOOLTIP_COPY: Record<TGrowthDisplayMode, { title: string; body: string }> = {
   index: {
     title: 'Index',
@@ -297,6 +310,58 @@ export function resolvePortfolioGrowthDisplayMode(
   protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
 ): TGrowthDisplayMode {
   return resolveGrowthDisplayMode(selectedMode, protocolReturnData)
+}
+
+function PortfolioHistoryChartLoading({
+  message,
+  serverProgress
+}: {
+  message: string
+  serverProgress?: TPortfolioHistoryChartProps['loadingProgress']
+}): ReactElement {
+  const [estimatedProgress, setEstimatedProgress] = useState<number>(HISTORY_LOADING_PROGRESS_STEPS[0].value)
+
+  useEffect(() => {
+    setEstimatedProgress(HISTORY_LOADING_PROGRESS_STEPS[0].value)
+    const timeouts = HISTORY_LOADING_PROGRESS_STEPS.map((step) =>
+      window.setTimeout(() => setEstimatedProgress(step.value), step.delayMs)
+    )
+
+    return () => {
+      timeouts.forEach((timeout) => {
+        window.clearTimeout(timeout)
+      })
+    }
+  }, [message])
+
+  const progress = serverProgress?.progress ?? estimatedProgress
+  const displayedMessage = serverProgress?.message ?? message
+  const detail = serverProgress?.detail
+
+  return (
+    <div
+      className={
+        'flex h-full min-h-[240px] flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16'
+      }
+    >
+      <IconSpinner className={'size-5 text-text-secondary sm:size-6'} />
+      <span>{displayedMessage}</span>
+      {detail ? <span className={'text-xs text-text-tertiary'}>{detail}</span> : null}
+      <div
+        className={'h-1.5 w-full max-w-[240px] overflow-hidden rounded-full bg-border'}
+        role={'progressbar'}
+        aria-label={displayedMessage}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progress}
+      >
+        <div
+          className={'h-full rounded-full bg-primary transition-[width] duration-700 ease-out'}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  )
 }
 
 export function PortfolioHistoryChartControls({
@@ -544,6 +609,7 @@ export function PortfolioHistoryChart({
   embedded = false,
   reserveControlSpace = true,
   loadingMessage = 'Searching for Yearn balances...',
+  loadingProgress,
   className
 }: TPortfolioHistoryChartProps): ReactElement {
   const { address } = useWeb3()
@@ -845,14 +911,7 @@ export function PortfolioHistoryChart({
   if (activeIsLoading) {
     return (
       <section className={cl(sectionClassName, className)}>
-        <div
-          className={
-            'flex h-full min-h-[240px] flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16'
-          }
-        >
-          <IconSpinner className={'size-5 text-text-secondary sm:size-6'} />
-          <span>{loadingMessage}</span>
-        </div>
+        <PortfolioHistoryChartLoading message={loadingMessage} serverProgress={loadingProgress} />
       </section>
     )
   }
