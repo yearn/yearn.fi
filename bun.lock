@@ -1,11 +1,12 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "yearnfi",
       "dependencies": {
         "@headlessui/react": "2.2.9",
-        "@plausible-analytics/tracker": "^0.4.4",
+        "@plausible-analytics/tracker": "0.4.4",
         "@rainbow-me/rainbowkit": "2.2.10",
         "@react-hookz/web": "24.0.4",
         "@tanstack/react-query": "5.90.21",
