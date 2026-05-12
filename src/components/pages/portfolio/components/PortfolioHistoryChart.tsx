@@ -333,7 +333,7 @@ function PortfolioHistoryChartLoading({
 }: {
   serverProgress?: TPortfolioHistoryChartProps['loadingProgress']
 }): ReactElement {
-  const displayedMessage = serverProgress?.message ?? 'Building your data'
+  const displayedMessage = serverProgress?.message ?? 'Building portfolio history'
   const detail = serverProgress?.detail
 
   return (
