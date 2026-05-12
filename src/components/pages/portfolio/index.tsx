@@ -15,6 +15,7 @@ import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/
 import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
 import { type TVaultsChainButton, VaultsChainSelector } from '@pages/vaults/components/filters/VaultsChainSelector'
 import { VaultsFiltersButton } from '@pages/vaults/components/filters/VaultsFiltersButton'
+import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { Notification } from '@pages/vaults/components/notifications/Notification'
@@ -38,6 +39,7 @@ import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { resolveNextSingleChainSelection } from '@pages/vaults/utils/chainSelection'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { METRIC_VALUE_CLASS, MetricHeader, type TMetricBlock } from '@shared/components/MetricsCard'
+import { SearchBar } from '@shared/components/SearchBar'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
@@ -50,12 +52,15 @@ import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
 import { useChainOptions } from '@shared/hooks/useChains'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconChevron } from '@shared/icons/IconChevron'
+import { IconCopy } from '@shared/icons/IconCopy'
 import { IconCross } from '@shared/icons/IconCross'
+import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
+import { copyToClipboard } from '@shared/utils/helpers'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { CSSProperties, ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -88,7 +93,7 @@ const metricTooltipContentClassName = 'flex max-w-[280px] flex-col gap-1 leading
 const metricCardClassName = 'bg-surface px-5 py-3 md:px-5 md:py-2.5'
 const PORTFOLIO_TABS = [
   { key: 'positions', label: 'Your Vaults' },
-  { key: 'activity', label: 'Activity' },
+  { key: 'activity', label: 'Your Activity' },
   { key: 'claim-rewards', label: 'Claim Rewards' }
 ] as const
 
@@ -137,15 +142,24 @@ const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: s
 ]
 
 type TActivityModalFilters = {
-  type: TPortfolioActivityTypeFilter
+  types: TPortfolioActivityEntry['action'][]
   startDate: string
   endDate: string
 }
 
+function getTodayDateInputValue(): string {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
 const DEFAULT_ACTIVITY_MODAL_FILTERS: TActivityModalFilters = {
-  type: 'all',
+  types: [],
   startDate: '',
-  endDate: ''
+  endDate: getTodayDateInputValue()
 }
 
 function formatActivityDisplayAmount(amountFormatted: number | null, symbol: string | null): string {
@@ -154,6 +168,58 @@ function formatActivityDisplayAmount(amountFormatted: number | null, symbol: str
   }
 
   return `${amountFormatted.toLocaleString(undefined, { maximumFractionDigits: 6 })} ${symbol ?? ''}`.trim()
+}
+
+function formatActivityFixedValue(amountFormatted: number | null): string {
+  if (amountFormatted === null) {
+    return 'Unknown'
+  }
+
+  const countableLength = (value: string): number => value.replace(/[.,]/g, '').length
+  const absoluteAmount = Math.abs(amountFormatted)
+  if (absoluteAmount === 0) {
+    return '0'
+  }
+
+  const units = [
+    { divisor: 1_000_000_000, suffix: 'B', threshold: 1_000_000_000 },
+    { divisor: 1_000_000, suffix: 'M', threshold: 1_000_000 },
+    { divisor: 1000, suffix: 'K', threshold: 10_000 }
+  ]
+  const unit = units.find((item) => absoluteAmount >= item.threshold)
+
+  if (unit) {
+    const scaledAmount = absoluteAmount / unit.divisor
+    for (let decimals = 2; decimals >= 0; decimals -= 1) {
+      const fixedAmount = scaledAmount.toFixed(decimals)
+      const trimmedAmount = fixedAmount.replace(/\.?0+$/, '')
+      const formatted = `${countableLength(fixedAmount) <= 4 ? fixedAmount : trimmedAmount}${unit.suffix}`
+      if (countableLength(formatted) <= 4) {
+        return formatted
+      }
+    }
+  }
+
+  if (absoluteAmount >= 1000) {
+    return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(absoluteAmount)
+  }
+
+  for (let decimals = 3; decimals >= 0; decimals -= 1) {
+    const formatted = absoluteAmount.toFixed(decimals)
+    if (countableLength(formatted) <= 4) {
+      return formatted
+    }
+  }
+
+  return absoluteAmount.toPrecision(1)
+}
+
+function truncateActivityHash(hashValue: string, size: number): string {
+  if (size === 0 || hashValue.length <= size * 2 + 4 || !hashValue.startsWith('0x')) {
+    return hashValue
+  }
+
+  return `0x${hashValue.slice(2, size + 2)}...${hashValue.slice(-size)}`
 }
 
 function getActivityExplorerUrl(chainId: number, txHash: string): string | null {
@@ -175,10 +241,34 @@ function formatIndexedActivityDate(timestamp: number): string {
   return new Date(timestamp * 1000).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
+    day: 'numeric'
+  })
+}
+
+function formatIndexedActivityDateTime(timestamp: number): string {
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
     day: 'numeric',
     hour: 'numeric',
     minute: 'numeric'
   })
+}
+
+function formatIndexedActivityTime(timestamp: number): string {
+  return new Date(timestamp * 1000).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: 'numeric'
+  })
+}
+
+function formatActivityDateInputValue(timestamp: number): string {
+  const date = new Date(timestamp * 1000)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
 }
 
 function getActivityDateBoundaryTimestamp(date: string, boundary: 'start' | 'end'): number | null {
@@ -247,26 +337,185 @@ function ActivityActionIcon({ action }: { action: TPortfolioActivityEntry['actio
 
 function ActivityDetailItem({ label, value }: { label: string; value: ReactElement | string }): ReactElement {
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-border bg-surface px-3 py-2">
-      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-text-secondary">{label}</span>
-      <div className="text-sm text-text-primary">{value}</div>
+    <div className="grid grid-cols-[180px_minmax(0,1fr)] items-start gap-3 py-1 text-left">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">{label}</span>
+      <div className="min-w-0 text-left text-sm text-text-primary">{value}</div>
     </div>
   )
 }
 
-function ActivityFilterRadio<T extends string>({
+function ActivityTransactionHash({
+  explorerUrl,
+  txHash
+}: {
+  explorerUrl: string | null
+  txHash: string
+}): ReactElement {
+  const displayHash = truncateActivityHash(txHash, 6)
+
+  return (
+    <span className="inline-flex min-w-0 items-center gap-1">
+      {explorerUrl ? (
+        <Link
+          href={explorerUrl}
+          target={'_blank'}
+          rel={'noopener noreferrer'}
+          aria-label={`View transaction ${txHash} on explorer`}
+          className={
+            'inline-flex min-w-0 items-center gap-1 text-text-primary transition-colors hover:text-text-secondary'
+          }
+        >
+          <span className="truncate font-mono text-sm" title={txHash}>
+            {displayHash}
+          </span>
+          <IconLinkOut className={'size-3 shrink-0'} />
+        </Link>
+      ) : (
+        <span className="truncate font-mono text-sm text-text-secondary" title={txHash}>
+          {displayHash}
+        </span>
+      )}
+      <button
+        type={'button'}
+        onClick={(): void => copyToClipboard(txHash)}
+        className={'text-text-secondary transition-colors hover:text-text-primary'}
+        aria-label={'Copy transaction hash'}
+      >
+        <IconCopy className={'size-3'} />
+      </button>
+    </span>
+  )
+}
+
+function ActivityDateChip({
+  date,
+  dateInputValue,
+  dateTime,
+  onPickerOpenChange,
+  time,
+  onApplyDateRange
+}: {
+  date: string
+  dateInputValue: string
+  dateTime: string
+  onPickerOpenChange: (isOpen: boolean) => void
+  time: string
+  onApplyDateRange: (startDate: string, endDate: string) => void
+}): ReactElement {
+  const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [pendingStartDate, setPendingStartDate] = useState(dateInputValue)
+  const [pendingEndDate, setPendingEndDate] = useState(dateInputValue)
+
+  useEffect(() => {
+    if (isPickerOpen) {
+      setPendingStartDate(dateInputValue)
+      setPendingEndDate(dateInputValue)
+    }
+
+    onPickerOpenChange(isPickerOpen)
+  }, [dateInputValue, isPickerOpen, onPickerOpenChange])
+
+  function handleApply(): void {
+    const normalizedFilters = normalizeActivityModalFilters({
+      types: [],
+      startDate: pendingStartDate,
+      endDate: pendingEndDate
+    })
+
+    onApplyDateRange(normalizedFilters.startDate, normalizedFilters.endDate)
+    setIsPickerOpen(false)
+  }
+
+  return (
+    <span className={cl('relative inline-flex justify-end', isPickerOpen ? 'z-100' : 'z-30')}>
+      <button
+        type="button"
+        aria-label={`Filter activity around ${dateTime}`}
+        onClick={(event): void => {
+          event.stopPropagation()
+          setIsPickerOpen((previous) => !previous)
+        }}
+        className={cl(
+          'group/date inline-flex flex-row-reverse items-center overflow-hidden rounded-lg border border-border bg-surface-secondary px-1 py-0.5 text-xs font-medium text-text-primary/70 transition-colors',
+          'hover:bg-surface-tertiary/80 hover:text-text-primary'
+        )}
+      >
+        <span>{date}</span>
+        <span
+          className={
+            'max-w-0 whitespace-nowrap opacity-0 transition-all duration-150 group-hover/date:mr-1 group-hover/date:max-w-24 group-hover/date:opacity-100'
+          }
+        >
+          {time}
+        </span>
+      </button>
+
+      {isPickerOpen ? (
+        <div
+          className="absolute bottom-full right-0 z-70 mb-2 w-64 rounded-lg border border-border bg-surface p-3 text-left shadow-lg"
+          onClick={(event): void => event.stopPropagation()}
+        >
+          <div className="grid gap-2">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-text-secondary">{'Start date'}</span>
+              <input
+                type="date"
+                value={pendingStartDate}
+                max={pendingEndDate || undefined}
+                onChange={(event) => setPendingStartDate(event.target.value)}
+                className="rounded-md border border-border bg-transparent px-2 py-1 text-sm text-text-primary outline-none"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-text-secondary">{'End date'}</span>
+              <input
+                type="date"
+                value={pendingEndDate}
+                min={pendingStartDate || undefined}
+                onChange={(event) => setPendingEndDate(event.target.value)}
+                className="rounded-md border border-border bg-transparent px-2 py-1 text-sm text-text-primary outline-none"
+              />
+            </label>
+          </div>
+          <div className="mt-3 flex justify-end gap-2">
+            <button
+              type="button"
+              className="rounded-full border border-border px-3 py-1 text-xs font-medium text-text-primary hover:border-border-hover"
+              onClick={(event): void => {
+                event.stopPropagation()
+                setIsPickerOpen(false)
+              }}
+            >
+              {'Cancel'}
+            </button>
+            <button
+              type="button"
+              className="rounded-full bg-neutral-900 px-3 py-1 text-xs font-semibold text-surface hover:bg-neutral-800"
+              onClick={(event): void => {
+                event.stopPropagation()
+                handleApply()
+              }}
+            >
+              {'Apply'}
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </span>
+  )
+}
+
+function ActivityFilterCheckbox<T extends string>({
   checked,
   description,
   label,
-  name,
   onChange,
   value
 }: {
   checked: boolean
   description?: string
   label: string
-  name: string
-  onChange: (value: T) => void
+  onChange: (value: T, checked: boolean) => void
   value: T
 }): ReactElement {
   return (
@@ -281,11 +530,10 @@ function ActivityFilterRadio<T extends string>({
         {description ? <span className="block text-xs text-text-secondary">{description}</span> : null}
       </span>
       <input
-        type="radio"
-        name={name}
-        className="radio accent-blue-500"
+        type="checkbox"
+        className="accent-blue-500"
         checked={checked}
-        onChange={() => onChange(value)}
+        onChange={(event) => onChange(value, event.target.checked)}
       />
     </label>
   )
@@ -361,14 +609,23 @@ function ActivityFiltersModal({
                   <div>
                     <p className="mb-2 text-sm text-text-secondary">{'Type'}</p>
                     <div className="space-y-2">
-                      {ACTIVITY_TYPE_FILTERS.map((filter) => (
-                        <ActivityFilterRadio
+                      {ACTIVITY_TYPE_FILTERS.filter(
+                        (filter): filter is { key: TPortfolioActivityEntry['action']; label: string } =>
+                          filter.key !== 'all'
+                      ).map((filter) => (
+                        <ActivityFilterCheckbox
                           key={filter.key}
-                          name="activity-type-filter"
                           label={filter.label}
                           value={filter.key}
-                          checked={pendingFilters.type === filter.key}
-                          onChange={(type) => setPendingFilters((previous) => ({ ...previous, type }))}
+                          checked={pendingFilters.types.includes(filter.key)}
+                          onChange={(type, checked) =>
+                            setPendingFilters((previous) => ({
+                              ...previous,
+                              types: checked
+                                ? [...previous.types, type]
+                                : previous.types.filter((selectedType) => selectedType !== type)
+                            }))
+                          }
                         />
                       ))}
                     </div>
@@ -529,17 +786,28 @@ function ActivityMobileChainDropdown({
 }
 
 function IndexedActivityRow({
-  entry,
+  assetAddress,
   displayName,
+  entry,
+  isChainFilterActive,
+  isVaultFilterActive,
   shareSymbol,
-  assetAddress
+  onSelectChain,
+  onApplyDateRange,
+  onSelectVault
 }: {
-  entry: TPortfolioActivityEntry
-  displayName: string
-  shareSymbol: string | null
   assetAddress: string | null
+  isChainFilterActive: boolean
+  isVaultFilterActive: boolean
+  displayName: string
+  entry: TPortfolioActivityEntry
+  shareSymbol: string | null
+  onSelectChain: (chainId: number) => void
+  onApplyDateRange: (startDate: string, endDate: string) => void
+  onSelectVault: (vaultName: string) => void
 }): ReactElement {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
   const explorerUrl = getActivityExplorerUrl(entry.chainId, entry.txHash)
   const preferredVaultAddress =
     entry.familyVaultAddress && !isZeroAddress(entry.familyVaultAddress) ? entry.familyVaultAddress : entry.vaultAddress
@@ -552,50 +820,81 @@ function IndexedActivityRow({
   const isExitAction = entry.action === 'withdraw' || entry.action === 'unstake'
   const chainName = getActivityChainName(entry.chainId)
   const formattedDate = formatIndexedActivityDate(entry.timestamp)
+  const formattedDateTime = formatIndexedActivityDateTime(entry.timestamp)
+  const formattedTime = formatIndexedActivityTime(entry.timestamp)
+  const activityDateInputValue = formatActivityDateInputValue(entry.timestamp)
   const primaryTokenSymbol = entry.inputTokenSymbol ?? entry.assetSymbol
   const primaryTokenAmount =
     entry.inputTokenAmountFormatted !== null ? entry.inputTokenAmountFormatted : entry.assetAmountFormatted
   const isZap = Boolean(entry.inputTokenAddress && entry.inputTokenAmount)
   const summaryAssetSymbol = primaryTokenSymbol ?? shareSymbol
-  const summaryAssetAmount = formatActivityDisplayAmount(primaryTokenAmount, summaryAssetSymbol)
   const primaryAmount = isExitAction
     ? formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
     : formatActivityDisplayAmount(primaryTokenAmount, primaryTokenSymbol)
   const secondaryAmount = isExitAction
     ? formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)
     : formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
-  const primaryLabel =
-    entry.action === 'withdraw'
-      ? 'Redeem'
-      : entry.action === 'stake'
-        ? 'Stake'
-        : entry.action === 'unstake'
-          ? 'Unstake'
-          : 'Token'
+  const collapsedPrimaryAmount = isExitAction
+    ? formatActivityFixedValue(entry.shareAmountFormatted)
+    : formatActivityFixedValue(primaryTokenAmount)
+  const collapsedSecondaryAmount = isExitAction
+    ? formatActivityFixedValue(entry.assetAmountFormatted)
+    : formatActivityFixedValue(entry.shareAmountFormatted)
+  const outboundAmount = collapsedPrimaryAmount
+  const inboundAmount = collapsedSecondaryAmount
+  const outboundSymbol = isExitAction ? shareSymbol : primaryTokenSymbol
+  const inboundSymbol = isExitAction ? entry.assetSymbol : shareSymbol
+  const primaryDetailLabel = isExitAction ? 'VAULT SHARES REDEEMED:' : 'TOKEN DEPOSITED:'
+  const secondaryDetailLabel = isExitAction ? 'ASSET RECEIVED:' : 'VAULT SHARES RECEIVED:'
   const metadataStatus = entry.status === 'ok' ? 'Indexed' : 'Limited metadata'
-  const actionAccentClassName = {
-    deposit: 'bg-emerald-500/12 text-emerald-600',
-    stake: 'bg-blue-500/12 text-blue-600',
-    withdraw: 'bg-amber-500/12 text-amber-700',
-    unstake: 'bg-neutral-500/12 text-neutral-500'
-  }[entry.action]
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card">
+    <div
+      className={cl(
+        'relative w-full overflow-visible border-b border-border bg-surface transition-colors last:border-b-0',
+        isDatePickerOpen ? 'z-[80]' : 'z-0'
+      )}
+    >
       <button
         type="button"
+        aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+        aria-expanded={isExpanded}
+        onClick={() => setIsExpanded((previous) => !previous)}
+        className={cl(
+          'absolute right-5 top-6.5 z-20 hidden size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150 md:flex',
+          'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+        )}
+      >
+        <IconChevron className="size-4" direction={isExpanded ? 'up' : 'down'} />
+      </button>
+
+      <div
         onClick={() => setIsExpanded((previous) => !previous)}
         aria-expanded={isExpanded}
-        className="flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-surface-secondary/40 md:px-4"
+        className="group relative grid w-full cursor-pointer grid-cols-1 bg-surface p-4 text-left md:grid-cols-24 md:px-6 md:py-4 md:pr-20"
       >
-        <div className={cl('flex size-10 shrink-0 items-center justify-center rounded-2xl', actionAccentClassName)}>
-          <ActivityActionIcon action={entry.action} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-start justify-between gap-3">
+        <div
+          className={cl(
+            'pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-100 group-hover:opacity-20 group-focus-visible:opacity-20',
+            'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
+          )}
+        />
+        {isExpanded ? (
+          <div
+            className={
+              'pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent,var(--color-surface))] opacity-0 transition-opacity duration-100 group-hover:opacity-100 group-focus-visible:opacity-100'
+            }
+          />
+        ) : null}
+
+        <div className="z-10 flex min-w-0 items-center gap-6 md:col-span-14">
+          <div className="flex size-10 shrink-0 items-center justify-center bg-transparent text-neutral-700">
+            <ActivityActionIcon action={entry.action} />
+          </div>
+          <div className="min-w-0 flex-1">
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2">
-                <p className="truncate text-sm font-semibold text-text-primary">{activityTitle}</p>
+                <p className="truncate text-lg font-bold leading-tight text-text-primary">{activityTitle}</p>
                 {isZap ? (
                   <span
                     aria-label="Zap transaction"
@@ -606,44 +905,82 @@ function IndexedActivityRow({
                   </span>
                 ) : null}
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-secondary">
-                <span className="truncate">{displayName}</span>
-                <span className="hidden size-1 rounded-full bg-text-secondary/50 md:inline-block" aria-hidden="true" />
-                <span className="hidden md:inline">{chainName}</span>
-                <span className="hidden size-1 rounded-full bg-text-secondary/50 lg:inline-block" aria-hidden="true" />
-                <span className="hidden lg:inline">{formattedDate}</span>
-              </div>
-            </div>
-            <div className="flex shrink-0 self-center items-center gap-2.5 text-right">
-              <p className="max-w-[220px] truncate text-base font-semibold leading-tight text-text-primary md:text-lg">
-                {summaryAssetAmount}
-              </p>
-              {tokenAddress ? (
-                <TokenLogo
-                  src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-                  altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-                  tokenSymbol={summaryAssetSymbol ?? activityTitle}
-                  width={24}
-                  height={24}
-                  className="rounded-full"
-                  loading="lazy"
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-primary/70">
+                <VaultsListChip
+                  label={displayName}
+                  isActive={isVaultFilterActive}
+                  onClick={() => onSelectVault(displayName)}
                 />
-              ) : null}
+                <VaultsListChip
+                  label={chainName}
+                  isActive={isChainFilterActive}
+                  icon={
+                    <img
+                      src={getActivityChainLogoUrl(entry.chainId)}
+                      alt=""
+                      className="size-3.5 rounded-full"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  }
+                  onClick={() => onSelectChain(entry.chainId)}
+                />
+                <ActivityDateChip
+                  date={formattedDate}
+                  dateInputValue={activityDateInputValue}
+                  dateTime={formattedDateTime}
+                  onPickerOpenChange={setIsDatePickerOpen}
+                  time={formattedTime}
+                  onApplyDateRange={onApplyDateRange}
+                />
+                {metadataStatus !== 'Indexed' ? <VaultsListChip label={metadataStatus} /> : null}
+              </div>
             </div>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <IconChevron className="size-4 text-text-secondary" direction={isExpanded ? 'up' : 'down'} />
+
+        <div className="z-10 mt-4 flex min-w-0 items-center justify-between gap-3 md:col-span-10 md:mt-0 md:justify-end">
+          <div className="flex min-w-0 shrink-0 items-center gap-2.5 text-right">
+            {tokenAddress ? (
+              <TokenLogo
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                tokenSymbol={summaryAssetSymbol ?? activityTitle}
+                width={24}
+                height={24}
+                className="rounded-full"
+                loading="lazy"
+              />
+            ) : null}
+            <div className="grid min-w-0 grid-cols-[max-content_100px] gap-x-4 gap-y-0.5">
+              <span className="min-w-0 text-right text-sm font-semibold leading-tight tabular-nums text-neutral-600 md:text-base">
+                {`-${outboundAmount}`}
+              </span>
+              <span className="min-w-0 truncate text-left text-sm font-medium leading-tight text-neutral-600 md:text-base">
+                {outboundSymbol}
+              </span>
+              <span className="min-w-0 text-right text-sm font-semibold leading-tight tabular-nums text-text-primary md:text-base">
+                {`+${inboundAmount}`}
+              </span>
+              <span className="min-w-0 truncate text-left text-sm font-medium leading-tight text-text-primary md:text-base">
+                {inboundSymbol}
+              </span>
+            </div>
+          </div>
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary md:hidden">
+            <IconChevron className="size-4" direction={isExpanded ? 'up' : 'down'} />
+          </div>
         </div>
-      </button>
+      </div>
 
       {isExpanded ? (
-        <div className="border-t border-border px-3 pb-3 pt-3 md:px-4">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <ActivityDetailItem label={primaryLabel} value={primaryAmount} />
-            <ActivityDetailItem label="Receive" value={secondaryAmount} />
+        <div className="bg-surface pb-4 pl-20 pr-4 pt-1 md:pl-[88px] md:pr-6">
+          <div className="flex flex-col">
+            <ActivityDetailItem label={primaryDetailLabel} value={primaryAmount} />
+            <ActivityDetailItem label={secondaryDetailLabel} value={secondaryAmount} />
+            <ActivityDetailItem label="CONFIRMED ON:" value={formattedDateTime} />
             <ActivityDetailItem
-              label="Vault"
+              label="VAULT NAME:"
               value={
                 vaultPageUrl ? (
                   <Link
@@ -659,7 +996,7 @@ function IndexedActivityRow({
               }
             />
             <ActivityDetailItem
-              label="Chain"
+              label="CHAIN NAME:"
               value={
                 <span className="inline-flex items-center gap-2">
                   <img
@@ -673,25 +1010,10 @@ function IndexedActivityRow({
                 </span>
               }
             />
-            <ActivityDetailItem label="Confirmed" value={formattedDate} />
-            <ActivityDetailItem label="Status" value={metadataStatus} />
+            <ActivityDetailItem label="STATUS:" value={metadataStatus} />
             <ActivityDetailItem
-              label="Transaction"
-              value={
-                explorerUrl ? (
-                  <Link
-                    href={explorerUrl}
-                    target={'_blank'}
-                    rel={'noopener noreferrer'}
-                    aria-label={`View transaction ${entry.txHash} on explorer`}
-                    className={'underline hover:text-text-secondary'}
-                  >
-                    <span className="text-sm">{'View on explorer'}</span>
-                  </Link>
-                ) : (
-                  <span className="text-sm text-text-secondary">{'Explorer unavailable'}</span>
-                )
-              }
+              label="TRANSACTION HASH:"
+              value={<ActivityTransactionHash explorerUrl={explorerUrl} txHash={entry.txHash} />}
             />
           </div>
         </div>
@@ -888,6 +1210,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   const { cachedEntries, isLoading: notificationsLoading, error: notificationsError } = useNotifications()
   const [activityFilters, setActivityFilters] = useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
   const [activityChainId, setActivityChainId] = useState<number | null>(null)
+  const [activitySearch, setActivitySearch] = useState('')
   const [isActivityFiltersOpen, setIsActivityFiltersOpen] = useState(false)
   const activityStartTimestamp = useMemo(
     () => getActivityDateBoundaryTimestamp(activityFilters.startDate, 'start'),
@@ -897,6 +1220,8 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     () => getActivityDateBoundaryTimestamp(activityFilters.endDate, 'end'),
     [activityFilters.endDate]
   )
+  const apiActivityType: TPortfolioActivityTypeFilter =
+    activityFilters.types.length === 1 ? activityFilters.types[0] : 'all'
   const {
     data: indexedEntries,
     isLoading: indexedLoading,
@@ -906,7 +1231,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     hasMore: indexedHasMore,
     loadMore: loadMoreIndexedActivity
   } = usePortfolioActivity(10, isActive, {
-    type: activityFilters.type,
+    type: apiActivityType,
     chainId: activityChainId,
     startTimestamp: activityStartTimestamp,
     endTimestamp: activityEndTimestamp
@@ -938,21 +1263,60 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   const hasIndexedEntries = indexedEntries.length > 0
   const hasActiveIndexedFilters =
     activityChainId !== null ||
-    activityFilters.type !== 'all' ||
+    activityFilters.types.length > 0 ||
     activityFilters.startDate !== '' ||
-    activityFilters.endDate !== ''
+    activityFilters.endDate !== DEFAULT_ACTIVITY_MODAL_FILTERS.endDate
   const activityFiltersCount =
-    Number(activityFilters.type !== DEFAULT_ACTIVITY_MODAL_FILTERS.type) +
-    Number(activityFilters.startDate !== '' || activityFilters.endDate !== '')
+    activityFilters.types.length +
+    Number(activityFilters.startDate !== '' || activityFilters.endDate !== DEFAULT_ACTIVITY_MODAL_FILTERS.endDate)
+
+  const visibleIndexedEntries = useMemo(() => {
+    const normalizedSearch = activitySearch.trim().toLowerCase()
+
+    return indexedEntries.filter((entry) => {
+      if (activityFilters.types.length > 0 && !activityFilters.types.includes(entry.action)) {
+        return false
+      }
+
+      if (!normalizedSearch) {
+        return true
+      }
+
+      const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
+      const activityVault = allVaults[toAddress(entry.vaultAddress)]
+      const displayName = familyVault
+        ? getVaultName(familyVault)
+        : activityVault
+          ? getVaultName(activityVault)
+          : truncateHex(entry.familyVaultAddress, 5)
+      const chainName = getActivityChainName(entry.chainId)
+      const actionLabel = ACTIVITY_ACTION_LABELS[entry.action]
+      const formattedDate = formatIndexedActivityDate(entry.timestamp)
+      const symbols = [entry.assetSymbol, entry.inputTokenSymbol].filter(Boolean).join(' ')
+
+      return [displayName, chainName, actionLabel, formattedDate, symbols, entry.txHash]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedSearch)
+    })
+  }, [activityFilters.types, activitySearch, allVaults, indexedEntries])
 
   function handleActivityChainSelect(chainId: number): void {
     setActivityChainId(resolveNextSingleChainSelection(selectedActivityChains, chainId)?.[0] ?? null)
   }
 
+  function handleActivityDateRangeApply(startDate: string, endDate: string): void {
+    setActivityFilters((previous) => ({ ...previous, startDate, endDate }))
+  }
+
+  function handleActivityVaultSelect(vaultName: string): void {
+    setActivitySearch((previous) => (previous === vaultName ? '' : vaultName))
+  }
+
   function renderActivityFilters(): ReactElement {
     return (
       <>
-        <div className="flex w-full items-center gap-2 md:gap-3">
+        <div className="sticky top-[calc(var(--header-height)+var(--portfolio-breadcrumbs-height)+0.75rem)] z-20 flex w-full flex-wrap items-center gap-2 rounded-lg border border-border bg-surface/95 p-2 backdrop-blur md:gap-3">
           <div className="min-w-0 flex-1 md:hidden">
             <ActivityMobileChainDropdown
               chainButtons={activityChainButtons}
@@ -975,6 +1339,17 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
             />
           </div>
           <VaultsFiltersButton filtersCount={activityFiltersCount} onClick={() => setIsActivityFiltersOpen(true)} />
+          <div className="min-w-[180px] flex-1">
+            <SearchBar
+              className="w-full rounded-lg border-border bg-surface text-text-primary transition-all"
+              iconClassName="text-text-primary"
+              searchPlaceholder="Search activity"
+              searchValue={activitySearch}
+              onSearch={setActivitySearch}
+              shouldDebounce={false}
+              highlightWhenActive={true}
+            />
+          </div>
         </div>
         <ActivityFiltersModal
           isOpen={isActivityFiltersOpen}
@@ -1005,17 +1380,19 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       )
     }
 
-    if (indexedEmpty) {
+    if (indexedEmpty || visibleIndexedEntries.length === 0) {
       return (
         <div className="py-6 text-center text-sm text-text-secondary">
-          {hasActiveIndexedFilters ? 'No indexed activity matches these filters.' : 'No indexed activity to show.'}
+          {hasActiveIndexedFilters || activitySearch.trim()
+            ? 'No indexed activity matches these filters.'
+            : 'No indexed activity to show.'}
         </div>
       )
     }
 
     return (
-      <div className="flex flex-col gap-4">
-        {indexedEntries.map((entry) => {
+      <div className="flex flex-col">
+        {visibleIndexedEntries.map((entry) => {
           const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
           const activityVault = allVaults[toAddress(entry.vaultAddress)]
           const assetToken = familyVault
@@ -1067,8 +1444,13 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
               key={`${entry.txHash}:${entry.vaultAddress}:${entry.action}`}
               entry={entry}
               displayName={displayName}
+              isChainFilterActive={activityChainId === entry.chainId}
+              isVaultFilterActive={activitySearch === displayName}
               shareSymbol={shareSymbol}
               assetAddress={assetAddress}
+              onSelectChain={handleActivityChainSelect}
+              onApplyDateRange={handleActivityDateRangeApply}
+              onSelectVault={handleActivityVaultSelect}
             />
           )
         })}
@@ -1119,7 +1501,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
 
         <div className="flex flex-col gap-3">
           {renderActivityFilters()}
-          <div>{renderIndexedActivity()}</div>
+          <div className="overflow-visible rounded-lg border border-border bg-surface">{renderIndexedActivity()}</div>
           {indexedHasMore && (
             <div className="flex justify-center">
               <button
@@ -1141,11 +1523,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   }
 
   return (
-    <section className={'flex flex-col gap-2'}>
-      <div>
-        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">Activity</h2>
-        <p className="text-xs text-text-secondary sm:text-sm">Review your recent Yearn transactions.</p>
-      </div>
+    <section className={'flex flex-col'}>
       {!isActive ? (
         <EmptySectionCard
           title="Connect a wallet to view activity"
@@ -1154,7 +1532,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
           onClick={openLoginModal}
         />
       ) : (
-        <div className="rounded-lg border border-border bg-surface p-4">{renderActivityContent()}</div>
+        renderActivityContent()
       )}
     </section>
   )
