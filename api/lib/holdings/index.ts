@@ -10,6 +10,7 @@ export {
   getHistoricalHoldings,
   getHistoricalHoldingsChart,
   getHoldingsBreakdown,
+  getHoldingsTotalsCacheVersion,
   type HoldingsBreakdownResponse,
   type HoldingsBreakdownVaultResponse,
   type HoldingsHistoryChartResponse,

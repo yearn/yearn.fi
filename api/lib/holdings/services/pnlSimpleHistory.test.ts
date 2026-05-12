@@ -42,7 +42,9 @@ vi.mock('./kong', () => ({
 
 vi.mock('./nestedVaultPrices', () => ({
   expandNestedVaultAssetPriceRequests: vi.fn((requests: unknown[]) => requests),
-  deriveNestedVaultAssetPriceData: vi.fn(({ priceData }: { priceData: Map<string, Map<number, number>> }) => priceData)
+  deriveNestedVaultAssetPriceData: vi.fn(({ priceData }: { priceData: Map<string, Map<number, number>> }) => priceData),
+  getNestedVaultPpsIdentifiersFromPriceRequests: vi.fn(() => []),
+  mergeVaultIdentifiers: vi.fn((identifiers: unknown[]) => identifiers)
 }))
 
 vi.mock('./pnlEvents', () => ({

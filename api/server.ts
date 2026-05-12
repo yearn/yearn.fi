@@ -12,6 +12,7 @@ import {
   getHoldingsActivity,
   getHoldingsBreakdown,
   getHoldingsProtocolReturnHistory,
+  getHoldingsTotalsCacheVersion,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
   type HoldingsHistoryDenomination,
@@ -589,7 +590,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
     })
 
     if (refresh) {
-      const cleared = await clearUserCache(address, version)
+      const cleared = await clearUserCache(address, getHoldingsTotalsCacheVersion(version))
       console.log(`[Server] Cleared ${cleared} cached entries for ${address}`)
     }
 

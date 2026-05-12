@@ -99,7 +99,7 @@ export interface HoldingsBreakdownResponse {
   message?: string
 }
 
-function getHoldingsTotalsCacheVersion(version: VaultVersion): string {
+export function getHoldingsTotalsCacheVersion(version: VaultVersion): string {
   return `${version}:${HOLDINGS_TOTALS_CACHE_VERSION}`
 }
 
