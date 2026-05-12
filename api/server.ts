@@ -490,6 +490,7 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
   const tokenOut = url.searchParams.get('tokenOut')
   const amountIn = url.searchParams.get('amountIn')
   const slippage = url.searchParams.get('slippage') || '100'
+  const routingStrategy = url.searchParams.get('routingStrategy')
   const destinationChainId = url.searchParams.get('destinationChainId')
   const receiver = url.searchParams.get('receiver')
 
@@ -517,6 +518,9 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
   }
   if (receiver) {
     params.set('receiver', receiver)
+  }
+  if (routingStrategy) {
+    params.set('routingStrategy', routingStrategy)
   }
 
   const ensoUrl = `${ENSO_API_BASE}/api/v1/shortcuts/route?${params}`

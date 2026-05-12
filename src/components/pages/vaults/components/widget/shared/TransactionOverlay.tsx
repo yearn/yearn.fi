@@ -13,16 +13,16 @@ import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
 import { getPublicClient } from '@wagmi/core'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useReward } from 'react-rewards'
-import type { TypedData, TypedDataDomain } from 'viem'
-import { useAccount, useCallsStatus, useSignTypedData, useWriteContract } from 'wagmi'
+import type { Address, TypedData, TypedDataDomain } from 'viem'
+import { useAccount, useCallsStatus, useSendCalls, useSignTypedData, useWriteContract } from 'wagmi'
 import { isConnectedToExecutionChain } from '@/config/tenderly'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
 import {
   AUTO_CONTINUE_SUCCESS_DELAY_MS,
   type CompletionDeferral,
   getInitialOverlayState,
-  getPendingTransactionTitle,
   getAutoContinueConfirmDelayMs,
+  getPendingTransactionTitle,
   type OverlayState,
   resolveCompletionDeferral,
   resolveExecutionTrackingHash,
@@ -47,6 +47,12 @@ export type PermitDataAsync = {
 
 export type PermitData = PermitDataDirect | PermitDataAsync
 
+export type TransactionBatchCall = {
+  to: Address
+  data: `0x${string}`
+  value?: bigint
+}
+
 export type TransactionStep = {
   prepare: AppUseSimulateContractReturnType
   label: string
@@ -60,6 +66,10 @@ export type TransactionStep = {
   isPermit?: boolean
   permitData?: PermitData
   onPermitSigned?: (signature: `0x${string}`) => void
+  batch?: {
+    chainId: number
+    calls: readonly TransactionBatchCall[]
+  }
 }
 
 type TPrepareDebugInfo = {
@@ -185,6 +195,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const [completedStepSnapshot, setCompletedStepSnapshot] = useState<TransactionStep | null>(null)
 
   const writeContract = useWriteContract()
+  const sendCalls = useSendCalls()
   const { signTypedDataAsync } = useSignTypedData()
   const currentChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
@@ -194,7 +205,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const connectedChainId = resolveOverlayConnectedChainId({
     accountChainId: chain?.id,
     currentChainId,
-    targetChainId: ((step?.prepare.data?.request as any)?.chainId as number | undefined) ?? undefined,
+    targetChainId:
+      step?.batch?.chainId ?? (((step?.prepare.data?.request as any)?.chainId as number | undefined) || undefined),
     isWalletSafe
   })
 
@@ -209,7 +221,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const executedStepRef = useRef<TransactionStep | null>(null)
 
   const explorerChainId =
-    ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ?? undefined
+    executedStepRef.current?.batch?.chainId ??
+    ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ??
+    undefined
   const safeTransactionDetails = useSafeTransactionDetails({
     safeTxHash: isWalletSafe ? txHash : undefined,
     enabled: Boolean(isWalletSafe && txHash && (overlayState === 'pending' || overlayState === 'submitted'))
@@ -241,7 +255,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const executedStepBlockRef = useRef<bigint | undefined>(undefined)
 
   // Check if current step is ready to execute
-  const isStepReady = Boolean(step?.prepare.isSuccess && step?.prepare.data?.request)
+  const isStepReady = Boolean(
+    step?.batch ? step.batch.calls.length > 0 : step?.prepare.isSuccess && step?.prepare.data?.request
+  )
   const executedStepLabel = executedStepRef.current?.label
   const executedStepFunctionName = (
     executedStepRef.current?.prepare.data?.request as { functionName?: unknown } | undefined
@@ -259,6 +275,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const hasAdvancedFromStepRef = useRef<string | null>(null)
   const autoContinueNonceRef = useRef(0)
   const writeContractResetRef = useRef(writeContract.reset)
+  const sendCallsResetRef = useRef(sendCalls.reset)
   const pendingCompletionRef = useRef<CompletionDeferral>('none')
   const handledConfettiRequestRef = useRef(0)
   const [isAutoContinuing, setIsAutoContinuing] = useState(false)
@@ -267,6 +284,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   useEffect(() => {
     writeContractResetRef.current = writeContract.reset
   }, [writeContract.reset])
+
+  useEffect(() => {
+    sendCallsResetRef.current = sendCalls.reset
+  }, [sendCalls.reset])
 
   const runAllCompleteIfPending = useCallback(
     (trigger: 'close' | 'confetti') => {
@@ -382,6 +403,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   const resetTxState = useCallback((clearNotification = false) => {
     writeContractResetRef.current()
+    sendCallsResetRef.current()
     setTxHash(undefined)
     if (clearNotification) {
       setNotificationId(undefined)
@@ -519,6 +541,67 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   const executeContractStep = useCallback(
     async (currentStep: TransactionStep) => {
+      if (currentStep.batch) {
+        if (!isWalletSafe) {
+          setOverlayState('error')
+          setErrorMessage('Batch transactions are only available in Safe.')
+          return
+        }
+        if (!account || currentStep.batch.calls.length === 0) {
+          setOverlayState('error')
+          setErrorMessage('Transaction not ready. Please try again.')
+          return
+        }
+
+        setStepExecutionContext(currentStep, isLastStep)
+        setOverlayState('confirming')
+        setErrorMessage('')
+
+        const txChainId = currentStep.batch.chainId
+        if (!isConnectedToExecutionChain(connectedChainId, txChainId)) {
+          try {
+            await switchChainAsync({ chainId: txChainId })
+          } catch (error: any) {
+            if (isUserRejectionError(error)) {
+              onClose()
+              return
+            }
+            console.warn('[TransactionOverlay] Safe batch chain switch failed', {
+              to: txChainId,
+              step: currentStep.label,
+              error: error?.message || error
+            })
+            setOverlayState('error')
+            setErrorMessage(
+              'Unable to switch networks for this transaction. Please confirm your Safe is opened on the correct chain.'
+            )
+            return
+          }
+        }
+
+        try {
+          const result = await sendCalls.sendCallsAsync({
+            account,
+            chainId: txChainId,
+            forceAtomic: true,
+            calls: currentStep.batch.calls
+          })
+          const hash = result.id as `0x${string}`
+          setTxHash(hash)
+          setOverlayState('pending')
+          await handleCreateNotification(hash, currentStep.notification, txChainId)
+        } catch (error: any) {
+          if (isUserRejectionError(error)) {
+            onClose()
+            return
+          }
+          console.error('Safe batch transaction failed:', error)
+          setOverlayState('error')
+          setErrorMessage(getTransactionErrorMessage(error))
+        }
+        return
+      }
+
       if (!currentStep.prepare.isSuccess || !currentStep.prepare.data?.request) {
         console.warn('[TransactionOverlay] Transaction not ready', getStepDebugInfo(currentStep))
         setOverlayState('error')
@@ -620,9 +703,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       connectedChainId,
       finalizeSuccessState,
       handleCreateNotification,
+      account,
       isLastStep,
+      isWalletSafe,
       onClose,
       requestConfetti,
+      sendCalls,
       setStepExecutionContext,
       switchChainAsync,
       writeContract
@@ -852,10 +938,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       const completedAllSteps = executedStepRef.current?.completesFlow ?? wasLastStepRef.current
       const capturedStep = executedStepRef.current
       const capturedReceipt = receipt.data
+      const capturedStatus = capturedStep?.notification?.type === 'crosschain zap' ? 'submitted' : 'success'
       resetTxState()
 
-      // Update notification to success
-      handleUpdateNotification({ receipt: capturedReceipt, status: 'success' })
+      // Cross-chain source execution is confirmed before destination funds arrive.
+      handleUpdateNotification({ receipt: capturedReceipt, status: capturedStatus })
       setNotificationId(undefined)
 
       if (completedAllSteps && onBeforeSuccess) {
@@ -891,6 +978,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     executedStepLabel,
     advanceToNextStep,
     finalizeSuccessState,
+    isWalletSafe,
     waitForAutoContinueBlock
   ])
 

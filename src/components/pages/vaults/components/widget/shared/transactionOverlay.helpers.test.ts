@@ -12,8 +12,8 @@ import {
   SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS,
   shouldAutoContinuePermitSuccess,
   shouldAutoContinueFromSuccessState,
-  shouldRunDeferredCompletion,
-  shouldRefetchNextStepAfterReceipt
+  shouldRefetchNextStepAfterReceipt,
+  shouldRunDeferredCompletion
 } from './transactionOverlay.helpers'
 
 describe('resolveOverlayConnectedChainId', () => {
