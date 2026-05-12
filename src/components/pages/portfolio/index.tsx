@@ -1321,8 +1321,6 @@ function PortfolioPage(): ReactElement {
   const isEthGrowthAvailable = Boolean(protocolReturnHistoryData?.some((point) => point.growthWeightEth !== null))
   const hasNoYearnPositions = model.isActive && !model.isHoldingsLoading && !model.hasHoldings
   const displayedHistoryChartTab = hasNoYearnPositions ? 'balance' : historyChartTab
-  const historyChartLoadingMessage =
-    model.hasHoldings && !model.isHoldingsLoading ? 'fetching historical user data' : 'Searching for Yearn balances...'
   const historyChartProgress = displayedHistoryChartTab === 'balance' ? historyProgress : protocolReturnHistoryProgress
   const historyChartElement = (
     <PortfolioHistoryChart
@@ -1345,7 +1343,6 @@ function PortfolioPage(): ReactElement {
       protocolReturnError={protocolReturnHistoryError}
       embedded
       reserveControlSpace={!hasNoYearnPositions}
-      loadingMessage={historyChartLoadingMessage}
       loadingProgress={historyChartProgress}
       className={
         hasNoYearnPositions ? 'h-full min-h-0 bg-linear-to-b from-surface to-surface-secondary/20' : 'min-h-0 flex-1'

@@ -35,11 +35,9 @@ type HoldingsProgressRow = {
   logs: unknown
 }
 
-const PROGRESS_TTL_MS = 10 * 60 * 1000
 const PROGRESS_TTL_INTERVAL = '10 minutes'
 const PERSISTED_PROGRESS_CLEANUP_INTERVAL_MS = 60 * 1000
 const MAX_PROGRESS_LOGS = 20
-const progressRecords = new Map<string, HoldingsProgressRecord>()
 const persistedProgressCleanupState = { lastCleanupAt: 0 }
 
 function isValidProgressId(id: string | null | undefined): id is string {
@@ -51,15 +49,6 @@ function clampProgress(progress: number): number {
     return 0
   }
   return Math.max(0, Math.min(100, Math.round(progress)))
-}
-
-function cleanupMemoryProgressRecords(): void {
-  const now = Date.now()
-  progressRecords.forEach((record, id) => {
-    if (now - record.updatedAt > PROGRESS_TTL_MS) {
-      progressRecords.delete(id)
-    }
-  })
 }
 
 async function cleanupPersistedProgressRecords(): Promise<void> {
@@ -127,14 +116,14 @@ function rowToProgressRecord(row: HoldingsProgressRow): HoldingsProgressRecord {
   }
 }
 
-async function persistProgressRecord(record: HoldingsProgressRecord): Promise<void> {
+async function persistProgressRecord(record: HoldingsProgressRecord): Promise<boolean> {
   if (!isDatabaseEnabled()) {
-    return
+    return false
   }
 
   const pool = await getPool()
   if (!pool) {
-    return
+    return false
   }
 
   try {
@@ -170,8 +159,10 @@ async function persistProgressRecord(record: HoldingsProgressRecord): Promise<vo
         JSON.stringify(record.logs)
       ]
     )
+    return true
   } catch (error) {
     console.error('[Holdings Progress] Failed to save progress row:', error)
+    return false
   }
 }
 
@@ -200,7 +191,7 @@ async function getPersistedProgressRecord(id: string): Promise<HoldingsProgressR
   }
 }
 
-export function startHoldingsProgress({
+export async function startHoldingsProgress({
   id,
   route,
   address,
@@ -210,11 +201,10 @@ export function startHoldingsProgress({
   route: string
   address: string
   message: string
-}): string | null {
-  cleanupMemoryProgressRecords()
+}): Promise<string | null> {
   void cleanupPersistedProgressRecords()
 
-  if (!isValidProgressId(id)) {
+  if (!isValidProgressId(id) || !isDatabaseEnabled()) {
     return null
   }
 
@@ -231,10 +221,7 @@ export function startHoldingsProgress({
     updatedAt: now,
     logs: []
   }
-  progressRecords.set(id, record)
-  void persistProgressRecord(record)
-
-  return id
+  return (await persistProgressRecord(record)) ? id : null
 }
 
 export async function updateHoldingsProgress(
@@ -250,7 +237,7 @@ export async function updateHoldingsProgress(
     return
   }
 
-  const record = progressRecords.get(id) ?? (await getPersistedProgressRecord(id))
+  const record = await getPersistedProgressRecord(id)
   if (!record) {
     return
   }
@@ -264,7 +251,6 @@ export async function updateHoldingsProgress(
     detail: update.detail === undefined ? record.detail : update.detail,
     updatedAt: Math.max(Date.now(), record.updatedAt + 1)
   }
-  progressRecords.set(id, nextRecord)
   await persistProgressRecord(nextRecord)
 }
 
@@ -276,7 +262,7 @@ export async function appendHoldingsProgressLog(
     return
   }
 
-  const record = progressRecords.get(id) ?? (await getPersistedProgressRecord(id))
+  const record = await getPersistedProgressRecord(id)
   if (!record) {
     return
   }
@@ -286,23 +272,15 @@ export async function appendHoldingsProgressLog(
     logs: [...record.logs, log].slice(-MAX_PROGRESS_LOGS),
     updatedAt: Math.max(Date.now(), record.updatedAt + 1)
   }
-  progressRecords.set(id, nextRecord)
   await persistProgressRecord(nextRecord)
 }
 
 export async function getHoldingsProgress(id: string | null | undefined): Promise<HoldingsProgressRecord | null> {
-  cleanupMemoryProgressRecords()
   void cleanupPersistedProgressRecords()
 
   if (!isValidProgressId(id)) {
     return null
   }
 
-  const persistedRecord = await getPersistedProgressRecord(id)
-  if (persistedRecord) {
-    progressRecords.set(id, persistedRecord)
-    return persistedRecord
-  }
-
-  return progressRecords.get(id) ?? null
+  return getPersistedProgressRecord(id)
 }

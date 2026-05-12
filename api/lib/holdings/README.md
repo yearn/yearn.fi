@@ -436,7 +436,7 @@ Server-side cache is optional. When `DATABASE_URL_PREVIEW` or `DATABASE_URL` is 
    - `holdings_totals`: daily USD totals per hashed user address, vault version, and date.
    - `rate_limits`: simple per-client request windows, cleaned opportunistically after the active window expires.
    - `vault_invalidations`: per-vault invalidation timestamps for lazy cache clearing.
-   - `holdings_progress`: short-lived progress records for long history requests across Vercel function instances.
+   - `holdings_progress`: authoritative short-lived progress records for long history requests across Vercel function instances.
 2. HTTP cache:
    - History, breakdown, and protocol-return history: `s-maxage=300, stale-while-revalidate=600`.
    - Activity: `s-maxage=60, stale-while-revalidate=300`.
@@ -511,5 +511,5 @@ Legacy `holdings_totals.user_address` rows are migrated to `user_address_hash`, 
 - Keep `API_KEY_PORTFOLIO` or `YEARN_PRICES_API_KEY` configured if `HOLDINGS_PRICE_PROVIDER=auto` should prefer yearn-prices.
 - Use `/api/admin/invalidate-cache` after indexer deployments add or repair vault coverage.
 - Stale rate-limit rows are cleaned opportunistically when holdings rate checks run.
-- Short-lived progress rows are cleaned opportunistically when progress-enabled holdings requests run.
+- Short-lived progress rows are cleaned opportunistically when progress-enabled holdings requests run; if DB progress is unavailable, clients show a neutral loading placeholder instead of estimated progress.
 - `timeframe=all` grows over time from `2024-01-01`, so cache row counts are no longer fixed at `365` per user/version.

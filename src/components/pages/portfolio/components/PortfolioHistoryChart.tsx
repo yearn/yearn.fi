@@ -62,7 +62,6 @@ type TPortfolioHistoryChartProps = {
   protocolReturnError?: Error | null
   embedded?: boolean
   reserveControlSpace?: boolean
-  loadingMessage?: string
   loadingProgress?: {
     progress: number
     message: string
@@ -161,14 +160,6 @@ const GROWTH_DISPLAY_MODES: Array<{ id: TGrowthDisplayMode; label: string }> = [
   { id: 'eth', label: 'ETH' }
 ]
 const ANNUALIZED_VALUE_TYPE = { id: 'percent', label: '%' } as const
-const HISTORY_LOADING_PROGRESS_STEPS = [
-  { delayMs: 0, value: 12 },
-  { delayMs: 700, value: 28 },
-  { delayMs: 1800, value: 46 },
-  { delayMs: 3300, value: 63 },
-  { delayMs: 5200, value: 78 },
-  { delayMs: 7600, value: 88 }
-] as const
 const INDEX_SERIES_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5'] as const
 const PORTFOLIO_CHART_MARGIN = {
   ...CHART_WITH_AXES_MARGIN,
@@ -338,29 +329,11 @@ export function resolvePortfolioGrowthDisplayMode(
 }
 
 function PortfolioHistoryChartLoading({
-  message,
   serverProgress
 }: {
-  message: string
   serverProgress?: TPortfolioHistoryChartProps['loadingProgress']
 }): ReactElement {
-  const [estimatedProgress, setEstimatedProgress] = useState<number>(HISTORY_LOADING_PROGRESS_STEPS[0].value)
-
-  useEffect(() => {
-    setEstimatedProgress(HISTORY_LOADING_PROGRESS_STEPS[0].value)
-    const timeouts = HISTORY_LOADING_PROGRESS_STEPS.map((step) =>
-      window.setTimeout(() => setEstimatedProgress(step.value), step.delayMs)
-    )
-
-    return () => {
-      timeouts.forEach((timeout) => {
-        window.clearTimeout(timeout)
-      })
-    }
-  }, [message])
-
-  const progress = serverProgress?.progress ?? estimatedProgress
-  const displayedMessage = serverProgress?.message ?? message
+  const displayedMessage = serverProgress?.message ?? 'Building your data'
   const detail = serverProgress?.detail
 
   return (
@@ -372,19 +345,21 @@ function PortfolioHistoryChartLoading({
       <YearnLogoSpinner className={'size-12'} logoClassName={'size-8'} />
       <span>{displayedMessage}</span>
       {detail ? <span className={'text-xs text-text-tertiary'}>{detail}</span> : null}
-      <div
-        className={'h-1.5 w-full max-w-[240px] overflow-hidden rounded-full bg-border'}
-        role={'progressbar'}
-        aria-label={displayedMessage}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={progress}
-      >
+      {serverProgress ? (
         <div
-          className={'h-full rounded-full bg-primary transition-[width] duration-700 ease-out'}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+          className={'h-1.5 w-full max-w-[240px] overflow-hidden rounded-full bg-border'}
+          role={'progressbar'}
+          aria-label={displayedMessage}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={serverProgress.progress}
+        >
+          <div
+            className={'h-full rounded-full bg-primary transition-[width] duration-700 ease-out'}
+            style={{ width: `${serverProgress.progress}%` }}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -616,7 +591,6 @@ export function PortfolioHistoryChart({
   protocolReturnError,
   embedded = false,
   reserveControlSpace = true,
-  loadingMessage = 'Searching for Yearn balances...',
   loadingProgress,
   className
 }: TPortfolioHistoryChartProps): ReactElement {
@@ -923,7 +897,7 @@ export function PortfolioHistoryChart({
   if (activeIsLoading) {
     return (
       <section className={cl(sectionClassName, className)}>
-        <PortfolioHistoryChartLoading message={loadingMessage} serverProgress={loadingProgress} />
+        <PortfolioHistoryChartLoading serverProgress={loadingProgress} />
       </section>
     )
   }

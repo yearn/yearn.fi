@@ -181,7 +181,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const debugEnabled = isHoldingsDebugRequested(typeof debugParam === 'string' ? debugParam : null)
 
   try {
-    const activeProgressId = startHoldingsProgress({
+    const activeProgressId = await startHoldingsProgress({
       id: progressId,
       route: 'pnl-simple-history',
       address,

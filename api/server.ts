@@ -581,7 +581,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const activeProgressId = startHoldingsProgress({
+    const activeProgressId = await startHoldingsProgress({
       id: progressId,
       route: 'history',
       address,
@@ -845,7 +845,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const activeProgressId = startHoldingsProgress({
+    const activeProgressId = await startHoldingsProgress({
       id: progressId,
       route: 'pnl-simple-history',
       address,
