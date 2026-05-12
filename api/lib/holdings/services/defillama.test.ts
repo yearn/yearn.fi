@@ -3,8 +3,8 @@ import type { DefiLlamaBatchResponse } from '../types'
 import {
   fetchHistoricalPrices,
   fetchHistoricalPricesForTokenTimestamps,
-  getHistoricalPriceFetchFailedBatches,
   getChainPrefix,
+  getHistoricalPriceFetchFailedBatches,
   getPriceAtTimestamp,
   parseDefiLlamaResponse
 } from './defillama'

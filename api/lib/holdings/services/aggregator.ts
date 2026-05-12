@@ -59,6 +59,7 @@ export interface HoldingsHistoryChartResponse {
 }
 
 const ETHEREUM_WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+const HOLDINGS_TOTALS_CACHE_VERSION = 'v2'
 
 export interface HoldingsBreakdownVaultResponse {
   chainId: number
@@ -96,6 +97,10 @@ export interface HoldingsBreakdownResponse {
     missingPrice: string[]
   }
   message?: string
+}
+
+function getHoldingsTotalsCacheVersion(version: VaultVersion): string {
+  return `${version}:${HOLDINGS_TOTALS_CACHE_VERSION}`
 }
 
 function filterVaultsByAuthoritativeVersion<
@@ -197,12 +202,13 @@ export async function getHistoricalHoldings(
   // Fetch cached totals with timestamp info for staleness check
   let cachedTotals: CachedTotal[] = []
   let oldestUpdatedAt: Date | null = null
+  const cacheVersion = getHoldingsTotalsCacheVersion(version)
   const shouldReadCache = timestamps.length > 0 && !requestedVaults?.length
   const shouldWriteCache = timestamps.length > 0 && !requestedVaults?.length
   if (shouldReadCache) {
     const startDate = timestampToDateString(timestamps[0])
     const endDate = timestampToDateString(timestamps[timestamps.length - 1])
-    const cachedResult = await getCachedTotalsWithTimestamp(userAddress, version, startDate, endDate)
+    const cachedResult = await getCachedTotalsWithTimestamp(userAddress, cacheVersion, startDate, endDate)
     cachedTotals = cachedResult.totals
     oldestUpdatedAt = cachedResult.oldestUpdatedAt
   }
@@ -260,7 +266,7 @@ export async function getHistoricalHoldings(
 
     if (isStale) {
       console.log(`[Aggregator] Cache stale for ${userAddress}, clearing and recalculating`)
-      await clearUserCache(userAddress, version)
+      await clearUserCache(userAddress, cacheVersion)
       cachedTotals = []
       oldestUpdatedAt = null
       cachedByDate = new Map()
@@ -379,7 +385,7 @@ export async function getHistoricalHoldings(
         ...vaults,
         ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, vaultMetadata)
       ])
-      const fetchedPriceData = await fetchHistoricalPricesForTokenTimestamps(priceRequests)
+      const fetchedPriceData = await fetchHistoricalPricesForTokenTimestamps(priceRequests, { resolution: 'utc_day' })
       failedPriceBatches = getHistoricalPriceFetchFailedBatches(fetchedPriceData)
       reportHoldingsProgress(76, 'Fetched historical token prices', `${priceRequests.length} price series`)
       const priceData = deriveNestedVaultAssetPriceData({
@@ -450,7 +456,7 @@ export async function getHistoricalHoldings(
     }
 
     if (shouldWriteCache && newTotals.length > 0 && failedPriceBatches === 0) {
-      const savedTotals = await saveCachedTotals(userAddress, version, newTotals)
+      const savedTotals = await saveCachedTotals(userAddress, cacheVersion, newTotals)
       debugLog(
         'history',
         savedTotals ? 'saved recalculated totals to cache' : 'did not save recalculated totals to cache',
@@ -571,7 +577,7 @@ export async function getHoldingsBreakdown(
   const breakdownDayTimestamp = targetTimestamp ?? timestamps[timestamps.length - 1]
   const breakdownTimestamp = toSettledDayTimestamp(breakdownDayTimestamp)
   const breakdownDate = timestampToDateString(breakdownTimestamp)
-  const breakdownPriceTimestamp = breakdownDayTimestamp
+  const breakdownPriceTimestamp = breakdownTimestamp
   debugLog('breakdown', 'starting holdings breakdown', {
     version,
     fetchType,

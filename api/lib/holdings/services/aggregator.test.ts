@@ -154,9 +154,9 @@ describe('getHistoricalHoldings', () => {
       'parallel',
       'all'
     )
-    expect(getCachedTotalsWithTimestampMock).toHaveBeenCalledWith(userAddress, 'v2', 'date-100', 'date-100')
+    expect(getCachedTotalsWithTimestampMock).toHaveBeenCalledWith(userAddress, 'v2:v2', 'date-100', 'date-100')
     expect(fetchMultipleVaultsPPSMock).toHaveBeenCalledWith([vaults[0]])
-    expect(saveCachedTotalsMock).toHaveBeenCalledWith(userAddress, 'v2', [{ date: 'date-100', usdValue: 2 }])
+    expect(saveCachedTotalsMock).toHaveBeenCalledWith(userAddress, 'v2:v2', [{ date: 'date-100', usdValue: 2 }])
     expect(response.hasActivity).toBe(true)
     expect(response.dataPoints).toEqual([{ date: 'date-100', timestamp: 101, totalUsdValue: 2 }])
   })
@@ -393,11 +393,12 @@ describe('getHistoricalHoldings', () => {
     const { getHistoricalHoldings } = await import('./aggregator')
     const response = await getHistoricalHoldings(userAddress, 'all')
 
-    expect(clearUserCacheMock).toHaveBeenCalledWith(userAddress, 'all')
+    expect(clearUserCacheMock).toHaveBeenCalledWith(userAddress, 'all:v2')
     expect(fetchMultipleVaultsPPSMock).toHaveBeenCalled()
-    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([
-      { chainId: 1, address: tokenAddress, timestamps: [101, 201] }
-    ])
+    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith(
+      [{ chainId: 1, address: tokenAddress, timestamps: [101, 201] }],
+      { resolution: 'utc_day' }
+    )
     expect(getShareBalanceAtTimestampMock).toHaveBeenNthCalledWith(1, [{ id: 'stale-entry' }], vaultAddress, 1, 101)
     expect(getShareBalanceAtTimestampMock).toHaveBeenNthCalledWith(2, [{ id: 'stale-entry' }], vaultAddress, 1, 201)
     expect(response.dataPoints).toEqual([
@@ -510,8 +511,8 @@ describe('getHistoricalHoldings', () => {
     const response = await getHistoricalHoldingsChart(userAddress, 'all', 'parallel', 'all', 'usd', 'all')
 
     expect(generateDailyTimestampsFromRangeMock).toHaveBeenCalledWith(1_704_067_200, 200)
-    expect(getCachedTotalsWithTimestampMock).toHaveBeenCalledWith(userAddress, 'all', 'date-50', 'date-200')
-    expect(saveCachedTotalsMock).toHaveBeenCalledWith(userAddress, 'all', [
+    expect(getCachedTotalsWithTimestampMock).toHaveBeenCalledWith(userAddress, 'all:v2', 'date-50', 'date-200')
+    expect(saveCachedTotalsMock).toHaveBeenCalledWith(userAddress, 'all:v2', [
       { date: 'date-50', usdValue: 1 },
       { date: 'date-100', usdValue: 1 },
       { date: 'date-200', usdValue: 1 }
@@ -680,7 +681,7 @@ describe('getHistoricalHoldings', () => {
     const response = await getHoldingsBreakdown(userAddress, 'all', 'parallel', 'all')
 
     expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86600, 'parallel', 'all')
-    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress, timestamps: [200] }], {
+    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress, timestamps: [201] }], {
       resolution: 'utc_day'
     })
     expect(getShareBalanceAtTimestampMock).toHaveBeenCalledWith(timeline, vaultAddress, 1, 201)
@@ -768,7 +769,7 @@ describe('getHistoricalHoldings', () => {
     const response = await getHoldingsBreakdown(userAddress, 'all', 'seq', 'paged', 100)
 
     expect(fetchUserEventsMock).toHaveBeenCalledWith(userAddress, 'all', 86500, 'seq', 'paged')
-    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress, timestamps: [100] }], {
+    expect(fetchHistoricalPricesMock).toHaveBeenCalledWith([{ chainId: 1, address: tokenAddress, timestamps: [101] }], {
       resolution: 'utc_day'
     })
     expect(getShareBalanceAtTimestampMock).toHaveBeenCalledWith(timeline, vaultAddress, 1, 101)

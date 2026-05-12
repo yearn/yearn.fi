@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto'
 import { holdingsConfig } from '../config'
 import { getPool, isDatabaseEnabled } from '../db/connection'
 import { debugError, debugLog } from './debug'
-import type { VaultVersion } from './graphql'
 
 export interface CachedTotal {
   date: string
@@ -23,7 +22,7 @@ function getUserAddressCacheKey(userAddress: string): string {
 
 export async function getCachedTotals(
   userAddress: string,
-  version: VaultVersion,
+  version: string,
   startDate: string,
   endDate: string
 ): Promise<CachedTotal[]> {
@@ -62,11 +61,7 @@ export async function getCachedTotals(
   }
 }
 
-export async function saveCachedTotals(
-  userAddress: string,
-  version: VaultVersion,
-  totals: CachedTotal[]
-): Promise<boolean> {
+export async function saveCachedTotals(userAddress: string, version: string, totals: CachedTotal[]): Promise<boolean> {
   if (!isDatabaseEnabled() || totals.length === 0) {
     if (totals.length > 0) {
       debugLog('cache', 'skipping cached totals save because database is disabled', { rows: totals.length })
@@ -147,7 +142,7 @@ export async function deleteStaleCache(): Promise<number> {
   }
 }
 
-export async function clearUserCache(userAddress: string, version?: VaultVersion): Promise<number> {
+export async function clearUserCache(userAddress: string, version?: string): Promise<number> {
   if (!isDatabaseEnabled()) {
     debugLog('cache', 'skipping user cache clear because database is disabled', {
       userAddressHash: getUserAddressCacheKey(userAddress),
@@ -306,7 +301,7 @@ export interface CachedTotalsResult {
 
 export async function getCachedTotalsWithTimestamp(
   userAddress: string,
-  version: VaultVersion,
+  version: string,
   startDate: string,
   endDate: string
 ): Promise<CachedTotalsResult> {
