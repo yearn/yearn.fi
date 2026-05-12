@@ -517,6 +517,43 @@ function getEventPps(ppsMap: Map<number, number> | undefined, timestamp: number)
   return ppsMap ? getPPS(ppsMap, timestamp) : null
 }
 
+function isKnownStakingWrapperEvent(event: TRawPnlEvent): boolean {
+  const stakingVaultAddress = getStakingVaultAddress(event.chainId, event.familyVaultAddress)
+  return stakingVaultAddress !== null && lowerCaseAddress(event.vaultAddress) === stakingVaultAddress
+}
+
+function valueDepositOrWithdrawalEvent(
+  event: Extract<TRawPnlEvent, { kind: 'deposit' | 'withdrawal' }>,
+  args: {
+    assetDecimals: number
+    shareDecimals: number
+    ppsMap: Map<number, number> | undefined
+  }
+): {
+  underlying: number
+  missingPps: boolean
+} {
+  if (!isKnownStakingWrapperEvent(event)) {
+    return {
+      underlying: formatAmount(event.assets, args.assetDecimals),
+      missingPps: false
+    }
+  }
+
+  const pps = getEventPps(args.ppsMap, event.blockTimestamp)
+  if (pps === null) {
+    return {
+      underlying: formatAmount(event.assets, args.assetDecimals),
+      missingPps: true
+    }
+  }
+
+  return {
+    underlying: formatAmount(event.shares, args.shareDecimals) * pps,
+    missingPps: false
+  }
+}
+
 function addReceipt(
   ledger: TProtocolReturnLedger,
   args: {
@@ -758,11 +795,16 @@ function processEvent(
   if (event.kind === 'deposit') {
     const receiptPriceUsd = getReceiptPriceUsd(metadata, args.priceData, event.blockTimestamp)
     const receiptPriceEth = getReceiptPriceEth(args.ethPriceData, receiptPriceUsd, event.blockTimestamp)
+    const valuation = valueDepositOrWithdrawalEvent(event, {
+      assetDecimals,
+      shareDecimals,
+      ppsMap
+    })
     ledgers.set(
       vaultKey,
-      addReceipt(currentLedger, {
+      addReceipt(valuation.missingPps ? { ...currentLedger, missingPps: true } : currentLedger, {
         shares: event.shares,
-        baselineUnderlying: formatAmount(event.assets, assetDecimals),
+        baselineUnderlying: valuation.underlying,
         receiptTimestamp: event.blockTimestamp,
         receiptPriceUsd,
         receiptPriceEth,
@@ -774,11 +816,16 @@ function processEvent(
   }
 
   if (event.kind === 'withdrawal') {
+    const valuation = valueDepositOrWithdrawalEvent(event, {
+      assetDecimals,
+      shareDecimals,
+      ppsMap
+    })
     ledgers.set(
       vaultKey,
-      addExit(currentLedger, {
+      addExit(valuation.missingPps ? { ...currentLedger, missingPps: true } : currentLedger, {
         shares: event.shares,
-        exitUnderlying: formatAmount(event.assets, assetDecimals),
+        exitUnderlying: valuation.underlying,
         exitKind: 'withdrawal'
       })
     )
