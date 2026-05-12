@@ -159,8 +159,8 @@ function YvBtcWidgetBody({
 
 function YvBtcUnlockedNotice({ mode }: { mode: ActionType }): ReactElement {
   return (
-    <div className="rounded-lg border border-border bg-surface-secondary px-3 py-2 text-sm text-text-primary">
-      <p className="text-sm text-primary">
+    <div className="rounded-lg border border-primary/80 bg-surface-tertiary/80 px-3 py-2 text-sm text-text-primary">
+      <p className="text-sm text-text-primary">
         {mode === ActionType.Deposit
           ? 'Unlocked yvBTC deposits stay liquid. The locked yvBTC contract is not live yet.'
           : 'Unlocked yvBTC withdrawals are available. Locked yvBTC withdrawals will be enabled once the locked contract is live.'}
@@ -183,9 +183,9 @@ function YvBtcLockedPlaceholder({ mode, headerActions }: { mode: ActionType; hea
         </div>
         {headerActions}
       </div>
-      <div className="rounded-lg border border-border bg-surface-secondary px-3 py-3 text-sm text-text-primary">
+      <div className="rounded-lg border border-primary/80 bg-surface-tertiary/80 px-3 py-3 text-sm text-text-primary">
         <p className="font-semibold text-text-primary">{'Locked yvBTC is not live yet.'}</p>
-        <p className="mt-1 text-text-secondary">
+        <p className="mt-1 text-text-primary/70">
           {'This page is wired for the dual-vault launch, but the locked vault address is still a placeholder.'}
         </p>
       </div>

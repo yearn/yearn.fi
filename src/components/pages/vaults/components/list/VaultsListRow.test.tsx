@@ -557,4 +557,37 @@ describe('VaultsListRow', () => {
     expect(html).toContain('aria-label="Filter by 0% management fee and 10% performance fee"')
     expect(html).toMatch(/data-active="true"[^>]*><span[^>]*>Fees: 0% \| 10%<\/span>/)
   })
+
+  it('renders the derived asset-category chip for LP vaults with protocol categories', () => {
+    const vault = {
+      version: '0.4.6',
+      chainID: 1,
+      address: '0x0000000000000000000000000000000000000001',
+      name: 'Curve USDC Factory Vault',
+      symbol: 'yvCurve-USDC',
+      category: 'Curve',
+      kind: null,
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        name: 'Curve USDC LP',
+        symbol: 'crvUSDC',
+        decimals: 18
+      },
+      tvl: {
+        tvl: 1234,
+        totalAssets: 1234567
+      },
+      info: {
+        riskLevel: 2
+      }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault, {
+      activeCategories: ['Stablecoin']
+    })
+
+    expect(html).toContain('Curve')
+    expect(html).toContain('aria-label="Filter by Stablecoin"')
+    expect(html).toMatch(/data-active="true"[^>]*><span[^>]*>Stablecoin<\/span>/)
+  })
 })

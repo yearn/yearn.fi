@@ -29,7 +29,7 @@ import {
   formatFeeStructureLabel,
   getFeeStructureKeyFromFees
 } from '@pages/vaults/utils/vaultFees'
-import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
+import { deriveAssetCategory, deriveListKind } from '@pages/vaults/utils/vaultListFacets'
 import { getVaultPrimaryLogoSrc } from '@pages/vaults/utils/vaultLogo'
 import {
   getCategoryDescription,
@@ -394,6 +394,9 @@ function VaultsListRowComponent({
   const showKindChip = showStrategies && Boolean(kindType) && (showAllocatorChip || kindType !== 'multi')
   const isKindActive = false
   const chainDescription = getChainDescription(chainID)
+  const assetCategory = deriveAssetCategory(currentVault)
+  const showAssetCategoryChip = productType === 'lp' && assetCategory !== vaultCategory
+  const assetCategoryDescription = getCategoryDescription(assetCategory)
   const categoryDescription = getCategoryDescription(vaultCategory)
   const productTypeDescription = getProductTypeDescription(listKind)
   const kindDescription = getKindDescription(kindType, kindLabel)
@@ -645,6 +648,18 @@ function VaultsListRowComponent({
                     onClick={onToggleCategory ? (): void => onToggleCategory(vaultCategory) : undefined}
                     onHoverChange={handleInteractiveHoverChange}
                     ariaLabel={`Filter by ${vaultCategory}`}
+                  />
+                ) : null}
+                {showAssetCategoryChip ? (
+                  <VaultsListChip
+                    label={assetCategory}
+                    isActive={activeCategoryLabels.includes(assetCategory)}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={assetCategoryDescription || undefined}
+                    onClick={onToggleCategory ? (): void => onToggleCategory(assetCategory) : undefined}
+                    onHoverChange={handleInteractiveHoverChange}
+                    ariaLabel={`Filter by ${assetCategory}`}
                   />
                 ) : null}
                 {showProductTypeChip ? (

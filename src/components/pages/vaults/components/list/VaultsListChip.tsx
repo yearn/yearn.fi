@@ -39,7 +39,11 @@ export function VaultsListChip({
   const shouldShowIconInChip = Boolean(icon) && showIconInChip
   const shouldCollapse = isCollapsed && shouldShowIconInChip
   const iconNode = icon ? (
-    <span className={'flex size-4 items-center justify-center text-text-secondary'}>{icon}</span>
+    <span
+      className={cl('flex size-4 items-center justify-center', isActive ? 'text-text-primary' : 'text-text-secondary')}
+    >
+      {icon}
+    </span>
   ) : null
 
   const chip = (
@@ -48,8 +52,9 @@ export function VaultsListChip({
       className={cl(
         'inline-flex items-center rounded-lg border border-border px-1 py-0.5 text-xs font-medium transition-colors',
         'bg-surface-secondary text-text-primary/70',
-        'data-[active=true]:bg-surface-tertiary/80 data-[active=true]:text-primary',
+        'data-[active=true]:border-primary/80 data-[active=true]:bg-surface-tertiary/80 data-[active=true]:text-text-primary',
         isInteractive ? 'cursor-pointer hover:bg-surface-tertiary/80 hover:text-text-primary' : 'cursor-default',
+        isInteractive ? 'data-[active=true]:hover:border-primary/80 data-[active=true]:hover:text-text-primary' : '',
         shouldCollapse ? 'gap-0' : 'gap-1'
       )}
       data-active={isActive}
