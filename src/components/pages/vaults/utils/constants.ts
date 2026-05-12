@@ -3,7 +3,7 @@ import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
 
 //TODO: see what can be combined with src/components/pages/vaults/utils/vaultTypeUtils.ts
 export const V2_SUPPORTED_CHAINS = [1, 10, 8453]
-export const V3_SUPPORTED_CHAINS = [1, 747474, 8453, 137, 42161]
+export const V3_SUPPORTED_CHAINS = [1, 747474, 8453]
 
 export const AVAILABLE_TOGGLE_VALUE = 'available'
 export const HOLDINGS_TOGGLE_VALUE = 'holdings'
