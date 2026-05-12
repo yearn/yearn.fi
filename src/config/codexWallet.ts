@@ -3,10 +3,12 @@ import { type Address, getAddress } from 'viem'
 import { createConnector } from 'wagmi'
 import { mock } from 'wagmi/connectors'
 
-const CODEX_WALLET_ID = 'codex'
+export const CODEX_WALLET_ID = 'codex'
 const CODEX_WALLET_NAME = 'Codex Wallet'
 const CODEX_WALLET_QUERY_PARAM = 'codexWallet'
+const CODEX_WALLET_ADDRESS_QUERY_PARAM = 'codexWalletAddress'
 const CODEX_WALLET_STORAGE_KEY = 'dev-codex-wallet-enabled'
+const CODEX_WALLET_ADDRESS_STORAGE_KEY = 'dev-codex-wallet-address'
 const DEFAULT_CODEX_WALLET_ADDRESS = '0x000000000000000000000000000000000000c0DE'
 const CODEX_WALLET_ICON =
   'data:image/svg+xml,%3Csvg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"%3E%3Crect width="48" height="48" rx="12" fill="%23065CF9"/%3E%3Cpath d="M15 15.5C15 13.57 16.57 12 18.5 12H31V17H20V31H31V36H18.5C16.57 36 15 34.43 15 32.5V15.5Z" fill="white"/%3E%3Cpath d="M25 21H34V27H25V21Z" fill="white"/%3E%3C/svg%3E'
@@ -52,6 +54,11 @@ function readRuntimeFlag(): boolean | undefined {
 }
 
 function resolveCodexWalletAddress(): Address {
+  const runtimeAddress = readRuntimeAddress()
+  if (runtimeAddress) {
+    return runtimeAddress
+  }
+
   const configuredAddress = (import.meta.env.VITE_CODEX_WALLET_ADDRESS as string | undefined)?.trim()
   if (!configuredAddress) {
     return DEFAULT_CODEX_WALLET_ADDRESS
@@ -65,12 +72,46 @@ function resolveCodexWalletAddress(): Address {
   }
 }
 
-export function isCodexWalletEnabled(): boolean {
-  if (import.meta.env.PROD) {
-    return false
+function parseCodexWalletAddress(value: string | null | undefined): Address | undefined {
+  const rawAddress = value?.trim()
+  if (!rawAddress) {
+    return undefined
   }
 
-  return readBooleanFlag(import.meta.env.VITE_CODEX_WALLET) ?? readRuntimeFlag() ?? false
+  try {
+    return getAddress(rawAddress)
+  } catch {
+    console.warn(`Invalid ${CODEX_WALLET_ADDRESS_QUERY_PARAM} "${rawAddress}"`)
+    return undefined
+  }
+}
+
+function readRuntimeAddress(): Address | undefined {
+  if (typeof window === 'undefined') {
+    return undefined
+  }
+
+  try {
+    const url = new URL(window.location.href)
+    const queryAddress = parseCodexWalletAddress(url.searchParams.get(CODEX_WALLET_ADDRESS_QUERY_PARAM))
+    if (queryAddress) {
+      window.localStorage.setItem(CODEX_WALLET_ADDRESS_STORAGE_KEY, queryAddress)
+      return queryAddress
+    }
+
+    return parseCodexWalletAddress(window.localStorage.getItem(CODEX_WALLET_ADDRESS_STORAGE_KEY))
+  } catch {
+    return undefined
+  }
+}
+
+export function isCodexWalletEnabled(): boolean {
+  const configuredFlag = readBooleanFlag(import.meta.env.VITE_CODEX_WALLET)
+  if (import.meta.env.PROD) {
+    return configuredFlag === true
+  }
+
+  return configuredFlag ?? readRuntimeFlag() ?? false
 }
 
 export function codexWallet(): Wallet {
