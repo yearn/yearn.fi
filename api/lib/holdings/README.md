@@ -349,31 +349,6 @@ Response:
 
 When a vault filter is present, each history point can also include `currentUnderlying`, `growthUnderlying`, `sharesFormatted`, and `pricePerShare`.
 
-### `POST /api/holdings/chores`
-
-Runs cache cleanup. Requires `Authorization: Bearer $CRON_SECRET`.
-
-Cleanup deletes:
-
-- `holdings_totals` rows before the supported history floor, `2024-01-01`.
-- Rate-limit rows older than 1 day.
-
-```bash
-curl -X POST \
-  -H "Authorization: Bearer $CRON_SECRET" \
-  "http://localhost:3001/api/holdings/chores"
-```
-
-Response:
-
-```json
-{
-  "success": true,
-  "deletedRows": 10,
-  "timestamp": "2026-05-07T00:00:00.000Z"
-}
-```
-
 ### `POST /api/admin/invalidate-cache`
 
 Marks vaults as invalidated so affected user daily totals are lazily cleared and recomputed on the next cached history request. Requires `x-admin-secret: $ADMIN_SECRET` and DB caching.
@@ -426,7 +401,6 @@ Response:
 | `API_KEY_PORTFOLIO` | No | `''` | Shared portfolio API key used as the yearn-prices fallback token |
 | `DEFILLAMA_API_KEY` | No | `''` | Enables DefiLlama Pro GET route |
 | `ADMIN_SECRET` | Admin only | `null` | Secret for `/api/admin/invalidate-cache` |
-| `CRON_SECRET` | Chores only | `null` | Bearer token for `/api/holdings/chores` |
 | `HOLDINGS_DEBUG` | Local only | `false` | Enables holdings debug logs in `api/server.ts` |
 
 Hardcoded service bases:
@@ -460,7 +434,7 @@ Server-side cache is optional. When `DATABASE_URL_PREVIEW` or `DATABASE_URL` is 
 
 1. PostgreSQL:
    - `holdings_totals`: daily USD totals per hashed user address, vault version, and date.
-   - `rate_limits`: simple per-client request windows.
+   - `rate_limits`: simple per-client request windows, cleaned opportunistically after the active window expires.
    - `vault_invalidations`: per-vault invalidation timestamps for lazy cache clearing.
    - `holdings_progress`: short-lived progress records for long history requests across Vercel function instances.
 2. HTTP cache:
@@ -536,5 +510,6 @@ Legacy `holdings_totals.user_address` rows are migrated to `user_address_hash`, 
 - Enable DB caching in shared environments; otherwise a history request must rebuild events, PPS, and prices every time.
 - Keep `API_KEY_PORTFOLIO` or `YEARN_PRICES_API_KEY` configured if `HOLDINGS_PRICE_PROVIDER=auto` should prefer yearn-prices.
 - Use `/api/admin/invalidate-cache` after indexer deployments add or repair vault coverage.
-- Use `/api/holdings/chores` from cron to remove pre-supported history totals, stale progress rows, and old rate-limit rows.
+- Stale rate-limit rows are cleaned opportunistically when holdings rate checks run.
+- Short-lived progress rows are cleaned opportunistically when progress-enabled holdings requests run.
 - `timeframe=all` grows over time from `2024-01-01`, so cache row counts are no longer fixed at `365` per user/version.

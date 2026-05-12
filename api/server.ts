@@ -7,7 +7,6 @@ import type {
 } from '../src/components/shared/types/tenderly'
 import {
   clearUserCache,
-  deleteStaleCache,
   getHistoricalHoldingsChart,
   getHoldingsActivity,
   getHoldingsBreakdown,
@@ -947,38 +946,6 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
   }
 }
 
-async function handleHoldingsChores(req: Request): Promise<Response> {
-  if (req.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 })
-  }
-
-  const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-
-  if (!cronSecret) {
-    console.error('[Chores] CRON_SECRET not configured')
-    return Response.json({ error: 'Server misconfigured' }, { status: 500 })
-  }
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  try {
-    await initializeSchema()
-    const deletedCount = await deleteStaleCache()
-
-    return Response.json({
-      success: true,
-      deletedRows: deletedCount,
-      timestamp: new Date().toISOString()
-    })
-  } catch (error) {
-    console.error('[Chores] Failed to run cleanup:', error)
-    return Response.json({ error: 'Cleanup failed' }, { status: 500 })
-  }
-}
-
 async function handleInvalidateCache(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 })
@@ -1097,10 +1064,6 @@ async function main() {
           url.pathname === '/api/holdings/pnl/simple-history'
         ) {
           return withCors(await handleHoldingsProtocolReturnHistory(req))
-        }
-
-        if (url.pathname === '/api/holdings/chores') {
-          return withCors(await handleHoldingsChores(req))
         }
 
         if (url.pathname === '/api/admin/invalidate-cache') {

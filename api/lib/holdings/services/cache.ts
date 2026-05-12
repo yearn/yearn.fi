@@ -1,15 +1,10 @@
 import { createHash } from 'node:crypto'
-import { holdingsConfig } from '../config'
 import { getPool, isDatabaseEnabled } from '../db/connection'
 import { debugError, debugLog } from './debug'
 
 export interface CachedTotal {
   date: string
   usdValue: number
-}
-
-function getSupportedHistoryStartDate(): string {
-  return new Date(holdingsConfig.historyStartTimestamp * 1000).toISOString().split('T')[0]
 }
 
 function normalizeUserAddress(userAddress: string): string {
@@ -111,36 +106,6 @@ export async function saveCachedTotals(userAddress: string, version: string, tot
     console.error('[Cache] Failed to save totals:', error)
     debugError('cache', 'cached totals save failed', error, { rows: totals.length })
     return false
-  }
-}
-
-export async function deleteStaleCache(): Promise<number> {
-  if (!isDatabaseEnabled()) {
-    debugLog('cache', 'skipping stale cache deletion because database is disabled')
-    return 0
-  }
-
-  const pool = await getPool()
-  if (!pool) {
-    debugLog('cache', 'skipping stale cache deletion because database pool is unavailable')
-    return 0
-  }
-
-  try {
-    const historyStartDate = getSupportedHistoryStartDate()
-    const [staleTotalsResult, staleRateLimitsResult, staleProgressResult] = await Promise.all([
-      pool.query('DELETE FROM holdings_totals WHERE date < $1::date', [historyStartDate]),
-      pool.query(`DELETE FROM rate_limits WHERE window_start < NOW() - INTERVAL '1 day'`),
-      pool.query(`DELETE FROM holdings_progress WHERE updated_at < NOW() - INTERVAL '1 day'`)
-    ])
-    const deletedCount =
-      (staleTotalsResult.rowCount ?? 0) + (staleRateLimitsResult.rowCount ?? 0) + (staleProgressResult.rowCount ?? 0)
-    console.log(`[Cache] Deleted ${deletedCount} stale cache rows`)
-    return deletedCount
-  } catch (error) {
-    console.error('[Cache] Failed to delete stale cache:', error)
-    debugError('cache', 'stale cache deletion failed', error)
-    return 0
   }
 }
 

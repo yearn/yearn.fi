@@ -24,7 +24,6 @@ The local server adds CORS to all handled routes and includes dev-only Tenderly 
 | `/api/holdings/activity` | `GET` | Vercel + local | Recent classified vault activity |
 | `/api/holdings/protocol-return/history` | `GET` | Vercel + local | Protocol-return history for vault exposure |
 | `/api/holdings/pnl/simple-history` | `GET` | Vercel + local | Compatibility alias for protocol-return history |
-| `/api/holdings/chores` | `POST` | Vercel + local | Holdings cache cleanup, cron-protected |
 | `/api/admin/invalidate-cache` | `POST` | Vercel + local | Lazy vault cache invalidation, admin-protected |
 | `/api/enso/status` | `GET` | Vercel + local | Returns whether `ENSO_API_KEY` is configured |
 | `/api/enso/balances` | `GET` | Vercel + local | Proxies Enso wallet balances |
@@ -44,7 +43,7 @@ The holdings implementation is the largest API surface here. See [`lib/holdings/
 - Endpoint query params and response shapes.
 - Envio, Kong, yearn-prices, and DefiLlama data flow.
 - `timeframe=all` support from `2024-01-01`.
-- Cache schema, hashed user cache keys, invalidation, and chores behavior.
+- Cache schema, hashed user cache keys, and invalidation behavior.
 - Historical price provider switching and yearn-prices range requests.
 
 ## Enso Proxies
@@ -100,7 +99,6 @@ Required env for a configured chain:
 | `API_KEY_PORTFOLIO` | holdings | Fallback bearer token for yearn-prices |
 | `DEFILLAMA_API_KEY` | holdings | Enables DefiLlama Pro |
 | `ADMIN_SECRET` | holdings admin | Required for `/api/admin/invalidate-cache` |
-| `CRON_SECRET` | holdings chores | Required for `/api/holdings/chores` |
 | `HOLDINGS_DEBUG` | local holdings | Enables holdings debug logs in `api/server.ts` |
 | `VITE_TENDERLY_MODE` | local Tenderly | Enables Tenderly config parsing |
 | `VITE_TENDERLY_CHAIN_ID_FOR_<id>` | local Tenderly | Tenderly execution chain ID for a canonical chain |

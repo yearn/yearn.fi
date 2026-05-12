@@ -19,7 +19,7 @@ export {
   type HoldingsHistoryTimeframe,
   type HoldingsVaultFilter
 } from './services/aggregator'
-export { clearUserCache, deleteStaleCache } from './services/cache'
+export { clearUserCache } from './services/cache'
 export {
   fetchRecentAddressScopedActivityEvents,
   fetchUserEvents,

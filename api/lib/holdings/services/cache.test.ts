@@ -8,29 +8,6 @@ vi.mock('../db/connection', () => ({
   isDatabaseEnabled: isDatabaseEnabledMock
 }))
 
-describe('deleteStaleCache', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('prunes stale rate limit rows during cache cleanup', async () => {
-    const queryMock = vi.fn().mockResolvedValueOnce({ rowCount: 2 }).mockResolvedValueOnce({ rowCount: 4 })
-
-    isDatabaseEnabledMock.mockReturnValue(true)
-    getPoolMock.mockResolvedValue({
-      query: queryMock,
-      end: vi.fn()
-    })
-
-    const { deleteStaleCache } = await import('./cache')
-    const deletedCount = await deleteStaleCache()
-
-    expect(queryMock).toHaveBeenNthCalledWith(1, 'DELETE FROM holdings_totals WHERE date < $1::date', ['2024-01-01'])
-    expect(queryMock).toHaveBeenNthCalledWith(2, expect.stringContaining('DELETE FROM rate_limits'))
-    expect(deletedCount).toBe(6)
-  })
-})
-
 describe('cache writes', () => {
   beforeEach(() => {
     vi.clearAllMocks()
