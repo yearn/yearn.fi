@@ -97,7 +97,7 @@ describe('resolvePendingSafeOverlayState', () => {
         safeTxStatus: 'CANCELLED',
         callsStatus: undefined
       })
-    ).toBe('Approve() transaction pending')
+    ).toBe('error')
 
     expect(
       getPendingTransactionTitle({
