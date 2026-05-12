@@ -1,4 +1,5 @@
 [install]
+exact = true
 workspace = [
   "packages/*"
 ]
