@@ -3,7 +3,28 @@ import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/util
 import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const useVaultUserDataMock = vi.hoisted(() =>
+  vi.fn(() => ({
+    depositedValue: 0n,
+    pricePerShare: 0n,
+    assetToken: {
+      decimals: 18,
+      symbol: 'yvUSD'
+    },
+    vaultToken: {
+      symbol: 'yvUSD'
+    },
+    stakingToken: undefined,
+    availableToDeposit: 0n,
+    depositedShares: 0n,
+    stakingWithdrawableAssets: 0n,
+    stakingRedeemableShares: 0n,
+    isLoading: false,
+    refetch: vi.fn()
+  }))
+)
 
 Object.defineProperty(globalThis, 'location', {
   value: {
@@ -40,16 +61,7 @@ vi.mock('@shared/hooks/useChainTimestamp', () => ({
 }))
 
 vi.mock('@pages/vaults/hooks/useVaultUserData', () => ({
-  useVaultUserData: () => ({
-    depositedValue: 0n,
-    assetToken: {
-      decimals: 18,
-      symbol: 'yvUSD'
-    },
-    vaultToken: {
-      symbol: 'yvUSD'
-    }
-  })
+  useVaultUserData: useVaultUserDataMock
 }))
 
 vi.mock('@pages/vaults/hooks/useYvUsdVaults', () => ({
@@ -266,7 +278,29 @@ const YVUSD_VAULT = {
   }
 } as const
 
+const YVBTC_VAULT = {
+  ...YVUSD_VAULT,
+  address: YVBTC_UNLOCKED_ADDRESS,
+  symbol: 'yvBTC',
+  name: 'yvBTC',
+  token: {
+    address: '0x0000000000000000000000000000000000000003',
+    symbol: 'WBTC',
+    name: 'Wrapped Bitcoin',
+    decimals: 8
+  },
+  tvl: {
+    tvl: 100,
+    totalAssets: 100000000n,
+    price: 100000
+  }
+} as const
+
 describe('VaultDetailsHeaderPresentation', () => {
+  beforeEach(() => {
+    useVaultUserDataMock.mockClear()
+  })
+
   it('uses the standard compressed token logo size for yvUSD', () => {
     const html = renderToStaticMarkup(
       <MemoryRouter>
@@ -301,5 +335,20 @@ describe('VaultDetailsHeaderPresentation', () => {
     expect(html).not.toContain('IN COOLDOWN')
     expect(html).not.toContain('WITHDRAWABLE')
     expect(html).not.toContain('EXPIRED COOLDOWN')
+  })
+
+  it('does not enable locked yvBTC user-data reads while the locked address is a placeholder', () => {
+    renderToStaticMarkup(
+      <MemoryRouter>
+        <VaultDetailsHeaderPresentation currentVault={YVBTC_VAULT as never} depositedValue={0n} isCompressed={false} />
+      </MemoryRouter>
+    )
+
+    expect(useVaultUserDataMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        vaultAddress: YVBTC_LOCKED_ADDRESS,
+        enabled: false
+      })
+    )
   })
 })

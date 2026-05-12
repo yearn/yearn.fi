@@ -63,6 +63,7 @@ import {
   formatTAmount,
   formatUSD,
   isZero,
+  isZeroAddress,
   SELECTOR_BAR_STYLES,
   toAddress,
   toNormalizedBN
@@ -800,6 +801,7 @@ function YvBtcUserHoldingsCard({
   const { unlockedVault, lockedVault } = useYvBtcVaults()
   const account = address ? toAddress(address) : undefined
   const unlockedAssetAddress = toAddress(unlockedVault?.token.address)
+  const isLockedVaultLive = !isZeroAddress(toAddress(lockedVault?.address))
 
   const unlockedUserData = useVaultUserData({
     vaultAddress: toAddress(unlockedVault?.address),
@@ -811,7 +813,8 @@ function YvBtcUserHoldingsCard({
     vaultAddress: toAddress(lockedVault?.address),
     assetAddress: unlockedAssetAddress,
     chainId: lockedVault.chainID,
-    account
+    account,
+    enabled: isLockedVaultLive
   })
   const unlockedAssetPrice =
     getPrice({ address: unlockedAssetAddress, chainID: unlockedVault.chainID }).normalized ||
