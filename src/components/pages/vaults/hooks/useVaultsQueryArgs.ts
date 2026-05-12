@@ -207,5 +207,5 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
   }
 }
 
-export { useQueryArguments }
 export type { TQueryArgs }
+export { useQueryArguments }
