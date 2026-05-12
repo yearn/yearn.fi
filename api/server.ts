@@ -139,9 +139,9 @@ function handleCorsPreFlight(): Response {
   })
 }
 
-function handleHoldingsProgress(req: Request): Response {
+async function handleHoldingsProgress(req: Request): Promise<Response> {
   const url = new URL(req.url)
-  const progress = getHoldingsProgress(url.searchParams.get('id'))
+  const progress = await getHoldingsProgress(url.searchParams.get('id'))
 
   if (!progress) {
     return Response.json({ error: 'Progress not found', status: 404 }, { status: 404 })
@@ -588,6 +588,11 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       address,
       message: 'Fetching historical user data'
     })
+    await updateHoldingsProgress(activeProgressId, {
+      progress: 8,
+      message: 'Fetching historical user data',
+      detail: null
+    })
 
     if (refresh) {
       const cleared = await clearUserCache(address, getHoldingsTotalsCacheVersion(version))
@@ -642,7 +647,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.value > 0)
     if (!hasHoldings) {
-      updateHoldingsProgress(activeProgressId, {
+      await updateHoldingsProgress(activeProgressId, {
         status: 'complete',
         progress: 100,
         message: 'No historical holdings found',
@@ -651,7 +656,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
 
-    updateHoldingsProgress(activeProgressId, {
+    await updateHoldingsProgress(activeProgressId, {
       status: 'complete',
       progress: 100,
       message: 'Historical user data ready',
@@ -676,7 +681,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       }
     )
   } catch (error) {
-    updateHoldingsProgress(progressId, {
+    await updateHoldingsProgress(progressId, {
       status: 'error',
       message: 'Failed to fetch historical user data',
       detail: error instanceof Error ? error.message : String(error)
@@ -847,6 +852,11 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
       address,
       message: 'Fetching historical user data'
     })
+    await updateHoldingsProgress(activeProgressId, {
+      progress: 8,
+      message: 'Fetching historical user data',
+      detail: null
+    })
 
     const history = await withHoldingsDebugContext(
       createHoldingsDebugContext('protocol-return-history', address, debugEnabled, {
@@ -900,7 +910,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
     )
 
     if (history.summary.totalVaults === 0) {
-      updateHoldingsProgress(activeProgressId, {
+      await updateHoldingsProgress(activeProgressId, {
         status: 'complete',
         progress: 100,
         message: 'No historical holdings found',
@@ -909,7 +919,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
       return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
 
-    updateHoldingsProgress(activeProgressId, {
+    await updateHoldingsProgress(activeProgressId, {
       status: 'complete',
       progress: 100,
       message: 'Historical user data ready',
@@ -922,7 +932,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
       }
     })
   } catch (error) {
-    updateHoldingsProgress(progressId, {
+    await updateHoldingsProgress(progressId, {
       status: 'error',
       message: 'Failed to fetch historical user data',
       detail: error instanceof Error ? error.message : String(error)
@@ -1071,7 +1081,7 @@ async function main() {
         }
 
         if (url.pathname === '/api/holdings/progress') {
-          return withCors(handleHoldingsProgress(req))
+          return withCors(await handleHoldingsProgress(req))
         }
 
         if (url.pathname === '/api/holdings/activity') {

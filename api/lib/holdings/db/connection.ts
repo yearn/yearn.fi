@@ -184,8 +184,22 @@ export async function initializeSchema(): Promise<void> {
       PRIMARY KEY (vault_address, chain_id)
     );
 
+    CREATE TABLE IF NOT EXISTS holdings_progress (
+      id VARCHAR(160) PRIMARY KEY,
+      route VARCHAR(64) NOT NULL,
+      address VARCHAR(42) NOT NULL,
+      status VARCHAR(16) NOT NULL,
+      progress INTEGER NOT NULL,
+      message TEXT NOT NULL,
+      detail TEXT,
+      started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      logs JSONB NOT NULL DEFAULT '[]'::jsonb
+    );
+
     CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
     CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
+    CREATE INDEX IF NOT EXISTS idx_holdings_progress_updated_at ON holdings_progress(updated_at);
   `
 
   try {

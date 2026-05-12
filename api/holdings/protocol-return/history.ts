@@ -6,6 +6,14 @@ import type {
   VaultVersion
 } from '../../lib/holdings'
 import { checkRateLimit, ensureSchemaInitialized } from '../../lib/holdings'
+import {
+  createHoldingsDebugContext,
+  debugError,
+  debugLog,
+  isHoldingsDebugRequested,
+  withHoldingsDebugContext
+} from '../../lib/holdings/services/debug'
+import { startHoldingsProgress, updateHoldingsProgress } from '../../lib/holdings/services/progress'
 
 function simpleHash(str: string): string {
   const hash = Array.from(str).reduce((currentHash, char) => {
@@ -142,7 +150,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     version: versionParam,
     fetchType: fetchTypeParam,
     paginationMode: paginationModeParam,
-    timeframe: timeframeParam
+    timeframe: timeframeParam,
+    debug: debugParam,
+    progressId: progressIdParam
   } = req.query
 
   if (!address || typeof address !== 'string') {
@@ -167,25 +177,89 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
   const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)
+  const progressId = typeof progressIdParam === 'string' ? progressIdParam : null
+  const debugEnabled = isHoldingsDebugRequested(typeof debugParam === 'string' ? debugParam : null)
 
   try {
-    const { getHoldingsProtocolReturnHistory } = await import('../../lib/holdings')
-    const history = await getHoldingsProtocolReturnHistory(
+    const activeProgressId = startHoldingsProgress({
+      id: progressId,
+      route: 'pnl-simple-history',
       address,
-      version,
-      fetchType,
-      paginationMode,
-      timeframe,
-      vaultFilters
+      message: 'Fetching historical user data'
+    })
+    await updateHoldingsProgress(activeProgressId, {
+      progress: 8,
+      message: 'Fetching historical user data',
+      detail: null
+    })
+    const { getHoldingsProtocolReturnHistory } = await import('../../lib/holdings')
+    const history = await withHoldingsDebugContext(
+      createHoldingsDebugContext('protocol-return-history', address, debugEnabled, {
+        progressId: activeProgressId
+      }),
+      async () => {
+        debugLog('route', 'started holdings protocol return history request', {
+          version,
+          timeframe,
+          fetchType,
+          paginationMode
+        })
+
+        try {
+          const response = await getHoldingsProtocolReturnHistory(
+            address,
+            version,
+            fetchType,
+            paginationMode,
+            timeframe,
+            vaultFilters
+          )
+          debugLog('route', 'completed holdings protocol return history request', {
+            version,
+            timeframe,
+            fetchType,
+            paginationMode,
+            totalVaults: response.summary.totalVaults,
+            points: response.dataPoints.length
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings protocol return history request failed', error, {
+            version,
+            timeframe,
+            fetchType,
+            paginationMode
+          })
+          throw error
+        }
+      }
     )
 
     if (history.summary.totalVaults === 0) {
+      await updateHoldingsProgress(activeProgressId, {
+        status: 'complete',
+        progress: 100,
+        message: 'No historical holdings found',
+        detail: null
+      })
       return res.status(404).json({ error: 'No holdings found for address' })
     }
+
+    await updateHoldingsProgress(activeProgressId, {
+      status: 'complete',
+      progress: 100,
+      message: 'Historical user data ready',
+      detail: `${history.dataPoints.length} chart points`
+    })
 
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
     return res.status(200).json(history)
   } catch (error) {
+    await updateHoldingsProgress(progressId, {
+      status: 'error',
+      message: 'Failed to fetch historical user data',
+      detail: error instanceof Error ? error.message : String(error)
+    })
     console.error('Holdings protocol return history error:', error)
 
     if (process.env.NODE_ENV === 'development') {

@@ -7,6 +7,14 @@ import type {
   VaultVersion
 } from '../lib/holdings'
 import { checkRateLimit, ensureSchemaInitialized } from '../lib/holdings'
+import {
+  createHoldingsDebugContext,
+  debugError,
+  debugLog,
+  isHoldingsDebugRequested,
+  withHoldingsDebugContext
+} from '../lib/holdings/services/debug'
+import { startHoldingsProgress, updateHoldingsProgress } from '../lib/holdings/services/progress'
 
 function simpleHash(str: string): string {
   let hash = 0
@@ -154,7 +162,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     fetchType: fetchTypeParam,
     paginationMode: paginationModeParam,
     denomination: denominationParam,
-    timeframe: timeframeParam
+    timeframe: timeframeParam,
+    debug: debugParam,
+    progressId: progressIdParam
   } = req.query
 
   if (!address || typeof address !== 'string') {
@@ -180,22 +190,77 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
   const denomination = parseHoldingsHistoryDenomination(denominationParam)
   const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)
+  const progressId = typeof progressIdParam === 'string' ? progressIdParam : null
+  const debugEnabled = isHoldingsDebugRequested(typeof debugParam === 'string' ? debugParam : null)
 
   try {
-    const { getHistoricalHoldingsChart } = await import('../lib/holdings')
-    const holdings = await getHistoricalHoldingsChart(
+    const activeProgressId = startHoldingsProgress({
+      id: progressId,
+      route: 'history',
       address,
-      version,
-      fetchType,
-      paginationMode,
-      denomination,
-      timeframe,
-      vaultFilters
+      message: 'Fetching historical user data'
+    })
+    await updateHoldingsProgress(activeProgressId, {
+      progress: 8,
+      message: 'Fetching historical user data',
+      detail: null
+    })
+    const { getHistoricalHoldingsChart } = await import('../lib/holdings')
+    const holdings = await withHoldingsDebugContext(
+      createHoldingsDebugContext('history', address, debugEnabled, {
+        progressId: activeProgressId
+      }),
+      async () => {
+        debugLog('route', 'started holdings history request', {
+          version,
+          fetchType,
+          paginationMode,
+          denomination,
+          timeframe
+        })
+
+        try {
+          const response = await getHistoricalHoldingsChart(
+            address,
+            version,
+            fetchType,
+            paginationMode,
+            denomination,
+            timeframe,
+            vaultFilters
+          )
+          debugLog('route', 'completed holdings history request', {
+            version,
+            fetchType,
+            paginationMode,
+            denomination,
+            timeframe,
+            points: response.dataPoints.length
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings history request failed', error, { version, fetchType, paginationMode })
+          throw error
+        }
+      }
     )
 
     if (!holdings.hasActivity) {
+      await updateHoldingsProgress(activeProgressId, {
+        status: 'complete',
+        progress: 100,
+        message: 'No historical holdings found',
+        detail: null
+      })
       return res.status(404).json({ error: 'No holdings found for address' })
     }
+
+    await updateHoldingsProgress(activeProgressId, {
+      status: 'complete',
+      progress: 100,
+      message: 'Historical user data ready',
+      detail: `${holdings.dataPoints.length} chart points`
+    })
 
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
     return res.status(200).json({
@@ -209,6 +274,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }))
     })
   } catch (error) {
+    await updateHoldingsProgress(progressId, {
+      status: 'error',
+      message: 'Failed to fetch historical user data',
+      detail: error instanceof Error ? error.message : String(error)
+    })
     console.error('Holdings history error:', error)
 
     if (process.env.NODE_ENV === 'development') {

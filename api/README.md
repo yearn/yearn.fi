@@ -19,6 +19,7 @@ The local server adds CORS to all handled routes and includes dev-only Tenderly 
 | Route | Method | Runtime | Purpose |
 |-------|--------|---------|---------|
 | `/api/holdings/history` | `GET` | Vercel + local | Daily holdings chart, USD or ETH-denominated |
+| `/api/holdings/progress` | `GET` | Vercel + local | Durable progress state for long holdings requests |
 | `/api/holdings/breakdown` | `GET` | Vercel + local | Per-vault breakdown for a settled UTC day |
 | `/api/holdings/activity` | `GET` | Vercel + local | Recent classified vault activity |
 | `/api/holdings/protocol-return/history` | `GET` | Vercel + local | Protocol-return history for vault exposure |

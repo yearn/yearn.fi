@@ -8,6 +8,7 @@ Calculates historical holdings value, per-vault breakdowns, recent activity, and
 Frontend hooks
   │
   ├─ GET /api/holdings/history
+  ├─ GET /api/holdings/progress
   ├─ GET /api/holdings/breakdown
   ├─ GET /api/holdings/activity
   └─ GET /api/holdings/protocol-return/history
@@ -18,7 +19,7 @@ Holdings services
   ├─ Envio GraphQL: deposits, withdrawals, transfers
   ├─ Kong: vault metadata and historical PPS
   ├─ yearn-prices or DefiLlama: historical token prices
-  └─ PostgreSQL: optional server-side cache, rate limits, invalidations
+  └─ PostgreSQL: optional server-side cache, progress, rate limits, invalidations
 ```
 
 In production, files under `api/` run as Vercel functions. In local development, `api/server.ts` exposes the same holdings routes on the Bun API server at `localhost:3001` and adds local-only debug and refresh controls.
@@ -461,6 +462,7 @@ Server-side cache is optional. When `DATABASE_URL_PREVIEW` or `DATABASE_URL` is 
    - `holdings_totals`: daily USD totals per hashed user address, vault version, and date.
    - `rate_limits`: simple per-client request windows.
    - `vault_invalidations`: per-vault invalidation timestamps for lazy cache clearing.
+   - `holdings_progress`: short-lived progress records for long history requests across Vercel function instances.
 2. HTTP cache:
    - History, breakdown, and protocol-return history: `s-maxage=300, stale-while-revalidate=600`.
    - Activity: `s-maxage=60, stale-while-revalidate=300`.
@@ -509,8 +511,22 @@ CREATE TABLE IF NOT EXISTS vault_invalidations (
   PRIMARY KEY (vault_address, chain_id)
 );
 
+CREATE TABLE IF NOT EXISTS holdings_progress (
+  id VARCHAR(160) PRIMARY KEY,
+  route VARCHAR(64) NOT NULL,
+  address VARCHAR(42) NOT NULL,
+  status VARCHAR(16) NOT NULL,
+  progress INTEGER NOT NULL,
+  message TEXT NOT NULL,
+  detail TEXT,
+  started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  logs JSONB NOT NULL DEFAULT '[]'::jsonb
+);
+
 CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
 CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
+CREATE INDEX IF NOT EXISTS idx_holdings_progress_updated_at ON holdings_progress(updated_at);
 ```
 
 Legacy `holdings_totals.user_address` rows are migrated to `user_address_hash`, and the primary key is migrated to `(user_address_hash, version, date)`.
@@ -520,5 +536,5 @@ Legacy `holdings_totals.user_address` rows are migrated to `user_address_hash`, 
 - Enable DB caching in shared environments; otherwise a history request must rebuild events, PPS, and prices every time.
 - Keep `API_KEY_PORTFOLIO` or `YEARN_PRICES_API_KEY` configured if `HOLDINGS_PRICE_PROVIDER=auto` should prefer yearn-prices.
 - Use `/api/admin/invalidate-cache` after indexer deployments add or repair vault coverage.
-- Use `/api/holdings/chores` from cron to remove pre-supported history totals, expired DefiLlama misses, and old rate-limit rows.
+- Use `/api/holdings/chores` from cron to remove pre-supported history totals, stale progress rows, and old rate-limit rows.
 - `timeframe=all` grows over time from `2024-01-01`, so cache row counts are no longer fixed at `365` per user/version.
