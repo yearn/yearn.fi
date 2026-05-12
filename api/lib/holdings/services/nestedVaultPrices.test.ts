@@ -68,8 +68,7 @@ describe('nested vault asset prices', () => {
         {
           chainId: 1,
           address: INNER_VAULT,
-          timestamps: [100, 200],
-          uncachedTimestamps: [200]
+          timestamps: [100, 200]
         }
       ],
       metadata
@@ -79,14 +78,12 @@ describe('nested vault asset prices', () => {
       {
         chainId: 1,
         address: INNER_VAULT,
-        timestamps: [100, 200],
-        uncachedTimestamps: [200]
+        timestamps: [100, 200]
       },
       {
         chainId: 1,
         address: UNDERLYING,
-        timestamps: [100, 200],
-        uncachedTimestamps: [200]
+        timestamps: [100, 200]
       }
     ])
   })

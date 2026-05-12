@@ -16,6 +16,7 @@ const fetchMultipleVaultsMetadataMock = vi.fn()
 const fetchMultipleVaultsPPSMock = vi.fn()
 const getPPSMock = vi.fn()
 const fetchHistoricalPricesMock = vi.fn()
+const getHistoricalPriceFetchFailedBatchesMock = vi.fn()
 const getChainPrefixMock = vi.fn()
 const getPriceAtTimestampMock = vi.fn()
 const CURRENT_DAY_LOOKAHEAD_SECONDS = 24 * 60 * 60
@@ -53,6 +54,7 @@ vi.mock('./kong', () => ({
 vi.mock('./defillama', () => ({
   fetchHistoricalPrices: fetchHistoricalPricesMock,
   fetchHistoricalPricesForTokenTimestamps: fetchHistoricalPricesMock,
+  getHistoricalPriceFetchFailedBatches: getHistoricalPriceFetchFailedBatchesMock,
   getChainPrefix: getChainPrefixMock,
   getPriceAtTimestamp: getPriceAtTimestampMock
 }))
@@ -62,6 +64,7 @@ describe('getHistoricalHoldings', () => {
     toSettledDayTimestampMock.mockImplementation((timestamp: number) => timestamp + 1)
     checkCacheStalenessMock.mockResolvedValue(false)
     clearUserCacheMock.mockResolvedValue(0)
+    getHistoricalPriceFetchFailedBatchesMock.mockReturnValue(0)
   })
 
   afterEach(() => {
@@ -520,6 +523,58 @@ describe('getHistoricalHoldings', () => {
       { date: 'date-100', timestamp: 101, value: 1 },
       { date: 'date-200', timestamp: 201, value: 1 }
     ])
+  })
+
+  it('does not cache recalculated totals after partial price fetch failures', async () => {
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+    const vaultAddress = '0x00000000000000000000000000000000000000b2'
+    const tokenAddress = '0x0000000000000000000000000000000000000bb2'
+    const timeline = [{ blockTimestamp: 100, blockNumber: 1 }]
+    const vaults = [{ chainId: 1, vaultAddress }]
+
+    generateDailyTimestampsMock.mockReturnValue([100])
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    getCachedTotalsWithTimestampMock.mockResolvedValue({ totals: [], oldestUpdatedAt: null })
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+    buildPositionTimelineMock.mockReturnValue(timeline)
+    getUniqueVaultsMock.mockReturnValue(vaults)
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${vaultAddress}`,
+          {
+            address: vaultAddress,
+            chainId: 1,
+            version: 'v3',
+            token: {
+              address: tokenAddress,
+              symbol: 'TKN',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+    fetchMultipleVaultsPPSMock.mockResolvedValue(new Map([[`1:${vaultAddress}`, new Map([[100, 1]])]]))
+    fetchHistoricalPricesMock.mockResolvedValue(new Map([[`ethereum:${tokenAddress}`, new Map([[101, 1]])]]))
+    getHistoricalPriceFetchFailedBatchesMock.mockReturnValue(1)
+    getChainPrefixMock.mockReturnValue('ethereum')
+    getPPSMock.mockReturnValue(1)
+    getPriceAtTimestampMock.mockReturnValue(1)
+    getShareBalanceAtTimestampMock.mockReturnValue(1n * 10n ** 18n)
+    generateDailyTimestampsFromRangeMock.mockReturnValue([])
+
+    const { getHistoricalHoldings } = await import('./aggregator')
+    const response = await getHistoricalHoldings(userAddress, 'all')
+
+    expect(saveCachedTotalsMock).not.toHaveBeenCalled()
+    expect(response.dataPoints).toEqual([{ date: 'date-100', timestamp: 101, totalUsdValue: 1 }])
   })
 
   it('marks history as active even when only unsettled same-day events exist', async () => {

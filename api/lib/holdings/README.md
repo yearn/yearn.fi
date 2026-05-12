@@ -54,13 +54,13 @@ The API internally values each day at `23:59:59 UTC`.
 | `settledHoldingsContext.ts` | Local orchestration | Build reusable settled event, timeline, metadata, raw PnL, and PPS contexts |
 | `vaults.ts` | Kong | Fetch global vault metadata, staking-to-family mappings, hidden flags, and snapshot fallback metadata |
 | `kong.ts` | Kong | Fetch historical PPS timelines with request dedupe and retries |
-| `defillama.ts` | yearn-prices / DefiLlama | Switchable historical price client and token price cache materialization |
+| `defillama.ts` | yearn-prices / DefiLlama | Switchable historical price client with request batching and retries |
 | `nestedVaultPrices.ts` | Local | Expand and derive nested vault asset pricing where a vault asset is another Yearn vault |
 | `aggregator.ts` | Local | Holdings history, ETH-denominated history, and breakdown calculations |
 | `activity.ts` | Local | Recent user activity classification: deposit, withdraw, stake, unstake |
 | `pnlEvents.ts` | Local | Shared raw event records for protocol-return history |
 | `pnlSimple.ts` | Local | Protocol-return exposure history without FIFO cost-basis accounting |
-| `cache.ts` | PostgreSQL | Daily totals, token prices, DefiLlama misses, rate limits, and lazy vault invalidation |
+| `cache.ts` | PostgreSQL | Daily totals, rate limits, and lazy vault invalidation |
 
 ## Event Semantics
 
@@ -99,16 +99,15 @@ yearn-prices behavior:
 - Timestamps are normalized to UTC day end before the API request.
 - Contiguous daily histories up to `366` days use `/api/prices/rangeHistorical`.
 - Sparse or single-day lookups use `/api/prices/batchHistorical`.
-- Returned UTC day-end prices are materialized back onto the originally requested timestamps for the local cache/result map.
-- Positive prices are saved to the shared local `token_prices` cache when DB caching is enabled.
-- Negative price misses are not written for yearn-prices, avoiding cross-provider miss poisoning.
+- Returned UTC day-end prices are materialized back onto the originally requested timestamps for the response map.
+- Prices are not read from or written to the local database.
 
 DefiLlama behavior:
 
 - Free route: `https://coins.llama.fi/batchHistorical?coins=...`.
 - Pro route is used when `DEFILLAMA_API_KEY` is set: `https://pro-api.llama.fi/{key}/coins/batchHistorical?coins=...`.
 - Strict timestamp mode only accepts exact or near-exact prior prices; UTC-day mode accepts prices within the day window.
-- Exact unsupported strict points can be cached in `token_price_misses` for 7 days.
+- Prices and misses are not read from or written to the local database.
 
 ## Endpoints
 
@@ -356,7 +355,6 @@ Runs cache cleanup. Requires `Authorization: Bearer $CRON_SECRET`.
 Cleanup deletes:
 
 - `holdings_totals` rows before the supported history floor, `2024-01-01`.
-- Expired `token_price_misses`.
 - Rate-limit rows older than 1 day.
 
 ```bash
@@ -461,8 +459,6 @@ Server-side cache is optional. When `DATABASE_URL_PREVIEW` or `DATABASE_URL` is 
 
 1. PostgreSQL:
    - `holdings_totals`: daily USD totals per hashed user address, vault version, and date.
-   - `token_prices`: shared positive token prices keyed by provider-compatible token key and requested timestamp.
-   - `token_price_misses`: shared exact misses for unsupported DefiLlama strict points with 7-day TTL.
    - `rate_limits`: simple per-client request windows.
    - `vault_invalidations`: per-vault invalidation timestamps for lazy cache clearing.
 2. HTTP cache:
@@ -481,13 +477,12 @@ Cache behavior:
 - Vault-filtered history skips aggregate daily total cache because the cache is user/version scoped, not vault-filter scoped.
 - Cache staleness is checked against `vault_invalidations` only after the request has enough cached daily totals to potentially serve from cache.
 - If any relevant vault was invalidated after the oldest cached row was written, the user's cached totals for that version are cleared and recomputed.
+- Recalculated totals are not cached when any token price batch failed, because partial price data can undercount chart totals.
 - `refresh=true` or `refresh=1` in the local Bun server clears the user's cached totals before recomputing.
 
 ### Token Prices
 
-Positive token prices are shared across providers by token key and requested timestamp. yearn-prices and DefiLlama can therefore reuse local positive cache entries for the same token-day.
-
-Negative misses are only read/written for DefiLlama strict mode. yearn-prices does not write misses because its source coverage and timestamp normalization differ.
+Token prices are fetched from the selected provider for each request. The holdings DB does not cache positive token prices or price misses.
 
 ## Database Schema
 
@@ -499,22 +494,6 @@ CREATE TABLE IF NOT EXISTS holdings_totals (
   usd_value NUMERIC NOT NULL,
   updated_at TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (user_address_hash, version, date)
-);
-
-CREATE TABLE IF NOT EXISTS token_prices (
-  token_key VARCHAR(100) NOT NULL,
-  timestamp INTEGER NOT NULL,
-  price NUMERIC NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW(),
-  PRIMARY KEY (token_key, timestamp)
-);
-
-CREATE TABLE IF NOT EXISTS token_price_misses (
-  token_key VARCHAR(100) NOT NULL,
-  timestamp INTEGER NOT NULL,
-  expires_at TIMESTAMP NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW(),
-  PRIMARY KEY (token_key, timestamp)
 );
 
 CREATE TABLE IF NOT EXISTS rate_limits (
@@ -530,9 +509,6 @@ CREATE TABLE IF NOT EXISTS vault_invalidations (
   PRIMARY KEY (vault_address, chain_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_token_prices_token_key ON token_prices(token_key);
-CREATE INDEX IF NOT EXISTS idx_token_price_misses_token_key ON token_price_misses(token_key);
-CREATE INDEX IF NOT EXISTS idx_token_price_misses_expires_at ON token_price_misses(expires_at);
 CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
 CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
 ```

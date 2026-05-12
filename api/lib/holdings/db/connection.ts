@@ -21,7 +21,8 @@ let pool: DatabasePool | null = null
 let schemaInitializationPromise: Promise<void> | null = null
 let databaseDisabled = false
 
-const DB_QUERY_TIMEOUT_MS = 5_000
+const DB_QUERY_TIMEOUT_MS = 20_000
+const LOCAL_DB_QUERY_TIMEOUT_CODE = 'HOLDINGS_DB_QUERY_TIMEOUT'
 const RETRYABLE_CONNECTION_ERROR_CODES = new Set([
   'ECONNRESET',
   'ECONNREFUSED',
@@ -49,7 +50,9 @@ function toUserAddressHash(userAddress: string): string {
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
-      reject(new Error(`${label} timed out after ${timeoutMs}ms`))
+      const error = new Error(`${label} timed out after ${timeoutMs}ms`) as DatabaseQueryError
+      error.code = LOCAL_DB_QUERY_TIMEOUT_CODE
+      reject(error)
     }, timeoutMs)
 
     promise.then(
@@ -89,6 +92,10 @@ export function shouldDisableDatabaseOnQueryError(error: unknown): boolean {
       : error instanceof Error
         ? error.message.toLowerCase()
         : String(error).toLowerCase()
+
+  if (code === LOCAL_DB_QUERY_TIMEOUT_CODE) {
+    return false
+  }
 
   if (code !== null && (RETRYABLE_CONNECTION_ERROR_CODES.has(code) || code.startsWith('08'))) {
     return true
@@ -164,22 +171,6 @@ export async function initializeSchema(): Promise<void> {
     ALTER TABLE holdings_totals ALTER COLUMN version SET DEFAULT 'all';
     ALTER TABLE holdings_totals ALTER COLUMN version SET NOT NULL;
 
-    CREATE TABLE IF NOT EXISTS token_prices (
-      token_key VARCHAR(100) NOT NULL,
-      timestamp INTEGER NOT NULL,
-      price NUMERIC NOT NULL,
-      created_at TIMESTAMP DEFAULT NOW(),
-      PRIMARY KEY (token_key, timestamp)
-    );
-
-    CREATE TABLE IF NOT EXISTS token_price_misses (
-      token_key VARCHAR(100) NOT NULL,
-      timestamp INTEGER NOT NULL,
-      expires_at TIMESTAMP NOT NULL,
-      created_at TIMESTAMP DEFAULT NOW(),
-      PRIMARY KEY (token_key, timestamp)
-    );
-
     CREATE TABLE IF NOT EXISTS rate_limits (
       ip VARCHAR(45) PRIMARY KEY,
       request_count INTEGER DEFAULT 1,
@@ -193,9 +184,6 @@ export async function initializeSchema(): Promise<void> {
       PRIMARY KEY (vault_address, chain_id)
     );
 
-    CREATE INDEX IF NOT EXISTS idx_token_prices_token_key ON token_prices(token_key);
-    CREATE INDEX IF NOT EXISTS idx_token_price_misses_token_key ON token_price_misses(token_key);
-    CREATE INDEX IF NOT EXISTS idx_token_price_misses_expires_at ON token_price_misses(expires_at);
     CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
     CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
   `

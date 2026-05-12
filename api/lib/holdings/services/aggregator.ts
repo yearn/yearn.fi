@@ -7,6 +7,7 @@ import {
   fetchHistoricalPrices,
   fetchHistoricalPricesForTokenTimestamps,
   getChainPrefix,
+  getHistoricalPriceFetchFailedBatches,
   getPriceAtTimestamp
 } from './defillama'
 import {
@@ -301,6 +302,7 @@ export async function getHistoricalHoldings(
   reportHoldingsProgress(52, 'Computed missing historical days', `${missingTimestamps.length} days need valuation`)
 
   const newTotals: CachedTotal[] = []
+  let failedPriceBatches = 0
 
   if (missingTimestamps.length > 0) {
     // Events already fetched above
@@ -378,6 +380,7 @@ export async function getHistoricalHoldings(
         ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, vaultMetadata)
       ])
       const fetchedPriceData = await fetchHistoricalPricesForTokenTimestamps(priceRequests)
+      failedPriceBatches = getHistoricalPriceFetchFailedBatches(fetchedPriceData)
       reportHoldingsProgress(76, 'Fetched historical token prices', `${priceRequests.length} price series`)
       const priceData = deriveNestedVaultAssetPriceData({
         priceData: fetchedPriceData,
@@ -400,7 +403,8 @@ export async function getHistoricalHoldings(
         paginationMode,
         tokens: priceRequests.length,
         priceKeys: priceData.size,
-        missingTimestamps: missingTimestamps.length
+        missingTimestamps: missingTimestamps.length,
+        failedPriceBatches
       })
 
       for (const timestamp of missingTimestamps) {
@@ -445,15 +449,32 @@ export async function getHistoricalHoldings(
       reportHoldingsProgress(88, 'Calculated uncached chart history', `${newTotals.length} daily totals`)
     }
 
-    if (shouldWriteCache && newTotals.length > 0) {
-      await saveCachedTotals(userAddress, version, newTotals)
-      debugLog('history', 'saved recalculated totals to cache', {
+    if (shouldWriteCache && newTotals.length > 0 && failedPriceBatches === 0) {
+      const savedTotals = await saveCachedTotals(userAddress, version, newTotals)
+      debugLog(
+        'history',
+        savedTotals ? 'saved recalculated totals to cache' : 'did not save recalculated totals to cache',
+        {
+          version,
+          fetchType,
+          paginationMode,
+          newTotals: newTotals.length
+        }
+      )
+      reportHoldingsProgress(
+        92,
+        savedTotals ? 'Saved historical chart cache' : 'Skipped historical chart cache save',
+        `${newTotals.length} daily totals`
+      )
+    } else if (shouldWriteCache && newTotals.length > 0 && failedPriceBatches > 0) {
+      debugLog('history', 'skipped historical totals cache save because price batches failed', {
         version,
         fetchType,
         paginationMode,
-        newTotals: newTotals.length
+        newTotals: newTotals.length,
+        failedPriceBatches
       })
-      reportHoldingsProgress(92, 'Saved historical chart cache', `${newTotals.length} daily totals`)
+      reportHoldingsProgress(92, 'Skipped historical chart cache save', `${failedPriceBatches} price batches failed`)
     }
   }
 

@@ -7,8 +7,6 @@ type TPriceRequestDraft = {
   chainId: number
   address: string
   timestamps: Set<number>
-  uncachedTimestamps: Set<number>
-  includeUncachedTimestamps: boolean
 }
 
 type TVaultIdentifier = {
@@ -43,42 +41,26 @@ function priceRequestKey(chainId: number, tokenAddress: string): string {
   return `${chainId}:${tokenAddress.toLowerCase()}`
 }
 
-function addPriceRequest(
-  drafts: Map<string, TPriceRequestDraft>,
-  request: THistoricalPriceRequest,
-  includeUncachedTimestamps: boolean
-): void {
+function addPriceRequest(drafts: Map<string, TPriceRequestDraft>, request: THistoricalPriceRequest): void {
   const key = priceRequestKey(request.chainId, request.address)
   const draft = drafts.get(key) ?? {
     chainId: request.chainId,
     address: request.address.toLowerCase(),
-    timestamps: new Set<number>(),
-    uncachedTimestamps: new Set<number>(),
-    includeUncachedTimestamps
+    timestamps: new Set<number>()
   }
 
   request.timestamps.forEach((timestamp) => {
     draft.timestamps.add(timestamp)
   })
-  request.uncachedTimestamps?.forEach((timestamp) => {
-    draft.timestamps.add(timestamp)
-    draft.uncachedTimestamps.add(timestamp)
-  })
-  draft.includeUncachedTimestamps ||= includeUncachedTimestamps
   drafts.set(key, draft)
 }
 
 function materializePriceRequests(drafts: Map<string, TPriceRequestDraft>): THistoricalPriceRequest[] {
-  return Array.from(drafts.values()).map((draft) => {
-    const uncachedTimestamps = Array.from(draft.uncachedTimestamps).sort((a, b) => a - b)
-
-    return {
-      chainId: draft.chainId,
-      address: draft.address,
-      timestamps: Array.from(draft.timestamps).sort((a, b) => a - b),
-      ...(draft.includeUncachedTimestamps || uncachedTimestamps.length > 0 ? { uncachedTimestamps } : {})
-    }
-  })
+  return Array.from(drafts.values()).map((draft) => ({
+    chainId: draft.chainId,
+    address: draft.address,
+    timestamps: Array.from(draft.timestamps).sort((a, b) => a - b)
+  }))
 }
 
 export function mergeVaultIdentifiers(vaults: TVaultIdentifier[]): TVaultIdentifier[] {
@@ -154,8 +136,7 @@ function getNestedVaultPpsIdentifiersForRequest(
       {
         chainId: nestedVault.chainId,
         address: nestedVault.token.address,
-        timestamps: request.timestamps,
-        uncachedTimestamps: request.uncachedTimestamps
+        timestamps: request.timestamps
       },
       vaultMetadata,
       maxDepth - 1
@@ -177,7 +158,6 @@ function addNestedVaultAssetPriceRequests(
   drafts: Map<string, TPriceRequestDraft>,
   request: THistoricalPriceRequest,
   vaultMetadata: Map<string, VaultMetadata>,
-  includeUncachedTimestamps: boolean,
   maxDepth: number
 ): void {
   if (maxDepth <= 0) {
@@ -192,12 +172,11 @@ function addNestedVaultAssetPriceRequests(
   const nestedAssetRequest = {
     chainId: nestedVault.chainId,
     address: nestedVault.token.address,
-    timestamps: request.timestamps,
-    uncachedTimestamps: request.uncachedTimestamps
+    timestamps: request.timestamps
   }
 
-  addPriceRequest(drafts, nestedAssetRequest, includeUncachedTimestamps)
-  addNestedVaultAssetPriceRequests(drafts, nestedAssetRequest, vaultMetadata, includeUncachedTimestamps, maxDepth - 1)
+  addPriceRequest(drafts, nestedAssetRequest)
+  addNestedVaultAssetPriceRequests(drafts, nestedAssetRequest, vaultMetadata, maxDepth - 1)
 }
 
 export function expandNestedVaultAssetPriceRequests(
@@ -208,9 +187,8 @@ export function expandNestedVaultAssetPriceRequests(
   const drafts = new Map<string, TPriceRequestDraft>()
 
   requests.forEach((request) => {
-    const includeUncachedTimestamps = request.uncachedTimestamps !== undefined
-    addPriceRequest(drafts, request, includeUncachedTimestamps)
-    addNestedVaultAssetPriceRequests(drafts, request, vaultMetadata, includeUncachedTimestamps, maxDepth)
+    addPriceRequest(drafts, request)
+    addNestedVaultAssetPriceRequests(drafts, request, vaultMetadata, maxDepth)
   })
 
   return materializePriceRequests(drafts)
