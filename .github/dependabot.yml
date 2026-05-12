@@ -1,25 +1,10 @@
 version: 2
 updates:
-  - package-ecosystem: "bun"
+  - package-ecosystem: npm
     directory: "/"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
-    rebase-strategy: "auto"
-    versioning-strategy: "increase-if-necessary"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-    groups:
-      security-updates:
-        applies-to: security-updates
-        patterns:
-          - "*"
-      patch-updates:
-        applies-to: version-updates
-        update-types:
-          - "patch"
-      minor-updates:
-        applies-to: version-updates
-        update-types:
-          - "minor"
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
