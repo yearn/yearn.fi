@@ -1,6 +1,9 @@
 const DEFAULT_API_SERVER_PORT = '3001'
 const API_PROXY_TARGET =
   process.env.API_PROXY_TARGET || `http://localhost:${process.env.API_SERVER_PORT || DEFAULT_API_SERVER_PORT}`
+const API_PROXY_TARGET_DESCRIPTION = process.env.API_PROXY_TARGET?.trim()
+  ? 'the configured API proxy target'
+  : 'the default local API address'
 
 function resolveApiServerPort() {
   if (process.env.API_SERVER_PORT) {
@@ -37,13 +40,13 @@ async function checkApi() {
 ;(async () => {
   const health = await checkApi()
   if (health.ok) {
-    console.log(`API already running at ${API_PROXY_TARGET}`)
+    console.log(`API already running at ${API_PROXY_TARGET_DESCRIPTION}`)
     process.exit(0)
   }
 
   if (health.reason === 'unexpected-response') {
     console.error(
-      `Port in use at ${API_PROXY_TARGET}, but it doesn't look like the Yearn API server. Stop that process or set API_PROXY_TARGET to a different port.`
+      `${API_PROXY_TARGET_DESCRIPTION} is already in use, but it doesn't look like the Yearn API server. Stop that process or set API_PROXY_TARGET to a different value.`
     )
     process.exit(1)
   }

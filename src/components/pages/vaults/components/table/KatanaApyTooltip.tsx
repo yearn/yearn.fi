@@ -1,7 +1,7 @@
 import { getVaultChainID, getVaultToken, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { Tooltip } from '@shared/components/Tooltip'
-import { cl, formatAmount, formatApyDisplay } from '@shared/utils'
+import { cl, formatApyDisplay } from '@shared/utils'
 import type { ReactElement } from 'react'
 
 type TKatanaTooltipProps = {
@@ -88,17 +88,6 @@ export function KatanaApyTooltipContent({
             <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
               {'Limited time KAT rewards'}
             </p>
-            <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary break-words'}>
-              {'* claimable after 28 days, subject to '}
-              <a
-                href={'https://x.com/katana/status/1961475531188126178'}
-                target={'_blank'}
-                rel={'noopener noreferrer'}
-                className={KATANA_LINK_CLASS}
-              >
-                {'haircut schedule.'}
-              </a>
-            </p>
           </>
         ) : null}
         {hasAppRewards ? (
@@ -147,18 +136,15 @@ export function KatanaApyTooltipContent({
         {hasSteerPoints ? (
           <>
             <div className={'my-2 h-px w-full bg-surface-tertiary/60'} />
-            <p className={KATANA_SECTION_TITLE_CLASS}>{'Steer Points'}</p>
-            <p className={'-mt-1 mb-2 w-full text-left text-sm text-text-secondary wrap-break-word whitespace-normal'}>
-              {'This vault earns '}
-              <span className={'font-number'}>{formatAmount(steerPointsPerDollar || 0, 2, 2)}</span>
-              {' Steer Points / dollar deposited, but you must '}
+            <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word whitespace-normal'}>
+              {'The Steer Points program has concluded.'}
               <a
                 href={'https://app.steer.finance/points'}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 className={KATANA_SECONDARY_LINK_CLASS}
               >
-                {'register here to earn them.'}
+                {' You can view your Steer Points here.'}
               </a>
             </p>
           </>
