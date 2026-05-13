@@ -1,7 +1,11 @@
-import type { DepositEvent, TransferEvent, VaultMetadata, WithdrawEvent } from '../types'
+import type { DepositEvent, TransferEvent, UserEvents, VaultMetadata, WithdrawEvent } from '../types'
 import { fetchRouterInputAssetForActivity, type TActivityInputAsset } from './activityReceiptEnrichment'
 import type { TransactionActivityEvents, VaultVersion } from './graphql'
-import { fetchActivityEventsByTransactionHashes, fetchRecentAddressScopedActivityEvents } from './graphql'
+import {
+  fetchActivityEventsByTransactionHashes,
+  fetchRecentAddressScopedActivityEvents,
+  fetchUserEvents
+} from './graphql'
 import { formatAmount, lowerCaseAddress, minBigInt, toVaultKey, ZERO } from './pnlShared'
 import { getFamilyVaultAddress, isStakingVault } from './staking'
 import { fetchMultipleVaultsMetadata } from './vaults'
@@ -40,6 +44,9 @@ export interface HoldingsActivityResponse {
   version: VaultVersion
   limit: number
   offset: number
+  facets?: {
+    chainIds: number[]
+  }
   pageInfo: {
     hasMore: boolean
     nextOffset: number | null
@@ -143,6 +150,26 @@ const DEFAULT_ACTIVITY_FILTERS: TNormalizedActivityFilters = {
   chainId: null,
   startTimestamp: null,
   endTimestamp: null
+}
+
+function getSortedChainIds(events: Array<{ chainId: number }>): number[] {
+  return Array.from(new Set(events.map((event) => event.chainId))).sort((a, b) => a - b)
+}
+
+async function getHoldingsActivityFacets(
+  userAddress: string,
+  version: VaultVersion
+): Promise<HoldingsActivityResponse['facets']> {
+  const events = await fetchUserEvents(userAddress, version, undefined, 'parallel', 'paged')
+
+  return {
+    chainIds: getSortedChainIds([
+      ...events.deposits,
+      ...events.withdrawals,
+      ...events.transfersIn,
+      ...events.transfersOut
+    ])
+  }
 }
 
 function compareStringDesc(a: string, b: string): number {
@@ -543,6 +570,15 @@ function classifyActivityEvents(events: TActivityEvent[], userAddress: string): 
     .sort((a, b) => b.timestamp - a.timestamp || b.blockNumber - a.blockNumber || b.logIndex - a.logIndex)
 }
 
+function normalizeUserEvents(events: UserEvents): TActivityEvent[] {
+  return sortEventsDesc([
+    ...events.deposits.map((event) => normalizeDepositEvent(event, 'address')),
+    ...events.withdrawals.map((event) => normalizeWithdrawalEvent(event, 'address')),
+    ...events.transfersIn.map((event) => normalizeTransferEvent(event, 'address')),
+    ...events.transfersOut.map((event) => normalizeTransferEvent(event, 'address'))
+  ])
+}
+
 async function loadRecentActivityWindowAttempt(
   userAddress: string,
   version: VaultVersion,
@@ -778,6 +814,48 @@ async function getUnfilteredHoldingsActivity(
   }
 }
 
+async function getCompleteChainFilteredHoldingsActivity(
+  userAddress: string,
+  version: VaultVersion,
+  boundedLimit: number,
+  boundedOffset: number,
+  filters: TNormalizedActivityFilters
+): Promise<Pick<HoldingsActivityResponse, 'entries' | 'pageInfo'>> {
+  const allAddressEvents = await fetchUserEvents(userAddress, version, undefined, 'parallel', 'paged')
+  const candidateEvents = normalizeUserEvents(allAddressEvents)
+  const candidateTransactionKeys = getSelectedTransactionKeys(
+    candidateEvents.filter(
+      (event) =>
+        event.chainId === filters.chainId &&
+        (filters.startTimestamp === null || event.blockTimestamp >= filters.startTimestamp) &&
+        (filters.endTimestamp === null || event.blockTimestamp <= filters.endTimestamp)
+    ),
+    Number.MAX_SAFE_INTEGER
+  )
+  const classifiedEvents = await classifyActivityForTransactionKeys(
+    userAddress,
+    version,
+    candidateEvents,
+    candidateTransactionKeys
+  )
+  const matchingEvents = classifiedEvents.filter((event) => matchesActivityFilters(event, filters))
+  const vaultIdentifiers = getVaultIdentifiers(matchingEvents)
+  const metadata = vaultIdentifiers.length > 0 ? await fetchMultipleVaultsMetadata(vaultIdentifiers) : new Map()
+  const visibleEvents = filterVisibleActivityEvents(matchingEvents, metadata)
+  const pageEvents = visibleEvents.slice(boundedOffset, boundedOffset + boundedLimit)
+  const enrichedEvents = await enrichActivityInputAssets(pageEvents, userAddress, metadata)
+  const entries = enrichedEvents.map((event) => toHoldingsActivityEntry(event, metadata))
+  const hasMore = visibleEvents.length > boundedOffset + boundedLimit
+
+  return {
+    entries,
+    pageInfo: {
+      hasMore,
+      nextOffset: hasMore ? boundedOffset + boundedLimit : null
+    }
+  }
+}
+
 async function getFilteredHoldingsActivity(
   userAddress: string,
   version: VaultVersion,
@@ -844,20 +922,30 @@ export async function getHoldingsActivity(
   version: VaultVersion = 'all',
   limit = 10,
   offset = 0,
-  filters: HoldingsActivityFilters = DEFAULT_ACTIVITY_FILTERS
+  filters: HoldingsActivityFilters = DEFAULT_ACTIVITY_FILTERS,
+  includeFacets = false
 ): Promise<HoldingsActivityResponse> {
   const boundedLimit = Math.max(1, limit)
   const boundedOffset = Math.max(0, offset)
   const normalizedFilters = normalizeActivityFilters(filters)
   const activityPage = !hasActiveActivityFilters(normalizedFilters)
     ? await getUnfilteredHoldingsActivity(userAddress, version, boundedLimit, boundedOffset)
-    : await getFilteredHoldingsActivity(userAddress, version, boundedLimit, boundedOffset, normalizedFilters)
+    : normalizedFilters.chainId !== null
+      ? await getCompleteChainFilteredHoldingsActivity(
+          userAddress,
+          version,
+          boundedLimit,
+          boundedOffset,
+          normalizedFilters
+        )
+      : await getFilteredHoldingsActivity(userAddress, version, boundedLimit, boundedOffset, normalizedFilters)
 
   return {
     address: lowerCaseAddress(userAddress),
     version,
     limit: boundedLimit,
     offset: boundedOffset,
+    ...(includeFacets ? { facets: await getHoldingsActivityFacets(userAddress, version) } : {}),
     pageInfo: activityPage.pageInfo,
     entries: activityPage.entries
   }

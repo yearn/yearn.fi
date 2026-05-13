@@ -155,6 +155,13 @@ export const portfolioActivityResponseSchema = z.object({
   version: z.enum(['all', 'v2', 'v3']).optional().default('all'),
   limit: z.number(),
   offset: z.number(),
+  facets: z
+    .object({
+      chainIds: z.array(z.number())
+    })
+    .nullable()
+    .optional()
+    .default(null),
   pageInfo: z.object({
     hasMore: z.boolean(),
     nextOffset: z.number().nullable()

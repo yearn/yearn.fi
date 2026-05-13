@@ -3,11 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchRecentAddressScopedActivityEventsMock = vi.fn()
 const fetchActivityEventsByTransactionHashesMock = vi.fn()
+const fetchUserEventsMock = vi.fn()
 const fetchMultipleVaultsMetadataMock = vi.fn()
 
 vi.mock('./graphql', () => ({
   fetchRecentAddressScopedActivityEvents: fetchRecentAddressScopedActivityEventsMock,
-  fetchActivityEventsByTransactionHashes: fetchActivityEventsByTransactionHashesMock
+  fetchActivityEventsByTransactionHashes: fetchActivityEventsByTransactionHashesMock,
+  fetchUserEvents: fetchUserEventsMock
 }))
 
 vi.mock('./vaults', () => ({
@@ -176,6 +178,12 @@ describe('getHoldingsActivity', () => {
       deposits: [],
       withdrawals: [],
       transfers: []
+    })
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
     })
   })
 
@@ -685,6 +693,33 @@ describe('getHoldingsActivity', () => {
       hasMoreTransfersOut: false
     })
 
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [
+        createDepositEvent({
+          id: 'deposit-chain-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xaaa',
+          blockTimestamp: 300,
+          logIndex: 2,
+          assets: '1000000'
+        }),
+        {
+          ...createDepositEvent({
+            id: 'deposit-chain-2',
+            vaultAddress: UNDERLYING_VAULT,
+            transactionHash: '0xbbb',
+            blockTimestamp: 290,
+            logIndex: 2,
+            assets: '2000000'
+          }),
+          chainId: 137
+        }
+      ],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+
     fetchMultipleVaultsMetadataMock.mockResolvedValue(
       new Map([
         [
@@ -728,6 +763,91 @@ describe('getHoldingsActivity', () => {
         status: 'ok'
       }
     ])
+  })
+
+  it('loads complete address-scoped history for chain-filtered activity so older chain events are not missed', async () => {
+    const baseVault = '0xc3bd0a2193c8f027b82dde3611d18589ef3f62a9'
+    const baseDeposit = {
+      ...createDepositEvent({
+        id: 'deposit-base-older',
+        vaultAddress: baseVault,
+        transactionHash: '0xeae5d579a571e592719d0815674744238a49993e7a7322c29d81b88343ef1c7b',
+        blockTimestamp: 100,
+        logIndex: 1,
+        assets: '3000000'
+      }),
+      chainId: 8453
+    }
+
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [
+        createDepositEvent({
+          id: 'deposit-mainnet-newer',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xaaa',
+          blockTimestamp: 500,
+          logIndex: 1,
+          assets: '1000000'
+        }),
+        baseDeposit
+      ],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `8453:${baseVault}`,
+          {
+            address: baseVault,
+            chainId: 8453,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0x4200000000000000000000000000000000000006',
+              symbol: 'WETH',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, { chainId: 8453 })
+
+    expect(fetchUserEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', undefined, 'parallel', 'paged')
+    expect(fetchRecentAddressScopedActivityEventsMock).not.toHaveBeenCalled()
+    expect(fetchActivityEventsByTransactionHashesMock).toHaveBeenCalledWith(
+      new Map([[8453, ['0xeae5d579a571e592719d0815674744238a49993e7a7322c29d81b88343ef1c7b']]]),
+      'all'
+    )
+    expect(response.entries).toEqual([
+      {
+        chainId: 8453,
+        txHash: '0xeae5d579a571e592719d0815674744238a49993e7a7322c29d81b88343ef1c7b',
+        timestamp: 100,
+        action: 'deposit',
+        vaultAddress: baseVault,
+        familyVaultAddress: baseVault,
+        assetSymbol: 'WETH',
+        assetAmount: '3000000',
+        assetAmountFormatted: 0.000000000003,
+        inputTokenAddress: null,
+        inputTokenSymbol: null,
+        inputTokenAmount: null,
+        inputTokenAmountFormatted: null,
+        shareAmount: '3000000',
+        shareAmountFormatted: 0.000000000003,
+        status: 'ok'
+      }
+    ])
+    expect(response.pageInfo).toEqual({
+      hasMore: false,
+      nextOffset: null
+    })
   })
 
   it('filters activity by timestamp range before paginating', async () => {

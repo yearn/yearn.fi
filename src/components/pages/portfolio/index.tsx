@@ -18,6 +18,7 @@ import { VaultsFiltersButton } from '@pages/vaults/components/filters/VaultsFilt
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
+import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import { Notification } from '@pages/vaults/components/notifications/Notification'
 import { SuggestedVaultCard } from '@pages/vaults/components/SuggestedVaultCard'
 import { MerkleRewardRow } from '@pages/vaults/components/widget/rewards/MerkleRewardRow'
@@ -851,7 +852,7 @@ function IndexedActivityRow({
   return (
     <div
       className={cl(
-        'relative w-full overflow-visible border-b border-border bg-surface transition-colors last:border-b-0',
+        'relative w-full overflow-visible bg-surface transition-colors',
         isDatePickerOpen ? 'z-[80]' : 'z-0'
       )}
     >
@@ -1010,7 +1011,6 @@ function IndexedActivityRow({
                 </span>
               }
             />
-            <ActivityDetailItem label="STATUS:" value={metadataStatus} />
             <ActivityDetailItem
               label="TRANSACTION HASH:"
               value={<ActivityTransactionHash explorerUrl={explorerUrl} txHash={entry.txHash} />}
@@ -1229,6 +1229,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     error: indexedError,
     isEmpty: indexedEmpty,
     hasMore: indexedHasMore,
+    availableChainIds: activityAvailableChainIds,
     loadMore: loadMoreIndexedActivity
   } = usePortfolioActivity(10, isActive, {
     type: apiActivityType,
@@ -1238,9 +1239,27 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   })
   const selectedActivityChains = useMemo(() => (activityChainId === null ? null : [activityChainId]), [activityChainId])
   const activityChainOptions = useChainOptions(selectedActivityChains)
+  const displayedActivityNetworks = useMemo(() => {
+    if (activityAvailableChainIds === null) {
+      return SUPPORTED_NETWORKS
+    }
+
+    const availableChainIdSet = new Set(activityAvailableChainIds)
+    return SUPPORTED_NETWORKS.filter((network) => availableChainIdSet.has(network.id))
+  }, [activityAvailableChainIds])
+
+  useEffect(() => {
+    if (
+      activityChainId !== null &&
+      activityAvailableChainIds !== null &&
+      !activityAvailableChainIds.includes(activityChainId)
+    ) {
+      setActivityChainId(null)
+    }
+  }, [activityAvailableChainIds, activityChainId])
   const activityChainButtons = useMemo<TVaultsChainButton[]>(
     () =>
-      SUPPORTED_NETWORKS.map((network) => {
+      displayedActivityNetworks.map((network) => {
         const chainOption = activityChainOptions.find((option) => option.value === network.id)
 
         return {
@@ -1250,7 +1269,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
           isSelected: activityChainId === network.id
         }
       }),
-    [activityChainId, activityChainOptions]
+    [activityChainId, activityChainOptions, displayedActivityNetworks]
   )
   const unresolvedLocalEntries = useMemo(
     () =>
@@ -1313,10 +1332,18 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     setActivitySearch((previous) => (previous === vaultName ? '' : vaultName))
   }
 
+  const handleIndexedActivityEndReached = useCallback((): void => {
+    if (!indexedHasMore || indexedLoadingMore) {
+      return
+    }
+
+    void loadMoreIndexedActivity()
+  }, [indexedHasMore, indexedLoadingMore, loadMoreIndexedActivity])
+
   function renderActivityFilters(): ReactElement {
     return (
       <>
-        <div className="sticky top-[calc(var(--header-height)+var(--portfolio-breadcrumbs-height)+0.75rem)] z-20 flex w-full flex-wrap items-center gap-2 rounded-lg border border-border bg-surface/95 p-2 backdrop-blur md:gap-3">
+        <div className="sticky top-[calc(var(--header-height)+var(--portfolio-breadcrumbs-height)+var(--portfolio-tabs-height))] z-20 flex w-full flex-wrap items-center gap-2 bg-app md:gap-3">
           <div className="min-w-0 flex-1 md:hidden">
             <ActivityMobileChainDropdown
               chainButtons={activityChainButtons}
@@ -1391,8 +1418,13 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     }
 
     return (
-      <div className="flex flex-col">
-        {visibleIndexedEntries.map((entry) => {
+      <VirtualizedVaultsList
+        items={visibleIndexedEntries}
+        estimateSize={81}
+        itemSpacingClassName="border-b border-border"
+        getItemKey={(entry): string => `${entry.txHash}:${entry.vaultAddress}:${entry.action}`}
+        onEndReached={indexedHasMore ? handleIndexedActivityEndReached : undefined}
+        renderItem={(entry) => {
           const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
           const activityVault = allVaults[toAddress(entry.vaultAddress)]
           const assetToken = familyVault
@@ -1441,7 +1473,6 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
 
           return (
             <IndexedActivityRow
-              key={`${entry.txHash}:${entry.vaultAddress}:${entry.action}`}
               entry={entry}
               displayName={displayName}
               isChainFilterActive={activityChainId === entry.chainId}
@@ -1453,8 +1484,8 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
               onSelectVault={handleActivityVaultSelect}
             />
           )
-        })}
-      </div>
+        }}
+      />
     )
   }
 
@@ -1499,9 +1530,9 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
           </div>
         )}
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           {renderActivityFilters()}
-          <div className="overflow-visible rounded-lg border border-border bg-surface">{renderIndexedActivity()}</div>
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">{renderIndexedActivity()}</div>
           {indexedHasMore && (
             <div className="flex justify-center">
               <button
@@ -2126,7 +2157,7 @@ function PortfolioHoldingsSection({
             <div
               className="relative md:sticky md:z-30"
               style={{
-                top: 'calc(var(--header-height) + var(--portfolio-breadcrumbs-height))'
+                top: 'calc(var(--header-height) + var(--portfolio-breadcrumbs-height) + var(--portfolio-tabs-height))'
               }}
             >
               <div aria-hidden={true} className="pointer-events-none absolute inset-0 z-0 bg-app" />
@@ -2227,6 +2258,7 @@ function PortfolioPage(): ReactElement {
   const [searchParams, setSearchParams] = useSearchParams()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
+  const tabsRef = useRef<HTMLDivElement>(null)
   const historyFetchTimeframe: TPortfolioHistoryTimeframe = historyTimeframe === 'all' ? 'all' : '1y'
   const { onRefresh } = useWallet()
 
@@ -2274,8 +2306,9 @@ function PortfolioPage(): ReactElement {
   useEffect(() => {
     const root = varsRef.current
     const breadcrumbsNode = breadcrumbsRef.current
+    const tabsNode = tabsRef.current
 
-    if (!root || !breadcrumbsNode) {
+    if (!root || !breadcrumbsNode || !tabsNode) {
       return
     }
 
@@ -2284,6 +2317,8 @@ function PortfolioPage(): ReactElement {
       frame = 0
       const height = breadcrumbsNode.getBoundingClientRect().height
       root.style.setProperty('--portfolio-breadcrumbs-height', `${height}px`)
+      const tabsHeight = tabsNode.getBoundingClientRect().height
+      root.style.setProperty('--portfolio-tabs-height', `${tabsHeight}px`)
     }
 
     const schedule = (): void => {
@@ -2297,6 +2332,7 @@ function PortfolioPage(): ReactElement {
 
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule)
     observer?.observe(breadcrumbsNode)
+    observer?.observe(tabsNode)
     window.addEventListener('resize', schedule)
 
     return () => {
@@ -2387,8 +2423,12 @@ function PortfolioPage(): ReactElement {
 
   return (
     <PortfolioPageLayout>
-      <div ref={varsRef} className="flex flex-col" style={{ '--portfolio-breadcrumbs-height': '0px' } as CSSProperties}>
-        <div ref={breadcrumbsRef} className="sticky top-(--header-height) z-40 bg-app pb-2">
+      <div
+        ref={varsRef}
+        className="flex flex-col"
+        style={{ '--portfolio-breadcrumbs-height': '0px', '--portfolio-tabs-height': '0px' } as CSSProperties}
+      >
+        <div ref={breadcrumbsRef} className="sticky z-40 bg-app pb-2" style={{ top: 'var(--header-height)' }}>
           <Breadcrumbs
             className="px-1"
             items={[
@@ -2398,11 +2438,15 @@ function PortfolioPage(): ReactElement {
             ]}
           />
         </div>
-        <div className="flex flex-col gap-4 sm:gap-6">
-          <div className="flex flex-col gap-3">
-            <div className="px-1">{overviewHeading}</div>
-            <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} />
-          </div>
+        <div className="flex flex-col gap-3">
+          <div className="px-1">{overviewHeading}</div>
+        </div>
+        <div
+          ref={tabsRef}
+          className="sticky z-30 bg-app pb-2"
+          style={{ top: 'calc(var(--header-height) + var(--portfolio-breadcrumbs-height))' }}
+        >
+          <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} />
         </div>
         <div className={'pt-2'} key={activeTab}>
           {renderTabContent()}

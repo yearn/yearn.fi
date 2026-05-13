@@ -225,6 +225,10 @@ function parseHoldingsActivityTimestamp(value: string | null): number | null {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null
 }
 
+function parseHoldingsActivityBoolean(value: string | null): boolean {
+  return value === 'true' || value === '1'
+}
+
 function parseUtcDateParam(value: string | null): number | null {
   if (!value) {
     return null
@@ -633,6 +637,7 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const chainId = parseHoldingsActivityChainId(url.searchParams.get('chainId'))
   const startTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('startTimestamp'))
   const endTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('endTimestamp'))
+  const includeFacets = parseHoldingsActivityBoolean(url.searchParams.get('includeFacets'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -645,12 +650,19 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const activity = await getHoldingsActivity(address, version, limit, offset, {
-      type,
-      chainId,
-      startTimestamp,
-      endTimestamp
-    })
+    const activity = await getHoldingsActivity(
+      address,
+      version,
+      limit,
+      offset,
+      {
+        type,
+        chainId,
+        startTimestamp,
+        endTimestamp
+      },
+      includeFacets
+    )
 
     return Response.json(activity, {
       headers: {

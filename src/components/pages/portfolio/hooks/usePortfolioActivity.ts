@@ -34,6 +34,9 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
         offset: String(Number(pageParam) || 0),
         type
       })
+      if (Number(pageParam) === 0) {
+        params.set('includeFacets', 'true')
+      }
 
       if (chainId !== null) {
         params.set('chainId', String(chainId))
@@ -57,11 +60,20 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
   })
 
   const entries: TPortfolioActivityEntry[] = query.data?.pages.flatMap((page) => page.entries) ?? []
+  const facetChainIds = query.data?.pages.find((page) => page.facets?.chainIds)?.facets?.chainIds ?? null
+  const availableChainIds =
+    facetChainIds ??
+    (query.data
+      ? Array.from(new Set(entries.map((entry) => entry.chainId))).sort(
+          (firstChainId, secondChainId) => firstChainId - secondChainId
+        )
+      : null)
   const isInitialLoading = query.isLoading || (query.isFetching && entries.length === 0)
   const isEmpty = !isInitialLoading && !query.error && Boolean(address) && entries.length === 0
 
   return {
     data: entries,
+    availableChainIds,
     isLoading: isInitialLoading,
     isLoadingMore: query.isFetchingNextPage,
     error: query.error,
