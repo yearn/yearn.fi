@@ -1330,7 +1330,10 @@ function PortfolioPage(): ReactElement {
     protocolReturnHistoryIsEmpty: protocolReturnHistoryEmpty
   })
   const displayedHistoryChartTab = hasResolvedNoYearnPositions ? 'balance' : historyChartTab
-  const historyChartProgress = displayedHistoryChartTab === 'balance' ? historyProgress : protocolReturnHistoryProgress
+  const historyChartProgress =
+    displayedHistoryChartTab === 'balance'
+      ? (historyProgress ?? protocolReturnHistoryProgress)
+      : (protocolReturnHistoryProgress ?? historyProgress)
   const historyChartElement = (
     <PortfolioHistoryChart
       balanceData={historyData}

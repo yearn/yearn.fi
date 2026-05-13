@@ -335,6 +335,7 @@ function PortfolioHistoryChartLoading({
 }): ReactElement {
   const displayedMessage = serverProgress?.message ?? 'Building portfolio history'
   const detail = serverProgress?.detail
+  const isDeterminate = Boolean(serverProgress)
 
   return (
     <div
@@ -345,21 +346,22 @@ function PortfolioHistoryChartLoading({
       <YearnLogoSpinner className={'size-12'} logoClassName={'size-8'} />
       <span>{displayedMessage}</span>
       {detail ? <span className={'text-xs text-text-tertiary'}>{detail}</span> : null}
-      {serverProgress ? (
+      <div
+        className={'h-1.5 w-full max-w-[240px] overflow-hidden rounded-full bg-border'}
+        role={'progressbar'}
+        aria-label={displayedMessage}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={serverProgress?.progress}
+      >
         <div
-          className={'h-1.5 w-full max-w-[240px] overflow-hidden rounded-full bg-border'}
-          role={'progressbar'}
-          aria-label={displayedMessage}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={serverProgress.progress}
-        >
-          <div
-            className={'h-full rounded-full bg-primary transition-[width] duration-700 ease-out'}
-            style={{ width: `${serverProgress.progress}%` }}
-          />
-        </div>
-      ) : null}
+          className={cl(
+            'h-full rounded-full bg-primary',
+            isDeterminate ? 'transition-[width] duration-700 ease-out' : 'w-1/2 animate-pulse opacity-70'
+          )}
+          style={serverProgress ? { width: `${serverProgress.progress}%` } : undefined}
+        />
+      </div>
     </div>
   )
 }
