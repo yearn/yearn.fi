@@ -169,6 +169,18 @@ export const portfolioActivityResponseSchema = z.object({
   entries: z.array(portfolioActivityEntrySchema)
 })
 
+export const portfolioActivityFacetsResponseSchema = z.object({
+  address: z.string(),
+  version: z.enum(['all', 'v2', 'v3']).optional().default('all'),
+  facets: z.object({
+    chainIds: z.array(z.number())
+  }),
+  pageInfo: z.object({
+    hasMore: z.boolean(),
+    nextOffsetPerSource: z.number().nullable()
+  })
+})
+
 const portfolioProtocolReturnVaultSchema = z.object({
   chainId: z.number(),
   vaultAddress: z.string(),
@@ -204,6 +216,7 @@ export type TPortfolioProtocolReturnResponse = z.infer<typeof portfolioProtocolR
 export type TPortfolioProtocolReturnSummary = z.infer<typeof portfolioProtocolReturnSummarySchema>
 export type TPortfolioProtocolReturnVault = z.infer<typeof portfolioProtocolReturnVaultSchema>
 export type TPortfolioActivityResponse = z.infer<typeof portfolioActivityResponseSchema>
+export type TPortfolioActivityFacetsResponse = z.infer<typeof portfolioActivityFacetsResponseSchema>
 export type TPortfolioActivityEntry = z.infer<typeof portfolioActivityEntrySchema>
 export type TPortfolioActivityTypeFilter = TPortfolioActivityEntry['action'] | 'all'
 export type TPortfolioHistoryDenomination = z.infer<typeof portfolioHistorySimpleResponseSchema>['denomination']

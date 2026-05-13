@@ -34,11 +34,12 @@ function createDepositEvent(args: {
   assets: string
   shares?: string
   sender?: string
+  chainId?: number
 }) {
   return {
     id: args.id,
     vaultAddress: args.vaultAddress,
-    chainId: 1,
+    chainId: args.chainId ?? 1,
     blockNumber: args.blockTimestamp,
     blockTimestamp: args.blockTimestamp,
     logIndex: args.logIndex,
@@ -59,11 +60,12 @@ function createWithdrawalEvent(args: {
   logIndex: number
   assets: string
   shares?: string
+  chainId?: number
 }) {
   return {
     id: args.id,
     vaultAddress: args.vaultAddress,
-    chainId: 1,
+    chainId: args.chainId ?? 1,
     blockNumber: args.blockTimestamp,
     blockTimestamp: args.blockTimestamp,
     logIndex: args.logIndex,
@@ -84,11 +86,12 @@ function createTransferEvent(args: {
   value: string
   sender: string
   receiver: string
+  chainId?: number
 }) {
   return {
     id: args.id,
     vaultAddress: args.vaultAddress,
-    chainId: 1,
+    chainId: args.chainId ?? 1,
     blockNumber: args.blockTimestamp,
     blockTimestamp: args.blockTimestamp,
     logIndex: args.logIndex,
@@ -917,6 +920,7 @@ describe('getHoldingsActivity', () => {
       endTimestamp: 260
     })
 
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 80, 260)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -937,6 +941,162 @@ describe('getHoldingsActivity', () => {
         status: 'ok'
       }
     ])
+  })
+
+  it('seeks date-filtered scans from the selected end timestamp', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockImplementation(
+      async (_userAddress: string, _version: string, _limitPerSource: number, maxTimestamp?: number) => ({
+        deposits:
+          maxTimestamp === 260
+            ? [
+                createDepositEvent({
+                  id: 'older-in-range',
+                  vaultAddress: UNDERLYING_VAULT,
+                  transactionHash: '0xolder',
+                  blockTimestamp: 250,
+                  logIndex: 2,
+                  assets: '2000000'
+                })
+              ]
+            : [
+                createDepositEvent({
+                  id: 'newer-out-of-range',
+                  vaultAddress: UNDERLYING_VAULT,
+                  transactionHash: '0xnewer',
+                  blockTimestamp: 500,
+                  logIndex: 2,
+                  assets: '1000000'
+                })
+              ],
+        withdrawals: [],
+        transfersIn: [],
+        transfersOut: [],
+        hasMoreDeposits: false,
+        hasMoreWithdrawals: false,
+        hasMoreTransfersIn: false,
+        hasMoreTransfersOut: false
+      })
+    )
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+              symbol: 'USDC',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, {
+      startTimestamp: 240,
+      endTimestamp: 260
+    })
+
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 80, 260)
+    expect(response.entries.map((entry) => entry.txHash)).toEqual(['0xolder'])
+    expect(response.pageInfo).toEqual({
+      hasMore: false,
+      nextOffset: null
+    })
+  })
+
+  it('keeps scanning when filtered chain matches are sparse', async () => {
+    fetchRecentAddressScopedActivityEventsMock
+      .mockResolvedValueOnce({
+        deposits: Array.from({ length: 20 }, (_, index) =>
+          createDepositEvent({
+            id: `mainnet-recent-${index}`,
+            vaultAddress: UNDERLYING_VAULT,
+            transactionHash: `0xmainnet${index}`,
+            blockTimestamp: 500 - index,
+            logIndex: 2,
+            assets: '1000000',
+            chainId: 1
+          })
+        ),
+        withdrawals: [],
+        transfersIn: [],
+        transfersOut: [],
+        hasMoreDeposits: true,
+        hasMoreWithdrawals: false,
+        hasMoreTransfersIn: false,
+        hasMoreTransfersOut: false
+      })
+      .mockResolvedValueOnce({
+        deposits: [
+          ...Array.from({ length: 20 }, (_, index) =>
+            createDepositEvent({
+              id: `mainnet-expanded-${index}`,
+              vaultAddress: UNDERLYING_VAULT,
+              transactionHash: `0xmainnet${index}`,
+              blockTimestamp: 500 - index,
+              logIndex: 2,
+              assets: '1000000',
+              chainId: 1
+            })
+          ),
+          createDepositEvent({
+            id: 'base-match',
+            vaultAddress: UNDERLYING_VAULT,
+            transactionHash: '0xbase',
+            blockTimestamp: 300,
+            logIndex: 2,
+            assets: '2000000',
+            chainId: 8453
+          })
+        ],
+        withdrawals: [],
+        transfersIn: [],
+        transfersOut: [],
+        hasMoreDeposits: false,
+        hasMoreWithdrawals: false,
+        hasMoreTransfersIn: false,
+        hasMoreTransfersOut: false
+      })
+
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `8453:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 8453,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+              symbol: 'USDC',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, {
+      chainId: 8453
+    })
+
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(1, USER_ADDRESS, 'all', 80)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(2, USER_ADDRESS, 'all', 160)
+    expect(response.entries.map((entry) => [entry.chainId, entry.txHash])).toEqual([[8453, '0xbase']])
+    expect(response.pageInfo).toEqual({
+      hasMore: false,
+      nextOffset: null
+    })
   })
 
   it('recovers routed withdrawals from address transfers plus tx-scoped withdraw events', async () => {

@@ -2,6 +2,7 @@ export { config, validateConfig } from './config'
 export { ensureSchemaInitialized, initializeSchema, isDatabaseEnabled } from './db/connection'
 export {
   getHoldingsActivity,
+  getHoldingsActivityFacets,
   type HoldingsActivityAction,
   type HoldingsActivityEntry,
   type HoldingsActivityFilters,

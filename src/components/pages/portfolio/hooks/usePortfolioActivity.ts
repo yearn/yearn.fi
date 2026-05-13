@@ -1,10 +1,11 @@
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema } from '@shared/hooks/useFetch'
-import { type InfiniteData, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import {
+  portfolioActivityFacetsResponseSchema,
   portfolioActivityResponseSchema,
   type TPortfolioActivityEntry,
-  type TPortfolioActivityResponse,
   type TPortfolioActivityTypeFilter
 } from '../types/api'
 
@@ -15,27 +16,66 @@ type TPortfolioActivityFilters = {
   endTimestamp?: number | null
 }
 
+const ACTIVITY_FACET_LIMIT_PER_SOURCE = 250
+
 export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortfolioActivityFilters = {}) {
   const { address } = useWeb3()
-  const queryClient = useQueryClient()
   const isEnabled = Boolean(address) && enabled
   const type = filters.type ?? 'all'
   const chainId = filters.chainId ?? null
   const startTimestamp = filters.startTimestamp ?? null
   const endTimestamp = filters.endTimestamp ?? null
-  const shouldIncludeFacets = type === 'all' && chainId === null && startTimestamp === null && endTimestamp === null
-  const cachedUnfilteredPages =
-    queryClient.getQueryData<InfiniteData<TPortfolioActivityResponse>>([
-      'portfolio-activity',
-      address,
-      limit,
-      'all',
-      null,
-      null,
-      null
-    ])?.pages ?? []
+  const shouldFetchFacets = type === 'all' && chainId === null && startTimestamp === null && endTimestamp === null
+  const [facetOffsetPerSource, setFacetOffsetPerSource] = useState(0)
+  const [discoveredFacetChainIds, setDiscoveredFacetChainIds] = useState<number[] | null>(null)
+  const [isFacetScanComplete, setIsFacetScanComplete] = useState(false)
 
-  const query = useInfiniteQuery<TPortfolioActivityResponse, Error>({
+  useEffect(() => {
+    setFacetOffsetPerSource(0)
+    setDiscoveredFacetChainIds(null)
+    setIsFacetScanComplete(false)
+  }, [address])
+
+  const facetsQuery = useQuery({
+    queryKey: ['portfolio-activity-facets', address, 'all', facetOffsetPerSource],
+    enabled: isEnabled && shouldFetchFacets && !isFacetScanComplete,
+    queryFn: () => {
+      const params = new URLSearchParams({
+        address: address ?? '',
+        version: 'all',
+        limitPerSource: String(ACTIVITY_FACET_LIMIT_PER_SOURCE),
+        offsetPerSource: String(facetOffsetPerSource)
+      })
+
+      return fetchWithSchema(`/api/holdings/activity-facets?${params}`, portfolioActivityFacetsResponseSchema, {
+        timeout: 30 * 1000
+      })
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
+  })
+
+  useEffect(() => {
+    const page = facetsQuery.data
+    if (!page || !shouldFetchFacets) {
+      return
+    }
+
+    setDiscoveredFacetChainIds((previousChainIds) =>
+      Array.from(new Set([...(previousChainIds ?? []), ...page.facets.chainIds])).sort(
+        (firstChainId, secondChainId) => firstChainId - secondChainId
+      )
+    )
+
+    if (page.pageInfo.nextOffsetPerSource !== null) {
+      setFacetOffsetPerSource(page.pageInfo.nextOffsetPerSource)
+      return
+    }
+
+    setIsFacetScanComplete(true)
+  }, [facetsQuery.data, shouldFetchFacets])
+
+  const query = useInfiniteQuery({
     queryKey: ['portfolio-activity', address, limit, type, chainId, startTimestamp, endTimestamp],
     enabled: isEnabled,
     initialPageParam: 0,
@@ -46,9 +86,6 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
         offset: String(Number(pageParam) || 0),
         type
       })
-      if (Number(pageParam) === 0 && shouldIncludeFacets) {
-        params.set('includeFacets', 'true')
-      }
 
       if (chainId !== null) {
         params.set('chainId', String(chainId))
@@ -72,13 +109,10 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
   })
 
   const entries: TPortfolioActivityEntry[] = query.data?.pages.flatMap((page) => page.entries) ?? []
-  const facetChainIds =
-    query.data?.pages.find((page) => page.facets?.chainIds)?.facets?.chainIds ??
-    cachedUnfilteredPages.find((page) => page.facets?.chainIds)?.facets?.chainIds ??
-    null
+  const facetChainIds = discoveredFacetChainIds
   const availableChainIds =
     facetChainIds ??
-    (shouldIncludeFacets && query.data
+    (shouldFetchFacets && query.data
       ? Array.from(new Set(entries.map((entry) => entry.chainId))).sort(
           (firstChainId, secondChainId) => firstChainId - secondChainId
         )

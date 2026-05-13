@@ -156,7 +156,7 @@ function getSortedChainIds(events: Array<{ chainId: number }>): number[] {
   return Array.from(new Set(events.map((event) => event.chainId))).sort((a, b) => a - b)
 }
 
-async function getHoldingsActivityFacets(
+export async function getHoldingsActivityFacets(
   userAddress: string,
   version: VaultVersion
 ): Promise<HoldingsActivityResponse['facets']> {
@@ -575,9 +575,13 @@ async function loadRecentActivityWindowAttempt(
   version: VaultVersion,
   targetTransactionCount: number,
   limitPerSource: number,
-  attempt: number
+  attempt: number,
+  maxTimestamp?: number
 ): Promise<TRecentActivityWindow> {
-  const recentEvents = await fetchRecentAddressScopedActivityEvents(userAddress, version, limitPerSource)
+  const recentEvents =
+    maxTimestamp === undefined
+      ? await fetchRecentAddressScopedActivityEvents(userAddress, version, limitPerSource)
+      : await fetchRecentAddressScopedActivityEvents(userAddress, version, limitPerSource, maxTimestamp)
   const candidateEvents = sortEventsDesc([
     ...recentEvents.deposits.map((event) => normalizeDepositEvent(event, 'address')),
     ...recentEvents.withdrawals.map((event) => normalizeWithdrawalEvent(event, 'address')),
@@ -602,21 +606,24 @@ async function loadRecentActivityWindowAttempt(
         version,
         targetTransactionCount,
         Math.min(limitPerSource * 2, 1000),
-        attempt + 1
+        attempt + 1,
+        maxTimestamp
       )
 }
 
 async function loadRecentActivityWindow(
   userAddress: string,
   version: VaultVersion,
-  targetTransactionCount: number
+  targetTransactionCount: number,
+  maxTimestamp?: number
 ): Promise<TRecentActivityWindow> {
   return loadRecentActivityWindowAttempt(
     userAddress,
     version,
     targetTransactionCount,
     Math.max(targetTransactionCount * 4, 20),
-    0
+    0,
+    maxTimestamp
   )
 }
 
@@ -834,12 +841,14 @@ async function getFilteredHoldingsActivity(
   let filteredEvents: TResolvedActivityEvent[] = []
   let metadata = new Map<string, VaultMetadata>()
   let hasUnscannedTransactions = false
+  const maxTimestamp = filters.endTimestamp ?? undefined
 
   while (attempt < MAX_FILTERED_ACTIVITY_ATTEMPTS) {
     const { candidateEvents, hasPotentialMore } = await loadRecentActivityWindow(
       userAddress,
       version,
-      targetTransactionCount
+      targetTransactionCount,
+      maxTimestamp
     )
     const filteredCandidateEvents = candidateEvents.filter((event) => matchesCoarseActivityFilters(event, filters))
     const selectedTransactionKeys = getSelectedTransactionKeys(filteredCandidateEvents, targetTransactionCount)
@@ -853,7 +862,7 @@ async function getFilteredHoldingsActivity(
     const vaultIdentifiers = getVaultIdentifiers(matchingEvents)
     metadata = vaultIdentifiers.length > 0 ? await fetchMultipleVaultsMetadata(vaultIdentifiers) : new Map()
     filteredEvents = filterVisibleActivityEvents(matchingEvents, metadata)
-    hasUnscannedTransactions = hasPotentialMore && selectedTransactionKeys.length >= targetTransactionCount
+    hasUnscannedTransactions = hasPotentialMore
 
     if (
       filteredEvents.length >= requestedEntryCount ||
@@ -903,7 +912,7 @@ export async function getHoldingsActivity(
     version,
     limit: boundedLimit,
     offset: boundedOffset,
-    ...(includeFacets ? { facets: await getHoldingsActivityFacets(userAddress, version) } : {}),
+    ...(includeFacets ? { facets: { chainIds: getSortedChainIds(activityPage.entries) } } : {}),
     pageInfo: activityPage.pageInfo,
     entries: activityPage.entries
   }
