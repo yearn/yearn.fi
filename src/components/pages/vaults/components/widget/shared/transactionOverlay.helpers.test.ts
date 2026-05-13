@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatPendingTransactionFunctionName,
+  getInitialOverlayState,
   getPendingTransactionTitle,
   resolveCompletionDeferral,
   shouldAutoContinuePermitSuccess,
   shouldRunDeferredCompletion
 } from './transactionOverlay.helpers'
+
+describe('transactionOverlay.helpers', () => {
+  it('starts idle so conditionally mounted overlays can execute their first step on open', () => {
+    expect(getInitialOverlayState()).toBe('idle')
+  })
+})
 
 describe('transactionOverlay.helpers', () => {
   it('formats pending transaction function names from onchain requests', () => {

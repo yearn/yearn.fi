@@ -15,6 +15,7 @@ export type TRewardToken = {
 }
 
 export type TMerkleReward = {
+  root: `0x${string}`
   token: TRewardToken
   accumulated: bigint
   unclaimed: bigint

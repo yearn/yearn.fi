@@ -1,5 +1,7 @@
 import { usePlausible } from '@hooks/usePlausible'
+import { mergeChainMerkleData } from '@pages/portfolio/claimRewards.helpers'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
+import { usePortfolioEntryRefresh } from '@pages/portfolio/hooks/usePortfolioEntryRefresh'
 import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
 import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
@@ -28,6 +30,7 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { YearnLogoSpinner } from '@shared/components/YearnLogoSpinner'
 import { useNotifications } from '@shared/contexts/useNotifications'
+import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
@@ -625,11 +628,6 @@ function rewardsArrayEqual(a: TStakingReward[], b: TStakingReward[]): boolean {
   return a.every((r, i) => r.tokenAddress === b[i]?.tokenAddress && r.amount === b[i]?.amount)
 }
 
-function merkleRewardsEqual(a: TGroupedMerkleReward[], b: TGroupedMerkleReward[]): boolean {
-  if (a.length !== b.length) return false
-  return a.every((r, i) => r.token.address === b[i]?.token.address && r.totalUnclaimed === b[i]?.totalUnclaimed)
-}
-
 function ChainStakingRewardsFetcher({
   vault: originalVault,
   userAddress,
@@ -699,18 +697,21 @@ function ChainMerkleRewardsFetcher({
   chainId,
   userAddress,
   isActive,
-  onRewards
+  onRewards,
+  hiddenRewardKeys = []
 }: {
   chainId: number
   userAddress?: `0x${string}`
   isActive: boolean
   onRewards: (chainId: number, rewards: TGroupedMerkleReward[], isLoading: boolean, refetch: () => void) => void
+  hiddenRewardKeys?: string[]
 }): null {
   const isEnabled = isActive && !!userAddress
   const { groupedRewards, isLoading, refetch } = useMerkleRewards({
     userAddress,
     chainId,
-    enabled: isEnabled
+    enabled: isEnabled,
+    hiddenRewardKeys
   })
 
   // Stable refs to avoid recreating the effect callback
@@ -765,6 +766,8 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
       }
     >
   >({})
+  const [hiddenMerkleRewardKeys, setHiddenMerkleRewardKeys] = useState<Record<number, string[]>>({})
+  const [activeMerkleClaim, setActiveMerkleClaim] = useState<{ chainId: number; keys: string[] } | undefined>()
 
   const handleStakingRewards = useCallback(
     (
@@ -803,15 +806,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
   const handleMerkleRewards = useCallback(
     (chainId: number, rewards: TGroupedMerkleReward[], isLoading: boolean, refetch: () => void) => {
-      setChainMerkleData((prev) => {
-        const existing = prev[chainId]
-
-        // Bail out if nothing changed
-        if (existing?.isLoading === isLoading && merkleRewardsEqual(existing.rewards, rewards)) return prev
-        if (!existing && rewards.length === 0 && isLoading) return prev
-
-        return { ...prev, [chainId]: { rewards, isLoading, refetch } }
-      })
+      setChainMerkleData((prev) => mergeChainMerkleData(prev, chainId, rewards, isLoading, refetch))
     },
     []
   )
@@ -866,10 +861,28 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
     return selectedChainData && selectedChainData.rewardCount > 0 ? [selectedChainData] : []
   }, [selectedChainId, chainRewardsData, selectedChainData])
 
-  const handleStartClaim = useCallback((step: TransactionStep) => {
+  const handleStartClaim = useCallback((step: TransactionStep, merkleRewardKeys: string[] = [], chainId?: number) => {
     setActiveStep(step)
+    setActiveMerkleClaim(
+      chainId !== undefined && merkleRewardKeys.length > 0 ? { chainId, keys: merkleRewardKeys } : undefined
+    )
     setIsOverlayOpen(true)
   }, [])
+
+  const handleBeforeSuccess = useCallback(async () => {
+    if (activeMerkleClaim) {
+      setHiddenMerkleRewardKeys((prev) => ({
+        ...prev,
+        [activeMerkleClaim.chainId]: [
+          ...new Set([...(prev[activeMerkleClaim.chainId] ?? []), ...activeMerkleClaim.keys])
+        ]
+      }))
+    }
+
+    await Promise.all(
+      chainRewardsData.flatMap((chainRewardData) => [chainRewardData.refetchStaking(), chainRewardData.refetchMerkle()])
+    )
+  }, [activeMerkleClaim, chainRewardsData])
 
   const handleClaimComplete = useCallback(() => {
     trackEvent(PLAUSIBLE_EVENTS.CLAIM, {
@@ -881,16 +894,21 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
     })
     setIsOverlayOpen(false)
     setActiveStep(undefined)
-    chainRewardsData.forEach((c) => {
-      c.refetchStaking()
-      c.refetchMerkle()
-    })
-  }, [trackEvent, selectedChainId, totalUsd, selectedChainData?.totalUsd, chainRewardsData])
+    setActiveMerkleClaim(undefined)
+  }, [trackEvent, selectedChainId, totalUsd, selectedChainData?.totalUsd])
 
   const handleOverlayClose = useCallback(() => {
     setIsOverlayOpen(false)
     setActiveStep(undefined)
+    setActiveMerkleClaim(undefined)
   }, [])
+
+  useEffect(() => {
+    setHiddenMerkleRewardKeys({})
+    setActiveMerkleClaim(undefined)
+    setActiveStep(undefined)
+    setIsOverlayOpen(false)
+  }, [userAddress])
 
   function getChainLogoUrl(chainId: number): string {
     return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
@@ -935,7 +953,9 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                   stakingAddress={sr.stakingAddress}
                   stakingSource={sr.stakingSource}
                   chainId={chainData.chainId}
-                  onStartClaim={handleStartClaim}
+                  onStartClaim={(step, merkleRewardRoots) =>
+                    handleStartClaim(step, merkleRewardRoots, chainData.chainId)
+                  }
                   isFirst={srIdx === 0 && rewardIdx === 0}
                   isAllChainsView={isAllChainsView}
                   onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
@@ -948,7 +968,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                 groupedReward={groupedReward}
                 userAddress={userAddress!}
                 chainId={chainData.chainId}
-                onStartClaim={handleStartClaim}
+                onStartClaim={(step, merkleRewardRoots) => handleStartClaim(step, merkleRewardRoots, chainData.chainId)}
                 isFirst={idx === 0 && chainData.stakingRewards.length === 0}
                 isAllChainsView={isAllChainsView}
                 onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
@@ -1004,6 +1024,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
           userAddress={userAddress}
           isActive={isActive}
           onRewards={handleMerkleRewards}
+          hiddenRewardKeys={hiddenMerkleRewardKeys[chainId] ?? []}
         />
       ))}
 
@@ -1086,6 +1107,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
           onClose={handleOverlayClose}
           step={activeStep}
           isLastStep={true}
+          onBeforeSuccess={handleBeforeSuccess}
           onAllComplete={handleClaimComplete}
           topOffset="0"
           contentAlign="center"
@@ -1288,6 +1310,10 @@ function PortfolioPage(): ReactElement {
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
   const historyFetchTimeframe: TPortfolioHistoryTimeframe = historyTimeframe === 'all' ? 'all' : '1y'
+  const { onRefresh } = useWallet()
+
+  usePortfolioEntryRefresh({ isActive: model.isActive, onRefresh })
+
   const activeTab = useMemo((): TPortfolioTabKey => {
     const tabParam = searchParams.get('tab')
     if (tabParam === 'activity' || tabParam === 'claim-rewards' || tabParam === 'positions') {
