@@ -10,6 +10,8 @@ import type {
 import { portfolioHistorySimpleResponseSchema } from '../types/api'
 import { createPortfolioHistoryProgressId, usePortfolioHistoryProgress } from './usePortfolioHistoryProgress'
 
+const PORTFOLIO_HISTORY_CACHE_DURATION = 60 * 60 * 1000
+
 export function usePortfolioHistory(
   denomination: TPortfolioHistoryDenomination = 'usd',
   timeframe: TPortfolioHistoryTimeframe = '1y',
@@ -38,7 +40,7 @@ export function usePortfolioHistory(
     endpoint,
     schema: portfolioHistorySimpleResponseSchema,
     config: {
-      cacheDuration: 5 * 60 * 1000,
+      cacheDuration: PORTFOLIO_HISTORY_CACHE_DURATION,
       keepPreviousData: false,
       timeout: 2 * 60 * 1000 // 2 minutes for large holdings requests
     }

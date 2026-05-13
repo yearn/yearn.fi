@@ -8,7 +8,11 @@ interface QueryResult<T> {
 }
 
 interface DatabasePool {
-  query: <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<QueryResult<T>>
+  query: <T = Record<string, unknown>>(
+    text: string,
+    params?: unknown[],
+    options?: { disableOnFailure?: boolean }
+  ) => Promise<QueryResult<T>>
   end: () => Promise<void>
 }
 
@@ -118,12 +122,12 @@ async function createPool(): Promise<DatabasePool | null> {
     const neonPool = new Pool({ connectionString: holdingsConfig.databaseUrl })
 
     return {
-      query: async <T>(text: string, params?: unknown[]) => {
+      query: async <T>(text: string, params?: unknown[], options?: { disableOnFailure?: boolean }) => {
         try {
           const result = await withTimeout(neonPool.query(text, params), DB_QUERY_TIMEOUT_MS, 'Holdings DB query')
           return { rows: result.rows as T[], rowCount: result.rowCount ?? 0 }
         } catch (error) {
-          if (shouldDisableDatabaseOnQueryError(error)) {
+          if (options?.disableOnFailure !== false && shouldDisableDatabaseOnQueryError(error)) {
             disableDatabase('query failure', error)
           }
           throw error

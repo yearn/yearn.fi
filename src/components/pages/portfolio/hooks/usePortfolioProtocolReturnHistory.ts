@@ -11,6 +11,8 @@ import {
 } from '../types/api'
 import { createPortfolioHistoryProgressId, usePortfolioHistoryProgress } from './usePortfolioHistoryProgress'
 
+const PORTFOLIO_HISTORY_CACHE_DURATION = 60 * 60 * 1000
+
 export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTimeframe = '1y', enabled = true) {
   const { address } = useWeb3()
   const progressId = useMemo(
@@ -30,7 +32,7 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
     endpoint,
     schema: portfolioProtocolReturnHistoryResponseSchema,
     config: {
-      cacheDuration: 5 * 60 * 1000,
+      cacheDuration: PORTFOLIO_HISTORY_CACHE_DURATION,
       keepPreviousData: false,
       timeout: 2 * 60 * 1000
     }

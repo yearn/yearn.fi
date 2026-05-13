@@ -441,7 +441,8 @@ Server-side cache is optional. When `DATABASE_URL_PREVIEW` or `DATABASE_URL` is 
    - History, breakdown, and protocol-return history: `s-maxage=300, stale-while-revalidate=600`.
    - Activity: `s-maxage=60, stale-while-revalidate=300`.
 3. Client TanStack Query cache:
-   - Configured in frontend hooks.
+   - Portfolio history and protocol-return history hooks keep chart responses fresh for one hour.
+   - Other frontend hooks configure their own durations.
 
 ### Daily Totals
 

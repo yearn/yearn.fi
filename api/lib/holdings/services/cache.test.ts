@@ -33,5 +33,7 @@ describe('cache writes', () => {
     expect(queryMock).toHaveBeenCalledTimes(2)
     expect(queryMock.mock.calls[0]?.[1]).toHaveLength(1_000)
     expect(queryMock.mock.calls[1]?.[1]).toHaveLength(988)
+    expect(queryMock.mock.calls[0]?.[2]).toEqual({ disableOnFailure: false })
+    expect(queryMock.mock.calls[1]?.[2]).toEqual({ disableOnFailure: false })
   })
 })

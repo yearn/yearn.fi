@@ -98,7 +98,7 @@ export async function saveCachedTotals(userAddress: string, version: string, tot
         DO UPDATE SET usd_value = EXCLUDED.usd_value, updated_at = NOW()
       `
 
-      await pool.query(query, values)
+      await pool.query(query, values, { disableOnFailure: false })
     }
     debugLog('cache', 'saved cached totals', { rows: totals.length })
     return true
@@ -110,9 +110,11 @@ export async function saveCachedTotals(userAddress: string, version: string, tot
 }
 
 export async function clearUserCache(userAddress: string, version?: string): Promise<number> {
+  const userAddressHash = getUserAddressCacheKey(userAddress)
+
   if (!isDatabaseEnabled()) {
     debugLog('cache', 'skipping user cache clear because database is disabled', {
-      userAddressHash: getUserAddressCacheKey(userAddress),
+      userAddressHash,
       version: version ?? null
     })
     return 0
@@ -121,27 +123,29 @@ export async function clearUserCache(userAddress: string, version?: string): Pro
   const pool = await getPool()
   if (!pool) {
     debugLog('cache', 'skipping user cache clear because database pool is unavailable', {
-      userAddressHash: getUserAddressCacheKey(userAddress),
+      userAddressHash,
       version: version ?? null
     })
     return 0
   }
 
   try {
-    const userAddressHash = getUserAddressCacheKey(userAddress)
     const result = version
-      ? await pool.query('DELETE FROM holdings_totals WHERE user_address_hash = $1 AND version = $2', [
-          userAddressHash,
-          version
-        ])
-      : await pool.query('DELETE FROM holdings_totals WHERE user_address_hash = $1', [userAddressHash])
+      ? await pool.query(
+          'DELETE FROM holdings_totals WHERE user_address_hash = $1 AND version = $2',
+          [userAddressHash, version],
+          { disableOnFailure: false }
+        )
+      : await pool.query('DELETE FROM holdings_totals WHERE user_address_hash = $1', [userAddressHash], {
+          disableOnFailure: false
+        })
     const deletedCount = result.rowCount ?? 0
     console.log(`[Cache] Cleared ${deletedCount} cached rows for user ${userAddress}${version ? ` (${version})` : ''}`)
     return deletedCount
   } catch (error) {
     console.error('[Cache] Failed to clear user cache:', error)
     debugError('cache', 'user cache clear failed', error, {
-      userAddressHash: getUserAddressCacheKey(userAddress),
+      userAddressHash,
       version: version ?? null
     })
     return 0
@@ -185,7 +189,7 @@ export async function invalidateVaults(vaults: VaultIdentifier[]): Promise<numbe
       DO UPDATE SET invalidated_at = NOW()
     `
 
-    await pool.query(query, values)
+    await pool.query(query, values, { disableOnFailure: false })
     console.log(`[Cache] Invalidated ${vaults.length} vaults`)
     return vaults.length
   } catch (error) {
