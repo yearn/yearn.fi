@@ -122,6 +122,7 @@ export function usePortfolioModel(): TPortfolioModel {
     cumulatedValueInV2Vaults,
     cumulatedValueInV3Vaults,
     isLoading: isWalletLoading,
+    isBalanceDiscoveryLoading,
     getBalance,
     getVaultHoldingsUsd,
     balances
@@ -252,7 +253,8 @@ export function usePortfolioModel(): TPortfolioModel {
   }, [visibleHoldingsVaults])
 
   const isSearchingBalances =
-    (isActive || isUserConnecting) && (isWalletLoading || isUserConnecting || isIdentityLoading)
+    (isActive || isUserConnecting) &&
+    (isWalletLoading || isBalanceDiscoveryLoading || isUserConnecting || isIdentityLoading)
   const isHoldingsLoading = (isLoadingVaultList && isActive) || isSearchingBalances
 
   const suggestedVaultCandidates = useMemo(

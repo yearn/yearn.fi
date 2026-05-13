@@ -8,7 +8,11 @@ interface QueryResult<T> {
 }
 
 interface DatabasePool {
-  query: <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<QueryResult<T>>
+  query: <T = Record<string, unknown>>(
+    text: string,
+    params?: unknown[],
+    options?: { disableOnFailure?: boolean }
+  ) => Promise<QueryResult<T>>
   end: () => Promise<void>
 }
 
@@ -21,7 +25,11 @@ let pool: DatabasePool | null = null
 let schemaInitializationPromise: Promise<void> | null = null
 let databaseDisabled = false
 
-const DB_QUERY_TIMEOUT_MS = 20_000
+const DEFAULT_DB_QUERY_TIMEOUT_MS = 20_000
+const DB_QUERY_TIMEOUT_MS = (() => {
+  const configuredTimeout = Number(process.env.HOLDINGS_DB_QUERY_TIMEOUT_MS)
+  return Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : DEFAULT_DB_QUERY_TIMEOUT_MS
+})()
 const LOCAL_DB_QUERY_TIMEOUT_CODE = 'HOLDINGS_DB_QUERY_TIMEOUT'
 const RETRYABLE_CONNECTION_ERROR_CODES = new Set([
   'ECONNRESET',
@@ -118,12 +126,12 @@ async function createPool(): Promise<DatabasePool | null> {
     const neonPool = new Pool({ connectionString: holdingsConfig.databaseUrl })
 
     return {
-      query: async <T>(text: string, params?: unknown[]) => {
+      query: async <T>(text: string, params?: unknown[], options?: { disableOnFailure?: boolean }) => {
         try {
           const result = await withTimeout(neonPool.query(text, params), DB_QUERY_TIMEOUT_MS, 'Holdings DB query')
           return { rows: result.rows as T[], rowCount: result.rowCount ?? 0 }
         } catch (error) {
-          if (shouldDisableDatabaseOnQueryError(error)) {
+          if (options?.disableOnFailure !== false && shouldDisableDatabaseOnQueryError(error)) {
             disableDatabase('query failure', error)
           }
           throw error
@@ -171,6 +179,22 @@ export async function initializeSchema(): Promise<void> {
     ALTER TABLE holdings_totals ALTER COLUMN version SET DEFAULT 'all';
     ALTER TABLE holdings_totals ALTER COLUMN version SET NOT NULL;
 
+    CREATE TABLE IF NOT EXISTS token_prices (
+      token_key VARCHAR(100) NOT NULL,
+      timestamp INTEGER NOT NULL,
+      price NUMERIC NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      PRIMARY KEY (token_key, timestamp)
+    );
+
+    CREATE TABLE IF NOT EXISTS token_price_misses (
+      token_key VARCHAR(100) NOT NULL,
+      timestamp INTEGER NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      PRIMARY KEY (token_key, timestamp)
+    );
+
     CREATE TABLE IF NOT EXISTS rate_limits (
       ip VARCHAR(45) PRIMARY KEY,
       request_count INTEGER DEFAULT 1,
@@ -182,6 +206,17 @@ export async function initializeSchema(): Promise<void> {
       chain_id INTEGER NOT NULL,
       invalidated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       PRIMARY KEY (vault_address, chain_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS protocol_return_history (
+      user_address_hash VARCHAR(64) NOT NULL,
+      version VARCHAR(8) NOT NULL,
+      timeframe VARCHAR(16) NOT NULL,
+      vault_filter_hash VARCHAR(64) NOT NULL,
+      latest_settled_timestamp INTEGER NOT NULL,
+      response_json JSONB NOT NULL,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      PRIMARY KEY (user_address_hash, version, timeframe, vault_filter_hash, latest_settled_timestamp)
     );
 
     CREATE TABLE IF NOT EXISTS holdings_progress (
@@ -197,8 +232,12 @@ export async function initializeSchema(): Promise<void> {
       logs JSONB NOT NULL DEFAULT '[]'::jsonb
     );
 
+    CREATE INDEX IF NOT EXISTS idx_token_prices_token_key ON token_prices(token_key);
+    CREATE INDEX IF NOT EXISTS idx_token_price_misses_token_key ON token_price_misses(token_key);
+    CREATE INDEX IF NOT EXISTS idx_token_price_misses_expires_at ON token_price_misses(expires_at);
     CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
     CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
+    CREATE INDEX IF NOT EXISTS idx_protocol_return_history_updated_at ON protocol_return_history(updated_at);
     CREATE INDEX IF NOT EXISTS idx_holdings_progress_updated_at ON holdings_progress(updated_at);
   `
 

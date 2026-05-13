@@ -20,7 +20,7 @@ export function Breadcrumbs({ items, className }: TBreadcrumbsProps): ReactEleme
     <nav aria-label={'Breadcrumb'} className={cl('flex items-center gap-2 text-sm text-text-secondary', className)}>
       {items.map((item, index) => {
         const isCurrent = item.isCurrent ?? index === lastIndex
-        const key = item.href ?? item.label
+        const itemKey = item.href ? `href-${item.href}` : `label-${item.label}-${isCurrent ? 'current' : 'static'}`
         const content =
           item.href && !isCurrent ? (
             <Link to={item.href} className={'transition-colors hover:text-text-primary'}>
@@ -36,7 +36,7 @@ export function Breadcrumbs({ items, className }: TBreadcrumbsProps): ReactEleme
           )
 
         return (
-          <span key={key} className={'flex items-center gap-2'}>
+          <span key={itemKey} className={'flex items-center gap-2'}>
             {content}
             {index < lastIndex ? <span>{'>'}</span> : null}
           </span>

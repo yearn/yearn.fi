@@ -37,6 +37,7 @@ type TWalletContext = {
   getVaultHoldingsUsd: (vault: TKongVaultInput) => number
   balances: TChainTokens
   isLoading: boolean
+  isBalanceDiscoveryLoading: boolean
   cumulatedValueInV2Vaults: number
   cumulatedValueInV3Vaults: number
   onRefresh: (
@@ -52,6 +53,7 @@ const defaultProps = {
   getVaultHoldingsUsd: (): number => 0,
   balances: {},
   isLoading: true,
+  isBalanceDiscoveryLoading: true,
   cumulatedValueInV2Vaults: 0,
   cumulatedValueInV3Vaults: 0,
   onRefresh: async (): Promise<TChainTokens> => ({})
@@ -83,6 +85,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
     onUpdate,
     onUpdateSome,
+    status: balanceStatus,
     isLoading
   } = useBalancesHook({
     tokens: allTokens,
@@ -115,10 +118,13 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   }, [deferredTokensRaw])
   const isBalancesPending = deferredTokensRaw !== visibleTokensRaw
   const hasVisibleBalances = hasWalletBalanceSnapshot(visibleTokensRaw)
+  const isBalanceQueryPending =
+    Boolean(userAddress) && (isLoadingVaultList || allTokens.length === 0 || balanceStatus === 'unknown')
+  const isBalanceDiscoveryLoading = Boolean(userAddress) && (isLoading || isBalancesPending || isBalanceQueryPending)
   const isWalletLoading = shouldExposeWalletLoading({
     userAddress,
     hasVisibleBalances,
-    isLoading,
+    isLoading: isLoading || isBalanceQueryPending,
     isBalancesPending
   })
 
@@ -279,6 +285,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       getVaultHoldingsUsd,
       balances,
       isLoading: isWalletLoading,
+      isBalanceDiscoveryLoading,
       onRefresh,
       cumulatedValueInV2Vaults,
       cumulatedValueInV3Vaults
@@ -289,6 +296,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       getVaultHoldingsUsd,
       balances,
       isWalletLoading,
+      isBalanceDiscoveryLoading,
       onRefresh,
       cumulatedValueInV2Vaults,
       cumulatedValueInV3Vaults

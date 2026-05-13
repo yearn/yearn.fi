@@ -6,7 +6,9 @@ import {
   getChainPrefix,
   getHistoricalPriceFetchFailedBatches,
   getPriceAtTimestamp,
-  parseDefiLlamaResponse
+  parseDefiLlamaResponse,
+  resetDefiLlamaProApiAvailabilityForTests,
+  resetHistoricalPriceInflightRequestsForTests
 } from './defillama'
 
 function createBatchResponse(response: DefiLlamaBatchResponse): Response {
@@ -17,6 +19,8 @@ function createBatchResponse(response: DefiLlamaBatchResponse): Response {
 }
 
 afterEach(() => {
+  resetDefiLlamaProApiAvailabilityForTests()
+  resetHistoricalPriceInflightRequestsForTests()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
   vi.unstubAllEnvs()
@@ -77,6 +81,33 @@ describe('parseDefiLlamaResponse', () => {
     expect(priceMap?.get(1773260095)).toBe(0.9966185770862551)
     expect(priceMap?.get(1700000102)).toBe(0.999211)
     expect(getPriceAtTimestamp(priceMap ?? new Map(), 1773260546)).toBe(0.9966185770862551)
+  })
+
+  it('deduplicates overlapping in-flight historical price requests', async () => {
+    const tokenAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    const tokenKey = `ethereum:${tokenAddress}`
+    const timestamp = 1700000000
+    const fetchStub = vi.fn(async () =>
+      createBatchResponse({
+        coins: {
+          [tokenKey]: {
+            symbol: 'USDC',
+            prices: [{ timestamp, price: 1.002, confidence: 0.99 }]
+          }
+        }
+      })
+    )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const [firstPrices, secondPrices] = await Promise.all([
+      fetchHistoricalPricesForTokenTimestamps([{ chainId: 1, address: tokenAddress, timestamps: [timestamp] }]),
+      fetchHistoricalPricesForTokenTimestamps([{ chainId: 1, address: tokenAddress, timestamps: [timestamp] }])
+    ])
+
+    expect(fetchStub).toHaveBeenCalledTimes(1)
+    expect(firstPrices.get(tokenKey)?.get(timestamp)).toBe(1.002)
+    expect(secondPrices.get(tokenKey)?.get(timestamp)).toBe(1.002)
   })
 
   it('uses yearn-prices when selected and maps UTC day-end prices back to requested timestamps', async () => {
@@ -678,6 +709,35 @@ describe('parseDefiLlamaResponse', () => {
     )
     expect(secondRequestInit).toEqual({ signal: expect.any(AbortSignal) })
     expect(prices.get('ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')?.get(1700000000)).toBe(1)
+  })
+
+  it('skips paid DefiLlama requests after an authorization failure', async () => {
+    vi.stubEnv('DEFILLAMA_API_KEY', 'test-llama-key')
+
+    const tokenAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    const fetchStub = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 402 }))
+      .mockImplementation(() =>
+        createBatchResponse({
+          coins: {
+            [`ethereum:${tokenAddress}`]: {
+              symbol: 'USDC',
+              prices: [{ timestamp: 1700000000, price: 1, confidence: 0.99 }]
+            }
+          }
+        })
+      )
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    await fetchHistoricalPrices([{ chainId: 1, address: tokenAddress }], [1700000000])
+    await fetchHistoricalPrices([{ chainId: 1, address: tokenAddress }], [1700000000])
+
+    expect(fetchStub).toHaveBeenCalledTimes(3)
+    expect(new URL(String(fetchStub.mock.calls[0]?.[0])).origin).toBe('https://pro-api.llama.fi')
+    expect(new URL(String(fetchStub.mock.calls[1]?.[0])).origin).toBe('https://coins.llama.fi')
+    expect(new URL(String(fetchStub.mock.calls[2]?.[0])).origin).toBe('https://coins.llama.fi')
   })
 
   it('splits paid GET batches before the request URL grows beyond the configured limit', async () => {

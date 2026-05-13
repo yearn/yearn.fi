@@ -53,6 +53,7 @@ import {
   resolvePortfolioGrowthDisplayMode
 } from './components/PortfolioHistoryChart'
 import type { TPortfolioVaultGrowthChartMode } from './components/PortfolioVaultGrowthChart'
+import { getPortfolioHistoryDisplayState } from './hooks/portfolioDisplayState'
 import { usePortfolioActivity } from './hooks/usePortfolioActivity'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
@@ -1319,8 +1320,16 @@ function PortfolioPage(): ReactElement {
     protocolReturnHistoryData
   )
   const isEthGrowthAvailable = Boolean(protocolReturnHistoryData?.some((point) => point.growthWeightEth !== null))
-  const hasNoYearnPositions = model.isActive && !model.isHoldingsLoading && !model.hasHoldings
-  const displayedHistoryChartTab = hasNoYearnPositions ? 'balance' : historyChartTab
+  const { hasResolvedNoYearnPositions, shouldDeferHistoryChart } = getPortfolioHistoryDisplayState({
+    isActive: model.isActive,
+    isHoldingsLoading: model.isHoldingsLoading,
+    hasHoldings: model.hasHoldings,
+    balanceHistoryIsLoading: historyLoading,
+    balanceHistoryIsEmpty: historyEmpty,
+    protocolReturnHistoryIsLoading: protocolReturnHistoryLoading,
+    protocolReturnHistoryIsEmpty: protocolReturnHistoryEmpty
+  })
+  const displayedHistoryChartTab = hasResolvedNoYearnPositions ? 'balance' : historyChartTab
   const historyChartProgress = displayedHistoryChartTab === 'balance' ? historyProgress : protocolReturnHistoryProgress
   const historyChartElement = (
     <PortfolioHistoryChart
@@ -1335,17 +1344,19 @@ function PortfolioPage(): ReactElement {
       onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
       vaultGrowthMode={historyVaultGrowthMode}
       onVaultGrowthModeChange={setHistoryVaultGrowthMode}
-      balanceIsLoading={historyLoading}
+      balanceIsLoading={historyLoading || shouldDeferHistoryChart}
       balanceIsEmpty={historyEmpty}
       balanceError={historyError}
-      protocolReturnIsLoading={protocolReturnHistoryLoading}
+      protocolReturnIsLoading={protocolReturnHistoryLoading || shouldDeferHistoryChart}
       protocolReturnIsEmpty={protocolReturnHistoryEmpty}
       protocolReturnError={protocolReturnHistoryError}
       embedded
-      reserveControlSpace={!hasNoYearnPositions}
+      reserveControlSpace={!hasResolvedNoYearnPositions}
       loadingProgress={historyChartProgress}
       className={
-        hasNoYearnPositions ? 'h-full min-h-0 bg-linear-to-b from-surface to-surface-secondary/20' : 'min-h-0 flex-1'
+        hasResolvedNoYearnPositions
+          ? 'h-full min-h-0 bg-linear-to-b from-surface to-surface-secondary/20'
+          : 'min-h-0 flex-1'
       }
     />
   )
@@ -1421,7 +1432,7 @@ function PortfolioPage(): ReactElement {
             {model.isActive ? (
               <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
                 <div className="grid items-stretch min-[920px]:grid-cols-[minmax(640px,1fr)_minmax(200px,340px)]">
-                  {hasNoYearnPositions ? (
+                  {hasResolvedNoYearnPositions ? (
                     historyChartElement
                   ) : (
                     <PortfolioHistoryChartControls
@@ -1466,7 +1477,7 @@ function PortfolioPage(): ReactElement {
               setSortDirection={model.setSortDirection}
               vaultFlags={model.vaultFlags}
             />
-            <PortfolioSuggestedSection suggestedRows={model.suggestedRows} />
+            {!model.isHoldingsLoading ? <PortfolioSuggestedSection suggestedRows={model.suggestedRows} /> : null}
           </div>
         )
       case 'activity':

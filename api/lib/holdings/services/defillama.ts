@@ -38,6 +38,8 @@ const YEARN_PRICES_MAX_RANGE_DAYS = 366
 const MAX_REQUESTED_PRICE_DISTANCE_SECONDS = 60 * 60
 const MAX_DAILY_PRICE_DISTANCE_SECONDS = 60 * 60 * 24
 const SPLITTABLE_GET_STATUS_CODES = new Set([414, 431, 505])
+const DISABLE_PRO_API_STATUS_CODES = new Set([401, 402, 403])
+const defillamaProApiAvailability = { isDisabled: false }
 
 type TCoinRequest = { chain: string; address: string; timestamps: number[] }
 type TDefiLlamaFetchTuning = {
@@ -77,10 +79,87 @@ const HISTORICAL_PRICE_FETCH_FAILED_BATCHES = Symbol('historicalPriceFetchFailed
 type THistoricalPriceResult = Map<string, Map<number, number>> & {
   [HISTORICAL_PRICE_FETCH_FAILED_BATCHES]?: number
 }
+type TPendingHistoricalPrice = {
+  promise: Promise<number | null>
+  resolve: (price: number | null) => void
+}
+
+const pendingHistoricalPrices = new Map<string, TPendingHistoricalPrice>()
 
 export function getChainPrefix(chainId: number): string {
   const chain = SUPPORTED_CHAINS.find((c) => c.id === chainId)
   return chain?.defillamaPrefix || 'ethereum'
+}
+
+export function resetDefiLlamaProApiAvailabilityForTests(): void {
+  defillamaProApiAvailability.isDisabled = false
+}
+
+export function resetHistoricalPriceInflightRequestsForTests(): void {
+  pendingHistoricalPrices.forEach((pendingPrice) => {
+    pendingPrice.resolve(null)
+  })
+  pendingHistoricalPrices.clear()
+}
+
+function createPendingHistoricalPrice(): TPendingHistoricalPrice {
+  let resolvePendingPrice: (price: number | null) => void = () => {}
+  const promise = new Promise<number | null>((resolve) => {
+    resolvePendingPrice = resolve
+  })
+
+  return { promise, resolve: resolvePendingPrice }
+}
+
+function getPendingHistoricalPriceKey(tokenKey: string, timestamp: number): string {
+  return `${tokenKey}:${timestamp}`
+}
+
+function claimMissingHistoricalPrices(coins: TCoinRequest[]): {
+  claimedCoins: TCoinRequest[]
+  claimedKeys: string[]
+  pendingPrices: Array<{ tokenKey: string; timestamp: number; promise: Promise<number | null> }>
+} {
+  const claimedKeys: string[] = []
+  const pendingPrices: Array<{ tokenKey: string; timestamp: number; promise: Promise<number | null> }> = []
+  const claimedCoins = coins
+    .map((coin) => {
+      const tokenKey = `${coin.chain}:${coin.address.toLowerCase()}`
+      const claimedTimestamps = coin.timestamps.filter((timestamp) => {
+        const pendingKey = getPendingHistoricalPriceKey(tokenKey, timestamp)
+        const pendingPrice = pendingHistoricalPrices.get(pendingKey)
+
+        if (pendingPrice) {
+          pendingPrices.push({ tokenKey, timestamp, promise: pendingPrice.promise })
+          return false
+        }
+
+        pendingHistoricalPrices.set(pendingKey, createPendingHistoricalPrice())
+        claimedKeys.push(pendingKey)
+        return true
+      })
+
+      return { ...coin, timestamps: claimedTimestamps }
+    })
+    .filter((coin) => coin.timestamps.length > 0)
+
+  return { claimedCoins, claimedKeys, pendingPrices }
+}
+
+function settleClaimedHistoricalPrices(claimedKeys: string[], result: Map<string, Map<number, number>>): void {
+  claimedKeys.forEach((pendingKey) => {
+    const pendingPrice = pendingHistoricalPrices.get(pendingKey)
+
+    if (!pendingPrice) {
+      return
+    }
+
+    const [tokenKey, timestampValue] = pendingKey.split(/:(?=\d+$)/)
+    const timestamp = Number(timestampValue)
+    const price = Number.isFinite(timestamp) ? result.get(tokenKey)?.get(timestamp) : null
+    pendingPrice.resolve(price ?? null)
+    pendingHistoricalPrices.delete(pendingKey)
+  })
 }
 
 function normalizeToUtcDayEnd(timestamp: number): number {
@@ -503,7 +582,7 @@ function buildBatchHistoricalRequests(coins: TCoinRequest[], tuning: TDefiLlamaF
     ]
   }
 
-  if (holdingsConfig.defillamaApiKey.length === 0) {
+  if (holdingsConfig.defillamaApiKey.length === 0 || !tuning.useProApi) {
     return [
       {
         url: buildBatchHistoricalUrl(coins),
@@ -564,6 +643,12 @@ function isSplittableGetError(error: unknown): boolean {
   return status !== null && SPLITTABLE_GET_STATUS_CODES.has(status)
 }
 
+function shouldDisableDefiLlamaProApi(error: unknown): boolean {
+  const errorStatus = (error as Partial<TDefiLlamaError>)?.status
+  const status = typeof errorStatus === 'number' ? errorStatus : null
+  return status !== null && DISABLE_PRO_API_STATUS_CODES.has(status)
+}
+
 function shouldSplitBatchAfterRequestError(error: unknown, tuning: TDefiLlamaFetchTuning): boolean {
   return isSplittableGetError(error) || (tuning.provider === 'yearn-prices' && isTimeoutError(error))
 }
@@ -612,7 +697,7 @@ function getDefiLlamaFetchTuning(providerConfig: THistoricalPriceProviderConfig)
     }
   }
 
-  if (holdingsConfig.defillamaApiKey.length > 0) {
+  if (holdingsConfig.defillamaApiKey.length > 0 && !defillamaProApiAvailability.isDisabled) {
     return {
       provider: 'defillama',
       useProApi: true,
@@ -710,6 +795,21 @@ async function fetchBatch(
           const data = (await response.json()) as DefiLlamaBatchResponse
           return parseDefiLlamaResponse(data, uniqueTimestamps)
         } catch (error) {
+          if (request.variant === 'pro_get' && shouldDisableDefiLlamaProApi(error)) {
+            defillamaProApiAvailability.isDisabled = true
+            debugError('prices', 'disabling DefiLlama Pro API after authorization failure', error, {
+              attempt: attempt + 1,
+              provider: tuning.provider,
+              tokenCount: coinBatch.length,
+              timestampCount: uniqueTimestamps.length,
+              pricePointCount: requestedPricePoints,
+              ...batchDebugSummary,
+              requestVariant: request.variant,
+              requestMethod: request.init.method ?? 'GET',
+              requestUrlLength: request.url.length
+            })
+          }
+
           if (shouldSplitBatchAfterRequestError(error, tuning)) {
             const splitBatch = splitCoinBatch(coinBatch)
 
@@ -845,6 +945,16 @@ export async function fetchHistoricalPricesForTokenTimestamps(
     return result
   }
 
+  const { claimedCoins, claimedKeys, pendingPrices } = claimMissingHistoricalPrices(coins)
+  if (pendingPrices.length > 0) {
+    debugLog('prices', 'waiting on in-flight historical prices', {
+      provider: providerConfig.provider,
+      pendingPoints: pendingPrices.length,
+      claimedPoints: claimedKeys.length,
+      resolution
+    })
+  }
+
   const fetchStats = { successfulBatches: 0, failedBatches: 0 }
   const fetchPriceGroup = async (coinsToFetch: TCoinRequest[]): Promise<void> => {
     const shouldUseRangeRequests = tuning.provider === 'yearn-prices' && shouldUseYearnPricesRangeRequest(coinsToFetch)
@@ -926,7 +1036,26 @@ export async function fetchHistoricalPricesForTokenTimestamps(
     }, Promise.resolve())
   }
 
-  await fetchPriceGroup(coins)
+  try {
+    await fetchPriceGroup(claimedCoins)
+  } finally {
+    settleClaimedHistoricalPrices(claimedKeys, result)
+  }
+
+  if (pendingPrices.length > 0) {
+    const pendingResults = await Promise.all(pendingPrices.map((pendingPrice) => pendingPrice.promise))
+    pendingPrices.forEach((pendingPrice, index) => {
+      const price = pendingResults[index]
+
+      if (price === null) {
+        return
+      }
+
+      const tokenPrices = result.get(pendingPrice.tokenKey) ?? new Map<number, number>()
+      tokenPrices.set(pendingPrice.timestamp, price)
+      result.set(pendingPrice.tokenKey, tokenPrices)
+    })
+  }
 
   if (fetchStats.successfulBatches === 0 && countPricePoints(result) === 0) {
     throw new Error(`Failed to fetch token prices from ${providerConfig.label}`)

@@ -1,6 +1,7 @@
 import { formatUnits } from 'viem'
 import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
+import { getCachedProtocolReturnHistory, saveCachedProtocolReturnHistory } from './cache'
 import { debugError, debugLog, reportHoldingsProgress } from './debug'
 import {
   fetchHistoricalPricesForTokenTimestamps,
@@ -39,6 +40,7 @@ type TProtocolReturnReceiptKind = 'deposit' | 'transfer_in'
 type TProtocolReturnExitKind = 'withdrawal' | 'transfer_out'
 
 const RECEIPT_PRICE_BUCKET_SECONDS = 24 * 60 * 60
+const PROTOCOL_RETURN_HISTORY_CACHE_MAX_AGE_SECONDS = 60 * 60
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 const ETHEREUM_WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 const ETHEREUM_WETH_PRICE_KEY = `${getChainPrefix(1)}:${ETHEREUM_WETH_ADDRESS.toLowerCase()}`
@@ -454,6 +456,22 @@ export function buildReceiptPriceRequests(args: {
 
 function countReceiptPricePoints(requests: TSimpleReceiptPriceRequest[]): number {
   return requests.reduce((total, request) => total + request.timestamps.length, 0)
+}
+
+function getProtocolReturnVaultFilterCacheKey(vaultFilters: TProtocolReturnVaultFilter[] | undefined): string {
+  if (!vaultFilters || vaultFilters.length === 0) {
+    return 'all'
+  }
+
+  return vaultFilters
+    .map((vault) => `${vault.chainId}:${vault.vaultAddress.toLowerCase()}`)
+    .sort()
+    .join(',')
+}
+
+function getLatestSettledProtocolReturnTimestamp(): number {
+  const settledTimestamps = generateDailyTimestamps(1, 1)
+  return toSettledDayTimestamp(settledTimestamps[0] ?? 0)
 }
 
 async function fetchReceiptPrices(requests: TSimpleReceiptPriceRequest[]): Promise<Map<string, Map<number, number>>> {
@@ -1547,17 +1565,28 @@ function getProtocolReturnTimestamps(events: TRawPnlEvent[], timeframe: '1y' | '
 }
 
 function buildTransactionHashesByChain(events: TRawPnlEvent[]): Map<number, string[]> {
-  return events.reduce<Map<number, string[]>>((grouped, event) => {
+  const seenByChain = new Map<number, Set<string>>()
+  const grouped = events.reduce<Map<number, string[]>>((result, event) => {
     const transactionHash = lowerCaseAddress(event.transactionHash)
-    const existing = grouped.get(event.chainId) ?? []
+    const seen = seenByChain.get(event.chainId) ?? new Set<string>()
 
-    if (existing.includes(transactionHash)) {
-      return grouped
+    if (seen.has(transactionHash)) {
+      return result
     }
 
-    grouped.set(event.chainId, [...existing, transactionHash])
-    return grouped
+    if (!seenByChain.has(event.chainId)) {
+      seenByChain.set(event.chainId, seen)
+    }
+
+    seen.add(transactionHash)
+
+    const transactionHashes = result.get(event.chainId) ?? []
+    transactionHashes.push(transactionHash)
+    result.set(event.chainId, transactionHashes)
+    return result
   }, new Map())
+
+  return grouped
 }
 
 async function enrichSimpleHistoryRawEvents(args: {
@@ -1754,73 +1783,76 @@ export function materializeProtocolReturnVaults(args: {
   metadata: Map<string, VaultMetadata>
   ppsData: Map<string, Map<number, number>>
   currentTimestamp: number
+  selectedVaultKeys?: Set<string>
 }): HoldingsPnLSimpleVault[] {
-  return Array.from(args.ledgers.values()).map((ledger) => {
-    const vaultKey = toVaultKey(ledger.chainId, ledger.vaultAddress)
-    const metadata = args.metadata.get(vaultKey)
-    const shareDecimals = metadata?.decimals ?? 18
-    const ppsMap = args.ppsData.get(vaultKey)
-    const currentPps = ppsMap ? getPPS(ppsMap, args.currentTimestamp) : null
-    const currentShares = ledger.lots.reduce((total, lot) => total + lot.shares, ZERO)
-    const sharesFormatted = formatAmount(currentShares, shareDecimals)
-    const currentUnderlying = currentPps === null ? 0 : sharesFormatted * currentPps
-    const unrealizedBaselineUnderlying = ledger.lots.reduce((total, lot) => total + lot.baselineUnderlying, 0)
-    const unrealizedBaselineWeightUsd = ledger.lots.reduce(
-      (total, lot) => total + lot.baselineUnderlying * lot.receiptPriceUsd,
-      0
-    )
-    const currentWeightUsd = ledger.lots.reduce(
-      (total, lot) => total + scaleNumber(currentUnderlying, lot.shares, currentShares) * lot.receiptPriceUsd,
-      0
-    )
-    const unrealizedGrowthUnderlying = currentUnderlying - unrealizedBaselineUnderlying
-    const unrealizedGrowthWeightUsd = currentWeightUsd - unrealizedBaselineWeightUsd
-    const baselineExposureUnderlyingYears = ledger.baselineExposureUnderlyingSeconds / SECONDS_PER_YEAR
-    const baselineExposureWeightUsdYears = ledger.baselineExposureWeightUsdSeconds / SECONDS_PER_YEAR
-    const baselineWeightUsd = ledger.realizedBaselineWeightUsd + unrealizedBaselineWeightUsd
-    const growthWeightUsd = ledger.realizedGrowthWeightUsd + unrealizedGrowthWeightUsd
-    const issues = ledgerIssues({ ledger, metadata, currentPps })
-    const status = vaultStatus(issues)
+  return Array.from(args.ledgers.entries())
+    .filter(([vaultKey]) => (args.selectedVaultKeys ? args.selectedVaultKeys.has(vaultKey) : true))
+    .map(([, ledger]) => {
+      const vaultKey = toVaultKey(ledger.chainId, ledger.vaultAddress)
+      const metadata = args.metadata.get(vaultKey)
+      const shareDecimals = metadata?.decimals ?? 18
+      const ppsMap = args.ppsData.get(vaultKey)
+      const currentPps = ppsMap ? getPPS(ppsMap, args.currentTimestamp) : null
+      const currentShares = ledger.lots.reduce((total, lot) => total + lot.shares, ZERO)
+      const sharesFormatted = formatAmount(currentShares, shareDecimals)
+      const currentUnderlying = currentPps === null ? 0 : sharesFormatted * currentPps
+      const unrealizedBaselineUnderlying = ledger.lots.reduce((total, lot) => total + lot.baselineUnderlying, 0)
+      const unrealizedBaselineWeightUsd = ledger.lots.reduce(
+        (total, lot) => total + lot.baselineUnderlying * lot.receiptPriceUsd,
+        0
+      )
+      const currentWeightUsd = ledger.lots.reduce(
+        (total, lot) => total + scaleNumber(currentUnderlying, lot.shares, currentShares) * lot.receiptPriceUsd,
+        0
+      )
+      const unrealizedGrowthUnderlying = currentUnderlying - unrealizedBaselineUnderlying
+      const unrealizedGrowthWeightUsd = currentWeightUsd - unrealizedBaselineWeightUsd
+      const baselineExposureUnderlyingYears = ledger.baselineExposureUnderlyingSeconds / SECONDS_PER_YEAR
+      const baselineExposureWeightUsdYears = ledger.baselineExposureWeightUsdSeconds / SECONDS_PER_YEAR
+      const baselineWeightUsd = ledger.realizedBaselineWeightUsd + unrealizedBaselineWeightUsd
+      const growthWeightUsd = ledger.realizedGrowthWeightUsd + unrealizedGrowthWeightUsd
+      const issues = ledgerIssues({ ledger, metadata, currentPps })
+      const status = vaultStatus(issues)
 
-    return {
-      chainId: ledger.chainId,
-      vaultAddress: ledger.vaultAddress,
-      status,
-      issues,
-      shares: currentShares.toString(),
-      sharesFormatted,
-      pricePerShare: currentPps ?? 0,
-      currentUnderlying,
-      baselineUnderlying: ledger.realizedBaselineUnderlying + unrealizedBaselineUnderlying,
-      baselineExposureUnderlyingYears,
-      baselineExposureWeightUsdYears,
-      realizedBaselineUnderlying: ledger.realizedBaselineUnderlying,
-      unrealizedBaselineUnderlying,
-      realizedGrowthUnderlying: ledger.realizedGrowthUnderlying,
-      unrealizedGrowthUnderlying,
-      growthUnderlying: ledger.realizedGrowthUnderlying + unrealizedGrowthUnderlying,
-      baselineWeightUsd,
-      growthWeightUsd,
-      realizedGrowthWeightUsd: ledger.realizedGrowthWeightUsd,
-      unrealizedGrowthWeightUsd,
-      protocolReturnPct: protocolReturnPct(growthWeightUsd, baselineWeightUsd),
-      annualizedProtocolReturnPct: annualizedProtocolReturnPct(growthWeightUsd, baselineExposureWeightUsdYears),
-      receiptCount: ledger.receiptCount,
-      exitCount: ledger.exitCount,
-      deposits: ledger.deposits,
-      withdrawals: ledger.withdrawals,
-      transfersIn: ledger.transfersIn,
-      transfersOut: ledger.transfersOut,
-      unmatchedExitShares: ledger.unmatchedExitShares.toString(),
-      unmatchedExitSharesFormatted: formatAmount(ledger.unmatchedExitShares, shareDecimals),
-      metadata: {
-        symbol: metadata?.token.symbol ?? null,
-        decimals: metadata?.decimals ?? 18,
-        assetDecimals: metadata?.token.decimals ?? 18,
-        tokenAddress: metadata?.token.address ?? null
+      return {
+        chainId: ledger.chainId,
+        vaultAddress: ledger.vaultAddress,
+        status,
+        issues,
+        shares: currentShares.toString(),
+        sharesFormatted,
+        pricePerShare: currentPps ?? 0,
+        currentUnderlying,
+        baselineUnderlying: ledger.realizedBaselineUnderlying + unrealizedBaselineUnderlying,
+        baselineExposureUnderlyingYears,
+        baselineExposureWeightUsdYears,
+        realizedBaselineUnderlying: ledger.realizedBaselineUnderlying,
+        unrealizedBaselineUnderlying,
+        realizedGrowthUnderlying: ledger.realizedGrowthUnderlying,
+        unrealizedGrowthUnderlying,
+        growthUnderlying: ledger.realizedGrowthUnderlying + unrealizedGrowthUnderlying,
+        baselineWeightUsd,
+        growthWeightUsd,
+        realizedGrowthWeightUsd: ledger.realizedGrowthWeightUsd,
+        unrealizedGrowthWeightUsd,
+        protocolReturnPct: protocolReturnPct(growthWeightUsd, baselineWeightUsd),
+        annualizedProtocolReturnPct: annualizedProtocolReturnPct(growthWeightUsd, baselineExposureWeightUsdYears),
+        receiptCount: ledger.receiptCount,
+        exitCount: ledger.exitCount,
+        deposits: ledger.deposits,
+        withdrawals: ledger.withdrawals,
+        transfersIn: ledger.transfersIn,
+        transfersOut: ledger.transfersOut,
+        unmatchedExitShares: ledger.unmatchedExitShares.toString(),
+        unmatchedExitSharesFormatted: formatAmount(ledger.unmatchedExitShares, shareDecimals),
+        metadata: {
+          symbol: metadata?.token.symbol ?? null,
+          decimals: metadata?.decimals ?? 18,
+          assetDecimals: metadata?.token.decimals ?? 18,
+          tokenAddress: metadata?.token.address ?? null
+        }
       }
-    }
-  })
+    })
 }
 
 function buildSummary(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleResponse['summary'] {
@@ -1877,6 +1909,8 @@ export function buildProtocolReturnHistorySeries(args: {
   let previousGrowthWeightUsd = 0
   let previousExposureWeightUsdYears = 0
   let growthIndex: number | null = null
+  const selectedVaultKeys = args.selectedVaultKeys ?? (args.selectedVaultKey ? [args.selectedVaultKey] : [])
+  const selectedVaultKeySet = new Set(selectedVaultKeys)
 
   return args.timestamps.map((timestamp) => {
     while (
@@ -1908,8 +1942,6 @@ export function buildProtocolReturnHistorySeries(args: {
       ppsData: args.ppsData,
       currentTimestamp: timestamp
     })
-    const selectedVaultKeys = args.selectedVaultKeys ?? (args.selectedVaultKey ? [args.selectedVaultKey] : [])
-    const selectedVaultKeySet = new Set(selectedVaultKeys)
     const selectedVaults = selectedVaultKeys.length
       ? vaults.filter((vault) => selectedVaultKeySet.has(toVaultKey(vault.chainId, vault.vaultAddress)))
       : []
@@ -2031,7 +2063,8 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
         ledgers,
         metadata: args.metadata,
         ppsData: args.ppsData,
-        currentTimestamp: timestamp
+        currentTimestamp: timestamp,
+        selectedVaultKeys
       }).map((vault) => [toVaultKey(vault.chainId, vault.vaultAddress), vault] as const)
     )
 
@@ -2105,6 +2138,34 @@ export async function getHoldingsProtocolReturnHistory(
   reportHoldingsProgress(12, 'Fetching historical user data', 'Starting protocol return history')
 
   const requestedVaults = normalizeProtocolReturnVaultFilters(requestedVaultFilters, legacyVaultChainId)
+  const vaultFilterCacheKey = getProtocolReturnVaultFilterCacheKey(requestedVaults)
+  const latestSettledTimestamp = getLatestSettledProtocolReturnTimestamp()
+  const cachedHistory = await getCachedProtocolReturnHistory<HoldingsPnLSimpleHistoryResponse>({
+    userAddress,
+    version,
+    timeframe,
+    vaultFilterKey: vaultFilterCacheKey,
+    latestSettledTimestamp,
+    maxAgeSeconds: PROTOCOL_RETURN_HISTORY_CACHE_MAX_AGE_SECONDS
+  })
+
+  if (cachedHistory) {
+    reportHoldingsProgress(
+      94,
+      'Loaded cached protocol return history',
+      `${cachedHistory.response.dataPoints.length} chart points`
+    )
+    debugLog('protocol-return-history', 'serving cached holdings protocol return history', {
+      version,
+      timeframe,
+      latestSettledTimestamp,
+      updatedAt: cachedHistory.updatedAt.toISOString(),
+      points: cachedHistory.response.dataPoints.length,
+      families: cachedHistory.response.familySeries.length
+    })
+    return cachedHistory.response
+  }
+
   const singleRequestedVault = requestedVaults?.length === 1 ? requestedVaults[0] : undefined
   const settledContext = await getSettledVersionedPpsContext({
     userAddress,
@@ -2254,7 +2315,7 @@ export async function getHoldingsProtocolReturnHistory(
     recommendedGrowthDisplayReason
   })
 
-  return {
+  const response = {
     address: lowerCaseAddress(userAddress),
     version,
     timeframe,
@@ -2271,4 +2332,15 @@ export async function getHoldingsProtocolReturnHistory(
     dataPoints: history,
     familySeries
   }
+
+  saveCachedProtocolReturnHistory({
+    userAddress,
+    version,
+    timeframe,
+    vaultFilterKey: vaultFilterCacheKey,
+    latestSettledTimestamp,
+    response
+  }).catch(() => {})
+
+  return response
 }
