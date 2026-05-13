@@ -187,7 +187,7 @@ export async function initializeSchema(): Promise<void> {
     CREATE TABLE IF NOT EXISTS holdings_progress (
       id VARCHAR(160) PRIMARY KEY,
       route VARCHAR(64) NOT NULL,
-      address VARCHAR(42) NOT NULL,
+      address_hash VARCHAR(64) NOT NULL,
       status VARCHAR(16) NOT NULL,
       progress INTEGER NOT NULL,
       message TEXT NOT NULL,
@@ -196,6 +196,11 @@ export async function initializeSchema(): Promise<void> {
       updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
       logs JSONB NOT NULL DEFAULT '[]'::jsonb
     );
+
+    ALTER TABLE holdings_progress ADD COLUMN IF NOT EXISTS address_hash VARCHAR(64);
+    DELETE FROM holdings_progress WHERE address_hash IS NULL;
+    ALTER TABLE holdings_progress ALTER COLUMN address_hash SET NOT NULL;
+    ALTER TABLE holdings_progress DROP COLUMN IF EXISTS address;
 
     CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
     CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);

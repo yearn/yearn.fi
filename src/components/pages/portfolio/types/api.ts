@@ -80,7 +80,7 @@ export const portfolioProtocolReturnHistoryResponseSchema = z.object({
 export const portfolioHistoryProgressResponseSchema = z.object({
   id: z.string(),
   route: z.string(),
-  address: z.string(),
+  addressHash: z.string(),
   status: z.enum(['running', 'complete', 'error']),
   progress: z.number(),
   message: z.string(),

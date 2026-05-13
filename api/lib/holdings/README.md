@@ -436,7 +436,7 @@ Server-side cache is optional. When `DATABASE_URL_PREVIEW` or `DATABASE_URL` is 
    - `holdings_totals`: daily USD totals per hashed user address, vault version, and date.
    - `rate_limits`: simple per-client request windows, cleaned opportunistically after the active window expires.
    - `vault_invalidations`: per-vault invalidation timestamps for lazy cache clearing.
-   - `holdings_progress`: authoritative short-lived progress records for long history requests across Vercel function instances.
+   - `holdings_progress`: authoritative short-lived progress records keyed by hashed wallet identity for long history requests across Vercel function instances.
 2. HTTP cache:
    - History, breakdown, and protocol-return history: `s-maxage=300, stale-while-revalidate=600`.
    - Activity: `s-maxage=60, stale-while-revalidate=300`.
@@ -488,7 +488,7 @@ CREATE TABLE IF NOT EXISTS vault_invalidations (
 CREATE TABLE IF NOT EXISTS holdings_progress (
   id VARCHAR(160) PRIMARY KEY,
   route VARCHAR(64) NOT NULL,
-  address VARCHAR(42) NOT NULL,
+  address_hash VARCHAR(64) NOT NULL,
   status VARCHAR(16) NOT NULL,
   progress INTEGER NOT NULL,
   message TEXT NOT NULL,

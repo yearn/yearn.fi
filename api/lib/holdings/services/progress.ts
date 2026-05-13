@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { getPool, isDatabaseEnabled } from '../db/connection'
 
 export type HoldingsProgressStatus = 'running' | 'complete' | 'error'
@@ -12,7 +13,7 @@ export type HoldingsProgressLog = {
 export type HoldingsProgressRecord = {
   id: string
   route: string
-  address: string
+  addressHash: string
   status: HoldingsProgressStatus
   progress: number
   message: string
@@ -25,7 +26,7 @@ export type HoldingsProgressRecord = {
 type HoldingsProgressRow = {
   id: string
   route: string
-  address: string
+  address_hash: string
   status: HoldingsProgressStatus
   progress: number
   message: string
@@ -42,6 +43,14 @@ const persistedProgressCleanupState = { lastCleanupAt: 0 }
 
 function isValidProgressId(id: string | null | undefined): id is string {
   return Boolean(id && /^[a-zA-Z0-9:_-]{1,160}$/.test(id))
+}
+
+function normalizeUserAddress(userAddress: string): string {
+  return userAddress.toLowerCase()
+}
+
+function getUserAddressCacheKey(userAddress: string): string {
+  return createHash('sha256').update(normalizeUserAddress(userAddress)).digest('hex')
 }
 
 function clampProgress(progress: number): number {
@@ -105,7 +114,7 @@ function rowToProgressRecord(row: HoldingsProgressRow): HoldingsProgressRecord {
   return {
     id: row.id,
     route: row.route,
-    address: row.address,
+    addressHash: row.address_hash,
     status: row.status,
     progress: clampProgress(Number(row.progress)),
     message: row.message,
@@ -129,13 +138,13 @@ async function persistProgressRecord(record: HoldingsProgressRecord): Promise<bo
   try {
     await pool.query(
       `INSERT INTO holdings_progress (
-         id, route, address, status, progress, message, detail, started_at, updated_at, logs
+         id, route, address_hash, status, progress, message, detail, started_at, updated_at, logs
        )
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
        ON CONFLICT (id)
        DO UPDATE SET
          route = EXCLUDED.route,
-         address = EXCLUDED.address,
+         address_hash = EXCLUDED.address_hash,
          status = EXCLUDED.status,
          progress = CASE
            WHEN EXCLUDED.status = 'complete' THEN 100
@@ -149,7 +158,7 @@ async function persistProgressRecord(record: HoldingsProgressRecord): Promise<bo
       [
         record.id,
         record.route,
-        record.address,
+        record.addressHash,
         record.status,
         record.progress,
         record.message,
@@ -178,7 +187,7 @@ async function getPersistedProgressRecord(id: string): Promise<HoldingsProgressR
 
   try {
     const result = await pool.query<HoldingsProgressRow>(
-      `SELECT id, route, address, status, progress, message, detail, started_at, updated_at, logs
+      `SELECT id, route, address_hash, status, progress, message, detail, started_at, updated_at, logs
        FROM holdings_progress
        WHERE id = $1 AND updated_at >= NOW() - INTERVAL '${PROGRESS_TTL_INTERVAL}'`,
       [id]
@@ -212,7 +221,7 @@ export async function startHoldingsProgress({
   const record: HoldingsProgressRecord = {
     id,
     route,
-    address: address.toLowerCase(),
+    addressHash: getUserAddressCacheKey(address),
     status: 'running',
     progress: 8,
     message,

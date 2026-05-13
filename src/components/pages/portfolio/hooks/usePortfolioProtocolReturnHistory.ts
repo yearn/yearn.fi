@@ -14,8 +14,7 @@ import { createPortfolioHistoryProgressId, usePortfolioHistoryProgress } from '.
 export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTimeframe = '1y', enabled = true) {
   const { address } = useWeb3()
   const progressId = useMemo(
-    () =>
-      address && enabled ? createPortfolioHistoryProgressId(['portfolio-protocol-history', address, timeframe]) : null,
+    () => (address && enabled ? createPortfolioHistoryProgressId(['portfolio-protocol-history', timeframe]) : null),
     [address, enabled, timeframe]
   )
 

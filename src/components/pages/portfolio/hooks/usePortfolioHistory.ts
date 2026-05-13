@@ -18,9 +18,7 @@ export function usePortfolioHistory(
   const { address } = useWeb3()
   const progressId = useMemo(
     () =>
-      address && enabled
-        ? createPortfolioHistoryProgressId(['portfolio-history', address, denomination, timeframe])
-        : null,
+      address && enabled ? createPortfolioHistoryProgressId(['portfolio-history', denomination, timeframe]) : null,
     [address, denomination, enabled, timeframe]
   )
 
