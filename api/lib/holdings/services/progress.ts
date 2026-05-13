@@ -39,6 +39,26 @@ const PROGRESS_TTL_INTERVAL = '10 minutes'
 const PERSISTED_PROGRESS_CLEANUP_INTERVAL_MS = 60 * 1000
 const MAX_PROGRESS_LOGS = 20
 const persistedProgressCleanupState = { lastCleanupAt: 0 }
+const progressStorageWarningState = { didWarnMissingTable: false }
+const progressSchemaInitializationState: { promise: Promise<boolean> | null } = { promise: null }
+type HoldingsProgressPool = NonNullable<Awaited<ReturnType<typeof getPool>>>
+
+const PROGRESS_SCHEMA_SQL = `
+  CREATE TABLE IF NOT EXISTS holdings_progress (
+    id VARCHAR(160) PRIMARY KEY,
+    route VARCHAR(64) NOT NULL,
+    address VARCHAR(42) NOT NULL,
+    status VARCHAR(16) NOT NULL,
+    progress INTEGER NOT NULL,
+    message TEXT NOT NULL,
+    detail TEXT,
+    started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    logs JSONB NOT NULL DEFAULT '[]'::jsonb
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_holdings_progress_updated_at ON holdings_progress(updated_at);
+`
 
 function isValidProgressId(id: string | null | undefined): id is string {
   return Boolean(id && /^[a-zA-Z0-9:_-]{1,160}$/.test(id))
@@ -51,6 +71,57 @@ function clampProgress(progress: number): number {
   return Math.max(0, Math.min(100, Math.round(progress)))
 }
 
+function isMissingProgressTableError(error: unknown): boolean {
+  const databaseError = error as { code?: unknown; message?: unknown }
+  const code = typeof databaseError.code === 'string' ? databaseError.code : null
+  const message =
+    typeof databaseError.message === 'string'
+      ? databaseError.message
+      : error instanceof Error
+        ? error.message
+        : String(error)
+
+  return code === '42P01' && message.includes('holdings_progress')
+}
+
+function logProgressStorageError(action: string, error: unknown): void {
+  if (isMissingProgressTableError(error)) {
+    if (!progressStorageWarningState.didWarnMissingTable) {
+      progressStorageWarningState.didWarnMissingTable = true
+      console.warn(
+        '[Holdings Progress] holdings_progress table is unavailable; progress polling will return 404 until storage is initialized'
+      )
+    }
+    return
+  }
+
+  console.error(`[Holdings Progress] Failed to ${action}:`, error)
+}
+
+async function getPersistedProgressPool(): Promise<HoldingsProgressPool | null> {
+  if (!isDatabaseEnabled()) {
+    return null
+  }
+
+  const pool = await getPool()
+  if (!pool) {
+    return null
+  }
+
+  if (!progressSchemaInitializationState.promise) {
+    progressSchemaInitializationState.promise = pool
+      .query(PROGRESS_SCHEMA_SQL, undefined, { disableOnFailure: false })
+      .then(() => true)
+      .catch((error) => {
+        progressSchemaInitializationState.promise = null
+        logProgressStorageError('initialize progress storage', error)
+        return false
+      })
+  }
+
+  return (await progressSchemaInitializationState.promise) ? pool : null
+}
+
 async function cleanupPersistedProgressRecords(): Promise<void> {
   const now = Date.now()
   if (now - persistedProgressCleanupState.lastCleanupAt < PERSISTED_PROGRESS_CLEANUP_INTERVAL_MS) {
@@ -58,19 +129,14 @@ async function cleanupPersistedProgressRecords(): Promise<void> {
   }
   persistedProgressCleanupState.lastCleanupAt = now
 
-  if (!isDatabaseEnabled()) {
-    return
-  }
-
-  const pool = await getPool()
+  const pool = await getPersistedProgressPool()
   if (!pool) {
     return
   }
-
   try {
     await pool.query(`DELETE FROM holdings_progress WHERE updated_at < NOW() - INTERVAL '${PROGRESS_TTL_INTERVAL}'`)
   } catch (error) {
-    console.error('[Holdings Progress] Failed to delete stale progress rows:', error)
+    logProgressStorageError('delete stale progress rows', error)
   }
 }
 
@@ -117,15 +183,10 @@ function rowToProgressRecord(row: HoldingsProgressRow): HoldingsProgressRecord {
 }
 
 async function persistProgressRecord(record: HoldingsProgressRecord): Promise<boolean> {
-  if (!isDatabaseEnabled()) {
-    return false
-  }
-
-  const pool = await getPool()
+  const pool = await getPersistedProgressPool()
   if (!pool) {
     return false
   }
-
   try {
     await pool.query(
       `INSERT INTO holdings_progress (
@@ -161,21 +222,16 @@ async function persistProgressRecord(record: HoldingsProgressRecord): Promise<bo
     )
     return true
   } catch (error) {
-    console.error('[Holdings Progress] Failed to save progress row:', error)
+    logProgressStorageError('save progress row', error)
     return false
   }
 }
 
 async function getPersistedProgressRecord(id: string): Promise<HoldingsProgressRecord | null> {
-  if (!isDatabaseEnabled()) {
-    return null
-  }
-
-  const pool = await getPool()
+  const pool = await getPersistedProgressPool()
   if (!pool) {
     return null
   }
-
   try {
     const result = await pool.query<HoldingsProgressRow>(
       `SELECT id, route, address, status, progress, message, detail, started_at, updated_at, logs
@@ -186,7 +242,7 @@ async function getPersistedProgressRecord(id: string): Promise<HoldingsProgressR
     const row = result.rows[0]
     return row ? rowToProgressRecord(row) : null
   } catch (error) {
-    console.error('[Holdings Progress] Failed to get progress row:', error)
+    logProgressStorageError('get progress row', error)
     return null
   }
 }
