@@ -1152,13 +1152,14 @@ async function main() {
     idleTimeout: 120
   })
   console.log(`🚀 API server running on http://localhost:${API_PORT}`)
-  console.log(`📊 Holdings API: http://localhost:${API_PORT}/api/holdings/history?address=0x...`)
+  console.log(`📊 Holdings History API: http://localhost:${API_PORT}/api/holdings/history?address=0x...`)
+  console.log(`📡 Holdings Progress API: http://localhost:${API_PORT}/api/holdings/progress?id=...`)
   console.log(`🗂️ Holdings Activity API: http://localhost:${API_PORT}/api/holdings/activity?address=0x...`)
   console.log(`🧩 Holdings Breakdown API: http://localhost:${API_PORT}/api/holdings/breakdown?address=0x...`)
-  console.log(`💹 PnL API: http://localhost:${API_PORT}/api/holdings/pnl?address=0x...`)
-  console.log(`📈 Simple PnL API: http://localhost:${API_PORT}/api/holdings/pnl/simple?address=0x...`)
-  console.log(`📊 Simple PnL History API: http://localhost:${API_PORT}/api/holdings/pnl/simple-history?address=0x...`)
-  console.log(`🧾 PnL Drilldown API: http://localhost:${API_PORT}/api/holdings/pnl/drilldown?address=0x...`)
+  console.log(
+    `📈 Protocol Return History API: http://localhost:${API_PORT}/api/holdings/protocol-return/history?address=0x...`
+  )
+  console.log(`🧹 Holdings Chores API: http://localhost:${API_PORT}/api/holdings/chores`)
 }
 
 main().catch((error) => {
