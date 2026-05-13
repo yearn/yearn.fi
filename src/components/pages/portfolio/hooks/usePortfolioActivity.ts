@@ -1,6 +1,6 @@
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema } from '@shared/hooks/useFetch'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { type InfiniteData, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import {
   portfolioActivityResponseSchema,
   type TPortfolioActivityEntry,
@@ -17,11 +17,23 @@ type TPortfolioActivityFilters = {
 
 export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortfolioActivityFilters = {}) {
   const { address } = useWeb3()
+  const queryClient = useQueryClient()
   const isEnabled = Boolean(address) && enabled
   const type = filters.type ?? 'all'
   const chainId = filters.chainId ?? null
   const startTimestamp = filters.startTimestamp ?? null
   const endTimestamp = filters.endTimestamp ?? null
+  const shouldIncludeFacets = type === 'all' && chainId === null && startTimestamp === null && endTimestamp === null
+  const cachedUnfilteredPages =
+    queryClient.getQueryData<InfiniteData<TPortfolioActivityResponse>>([
+      'portfolio-activity',
+      address,
+      limit,
+      'all',
+      null,
+      null,
+      null
+    ])?.pages ?? []
 
   const query = useInfiniteQuery<TPortfolioActivityResponse, Error>({
     queryKey: ['portfolio-activity', address, limit, type, chainId, startTimestamp, endTimestamp],
@@ -34,7 +46,7 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
         offset: String(Number(pageParam) || 0),
         type
       })
-      if (Number(pageParam) === 0) {
+      if (Number(pageParam) === 0 && shouldIncludeFacets) {
         params.set('includeFacets', 'true')
       }
 
@@ -60,10 +72,13 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
   })
 
   const entries: TPortfolioActivityEntry[] = query.data?.pages.flatMap((page) => page.entries) ?? []
-  const facetChainIds = query.data?.pages.find((page) => page.facets?.chainIds)?.facets?.chainIds ?? null
+  const facetChainIds =
+    query.data?.pages.find((page) => page.facets?.chainIds)?.facets?.chainIds ??
+    cachedUnfilteredPages.find((page) => page.facets?.chainIds)?.facets?.chainIds ??
+    null
   const availableChainIds =
     facetChainIds ??
-    (query.data
+    (shouldIncludeFacets && query.data
       ? Array.from(new Set(entries.map((entry) => entry.chainId))).sort(
           (firstChainId, secondChainId) => firstChainId - secondChainId
         )

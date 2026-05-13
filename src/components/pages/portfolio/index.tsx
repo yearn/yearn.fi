@@ -14,7 +14,6 @@ import { usePortfolioEntryRefresh } from '@pages/portfolio/hooks/usePortfolioEnt
 import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
 import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
 import { type TVaultsChainButton, VaultsChainSelector } from '@pages/vaults/components/filters/VaultsChainSelector'
-import { VaultsFiltersButton } from '@pages/vaults/components/filters/VaultsFiltersButton'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
@@ -52,11 +51,17 @@ import { useTokenList } from '@shared/contexts/WithTokenList'
 import { useChainId, useSwitchChain } from '@shared/hooks/useAppWagmi'
 import { useChainOptions } from '@shared/hooks/useChains'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
+import { IconCalendarDays } from '@shared/icons/IconCalendarDays'
+import { IconCheck } from '@shared/icons/IconCheck'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconCross } from '@shared/icons/IconCross'
+import { IconDeposit } from '@shared/icons/IconDeposit'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconSpinner } from '@shared/icons/IconSpinner'
+import { IconStake } from '@shared/icons/IconStake'
+import { IconUnstake } from '@shared/icons/IconUnstake'
+import { IconWithdraw } from '@shared/icons/IconWithdraw'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import type { TSortDirection } from '@shared/types'
 import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@shared/utils'
@@ -141,12 +146,22 @@ const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: s
   { key: 'stake', label: 'Stake' },
   { key: 'unstake', label: 'Unstake' }
 ]
+const ACTIVITY_CALENDAR_DAY_LABELS = [
+  { key: 'sunday', label: 'S' },
+  { key: 'monday', label: 'M' },
+  { key: 'tuesday', label: 'T' },
+  { key: 'wednesday', label: 'W' },
+  { key: 'thursday', label: 'T' },
+  { key: 'friday', label: 'F' },
+  { key: 'saturday', label: 'S' }
+] as const
 
 type TActivityModalFilters = {
   types: TPortfolioActivityEntry['action'][]
   startDate: string
   endDate: string
 }
+type TActivityDateField = 'startDate' | 'endDate'
 
 function getTodayDateInputValue(): string {
   const today = new Date()
@@ -310,30 +325,75 @@ function normalizeActivityModalFilters(filters: TActivityModalFilters): TActivit
   return filters
 }
 
-function ActivityActionIcon({ action }: { action: TPortfolioActivityEntry['action'] }): ReactElement {
-  const isInboundAction = action === 'deposit' || action === 'stake'
+function getActivityDateFromInputValue(date: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
+  if (!match) {
+    return null
+  }
 
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 18 18"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-      style={{ transform: isInboundAction ? 'rotate(180deg)' : 'rotate(0deg)' }}
-    >
-      <path d="M9 3.5V10.75" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-      <path
-        d="M5.75 8.5L9 11.75L12.25 8.5"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M4.75 14.5H13.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-    </svg>
-  )
+  const [, year, month, day] = match
+  const yearNumber = Number(year)
+  const monthIndex = Number(month) - 1
+  const dayNumber = Number(day)
+  const dateValue = new Date(yearNumber, monthIndex, dayNumber)
+
+  if (
+    dateValue.getFullYear() !== yearNumber ||
+    dateValue.getMonth() !== monthIndex ||
+    dateValue.getDate() !== dayNumber
+  ) {
+    return null
+  }
+
+  return dateValue
+}
+
+function getActivityMonthDate(date: string): Date {
+  const parsedDate = getActivityDateFromInputValue(date) ?? new Date()
+
+  return new Date(parsedDate.getFullYear(), parsedDate.getMonth(), 1)
+}
+
+function getActivityDateInputFromDate(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function getActivityMonthOffset(date: Date, offset: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + offset, 1)
+}
+
+function getActivityMonthKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function getEarlierActivityDate(firstDate: string, secondDate: string): string {
+  return firstDate < secondDate ? firstDate : secondDate
+}
+
+function formatActivityMonthLabel(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+}
+
+function ActivityActionIcon({ action }: { action: TPortfolioActivityEntry['action'] }): ReactElement {
+  const iconClassName = 'size-5'
+
+  if (action === 'deposit') {
+    return <IconDeposit className={iconClassName} aria-hidden="true" />
+  }
+
+  if (action === 'withdraw') {
+    return <IconWithdraw className={iconClassName} aria-hidden="true" />
+  }
+
+  if (action === 'stake') {
+    return <IconStake className={iconClassName} aria-hidden="true" />
+  }
+
+  return <IconUnstake className={iconClassName} aria-hidden="true" />
 }
 
 function ActivityDetailItem({ label, value }: { label: string; value: ReactElement | string }): ReactElement {
@@ -392,49 +452,23 @@ function ActivityDateChip({
   date,
   dateInputValue,
   dateTime,
-  onPickerOpenChange,
-  time,
-  onApplyDateRange
+  onOpenDateRange,
+  time
 }: {
   date: string
   dateInputValue: string
   dateTime: string
-  onPickerOpenChange: (isOpen: boolean) => void
   time: string
-  onApplyDateRange: (startDate: string, endDate: string) => void
+  onOpenDateRange: (startDate: string, endDate: string) => void
 }): ReactElement {
-  const [isPickerOpen, setIsPickerOpen] = useState(false)
-  const [pendingStartDate, setPendingStartDate] = useState(dateInputValue)
-  const [pendingEndDate, setPendingEndDate] = useState(dateInputValue)
-
-  useEffect(() => {
-    if (isPickerOpen) {
-      setPendingStartDate(dateInputValue)
-      setPendingEndDate(dateInputValue)
-    }
-
-    onPickerOpenChange(isPickerOpen)
-  }, [dateInputValue, isPickerOpen, onPickerOpenChange])
-
-  function handleApply(): void {
-    const normalizedFilters = normalizeActivityModalFilters({
-      types: [],
-      startDate: pendingStartDate,
-      endDate: pendingEndDate
-    })
-
-    onApplyDateRange(normalizedFilters.startDate, normalizedFilters.endDate)
-    setIsPickerOpen(false)
-  }
-
   return (
-    <span className={cl('relative inline-flex justify-end', isPickerOpen ? 'z-100' : 'z-30')}>
+    <span className="relative z-30 inline-flex justify-end">
       <button
         type="button"
         aria-label={`Filter activity around ${dateTime}`}
         onClick={(event): void => {
           event.stopPropagation()
-          setIsPickerOpen((previous) => !previous)
+          onOpenDateRange(dateInputValue, dateInputValue)
         }}
         className={cl(
           'group/date inline-flex flex-row-reverse items-center overflow-hidden rounded-lg border border-border bg-surface-secondary px-1 py-0.5 text-xs font-medium text-text-primary/70 transition-colors',
@@ -450,97 +484,237 @@ function ActivityDateChip({
           {time}
         </span>
       </button>
-
-      {isPickerOpen ? (
-        <div
-          className="absolute bottom-full right-0 z-70 mb-2 w-64 rounded-lg border border-border bg-surface p-3 text-left shadow-lg"
-          onClick={(event): void => event.stopPropagation()}
-        >
-          <div className="grid gap-2">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-text-secondary">{'Start date'}</span>
-              <input
-                type="date"
-                value={pendingStartDate}
-                max={pendingEndDate || undefined}
-                onChange={(event) => setPendingStartDate(event.target.value)}
-                className="rounded-md border border-border bg-transparent px-2 py-1 text-sm text-text-primary outline-none"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-text-secondary">{'End date'}</span>
-              <input
-                type="date"
-                value={pendingEndDate}
-                min={pendingStartDate || undefined}
-                onChange={(event) => setPendingEndDate(event.target.value)}
-                className="rounded-md border border-border bg-transparent px-2 py-1 text-sm text-text-primary outline-none"
-              />
-            </label>
-          </div>
-          <div className="mt-3 flex justify-end gap-2">
-            <button
-              type="button"
-              className="rounded-full border border-border px-3 py-1 text-xs font-medium text-text-primary hover:border-border-hover"
-              onClick={(event): void => {
-                event.stopPropagation()
-                setIsPickerOpen(false)
-              }}
-            >
-              {'Cancel'}
-            </button>
-            <button
-              type="button"
-              className="rounded-full bg-neutral-900 px-3 py-1 text-xs font-semibold text-surface hover:bg-neutral-800"
-              onClick={(event): void => {
-                event.stopPropagation()
-                handleApply()
-              }}
-            >
-              {'Apply'}
-            </button>
-          </div>
-        </div>
-      ) : null}
     </span>
   )
 }
 
-function ActivityFilterCheckbox<T extends string>({
-  checked,
-  description,
-  label,
-  onChange,
-  value
+function ActivityTypeDropdown({
+  selectedTypes,
+  onChange
 }: {
-  checked: boolean
-  description?: string
-  label: string
-  onChange: (value: T, checked: boolean) => void
-  value: T
+  selectedTypes: TPortfolioActivityEntry['action'][]
+  onChange: (selectedTypes: TPortfolioActivityEntry['action'][]) => void
 }): ReactElement {
+  const selectedLabels = ACTIVITY_TYPE_FILTERS.filter(
+    (filter): filter is { key: TPortfolioActivityEntry['action']; label: string } =>
+      filter.key !== 'all' && selectedTypes.includes(filter.key)
+  ).map((filter) => filter.label)
+  const isActive = selectedTypes.length > 0
+  const buttonLabel = selectedLabels.length > 0 ? selectedLabels.join(', ') : 'Transaction type'
+
   return (
-    <label
-      className={cl(
-        'flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors',
-        checked ? 'border-border bg-surface-tertiary/80' : 'border-border hover:bg-surface-tertiary/40'
-      )}
-    >
-      <span className="min-w-0">
-        <span className="block text-sm font-medium text-text-primary">{label}</span>
-        {description ? <span className="block text-xs text-text-secondary">{description}</span> : null}
-      </span>
-      <input
-        type="checkbox"
-        className="accent-blue-500"
-        checked={checked}
-        onChange={(event) => onChange(value, event.target.checked)}
-      />
-    </label>
+    <Listbox value={selectedTypes} onChange={onChange} multiple>
+      <div className="relative shrink-0">
+        <ListboxButton
+          className={cl(
+            'flex h-10 items-center justify-between gap-2 rounded-lg border bg-surface px-3 text-sm font-medium transition-colors',
+            isActive ? 'border-primary/50 text-primary' : 'border-border text-text-secondary hover:text-text-primary'
+          )}
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate">{buttonLabel}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1">
+            {isActive ? (
+              <span className="relative size-5 rounded-full border border-primary/50 text-[11px] font-semibold leading-none">
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                  {selectedTypes.length}
+                </span>
+              </span>
+            ) : null}
+            <IconChevron className="size-4 text-text-secondary" />
+          </span>
+        </ListboxButton>
+        <Transition
+          as={Fragment}
+          enter="transition ease-out duration-100"
+          enterFrom="opacity-0 scale-95"
+          enterTo="opacity-100 scale-100"
+          leave="transition ease-in duration-75"
+          leaveFrom="opacity-100 scale-100"
+          leaveTo="opacity-0 scale-95"
+        >
+          <ListboxOptions className="absolute z-50 mt-1 max-h-72 w-56 overflow-auto rounded-lg border border-border bg-surface-secondary py-1 shadow-lg scrollbar-themed">
+            {ACTIVITY_TYPE_FILTERS.filter(
+              (filter): filter is { key: TPortfolioActivityEntry['action']; label: string } => filter.key !== 'all'
+            ).map((filter) => (
+              <ListboxOption
+                key={filter.key}
+                value={filter.key}
+                className={({ active }) =>
+                  cl(
+                    'flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm text-text-primary',
+                    active ? 'bg-surface' : ''
+                  )
+                }
+              >
+                {({ selected }) => (
+                  <>
+                    <span>{filter.label}</span>
+                    <span
+                      className={cl(
+                        'inline-flex size-4 items-center justify-center rounded-full border bg-surface',
+                        selected ? 'border-primary text-primary' : 'border-border text-transparent'
+                      )}
+                    >
+                      <IconCheck className="size-3" />
+                    </span>
+                  </>
+                )}
+              </ListboxOption>
+            ))}
+          </ListboxOptions>
+        </Transition>
+      </div>
+    </Listbox>
   )
 }
 
-function ActivityFiltersModal({
+function ActivityCalendarMonth({
+  activeField,
+  endDate,
+  maxDate,
+  minDate,
+  onSelectDate,
+  onShowNextMonth,
+  onShowPreviousMonth,
+  selectedDate,
+  startDate,
+  visibleMonth
+}: {
+  activeField: TActivityDateField
+  endDate: string
+  maxDate?: string
+  minDate?: string
+  onSelectDate: (date: string) => void
+  onShowNextMonth?: () => void
+  onShowPreviousMonth?: () => void
+  selectedDate: string
+  startDate: string
+  visibleMonth: Date
+}): ReactElement {
+  const firstDayOffset = visibleMonth.getDay()
+  const daysInMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0).getDate()
+  const selectedDateValue = selectedDate
+  const emptyCalendarDays = Array.from(
+    { length: firstDayOffset },
+    (_, emptyDay) => `empty-${visibleMonth.getFullYear()}-${visibleMonth.getMonth()}-${emptyDay}`
+  )
+  const calendarDays = Array.from({ length: daysInMonth }, (_, dayIndex) => dayIndex + 1)
+
+  return (
+    <div className="rounded-lg border border-border bg-surface-secondary p-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        {onShowPreviousMonth ? (
+          <button
+            type="button"
+            className="inline-flex size-8 items-center justify-center rounded-full border border-border text-text-secondary hover:text-text-primary"
+            onClick={onShowPreviousMonth}
+            aria-label="Show previous month"
+          >
+            <IconChevron className="size-4 rotate-90" />
+          </button>
+        ) : (
+          <span className="size-8" />
+        )}
+        <span className="text-sm font-semibold text-text-primary">{formatActivityMonthLabel(visibleMonth)}</span>
+        {onShowNextMonth ? (
+          <button
+            type="button"
+            className="inline-flex size-8 items-center justify-center rounded-full border border-border text-text-secondary hover:text-text-primary"
+            onClick={onShowNextMonth}
+            aria-label="Show next month"
+          >
+            <IconChevron className="size-4 -rotate-90" />
+          </button>
+        ) : (
+          <span className="size-8" />
+        )}
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold uppercase text-text-secondary">
+        {ACTIVITY_CALENDAR_DAY_LABELS.map((day) => (
+          <span key={day.key} className="py-1">
+            {day.label}
+          </span>
+        ))}
+      </div>
+      <div className="mt-1 grid grid-cols-7 gap-y-1">
+        {emptyCalendarDays.map((emptyDay) => (
+          <span key={emptyDay} className="size-8" />
+        ))}
+        {calendarDays.map((day) => {
+          const date = getActivityDateInputFromDate(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), day))
+          const isSelected = date === selectedDateValue
+          const isRangeStart = startDate !== '' && date === startDate
+          const isRangeEnd = endDate !== '' && date === endDate
+          const isInRange = startDate !== '' && endDate !== '' && date >= startDate && date <= endDate
+          const isDisabled = Boolean((minDate && date < minDate) || (maxDate && date > maxDate))
+
+          return (
+            <span key={date} className="relative flex size-8 items-center justify-center">
+              {isInRange ? (
+                <span
+                  className={cl(
+                    'absolute inset-y-1 bg-primary/10',
+                    isRangeStart ? 'left-1 right-0 rounded-l-full' : 'left-0 right-0',
+                    isRangeEnd ? 'left-0 right-1 rounded-r-full' : '',
+                    isRangeStart && isRangeEnd ? 'inset-x-1 rounded-full' : ''
+                  )}
+                />
+              ) : null}
+              <button
+                type="button"
+                disabled={isDisabled}
+                className={cl(
+                  'relative z-10 inline-flex size-8 items-center justify-center rounded-full text-sm transition-colors',
+                  isSelected || isRangeStart || isRangeEnd
+                    ? 'bg-neutral-900 font-semibold text-surface'
+                    : 'text-text-primary hover:bg-surface',
+                  activeField === 'startDate' && isRangeStart ? 'ring-2 ring-primary/40' : '',
+                  activeField === 'endDate' && isRangeEnd ? 'ring-2 ring-primary/40' : '',
+                  isDisabled ? 'cursor-not-allowed text-text-secondary/40 hover:bg-transparent' : ''
+                )}
+                onClick={() => onSelectDate(date)}
+              >
+                {day}
+              </button>
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function ActivityDateRangeButton({
+  endDate,
+  onClick,
+  startDate
+}: {
+  endDate: string
+  onClick: () => void
+  startDate: string
+}): ReactElement {
+  const isActive = startDate !== '' || endDate !== DEFAULT_ACTIVITY_MODAL_FILTERS.endDate
+
+  return (
+    <button
+      type="button"
+      className={cl(
+        'flex h-10 shrink-0 items-center justify-between gap-2 rounded-lg border bg-surface px-3 text-sm font-medium transition-colors',
+        isActive ? 'border-primary/50 text-primary' : 'border-border text-text-secondary hover:text-text-primary'
+      )}
+      onClick={onClick}
+    >
+      <span className="flex min-w-0 items-center gap-2">
+        <IconCalendarDays className="size-4 shrink-0" />
+        <span className="min-w-0 truncate">{'Select date range'}</span>
+      </span>
+    </button>
+  )
+}
+
+function ActivityDateRangeModal({
   filters,
   isOpen,
   onApply,
@@ -552,15 +726,56 @@ function ActivityFiltersModal({
   onClose: () => void
 }): ReactElement {
   const [pendingFilters, setPendingFilters] = useState<TActivityModalFilters>(filters)
+  const [activeDateField, setActiveDateField] = useState<TActivityDateField>('startDate')
+  const [visibleStartMonth, setVisibleStartMonth] = useState(() =>
+    getActivityMonthOffset(getActivityMonthDate(filters.endDate), -1)
+  )
 
   useEffect(() => {
     if (isOpen) {
       setPendingFilters(filters)
+      setActiveDateField(filters.startDate ? 'endDate' : 'startDate')
+      setVisibleStartMonth(getActivityMonthOffset(getActivityMonthDate(filters.endDate), -1))
     }
   }, [filters, isOpen])
 
+  const todayDate = DEFAULT_ACTIVITY_MODAL_FILTERS.endDate
+  const visibleEndMonth = getActivityMonthOffset(visibleStartMonth, 1)
+  const currentMonth = getActivityMonthDate(todayDate)
+  const canShowNextMonth = getActivityMonthKey(visibleEndMonth) < getActivityMonthKey(currentMonth)
+  const startDateMax = pendingFilters.endDate ? getEarlierActivityDate(pendingFilters.endDate, todayDate) : todayDate
+  const selectedCalendarDate = activeDateField === 'startDate' ? pendingFilters.startDate : pendingFilters.endDate
+
+  function handleDateSelect(date: string): void {
+    if (activeDateField === 'startDate') {
+      setPendingFilters((previous) => ({
+        ...previous,
+        startDate: date,
+        endDate: previous.endDate && previous.endDate >= date ? previous.endDate : date
+      }))
+      setActiveDateField('endDate')
+      return
+    }
+
+    setPendingFilters((previous) => ({
+      ...previous,
+      endDate: date,
+      startDate: previous.startDate && previous.startDate <= date ? previous.startDate : date
+    }))
+  }
+
   function handleClear(): void {
-    setPendingFilters(DEFAULT_ACTIVITY_MODAL_FILTERS)
+    const clearedFilters = {
+      ...pendingFilters,
+      startDate: DEFAULT_ACTIVITY_MODAL_FILTERS.startDate,
+      endDate: DEFAULT_ACTIVITY_MODAL_FILTERS.endDate
+    }
+
+    setPendingFilters(clearedFilters)
+    onApply(clearedFilters)
+    setActiveDateField('startDate')
+    setVisibleStartMonth(getActivityMonthOffset(getActivityMonthDate(DEFAULT_ACTIVITY_MODAL_FILTERS.endDate), -1))
+    onClose()
   }
 
   function handleSave(): void {
@@ -593,77 +808,96 @@ function ActivityFiltersModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-3xl rounded-3xl border border-border bg-surface p-6 text-text-primary shadow-lg">
+              <Dialog.Panel className="w-full max-w-4xl rounded-3xl border border-border bg-surface p-6 text-text-primary shadow-lg">
                 <div className="flex items-start justify-between gap-4">
-                  <Dialog.Title className="text-lg font-semibold text-text-primary">{'Filters'}</Dialog.Title>
+                  <Dialog.Title className="text-lg font-semibold text-text-primary">{'Date range'}</Dialog.Title>
                   <button
                     type="button"
                     onClick={onClose}
                     className="inline-flex size-8 items-center justify-center rounded-full border border-transparent text-text-secondary hover:border-border hover:text-text-primary"
-                    aria-label="Close filters"
+                    aria-label="Close date range"
                   >
                     <IconCross className="size-4" />
                   </button>
                 </div>
 
-                <div className="relative mt-4 grid gap-6 md:grid-cols-2">
-                  <div>
-                    <p className="mb-2 text-sm text-text-secondary">{'Type'}</p>
-                    <div className="space-y-2">
-                      {ACTIVITY_TYPE_FILTERS.filter(
-                        (filter): filter is { key: TPortfolioActivityEntry['action']; label: string } =>
-                          filter.key !== 'all'
-                      ).map((filter) => (
-                        <ActivityFilterCheckbox
-                          key={filter.key}
-                          label={filter.label}
-                          value={filter.key}
-                          checked={pendingFilters.types.includes(filter.key)}
-                          onChange={(type, checked) =>
-                            setPendingFilters((previous) => ({
-                              ...previous,
-                              types: checked
-                                ? [...previous.types, type]
-                                : previous.types.filter((selectedType) => selectedType !== type)
-                            }))
-                          }
-                        />
-                      ))}
-                    </div>
+                <div className="relative mt-4 grid gap-4 md:grid-cols-2">
+                  <div className="flex min-w-0 flex-col gap-3">
+                    <label className="flex min-w-0 flex-col gap-3">
+                      <span className="text-sm font-medium text-text-secondary">{'Start date'}</span>
+                      <input
+                        type="date"
+                        value={pendingFilters.startDate}
+                        max={startDateMax}
+                        onFocus={() => setActiveDateField('startDate')}
+                        onChange={(event) => {
+                          const startDate = event.target.value
+                          setPendingFilters((previous) => ({
+                            ...previous,
+                            startDate,
+                            endDate: previous.endDate && previous.endDate >= startDate ? previous.endDate : startDate
+                          }))
+                        }}
+                        className={cl(
+                          'h-10 rounded-lg border bg-transparent px-3 text-sm text-text-primary outline-none',
+                          activeDateField === 'startDate' ? 'border-primary/60' : 'border-border'
+                        )}
+                      />
+                    </label>
                   </div>
-
-                  <div>
-                    <p className="mb-2 text-sm text-text-secondary">{'Date range'}</p>
-                    <div className="grid gap-3">
-                      <label className="flex flex-col gap-1 rounded-lg border border-border px-3 py-2">
-                        <span className="text-sm font-medium text-text-primary">{'Start date'}</span>
-                        <input
-                          type="date"
-                          value={pendingFilters.startDate}
-                          max={pendingFilters.endDate || undefined}
-                          onChange={(event) =>
-                            setPendingFilters((previous) => ({ ...previous, startDate: event.target.value }))
-                          }
-                          className="w-full bg-transparent text-sm text-text-primary outline-none"
-                        />
-                      </label>
-                      <label className="flex flex-col gap-1 rounded-lg border border-border px-3 py-2">
-                        <span className="text-sm font-medium text-text-primary">{'End date'}</span>
-                        <input
-                          type="date"
-                          value={pendingFilters.endDate}
-                          min={pendingFilters.startDate || undefined}
-                          onChange={(event) =>
-                            setPendingFilters((previous) => ({ ...previous, endDate: event.target.value }))
-                          }
-                          className="w-full bg-transparent text-sm text-text-primary outline-none"
-                        />
-                      </label>
-                      <p className="text-xs leading-relaxed text-text-secondary">
-                        {'Dates are inclusive and use your browser timezone.'}
-                      </p>
-                    </div>
+                  <div className="flex min-w-0 flex-col gap-3">
+                    <label className="flex min-w-0 flex-col gap-3">
+                      <span className="text-sm font-medium text-text-secondary">{'End date'}</span>
+                      <input
+                        type="date"
+                        value={pendingFilters.endDate}
+                        min={pendingFilters.startDate || undefined}
+                        max={todayDate}
+                        onFocus={() => setActiveDateField('endDate')}
+                        onChange={(event) => {
+                          const endDate = event.target.value
+                          setPendingFilters((previous) => ({
+                            ...previous,
+                            endDate,
+                            startDate:
+                              previous.startDate && previous.startDate <= endDate ? previous.startDate : endDate
+                          }))
+                        }}
+                        className={cl(
+                          'h-10 rounded-lg border bg-transparent px-3 text-sm text-text-primary outline-none',
+                          activeDateField === 'endDate' ? 'border-primary/60' : 'border-border'
+                        )}
+                      />
+                    </label>
                   </div>
+                </div>
+                <div className="relative mt-4 grid gap-4 md:grid-cols-2">
+                  <ActivityCalendarMonth
+                    activeField={activeDateField}
+                    selectedDate={selectedCalendarDate}
+                    startDate={pendingFilters.startDate}
+                    endDate={pendingFilters.endDate}
+                    visibleMonth={visibleStartMonth}
+                    minDate={activeDateField === 'endDate' ? pendingFilters.startDate || undefined : undefined}
+                    maxDate={activeDateField === 'startDate' ? startDateMax : todayDate}
+                    onShowPreviousMonth={() => setVisibleStartMonth((previous) => getActivityMonthOffset(previous, -1))}
+                    onSelectDate={handleDateSelect}
+                  />
+                  <ActivityCalendarMonth
+                    activeField={activeDateField}
+                    selectedDate={selectedCalendarDate}
+                    startDate={pendingFilters.startDate}
+                    endDate={pendingFilters.endDate}
+                    visibleMonth={visibleEndMonth}
+                    minDate={activeDateField === 'endDate' ? pendingFilters.startDate || undefined : undefined}
+                    maxDate={activeDateField === 'startDate' ? startDateMax : todayDate}
+                    onShowNextMonth={
+                      canShowNextMonth
+                        ? () => setVisibleStartMonth((previous) => getActivityMonthOffset(previous, 1))
+                        : undefined
+                    }
+                    onSelectDate={handleDateSelect}
+                  />
                 </div>
 
                 <div className="mt-6 flex justify-end gap-3">
@@ -790,25 +1024,32 @@ function IndexedActivityRow({
   assetAddress,
   displayName,
   entry,
+  isFirstRow,
+  isLastRow,
   isChainFilterActive,
+  isZapFilterActive,
   isVaultFilterActive,
   shareSymbol,
   onSelectChain,
-  onApplyDateRange,
+  onOpenDateRange,
+  onSelectZap,
   onSelectVault
 }: {
   assetAddress: string | null
+  isFirstRow: boolean
+  isLastRow: boolean
   isChainFilterActive: boolean
+  isZapFilterActive: boolean
   isVaultFilterActive: boolean
   displayName: string
   entry: TPortfolioActivityEntry
   shareSymbol: string | null
   onSelectChain: (chainId: number) => void
-  onApplyDateRange: (startDate: string, endDate: string) => void
+  onOpenDateRange: (startDate: string, endDate: string) => void
+  onSelectZap: () => void
   onSelectVault: (vaultName: string) => void
 }): ReactElement {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
   const explorerUrl = getActivityExplorerUrl(entry.chainId, entry.txHash)
   const preferredVaultAddress =
     entry.familyVaultAddress && !isZeroAddress(entry.familyVaultAddress) ? entry.familyVaultAddress : entry.vaultAddress
@@ -848,14 +1089,11 @@ function IndexedActivityRow({
   const primaryDetailLabel = isExitAction ? 'VAULT SHARES REDEEMED:' : 'TOKEN DEPOSITED:'
   const secondaryDetailLabel = isExitAction ? 'ASSET RECEIVED:' : 'VAULT SHARES RECEIVED:'
   const metadataStatus = entry.status === 'ok' ? 'Indexed' : 'Limited metadata'
+  const hoverRoundedClass =
+    isFirstRow && isLastRow ? 'rounded-lg' : isFirstRow ? 'rounded-t-lg' : isLastRow ? 'rounded-b-lg' : ''
 
   return (
-    <div
-      className={cl(
-        'relative w-full overflow-visible bg-surface transition-colors',
-        isDatePickerOpen ? 'z-[80]' : 'z-0'
-      )}
-    >
+    <div className={cl('relative z-0 w-full overflow-visible bg-surface transition-colors', hoverRoundedClass)}>
       <button
         type="button"
         aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
@@ -872,11 +1110,15 @@ function IndexedActivityRow({
       <div
         onClick={() => setIsExpanded((previous) => !previous)}
         aria-expanded={isExpanded}
-        className="group relative grid w-full cursor-pointer grid-cols-1 bg-surface p-4 text-left md:grid-cols-24 md:px-6 md:py-4 md:pr-20"
+        className={cl(
+          'group relative grid w-full cursor-pointer grid-cols-1 bg-surface p-4 text-left md:grid-cols-24 md:px-6 md:py-4 md:pr-20',
+          hoverRoundedClass
+        )}
       >
         <div
           className={cl(
             'pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-100 group-hover:opacity-20 group-focus-visible:opacity-20',
+            hoverRoundedClass,
             'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
           )}
         />
@@ -896,15 +1138,6 @@ function IndexedActivityRow({
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2">
                 <p className="truncate text-lg font-bold leading-tight text-text-primary">{activityTitle}</p>
-                {isZap ? (
-                  <span
-                    aria-label="Zap transaction"
-                    className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-primary"
-                  >
-                    <span aria-hidden="true">⚡</span>
-                    <span>Zap</span>
-                  </span>
-                ) : null}
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-primary/70">
                 <VaultsListChip
@@ -930,11 +1163,18 @@ function IndexedActivityRow({
                   date={formattedDate}
                   dateInputValue={activityDateInputValue}
                   dateTime={formattedDateTime}
-                  onPickerOpenChange={setIsDatePickerOpen}
+                  onOpenDateRange={onOpenDateRange}
                   time={formattedTime}
-                  onApplyDateRange={onApplyDateRange}
                 />
                 {metadataStatus !== 'Indexed' ? <VaultsListChip label={metadataStatus} /> : null}
+                {isZap ? (
+                  <VaultsListChip
+                    label="Zap"
+                    isActive={isZapFilterActive}
+                    icon={<span aria-hidden="true">⚡</span>}
+                    onClick={onSelectZap}
+                  />
+                ) : null}
               </div>
             </div>
           </div>
@@ -1209,16 +1449,21 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   const { getToken } = useTokenList()
   const { cachedEntries, isLoading: notificationsLoading, error: notificationsError } = useNotifications()
   const [activityFilters, setActivityFilters] = useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
+  const [activityDateRangeDraftFilters, setActivityDateRangeDraftFilters] =
+    useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
   const [activityChainId, setActivityChainId] = useState<number | null>(null)
+  const [lastKnownActivityChainIds, setLastKnownActivityChainIds] = useState<number[] | null>(null)
+  const [isActivityZapFilterActive, setIsActivityZapFilterActive] = useState(false)
   const [activitySearch, setActivitySearch] = useState('')
-  const [isActivityFiltersOpen, setIsActivityFiltersOpen] = useState(false)
+  const [isActivityDateRangeOpen, setIsActivityDateRangeOpen] = useState(false)
   const activityStartTimestamp = useMemo(
     () => getActivityDateBoundaryTimestamp(activityFilters.startDate, 'start'),
     [activityFilters.startDate]
   )
+  const isActivityEndDateActive = activityFilters.endDate !== DEFAULT_ACTIVITY_MODAL_FILTERS.endDate
   const activityEndTimestamp = useMemo(
-    () => getActivityDateBoundaryTimestamp(activityFilters.endDate, 'end'),
-    [activityFilters.endDate]
+    () => (isActivityEndDateActive ? getActivityDateBoundaryTimestamp(activityFilters.endDate, 'end') : null),
+    [activityFilters.endDate, isActivityEndDateActive]
   )
   const apiActivityType: TPortfolioActivityTypeFilter =
     activityFilters.types.length === 1 ? activityFilters.types[0] : 'all'
@@ -1239,14 +1484,21 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   })
   const selectedActivityChains = useMemo(() => (activityChainId === null ? null : [activityChainId]), [activityChainId])
   const activityChainOptions = useChainOptions(selectedActivityChains)
+  useEffect(() => {
+    if (activityAvailableChainIds !== null) {
+      setLastKnownActivityChainIds(activityAvailableChainIds)
+    }
+  }, [activityAvailableChainIds])
   const displayedActivityNetworks = useMemo(() => {
-    if (activityAvailableChainIds === null) {
-      return SUPPORTED_NETWORKS
+    const availableChainIds = activityAvailableChainIds ?? lastKnownActivityChainIds
+
+    if (availableChainIds === null) {
+      return []
     }
 
-    const availableChainIdSet = new Set(activityAvailableChainIds)
+    const availableChainIdSet = new Set(availableChainIds)
     return SUPPORTED_NETWORKS.filter((network) => availableChainIdSet.has(network.id))
-  }, [activityAvailableChainIds])
+  }, [activityAvailableChainIds, lastKnownActivityChainIds])
 
   useEffect(() => {
     if (
@@ -1282,18 +1534,19 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   const hasIndexedEntries = indexedEntries.length > 0
   const hasActiveIndexedFilters =
     activityChainId !== null ||
+    isActivityZapFilterActive ||
     activityFilters.types.length > 0 ||
     activityFilters.startDate !== '' ||
     activityFilters.endDate !== DEFAULT_ACTIVITY_MODAL_FILTERS.endDate
-  const activityFiltersCount =
-    activityFilters.types.length +
-    Number(activityFilters.startDate !== '' || activityFilters.endDate !== DEFAULT_ACTIVITY_MODAL_FILTERS.endDate)
-
   const visibleIndexedEntries = useMemo(() => {
     const normalizedSearch = activitySearch.trim().toLowerCase()
 
     return indexedEntries.filter((entry) => {
       if (activityFilters.types.length > 0 && !activityFilters.types.includes(entry.action)) {
+        return false
+      }
+
+      if (isActivityZapFilterActive && !(entry.inputTokenAddress && entry.inputTokenAmount)) {
         return false
       }
 
@@ -1318,18 +1571,38 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         .toLowerCase()
         .includes(normalizedSearch)
     })
-  }, [activityFilters.types, activitySearch, allVaults, indexedEntries])
+  }, [activityFilters.types, activitySearch, allVaults, indexedEntries, isActivityZapFilterActive])
 
   function handleActivityChainSelect(chainId: number): void {
     setActivityChainId(resolveNextSingleChainSelection(selectedActivityChains, chainId)?.[0] ?? null)
   }
 
-  function handleActivityDateRangeApply(startDate: string, endDate: string): void {
-    setActivityFilters((previous) => ({ ...previous, startDate, endDate }))
+  function handleActivityDateRangeOpen(): void {
+    setActivityDateRangeDraftFilters(activityFilters)
+    setIsActivityDateRangeOpen(true)
+  }
+
+  function handleActivityDateChipOpen(startDate: string, endDate: string): void {
+    setActivityDateRangeDraftFilters((previous) => ({
+      ...previous,
+      ...activityFilters,
+      startDate,
+      endDate
+    }))
+    setIsActivityDateRangeOpen(true)
+  }
+
+  function handleActivityDateRangeModalApply(filters: TActivityModalFilters): void {
+    setActivityFilters(filters)
+    setActivityDateRangeDraftFilters(filters)
   }
 
   function handleActivityVaultSelect(vaultName: string): void {
     setActivitySearch((previous) => (previous === vaultName ? '' : vaultName))
+  }
+
+  function handleActivityZapSelect(): void {
+    setIsActivityZapFilterActive((previous) => !previous)
   }
 
   const handleIndexedActivityEndReached = useCallback((): void => {
@@ -1365,7 +1638,15 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
               onOpenChainModal={() => undefined}
             />
           </div>
-          <VaultsFiltersButton filtersCount={activityFiltersCount} onClick={() => setIsActivityFiltersOpen(true)} />
+          <ActivityTypeDropdown
+            selectedTypes={activityFilters.types}
+            onChange={(types) => setActivityFilters((previous) => ({ ...previous, types }))}
+          />
+          <ActivityDateRangeButton
+            startDate={activityFilters.startDate}
+            endDate={activityFilters.endDate}
+            onClick={handleActivityDateRangeOpen}
+          />
           <div className="min-w-[180px] flex-1">
             <SearchBar
               className="w-full rounded-lg border-border bg-surface text-text-primary transition-all"
@@ -1378,11 +1659,11 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
             />
           </div>
         </div>
-        <ActivityFiltersModal
-          isOpen={isActivityFiltersOpen}
-          filters={activityFilters}
-          onApply={setActivityFilters}
-          onClose={() => setIsActivityFiltersOpen(false)}
+        <ActivityDateRangeModal
+          isOpen={isActivityDateRangeOpen}
+          filters={activityDateRangeDraftFilters}
+          onApply={handleActivityDateRangeModalApply}
+          onClose={() => setIsActivityDateRangeOpen(false)}
         />
       </>
     )
@@ -1424,7 +1705,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         itemSpacingClassName="border-b border-border"
         getItemKey={(entry): string => `${entry.txHash}:${entry.vaultAddress}:${entry.action}`}
         onEndReached={indexedHasMore ? handleIndexedActivityEndReached : undefined}
-        renderItem={(entry) => {
+        renderItem={(entry, index) => {
           const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
           const activityVault = allVaults[toAddress(entry.vaultAddress)]
           const assetToken = familyVault
@@ -1475,12 +1756,16 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
             <IndexedActivityRow
               entry={entry}
               displayName={displayName}
+              isFirstRow={index === 0}
+              isLastRow={index === visibleIndexedEntries.length - 1}
               isChainFilterActive={activityChainId === entry.chainId}
+              isZapFilterActive={isActivityZapFilterActive}
               isVaultFilterActive={activitySearch === displayName}
               shareSymbol={shareSymbol}
               assetAddress={assetAddress}
               onSelectChain={handleActivityChainSelect}
-              onApplyDateRange={handleActivityDateRangeApply}
+              onOpenDateRange={handleActivityDateChipOpen}
+              onSelectZap={handleActivityZapSelect}
               onSelectVault={handleActivityVaultSelect}
             />
           )
@@ -1532,7 +1817,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
 
         <div className="flex flex-col gap-2">
           {renderActivityFilters()}
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">{renderIndexedActivity()}</div>
+          <div className="overflow-visible rounded-lg border border-border bg-surface">{renderIndexedActivity()}</div>
           {indexedHasMore && (
             <div className="flex justify-center">
               <button

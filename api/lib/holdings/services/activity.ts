@@ -1,4 +1,4 @@
-import type { DepositEvent, TransferEvent, UserEvents, VaultMetadata, WithdrawEvent } from '../types'
+import type { DepositEvent, TransferEvent, VaultMetadata, WithdrawEvent } from '../types'
 import { fetchRouterInputAssetForActivity, type TActivityInputAsset } from './activityReceiptEnrichment'
 import type { TransactionActivityEvents, VaultVersion } from './graphql'
 import {
@@ -570,15 +570,6 @@ function classifyActivityEvents(events: TActivityEvent[], userAddress: string): 
     .sort((a, b) => b.timestamp - a.timestamp || b.blockNumber - a.blockNumber || b.logIndex - a.logIndex)
 }
 
-function normalizeUserEvents(events: UserEvents): TActivityEvent[] {
-  return sortEventsDesc([
-    ...events.deposits.map((event) => normalizeDepositEvent(event, 'address')),
-    ...events.withdrawals.map((event) => normalizeWithdrawalEvent(event, 'address')),
-    ...events.transfersIn.map((event) => normalizeTransferEvent(event, 'address')),
-    ...events.transfersOut.map((event) => normalizeTransferEvent(event, 'address'))
-  ])
-}
-
 async function loadRecentActivityWindowAttempt(
   userAddress: string,
   version: VaultVersion,
@@ -690,6 +681,22 @@ function matchesActivityFilters(event: TResolvedActivityEvent, filters: TNormali
   }
 
   if (filters.endTimestamp !== null && event.timestamp > filters.endTimestamp) {
+    return false
+  }
+
+  return true
+}
+
+function matchesCoarseActivityFilters(event: TActivityEvent, filters: TNormalizedActivityFilters): boolean {
+  if (filters.chainId !== null && event.chainId !== filters.chainId) {
+    return false
+  }
+
+  if (filters.startTimestamp !== null && event.blockTimestamp < filters.startTimestamp) {
+    return false
+  }
+
+  if (filters.endTimestamp !== null && event.blockTimestamp > filters.endTimestamp) {
     return false
   }
 
@@ -814,48 +821,6 @@ async function getUnfilteredHoldingsActivity(
   }
 }
 
-async function getCompleteChainFilteredHoldingsActivity(
-  userAddress: string,
-  version: VaultVersion,
-  boundedLimit: number,
-  boundedOffset: number,
-  filters: TNormalizedActivityFilters
-): Promise<Pick<HoldingsActivityResponse, 'entries' | 'pageInfo'>> {
-  const allAddressEvents = await fetchUserEvents(userAddress, version, undefined, 'parallel', 'paged')
-  const candidateEvents = normalizeUserEvents(allAddressEvents)
-  const candidateTransactionKeys = getSelectedTransactionKeys(
-    candidateEvents.filter(
-      (event) =>
-        event.chainId === filters.chainId &&
-        (filters.startTimestamp === null || event.blockTimestamp >= filters.startTimestamp) &&
-        (filters.endTimestamp === null || event.blockTimestamp <= filters.endTimestamp)
-    ),
-    Number.MAX_SAFE_INTEGER
-  )
-  const classifiedEvents = await classifyActivityForTransactionKeys(
-    userAddress,
-    version,
-    candidateEvents,
-    candidateTransactionKeys
-  )
-  const matchingEvents = classifiedEvents.filter((event) => matchesActivityFilters(event, filters))
-  const vaultIdentifiers = getVaultIdentifiers(matchingEvents)
-  const metadata = vaultIdentifiers.length > 0 ? await fetchMultipleVaultsMetadata(vaultIdentifiers) : new Map()
-  const visibleEvents = filterVisibleActivityEvents(matchingEvents, metadata)
-  const pageEvents = visibleEvents.slice(boundedOffset, boundedOffset + boundedLimit)
-  const enrichedEvents = await enrichActivityInputAssets(pageEvents, userAddress, metadata)
-  const entries = enrichedEvents.map((event) => toHoldingsActivityEntry(event, metadata))
-  const hasMore = visibleEvents.length > boundedOffset + boundedLimit
-
-  return {
-    entries,
-    pageInfo: {
-      hasMore,
-      nextOffset: hasMore ? boundedOffset + boundedLimit : null
-    }
-  }
-}
-
 async function getFilteredHoldingsActivity(
   userAddress: string,
   version: VaultVersion,
@@ -876,7 +841,8 @@ async function getFilteredHoldingsActivity(
       version,
       targetTransactionCount
     )
-    const selectedTransactionKeys = getSelectedTransactionKeys(candidateEvents, targetTransactionCount)
+    const filteredCandidateEvents = candidateEvents.filter((event) => matchesCoarseActivityFilters(event, filters))
+    const selectedTransactionKeys = getSelectedTransactionKeys(filteredCandidateEvents, targetTransactionCount)
     const classifiedEvents = await classifyActivityForTransactionKeys(
       userAddress,
       version,
@@ -930,15 +896,7 @@ export async function getHoldingsActivity(
   const normalizedFilters = normalizeActivityFilters(filters)
   const activityPage = !hasActiveActivityFilters(normalizedFilters)
     ? await getUnfilteredHoldingsActivity(userAddress, version, boundedLimit, boundedOffset)
-    : normalizedFilters.chainId !== null
-      ? await getCompleteChainFilteredHoldingsActivity(
-          userAddress,
-          version,
-          boundedLimit,
-          boundedOffset,
-          normalizedFilters
-        )
-      : await getFilteredHoldingsActivity(userAddress, version, boundedLimit, boundedOffset, normalizedFilters)
+    : await getFilteredHoldingsActivity(userAddress, version, boundedLimit, boundedOffset, normalizedFilters)
 
   return {
     address: lowerCaseAddress(userAddress),

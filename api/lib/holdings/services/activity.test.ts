@@ -765,7 +765,7 @@ describe('getHoldingsActivity', () => {
     ])
   })
 
-  it('loads complete address-scoped history for chain-filtered activity so older chain events are not missed', async () => {
+  it('uses the bounded filtered scanner for chain-filtered activity', async () => {
     const baseVault = '0xc3bd0a2193c8f027b82dde3611d18589ef3f62a9'
     const baseDeposit = {
       ...createDepositEvent({
@@ -779,7 +779,7 @@ describe('getHoldingsActivity', () => {
       chainId: 8453
     }
 
-    fetchUserEventsMock.mockResolvedValue({
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
       deposits: [
         createDepositEvent({
           id: 'deposit-mainnet-newer',
@@ -793,7 +793,11 @@ describe('getHoldingsActivity', () => {
       ],
       withdrawals: [],
       transfersIn: [],
-      transfersOut: []
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
     })
     fetchMultipleVaultsMetadataMock.mockResolvedValue(
       new Map([
@@ -818,8 +822,8 @@ describe('getHoldingsActivity', () => {
     const { getHoldingsActivity } = await import('./activity')
     const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, { chainId: 8453 })
 
-    expect(fetchUserEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', undefined, 'parallel', 'paged')
-    expect(fetchRecentAddressScopedActivityEventsMock).not.toHaveBeenCalled()
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 80)
+    expect(fetchUserEventsMock).not.toHaveBeenCalled()
     expect(fetchActivityEventsByTransactionHashesMock).toHaveBeenCalledWith(
       new Map([[8453, ['0xeae5d579a571e592719d0815674744238a49993e7a7322c29d81b88343ef1c7b']]]),
       'all'
