@@ -30,7 +30,7 @@ jobs:
           curl -fsSL https://bun.sh/install | bash
           echo "$HOME/.bun/bin" >> $GITHUB_PATH
       - name: Install project dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Lint
         run: bun run lint
