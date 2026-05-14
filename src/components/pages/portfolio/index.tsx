@@ -504,10 +504,10 @@ function ActivityTypeDropdown({
 
   return (
     <Listbox value={selectedTypes} onChange={onChange} multiple>
-      <div className="relative shrink-0">
+      <div className="relative w-full md:w-auto md:shrink-0">
         <ListboxButton
           className={cl(
-            'flex h-10 items-center justify-between gap-2 rounded-lg border bg-surface px-3 text-sm font-medium transition-colors',
+            'flex h-10 w-full items-center justify-between gap-2 rounded-lg border bg-surface px-3 text-sm font-medium transition-colors',
             isActive ? 'border-primary/50 text-primary' : 'border-border text-text-secondary hover:text-text-primary'
           )}
         >
@@ -701,7 +701,7 @@ function ActivityDateRangeButton({
     <button
       type="button"
       className={cl(
-        'flex h-10 shrink-0 items-center justify-between gap-2 rounded-lg border bg-surface px-3 text-sm font-medium transition-colors',
+        'flex h-10 w-full items-center justify-between gap-2 rounded-lg border bg-surface px-3 text-sm font-medium transition-colors md:w-auto md:shrink-0',
         isActive ? 'border-primary/50 text-primary' : 'border-border text-text-secondary hover:text-text-primary'
       )}
       onClick={onClick}
@@ -1143,19 +1143,19 @@ function IndexedActivityRow({
           />
         ) : null}
 
-        <div className="z-10 flex min-w-0 items-start gap-3 md:col-span-14 md:items-center md:gap-6">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary text-neutral-700 md:size-10 md:rounded-none md:bg-transparent">
+        <div className="z-10 grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 md:col-span-14 md:flex md:gap-6">
+          <div className="flex size-10 shrink-0 items-center justify-center text-neutral-700">
             <ActivityActionIcon action={entry.action} />
           </div>
-          <div className="min-w-0 flex-1 pt-0.5 md:pt-0">
-            <div className="min-w-0">
-              <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="contents md:block md:min-w-0 md:flex-1">
+            <div className="contents md:block md:min-w-0">
+              <div className="col-start-2 row-start-1 flex min-w-0 items-center justify-between gap-3 pt-0.5 md:pt-0">
                 <p className="min-w-0 truncate text-lg font-bold leading-tight text-text-primary">{activityTitle}</p>
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-app text-text-secondary md:hidden">
                   <IconChevron className="size-4" direction={isExpanded ? 'up' : 'down'} />
                 </span>
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-text-primary/70 md:mt-1 md:gap-2">
+              <div className="col-span-2 row-start-2 mt-0 flex w-full flex-wrap items-center justify-start gap-1.5 text-left text-xs text-text-primary/70 md:mt-1 md:gap-2">
                 <VaultsListChip
                   label={displayName}
                   isActive={isVaultFilterActive}
@@ -1196,33 +1196,31 @@ function IndexedActivityRow({
           </div>
         </div>
 
-        <div className="z-10 rounded-2xl border border-border bg-surface-secondary/60 p-3 md:hidden">
-          <div className="flex min-w-0 items-center gap-3">
-            {tokenAddress ? (
-              <TokenLogo
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-                altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-                tokenSymbol={summaryAssetSymbol ?? activityTitle}
-                width={32}
-                height={32}
-                className="rounded-full"
-                loading="lazy"
-              />
-            ) : null}
-            <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
-              <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
-                {'Sent'}
-              </span>
-              <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
-                {`-${outboundAmount} ${outboundSymbol ?? ''}`.trim()}
-              </span>
-              <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
-                {'Received'}
-              </span>
-              <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
-                {`+${inboundAmount} ${inboundSymbol ?? ''}`.trim()}
-              </span>
-            </div>
+        <div className="z-10 flex min-w-0 items-center gap-3 md:hidden">
+          {tokenAddress ? (
+            <TokenLogo
+              src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+              altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+              tokenSymbol={summaryAssetSymbol ?? activityTitle}
+              width={32}
+              height={32}
+              className="rounded-full"
+              loading="lazy"
+            />
+          ) : null}
+          <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
+            <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+              {'Sent'}
+            </span>
+            <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
+              {`-${outboundAmount} ${outboundSymbol ?? ''}`.trim()}
+            </span>
+            <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+              {'Received'}
+            </span>
+            <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
+              {`+${inboundAmount} ${inboundSymbol ?? ''}`.trim()}
+            </span>
           </div>
         </div>
 
@@ -1684,15 +1682,17 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
               onOpenChainModal={() => undefined}
             />
           </div>
-          <ActivityTypeDropdown
-            selectedTypes={activityFilters.types}
-            onChange={(types) => setActivityFilters((previous) => ({ ...previous, types }))}
-          />
-          <ActivityDateRangeButton
-            startDate={activityFilters.startDate}
-            endDate={activityFilters.endDate}
-            onClick={handleActivityDateRangeOpen}
-          />
+          <div className="grid w-full grid-cols-2 gap-2 md:contents">
+            <ActivityTypeDropdown
+              selectedTypes={activityFilters.types}
+              onChange={(types) => setActivityFilters((previous) => ({ ...previous, types }))}
+            />
+            <ActivityDateRangeButton
+              startDate={activityFilters.startDate}
+              endDate={activityFilters.endDate}
+              onClick={handleActivityDateRangeOpen}
+            />
+          </div>
           <div className="min-w-[180px] flex-1">
             <SearchBar
               className="w-full rounded-lg border-border bg-surface text-text-primary transition-all"
