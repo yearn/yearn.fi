@@ -398,7 +398,7 @@ function ActivityActionIcon({ action }: { action: TPortfolioActivityEntry['actio
 
 function ActivityDetailItem({ label, value }: { label: string; value: ReactElement | string }): ReactElement {
   return (
-    <div className="grid grid-cols-[180px_minmax(0,1fr)] items-start gap-3 py-1 text-left">
+    <div className="grid grid-cols-1 items-start gap-1 py-1 text-left md:grid-cols-[180px_minmax(0,1fr)] md:gap-3">
       <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">{label}</span>
       <div className="min-w-0 text-left text-sm text-text-primary">{value}</div>
     </div>
@@ -1124,7 +1124,7 @@ function IndexedActivityRow({
         onClick={() => setIsExpanded((previous) => !previous)}
         aria-expanded={isExpanded}
         className={cl(
-          'group relative grid w-full cursor-pointer grid-cols-1 bg-surface p-4 text-left md:grid-cols-24 md:px-6 md:py-4 md:pr-20',
+          'group relative grid w-full cursor-pointer grid-cols-1 gap-3 bg-surface p-3 text-left md:grid-cols-24 md:gap-0 md:px-6 md:py-4 md:pr-20',
           hoverRoundedClass
         )}
       >
@@ -1143,16 +1143,19 @@ function IndexedActivityRow({
           />
         ) : null}
 
-        <div className="z-10 flex min-w-0 items-center gap-6 md:col-span-14">
-          <div className="flex size-10 shrink-0 items-center justify-center bg-transparent text-neutral-700">
+        <div className="z-10 flex min-w-0 items-start gap-3 md:col-span-14 md:items-center md:gap-6">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary text-neutral-700 md:size-10 md:rounded-none md:bg-transparent">
             <ActivityActionIcon action={entry.action} />
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 pt-0.5 md:pt-0">
             <div className="min-w-0">
-              <div className="flex min-w-0 items-center gap-2">
-                <p className="truncate text-lg font-bold leading-tight text-text-primary">{activityTitle}</p>
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <p className="min-w-0 truncate text-lg font-bold leading-tight text-text-primary">{activityTitle}</p>
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-app text-text-secondary md:hidden">
+                  <IconChevron className="size-4" direction={isExpanded ? 'up' : 'down'} />
+                </span>
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-primary/70">
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-text-primary/70 md:mt-1 md:gap-2">
                 <VaultsListChip
                   label={displayName}
                   isActive={isVaultFilterActive}
@@ -1193,7 +1196,37 @@ function IndexedActivityRow({
           </div>
         </div>
 
-        <div className="z-10 mt-4 flex min-w-0 items-center justify-between gap-3 md:col-span-10 md:mt-0 md:justify-end">
+        <div className="z-10 rounded-2xl border border-border bg-surface-secondary/60 p-3 md:hidden">
+          <div className="flex min-w-0 items-center gap-3">
+            {tokenAddress ? (
+              <TokenLogo
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                tokenSymbol={summaryAssetSymbol ?? activityTitle}
+                width={32}
+                height={32}
+                className="rounded-full"
+                loading="lazy"
+              />
+            ) : null}
+            <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
+              <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                {'Sent'}
+              </span>
+              <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
+                {`-${outboundAmount} ${outboundSymbol ?? ''}`.trim()}
+              </span>
+              <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                {'Received'}
+              </span>
+              <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
+                {`+${inboundAmount} ${inboundSymbol ?? ''}`.trim()}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="z-10 hidden min-w-0 items-center justify-end gap-3 md:col-span-10 md:flex">
           <div className="flex min-w-0 shrink-0 items-center gap-2.5 text-right">
             {tokenAddress ? (
               <TokenLogo
@@ -1221,15 +1254,12 @@ function IndexedActivityRow({
               </span>
             </div>
           </div>
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary md:hidden">
-            <IconChevron className="size-4" direction={isExpanded ? 'up' : 'down'} />
-          </div>
         </div>
       </div>
 
       {isExpanded ? (
-        <div className="bg-surface pb-4 pl-20 pr-4 pt-1 md:pl-[88px] md:pr-6">
-          <div className="flex flex-col">
+        <div className="bg-surface px-3 pb-4 pt-1 md:pl-[88px] md:pr-6">
+          <div className="flex flex-col rounded-2xl border border-border bg-surface-secondary/35 p-3 md:rounded-none md:border-0 md:bg-transparent md:p-0">
             <ActivityDetailItem label={primaryDetailLabel} value={primaryAmount} />
             <ActivityDetailItem label={secondaryDetailLabel} value={secondaryAmount} />
             <ActivityDetailItem label="CONFIRMED ON:" value={formattedDateTime} />
