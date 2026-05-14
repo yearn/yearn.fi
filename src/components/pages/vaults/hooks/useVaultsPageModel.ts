@@ -32,6 +32,7 @@ import {
   V3_PRIMARY_CHAIN_IDS,
   V3_SUPPORTED_CHAINS
 } from '@pages/vaults/utils/constants'
+import { getVaultFeeStructureKey } from '@pages/vaults/utils/vaultFees'
 import {
   deriveAssetCategory,
   deriveListKind,
@@ -99,6 +100,7 @@ type TVaultsBlockingFilterBaseActionKey =
   | 'showAllCategories'
   | 'showAllAggressiveness'
   | 'showAllUnderlyingAssets'
+  | 'showAllFees'
   | 'clearMinTvl'
   | 'showAllTypes'
   | 'showAllVaults'
@@ -117,6 +119,7 @@ const BLOCKING_FILTER_LABELS: Record<TVaultsBlockingFilterBaseActionKey, string>
   showAllCategories: 'Show all categories',
   showAllAggressiveness: 'Show all aggressiveness levels',
   showAllUnderlyingAssets: 'Show all underlying assets',
+  showAllFees: 'Show all fee structures',
   clearMinTvl: 'Show low-TVL vaults',
   showAllTypes: 'Show all strategy types',
   showAllVaults: 'Show all vaults'
@@ -194,6 +197,7 @@ type TVaultsListModel = {
     activeChains: number[]
     activeCategories: string[]
     activeProductType: 'all' | 'v3' | 'lp'
+    activeFeeStructureKey: string | null
   }
   data: TVaultsListData
   handlers: {
@@ -201,6 +205,7 @@ type TVaultsListModel = {
     onToggleCategory: (category: string) => void
     onToggleType: (type: string) => void
     onToggleVaultType: (type: 'v3' | 'lp') => void
+    onToggleFeeStructure: (feeStructureKey: string) => void
   }
   onResetFilters: () => void
   resolveApyDisplayVariant: (vault: TKongVaultInput) => 'default' | 'factory-list'
@@ -295,12 +300,14 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const [displayedShowLegacyVaults, setOptimisticShowLegacyVaults] = useOptimisticValue(showLegacyVaults)
   const displayedShowHiddenVaults = false
   const [displayedShowStrategies, setOptimisticShowStrategies] = useOptimisticValue(showStrategies)
+  const [activeFeeStructureKey, setActiveFeeStructureKey] = useState<string | null>(null)
 
   const listChains = useDeferredValue(chains)
   const listTypes = useDeferredValue(types)
   const listCategories = useDeferredValue(categories)
   const listAggressiveness = useDeferredValue(aggressiveness)
   const listUnderlyingAssets = useDeferredValue(underlyingAssets)
+  const listFeeStructureKey = useDeferredValue(activeFeeStructureKey)
   const listMinTvl = useDeferredValue(minTvl)
   const listShowLegacyVaults = useDeferredValue(showLegacyVaults)
   const listShowHiddenVaults = false
@@ -388,6 +395,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     listCategories,
     listAggressiveness,
     listUnderlyingAssets: listUnderlyingAssetsSanitized,
+    listFeeStructureKey,
     listMinTvl,
     listShowLegacyVaults,
     listShowHiddenVaults,
@@ -428,6 +436,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     listCategories,
     listAggressiveness: listAggressivenessSanitized.length > 0 ? listAggressivenessSanitized : null,
     listUnderlyingAssets: listUnderlyingAssetsSanitized,
+    listFeeStructureKey,
     listMinTvl,
     listShowLegacyVaults,
     listShowHiddenVaults,
@@ -448,6 +457,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       listCategories: null,
       listAggressiveness: null,
       listUnderlyingAssets: null,
+      listFeeStructureKey: null,
       listMinTvl: MIN_TVL_DISABLED,
       listShowLegacyVaults: true,
       listShowHiddenVaults: false
@@ -506,6 +516,10 @@ export function useVaultsPageModel(): TVaultsPageModel {
         }
       }
 
+      if (listFeeStructureKey && getVaultFeeStructureKey(vault) !== listFeeStructureKey) {
+        blockingKeys.add('showAllFees')
+      }
+
       const tvl = getVaultTVL(vault).tvl || 0
       if (isVaultHiddenByMinTvl({ minTvl: listMinTvl, vaultTvl: tvl })) {
         blockingKeys.add('clearMinTvl')
@@ -528,6 +542,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       listAggressivenessSanitized,
       listCategoriesSanitized,
       listChains,
+      listFeeStructureKey,
       listMinTvl,
       listShowHiddenVaults,
       listShowLegacyVaults,
@@ -662,7 +677,11 @@ export function useVaultsPageModel(): TVaultsPageModel {
   )
   const handleToggleCategory = useCallback(
     (category: string): void => {
-      handleCategoriesChange(toggleInArray(displayedCategoriesSanitized, category))
+      if (displayedCategoriesSanitized.includes(category)) {
+        handleCategoriesChange([])
+        return
+      }
+      handleCategoriesChange([category])
     },
     [displayedCategoriesSanitized, handleCategoriesChange]
   )
@@ -675,6 +694,9 @@ export function useVaultsPageModel(): TVaultsPageModel {
     },
     [displayedVaultType, displayedV3Types, handleTypesChange]
   )
+  const handleToggleFeeStructure = useCallback((feeStructureKey: string): void => {
+    setActiveFeeStructureKey((current) => (current === feeStructureKey ? null : feeStructureKey))
+  }, [])
 
   const underlyingAssetOptions = useMemo((): TMultiSelectOptionProps[] => {
     const selectedAssets = new Set(displayedUnderlyingAssetsSanitized)
@@ -731,10 +753,15 @@ export function useVaultsPageModel(): TVaultsPageModel {
   )
   const handleToggleVaultType = useCallback(
     (nextType: 'v3' | 'lp'): void => {
+      const isActive = activeProductType === nextType
+      if (isActive) {
+        handleVaultVersionToggle('all')
+        return
+      }
       const targetType = nextType === 'lp' ? 'factory' : 'v3'
       handleVaultVersionToggle(targetType)
     },
-    [handleVaultVersionToggle]
+    [activeProductType, handleVaultVersionToggle]
   )
 
   const handleResetFilters = useCallback((): void => {
@@ -742,6 +769,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     setOptimisticCategories([])
     setOptimisticAggressiveness([])
     setOptimisticUnderlyingAssets([])
+    setActiveFeeStructureKey(null)
     setOptimisticMinTvl(DEFAULT_MIN_TVL)
     setOptimisticTypes(DEFAULT_VAULT_TYPES)
     setOptimisticShowLegacyVaults(false)
@@ -776,6 +804,10 @@ export function useVaultsPageModel(): TVaultsPageModel {
     handleUnderlyingAssetsChange(null)
   }, [handleUnderlyingAssetsChange])
 
+  const handleShowAllFees = useCallback((): void => {
+    setActiveFeeStructureKey(null)
+  }, [])
+
   const handleClearMinTvl = useCallback((): void => {
     handleMinTvlChange(MIN_TVL_DISABLED)
   }, [handleMinTvlChange])
@@ -798,6 +830,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       showAllCategories: handleShowAllCategories,
       showAllAggressiveness: handleShowAllAggressiveness,
       showAllUnderlyingAssets: handleShowAllUnderlyingAssets,
+      showAllFees: handleShowAllFees,
       clearMinTvl: handleClearMinTvl,
       showAllTypes: handleShowAllTypes,
       showAllVaults: handleShowAllVaults
@@ -833,6 +866,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     handleShowAllAggressiveness,
     handleShowAllCategories,
     handleShowAllChains,
+    handleShowAllFees,
     handleShowAllTypes,
     handleShowAllUnderlyingAssets,
     handleShowAllVaults
@@ -1127,7 +1161,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
       activeFilters: {
         activeChains,
         activeCategories,
-        activeProductType
+        activeProductType,
+        activeFeeStructureKey
       },
       data: {
         isLoading: isLoadingVaultList,
@@ -1144,7 +1179,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
         onToggleChain: handleToggleChain,
         onToggleCategory: handleToggleCategory,
         onToggleType: handleToggleType,
-        onToggleVaultType: handleToggleVaultType
+        onToggleVaultType: handleToggleVaultType,
+        onToggleFeeStructure: handleToggleFeeStructure
       },
       onResetFilters: handleResetFilters,
       resolveApyDisplayVariant

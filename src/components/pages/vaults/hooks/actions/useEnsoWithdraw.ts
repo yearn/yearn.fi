@@ -94,6 +94,7 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
         minExpectedOut: ensoFlow.periphery.minExpectedOut.raw,
         isLoadingRoute: ensoFlow.periphery.isLoadingRoute,
         isCrossChain: ensoFlow.periphery.isCrossChain,
+        routeHasSwap: ensoFlow.periphery.routeHasSwap,
         routerAddress: ensoFlow.periphery.routerAddress,
         error: ensoFlow.periphery.error?.message,
         resetQuote: ensoFlow.methods.resetRoute
