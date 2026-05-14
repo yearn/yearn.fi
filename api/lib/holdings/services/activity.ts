@@ -3,6 +3,7 @@ import {
   fetchDirectV2VaultActionForActivity,
   fetchIsRewardClaimForActivity,
   fetchRouterInputAssetForActivity,
+  fetchRouterOutputAssetForActivity,
   fetchYcrvZapInputAssetForActivity,
   type TActivityInputAsset,
   type TActivityOutputAsset
@@ -140,6 +141,7 @@ type TResolvedActivityEvent = {
   sender: string | null
   inputAsset: TActivityInputAsset | null
   outputAsset: TActivityOutputAsset | null
+  usesRouter: boolean
 }
 
 type TRecentActivityWindow = {
@@ -423,6 +425,7 @@ function createResolvedActivityEvent(args: {
   assetAmount: bigint
   shareAmount: bigint
   transferDirection?: 'in' | 'out' | null
+  usesRouter?: boolean
 }): TResolvedActivityEvent {
   return {
     chainId: args.event.chainId,
@@ -440,7 +443,8 @@ function createResolvedActivityEvent(args: {
     owner: args.event.kind === 'deposit' ? args.event.owner : null,
     sender: args.event.kind === 'deposit' ? args.event.sender : null,
     inputAsset: null,
-    outputAsset: null
+    outputAsset: null,
+    usesRouter: args.usesRouter ?? false
   }
 }
 
@@ -526,7 +530,8 @@ function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): 
                   action: 'deposit',
                   event: txDeposits.latestEvent,
                   assetAmount: scaleAmountByMatchedShares(txDeposits.assets, txDeposits.shares, matchedDepositShares),
-                  shareAmount: matchedDepositShares
+                  shareAmount: matchedDepositShares,
+                  usesRouter: true
                 })
               : null
           })()
@@ -551,7 +556,8 @@ function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): 
                     txWithdrawals.shares,
                     matchedWithdrawalShares
                   ),
-                  shareAmount: matchedWithdrawalShares
+                  shareAmount: matchedWithdrawalShares,
+                  usesRouter: true
                 })
               : null
           })()
@@ -572,7 +578,8 @@ function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): 
                   action: 'stake',
                   event: txStakes.latestEvent,
                   assetAmount: matchedStakeAssets,
-                  shareAmount: scaleAmountByMatchedShares(txStakes.shares, txStakes.assets, matchedStakeAssets)
+                  shareAmount: scaleAmountByMatchedShares(txStakes.shares, txStakes.assets, matchedStakeAssets),
+                  usesRouter: true
                 })
               : null
           })()
@@ -593,7 +600,8 @@ function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): 
                   action: 'unstake',
                   event: txUnstakes.latestEvent,
                   assetAmount: matchedUnstakeAssets,
-                  shareAmount: scaleAmountByMatchedShares(txUnstakes.shares, txUnstakes.assets, matchedUnstakeAssets)
+                  shareAmount: scaleAmountByMatchedShares(txUnstakes.shares, txUnstakes.assets, matchedUnstakeAssets),
+                  usesRouter: true
                 })
               : null
           })()
@@ -896,6 +904,10 @@ function shouldFetchInputAsset(event: TResolvedActivityEvent, userAddress: strin
   )
 }
 
+function shouldFetchOutputAsset(event: TResolvedActivityEvent): boolean {
+  return event.usesRouter && (event.action === 'withdraw' || event.action === 'unstake')
+}
+
 async function enrichActivityInputAssets(
   events: TResolvedActivityEvent[],
   userAddress: string,
@@ -903,23 +915,39 @@ async function enrichActivityInputAssets(
 ): Promise<TResolvedActivityEvent[]> {
   return Promise.all(
     events.map(async (event) => {
-      if (!shouldFetchInputAsset(event, userAddress)) {
+      const shouldFetchInput = shouldFetchInputAsset(event, userAddress)
+      const shouldFetchOutput = shouldFetchOutputAsset(event)
+
+      if (!shouldFetchInput && !shouldFetchOutput) {
         return event
       }
 
       const eventMetadata = metadata.get(toVaultKey(event.chainId, event.vaultAddress)) ?? null
-      const inputAsset = await fetchRouterInputAssetForActivity({
-        chainId: event.chainId,
-        transactionHash: event.txHash,
-        userAddress,
-        excludedTokenAddresses: [
-          event.vaultAddress,
-          event.familyVaultAddress,
-          ...(eventMetadata ? [eventMetadata.token.address] : [])
-        ]
-      })
+      const excludedTokenAddresses = [
+        event.vaultAddress,
+        event.familyVaultAddress,
+        ...(eventMetadata ? [eventMetadata.token.address] : [])
+      ]
+      const [inputAsset, outputAsset] = await Promise.all([
+        shouldFetchInput
+          ? fetchRouterInputAssetForActivity({
+              chainId: event.chainId,
+              transactionHash: event.txHash,
+              userAddress,
+              excludedTokenAddresses
+            })
+          : Promise.resolve(null),
+        shouldFetchOutput
+          ? fetchRouterOutputAssetForActivity({
+              chainId: event.chainId,
+              transactionHash: event.txHash,
+              userAddress,
+              excludedTokenAddresses
+            })
+          : Promise.resolve(null)
+      ])
 
-      return inputAsset ? { ...event, inputAsset } : event
+      return inputAsset || outputAsset ? { ...event, inputAsset, outputAsset } : event
     })
   )
 }

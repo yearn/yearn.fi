@@ -425,7 +425,7 @@ function ActivityActionIcon({ action }: { action: TPortfolioActivityEntry['actio
 
 function ActivityDetailItem({ label, value }: { label: string; value: ReactElement | string }): ReactElement {
   return (
-    <div className="grid grid-cols-[180px_minmax(0,1fr)] items-start gap-3 py-1 text-left">
+    <div className="grid grid-cols-1 items-start gap-1 py-1 text-left md:grid-cols-[180px_minmax(0,1fr)] md:gap-3">
       <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">{label}</span>
       <div className="min-w-0 text-left text-sm text-text-primary">{value}</div>
     </div>
@@ -855,14 +855,13 @@ function ActivityDateRangeModal({
                       <input
                         type="date"
                         value={pendingFilters.startDate}
-                        max={startDateMax}
+                        max={todayDate}
                         onFocus={() => setActiveDateField('startDate')}
                         onChange={(event) => {
                           const startDate = event.target.value
                           setPendingFilters((previous) => ({
                             ...previous,
-                            startDate,
-                            endDate: previous.endDate && previous.endDate >= startDate ? previous.endDate : startDate
+                            startDate
                           }))
                         }}
                         className={cl(
@@ -878,16 +877,13 @@ function ActivityDateRangeModal({
                       <input
                         type="date"
                         value={pendingFilters.endDate}
-                        min={pendingFilters.startDate || undefined}
                         max={todayDate}
                         onFocus={() => setActiveDateField('endDate')}
                         onChange={(event) => {
                           const endDate = event.target.value
                           setPendingFilters((previous) => ({
                             ...previous,
-                            endDate,
-                            startDate:
-                              previous.startDate && previous.startDate <= endDate ? previous.startDate : endDate
+                            endDate
                           }))
                         }}
                         className={cl(
@@ -1083,44 +1079,61 @@ function IndexedActivityRow({
   const normalizedAssetAddress = assetAddress && !isZeroAddress(assetAddress) ? toAddress(assetAddress) : null
   const normalizedInputTokenAddress =
     entry.inputTokenAddress && !isZeroAddress(entry.inputTokenAddress) ? toAddress(entry.inputTokenAddress) : null
+  const normalizedOutputTokenAddress =
+    entry.outputTokenAddress && !isZeroAddress(entry.outputTokenAddress) ? toAddress(entry.outputTokenAddress) : null
   const isTransferAction = entry.action === 'transfer'
   const isRewardClaim = entry.displayType === 'reward_claim'
   const transferTokenAddress = isTransferAction ? toAddress(entry.vaultAddress) : null
-  const tokenAddress = transferTokenAddress ?? normalizedInputTokenAddress ?? normalizedAssetAddress
   const vaultPageUrl = `/vaults/${entry.chainId}/${toAddress(preferredVaultAddress)}`
   const activityTitle = getActivityEntryTitle(entry)
   const isExitAction = entry.action === 'withdraw' || entry.action === 'unstake'
+  const tokenAddress =
+    transferTokenAddress ??
+    (isExitAction
+      ? (normalizedOutputTokenAddress ?? normalizedAssetAddress)
+      : (normalizedInputTokenAddress ?? normalizedAssetAddress))
   const chainName = getActivityChainName(entry.chainId)
   const formattedDate = formatIndexedActivityDate(entry.timestamp)
   const formattedDateTime = formatIndexedActivityDateTime(entry.timestamp)
   const formattedTime = formatIndexedActivityTime(entry.timestamp)
   const activityDateInputValue = formatActivityDateInputValue(entry.timestamp)
-  const primaryTokenSymbol = entry.inputTokenSymbol ?? entry.assetSymbol
-  const primaryTokenAmount =
+  const depositedTokenSymbol = entry.inputTokenSymbol ?? entry.assetSymbol
+  const depositedTokenAmount =
     entry.inputTokenAmountFormatted !== null ? entry.inputTokenAmountFormatted : entry.assetAmountFormatted
-  const isZap = Boolean(entry.inputTokenAddress && entry.inputTokenAmount)
-  const isStakeZap = entry.action === 'stake' && isZap && Boolean(entry.outputTokenAddress)
+  const receivedTokenSymbol = isExitAction ? (entry.outputTokenSymbol ?? entry.assetSymbol) : shareSymbol
+  const receivedTokenAmount =
+    isExitAction && entry.outputTokenAmountFormatted !== null
+      ? entry.outputTokenAmountFormatted
+      : isExitAction
+        ? entry.assetAmountFormatted
+        : entry.shareAmountFormatted
+  const isZap = Boolean(
+    (entry.inputTokenAddress && entry.inputTokenAmount) || (entry.outputTokenAddress && entry.outputTokenAmount)
+  )
+  const isStakeZap = entry.action === 'stake' && Boolean(entry.inputTokenAddress && entry.inputTokenAmount)
   const zapTarget =
     entry.outputTokenSymbol ?? (entry.outputTokenAddress ? truncateHex(entry.outputTokenAddress, 5) : null)
-  const summaryAssetSymbol = isTransferAction ? shareSymbol : (primaryTokenSymbol ?? shareSymbol)
+  const summaryAssetSymbol = isTransferAction
+    ? shareSymbol
+    : isExitAction
+      ? (receivedTokenSymbol ?? shareSymbol)
+      : (depositedTokenSymbol ?? shareSymbol)
   const primaryAmount = isExitAction
     ? formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
-    : formatActivityDisplayAmount(primaryTokenAmount, primaryTokenSymbol)
-  const secondaryAmount = isTransferAction
-    ? formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
-    : isExitAction
-      ? formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)
-      : formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
+    : formatActivityDisplayAmount(depositedTokenAmount, depositedTokenSymbol)
+  const secondaryAmount = isExitAction
+    ? formatActivityDisplayAmount(receivedTokenAmount, receivedTokenSymbol)
+    : formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
   const collapsedPrimaryAmount = isExitAction
     ? formatActivityFixedValue(entry.shareAmountFormatted)
-    : formatActivityFixedValue(primaryTokenAmount)
+    : formatActivityFixedValue(depositedTokenAmount)
   const collapsedSecondaryAmount = isExitAction
-    ? formatActivityFixedValue(entry.assetAmountFormatted)
+    ? formatActivityFixedValue(receivedTokenAmount)
     : formatActivityFixedValue(entry.shareAmountFormatted)
   const outboundAmount = collapsedPrimaryAmount
   const inboundAmount = collapsedSecondaryAmount
-  const outboundSymbol = isExitAction ? shareSymbol : primaryTokenSymbol
-  const inboundSymbol = isExitAction ? entry.assetSymbol : shareSymbol
+  const outboundSymbol = isExitAction ? shareSymbol : depositedTokenSymbol
+  const inboundSymbol = isExitAction ? receivedTokenSymbol : shareSymbol
   const transferSign = entry.transferDirection === 'out' ? '-' : '+'
   const transferAmount = formatActivityFixedValue(entry.shareAmountFormatted)
   const transferDetailLabel = isRewardClaim
@@ -1129,7 +1142,11 @@ function IndexedActivityRow({
       ? 'VAULT SHARES SENT:'
       : 'VAULT SHARES RECEIVED:'
   const primaryDetailLabel = isExitAction ? 'VAULT SHARES REDEEMED:' : 'TOKEN DEPOSITED:'
-  const secondaryDetailLabel = isExitAction ? 'ASSET RECEIVED:' : 'VAULT SHARES RECEIVED:'
+  const secondaryDetailLabel = isExitAction
+    ? entry.outputTokenAddress
+      ? 'TOKEN RECEIVED:'
+      : 'ASSET RECEIVED:'
+    : 'VAULT SHARES RECEIVED:'
   const metadataStatus = entry.status === 'ok' ? 'Indexed' : 'Limited metadata'
   const hoverRoundedClass =
     isFirstRow && isLastRow ? 'rounded-lg' : isFirstRow ? 'rounded-t-lg' : isLastRow ? 'rounded-b-lg' : ''
@@ -1153,7 +1170,7 @@ function IndexedActivityRow({
         onClick={() => setIsExpanded((previous) => !previous)}
         aria-expanded={isExpanded}
         className={cl(
-          'group relative grid w-full cursor-pointer grid-cols-1 bg-surface p-4 text-left md:grid-cols-24 md:px-6 md:py-4 md:pr-20',
+          'group relative grid w-full cursor-pointer grid-cols-1 gap-3 bg-surface p-3 text-left md:grid-cols-24 md:gap-0 md:px-6 md:py-4 md:pr-20',
           hoverRoundedClass
         )}
       >
@@ -1172,16 +1189,19 @@ function IndexedActivityRow({
           />
         ) : null}
 
-        <div className="z-10 flex min-w-0 items-center gap-6 md:col-span-14">
-          <div className="flex size-10 shrink-0 items-center justify-center bg-transparent text-neutral-700">
+        <div className="z-10 flex min-w-0 items-start gap-3 md:col-span-14 md:items-center md:gap-6">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary text-neutral-700 md:size-10 md:rounded-none md:bg-transparent">
             <ActivityActionIcon action={entry.action} />
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 pt-0.5 md:pt-0">
             <div className="min-w-0">
-              <div className="flex min-w-0 items-center gap-2">
-                <p className="truncate text-lg font-bold leading-tight text-text-primary">{activityTitle}</p>
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <p className="min-w-0 truncate text-lg font-bold leading-tight text-text-primary">{activityTitle}</p>
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-app text-text-secondary md:hidden">
+                  <IconChevron className="size-4" direction={isExpanded ? 'up' : 'down'} />
+                </span>
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-primary/70">
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-text-primary/70 md:mt-1 md:gap-2">
                 <VaultsListChip
                   label={displayName}
                   isActive={isVaultFilterActive}
@@ -1222,7 +1242,57 @@ function IndexedActivityRow({
           </div>
         </div>
 
-        <div className="z-10 mt-4 flex min-w-0 items-center justify-between gap-3 md:col-span-10 md:mt-0 md:justify-end">
+        <div className="z-10 rounded-2xl border border-border bg-surface-secondary/60 p-3 md:hidden">
+          <div className="flex min-w-0 items-center gap-3">
+            {tokenAddress ? (
+              <TokenLogo
+                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                tokenSymbol={summaryAssetSymbol ?? activityTitle}
+                width={32}
+                height={32}
+                className="rounded-full"
+                loading="lazy"
+              />
+            ) : null}
+            {isStakeZap ? (
+              <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-x-3">
+                <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                  {'Staked'}
+                </span>
+                <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
+                  {`${collapsedPrimaryAmount} ${depositedTokenSymbol ?? ''}`.trim()}
+                </span>
+              </div>
+            ) : isTransferAction ? (
+              <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-x-3">
+                <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                  {isRewardClaim ? 'Claimed' : entry.transferDirection === 'out' ? 'Sent' : 'Received'}
+                </span>
+                <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
+                  {`${isRewardClaim ? transferAmount : `${transferSign}${transferAmount}`} ${shareSymbol ?? ''}`.trim()}
+                </span>
+              </div>
+            ) : (
+              <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
+                <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                  {'Sent'}
+                </span>
+                <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
+                  {`-${outboundAmount} ${outboundSymbol ?? ''}`.trim()}
+                </span>
+                <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+                  {'Received'}
+                </span>
+                <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
+                  {`+${inboundAmount} ${inboundSymbol ?? ''}`.trim()}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="z-10 hidden min-w-0 items-center justify-end gap-3 md:col-span-10 md:flex">
           <div className="flex min-w-0 shrink-0 items-center gap-2.5 text-right">
             {tokenAddress ? (
               <TokenLogo
@@ -1241,7 +1311,7 @@ function IndexedActivityRow({
                   {collapsedPrimaryAmount}
                 </span>
                 <span className="min-w-0 truncate text-left text-sm font-medium leading-tight text-text-primary md:text-base">
-                  {primaryTokenSymbol}
+                  {depositedTokenSymbol}
                 </span>
               </div>
             ) : isTransferAction ? (
@@ -1280,15 +1350,12 @@ function IndexedActivityRow({
               </div>
             )}
           </div>
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary md:hidden">
-            <IconChevron className="size-4" direction={isExpanded ? 'up' : 'down'} />
-          </div>
         </div>
       </div>
 
       {isExpanded ? (
-        <div className="bg-surface pb-4 pl-20 pr-4 pt-1 md:pl-[88px] md:pr-6">
-          <div className="flex flex-col">
+        <div className="bg-surface px-3 pb-4 pt-1 md:pl-[88px] md:pr-6">
+          <div className="flex flex-col rounded-2xl border border-border bg-surface-secondary/35 p-3 md:rounded-none md:border-0 md:bg-transparent md:p-0">
             {isStakeZap ? (
               <>
                 <ActivityDetailItem label="TOKEN STAKED:" value={primaryAmount} />
@@ -1633,7 +1700,10 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         return false
       }
 
-      if (isActivityZapFilterActive && !(entry.inputTokenAddress && entry.inputTokenAmount)) {
+      const hasZapToken =
+        (entry.inputTokenAddress && entry.inputTokenAmount) || (entry.outputTokenAddress && entry.outputTokenAmount)
+
+      if (isActivityZapFilterActive && !hasZapToken) {
         return false
       }
 
