@@ -207,7 +207,9 @@ function parseHoldingsActivityOffset(value: string | null): number {
 }
 
 function parseHoldingsActivityType(value: string | null): HoldingsActivityTypeFilter {
-  return value === 'deposit' || value === 'withdraw' || value === 'stake' || value === 'unstake' ? value : 'all'
+  return value === 'deposit' || value === 'withdraw' || value === 'stake' || value === 'unstake' || value === 'transfer'
+    ? value
+    : 'all'
 }
 
 function parseHoldingsActivityChainId(value: string | null): number | null {

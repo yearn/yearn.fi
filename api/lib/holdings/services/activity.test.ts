@@ -307,6 +307,7 @@ describe('getHoldingsActivity', () => {
         txHash: '0xaaa',
         timestamp: 200,
         action: 'deposit',
+        transferDirection: null,
         vaultAddress: UNDERLYING_VAULT,
         familyVaultAddress: UNDERLYING_VAULT,
         assetSymbol: 'USDC',
@@ -325,6 +326,7 @@ describe('getHoldingsActivity', () => {
         txHash: '0xbbb',
         timestamp: 190,
         action: 'stake',
+        transferDirection: null,
         vaultAddress: STAKING_VAULT,
         familyVaultAddress: UNDERLYING_VAULT,
         assetSymbol: 'yvUSDC',
@@ -343,6 +345,7 @@ describe('getHoldingsActivity', () => {
         txHash: '0xccc',
         timestamp: 180,
         action: 'unstake',
+        transferDirection: null,
         vaultAddress: STAKING_VAULT,
         familyVaultAddress: UNDERLYING_VAULT,
         assetSymbol: 'yvUSDC',
@@ -419,6 +422,7 @@ describe('getHoldingsActivity', () => {
         txHash: '0xenso',
         timestamp: 230,
         action: 'deposit',
+        transferDirection: null,
         vaultAddress: UNDERLYING_VAULT,
         familyVaultAddress: UNDERLYING_VAULT,
         assetSymbol: 'USDC',
@@ -466,6 +470,7 @@ describe('getHoldingsActivity', () => {
         txHash: '0xeee',
         timestamp: 220,
         action: 'withdraw',
+        transferDirection: null,
         vaultAddress: UNKNOWN_VAULT,
         familyVaultAddress: UNKNOWN_VAULT,
         assetSymbol: null,
@@ -556,6 +561,7 @@ describe('getHoldingsActivity', () => {
         txHash: '0xbbb',
         timestamp: 290,
         action: 'deposit',
+        transferDirection: null,
         vaultAddress: UNDERLYING_VAULT,
         familyVaultAddress: UNDERLYING_VAULT,
         assetSymbol: 'USDC',
@@ -644,6 +650,7 @@ describe('getHoldingsActivity', () => {
         txHash: '0xccc',
         timestamp: 280,
         action: 'withdraw',
+        transferDirection: null,
         vaultAddress: UNDERLYING_VAULT,
         familyVaultAddress: UNDERLYING_VAULT,
         assetSymbol: 'USDC',
@@ -752,6 +759,7 @@ describe('getHoldingsActivity', () => {
         txHash: '0xbbb',
         timestamp: 290,
         action: 'deposit',
+        transferDirection: null,
         vaultAddress: UNDERLYING_VAULT,
         familyVaultAddress: UNDERLYING_VAULT,
         assetSymbol: 'USDC',
@@ -837,6 +845,7 @@ describe('getHoldingsActivity', () => {
         txHash: '0xeae5d579a571e592719d0815674744238a49993e7a7322c29d81b88343ef1c7b',
         timestamp: 100,
         action: 'deposit',
+        transferDirection: null,
         vaultAddress: baseVault,
         familyVaultAddress: baseVault,
         assetSymbol: 'WETH',
@@ -927,6 +936,7 @@ describe('getHoldingsActivity', () => {
         txHash: '0xbbb',
         timestamp: 250,
         action: 'deposit',
+        transferDirection: null,
         vaultAddress: UNDERLYING_VAULT,
         familyVaultAddress: UNDERLYING_VAULT,
         assetSymbol: 'USDC',
@@ -1099,6 +1109,204 @@ describe('getHoldingsActivity', () => {
     })
   })
 
+  it('emits fallback transfer-in activity for address-scoped vault share transfers', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [
+        createTransferEvent({
+          id: 'transfer-in-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xtransferin',
+          blockTimestamp: 410,
+          logIndex: 2,
+          value: '1230000000000000000',
+          sender: INTERMEDIARY,
+          receiver: USER_ADDRESS
+        })
+      ],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+              symbol: 'USDC',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(response.entries).toEqual([
+      {
+        chainId: 1,
+        txHash: '0xtransferin',
+        timestamp: 410,
+        action: 'transfer',
+        transferDirection: 'in',
+        vaultAddress: UNDERLYING_VAULT,
+        familyVaultAddress: UNDERLYING_VAULT,
+        assetSymbol: 'USDC',
+        assetAmount: '0',
+        assetAmountFormatted: null,
+        inputTokenAddress: null,
+        inputTokenSymbol: null,
+        inputTokenAmount: null,
+        inputTokenAmountFormatted: null,
+        shareAmount: '1230000000000000000',
+        shareAmountFormatted: 1.23,
+        status: 'ok'
+      }
+    ])
+  })
+
+  it('emits fallback transfer-out activity for address-scoped vault share transfers', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: [
+        createTransferEvent({
+          id: 'transfer-out-raw-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xtransferout',
+          blockTimestamp: 405,
+          logIndex: 2,
+          value: '2500000000000000000',
+          sender: USER_ADDRESS,
+          receiver: INTERMEDIARY
+        })
+      ],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+              symbol: 'USDC',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(response.entries).toMatchObject([
+      {
+        action: 'transfer',
+        transferDirection: 'out',
+        assetAmount: '0',
+        assetAmountFormatted: null,
+        shareAmount: '2500000000000000000',
+        shareAmountFormatted: 2.5
+      }
+    ])
+  })
+
+  it('does not emit fallback transfers when the same transaction family has higher-level activity', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [
+        createDepositEvent({
+          id: 'deposit-with-transfer-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xdeposittx',
+          blockTimestamp: 415,
+          logIndex: 3,
+          assets: '1000000',
+          shares: '1000000000000000000'
+        })
+      ],
+      withdrawals: [],
+      transfersIn: [
+        createTransferEvent({
+          id: 'transfer-supporting-deposit-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xdeposittx',
+          blockTimestamp: 415,
+          logIndex: 2,
+          value: '1000000000000000000',
+          sender: '0x0000000000000000000000000000000000000000',
+          receiver: USER_ADDRESS
+        })
+      ],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(new Map())
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(response.entries.map((entry) => entry.action)).toEqual(['deposit'])
+  })
+
+  it('filters transfer fallback rows by activity type', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [
+        createTransferEvent({
+          id: 'transfer-filter-1',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xtransferfilter',
+          blockTimestamp: 420,
+          logIndex: 2,
+          value: '1000000000000000000',
+          sender: INTERMEDIARY,
+          receiver: USER_ADDRESS
+        })
+      ],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(new Map())
+
+    const { getHoldingsActivity } = await import('./activity')
+    const transferResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'transfer' })
+    const depositResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'deposit' })
+
+    expect(transferResponse.entries).toHaveLength(1)
+    expect(transferResponse.entries[0]?.action).toBe('transfer')
+    expect(depositResponse.entries).toEqual([])
+  })
+
   it('recovers routed withdrawals from address transfers plus tx-scoped withdraw events', async () => {
     fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
       deposits: [],
@@ -1177,6 +1385,7 @@ describe('getHoldingsActivity', () => {
         txHash: '0xroute',
         timestamp: 400,
         action: 'withdraw',
+        transferDirection: null,
         vaultAddress: UNDERLYING_VAULT,
         familyVaultAddress: UNDERLYING_VAULT,
         assetSymbol: 'USDC',

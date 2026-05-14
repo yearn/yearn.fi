@@ -57,6 +57,7 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconDeposit } from '@shared/icons/IconDeposit'
+import { IconGitCompare } from '@shared/icons/IconGitCompare'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { IconStake } from '@shared/icons/IconStake'
@@ -137,14 +138,16 @@ const ACTIVITY_ACTION_LABELS: Record<TPortfolioActivityEntry['action'], string> 
   deposit: 'Deposit',
   withdraw: 'Withdraw',
   stake: 'Stake',
-  unstake: 'Unstake'
+  unstake: 'Unstake',
+  transfer: 'Transfer'
 }
 const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: string }> = [
   { key: 'all', label: 'All' },
   { key: 'deposit', label: 'Deposit' },
   { key: 'withdraw', label: 'Withdraw' },
   { key: 'stake', label: 'Stake' },
-  { key: 'unstake', label: 'Unstake' }
+  { key: 'unstake', label: 'Unstake' },
+  { key: 'transfer', label: 'Transfer' }
 ]
 const ACTIVITY_CALENDAR_DAY_LABELS = [
   { key: 'sunday', label: 'S' },
@@ -374,6 +377,18 @@ function getEarlierActivityDate(firstDate: string, secondDate: string): string {
   return firstDate < secondDate ? firstDate : secondDate
 }
 
+function getActivityEntryTitle(entry: TPortfolioActivityEntry): string {
+  if (entry.action === 'transfer' && entry.transferDirection === 'in') {
+    return 'Transfer in'
+  }
+
+  if (entry.action === 'transfer' && entry.transferDirection === 'out') {
+    return 'Transfer out'
+  }
+
+  return ACTIVITY_ACTION_LABELS[entry.action]
+}
+
 function formatActivityMonthLabel(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 }
@@ -391,6 +406,10 @@ function ActivityActionIcon({ action }: { action: TPortfolioActivityEntry['actio
 
   if (action === 'stake') {
     return <IconStake className={iconClassName} aria-hidden="true" />
+  }
+
+  if (action === 'transfer') {
+    return <IconGitCompare className={iconClassName} aria-hidden="true" />
   }
 
   return <IconUnstake className={iconClassName} aria-hidden="true" />
@@ -1056,9 +1075,11 @@ function IndexedActivityRow({
   const normalizedAssetAddress = assetAddress && !isZeroAddress(assetAddress) ? toAddress(assetAddress) : null
   const normalizedInputTokenAddress =
     entry.inputTokenAddress && !isZeroAddress(entry.inputTokenAddress) ? toAddress(entry.inputTokenAddress) : null
-  const tokenAddress = normalizedInputTokenAddress ?? normalizedAssetAddress
+  const isTransferAction = entry.action === 'transfer'
+  const transferTokenAddress = isTransferAction ? toAddress(entry.vaultAddress) : null
+  const tokenAddress = transferTokenAddress ?? normalizedInputTokenAddress ?? normalizedAssetAddress
   const vaultPageUrl = `/vaults/${entry.chainId}/${toAddress(preferredVaultAddress)}`
-  const activityTitle = ACTIVITY_ACTION_LABELS[entry.action]
+  const activityTitle = getActivityEntryTitle(entry)
   const isExitAction = entry.action === 'withdraw' || entry.action === 'unstake'
   const chainName = getActivityChainName(entry.chainId)
   const formattedDate = formatIndexedActivityDate(entry.timestamp)
@@ -1069,13 +1090,15 @@ function IndexedActivityRow({
   const primaryTokenAmount =
     entry.inputTokenAmountFormatted !== null ? entry.inputTokenAmountFormatted : entry.assetAmountFormatted
   const isZap = Boolean(entry.inputTokenAddress && entry.inputTokenAmount)
-  const summaryAssetSymbol = primaryTokenSymbol ?? shareSymbol
+  const summaryAssetSymbol = isTransferAction ? shareSymbol : (primaryTokenSymbol ?? shareSymbol)
   const primaryAmount = isExitAction
     ? formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
     : formatActivityDisplayAmount(primaryTokenAmount, primaryTokenSymbol)
-  const secondaryAmount = isExitAction
-    ? formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)
-    : formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
+  const secondaryAmount = isTransferAction
+    ? formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
+    : isExitAction
+      ? formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)
+      : formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
   const collapsedPrimaryAmount = isExitAction
     ? formatActivityFixedValue(entry.shareAmountFormatted)
     : formatActivityFixedValue(primaryTokenAmount)
@@ -1086,6 +1109,9 @@ function IndexedActivityRow({
   const inboundAmount = collapsedSecondaryAmount
   const outboundSymbol = isExitAction ? shareSymbol : primaryTokenSymbol
   const inboundSymbol = isExitAction ? entry.assetSymbol : shareSymbol
+  const transferSign = entry.transferDirection === 'out' ? '-' : '+'
+  const transferAmount = formatActivityFixedValue(entry.shareAmountFormatted)
+  const transferDetailLabel = entry.transferDirection === 'out' ? 'VAULT SHARES SENT:' : 'VAULT SHARES RECEIVED:'
   const primaryDetailLabel = isExitAction ? 'VAULT SHARES REDEEMED:' : 'TOKEN DEPOSITED:'
   const secondaryDetailLabel = isExitAction ? 'ASSET RECEIVED:' : 'VAULT SHARES RECEIVED:'
   const metadataStatus = entry.status === 'ok' ? 'Indexed' : 'Limited metadata'
@@ -1193,20 +1219,41 @@ function IndexedActivityRow({
                 loading="lazy"
               />
             ) : null}
-            <div className="grid min-w-0 grid-cols-[max-content_100px] gap-x-4 gap-y-0.5">
-              <span className="min-w-0 text-right text-sm font-semibold leading-tight tabular-nums text-neutral-600 md:text-base">
-                {`-${outboundAmount}`}
-              </span>
-              <span className="min-w-0 truncate text-left text-sm font-medium leading-tight text-neutral-600 md:text-base">
-                {outboundSymbol}
-              </span>
-              <span className="min-w-0 text-right text-sm font-semibold leading-tight tabular-nums text-text-primary md:text-base">
-                {`+${inboundAmount}`}
-              </span>
-              <span className="min-w-0 truncate text-left text-sm font-medium leading-tight text-text-primary md:text-base">
-                {inboundSymbol}
-              </span>
-            </div>
+            {isTransferAction ? (
+              <div className="grid min-w-0 grid-cols-[max-content_100px] gap-x-4">
+                <span
+                  className={cl(
+                    'min-w-0 text-right text-sm font-semibold leading-tight tabular-nums md:text-base',
+                    entry.transferDirection === 'out' ? 'text-neutral-600' : 'text-text-primary'
+                  )}
+                >
+                  {`${transferSign}${transferAmount}`}
+                </span>
+                <span
+                  className={cl(
+                    'min-w-0 truncate text-left text-sm font-medium leading-tight md:text-base',
+                    entry.transferDirection === 'out' ? 'text-neutral-600' : 'text-text-primary'
+                  )}
+                >
+                  {shareSymbol}
+                </span>
+              </div>
+            ) : (
+              <div className="grid min-w-0 grid-cols-[max-content_100px] gap-x-4 gap-y-0.5">
+                <span className="min-w-0 text-right text-sm font-semibold leading-tight tabular-nums text-neutral-600 md:text-base">
+                  {`-${outboundAmount}`}
+                </span>
+                <span className="min-w-0 truncate text-left text-sm font-medium leading-tight text-neutral-600 md:text-base">
+                  {outboundSymbol}
+                </span>
+                <span className="min-w-0 text-right text-sm font-semibold leading-tight tabular-nums text-text-primary md:text-base">
+                  {`+${inboundAmount}`}
+                </span>
+                <span className="min-w-0 truncate text-left text-sm font-medium leading-tight text-text-primary md:text-base">
+                  {inboundSymbol}
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary md:hidden">
             <IconChevron className="size-4" direction={isExpanded ? 'up' : 'down'} />
@@ -1217,8 +1264,14 @@ function IndexedActivityRow({
       {isExpanded ? (
         <div className="bg-surface pb-4 pl-20 pr-4 pt-1 md:pl-[88px] md:pr-6">
           <div className="flex flex-col">
-            <ActivityDetailItem label={primaryDetailLabel} value={primaryAmount} />
-            <ActivityDetailItem label={secondaryDetailLabel} value={secondaryAmount} />
+            {isTransferAction ? (
+              <ActivityDetailItem label={transferDetailLabel} value={secondaryAmount} />
+            ) : (
+              <>
+                <ActivityDetailItem label={primaryDetailLabel} value={primaryAmount} />
+                <ActivityDetailItem label={secondaryDetailLabel} value={secondaryAmount} />
+              </>
+            )}
             <ActivityDetailItem label="CONFIRMED ON:" value={formattedDateTime} />
             <ActivityDetailItem
               label="VAULT NAME:"
@@ -1562,7 +1615,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
           ? getVaultName(activityVault)
           : truncateHex(entry.familyVaultAddress, 5)
       const chainName = getActivityChainName(entry.chainId)
-      const actionLabel = ACTIVITY_ACTION_LABELS[entry.action]
+      const actionLabel = getActivityEntryTitle(entry)
       const formattedDate = formatIndexedActivityDate(entry.timestamp)
       const symbols = [entry.assetSymbol, entry.inputTokenSymbol].filter(Boolean).join(' ')
 
@@ -1703,7 +1756,9 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         items={visibleIndexedEntries}
         estimateSize={81}
         itemSpacingClassName="border-b border-border"
-        getItemKey={(entry): string => `${entry.txHash}:${entry.vaultAddress}:${entry.action}`}
+        getItemKey={(entry): string =>
+          `${entry.txHash}:${entry.vaultAddress}:${entry.action}:${entry.transferDirection ?? 'none'}:${entry.timestamp}`
+        }
         onEndReached={indexedHasMore ? handleIndexedActivityEndReached : undefined}
         renderItem={(entry, index) => {
           const familyVault = allVaults[toAddress(entry.familyVaultAddress)]

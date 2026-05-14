@@ -10,7 +10,7 @@ import { formatAmount, lowerCaseAddress, minBigInt, toVaultKey, ZERO } from './p
 import { getFamilyVaultAddress, isStakingVault } from './staking'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
-export type HoldingsActivityAction = 'deposit' | 'withdraw' | 'stake' | 'unstake'
+export type HoldingsActivityAction = 'deposit' | 'withdraw' | 'stake' | 'unstake' | 'transfer'
 export type HoldingsActivityTypeFilter = HoldingsActivityAction | 'all'
 
 export interface HoldingsActivityFilters {
@@ -25,6 +25,7 @@ export interface HoldingsActivityEntry {
   txHash: string
   timestamp: number
   action: HoldingsActivityAction
+  transferDirection: 'in' | 'out' | null
   vaultAddress: string
   familyVaultAddress: string
   assetSymbol: string | null
@@ -118,6 +119,7 @@ type TResolvedActivityEvent = {
   vaultAddress: string
   familyVaultAddress: string
   action: HoldingsActivityAction
+  transferDirection: 'in' | 'out' | null
   assets: bigint
   shares: bigint
   owner: string | null
@@ -405,6 +407,7 @@ function createResolvedActivityEvent(args: {
   event: TActivityEvent
   assetAmount: bigint
   shareAmount: bigint
+  transferDirection?: 'in' | 'out' | null
 }): TResolvedActivityEvent {
   return {
     chainId: args.event.chainId,
@@ -415,12 +418,35 @@ function createResolvedActivityEvent(args: {
     vaultAddress: args.event.vaultAddress,
     familyVaultAddress: args.event.familyVaultAddress,
     action: args.action,
+    transferDirection: args.transferDirection ?? null,
     assets: args.assetAmount,
     shares: args.shareAmount,
     owner: args.event.kind === 'deposit' ? args.event.owner : null,
     sender: args.event.kind === 'deposit' ? args.event.sender : null,
     inputAsset: null
   }
+}
+
+function createTransferActivityEvents(events: TActivityEvent[], userAddress: string): TResolvedActivityEvent[] {
+  const normalizedUserAddress = lowerCaseAddress(userAddress)
+
+  return events
+    .filter(
+      (event): event is Extract<TActivityEvent, { kind: 'transfer' }> =>
+        event.kind === 'transfer' &&
+        event.scopes.address &&
+        event.shares > ZERO &&
+        (event.receiver === normalizedUserAddress || event.sender === normalizedUserAddress)
+    )
+    .map((event) =>
+      createResolvedActivityEvent({
+        action: 'transfer',
+        event,
+        assetAmount: ZERO,
+        shareAmount: event.shares,
+        transferDirection: event.receiver === normalizedUserAddress ? 'in' : 'out'
+      })
+    )
 }
 
 function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): TResolvedActivityEvent[] {
@@ -466,7 +492,7 @@ function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): 
     (event) => !event.isStakingVault && event.scopes.address && event.sender === normalizedUserAddress
   )
 
-  return [
+  const classifiedEvents = [
     directDeposits.latestEvent && directDeposits.shares > ZERO
       ? createResolvedActivityEvent({
           action: 'deposit',
@@ -556,6 +582,8 @@ function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): 
           })()
         : null
   ].filter((event): event is TResolvedActivityEvent => event !== null)
+
+  return classifiedEvents.length > 0 ? classifiedEvents : createTransferActivityEvents(events, userAddress)
 }
 
 function classifyActivityEvents(events: TActivityEvent[], userAddress: string): TResolvedActivityEvent[] {
@@ -762,11 +790,13 @@ function toHoldingsActivityEntry(
     txHash: event.txHash,
     timestamp: event.timestamp,
     action: event.action,
+    transferDirection: event.transferDirection,
     vaultAddress: event.vaultAddress,
     familyVaultAddress: event.familyVaultAddress,
     assetSymbol: eventMetadata?.token.symbol ?? null,
     assetAmount: event.assets.toString(),
-    assetAmountFormatted: eventMetadata ? formatAmount(event.assets, eventMetadata.token.decimals) : null,
+    assetAmountFormatted:
+      event.action === 'transfer' || !eventMetadata ? null : formatAmount(event.assets, eventMetadata.token.decimals),
     inputTokenAddress: event.inputAsset?.tokenAddress ?? null,
     inputTokenSymbol: event.inputAsset?.tokenSymbol ?? null,
     inputTokenAmount: event.inputAsset?.amount ?? null,
