@@ -55,7 +55,12 @@ function parseOffset(value: string | string[] | undefined): number {
 function parseType(value: string | string[] | undefined): HoldingsActivityTypeFilter {
   const rawValue = Array.isArray(value) ? value[0] : value
 
-  return rawValue === 'deposit' || rawValue === 'withdraw' || rawValue === 'stake' || rawValue === 'unstake'
+  return rawValue === 'deposit' ||
+    rawValue === 'withdraw' ||
+    rawValue === 'stake' ||
+    rawValue === 'unstake' ||
+    rawValue === 'transfer' ||
+    rawValue === 'swap'
     ? rawValue
     : 'all'
 }

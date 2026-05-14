@@ -1,9 +1,14 @@
 import type { DepositEvent, TransferEvent, VaultMetadata, WithdrawEvent } from '../types'
 import {
+  fetchDirectV2VaultActionForActivity,
+  fetchIsRewardClaimForActivity,
   fetchRouterInputAssetForActivity,
   fetchRouterOutputAssetForActivity,
+  fetchYcrvZapInputAssetForActivity,
+  fetchZapperV2ZapForActivity,
+  fetchZapperV2ZapOutForActivity,
   type TActivityInputAsset,
-  type TActivityTransferAsset
+  type TActivityOutputAsset
 } from './activityReceiptEnrichment'
 import type { TransactionActivityEvents, VaultVersion } from './graphql'
 import {
@@ -11,12 +16,20 @@ import {
   fetchRecentAddressScopedActivityEvents,
   fetchUserEvents
 } from './graphql'
-import { formatAmount, lowerCaseAddress, minBigInt, toVaultKey, ZERO } from './pnlShared'
+import {
+  formatAmount,
+  isKnownCompatibleAssetVaultRollover,
+  lowerCaseAddress,
+  minBigInt,
+  toVaultKey,
+  ZERO
+} from './pnlShared'
 import { getFamilyVaultAddress, isStakingVault } from './staking'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
-export type HoldingsActivityAction = 'deposit' | 'withdraw' | 'stake' | 'unstake'
+export type HoldingsActivityAction = 'deposit' | 'withdraw' | 'stake' | 'unstake' | 'transfer' | 'swap'
 export type HoldingsActivityTypeFilter = HoldingsActivityAction | 'all'
+export type HoldingsActivityDisplayType = 'reward_claim' | 'zap'
 
 export interface HoldingsActivityFilters {
   type?: HoldingsActivityTypeFilter
@@ -30,6 +43,8 @@ export interface HoldingsActivityEntry {
   txHash: string
   timestamp: number
   action: HoldingsActivityAction
+  displayType?: HoldingsActivityDisplayType | null
+  transferDirection: 'in' | 'out' | null
   vaultAddress: string
   familyVaultAddress: string
   assetSymbol: string | null
@@ -127,12 +142,14 @@ type TResolvedActivityEvent = {
   vaultAddress: string
   familyVaultAddress: string
   action: HoldingsActivityAction
+  displayType: HoldingsActivityDisplayType | null
+  transferDirection: 'in' | 'out' | null
   assets: bigint
   shares: bigint
   owner: string | null
   sender: string | null
   inputAsset: TActivityInputAsset | null
-  outputAsset: TActivityTransferAsset | null
+  outputAsset: TActivityOutputAsset | null
   usesRouter: boolean
 }
 
@@ -416,6 +433,7 @@ function createResolvedActivityEvent(args: {
   event: TActivityEvent
   assetAmount: bigint
   shareAmount: bigint
+  transferDirection?: 'in' | 'out' | null
   usesRouter?: boolean
 }): TResolvedActivityEvent {
   return {
@@ -427,6 +445,8 @@ function createResolvedActivityEvent(args: {
     vaultAddress: args.event.vaultAddress,
     familyVaultAddress: args.event.familyVaultAddress,
     action: args.action,
+    displayType: null,
+    transferDirection: args.transferDirection ?? null,
     assets: args.assetAmount,
     shares: args.shareAmount,
     owner: args.event.kind === 'deposit' ? args.event.owner : null,
@@ -435,6 +455,28 @@ function createResolvedActivityEvent(args: {
     outputAsset: null,
     usesRouter: args.usesRouter ?? false
   }
+}
+
+function createTransferActivityEvents(events: TActivityEvent[], userAddress: string): TResolvedActivityEvent[] {
+  const normalizedUserAddress = lowerCaseAddress(userAddress)
+
+  return events
+    .filter(
+      (event): event is Extract<TActivityEvent, { kind: 'transfer' }> =>
+        event.kind === 'transfer' &&
+        event.scopes.address &&
+        event.shares > ZERO &&
+        (event.receiver === normalizedUserAddress || event.sender === normalizedUserAddress)
+    )
+    .map((event) =>
+      createResolvedActivityEvent({
+        action: 'transfer',
+        event,
+        assetAmount: ZERO,
+        shareAmount: event.shares,
+        transferDirection: event.receiver === normalizedUserAddress ? 'in' : 'out'
+      })
+    )
 }
 
 function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): TResolvedActivityEvent[] {
@@ -480,7 +522,7 @@ function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): 
     (event) => !event.isStakingVault && event.scopes.address && event.sender === normalizedUserAddress
   )
 
-  return [
+  const classifiedEvents = [
     directDeposits.latestEvent && directDeposits.shares > ZERO
       ? createResolvedActivityEvent({
           action: 'deposit',
@@ -574,6 +616,8 @@ function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): 
           })()
         : null
   ].filter((event): event is TResolvedActivityEvent => event !== null)
+
+  return classifiedEvents.length > 0 ? classifiedEvents : createTransferActivityEvents(events, userAddress)
 }
 
 function classifyActivityEvents(events: TActivityEvent[], userAddress: string): TResolvedActivityEvent[] {
@@ -586,6 +630,152 @@ function classifyActivityEvents(events: TActivityEvent[], userAddress: string): 
   )
     .flatMap(([, txFamilyEvents]) => classifyTxFamilyEvents(txFamilyEvents, userAddress))
     .sort((a, b) => b.timestamp - a.timestamp || b.blockNumber - a.blockNumber || b.logIndex - a.logIndex)
+}
+
+function isCompatibleAssetVaultFallbackTransfer(args: {
+  highLevelEvent: TResolvedActivityEvent
+  transferEvent: TResolvedActivityEvent
+}): boolean {
+  if (
+    args.transferEvent.action !== 'transfer' ||
+    args.transferEvent.transferDirection === null ||
+    args.highLevelEvent.chainId !== args.transferEvent.chainId ||
+    args.highLevelEvent.txHash !== args.transferEvent.txHash
+  ) {
+    return false
+  }
+
+  const isCompatiblePair = isKnownCompatibleAssetVaultRollover(
+    args.highLevelEvent.chainId,
+    args.highLevelEvent.familyVaultAddress,
+    args.transferEvent.familyVaultAddress
+  )
+
+  if (!isCompatiblePair || args.highLevelEvent.assets !== args.transferEvent.shares) {
+    return false
+  }
+
+  return (
+    (args.highLevelEvent.action === 'withdraw' && args.transferEvent.transferDirection === 'in') ||
+    (args.highLevelEvent.action === 'deposit' && args.transferEvent.transferDirection === 'out')
+  )
+}
+
+function suppressCompatibleAssetVaultFallbackTransfers(events: TResolvedActivityEvent[]): TResolvedActivityEvent[] {
+  const highLevelEvents = events.filter((event) => event.action !== 'transfer')
+
+  if (highLevelEvents.length === 0) {
+    return events
+  }
+
+  return events.filter(
+    (event) =>
+      !highLevelEvents.some((highLevelEvent) =>
+        isCompatibleAssetVaultFallbackTransfer({
+          highLevelEvent,
+          transferEvent: event
+        })
+      )
+  )
+}
+
+function createSwapActivityEvent(args: {
+  sourceEvent: TResolvedActivityEvent
+  destinationEvent: TResolvedActivityEvent
+}): TResolvedActivityEvent {
+  return {
+    ...args.destinationEvent,
+    action: 'swap',
+    displayType: null,
+    transferDirection: null,
+    assets: ZERO,
+    inputAsset: {
+      tokenAddress: args.sourceEvent.vaultAddress,
+      tokenSymbol: null,
+      amount: args.sourceEvent.shares.toString(),
+      amountFormatted: null
+    },
+    outputAsset: null,
+    usesRouter: true
+  }
+}
+
+function isSwapSourceEvent(event: TResolvedActivityEvent): boolean {
+  return event.action === 'withdraw' && event.shares > ZERO
+}
+
+function isSwapDestinationEvent(event: TResolvedActivityEvent): boolean {
+  return event.action === 'deposit' && event.shares > ZERO
+}
+
+function collapseRouterVaultSwaps(events: TResolvedActivityEvent[]): TResolvedActivityEvent[] {
+  const swapsByTransactionKey = new Map(
+    Array.from(
+      events.reduce<Map<string, TResolvedActivityEvent[]>>((grouped, event) => {
+        const existing = grouped.get(toResolvedTxKey(event)) ?? []
+        return new Map(grouped).set(toResolvedTxKey(event), [...existing, event])
+      }, new Map<string, TResolvedActivityEvent[]>())
+    )
+      .map(([txKey, txEvents]) => {
+        const sourceEvents = txEvents.filter(isSwapSourceEvent)
+        const destinationEvents = txEvents.filter(isSwapDestinationEvent)
+        const sourceEvent = sourceEvents.length === 1 ? sourceEvents[0] : null
+        const destinationEvent = destinationEvents.length === 1 ? destinationEvents[0] : null
+
+        return sourceEvent && destinationEvent && sourceEvent.vaultAddress !== destinationEvent.vaultAddress
+          ? ([
+              txKey,
+              {
+                sourceEvent,
+                destinationEvent,
+                swapEvent: createSwapActivityEvent({ sourceEvent, destinationEvent })
+              }
+            ] as const)
+          : null
+      })
+      .filter(
+        (
+          entry
+        ): entry is readonly [
+          string,
+          {
+            sourceEvent: TResolvedActivityEvent
+            destinationEvent: TResolvedActivityEvent
+            swapEvent: TResolvedActivityEvent
+          }
+        ] => entry !== null
+      )
+  )
+
+  if (swapsByTransactionKey.size === 0) {
+    return events
+  }
+
+  const emittedSwapTransactionKeys = new Set<string>()
+
+  return events.flatMap((event) => {
+    const txKey = toResolvedTxKey(event)
+    const swap = swapsByTransactionKey.get(txKey)
+
+    if (!swap) {
+      return [event]
+    }
+
+    if (event === swap.sourceEvent || event === swap.destinationEvent) {
+      if (emittedSwapTransactionKeys.has(txKey)) {
+        return []
+      }
+
+      emittedSwapTransactionKeys.add(txKey)
+      return [swap.swapEvent]
+    }
+
+    return [event]
+  })
+}
+
+function toResolvedTxKey(event: TResolvedActivityEvent): string {
+  return `${event.chainId}:${event.txHash}`
 }
 
 async function loadRecentActivityWindowAttempt(
@@ -651,6 +841,291 @@ function normalizeTransactionActivityEvents(transactionEvents: TransactionActivi
     ...transactionEvents.withdrawals.map((event) => normalizeWithdrawalEvent(event, 'tx')),
     ...transactionEvents.transfers.map((event) => normalizeTransferEvent(event, 'tx'))
   ]
+}
+
+function selectYcrvZapTransferDisplayEvent(events: TResolvedActivityEvent[]): TResolvedActivityEvent | null {
+  const incomingTransfers = events
+    .filter((event) => event.action === 'transfer' && event.transferDirection === 'in')
+    .sort((a, b) => b.logIndex - a.logIndex)
+  const outgoingTransfers = events
+    .filter((event) => event.action === 'transfer' && event.transferDirection === 'out')
+    .sort((a, b) => b.logIndex - a.logIndex)
+
+  return incomingTransfers[0] ?? outgoingTransfers[0] ?? null
+}
+
+async function enrichYcrvZapTransferEvents(
+  events: TResolvedActivityEvent[],
+  userAddress: string
+): Promise<TResolvedActivityEvent[]> {
+  const highLevelTransactionKeys = new Set(
+    events.filter((event) => event.action !== 'transfer').map((event) => toResolvedTxKey(event))
+  )
+  const transferEventsByTransactionKey = events.reduce<Map<string, TResolvedActivityEvent[]>>((grouped, event) => {
+    if (event.action !== 'transfer' || highLevelTransactionKeys.has(toResolvedTxKey(event))) {
+      return grouped
+    }
+
+    const txKey = toResolvedTxKey(event)
+    const existing = grouped.get(txKey) ?? []
+    return new Map(grouped).set(txKey, [...existing, event])
+  }, new Map<string, TResolvedActivityEvent[]>())
+
+  if (transferEventsByTransactionKey.size === 0) {
+    return events
+  }
+
+  const ycrvZapEventsByTransactionKey = new Map(
+    (
+      await Promise.all(
+        Array.from(transferEventsByTransactionKey.entries()).map(async ([txKey, txEvents]) => {
+          const representativeEvent = txEvents[0]
+
+          if (!representativeEvent) {
+            return null
+          }
+
+          const zapAssets = await fetchYcrvZapInputAssetForActivity({
+            chainId: representativeEvent.chainId,
+            transactionHash: representativeEvent.txHash,
+            userAddress,
+            excludedTokenAddresses: Array.from(
+              new Set(txEvents.flatMap((event) => [event.vaultAddress, event.familyVaultAddress]).map(lowerCaseAddress))
+            )
+          })
+          const displayEvent = zapAssets ? selectYcrvZapTransferDisplayEvent(txEvents) : null
+
+          return displayEvent
+            ? ([
+                txKey,
+                {
+                  ...displayEvent,
+                  action: zapAssets.outputKind === 'stake' ? 'stake' : displayEvent.action,
+                  transferDirection: zapAssets.outputKind === 'stake' ? null : displayEvent.transferDirection,
+                  inputAsset: zapAssets.inputAsset,
+                  outputAsset: zapAssets.outputAsset
+                }
+              ] as const)
+            : null
+        })
+      )
+    ).filter((entry): entry is readonly [string, TResolvedActivityEvent] => entry !== null)
+  )
+
+  if (ycrvZapEventsByTransactionKey.size === 0) {
+    return events
+  }
+
+  const emittedYcrvZapTransactionKeys = new Set<string>()
+
+  return events.flatMap((event) => {
+    const txKey = toResolvedTxKey(event)
+    const ycrvZapEvent = ycrvZapEventsByTransactionKey.get(txKey)
+
+    if (!ycrvZapEvent) {
+      return [event]
+    }
+
+    if (event.action !== 'transfer') {
+      return [event]
+    }
+
+    if (emittedYcrvZapTransactionKeys.has(txKey)) {
+      return []
+    }
+
+    emittedYcrvZapTransactionKeys.add(txKey)
+    return [ycrvZapEvent]
+  })
+}
+
+async function enrichDirectV2VaultTransferEvents(
+  events: TResolvedActivityEvent[],
+  userAddress: string
+): Promise<TResolvedActivityEvent[]> {
+  const transferEvents = events.filter(
+    (event) =>
+      event.action === 'transfer' &&
+      event.transferDirection !== null &&
+      event.assets === ZERO &&
+      event.shares > ZERO &&
+      event.vaultAddress === event.familyVaultAddress
+  )
+
+  if (transferEvents.length === 0) {
+    return events
+  }
+
+  const directActionsByEventKey = new Map(
+    (
+      await Promise.all(
+        transferEvents.map(async (event) => {
+          const directAction = await fetchDirectV2VaultActionForActivity({
+            chainId: event.chainId,
+            transactionHash: event.txHash,
+            userAddress,
+            vaultAddress: event.vaultAddress,
+            transferDirection: event.transferDirection as 'in' | 'out'
+          })
+
+          return directAction
+            ? ([
+                `${toResolvedTxKey(event)}:${event.vaultAddress}:${event.transferDirection}:${event.logIndex}`,
+                directAction
+              ] as const)
+            : null
+        })
+      )
+    ).filter(
+      (entry): entry is readonly [string, { action: 'deposit' | 'withdraw'; assetAmount: bigint }] => entry !== null
+    )
+  )
+
+  return directActionsByEventKey.size === 0
+    ? events
+    : events.map((event) => {
+        const directAction = directActionsByEventKey.get(
+          `${toResolvedTxKey(event)}:${event.vaultAddress}:${event.transferDirection}:${event.logIndex}`
+        )
+
+        return directAction
+          ? {
+              ...event,
+              action: directAction.action,
+              transferDirection: null,
+              assets: directAction.assetAmount
+            }
+          : event
+      })
+}
+
+async function enrichZapperV2TransferEvents(
+  events: TResolvedActivityEvent[],
+  userAddress: string
+): Promise<TResolvedActivityEvent[]> {
+  const transferEvents = events.filter(
+    (event) =>
+      event.action === 'transfer' && event.transferDirection !== null && event.assets === ZERO && event.shares > ZERO
+  )
+
+  if (transferEvents.length === 0) {
+    return events
+  }
+
+  const zapsByEventKey = new Map(
+    (
+      await Promise.all(
+        transferEvents.map(async (event) => {
+          const zap =
+            event.transferDirection === 'in'
+              ? await fetchZapperV2ZapForActivity({
+                  chainId: event.chainId,
+                  transactionHash: event.txHash,
+                  userAddress,
+                  vaultAddress: event.vaultAddress,
+                  shareAmount: event.shares,
+                  excludedTokenAddresses: [event.vaultAddress, event.familyVaultAddress]
+                })
+              : await fetchZapperV2ZapOutForActivity({
+                  chainId: event.chainId,
+                  transactionHash: event.txHash,
+                  userAddress,
+                  vaultAddress: event.vaultAddress,
+                  shareAmount: event.shares
+                })
+
+          return zap
+            ? ([
+                `${toResolvedTxKey(event)}:${event.vaultAddress}:${event.transferDirection}:${event.logIndex}`,
+                zap
+              ] as const)
+            : null
+        })
+      )
+    ).filter(
+      (
+        entry
+      ): entry is readonly [
+        string,
+        NonNullable<Awaited<ReturnType<typeof fetchZapperV2ZapForActivity | typeof fetchZapperV2ZapOutForActivity>>>
+      ] => entry !== null
+    )
+  )
+
+  return zapsByEventKey.size === 0
+    ? events
+    : events.map((event) => {
+        const zap = zapsByEventKey.get(
+          `${toResolvedTxKey(event)}:${event.vaultAddress}:${event.transferDirection}:${event.logIndex}`
+        )
+
+        if (!zap) {
+          return event
+        }
+
+        return event.transferDirection === 'out'
+          ? {
+              ...event,
+              action: 'withdraw',
+              displayType: 'zap',
+              transferDirection: null,
+              assets: zap.assetAmount,
+              outputAsset: 'outputAsset' in zap ? zap.outputAsset : null
+            }
+          : {
+              ...event,
+              action: 'deposit',
+              displayType: 'zap',
+              transferDirection: null,
+              assets: zap.assetAmount,
+              inputAsset: 'inputAsset' in zap ? zap.inputAsset : null
+            }
+      })
+}
+
+async function enrichRewardClaimTransferEvents(events: TResolvedActivityEvent[]): Promise<TResolvedActivityEvent[]> {
+  const transferEventsByTransactionKey = events.reduce<Map<string, TResolvedActivityEvent[]>>((grouped, event) => {
+    if (event.action !== 'transfer') {
+      return grouped
+    }
+
+    const txKey = toResolvedTxKey(event)
+    const existing = grouped.get(txKey) ?? []
+    return new Map(grouped).set(txKey, [...existing, event])
+  }, new Map<string, TResolvedActivityEvent[]>())
+
+  if (transferEventsByTransactionKey.size === 0) {
+    return events
+  }
+
+  const rewardClaimTransactionKeys = new Set(
+    (
+      await Promise.all(
+        Array.from(transferEventsByTransactionKey.entries()).map(async ([txKey, txEvents]) => {
+          const representativeEvent = txEvents[0]
+
+          if (!representativeEvent) {
+            return null
+          }
+
+          const isRewardClaim = await fetchIsRewardClaimForActivity({
+            chainId: representativeEvent.chainId,
+            transactionHash: representativeEvent.txHash
+          })
+
+          return isRewardClaim ? txKey : null
+        })
+      )
+    ).filter((txKey): txKey is string => txKey !== null)
+  )
+
+  return rewardClaimTransactionKeys.size === 0
+    ? events
+    : events.map((event) =>
+        event.action === 'transfer' && rewardClaimTransactionKeys.has(toResolvedTxKey(event))
+          ? { ...event, displayType: 'reward_claim' }
+          : event
+      )
 }
 
 function shouldFetchInputAsset(event: TResolvedActivityEvent, userAddress: string): boolean {
@@ -764,22 +1239,36 @@ async function classifyActivityForTransactionKeys(
     ...selectedAddressEvents,
     ...normalizeTransactionActivityEvents(transactionEvents)
   ])
+  const classifiedEvents = suppressCompatibleAssetVaultFallbackTransfers(
+    classifyActivityEvents(selectedEvents, userAddress)
+  )
+  const directV2EnrichedEvents = await enrichDirectV2VaultTransferEvents(classifiedEvents, userAddress)
+  const zapperV2EnrichedEvents = await enrichZapperV2TransferEvents(directV2EnrichedEvents, userAddress)
+  const ycrvZapEnrichedEvents = await enrichYcrvZapTransferEvents(zapperV2EnrichedEvents, userAddress)
+  const swapEnrichedEvents = collapseRouterVaultSwaps(ycrvZapEnrichedEvents)
 
-  return classifyActivityEvents(selectedEvents, userAddress)
+  return enrichRewardClaimTransferEvents(swapEnrichedEvents)
 }
 
 function getVaultIdentifiers(events: TResolvedActivityEvent[]): Array<{ chainId: number; vaultAddress: string }> {
-  return events.reduce<Array<{ chainId: number; vaultAddress: string }>>((identifiers, event) => {
-    const alreadyIncluded = identifiers.some(
-      (identifier) => identifier.chainId === event.chainId && identifier.vaultAddress === event.vaultAddress
-    )
+  return events
+    .flatMap((event) => [
+      { chainId: event.chainId, vaultAddress: event.vaultAddress },
+      ...(event.action === 'swap' && event.inputAsset
+        ? [{ chainId: event.chainId, vaultAddress: event.inputAsset.tokenAddress }]
+        : [])
+    ])
+    .reduce<Array<{ chainId: number; vaultAddress: string }>>((identifiers, identifier) => {
+      const alreadyIncluded = identifiers.some(
+        (existing) => existing.chainId === identifier.chainId && existing.vaultAddress === identifier.vaultAddress
+      )
 
-    if (!alreadyIncluded) {
-      identifiers.push({ chainId: event.chainId, vaultAddress: event.vaultAddress })
-    }
+      if (!alreadyIncluded) {
+        identifiers.push(identifier)
+      }
 
-    return identifiers
-  }, [])
+      return identifiers
+    }, [])
 }
 
 function filterVisibleActivityEvents(
@@ -794,21 +1283,35 @@ function toHoldingsActivityEntry(
   metadata: Map<string, VaultMetadata>
 ): HoldingsActivityEntry {
   const eventMetadata = metadata.get(toVaultKey(event.chainId, event.vaultAddress)) ?? null
+  const inputVaultMetadata =
+    event.inputAsset && event.action === 'swap'
+      ? (metadata.get(toVaultKey(event.chainId, event.inputAsset.tokenAddress)) ?? null)
+      : null
+  const inputTokenSymbol = event.inputAsset?.tokenSymbol ?? null
+  const inputTokenAmountFormatted =
+    inputVaultMetadata && event.inputAsset
+      ? formatAmount(BigInt(event.inputAsset.amount), inputVaultMetadata.decimals)
+      : (event.inputAsset?.amountFormatted ?? null)
 
   return {
     chainId: event.chainId,
     txHash: event.txHash,
     timestamp: event.timestamp,
     action: event.action,
+    ...(event.displayType ? { displayType: event.displayType } : {}),
+    transferDirection: event.transferDirection,
     vaultAddress: event.vaultAddress,
     familyVaultAddress: event.familyVaultAddress,
     assetSymbol: eventMetadata?.token.symbol ?? null,
     assetAmount: event.assets.toString(),
-    assetAmountFormatted: eventMetadata ? formatAmount(event.assets, eventMetadata.token.decimals) : null,
+    assetAmountFormatted:
+      event.action === 'transfer' || event.action === 'swap' || event.outputAsset || !eventMetadata
+        ? null
+        : formatAmount(event.assets, eventMetadata.token.decimals),
     inputTokenAddress: event.inputAsset?.tokenAddress ?? null,
-    inputTokenSymbol: event.inputAsset?.tokenSymbol ?? null,
+    inputTokenSymbol,
     inputTokenAmount: event.inputAsset?.amount ?? null,
-    inputTokenAmountFormatted: event.inputAsset?.amountFormatted ?? null,
+    inputTokenAmountFormatted,
     outputTokenAddress: event.outputAsset?.tokenAddress ?? null,
     outputTokenSymbol: event.outputAsset?.tokenSymbol ?? null,
     outputTokenAmount: event.outputAsset?.amount ?? null,
