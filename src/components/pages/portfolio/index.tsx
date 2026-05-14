@@ -400,6 +400,26 @@ function getActivityEntryTitle(entry: TPortfolioActivityEntry): string {
   return ACTIVITY_ACTION_LABELS[entry.action]
 }
 
+function getActivityEntryKey(entry: TPortfolioActivityEntry, index: number): string {
+  return [
+    entry.chainId,
+    entry.txHash,
+    entry.vaultAddress,
+    entry.familyVaultAddress,
+    entry.action,
+    entry.displayType ?? 'none',
+    entry.transferDirection ?? 'none',
+    entry.assetAmount,
+    entry.inputTokenAddress ?? 'none',
+    entry.inputTokenAmount ?? 'none',
+    entry.outputTokenAddress ?? 'none',
+    entry.outputTokenAmount ?? 'none',
+    entry.shareAmount,
+    entry.timestamp,
+    index
+  ].join(':')
+}
+
 function formatActivityMonthLabel(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 }
@@ -1885,9 +1905,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         items={visibleIndexedEntries}
         estimateSize={81}
         itemSpacingClassName="border-b border-border"
-        getItemKey={(entry): string =>
-          `${entry.txHash}:${entry.vaultAddress}:${entry.action}:${entry.displayType ?? 'none'}:${entry.transferDirection ?? 'none'}:${entry.timestamp}`
-        }
+        getItemKey={getActivityEntryKey}
         onEndReached={indexedHasMore ? handleIndexedActivityEndReached : undefined}
         renderItem={(entry, index) => {
           const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
