@@ -30,6 +30,8 @@ const UNKNOWN_VAULT = '0x0000000000000000000000000000000000000456'
 const USER_ADDRESS = '0x2222222222222222222222222222222222222222'
 const INTERMEDIARY = '0x4Fe93ebC4Ce6Ae4f81601cC7Ce7139023919E003'
 const USDT0 = '0x5555555555555555555555555555555555555555'
+const YBOLD_VAULT = '0x9f4330700a36b29952869fac9b33f45eedd8a3d8'
+const YSYBOLD_VAULT = '0x23346b04a7f55b8760e5860aa5a77383d63491cd'
 const YCRV_ZAP = '0x78ada385b15d89a9b845d2cac0698663f0c69e3c'
 const YBS_REWARD_DISTRIBUTOR = '0xB226c52EB411326CdB54824a88aBaFDAAfF16D3d'
 const YYB_REWARD_DISTRIBUTOR = '0x1d02F6A86Ed5650f93E40FCD62fa5727c32ad746'
@@ -1626,6 +1628,114 @@ describe('getHoldingsActivity', () => {
     const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
 
     expect(response.entries.map((entry) => entry.action)).toEqual(['deposit'])
+  })
+
+  it('does not emit compatible asset-vault fallback transfers when another family has matching higher-level activity', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [
+        createWithdrawalEvent({
+          id: 'ysybold-withdraw',
+          vaultAddress: YSYBOLD_VAULT,
+          transactionHash: '0xysyboldwithdraw',
+          blockTimestamp: 416,
+          logIndex: 3,
+          assets: '100000000000000000000',
+          shares: '94000000000000000000'
+        })
+      ],
+      transfersIn: [
+        createTransferEvent({
+          id: 'ybold-transfer-in',
+          vaultAddress: YBOLD_VAULT,
+          transactionHash: '0xysyboldwithdraw',
+          blockTimestamp: 416,
+          logIndex: 2,
+          value: '100000000000000000000',
+          sender: YSYBOLD_VAULT,
+          receiver: USER_ADDRESS
+        })
+      ],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchActivityEventsByTransactionHashesMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [
+        createWithdrawalEvent({
+          id: 'ysybold-withdraw',
+          vaultAddress: YSYBOLD_VAULT,
+          transactionHash: '0xysyboldwithdraw',
+          blockTimestamp: 416,
+          logIndex: 3,
+          assets: '100000000000000000000',
+          shares: '94000000000000000000'
+        })
+      ],
+      transfers: [
+        createTransferEvent({
+          id: 'ybold-transfer-in',
+          vaultAddress: YBOLD_VAULT,
+          transactionHash: '0xysyboldwithdraw',
+          blockTimestamp: 416,
+          logIndex: 2,
+          value: '100000000000000000000',
+          sender: YSYBOLD_VAULT,
+          receiver: USER_ADDRESS
+        })
+      ]
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${YSYBOLD_VAULT}`,
+          {
+            address: YSYBOLD_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: YBOLD_VAULT,
+              symbol: 'yBOLD',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ],
+        [
+          `1:${YBOLD_VAULT}`,
+          {
+            address: YBOLD_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0x6440f144b7e50d6a8439336510312d2f54beb01d',
+              symbol: 'BOLD',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(response.entries).toMatchObject([
+      {
+        action: 'withdraw',
+        vaultAddress: YSYBOLD_VAULT,
+        assetSymbol: 'yBOLD',
+        assetAmount: '100000000000000000000',
+        shareAmount: '94000000000000000000'
+      }
+    ])
+    expect(response.entries).toHaveLength(1)
   })
 
   it('filters transfer fallback rows by activity type', async () => {

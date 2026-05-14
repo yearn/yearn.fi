@@ -14,7 +14,14 @@ import {
   fetchRecentAddressScopedActivityEvents,
   fetchUserEvents
 } from './graphql'
-import { formatAmount, lowerCaseAddress, minBigInt, toVaultKey, ZERO } from './pnlShared'
+import {
+  formatAmount,
+  isKnownCompatibleAssetVaultRollover,
+  lowerCaseAddress,
+  minBigInt,
+  toVaultKey,
+  ZERO
+} from './pnlShared'
 import { getFamilyVaultAddress, isStakingVault } from './staking'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
@@ -623,6 +630,53 @@ function classifyActivityEvents(events: TActivityEvent[], userAddress: string): 
     .sort((a, b) => b.timestamp - a.timestamp || b.blockNumber - a.blockNumber || b.logIndex - a.logIndex)
 }
 
+function isCompatibleAssetVaultFallbackTransfer(args: {
+  highLevelEvent: TResolvedActivityEvent
+  transferEvent: TResolvedActivityEvent
+}): boolean {
+  if (
+    args.transferEvent.action !== 'transfer' ||
+    args.transferEvent.transferDirection === null ||
+    args.highLevelEvent.chainId !== args.transferEvent.chainId ||
+    args.highLevelEvent.txHash !== args.transferEvent.txHash
+  ) {
+    return false
+  }
+
+  const isCompatiblePair = isKnownCompatibleAssetVaultRollover(
+    args.highLevelEvent.chainId,
+    args.highLevelEvent.familyVaultAddress,
+    args.transferEvent.familyVaultAddress
+  )
+
+  if (!isCompatiblePair || args.highLevelEvent.assets !== args.transferEvent.shares) {
+    return false
+  }
+
+  return (
+    (args.highLevelEvent.action === 'withdraw' && args.transferEvent.transferDirection === 'in') ||
+    (args.highLevelEvent.action === 'deposit' && args.transferEvent.transferDirection === 'out')
+  )
+}
+
+function suppressCompatibleAssetVaultFallbackTransfers(events: TResolvedActivityEvent[]): TResolvedActivityEvent[] {
+  const highLevelEvents = events.filter((event) => event.action !== 'transfer')
+
+  if (highLevelEvents.length === 0) {
+    return events
+  }
+
+  return events.filter(
+    (event) =>
+      !highLevelEvents.some((highLevelEvent) =>
+        isCompatibleAssetVaultFallbackTransfer({
+          highLevelEvent,
+          transferEvent: event
+        })
+      )
+  )
+}
+
 function toResolvedTxKey(event: TResolvedActivityEvent): string {
   return `${event.chainId}:${event.txHash}`
 }
@@ -1004,7 +1058,9 @@ async function classifyActivityForTransactionKeys(
     ...selectedAddressEvents,
     ...normalizeTransactionActivityEvents(transactionEvents)
   ])
-  const classifiedEvents = classifyActivityEvents(selectedEvents, userAddress)
+  const classifiedEvents = suppressCompatibleAssetVaultFallbackTransfers(
+    classifyActivityEvents(selectedEvents, userAddress)
+  )
   const directV2EnrichedEvents = await enrichDirectV2VaultTransferEvents(classifiedEvents, userAddress)
   const ycrvZapEnrichedEvents = await enrichYcrvZapTransferEvents(directV2EnrichedEvents, userAddress)
 
