@@ -41,6 +41,7 @@ _app
 
 # docs
 /docs/plans
+/docs/temp
 
 # playwright
 .playwright-mcp
