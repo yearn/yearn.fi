@@ -1663,7 +1663,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     return (
       <>
         <div className="sticky top-[calc(var(--header-height)+var(--portfolio-breadcrumbs-height)+var(--portfolio-tabs-height))] z-20 flex w-full flex-wrap items-center gap-2 bg-app md:gap-3">
-          <div className="min-w-0 flex-1 md:hidden">
+          <div className="w-full md:hidden">
             <ActivityMobileChainDropdown
               chainButtons={activityChainButtons}
               areAllChainsSelected={activityChainId === null}
