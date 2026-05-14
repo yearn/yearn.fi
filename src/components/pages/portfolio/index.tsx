@@ -60,6 +60,7 @@ import { IconDeposit } from '@shared/icons/IconDeposit'
 import { IconGitCompare } from '@shared/icons/IconGitCompare'
 import { IconHandCoins } from '@shared/icons/IconHandCoins'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
+import { IconSearch } from '@shared/icons/IconSearch'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { IconStake } from '@shared/icons/IconStake'
 import { IconUnstake } from '@shared/icons/IconUnstake'
@@ -567,7 +568,7 @@ function ActivityTypeDropdown({
       <div className="relative w-full md:w-auto md:shrink-0">
         <ListboxButton
           className={cl(
-            'flex h-10 w-full items-center justify-between gap-2 rounded-lg border bg-surface px-3 text-sm font-medium transition-colors',
+            'flex h-10 w-full items-center justify-between gap-2 rounded-lg border bg-surface px-2 text-xs font-medium transition-colors md:px-3 md:text-sm',
             isActive ? 'border-primary/50 text-primary' : 'border-border text-text-secondary hover:text-text-primary'
           )}
         >
@@ -761,14 +762,15 @@ function ActivityDateRangeButton({
     <button
       type="button"
       className={cl(
-        'flex h-10 w-full items-center justify-between gap-2 rounded-lg border bg-surface px-3 text-sm font-medium transition-colors md:w-auto md:shrink-0',
+        'flex h-10 w-full items-center justify-between gap-2 rounded-lg border bg-surface px-2 text-xs font-medium transition-colors md:w-auto md:shrink-0 md:px-3 md:text-sm',
         isActive ? 'border-primary/50 text-primary' : 'border-border text-text-secondary hover:text-text-primary'
       )}
       onClick={onClick}
     >
       <span className="flex min-w-0 items-center gap-2">
         <IconCalendarDays className="size-4 shrink-0" />
-        <span className="min-w-0 truncate">{'Select date range'}</span>
+        <span className="min-w-0 truncate md:hidden">{'Date range'}</span>
+        <span className="hidden min-w-0 truncate md:inline">{'Select date range'}</span>
       </span>
     </button>
   )
@@ -1119,15 +1121,10 @@ function IndexedActivityRow({
   const isTransferAction = entry.action === 'transfer'
   const isSwapAction = entry.action === 'swap'
   const isRewardClaim = entry.displayType === 'reward_claim'
-  const transferTokenAddress = isTransferAction ? toAddress(entry.vaultAddress) : null
   const vaultPageUrl = `/vaults/${entry.chainId}/${toAddress(preferredVaultAddress)}`
   const activityTitle = getActivityEntryTitle(entry)
   const isExitAction = entry.action === 'withdraw' || entry.action === 'unstake'
-  const tokenAddress =
-    transferTokenAddress ??
-    (isExitAction
-      ? (normalizedOutputTokenAddress ?? normalizedAssetAddress)
-      : (normalizedInputTokenAddress ?? normalizedAssetAddress))
+  const tokenAddress = normalizedAssetAddress ?? normalizedInputTokenAddress ?? normalizedOutputTokenAddress
   const chainName = getActivityChainName(entry.chainId)
   const formattedDate = formatIndexedActivityDate(entry.timestamp)
   const formattedDateTime = formatIndexedActivityDateTime(entry.timestamp)
@@ -1215,7 +1212,7 @@ function IndexedActivityRow({
         onClick={() => setIsExpanded((previous) => !previous)}
         aria-expanded={isExpanded}
         className={cl(
-          'group relative grid w-full cursor-pointer grid-cols-1 gap-3 bg-surface p-3 text-left md:grid-cols-24 md:gap-0 md:px-6 md:py-4 md:pr-20',
+          'group relative grid w-full cursor-pointer grid-cols-1 gap-1.5 bg-surface p-3 pb-5 text-left md:grid-cols-24 md:gap-0 md:px-6 md:py-4 md:pr-20',
           hoverRoundedClass
         )}
       >
@@ -1234,19 +1231,34 @@ function IndexedActivityRow({
           />
         ) : null}
 
-        <div className="z-10 flex min-w-0 items-start gap-3 md:col-span-14 md:items-center md:gap-6">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary text-neutral-700 md:size-10 md:rounded-none md:bg-transparent">
-            <ActivityActionIcon action={entry.action} displayType={entry.displayType} />
-          </div>
-          <div className="contents md:block md:min-w-0 md:flex-1">
-            <div className="contents md:block md:min-w-0">
-              <div className="col-start-2 row-start-1 flex min-w-0 items-center justify-between gap-3 pt-0.5 md:pt-0">
-                <p className="min-w-0 truncate text-lg font-bold leading-tight text-text-primary">{activityTitle}</p>
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-app text-text-secondary md:hidden">
-                  <IconChevron className="size-4" direction={isExpanded ? 'up' : 'down'} />
-                </span>
+        <div className="z-10 flex min-w-0 items-start justify-between gap-3 md:col-span-14 md:items-center md:justify-start md:gap-6">
+          <div className="flex min-w-0 items-center gap-3 md:contents">
+            <div className="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-neutral-700 md:size-10">
+              <ActivityActionIcon action={entry.action} displayType={entry.displayType} />
+              <div className="absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface">
+                <img
+                  src={getActivityChainLogoUrl(entry.chainId)}
+                  alt={chainName}
+                  className="size-3.5 rounded-full"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
-              <div className="col-span-2 row-start-2 mt-0 flex w-full flex-wrap items-center justify-start gap-1.5 text-left text-xs text-text-primary/70 md:mt-1 md:gap-2">
+            </div>
+            <div className="min-w-0 flex-1 md:block">
+              <div className="md:block md:min-w-0">
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-0 pt-0.5 md:block md:pt-0">
+                  <p className="min-w-0 truncate text-lg font-bold leading-tight text-text-primary">{activityTitle}</p>
+                  <div className="max-w-full md:hidden">
+                    <VaultsListChip
+                      label={displayName}
+                      isActive={isVaultFilterActive}
+                      onClick={() => onSelectVault(displayName)}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-1 hidden w-full flex-wrap items-center justify-start gap-2 text-left text-xs text-text-primary/70 md:flex">
                 <VaultsListChip
                   label={displayName}
                   isActive={isVaultFilterActive}
@@ -1255,15 +1267,6 @@ function IndexedActivityRow({
                 <VaultsListChip
                   label={chainName}
                   isActive={isChainFilterActive}
-                  icon={
-                    <img
-                      src={getActivityChainLogoUrl(entry.chainId)}
-                      alt=""
-                      className="size-3.5 rounded-full"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  }
                   onClick={() => onSelectChain(entry.chainId)}
                 />
                 <ActivityDateChip
@@ -1285,10 +1288,59 @@ function IndexedActivityRow({
               </div>
             </div>
           </div>
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-app text-text-secondary md:hidden">
+            <IconChevron className="size-4" direction={isExpanded ? 'up' : 'down'} />
+          </span>
         </div>
 
-        <div className="z-10 rounded-2xl border border-border bg-surface-secondary/60 p-3 md:hidden">
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="z-10 flex w-full flex-wrap items-center justify-start gap-1.5 pl-11 text-left text-xs text-text-primary/70 md:hidden">
+          <VaultsListChip
+            label={chainName}
+            isActive={isChainFilterActive}
+            onClick={() => onSelectChain(entry.chainId)}
+          />
+          <ActivityDateChip
+            date={formattedDate}
+            dateInputValue={activityDateInputValue}
+            dateTime={formattedDateTime}
+            onOpenDateRange={onOpenDateRange}
+            time={formattedTime}
+          />
+          {metadataStatus !== 'Indexed' ? <VaultsListChip label={metadataStatus} /> : null}
+          {isZap ? (
+            <VaultsListChip
+              label="Zap"
+              isActive={isZapFilterActive}
+              icon={<span aria-hidden="true">⚡</span>}
+              onClick={onSelectZap}
+            />
+          ) : null}
+        </div>
+
+        <div className="z-10 mt-1 pl-11 md:hidden">
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            {isStakeZap ? (
+              <div className="flex min-w-0 flex-1 flex-col items-start">
+                <span className="min-w-0 text-left text-sm font-semibold tabular-nums text-text-primary">
+                  {`${collapsedPrimaryAmount} ${depositedTokenSymbol ?? ''}`.trim()}
+                </span>
+              </div>
+            ) : isTransferAction ? (
+              <div className="flex min-w-0 flex-1 flex-col items-start">
+                <span className="min-w-0 text-left text-sm font-semibold tabular-nums text-text-primary">
+                  {`${isRewardClaim ? transferAmount : `${transferSign}${transferAmount}`} ${shareSymbol ?? ''}`.trim()}
+                </span>
+              </div>
+            ) : (
+              <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+                <span className="min-w-0 text-left text-sm font-semibold tabular-nums text-neutral-600">
+                  {`-${outboundAmount} ${outboundSymbol ?? ''}`.trim()}
+                </span>
+                <span className="min-w-0 text-left text-sm font-semibold tabular-nums text-text-primary">
+                  {`+${inboundAmount} ${inboundSymbol ?? ''}`.trim()}
+                </span>
+              </div>
+            )}
             {tokenAddress ? (
               <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
@@ -1296,49 +1348,15 @@ function IndexedActivityRow({
                 tokenSymbol={summaryAssetSymbol ?? activityTitle}
                 width={32}
                 height={32}
-                className="rounded-full"
+                className="shrink-0 rounded-full"
                 loading="lazy"
               />
             ) : null}
-            {isStakeZap ? (
-              <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-x-3">
-                <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
-                  {'Staked'}
-                </span>
-                <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
-                  {`${collapsedPrimaryAmount} ${depositedTokenSymbol ?? ''}`.trim()}
-                </span>
-              </div>
-            ) : isTransferAction ? (
-              <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-x-3">
-                <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
-                  {isRewardClaim ? 'Claimed' : entry.transferDirection === 'out' ? 'Sent' : 'Received'}
-                </span>
-                <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
-                  {`${isRewardClaim ? transferAmount : `${transferSign}${transferAmount}`} ${shareSymbol ?? ''}`.trim()}
-                </span>
-              </div>
-            ) : (
-              <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5">
-                <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
-                  {'Sent'}
-                </span>
-                <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
-                  {`-${outboundAmount} ${outboundSymbol ?? ''}`.trim()}
-                </span>
-                <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
-                  {'Received'}
-                </span>
-                <span className="min-w-0 text-right text-sm font-semibold tabular-nums text-text-primary">
-                  {`+${inboundAmount} ${inboundSymbol ?? ''}`.trim()}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
         <div className="z-10 hidden min-w-0 items-center justify-end gap-3 md:col-span-10 md:flex">
-          <div className="flex min-w-0 shrink-0 items-center gap-2.5 text-right">
+          <div className="grid min-w-0 shrink-0 grid-cols-[24px_160px] items-center gap-2.5 text-right">
             {tokenAddress ? (
               <TokenLogo
                 src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
@@ -1349,9 +1367,11 @@ function IndexedActivityRow({
                 className="rounded-full"
                 loading="lazy"
               />
-            ) : null}
+            ) : (
+              <span className="size-6" />
+            )}
             {isStakeZap ? (
-              <div className="grid min-w-0 grid-cols-[max-content_100px] gap-x-4">
+              <div className="grid min-w-0 grid-cols-[60px_minmax(0,1fr)] gap-x-4">
                 <span className="min-w-0 text-right text-sm font-semibold leading-tight tabular-nums text-text-primary md:text-base">
                   {collapsedPrimaryAmount}
                 </span>
@@ -1360,7 +1380,7 @@ function IndexedActivityRow({
                 </span>
               </div>
             ) : isTransferAction ? (
-              <div className="grid min-w-0 grid-cols-[max-content_100px] gap-x-4">
+              <div className="grid min-w-0 grid-cols-[60px_minmax(0,1fr)] gap-x-4">
                 <span
                   className={cl(
                     'min-w-0 text-right text-sm font-semibold leading-tight tabular-nums md:text-base',
@@ -1379,7 +1399,7 @@ function IndexedActivityRow({
                 </span>
               </div>
             ) : (
-              <div className="grid min-w-0 grid-cols-[max-content_100px] gap-x-4 gap-y-0.5">
+              <div className="grid min-w-0 grid-cols-[60px_minmax(0,1fr)] gap-x-4 gap-y-0.5">
                 <span className="min-w-0 text-right text-sm font-semibold leading-tight tabular-nums text-neutral-600 md:text-base">
                   {`-${outboundAmount}`}
                 </span>
@@ -1399,8 +1419,8 @@ function IndexedActivityRow({
       </div>
 
       {isExpanded ? (
-        <div className="bg-surface px-3 pb-4 pt-1 md:pl-[88px] md:pr-6">
-          <div className="flex flex-col rounded-2xl border border-border bg-surface-secondary/35 p-3 md:rounded-none md:border-0 md:bg-transparent md:p-0">
+        <div className="bg-transparent px-3 pb-4 md:pt-1 md:pl-[88px] md:pr-6">
+          <div className="flex flex-col pl-11 md:pl-0">
             {isStakeZap ? (
               <>
                 <ActivityDetailItem label="TOKEN STAKED:" value={primaryAmount} />
@@ -1616,7 +1636,7 @@ function PortfolioTabSelector({
     <div className={'flex gap-2 md:gap-3 w-full'}>
       <div
         className={cl(
-          'flex w-full justify-between gap-1 bg-surface-secondary p-1',
+          'flex h-10 w-full items-stretch justify-between overflow-hidden bg-surface-secondary text-sm text-text-primary divide-x divide-border',
           mergeWithHeader ? 'rounded-b-lg border-x border-b border-border' : 'rounded-lg border border-border'
         )}
       >
@@ -1626,12 +1646,11 @@ function PortfolioTabSelector({
             type={'button'}
             onClick={() => onSelectTab(tab.key)}
             className={cl(
-              'flex-1 rounded-md px-2 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5',
-              'border border-transparent focus-visible:outline-none focus-visible:ring-0',
-              'min-h-[36px] active:scale-[0.98]',
+              'flex h-full flex-1 items-center justify-center px-2 font-medium transition-colors md:px-4',
+              'focus-visible:outline-none focus-visible:ring-0',
               activeTab === tab.key
-                ? 'bg-surface text-text-primary !border-border'
-                : 'bg-transparent text-text-secondary hover:text-text-primary'
+                ? 'bg-surface text-text-primary font-semibold'
+                : 'bg-transparent text-text-secondary hover:bg-surface/30 hover:text-text-primary'
             )}
             aria-pressed={activeTab === tab.key}
           >
@@ -1654,6 +1673,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   const [lastKnownActivityChainIds, setLastKnownActivityChainIds] = useState<number[] | null>(null)
   const [isActivityZapFilterActive, setIsActivityZapFilterActive] = useState(false)
   const [activitySearch, setActivitySearch] = useState('')
+  const [isActivityMobileSearchExpanded, setIsActivityMobileSearchExpanded] = useState(false)
   const [isActivityDateRangeOpen, setIsActivityDateRangeOpen] = useState(false)
   const activityStartTimestamp = useMemo(
     () => getActivityDateBoundaryTimestamp(activityFilters.startDate, 'start'),
@@ -1840,18 +1860,59 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
               onOpenChainModal={() => undefined}
             />
           </div>
-          <div className="grid w-full grid-cols-2 gap-2 md:contents">
-            <ActivityTypeDropdown
-              selectedTypes={activityFilters.types}
-              onChange={(types) => setActivityFilters((previous) => ({ ...previous, types }))}
-            />
-            <ActivityDateRangeButton
-              startDate={activityFilters.startDate}
-              endDate={activityFilters.endDate}
-              onClick={handleActivityDateRangeOpen}
-            />
-          </div>
-          <div className="min-w-[180px] flex-1">
+          {isActivityMobileSearchExpanded ? (
+            <div className="flex w-full items-center gap-1 md:hidden">
+              <div className="flex-1">
+                <SearchBar
+                  className="w-full rounded-[4px] border-none bg-neutral-800/20 text-text-primary"
+                  iconClassName="text-text-primary"
+                  searchPlaceholder="Search activity"
+                  searchValue={activitySearch}
+                  onSearch={setActivitySearch}
+                  shouldDebounce={false}
+                  highlightWhenActive={false}
+                  autoFocus={true}
+                  onKeyDown={(event): void => {
+                    if (event.key === 'Escape') {
+                      setIsActivityMobileSearchExpanded(false)
+                    }
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition-colors hover:border-hover hover:text-text-primary"
+                onClick={(): void => setIsActivityMobileSearchExpanded(false)}
+                aria-label="Close activity search"
+              >
+                <IconCross className="size-3" />
+              </button>
+            </div>
+          ) : (
+            <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_40px] gap-1 md:contents md:gap-2">
+              <ActivityTypeDropdown
+                selectedTypes={activityFilters.types}
+                onChange={(types) => setActivityFilters((previous) => ({ ...previous, types }))}
+              />
+              <ActivityDateRangeButton
+                startDate={activityFilters.startDate}
+                endDate={activityFilters.endDate}
+                onClick={handleActivityDateRangeOpen}
+              />
+              <button
+                type="button"
+                className={cl(
+                  'flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition-colors hover:border-hover hover:text-text-primary md:hidden',
+                  activitySearch ? 'text-text-primary' : ''
+                )}
+                onClick={(): void => setIsActivityMobileSearchExpanded(true)}
+                aria-label="Search activity"
+              >
+                <IconSearch className="size-4" />
+              </button>
+            </div>
+          )}
+          <div className="hidden min-w-[180px] flex-1 md:block">
             <SearchBar
               className="w-full rounded-lg border-border bg-surface text-text-primary transition-all"
               iconClassName="text-text-primary"
@@ -1905,8 +1966,8 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     return (
       <VirtualizedVaultsList
         items={visibleIndexedEntries}
-        estimateSize={81}
-        itemSpacingClassName="border-b border-border"
+        estimateSize={132}
+        itemSpacingClassName="border-b-2 border-border md:border-b"
         getItemKey={getActivityEntryKey}
         onEndReached={indexedHasMore ? handleIndexedActivityEndReached : undefined}
         renderItem={(entry, index) => {
@@ -1950,9 +2011,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
               ? entry.familyVaultAddress
               : entry.vaultAddress
           const assetAddress =
-            (entry.action === 'deposit' || entry.action === 'withdraw') &&
-            assetToken &&
-            !isZeroAddress(assetToken.address)
+            assetToken && !isZeroAddress(assetToken.address)
               ? assetToken.address
               : fallbackLogoAddress && !isZeroAddress(fallbackLogoAddress)
                 ? fallbackLogoAddress
@@ -2024,7 +2083,9 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
 
         <div className="flex flex-col gap-2">
           {renderActivityFilters()}
-          <div className="overflow-visible rounded-lg border border-border bg-surface">{renderIndexedActivity()}</div>
+          <div className="overflow-visible bg-surface md:rounded-lg md:border md:border-border">
+            {renderIndexedActivity()}
+          </div>
           {indexedHasMore && (
             <div className="flex justify-center">
               <button
@@ -2930,7 +2991,7 @@ function PortfolioPage(): ReactElement {
             ]}
           />
         </div>
-        <div className="flex flex-col gap-3">
+        <div className="hidden flex-col gap-3 md:flex">
           <div className="px-1">{overviewHeading}</div>
         </div>
         <div
