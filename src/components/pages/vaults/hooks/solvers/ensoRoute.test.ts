@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeEnsoRouteResponse } from './ensoRoute'
+import { normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
 
 describe('normalizeEnsoRouteResponse', () => {
   it('keeps valid Enso route payloads as routes', () => {
@@ -94,5 +94,47 @@ describe('normalizeEnsoRouteResponse', () => {
         statusCode: 400
       }
     })
+  })
+
+  it('detects swap actions from route steps', () => {
+    const normalized = normalizeEnsoRouteResponse(
+      {
+        tx: {
+          to: '0x0000000000000000000000000000000000000001',
+          data: '0x1234',
+          value: '0',
+          from: '0x0000000000000000000000000000000000000002',
+          chainId: 1
+        },
+        amountOut: '100',
+        minAmountOut: '95',
+        gas: '123456',
+        route: [{ action: 'deposit' }, { action: 'swap' }]
+      },
+      200
+    )
+
+    expect(routeHasSwapStep(normalized.route)).toBe(true)
+  })
+
+  it('does not flag pure routing steps as swaps', () => {
+    const normalized = normalizeEnsoRouteResponse(
+      {
+        tx: {
+          to: '0x0000000000000000000000000000000000000001',
+          data: '0x1234',
+          value: '0',
+          from: '0x0000000000000000000000000000000000000002',
+          chainId: 1
+        },
+        amountOut: '100',
+        minAmountOut: '100',
+        gas: '123456',
+        route: [{ action: 'redeem' }, { action: 'deposit' }]
+      },
+      200
+    )
+
+    expect(routeHasSwapStep(normalized.route)).toBe(false)
   })
 })

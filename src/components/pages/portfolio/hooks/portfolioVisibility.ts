@@ -1,9 +1,28 @@
 import { getVaultInfo, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 
-export function filterVisiblePortfolioHoldings<T extends TKongVaultInput>(vaults: T[], showHiddenVaults: boolean): T[] {
-  if (showHiddenVaults) {
-    return vaults
-  }
+export const PORTFOLIO_DUST_USD_THRESHOLD = 0.01
 
-  return vaults.filter((vault) => !Boolean(getVaultInfo(vault)?.isHidden))
+export function isPortfolioDustValueVisible(value: number, shouldHideDust: boolean): boolean {
+  return !shouldHideDust || value >= PORTFOLIO_DUST_USD_THRESHOLD
+}
+
+export function filterVisiblePortfolioHoldings<T extends TKongVaultInput>(
+  vaults: T[],
+  showHiddenVaults: boolean,
+  options?: {
+    shouldHideDust?: boolean
+    getVaultValue?: (vault: T) => number
+  }
+): T[] {
+  return vaults.filter((vault) => {
+    if (!showHiddenVaults && Boolean(getVaultInfo(vault)?.isHidden)) {
+      return false
+    }
+
+    if (!options?.shouldHideDust) {
+      return true
+    }
+
+    return isPortfolioDustValueVisible(options.getVaultValue?.(vault) ?? 0, true)
+  })
 }

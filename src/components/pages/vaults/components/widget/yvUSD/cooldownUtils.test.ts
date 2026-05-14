@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { formatDays, resolveCooldownWindowState, resolveDurationSeconds } from './cooldownUtils'
+import {
+  formatDays,
+  resolveCooldownWindowState,
+  resolveDurationSeconds,
+  resolveYvUsdCooldownSummary
+} from './cooldownUtils'
 
 describe('resolveDurationSeconds', () => {
   it('uses the contract-provided duration when available', () => {
@@ -52,5 +57,63 @@ describe('resolveCooldownWindowState', () => {
       isWithdrawalWindowOpen: false,
       isCooldownWindowExpired: true
     })
+  })
+})
+
+describe('resolveYvUsdCooldownSummary', () => {
+  it('returns a cooling down summary while cooldown is active', () => {
+    expect(
+      resolveYvUsdCooldownSummary({
+        hasActiveCooldown: true,
+        isCooldownActive: true,
+        isWithdrawalWindowOpen: false,
+        isCooldownWindowExpired: false
+      })
+    ).toEqual({
+      label: 'Cooling down',
+      detail: 'Locked yvUSD is still in cooldown.',
+      tone: 'cooling'
+    })
+  })
+
+  it('returns a ready summary once withdrawals are available', () => {
+    expect(
+      resolveYvUsdCooldownSummary({
+        hasActiveCooldown: true,
+        isCooldownActive: false,
+        isWithdrawalWindowOpen: true,
+        isCooldownWindowExpired: false
+      })
+    ).toEqual({
+      label: 'Ready to withdraw',
+      detail: 'Locked yvUSD cooldown completed.',
+      tone: 'ready'
+    })
+  })
+
+  it('returns an expired summary when the withdrawal window closes', () => {
+    expect(
+      resolveYvUsdCooldownSummary({
+        hasActiveCooldown: true,
+        isCooldownActive: false,
+        isWithdrawalWindowOpen: false,
+        isCooldownWindowExpired: true
+      })
+    ).toEqual({
+      label: 'Cooldown expired',
+      detail: 'Withdrawal window closed. Start a new cooldown to withdraw.',
+      tone: 'expired'
+    })
+  })
+
+  it('returns null when there is no active cooldown', () => {
+    expect(
+      resolveYvUsdCooldownSummary({
+        hasActiveCooldown: false,
+        isCooldownActive: false,
+        isWithdrawalWindowOpen: false,
+        isCooldownWindowExpired: false
+      })
+    ).toBeNull()
   })
 })
