@@ -105,9 +105,11 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
    **************************************************************************/
   const settledTokensRawRef = useRef<TYChainTokens>({})
   const settledOwnerRef = useRef(userAddress)
+  const hasCompletedInitialBalanceLoadRef = useRef(false)
   if (settledOwnerRef.current !== userAddress) {
     settledOwnerRef.current = userAddress
     settledTokensRawRef.current = {}
+    hasCompletedInitialBalanceLoadRef.current = false
   }
   if (!isLoading) {
     settledTokensRawRef.current = stableTokensRaw
@@ -127,8 +129,12 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     isLoading,
     isBalancesPending
   })
-  const hasCompletedBalanceLoad =
+  const hasCurrentBalanceLoadCompleted =
     !userAddress || (allTokens.length > 0 && isSuccess && !isLoading && !isBalancesPending)
+  if (hasCurrentBalanceLoadCompleted) {
+    hasCompletedInitialBalanceLoadRef.current = true
+  }
+  const hasCompletedBalanceLoad = !userAddress || hasCompletedInitialBalanceLoadRef.current
 
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
