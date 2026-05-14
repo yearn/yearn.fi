@@ -59,7 +59,8 @@ function parseType(value: string | string[] | undefined): HoldingsActivityTypeFi
     rawValue === 'withdraw' ||
     rawValue === 'stake' ||
     rawValue === 'unstake' ||
-    rawValue === 'transfer'
+    rawValue === 'transfer' ||
+    rawValue === 'swap'
     ? rawValue
     : 'all'
 }

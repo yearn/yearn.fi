@@ -25,6 +25,7 @@ vi.mock('./vaults', () => ({
 
 const UNDERLYING_VAULT = '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204'
 const STAKING_VAULT = '0x622fa41799406b120f9a40da843d358b7b2cfee3'
+const DESTINATION_VAULT = '0x3333333333333333333333333333333333333333'
 const HIDDEN_VAULT = '0x0000000000000000000000000000000000000123'
 const UNKNOWN_VAULT = '0x0000000000000000000000000000000000000456'
 const USER_ADDRESS = '0x2222222222222222222222222222222222222222'
@@ -33,9 +34,17 @@ const USDT0 = '0x5555555555555555555555555555555555555555'
 const YBOLD_VAULT = '0x9f4330700a36b29952869fac9b33f45eedd8a3d8'
 const YSYBOLD_VAULT = '0x23346b04a7f55b8760e5860aa5a77383d63491cd'
 const YCRV_ZAP = '0x78ada385b15d89a9b845d2cac0698663f0c69e3c'
+const ZAPPER_V2 = '0x42D4e90Ff4068Abe7BC4EaB838c7dE1D2F5998A3'
+const ZAPPER_V2_ZAP_IN = '0x92Be6ADB6a12Da0CA607F9d87DB2F9978cD6ec3E'
+const ZAPPER_V2_ZAP_OUT = '0xd6b88257e91e4E4D4E990B3A858c849EF2DFdE8c'
+const DAI = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
 const YBS_REWARD_DISTRIBUTOR = '0xB226c52EB411326CdB54824a88aBaFDAAfF16D3d'
 const YYB_REWARD_DISTRIBUTOR = '0x1d02F6A86Ed5650f93E40FCD62fa5727c32ad746'
 const TRANSFER_EVENT = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)')
+const ZAPPER_ZAP_IN_EVENT = parseAbiItem('event zapIn(address sender, address pool, uint256 tokensRec)')
+const ZAPPER_ZAP_OUT_EVENT = parseAbiItem(
+  'event zapOut(address sender, address pool, address token, uint256 tokensRec)'
+)
 const YCRV_ZAP_TEST_ABI = [
   {
     stateMutability: 'nonpayable',
@@ -159,6 +168,42 @@ function createTransferLog(args: { tokenAddress: string; from: string; to: strin
       }
     }),
     logIndex: '0x1'
+  }
+}
+
+function createZapperZapInLog(args: { sender: string; pool: string; tokensRec: bigint; address?: string }) {
+  return {
+    address: args.address ?? ZAPPER_V2,
+    data: encodeAbiParameters(
+      [{ type: 'address' }, { type: 'address' }, { type: 'uint256' }],
+      [args.sender, args.pool, args.tokensRec]
+    ),
+    topics: encodeEventTopics({
+      abi: [ZAPPER_ZAP_IN_EVENT],
+      eventName: 'zapIn'
+    }),
+    logIndex: '0x2'
+  }
+}
+
+function createZapperZapOutLog(args: {
+  sender: string
+  pool: string
+  token: string
+  tokensRec: bigint
+  address?: string
+}) {
+  return {
+    address: args.address ?? ZAPPER_V2_ZAP_OUT,
+    data: encodeAbiParameters(
+      [{ type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'uint256' }],
+      [args.sender, args.pool, args.token, args.tokensRec]
+    ),
+    topics: encodeEventTopics({
+      abi: [ZAPPER_ZAP_OUT_EVENT],
+      eventName: 'zapOut'
+    }),
+    logIndex: '0x2'
   }
 }
 
@@ -347,6 +392,183 @@ function mockDirectV2VaultRpc(args: {
                 })
               ]
             }
+          })
+        )
+      }
+
+      return new Response(JSON.stringify({ result: null }))
+    })
+  )
+}
+
+function mockZapperV2Rpc(args: {
+  transactionHash: string
+  transactionTo?: string
+  zapSender?: string
+  zapPool?: string
+  tokensRec?: bigint
+  inputTokenAddress?: string
+  inputAmount?: bigint
+  inputTokenSymbol?: string
+  inputTokenDecimals?: number
+}) {
+  process.env.VITE_RPC_URI_FOR_1 = 'https://rpc.example'
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (_url: string, init?: RequestInit) => {
+      const zapperContract = args.transactionTo ?? ZAPPER_V2
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        method?: string
+        params?: Array<string | { data?: string }>
+      }
+
+      if (body.method === 'eth_getTransactionByHash' && body.params?.[0] === args.transactionHash) {
+        return new Response(
+          JSON.stringify({
+            result: {
+              to: zapperContract,
+              input: '0x82650b10'
+            }
+          })
+        )
+      }
+
+      if (body.method === 'eth_getTransactionReceipt') {
+        return new Response(
+          JSON.stringify({
+            result: {
+              logs: [
+                createTransferLog({
+                  tokenAddress: args.inputTokenAddress ?? DAI,
+                  from: USER_ADDRESS,
+                  to: zapperContract,
+                  value: args.inputAmount ?? 100000000000000000000n
+                }),
+                createTransferLog({
+                  tokenAddress: args.zapPool ?? UNDERLYING_VAULT,
+                  from: zapperContract,
+                  to: USER_ADDRESS,
+                  value: args.tokensRec ?? 50741940577121965627316n
+                }),
+                createZapperZapInLog({
+                  address: zapperContract,
+                  sender: args.zapSender ?? USER_ADDRESS,
+                  pool: args.zapPool ?? UNDERLYING_VAULT,
+                  tokensRec: args.tokensRec ?? 50741940577121965627316n
+                })
+              ]
+            }
+          })
+        )
+      }
+
+      if (body.method === 'eth_call') {
+        const [call] = body.params ?? []
+        const data = typeof call === 'object' ? call.data : null
+
+        return new Response(
+          JSON.stringify({
+            result:
+              data === '0x95d89b41'
+                ? encodeFunctionResult({
+                    abi: erc20Abi,
+                    functionName: 'symbol',
+                    result: args.inputTokenSymbol ?? 'DAI'
+                  })
+                : encodeFunctionResult({
+                    abi: erc20Abi,
+                    functionName: 'decimals',
+                    result: args.inputTokenDecimals ?? 18
+                  })
+          })
+        )
+      }
+
+      return new Response(JSON.stringify({ result: null }))
+    })
+  )
+}
+
+function mockZapperV2ZapOutRpc(args: {
+  transactionHash: string
+  transactionTo?: string
+  zapSender?: string
+  zapPool?: string
+  shareAmount: bigint
+  outputTokenAddress?: string
+  outputAmount: bigint
+  outputTokenSymbol?: string
+  outputTokenDecimals?: number
+}) {
+  process.env.VITE_RPC_URI_FOR_1 = 'https://rpc.example'
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (_url: string, init?: RequestInit) => {
+      const zapperContract = args.transactionTo ?? ZAPPER_V2_ZAP_OUT
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        method?: string
+        params?: Array<string | { data?: string }>
+      }
+
+      if (body.method === 'eth_getTransactionByHash' && body.params?.[0] === args.transactionHash) {
+        return new Response(
+          JSON.stringify({
+            result: {
+              to: zapperContract,
+              input: '0x89c6973b'
+            }
+          })
+        )
+      }
+
+      if (body.method === 'eth_getTransactionReceipt') {
+        return new Response(
+          JSON.stringify({
+            result: {
+              logs: [
+                createTransferLog({
+                  tokenAddress: args.zapPool ?? UNDERLYING_VAULT,
+                  from: USER_ADDRESS,
+                  to: zapperContract,
+                  value: args.shareAmount
+                }),
+                createTransferLog({
+                  tokenAddress: args.outputTokenAddress ?? USDT0,
+                  from: zapperContract,
+                  to: USER_ADDRESS,
+                  value: args.outputAmount
+                }),
+                createZapperZapOutLog({
+                  address: zapperContract,
+                  sender: args.zapSender ?? USER_ADDRESS,
+                  pool: args.zapPool ?? UNDERLYING_VAULT,
+                  token: args.outputTokenAddress ?? USDT0,
+                  tokensRec: args.outputAmount
+                })
+              ]
+            }
+          })
+        )
+      }
+
+      if (body.method === 'eth_call') {
+        const [call] = body.params ?? []
+        const data = typeof call === 'object' ? call.data : null
+
+        return new Response(
+          JSON.stringify({
+            result:
+              data === '0x95d89b41'
+                ? encodeFunctionResult({
+                    abi: erc20Abi,
+                    functionName: 'symbol',
+                    result: args.outputTokenSymbol ?? 'USDT'
+                  })
+                : encodeFunctionResult({
+                    abi: erc20Abi,
+                    functionName: 'decimals',
+                    result: args.outputTokenDecimals ?? 6
+                  })
           })
         )
       }
@@ -637,6 +859,232 @@ describe('getHoldingsActivity', () => {
         shareAmountFormatted: 0.202094,
         status: 'ok'
       }
+    ])
+  })
+
+  it('collapses router-mediated vault exits and entries in the same transaction into a swap row', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [
+        createTransferEvent({
+          id: 'enso-swap-transfer-in',
+          vaultAddress: DESTINATION_VAULT,
+          transactionHash: '0xensoswap',
+          blockTimestamp: 240,
+          logIndex: 8,
+          value: '37000000000000000000',
+          sender: INTERMEDIARY,
+          receiver: USER_ADDRESS
+        })
+      ],
+      transfersOut: [
+        createTransferEvent({
+          id: 'enso-swap-transfer-out',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xensoswap',
+          blockTimestamp: 240,
+          logIndex: 1,
+          value: '27000000000000000000',
+          sender: USER_ADDRESS,
+          receiver: INTERMEDIARY
+        })
+      ],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchActivityEventsByTransactionHashesMock.mockResolvedValue({
+      deposits: [
+        createDepositEvent({
+          id: 'enso-swap-deposit',
+          vaultAddress: DESTINATION_VAULT,
+          transactionHash: '0xensoswap',
+          blockTimestamp: 240,
+          logIndex: 7,
+          assets: '39000000000000000000',
+          shares: '37000000000000000000',
+          sender: INTERMEDIARY
+        })
+      ],
+      withdrawals: [
+        createWithdrawalEvent({
+          id: 'enso-swap-withdraw',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xensoswap',
+          blockTimestamp: 240,
+          logIndex: 2,
+          assets: '28000000000000000000',
+          shares: '27000000000000000000'
+        })
+      ],
+      transfers: [
+        createTransferEvent({
+          id: 'enso-swap-transfer-in',
+          vaultAddress: DESTINATION_VAULT,
+          transactionHash: '0xensoswap',
+          blockTimestamp: 240,
+          logIndex: 8,
+          value: '37000000000000000000',
+          sender: INTERMEDIARY,
+          receiver: USER_ADDRESS
+        }),
+        createTransferEvent({
+          id: 'enso-swap-transfer-out',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xensoswap',
+          blockTimestamp: 240,
+          logIndex: 1,
+          value: '27000000000000000000',
+          sender: USER_ADDRESS,
+          receiver: INTERMEDIARY
+        })
+      ]
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+              symbol: 'USDC',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ],
+        [
+          `1:${DESTINATION_VAULT}`,
+          {
+            address: DESTINATION_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'volatile',
+            token: {
+              address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+              symbol: 'WETH',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const allResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const swapResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'swap' })
+    const depositResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'deposit' })
+    const withdrawResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'withdraw' })
+
+    expect(allResponse.entries).toEqual([
+      {
+        chainId: 1,
+        txHash: '0xensoswap',
+        timestamp: 240,
+        action: 'swap',
+        transferDirection: null,
+        vaultAddress: DESTINATION_VAULT,
+        familyVaultAddress: DESTINATION_VAULT,
+        assetSymbol: 'WETH',
+        assetAmount: '0',
+        assetAmountFormatted: null,
+        inputTokenAddress: UNDERLYING_VAULT,
+        inputTokenSymbol: null,
+        inputTokenAmount: '27000000000000000000',
+        inputTokenAmountFormatted: 27,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
+        shareAmount: '37000000000000000000',
+        shareAmountFormatted: 37,
+        status: 'ok'
+      }
+    ])
+    expect(swapResponse.entries).toHaveLength(1)
+    expect(depositResponse.entries).toEqual([])
+    expect(withdrawResponse.entries).toEqual([])
+  })
+
+  it('collapses direct-classified vault exits and entries in the same transaction into a swap row', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [
+        createDepositEvent({
+          id: 'enso-direct-swap-deposit',
+          vaultAddress: DESTINATION_VAULT,
+          transactionHash: '0xensodirectswap',
+          blockTimestamp: 245,
+          logIndex: 7,
+          assets: '39000000000000000000',
+          shares: '37000000000000000000',
+          sender: INTERMEDIARY
+        })
+      ],
+      withdrawals: [
+        createWithdrawalEvent({
+          id: 'enso-direct-swap-withdraw',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xensodirectswap',
+          blockTimestamp: 245,
+          logIndex: 2,
+          assets: '28000000000000000000',
+          shares: '27000000000000000000'
+        })
+      ],
+      transfersIn: [],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+              symbol: 'USDC',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ],
+        [
+          `1:${DESTINATION_VAULT}`,
+          {
+            address: DESTINATION_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'volatile',
+            token: {
+              address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+              symbol: 'WETH',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(response.entries.map((entry) => [entry.action, entry.txHash, entry.vaultAddress])).toEqual([
+      ['swap', '0xensodirectswap', DESTINATION_VAULT]
     ])
   })
 
@@ -1587,6 +2035,293 @@ describe('getHoldingsActivity', () => {
         shareAmount: '4100000000000000000',
         shareAmountFormatted: 4.1
       }
+    ])
+  })
+
+  it('classifies known Zapper v2 vault zap-ins as deposit zap rows', async () => {
+    const shareAmount = 50741940577121965627316n
+    const inputAmount = 100000000000000000000n
+
+    mockZapperV2Rpc({
+      transactionHash: '0xzapperv2',
+      transactionTo: ZAPPER_V2_ZAP_IN,
+      tokensRec: shareAmount,
+      inputAmount
+    })
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [
+        createTransferEvent({
+          id: 'zapper-v2-transfer-in',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xzapperv2',
+          blockTimestamp: 413,
+          logIndex: 7,
+          value: shareAmount.toString(),
+          sender: ZAPPER_V2_ZAP_IN,
+          receiver: USER_ADDRESS
+        })
+      ],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v2',
+            category: 'stable',
+            token: {
+              address: USDT0,
+              symbol: 'USDT',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const depositResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'deposit' })
+    const transferResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'transfer' })
+
+    expect(response.entries).toMatchObject([
+      {
+        action: 'deposit',
+        displayType: 'zap',
+        transferDirection: null,
+        assetAmount: inputAmount.toString(),
+        inputTokenAddress: DAI.toLowerCase(),
+        inputTokenSymbol: 'DAI',
+        inputTokenAmount: inputAmount.toString(),
+        inputTokenAmountFormatted: 100,
+        shareAmount: shareAmount.toString(),
+        shareAmountFormatted: 50741.94057712197
+      }
+    ])
+    expect(depositResponse.entries).toHaveLength(1)
+    expect(depositResponse.entries[0]?.displayType).toBe('zap')
+    expect(transferResponse.entries).toEqual([])
+  })
+
+  it('classifies known Zapper v2 vault zap-outs as withdraw zap rows', async () => {
+    const shareAmount = 2300000000000000000n
+    const outputAmount = 2500000n
+
+    mockZapperV2ZapOutRpc({
+      transactionHash: '0xzapperv2out',
+      shareAmount,
+      outputAmount
+    })
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: [
+        createTransferEvent({
+          id: 'zapper-v2-transfer-out',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xzapperv2out',
+          blockTimestamp: 412,
+          logIndex: 7,
+          value: shareAmount.toString(),
+          sender: USER_ADDRESS,
+          receiver: ZAPPER_V2_ZAP_OUT
+        })
+      ],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v2',
+            category: 'stable',
+            token: {
+              address: USDT0,
+              symbol: 'USDT',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const withdrawResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'withdraw' })
+    const transferResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'transfer' })
+
+    expect(response.entries).toMatchObject([
+      {
+        action: 'withdraw',
+        displayType: 'zap',
+        transferDirection: null,
+        assetAmount: outputAmount.toString(),
+        assetAmountFormatted: null,
+        outputTokenAddress: USDT0.toLowerCase(),
+        outputTokenSymbol: 'USDT',
+        outputTokenAmount: outputAmount.toString(),
+        outputTokenAmountFormatted: 2.5,
+        shareAmount: shareAmount.toString(),
+        shareAmountFormatted: 2.3
+      }
+    ])
+    expect(withdrawResponse.entries).toHaveLength(1)
+    expect(withdrawResponse.entries[0]?.displayType).toBe('zap')
+    expect(transferResponse.entries).toEqual([])
+  })
+
+  it('requires a strict known Zapper v2 receipt shape before classifying transfer-ins as zaps', async () => {
+    const shareAmount = 50741940577121965627316n
+
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [
+        createTransferEvent({
+          id: 'unknown-zapper-transfer-in',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xunknownzapper',
+          blockTimestamp: 413,
+          logIndex: 7,
+          value: shareAmount.toString(),
+          sender: ZAPPER_V2,
+          receiver: USER_ADDRESS
+        }),
+        createTransferEvent({
+          id: 'wrong-sender-zapper-transfer-in',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xwrongsenderzapper',
+          blockTimestamp: 412,
+          logIndex: 7,
+          value: shareAmount.toString(),
+          sender: ZAPPER_V2,
+          receiver: USER_ADDRESS
+        }),
+        createTransferEvent({
+          id: 'wrong-pool-zapper-transfer-in',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xwrongpoolzapper',
+          blockTimestamp: 411,
+          logIndex: 7,
+          value: shareAmount.toString(),
+          sender: ZAPPER_V2,
+          receiver: USER_ADDRESS
+        }),
+        createTransferEvent({
+          id: 'wrong-amount-zapper-transfer-in',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xwrongamountzapper',
+          blockTimestamp: 410,
+          logIndex: 7,
+          value: shareAmount.toString(),
+          sender: ZAPPER_V2,
+          receiver: USER_ADDRESS
+        })
+      ],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v2',
+            category: 'stable',
+            token: {
+              address: USDT0,
+              symbol: 'USDT',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+    process.env.VITE_RPC_URI_FOR_1 = 'https://rpc.example'
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body ?? '{}')) as {
+          method?: string
+          params?: Array<string | { data?: string }>
+        }
+        const transactionHash = body.params?.[0]
+        const transactionTo = transactionHash === '0xunknownzapper' ? INTERMEDIARY : ZAPPER_V2
+        const zapSender =
+          transactionHash === '0xwrongsenderzapper' ? '0x3333333333333333333333333333333333333333' : USER_ADDRESS
+        const zapPool =
+          transactionHash === '0xwrongpoolzapper' ? '0x4444444444444444444444444444444444444444' : UNDERLYING_VAULT
+        const tokensRec = transactionHash === '0xwrongamountzapper' ? shareAmount - 1n : shareAmount
+
+        if (body.method === 'eth_getTransactionByHash') {
+          return new Response(
+            JSON.stringify({
+              result: {
+                to: transactionTo,
+                input: '0x82650b10'
+              }
+            })
+          )
+        }
+
+        if (body.method === 'eth_getTransactionReceipt') {
+          return new Response(
+            JSON.stringify({
+              result: {
+                logs: [
+                  createTransferLog({
+                    tokenAddress: DAI,
+                    from: USER_ADDRESS,
+                    to: ZAPPER_V2,
+                    value: 100000000000000000000n
+                  }),
+                  createZapperZapInLog({
+                    sender: zapSender,
+                    pool: zapPool,
+                    tokensRec
+                  })
+                ]
+              }
+            })
+          )
+        }
+
+        return new Response(JSON.stringify({ result: null }))
+      })
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(response.entries.map((entry) => [entry.txHash, entry.action, entry.displayType])).toEqual([
+      ['0xunknownzapper', 'transfer', undefined],
+      ['0xwrongsenderzapper', 'transfer', undefined],
+      ['0xwrongpoolzapper', 'transfer', undefined],
+      ['0xwrongamountzapper', 'transfer', undefined]
     ])
   })
 

@@ -140,7 +140,8 @@ const ACTIVITY_ACTION_LABELS: Record<TPortfolioActivityEntry['action'], string> 
   withdraw: 'Withdraw',
   stake: 'Stake',
   unstake: 'Unstake',
-  transfer: 'Transfer'
+  transfer: 'Transfer',
+  swap: 'Swap'
 }
 const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: string }> = [
   { key: 'all', label: 'All' },
@@ -148,7 +149,8 @@ const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: s
   { key: 'withdraw', label: 'Withdraw' },
   { key: 'stake', label: 'Stake' },
   { key: 'unstake', label: 'Unstake' },
-  { key: 'transfer', label: 'Transfer' }
+  { key: 'transfer', label: 'Transfer' },
+  { key: 'swap', label: 'Swap' }
 ]
 const ACTIVITY_CALENDAR_DAY_LABELS = [
   { key: 'sunday', label: 'S' },
@@ -427,7 +429,7 @@ function ActivityActionIcon({
     return <IconStake className={iconClassName} aria-hidden="true" />
   }
 
-  if (action === 'transfer') {
+  if (action === 'transfer' || action === 'swap') {
     return <IconGitCompare className={iconClassName} strokeWidth={1.5} aria-hidden="true" />
   }
 
@@ -1063,6 +1065,7 @@ function IndexedActivityRow({
   isChainFilterActive,
   isZapFilterActive,
   isVaultFilterActive,
+  sourceShareSymbol,
   shareSymbol,
   onSelectChain,
   onOpenDateRange,
@@ -1077,6 +1080,7 @@ function IndexedActivityRow({
   isVaultFilterActive: boolean
   displayName: string
   entry: TPortfolioActivityEntry
+  sourceShareSymbol: string | null
   shareSymbol: string | null
   onSelectChain: (chainId: number) => void
   onOpenDateRange: (startDate: string, endDate: string) => void
@@ -1093,6 +1097,7 @@ function IndexedActivityRow({
   const normalizedOutputTokenAddress =
     entry.outputTokenAddress && !isZeroAddress(entry.outputTokenAddress) ? toAddress(entry.outputTokenAddress) : null
   const isTransferAction = entry.action === 'transfer'
+  const isSwapAction = entry.action === 'swap'
   const isRewardClaim = entry.displayType === 'reward_claim'
   const transferTokenAddress = isTransferAction ? toAddress(entry.vaultAddress) : null
   const vaultPageUrl = `/vaults/${entry.chainId}/${toAddress(preferredVaultAddress)}`
@@ -1108,7 +1113,9 @@ function IndexedActivityRow({
   const formattedDateTime = formatIndexedActivityDateTime(entry.timestamp)
   const formattedTime = formatIndexedActivityTime(entry.timestamp)
   const activityDateInputValue = formatActivityDateInputValue(entry.timestamp)
-  const depositedTokenSymbol = entry.inputTokenSymbol ?? entry.assetSymbol
+  const depositedTokenSymbol = isSwapAction
+    ? (sourceShareSymbol ?? entry.inputTokenSymbol)
+    : (entry.inputTokenSymbol ?? entry.assetSymbol)
   const depositedTokenAmount =
     entry.inputTokenAmountFormatted !== null ? entry.inputTokenAmountFormatted : entry.assetAmountFormatted
   const receivedTokenSymbol = isExitAction ? (entry.outputTokenSymbol ?? entry.assetSymbol) : shareSymbol
@@ -1119,7 +1126,8 @@ function IndexedActivityRow({
         ? entry.assetAmountFormatted
         : entry.shareAmountFormatted
   const isZap = Boolean(
-    (entry.inputTokenAddress && entry.inputTokenAmount) || (entry.outputTokenAddress && entry.outputTokenAmount)
+    !isSwapAction &&
+      ((entry.inputTokenAddress && entry.inputTokenAmount) || (entry.outputTokenAddress && entry.outputTokenAmount))
   )
   const isStakeZap = entry.action === 'stake' && Boolean(entry.inputTokenAddress && entry.inputTokenAmount)
   const zapTarget =
@@ -1152,7 +1160,13 @@ function IndexedActivityRow({
     : entry.transferDirection === 'out'
       ? 'VAULT SHARES SENT:'
       : 'VAULT SHARES RECEIVED:'
-  const primaryDetailLabel = isExitAction ? 'VAULT SHARES REDEEMED:' : 'TOKEN DEPOSITED:'
+  const primaryDetailLabel = isExitAction
+    ? 'VAULT SHARES REDEEMED:'
+    : isSwapAction
+      ? 'VAULT SHARES SENT:'
+      : entry.displayType === 'zap'
+        ? 'TOKEN ZAPPED:'
+        : 'TOKEN DEPOSITED:'
   const secondaryDetailLabel = isExitAction
     ? entry.outputTokenAddress
       ? 'TOKEN RECEIVED:'
@@ -1878,6 +1892,8 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         renderItem={(entry, index) => {
           const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
           const activityVault = allVaults[toAddress(entry.vaultAddress)]
+          const sourceVault =
+            entry.action === 'swap' && entry.inputTokenAddress ? allVaults[toAddress(entry.inputTokenAddress)] : null
           const assetToken = familyVault
             ? getVaultToken(familyVault)
             : activityVault
@@ -1931,6 +1947,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
               isChainFilterActive={activityChainId === entry.chainId}
               isZapFilterActive={isActivityZapFilterActive}
               isVaultFilterActive={activitySearch === displayName}
+              sourceShareSymbol={sourceVault ? getVaultSymbol(sourceVault) : null}
               shareSymbol={shareSymbol}
               assetAddress={assetAddress}
               onSelectChain={handleActivityChainSelect}

@@ -12,6 +12,10 @@ import { debugError } from './debug'
 import { formatAmount, lowerCaseAddress, ZERO } from './pnlShared'
 
 const TRANSFER_EVENT = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)')
+const ZAPPER_ZAP_IN_EVENT = parseAbiItem('event zapIn(address sender, address pool, uint256 tokensRec)')
+const ZAPPER_ZAP_OUT_EVENT = parseAbiItem(
+  'event zapOut(address sender, address pool, address token, uint256 tokensRec)'
+)
 const V2_VAULT_ACTIVITY_ABI = [
   {
     stateMutability: 'nonpayable',
@@ -94,6 +98,19 @@ const KNOWN_REWARD_DISTRIBUTOR_CONTRACTS_BY_CHAIN = new Map([
     ])
   ]
 ])
+const KNOWN_ZAPPER_V2_CONTRACTS_BY_CHAIN = new Map([
+  [
+    1,
+    new Set([
+      lowerCaseAddress('0x42D4e90Ff4068Abe7BC4EaB838c7dE1D2F5998A3'),
+      lowerCaseAddress('0x462991D18666c578F787e9eC0A74Cd18D2971E5F'),
+      lowerCaseAddress('0xB0880df8420974ef1b040111e5e0e95f05F8fee1'),
+      lowerCaseAddress('0x92Be6ADB6a12Da0CA607F9d87DB2F9978cD6ec3E'),
+      lowerCaseAddress('0x9c57618bfCDfaE4cE8e49226Ca22A7837DE64A2d'),
+      lowerCaseAddress('0xd6b88257e91e4E4D4E990B3A858c849EF2DFdE8c')
+    ])
+  ]
+])
 const DEFAULT_TIMEOUT_MS = 4_000
 const DEFAULT_MAX_RETRIES = 1
 
@@ -151,12 +168,24 @@ export type TDirectV2VaultAction = {
   assetAmount: bigint
 }
 
+export type TZapperV2Zap = {
+  inputAsset: TActivityInputAsset
+  assetAmount: bigint
+}
+
+export type TZapperV2ZapOut = {
+  outputAsset: TActivityOutputAsset
+  assetAmount: bigint
+}
+
 type TActivityTransferDirection = 'input' | 'output'
 
 const receiptAssetCache = new Map<string, Promise<TActivityTransferAsset | null>>()
 const ycrvZapInputCache = new Map<string, Promise<TActivityZapAssets | null>>()
 const rewardClaimTransactionCache = new Map<string, Promise<boolean>>()
 const directV2VaultActionCache = new Map<string, Promise<TDirectV2VaultAction | null>>()
+const zapperV2ZapCache = new Map<string, Promise<TZapperV2Zap | null>>()
+const zapperV2ZapOutCache = new Map<string, Promise<TZapperV2ZapOut | null>>()
 const tokenMetadataCache = new Map<string, Promise<TTokenMetadata>>()
 
 function getChainRpcUrl(chainId: number): string | null {
@@ -230,6 +259,60 @@ function decodeTransferLog(log: TRpcReceiptLog): TDecodedTransfer | null {
       from: lowerCaseAddress(args.from),
       to: lowerCaseAddress(args.to),
       value: args.value
+    }
+  } catch {
+    return null
+  }
+}
+
+function decodeZapperZapInLog(
+  log: TRpcReceiptLog
+): { emitter: string; sender: string; pool: string; tokensRec: bigint } | null {
+  try {
+    const decoded = decodeEventLog({
+      abi: [ZAPPER_ZAP_IN_EVENT],
+      data: log.data as Hex,
+      topics: log.topics as Hex[]
+    })
+    const args = decoded.args as {
+      sender: string
+      pool: string
+      tokensRec: bigint
+    }
+
+    return {
+      emitter: lowerCaseAddress(log.address),
+      sender: lowerCaseAddress(args.sender),
+      pool: lowerCaseAddress(args.pool),
+      tokensRec: args.tokensRec
+    }
+  } catch {
+    return null
+  }
+}
+
+function decodeZapperZapOutLog(
+  log: TRpcReceiptLog
+): { emitter: string; sender: string; pool: string; token: string; tokensRec: bigint } | null {
+  try {
+    const decoded = decodeEventLog({
+      abi: [ZAPPER_ZAP_OUT_EVENT],
+      data: log.data as Hex,
+      topics: log.topics as Hex[]
+    })
+    const args = decoded.args as {
+      sender: string
+      pool: string
+      token: string
+      tokensRec: bigint
+    }
+
+    return {
+      emitter: lowerCaseAddress(log.address),
+      sender: lowerCaseAddress(args.sender),
+      pool: lowerCaseAddress(args.pool),
+      token: lowerCaseAddress(args.token),
+      tokensRec: args.tokensRec
     }
   } catch {
     return null
@@ -488,6 +571,83 @@ function isKnownRewardDistributorTransaction(args: { chainId: number; transactio
   return Boolean(knownContracts && transactionTo && knownContracts.has(transactionTo))
 }
 
+function getKnownZapperV2Contract(args: { chainId: number; transaction: TRpcTransaction }): string | null {
+  const knownContracts = KNOWN_ZAPPER_V2_CONTRACTS_BY_CHAIN.get(args.chainId)
+  const transactionTo = args.transaction.to ? lowerCaseAddress(args.transaction.to) : null
+
+  return knownContracts && transactionTo && knownContracts.has(transactionTo) ? transactionTo : null
+}
+
+function hasMatchingZapperZapIn(args: {
+  receipt: TRpcTransactionReceipt
+  zapperContract: string
+  userAddress: string
+  vaultAddress: string
+  shareAmount: bigint
+}): boolean {
+  const normalizedUserAddress = lowerCaseAddress(args.userAddress)
+  const normalizedVaultAddress = lowerCaseAddress(args.vaultAddress)
+  const normalizedZapperContract = lowerCaseAddress(args.zapperContract)
+
+  return (args.receipt.logs ?? [])
+    .map(decodeZapperZapInLog)
+    .some(
+      (event) =>
+        event !== null &&
+        event.emitter === normalizedZapperContract &&
+        event.sender === normalizedUserAddress &&
+        event.pool === normalizedVaultAddress &&
+        event.tokensRec === args.shareAmount
+    )
+}
+
+function getMatchingZapperZapOut(args: {
+  receipt: TRpcTransactionReceipt
+  zapperContract: string
+  userAddress: string
+  vaultAddress: string
+}): { token: string; tokensRec: bigint } | null {
+  const normalizedUserAddress = lowerCaseAddress(args.userAddress)
+  const normalizedVaultAddress = lowerCaseAddress(args.vaultAddress)
+  const normalizedZapperContract = lowerCaseAddress(args.zapperContract)
+
+  return (
+    (args.receipt.logs ?? [])
+      .map(decodeZapperZapOutLog)
+      .find(
+        (event) =>
+          event !== null &&
+          event.emitter === normalizedZapperContract &&
+          event.sender === normalizedUserAddress &&
+          event.pool === normalizedVaultAddress &&
+          event.tokensRec > ZERO
+      ) ?? null
+  )
+}
+
+function hasMatchingTokenTransfer(args: {
+  receipt: TRpcTransactionReceipt
+  tokenAddress: string
+  from: string
+  to: string
+  value: bigint
+}): boolean {
+  const normalizedTokenAddress = lowerCaseAddress(args.tokenAddress)
+  const normalizedFrom = lowerCaseAddress(args.from)
+  const normalizedTo = lowerCaseAddress(args.to)
+
+  return (args.receipt.logs ?? [])
+    .map(decodeTransferLog)
+    .some(
+      (transfer) =>
+        transfer !== null &&
+        transfer.tokenAddress === normalizedTokenAddress &&
+        transfer.from === normalizedFrom &&
+        transfer.to === normalizedTo &&
+        transfer.value === args.value
+    )
+}
+
 async function fetchRouterAssetForActivity(args: {
   chainId: number
   transactionHash: string
@@ -717,5 +877,166 @@ export async function fetchDirectV2VaultActionForActivity(args: {
   })()
 
   directV2VaultActionCache.set(cacheKey, request)
+  return request
+}
+
+export async function fetchZapperV2ZapForActivity(args: {
+  chainId: number
+  transactionHash: string
+  userAddress: string
+  vaultAddress: string
+  shareAmount: bigint
+  excludedTokenAddresses?: string[]
+}): Promise<TZapperV2Zap | null> {
+  const cacheKey = [
+    args.chainId,
+    lowerCaseAddress(args.transactionHash),
+    lowerCaseAddress(args.userAddress),
+    lowerCaseAddress(args.vaultAddress),
+    args.shareAmount.toString(),
+    [...(args.excludedTokenAddresses ?? [])].map(lowerCaseAddress).sort().join(',')
+  ].join(':')
+  const existing = zapperV2ZapCache.get(cacheKey)
+
+  if (existing) {
+    return existing
+  }
+
+  const request = (async () => {
+    const transaction = await fetchRpc<TRpcTransaction>(args.chainId, 'eth_getTransactionByHash', [
+      args.transactionHash
+    ])
+    const zapperContract = transaction ? getKnownZapperV2Contract({ chainId: args.chainId, transaction }) : null
+
+    if (!zapperContract) {
+      return null
+    }
+
+    const receipt = await fetchRpc<TRpcTransactionReceipt>(args.chainId, 'eth_getTransactionReceipt', [
+      args.transactionHash
+    ])
+
+    if (
+      !receipt ||
+      !hasMatchingZapperZapIn({
+        receipt,
+        zapperContract,
+        userAddress: args.userAddress,
+        vaultAddress: args.vaultAddress,
+        shareAmount: args.shareAmount
+      })
+    ) {
+      return null
+    }
+
+    const inputTransfer = selectSingleTokenTransfer({
+      receipt,
+      from: args.userAddress,
+      to: zapperContract,
+      excludedTokenAddresses: new Set([
+        lowerCaseAddress(args.vaultAddress),
+        ...(args.excludedTokenAddresses ?? []).map(lowerCaseAddress)
+      ])
+    })
+
+    if (!inputTransfer) {
+      return null
+    }
+
+    const metadata = await fetchTokenMetadata(args.chainId, inputTransfer.tokenAddress)
+    const inputAsset = {
+      tokenAddress: inputTransfer.tokenAddress,
+      tokenSymbol: metadata.symbol,
+      amount: inputTransfer.value.toString(),
+      amountFormatted: metadata.decimals === null ? null : formatAmount(inputTransfer.value, metadata.decimals)
+    }
+
+    return {
+      inputAsset,
+      assetAmount: inputTransfer.value
+    }
+  })()
+
+  zapperV2ZapCache.set(cacheKey, request)
+  return request
+}
+
+export async function fetchZapperV2ZapOutForActivity(args: {
+  chainId: number
+  transactionHash: string
+  userAddress: string
+  vaultAddress: string
+  shareAmount: bigint
+}): Promise<TZapperV2ZapOut | null> {
+  const cacheKey = [
+    args.chainId,
+    lowerCaseAddress(args.transactionHash),
+    lowerCaseAddress(args.userAddress),
+    lowerCaseAddress(args.vaultAddress),
+    args.shareAmount.toString()
+  ].join(':')
+  const existing = zapperV2ZapOutCache.get(cacheKey)
+
+  if (existing) {
+    return existing
+  }
+
+  const request = (async () => {
+    const transaction = await fetchRpc<TRpcTransaction>(args.chainId, 'eth_getTransactionByHash', [
+      args.transactionHash
+    ])
+    const zapperContract = transaction ? getKnownZapperV2Contract({ chainId: args.chainId, transaction }) : null
+
+    if (!zapperContract) {
+      return null
+    }
+
+    const receipt = await fetchRpc<TRpcTransactionReceipt>(args.chainId, 'eth_getTransactionReceipt', [
+      args.transactionHash
+    ])
+    const zapOut = receipt
+      ? getMatchingZapperZapOut({
+          receipt,
+          zapperContract,
+          userAddress: args.userAddress,
+          vaultAddress: args.vaultAddress
+        })
+      : null
+
+    if (
+      !receipt ||
+      !zapOut ||
+      !hasMatchingTokenTransfer({
+        receipt,
+        tokenAddress: args.vaultAddress,
+        from: args.userAddress,
+        to: zapperContract,
+        value: args.shareAmount
+      }) ||
+      !hasMatchingTokenTransfer({
+        receipt,
+        tokenAddress: zapOut.token,
+        from: zapperContract,
+        to: args.userAddress,
+        value: zapOut.tokensRec
+      })
+    ) {
+      return null
+    }
+
+    const metadata = await fetchTokenMetadata(args.chainId, zapOut.token)
+
+    return {
+      outputAsset: {
+        tokenAddress: zapOut.token,
+        tokenSymbol: metadata.symbol,
+        amount: zapOut.tokensRec.toString(),
+        amountFormatted: metadata.decimals === null ? null : formatAmount(zapOut.tokensRec, metadata.decimals)
+      },
+      assetAmount: zapOut.tokensRec
+    }
+  })()
+
+  zapperV2ZapOutCache.set(cacheKey, request)
   return request
 }

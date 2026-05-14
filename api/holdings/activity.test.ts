@@ -264,4 +264,46 @@ describe('holdings activity route', () => {
     )
     expect(res.statusCode).toBe(200)
   })
+
+  it('passes through the swap activity filter', async () => {
+    getHoldingsActivityMock.mockResolvedValue({
+      address: TEST_ADDRESS,
+      version: 'all',
+      limit: 10,
+      offset: 0,
+      pageInfo: {
+        hasMore: false,
+        nextOffset: null
+      },
+      entries: []
+    })
+
+    const { default: handler } = await import('./activity')
+    const req = {
+      method: 'GET',
+      query: {
+        address: TEST_ADDRESS,
+        type: 'swap'
+      },
+      headers: {}
+    } as any
+    const res = createMockResponse()
+
+    await handler(req, res as any)
+
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(
+      TEST_ADDRESS,
+      'all',
+      10,
+      0,
+      {
+        type: 'swap',
+        chainId: null,
+        startTimestamp: null,
+        endTimestamp: null
+      },
+      false
+    )
+    expect(res.statusCode).toBe(200)
+  })
 })
