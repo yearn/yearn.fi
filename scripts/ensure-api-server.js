@@ -1,22 +1,27 @@
-const DEFAULT_API_SERVER_PORT = '3001'
+const DEFAULT_API_PORT = '3001'
 const API_PROXY_TARGET =
-  process.env.API_PROXY_TARGET || `http://localhost:${process.env.API_SERVER_PORT || DEFAULT_API_SERVER_PORT}`
+  process.env.API_PROXY_TARGET ||
+  `http://localhost:${process.env.API_PORT || process.env.API_SERVER_PORT || DEFAULT_API_PORT}`
 const API_PROXY_TARGET_DESCRIPTION = process.env.API_PROXY_TARGET?.trim()
   ? 'the configured API proxy target'
   : 'the default local API address'
 
-function resolveApiServerPort() {
-  if (process.env.API_SERVER_PORT) {
-    return process.env.API_SERVER_PORT
-  }
-
-  return DEFAULT_API_SERVER_PORT
-}
-
-const API_SERVER_PORT = resolveApiServerPort()
 const API_HEALTHCHECK_PATH = process.env.API_HEALTHCHECK_PATH || '/api/enso/balances'
 const API_HEALTHCHECK_EXPECTED_ERROR = 'Missing eoaAddress'
 const API_HEALTHCHECK_TIMEOUT_MS = Number(process.env.API_HEALTHCHECK_TIMEOUT_MS || '500')
+
+function resolveApiPort() {
+  if (process.env.API_PORT) {
+    return process.env.API_PORT
+  }
+
+  try {
+    const parsedTarget = new URL(API_PROXY_TARGET)
+    return parsedTarget.port || (parsedTarget.protocol === 'https:' ? '443' : '80')
+  } catch {
+    return '3001'
+  }
+}
 
 async function checkApi() {
   const controller = new AbortController()
@@ -54,7 +59,7 @@ async function checkApi() {
   const child = Bun.spawn(['bun', 'api/server.ts'], {
     env: {
       ...process.env,
-      API_SERVER_PORT
+      API_PORT: resolveApiPort()
     },
     stdin: 'inherit',
     stdout: 'inherit',

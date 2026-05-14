@@ -1,5 +1,5 @@
 import { VAULT_V3_ABI } from '@shared/contracts/abi/vaultV3.abi'
-import { toNormalizedBN } from '@shared/utils'
+import { isZeroAddress, toNormalizedBN } from '@shared/utils'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import { type Address, getContract } from 'viem'
@@ -37,6 +37,7 @@ interface UseVaultUserDataParams {
   stakingSource?: string
   chainId: number
   account?: Address
+  enabled?: boolean
 }
 
 export const useVaultUserData = ({
@@ -45,17 +46,22 @@ export const useVaultUserData = ({
   stakingAddress,
   stakingSource,
   chainId,
-  account
+  account,
+  enabled = true
 }: UseVaultUserDataParams): VaultUserData => {
   const config = useConfig()
   const executionChainId = resolveExecutionChainId(chainId)
+  const shouldReadVault = enabled && !isZeroAddress(vaultAddress)
 
   // Reuse useTokens for token data + balances
   const priorityAddresses = useMemo(() => {
+    if (!shouldReadVault) {
+      return []
+    }
     const addrs: (Address | undefined)[] = [assetAddress, vaultAddress]
     if (stakingAddress) addrs.push(stakingAddress)
     return addrs
-  }, [assetAddress, vaultAddress, stakingAddress])
+  }, [assetAddress, shouldReadVault, stakingAddress, vaultAddress])
 
   const { tokens, isLoading: isLoadingTokens, refetch: refetchTokens } = useTokens(priorityAddresses, chainId, account)
 
@@ -81,7 +87,7 @@ export const useVaultUserData = ({
       })
       return contract.read.pricePerShare()
     },
-    enabled: !!vaultAddress && !!chainId && !!executionChainId,
+    enabled: shouldReadVault && !!chainId && !!executionChainId,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false
@@ -167,7 +173,7 @@ export const useVaultUserData = ({
 
       return { withdrawableAssets, redeemableShares }
     },
-    enabled: !!stakingAddress && !!account && !!chainId && !!executionChainId,
+    enabled: shouldReadVault && !!stakingAddress && !!account && !!chainId && !!executionChainId,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false
@@ -175,10 +181,13 @@ export const useVaultUserData = ({
 
   // Combined refetch
   const refetch = useCallback(() => {
+    if (!shouldReadVault) {
+      return
+    }
     refetchTokens()
     refetchPPS()
     refetchStakingWithdrawableAssets()
-  }, [refetchTokens, refetchPPS, refetchStakingWithdrawableAssets])
+  }, [refetchTokens, refetchPPS, refetchStakingWithdrawableAssets, shouldReadVault])
 
   const effectiveStakingWithdrawableAssets = stakingCapacity?.withdrawableAssets ?? stakingShareBalance
   const effectiveStakingRedeemableShares = stakingCapacity?.redeemableShares ?? stakingShareBalance

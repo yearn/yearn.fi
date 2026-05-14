@@ -1,3 +1,5 @@
+import { isPortfolioDustValueVisible } from '@pages/portfolio/hooks/portfolioVisibility'
+import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import {
   getVaultAddress,
   getVaultChainID,
@@ -70,6 +72,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   const { vaults, allVaults, isLoadingVaultList, getPrice } = useYearn()
   const { unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
   const { address: userAddress } = useWeb3()
+  const { shouldHideDust } = useAppSettings()
 
   const allTokens = useYearnTokens({
     vaults: allVaults,
@@ -237,6 +240,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
           const sharePrice =
             normalizedAddress === YVUSD_UNLOCKED_ADDRESS ? yvUsdUnlockedSharePrice : yvUsdLockedSharePrice
           const tokenValue = tokenData.value || tokenData.balance.normalized * sharePrice
+          if (!isPortfolioDustValueVisible(tokenValue, shouldHideDust)) {
+            continue
+          }
           cumulatedValueInV3Vaults += tokenValue
           continue
         }
@@ -256,6 +262,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         countedVaults.add(vaultKey)
 
         const tokenValue = getVaultHoldingsUsd(vaultDetails)
+        if (!isPortfolioDustValueVisible(tokenValue, shouldHideDust)) {
+          continue
+        }
         const vaultVersion = getVaultVersion(vaultDetails)
         const isV3 = vaultVersion.startsWith('3') || vaultVersion.startsWith('~3')
 
@@ -267,7 +276,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       }
     }
     return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults]
-  }, [allVaults, balances, getPrice, getVaultHoldingsUsd, yvUsdLockedSharePrice, yvUsdUnlockedSharePrice])
+  }, [allVaults, balances, getVaultHoldingsUsd, shouldHideDust, yvUsdLockedSharePrice, yvUsdUnlockedSharePrice])
 
   /***************************************************************************
    **	Setup and render the Context provider to use in the app.

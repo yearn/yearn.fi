@@ -1,4 +1,5 @@
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
+import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import { yToast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import useWallet from '@shared/contexts/useWallet'
@@ -211,6 +212,7 @@ function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
   const { mutateVaultList, enableVaultListFetch, isLoadingVaultList } = useYearn()
+  const { shouldHideDust, onSwitchHideDust } = useAppSettings()
   const { toast } = yToast()
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
   const [isRefreshingVaults, setIsRefreshingVaults] = useState(false)
@@ -319,6 +321,27 @@ function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
             isDarkTheme ? 'border-border bg-surface-secondary' : 'border-neutral-200 bg-neutral-50'
           )}
         >
+          <div className={cl(menuItemClass, 'w-full justify-between')}>
+            <span>{'Show dust'}</span>
+            <button
+              type={'button'}
+              role={'switch'}
+              aria-checked={!shouldHideDust}
+              aria-label={!shouldHideDust ? 'Hide dust positions' : 'Show dust positions'}
+              onClick={onSwitchHideDust}
+              className={cl(
+                'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors',
+                !shouldHideDust ? 'border-primary bg-primary/20' : 'border-border bg-surface'
+              )}
+            >
+              <span
+                className={cl(
+                  'block size-3 rounded-full transition-transform',
+                  !shouldHideDust ? 'translate-x-[18px] bg-primary' : 'translate-x-[3px] bg-text-secondary'
+                )}
+              />
+            </button>
+          </div>
           <button
             className={cl(menuItemClass, 'w-full justify-between')}
             onClick={handleRefreshVaultList}

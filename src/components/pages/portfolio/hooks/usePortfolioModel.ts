@@ -1,6 +1,7 @@
 import { useTokenSuggestions } from '@pages/portfolio/hooks/useTokenSuggestions'
 import { useVaultSuggestions } from '@pages/portfolio/hooks/useVaultSuggestions'
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
+import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import {
   getVaultAddress,
   getVaultChainID,
@@ -130,6 +131,7 @@ export function usePortfolioModel(): TPortfolioModel {
   const { vaults, allVaults, isLoadingVaultList } = useYearn()
   const { listVault: yvUsdVault, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
   const { apyData: yvUsdHistoricalApyData } = useYvUsdCharts()
+  const { shouldHideDust } = useAppSettings()
   const showHiddenVaults = usePersistedShowHiddenVaults()
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
@@ -229,9 +231,48 @@ export function usePortfolioModel(): TPortfolioModel {
     return result
   }, [balances, vaultLookup, yvUsdPosition.hasHoldings, yvUsdVault])
 
+  const getVaultEstimatedAPY = useCallback(
+    (vault: (typeof holdingsVaults)[number]): number | null => {
+      if (isYvUsdVault(vault)) {
+        return yvUsdPosition.blendedCurrentApy
+      }
+
+      const apy = calculateVaultEstimatedAPY(vault)
+      const hasHistoricalNet = 'performance' in vault && Boolean(vault.performance?.historical?.net)
+      return apy === 0 && !hasHistoricalNet ? null : apy
+    },
+    [yvUsdPosition.blendedCurrentApy]
+  )
+
+  const getVaultHistoricalAPY = useCallback(
+    (vault: (typeof holdingsVaults)[number]): number | null => {
+      if (isYvUsdVault(vault)) {
+        return yvUsdPosition.blendedHistoricalApy
+      }
+
+      return calculateVaultHistoricalAPY(vault)
+    },
+    [yvUsdPosition.blendedHistoricalApy]
+  )
+
+  const getVaultValue = useCallback(
+    (vault: (typeof holdingsVaults)[number]): number => {
+      if (isYvUsdVault(vault)) {
+        return yvUsdPosition.combinedValue
+      }
+
+      return getVaultHoldingsUsd(vault)
+    },
+    [getVaultHoldingsUsd, yvUsdPosition.combinedValue]
+  )
+
   const visibleHoldingsVaults = useMemo(
-    () => filterVisiblePortfolioHoldings(holdingsVaults, showHiddenVaults),
-    [holdingsVaults, showHiddenVaults]
+    () =>
+      filterVisiblePortfolioHoldings(holdingsVaults, showHiddenVaults, {
+        shouldHideDust,
+        getVaultValue
+      }),
+    [getVaultValue, holdingsVaults, shouldHideDust, showHiddenVaults]
   )
 
   const vaultFlags = useMemo(() => {
@@ -337,50 +378,15 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const hasHoldings = sortedHoldings.length > 0
   const hasKatanaHoldings = useMemo(
-    () => holdingsVaults.some((vault) => getVaultChainID(vault) === KATANA_CHAIN_ID),
-    [holdingsVaults]
+    () => sortedHoldings.some((vault) => getVaultChainID(vault) === KATANA_CHAIN_ID),
+    [sortedHoldings]
   )
   const totalPortfolioValue = (cumulatedValueInV2Vaults || 0) + (cumulatedValueInV3Vaults || 0)
-
-  const getVaultEstimatedAPY = useCallback(
-    (vault: (typeof holdingsVaults)[number]): number | null => {
-      if (isYvUsdVault(vault)) {
-        return yvUsdPosition.blendedCurrentApy
-      }
-
-      const apy = calculateVaultEstimatedAPY(vault)
-      const hasHistoricalNet = 'performance' in vault && Boolean(vault.performance?.historical?.net)
-      return apy === 0 && !hasHistoricalNet ? null : apy
-    },
-    [yvUsdPosition.blendedCurrentApy]
-  )
-
-  const getVaultHistoricalAPY = useCallback(
-    (vault: (typeof holdingsVaults)[number]): number | null => {
-      if (isYvUsdVault(vault)) {
-        return yvUsdPosition.blendedHistoricalApy
-      }
-
-      return calculateVaultHistoricalAPY(vault)
-    },
-    [yvUsdPosition.blendedHistoricalApy]
-  )
-
-  const getVaultValue = useCallback(
-    (vault: (typeof holdingsVaults)[number]): number => {
-      if (isYvUsdVault(vault)) {
-        return yvUsdPosition.combinedValue
-      }
-
-      return getVaultHoldingsUsd(vault)
-    },
-    [getVaultHoldingsUsd, yvUsdPosition.combinedValue]
-  )
 
   const blendedMetrics = useMemo(() => {
     const isFiniteNumber = (v: number | null): v is number => v !== null && Number.isFinite(v)
 
-    const { totalValue, weightedCurrent, weightedHistorical, hasCurrent, hasHistorical } = holdingsVaults.reduce(
+    const { totalValue, weightedCurrent, weightedHistorical, hasCurrent, hasHistorical } = sortedHoldings.reduce(
       (acc, vault) => {
         const value = getVaultValue(vault)
         if (!Number.isFinite(value) || value <= 0) return acc
@@ -405,7 +411,7 @@ export function usePortfolioModel(): TPortfolioModel {
       totalValue > 0 && hasCurrent ? totalPortfolioValue * (weightedCurrent / totalValue) : null
 
     return { blendedCurrentAPY, blendedHistoricalAPY, estimatedAnnualReturn }
-  }, [getVaultEstimatedAPY, getVaultHistoricalAPY, getVaultValue, holdingsVaults, totalPortfolioValue])
+  }, [getVaultEstimatedAPY, getVaultHistoricalAPY, getVaultValue, sortedHoldings, totalPortfolioValue])
 
   return {
     blendedMetrics,
