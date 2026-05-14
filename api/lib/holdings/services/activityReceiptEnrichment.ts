@@ -119,6 +119,7 @@ type TRpcReceiptLog = {
   data: string
   topics: string[]
 }
+type TDecodeTopics = [] | [signature: Hex, ...args: Hex[]]
 
 type TRpcTransactionReceipt = {
   logs: TRpcReceiptLog[] | null
@@ -188,6 +189,10 @@ const zapperV2ZapCache = new Map<string, Promise<TZapperV2Zap | null>>()
 const zapperV2ZapOutCache = new Map<string, Promise<TZapperV2ZapOut | null>>()
 const tokenMetadataCache = new Map<string, Promise<TTokenMetadata>>()
 
+function toDecodeTopics(topics: string[]): TDecodeTopics {
+  return topics.length === 0 ? [] : [topics[0] as Hex, ...(topics.slice(1) as Hex[])]
+}
+
 function getChainRpcUrl(chainId: number): string | null {
   const rpcUrl = process.env[`VITE_RPC_URI_FOR_${chainId}`]?.trim()
   return rpcUrl && rpcUrl.length > 0 ? rpcUrl : null
@@ -246,7 +251,7 @@ function decodeTransferLog(log: TRpcReceiptLog): TDecodedTransfer | null {
     const decoded = decodeEventLog({
       abi: [TRANSFER_EVENT],
       data: log.data as Hex,
-      topics: log.topics as Hex[]
+      topics: toDecodeTopics(log.topics)
     })
     const args = decoded.args as {
       from: string
@@ -272,7 +277,7 @@ function decodeZapperZapInLog(
     const decoded = decodeEventLog({
       abi: [ZAPPER_ZAP_IN_EVENT],
       data: log.data as Hex,
-      topics: log.topics as Hex[]
+      topics: toDecodeTopics(log.topics)
     })
     const args = decoded.args as {
       sender: string
@@ -298,7 +303,7 @@ function decodeZapperZapOutLog(
     const decoded = decodeEventLog({
       abi: [ZAPPER_ZAP_OUT_EVENT],
       data: log.data as Hex,
-      topics: log.topics as Hex[]
+      topics: toDecodeTopics(log.topics)
     })
     const args = decoded.args as {
       sender: string
@@ -873,7 +878,7 @@ export async function fetchDirectV2VaultActionForActivity(args: {
         })
       : null
 
-    return outputTransfer ? { action: 'withdraw', assetAmount: outputTransfer.value } : null
+    return outputTransfer ? ({ action: 'withdraw', assetAmount: outputTransfer.value } as const) : null
   })()
 
   directV2VaultActionCache.set(cacheKey, request)

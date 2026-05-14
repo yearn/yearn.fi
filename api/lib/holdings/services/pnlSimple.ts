@@ -899,6 +899,15 @@ function scaleBigInt(value: bigint, numerator: bigint, denominator: bigint): big
   return (value * numerator) / denominator
 }
 
+function cloneEventWithShares(
+  event: Extract<TRawPnlEvent, { kind: 'deposit' | 'withdrawal' }>,
+  shares: bigint
+): Extract<TRawPnlEvent, { kind: 'deposit' | 'withdrawal' }>
+function cloneEventWithShares(
+  event: Extract<TRawPnlEvent, { kind: 'transfer' }>,
+  shares: bigint
+): Extract<TRawPnlEvent, { kind: 'transfer' }>
+function cloneEventWithShares(event: TRawPnlEvent, shares: bigint): TRawPnlEvent
 function cloneEventWithShares(event: TRawPnlEvent, shares: bigint): TRawPnlEvent {
   if (event.kind === 'deposit' || event.kind === 'withdrawal') {
     return {

@@ -50,6 +50,7 @@ export interface RpcReceiptLog {
   topics: string[]
   logIndex: string | null
 }
+type TDecodeTopics = [] | [signature: Hex, ...args: Hex[]]
 
 export interface RpcTransactionReceipt {
   logs: RpcReceiptLog[] | null
@@ -94,12 +95,16 @@ function parseHexInteger(value: string | null): number {
   return value === null ? 0 : Number.parseInt(value, 16)
 }
 
+function toDecodeTopics(topics: string[]): TDecodeTopics {
+  return topics.length === 0 ? [] : [topics[0] as Hex, ...(topics.slice(1) as Hex[])]
+}
+
 function decodeTransferLog(log: RpcReceiptLog): TDecodedTransferLog | null {
   try {
     const decoded = decodeEventLog({
       abi: [TRANSFER_EVENT],
       data: log.data as Hex,
-      topics: log.topics as Hex[]
+      topics: toDecodeTopics(log.topics)
     })
     const args = decoded.args as {
       from: string
@@ -123,7 +128,7 @@ function decodeTradeLog(log: RpcReceiptLog): TDecodedTradeLog | null {
     const decoded = decodeEventLog({
       abi: [TRADE_EVENT],
       data: log.data as Hex,
-      topics: log.topics as Hex[]
+      topics: toDecodeTopics(log.topics)
     })
     const args = decoded.args as {
       owner: string

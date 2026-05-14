@@ -70,6 +70,12 @@ import {
 import { getFamilyVaultAddress, getStakingVaultAddress, isStakingVault } from './staking'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
+type TRawPnlEventWithoutScopes = TRawPnlEvent extends infer Event
+  ? Event extends TRawPnlEvent
+    ? Omit<Event, 'scopes'>
+    : never
+  : never
+
 function createLot(shares: bigint, costBasis: bigint | null, acquiredAt?: number): TLot {
   return acquiredAt === undefined ? { shares, costBasis } : { shares, costBasis, acquiredAt }
 }
@@ -679,7 +685,7 @@ function normalizeTransfer(event: TransferEvent): Omit<Extract<TRawPnlEvent, { k
 
 function mergeRawEvent(
   merged: Map<string, TRawPnlEvent>,
-  event: Omit<TRawPnlEvent, 'scopes'>,
+  event: TRawPnlEventWithoutScopes,
   scope: keyof TRawScopes
 ): void {
   const eventKey = `${event.kind}:${event.id}`
@@ -701,7 +707,7 @@ function mergeRawEvent(
 
 export function buildRawPnlEvents(context: RawPnlEventContext): TRawPnlEvent[] {
   const merged = new Map<string, TRawPnlEvent>()
-  const eventSources: Array<{ events: Array<Omit<TRawPnlEvent, 'scopes'>>; scope: keyof TRawScopes }> = [
+  const eventSources: Array<{ events: TRawPnlEventWithoutScopes[]; scope: keyof TRawScopes }> = [
     { events: context.addressEvents.deposits.map(normalizeDeposit), scope: 'address' },
     { events: context.addressEvents.withdrawals.map(normalizeWithdrawal), scope: 'address' },
     { events: context.addressEvents.transfersIn.map(normalizeTransfer), scope: 'address' },
@@ -1187,7 +1193,7 @@ function getRecognizedRewardTransferIns(
   familyVaultAddress: string,
   stakingVaultAddress: string | null
 ): FamilyPnlLedger['rewardTransferInEntries'] {
-  return txFamilyEvents.flatMap((event) => {
+  return txFamilyEvents.flatMap<FamilyPnlLedger['rewardTransferInEntries'][number]>((event) => {
     if (
       event.kind !== 'transfer' ||
       !event.scopes.address ||
@@ -2272,7 +2278,7 @@ function materializeHoldingsPnLVault(vault: FamilyPnlLedger, artifacts: TPnlComp
   const ppsMap = ppsData.get(vaultKey)
   const pricePerShare = ppsMap ? getPPS(ppsMap, currentTimestamp) : null
   const priceKey = metadata ? `${getChainPrefix(vault.chainId)}:${metadata.token.address.toLowerCase()}` : null
-  const tokenPriceMap = priceKey ? priceData.get(priceKey) : null
+  const tokenPriceMap = priceKey ? (priceData.get(priceKey) ?? null) : null
   const tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, currentTimestamp) : 0
   const resolvedPricePerShare = pricePerShare ?? 0
   const vaultSharesRaw = sumShares(vault.vaultLots)

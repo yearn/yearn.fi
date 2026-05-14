@@ -8,7 +8,10 @@ import {
   fetchZapperV2ZapForActivity,
   fetchZapperV2ZapOutForActivity,
   type TActivityInputAsset,
-  type TActivityOutputAsset
+  type TActivityOutputAsset,
+  type TDirectV2VaultAction,
+  type TZapperV2Zap,
+  type TZapperV2ZapOut
 } from './activityReceiptEnrichment'
 import type { TransactionActivityEvents, VaultVersion } from './graphql'
 import {
@@ -152,6 +155,10 @@ type TResolvedActivityEvent = {
   outputAsset: TActivityOutputAsset | null
   usesRouter: boolean
 }
+
+type TResolvedActivityEntry = readonly [string, TResolvedActivityEvent]
+type TDirectV2VaultActionEntry = readonly [string, TDirectV2VaultAction]
+type TZapperV2ZapEntry = readonly [string, TZapperV2Zap | TZapperV2ZapOut]
 
 type TRecentActivityWindow = {
   candidateEvents: TActivityEvent[]
@@ -875,10 +882,10 @@ async function enrichYcrvZapTransferEvents(
     return events
   }
 
-  const ycrvZapEventsByTransactionKey = new Map(
-    (
-      await Promise.all(
-        Array.from(transferEventsByTransactionKey.entries()).map(async ([txKey, txEvents]) => {
+  const ycrvZapEventEntries = (
+    await Promise.all(
+      Array.from(transferEventsByTransactionKey.entries()).map(
+        async ([txKey, txEvents]): Promise<TResolvedActivityEntry | null> => {
           const representativeEvent = txEvents[0]
 
           if (!representativeEvent) {
@@ -895,22 +902,25 @@ async function enrichYcrvZapTransferEvents(
           })
           const displayEvent = zapAssets ? selectYcrvZapTransferDisplayEvent(txEvents) : null
 
-          return displayEvent
-            ? ([
-                txKey,
-                {
-                  ...displayEvent,
-                  action: zapAssets.outputKind === 'stake' ? 'stake' : displayEvent.action,
-                  transferDirection: zapAssets.outputKind === 'stake' ? null : displayEvent.transferDirection,
-                  inputAsset: zapAssets.inputAsset,
-                  outputAsset: zapAssets.outputAsset
-                }
-              ] as const)
-            : null
-        })
+          if (!displayEvent || !zapAssets) {
+            return null
+          }
+
+          return [
+            txKey,
+            {
+              ...displayEvent,
+              action: zapAssets.outputKind === 'stake' ? 'stake' : displayEvent.action,
+              transferDirection: zapAssets.outputKind === 'stake' ? null : displayEvent.transferDirection,
+              inputAsset: zapAssets.inputAsset,
+              outputAsset: zapAssets.outputAsset
+            }
+          ] as const
+        }
       )
-    ).filter((entry): entry is readonly [string, TResolvedActivityEvent] => entry !== null)
-  )
+    )
+  ).filter((entry): entry is TResolvedActivityEntry => entry !== null)
+  const ycrvZapEventsByTransactionKey = new Map(ycrvZapEventEntries)
 
   if (ycrvZapEventsByTransactionKey.size === 0) {
     return events
@@ -956,30 +966,27 @@ async function enrichDirectV2VaultTransferEvents(
     return events
   }
 
-  const directActionsByEventKey = new Map(
-    (
-      await Promise.all(
-        transferEvents.map(async (event) => {
-          const directAction = await fetchDirectV2VaultActionForActivity({
-            chainId: event.chainId,
-            transactionHash: event.txHash,
-            userAddress,
-            vaultAddress: event.vaultAddress,
-            transferDirection: event.transferDirection as 'in' | 'out'
-          })
-
-          return directAction
-            ? ([
-                `${toResolvedTxKey(event)}:${event.vaultAddress}:${event.transferDirection}:${event.logIndex}`,
-                directAction
-              ] as const)
-            : null
+  const directActionEntries = (
+    await Promise.all(
+      transferEvents.map(async (event): Promise<TDirectV2VaultActionEntry | null> => {
+        const directAction = await fetchDirectV2VaultActionForActivity({
+          chainId: event.chainId,
+          transactionHash: event.txHash,
+          userAddress,
+          vaultAddress: event.vaultAddress,
+          transferDirection: event.transferDirection as 'in' | 'out'
         })
-      )
-    ).filter(
-      (entry): entry is readonly [string, { action: 'deposit' | 'withdraw'; assetAmount: bigint }] => entry !== null
+
+        return directAction
+          ? ([
+              `${toResolvedTxKey(event)}:${event.vaultAddress}:${event.transferDirection}:${event.logIndex}`,
+              directAction
+            ] as const)
+          : null
+      })
     )
-  )
+  ).filter((entry): entry is TDirectV2VaultActionEntry => entry !== null)
+  const directActionsByEventKey = new Map(directActionEntries)
 
   return directActionsByEventKey.size === 0
     ? events
@@ -1012,45 +1019,37 @@ async function enrichZapperV2TransferEvents(
     return events
   }
 
-  const zapsByEventKey = new Map(
-    (
-      await Promise.all(
-        transferEvents.map(async (event) => {
-          const zap =
-            event.transferDirection === 'in'
-              ? await fetchZapperV2ZapForActivity({
-                  chainId: event.chainId,
-                  transactionHash: event.txHash,
-                  userAddress,
-                  vaultAddress: event.vaultAddress,
-                  shareAmount: event.shares,
-                  excludedTokenAddresses: [event.vaultAddress, event.familyVaultAddress]
-                })
-              : await fetchZapperV2ZapOutForActivity({
-                  chainId: event.chainId,
-                  transactionHash: event.txHash,
-                  userAddress,
-                  vaultAddress: event.vaultAddress,
-                  shareAmount: event.shares
-                })
+  const zapEntries = (
+    await Promise.all(
+      transferEvents.map(async (event): Promise<TZapperV2ZapEntry | null> => {
+        const zap =
+          event.transferDirection === 'in'
+            ? await fetchZapperV2ZapForActivity({
+                chainId: event.chainId,
+                transactionHash: event.txHash,
+                userAddress,
+                vaultAddress: event.vaultAddress,
+                shareAmount: event.shares,
+                excludedTokenAddresses: [event.vaultAddress, event.familyVaultAddress]
+              })
+            : await fetchZapperV2ZapOutForActivity({
+                chainId: event.chainId,
+                transactionHash: event.txHash,
+                userAddress,
+                vaultAddress: event.vaultAddress,
+                shareAmount: event.shares
+              })
 
-          return zap
-            ? ([
-                `${toResolvedTxKey(event)}:${event.vaultAddress}:${event.transferDirection}:${event.logIndex}`,
-                zap
-              ] as const)
-            : null
-        })
-      )
-    ).filter(
-      (
-        entry
-      ): entry is readonly [
-        string,
-        NonNullable<Awaited<ReturnType<typeof fetchZapperV2ZapForActivity | typeof fetchZapperV2ZapOutForActivity>>>
-      ] => entry !== null
+        return zap
+          ? ([
+              `${toResolvedTxKey(event)}:${event.vaultAddress}:${event.transferDirection}:${event.logIndex}`,
+              zap
+            ] as const)
+          : null
+      })
     )
-  )
+  ).filter((entry): entry is TZapperV2ZapEntry => entry !== null)
+  const zapsByEventKey = new Map(zapEntries)
 
   return zapsByEventKey.size === 0
     ? events

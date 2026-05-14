@@ -68,7 +68,7 @@ export function createEmptyHoldingsPnlResponse(
 }
 
 export function summarizePnlVaults(vaults: HoldingsPnLVault[]): HoldingsPnLResponse['summary'] {
-  return vaults.reduce(
+  return vaults.reduce<HoldingsPnLResponse['summary']>(
     (totals, vault) => {
       const category = vault.metadata?.category ?? 'volatile'
 

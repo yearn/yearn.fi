@@ -2,6 +2,10 @@ import { createHash } from 'node:crypto'
 import { Pool } from '@neondatabase/serverless'
 import { config } from '../config'
 
+type NeonPoolWithFetchMode = typeof Pool & {
+  poolQueryViaFetch?: boolean
+}
+
 interface QueryResult<T> {
   rows: T[]
   rowCount: number
@@ -107,7 +111,7 @@ async function createPool(): Promise<DatabasePool | null> {
   }
 
   try {
-    Pool.poolQueryViaFetch = true
+    ;(Pool as NeonPoolWithFetchMode).poolQueryViaFetch = true
     const neonPool = new Pool({ connectionString: config.databaseUrl })
 
     return {

@@ -404,19 +404,20 @@ function buildBatchDebugSummary(
   lastToken: string | null
 } {
   const firstCoin = coinBatch[0]
-  const lastCoin = coinBatch.at(-1)
+  const lastCoin = coinBatch[coinBatch.length - 1]
+  const lastTimestamp = uniqueTimestamps[uniqueTimestamps.length - 1]
 
   return {
     firstTimestamp: uniqueTimestamps[0] ?? null,
-    lastTimestamp: uniqueTimestamps.at(-1) ?? null,
+    lastTimestamp: lastTimestamp ?? null,
     firstToken: firstCoin ? abbreviateTokenAddress(firstCoin.address) : null,
     lastToken: lastCoin ? abbreviateTokenAddress(lastCoin.address) : null
   }
 }
 
 function isSplittableGetError(error: unknown): boolean {
-  const status =
-    typeof (error as Partial<TDefiLlamaError>)?.status === 'number' ? (error as Partial<TDefiLlamaError>).status : null
+  const errorStatus = (error as Partial<TDefiLlamaError>)?.status
+  const status = typeof errorStatus === 'number' ? errorStatus : null
 
   return status !== null && SPLITTABLE_GET_STATUS_CODES.has(status)
 }
@@ -771,7 +772,7 @@ export async function fetchHistoricalPricesForTokenTimestamps(
             timestampCount: batchTimestamps.length,
             pricePointCount: batchPricePoints,
             firstTimestamp: batchTimestamps[0] ?? null,
-            lastTimestamp: batchTimestamps.at(-1) ?? null
+            lastTimestamp: batchTimestamps[batchTimestamps.length - 1] ?? null
           })
           return
         }
