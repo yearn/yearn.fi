@@ -1328,7 +1328,7 @@ function IndexedActivityRow({
             ) : isTransferAction ? (
               <div className="flex min-w-0 flex-1 flex-col items-start">
                 <span className="min-w-0 text-left text-sm font-semibold tabular-nums text-text-primary">
-                  {`${isRewardClaim ? transferAmount : `${transferSign}${transferAmount}`} ${shareSymbol ?? ''}`.trim()}
+                  {`${isRewardClaim ? `+${transferAmount}` : `${transferSign}${transferAmount}`} ${shareSymbol ?? ''}`.trim()}
                 </span>
               </div>
             ) : (
@@ -1387,7 +1387,7 @@ function IndexedActivityRow({
                     entry.transferDirection === 'out' && !isRewardClaim ? 'text-neutral-600' : 'text-text-primary'
                   )}
                 >
-                  {isRewardClaim ? transferAmount : `${transferSign}${transferAmount}`}
+                  {isRewardClaim ? `+${transferAmount}` : `${transferSign}${transferAmount}`}
                 </span>
                 <span
                   className={cl(
