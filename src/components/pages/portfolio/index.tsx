@@ -58,6 +58,7 @@ import { IconCopy } from '@shared/icons/IconCopy'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconDeposit } from '@shared/icons/IconDeposit'
 import { IconGitCompare } from '@shared/icons/IconGitCompare'
+import { IconHandCoins } from '@shared/icons/IconHandCoins'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { IconStake } from '@shared/icons/IconStake'
@@ -401,8 +402,18 @@ function formatActivityMonthLabel(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 }
 
-function ActivityActionIcon({ action }: { action: TPortfolioActivityEntry['action'] }): ReactElement {
+function ActivityActionIcon({
+  action,
+  displayType
+}: {
+  action: TPortfolioActivityEntry['action']
+  displayType: TPortfolioActivityEntry['displayType']
+}): ReactElement {
   const iconClassName = 'size-5'
+
+  if (displayType === 'reward_claim') {
+    return <IconHandCoins className={iconClassName} aria-hidden="true" />
+  }
 
   if (action === 'deposit') {
     return <IconDeposit className={iconClassName} aria-hidden="true" />
@@ -417,7 +428,7 @@ function ActivityActionIcon({ action }: { action: TPortfolioActivityEntry['actio
   }
 
   if (action === 'transfer') {
-    return <IconGitCompare className={iconClassName} aria-hidden="true" />
+    return <IconGitCompare className={iconClassName} strokeWidth={1.5} aria-hidden="true" />
   }
 
   return <IconUnstake className={iconClassName} aria-hidden="true" />
@@ -1191,7 +1202,7 @@ function IndexedActivityRow({
 
         <div className="z-10 flex min-w-0 items-start gap-3 md:col-span-14 md:items-center md:gap-6">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-surface-secondary text-neutral-700 md:size-10 md:rounded-none md:bg-transparent">
-            <ActivityActionIcon action={entry.action} />
+            <ActivityActionIcon action={entry.action} displayType={entry.displayType} />
           </div>
           <div className="min-w-0 flex-1 pt-0.5 md:pt-0">
             <div className="min-w-0">
