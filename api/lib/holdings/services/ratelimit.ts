@@ -1,7 +1,7 @@
 import { getPool, isDatabaseEnabled } from '../db/connection'
 
 const WINDOW_MS = 60 * 1000 // 1 minute
-const MAX_REQUESTS = 10
+const MAX_REQUESTS = 60
 
 export interface RateLimitResult {
   allowed: boolean
