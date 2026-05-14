@@ -30,6 +30,11 @@ export function usePortfolioHistory(
     }
     return `/api/holdings/history?address=${address}&denomination=${denomination}&timeframe=${timeframe}&fetchType=parallel&progressId=${encodeURIComponent(progressId)}`
   }, [address, denomination, enabled, progressId, timeframe])
+  const cacheKey = useMemo(
+    () =>
+      address && enabled ? ['fetch', 'portfolio-history', address.toLowerCase(), denomination, timeframe] : undefined,
+    [address, denomination, enabled, timeframe]
+  )
 
   const {
     data: rawData,
@@ -40,7 +45,9 @@ export function usePortfolioHistory(
     endpoint,
     schema: portfolioHistorySimpleResponseSchema,
     config: {
+      cacheKey,
       cacheDuration: PORTFOLIO_HISTORY_CACHE_DURATION,
+      gcTime: PORTFOLIO_HISTORY_CACHE_DURATION,
       keepPreviousData: false,
       timeout: 2 * 60 * 1000 // 2 minutes for large holdings requests
     }
@@ -56,7 +63,8 @@ export function usePortfolioHistory(
     }))
   }, [rawData])
 
-  const isLoadingState = isLoading || isFetching
+  const hasData = Boolean(rawData?.dataPoints)
+  const isLoadingState = !hasData && (isLoading || isFetching)
   const errorStatus =
     (error as { response?: { status?: number }; status?: number } | null)?.response?.status ??
     (error as { status?: number } | null)?.status

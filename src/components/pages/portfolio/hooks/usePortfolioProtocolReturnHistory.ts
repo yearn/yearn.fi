@@ -27,12 +27,18 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
 
     return `/api/holdings/protocol-return/history?address=${address}&timeframe=${timeframe}&debug=1&fetchType=parallel&progressId=${encodeURIComponent(progressId)}`
   }, [address, enabled, progressId, timeframe])
+  const cacheKey = useMemo(
+    () => (address && enabled ? ['fetch', 'portfolio-protocol-history', address.toLowerCase(), timeframe] : undefined),
+    [address, enabled, timeframe]
+  )
 
   const { data, isLoading, isFetching, error } = useFetch<TPortfolioProtocolReturnHistoryResponse>({
     endpoint,
     schema: portfolioProtocolReturnHistoryResponseSchema,
     config: {
+      cacheKey,
       cacheDuration: PORTFOLIO_HISTORY_CACHE_DURATION,
+      gcTime: PORTFOLIO_HISTORY_CACHE_DURATION,
       keepPreviousData: false,
       timeout: 2 * 60 * 1000
     }
@@ -56,7 +62,8 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
   const summary = useMemo<TPortfolioProtocolReturnHistorySummary | null>(() => data?.summary ?? null, [data])
   const familySeries = useMemo<TPortfolioProtocolReturnHistoryFamilySeries>(() => data?.familySeries ?? [], [data])
 
-  const isLoadingState = isLoading || isFetching
+  const hasData = Boolean(data?.dataPoints)
+  const isLoadingState = !hasData && (isLoading || isFetching)
   const errorStatus =
     (error as { response?: { status?: number }; status?: number } | null)?.response?.status ??
     (error as { status?: number } | null)?.status
