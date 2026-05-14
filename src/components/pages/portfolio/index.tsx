@@ -828,14 +828,13 @@ function ActivityDateRangeModal({
                       <input
                         type="date"
                         value={pendingFilters.startDate}
-                        max={startDateMax}
+                        max={todayDate}
                         onFocus={() => setActiveDateField('startDate')}
                         onChange={(event) => {
                           const startDate = event.target.value
                           setPendingFilters((previous) => ({
                             ...previous,
-                            startDate,
-                            endDate: previous.endDate && previous.endDate >= startDate ? previous.endDate : startDate
+                            startDate
                           }))
                         }}
                         className={cl(
@@ -851,16 +850,13 @@ function ActivityDateRangeModal({
                       <input
                         type="date"
                         value={pendingFilters.endDate}
-                        min={pendingFilters.startDate || undefined}
                         max={todayDate}
                         onFocus={() => setActiveDateField('endDate')}
                         onChange={(event) => {
                           const endDate = event.target.value
                           setPendingFilters((previous) => ({
                             ...previous,
-                            endDate,
-                            startDate:
-                              previous.startDate && previous.startDate <= endDate ? previous.startDate : endDate
+                            endDate
                           }))
                         }}
                         className={cl(
@@ -1056,38 +1052,55 @@ function IndexedActivityRow({
   const normalizedAssetAddress = assetAddress && !isZeroAddress(assetAddress) ? toAddress(assetAddress) : null
   const normalizedInputTokenAddress =
     entry.inputTokenAddress && !isZeroAddress(entry.inputTokenAddress) ? toAddress(entry.inputTokenAddress) : null
-  const tokenAddress = normalizedInputTokenAddress ?? normalizedAssetAddress
+  const normalizedOutputTokenAddress =
+    entry.outputTokenAddress && !isZeroAddress(entry.outputTokenAddress) ? toAddress(entry.outputTokenAddress) : null
   const vaultPageUrl = `/vaults/${entry.chainId}/${toAddress(preferredVaultAddress)}`
   const activityTitle = ACTIVITY_ACTION_LABELS[entry.action]
   const isExitAction = entry.action === 'withdraw' || entry.action === 'unstake'
+  const tokenAddress = isExitAction
+    ? (normalizedOutputTokenAddress ?? normalizedAssetAddress)
+    : (normalizedInputTokenAddress ?? normalizedAssetAddress)
   const chainName = getActivityChainName(entry.chainId)
   const formattedDate = formatIndexedActivityDate(entry.timestamp)
   const formattedDateTime = formatIndexedActivityDateTime(entry.timestamp)
   const formattedTime = formatIndexedActivityTime(entry.timestamp)
   const activityDateInputValue = formatActivityDateInputValue(entry.timestamp)
-  const primaryTokenSymbol = entry.inputTokenSymbol ?? entry.assetSymbol
-  const primaryTokenAmount =
+  const depositedTokenSymbol = entry.inputTokenSymbol ?? entry.assetSymbol
+  const depositedTokenAmount =
     entry.inputTokenAmountFormatted !== null ? entry.inputTokenAmountFormatted : entry.assetAmountFormatted
-  const isZap = Boolean(entry.inputTokenAddress && entry.inputTokenAmount)
-  const summaryAssetSymbol = primaryTokenSymbol ?? shareSymbol
+  const receivedTokenSymbol = isExitAction ? (entry.outputTokenSymbol ?? entry.assetSymbol) : shareSymbol
+  const receivedTokenAmount =
+    isExitAction && entry.outputTokenAmountFormatted !== null
+      ? entry.outputTokenAmountFormatted
+      : isExitAction
+        ? entry.assetAmountFormatted
+        : entry.shareAmountFormatted
+  const isZap = Boolean(
+    (entry.inputTokenAddress && entry.inputTokenAmount) || (entry.outputTokenAddress && entry.outputTokenAmount)
+  )
+  const summaryAssetSymbol = isExitAction ? (receivedTokenSymbol ?? shareSymbol) : (depositedTokenSymbol ?? shareSymbol)
   const primaryAmount = isExitAction
     ? formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
-    : formatActivityDisplayAmount(primaryTokenAmount, primaryTokenSymbol)
+    : formatActivityDisplayAmount(depositedTokenAmount, depositedTokenSymbol)
   const secondaryAmount = isExitAction
-    ? formatActivityDisplayAmount(entry.assetAmountFormatted, entry.assetSymbol)
+    ? formatActivityDisplayAmount(receivedTokenAmount, receivedTokenSymbol)
     : formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
   const collapsedPrimaryAmount = isExitAction
     ? formatActivityFixedValue(entry.shareAmountFormatted)
-    : formatActivityFixedValue(primaryTokenAmount)
+    : formatActivityFixedValue(depositedTokenAmount)
   const collapsedSecondaryAmount = isExitAction
-    ? formatActivityFixedValue(entry.assetAmountFormatted)
+    ? formatActivityFixedValue(receivedTokenAmount)
     : formatActivityFixedValue(entry.shareAmountFormatted)
   const outboundAmount = collapsedPrimaryAmount
   const inboundAmount = collapsedSecondaryAmount
-  const outboundSymbol = isExitAction ? shareSymbol : primaryTokenSymbol
-  const inboundSymbol = isExitAction ? entry.assetSymbol : shareSymbol
+  const outboundSymbol = isExitAction ? shareSymbol : depositedTokenSymbol
+  const inboundSymbol = isExitAction ? receivedTokenSymbol : shareSymbol
   const primaryDetailLabel = isExitAction ? 'VAULT SHARES REDEEMED:' : 'TOKEN DEPOSITED:'
-  const secondaryDetailLabel = isExitAction ? 'ASSET RECEIVED:' : 'VAULT SHARES RECEIVED:'
+  const secondaryDetailLabel = isExitAction
+    ? entry.outputTokenAddress
+      ? 'TOKEN RECEIVED:'
+      : 'ASSET RECEIVED:'
+    : 'VAULT SHARES RECEIVED:'
   const metadataStatus = entry.status === 'ok' ? 'Indexed' : 'Limited metadata'
   const hoverRoundedClass =
     isFirstRow && isLastRow ? 'rounded-lg' : isFirstRow ? 'rounded-t-lg' : isLastRow ? 'rounded-b-lg' : ''
@@ -1546,7 +1559,10 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         return false
       }
 
-      if (isActivityZapFilterActive && !(entry.inputTokenAddress && entry.inputTokenAmount)) {
+      const hasZapToken =
+        (entry.inputTokenAddress && entry.inputTokenAmount) || (entry.outputTokenAddress && entry.outputTokenAmount)
+
+      if (isActivityZapFilterActive && !hasZapToken) {
         return false
       }
 
@@ -1564,7 +1580,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       const chainName = getActivityChainName(entry.chainId)
       const actionLabel = ACTIVITY_ACTION_LABELS[entry.action]
       const formattedDate = formatIndexedActivityDate(entry.timestamp)
-      const symbols = [entry.assetSymbol, entry.inputTokenSymbol].filter(Boolean).join(' ')
+      const symbols = [entry.assetSymbol, entry.inputTokenSymbol, entry.outputTokenSymbol].filter(Boolean).join(' ')
 
       return [displayName, chainName, actionLabel, formattedDate, symbols, entry.txHash]
         .join(' ')

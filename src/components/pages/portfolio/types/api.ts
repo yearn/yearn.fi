@@ -145,6 +145,10 @@ const portfolioActivityEntrySchema = z.object({
   inputTokenSymbol: z.string().nullable(),
   inputTokenAmount: z.string().nullable(),
   inputTokenAmountFormatted: z.number().nullable(),
+  outputTokenAddress: z.string().nullable(),
+  outputTokenSymbol: z.string().nullable(),
+  outputTokenAmount: z.string().nullable(),
+  outputTokenAmountFormatted: z.number().nullable(),
   shareAmount: z.string(),
   shareAmountFormatted: z.number().nullable(),
   status: z.enum(['ok', 'missing_metadata'])

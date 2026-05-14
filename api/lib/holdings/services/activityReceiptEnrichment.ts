@@ -36,14 +36,18 @@ type TTokenMetadata = {
   decimals: number | null
 }
 
-export type TActivityInputAsset = {
+export type TActivityTransferAsset = {
   tokenAddress: string
   tokenSymbol: string | null
   amount: string
   amountFormatted: number | null
 }
 
-const receiptInputCache = new Map<string, Promise<TActivityInputAsset | null>>()
+export type TActivityInputAsset = TActivityTransferAsset
+
+type TActivityTransferDirection = 'input' | 'output'
+
+const receiptAssetCache = new Map<string, Promise<TActivityTransferAsset | null>>()
 const tokenMetadataCache = new Map<string, Promise<TTokenMetadata>>()
 
 function getChainRpcUrl(chainId: number): string | null {
@@ -207,10 +211,11 @@ async function fetchTokenMetadata(chainId: number, tokenAddress: string): Promis
   return request
 }
 
-function selectSingleUserInputTransfer(args: {
+function selectSingleUserTransfer(args: {
   receipt: TRpcTransactionReceipt
   userAddress: string
   excludedTokenAddresses: Set<string>
+  direction: TActivityTransferDirection
 }): { tokenAddress: string; value: bigint } | null {
   const normalizedUserAddress = lowerCaseAddress(args.userAddress)
   const groupedTransfers = (args.receipt.logs ?? [])
@@ -219,7 +224,9 @@ function selectSingleUserInputTransfer(args: {
       (transfer): transfer is TDecodedTransfer =>
         transfer !== null &&
         transfer.value > ZERO &&
-        transfer.from === normalizedUserAddress &&
+        (args.direction === 'input'
+          ? transfer.from === normalizedUserAddress
+          : transfer.to === normalizedUserAddress) &&
         !args.excludedTokenAddresses.has(transfer.tokenAddress)
     )
     .reduce<Map<string, bigint>>((grouped, transfer) => {
@@ -240,19 +247,21 @@ function selectSingleUserInputTransfer(args: {
   return { tokenAddress, value }
 }
 
-export async function fetchRouterInputAssetForActivity(args: {
+async function fetchRouterAssetForActivity(args: {
   chainId: number
   transactionHash: string
   userAddress: string
   excludedTokenAddresses?: string[]
-}): Promise<TActivityInputAsset | null> {
+  direction: TActivityTransferDirection
+}): Promise<TActivityTransferAsset | null> {
   const cacheKey = [
+    args.direction,
     args.chainId,
     lowerCaseAddress(args.transactionHash),
     lowerCaseAddress(args.userAddress),
     [...(args.excludedTokenAddresses ?? [])].map(lowerCaseAddress).sort().join(',')
   ].join(':')
-  const existing = receiptInputCache.get(cacheKey)
+  const existing = receiptAssetCache.get(cacheKey)
 
   if (existing) {
     return existing
@@ -267,26 +276,45 @@ export async function fetchRouterInputAssetForActivity(args: {
       return null
     }
 
-    const inputTransfer = selectSingleUserInputTransfer({
+    const transfer = selectSingleUserTransfer({
       receipt,
       userAddress: args.userAddress,
-      excludedTokenAddresses: new Set((args.excludedTokenAddresses ?? []).map(lowerCaseAddress))
+      excludedTokenAddresses: new Set((args.excludedTokenAddresses ?? []).map(lowerCaseAddress)),
+      direction: args.direction
     })
 
-    if (!inputTransfer) {
+    if (!transfer) {
       return null
     }
 
-    const metadata = await fetchTokenMetadata(args.chainId, inputTransfer.tokenAddress)
+    const metadata = await fetchTokenMetadata(args.chainId, transfer.tokenAddress)
 
     return {
-      tokenAddress: inputTransfer.tokenAddress,
+      tokenAddress: transfer.tokenAddress,
       tokenSymbol: metadata.symbol,
-      amount: inputTransfer.value.toString(),
-      amountFormatted: metadata.decimals === null ? null : formatAmount(inputTransfer.value, metadata.decimals)
+      amount: transfer.value.toString(),
+      amountFormatted: metadata.decimals === null ? null : formatAmount(transfer.value, metadata.decimals)
     }
   })()
 
-  receiptInputCache.set(cacheKey, request)
+  receiptAssetCache.set(cacheKey, request)
   return request
+}
+
+export async function fetchRouterInputAssetForActivity(args: {
+  chainId: number
+  transactionHash: string
+  userAddress: string
+  excludedTokenAddresses?: string[]
+}): Promise<TActivityTransferAsset | null> {
+  return fetchRouterAssetForActivity({ ...args, direction: 'input' })
+}
+
+export async function fetchRouterOutputAssetForActivity(args: {
+  chainId: number
+  transactionHash: string
+  userAddress: string
+  excludedTokenAddresses?: string[]
+}): Promise<TActivityTransferAsset | null> {
+  return fetchRouterAssetForActivity({ ...args, direction: 'output' })
 }

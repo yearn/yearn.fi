@@ -119,7 +119,12 @@ function createTransferLog(args: { tokenAddress: string; from: string; to: strin
   }
 }
 
-function mockReceiptEnrichmentRpc(args: { tokenAddress: string; tokenSymbol: string; tokenDecimals: number }) {
+function mockReceiptEnrichmentRpc(args: {
+  tokenAddress: string
+  tokenSymbol: string
+  tokenDecimals: number
+  logs?: ReturnType<typeof createTransferLog>[]
+}) {
   process.env.VITE_RPC_URI_FOR_1 = 'https://rpc.example'
   vi.stubGlobal(
     'fetch',
@@ -133,7 +138,7 @@ function mockReceiptEnrichmentRpc(args: { tokenAddress: string; tokenSymbol: str
         return new Response(
           JSON.stringify({
             result: {
-              logs: [
+              logs: args.logs ?? [
                 createTransferLog({
                   tokenAddress: args.tokenAddress,
                   from: USER_ADDRESS,
@@ -316,6 +321,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '2000000000000000000',
         shareAmountFormatted: 2,
         status: 'ok'
@@ -334,6 +343,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '2000000000000000000',
         shareAmountFormatted: 2,
         status: 'ok'
@@ -352,6 +365,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '1000000000000000000',
         shareAmountFormatted: 1,
         status: 'ok'
@@ -428,6 +445,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: 'USDT0',
         inputTokenAmount: '230000',
         inputTokenAmountFormatted: 0.23,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '202094',
         shareAmountFormatted: 0.202094,
         status: 'ok'
@@ -475,6 +496,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '123456789',
         shareAmountFormatted: null,
         status: 'missing_metadata'
@@ -565,6 +590,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '2000000000000000000',
         shareAmountFormatted: 2,
         status: 'ok'
@@ -653,6 +682,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '3000000',
         shareAmountFormatted: 0.000000000003,
         status: 'ok'
@@ -761,6 +794,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '2000000',
         shareAmountFormatted: 0.000000000002,
         status: 'ok'
@@ -846,6 +883,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '3000000',
         shareAmountFormatted: 0.000000000003,
         status: 'ok'
@@ -936,6 +977,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '2000000',
         shareAmountFormatted: 0.000000000002,
         status: 'ok'
@@ -1099,7 +1144,7 @@ describe('getHoldingsActivity', () => {
     })
   })
 
-  it('recovers routed withdrawals from address transfers plus tx-scoped withdraw events', async () => {
+  it('recovers routed withdrawals and enriches the final token received from the tx receipt', async () => {
     fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
       deposits: [],
       withdrawals: [],
@@ -1166,6 +1211,19 @@ describe('getHoldingsActivity', () => {
         ]
       ])
     )
+    mockReceiptEnrichmentRpc({
+      tokenAddress: USDT0,
+      tokenSymbol: 'USDT0',
+      tokenDecimals: 6,
+      logs: [
+        createTransferLog({
+          tokenAddress: USDT0,
+          from: INTERMEDIARY,
+          to: USER_ADDRESS,
+          value: 1068000n
+        })
+      ]
+    })
 
     const { getHoldingsActivity } = await import('./activity')
     const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
@@ -1186,6 +1244,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: USDT0.toLowerCase(),
+        outputTokenSymbol: 'USDT0',
+        outputTokenAmount: '1068000',
+        outputTokenAmountFormatted: 1.068,
         shareAmount: '849068037733633594470',
         shareAmountFormatted: 849.0680377336336,
         status: 'ok'

@@ -1,5 +1,10 @@
 import type { DepositEvent, TransferEvent, VaultMetadata, WithdrawEvent } from '../types'
-import { fetchRouterInputAssetForActivity, type TActivityInputAsset } from './activityReceiptEnrichment'
+import {
+  fetchRouterInputAssetForActivity,
+  fetchRouterOutputAssetForActivity,
+  type TActivityInputAsset,
+  type TActivityTransferAsset
+} from './activityReceiptEnrichment'
 import type { TransactionActivityEvents, VaultVersion } from './graphql'
 import {
   fetchActivityEventsByTransactionHashes,
@@ -34,6 +39,10 @@ export interface HoldingsActivityEntry {
   inputTokenSymbol: string | null
   inputTokenAmount: string | null
   inputTokenAmountFormatted: number | null
+  outputTokenAddress: string | null
+  outputTokenSymbol: string | null
+  outputTokenAmount: string | null
+  outputTokenAmountFormatted: number | null
   shareAmount: string
   shareAmountFormatted: number | null
   status: 'ok' | 'missing_metadata'
@@ -123,6 +132,8 @@ type TResolvedActivityEvent = {
   owner: string | null
   sender: string | null
   inputAsset: TActivityInputAsset | null
+  outputAsset: TActivityTransferAsset | null
+  usesRouter: boolean
 }
 
 type TRecentActivityWindow = {
@@ -405,6 +416,7 @@ function createResolvedActivityEvent(args: {
   event: TActivityEvent
   assetAmount: bigint
   shareAmount: bigint
+  usesRouter?: boolean
 }): TResolvedActivityEvent {
   return {
     chainId: args.event.chainId,
@@ -419,7 +431,9 @@ function createResolvedActivityEvent(args: {
     shares: args.shareAmount,
     owner: args.event.kind === 'deposit' ? args.event.owner : null,
     sender: args.event.kind === 'deposit' ? args.event.sender : null,
-    inputAsset: null
+    inputAsset: null,
+    outputAsset: null,
+    usesRouter: args.usesRouter ?? false
   }
 }
 
@@ -483,7 +497,8 @@ function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): 
                   action: 'deposit',
                   event: txDeposits.latestEvent,
                   assetAmount: scaleAmountByMatchedShares(txDeposits.assets, txDeposits.shares, matchedDepositShares),
-                  shareAmount: matchedDepositShares
+                  shareAmount: matchedDepositShares,
+                  usesRouter: true
                 })
               : null
           })()
@@ -508,7 +523,8 @@ function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): 
                     txWithdrawals.shares,
                     matchedWithdrawalShares
                   ),
-                  shareAmount: matchedWithdrawalShares
+                  shareAmount: matchedWithdrawalShares,
+                  usesRouter: true
                 })
               : null
           })()
@@ -529,7 +545,8 @@ function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): 
                   action: 'stake',
                   event: txStakes.latestEvent,
                   assetAmount: matchedStakeAssets,
-                  shareAmount: scaleAmountByMatchedShares(txStakes.shares, txStakes.assets, matchedStakeAssets)
+                  shareAmount: scaleAmountByMatchedShares(txStakes.shares, txStakes.assets, matchedStakeAssets),
+                  usesRouter: true
                 })
               : null
           })()
@@ -550,7 +567,8 @@ function classifyTxFamilyEvents(events: TActivityEvent[], userAddress: string): 
                   action: 'unstake',
                   event: txUnstakes.latestEvent,
                   assetAmount: matchedUnstakeAssets,
-                  shareAmount: scaleAmountByMatchedShares(txUnstakes.shares, txUnstakes.assets, matchedUnstakeAssets)
+                  shareAmount: scaleAmountByMatchedShares(txUnstakes.shares, txUnstakes.assets, matchedUnstakeAssets),
+                  usesRouter: true
                 })
               : null
           })()
@@ -646,6 +664,10 @@ function shouldFetchInputAsset(event: TResolvedActivityEvent, userAddress: strin
   )
 }
 
+function shouldFetchOutputAsset(event: TResolvedActivityEvent): boolean {
+  return event.usesRouter && (event.action === 'withdraw' || event.action === 'unstake')
+}
+
 async function enrichActivityInputAssets(
   events: TResolvedActivityEvent[],
   userAddress: string,
@@ -653,23 +675,39 @@ async function enrichActivityInputAssets(
 ): Promise<TResolvedActivityEvent[]> {
   return Promise.all(
     events.map(async (event) => {
-      if (!shouldFetchInputAsset(event, userAddress)) {
+      const shouldFetchInput = shouldFetchInputAsset(event, userAddress)
+      const shouldFetchOutput = shouldFetchOutputAsset(event)
+
+      if (!shouldFetchInput && !shouldFetchOutput) {
         return event
       }
 
       const eventMetadata = metadata.get(toVaultKey(event.chainId, event.vaultAddress)) ?? null
-      const inputAsset = await fetchRouterInputAssetForActivity({
-        chainId: event.chainId,
-        transactionHash: event.txHash,
-        userAddress,
-        excludedTokenAddresses: [
-          event.vaultAddress,
-          event.familyVaultAddress,
-          ...(eventMetadata ? [eventMetadata.token.address] : [])
-        ]
-      })
+      const excludedTokenAddresses = [
+        event.vaultAddress,
+        event.familyVaultAddress,
+        ...(eventMetadata ? [eventMetadata.token.address] : [])
+      ]
+      const [inputAsset, outputAsset] = await Promise.all([
+        shouldFetchInput
+          ? fetchRouterInputAssetForActivity({
+              chainId: event.chainId,
+              transactionHash: event.txHash,
+              userAddress,
+              excludedTokenAddresses
+            })
+          : Promise.resolve(null),
+        shouldFetchOutput
+          ? fetchRouterOutputAssetForActivity({
+              chainId: event.chainId,
+              transactionHash: event.txHash,
+              userAddress,
+              excludedTokenAddresses
+            })
+          : Promise.resolve(null)
+      ])
 
-      return inputAsset ? { ...event, inputAsset } : event
+      return inputAsset || outputAsset ? { ...event, inputAsset, outputAsset } : event
     })
   )
 }
@@ -771,6 +809,10 @@ function toHoldingsActivityEntry(
     inputTokenSymbol: event.inputAsset?.tokenSymbol ?? null,
     inputTokenAmount: event.inputAsset?.amount ?? null,
     inputTokenAmountFormatted: event.inputAsset?.amountFormatted ?? null,
+    outputTokenAddress: event.outputAsset?.tokenAddress ?? null,
+    outputTokenSymbol: event.outputAsset?.tokenSymbol ?? null,
+    outputTokenAmount: event.outputAsset?.amount ?? null,
+    outputTokenAmountFormatted: event.outputAsset?.amountFormatted ?? null,
     shareAmount: event.shares.toString(),
     shareAmountFormatted: eventMetadata ? formatAmount(event.shares, eventMetadata.decimals) : null,
     status: eventMetadata ? 'ok' : 'missing_metadata'
