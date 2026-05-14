@@ -378,6 +378,14 @@ function getEarlierActivityDate(firstDate: string, secondDate: string): string {
 }
 
 function getActivityEntryTitle(entry: TPortfolioActivityEntry): string {
+  if (entry.displayType === 'reward_claim') {
+    return 'Reward Claim'
+  }
+
+  if (entry.action === 'transfer' && entry.inputTokenAddress && entry.outputTokenAddress) {
+    return 'Zap'
+  }
+
   if (entry.action === 'transfer' && entry.transferDirection === 'in') {
     return 'Transfer in'
   }
@@ -1076,6 +1084,7 @@ function IndexedActivityRow({
   const normalizedInputTokenAddress =
     entry.inputTokenAddress && !isZeroAddress(entry.inputTokenAddress) ? toAddress(entry.inputTokenAddress) : null
   const isTransferAction = entry.action === 'transfer'
+  const isRewardClaim = entry.displayType === 'reward_claim'
   const transferTokenAddress = isTransferAction ? toAddress(entry.vaultAddress) : null
   const tokenAddress = transferTokenAddress ?? normalizedInputTokenAddress ?? normalizedAssetAddress
   const vaultPageUrl = `/vaults/${entry.chainId}/${toAddress(preferredVaultAddress)}`
@@ -1090,6 +1099,9 @@ function IndexedActivityRow({
   const primaryTokenAmount =
     entry.inputTokenAmountFormatted !== null ? entry.inputTokenAmountFormatted : entry.assetAmountFormatted
   const isZap = Boolean(entry.inputTokenAddress && entry.inputTokenAmount)
+  const isStakeZap = entry.action === 'stake' && isZap && Boolean(entry.outputTokenAddress)
+  const zapTarget =
+    entry.outputTokenSymbol ?? (entry.outputTokenAddress ? truncateHex(entry.outputTokenAddress, 5) : null)
   const summaryAssetSymbol = isTransferAction ? shareSymbol : (primaryTokenSymbol ?? shareSymbol)
   const primaryAmount = isExitAction
     ? formatActivityDisplayAmount(entry.shareAmountFormatted, shareSymbol)
@@ -1111,7 +1123,11 @@ function IndexedActivityRow({
   const inboundSymbol = isExitAction ? entry.assetSymbol : shareSymbol
   const transferSign = entry.transferDirection === 'out' ? '-' : '+'
   const transferAmount = formatActivityFixedValue(entry.shareAmountFormatted)
-  const transferDetailLabel = entry.transferDirection === 'out' ? 'VAULT SHARES SENT:' : 'VAULT SHARES RECEIVED:'
+  const transferDetailLabel = isRewardClaim
+    ? 'REWARD CLAIMED:'
+    : entry.transferDirection === 'out'
+      ? 'VAULT SHARES SENT:'
+      : 'VAULT SHARES RECEIVED:'
   const primaryDetailLabel = isExitAction ? 'VAULT SHARES REDEEMED:' : 'TOKEN DEPOSITED:'
   const secondaryDetailLabel = isExitAction ? 'ASSET RECEIVED:' : 'VAULT SHARES RECEIVED:'
   const metadataStatus = entry.status === 'ok' ? 'Indexed' : 'Limited metadata'
@@ -1219,20 +1235,29 @@ function IndexedActivityRow({
                 loading="lazy"
               />
             ) : null}
-            {isTransferAction ? (
+            {isStakeZap ? (
+              <div className="grid min-w-0 grid-cols-[max-content_100px] gap-x-4">
+                <span className="min-w-0 text-right text-sm font-semibold leading-tight tabular-nums text-text-primary md:text-base">
+                  {collapsedPrimaryAmount}
+                </span>
+                <span className="min-w-0 truncate text-left text-sm font-medium leading-tight text-text-primary md:text-base">
+                  {primaryTokenSymbol}
+                </span>
+              </div>
+            ) : isTransferAction ? (
               <div className="grid min-w-0 grid-cols-[max-content_100px] gap-x-4">
                 <span
                   className={cl(
                     'min-w-0 text-right text-sm font-semibold leading-tight tabular-nums md:text-base',
-                    entry.transferDirection === 'out' ? 'text-neutral-600' : 'text-text-primary'
+                    entry.transferDirection === 'out' && !isRewardClaim ? 'text-neutral-600' : 'text-text-primary'
                   )}
                 >
-                  {`${transferSign}${transferAmount}`}
+                  {isRewardClaim ? transferAmount : `${transferSign}${transferAmount}`}
                 </span>
                 <span
                   className={cl(
                     'min-w-0 truncate text-left text-sm font-medium leading-tight md:text-base',
-                    entry.transferDirection === 'out' ? 'text-neutral-600' : 'text-text-primary'
+                    entry.transferDirection === 'out' && !isRewardClaim ? 'text-neutral-600' : 'text-text-primary'
                   )}
                 >
                   {shareSymbol}
@@ -1264,8 +1289,17 @@ function IndexedActivityRow({
       {isExpanded ? (
         <div className="bg-surface pb-4 pl-20 pr-4 pt-1 md:pl-[88px] md:pr-6">
           <div className="flex flex-col">
-            {isTransferAction ? (
-              <ActivityDetailItem label={transferDetailLabel} value={secondaryAmount} />
+            {isStakeZap ? (
+              <>
+                <ActivityDetailItem label="TOKEN STAKED:" value={primaryAmount} />
+                {zapTarget ? <ActivityDetailItem label="STAKED IN:" value={zapTarget} /> : null}
+              </>
+            ) : isTransferAction ? (
+              <>
+                {isZap ? <ActivityDetailItem label="TOKEN ZAPPED:" value={primaryAmount} /> : null}
+                {zapTarget ? <ActivityDetailItem label="ZAPPED TO:" value={zapTarget} /> : null}
+                {zapTarget ? null : <ActivityDetailItem label={transferDetailLabel} value={secondaryAmount} />}
+              </>
             ) : (
               <>
                 <ActivityDetailItem label={primaryDetailLabel} value={primaryAmount} />
@@ -1617,7 +1651,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       const chainName = getActivityChainName(entry.chainId)
       const actionLabel = getActivityEntryTitle(entry)
       const formattedDate = formatIndexedActivityDate(entry.timestamp)
-      const symbols = [entry.assetSymbol, entry.inputTokenSymbol].filter(Boolean).join(' ')
+      const symbols = [entry.assetSymbol, entry.inputTokenSymbol, entry.outputTokenSymbol].filter(Boolean).join(' ')
 
       return [displayName, chainName, actionLabel, formattedDate, symbols, entry.txHash]
         .join(' ')
@@ -1757,7 +1791,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         estimateSize={81}
         itemSpacingClassName="border-b border-border"
         getItemKey={(entry): string =>
-          `${entry.txHash}:${entry.vaultAddress}:${entry.action}:${entry.transferDirection ?? 'none'}:${entry.timestamp}`
+          `${entry.txHash}:${entry.vaultAddress}:${entry.action}:${entry.displayType ?? 'none'}:${entry.transferDirection ?? 'none'}:${entry.timestamp}`
         }
         onEndReached={indexedHasMore ? handleIndexedActivityEndReached : undefined}
         renderItem={(entry, index) => {

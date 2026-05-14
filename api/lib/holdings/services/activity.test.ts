@@ -1,4 +1,11 @@
-import { encodeAbiParameters, encodeEventTopics, encodeFunctionResult, erc20Abi, parseAbiItem } from 'viem'
+import {
+  encodeAbiParameters,
+  encodeEventTopics,
+  encodeFunctionData,
+  encodeFunctionResult,
+  erc20Abi,
+  parseAbiItem
+} from 'viem'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchRecentAddressScopedActivityEventsMock = vi.fn()
@@ -23,7 +30,41 @@ const UNKNOWN_VAULT = '0x0000000000000000000000000000000000000456'
 const USER_ADDRESS = '0x2222222222222222222222222222222222222222'
 const INTERMEDIARY = '0x4Fe93ebC4Ce6Ae4f81601cC7Ce7139023919E003'
 const USDT0 = '0x5555555555555555555555555555555555555555'
+const YCRV_ZAP = '0x78ada385b15d89a9b845d2cac0698663f0c69e3c'
+const YBS_REWARD_DISTRIBUTOR = '0xB226c52EB411326CdB54824a88aBaFDAAfF16D3d'
+const YYB_REWARD_DISTRIBUTOR = '0x1d02F6A86Ed5650f93E40FCD62fa5727c32ad746'
 const TRANSFER_EVENT = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)')
+const YCRV_ZAP_TEST_ABI = [
+  {
+    stateMutability: 'nonpayable',
+    type: 'function',
+    name: 'zap',
+    inputs: [
+      { name: '_input_token', type: 'address' },
+      { name: '_output_token', type: 'address' },
+      { name: '_amount_in', type: 'uint256' },
+      { name: '_min_out', type: 'uint256' },
+      { name: '_recipient', type: 'address' }
+    ],
+    outputs: [{ name: '', type: 'uint256' }]
+  }
+] as const
+const V2_VAULT_TEST_ABI = [
+  {
+    stateMutability: 'nonpayable',
+    type: 'function',
+    name: 'deposit',
+    inputs: [{ name: '_amount', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    stateMutability: 'nonpayable',
+    type: 'function',
+    name: 'withdraw',
+    inputs: [{ name: '_maxShares', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }]
+  }
+] as const
 
 function createDepositEvent(args: {
   id: string
@@ -172,11 +213,148 @@ function mockReceiptEnrichmentRpc(args: { tokenAddress: string; tokenSymbol: str
   )
 }
 
+function mockYcrvZapRpc(args: {
+  inputTokenAddress: string
+  outputTokenAddress: string
+  inputAmount: bigint
+  inputTokenSymbol: string
+  inputTokenDecimals: number
+}) {
+  process.env.VITE_RPC_URI_FOR_1 = 'https://rpc.example'
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        method?: string
+        params?: Array<{ data?: string }>
+      }
+
+      if (body.method === 'eth_getTransactionByHash') {
+        return new Response(
+          JSON.stringify({
+            result: {
+              to: YCRV_ZAP,
+              input: encodeFunctionData({
+                abi: YCRV_ZAP_TEST_ABI,
+                functionName: 'zap',
+                args: [args.inputTokenAddress, args.outputTokenAddress, args.inputAmount, 1n, USER_ADDRESS]
+              })
+            }
+          })
+        )
+      }
+
+      if (body.method === 'eth_call') {
+        const data = body.params?.[0]?.data
+
+        return new Response(
+          JSON.stringify({
+            result:
+              data === '0x95d89b41'
+                ? encodeFunctionResult({
+                    abi: erc20Abi,
+                    functionName: 'symbol',
+                    result: args.inputTokenSymbol
+                  })
+                : encodeFunctionResult({
+                    abi: erc20Abi,
+                    functionName: 'decimals',
+                    result: args.inputTokenDecimals
+                  })
+          })
+        )
+      }
+
+      return new Response(JSON.stringify({ result: null }))
+    })
+  )
+}
+
+function mockRewardDistributorRpc(transactionTargets: Record<string, string>) {
+  process.env.VITE_RPC_URI_FOR_1 = 'https://rpc.example'
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        method?: string
+        params?: string[]
+      }
+      const transactionHash = body.params?.[0]
+
+      return new Response(
+        JSON.stringify({
+          result:
+            body.method === 'eth_getTransactionByHash' && transactionHash
+              ? {
+                  to: transactionTargets[transactionHash] ?? INTERMEDIARY,
+                  input: '0x'
+                }
+              : null
+        })
+      )
+    })
+  )
+}
+
+function mockDirectV2VaultRpc(args: {
+  transactionHash: string
+  vaultAddress: string
+  action: 'deposit' | 'withdraw'
+  assetAmount: bigint
+  underlyingTokenAddress?: string
+}) {
+  process.env.VITE_RPC_URI_FOR_1 = 'https://rpc.example'
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        method?: string
+        params?: string[]
+      }
+
+      if (body.method === 'eth_getTransactionByHash' && body.params?.[0] === args.transactionHash) {
+        return new Response(
+          JSON.stringify({
+            result: {
+              to: args.vaultAddress,
+              input: encodeFunctionData({
+                abi: V2_VAULT_TEST_ABI,
+                functionName: args.action,
+                args: [args.assetAmount]
+              })
+            }
+          })
+        )
+      }
+
+      if (body.method === 'eth_getTransactionReceipt' && args.action === 'withdraw') {
+        return new Response(
+          JSON.stringify({
+            result: {
+              logs: [
+                createTransferLog({
+                  tokenAddress: args.underlyingTokenAddress ?? USDT0,
+                  from: args.vaultAddress,
+                  to: USER_ADDRESS,
+                  value: args.assetAmount
+                })
+              ]
+            }
+          })
+        )
+      }
+
+      return new Response(JSON.stringify({ result: null }))
+    })
+  )
+}
+
 describe('getHoldingsActivity', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
     vi.unstubAllGlobals()
+    delete process.env.VITE_RPC_URI_FOR_1
     fetchActivityEventsByTransactionHashesMock.mockResolvedValue({
       deposits: [],
       withdrawals: [],
@@ -317,6 +495,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '2000000000000000000',
         shareAmountFormatted: 2,
         status: 'ok'
@@ -336,6 +518,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '2000000000000000000',
         shareAmountFormatted: 2,
         status: 'ok'
@@ -355,6 +541,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '1000000000000000000',
         shareAmountFormatted: 1,
         status: 'ok'
@@ -432,6 +622,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: 'USDT0',
         inputTokenAmount: '230000',
         inputTokenAmountFormatted: 0.23,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '202094',
         shareAmountFormatted: 0.202094,
         status: 'ok'
@@ -480,6 +674,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '123456789',
         shareAmountFormatted: null,
         status: 'missing_metadata'
@@ -571,6 +769,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '2000000000000000000',
         shareAmountFormatted: 2,
         status: 'ok'
@@ -660,6 +862,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '3000000',
         shareAmountFormatted: 0.000000000003,
         status: 'ok'
@@ -769,6 +975,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '2000000',
         shareAmountFormatted: 0.000000000002,
         status: 'ok'
@@ -855,6 +1065,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '3000000',
         shareAmountFormatted: 0.000000000003,
         status: 'ok'
@@ -946,6 +1160,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '2000000',
         shareAmountFormatted: 0.000000000002,
         status: 'ok'
@@ -1170,6 +1388,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '1230000000000000000',
         shareAmountFormatted: 1.23,
         status: 'ok'
@@ -1230,6 +1452,133 @@ describe('getHoldingsActivity', () => {
         assetAmountFormatted: null,
         shareAmount: '2500000000000000000',
         shareAmountFormatted: 2.5
+      }
+    ])
+  })
+
+  it('classifies direct v2 vault mint transfers as deposits from transaction input', async () => {
+    mockDirectV2VaultRpc({
+      transactionHash: '0xv2deposit',
+      vaultAddress: UNDERLYING_VAULT,
+      action: 'deposit',
+      assetAmount: 4000000n
+    })
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [
+        createTransferEvent({
+          id: 'v2-deposit-mint-transfer',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xv2deposit',
+          blockTimestamp: 412,
+          logIndex: 2,
+          value: '3900000000000000000',
+          sender: '0x0000000000000000000000000000000000000000',
+          receiver: USER_ADDRESS
+        })
+      ],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v2',
+            category: 'stable',
+            token: {
+              address: USDT0,
+              symbol: 'USDT',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(response.entries).toMatchObject([
+      {
+        action: 'deposit',
+        transferDirection: null,
+        assetAmount: '4000000',
+        assetAmountFormatted: 4,
+        shareAmount: '3900000000000000000',
+        shareAmountFormatted: 3.9
+      }
+    ])
+  })
+
+  it('classifies direct v2 vault burn transfers as withdrawals from transaction receipt output', async () => {
+    mockDirectV2VaultRpc({
+      transactionHash: '0xv2withdraw',
+      vaultAddress: UNDERLYING_VAULT,
+      action: 'withdraw',
+      assetAmount: 4300000n,
+      underlyingTokenAddress: USDT0
+    })
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: [
+        createTransferEvent({
+          id: 'v2-withdraw-burn-transfer',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xv2withdraw',
+          blockTimestamp: 411,
+          logIndex: 2,
+          value: '4100000000000000000',
+          sender: USER_ADDRESS,
+          receiver: '0x0000000000000000000000000000000000000000'
+        })
+      ],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v2',
+            category: 'stable',
+            token: {
+              address: USDT0,
+              symbol: 'USDT',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(response.entries).toMatchObject([
+      {
+        action: 'withdraw',
+        transferDirection: null,
+        assetAmount: '4300000',
+        assetAmountFormatted: 4.3,
+        shareAmount: '4100000000000000000',
+        shareAmountFormatted: 4.1
       }
     ])
   })
@@ -1305,6 +1654,213 @@ describe('getHoldingsActivity', () => {
     expect(transferResponse.entries).toHaveLength(1)
     expect(transferResponse.entries[0]?.action).toBe('transfer')
     expect(depositResponse.entries).toEqual([])
+  })
+
+  it('marks known rewards distributor transfers as reward claims while keeping transfer action type', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [
+        createTransferEvent({
+          id: 'ybs-reward-claim-transfer',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xrewardclaimybs',
+          blockTimestamp: 430,
+          logIndex: 2,
+          value: '1200000000000000000',
+          sender: YBS_REWARD_DISTRIBUTOR,
+          receiver: USER_ADDRESS
+        }),
+        createTransferEvent({
+          id: 'yyb-reward-claim-transfer',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xrewardclaimyyb',
+          blockTimestamp: 420,
+          logIndex: 2,
+          value: '3400000000000000000',
+          sender: YYB_REWARD_DISTRIBUTOR,
+          receiver: USER_ADDRESS
+        })
+      ],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${UNDERLYING_VAULT}`,
+          {
+            address: UNDERLYING_VAULT,
+            chainId: 1,
+            version: 'v3',
+            category: 'stable',
+            token: {
+              address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+              symbol: 'USDC',
+              decimals: 6
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+    mockRewardDistributorRpc({
+      '0xrewardclaimybs': YBS_REWARD_DISTRIBUTOR,
+      '0xrewardclaimyyb': YYB_REWARD_DISTRIBUTOR
+    })
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(response.entries.map((entry) => [entry.txHash, entry.action, entry.displayType])).toEqual([
+      ['0xrewardclaimybs', 'transfer', 'reward_claim'],
+      ['0xrewardclaimyyb', 'transfer', 'reward_claim']
+    ])
+  })
+
+  it('collapses known yCRV zap transfer pairs to the incoming output leg with input token details', async () => {
+    const outputVault = '0x27b5739e22ad9033bcbf192059122d163b60349d'
+
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [
+        createTransferEvent({
+          id: 'ycrv-zap-transfer-in',
+          vaultAddress: outputVault,
+          transactionHash: '0xycrvzap',
+          blockTimestamp: 430,
+          logIndex: 9,
+          value: '17760163460645012029397',
+          sender: '0x0000000000000000000000000000000000000000',
+          receiver: USER_ADDRESS
+        })
+      ],
+      transfersOut: [
+        createTransferEvent({
+          id: 'ycrv-zap-transfer-out',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xycrvzap',
+          blockTimestamp: 430,
+          logIndex: 3,
+          value: '8913214966288657814790',
+          sender: USER_ADDRESS,
+          receiver: YCRV_ZAP
+        })
+      ],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(
+      new Map([
+        [
+          `1:${outputVault}`,
+          {
+            address: outputVault,
+            chainId: 1,
+            version: 'v2',
+            category: 'stable',
+            token: {
+              address: outputVault,
+              symbol: 'st-yCRV',
+              decimals: 18
+            },
+            decimals: 18
+          }
+        ]
+      ])
+    )
+    mockYcrvZapRpc({
+      inputTokenAddress: UNDERLYING_VAULT,
+      outputTokenAddress: outputVault,
+      inputAmount: 8913214966288657814790n,
+      inputTokenSymbol: 'yvCurve',
+      inputTokenDecimals: 18
+    })
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(response.entries).toEqual([
+      {
+        chainId: 1,
+        txHash: '0xycrvzap',
+        timestamp: 430,
+        action: 'transfer',
+        transferDirection: 'in',
+        vaultAddress: outputVault,
+        familyVaultAddress: outputVault,
+        assetSymbol: 'st-yCRV',
+        assetAmount: '0',
+        assetAmountFormatted: null,
+        inputTokenAddress: UNDERLYING_VAULT,
+        inputTokenSymbol: 'yvCurve',
+        inputTokenAmount: '8913214966288657814790',
+        inputTokenAmountFormatted: 8913.214966288659,
+        outputTokenAddress: outputVault,
+        outputTokenSymbol: 'yvCurve',
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
+        shareAmount: '17760163460645012029397',
+        shareAmountFormatted: 17760.163460645013,
+        status: 'ok'
+      }
+    ])
+  })
+
+  it('classifies yCRV Boosted Staker zaps as stake rows when only the outgoing leg is address scoped', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: [
+        createTransferEvent({
+          id: 'ycrv-zap-outgoing-only',
+          vaultAddress: UNDERLYING_VAULT,
+          transactionHash: '0xycrvzapout',
+          blockTimestamp: 425,
+          logIndex: 3,
+          value: '3000000000000000000',
+          sender: USER_ADDRESS,
+          receiver: YCRV_ZAP
+        })
+      ],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+    fetchMultipleVaultsMetadataMock.mockResolvedValue(new Map())
+    mockYcrvZapRpc({
+      inputTokenAddress: UNDERLYING_VAULT,
+      outputTokenAddress: '0xe9a115b77a1057c918f997c32663fdce24fb873f',
+      inputAmount: 3000000000000000000n,
+      inputTokenSymbol: 'yvCurve',
+      inputTokenDecimals: 18
+    })
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+
+    expect(response.entries).toMatchObject([
+      {
+        action: 'stake',
+        transferDirection: null,
+        inputTokenAddress: UNDERLYING_VAULT,
+        inputTokenSymbol: 'yvCurve',
+        inputTokenAmount: '3000000000000000000',
+        inputTokenAmountFormatted: 3,
+        outputTokenAddress: '0xe9a115b77a1057c918f997c32663fdce24fb873f',
+        outputTokenSymbol: 'yCRV Boosted Staker',
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null
+      }
+    ])
   })
 
   it('recovers routed withdrawals from address transfers plus tx-scoped withdraw events', async () => {
@@ -1395,6 +1951,10 @@ describe('getHoldingsActivity', () => {
         inputTokenSymbol: null,
         inputTokenAmount: null,
         inputTokenAmountFormatted: null,
+        outputTokenAddress: null,
+        outputTokenSymbol: null,
+        outputTokenAmount: null,
+        outputTokenAmountFormatted: null,
         shareAmount: '849068037733633594470',
         shareAmountFormatted: 849.0680377336336,
         status: 'ok'

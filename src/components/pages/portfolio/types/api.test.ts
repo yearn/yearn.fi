@@ -18,6 +18,7 @@ describe('portfolioActivityResponseSchema', () => {
           txHash: '0xtransfer',
           timestamp: 1776902400,
           action: 'transfer',
+          displayType: 'reward_claim',
           transferDirection: 'in',
           vaultAddress: '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204',
           familyVaultAddress: '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204',
@@ -28,6 +29,10 @@ describe('portfolioActivityResponseSchema', () => {
           inputTokenSymbol: null,
           inputTokenAmount: null,
           inputTokenAmountFormatted: null,
+          outputTokenAddress: null,
+          outputTokenSymbol: null,
+          outputTokenAmount: null,
+          outputTokenAmountFormatted: null,
           shareAmount: '1000000000000000000',
           shareAmountFormatted: 1,
           status: 'ok'
@@ -36,6 +41,7 @@ describe('portfolioActivityResponseSchema', () => {
     })
 
     expect(parsed.entries[0]?.action).toBe('transfer')
+    expect(parsed.entries[0]?.displayType).toBe('reward_claim')
     expect(parsed.entries[0]?.transferDirection).toBe('in')
   })
 })

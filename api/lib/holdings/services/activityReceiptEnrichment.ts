@@ -1,5 +1,6 @@
 import {
   decodeEventLog,
+  decodeFunctionData,
   decodeFunctionResult,
   encodeFunctionData,
   erc20Abi,
@@ -11,6 +12,88 @@ import { debugError } from './debug'
 import { formatAmount, lowerCaseAddress, ZERO } from './pnlShared'
 
 const TRANSFER_EVENT = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)')
+const V2_VAULT_ACTIVITY_ABI = [
+  {
+    stateMutability: 'nonpayable',
+    type: 'function',
+    name: 'deposit',
+    inputs: [{ name: '_amount', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    stateMutability: 'nonpayable',
+    type: 'function',
+    name: 'withdraw',
+    inputs: [{ name: '_maxShares', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }]
+  }
+] as const
+const YCRV_ZAP_ABI = [
+  {
+    stateMutability: 'nonpayable',
+    type: 'function',
+    name: 'zap',
+    inputs: [
+      { name: '_input_token', type: 'address' },
+      { name: '_output_token', type: 'address' }
+    ],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    stateMutability: 'nonpayable',
+    type: 'function',
+    name: 'zap',
+    inputs: [
+      { name: '_input_token', type: 'address' },
+      { name: '_output_token', type: 'address' },
+      { name: '_amount_in', type: 'uint256' }
+    ],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    stateMutability: 'nonpayable',
+    type: 'function',
+    name: 'zap',
+    inputs: [
+      { name: '_input_token', type: 'address' },
+      { name: '_output_token', type: 'address' },
+      { name: '_amount_in', type: 'uint256' },
+      { name: '_min_out', type: 'uint256' }
+    ],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    stateMutability: 'nonpayable',
+    type: 'function',
+    name: 'zap',
+    inputs: [
+      { name: '_input_token', type: 'address' },
+      { name: '_output_token', type: 'address' },
+      { name: '_amount_in', type: 'uint256' },
+      { name: '_min_out', type: 'uint256' },
+      { name: '_recipient', type: 'address' }
+    ],
+    outputs: [{ name: '', type: 'uint256' }]
+  }
+] as const
+const KNOWN_YCRV_ZAP_CONTRACTS_BY_CHAIN = new Map([
+  [
+    1,
+    new Set([
+      lowerCaseAddress('0x78ada385b15d89a9b845d2cac0698663f0c69e3c'),
+      lowerCaseAddress('0xdc899AB992fbCFbac936CE5a5bC5A86a5d35A66a')
+    ])
+  ]
+])
+const KNOWN_REWARD_DISTRIBUTOR_CONTRACTS_BY_CHAIN = new Map([
+  [
+    1,
+    new Set([
+      lowerCaseAddress('0xB226c52EB411326CdB54824a88aBaFDAAfF16D3d'),
+      lowerCaseAddress('0x1d02F6A86Ed5650f93E40FCD62fa5727c32ad746')
+    ])
+  ]
+])
 const DEFAULT_TIMEOUT_MS = 4_000
 const DEFAULT_MAX_RETRIES = 1
 
@@ -22,6 +105,11 @@ type TRpcReceiptLog = {
 
 type TRpcTransactionReceipt = {
   logs: TRpcReceiptLog[] | null
+}
+
+type TRpcTransaction = {
+  to: string | null
+  input: string | null
 }
 
 type TDecodedTransfer = {
@@ -43,7 +131,28 @@ export type TActivityInputAsset = {
   amountFormatted: number | null
 }
 
+export type TActivityOutputAsset = {
+  tokenAddress: string
+  tokenSymbol: string | null
+  amount: string | null
+  amountFormatted: number | null
+}
+
+export type TActivityZapAssets = {
+  inputAsset: TActivityInputAsset
+  outputAsset: TActivityOutputAsset
+  outputKind: 'stake' | 'token'
+}
+
+export type TDirectV2VaultAction = {
+  action: 'deposit' | 'withdraw'
+  assetAmount: bigint
+}
+
 const receiptInputCache = new Map<string, Promise<TActivityInputAsset | null>>()
+const ycrvZapInputCache = new Map<string, Promise<TActivityZapAssets | null>>()
+const rewardClaimTransactionCache = new Map<string, Promise<boolean>>()
+const directV2VaultActionCache = new Map<string, Promise<TDirectV2VaultAction | null>>()
 const tokenMetadataCache = new Map<string, Promise<TTokenMetadata>>()
 
 function getChainRpcUrl(chainId: number): string | null {
@@ -240,6 +349,138 @@ function selectSingleUserInputTransfer(args: {
   return { tokenAddress, value }
 }
 
+function selectSingleTokenTransfer(args: {
+  receipt: TRpcTransactionReceipt
+  from: string
+  to: string
+  excludedTokenAddresses: Set<string>
+}): { tokenAddress: string; value: bigint } | null {
+  const normalizedFrom = lowerCaseAddress(args.from)
+  const normalizedTo = lowerCaseAddress(args.to)
+  const groupedTransfers = (args.receipt.logs ?? [])
+    .map(decodeTransferLog)
+    .filter(
+      (transfer): transfer is TDecodedTransfer =>
+        transfer !== null &&
+        transfer.value > ZERO &&
+        transfer.from === normalizedFrom &&
+        transfer.to === normalizedTo &&
+        !args.excludedTokenAddresses.has(transfer.tokenAddress)
+    )
+    .reduce<Map<string, bigint>>((grouped, transfer) => {
+      grouped.set(transfer.tokenAddress, (grouped.get(transfer.tokenAddress) ?? ZERO) + transfer.value)
+      return grouped
+    }, new Map())
+
+  if (groupedTransfers.size !== 1) {
+    return null
+  }
+
+  const [entry] = groupedTransfers.entries()
+  if (!entry) {
+    return null
+  }
+
+  const [tokenAddress, value] = entry
+  return { tokenAddress, value }
+}
+
+function decodeDirectV2VaultAction(args: {
+  transaction: TRpcTransaction
+  vaultAddress: string
+  transferDirection: 'in' | 'out'
+}): { action: 'deposit'; assetAmount: bigint } | { action: 'withdraw' } | null {
+  const transactionTo = args.transaction.to ? lowerCaseAddress(args.transaction.to) : null
+  const input = args.transaction.input
+
+  if (!transactionTo || transactionTo !== lowerCaseAddress(args.vaultAddress) || !input) {
+    return null
+  }
+
+  try {
+    const decoded = decodeFunctionData({
+      abi: V2_VAULT_ACTIVITY_ABI,
+      data: input as Hex
+    })
+
+    if (decoded.functionName === 'deposit' && args.transferDirection === 'in') {
+      const [assetAmount] = decoded.args
+      return assetAmount > ZERO ? { action: 'deposit', assetAmount } : null
+    }
+
+    return decoded.functionName === 'withdraw' && args.transferDirection === 'out' ? { action: 'withdraw' } : null
+  } catch {
+    return null
+  }
+}
+
+function getKnownYcrvZapOutputSymbol(chainId: number, tokenAddress: string): string | null {
+  if (chainId !== 1) {
+    return null
+  }
+
+  const normalizedTokenAddress = lowerCaseAddress(tokenAddress)
+
+  if (normalizedTokenAddress === lowerCaseAddress('0xe9a115b77a1057c918f997c32663fdce24fb873f')) {
+    return 'yCRV Boosted Staker'
+  }
+
+  return null
+}
+
+function getKnownYcrvZapOutputKind(chainId: number, tokenAddress: string): TActivityZapAssets['outputKind'] {
+  if (
+    chainId === 1 &&
+    lowerCaseAddress(tokenAddress) === lowerCaseAddress('0xe9a115b77a1057c918f997c32663fdce24fb873f')
+  ) {
+    return 'stake'
+  }
+
+  return 'token'
+}
+
+function decodeKnownYcrvZapInput(args: { chainId: number; transaction: TRpcTransaction }): {
+  inputTokenAddress: string
+  outputTokenAddress: string
+  inputAmount: bigint | null
+} | null {
+  const knownContracts = KNOWN_YCRV_ZAP_CONTRACTS_BY_CHAIN.get(args.chainId)
+  const transactionTo = args.transaction.to ? lowerCaseAddress(args.transaction.to) : null
+  const input = args.transaction.input
+
+  if (!knownContracts || !transactionTo || !input || !knownContracts.has(transactionTo)) {
+    return null
+  }
+
+  try {
+    const decoded = decodeFunctionData({
+      abi: YCRV_ZAP_ABI,
+      data: input as Hex
+    })
+
+    if (decoded.functionName !== 'zap') {
+      return null
+    }
+
+    const [inputToken, outputToken, amountIn] = decoded.args
+
+    return {
+      inputTokenAddress: lowerCaseAddress(inputToken),
+      outputTokenAddress: lowerCaseAddress(outputToken),
+      inputAmount: typeof amountIn === 'bigint' && amountIn > ZERO ? amountIn : null
+    }
+  } catch {
+    return null
+  }
+}
+
+function isKnownRewardDistributorTransaction(args: { chainId: number; transaction: TRpcTransaction }): boolean {
+  const knownContracts = KNOWN_REWARD_DISTRIBUTOR_CONTRACTS_BY_CHAIN.get(args.chainId)
+  const transactionTo = args.transaction.to ? lowerCaseAddress(args.transaction.to) : null
+
+  return Boolean(knownContracts && transactionTo && knownContracts.has(transactionTo))
+}
+
 export async function fetchRouterInputAssetForActivity(args: {
   chainId: number
   transactionHash: string
@@ -288,5 +529,164 @@ export async function fetchRouterInputAssetForActivity(args: {
   })()
 
   receiptInputCache.set(cacheKey, request)
+  return request
+}
+
+export async function fetchYcrvZapInputAssetForActivity(args: {
+  chainId: number
+  transactionHash: string
+  userAddress: string
+  excludedTokenAddresses?: string[]
+}): Promise<TActivityZapAssets | null> {
+  const cacheKey = [
+    args.chainId,
+    lowerCaseAddress(args.transactionHash),
+    lowerCaseAddress(args.userAddress),
+    [...(args.excludedTokenAddresses ?? [])].map(lowerCaseAddress).sort().join(',')
+  ].join(':')
+  const existing = ycrvZapInputCache.get(cacheKey)
+
+  if (existing) {
+    return existing
+  }
+
+  const request = (async () => {
+    const transaction = await fetchRpc<TRpcTransaction>(args.chainId, 'eth_getTransactionByHash', [
+      args.transactionHash
+    ])
+    const decodedZap = transaction ? decodeKnownYcrvZapInput({ chainId: args.chainId, transaction }) : null
+
+    if (!decodedZap) {
+      return null
+    }
+
+    const receiptInput =
+      decodedZap.inputAmount === null
+        ? await (async () => {
+            const receipt = await fetchRpc<TRpcTransactionReceipt>(args.chainId, 'eth_getTransactionReceipt', [
+              args.transactionHash
+            ])
+
+            return receipt
+              ? selectSingleUserInputTransfer({
+                  receipt,
+                  userAddress: args.userAddress,
+                  excludedTokenAddresses: new Set((args.excludedTokenAddresses ?? []).map(lowerCaseAddress))
+                })
+              : null
+          })()
+        : null
+    const tokenAddress = receiptInput?.tokenAddress ?? decodedZap.inputTokenAddress
+    const amount = receiptInput?.value ?? decodedZap.inputAmount
+
+    if (amount === null || amount <= ZERO) {
+      return null
+    }
+
+    const [inputMetadata, outputMetadata] = await Promise.all([
+      fetchTokenMetadata(args.chainId, tokenAddress),
+      fetchTokenMetadata(args.chainId, decodedZap.outputTokenAddress)
+    ])
+
+    return {
+      inputAsset: {
+        tokenAddress,
+        tokenSymbol: inputMetadata.symbol,
+        amount: amount.toString(),
+        amountFormatted: inputMetadata.decimals === null ? null : formatAmount(amount, inputMetadata.decimals)
+      },
+      outputAsset: {
+        tokenAddress: decodedZap.outputTokenAddress,
+        tokenSymbol: getKnownYcrvZapOutputSymbol(args.chainId, decodedZap.outputTokenAddress) ?? outputMetadata.symbol,
+        amount: null,
+        amountFormatted: null
+      },
+      outputKind: getKnownYcrvZapOutputKind(args.chainId, decodedZap.outputTokenAddress)
+    }
+  })()
+
+  ycrvZapInputCache.set(cacheKey, request)
+  return request
+}
+
+export async function fetchIsRewardClaimForActivity(args: {
+  chainId: number
+  transactionHash: string
+}): Promise<boolean> {
+  const cacheKey = `${args.chainId}:${lowerCaseAddress(args.transactionHash)}`
+  const existing = rewardClaimTransactionCache.get(cacheKey)
+
+  if (existing) {
+    return existing
+  }
+
+  const request = (async () => {
+    const transaction = await fetchRpc<TRpcTransaction>(args.chainId, 'eth_getTransactionByHash', [
+      args.transactionHash
+    ])
+
+    return transaction ? isKnownRewardDistributorTransaction({ chainId: args.chainId, transaction }) : false
+  })()
+
+  rewardClaimTransactionCache.set(cacheKey, request)
+  return request
+}
+
+export async function fetchDirectV2VaultActionForActivity(args: {
+  chainId: number
+  transactionHash: string
+  userAddress: string
+  vaultAddress: string
+  transferDirection: 'in' | 'out'
+}): Promise<TDirectV2VaultAction | null> {
+  const cacheKey = [
+    args.chainId,
+    lowerCaseAddress(args.transactionHash),
+    lowerCaseAddress(args.userAddress),
+    lowerCaseAddress(args.vaultAddress),
+    args.transferDirection
+  ].join(':')
+  const existing = directV2VaultActionCache.get(cacheKey)
+
+  if (existing) {
+    return existing
+  }
+
+  const request = (async () => {
+    const transaction = await fetchRpc<TRpcTransaction>(args.chainId, 'eth_getTransactionByHash', [
+      args.transactionHash
+    ])
+    const directAction = transaction
+      ? decodeDirectV2VaultAction({
+          transaction,
+          vaultAddress: args.vaultAddress,
+          transferDirection: args.transferDirection
+        })
+      : null
+
+    if (!directAction) {
+      return null
+    }
+
+    if (directAction.action === 'deposit') {
+      return directAction
+    }
+
+    const receipt = await fetchRpc<TRpcTransactionReceipt>(args.chainId, 'eth_getTransactionReceipt', [
+      args.transactionHash
+    ])
+    const outputTransfer = receipt
+      ? selectSingleTokenTransfer({
+          receipt,
+          from: args.vaultAddress,
+          to: args.userAddress,
+          excludedTokenAddresses: new Set([lowerCaseAddress(args.vaultAddress)])
+        })
+      : null
+
+    return outputTransfer ? { action: 'withdraw', assetAmount: outputTransfer.value } : null
+  })()
+
+  directV2VaultActionCache.set(cacheKey, request)
   return request
 }

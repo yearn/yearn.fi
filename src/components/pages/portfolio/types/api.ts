@@ -136,6 +136,7 @@ const portfolioActivityEntrySchema = z.object({
   txHash: z.string(),
   timestamp: z.number(),
   action: z.enum(['deposit', 'withdraw', 'stake', 'unstake', 'transfer']),
+  displayType: z.enum(['reward_claim']).nullable().optional().default(null),
   transferDirection: z.enum(['in', 'out']).nullable().optional().default(null),
   vaultAddress: z.string(),
   familyVaultAddress: z.string(),
@@ -146,6 +147,10 @@ const portfolioActivityEntrySchema = z.object({
   inputTokenSymbol: z.string().nullable(),
   inputTokenAmount: z.string().nullable(),
   inputTokenAmountFormatted: z.number().nullable(),
+  outputTokenAddress: z.string().nullable().optional().default(null),
+  outputTokenSymbol: z.string().nullable().optional().default(null),
+  outputTokenAmount: z.string().nullable().optional().default(null),
+  outputTokenAmountFormatted: z.number().nullable().optional().default(null),
   shareAmount: z.string(),
   shareAmountFormatted: z.number().nullable(),
   status: z.enum(['ok', 'missing_metadata'])
