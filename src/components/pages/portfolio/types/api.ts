@@ -162,7 +162,19 @@ export type TPortfolioHistoryTimeframe = z.infer<typeof portfolioHistorySimpleRe
 export type TPortfolioHistoryChartData = Array<{
   date: string
   value: number
+  isLive?: boolean
 }>
+export type TPortfolioLiveBalanceSnapshot = {
+  date: string
+  totalUsd: number
+  totalEth: number | null
+  vaults: Array<{
+    key: string
+    chainId: number
+    vaultAddress: string
+    usdValue: number
+  }>
+}
 export type TPortfolioProtocolReturnHistoryChartData = Array<{
   date: string
   growthWeightUsd: number

@@ -73,6 +73,7 @@ type TPortfolioHistoryChartProps = {
 type TChartPoint = {
   date: string
   value: number | null
+  isLive?: boolean
 }
 
 type TPortfolioHistoryTooltipProps = {
@@ -82,6 +83,7 @@ type TPortfolioHistoryTooltipProps = {
     payload?: {
       date?: string
       value?: unknown
+      isLive?: boolean
       [key: string]: unknown
     }
   }>
@@ -544,7 +546,7 @@ function PortfolioHistoryTooltip({
       </div>
       {activeTab === 'balance' ? (
         <span className={'text-xs font-medium text-text-secondary'}>
-          {value > 0 ? 'Click to see breakdown' : 'No breakdown available for this point'}
+          {value > 0 && !point?.isLive ? 'Click to see breakdown' : 'No breakdown available for this point'}
         </span>
       ) : null}
     </div>
@@ -626,7 +628,7 @@ export function PortfolioHistoryChart({
 
     const limit = getTimeframeLimit(timeframe)
     const points = !Number.isFinite(limit) || limit >= balanceData.length ? balanceData : balanceData.slice(-limit)
-    return points.map((point) => ({ date: point.date, value: point.value }))
+    return points.map((point) => ({ date: point.date, value: point.value, isLive: point.isLive }))
   }, [balanceData, timeframe])
 
   const filteredGrowthUsdData = useMemo<TChartPoint[]>(() => {
@@ -859,7 +861,8 @@ export function PortfolioHistoryChart({
       return null
     }
 
-    return filteredBalanceData.find((point) => point.date === date) ?? null
+    const point = filteredBalanceData.find((balancePoint) => balancePoint.date === date) ?? null
+    return point?.isLive ? null : point
   }
 
   const handleChartMouseMove = (state: TActiveChartState | undefined): void => {

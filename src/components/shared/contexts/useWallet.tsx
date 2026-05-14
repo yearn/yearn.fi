@@ -39,6 +39,7 @@ type TWalletContext = {
   getVaultHoldingsUsd: (vault: TKongVaultInput) => number
   balances: TChainTokens
   isLoading: boolean
+  hasCompletedBalanceLoad: boolean
   cumulatedValueInV2Vaults: number
   cumulatedValueInV3Vaults: number
   onRefresh: (
@@ -54,6 +55,7 @@ const defaultProps = {
   getVaultHoldingsUsd: (): number => 0,
   balances: {},
   isLoading: true,
+  hasCompletedBalanceLoad: false,
   cumulatedValueInV2Vaults: 0,
   cumulatedValueInV3Vaults: 0,
   onRefresh: async (): Promise<TChainTokens> => ({})
@@ -86,7 +88,8 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
     onUpdate,
     onUpdateSome,
-    isLoading
+    isLoading,
+    isSuccess
   } = useBalancesHook({
     tokens: allTokens,
     priorityChainID: 1
@@ -124,6 +127,8 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     isLoading,
     isBalancesPending
   })
+  const hasCompletedBalanceLoad =
+    !userAddress || (allTokens.length > 0 && isSuccess && !isLoading && !isBalancesPending)
 
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
@@ -288,6 +293,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       getVaultHoldingsUsd,
       balances,
       isLoading: isWalletLoading,
+      hasCompletedBalanceLoad,
       onRefresh,
       cumulatedValueInV2Vaults,
       cumulatedValueInV3Vaults
@@ -298,6 +304,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       getVaultHoldingsUsd,
       balances,
       isWalletLoading,
+      hasCompletedBalanceLoad,
       onRefresh,
       cumulatedValueInV2Vaults,
       cumulatedValueInV3Vaults

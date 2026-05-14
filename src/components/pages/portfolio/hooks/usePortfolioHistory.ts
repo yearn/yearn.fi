@@ -5,9 +5,11 @@ import type {
   TPortfolioHistoryChartData,
   TPortfolioHistoryDenomination,
   TPortfolioHistorySimpleResponse,
-  TPortfolioHistoryTimeframe
+  TPortfolioHistoryTimeframe,
+  TPortfolioLiveBalanceSnapshot
 } from '../types/api'
 import { portfolioHistorySimpleResponseSchema } from '../types/api'
+import { upsertLivePortfolioBalancePoint } from './usePortfolioHistory.helpers'
 import { createPortfolioHistoryProgressId, usePortfolioHistoryProgress } from './usePortfolioHistoryProgress'
 
 const PORTFOLIO_HISTORY_CACHE_DURATION = 60 * 60 * 1000
@@ -15,7 +17,8 @@ const PORTFOLIO_HISTORY_CACHE_DURATION = 60 * 60 * 1000
 export function usePortfolioHistory(
   denomination: TPortfolioHistoryDenomination = 'usd',
   timeframe: TPortfolioHistoryTimeframe = '1y',
-  enabled = true
+  enabled = true,
+  liveSnapshot: TPortfolioLiveBalanceSnapshot | null = null
 ) {
   const { address } = useWeb3()
   const progressId = useMemo(
@@ -57,11 +60,13 @@ export function usePortfolioHistory(
     if (!rawData?.dataPoints) {
       return null
     }
-    return rawData.dataPoints.map((point) => ({
+
+    const historicalData = rawData.dataPoints.map((point) => ({
       date: point.date,
       value: point.value
     }))
-  }, [rawData])
+    return upsertLivePortfolioBalancePoint({ data: historicalData, denomination, liveSnapshot })
+  }, [denomination, liveSnapshot, rawData])
 
   const hasData = Boolean(rawData?.dataPoints)
   const isLoadingState = !hasData && (isLoading || isFetching)

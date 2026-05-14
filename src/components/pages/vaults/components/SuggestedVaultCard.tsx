@@ -11,14 +11,17 @@ import {
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
+import { getVaultPrimaryLogoSrc } from '@pages/vaults/utils/vaultLogo'
 import {
   getCategoryDescription,
   getChainDescription,
   getProductTypeDescription
 } from '@pages/vaults/utils/vaultTagCopy'
+import { isYvUsdVault, YVUSD_LOCKED_ADDRESS, YVUSD_LOCKED_COOLDOWN_DAYS } from '@pages/vaults/utils/yvUsd'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { toAddress } from '@shared/utils'
+import { formatApyDisplay, toAddress } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
 
@@ -38,11 +41,16 @@ export function SuggestedVaultCard({
   const chainID = getVaultChainID(vault)
   const vaultAddress = getVaultAddress(vault)
   const token = getVaultToken(vault)
-  const vaultName = getVaultName(vault)
   const vaultCategory = getVaultCategory(vault)
+  const yvUsdVaults = useYvUsdVaults()
+  const isYvUsd = isYvUsdVault(vault)
+  const vaultName = isYvUsd ? `yvUSD (${YVUSD_LOCKED_COOLDOWN_DAYS} day lock)` : getVaultName(vault)
+  const displayedVaultAddress = isYvUsd ? YVUSD_LOCKED_ADDRESS : vaultAddress
 
   const chain = getNetwork(chainID)
-  const tokenIcon = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
+  const tokenIcon = isYvUsd
+    ? getVaultPrimaryLogoSrc(vault)
+    : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const listKind = deriveListKind(vault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
@@ -60,7 +68,7 @@ export function SuggestedVaultCard({
 
   return (
     <Link
-      to={`/vaults/${chainID}/${toAddress(vaultAddress)}`}
+      to={`/vaults/${chainID}/${toAddress(displayedVaultAddress)}`}
       className={
         'group flex h-fit min-h-[156px] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_12px_32px_rgba(4,8,32,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(4,8,32,0.12)]'
       }
@@ -100,15 +108,23 @@ export function SuggestedVaultCard({
         </div>
         <div className={'flex items-end justify-between gap-4'}>
           <div>
-            <p className={'text-mobile-label text-xs uppercase tracking-wide text-text-secondary'}>{apyLabel}</p>
+            <p className={'text-mobile-label text-xs uppercase tracking-wide text-text-secondary'}>
+              {isYvUsd ? 'Locked APY' : apyLabel}
+            </p>
             <div className={'mt-0'}>
-              <VaultForwardAPY
-                currentVault={vault}
-                className={'items-start text-left md:text-left'}
-                valueClassName={'text-xl font-bold text-text-primary'}
-                showSubline={false}
-                showSublineTooltip
-              />
+              {isYvUsd ? (
+                <span className={'text-xl font-bold text-text-primary'}>
+                  {formatApyDisplay(yvUsdVaults.metrics.locked.apy)}
+                </span>
+              ) : (
+                <VaultForwardAPY
+                  currentVault={vault}
+                  className={'items-start text-left md:text-left'}
+                  valueClassName={'text-xl font-bold text-text-primary'}
+                  showSubline={false}
+                  showSublineTooltip
+                />
+              )}
             </div>
           </div>
           <div className={'text-left'}>

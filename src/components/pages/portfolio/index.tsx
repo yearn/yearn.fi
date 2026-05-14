@@ -102,7 +102,7 @@ type TPortfolioHoldingsProps = Pick<
   | 'vaultFlags'
 >
 
-type TPortfolioSuggestedProps = Pick<TPortfolioModel, 'suggestedRows'>
+type TPortfolioSuggestedProps = Pick<TPortfolioModel, 'hasHoldings' | 'isActive' | 'suggestedRows'>
 
 type TPortfolioActivityProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'>
 
@@ -344,7 +344,7 @@ function PortfolioHeaderSection({
       header: <MetricHeader label="Total Balance" tooltip="Total USD value of all your vault deposits." />,
       value: (
         <span className={METRIC_VALUE_CLASS}>
-          {isSearchingBalances ? metricSpinner : currencyFormatter.format(totalPortfolioValue)}
+          {isSearchingBalances || isHoldingsLoading ? metricSpinner : currencyFormatter.format(totalPortfolioValue)}
         </span>
       )
     },
@@ -1148,7 +1148,7 @@ function PortfolioHoldingsSection({
         <EmptySectionCard
           title="No vault positions yet"
           description="Deposit into a Yearn vault to see it here."
-          ctaLabel="Browse vaults"
+          ctaLabel="Explore Vaults"
           ctaClassName="yearn--button--nextgen min-h-[44px] px-6"
           href="/vaults"
         />
@@ -1179,12 +1179,15 @@ function PortfolioHoldingsSection({
   return (
     <section className="flex flex-col gap-2">
       {!isActive ? (
-        <EmptySectionCard
-          title="Connect a wallet to view your vaults"
-          description="See all your Yearn deposits in one place."
-          ctaLabel="Connect wallet"
-          onClick={openLoginModal}
-        />
+        <div className="flex flex-col gap-2">
+          <EmptySectionCard
+            title="Connect a wallet to view your portfolio."
+            ctaLabel="Connect wallet"
+            onClick={openLoginModal}
+            secondaryCtaLabel="Explore Vaults"
+            secondaryCtaHref="/vaults"
+          />
+        </div>
       ) : (
         <div className="rounded-lg">
           <div className="flex flex-col">
@@ -1243,8 +1246,21 @@ function PortfolioHoldingsSection({
   )
 }
 
-function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps): ReactElement | null {
-  if (suggestedRows.length === 0) {
+function PortfolioPositionsLoadingState(): ReactElement {
+  return (
+    <section className="flex min-h-[420px] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-surface px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16">
+      <YearnLogoSpinner className="size-12" logoClassName="size-8" />
+      <span>{'Searching for Yearn balances...'}</span>
+    </section>
+  )
+}
+
+function PortfolioSuggestedSection({
+  hasHoldings,
+  isActive,
+  suggestedRows
+}: TPortfolioSuggestedProps): ReactElement | null {
+  if (!isActive || suggestedRows.length === 0) {
     return null
   }
 
@@ -1261,7 +1277,9 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
         side="top"
         tooltip={<div className={headingTooltipClassName}>{tooltipText}</div>}
       >
-        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">{'Other vaults you might like:'}</h2>
+        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">
+          {hasHoldings ? 'Other vaults you might like:' : 'Vaults you might like:'}
+        </h2>
       </Tooltip>
       <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         {suggestedRows.map((row) => {
@@ -1321,7 +1339,7 @@ function PortfolioPage(): ReactElement {
     }
     return 'positions'
   }, [searchParams])
-  const shouldLoadPositionsHistory = activeTab === 'positions' && model.isActive
+  const shouldLoadPositionsHistory = activeTab === 'positions' && model.isActive && !model.isHoldingsLoading
   const {
     data: historyData,
     denomination: resolvedHistoryDenomination,
@@ -1329,7 +1347,12 @@ function PortfolioPage(): ReactElement {
     progress: historyProgress,
     error: historyError,
     isEmpty: historyEmpty
-  } = usePortfolioHistory(historyDenomination, historyFetchTimeframe, shouldLoadPositionsHistory)
+  } = usePortfolioHistory(
+    historyDenomination,
+    historyFetchTimeframe,
+    shouldLoadPositionsHistory,
+    model.liveBalanceSnapshot
+  )
   const {
     data: protocolReturnHistoryData,
     summary: protocolReturnHistorySummary,
@@ -1361,10 +1384,10 @@ function PortfolioPage(): ReactElement {
       onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
       vaultGrowthMode={historyVaultGrowthMode}
       onVaultGrowthModeChange={setHistoryVaultGrowthMode}
-      balanceIsLoading={historyLoading}
+      balanceIsLoading={model.isHoldingsLoading || historyLoading}
       balanceIsEmpty={historyEmpty}
       balanceError={historyError}
-      protocolReturnIsLoading={protocolReturnHistoryLoading}
+      protocolReturnIsLoading={model.isHoldingsLoading || protocolReturnHistoryLoading}
       protocolReturnIsEmpty={protocolReturnHistoryEmpty}
       protocolReturnError={protocolReturnHistoryError}
       embedded
@@ -1442,6 +1465,10 @@ function PortfolioPage(): ReactElement {
   function renderTabContent(): ReactElement | null {
     switch (activeTab) {
       case 'positions':
+        if (model.isActive && model.isHoldingsLoading) {
+          return <PortfolioPositionsLoadingState />
+        }
+
         return (
           <div className="flex flex-col gap-6 sm:gap-4">
             {model.isActive ? (
@@ -1472,7 +1499,7 @@ function PortfolioPage(): ReactElement {
                       isHoldingsLoading={model.isHoldingsLoading}
                       isSearchingBalances={model.isSearchingBalances}
                       hasKatanaHoldings={model.hasKatanaHoldings}
-                      isProtocolReturnLoading={protocolReturnHistoryLoading}
+                      isProtocolReturnLoading={model.isHoldingsLoading || protocolReturnHistoryLoading}
                       annualizedProtocolReturnPct={annualizedProtocolReturnPct}
                       totalPortfolioValue={model.totalPortfolioValue}
                     />
@@ -1492,7 +1519,11 @@ function PortfolioPage(): ReactElement {
               setSortDirection={model.setSortDirection}
               vaultFlags={model.vaultFlags}
             />
-            <PortfolioSuggestedSection suggestedRows={model.suggestedRows} />
+            <PortfolioSuggestedSection
+              hasHoldings={model.hasHoldings}
+              isActive={model.isActive}
+              suggestedRows={model.suggestedRows}
+            />
           </div>
         )
       case 'activity':
