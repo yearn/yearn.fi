@@ -16,6 +16,8 @@
     "tslint": "tsc -p tsconfig.json --noEmit",
     "bump": "bump",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "clean": "bash clean.sh",
     "prepare": "husky"
   },
@@ -47,6 +49,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.14",
+    "@playwright/test": "1.60.0",
     "@tailwindcss/postcss": "4.1.18",
     "@testing-library/react": "16.3.2",
     "@types/minimatch": "6.0.0",

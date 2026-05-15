@@ -10,6 +10,7 @@ bun run dev                              # Vite dev server + Bun API server; pro
 bun run preview                          # Vite preview + Bun API server; prompts for an API port when needed
 bun run build                            # TypeScript check + Vite build
 bun run test                             # Full Vitest suite
+bun run test:e2e                         # Playwright smoke tests
 bunx vitest run src/path/to/test.ts      # Single test file
 bun run lint:fix                         # Biome format and fix
 bun run tslint                           # TypeScript type check only
@@ -21,6 +22,13 @@ IMPORTANT: After making code changes, always verify:
 1. `bun run tslint` — type check passes
 2. `bun run lint:fix` — code is formatted
 3. Run relevant test file if one exists
+4. For route, UI flow, or public page changes, run `bun run test:e2e`
+
+## Testing Strategy
+
+Prefer fewer, higher-signal unit tests. Keep Vitest coverage for math, bigint/share conversions, APY/APR calculations, state machines, URL validation, safety checks, and logic with independently verified expected values. Avoid long-lived tests that simply mirror component structure, copy, Tailwind classes, route-string mappings, or config snapshots.
+
+Use Playwright for smoke coverage of real user-visible flows. Before approving UI-heavy PRs, ask an agent to smoke test the preview or local branch with `bun run test:e2e` plus a manual browser pass over the changed flow. Temporary tests created while building a PR are fine, but after approval keep only tests that protect durable behavior.
 
 Husky runs `lint-staged` + `bun run tslint` on every commit.
 
