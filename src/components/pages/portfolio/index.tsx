@@ -2901,9 +2901,7 @@ function PortfolioPage(): ReactElement {
     protocolReturnHistoryData
   )
   const isEthGrowthAvailable = Boolean(protocolReturnHistoryData?.some((point) => point.growthWeightEth !== null))
-  const hasNoYearnPositions = model.isActive && !model.isHoldingsLoading && !model.hasHoldings
-  const displayedHistoryChartTab = hasNoYearnPositions ? 'balance' : historyChartTab
-  const historyChartProgress = displayedHistoryChartTab === 'balance' ? historyProgress : protocolReturnHistoryProgress
+  const historyChartProgress = historyChartTab === 'balance' ? historyProgress : protocolReturnHistoryProgress
   const historyChartElement = (
     <PortfolioHistoryChart
       balanceData={historyData}
@@ -2912,7 +2910,7 @@ function PortfolioPage(): ReactElement {
       protocolReturnFamilySeries={protocolReturnHistoryFamilySeries}
       denomination={resolvedHistoryDenomination}
       timeframe={historyTimeframe}
-      activeTab={displayedHistoryChartTab}
+      activeTab={historyChartTab}
       growthDisplayModeOverride={historyGrowthDisplayModeOverride}
       onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
       vaultGrowthMode={historyVaultGrowthMode}
@@ -2924,11 +2922,8 @@ function PortfolioPage(): ReactElement {
       protocolReturnIsEmpty={protocolReturnHistoryEmpty}
       protocolReturnError={protocolReturnHistoryError}
       embedded
-      reserveControlSpace={!hasNoYearnPositions}
       loadingProgress={historyChartProgress}
-      className={
-        hasNoYearnPositions ? 'h-full min-h-0 bg-linear-to-b from-surface to-surface-secondary/20' : 'min-h-0 flex-1'
-      }
+      className="min-h-0 flex-1"
     />
   )
 
@@ -3011,25 +3006,21 @@ function PortfolioPage(): ReactElement {
             {model.isActive ? (
               <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
                 <div className="grid items-stretch min-[920px]:grid-cols-[minmax(640px,1fr)_minmax(200px,340px)]">
-                  {hasNoYearnPositions ? (
-                    historyChartElement
-                  ) : (
-                    <PortfolioHistoryChartControls
-                      activeTab={historyChartTab}
-                      onActiveTabChange={setHistoryChartTab}
-                      denomination={resolvedHistoryDenomination}
-                      onDenominationChange={setHistoryDenomination}
-                      timeframe={historyTimeframe}
-                      onTimeframeChange={setHistoryTimeframe}
-                      resolvedGrowthDisplayMode={resolvedGrowthDisplayMode}
-                      onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
-                      onVaultGrowthModeChange={setHistoryVaultGrowthMode}
-                      isEthGrowthAvailable={isEthGrowthAvailable}
-                      className="h-full bg-linear-to-b from-surface to-surface-secondary/20"
-                    >
-                      {historyChartElement}
-                    </PortfolioHistoryChartControls>
-                  )}
+                  <PortfolioHistoryChartControls
+                    activeTab={historyChartTab}
+                    onActiveTabChange={setHistoryChartTab}
+                    denomination={resolvedHistoryDenomination}
+                    onDenominationChange={setHistoryDenomination}
+                    timeframe={historyTimeframe}
+                    onTimeframeChange={setHistoryTimeframe}
+                    resolvedGrowthDisplayMode={resolvedGrowthDisplayMode}
+                    onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
+                    onVaultGrowthModeChange={setHistoryVaultGrowthMode}
+                    isEthGrowthAvailable={isEthGrowthAvailable}
+                    className="h-full bg-linear-to-b from-surface to-surface-secondary/20"
+                  >
+                    {historyChartElement}
+                  </PortfolioHistoryChartControls>
                   <div className="border-t border-border bg-linear-to-b from-surface to-surface-secondary/25 min-[920px]:border-t-0 min-[920px]:border-l">
                     <PortfolioHeaderSection
                       blendedMetrics={model.blendedMetrics}
