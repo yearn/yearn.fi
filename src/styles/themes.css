@@ -5,6 +5,8 @@
    LIGHT THEME
    ============================================ */
 :root[data-theme="light"] {
+  color-scheme: light;
+
   /* Surface tokens (backgrounds) */
   --color-app: hsl(0 0% 98%); /* #fafafa */
   --color-surface: hsl(0 0% 100%); /* #ffffff */
@@ -38,6 +40,8 @@
    DARK THEME (True Dark)
    ============================================ */
 :root[data-theme="dark"] {
+  color-scheme: dark;
+
   /* Surface tokens (backgrounds) */
   --color-app: hsl(0 0% 0%); /* #000000 */
   --color-surface: hsl(0 0% 4%); /* #0a0a0a */
@@ -71,6 +75,8 @@
    SOFT-DARK THEME (Warmer Dark)
    ============================================ */
 :root[data-theme="soft-dark"] {
+  color-scheme: dark;
+
   /* Surface tokens (backgrounds) */
   --color-app: hsl(0 0% 6%); /* #0f0f0f */
   --color-surface: hsl(0 0% 10%); /* #1a1a1a */
@@ -104,6 +110,8 @@
    BLUE-DARK THEME (Deep Navy)
    ============================================ */
 :root[data-theme="blue-dark"] {
+  color-scheme: dark;
+
   /* Base neutrals */
   --color-neutral-300: hsl(231 50% 20%);
   --color-neutral-200: hsl(231 75% 15%);
@@ -143,6 +151,8 @@
    MIDNIGHT THEME (True Dark)
    ============================================ */
 :root[data-theme="midnight"] {
+  color-scheme: dark;
+
   /* Surface tokens (backgrounds) */
   --color-app: hsl(0 0% 0%); /* #000000 */
   --color-surface: hsl(0 0% 4%); /* #0a0a0a */
@@ -176,6 +186,8 @@
    DEFAULT THEME (Fallback to Light)
    ============================================ */
 :root {
+  color-scheme: light;
+
   /* Default to light theme if no data-theme attribute is set */
   --color-app: hsl(0 0% 98%);
   --color-surface: hsl(0 0% 100%);

@@ -88,4 +88,42 @@ describe('holdings history route', () => {
       ]
     })
   })
+
+  it('passes multi-vault filters to historical holdings chart', async () => {
+    getHistoricalHoldingsChartMock.mockResolvedValue({
+      address: '0xA7b6f3d18db39F65C8056d0892Af76c07d15Fc5a',
+      periodDays: 365,
+      timeframe: '1y',
+      denomination: 'usd',
+      hasActivity: true,
+      dataPoints: [{ date: '2026-04-21', timestamp: 1776815999, value: 42 }]
+    })
+
+    const { default: handler } = await import('./history')
+    const req = {
+      method: 'GET',
+      query: {
+        address: '0xA7b6f3d18db39F65C8056d0892Af76c07d15Fc5a',
+        vaults: '1:0x696d02Db93291651ED510704c9b286841d506987,1:0xAaaFEa48472f77563961Cdb53291DEDfB46F9040'
+      },
+      headers: {}
+    } as any
+    const res = createMockResponse()
+
+    await handler(req, res as any)
+
+    expect(res.statusCode).toBe(200)
+    expect(getHistoricalHoldingsChartMock).toHaveBeenCalledWith(
+      '0xA7b6f3d18db39F65C8056d0892Af76c07d15Fc5a',
+      'all',
+      'seq',
+      'paged',
+      'usd',
+      '1y',
+      [
+        { chainId: 1, vaultAddress: '0x696d02Db93291651ED510704c9b286841d506987' },
+        { chainId: 1, vaultAddress: '0xAaaFEa48472f77563961Cdb53291DEDfB46F9040' }
+      ]
+    )
+  })
 })

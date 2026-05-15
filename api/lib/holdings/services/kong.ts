@@ -1,4 +1,4 @@
-import { config } from '../config'
+import { holdingsConfig } from '../config'
 import type { KongPPSDataPoint } from '../types'
 import { debugError, debugLog } from './debug'
 
@@ -119,7 +119,7 @@ export async function fetchVaultPPS(
   vaultAddress: string,
   options?: TKongFetchOptions
 ): Promise<PPSTimeline> {
-  const url = `${config.kongBaseUrl}/api/rest/timeseries/pps/${chainId}/${vaultAddress}`
+  const url = `${holdingsConfig.kongBaseUrl}/api/rest/timeseries/pps/${chainId}/${vaultAddress}`
   const response = await getFetchFn(options)(url, { signal: AbortSignal.timeout(getTimeoutMs(options)) })
 
   if (!response.ok) {

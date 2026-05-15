@@ -9,23 +9,36 @@ import {
   type TPortfolioProtocolReturnHistoryResponse,
   type TPortfolioProtocolReturnHistorySummary
 } from '../types/api'
+import { createPortfolioHistoryProgressId, usePortfolioHistoryProgress } from './usePortfolioHistoryProgress'
+
+const PORTFOLIO_HISTORY_CACHE_DURATION = 60 * 60 * 1000
 
 export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTimeframe = '1y', enabled = true) {
   const { address } = useWeb3()
+  const progressId = useMemo(
+    () => (address && enabled ? createPortfolioHistoryProgressId(['portfolio-protocol-history', timeframe]) : null),
+    [address, enabled, timeframe]
+  )
 
   const endpoint = useMemo(() => {
-    if (!address || !enabled) {
+    if (!address || !enabled || !progressId) {
       return null
     }
 
-    return `/api/holdings/pnl/simple-history?address=${address}&timeframe=${timeframe}&debug=1&fetchType=parallel`
-  }, [address, enabled, timeframe])
+    return `/api/holdings/protocol-return/history?address=${address}&timeframe=${timeframe}&debug=1&fetchType=parallel&progressId=${encodeURIComponent(progressId)}`
+  }, [address, enabled, progressId, timeframe])
+  const cacheKey = useMemo(
+    () => (address && enabled ? ['fetch', 'portfolio-protocol-history', address.toLowerCase(), timeframe] : undefined),
+    [address, enabled, timeframe]
+  )
 
   const { data, isLoading, isFetching, error } = useFetch<TPortfolioProtocolReturnHistoryResponse>({
     endpoint,
     schema: portfolioProtocolReturnHistoryResponseSchema,
     config: {
-      cacheDuration: 5 * 60 * 1000,
+      cacheKey,
+      cacheDuration: PORTFOLIO_HISTORY_CACHE_DURATION,
+      gcTime: PORTFOLIO_HISTORY_CACHE_DURATION,
       keepPreviousData: false,
       timeout: 2 * 60 * 1000
     }
@@ -49,13 +62,15 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
   const summary = useMemo<TPortfolioProtocolReturnHistorySummary | null>(() => data?.summary ?? null, [data])
   const familySeries = useMemo<TPortfolioProtocolReturnHistoryFamilySeries>(() => data?.familySeries ?? [], [data])
 
-  const isLoadingState = isLoading || isFetching
+  const hasData = Boolean(data?.dataPoints)
+  const isLoadingState = !hasData && (isLoading || isFetching)
   const errorStatus =
     (error as { response?: { status?: number }; status?: number } | null)?.response?.status ??
     (error as { status?: number } | null)?.status
   const isEmpty =
     !isLoadingState && Boolean(address) && (errorStatus === 404 || Boolean(history && history.length === 0))
   const visibleError = isEmpty ? null : error
+  const progress = usePortfolioHistoryProgress(progressId, isLoadingState)
 
   return {
     data: history,
@@ -63,6 +78,7 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
     familySeries,
     timeframe,
     isLoading: isLoadingState,
+    progress,
     error: visibleError,
     isEmpty
   }

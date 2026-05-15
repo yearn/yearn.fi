@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { VaultMetadata } from '../types'
+import type { TransactionActivityEvents } from './graphql'
+import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnlEvents'
 import { toVaultKey } from './pnlShared'
 import {
   buildProtocolReturnFamilyHistorySeries,
@@ -11,6 +13,11 @@ import {
 } from './pnlSimple'
 import type { TRawPnlEvent } from './pnlTypes'
 
+vi.mock('../db/connection', () => ({
+  getPool: vi.fn(() => null),
+  isDatabaseEnabled: vi.fn(() => false)
+}))
+
 const USER = '0x1111111111111111111111111111111111111111'
 const OTHER = '0x2222222222222222222222222222222222222222'
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
@@ -19,6 +26,12 @@ const ASSET = '0x4444444444444444444444444444444444444444'
 const VAULT_KEY = toVaultKey(1, VAULT)
 const ASSET_PRICE_KEY = `ethereum:${ASSET}`
 const ONE = 10n ** 18n
+const YVUSD_UNDERLYING = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+const YVUSD_UNLOCKED = '0x696d02db93291651ed510704c9b286841d506987'
+const YVUSD_LOCKED = '0xaaafea48472f77563961cdb53291dedfb46f9040'
+const YVUSD_UNLOCKED_KEY = toVaultKey(1, YVUSD_UNLOCKED)
+const YVUSD_LOCKED_KEY = toVaultKey(1, YVUSD_LOCKED)
+const YVUSD_ONE = 10n ** 6n
 
 const metadata = new Map<string, VaultMetadata>([
   [
@@ -265,6 +278,146 @@ describe('pnl simple protocol return', () => {
     expect(vault.protocolReturnPct).toBeCloseTo(20)
   })
 
+  it('values staking wrapper deposit and withdrawal events with family PPS', () => {
+    const UNDERLYING_VAULT = '0x182863131F9a4630fF9E27830d945B1413e347E8'
+    const STAKING_VAULT = '0xd57aea3686d623da2dcebc87010a4f2f38ac7b15'
+    const STAKING_VAULT_KEY = toVaultKey(1, UNDERLYING_VAULT)
+    const stakingMetadata = new Map<string, VaultMetadata>([
+      [
+        STAKING_VAULT_KEY,
+        {
+          address: UNDERLYING_VAULT,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: ASSET,
+            symbol: 'TST',
+            decimals: 18
+          },
+          decimals: 18
+        }
+      ]
+    ])
+    const ledgers = buildProtocolReturnLedgers({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'staking-deposit',
+          blockTimestamp: 100,
+          vaultAddress: STAKING_VAULT,
+          familyVaultAddress: UNDERLYING_VAULT,
+          isStakingVault: true,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'staking-withdrawal',
+          blockTimestamp: 200,
+          blockNumber: 2,
+          vaultAddress: STAKING_VAULT,
+          familyVaultAddress: UNDERLYING_VAULT,
+          isStakingVault: true,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER
+        })
+      ],
+      userAddress: USER,
+      metadata: stakingMetadata,
+      ppsData: new Map([
+        [
+          STAKING_VAULT_KEY,
+          new Map([
+            [100, 1.1],
+            [200, 1.2],
+            [300, 1.2]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]]),
+      currentTimestamp: 300
+    })
+    const vault = materializeProtocolReturnVaults({
+      ledgers,
+      metadata: stakingMetadata,
+      ppsData: new Map([
+        [
+          STAKING_VAULT_KEY,
+          new Map([
+            [100, 1.1],
+            [200, 1.2],
+            [300, 1.2]
+          ])
+        ]
+      ]),
+      currentTimestamp: 300
+    })[0]!
+
+    expect(vault.baselineUnderlying).toBeCloseTo(110)
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(10)
+    expect(vault.growthWeightUsd).toBeCloseTo(10)
+    expect(vault.protocolReturnPct).toBeCloseTo(9.0909090909)
+  })
+
+  it('marks staking wrapper receipt valuation partial when family PPS is missing', () => {
+    const UNDERLYING_VAULT = '0x182863131F9a4630fF9E27830d945B1413e347E8'
+    const STAKING_VAULT = '0xd57aea3686d623da2dcebc87010a4f2f38ac7b15'
+    const STAKING_VAULT_KEY = toVaultKey(1, UNDERLYING_VAULT)
+    const stakingMetadata = new Map<string, VaultMetadata>([
+      [
+        STAKING_VAULT_KEY,
+        {
+          address: UNDERLYING_VAULT,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: ASSET,
+            symbol: 'TST',
+            decimals: 18
+          },
+          decimals: 18
+        }
+      ]
+    ])
+    const ppsData = new Map([[STAKING_VAULT_KEY, new Map<number, number>()]])
+    const ledgers = buildProtocolReturnLedgers({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'staking-deposit',
+          blockTimestamp: 100,
+          vaultAddress: STAKING_VAULT,
+          familyVaultAddress: UNDERLYING_VAULT,
+          isStakingVault: true,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        })
+      ],
+      userAddress: USER,
+      metadata: stakingMetadata,
+      ppsData,
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]]),
+      currentTimestamp: 300
+    })
+    const vault = materializeProtocolReturnVaults({
+      ledgers,
+      metadata: stakingMetadata,
+      ppsData,
+      currentTimestamp: 300
+    })[0]!
+
+    expect(vault.status).toBe('missing_pps')
+    expect(vault.issues).toContain('missing_pps')
+    expect(vault.baselineUnderlying).toBeCloseTo(100)
+  })
+
   it('builds a daily growth series without deposit jumps in growth', () => {
     const history = buildProtocolReturnHistorySeries({
       events: [
@@ -374,6 +527,94 @@ describe('pnl simple protocol return', () => {
     expect(history[1]?.growthUnderlying).toBeCloseTo(10)
     expect(history[1]?.sharesFormatted).toBeCloseTo(100)
     expect(history[1]?.pricePerShare).toBeCloseTo(1.1)
+  })
+
+  it('combines current underlying and growth fields for multi-vault history points', () => {
+    const combinedMetadata = new Map<string, VaultMetadata>([
+      ...metadata,
+      [
+        YVUSD_UNLOCKED_KEY,
+        {
+          address: YVUSD_UNLOCKED,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: YVUSD_UNDERLYING,
+            symbol: 'USDC',
+            decimals: 6
+          },
+          decimals: 6
+        }
+      ],
+      [
+        YVUSD_LOCKED_KEY,
+        {
+          address: YVUSD_LOCKED,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: YVUSD_UNLOCKED,
+            symbol: 'yvUSD',
+            decimals: 6
+          },
+          decimals: 18
+        }
+      ]
+    ])
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'unlocked-deposit',
+          vaultAddress: YVUSD_UNLOCKED,
+          familyVaultAddress: YVUSD_UNLOCKED,
+          blockTimestamp: 100,
+          shares: 100n * YVUSD_ONE,
+          assets: 100n * YVUSD_ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'deposit',
+          id: 'locked-deposit',
+          vaultAddress: YVUSD_LOCKED,
+          familyVaultAddress: YVUSD_LOCKED,
+          blockTimestamp: 100,
+          shares: 2n * ONE,
+          assets: 200n * YVUSD_ONE,
+          owner: USER,
+          sender: USER
+        })
+      ],
+      userAddress: USER,
+      metadata: combinedMetadata,
+      ppsData: new Map([
+        [
+          YVUSD_UNLOCKED_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.1]
+          ])
+        ],
+        [
+          YVUSD_LOCKED_KEY,
+          new Map([
+            [100, 100],
+            [200, 110]
+          ])
+        ]
+      ]),
+      priceData: new Map([[`ethereum:${YVUSD_UNDERLYING}`, new Map([[100, 1]])]]),
+      timestamps: [100, 200],
+      selectedVaultKeys: [YVUSD_UNLOCKED_KEY, YVUSD_LOCKED_KEY]
+    })
+
+    expect(history[0]?.currentUnderlying).toBeCloseTo(300)
+    expect(history[0]?.growthUnderlying).toBeCloseTo(0)
+    expect(history[1]?.currentUnderlying).toBeCloseTo(330)
+    expect(history[1]?.growthUnderlying).toBeCloseTo(30)
   })
 
   it('keeps ETH growth history available when another vault is missing receipt prices', () => {
@@ -550,6 +791,48 @@ describe('pnl simple protocol return', () => {
     expect(vault.exitCount).toBe(1)
   })
 
+  it('nets same-transaction transfer-ins that are immediately withdrawn', () => {
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'transfer',
+          id: 'router-transfer-in',
+          blockTimestamp: 100,
+          transactionHash: '0xrouter-exit',
+          sender: OTHER,
+          receiver: USER,
+          shares: 40n * ONE
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'router-withdrawal',
+          blockTimestamp: 100,
+          transactionHash: '0xrouter-exit',
+          logIndex: 1,
+          shares: 30n * ONE,
+          assets: 30n * ONE,
+          owner: USER
+        })
+      ],
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1.1],
+            [300, 1.2]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]])
+    })
+
+    expect(vault.sharesFormatted).toBeCloseTo(10)
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(0)
+    expect(vault.unrealizedBaselineUnderlying).toBeCloseTo(11)
+    expect(vault.growthUnderlying).toBeCloseTo(1)
+    expect(vault.exitCount).toBe(0)
+  })
+
   it('preserves accumulated growth across same-family staking unwrap transactions', () => {
     const UNDERLYING_VAULT = '0x182863131F9a4630fF9E27830d945B1413e347E8'
     const STAKING_VAULT = '0xd57aea3686d623da2dcebc87010a4f2f38ac7b15'
@@ -643,6 +926,112 @@ describe('pnl simple protocol return', () => {
     expect(history[3]?.growthWeightUsd).toBeCloseTo(20)
     expect(history[3]?.growthWeightEth).toBeCloseTo(10)
     expect(history[2]?.protocolReturnPct).toBeCloseTo(10)
+  })
+
+  it('uses family PPS for a staking wrapper unstake when underlying shares do not transfer back to the user', () => {
+    const UNDERLYING_VAULT = '0x182863131F9a4630fF9E27830d945B1413e347E8'
+    const STAKING_VAULT = '0xd57aea3686d623da2dcebc87010a4f2f38ac7b15'
+    const STAKING_VAULT_KEY = toVaultKey(1, UNDERLYING_VAULT)
+    const stakingMetadata = new Map<string, VaultMetadata>([
+      [
+        STAKING_VAULT_KEY,
+        {
+          address: UNDERLYING_VAULT,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: ASSET,
+            symbol: 'TST',
+            decimals: 18
+          },
+          decimals: 18
+        }
+      ]
+    ])
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'underlying-deposit',
+          blockTimestamp: 100,
+          vaultAddress: UNDERLYING_VAULT,
+          familyVaultAddress: UNDERLYING_VAULT,
+          shares: 100n * ONE,
+          assets: 125n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'transfer',
+          id: 'stake-transfer-to-wrapper',
+          transactionHash: '0xstake',
+          vaultAddress: UNDERLYING_VAULT,
+          familyVaultAddress: UNDERLYING_VAULT,
+          blockTimestamp: 120,
+          blockNumber: 2,
+          sender: USER,
+          receiver: STAKING_VAULT,
+          shares: 100n * ONE
+        }),
+        baseEvent({
+          kind: 'deposit',
+          id: 'stake-wrapper-deposit',
+          transactionHash: '0xstake',
+          vaultAddress: STAKING_VAULT,
+          familyVaultAddress: UNDERLYING_VAULT,
+          isStakingVault: true,
+          blockTimestamp: 120,
+          blockNumber: 2,
+          logIndex: 1,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'unstake-wrapper-withdrawal',
+          transactionHash: '0xwallet-like-unstake',
+          vaultAddress: STAKING_VAULT,
+          familyVaultAddress: UNDERLYING_VAULT,
+          isStakingVault: true,
+          blockTimestamp: 200,
+          blockNumber: 3,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER
+        })
+      ],
+      userAddress: USER,
+      metadata: stakingMetadata,
+      ppsData: new Map([
+        [
+          STAKING_VAULT_KEY,
+          new Map([
+            [100, 1.25],
+            [120, 1.25],
+            [150, 1.4],
+            [200, 1.5]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      ethPriceData: new Map([
+        [0, 2],
+        [100, 2],
+        [120, 2],
+        [150, 2],
+        [200, 2]
+      ]),
+      timestamps: [100, 150, 200]
+    })
+
+    expect(history[1]?.growthWeightUsd).toBeCloseTo(15)
+    expect(history[2]?.growthWeightUsd).toBeCloseTo(25)
+    expect(history[2]?.growthWeightEth).toBeCloseTo(12.5)
+    expect(history[2]?.protocolReturnPct).toBeCloseTo(20)
+    expect(history[2]?.growthIndex).toBeGreaterThan(100)
   })
 
   it('treats mixed unstake transfer-ins identically regardless of transfer order', () => {
@@ -915,6 +1304,141 @@ describe('pnl simple protocol return', () => {
     expect(history[1]?.growthIndex).toBeCloseTo(109.0909090909)
   })
 
+  it('recovers router-mediated staking basis when tx activity is merged into address-scoped simple-history events', () => {
+    const UNDERLYING_VAULT = '0x182863131F9a4630fF9E27830d945B1413e347E8'
+    const STAKING_VAULT = '0xd57aea3686d623da2dcebc87010a4f2f38ac7b15'
+    const STAKING_VAULT_KEY = toVaultKey(1, UNDERLYING_VAULT)
+    const stakingMetadata = new Map<string, VaultMetadata>([
+      [
+        STAKING_VAULT_KEY,
+        {
+          address: UNDERLYING_VAULT,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: ASSET,
+            symbol: 'TST',
+            decimals: 18
+          },
+          decimals: 18
+        }
+      ]
+    ])
+
+    const addressEvents = [
+      baseEvent({
+        kind: 'deposit',
+        id: 'user-staking-deposit',
+        transactionHash: '0xrouter-stake',
+        vaultAddress: STAKING_VAULT,
+        familyVaultAddress: UNDERLYING_VAULT,
+        isStakingVault: true,
+        blockTimestamp: 200,
+        blockNumber: 2,
+        logIndex: 2,
+        shares: 100n * ONE,
+        assets: 100n * ONE,
+        owner: USER,
+        sender: OTHER,
+        scopes: {
+          address: true,
+          tx: false
+        }
+      }),
+      baseEvent({
+        kind: 'transfer',
+        id: 'user-staking-mint-transfer',
+        transactionHash: '0xrouter-stake',
+        vaultAddress: STAKING_VAULT,
+        familyVaultAddress: UNDERLYING_VAULT,
+        isStakingVault: true,
+        blockTimestamp: 200,
+        blockNumber: 2,
+        logIndex: 3,
+        sender: ZERO_ADDRESS,
+        receiver: USER,
+        shares: 100n * ONE,
+        scopes: {
+          address: true,
+          tx: false
+        }
+      })
+    ]
+    const transactionEvents: TransactionActivityEvents = {
+      deposits: [
+        {
+          id: 'router-underlying-deposit',
+          vaultAddress: UNDERLYING_VAULT,
+          chainId: 1,
+          blockNumber: 2,
+          blockTimestamp: 200,
+          logIndex: 0,
+          transactionHash: '0xrouter-stake',
+          transactionFrom: OTHER,
+          owner: OTHER,
+          sender: OTHER,
+          assets: (110n * ONE).toString(),
+          shares: (100n * ONE).toString()
+        }
+      ],
+      withdrawals: [],
+      transfers: [
+        {
+          id: 'router-transfer-to-staking',
+          vaultAddress: UNDERLYING_VAULT,
+          chainId: 1,
+          blockNumber: 2,
+          blockTimestamp: 200,
+          logIndex: 1,
+          transactionHash: '0xrouter-stake',
+          transactionFrom: OTHER,
+          sender: OTHER,
+          receiver: STAKING_VAULT,
+          value: (100n * ONE).toString()
+        }
+      ]
+    }
+
+    const history = buildProtocolReturnHistorySeries({
+      events: mergeAddressScopedRawPnlEventsWithTransactionActivity(addressEvents, transactionEvents),
+      userAddress: USER,
+      metadata: stakingMetadata,
+      ppsData: new Map([
+        [
+          STAKING_VAULT_KEY,
+          new Map([
+            [200, 1.1],
+            [250, 1.2]
+          ])
+        ]
+      ]),
+      priceData: new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [0, 1],
+            [200, 1]
+          ])
+        ]
+      ]),
+      ethPriceData: new Map([
+        [0, 2],
+        [200, 2],
+        [250, 2]
+      ]),
+      timestamps: [200, 250]
+    })
+
+    expect(history[0]?.growthWeightUsd).toBeCloseTo(0)
+    expect(history[0]?.protocolReturnPct).toBeCloseTo(0)
+    expect(history[0]?.growthIndex).toBeCloseTo(100)
+    expect(history[1]?.growthWeightUsd).toBeCloseTo(10)
+    expect(history[1]?.growthWeightEth).toBeCloseTo(5)
+    expect(history[1]?.protocolReturnPct).toBeCloseTo(9.0909090909)
+    expect(history[1]?.growthIndex).toBeCloseTo(109.0909090909)
+  })
+
   it('builds family comparison history for selected vaults', () => {
     const ledgers = buildProtocolReturnLedgers({
       events: [
@@ -989,6 +1513,207 @@ describe('pnl simple protocol return', () => {
     expect(familyHistory[0]?.dataPoints[1]?.protocolReturnPct).toBeCloseTo(10)
     expect(familyHistory[0]?.dataPoints[0]?.growthIndex).toBeCloseTo(100)
     expect(familyHistory[0]?.dataPoints[1]?.growthIndex).toBeCloseTo(110)
+  })
+
+  it('keeps locked and unlocked yvUSD as separate protocol-return families', () => {
+    const yvUsdMetadata = new Map<string, VaultMetadata>([
+      [
+        YVUSD_UNLOCKED_KEY,
+        {
+          address: YVUSD_UNLOCKED,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: YVUSD_UNDERLYING,
+            symbol: 'USDC',
+            decimals: 6
+          },
+          decimals: 6
+        }
+      ],
+      [
+        YVUSD_LOCKED_KEY,
+        {
+          address: YVUSD_LOCKED,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: YVUSD_UNLOCKED,
+            symbol: 'yvUSD',
+            decimals: 6
+          },
+          decimals: 6
+        }
+      ]
+    ])
+    const yvUsdPpsData = new Map([
+      [
+        YVUSD_UNLOCKED_KEY,
+        new Map([
+          [100, 1],
+          [200, 1.02]
+        ])
+      ],
+      [
+        YVUSD_LOCKED_KEY,
+        new Map([
+          [100, 1],
+          [200, 1.05]
+        ])
+      ]
+    ])
+    const yvUsdPriceData = new Map([
+      [
+        `ethereum:${YVUSD_UNDERLYING}`,
+        new Map([
+          [100, 1],
+          [200, 1]
+        ])
+      ],
+      [
+        `ethereum:${YVUSD_UNLOCKED}`,
+        new Map([
+          [100, 1.01],
+          [200, 1.02]
+        ])
+      ]
+    ])
+    const events = [
+      baseEvent({
+        kind: 'deposit',
+        id: 'unlocked-deposit',
+        vaultAddress: YVUSD_UNLOCKED,
+        familyVaultAddress: YVUSD_UNLOCKED,
+        shares: 100n * YVUSD_ONE,
+        assets: 100n * YVUSD_ONE,
+        owner: USER,
+        sender: USER
+      }),
+      baseEvent({
+        kind: 'deposit',
+        id: 'locked-deposit',
+        vaultAddress: YVUSD_LOCKED,
+        familyVaultAddress: YVUSD_LOCKED,
+        blockTimestamp: 100,
+        blockNumber: 1,
+        logIndex: 1,
+        transactionHash: '0xlocked-deposit',
+        shares: 100n * YVUSD_ONE,
+        assets: 100n * YVUSD_ONE,
+        owner: USER,
+        sender: USER
+      })
+    ]
+    const ledgers = buildProtocolReturnLedgers({
+      events,
+      userAddress: USER,
+      metadata: yvUsdMetadata,
+      ppsData: yvUsdPpsData,
+      priceData: yvUsdPriceData,
+      currentTimestamp: 200
+    })
+    const selectedVaults = materializeProtocolReturnVaults({
+      ledgers,
+      metadata: yvUsdMetadata,
+      ppsData: yvUsdPpsData,
+      currentTimestamp: 200
+    })
+    const lockedVault = selectedVaults.find((vault) => vault.vaultAddress === YVUSD_LOCKED)
+    const familyHistory = buildProtocolReturnFamilyHistorySeries({
+      events,
+      userAddress: USER,
+      metadata: yvUsdMetadata,
+      ppsData: yvUsdPpsData,
+      priceData: yvUsdPriceData,
+      timestamps: [100, 200],
+      selectedVaults
+    })
+
+    expect(selectedVaults).toHaveLength(2)
+    expect(lockedVault?.currentUnderlying).toBeCloseTo(105)
+    expect(lockedVault?.growthUnderlying).toBeCloseTo(5)
+    expect(lockedVault?.growthWeightUsd).toBeCloseTo(5.05)
+    expect(familyHistory.map((series) => series.vaultAddress).sort()).toEqual([YVUSD_LOCKED, YVUSD_UNLOCKED].sort())
+    expect(
+      familyHistory.find((series) => series.vaultAddress === YVUSD_LOCKED)?.dataPoints[1]?.growthWeightUsd
+    ).toBeCloseTo(5.05)
+    expect(
+      familyHistory.find((series) => series.vaultAddress === YVUSD_UNLOCKED)?.dataPoints[1]?.growthWeightUsd
+    ).toBeCloseTo(2)
+  })
+
+  it('values locked yvUSD withdrawals as normal nested-vault exits, not staking wrapper exits', () => {
+    const yvUsdMetadata = new Map<string, VaultMetadata>([
+      [
+        YVUSD_LOCKED_KEY,
+        {
+          address: YVUSD_LOCKED,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: YVUSD_UNLOCKED,
+            symbol: 'yvUSD',
+            decimals: 6
+          },
+          decimals: 6
+        }
+      ]
+    ])
+    const ppsData = new Map([
+      [
+        YVUSD_LOCKED_KEY,
+        new Map([
+          [100, 1],
+          [200, 1.05],
+          [300, 1.05]
+        ])
+      ]
+    ])
+    const ledgers = buildProtocolReturnLedgers({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'locked-deposit',
+          vaultAddress: YVUSD_LOCKED,
+          familyVaultAddress: YVUSD_LOCKED,
+          blockTimestamp: 100,
+          shares: 100n * YVUSD_ONE,
+          assets: 100n * YVUSD_ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'locked-withdrawal',
+          vaultAddress: YVUSD_LOCKED,
+          familyVaultAddress: YVUSD_LOCKED,
+          blockTimestamp: 200,
+          blockNumber: 2,
+          shares: 100n * YVUSD_ONE,
+          assets: 105n * YVUSD_ONE,
+          owner: USER
+        })
+      ],
+      userAddress: USER,
+      metadata: yvUsdMetadata,
+      ppsData,
+      priceData: new Map([[`ethereum:${YVUSD_UNLOCKED}`, new Map([[100, 1.01]])]]),
+      currentTimestamp: 300
+    })
+    const vault = materializeProtocolReturnVaults({
+      ledgers,
+      metadata: yvUsdMetadata,
+      ppsData,
+      currentTimestamp: 300
+    })[0]!
+
+    expect(vault.status).toBe('ok')
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(5)
+    expect(vault.growthWeightUsd).toBeCloseTo(5.05)
+    expect(vault.protocolReturnPct).toBeCloseTo(5)
   })
 
   it('stops emitting family growth index points after a vault is fully exited', () => {

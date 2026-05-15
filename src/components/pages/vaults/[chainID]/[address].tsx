@@ -654,6 +654,18 @@ function Index(): ReactElement | null {
     !!address && currentVault?.address && Number.isInteger(currentVault?.chainID)
       ? getBalance({ address: toAddress(currentVault.address), chainID: currentVault.chainID }).raw
       : 0n
+  const yvUsdUnlockedShareBalance =
+    !!address && isYvUsd
+      ? getBalance({
+          address: toAddress(yvUsdUnlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS),
+          chainID: YVUSD_CHAIN_ID
+        }).raw
+      : 0n
+  const yvUsdLockedShareBalance =
+    !!address && isYvUsd
+      ? getBalance({ address: toAddress(yvUsdLockedVault?.address ?? YVUSD_LOCKED_ADDRESS), chainID: YVUSD_CHAIN_ID })
+          .raw
+      : 0n
 
   const stakingShareBalance =
     !!address && !!stakingAddress && Number.isInteger(currentVault?.chainID) && !!currentVault
@@ -663,7 +675,8 @@ function Index(): ReactElement | null {
   const isMigratable = Boolean(currentVault?.migration?.available)
   const canShowMigrateAction = isMigratable && vaultShareBalance > 0n
   const isRetired = Boolean(currentVault?.info?.isRetired)
-  const hasUserFundsInVault = vaultShareBalance > 0n || stakingShareBalance > 0n
+  const hasYvUsdFunds = yvUsdUnlockedShareBalance > 0n || yvUsdLockedShareBalance > 0n
+  const hasUserFundsInVault = isYvUsd ? hasYvUsdFunds : vaultShareBalance > 0n || stakingShareBalance > 0n
   const canShowUserCharts = !isWalletLoading && hasUserFundsInVault
   const retiredVaultAlertMessage = useMemo(() => {
     if (!isRetired || !currentVault) return null
@@ -983,7 +996,7 @@ function Index(): ReactElement | null {
         shouldRender: Number.isInteger(chainId),
         ref: sectionRefs.charts,
         content: isYvUsd ? (
-          <YvUsdChartsSection chartHeightPx={180} chartHeightMdPx={230} />
+          <YvUsdChartsSection chartHeightPx={180} chartHeightMdPx={230} enableUserPositionChart={canShowUserCharts} />
         ) : (
           <VaultChartsSection
             key={`${currentVault.address}-${address ?? 'disconnected'}`}
@@ -1028,6 +1041,7 @@ function Index(): ReactElement | null {
       }
     ]
   }, [
+    canShowUserCharts,
     additionalFeaturesContent,
     chainId,
     currentVault,
@@ -1382,7 +1396,13 @@ function Index(): ReactElement | null {
 
   function renderDetailCharts(chartHeightPx: number, chartHeightMdPx: number): ReactElement {
     if (isYvUsd) {
-      return <YvUsdChartsSection chartHeightPx={chartHeightPx} chartHeightMdPx={chartHeightMdPx} />
+      return (
+        <YvUsdChartsSection
+          chartHeightPx={chartHeightPx}
+          chartHeightMdPx={chartHeightMdPx}
+          enableUserPositionChart={canShowUserCharts}
+        />
+      )
     }
 
     return (

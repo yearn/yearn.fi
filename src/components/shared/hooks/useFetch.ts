@@ -9,6 +9,8 @@ type TUseZodProps<T> = {
   config?: Omit<UseQueryOptions<T, Error, T, QueryKey>, 'queryKey' | 'queryFn' | 'enabled'> & {
     /** Enable the query (default: true when endpoint exists) */
     enabled?: boolean
+    /** Stable query key when the endpoint contains request-only params */
+    cacheKey?: QueryKey
     /** Cache duration in milliseconds (default: 2 minutes) */
     cacheDuration?: number
     /** Enable background revalidation on interval (default: false) */
@@ -57,13 +59,14 @@ export function useFetch<T>({ endpoint, schema, config }: TUseZodProps<T>): UseQ
     maxRetries = 3,
     keepPreviousData: keepPreviousDataFlag = true,
     enabled: enabledOverride,
+    cacheKey,
     timeout,
     retry,
     retryDelay,
     ...queryConfig
   } = config ?? {}
 
-  const queryKey = getFetchQueryKey(endpoint) ?? ['fetch', 'disabled']
+  const queryKey = cacheKey ?? getFetchQueryKey(endpoint) ?? ['fetch', 'disabled']
   const isEnabled = Boolean(endpoint) && (enabledOverride ?? true)
   const shouldRetry =
     retry ??

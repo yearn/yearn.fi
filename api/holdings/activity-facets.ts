@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { HoldingsEventFetchType, HoldingsEventPaginationMode } from '../lib/holdings'
+import type { VaultVersion } from '../lib/holdings'
 import { checkRateLimit, ensureSchemaInitialized } from '../lib/holdings'
 
 function simpleHash(str: string): string {
@@ -26,16 +26,22 @@ function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
 
-function parseUnknownTransferInPnlMode(value: unknown): 'strict' | 'zero_basis' | 'windfall' {
-  return value === 'strict' || value === 'zero_basis' || value === 'windfall' ? value : 'windfall'
+function parseVersion(value: string | string[] | undefined): VaultVersion {
+  return value === 'v2' || value === 'v3' ? value : 'all'
 }
 
-function parseHoldingsEventFetchType(value: string | string[] | undefined): HoldingsEventFetchType {
-  return value === 'parallel' ? 'parallel' : 'seq'
+function parsePositiveInteger(value: string | string[] | undefined, fallback: number, max: number): number {
+  const rawValue = Array.isArray(value) ? value[0] : value
+  const parsedValue = Number(rawValue)
+
+  return Number.isInteger(parsedValue) && parsedValue > 0 ? Math.min(parsedValue, max) : fallback
 }
 
-function parseHoldingsEventPaginationMode(value: string | string[] | undefined): HoldingsEventPaginationMode {
-  return value === 'all' ? 'all' : 'paged'
+function parseNonNegativeInteger(value: string | string[] | undefined): number {
+  const rawValue = Array.isArray(value) ? value[0] : value
+  const parsedValue = Number(rawValue)
+
+  return Number.isInteger(parsedValue) && parsedValue >= 0 ? parsedValue : 0
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -54,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await ensureSchemaInitialized()
   } catch (error) {
-    console.error('Holdings PnL schema initialization error:', error)
+    console.error('Holdings activity facets schema initialization error:', error)
     return res.status(500).json({ error: 'Failed to initialize holdings storage' })
   }
 
@@ -68,12 +74,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
     return res.status(503).json({
-      error: 'Holdings PnL API not configured',
+      error: 'Holdings activity API not configured',
       details: 'ENVIO_GRAPHQL_URL environment variable is not set. This feature requires a running Envio indexer.'
     })
   }
 
-  const { address, version, unknownMode, fetchType: fetchTypeParam, paginationMode: paginationModeParam } = req.query
+  const {
+    address,
+    version: versionParam,
+    limitPerSource: limitPerSourceParam,
+    offsetPerSource: offsetPerSourceParam
+  } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -83,38 +94,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Invalid Ethereum address' })
   }
 
-  const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
-  const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
-
   try {
-    const { getHoldingsPnL } = await import('../lib/holdings')
-    const pnl = await getHoldingsPnL(
+    const { fetchRecentAddressScopedActivityEvents } = await import('../lib/holdings')
+    const version = parseVersion(versionParam)
+    const limitPerSource = parsePositiveInteger(limitPerSourceParam, 250, 1000)
+    const offsetPerSource = parseNonNegativeInteger(offsetPerSourceParam)
+    const events = await fetchRecentAddressScopedActivityEvents(
       address,
-      version === 'v2' || version === 'v3' ? version : 'all',
-      parseUnknownTransferInPnlMode(Array.isArray(unknownMode) ? unknownMode[0] : unknownMode),
-      fetchType,
-      paginationMode
+      version,
+      limitPerSource,
+      undefined,
+      offsetPerSource
     )
+    const hasMore =
+      events.hasMoreDeposits || events.hasMoreWithdrawals || events.hasMoreTransfersIn || events.hasMoreTransfersOut
+    const chainIds = Array.from(
+      new Set(
+        [...events.deposits, ...events.withdrawals, ...events.transfersIn, ...events.transfersOut].map(
+          (event) => event.chainId
+        )
+      )
+    ).sort((firstChainId, secondChainId) => firstChainId - secondChainId)
 
-    if (pnl.summary.totalVaults === 0) {
-      return res.status(404).json({ error: 'No holdings found for address' })
-    }
-
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-    return res.status(200).json(pnl)
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900')
+    return res.status(200).json({
+      address: address.toLowerCase(),
+      version,
+      facets: { chainIds },
+      pageInfo: {
+        hasMore,
+        nextOffsetPerSource: hasMore ? offsetPerSource + limitPerSource : null
+      }
+    })
   } catch (error) {
-    console.error('Holdings PnL error:', error)
+    console.error('Holdings activity facets error:', error)
 
     if (process.env.NODE_ENV === 'development') {
       const message = error instanceof Error ? error.message : String(error)
       const stack = error instanceof Error ? error.stack : undefined
       return res.status(502).json({
-        error: 'Failed to fetch holdings PnL',
+        error: 'Failed to fetch holdings activity facets',
         message,
         stack
       })
     }
 
-    return res.status(502).json({ error: 'Failed to fetch holdings PnL' })
+    return res.status(502).json({ error: 'Failed to fetch holdings activity facets' })
   }
 }

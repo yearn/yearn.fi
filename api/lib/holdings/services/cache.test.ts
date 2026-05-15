@@ -8,30 +8,32 @@ vi.mock('../db/connection', () => ({
   isDatabaseEnabled: isDatabaseEnabledMock
 }))
 
-describe('deleteStaleCache', () => {
+describe('cache writes', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('prunes stale rate limit rows during cache cleanup', async () => {
-    const queryMock = vi
-      .fn()
-      .mockResolvedValueOnce({ rowCount: 2 })
-      .mockResolvedValueOnce({ rowCount: 3 })
-      .mockResolvedValueOnce({ rowCount: 4 })
-
+  it('saves historical totals in smaller batches', async () => {
+    const queryMock = vi.fn().mockResolvedValue({ rowCount: 250 })
     isDatabaseEnabledMock.mockReturnValue(true)
     getPoolMock.mockResolvedValue({
       query: queryMock,
       end: vi.fn()
     })
 
-    const { deleteStaleCache } = await import('./cache')
-    const deletedCount = await deleteStaleCache()
+    const { saveCachedTotals } = await import('./cache')
+    const totals = Array.from({ length: 497 }, (_value, index) => ({
+      date: `2025-01-${String((index % 28) + 1).padStart(2, '0')}`,
+      usdValue: index
+    }))
 
-    expect(queryMock).toHaveBeenNthCalledWith(1, expect.stringContaining('DELETE FROM holdings_totals'))
-    expect(queryMock).toHaveBeenNthCalledWith(2, expect.stringContaining('DELETE FROM token_price_misses'))
-    expect(queryMock).toHaveBeenNthCalledWith(3, expect.stringContaining('DELETE FROM rate_limits'))
-    expect(deletedCount).toBe(9)
+    const saved = await saveCachedTotals('0x0000000000000000000000000000000000000001', 'all', totals)
+
+    expect(saved).toBe(true)
+    expect(queryMock).toHaveBeenCalledTimes(2)
+    expect(queryMock.mock.calls[0]?.[1]).toHaveLength(1_000)
+    expect(queryMock.mock.calls[1]?.[1]).toHaveLength(988)
+    expect(queryMock.mock.calls[0]?.[2]).toEqual({ disableOnFailure: false })
+    expect(queryMock.mock.calls[1]?.[2]).toEqual({ disableOnFailure: false })
   })
 })

@@ -189,7 +189,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
               onClick={handleOpenRewards}
               variant={'filled'}
               isDisabled={!onOpenRewards}
-              classNameOverride="yearn--button-nextgen min-h-[44px] px-3 rounded-xl text-md bg-primary text-white hover:bg-primary/90"
+              classNameOverride="yearn--button-nextgen min-h-[44px] px-3 rounded-lg text-md bg-primary text-white hover:bg-primary/90"
             >
               {'View rewards'}
             </Button>
@@ -213,7 +213,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
               </div>
             ) : isRewardsLoading ? (
               <div className="flex items-center gap-2 text-sm text-text-secondary">
-                <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-border border-t-text-secondary" />
+                <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />
                 {'Loading rewards...'}
               </div>
             ) : !hasAnyRewards ? (

@@ -54,7 +54,11 @@ function VaultsListSection({
           />
           {listHead}
         </div>
-        <div className={'flex flex-col border-x border-b border-border rounded-b-xl overflow-hidden'}>{children}</div>
+        <div
+          className={'flex flex-col border md:border-t-0 border-border rounded-lg md:rounded-t-none overflow-hidden'}
+        >
+          {children}
+        </div>
       </div>
       {shouldShowSubtleOverlay ? (
         <div aria-hidden={true} className={'pointer-events-none absolute inset-0 z-30 rounded-lg bg-app/30'} />

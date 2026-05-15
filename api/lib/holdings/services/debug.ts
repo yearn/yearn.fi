@@ -1,14 +1,16 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
+import { appendHoldingsProgressLog, updateHoldingsProgress } from './progress'
 
 export interface HoldingsDebugContext {
   enabled: boolean
   requestId: string
-  route: 'history' | 'breakdown' | 'pnl'
+  route: 'history' | 'breakdown' | 'protocol-return-history'
   address: string
   startedAt: number
   lotsEnabled: boolean
   vaultFilter: string | null
   txFilter: string | null
+  progressId: string | null
 }
 
 const storage = new AsyncLocalStorage<HoldingsDebugContext>()
@@ -31,13 +33,14 @@ export function isHoldingsDebugRequested(debugValue?: string | null): boolean {
 }
 
 export function createHoldingsDebugContext(
-  route: 'history' | 'breakdown' | 'pnl',
+  route: 'history' | 'breakdown' | 'protocol-return-history',
   address: string,
   enabled: boolean,
   options?: {
     lotsEnabled?: boolean
     vaultFilter?: string | null
     txFilter?: string | null
+    progressId?: string | null
   }
 ): HoldingsDebugContext {
   return {
@@ -48,7 +51,8 @@ export function createHoldingsDebugContext(
     startedAt: Date.now(),
     lotsEnabled: options?.lotsEnabled ?? false,
     vaultFilter: options?.vaultFilter?.toLowerCase() ?? null,
-    txFilter: options?.txFilter?.toLowerCase() ?? null
+    txFilter: options?.txFilter?.toLowerCase() ?? null,
+    progressId: options?.progressId ?? null
   }
 }
 
@@ -77,12 +81,23 @@ export function getHoldingsDebugFilters(): {
 export function debugLog(scope: string, message: string, payload?: Record<string, unknown>): void {
   const context = getHoldingsDebugContext()
 
-  if (!context?.enabled) {
+  if (!context) {
     return
   }
 
   const elapsedMs = Date.now() - context.startedAt
+  void appendHoldingsProgressLog(context.progressId, { elapsedMs, scope, message })
+
+  if (!context.enabled) {
+    return
+  }
+
   console.log(`[HoldingsDebug][${context.requestId}][+${elapsedMs}ms][${scope}] ${message}${formatPayload(payload)}`)
+}
+
+export function reportHoldingsProgress(progress: number, message: string, detail?: string | null): void {
+  const context = getHoldingsDebugContext()
+  void updateHoldingsProgress(context?.progressId, { progress, message, detail: detail ?? null })
 }
 
 export function debugError(scope: string, message: string, error: unknown, payload?: Record<string, unknown>): void {
