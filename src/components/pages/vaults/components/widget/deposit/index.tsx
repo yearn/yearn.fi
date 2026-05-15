@@ -1,3 +1,4 @@
+import { buildSafeDepositBatch } from '@pages/vaults/components/widget/deposit/safeDepositBatch'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
@@ -170,7 +171,8 @@ export function WidgetDeposit({
     isAutoStakingEnabled,
     getPrice,
     trackEvent,
-    ensoEnabled
+    ensoEnabled,
+    isWalletSafe
   } = useWidgetContext({ chainId, vaultAddress })
   const { allVaults } = useYearn()
 
@@ -311,6 +313,7 @@ export function WidgetDeposit({
     inputDecimals: inputToken?.decimals ?? 18,
     vaultDecimals: vault?.decimals ?? 18,
     slippage: ensoQuoteSlippage,
+    ensoRoutingStrategy: isWalletSafe ? 'router' : undefined,
     stakingSource
   })
 
@@ -596,10 +599,78 @@ export function WidgetDeposit({
       : null
   const effectiveDepositError = depositError || unpricedEnsoDepositError
 
+  const { spenderAddress: approvalSpenderAddress, spenderName: approvalSpenderName } = getDepositApprovalSpender({
+    routeType,
+    destinationToken,
+    stakingAddress,
+    routerAddress: activeFlow.periphery.routerAddress,
+    vaultSymbol,
+    stakingTokenSymbol: stakingToken?.symbol
+  })
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
+  const safeDepositBatch = useMemo(() => {
+    if (!isWalletSafe || !needsApproval) {
+      return undefined
+    }
+
+    return buildSafeDepositBatch({
+      routeType,
+      account,
+      depositToken: toAddress(depositToken),
+      amount: depositAmount.debouncedBn,
+      currentAllowance: activeFlow.periphery.allowance,
+      chainId: routeType === 'ENSO' ? sourceChainId : chainId,
+      vaultAddress,
+      stakingAddress,
+      stakingSource,
+      approvalSpenderAddress,
+      routerAddress: activeFlow.periphery.routerAddress ? toAddress(activeFlow.periphery.routerAddress) : undefined,
+      ensoTx: activeFlow.periphery.tx
+        ? {
+            to: toAddress(activeFlow.periphery.tx.to),
+            data: activeFlow.periphery.tx.data,
+            value: activeFlow.periphery.tx.value
+          }
+        : undefined
+    })
+  }, [
+    account,
+    activeFlow.periphery.allowance,
+    activeFlow.periphery.routerAddress,
+    activeFlow.periphery.tx,
+    approvalSpenderAddress,
+    chainId,
+    depositAmount.debouncedBn,
+    depositToken,
+    isWalletSafe,
+    needsApproval,
+    routeType,
+    sourceChainId,
+    stakingAddress,
+    stakingSource,
+    vaultAddress
+  ])
 
   const currentStep: TransactionStep | undefined = useMemo(() => {
+    const { actionLabel, progressLabel, pastTenseLabel } = getDepositActionCopy(routeType)
+
+    if (safeDepositBatch) {
+      return {
+        prepare: activeFlow.actions.prepareApprove,
+        batch: safeDepositBatch,
+        label: `Approve & ${actionLabel}`,
+        confirmMessage: `Submitting approval and ${actionLabel.toLowerCase()} to your Safe`,
+        successTitle: isCrossChain ? 'Transaction Submitted' : `${actionLabel} successful!`,
+        successMessage: isCrossChain
+          ? `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`
+          : `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+        completesFlow: true,
+        showConfetti: true,
+        notification: depositNotificationParams
+      }
+    }
+
     if (needsApproval) {
       return {
         prepare: activeFlow.actions.prepareApprove,
@@ -611,8 +682,6 @@ export function WidgetDeposit({
         notification: approveNotificationParams
       }
     }
-
-    const { actionLabel, progressLabel, pastTenseLabel } = getDepositActionCopy(routeType)
 
     if (isCrossChain) {
       return {
@@ -641,6 +710,7 @@ export function WidgetDeposit({
     needsApproval,
     activeFlow.actions.prepareApprove,
     activeFlow.actions.prepareDeposit,
+    safeDepositBatch,
     formattedDepositAmount,
     inputToken?.symbol,
     vaultSymbol,
@@ -775,14 +845,6 @@ export function WidgetDeposit({
   // Render
   // ============================================================================
   const isSettingsVisible = !!account && !!isSettingsOpen
-  const { spenderAddress: approvalSpenderAddress, spenderName: approvalSpenderName } = getDepositApprovalSpender({
-    routeType,
-    destinationToken,
-    stakingAddress,
-    routerAddress: activeFlow.periphery.routerAddress,
-    vaultSymbol,
-    stakingTokenSymbol: stakingToken?.symbol
-  })
   const onAllowanceClick =
     !isNativeToken && activeFlow.periphery.allowance > 0n
       ? (): void => {

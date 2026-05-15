@@ -20,11 +20,12 @@ type TWidgetContext = {
   getPrice: ReturnType<typeof useYearn>['getPrice']
   trackEvent: ReturnType<typeof usePlausible>
   ensoEnabled: boolean
+  isWalletSafe: boolean
 }
 
 export function useWidgetContext({ chainId, vaultAddress }: TUseWidgetContextParams): TWidgetContext {
   const { address: account } = useAccount()
-  const { openLoginModal } = useWeb3()
+  const { openLoginModal, isWalletSafe } = useWeb3()
   const { onRefresh: refreshWalletBalances, getToken } = useWallet()
   const { zapSlippage, isAutoStakingEnabled, getPrice } = useYearn()
   const trackEvent = usePlausible()
@@ -39,6 +40,7 @@ export function useWidgetContext({ chainId, vaultAddress }: TUseWidgetContextPar
     isAutoStakingEnabled,
     getPrice,
     trackEvent,
-    ensoEnabled
+    ensoEnabled,
+    isWalletSafe
   }
 }

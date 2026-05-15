@@ -7,7 +7,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { fromAddress, chainId, tokenIn, tokenOut, amountIn, slippage, destinationChainId, receiver } = req.query
+  const { fromAddress, chainId, tokenIn, tokenOut, amountIn, slippage, routingStrategy, destinationChainId, receiver } =
+    req.query
 
   if (!fromAddress || typeof fromAddress !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid fromAddress' })
@@ -46,6 +47,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (receiver && typeof receiver === 'string') {
       params.set('receiver', receiver)
+    }
+    if (routingStrategy && typeof routingStrategy === 'string') {
+      params.set('routingStrategy', routingStrategy)
     }
 
     const url = `${ENSO_API_BASE}/api/v1/shortcuts/route?${params}`
