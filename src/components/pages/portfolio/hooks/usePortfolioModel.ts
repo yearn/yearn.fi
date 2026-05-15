@@ -39,6 +39,7 @@ import { calculateVaultEstimatedAPY, calculateVaultHistoricalAPY } from '@shared
 import { useCallback, useMemo, useState } from 'react'
 import type { TPortfolioLiveBalanceSnapshot } from '../types/api'
 import { filterVisiblePortfolioHoldings } from './portfolioVisibility'
+import { hasYvUsdPortfolioHoldings } from './usePortfolioModel.helpers'
 
 type THoldingsRow = {
   key: string
@@ -391,8 +392,9 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const suggestedRows = useMemo((): TSuggestedItem[] => {
     const yvUsdSuggestedVaultKey = yvUsdSuggestedVault ? getVaultKey(yvUsdSuggestedVault) : null
+    const hasYvUsdHoldings = hasYvUsdPortfolioHoldings(holdingsKeySet)
     const yvUsdSuggestion =
-      yvUsdSuggestedVault && yvUsdSuggestedVaultKey && !holdingsKeySet.has(yvUsdSuggestedVaultKey)
+      yvUsdSuggestedVault && yvUsdSuggestedVaultKey && !hasYvUsdHoldings
         ? {
             item: stablecoinHoldingMatch
               ? {
