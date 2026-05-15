@@ -40,7 +40,7 @@ import { PortfolioVaultGrowthChart } from './PortfolioVaultGrowthChart'
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
 export type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'annualized' | 'index'
 export type TGrowthDisplayMode = 'index' | 'usd' | 'eth'
-type TPortfolioHistoryValueType = TGrowthDisplayMode | 'percent'
+type TPortfolioHistoryValueType = TGrowthDisplayMode | TPortfolioVaultGrowthChartMode | 'percent'
 
 type TPortfolioHistoryChartProps = {
   balanceData: TPortfolioHistoryChartData | null
@@ -138,6 +138,7 @@ type TPortfolioHistoryChartControlsProps = {
   onTimeframeChange: (timeframe: TPortfolioHistoryChartTimeframe) => void
   resolvedGrowthDisplayMode: TGrowthDisplayMode
   onGrowthDisplayModeOverrideChange: (mode: TGrowthDisplayMode | null) => void
+  vaultGrowthMode: TPortfolioVaultGrowthChartMode
   onVaultGrowthModeChange: (mode: TPortfolioVaultGrowthChartMode) => void
   isEthGrowthAvailable?: boolean
   children?: ReactElement
@@ -160,6 +161,10 @@ const GROWTH_DISPLAY_MODES: Array<{ id: TGrowthDisplayMode; label: string }> = [
   { id: 'index', label: 'Index' },
   { id: 'usd', label: 'USD' },
   { id: 'eth', label: 'ETH' }
+]
+const VAULT_GROWTH_VALUE_TYPES: Array<{ id: TPortfolioVaultGrowthChartMode; label: string }> = [
+  { id: 'position', label: 'Position' },
+  { id: 'index', label: 'Index' }
 ]
 const ANNUALIZED_VALUE_TYPE = { id: 'percent', label: '%' } as const
 const INDEX_SERIES_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5'] as const
@@ -377,6 +382,7 @@ export function PortfolioHistoryChartControls({
   onTimeframeChange,
   resolvedGrowthDisplayMode,
   onGrowthDisplayModeOverrideChange,
+  vaultGrowthMode,
   onVaultGrowthModeChange,
   isEthGrowthAvailable = true,
   children,
@@ -403,14 +409,20 @@ export function PortfolioHistoryChartControls({
   const valueTypeOptions: Array<{ id: TPortfolioHistoryValueType; label: string }> =
     activeTab === 'annualized'
       ? [ANNUALIZED_VALUE_TYPE]
-      : unitOptions
-          .filter((mode) => mode.isAvailable)
-          .map((mode) => ({
-            id: mode.id,
-            label: mode.label
-          }))
+      : activeTab === 'index'
+        ? VAULT_GROWTH_VALUE_TYPES
+        : unitOptions
+            .filter((mode) => mode.isAvailable)
+            .map((mode) => ({
+              id: mode.id,
+              label: mode.label
+            }))
   const activeUnitValue: TPortfolioHistoryValueType | '' =
-    activeTab === 'annualized' ? ANNUALIZED_VALUE_TYPE.id : (unitOptions.find((mode) => mode.isActive)?.id ?? '')
+    activeTab === 'annualized'
+      ? ANNUALIZED_VALUE_TYPE.id
+      : activeTab === 'index'
+        ? vaultGrowthMode
+        : (unitOptions.find((mode) => mode.isActive)?.id ?? '')
 
   const handleValueTypeChange = (mode: TPortfolioHistoryValueType): void => {
     if (mode === 'percent') {
@@ -425,12 +437,16 @@ export function PortfolioHistoryChartControls({
     }
 
     if (activeTab === 'growth') {
-      onGrowthDisplayModeOverrideChange(mode)
+      if (mode === 'index' || mode === 'usd' || mode === 'eth') {
+        onGrowthDisplayModeOverrideChange(mode)
+      }
       return
     }
 
     if (activeTab === 'index') {
-      onVaultGrowthModeChange('index')
+      if (mode === 'position' || mode === 'index') {
+        onVaultGrowthModeChange(mode)
+      }
     }
   }
 

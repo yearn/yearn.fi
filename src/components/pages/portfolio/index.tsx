@@ -3015,6 +3015,7 @@ function PortfolioPage(): ReactElement {
                     onTimeframeChange={setHistoryTimeframe}
                     resolvedGrowthDisplayMode={resolvedGrowthDisplayMode}
                     onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
+                    vaultGrowthMode={historyVaultGrowthMode}
                     onVaultGrowthModeChange={setHistoryVaultGrowthMode}
                     isEthGrowthAvailable={isEthGrowthAvailable}
                     className="h-full bg-linear-to-b from-surface to-surface-secondary/20"
