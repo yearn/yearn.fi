@@ -40,7 +40,7 @@ import { PortfolioVaultGrowthChart } from './PortfolioVaultGrowthChart'
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
 export type TPortfolioHistoryChartTab = 'balance' | 'growth' | 'annualized' | 'index'
 export type TGrowthDisplayMode = 'index' | 'usd' | 'eth'
-type TPortfolioHistoryValueType = TGrowthDisplayMode | TPortfolioVaultGrowthChartMode | 'percent'
+type TPortfolioHistoryValueType = TGrowthDisplayMode | TPortfolioVaultGrowthChartMode
 
 type TPortfolioHistoryChartProps = {
   balanceData: TPortfolioHistoryChartData | null
@@ -166,7 +166,6 @@ const VAULT_GROWTH_VALUE_TYPES: Array<{ id: TPortfolioVaultGrowthChartMode; labe
   { id: 'position', label: 'Position' },
   { id: 'index', label: 'Index' }
 ]
-const ANNUALIZED_VALUE_TYPE = { id: 'percent', label: '%' } as const
 const INDEX_SERIES_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5'] as const
 const PORTFOLIO_CHART_MARGIN = {
   ...CHART_WITH_AXES_MARGIN,
@@ -407,28 +406,19 @@ export function PortfolioHistoryChartControls({
     return { ...mode, isActive, isAvailable }
   })
   const valueTypeOptions: Array<{ id: TPortfolioHistoryValueType; label: string }> =
-    activeTab === 'annualized'
-      ? [ANNUALIZED_VALUE_TYPE]
-      : activeTab === 'index'
-        ? VAULT_GROWTH_VALUE_TYPES
-        : unitOptions
-            .filter((mode) => mode.isAvailable)
-            .map((mode) => ({
-              id: mode.id,
-              label: mode.label
-            }))
+    activeTab === 'index'
+      ? VAULT_GROWTH_VALUE_TYPES
+      : unitOptions
+          .filter((mode) => mode.isAvailable)
+          .map((mode) => ({
+            id: mode.id,
+            label: mode.label
+          }))
   const activeUnitValue: TPortfolioHistoryValueType | '' =
-    activeTab === 'annualized'
-      ? ANNUALIZED_VALUE_TYPE.id
-      : activeTab === 'index'
-        ? vaultGrowthMode
-        : (unitOptions.find((mode) => mode.isActive)?.id ?? '')
+    activeTab === 'index' ? vaultGrowthMode : (unitOptions.find((mode) => mode.isActive)?.id ?? '')
+  const shouldShowValueTypeSelector = activeTab !== 'annualized'
 
   const handleValueTypeChange = (mode: TPortfolioHistoryValueType): void => {
-    if (mode === 'percent') {
-      return
-    }
-
     if (activeTab === 'balance') {
       if (mode === 'usd' || mode === 'eth') {
         onDenominationChange(mode)
@@ -492,12 +482,14 @@ export function PortfolioHistoryChartControls({
             onChange={onTimeframeChange}
             className={'min-w-[76px]'}
           />
-          <PortfolioChartDropdown
-            label={'Asset value type'}
-            value={activeUnitValue}
-            options={valueTypeOptions}
-            onChange={handleValueTypeChange}
-          />
+          {shouldShowValueTypeSelector ? (
+            <PortfolioChartDropdown
+              label={'Asset value type'}
+              value={activeUnitValue}
+              options={valueTypeOptions}
+              onChange={handleValueTypeChange}
+            />
+          ) : null}
         </div>
       </div>
       {children}
