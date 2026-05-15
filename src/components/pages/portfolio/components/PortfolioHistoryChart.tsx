@@ -276,15 +276,17 @@ function PortfolioChartDropdown<TValue extends string>({
   label,
   value,
   options,
-  onChange
+  onChange,
+  className
 }: {
   label: string
   value: TValue | ''
   options: Array<{ id: TValue; label: string }>
   onChange: (value: TValue) => void
+  className?: string
 }): ReactElement {
   return (
-    <label className={'relative min-w-[92px]'}>
+    <label className={cl('relative', className ?? 'min-w-[92px]')}>
       <span className={'sr-only'}>{label}</span>
       <select
         value={value}
@@ -432,24 +434,29 @@ export function PortfolioHistoryChartControls({
     }
   }
 
+  const handleChartTabChange = (tab: TPortfolioHistoryChartTab): void => {
+    onActiveTabChange(tab)
+    if (tab === 'index') {
+      onVaultGrowthModeChange('index')
+    }
+  }
+
   return (
     <div className={cl('relative min-h-0', className)}>
-      <div
-        className={
-          'absolute inset-x-0 top-0 z-10 flex flex-col gap-2 p-4 md:flex-row md:items-center md:justify-between md:px-6'
-        }
-      >
-        <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
+      <div className={'absolute inset-x-0 top-0 z-10 flex items-center gap-2 p-4 md:justify-between md:px-6'}>
+        <PortfolioChartDropdown
+          label={'Chart type'}
+          value={activeTab}
+          options={CHART_TABS}
+          onChange={handleChartTabChange}
+          className={'min-w-[140px] flex-1 md:hidden'}
+        />
+        <div className={cl('hidden items-center gap-1 md:flex md:w-auto', SELECTOR_BAR_STYLES.container)}>
           {CHART_TABS.map((tab) => (
             <button
               key={tab.id}
               type={'button'}
-              onClick={() => {
-                onActiveTabChange(tab.id)
-                if (tab.id === 'index') {
-                  onVaultGrowthModeChange('index')
-                }
-              }}
+              onClick={() => handleChartTabChange(tab.id)}
               className={cl(
                 'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold transition-all',
                 'min-h-[36px] md:min-h-0 active:scale-[0.98]',
@@ -461,12 +468,13 @@ export function PortfolioHistoryChartControls({
             </button>
           ))}
         </div>
-        <div className={'flex w-full items-center justify-end gap-2 md:w-auto'}>
+        <div className={'flex shrink-0 items-center justify-end gap-2 md:w-auto'}>
           <PortfolioChartDropdown
             label={'Chart timeframe'}
             value={timeframe}
             options={TIMEFRAME_OPTIONS}
             onChange={onTimeframeChange}
+            className={'min-w-[76px]'}
           />
           <PortfolioChartDropdown
             label={'Asset value type'}
@@ -617,7 +625,7 @@ export function PortfolioHistoryChart({
 
   const sectionClassName = embedded
     ? reserveControlSpace
-      ? 'flex h-full min-h-0 flex-col bg-surface px-5 pt-24 pb-2 md:px-6 md:pt-16 md:pb-3'
+      ? 'flex h-full min-h-[260px] flex-col bg-surface px-5 pt-16 pb-2 md:min-h-0 md:px-6 md:pt-16 md:pb-3'
       : 'flex h-full min-h-0 flex-col bg-surface p-5 md:p-6'
     : 'flex h-full flex-col gap-4 rounded-lg border border-border bg-surface p-6'
 

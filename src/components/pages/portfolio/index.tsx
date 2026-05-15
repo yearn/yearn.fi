@@ -380,10 +380,21 @@ function PortfolioHeaderSection({
       value: <span className={METRIC_VALUE_CLASS}>{renderSignedPercentMetric(annualizedProtocolReturnPct)}</span>
     }
   ]
+  const mobileMetrics = [metrics[0], metrics[2], metrics[1], metrics[4]]
 
   return (
     <section className="h-full bg-surface">
-      <div className="grid h-full grid-rows-5 gap-px bg-border">
+      <div className="grid grid-cols-2 gap-px bg-border md:hidden">
+        {mobileMetrics.map((item) => (
+          <div key={item.key} className={metricCardClassName}>
+            <div className="flex items-center justify-between">{item.header}</div>
+            <div className="pt-0.5">{item.value}</div>
+            {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
+            {item.footnote ? <div className="pt-1.5">{item.footnote}</div> : null}
+          </div>
+        ))}
+      </div>
+      <div className="hidden h-full grid-rows-5 gap-px bg-border md:grid">
         {metrics.map((item) => (
           <div key={item.key} className={metricCardClassName}>
             <div className="flex items-center justify-between">{item.header}</div>
