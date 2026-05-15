@@ -62,7 +62,6 @@ type TPortfolioHistoryChartProps = {
   protocolReturnError?: Error | null
   embedded?: boolean
   reserveControlSpace?: boolean
-  loadingMessage?: string
   loadingProgress?: {
     progress: number
     message: string
@@ -74,6 +73,7 @@ type TPortfolioHistoryChartProps = {
 type TChartPoint = {
   date: string
   value: number | null
+  isLive?: boolean
 }
 
 type TPortfolioHistoryTooltipProps = {
@@ -83,6 +83,7 @@ type TPortfolioHistoryTooltipProps = {
     payload?: {
       date?: string
       value?: unknown
+      isLive?: boolean
       [key: string]: unknown
     }
   }>
@@ -161,14 +162,6 @@ const GROWTH_DISPLAY_MODES: Array<{ id: TGrowthDisplayMode; label: string }> = [
   { id: 'eth', label: 'ETH' }
 ]
 const ANNUALIZED_VALUE_TYPE = { id: 'percent', label: '%' } as const
-const HISTORY_LOADING_PROGRESS_STEPS = [
-  { delayMs: 0, value: 12 },
-  { delayMs: 700, value: 28 },
-  { delayMs: 1800, value: 46 },
-  { delayMs: 3300, value: 63 },
-  { delayMs: 5200, value: 78 },
-  { delayMs: 7600, value: 88 }
-] as const
 const INDEX_SERIES_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5'] as const
 const PORTFOLIO_CHART_MARGIN = {
   ...CHART_WITH_AXES_MARGIN,
@@ -283,15 +276,17 @@ function PortfolioChartDropdown<TValue extends string>({
   label,
   value,
   options,
-  onChange
+  onChange,
+  className
 }: {
   label: string
   value: TValue | ''
   options: Array<{ id: TValue; label: string }>
   onChange: (value: TValue) => void
+  className?: string
 }): ReactElement {
   return (
-    <label className={'relative min-w-[92px]'}>
+    <label className={cl('relative', className ?? 'min-w-[92px]')}>
       <span className={'sr-only'}>{label}</span>
       <select
         value={value}
@@ -338,29 +333,11 @@ export function resolvePortfolioGrowthDisplayMode(
 }
 
 function PortfolioHistoryChartLoading({
-  message,
   serverProgress
 }: {
-  message: string
   serverProgress?: TPortfolioHistoryChartProps['loadingProgress']
 }): ReactElement {
-  const [estimatedProgress, setEstimatedProgress] = useState<number>(HISTORY_LOADING_PROGRESS_STEPS[0].value)
-
-  useEffect(() => {
-    setEstimatedProgress(HISTORY_LOADING_PROGRESS_STEPS[0].value)
-    const timeouts = HISTORY_LOADING_PROGRESS_STEPS.map((step) =>
-      window.setTimeout(() => setEstimatedProgress(step.value), step.delayMs)
-    )
-
-    return () => {
-      timeouts.forEach((timeout) => {
-        window.clearTimeout(timeout)
-      })
-    }
-  }, [message])
-
-  const progress = serverProgress?.progress ?? estimatedProgress
-  const displayedMessage = serverProgress?.message ?? message
+  const displayedMessage = serverProgress?.message ?? 'Building portfolio history'
   const detail = serverProgress?.detail
 
   return (
@@ -372,19 +349,21 @@ function PortfolioHistoryChartLoading({
       <YearnLogoSpinner className={'size-12'} logoClassName={'size-8'} />
       <span>{displayedMessage}</span>
       {detail ? <span className={'text-xs text-text-tertiary'}>{detail}</span> : null}
-      <div
-        className={'h-1.5 w-full max-w-[240px] overflow-hidden rounded-full bg-border'}
-        role={'progressbar'}
-        aria-label={displayedMessage}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={progress}
-      >
+      {serverProgress ? (
         <div
-          className={'h-full rounded-full bg-primary transition-[width] duration-700 ease-out'}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+          className={'h-1.5 w-full max-w-[240px] overflow-hidden rounded-full bg-border'}
+          role={'progressbar'}
+          aria-label={displayedMessage}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={serverProgress.progress}
+        >
+          <div
+            className={'h-full rounded-full bg-primary transition-[width] duration-700 ease-out'}
+            style={{ width: `${serverProgress.progress}%` }}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -455,24 +434,29 @@ export function PortfolioHistoryChartControls({
     }
   }
 
+  const handleChartTabChange = (tab: TPortfolioHistoryChartTab): void => {
+    onActiveTabChange(tab)
+    if (tab === 'index') {
+      onVaultGrowthModeChange('index')
+    }
+  }
+
   return (
     <div className={cl('relative min-h-0', className)}>
-      <div
-        className={
-          'absolute inset-x-0 top-0 z-10 flex flex-col gap-2 p-4 md:flex-row md:items-center md:justify-between md:px-6'
-        }
-      >
-        <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
+      <div className={'absolute inset-x-0 top-0 z-10 flex items-center gap-2 p-4 md:justify-between md:px-6'}>
+        <PortfolioChartDropdown
+          label={'Chart type'}
+          value={activeTab}
+          options={CHART_TABS}
+          onChange={handleChartTabChange}
+          className={'min-w-[140px] flex-1 md:hidden'}
+        />
+        <div className={cl('hidden items-center gap-1 md:flex md:w-auto', SELECTOR_BAR_STYLES.container)}>
           {CHART_TABS.map((tab) => (
             <button
               key={tab.id}
               type={'button'}
-              onClick={() => {
-                onActiveTabChange(tab.id)
-                if (tab.id === 'index') {
-                  onVaultGrowthModeChange('index')
-                }
-              }}
+              onClick={() => handleChartTabChange(tab.id)}
               className={cl(
                 'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold transition-all',
                 'min-h-[36px] md:min-h-0 active:scale-[0.98]',
@@ -484,12 +468,13 @@ export function PortfolioHistoryChartControls({
             </button>
           ))}
         </div>
-        <div className={'flex w-full items-center justify-end gap-2 md:w-auto'}>
+        <div className={'flex shrink-0 items-center justify-end gap-2 md:w-auto'}>
           <PortfolioChartDropdown
             label={'Chart timeframe'}
             value={timeframe}
             options={TIMEFRAME_OPTIONS}
             onChange={onTimeframeChange}
+            className={'min-w-[76px]'}
           />
           <PortfolioChartDropdown
             label={'Asset value type'}
@@ -558,7 +543,7 @@ function PortfolioHistoryTooltip({
   return (
     <div
       className={
-        'pointer-events-none flex min-w-[13rem] flex-col gap-2 rounded-xl border border-border bg-surface px-3 py-3 shadow-xl'
+        'pointer-events-none flex min-w-[13rem] flex-col gap-2 rounded-lg border border-border bg-surface px-3 py-3 shadow-xl'
       }
     >
       <div className={'flex flex-col gap-0.5'}>
@@ -569,7 +554,7 @@ function PortfolioHistoryTooltip({
       </div>
       {activeTab === 'balance' ? (
         <span className={'text-xs font-medium text-text-secondary'}>
-          {value > 0 ? 'Click to see breakdown' : 'No breakdown available for this point'}
+          {value > 0 && !point?.isLive ? 'Click to see breakdown' : 'No breakdown available for this point'}
         </span>
       ) : null}
     </div>
@@ -616,7 +601,6 @@ export function PortfolioHistoryChart({
   protocolReturnError,
   embedded = false,
   reserveControlSpace = true,
-  loadingMessage = 'Searching for Yearn balances...',
   loadingProgress,
   className
 }: TPortfolioHistoryChartProps): ReactElement {
@@ -641,7 +625,7 @@ export function PortfolioHistoryChart({
 
   const sectionClassName = embedded
     ? reserveControlSpace
-      ? 'flex h-full min-h-0 flex-col bg-surface px-5 pt-24 pb-2 md:px-6 md:pt-16 md:pb-3'
+      ? 'flex h-full min-h-[260px] flex-col bg-surface px-5 pt-16 pb-2 md:min-h-0 md:px-6 md:pt-16 md:pb-3'
       : 'flex h-full min-h-0 flex-col bg-surface p-5 md:p-6'
     : 'flex h-full flex-col gap-4 rounded-lg border border-border bg-surface p-6'
 
@@ -652,7 +636,7 @@ export function PortfolioHistoryChart({
 
     const limit = getTimeframeLimit(timeframe)
     const points = !Number.isFinite(limit) || limit >= balanceData.length ? balanceData : balanceData.slice(-limit)
-    return points.map((point) => ({ date: point.date, value: point.value }))
+    return points.map((point) => ({ date: point.date, value: point.value, isLive: point.isLive }))
   }, [balanceData, timeframe])
 
   const filteredGrowthUsdData = useMemo<TChartPoint[]>(() => {
@@ -885,7 +869,8 @@ export function PortfolioHistoryChart({
       return null
     }
 
-    return filteredBalanceData.find((point) => point.date === date) ?? null
+    const point = filteredBalanceData.find((balancePoint) => balancePoint.date === date) ?? null
+    return point?.isLive ? null : point
   }
 
   const handleChartMouseMove = (state: TActiveChartState | undefined): void => {
@@ -923,7 +908,7 @@ export function PortfolioHistoryChart({
   if (activeIsLoading) {
     return (
       <section className={cl(sectionClassName, className)}>
-        <PortfolioHistoryChartLoading message={loadingMessage} serverProgress={loadingProgress} />
+        <PortfolioHistoryChartLoading serverProgress={loadingProgress} />
       </section>
     )
   }

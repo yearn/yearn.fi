@@ -22,24 +22,31 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCopy } from '@shared/icons/IconCopy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { cl, formatPercent } from '@shared/utils'
+import { cl, formatPercent, truncateHex } from '@shared/utils'
 import { copyToClipboard } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { type ReactElement, type ReactNode, useState } from 'react'
 
+export type TVaultAddressItem = {
+  address: string
+  label: string
+}
+
 type TInlineHeading = {
   label: string
-  value: ReactNode
+  value?: ReactNode
   icon?: ReactNode
   suffix?: ReactNode
 }
 
 function InlineHeading({ label, value, icon, suffix }: TInlineHeading): ReactElement {
+  const hasValue = value !== null && value !== undefined && value !== ''
+
   return (
     <div className={'flex flex-wrap items-center gap-2 text-sm'}>
       <span className={'sr-only'}>{`${label}:`}</span>
       <span className={'flex items-center gap-1 font-normal text-text-primary'}>
-        <span>{value}</span>
+        {hasValue ? <span>{value}</span> : null}
         {icon ? <span className={'flex size-4 items-center justify-center'}>{icon}</span> : null}
         {suffix ? <span className={'flex size-3 items-center justify-center'}>{suffix}</span> : null}
       </span>
@@ -49,23 +56,36 @@ function InlineHeading({ label, value, icon, suffix }: TInlineHeading): ReactEle
 
 type TExpandableInfoItem = {
   label: string
-  value: ReactNode
+  value?: ReactNode
   children: ReactNode
   className?: string
   icon?: ReactNode
+  isOpenByDefault?: boolean
 }
 
-function ExpandableInfoItem({ label, value, children, className, icon }: TExpandableInfoItem): ReactElement {
-  const [isOpen, setIsOpen] = useState(false)
+function ExpandableInfoItem({
+  label,
+  value,
+  children,
+  className,
+  icon,
+  isOpenByDefault
+}: TExpandableInfoItem): ReactElement {
+  const [isOpen, setIsOpen] = useState(Boolean(isOpenByDefault))
 
   return (
     <details
-      className={cl('py-1', className)}
+      className={className}
+      open={isOpen}
       onToggle={(event): void => {
         setIsOpen(event.currentTarget.open)
       }}
     >
-      <summary className={'cursor-pointer list-none [&::-webkit-details-marker]:hidden'}>
+      <summary
+        className={cl(
+          'w-full cursor-pointer list-none rounded-lg text-left transition-colors py-2 hover:bg-surface-secondary/80 [&::-webkit-details-marker]:hidden'
+        )}
+      >
         <InlineHeading
           label={label}
           value={value}
@@ -79,21 +99,93 @@ function ExpandableInfoItem({ label, value, children, className, icon }: TExpand
           }
         />
       </summary>
-      <div className={'mt-1 text-sm text-text-secondary'}>{children}</div>
+      <div className={'px-2 mb-2 text-sm text-text-secondary'}>{children}</div>
     </details>
+  )
+}
+
+function AddressLink({
+  address,
+  explorerBase,
+  label
+}: {
+  address: string
+  explorerBase: string
+  label: string
+}): ReactElement {
+  const explorerHref = `${explorerBase}/address/${address}`
+
+  return (
+    <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+      <p className={'w-full text-sm text-text-secondary md:w-auto md:pr-4'}>{label}</p>
+      <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+        {explorerBase ? (
+          <a
+            href={explorerHref}
+            target={'_blank'}
+            rel={'noopener noreferrer'}
+            className={
+              'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+            }
+            suppressHydrationWarning
+          >
+            {truncateHex(address, 4)}
+            <IconLinkOut className={'size-3'} />
+          </a>
+        ) : (
+          <span className={'md:text-sm text-text-primary'}>{truncateHex(address, 4)}</span>
+        )}
+        <button
+          type={'button'}
+          onClick={(): void => copyToClipboard(address)}
+          className={'text-text-secondary transition-colors hover:text-text-primary'}
+          aria-label={`Copy ${label.toLowerCase()}`}
+        >
+          <IconCopy className={'size-3'} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function VaultAddressesInfo({
+  chainID,
+  addresses
+}: {
+  chainID: number
+  addresses: TVaultAddressItem[]
+}): ReactElement | null {
+  const explorerBase = getNetwork(chainID).defaultBlockExplorer
+
+  if (addresses.length === 0) {
+    return null
+  }
+
+  return (
+    <ExpandableInfoItem label={'Addresses'} value={'Addresses'}>
+      <div className={'flex flex-col gap-2'}>
+        {addresses.map((item) => (
+          <AddressLink key={item.address} address={item.address} explorerBase={explorerBase} label={item.label} />
+        ))}
+      </div>
+    </ExpandableInfoItem>
   )
 }
 
 export function VaultAboutSection({
   currentVault,
   className,
+  vaultAddresses = [],
+  additionalFeaturesContent,
   showKindTag = true,
   showVaultAddress = false
 }: {
   currentVault: TKongVaultInput
   className?: string
+  vaultAddresses?: TVaultAddressItem[]
   showKindTag?: boolean
   showVaultAddress?: boolean
+  additionalFeaturesContent?: ReactNode
   showHiddenTag?: boolean
   isHidden?: boolean
 }): ReactElement {
@@ -206,7 +298,15 @@ export function VaultAboutSection({
           ) : null}
         </div>
 
-        <div className={'flex flex-col gap-1.5'}>
+        <div className={'flex flex-col gap-0.5'}>
+          {additionalFeaturesContent ? (
+            <ExpandableInfoItem label={'Additional Features'} value={'Additional Features'} isOpenByDefault>
+              <div className={'px-0'}>{additionalFeaturesContent}</div>
+            </ExpandableInfoItem>
+          ) : null}
+
+          <VaultAddressesInfo chainID={chainID} addresses={vaultAddresses} />
+
           <ExpandableInfoItem label={'Chain'} value={chainName} icon={chainIcon}>
             <p>
               {chainDescription}
@@ -241,11 +341,13 @@ export function VaultAboutSection({
           <ExpandableInfoItem label={'Fees'} value={feesSummary}>
             <div className={'space-y-3'}>
               <p>
-                {
-                  'Management fees are claimed from earned yield, pro-rated and up to the stated percentage of principal.'
-                }
+                <strong>{'Management fees'}</strong>
+                {' are claimed from earned yield, pro-rated and up to the stated percentage of principal.'}
               </p>
-              <p>{'Performance fees are claimed from earned yield, up to the stated percentage of yield earned.'}</p>
+              <p>
+                <strong>{'Performance fees'}</strong>
+                {' are claimed from earned yield, up to the stated percentage of yield earned.'}
+              </p>
             </div>
           </ExpandableInfoItem>
         </div>

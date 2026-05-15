@@ -78,6 +78,13 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
 }) => {
   const isStake = routeType === 'DIRECT_STAKE'
   const sharesLabel = willReceiveStakedShares ? 'Staked shares' : (vaultSharesLabel ?? 'Vault shares')
+  const formatSignedSlippage = (percentage: number) => {
+    if (percentage === 0) {
+      return '0.00%'
+    }
+
+    return `${percentage < 0 ? '+' : '-'}${Math.abs(percentage).toFixed(2)}%`
+  }
 
   // Determine action verb based on route type
   const getActionVerb = () => {
@@ -188,9 +195,9 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 <span className="inline-block h-4 w-28 bg-surface-secondary rounded animate-pulse" />
               ) : (
                 <>
-                  <span className="font-semibold">{`${expectedPriceImpactPercentage.toFixed(2)}%`}</span>
+                  <span className="font-semibold">{formatSignedSlippage(expectedPriceImpactPercentage)}</span>
                   <span className="font-normal">{' | '}</span>
-                  <span className="font-semibold">{`${priceImpactPercentage.toFixed(2)}%`}</span>
+                  <span className="font-semibold">{formatSignedSlippage(priceImpactPercentage)}</span>
                 </>
               )}
             </p>

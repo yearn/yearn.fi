@@ -5,9 +5,12 @@ import { Link } from 'react-router'
 
 type TEmptySectionCardProps = {
   title: string
-  description: string
+  description?: string
   ctaLabel: string
   ctaClassName?: string
+  secondaryCtaClassName?: string
+  secondaryCtaHref?: string
+  secondaryCtaLabel?: string
 } & ({ onClick: () => void; href?: never } | { href: string; onClick?: never })
 
 export function EmptySectionCard({
@@ -15,6 +18,9 @@ export function EmptySectionCard({
   description,
   ctaLabel,
   ctaClassName,
+  secondaryCtaClassName,
+  secondaryCtaHref,
+  secondaryCtaLabel,
   onClick,
   href
 }: TEmptySectionCardProps): ReactElement {
@@ -27,6 +33,26 @@ export function EmptySectionCard({
       {ctaLabel}
     </Button>
   )
+  const secondaryActionButton =
+    secondaryCtaHref && secondaryCtaLabel ? (
+      <Link
+        to={secondaryCtaHref}
+        className={
+          secondaryCtaClassName ??
+          'flex min-h-[44px] items-center justify-center rounded-lg border border-text-primary bg-surface px-6 text-sm font-semibold text-text-primary transition-colors hover:bg-surface-secondary'
+        }
+      >
+        {secondaryCtaLabel}
+      </Link>
+    ) : null
+  const action = secondaryActionButton ? (
+    <div className="flex items-center justify-center gap-2">
+      {actionButton}
+      {secondaryActionButton}
+    </div>
+  ) : (
+    actionButton
+  )
 
-  return <EmptyState title={title} description={description} action={actionButton} />
+  return <EmptyState title={title} description={description} action={action} />
 }

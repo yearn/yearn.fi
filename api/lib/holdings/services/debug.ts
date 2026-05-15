@@ -86,7 +86,7 @@ export function debugLog(scope: string, message: string, payload?: Record<string
   }
 
   const elapsedMs = Date.now() - context.startedAt
-  appendHoldingsProgressLog(context.progressId, { elapsedMs, scope, message, payload })
+  void appendHoldingsProgressLog(context.progressId, { elapsedMs, scope, message })
 
   if (!context.enabled) {
     return
@@ -97,7 +97,7 @@ export function debugLog(scope: string, message: string, payload?: Record<string
 
 export function reportHoldingsProgress(progress: number, message: string, detail?: string | null): void {
   const context = getHoldingsDebugContext()
-  updateHoldingsProgress(context?.progressId, { progress, message, detail: detail ?? null })
+  void updateHoldingsProgress(context?.progressId, { progress, message, detail: detail ?? null })
 }
 
 export function debugError(scope: string, message: string, error: unknown, payload?: Record<string, unknown>): void {

@@ -1,29 +1,56 @@
+import { createHash } from 'node:crypto'
+import { getPool, isDatabaseEnabled } from '../db/connection'
+
 export type HoldingsProgressStatus = 'running' | 'complete' | 'error'
+
+export type HoldingsProgressLog = {
+  elapsedMs: number
+  scope: string
+  message: string
+  payload?: Record<string, unknown>
+}
 
 export type HoldingsProgressRecord = {
   id: string
   route: string
-  address: string
+  addressHash: string
   status: HoldingsProgressStatus
   progress: number
   message: string
   detail: string | null
   startedAt: number
   updatedAt: number
-  logs: Array<{
-    elapsedMs: number
-    scope: string
-    message: string
-    payload?: Record<string, unknown>
-  }>
+  logs: HoldingsProgressLog[]
 }
 
-const PROGRESS_TTL_MS = 10 * 60 * 1000
+type HoldingsProgressRow = {
+  id: string
+  route: string
+  address_hash: string
+  status: HoldingsProgressStatus
+  progress: number
+  message: string
+  detail: string | null
+  started_at: Date | string
+  updated_at: Date | string
+  logs: unknown
+}
+
+const PROGRESS_TTL_INTERVAL = '10 minutes'
+const PERSISTED_PROGRESS_CLEANUP_INTERVAL_MS = 60 * 1000
 const MAX_PROGRESS_LOGS = 20
-const progressRecords = new Map<string, HoldingsProgressRecord>()
+const persistedProgressCleanupState = { lastCleanupAt: 0 }
 
 function isValidProgressId(id: string | null | undefined): id is string {
   return Boolean(id && /^[a-zA-Z0-9:_-]{1,160}$/.test(id))
+}
+
+function normalizeUserAddress(userAddress: string): string {
+  return userAddress.toLowerCase()
+}
+
+function getUserAddressCacheKey(userAddress: string): string {
+  return createHash('sha256').update(normalizeUserAddress(userAddress)).digest('hex')
 }
 
 function clampProgress(progress: number): number {
@@ -33,16 +60,147 @@ function clampProgress(progress: number): number {
   return Math.max(0, Math.min(100, Math.round(progress)))
 }
 
-function cleanupProgressRecords(): void {
+async function cleanupPersistedProgressRecords(): Promise<void> {
   const now = Date.now()
-  progressRecords.forEach((record, id) => {
-    if (now - record.updatedAt > PROGRESS_TTL_MS) {
-      progressRecords.delete(id)
-    }
-  })
+  if (now - persistedProgressCleanupState.lastCleanupAt < PERSISTED_PROGRESS_CLEANUP_INTERVAL_MS) {
+    return
+  }
+  persistedProgressCleanupState.lastCleanupAt = now
+
+  if (!isDatabaseEnabled()) {
+    return
+  }
+
+  const pool = await getPool()
+  if (!pool) {
+    return
+  }
+
+  try {
+    await pool.query(`DELETE FROM holdings_progress WHERE updated_at < NOW() - INTERVAL '${PROGRESS_TTL_INTERVAL}'`)
+  } catch (error) {
+    console.error('[Holdings Progress] Failed to delete stale progress rows:', error)
+  }
 }
 
-export function startHoldingsProgress({
+function parseTimestamp(value: Date | string): number {
+  return value instanceof Date ? value.getTime() : new Date(value).getTime()
+}
+
+function parseLogs(value: unknown): HoldingsProgressLog[] {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is HoldingsProgressLog => {
+      const candidate = entry as Partial<HoldingsProgressLog>
+      return (
+        typeof candidate.elapsedMs === 'number' &&
+        typeof candidate.scope === 'string' &&
+        typeof candidate.message === 'string'
+      )
+    })
+  }
+
+  if (typeof value === 'string') {
+    try {
+      return parseLogs(JSON.parse(value))
+    } catch {
+      return []
+    }
+  }
+
+  return []
+}
+
+function rowToProgressRecord(row: HoldingsProgressRow): HoldingsProgressRecord {
+  return {
+    id: row.id,
+    route: row.route,
+    addressHash: row.address_hash,
+    status: row.status,
+    progress: clampProgress(Number(row.progress)),
+    message: row.message,
+    detail: row.detail ?? null,
+    startedAt: parseTimestamp(row.started_at),
+    updatedAt: parseTimestamp(row.updated_at),
+    logs: parseLogs(row.logs).slice(-MAX_PROGRESS_LOGS)
+  }
+}
+
+async function persistProgressRecord(record: HoldingsProgressRecord): Promise<boolean> {
+  if (!isDatabaseEnabled()) {
+    return false
+  }
+
+  const pool = await getPool()
+  if (!pool) {
+    return false
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO holdings_progress (
+         id, route, address_hash, status, progress, message, detail, started_at, updated_at, logs
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+       ON CONFLICT (id)
+       DO UPDATE SET
+         route = EXCLUDED.route,
+         address_hash = EXCLUDED.address_hash,
+         status = EXCLUDED.status,
+         progress = CASE
+           WHEN EXCLUDED.status = 'complete' THEN 100
+           ELSE GREATEST(holdings_progress.progress, EXCLUDED.progress)
+         END,
+         message = EXCLUDED.message,
+         detail = EXCLUDED.detail,
+         updated_at = EXCLUDED.updated_at,
+         logs = EXCLUDED.logs
+       WHERE holdings_progress.updated_at <= EXCLUDED.updated_at`,
+      [
+        record.id,
+        record.route,
+        record.addressHash,
+        record.status,
+        record.progress,
+        record.message,
+        record.detail,
+        new Date(record.startedAt),
+        new Date(record.updatedAt),
+        JSON.stringify(record.logs)
+      ]
+    )
+    return true
+  } catch (error) {
+    console.error('[Holdings Progress] Failed to save progress row:', error)
+    return false
+  }
+}
+
+async function getPersistedProgressRecord(id: string): Promise<HoldingsProgressRecord | null> {
+  if (!isDatabaseEnabled()) {
+    return null
+  }
+
+  const pool = await getPool()
+  if (!pool) {
+    return null
+  }
+
+  try {
+    const result = await pool.query<HoldingsProgressRow>(
+      `SELECT id, route, address_hash, status, progress, message, detail, started_at, updated_at, logs
+       FROM holdings_progress
+       WHERE id = $1 AND updated_at >= NOW() - INTERVAL '${PROGRESS_TTL_INTERVAL}'`,
+      [id]
+    )
+    const row = result.rows[0]
+    return row ? rowToProgressRecord(row) : null
+  } catch (error) {
+    console.error('[Holdings Progress] Failed to get progress row:', error)
+    return null
+  }
+}
+
+export async function startHoldingsProgress({
   id,
   route,
   address,
@@ -52,18 +210,18 @@ export function startHoldingsProgress({
   route: string
   address: string
   message: string
-}): string | null {
-  cleanupProgressRecords()
+}): Promise<string | null> {
+  void cleanupPersistedProgressRecords()
 
-  if (!isValidProgressId(id)) {
+  if (!isValidProgressId(id) || !isDatabaseEnabled()) {
     return null
   }
 
   const now = Date.now()
-  progressRecords.set(id, {
+  const record: HoldingsProgressRecord = {
     id,
     route,
-    address: address.toLowerCase(),
+    addressHash: getUserAddressCacheKey(address),
     status: 'running',
     progress: 8,
     message,
@@ -71,12 +229,11 @@ export function startHoldingsProgress({
     startedAt: now,
     updatedAt: now,
     logs: []
-  })
-
-  return id
+  }
+  return (await persistProgressRecord(record)) ? id : null
 }
 
-export function updateHoldingsProgress(
+export async function updateHoldingsProgress(
   id: string | null | undefined,
   update: {
     progress?: number
@@ -84,53 +241,55 @@ export function updateHoldingsProgress(
     detail?: string | null
     status?: HoldingsProgressStatus
   }
-): void {
+): Promise<void> {
   if (!isValidProgressId(id)) {
     return
   }
 
-  const record = progressRecords.get(id)
+  const record = await getPersistedProgressRecord(id)
   if (!record) {
     return
   }
 
   const nextProgress = update.progress === undefined ? record.progress : clampProgress(update.progress)
-  progressRecords.set(id, {
+  const nextRecord: HoldingsProgressRecord = {
     ...record,
     status: update.status ?? record.status,
     progress: update.status === 'complete' ? 100 : Math.max(record.progress, nextProgress),
     message: update.message ?? record.message,
     detail: update.detail === undefined ? record.detail : update.detail,
-    updatedAt: Date.now()
-  })
+    updatedAt: Math.max(Date.now(), record.updatedAt + 1)
+  }
+  await persistProgressRecord(nextRecord)
 }
 
-export function appendHoldingsProgressLog(
+export async function appendHoldingsProgressLog(
   id: string | null | undefined,
-  log: { elapsedMs: number; scope: string; message: string; payload?: Record<string, unknown> }
-): void {
+  log: HoldingsProgressLog
+): Promise<void> {
   if (!isValidProgressId(id)) {
     return
   }
 
-  const record = progressRecords.get(id)
+  const record = await getPersistedProgressRecord(id)
   if (!record) {
     return
   }
 
-  progressRecords.set(id, {
+  const nextRecord: HoldingsProgressRecord = {
     ...record,
     logs: [...record.logs, log].slice(-MAX_PROGRESS_LOGS),
-    updatedAt: Date.now()
-  })
+    updatedAt: Math.max(Date.now(), record.updatedAt + 1)
+  }
+  await persistProgressRecord(nextRecord)
 }
 
-export function getHoldingsProgress(id: string | null | undefined): HoldingsProgressRecord | null {
-  cleanupProgressRecords()
+export async function getHoldingsProgress(id: string | null | undefined): Promise<HoldingsProgressRecord | null> {
+  void cleanupPersistedProgressRecords()
 
   if (!isValidProgressId(id)) {
     return null
   }
 
-  return progressRecords.get(id) ?? null
+  return getPersistedProgressRecord(id)
 }

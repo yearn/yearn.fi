@@ -102,7 +102,7 @@ type TPortfolioHoldingsProps = Pick<
   | 'vaultFlags'
 >
 
-type TPortfolioSuggestedProps = Pick<TPortfolioModel, 'suggestedRows'>
+type TPortfolioSuggestedProps = Pick<TPortfolioModel, 'hasHoldings' | 'isActive' | 'suggestedRows'>
 
 type TPortfolioActivityProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'>
 
@@ -344,7 +344,7 @@ function PortfolioHeaderSection({
       header: <MetricHeader label="Total Balance" tooltip="Total USD value of all your vault deposits." />,
       value: (
         <span className={METRIC_VALUE_CLASS}>
-          {isSearchingBalances ? metricSpinner : currencyFormatter.format(totalPortfolioValue)}
+          {isSearchingBalances || isHoldingsLoading ? metricSpinner : currencyFormatter.format(totalPortfolioValue)}
         </span>
       )
     },
@@ -380,10 +380,21 @@ function PortfolioHeaderSection({
       value: <span className={METRIC_VALUE_CLASS}>{renderSignedPercentMetric(annualizedProtocolReturnPct)}</span>
     }
   ]
+  const mobileMetrics = [metrics[0], metrics[2], metrics[1], metrics[4]]
 
   return (
     <section className="h-full bg-surface">
-      <div className="grid h-full grid-rows-5 gap-px bg-border">
+      <div className="grid grid-cols-2 gap-px bg-border md:hidden">
+        {mobileMetrics.map((item) => (
+          <div key={item.key} className={metricCardClassName}>
+            <div className="flex items-center justify-between">{item.header}</div>
+            <div className="pt-0.5">{item.value}</div>
+            {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
+            {item.footnote ? <div className="pt-1.5">{item.footnote}</div> : null}
+          </div>
+        ))}
+      </div>
+      <div className="hidden h-full grid-rows-5 gap-px bg-border md:grid">
         {metrics.map((item) => (
           <div key={item.key} className={metricCardClassName}>
             <div className="flex items-center justify-between">{item.header}</div>
@@ -1148,7 +1159,7 @@ function PortfolioHoldingsSection({
         <EmptySectionCard
           title="No vault positions yet"
           description="Deposit into a Yearn vault to see it here."
-          ctaLabel="Browse vaults"
+          ctaLabel="Explore Vaults"
           ctaClassName="yearn--button--nextgen min-h-[44px] px-6"
           href="/vaults"
         />
@@ -1179,12 +1190,15 @@ function PortfolioHoldingsSection({
   return (
     <section className="flex flex-col gap-2">
       {!isActive ? (
-        <EmptySectionCard
-          title="Connect a wallet to view your vaults"
-          description="See all your Yearn deposits in one place."
-          ctaLabel="Connect wallet"
-          onClick={openLoginModal}
-        />
+        <div className="flex flex-col gap-2">
+          <EmptySectionCard
+            title="Connect a wallet to view your portfolio."
+            ctaLabel="Connect wallet"
+            onClick={openLoginModal}
+            secondaryCtaLabel="Explore Vaults"
+            secondaryCtaHref="/vaults"
+          />
+        </div>
       ) : (
         <div className="rounded-lg">
           <div className="flex flex-col">
@@ -1233,7 +1247,7 @@ function PortfolioHoldingsSection({
                 ]}
               />
             </div>
-            <div className="overflow-hidden rounded-b-lg border-x border-b border-border">
+            <div className="overflow-hidden rounded-lg md:rounded-t-none border-x border-b border-border">
               {renderHoldingsContent()}
             </div>
           </div>
@@ -1243,8 +1257,21 @@ function PortfolioHoldingsSection({
   )
 }
 
-function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps): ReactElement | null {
-  if (suggestedRows.length === 0) {
+function PortfolioPositionsLoadingState(): ReactElement {
+  return (
+    <section className="flex min-h-[420px] flex-col items-center justify-center gap-3 rounded-lg border border-border bg-surface px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16">
+      <YearnLogoSpinner className="size-12" logoClassName="size-8" />
+      <span>{'Searching for Yearn balances...'}</span>
+    </section>
+  )
+}
+
+function PortfolioSuggestedSection({
+  hasHoldings,
+  isActive,
+  suggestedRows
+}: TPortfolioSuggestedProps): ReactElement | null {
+  if (!isActive || suggestedRows.length === 0) {
     return null
   }
 
@@ -1261,7 +1288,9 @@ function PortfolioSuggestedSection({ suggestedRows }: TPortfolioSuggestedProps):
         side="top"
         tooltip={<div className={headingTooltipClassName}>{tooltipText}</div>}
       >
-        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">{'Other vaults you might like:'}</h2>
+        <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">
+          {hasHoldings ? 'Other vaults you might like:' : 'Vaults you might like:'}
+        </h2>
       </Tooltip>
       <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         {suggestedRows.map((row) => {
@@ -1321,7 +1350,7 @@ function PortfolioPage(): ReactElement {
     }
     return 'positions'
   }, [searchParams])
-  const shouldLoadPositionsHistory = activeTab === 'positions' && model.isActive
+  const shouldLoadPositionsHistory = activeTab === 'positions' && model.isActive && !model.isHoldingsLoading
   const {
     data: historyData,
     denomination: resolvedHistoryDenomination,
@@ -1329,7 +1358,12 @@ function PortfolioPage(): ReactElement {
     progress: historyProgress,
     error: historyError,
     isEmpty: historyEmpty
-  } = usePortfolioHistory(historyDenomination, historyFetchTimeframe, shouldLoadPositionsHistory)
+  } = usePortfolioHistory(
+    historyDenomination,
+    historyFetchTimeframe,
+    shouldLoadPositionsHistory,
+    model.liveBalanceSnapshot
+  )
   const {
     data: protocolReturnHistoryData,
     summary: protocolReturnHistorySummary,
@@ -1347,8 +1381,6 @@ function PortfolioPage(): ReactElement {
   const isEthGrowthAvailable = Boolean(protocolReturnHistoryData?.some((point) => point.growthWeightEth !== null))
   const hasNoYearnPositions = model.isActive && !model.isHoldingsLoading && !model.hasHoldings
   const displayedHistoryChartTab = hasNoYearnPositions ? 'balance' : historyChartTab
-  const historyChartLoadingMessage =
-    model.hasHoldings && !model.isHoldingsLoading ? 'fetching historical user data' : 'Searching for Yearn balances...'
   const historyChartProgress = displayedHistoryChartTab === 'balance' ? historyProgress : protocolReturnHistoryProgress
   const historyChartElement = (
     <PortfolioHistoryChart
@@ -1363,15 +1395,14 @@ function PortfolioPage(): ReactElement {
       onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
       vaultGrowthMode={historyVaultGrowthMode}
       onVaultGrowthModeChange={setHistoryVaultGrowthMode}
-      balanceIsLoading={historyLoading}
+      balanceIsLoading={model.isHoldingsLoading || historyLoading}
       balanceIsEmpty={historyEmpty}
       balanceError={historyError}
-      protocolReturnIsLoading={protocolReturnHistoryLoading}
+      protocolReturnIsLoading={model.isHoldingsLoading || protocolReturnHistoryLoading}
       protocolReturnIsEmpty={protocolReturnHistoryEmpty}
       protocolReturnError={protocolReturnHistoryError}
       embedded
       reserveControlSpace={!hasNoYearnPositions}
-      loadingMessage={historyChartLoadingMessage}
       loadingProgress={historyChartProgress}
       className={
         hasNoYearnPositions ? 'h-full min-h-0 bg-linear-to-b from-surface to-surface-secondary/20' : 'min-h-0 flex-1'
@@ -1445,10 +1476,14 @@ function PortfolioPage(): ReactElement {
   function renderTabContent(): ReactElement | null {
     switch (activeTab) {
       case 'positions':
+        if (model.isActive && model.isHoldingsLoading) {
+          return <PortfolioPositionsLoadingState />
+        }
+
         return (
           <div className="flex flex-col gap-6 sm:gap-4">
             {model.isActive ? (
-              <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
+              <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
                 <div className="grid items-stretch min-[920px]:grid-cols-[minmax(640px,1fr)_minmax(200px,340px)]">
                   {hasNoYearnPositions ? (
                     historyChartElement
@@ -1475,7 +1510,7 @@ function PortfolioPage(): ReactElement {
                       isHoldingsLoading={model.isHoldingsLoading}
                       isSearchingBalances={model.isSearchingBalances}
                       hasKatanaHoldings={model.hasKatanaHoldings}
-                      isProtocolReturnLoading={protocolReturnHistoryLoading}
+                      isProtocolReturnLoading={model.isHoldingsLoading || protocolReturnHistoryLoading}
                       annualizedProtocolReturnPct={annualizedProtocolReturnPct}
                       totalPortfolioValue={model.totalPortfolioValue}
                     />
@@ -1495,7 +1530,11 @@ function PortfolioPage(): ReactElement {
               setSortDirection={model.setSortDirection}
               vaultFlags={model.vaultFlags}
             />
-            <PortfolioSuggestedSection suggestedRows={model.suggestedRows} />
+            <PortfolioSuggestedSection
+              hasHoldings={model.hasHoldings}
+              isActive={model.isActive}
+              suggestedRows={model.suggestedRows}
+            />
           </div>
         )
       case 'activity':

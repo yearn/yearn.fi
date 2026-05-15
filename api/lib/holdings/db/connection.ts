@@ -8,7 +8,11 @@ interface QueryResult<T> {
 }
 
 interface DatabasePool {
-  query: <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<QueryResult<T>>
+  query: <T = Record<string, unknown>>(
+    text: string,
+    params?: unknown[],
+    options?: { disableOnFailure?: boolean }
+  ) => Promise<QueryResult<T>>
   end: () => Promise<void>
 }
 
@@ -37,6 +41,11 @@ const RETRYABLE_CONNECTION_ERROR_CODES = new Set([
   '57P02',
   '57P03',
   '53300'
+])
+const DISABLING_CONFIGURATION_ERROR_CODES = new Set([
+  '28P01', // invalid_password
+  '28000', // invalid_authorization_specification
+  '3D000' // invalid_catalog_name
 ])
 
 function normalizeUserAddress(userAddress: string): string {
@@ -101,11 +110,20 @@ export function shouldDisableDatabaseOnQueryError(error: unknown): boolean {
     return true
   }
 
+  if (code !== null && DISABLING_CONFIGURATION_ERROR_CODES.has(code)) {
+    return true
+  }
+
   if (status !== null && status >= 500) {
     return true
   }
 
-  return message.includes('timed out') || message.includes('timeout') || message.includes('failed to fetch')
+  return (
+    message.includes('timed out') ||
+    message.includes('timeout') ||
+    message.includes('failed to fetch') ||
+    message.includes('password authentication failed')
+  )
 }
 
 async function createPool(): Promise<DatabasePool | null> {
@@ -118,12 +136,12 @@ async function createPool(): Promise<DatabasePool | null> {
     const neonPool = new Pool({ connectionString: holdingsConfig.databaseUrl })
 
     return {
-      query: async <T>(text: string, params?: unknown[]) => {
+      query: async <T>(text: string, params?: unknown[], options?: { disableOnFailure?: boolean }) => {
         try {
           const result = await withTimeout(neonPool.query(text, params), DB_QUERY_TIMEOUT_MS, 'Holdings DB query')
           return { rows: result.rows as T[], rowCount: result.rowCount ?? 0 }
         } catch (error) {
-          if (shouldDisableDatabaseOnQueryError(error)) {
+          if (options?.disableOnFailure !== false && shouldDisableDatabaseOnQueryError(error)) {
             disableDatabase('query failure', error)
           }
           throw error
@@ -184,8 +202,27 @@ export async function initializeSchema(): Promise<void> {
       PRIMARY KEY (vault_address, chain_id)
     );
 
+    CREATE TABLE IF NOT EXISTS holdings_progress (
+      id VARCHAR(160) PRIMARY KEY,
+      route VARCHAR(64) NOT NULL,
+      address_hash VARCHAR(64) NOT NULL,
+      status VARCHAR(16) NOT NULL,
+      progress INTEGER NOT NULL,
+      message TEXT NOT NULL,
+      detail TEXT,
+      started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      logs JSONB NOT NULL DEFAULT '[]'::jsonb
+    );
+
+    ALTER TABLE holdings_progress ADD COLUMN IF NOT EXISTS address_hash VARCHAR(64);
+    DELETE FROM holdings_progress WHERE address_hash IS NULL;
+    ALTER TABLE holdings_progress ALTER COLUMN address_hash SET NOT NULL;
+    ALTER TABLE holdings_progress DROP COLUMN IF EXISTS address;
+
     CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
     CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
+    CREATE INDEX IF NOT EXISTS idx_holdings_progress_updated_at ON holdings_progress(updated_at);
   `
 
   try {

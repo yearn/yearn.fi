@@ -5,22 +5,25 @@ import type {
   TPortfolioHistoryChartData,
   TPortfolioHistoryDenomination,
   TPortfolioHistorySimpleResponse,
-  TPortfolioHistoryTimeframe
+  TPortfolioHistoryTimeframe,
+  TPortfolioLiveBalanceSnapshot
 } from '../types/api'
 import { portfolioHistorySimpleResponseSchema } from '../types/api'
+import { upsertLivePortfolioBalancePoint } from './usePortfolioHistory.helpers'
 import { createPortfolioHistoryProgressId, usePortfolioHistoryProgress } from './usePortfolioHistoryProgress'
+
+const PORTFOLIO_HISTORY_CACHE_DURATION = 60 * 60 * 1000
 
 export function usePortfolioHistory(
   denomination: TPortfolioHistoryDenomination = 'usd',
   timeframe: TPortfolioHistoryTimeframe = '1y',
-  enabled = true
+  enabled = true,
+  liveSnapshot: TPortfolioLiveBalanceSnapshot | null = null
 ) {
   const { address } = useWeb3()
   const progressId = useMemo(
     () =>
-      address && enabled
-        ? createPortfolioHistoryProgressId(['portfolio-history', address, denomination, timeframe])
-        : null,
+      address && enabled ? createPortfolioHistoryProgressId(['portfolio-history', denomination, timeframe]) : null,
     [address, denomination, enabled, timeframe]
   )
 
@@ -30,6 +33,11 @@ export function usePortfolioHistory(
     }
     return `/api/holdings/history?address=${address}&denomination=${denomination}&timeframe=${timeframe}&fetchType=parallel&progressId=${encodeURIComponent(progressId)}`
   }, [address, denomination, enabled, progressId, timeframe])
+  const cacheKey = useMemo(
+    () =>
+      address && enabled ? ['fetch', 'portfolio-history', address.toLowerCase(), denomination, timeframe] : undefined,
+    [address, denomination, enabled, timeframe]
+  )
 
   const {
     data: rawData,
@@ -40,7 +48,9 @@ export function usePortfolioHistory(
     endpoint,
     schema: portfolioHistorySimpleResponseSchema,
     config: {
-      cacheDuration: 5 * 60 * 1000,
+      cacheKey,
+      cacheDuration: PORTFOLIO_HISTORY_CACHE_DURATION,
+      gcTime: PORTFOLIO_HISTORY_CACHE_DURATION,
       keepPreviousData: false,
       timeout: 2 * 60 * 1000 // 2 minutes for large holdings requests
     }
@@ -50,13 +60,16 @@ export function usePortfolioHistory(
     if (!rawData?.dataPoints) {
       return null
     }
-    return rawData.dataPoints.map((point) => ({
+
+    const historicalData = rawData.dataPoints.map((point) => ({
       date: point.date,
       value: point.value
     }))
-  }, [rawData])
+    return upsertLivePortfolioBalancePoint({ data: historicalData, denomination, liveSnapshot })
+  }, [denomination, liveSnapshot, rawData])
 
-  const isLoadingState = isLoading || isFetching
+  const hasData = Boolean(rawData?.dataPoints)
+  const isLoadingState = !hasData && (isLoading || isFetching)
   const errorStatus =
     (error as { response?: { status?: number }; status?: number } | null)?.response?.status ??
     (error as { status?: number } | null)?.status

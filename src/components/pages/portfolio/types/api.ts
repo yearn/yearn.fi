@@ -80,7 +80,7 @@ export const portfolioProtocolReturnHistoryResponseSchema = z.object({
 export const portfolioHistoryProgressResponseSchema = z.object({
   id: z.string(),
   route: z.string(),
-  address: z.string(),
+  addressHash: z.string(),
   status: z.enum(['running', 'complete', 'error']),
   progress: z.number(),
   message: z.string(),
@@ -162,7 +162,19 @@ export type TPortfolioHistoryTimeframe = z.infer<typeof portfolioHistorySimpleRe
 export type TPortfolioHistoryChartData = Array<{
   date: string
   value: number
+  isLive?: boolean
 }>
+export type TPortfolioLiveBalanceSnapshot = {
+  date: string
+  totalUsd: number
+  totalEth: number | null
+  vaults: Array<{
+    key: string
+    chainId: number
+    vaultAddress: string
+    usdValue: number
+  }>
+}
 export type TPortfolioProtocolReturnHistoryChartData = Array<{
   date: string
   growthWeightUsd: number

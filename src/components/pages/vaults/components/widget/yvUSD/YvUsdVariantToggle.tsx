@@ -11,8 +11,8 @@ type Props = {
 }
 
 const VARIANT_OPTIONS: { id: TYvUsdVariant; label: string; icon: ReactElement }[] = [
-  { id: 'unlocked', label: 'Unlocked', icon: <IconLockOpen className="size-3" /> },
-  { id: 'locked', label: 'Locked', icon: <IconLock className="size-3" /> }
+  { id: 'locked', label: 'Locked', icon: <IconLock className="size-3" /> },
+  { id: 'unlocked', label: 'Unlocked', icon: <IconLockOpen className="size-3" /> }
 ]
 
 export function YvUsdVariantToggle({ activeVariant, onChange }: Props): ReactElement {

@@ -1,16 +1,26 @@
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
+import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
 import { SuggestedVaultCard } from './SuggestedVaultCard'
 
-vi.mock('@vaults/hooks/useVaultApyData', () => ({
+vi.mock('@pages/vaults/hooks/useVaultApyData', () => ({
   useVaultApyData: vi.fn()
 }))
 
+vi.mock('@pages/vaults/hooks/useYvUsdVaults', () => ({
+  useYvUsdVaults: () => ({
+    metrics: {
+      locked: { apy: 0.09 }
+    }
+  })
+}))
+
 const baseVault = {
+  chainId: 1,
   chainID: 1,
   address: '0x0000000000000000000000000000000000000001',
   name: 'A Very Long Vault Name That Should Truncate In The Card Header',
@@ -101,5 +111,38 @@ describe('SuggestedVaultCard', () => {
 
     const html = renderCard(baseVault)
     expect(html).toContain('class="truncate')
+  })
+
+  it('uses yvUSD locked presentation for yvUSD suggestions', () => {
+    vi.mocked(useVaultApyData).mockReturnValue({
+      mode: 'spot',
+      baseForwardApr: 0.1,
+      netApr: 0,
+      rewardsAprSum: 0,
+      isBoosted: false,
+      hasPendleArbRewards: false,
+      hasKelp: false,
+      hasKelpNEngenlayer: false,
+      katanaExtras: undefined,
+      katanaThirtyDayApr: undefined,
+      katanaEstApr: undefined
+    })
+
+    const html = renderCard({
+      ...baseVault,
+      address: YVUSD_UNLOCKED_ADDRESS,
+      name: 'yvUSD',
+      token: {
+        address: YVUSD_UNLOCKED_ADDRESS,
+        symbol: 'yvUSD'
+      }
+    } as unknown as TKongVaultInput)
+
+    expect(html).toContain('yvUSD (14 day lock)')
+    expect(html).toContain('Locked APY')
+    expect(html).toContain('9.00%')
+    expect(html).toContain('/vaults/1/')
+    expect(html).toContain(YVUSD_LOCKED_ADDRESS)
+    expect(html).toContain('yvusd-128.png')
   })
 })

@@ -1,6 +1,7 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
+import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconChevron } from '@shared/icons/IconChevron'
@@ -119,8 +120,10 @@ export function MobileNavMenu({
   })
   const [isWalletDrawerOpen, setIsWalletDrawerOpen] = useState(false)
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false)
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
   const { isActive, openLoginModal, onDesactivate, address, ens, clusters } = useWeb3()
   const { cumulatedValueInV2Vaults, cumulatedValueInV3Vaults, isLoading: isWalletLoading } = useWallet()
+  const { shouldHideDust, onSwitchHideDust } = useAppSettings()
   const themePreference = useThemePreference()
   const navigate = useNavigate()
 
@@ -132,6 +135,7 @@ export function MobileNavMenu({
         community: false,
         tools: false
       })
+      setIsAdvancedOpen(false)
     }
   }, [isOpen])
 
@@ -670,10 +674,46 @@ export function MobileNavMenu({
             </div>
           )}
 
-          <button className={getVariantButtonClass('advanced')}>
+          <button
+            className={getVariantButtonClass('advanced')}
+            onClick={() => setIsAdvancedOpen((previous) => !previous)}
+            aria-expanded={isAdvancedOpen}
+            aria-controls={'mobile-nav-settings-advanced'}
+          >
             <span>{'Advanced'}</span>
-            <IconChevron className={'size-4 -rotate-90'} />
+            <IconChevron className={cl('size-4 transition-transform', isAdvancedOpen ? 'rotate-0' : '-rotate-90')} />
           </button>
+          {isAdvancedOpen && (
+            <div
+              id={'mobile-nav-settings-advanced'}
+              className={cl(
+                'mt-2 rounded-lg border p-2',
+                isDarkTheme ? 'border-border bg-surface-secondary' : 'border-neutral-200 bg-neutral-50'
+              )}
+            >
+              <div className={'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium'}>
+                <span className={'text-text-primary'}>{'Show dust'}</span>
+                <button
+                  type={'button'}
+                  role={'switch'}
+                  aria-checked={!shouldHideDust}
+                  aria-label={!shouldHideDust ? 'Hide dust positions' : 'Show dust positions'}
+                  onClick={onSwitchHideDust}
+                  className={cl(
+                    'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors',
+                    !shouldHideDust ? 'border-primary bg-primary/20' : 'border-border bg-surface'
+                  )}
+                >
+                  <span
+                    className={cl(
+                      'block size-3 rounded-full transition-transform',
+                      !shouldHideDust ? 'translate-x-[18px] bg-primary' : 'translate-x-[3px] bg-text-secondary'
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </BottomDrawer>
     </>

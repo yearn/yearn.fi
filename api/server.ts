@@ -8,7 +8,6 @@ import type {
 import { ENSO_BALANCES_CACHE_CONTROL } from './enso/cache'
 import {
   clearUserCache,
-  deleteStaleCache,
   getHistoricalHoldingsChart,
   getHoldingsActivity,
   getHoldingsBreakdown,
@@ -139,9 +138,9 @@ function handleCorsPreFlight(): Response {
   })
 }
 
-function handleHoldingsProgress(req: Request): Response {
+async function handleHoldingsProgress(req: Request): Promise<Response> {
   const url = new URL(req.url)
-  const progress = getHoldingsProgress(url.searchParams.get('id'))
+  const progress = await getHoldingsProgress(url.searchParams.get('id'))
 
   if (!progress) {
     return Response.json({ error: 'Progress not found', status: 404 }, { status: 404 })
@@ -582,11 +581,16 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const activeProgressId = startHoldingsProgress({
+    const activeProgressId = await startHoldingsProgress({
       id: progressId,
       route: 'history',
       address,
       message: 'Fetching historical user data'
+    })
+    await updateHoldingsProgress(activeProgressId, {
+      progress: 8,
+      message: 'Fetching historical user data',
+      detail: null
     })
 
     if (refresh) {
@@ -642,7 +646,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
 
     const hasHoldings = holdings.dataPoints.some((dp) => dp.value > 0)
     if (!hasHoldings) {
-      updateHoldingsProgress(activeProgressId, {
+      await updateHoldingsProgress(activeProgressId, {
         status: 'complete',
         progress: 100,
         message: 'No historical holdings found',
@@ -651,7 +655,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
 
-    updateHoldingsProgress(activeProgressId, {
+    await updateHoldingsProgress(activeProgressId, {
       status: 'complete',
       progress: 100,
       message: 'Historical user data ready',
@@ -676,7 +680,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       }
     )
   } catch (error) {
-    updateHoldingsProgress(progressId, {
+    await updateHoldingsProgress(progressId, {
       status: 'error',
       message: 'Failed to fetch historical user data',
       detail: error instanceof Error ? error.message : String(error)
@@ -841,11 +845,16 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const activeProgressId = startHoldingsProgress({
+    const activeProgressId = await startHoldingsProgress({
       id: progressId,
       route: 'pnl-simple-history',
       address,
       message: 'Fetching historical user data'
+    })
+    await updateHoldingsProgress(activeProgressId, {
+      progress: 8,
+      message: 'Fetching historical user data',
+      detail: null
     })
 
     const history = await withHoldingsDebugContext(
@@ -900,7 +909,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
     )
 
     if (history.summary.totalVaults === 0) {
-      updateHoldingsProgress(activeProgressId, {
+      await updateHoldingsProgress(activeProgressId, {
         status: 'complete',
         progress: 100,
         message: 'No historical holdings found',
@@ -909,7 +918,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
       return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
 
-    updateHoldingsProgress(activeProgressId, {
+    await updateHoldingsProgress(activeProgressId, {
       status: 'complete',
       progress: 100,
       message: 'Historical user data ready',
@@ -922,7 +931,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
       }
     })
   } catch (error) {
-    updateHoldingsProgress(progressId, {
+    await updateHoldingsProgress(progressId, {
       status: 'error',
       message: 'Failed to fetch historical user data',
       detail: error instanceof Error ? error.message : String(error)
@@ -934,38 +943,6 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
       { error: 'Failed to fetch holdings protocol return history', message, stack, status: 502 },
       { status: 502 }
     )
-  }
-}
-
-async function handleHoldingsChores(req: Request): Promise<Response> {
-  if (req.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 })
-  }
-
-  const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-
-  if (!cronSecret) {
-    console.error('[Chores] CRON_SECRET not configured')
-    return Response.json({ error: 'Server misconfigured' }, { status: 500 })
-  }
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  try {
-    await initializeSchema()
-    const deletedCount = await deleteStaleCache()
-
-    return Response.json({
-      success: true,
-      deletedRows: deletedCount,
-      timestamp: new Date().toISOString()
-    })
-  } catch (error) {
-    console.error('[Chores] Failed to run cleanup:', error)
-    return Response.json({ error: 'Cleanup failed' }, { status: 500 })
   }
 }
 
@@ -1071,7 +1048,7 @@ async function main() {
         }
 
         if (url.pathname === '/api/holdings/progress') {
-          return withCors(handleHoldingsProgress(req))
+          return withCors(await handleHoldingsProgress(req))
         }
 
         if (url.pathname === '/api/holdings/activity') {
@@ -1087,10 +1064,6 @@ async function main() {
           url.pathname === '/api/holdings/pnl/simple-history'
         ) {
           return withCors(await handleHoldingsProtocolReturnHistory(req))
-        }
-
-        if (url.pathname === '/api/holdings/chores') {
-          return withCors(await handleHoldingsChores(req))
         }
 
         if (url.pathname === '/api/admin/invalidate-cache') {
@@ -1151,15 +1124,15 @@ async function main() {
     port: API_PORT,
     idleTimeout: 120
   })
+
   console.log(`🚀 API server running on http://localhost:${API_PORT}`)
-  console.log(`📊 Holdings History API: http://localhost:${API_PORT}/api/holdings/history?address=0x...`)
-  console.log(`📡 Holdings Progress API: http://localhost:${API_PORT}/api/holdings/progress?id=...`)
+  console.log(`📊 Holdings API: http://localhost:${API_PORT}/api/holdings/history?address=0x...`)
   console.log(`🗂️ Holdings Activity API: http://localhost:${API_PORT}/api/holdings/activity?address=0x...`)
   console.log(`🧩 Holdings Breakdown API: http://localhost:${API_PORT}/api/holdings/breakdown?address=0x...`)
-  console.log(
-    `📈 Protocol Return History API: http://localhost:${API_PORT}/api/holdings/protocol-return/history?address=0x...`
-  )
-  console.log(`🧹 Holdings Chores API: http://localhost:${API_PORT}/api/holdings/chores`)
+  console.log(`💹 PnL API: http://localhost:${API_PORT}/api/holdings/pnl?address=0x...`)
+  console.log(`📈 Simple PnL API: http://localhost:${API_PORT}/api/holdings/pnl/simple?address=0x...`)
+  console.log(`📊 Simple PnL History API: http://localhost:${API_PORT}/api/holdings/pnl/simple-history?address=0x...`)
+  console.log(`🧾 PnL Drilldown API: http://localhost:${API_PORT}/api/holdings/pnl/drilldown?address=0x...`)
 }
 
 main().catch((error) => {
