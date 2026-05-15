@@ -13,6 +13,7 @@ import {
   getHoldingsBreakdown,
   getHoldingsProtocolReturnHistory,
   getHoldingsTotalsCacheVersion,
+  type HoldingsActivityTypeFilter,
   type HoldingsEventFetchType,
   type HoldingsEventPaginationMode,
   type HoldingsHistoryDenomination,
@@ -30,6 +31,7 @@ import {
   isHoldingsDebugRequested,
   withHoldingsDebugContext
 } from './lib/holdings/services/debug'
+import { fetchRecentAddressScopedActivityEvents } from './lib/holdings/services/graphql'
 import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
 import {
   buildTenderlyPanelStatus,
@@ -254,6 +256,49 @@ function parseHoldingsActivityOffset(value: string | null): number {
   }
 
   return Math.max(parsed, 0)
+}
+
+function parseHoldingsActivityType(value: string | null): HoldingsActivityTypeFilter {
+  return value === 'deposit' ||
+    value === 'withdraw' ||
+    value === 'stake' ||
+    value === 'unstake' ||
+    value === 'transfer' ||
+    value === 'swap'
+    ? value
+    : 'all'
+}
+
+function parseHoldingsActivityChainId(value: string | null): number | null {
+  const parsed = Number(value)
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null
+}
+
+function parseHoldingsActivityTimestamp(value: string | null): number | null {
+  if (!value) {
+    return null
+  }
+
+  const parsed = Number(value)
+
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null
+}
+
+function parseHoldingsActivityBoolean(value: string | null): boolean {
+  return value === 'true' || value === '1'
+}
+
+function parsePositiveIntegerParam(value: string | null, fallback: number, max: number): number {
+  const parsed = Number(value)
+
+  return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, max) : fallback
+}
+
+function parseNonNegativeIntegerParam(value: string | null): number {
+  const parsed = Number(value)
+
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : 0
 }
 
 function parseUtcDateParam(value: string | null): number | null {
@@ -698,6 +743,11 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const versionParam = url.searchParams.get('version')
   const limit = parseHoldingsActivityLimit(url.searchParams.get('limit'))
   const offset = parseHoldingsActivityOffset(url.searchParams.get('offset'))
+  const type = parseHoldingsActivityType(url.searchParams.get('type'))
+  const chainId = parseHoldingsActivityChainId(url.searchParams.get('chainId'))
+  const startTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('startTimestamp'))
+  const endTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('endTimestamp'))
+  const includeFacets = parseHoldingsActivityBoolean(url.searchParams.get('includeFacets'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -710,7 +760,19 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const activity = await getHoldingsActivity(address, version, limit, offset)
+    const activity = await getHoldingsActivity(
+      address,
+      version,
+      limit,
+      offset,
+      {
+        type,
+        chainId,
+        startTimestamp,
+        endTimestamp
+      },
+      includeFacets
+    )
 
     return Response.json(activity, {
       headers: {
@@ -722,6 +784,68 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
     const message = error instanceof Error ? error.message : String(error)
     const stack = error instanceof Error ? error.stack : undefined
     return Response.json({ error: 'Failed to fetch holdings activity', message, stack, status: 502 }, { status: 502 })
+  }
+}
+
+async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const versionParam = url.searchParams.get('version')
+  const limitPerSource = parsePositiveIntegerParam(url.searchParams.get('limitPerSource'), 250, 1000)
+  const offsetPerSource = parseNonNegativeIntegerParam(url.searchParams.get('offsetPerSource'))
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const events = await fetchRecentAddressScopedActivityEvents(
+      address,
+      version,
+      limitPerSource,
+      undefined,
+      offsetPerSource
+    )
+    const hasMore =
+      events.hasMoreDeposits || events.hasMoreWithdrawals || events.hasMoreTransfersIn || events.hasMoreTransfersOut
+    const chainIds = Array.from(
+      new Set(
+        [...events.deposits, ...events.withdrawals, ...events.transfersIn, ...events.transfersOut].map(
+          (event) => event.chainId
+        )
+      )
+    ).sort((firstChainId, secondChainId) => firstChainId - secondChainId)
+
+    return Response.json(
+      {
+        address: address.toLowerCase(),
+        version,
+        facets: { chainIds },
+        pageInfo: {
+          hasMore,
+          nextOffsetPerSource: hasMore ? offsetPerSource + limitPerSource : null
+        }
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900'
+        }
+      }
+    )
+  } catch (error) {
+    console.error('Error fetching holdings activity facets:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json(
+      { error: 'Failed to fetch holdings activity facets', message, stack, status: 502 },
+      { status: 502 }
+    )
   }
 }
 
@@ -1053,6 +1177,10 @@ async function main() {
 
         if (url.pathname === '/api/holdings/activity') {
           return withCors(await handleHoldingsActivity(req))
+        }
+
+        if (url.pathname === '/api/holdings/activity-facets') {
+          return withCors(await handleHoldingsActivityFacets(req))
         }
 
         if (url.pathname === '/api/holdings/breakdown') {

@@ -1088,21 +1088,31 @@ export async function fetchRecentAddressScopedActivityEvents(
   userAddress: string,
   version: VaultVersion = 'all',
   limitPerSource = 25,
-  maxTimestamp?: number
+  maxTimestamp?: number,
+  offsetPerSource = 0
 ): Promise<RecentAddressActivityEvents> {
   const address = getGraphqlAddress(userAddress)
   const addressLower = address.toLowerCase()
   const boundedLimit = Math.max(1, limitPerSource)
+  const boundedOffset = Math.max(0, offsetPerSource)
 
   const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] = await Promise.all([
-    fetchRecentLimited<DepositEvent>(RECENT_DEPOSITS_QUERY, 'owner', address, 'Deposit', boundedLimit, 0, maxTimestamp),
+    fetchRecentLimited<DepositEvent>(
+      RECENT_DEPOSITS_QUERY,
+      'owner',
+      address,
+      'Deposit',
+      boundedLimit,
+      boundedOffset,
+      maxTimestamp
+    ),
     fetchRecentLimited<WithdrawEvent>(
       RECENT_WITHDRAWALS_QUERY,
       'owner',
       address,
       'Withdraw',
       boundedLimit,
-      0,
+      boundedOffset,
       maxTimestamp
     ),
     fetchRecentLimited<V2DepositEvent>(
@@ -1111,7 +1121,7 @@ export async function fetchRecentAddressScopedActivityEvents(
       address,
       'V2Deposit',
       boundedLimit,
-      0,
+      boundedOffset,
       maxTimestamp
     ),
     fetchRecentLimited<V2WithdrawEvent>(
@@ -1120,7 +1130,7 @@ export async function fetchRecentAddressScopedActivityEvents(
       address,
       'V2Withdraw',
       boundedLimit,
-      0,
+      boundedOffset,
       maxTimestamp
     ),
     fetchRecentLimited<TransferEvent>(
@@ -1129,7 +1139,7 @@ export async function fetchRecentAddressScopedActivityEvents(
       address,
       'Transfer',
       boundedLimit,
-      0,
+      boundedOffset,
       maxTimestamp
     ),
     fetchRecentLimited<TransferEvent>(
@@ -1138,7 +1148,7 @@ export async function fetchRecentAddressScopedActivityEvents(
       address,
       'Transfer',
       boundedLimit,
-      0,
+      boundedOffset,
       maxTimestamp
     )
   ])
@@ -1174,6 +1184,7 @@ export async function fetchRecentAddressScopedActivityEvents(
     hasMoreWithdrawals,
     hasMoreTransfersIn,
     hasMoreTransfersOut,
+    offsetPerSource: boundedOffset,
     maxTimestamp: maxTimestamp ?? null
   })
 

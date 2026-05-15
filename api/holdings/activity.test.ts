@@ -69,6 +69,7 @@ describe('holdings activity route', () => {
           txHash: '0xabc',
           timestamp: 1776902400,
           action: 'deposit',
+          transferDirection: null,
           vaultAddress: '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204',
           familyVaultAddress: '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204',
           assetSymbol: 'USDC',
@@ -95,7 +96,19 @@ describe('holdings activity route', () => {
 
     await handler(req, res as any)
 
-    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0)
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(
+      TEST_ADDRESS,
+      'all',
+      10,
+      0,
+      {
+        type: 'all',
+        chainId: null,
+        startTimestamp: null,
+        endTimestamp: null
+      },
+      false
+    )
     expect(res.statusCode).toBe(200)
     expect(res.body).toEqual({
       address: TEST_ADDRESS,
@@ -112,6 +125,7 @@ describe('holdings activity route', () => {
           txHash: '0xabc',
           timestamp: 1776902400,
           action: 'deposit',
+          transferDirection: null,
           vaultAddress: '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204',
           familyVaultAddress: '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204',
           assetSymbol: 'USDC',
@@ -162,5 +176,134 @@ describe('holdings activity route', () => {
       },
       entries: []
     })
+  })
+
+  it('passes through valid activity filters', async () => {
+    getHoldingsActivityMock.mockResolvedValue({
+      address: TEST_ADDRESS,
+      version: 'all',
+      limit: 10,
+      offset: 0,
+      pageInfo: {
+        hasMore: false,
+        nextOffset: null
+      },
+      entries: []
+    })
+
+    const { default: handler } = await import('./activity')
+    const req = {
+      method: 'GET',
+      query: {
+        address: TEST_ADDRESS,
+        type: 'withdraw',
+        chainId: '137',
+        startTimestamp: '1776729600',
+        endTimestamp: '1777334399'
+      },
+      headers: {}
+    } as any
+    const res = createMockResponse()
+
+    await handler(req, res as any)
+
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(
+      TEST_ADDRESS,
+      'all',
+      10,
+      0,
+      {
+        type: 'withdraw',
+        chainId: 137,
+        startTimestamp: 1776729600,
+        endTimestamp: 1777334399
+      },
+      false
+    )
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('passes through the transfer activity filter', async () => {
+    getHoldingsActivityMock.mockResolvedValue({
+      address: TEST_ADDRESS,
+      version: 'all',
+      limit: 10,
+      offset: 0,
+      pageInfo: {
+        hasMore: false,
+        nextOffset: null
+      },
+      entries: []
+    })
+
+    const { default: handler } = await import('./activity')
+    const req = {
+      method: 'GET',
+      query: {
+        address: TEST_ADDRESS,
+        type: 'transfer'
+      },
+      headers: {}
+    } as any
+    const res = createMockResponse()
+
+    await handler(req, res as any)
+
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(
+      TEST_ADDRESS,
+      'all',
+      10,
+      0,
+      {
+        type: 'transfer',
+        chainId: null,
+        startTimestamp: null,
+        endTimestamp: null
+      },
+      false
+    )
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('passes through the swap activity filter', async () => {
+    getHoldingsActivityMock.mockResolvedValue({
+      address: TEST_ADDRESS,
+      version: 'all',
+      limit: 10,
+      offset: 0,
+      pageInfo: {
+        hasMore: false,
+        nextOffset: null
+      },
+      entries: []
+    })
+
+    const { default: handler } = await import('./activity')
+    const req = {
+      method: 'GET',
+      query: {
+        address: TEST_ADDRESS,
+        type: 'swap'
+      },
+      headers: {}
+    } as any
+    const res = createMockResponse()
+
+    await handler(req, res as any)
+
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(
+      TEST_ADDRESS,
+      'all',
+      10,
+      0,
+      {
+        type: 'swap',
+        chainId: null,
+        startTimestamp: null,
+        endTimestamp: null
+      },
+      false
+    )
+    expect(res.statusCode).toBe(200)
   })
 })

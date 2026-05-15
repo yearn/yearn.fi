@@ -1,7 +1,7 @@
 import { cl } from '@shared/utils'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import type { ReactElement } from 'react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 type TVirtualizedVaultsListProps<TItem> = {
   items: TItem[]
@@ -13,6 +13,8 @@ type TVirtualizedVaultsListProps<TItem> = {
   renderPlaceholder?: (index: number) => ReactElement
   className?: string
   itemSpacingClassName?: string
+  onEndReached?: () => void
+  endReachedThreshold?: number
 }
 
 export function VirtualizedVaultsList<TItem>({
@@ -24,7 +26,9 @@ export function VirtualizedVaultsList<TItem>({
   placeholderCount,
   renderPlaceholder,
   className,
-  itemSpacingClassName
+  itemSpacingClassName,
+  onEndReached,
+  endReachedThreshold = 5
 }: TVirtualizedVaultsListProps<TItem>): ReactElement {
   const parentRef = useRef<HTMLDivElement | null>(null)
   const [scrollMargin, setScrollMargin] = useState(0)
@@ -88,6 +92,17 @@ export function VirtualizedVaultsList<TItem>({
 
   const virtualItems = rowVirtualizer.getVirtualItems()
   const totalSize = rowVirtualizer.getTotalSize()
+
+  useEffect(() => {
+    if (!onEndReached || virtualItems.length === 0 || totalCount === 0) {
+      return
+    }
+
+    const lastVirtualItem = virtualItems[virtualItems.length - 1]
+    if (lastVirtualItem.index >= totalCount - endReachedThreshold) {
+      onEndReached()
+    }
+  }, [endReachedThreshold, onEndReached, totalCount, virtualItems])
 
   return (
     <div ref={parentRef} className={cl('relative w-full', className)} style={{ height: totalSize }}>

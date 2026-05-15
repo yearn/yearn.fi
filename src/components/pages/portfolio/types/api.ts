@@ -126,12 +126,22 @@ const portfolioActivityEntrySchema = z.object({
   chainId: z.number(),
   txHash: z.string(),
   timestamp: z.number(),
-  action: z.enum(['deposit', 'withdraw', 'stake', 'unstake']),
+  action: z.enum(['deposit', 'withdraw', 'stake', 'unstake', 'transfer', 'swap']),
+  displayType: z.enum(['reward_claim', 'zap']).nullable().optional().default(null),
+  transferDirection: z.enum(['in', 'out']).nullable().optional().default(null),
   vaultAddress: z.string(),
   familyVaultAddress: z.string(),
   assetSymbol: z.string().nullable(),
   assetAmount: z.string(),
   assetAmountFormatted: z.number().nullable(),
+  inputTokenAddress: z.string().nullable(),
+  inputTokenSymbol: z.string().nullable(),
+  inputTokenAmount: z.string().nullable(),
+  inputTokenAmountFormatted: z.number().nullable(),
+  outputTokenAddress: z.string().nullable().optional().default(null),
+  outputTokenSymbol: z.string().nullable().optional().default(null),
+  outputTokenAmount: z.string().nullable().optional().default(null),
+  outputTokenAmountFormatted: z.number().nullable().optional().default(null),
   shareAmount: z.string(),
   shareAmountFormatted: z.number().nullable(),
   status: z.enum(['ok', 'missing_metadata'])
@@ -142,11 +152,30 @@ export const portfolioActivityResponseSchema = z.object({
   version: z.enum(['all', 'v2', 'v3']).optional().default('all'),
   limit: z.number(),
   offset: z.number(),
+  facets: z
+    .object({
+      chainIds: z.array(z.number())
+    })
+    .nullable()
+    .optional()
+    .default(null),
   pageInfo: z.object({
     hasMore: z.boolean(),
     nextOffset: z.number().nullable()
   }),
   entries: z.array(portfolioActivityEntrySchema)
+})
+
+export const portfolioActivityFacetsResponseSchema = z.object({
+  address: z.string(),
+  version: z.enum(['all', 'v2', 'v3']).optional().default('all'),
+  facets: z.object({
+    chainIds: z.array(z.number())
+  }),
+  pageInfo: z.object({
+    hasMore: z.boolean(),
+    nextOffsetPerSource: z.number().nullable()
+  })
 })
 
 export type TPortfolioHistorySimpleResponse = z.infer<typeof portfolioHistorySimpleResponseSchema>
@@ -156,7 +185,9 @@ export type TPortfolioProtocolReturnHistorySummary = z.infer<typeof portfolioPro
 export type TPortfolioBreakdownResponse = z.infer<typeof portfolioBreakdownResponseSchema>
 export type TPortfolioBreakdownVault = z.infer<typeof portfolioBreakdownVaultSchema>
 export type TPortfolioActivityResponse = z.infer<typeof portfolioActivityResponseSchema>
+export type TPortfolioActivityFacetsResponse = z.infer<typeof portfolioActivityFacetsResponseSchema>
 export type TPortfolioActivityEntry = z.infer<typeof portfolioActivityEntrySchema>
+export type TPortfolioActivityTypeFilter = TPortfolioActivityEntry['action'] | 'all'
 export type TPortfolioHistoryDenomination = z.infer<typeof portfolioHistorySimpleResponseSchema>['denomination']
 export type TPortfolioHistoryTimeframe = z.infer<typeof portfolioHistorySimpleResponseSchema>['timeframe']
 export type TPortfolioHistoryChartData = Array<{

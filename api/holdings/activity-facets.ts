@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { HoldingsActivityTypeFilter, VaultVersion } from '../lib/holdings'
+import type { VaultVersion } from '../lib/holdings'
 import { checkRateLimit, ensureSchemaInitialized } from '../lib/holdings'
 
 function simpleHash(str: string): string {
@@ -30,63 +30,18 @@ function parseVersion(value: string | string[] | undefined): VaultVersion {
   return value === 'v2' || value === 'v3' ? value : 'all'
 }
 
-function parseLimit(value: string | string[] | undefined): number {
+function parsePositiveInteger(value: string | string[] | undefined, fallback: number, max: number): number {
   const rawValue = Array.isArray(value) ? value[0] : value
   const parsedValue = Number(rawValue)
 
-  if (!Number.isFinite(parsedValue) || !Number.isInteger(parsedValue)) {
-    return 10
-  }
-
-  return Math.min(Math.max(parsedValue, 1), 50)
+  return Number.isInteger(parsedValue) && parsedValue > 0 ? Math.min(parsedValue, max) : fallback
 }
 
-function parseOffset(value: string | string[] | undefined): number {
+function parseNonNegativeInteger(value: string | string[] | undefined): number {
   const rawValue = Array.isArray(value) ? value[0] : value
   const parsedValue = Number(rawValue)
 
-  if (!Number.isFinite(parsedValue) || !Number.isInteger(parsedValue)) {
-    return 0
-  }
-
-  return Math.max(parsedValue, 0)
-}
-
-function parseType(value: string | string[] | undefined): HoldingsActivityTypeFilter {
-  const rawValue = Array.isArray(value) ? value[0] : value
-
-  return rawValue === 'deposit' ||
-    rawValue === 'withdraw' ||
-    rawValue === 'stake' ||
-    rawValue === 'unstake' ||
-    rawValue === 'transfer' ||
-    rawValue === 'swap'
-    ? rawValue
-    : 'all'
-}
-
-function parseChainId(value: string | string[] | undefined): number | null {
-  const rawValue = Array.isArray(value) ? value[0] : value
-  const parsedValue = Number(rawValue)
-
-  return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : null
-}
-
-function parseTimestamp(value: string | string[] | undefined): number | null {
-  const rawValue = Array.isArray(value) ? value[0] : value
-  if (!rawValue) {
-    return null
-  }
-
-  const parsedValue = Number(rawValue)
-
-  return Number.isInteger(parsedValue) && parsedValue >= 0 ? parsedValue : null
-}
-
-function parseBoolean(value: string | string[] | undefined): boolean {
-  const rawValue = Array.isArray(value) ? value[0] : value
-
-  return rawValue === 'true' || rawValue === '1'
+  return Number.isInteger(parsedValue) && parsedValue >= 0 ? parsedValue : 0
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -105,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await ensureSchemaInitialized()
   } catch (error) {
-    console.error('Holdings activity schema initialization error:', error)
+    console.error('Holdings activity facets schema initialization error:', error)
     return res.status(500).json({ error: 'Failed to initialize holdings storage' })
   }
 
@@ -127,13 +82,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const {
     address,
     version: versionParam,
-    limit: limitParam,
-    offset: offsetParam,
-    type: typeParam,
-    chainId: chainIdParam,
-    startTimestamp: startTimestampParam,
-    endTimestamp: endTimestampParam,
-    includeFacets: includeFacetsParam
+    limitPerSource: limitPerSourceParam,
+    offsetPerSource: offsetPerSourceParam
   } = req.query
 
   if (!address || typeof address !== 'string') {
@@ -145,36 +95,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { getHoldingsActivity } = await import('../lib/holdings')
-    const activity = await getHoldingsActivity(
+    const { fetchRecentAddressScopedActivityEvents } = await import('../lib/holdings')
+    const version = parseVersion(versionParam)
+    const limitPerSource = parsePositiveInteger(limitPerSourceParam, 250, 1000)
+    const offsetPerSource = parseNonNegativeInteger(offsetPerSourceParam)
+    const events = await fetchRecentAddressScopedActivityEvents(
       address,
-      parseVersion(versionParam),
-      parseLimit(limitParam),
-      parseOffset(offsetParam),
-      {
-        type: parseType(typeParam),
-        chainId: parseChainId(chainIdParam),
-        startTimestamp: parseTimestamp(startTimestampParam),
-        endTimestamp: parseTimestamp(endTimestampParam)
-      },
-      parseBoolean(includeFacetsParam)
+      version,
+      limitPerSource,
+      undefined,
+      offsetPerSource
     )
+    const hasMore =
+      events.hasMoreDeposits || events.hasMoreWithdrawals || events.hasMoreTransfersIn || events.hasMoreTransfersOut
+    const chainIds = Array.from(
+      new Set(
+        [...events.deposits, ...events.withdrawals, ...events.transfersIn, ...events.transfersOut].map(
+          (event) => event.chainId
+        )
+      )
+    ).sort((firstChainId, secondChainId) => firstChainId - secondChainId)
 
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
-    return res.status(200).json(activity)
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900')
+    return res.status(200).json({
+      address: address.toLowerCase(),
+      version,
+      facets: { chainIds },
+      pageInfo: {
+        hasMore,
+        nextOffsetPerSource: hasMore ? offsetPerSource + limitPerSource : null
+      }
+    })
   } catch (error) {
-    console.error('Holdings activity error:', error)
+    console.error('Holdings activity facets error:', error)
 
     if (process.env.NODE_ENV === 'development') {
       const message = error instanceof Error ? error.message : String(error)
       const stack = error instanceof Error ? error.stack : undefined
       return res.status(502).json({
-        error: 'Failed to fetch holdings activity',
+        error: 'Failed to fetch holdings activity facets',
         message,
         stack
       })
     }
 
-    return res.status(502).json({ error: 'Failed to fetch holdings activity' })
+    return res.status(502).json({ error: 'Failed to fetch holdings activity facets' })
   }
 }
