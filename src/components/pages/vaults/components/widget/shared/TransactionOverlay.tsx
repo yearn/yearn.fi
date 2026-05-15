@@ -20,8 +20,8 @@ import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicat
 import {
   AUTO_CONTINUE_SUCCESS_DELAY_MS,
   type CompletionDeferral,
-  getInitialOverlayState,
   getAutoContinueConfirmDelayMs,
+  getInitialOverlayState,
   getPendingTransactionTitle,
   type OverlayState,
   resolveCompletionDeferral,
