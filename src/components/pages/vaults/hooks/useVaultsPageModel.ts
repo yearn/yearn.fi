@@ -1041,7 +1041,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
 
   const listHeadProps: TListHead = {
     containerClassName: 'rounded-t-xl bg-surface shrink-0',
-    wrapperClassName: 'relative z-10 border border-border rounded-t-xl bg-transparent',
+    wrapperClassName: 'relative z-10 border border-border rounded-t-lg bg-transparent',
     sortBy: effectiveSortBy,
     sortDirection: effectiveSortDirection,
     onSort: (newSortBy: string, newSortDirection: TSortDirection): void => {

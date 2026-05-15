@@ -543,7 +543,7 @@ function PortfolioHistoryTooltip({
   return (
     <div
       className={
-        'pointer-events-none flex min-w-[13rem] flex-col gap-2 rounded-xl border border-border bg-surface px-3 py-3 shadow-xl'
+        'pointer-events-none flex min-w-[13rem] flex-col gap-2 rounded-lg border border-border bg-surface px-3 py-3 shadow-xl'
       }
     >
       <div className={'flex flex-col gap-0.5'}>

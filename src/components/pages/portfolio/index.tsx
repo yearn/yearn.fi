@@ -1247,7 +1247,7 @@ function PortfolioHoldingsSection({
                 ]}
               />
             </div>
-            <div className="overflow-hidden rounded-b-lg border-x border-b border-border">
+            <div className="overflow-hidden rounded-lg md:rounded-t-none border-x border-b border-border">
               {renderHoldingsContent()}
             </div>
           </div>
@@ -1259,7 +1259,7 @@ function PortfolioHoldingsSection({
 
 function PortfolioPositionsLoadingState(): ReactElement {
   return (
-    <section className="flex min-h-[420px] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-surface px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16">
+    <section className="flex min-h-[420px] flex-col items-center justify-center gap-3 rounded-lg border border-border bg-surface px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16">
       <YearnLogoSpinner className="size-12" logoClassName="size-8" />
       <span>{'Searching for Yearn balances...'}</span>
     </section>
@@ -1483,7 +1483,7 @@ function PortfolioPage(): ReactElement {
         return (
           <div className="flex flex-col gap-6 sm:gap-4">
             {model.isActive ? (
-              <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
+              <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
                 <div className="grid items-stretch min-[920px]:grid-cols-[minmax(640px,1fr)_minmax(200px,340px)]">
                   {hasNoYearnPositions ? (
                     historyChartElement

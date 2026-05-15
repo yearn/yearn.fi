@@ -466,7 +466,7 @@ function VaultsListRowComponent({
   return (
     <div
       className={cl(
-        'w-full overflow-hidden transition-colors bg-surface relative max-md:border-b-2 max-md:border-border'
+        'w-full overflow-hidden transition-colors bg-surface relative max-md:border-b-1 max-md:border-border'
       )}
     >
       <button
