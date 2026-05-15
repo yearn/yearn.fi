@@ -266,15 +266,27 @@ function AppHeader(): ReactElement {
               <>
                 <div className={'hidden items-center justify-end md:flex gap-2'} data-tour="vaults-header-user">
                   <TenderlyBadge />
+                  <div className={'hidden md:flex gap-4'}>
+                    <Link href={'/vaults'}>
+                      <span
+                        className={
+                          'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
+                        }
+                      >
+                        {'Vaults'}
+                      </span>
+                    </Link>
 
-                  <Link href={'/portfolio'}>
-                    <span
-                      className={'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'}
-                    >
-                      {'Portfolio'}
-                    </span>
-                  </Link>
-
+                    <Link href={'/portfolio'}>
+                      <span
+                        className={
+                          'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
+                        }
+                      >
+                        {'Portfolio'}
+                      </span>
+                    </Link>
+                  </div>
                   <button
                     className={
                       'min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
