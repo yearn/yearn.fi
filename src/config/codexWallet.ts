@@ -1,5 +1,16 @@
 import type { Wallet, WalletDetailsParams } from '@rainbow-me/rainbowkit'
-import { type Address, getAddress } from 'viem'
+import {
+  type Address,
+  type Chain,
+  createWalletClient,
+  custom,
+  fromHex,
+  getAddress,
+  type Hex,
+  http,
+  numberToHex
+} from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
 import { createConnector } from 'wagmi'
 import { mock } from 'wagmi/connectors'
 
@@ -54,6 +65,11 @@ function readRuntimeFlag(): boolean | undefined {
 }
 
 function resolveCodexWalletAddress(): Address {
+  const privateKeyAccount = resolveCodexWalletPrivateKeyAccount()
+  if (privateKeyAccount) {
+    return privateKeyAccount.address
+  }
+
   const runtimeAddress = readRuntimeAddress()
   if (runtimeAddress) {
     return runtimeAddress
@@ -70,6 +86,176 @@ function resolveCodexWalletAddress(): Address {
     console.warn(`Invalid VITE_CODEX_WALLET_ADDRESS "${configuredAddress}", using ${DEFAULT_CODEX_WALLET_ADDRESS}`)
     return DEFAULT_CODEX_WALLET_ADDRESS
   }
+}
+
+function resolveCodexWalletPrivateKey(): Hex | undefined {
+  const configuredPrivateKey = (import.meta.env.VITE_CODEX_WALLET_PRIVATE_KEY as string | undefined)?.trim()
+  if (!configuredPrivateKey) {
+    return undefined
+  }
+
+  if (!/^0x[0-9a-fA-F]{64}$/.test(configuredPrivateKey)) {
+    console.warn('Invalid VITE_CODEX_WALLET_PRIVATE_KEY, falling back to mock Codex wallet')
+    return undefined
+  }
+
+  return configuredPrivateKey as Hex
+}
+
+function resolveCodexWalletPrivateKeyAccount(): ReturnType<typeof privateKeyToAccount> | undefined {
+  const privateKey = resolveCodexWalletPrivateKey()
+  return privateKey ? privateKeyToAccount(privateKey) : undefined
+}
+
+async function requestRpc(rpcUrl: string, method: string, params?: unknown): Promise<unknown> {
+  const response = await fetch(rpcUrl, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ id: 1, jsonrpc: '2.0', method, params: params ?? [] })
+  })
+  const payload = (await response.json()) as {
+    result?: unknown
+    error?: { message: string; code: number; data?: unknown }
+  }
+  if (payload.error) {
+    throw new Error(`${payload.error.message} (code ${payload.error.code})`)
+  }
+  return payload.result
+}
+
+function getConnectorChain(chains: readonly Chain[], chainId: number): Chain {
+  return chains.find((chain) => chain.id === chainId) ?? chains[0]
+}
+
+function codexPrivateKeyConnector(walletDetails: WalletDetailsParams) {
+  const account = resolveCodexWalletPrivateKeyAccount()
+  if (!account) {
+    return undefined
+  }
+
+  return createConnector((config) => {
+    let connected = true
+    let connectedChainId = config.chains[0].id
+
+    const getWalletClient = (chainId = connectedChainId) => {
+      const chain = getConnectorChain(config.chains, chainId)
+      const rpcUrl = chain.rpcUrls.default.http[0]
+      return createWalletClient({ account, chain, transport: http(rpcUrl) })
+    }
+
+    const request = async ({ method, params }: { method: string; params?: unknown }): Promise<unknown> => {
+      if (method === 'eth_chainId') {
+        return numberToHex(connectedChainId)
+      }
+
+      if (method === 'eth_requestAccounts' || method === 'eth_accounts') {
+        return connected ? [account.address] : []
+      }
+
+      if (method === 'wallet_switchEthereumChain') {
+        const [requestedChain] = params as [{ chainId: Hex }]
+        connectedChainId = fromHex(requestedChain.chainId, 'number')
+        config.emitter.emit('change', { chainId: connectedChainId })
+        return null
+      }
+
+      if (method === 'wallet_addEthereumChain') {
+        return null
+      }
+
+      if (method === 'personal_sign') {
+        const [message] = params as [Hex, Address]
+        return getWalletClient().signMessage({ message: { raw: message } })
+      }
+
+      if (method === 'eth_sign') {
+        const [, message] = params as [Address, Hex]
+        return getWalletClient().signMessage({ message: { raw: message } })
+      }
+
+      if (method === 'eth_signTypedData_v4') {
+        const [, typedDataPayload] = params as [Address, string | Record<string, unknown>]
+        const typedData = typeof typedDataPayload === 'string' ? JSON.parse(typedDataPayload) : typedDataPayload
+        const { domain, message, primaryType, types } = typedData as {
+          domain: Record<string, unknown>
+          message: Record<string, unknown>
+          primaryType: string
+          types: Record<string, unknown>
+        }
+        const { EIP712Domain: _domainType, ...typedDataTypes } = types
+        return getWalletClient().signTypedData({
+          account,
+          domain,
+          message,
+          primaryType,
+          types: typedDataTypes
+        } as never)
+      }
+
+      if (method === 'eth_sendTransaction') {
+        const [transaction] = params as [Record<string, unknown>]
+        const { from: _from, ...transactionRequest } = transaction
+        return getWalletClient().sendTransaction({
+          ...transactionRequest,
+          account,
+          chain: getConnectorChain(config.chains, connectedChainId)
+        } as never)
+      }
+
+      const chain = getConnectorChain(config.chains, connectedChainId)
+      return requestRpc(chain.rpcUrls.default.http[0], method, params)
+    }
+
+    return {
+      ...walletDetails,
+      id: CODEX_WALLET_ID,
+      name: CODEX_WALLET_NAME,
+      type: 'codex',
+      async connect<withCapabilities extends boolean = false>(parameters?: { chainId?: number }) {
+        const chainId = parameters?.chainId
+        if (chainId) {
+          connectedChainId = chainId
+        }
+        connected = true
+        return { accounts: [account.address], chainId: connectedChainId } as unknown as {
+          accounts: withCapabilities extends true
+            ? readonly { address: Address; capabilities: Record<string, unknown> }[]
+            : readonly Address[]
+          chainId: number
+        }
+      },
+      async disconnect() {
+        connected = false
+      },
+      async getAccounts() {
+        return connected ? [account.address] : []
+      },
+      async getChainId() {
+        return connectedChainId
+      },
+      async getProvider() {
+        return custom({ request })({ retryCount: 0 })
+      },
+      async isAuthorized() {
+        return connected
+      },
+      async switchChain({ chainId }) {
+        connectedChainId = chainId
+        config.emitter.emit('change', { chainId })
+        return getConnectorChain(config.chains, chainId)
+      },
+      onAccountsChanged(accounts) {
+        config.emitter.emit('change', { accounts: accounts.map((item) => getAddress(item)) })
+      },
+      onChainChanged(chainId) {
+        config.emitter.emit('change', { chainId: Number(chainId) })
+      },
+      async onDisconnect() {
+        connected = false
+        config.emitter.emit('disconnect')
+      }
+    }
+  })
 }
 
 function parseCodexWalletAddress(value: string | null | undefined): Address | undefined {
@@ -124,6 +310,7 @@ export function codexWallet(): Wallet {
     iconBackground: '#065CF9',
     installed: true,
     createConnector: (walletDetails: WalletDetailsParams) =>
+      codexPrivateKeyConnector(walletDetails) ??
       createConnector((config) => ({
         ...mock({
           accounts: [account],

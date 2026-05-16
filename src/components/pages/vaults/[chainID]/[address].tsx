@@ -53,6 +53,7 @@ import {
   isYvUsdAddress,
   type TYvUsdVariant,
   YVUSD_CHAIN_ID,
+  YVUSD_DECIMALS,
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
@@ -83,6 +84,8 @@ import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
 import { getVaultPrimaryLogoSrc } from '@/components/pages/vaults/utils/vaultLogo'
 import { getCategoryDescription, getProductTypeDescription } from '@/components/pages/vaults/utils/vaultTagCopy'
 import { useWeb3 } from '@/components/shared/contexts/useWeb3'
+import type { TUseBalancesTokens } from '@/components/shared/hooks/useBalances.multichains'
+import { isTenderlyModeEnabled } from '@/config/tenderly'
 import { useDevFlags } from '@/contexts/useDevFlags'
 
 const resolveHeaderOffset = (): number => {
@@ -105,6 +108,85 @@ const resolveHeaderOffset = (): number => {
 }
 
 const desktopWidgetHeightClassNames = getDesktopWidgetHeightClassNames()
+
+function getVaultTenderlyOverrideTokens({
+  currentVault,
+  isYvBtc,
+  isYvUsd,
+  stakingAddress
+}: {
+  currentVault: TKongVaultView
+  isYvBtc: boolean
+  isYvUsd: boolean
+  stakingAddress?: string
+}): TUseBalancesTokens[] {
+  const tokens = new Map<string, TUseBalancesTokens>()
+  const addToken = (
+    address: string | undefined,
+    chainID: number | undefined,
+    metadata?: Partial<TUseBalancesTokens>
+  ) => {
+    if (!address || !Number.isInteger(chainID) || isZeroAddress(toAddress(address))) {
+      return
+    }
+    const token = {
+      address: toAddress(address),
+      chainID: chainID as number,
+      ...metadata
+    }
+    tokens.set(`${token.chainID}:${token.address}`, token)
+  }
+
+  addToken(currentVault.address, currentVault.chainID, {
+    decimals: currentVault.decimals,
+    name: currentVault.name,
+    symbol: currentVault.symbol,
+    isVaultToken: true
+  })
+  addToken(currentVault.token.address, currentVault.chainID, {
+    decimals: currentVault.token.decimals,
+    name: currentVault.token.name,
+    symbol: currentVault.token.symbol
+  })
+  addToken(stakingAddress, currentVault.chainID, {
+    decimals: currentVault.decimals,
+    name: currentVault.name,
+    symbol: currentVault.symbol,
+    isStakingToken: true
+  })
+
+  if (isYvUsd) {
+    addToken(YVUSD_UNLOCKED_ADDRESS, YVUSD_CHAIN_ID, {
+      decimals: YVUSD_DECIMALS,
+      name: 'yvUSD',
+      symbol: 'yvUSD',
+      isVaultToken: true
+    })
+    addToken(YVUSD_LOCKED_ADDRESS, YVUSD_CHAIN_ID, {
+      decimals: YVUSD_DECIMALS,
+      name: 'yvUSD (Locked)',
+      symbol: 'yvUSD',
+      isVaultToken: true
+    })
+  }
+
+  if (isYvBtc) {
+    addToken(YVBTC_UNLOCKED_ADDRESS, currentVault.chainID, {
+      decimals: currentVault.decimals,
+      name: currentVault.name,
+      symbol: currentVault.symbol,
+      isVaultToken: true
+    })
+    addToken(YVBTC_LOCKED_ADDRESS, currentVault.chainID, {
+      decimals: currentVault.decimals,
+      name: currentVault.name,
+      symbol: currentVault.symbol,
+      isVaultToken: true
+    })
+  }
+
+  return [...tokens.values()]
+}
 
 const EMPTY_VAULT_FOR_APY_DATA: TKongVaultView = {
   address: '0x0000000000000000000000000000000000000000',
@@ -640,6 +722,42 @@ function Index(): ReactElement | null {
     ? toAddress(currentVault?.staking?.address)
     : undefined
   const disableDepositStaking = shouldDisableStakingForDeposit || !currentVault?.staking?.available
+  const tenderlyOverrideRefreshKeyRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!isTenderlyModeEnabled() || !address || !currentVault) {
+      return
+    }
+
+    const refreshKey = [
+      address,
+      currentVault.chainID,
+      currentVault.address,
+      currentVault.token.address,
+      stakingAddress ?? '',
+      isYvUsd ? 'yvusd' : '',
+      isYvBtc ? 'yvbtc' : ''
+    ].join(':')
+    if (tenderlyOverrideRefreshKeyRef.current === refreshKey) {
+      return
+    }
+    tenderlyOverrideRefreshKeyRef.current = refreshKey
+
+    const tokensToRefresh = getVaultTenderlyOverrideTokens({
+      currentVault,
+      isYvBtc,
+      isYvUsd,
+      stakingAddress
+    })
+    if (tokensToRefresh.length === 0) {
+      return
+    }
+
+    void onRefresh(tokensToRefresh).catch((error) => {
+      console.error('Failed to refresh Tenderly vault override balances:', error)
+      tenderlyOverrideRefreshKeyRef.current = null
+    })
+  }, [address, currentVault, isYvBtc, isYvUsd, onRefresh, stakingAddress])
 
   const vaultUserData = useVaultUserData({
     vaultAddress: toAddress(currentVault?.address ?? '0x'),
