@@ -13,6 +13,9 @@ export type TPortfolioBenchmarkClassification = 'pass' | 'warn' | 'fail'
 const MEDIUM_BENCHMARK_WALLET_ADDRESS = (process.env.HOLDINGS_TEST_WALLET_ADDRESS ??
   '0x1111111111111111111111111111111111111111') as `0x${string}`
 
+const LIGHT_BENCHMARK_WALLET_ADDRESS = (process.env.LIGHT_BENCHMARK_WALLET_ADDRESS ??
+  '0x3333333333333333333333333333333333333333') as `0x${string}`
+
 export const BENCHMARK_WALLETS: TPortfolioBenchmarkWallet[] = [
   {
     id: 'heavy',
@@ -31,7 +34,7 @@ export const BENCHMARK_WALLETS: TPortfolioBenchmarkWallet[] = [
   {
     id: 'light',
     label: 'galloway.eth',
-    address: '0x5b0D3243c78fB9d4AC035fB2384FFdf7A9eF6396',
+    address: LIGHT_BENCHMARK_WALLET_ADDRESS,
     description: 'Small portfolio; catches shell and direct-load regressions that should be fast.',
     budgetMs: 4_000
   }
