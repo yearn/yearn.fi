@@ -73,10 +73,43 @@ Candidate approaches:
 - Increase multicall packing efficiency only after reducing the token set; bigger
   batches alone will not address the total contract-call volume.
 
+## Enso Base Experiment
+
+This branch now prototypes the smallest version of that approach:
+
+1. `useBalancesCombined` no longer adds every Tenderly-backed canonical chain to
+   `ENSO_UNSUPPORTED_NETWORKS`.
+2. Broad wallet state can use Enso as the base case in Tenderly mode.
+3. The existing `onRefresh(tokenList)` path remains the override layer: it
+   fetches the passed tokens through multicall and merges those fresh values into
+   the Enso cache.
+4. Vault detail now performs a Tenderly-only targeted refresh for the active
+   vault share token, asset token, staking token, and dual yvUSD/yvBTC variant
+   share tokens.
+
+This should preserve fork-correctness where the current flow needs it, while
+avoiding full-catalog Tenderly multicalls during normal connected browsing.
+
+Focused browser smoke on this branch:
+
+| Scenario | Result |
+| --- | ---: |
+| Direct vault detail | Passed, 3 Tenderly RPC, 0 429s |
+| Vaults search/filter/sort | Passed, 0 Tenderly RPC, 0 429s |
+| Vault Detail tabs | Passed, 2 Tenderly RPC, 0 429s |
+| Vault Detail wallet controls | Passed, 7 Tenderly RPC, 0 429s |
+
+The Portfolio interaction scenario could not be used as a connected-wallet parity
+check directly on `release/26-04-17`, because that branch does not include the
+Codex watch-wallet connector used by the outcome-test query params. It rendered
+the disconnected Portfolio state and failed when the scenario tried to return
+from Activity to the connected-only "Your Vaults" tab.
+
 ## Current Assessment
 
 The Tenderly scripts are probably not the source of the mismatch. The mismatch is
 the expected side effect of this runtime choice:
 
-Tenderly mode trades low generic-RPC usage for fork-correct wallet balances by
-routing Tenderly-backed chains away from Enso and into multicall.
+Tenderly mode traded low generic-RPC usage for fork-correct wallet balances by
+routing Tenderly-backed chains away from Enso and into full-catalog multicall.
+Using Enso as the base and multicall as a targeted override looks promising.

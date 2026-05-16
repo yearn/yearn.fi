@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
-import { getTenderlyBackedCanonicalChainIds, resolveExecutionChainId } from '@/config/tenderly'
+import { resolveExecutionChainId } from '@/config/tenderly'
 import { useWeb3 } from '../contexts/useWeb3'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'
@@ -59,10 +59,7 @@ function mergeBalanceSources(...sources: TChainTokens[]): TChainTokens {
 export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
   const { address: userAddress } = useWeb3()
   const queryClient = useQueryClient()
-  const ensoUnsupportedNetworks = useMemo(
-    () => [...new Set([...ENSO_UNSUPPORTED_NETWORKS, ...getTenderlyBackedCanonicalChainIds()])],
-    []
-  )
+  const ensoUnsupportedNetworks = useMemo(() => [...ENSO_UNSUPPORTED_NETWORKS], [])
 
   const tokens = useMemo(() => (userAddress ? props?.tokens || [] : []), [props?.tokens, userAddress])
 
