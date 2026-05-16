@@ -1102,7 +1102,7 @@ export function VaultDetailsHeaderPresentation({
           {'Home'}
         </Link>
         <span>{'>'}</span>
-        <Link to={'/v3'} className={'transition-colors hover:text-text-primary'}>
+        <Link to={'/vaults'} className={'transition-colors hover:text-text-primary'}>
           {'Vaults'}
         </Link>
         <span>{'>'}</span>
