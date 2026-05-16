@@ -16,6 +16,8 @@
     "tslint": "tsc -p tsconfig.json --noEmit",
     "bump": "bump",
     "test": "vitest run",
+    "benchmark:portfolio:api": "bun scripts/portfolioApiBenchmark.ts",
+    "benchmark:portfolio:report": "bun scripts/portfolioBenchmarkReport.ts",
     "clean": "bash clean.sh",
     "prepare": "husky"
   },
