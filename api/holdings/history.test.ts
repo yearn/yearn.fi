@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const ensureSchemaInitializedMock = vi.fn()
 const checkRateLimitMock = vi.fn()
 const getHistoricalHoldingsChartMock = vi.fn()
+const TEST_WALLET_ADDRESS = process.env.HOLDINGS_TEST_WALLET_ADDRESS ?? '0x1111111111111111111111111111111111111111'
 
 vi.mock('../lib/holdings', () => ({
   ensureSchemaInitialized: ensureSchemaInitializedMock,
@@ -53,7 +54,7 @@ describe('holdings history route', () => {
 
   it('returns zero-filled settled history for wallets that only have same-day activity', async () => {
     getHistoricalHoldingsChartMock.mockResolvedValue({
-      address: '0xA7b6f3d18db39F65C8056d0892Af76c07d15Fc5a',
+      address: 'TEST_WALLET_ADDRESS',
       periodDays: 365,
       timeframe: '1y',
       denomination: 'usd',
@@ -68,7 +69,7 @@ describe('holdings history route', () => {
     const req = {
       method: 'GET',
       query: {
-        address: '0xA7b6f3d18db39F65C8056d0892Af76c07d15Fc5a'
+        address: 'TEST_WALLET_ADDRESS'
       },
       headers: {}
     } as any
@@ -78,7 +79,7 @@ describe('holdings history route', () => {
 
     expect(res.statusCode).toBe(200)
     expect(res.body).toEqual({
-      address: '0xA7b6f3d18db39F65C8056d0892Af76c07d15Fc5a',
+      address: 'TEST_WALLET_ADDRESS',
       version: 'all',
       denomination: 'usd',
       timeframe: '1y',
