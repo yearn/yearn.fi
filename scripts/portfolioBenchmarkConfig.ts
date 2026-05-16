@@ -10,6 +10,9 @@ export type TPortfolioBenchmarkWallet = {
 
 export type TPortfolioBenchmarkClassification = 'pass' | 'warn' | 'fail'
 
+const MEDIUM_BENCHMARK_WALLET_ADDRESS = (process.env.HOLDINGS_TEST_WALLET_ADDRESS ??
+  '0x1111111111111111111111111111111111111111') as `0x${string}`
+
 export const BENCHMARK_WALLETS: TPortfolioBenchmarkWallet[] = [
   {
     id: 'heavy',
@@ -21,7 +24,7 @@ export const BENCHMARK_WALLETS: TPortfolioBenchmarkWallet[] = [
   {
     id: 'medium',
     label: 'SA Treasury',
-    address: '0xA7b6f3d18db39F65C8056d0892Af76c07d15Fc5a',
+    address: MEDIUM_BENCHMARK_WALLET_ADDRESS,
     description: 'Medium portfolio; catches common multi-vault loading regressions.',
     budgetMs: 8_000
   },
