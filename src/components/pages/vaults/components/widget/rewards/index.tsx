@@ -163,7 +163,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   }
 
   return (
-    <div className={cl('flex w-full flex-col pt-4', isPanelOpen ? 'flex-1 min-h-0' : '')}>
+    <div className={cl('flex w-full flex-col pt-4', isPanelOpen ? 'flex-1 min-h-0' : '')} data-testid={'rewards-page'}>
       <div
         className={cl(
           'relative overflow-hidden rounded-lg border border-border bg-surface',
@@ -186,6 +186,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
             </button>
           ) : (
             <Button
+              data-testid={'rewards-open-button'}
               onClick={handleOpenRewards}
               variant={'filled'}
               isDisabled={!onOpenRewards}
@@ -253,6 +254,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
           </div>
         ) : null}
         <TransactionOverlay
+          dataTestIdPrefix={'rewards'}
           isOpen={isOverlayOpen}
           onClose={handleOverlayClose}
           step={activeStep}

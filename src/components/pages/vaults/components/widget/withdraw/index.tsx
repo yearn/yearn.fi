@@ -1035,6 +1035,7 @@ export function WidgetWithdraw({
         <div className="flex-1">
           {!account ? (
             <Button
+              data-testid={'wallet-connect-button'}
               onClick={openLoginModal}
               variant="filled"
               className="w-full"
@@ -1044,6 +1045,7 @@ export function WidgetWithdraw({
             </Button>
           ) : (
             <Button
+              data-testid={'withdraw-submit-button'}
               onClick={handleOpenTransactionOverlay}
               variant={isFetchingQuote ? 'busy' : 'filled'}
               isBusy={isFetchingQuote}
@@ -1093,6 +1095,8 @@ export function WidgetWithdraw({
           {/* Amount Section */}
           <div className="flex flex-col gap-4">
             <InputTokenAmount
+              dataTestId={'withdraw-amount-input'}
+              tokenSelectorTestId={'withdraw-asset-selector'}
               input={withdrawInput}
               title="Amount"
               placeholder="0.00"
@@ -1173,6 +1177,7 @@ export function WidgetWithdraw({
 
       {/* Transaction Overlay */}
       <TransactionOverlay
+        dataTestIdPrefix={'withdraw'}
         isOpen={showTransactionOverlay}
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}

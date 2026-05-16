@@ -240,6 +240,7 @@ export function VaultsFiltersBar({
             <div className={'flex w-full items-center gap-1'}>
               <div className={'flex-1'}>
                 <SearchBar
+                  dataTestId={'vaults-search-input'}
                   className={'w-full rounded-[4px] border-none bg-neutral-800/20 text-text-primary'}
                   iconClassName={'text-text-primary'}
                   searchPlaceholder={'Search vaults...'}
@@ -280,6 +281,7 @@ export function VaultsFiltersBar({
               {filters.trailingControls}
               <button
                 type={'button'}
+                data-testid={'vaults-search-toggle'}
                 className={cl(
                   'flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition-colors hover:border-hover hover:text-text-primary',
                   search.value ? 'text-text-primary' : ''
@@ -406,6 +408,7 @@ function FilterControls({
   const inlineSearchElement = showInlineSearch ? (
     <div ref={searchContainerRef} className={'flex-1 min-w-0'}>
       <SearchBar
+        dataTestId={'vaults-search-input'}
         className={'w-full rounded-lg border-border bg-surface text-text-primary transition-all'}
         iconClassName={'text-text-primary'}
         searchPlaceholder={'Find a Vault'}
@@ -420,6 +423,7 @@ function FilterControls({
   ) : null
   const chainSelectorElement = showChainSelector ? (
     <VaultsChainSelector
+      dataTestId={'vaults-chain-filter'}
       chainButtons={chainButtons}
       areAllChainsSelected={areAllChainsSelected}
       allChainsLabel={allChainsLabel}
@@ -850,6 +854,7 @@ function MobileChainDropdown({
     <Listbox value={selectedChain?.id ?? null} onChange={handleChange}>
       <div className={'relative'}>
         <ListboxButton
+          data-testid={'vaults-chain-filter'}
           className={
             'flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-text-primary transition-colors hover:border-hover'
           }

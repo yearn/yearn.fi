@@ -44,6 +44,8 @@ interface Props {
   }
   onRemoveZap?: () => void
   zapNotificationText?: string
+  dataTestId?: string
+  tokenSelectorTestId?: string
 }
 
 export const InputTokenAmount: FC<Props> = ({
@@ -69,7 +71,9 @@ export const InputTokenAmount: FC<Props> = ({
   tokenLogoURI,
   zapToken,
   onRemoveZap,
-  zapNotificationText
+  zapNotificationText,
+  dataTestId,
+  tokenSelectorTestId
 }) => {
   const account = useAccount()
   const { openLoginModal } = useWeb3()
@@ -215,6 +219,7 @@ export const InputTokenAmount: FC<Props> = ({
         {/* Middle row - Input and token selector */}
         <div className="flex items-center gap-2 relative">
           <input
+            data-testid={dataTestId}
             disabled={disabled}
             placeholder={placeholder ?? '0.00'}
             value={formValue}
@@ -239,6 +244,7 @@ export const InputTokenAmount: FC<Props> = ({
               type="button"
               onClick={handleTokenButtonClick}
               data-token-selector-button
+              data-testid={tokenSelectorTestId}
               disabled={!showTokenSelector && disabled}
               className={cl(
                 'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 transition-colors',
@@ -334,6 +340,7 @@ export const InputTokenAmount: FC<Props> = ({
               <button
                 type="button"
                 onClick={onTokenSelectorClick}
+                data-testid={tokenSelectorTestId}
                 disabled={disabled}
                 className={cl(
                   'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 transition-colors shrink-0',

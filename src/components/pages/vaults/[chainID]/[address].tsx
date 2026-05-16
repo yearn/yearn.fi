@@ -1515,6 +1515,7 @@ function Index(): ReactElement | null {
 
   return (
     <div
+      data-testid={'vault-detail-page'}
       className={
         'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-[calc(7rem+env(safe-area-inset-bottom,0px))] sm:pb-8'
       }
@@ -1552,6 +1553,7 @@ function Index(): ReactElement | null {
         ) : null}
 
         <header
+          data-testid={'vault-detail-header'}
           className={cl(
             'h-full rounded-3xl',
             'relative flex-col items-center justify-center',
@@ -1699,6 +1701,7 @@ function Index(): ReactElement | null {
 
         <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
           <div
+            data-testid={'vault-detail-action-panel'}
             ref={widgetContainerRef}
             className={cl(
               'hidden md:block',
@@ -1865,6 +1868,9 @@ function Index(): ReactElement | null {
           <div className="flex gap-3 max-w-[1232px] mx-auto">
             <button
               type="button"
+              data-testid={
+                widgetActions[0] === WidgetActionType.Migrate ? 'migrate-submit-button' : 'deposit-submit-button'
+              }
               onClick={() => handleFloatingButtonClick(widgetActions[0])}
               className="yearn--button--nextgen flex-1"
               data-variant="filled"
@@ -1873,6 +1879,7 @@ function Index(): ReactElement | null {
             </button>
             <button
               type="button"
+              data-testid={'withdraw-submit-button'}
               onClick={() => handleFloatingButtonClick(widgetActions[1])}
               className="yearn--button flex-1"
               data-variant="light"

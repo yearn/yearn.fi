@@ -560,6 +560,7 @@ function VaultOverviewCard({
   const metrics: TMetricBlock[] = [
     {
       key: 'est-apy',
+      dataTestId: includeTourAttributes ? 'vault-detail-est-apy' : undefined,
       header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY based on underlying markets'} />,
       value: isDualVariantVault ? (
         <Tooltip
@@ -604,6 +605,7 @@ function VaultOverviewCard({
     },
     {
       key: 'tvl',
+      dataTestId: includeTourAttributes ? 'vault-detail-tvl' : undefined,
       header: <MetricHeader label={'TVL'} tooltip={'Total value currently deposited into this vault'} />,
       value: isDualVariantVault ? (
         <span className={METRIC_VALUE_CLASS}>
@@ -867,6 +869,7 @@ function DualVariantUserHoldingsCard({
   const sections: TMetricBlock[] = [
     {
       key: 'deposited',
+      dataTestId: includeTourAttributes ? 'vault-detail-your-deposits' : undefined,
       header: (
         <MetricHeader
           label={'Your Deposits'}
@@ -1002,6 +1005,7 @@ function UserHoldingsCard({
   const sections: TMetricBlock[] = [
     {
       key: 'deposited',
+      dataTestId: includeTourAttributes ? 'vault-detail-your-deposits' : undefined,
       header: (
         <MetricHeader
           label={'Your Deposits'}

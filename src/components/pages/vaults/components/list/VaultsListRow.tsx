@@ -242,6 +242,8 @@ type TVaultsListRowProps = {
   showProductTypeChipOverride?: boolean
   mobileSecondaryMetric?: 'tvl' | 'holdings'
   expandedChartVariant?: 'default' | 'portfolio-user-tvl-overlay'
+  rowTestId?: string
+  holdingsTestId?: string
 }
 
 function VaultsListRowComponent({
@@ -269,7 +271,9 @@ function VaultsListRowComponent({
   showProductTypeChipOverride,
   mobileSecondaryMetric = 'tvl',
   showAllocatorChip = true,
-  expandedChartVariant = 'default'
+  expandedChartVariant = 'default',
+  rowTestId,
+  holdingsTestId = 'vault-user-holdings'
 }: TVaultsListRowProps): ReactElement {
   const navigate = useNavigate()
   const trackEvent = usePlausible()
@@ -320,6 +324,7 @@ function VaultsListRowComponent({
   const holdingsColumnSpan = 'col-span-4'
   const showCompareToggle = Boolean(onToggleCompare)
   const vaultKey = `${chainID}_${toAddress(vaultAddress)}`
+  const vaultRowTestId = `vault-row-${chainID}-${toAddress(vaultAddress)}`
   const isCompareSelected = compareVaultKeys?.includes(vaultKey) ?? false
   const isHoveringInteractive = interactiveHoverCount > 0
   const handleInteractiveHoverChange = (isHovering: boolean): void => {
@@ -454,6 +459,7 @@ function VaultsListRowComponent({
     >
       <button
         type={'button'}
+        data-testid={'vault-row-expand-button'}
         aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
         aria-expanded={isExpanded}
         data-tour="vaults-row-expand"
@@ -484,6 +490,7 @@ function VaultsListRowComponent({
           'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',
           'cursor-pointer relative group'
         )}
+        data-testid={rowTestId ?? vaultRowTestId}
         data-tour="vaults-row"
         onMouseEnter={prefetchSnapshot}
         onFocus={prefetchSnapshot}
@@ -599,6 +606,7 @@ function VaultsListRowComponent({
             </div>
             <div className={'min-w-0 flex-1'}>
               <strong
+                data-testid={'vault-name'}
                 title={vaultName}
                 className={
                   'block truncate-safe whitespace-nowrap font-black text-text-primary md:mb-0 text-lg leading-tight'
@@ -737,74 +745,83 @@ function VaultsListRowComponent({
             <div className={'grid w-full grid-cols-2 gap-2 text-sm text-text-secondary'}>
               <div className={'flex items-center justify-center gap-2 whitespace-nowrap'}>
                 <span className={'text-text-primary/60'}>{'Est. APY:'}</span>
-                {resolvedYvUsdMetrics ? (
-                  <Tooltip
-                    className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
-                    openDelayMs={150}
-                    tooltip={yvUsdApyTooltip ?? ''}
-                    align={'center'}
-                    zIndex={90}
-                  >
-                    <button
-                      type={'button'}
-                      onClick={handleYvUsdApyClick}
-                      onMouseEnter={() => handleInteractiveHoverChange(true)}
-                      onMouseLeave={() => handleInteractiveHoverChange(false)}
-                      className={'inline-flex flex-col items-start gap-0.5 text-left leading-none'}
-                      aria-label={'View yvUSD APY details'}
+                <span data-testid={isMobile ? 'vault-est-apy' : undefined}>
+                  {resolvedYvUsdMetrics ? (
+                    <Tooltip
+                      className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
+                      openDelayMs={150}
+                      tooltip={yvUsdApyTooltip ?? ''}
+                      align={'center'}
+                      zIndex={90}
                     >
-                      <span className={'text-[10px] uppercase tracking-wide text-text-secondary'}>{'Up to'}</span>
-                      <b
-                        className={
-                          'yearn--table-data-section-item-value inline-flex items-center gap-2 text-lg font-semibold text-text-primary'
-                        }
+                      <button
+                        type={'button'}
+                        onClick={handleYvUsdApyClick}
+                        onMouseEnter={() => handleInteractiveHoverChange(true)}
+                        onMouseLeave={() => handleInteractiveHoverChange(false)}
+                        className={'inline-flex flex-col items-start gap-0.5 text-left leading-none'}
+                        aria-label={'View yvUSD APY details'}
                       >
-                        {yvUsdApyValue}
-                      </b>
-                    </button>
-                  </Tooltip>
-                ) : (
-                  <VaultForwardAPY
-                    currentVault={currentVault}
-                    className={'flex-row items-center text-left'}
-                    valueClassName={'text-lg font-semibold'}
-                    showSubline={false}
-                    displayVariant={apyDisplayVariant}
-                    showBoostDetails={showBoostDetails}
-                    onInteractiveHoverChange={handleInteractiveHoverChange}
-                  />
-                )}
+                        <span className={'text-[10px] uppercase tracking-wide text-text-secondary'}>{'Up to'}</span>
+                        <b
+                          className={
+                            'yearn--table-data-section-item-value inline-flex items-center gap-2 text-lg font-semibold text-text-primary'
+                          }
+                        >
+                          {yvUsdApyValue}
+                        </b>
+                      </button>
+                    </Tooltip>
+                  ) : (
+                    <VaultForwardAPY
+                      currentVault={currentVault}
+                      className={'flex-row items-center text-left'}
+                      valueClassName={'text-lg font-semibold'}
+                      showSubline={false}
+                      displayVariant={apyDisplayVariant}
+                      showBoostDetails={showBoostDetails}
+                      onInteractiveHoverChange={handleInteractiveHoverChange}
+                    />
+                  )}
+                </span>
               </div>
               <div className={'flex items-center justify-center gap-2 whitespace-nowrap'}>
                 <span className={'text-text-primary/60'}>
                   {mobileSecondaryMetric === 'holdings' ? 'Holdings:' : 'TVL:'}
                 </span>
                 {mobileSecondaryMetric === 'holdings' ? (
-                  <span className={'text-lg font-semibold text-text-primary'}>
+                  <span
+                    data-testid={isMobile ? holdingsTestId : undefined}
+                    className={'text-lg font-semibold text-text-primary'}
+                  >
                     {showHoldingsValue ? formatTvlDisplay(holdingsValue, holdingsFormatOptions) : '—'}
                   </span>
                 ) : resolvedYvUsdMetrics ? (
-                  <Tooltip
-                    className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
-                    openDelayMs={150}
-                    toggleOnClick={false}
-                    tooltip={yvUsdTvlTooltip ?? ''}
-                  >
-                    <span className={'text-lg font-semibold text-text-primary font-number'}>
-                      <RenderAmount
-                        value={resolvedYvUsdMetrics.combinedTvl}
-                        symbol={'USD'}
-                        decimals={0}
-                        options={{
-                          shouldCompactValue: true,
-                          maximumFractionDigits: 2,
-                          minimumFractionDigits: 0
-                        }}
-                      />
-                    </span>
-                  </Tooltip>
+                  <span data-testid={isMobile ? 'vault-tvl' : undefined}>
+                    <Tooltip
+                      className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
+                      openDelayMs={150}
+                      toggleOnClick={false}
+                      tooltip={yvUsdTvlTooltip ?? ''}
+                    >
+                      <span className={'text-lg font-semibold text-text-primary font-number'}>
+                        <RenderAmount
+                          value={resolvedYvUsdMetrics.combinedTvl}
+                          symbol={'USD'}
+                          decimals={0}
+                          options={{
+                            shouldCompactValue: true,
+                            maximumFractionDigits: 2,
+                            minimumFractionDigits: 0
+                          }}
+                        />
+                      </span>
+                    </Tooltip>
+                  </span>
                 ) : (
-                  <VaultTVL currentVault={currentVault} valueClassName={'text-lg font-semibold text-text-primary'} />
+                  <span data-testid={isMobile ? 'vault-tvl' : undefined}>
+                    <VaultTVL currentVault={currentVault} valueClassName={'text-lg font-semibold text-text-primary'} />
+                  </span>
                 )}
               </div>
             </div>
@@ -815,7 +832,11 @@ function VaultsListRowComponent({
         <div
           className={cl(rightColumnSpan, 'z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:items-center', rightGridColumns)}
         >
-          <div className={cl('yearn--table-data-section-item', apyColumnSpan)} datatype={'number'}>
+          <div
+            className={cl('yearn--table-data-section-item', apyColumnSpan)}
+            datatype={'number'}
+            data-testid={isMobile ? undefined : 'vault-est-apy'}
+          >
             {resolvedYvUsdMetrics ? (
               <div
                 className={'flex justify-end text-right'}
@@ -865,7 +886,11 @@ function VaultsListRowComponent({
             )}
           </div>
           {/* TVL */}
-          <div className={cl('yearn--table-data-section-item', tvlColumnSpan)} datatype={'number'}>
+          <div
+            className={cl('yearn--table-data-section-item', tvlColumnSpan)}
+            datatype={'number'}
+            data-testid={isMobile ? undefined : 'vault-tvl'}
+          >
             {resolvedYvUsdMetrics ? (
               <div
                 className={'flex justify-end text-right'}
@@ -900,7 +925,11 @@ function VaultsListRowComponent({
           </div>
           {!showHoldingsColumn ? <div className={'col-span-1'} /> : null}
           {showHoldingsColumn ? (
-            <div className={cl('yearn--table-data-section-item', holdingsColumnSpan)} datatype={'number'}>
+            <div
+              className={cl('yearn--table-data-section-item', holdingsColumnSpan)}
+              datatype={'number'}
+              data-testid={isMobile ? undefined : holdingsTestId}
+            >
               <VaultHoldingsAmount value={holdingsValue} formatOptions={holdingsFormatOptions} />
             </div>
           ) : null}

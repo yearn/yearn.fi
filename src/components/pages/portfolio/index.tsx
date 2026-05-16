@@ -1614,10 +1614,14 @@ function PortfolioHeaderSection({
   const mobileMetrics = [metrics[0], metrics[2], metrics[1], metrics[4]]
 
   return (
-    <section className="h-full bg-surface">
+    <section className="h-full bg-surface" data-testid={'portfolio-overview'}>
       <div className="grid grid-cols-2 gap-px bg-border md:hidden">
         {mobileMetrics.map((item) => (
-          <div key={item.key} className={metricCardClassName}>
+          <div
+            key={item.key}
+            className={metricCardClassName}
+            data-testid={item.key === 'total-balance' ? 'portfolio-total-balance' : undefined}
+          >
             <div className="flex items-center justify-between">{item.header}</div>
             <div className="pt-0.5">{item.value}</div>
             {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
@@ -1627,7 +1631,11 @@ function PortfolioHeaderSection({
       </div>
       <div className="hidden h-full grid-rows-5 gap-px bg-border md:grid">
         {metrics.map((item) => (
-          <div key={item.key} className={metricCardClassName}>
+          <div
+            key={item.key}
+            className={metricCardClassName}
+            data-testid={item.key === 'total-balance' ? 'portfolio-total-balance' : undefined}
+          >
             <div className="flex items-center justify-between">{item.header}</div>
             <div className="pt-0.5">{item.value}</div>
             {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
@@ -1651,6 +1659,7 @@ function PortfolioTabSelector({
   return (
     <div className={'flex gap-2 md:gap-3 w-full'}>
       <div
+        data-testid={'portfolio-tabs'}
         className={cl(
           'flex h-10 w-full items-stretch justify-between overflow-hidden bg-surface-secondary text-sm text-text-primary divide-x divide-border',
           mergeWithHeader ? 'rounded-b-lg border-x border-b border-border' : 'rounded-lg border border-border'
@@ -1659,6 +1668,7 @@ function PortfolioTabSelector({
         {PORTFOLIO_TABS.map((tab) => (
           <button
             key={tab.key}
+            data-testid={`portfolio-${tab.key}-tab`}
             type={'button'}
             onClick={() => onSelectTab(tab.key)}
             className={cl(
@@ -2521,7 +2531,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
   if (!isActive) {
     return (
-      <section className="flex flex-col gap-2">
+      <section className="flex flex-col gap-2" data-testid={'rewards-page'}>
         <div>
           <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">Claim rewards</h2>
           <p className="text-xs text-text-secondary sm:text-sm">
@@ -2539,7 +2549,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   }
 
   return (
-    <section className="relative flex flex-col gap-2 sm:gap-2">
+    <section className="relative flex flex-col gap-2 sm:gap-2" data-testid={'rewards-page'}>
       {stakingVaults.map((vault) => (
         <ChainStakingRewardsFetcher
           key={getVaultKey(vault)}
@@ -2635,6 +2645,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
       {isOverlayOpen && (
         <TransactionOverlay
+          dataTestIdPrefix={'rewards'}
           isOpen={isOverlayOpen}
           onClose={handleOverlayClose}
           step={activeStep}
@@ -2691,6 +2702,8 @@ function PortfolioHoldingsSection({
         {holdingsRows.map((row) => (
           <VaultsListRow
             key={row.key}
+            rowTestId={`portfolio-holding-row-${getVaultChainID(row.vault)}-${toAddress(getVaultAddress(row.vault))}`}
+            holdingsTestId={'portfolio-holding-value'}
             currentVault={row.vault}
             flags={vaultFlags[row.key]}
             hrefOverride={row.hrefOverride}
@@ -2709,7 +2722,7 @@ function PortfolioHoldingsSection({
   }
 
   return (
-    <section className="flex flex-col gap-2">
+    <section className="flex flex-col gap-2" data-testid={'portfolio-holdings'}>
       {!isActive ? (
         <div className="flex flex-col gap-2">
           <EmptySectionCard
@@ -2768,7 +2781,10 @@ function PortfolioHoldingsSection({
                 ]}
               />
             </div>
-            <div className="overflow-hidden rounded-lg md:rounded-t-none border-x border-b border-border">
+            <div
+              className="overflow-hidden rounded-lg md:rounded-t-none border-x border-b border-border"
+              data-testid={'portfolio-holdings-table'}
+            >
               {renderHoldingsContent()}
             </div>
           </div>
@@ -3068,6 +3084,7 @@ function PortfolioPage(): ReactElement {
     <PortfolioPageLayout>
       <div
         ref={varsRef}
+        data-testid={'portfolio-page'}
         className="flex flex-col"
         style={{ '--portfolio-breadcrumbs-height': '0px', '--portfolio-tabs-height': '0px' } as CSSProperties}
       >

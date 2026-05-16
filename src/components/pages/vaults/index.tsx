@@ -313,6 +313,7 @@ export default function Index(): ReactElement {
   const compareToggleControl = (
     <button
       type={'button'}
+      data-testid={'vaults-compare-toggle'}
       className={cl(
         'flex shrink-0 items-center justify-center h-10 px-4 gap-1 rounded-lg bg-surface border border-border hover:border-hover text-sm font-medium text-text-secondary transition-colors hover:text-text-primary data-[active=true]:border-primary/50 data-[active=true]:text-primary',
         isCompareMode ? 'bg-primary/50' : null
@@ -500,7 +501,7 @@ export default function Index(): ReactElement {
 
   return (
     <>
-      <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
+      <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'} data-testid={'vaults-page'}>
         <div className={'mx-auto w-full max-w-[1232px] px-4 pb-4'}>
           <div ref={varsRef} className={'flex flex-col'} style={{ '--vaults-filters-height': '0px' } as CSSProperties}>
             <div
@@ -547,7 +548,7 @@ export default function Index(): ReactElement {
                 isStackedLayout={shouldStackFilters}
               />
             </div>
-            <div data-tour="vaults-list">
+            <div data-tour="vaults-list" data-testid={'vaults-list'}>
               <VaultsListSection
                 isUpdatingProductType={isUpdatingProductType}
                 isUpdatingList={isUpdatingList}

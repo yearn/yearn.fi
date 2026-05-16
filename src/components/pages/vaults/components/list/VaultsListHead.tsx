@@ -166,6 +166,7 @@ export function VaultsListHead({
   return (
     <div className={cl('mt-4 hidden w-full grid-cols-1 md:mt-0 md:grid', wrapperClassName)}>
       <div
+        data-testid={'vaults-sort-control'}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 py-2 pl-6 pr-16 md:pl-6 md:pr-20',
           'border-t border-border md:border-none',

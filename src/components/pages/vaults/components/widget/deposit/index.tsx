@@ -945,6 +945,7 @@ export function WidgetDeposit({
         <div className="flex-1">
           {hideActionButton ? null : !account ? (
             <Button
+              data-testid={'wallet-connect-button'}
               onClick={openLoginModal}
               variant="filled"
               className="w-full"
@@ -954,6 +955,7 @@ export function WidgetDeposit({
             </Button>
           ) : (
             <Button
+              data-testid={'deposit-submit-button'}
               onClick={() => setShowTransactionOverlay(true)}
               variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
               isBusy={activeFlow.periphery.isLoadingRoute}
@@ -998,6 +1000,8 @@ export function WidgetDeposit({
       <div className="flex flex-col flex-1 p-6 pt-2 gap-3">
         {/* Amount Section */}
         <InputTokenAmount
+          dataTestId={'deposit-amount-input'}
+          tokenSelectorTestId={'deposit-asset-selector'}
           input={depositInput}
           title="Amount"
           placeholder="0.00"
@@ -1067,6 +1071,7 @@ export function WidgetDeposit({
 
       {/* Transaction Overlay */}
       <TransactionOverlay
+        dataTestIdPrefix={'deposit'}
         isOpen={showTransactionOverlay}
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}

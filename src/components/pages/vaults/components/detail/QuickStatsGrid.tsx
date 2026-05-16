@@ -35,9 +35,10 @@ interface CompactStatBoxProps {
   label: string
   value: ReactNode
   onClick?: () => void
+  dataTestId?: string
 }
 
-function CompactStatBox({ label, value, onClick }: CompactStatBoxProps): ReactElement {
+function CompactStatBox({ label, value, onClick, dataTestId }: CompactStatBoxProps): ReactElement {
   const isInteractive = Boolean(onClick)
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
@@ -49,6 +50,7 @@ function CompactStatBox({ label, value, onClick }: CompactStatBoxProps): ReactEl
 
   return (
     <div
+      data-testid={dataTestId}
       className={cl(
         'flex-1 min-w-0 rounded-lg bg-surface-secondary border border-border px-2 py-1.5 min-[375px]:px-3 min-[375px]:py-2',
         isInteractive ? 'cursor-pointer' : undefined
@@ -173,6 +175,7 @@ export function MobileKeyMetrics({
       <div className="grid grid-cols-3 gap-1.5 min-[375px]:gap-2">
         {apyBox ?? (
           <CompactStatBox
+            dataTestId={'vault-detail-est-apy'}
             label="Est. APY"
             onClick={() => forwardApyRef.current?.openModal()}
             value={
@@ -190,8 +193,8 @@ export function MobileKeyMetrics({
             }
           />
         )}
-        <CompactStatBox label="TVL" value={formatUSD(tvl.tvl)} />
-        <CompactStatBox label="Deposited" value={depositValue} />
+        <CompactStatBox dataTestId={'vault-detail-tvl'} label="TVL" value={formatUSD(tvl.tvl)} />
+        <CompactStatBox dataTestId={'vault-detail-your-deposits'} label="Deposited" value={depositValue} />
       </div>
       {showSectionNav ? (
         <div className="grid grid-cols-4 gap-2">
@@ -258,6 +261,7 @@ export function YvUsdApyStatBox({
     <>
       {/* biome-ignore lint/a11y/useSemanticElements: this card opens a modal while containing a nested variant toggle button */}
       <div
+        data-testid={'vault-detail-est-apy'}
         className={
           'flex min-w-0 flex-1 cursor-pointer flex-col rounded-lg border border-border bg-surface-secondary px-2 py-1.5 min-[375px]:px-3 min-[375px]:py-2'
         }

@@ -13,6 +13,7 @@ export function VaultsFiltersButton({ filtersCount, onClick }: TVaultsFiltersBut
   return (
     <button
       type={'button'}
+      data-testid={'vaults-filter-button'}
       className={cl(
         'relative flex shrink-0 items-center justify-center gap-1 overflow-visible border rounded-lg h-10 w-[34px] py-2 text-sm font-medium bg-surface transition-colors min-[1075px]:w-auto min-[1075px]:px-4',
         isActive ? 'border-primary/50 text-primary' : 'border-border text-text-secondary hover:text-text-primary'
