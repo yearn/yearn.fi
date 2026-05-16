@@ -26,6 +26,7 @@ type TYvUsdDualLineChartProps = {
   timeframe: string
   hideTooltip?: boolean
   allowNegativeValues?: boolean
+  connectNulls?: boolean
   referenceFloor?: number
   formatValue: (value: number) => string
   formatTick: (value: number | string) => string
@@ -69,6 +70,7 @@ export function YvUsdDualLineChart({
   timeframe,
   hideTooltip,
   allowNegativeValues = false,
+  connectNulls = false,
   referenceFloor,
   formatValue,
   formatTick
@@ -146,6 +148,7 @@ export function YvUsdDualLineChart({
           strokeWidth={2}
           dot={false}
           isAnimationActive={false}
+          connectNulls={connectNulls}
         />
         <Line
           type={'monotone'}
@@ -155,6 +158,7 @@ export function YvUsdDualLineChart({
           strokeDasharray="4 3"
           dot={false}
           isAnimationActive={false}
+          connectNulls={connectNulls}
         />
       </LineChart>
     </ChartContainer>
@@ -255,6 +259,7 @@ export function YvUsdTvlChart({
       chartData={chartData}
       timeframe={timeframe}
       hideTooltip={hideTooltip}
+      connectNulls
       formatValue={(value) =>
         `$${value.toLocaleString(undefined, {
           maximumFractionDigits: 0

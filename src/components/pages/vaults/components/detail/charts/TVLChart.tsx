@@ -169,7 +169,6 @@ export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
             stroke="none"
             fill={`url(#${gradientId}-tvl)`}
             fillOpacity={1}
-            connectNulls
             tooltipType={'none'}
             isAnimationActive={false}
           />
@@ -180,6 +179,7 @@ export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
             strokeWidth={2}
             dot={false}
             isAnimationActive={false}
+            connectNulls
           />
         </ComposedChart>
       </ChartContainer>
@@ -229,7 +229,6 @@ export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
           stroke="none"
           fill={`url(#${gradientId}-tvl)`}
           fillOpacity={1}
-          connectNulls
           tooltipType={'none'}
           isAnimationActive={false}
         />
@@ -240,6 +239,7 @@ export function TVLChart({ chartData, timeframe, hideTooltip }: TVLChartProps) {
           strokeWidth={2}
           dot={false}
           isAnimationActive={false}
+          connectNulls
         />
       </ComposedChart>
     </ChartContainer>
