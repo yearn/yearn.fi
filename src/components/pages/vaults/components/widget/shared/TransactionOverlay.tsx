@@ -603,7 +603,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       }
 
       if (!currentStep.prepare.isSuccess || !currentStep.prepare.data?.request) {
-        console.warn('[TransactionOverlay] Transaction not ready', getStepDebugInfo(currentStep))
+        console.warn('[TransactionOverlay] Transaction not ready', JSON.stringify(getStepDebugInfo(currentStep)))
         setOverlayState('error')
         setErrorMessage('Transaction not ready. Please try again.')
         return
@@ -820,11 +820,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Start step when overlay opens
   useEffect(() => {
-    if (isOpen && overlayState === 'idle' && step && !hasStartedRef.current) {
+    const canStartStep = Boolean(step?.isPermit || isStepReady || step?.prepare.isError)
+    if (isOpen && overlayState === 'idle' && step && canStartStep && !hasStartedRef.current) {
       hasStartedRef.current = true
       executeStep()
     }
-  }, [isOpen, overlayState, step, executeStep])
+  }, [isOpen, overlayState, step, isStepReady, executeStep])
 
   useEffect(() => {
     const nextOverlayState = resolvePendingSafeOverlayState({
@@ -843,7 +844,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
     if (nextOverlayState === 'error') {
       setOverlayState('error')
-      setErrorMessage('Transaction failed in Safe. Please review your Safe queue and try again.')
+      setErrorMessage(
+        isWalletSafe
+          ? 'Transaction failed in Safe. Please review your Safe queue and try again.'
+          : 'Transaction failed. Please try again.'
+      )
       resetTxState()
       void handleUpdateNotification({ status: 'error' })
       setNotificationId(undefined)
