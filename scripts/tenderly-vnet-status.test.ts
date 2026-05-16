@@ -10,6 +10,8 @@ import {
   selectMatchingTenderlyVnet
 } from './tenderly-vnet-status'
 
+const TEST_TX_FROM_ADDRESS = process.env.TENDERLY_TEST_TX_FROM_ADDRESS ?? '0x2222222222222222222222222222222222222222'
+
 describe('tenderly-vnet-status', () => {
   it('defaults to the webops profile', () => {
     expect(
@@ -137,7 +139,7 @@ describe('tenderly-vnet-status', () => {
               createdAtAgeLabel: '8s',
               blockNumber: 24_735_515,
               txHash: '0xb00dc057e50c8926896495cb31717bfa7ab47608673789b4b7b478ec114080cb',
-              from: '0x5b0d3243c78fb9d4ac035fb2384ffdf7a9ef6396',
+              from: 'TEST_TX_FROM_ADDRESS',
               to: '0xc56413869c6cdf96496f2b1ef801fedbdfa7ddb0'
             }
           ],
