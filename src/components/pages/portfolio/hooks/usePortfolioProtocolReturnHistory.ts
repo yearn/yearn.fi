@@ -25,7 +25,7 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
       return null
     }
 
-    return `/api/holdings/protocol-return/history?address=${address}&timeframe=${timeframe}&debug=1&fetchType=parallel&progressId=${encodeURIComponent(progressId)}`
+    return `/api/holdings/protocol-return/history?address=${address}&timeframe=${timeframe}&fetchType=parallel&progressId=${encodeURIComponent(progressId)}`
   }, [address, enabled, progressId, timeframe])
   const cacheKey = useMemo(
     () => (address && enabled ? ['fetch', 'portfolio-protocol-history', address.toLowerCase(), timeframe] : undefined),

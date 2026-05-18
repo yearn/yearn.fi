@@ -79,7 +79,7 @@ describe('holdings simple pnl history route', () => {
     const req = {
       method: 'GET',
       query: {
-        address: 'TEST_WALLET_ADDRESS',
+        address: TEST_WALLET_ADDRESS,
         vaults: '1:0x696d02Db93291651ED510704c9b286841d506987,1:0xAaaFEa48472f77563961Cdb53291DEDfB46F9040'
       },
       headers: {}
@@ -90,7 +90,7 @@ describe('holdings simple pnl history route', () => {
 
     expect(res.statusCode).toBe(200)
     expect(getHoldingsProtocolReturnHistoryMock).toHaveBeenCalledWith(
-      'TEST_WALLET_ADDRESS',
+      TEST_WALLET_ADDRESS,
       'all',
       'seq',
       'paged',
