@@ -14,7 +14,8 @@ vi.mock('@pages/vaults/hooks/useVaultApyData', () => ({
 vi.mock('@pages/vaults/hooks/useYvUsdVaults', () => ({
   useYvUsdVaults: () => ({
     metrics: {
-      locked: { apy: 0.09 }
+      locked: { apy: 0.09 },
+      unlocked: { apy: 0.05 }
     }
   })
 }))
@@ -113,7 +114,40 @@ describe('SuggestedVaultCard', () => {
     expect(html).toContain('class="truncate')
   })
 
-  it('uses yvUSD locked presentation for yvUSD suggestions', () => {
+  it('uses yvUSD locked presentation for the locked yvUSD suggestion', () => {
+    vi.mocked(useVaultApyData).mockReturnValue({
+      mode: 'spot',
+      baseForwardApr: 0.1,
+      netApr: 0,
+      rewardsAprSum: 0,
+      isBoosted: false,
+      hasPendleArbRewards: false,
+      hasKelp: false,
+      hasKelpNEngenlayer: false,
+      katanaExtras: undefined,
+      katanaThirtyDayApr: undefined,
+      katanaEstApr: undefined
+    })
+
+    const html = renderCard({
+      ...baseVault,
+      address: YVUSD_LOCKED_ADDRESS,
+      name: 'yvUSD (Locked)',
+      token: {
+        address: YVUSD_UNLOCKED_ADDRESS,
+        symbol: 'yvUSD'
+      }
+    } as unknown as TKongVaultInput)
+
+    expect(html).toContain('yvUSD (14 day lock)')
+    expect(html).toContain('Locked APY')
+    expect(html).toContain('9.00%')
+    expect(html).toContain('/vaults/1/')
+    expect(html).toContain(YVUSD_LOCKED_ADDRESS)
+    expect(html).toContain('yvusd-128.png')
+  })
+
+  it('uses yvUSD unlocked presentation for the unlocked yvUSD suggestion', () => {
     vi.mocked(useVaultApyData).mockReturnValue({
       mode: 'spot',
       baseForwardApr: 0.1,
@@ -138,11 +172,10 @@ describe('SuggestedVaultCard', () => {
       }
     } as unknown as TKongVaultInput)
 
-    expect(html).toContain('yvUSD (14 day lock)')
-    expect(html).toContain('Locked APY')
-    expect(html).toContain('9.00%')
+    expect(html).toContain('yvUSD (Unlocked)')
+    expect(html).toContain('Unlocked APY')
+    expect(html).toContain('5.00%')
     expect(html).toContain('/vaults/1/')
-    expect(html).toContain(YVUSD_LOCKED_ADDRESS)
-    expect(html).toContain('yvusd-128.png')
+    expect(html).toContain(YVUSD_UNLOCKED_ADDRESS)
   })
 })

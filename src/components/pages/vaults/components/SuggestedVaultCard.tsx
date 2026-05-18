@@ -44,8 +44,13 @@ export function SuggestedVaultCard({
   const vaultCategory = getVaultCategory(vault)
   const yvUsdVaults = useYvUsdVaults()
   const isYvUsd = isYvUsdVault(vault)
-  const vaultName = isYvUsd ? `yvUSD (${YVUSD_LOCKED_COOLDOWN_DAYS} day lock)` : getVaultName(vault)
-  const displayedVaultAddress = isYvUsd ? YVUSD_LOCKED_ADDRESS : vaultAddress
+  const isYvUsdLocked = isYvUsd && vaultAddress === YVUSD_LOCKED_ADDRESS
+  const vaultName = isYvUsd
+    ? isYvUsdLocked
+      ? `yvUSD (${YVUSD_LOCKED_COOLDOWN_DAYS} day lock)`
+      : 'yvUSD (Unlocked)'
+    : getVaultName(vault)
+  const yvUsdApy = isYvUsdLocked ? yvUsdVaults.metrics.locked.apy : yvUsdVaults.metrics.unlocked.apy
 
   const chain = getNetwork(chainID)
   const tokenIcon = isYvUsd
@@ -68,7 +73,7 @@ export function SuggestedVaultCard({
 
   return (
     <Link
-      to={`/vaults/${chainID}/${toAddress(displayedVaultAddress)}`}
+      to={`/vaults/${chainID}/${toAddress(vaultAddress)}`}
       className={
         'group flex h-fit min-h-[156px] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_12px_32px_rgba(4,8,32,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(4,8,32,0.12)]'
       }
@@ -109,13 +114,11 @@ export function SuggestedVaultCard({
         <div className={'flex items-end justify-between gap-4'}>
           <div>
             <p className={'text-mobile-label text-xs uppercase tracking-wide text-text-secondary'}>
-              {isYvUsd ? 'Locked APY' : apyLabel}
+              {isYvUsd ? (isYvUsdLocked ? 'Locked APY' : 'Unlocked APY') : apyLabel}
             </p>
             <div className={'mt-0'}>
               {isYvUsd ? (
-                <span className={'text-xl font-bold text-text-primary'}>
-                  {formatApyDisplay(yvUsdVaults.metrics.locked.apy)}
-                </span>
+                <span className={'text-xl font-bold text-text-primary'}>{formatApyDisplay(yvUsdApy)}</span>
               ) : (
                 <VaultForwardAPY
                   currentVault={vault}
