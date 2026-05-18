@@ -1,4 +1,4 @@
 [install]
-workspace = [
-  "packages/*"
-]
+minimumReleaseAge = 604800
+ignoreScripts = true
+exact = true
