@@ -158,6 +158,7 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
       isAllowanceSufficient: true, // No approval needed for withdrawing own shares
       allowance: maxUint256, // No approval needed - unlimited
       expectedOut, // User gets what they requested (or full balance for redeem-all)
+      minExpectedOut: expectedOut,
       isLoadingRoute: false, // No routing needed for direct withdraw
       isCrossChain: false, // Direct withdraw is always same-chain
       error: undefined

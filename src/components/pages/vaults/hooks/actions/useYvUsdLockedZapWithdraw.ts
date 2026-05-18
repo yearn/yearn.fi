@@ -70,6 +70,7 @@ export function useYvUsdLockedZapWithdraw(params: UseYvUsdLockedZapWithdrawParam
       isAllowanceSufficient,
       allowance,
       expectedOut: params.amount,
+      minExpectedOut: params.amount,
       isLoadingRoute: false,
       isCrossChain: false,
       routerAddress: YVUSD_LOCKED_ZAP_ADDRESS,

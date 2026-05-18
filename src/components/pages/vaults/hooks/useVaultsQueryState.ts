@@ -284,7 +284,7 @@ function buildSnapshotFromParams(params: URLSearchParams, defaults: TVaultsQuery
   const showLegacyFromParam = showLegacyParam !== null ? readBooleanParam(params, 'showLegacy') : false
   const legacyFallback = rawTypes.includes('legacy')
   const showLegacyVaults = showLegacyParam !== null ? showLegacyFromParam : legacyFallback
-  const showHiddenVaults = readBooleanParam(params, 'showHidden')
+  const showHiddenVaults = false
   const showStrategies = readBooleanParam(params, 'showStrategies')
   const sortBy = (params.get('sortBy') as TPossibleSortBy) || defaults.defaultSortBy
   const sortDirection = parseSortDirection(params.get('sortDirection'))
@@ -338,7 +338,7 @@ function readSnapshotFromStorage(storageKey: string, defaults: TVaultsQueryDefau
       underlyingAssets,
       minTvl,
       showLegacyVaults: Boolean(parsed.showLegacyVaults),
-      showHiddenVaults: Boolean(parsed.showHiddenVaults),
+      showHiddenVaults: false,
       showStrategies: Boolean(parsed.showStrategies),
       sortBy:
         typeof parsed.sortBy === 'string' && parsed.sortBy
@@ -475,9 +475,9 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     setSnapshot((prev) => ({ ...prev, showLegacyVaults: value }))
   }, [])
 
-  const onChangeShowHiddenVaults = useCallback((value: boolean): void => {
+  const onChangeShowHiddenVaults = useCallback((_value: boolean): void => {
     isOwnUrlUpdateRef.current = true
-    setSnapshot((prev) => ({ ...prev, showHiddenVaults: value }))
+    setSnapshot((prev) => ({ ...prev, showHiddenVaults: false }))
   }, [])
 
   const onChangeShowStrategies = useCallback((value: boolean): void => {
@@ -575,7 +575,6 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
       }
 
       applyBooleanParam(params, 'showLegacy', snap.showLegacyVaults)
-      applyBooleanParam(params, 'showHidden', snap.showHiddenVaults)
       applyBooleanParam(params, 'showStrategies', snap.showStrategies)
 
       if (snap.sortBy !== defaultSortBy) {

@@ -56,6 +56,8 @@ type Props = {
   chainId: number
   assetAddress: `0x${string}`
   onWithdrawSuccess?: () => void
+  onOpenSettings?: () => void
+  isSettingsOpen?: boolean
   collapseDetails?: boolean
 }
 
@@ -129,7 +131,14 @@ function getYvUsdWithdrawSymbol(variant: TYvUsdVariant): string {
   return variant === 'locked' ? 'yvUSD (Locked)' : 'yvUSD (Unlocked)'
 }
 
-export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collapseDetails }: Props): ReactElement {
+export function YvUsdWithdraw({
+  chainId,
+  assetAddress,
+  onWithdrawSuccess,
+  onOpenSettings,
+  isSettingsOpen,
+  collapseDetails
+}: Props): ReactElement {
   const { address: account } = useAccount()
   const { onRefresh: refreshWalletBalances } = useWallet()
   const { unlockedVault, lockedVault, assetAddress: yvUsdAssetAddress, isLoading } = useYvUsdVaults()
@@ -1259,6 +1268,8 @@ export function YvUsdWithdraw({ chainId, assetAddress, onWithdrawSuccess, collap
         onAmountChange={handleAmountChange}
         onTokenSelectionChange={handleLockedWithdrawTokenSelectionChange}
         handleWithdrawSuccess={isLockedVariant ? handleLockedWithdrawSuccess : onWithdrawSuccess}
+        onOpenSettings={onOpenSettings}
+        isSettingsOpen={isSettingsOpen}
         hideContainerBorder
         contentBelowInput={withdrawTypeSection}
         collapseDetails={collapseDetails}

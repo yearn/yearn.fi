@@ -20,8 +20,20 @@ function getAprServiceVault(
   return Object.values(data ?? {}).find((vault) => toAddress(vault.address) === address)
 }
 
-function hasInfinifiPoints(vault?: TYvUsdAprServicePointsVault): boolean {
-  return (vault?.meta?.strategies || []).some((strategy) => strategy.points === true)
+function hasPositiveDebt(rawDebt?: string): boolean {
+  if (!rawDebt) {
+    return false
+  }
+
+  try {
+    return BigInt(rawDebt) > 0n
+  } catch {
+    return false
+  }
+}
+
+export function hasInfinifiPoints(vault?: TYvUsdAprServicePointsVault): boolean {
+  return (vault?.meta?.strategies || []).some((strategy) => strategy.points === true && hasPositiveDebt(strategy.debt))
 }
 
 export function useYvUsdPoints(): TYvUsdPointsData {

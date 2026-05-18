@@ -10,6 +10,7 @@ import type { TToken } from '@shared/types'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
+import { calculateRemainingEnsoSlippagePercentage, ZAP_SLIPPAGE_HARD_CAP } from '@shared/utils/slippage'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
@@ -17,7 +18,6 @@ import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
-import { usePriceImpactAcceptance } from '../shared/usePriceImpactAcceptance'
 import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
 import { useWidgetContext } from '../shared/useWidgetContext'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
@@ -148,6 +148,9 @@ export function WidgetDeposit({
   deferSuccessEffectsUntilClose = false,
   deferSuccessEffectsUntilConfettiEnd = true
 }: Props): ReactElement {
+  const bootstrapEnsoQuoteDebugRef = useRef<Record<string, unknown> | null>(null)
+  const lastBootstrapEnsoQuoteDebugKeyRef = useRef<string | null>(null)
+  const lastProtectedEnsoQuoteDebugKeyRef = useRef<string | null>(null)
   const {
     account,
     openLoginModal,
@@ -238,6 +241,7 @@ export function WidgetDeposit({
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
   const shouldCollapseDetails = Boolean(collapseDetails && !hideDetails && !hideActionButton)
+  const [ensoQuoteSlippage, setEnsoQuoteSlippage] = useState(0)
 
   useEffect(() => {
     onAmountChange?.(depositAmount.formValue)
@@ -296,7 +300,7 @@ export function WidgetDeposit({
     destinationChainId: vault?.chainID,
     inputDecimals: inputToken?.decimals ?? 18,
     vaultDecimals: vault?.decimals ?? 18,
-    slippage: zapSlippage,
+    slippage: ensoQuoteSlippage,
     stakingSource
   })
 
@@ -339,6 +343,7 @@ export function WidgetDeposit({
     : (vault?.decimals ?? 18)
   const vaultDecimals = vault?.decimals ?? 18
   const normalizedExpectedOut = activeFlow.periphery.normalizedExpectedOut
+  const normalizedMinExpectedOut = activeFlow.periphery.normalizedMinExpectedOut
   const isLoadingQuote = activeFlow.periphery.isLoadingRoute || activeFlow.periphery.isLoadingExpectedOutNormalization
 
   const estimatedAnnualReturn = useMemo(() => {
@@ -350,6 +355,11 @@ export function WidgetDeposit({
     if (normalizedExpectedOut === 0n || !pricePerShare || depositAmount.bn === 0n) return 0n
     return (normalizedExpectedOut * pricePerShare) / 10n ** BigInt(vaultDecimals)
   }, [normalizedExpectedOut, vaultDecimals, pricePerShare, depositAmount.bn])
+
+  const minExpectedOutInAsset = useMemo(() => {
+    if (normalizedMinExpectedOut === 0n || !pricePerShare || depositAmount.bn === 0n) return 0n
+    return (normalizedMinExpectedOut * pricePerShare) / 10n ** BigInt(vaultDecimals)
+  }, [normalizedMinExpectedOut, vaultDecimals, pricePerShare, depositAmount.bn])
 
   const inputTokenPrice =
     inputToken?.address && inputToken?.chainID
@@ -366,6 +376,52 @@ export function WidgetDeposit({
       ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID }).normalized
       : 0
 
+  const hasInputTokenPrice = inputTokenPrice > 0
+  const hasAssetTokenPrice = assetTokenPrice > 0
+
+  // ENSO slippage is calibrated from USD price impact, so re-arm the second
+  // quote pass once those price inputs resolve after a cold load.
+  const ensoSlippageCalibrationKey = useMemo(
+    () =>
+      [
+        sourceChainId,
+        vault?.chainID ?? chainId,
+        depositToken,
+        destinationToken,
+        account ?? 'no-account',
+        depositAmount.debouncedBn.toString(),
+        zapSlippage,
+        hasInputTokenPrice,
+        hasAssetTokenPrice
+      ].join(':'),
+    [
+      account,
+      chainId,
+      depositAmount.debouncedBn,
+      depositToken,
+      destinationToken,
+      hasAssetTokenPrice,
+      hasInputTokenPrice,
+      sourceChainId,
+      vault?.chainID,
+      zapSlippage
+    ]
+  )
+
+  useEffect(() => {
+    setEnsoQuoteSlippage(0)
+  }, [ensoSlippageCalibrationKey])
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    bootstrapEnsoQuoteDebugRef.current = null
+    lastBootstrapEnsoQuoteDebugKeyRef.current = null
+    lastProtectedEnsoQuoteDebugKeyRef.current = null
+  }, [ensoSlippageCalibrationKey])
+
   const depositValueInfo = useMemo(
     () =>
       calculateDepositValueInfo({
@@ -373,6 +429,7 @@ export function WidgetDeposit({
         inputTokenDecimals: inputToken?.decimals ?? 18,
         inputTokenUsdPrice: inputTokenPrice,
         normalizedVaultShares: normalizedExpectedOut,
+        normalizedMinVaultShares: normalizedMinExpectedOut,
         vaultDecimals,
         pricePerShare: pricePerShare || 0n,
         assetTokenDecimals: assetToken?.decimals ?? 18,
@@ -383,6 +440,7 @@ export function WidgetDeposit({
       inputToken?.decimals,
       inputTokenPrice,
       normalizedExpectedOut,
+      normalizedMinExpectedOut,
       vaultDecimals,
       pricePerShare,
       assetToken?.decimals,
@@ -390,23 +448,133 @@ export function WidgetDeposit({
     ]
   )
 
-  // Calculate price impact for high slippage warning
+  const desiredEnsoQuoteSlippage = useMemo(
+    () =>
+      routeType === 'ENSO'
+        ? calculateRemainingEnsoSlippagePercentage({
+            userTolerancePercentage: zapSlippage,
+            quoteImpactPercentage: depositValueInfo.priceImpactPercentage
+          })
+        : zapSlippage,
+    [depositValueInfo.priceImpactPercentage, routeType, zapSlippage]
+  )
+
+  useEffect(() => {
+    if (
+      routeType !== 'ENSO' ||
+      ensoQuoteSlippage !== 0 ||
+      depositAmount.debouncedBn === 0n ||
+      isLoadingQuote ||
+      desiredEnsoQuoteSlippage <= 0
+    ) {
+      return
+    }
+
+    setEnsoQuoteSlippage(desiredEnsoQuoteSlippage)
+  }, [depositAmount.debouncedBn, desiredEnsoQuoteSlippage, ensoQuoteSlippage, isLoadingQuote, routeType])
+
+  useEffect(() => {
+    if (
+      !import.meta.env.DEV ||
+      routeType !== 'ENSO' ||
+      isLoadingQuote ||
+      depositAmount.isDebouncing ||
+      depositAmount.debouncedBn === 0n ||
+      (activeFlow.periphery.expectedOut === 0n && activeFlow.periphery.minExpectedOut === 0n)
+    ) {
+      return
+    }
+
+    const quoteSummary = {
+      calibrationKey: ensoSlippageCalibrationKey,
+      requestSlippagePercentage: ensoQuoteSlippage,
+      desiredProtectedSlippagePercentage: desiredEnsoQuoteSlippage,
+      userTolerancePercentage: zapSlippage,
+      inputAmountRaw: depositAmount.debouncedBn.toString(),
+      expectedOutRaw: activeFlow.periphery.expectedOut.toString(),
+      minExpectedOutRaw: activeFlow.periphery.minExpectedOut.toString(),
+      normalizedExpectedOutRaw: normalizedExpectedOut.toString(),
+      normalizedMinExpectedOutRaw: normalizedMinExpectedOut.toString(),
+      expectedOutInAssetRaw: expectedOutInAsset.toString(),
+      minExpectedOutInAssetRaw: minExpectedOutInAsset.toString(),
+      expectedPriceImpactPercentage: depositValueInfo.priceImpactPercentage,
+      worstCasePriceImpactPercentage: depositValueInfo.worstCasePriceImpactPercentage,
+      inputTokenSymbol: inputToken?.symbol,
+      destinationTokenSymbol: assetToken?.symbol
+    }
+
+    if (ensoQuoteSlippage === 0) {
+      const bootstrapLogKey = [
+        ensoSlippageCalibrationKey,
+        activeFlow.periphery.expectedOut.toString(),
+        activeFlow.periphery.minExpectedOut.toString()
+      ].join(':')
+
+      if (lastBootstrapEnsoQuoteDebugKeyRef.current === bootstrapLogKey) {
+        return
+      }
+
+      bootstrapEnsoQuoteDebugRef.current = quoteSummary
+      lastBootstrapEnsoQuoteDebugKeyRef.current = bootstrapLogKey
+      console.log('[ENSO][deposit] bootstrap quote', quoteSummary)
+      return
+    }
+
+    const protectedLogKey = [
+      ensoSlippageCalibrationKey,
+      ensoQuoteSlippage.toString(),
+      activeFlow.periphery.expectedOut.toString(),
+      activeFlow.periphery.minExpectedOut.toString()
+    ].join(':')
+
+    if (lastProtectedEnsoQuoteDebugKeyRef.current === protectedLogKey) {
+      return
+    }
+
+    lastProtectedEnsoQuoteDebugKeyRef.current = protectedLogKey
+    console.log('[ENSO][deposit] protected quote comparison', {
+      bootstrapQuote: bootstrapEnsoQuoteDebugRef.current,
+      protectedQuote: quoteSummary,
+      note: 'expectedPriceImpactPercentage comes from amountOut; worstCasePriceImpactPercentage comes from minAmountOut; widget warnings currently use worstCasePriceImpactPercentage.'
+    })
+  }, [
+    activeFlow.periphery.expectedOut,
+    activeFlow.periphery.minExpectedOut,
+    assetToken?.symbol,
+    depositAmount.debouncedBn,
+    depositAmount.isDebouncing,
+    depositValueInfo.priceImpactPercentage,
+    depositValueInfo.worstCasePriceImpactPercentage,
+    desiredEnsoQuoteSlippage,
+    ensoQuoteSlippage,
+    ensoSlippageCalibrationKey,
+    expectedOutInAsset,
+    inputToken?.symbol,
+    isLoadingQuote,
+    minExpectedOutInAsset,
+    normalizedExpectedOut,
+    normalizedMinExpectedOut,
+    routeType,
+    zapSlippage
+  ])
+
+  // Calculate total price impact for warning and blocking.
   const priceImpactInfo = useMemo(() => {
     return {
-      percentage: depositValueInfo.priceImpactPercentage,
-      isHigh: depositValueInfo.isHighPriceImpact
+      percentage: depositValueInfo.worstCasePriceImpactPercentage,
+      isAboveTolerance: depositValueInfo.worstCasePriceImpactPercentage > zapSlippage,
+      isBlocking: depositValueInfo.worstCasePriceImpactPercentage >= ZAP_SLIPPAGE_HARD_CAP
     }
-  }, [depositValueInfo.priceImpactPercentage, depositValueInfo.isHighPriceImpact])
-
-  const { hasAcceptedPriceImpact, priceImpactAcceptanceKey, setAcceptedPriceImpactKey } = usePriceImpactAcceptance([
-    depositAmount.bn,
-    routeType,
-    sourceChainId,
-    depositToken,
-    destinationToken,
-    activeFlow.periphery.routerAddress ?? '',
-    activeFlow.periphery.expectedOut
-  ])
+  }, [depositValueInfo.worstCasePriceImpactPercentage, zapSlippage])
+  const unpricedEnsoDepositError =
+    routeType === 'ENSO' &&
+    depositValueInfo.hasIncompleteUsdValuation &&
+    depositAmount.debouncedBn > 0n &&
+    !depositAmount.isDebouncing &&
+    !isLoadingQuote
+      ? 'Unable to estimate zap price impact for the selected token. Use the base asset flow or swap elsewhere.'
+      : null
+  const effectiveDepositError = depositError || unpricedEnsoDepositError
 
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
@@ -472,6 +640,14 @@ export function WidgetDeposit({
     sourceChainId,
     chainId,
     slippage: zapSlippage,
+    inputTokenUsdPrice: inputTokenPrice,
+    assetTokenUsdPrice: assetTokenPrice,
+    pricePerShare: pricePerShare || 0n,
+    vaultDecimals,
+    assetTokenDecimals: assetToken?.decimals ?? 18,
+    vaultAddress,
+    stakingAddress,
+    stakingSource,
     onResult: setDepositInput
   })
 
@@ -593,6 +769,19 @@ export function WidgetDeposit({
           setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
         }
       : undefined
+  const displayedExpectedVaultShares =
+    routeType === 'ENSO' ? activeFlow.periphery.minExpectedOut : activeFlow.periphery.expectedOut
+  const displayedVaultShareValueInAsset =
+    routeType === 'ENSO' ? depositValueInfo.minVaultShareValueInAsset : depositValueInfo.vaultShareValueInAsset
+  const displayedVaultShareValueUsdRaw =
+    routeType === 'ENSO' ? depositValueInfo.minVaultShareValueUsdRaw : depositValueInfo.vaultShareValueUsdRaw
+  const displayedPriceImpactPercentage =
+    routeType === 'ENSO' ? depositValueInfo.worstCasePriceImpactPercentage : depositValueInfo.priceImpactPercentage
+  const displayedShouldHighlightPriceImpact =
+    routeType === 'ENSO' && (priceImpactInfo.isAboveTolerance || priceImpactInfo.isBlocking)
+  const displayedConvertedVaultShares = routeType === 'ENSO' ? normalizedMinExpectedOut : normalizedExpectedOut
+  const shouldShowShareConversion =
+    willReceiveStakedShares && displayedExpectedVaultShares !== displayedConvertedVaultShares
 
   const detailsSection = detailsContent ? (
     detailsContent
@@ -607,17 +796,19 @@ export function WidgetDeposit({
       isLoadingQuote={isLoadingQuote}
       isQuoteStale={depositAmount.isDebouncing || depositAmount.bn !== depositAmount.debouncedBn}
       expectedOutInAsset={expectedOutInAsset}
+      minExpectedOutInAsset={minExpectedOutInAsset}
       assetTokenSymbol={assetToken?.symbol}
       assetTokenDecimals={assetToken?.decimals ?? 18}
-      expectedVaultShares={activeFlow.periphery.expectedOut}
+      expectedVaultShares={displayedExpectedVaultShares}
       vaultDecimals={vaultDecimals}
       sharesDisplayDecimals={sharesDecimals}
       pricePerShare={pricePerShare || 0n}
       assetUsdPrice={assetTokenPrice}
-      vaultShareValueInAsset={depositValueInfo.vaultShareValueInAsset}
-      vaultShareValueUsdRaw={depositValueInfo.vaultShareValueUsdRaw}
-      priceImpactPercentage={depositValueInfo.priceImpactPercentage}
-      hasHighPriceImpact={depositValueInfo.isHighPriceImpact}
+      vaultShareValueInAsset={displayedVaultShareValueInAsset}
+      vaultShareValueUsdRaw={displayedVaultShareValueUsdRaw}
+      expectedPriceImpactPercentage={depositValueInfo.priceImpactPercentage}
+      priceImpactPercentage={displayedPriceImpactPercentage}
+      shouldHighlightPriceImpact={displayedShouldHighlightPriceImpact}
       willReceiveStakedShares={willReceiveStakedShares}
       vaultSharesLabel={vaultSharesLabel}
       onShowVaultSharesModal={() => setShowVaultSharesModal(true)}
@@ -636,15 +827,12 @@ export function WidgetDeposit({
   const priceImpactWarning = (
     <PriceImpactWarning
       percentage={priceImpactInfo.percentage}
-      isHigh={priceImpactInfo.isHigh}
+      userTolerancePercentage={zapSlippage}
+      isBlocking={priceImpactInfo.isBlocking}
       isLoading={isLoadingQuote}
       isDebouncing={depositAmount.isDebouncing}
       isAmountSynced={depositAmount.bn === depositAmount.debouncedBn}
       hasAmount={depositAmount.bn > 0n}
-      hasAcceptedPriceImpact={hasAcceptedPriceImpact}
-      priceImpactAcceptanceKey={priceImpactAcceptanceKey}
-      setAcceptedPriceImpactKey={setAcceptedPriceImpactKey}
-      actionVerb="depositing"
     />
   )
 
@@ -652,13 +840,14 @@ export function WidgetDeposit({
   const showSettingsButton = !!account && !!onOpenSettings
   const depositButtonLabel = getDepositButtonLabel(isLoadingQuote, needsApproval, routeType)
   const isDepositButtonDisabled =
-    !!depositError ||
+    !!effectiveDepositError ||
     depositAmount.bn === 0n ||
     isLoadingQuote ||
     depositAmount.isDebouncing ||
     (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
     (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled) ||
-    (priceImpactInfo.isHigh && !hasAcceptedPriceImpact)
+    priceImpactInfo.isBlocking ||
+    priceImpactInfo.isAboveTolerance
 
   const actionRow = showActionRow ? (
     <div className="flex flex-col gap-3">
@@ -729,7 +918,7 @@ export function WidgetDeposit({
           disabled={isFetchingMaxQuote}
           isMaxButtonLoading={isFetchingMaxQuote}
           onMaxClick={isNativeToken && routeType === 'ENSO' ? fetchMaxQuote : undefined}
-          errorMessage={depositError || undefined}
+          errorMessage={effectiveDepositError || undefined}
           showTokenSelector={ensoEnabled}
           inputTokenUsdPrice={inputTokenPrice}
           outputTokenUsdPrice={outputTokenPrice}
@@ -810,9 +999,7 @@ export function WidgetDeposit({
         vaultSymbol={vaultSymbol}
         stakingTokenSymbol={stakingToken?.symbol}
         expectedShares={
-          activeFlow.periphery.expectedOut > 0n
-            ? formatWidgetValue(activeFlow.periphery.expectedOut, sharesDecimals)
-            : '0'
+          displayedExpectedVaultShares > 0n ? formatWidgetValue(displayedExpectedVaultShares, sharesDecimals) : '0'
         }
         stakingAddress={stakingAddress}
         isAutoStakingEnabled={isAutoStakingEnabled}
@@ -832,16 +1019,14 @@ export function WidgetDeposit({
       <VaultShareValueOverlay
         isOpen={showVaultShareValueModal}
         onClose={() => setShowVaultShareValueModal(false)}
-        sharesAmount={formatWidgetValue(activeFlow.periphery.expectedOut, sharesDecimals)}
+        sharesAmount={formatWidgetValue(displayedExpectedVaultShares, sharesDecimals)}
         sharesLabel={receivedSharesLabel}
-        shareValue={formatWidgetValue(depositValueInfo.vaultShareValueInAsset, assetToken?.decimals ?? 18)}
+        shareValue={formatWidgetValue(displayedVaultShareValueInAsset, assetToken?.decimals ?? 18)}
         assetSymbol={assetToken?.symbol || ''}
-        usdValue={formatWidgetValue(depositValueInfo.vaultShareValueUsdRaw)}
-        showShareConversion={willReceiveStakedShares && activeFlow.periphery.expectedOut !== normalizedExpectedOut}
+        usdValue={formatWidgetValue(displayedVaultShareValueUsdRaw)}
+        showShareConversion={shouldShowShareConversion}
         convertedVaultSharesAmount={
-          willReceiveStakedShares && activeFlow.periphery.expectedOut !== normalizedExpectedOut
-            ? formatWidgetValue(normalizedExpectedOut, vaultDecimals)
-            : undefined
+          shouldShowShareConversion ? formatWidgetValue(displayedConvertedVaultShares, vaultDecimals) : undefined
         }
       />
 

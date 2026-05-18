@@ -90,4 +90,36 @@ describe('InputTokenAmount', () => {
 
     expect(html).toContain('Balance: 4 yvUSD')
   })
+
+  it('renders zap output USD from raw quote amounts instead of compact display text', async () => {
+    const InputTokenAmount = await loadInputTokenAmount()
+    const html = renderToStaticMarkup(
+      <InputTokenAmount
+        input={
+          [
+            {
+              formValue: '17900',
+              activity: [false, vi.fn()],
+              decimals: 18
+            },
+            vi.fn(),
+            vi.fn()
+          ] as never
+        }
+        symbol={'crvUSD'}
+        inputTokenUsdPrice={1}
+        outputTokenUsdPrice={1.11}
+        zapToken={{
+          symbol: 'yvUSDC-2',
+          address: '0x0000000000000000000000000000000000000003',
+          chainId: 1,
+          expectedAmount: '16.1K',
+          expectedAmountRaw: 16_100000000n,
+          expectedAmountDecimals: 6
+        }}
+      />
+    )
+
+    expect(html).toContain('$17,871')
+  })
 })

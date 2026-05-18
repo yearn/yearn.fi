@@ -1,3 +1,4 @@
+import { formatCounterValue } from '@shared/utils/format'
 import type { ReactElement } from 'react'
 import { formatUnits } from 'viem'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
@@ -24,6 +25,9 @@ interface WithdrawDetailsProps {
   assetSymbol?: string
   // Output USD price for slippage calculation
   outputUsdPrice: number
+  expectedPriceImpactPercentage: number
+  priceImpactPercentage: number
+  shouldHighlightPriceImpact: boolean
   // Route type for "at least" text
   routeType: WithdrawRouteType
   // Modal trigger
@@ -57,6 +61,9 @@ export function WithdrawDetails({
   assetUsdPrice,
   assetSymbol,
   outputUsdPrice,
+  expectedPriceImpactPercentage,
+  priceImpactPercentage,
+  shouldHighlightPriceImpact,
   routeType,
   onShowDetailsModal,
   allowance,
@@ -68,13 +75,12 @@ export function WithdrawDetails({
 }: WithdrawDetailsProps): ReactElement {
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
   const approvalLabel = getApprovalLabel(approvalSpenderName)
-  const withdrawUsdValue = Number(formatUnits(withdrawAmountBn, assetDecimals)) * assetUsdPrice
-  const expectedOutUsdValue = Number(formatUnits(expectedOut, outputDecimals)) * outputUsdPrice
-  const priceImpact =
-    withdrawUsdValue > 0 && expectedOutUsdValue > 0
-      ? ((withdrawUsdValue - expectedOutUsdValue) / withdrawUsdValue) * 100
-      : 0
-  const hasHighPriceImpact = !isQuoteStale && !isLoadingQuote && priceImpact > 5
+  const withdrawUsdDisplay = formatCounterValue(formatUnits(withdrawAmountBn, assetDecimals), assetUsdPrice)
+  const expectedOutUsdDisplay = formatCounterValue(formatUnits(expectedOut, outputDecimals), outputUsdPrice)
+  const shouldShowWithdrawUsdBadge = showSwapRow && assetUsdPrice > 0 && withdrawAmountBn > 0n
+  const shouldShowExpectedOutUsdBadge = routeType === 'ENSO' && outputUsdPrice > 0 && expectedOut > 0n
+  const shouldShowWorstCasePriceImpact = showSwapRow && routeType === 'ENSO'
+  const shouldUseHighlight = !isQuoteStale && !isLoadingQuote && shouldHighlightPriceImpact
   return (
     <div>
       <div className="flex flex-col gap-2">
@@ -107,6 +113,7 @@ export function WithdrawDetails({
               <p className="text-sm text-text-primary">
                 <span className="font-semibold">{withdrawAmountSimple}</span>{' '}
                 <span className="font-normal">{assetSymbol}</span>
+                {shouldShowWithdrawUsdBadge ? <span className="font-normal">{` (${withdrawUsdDisplay})`}</span> : null}
               </p>
             </div>
           </div>
@@ -116,14 +123,19 @@ export function WithdrawDetails({
         <div className="flex items-center justify-between h-5">
           <p className="text-sm text-text-secondary">You will receive{routeType === 'ENSO' ? ' at least' : ''}</p>
           <div className="flex items-center gap-1">
-            <p className={`text-sm ${hasHighPriceImpact ? 'text-red-500' : 'text-text-primary'}`}>
+            <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
               {isLoadingQuote ? (
                 <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
               ) : expectedOut > 0n ? (
                 <>
                   <span className="font-semibold">{formatWidgetValue(expectedOut, outputDecimals)}</span>{' '}
                   <span className="font-normal">{outputSymbol}</span>
-                  {hasHighPriceImpact && <span className="font-semibold">{` (-${priceImpact.toFixed(2)}%)`}</span>}
+                  {shouldUseHighlight && (
+                    <span className="font-semibold">{` (-${priceImpactPercentage.toFixed(2)}%)`}</span>
+                  )}
+                  {shouldShowExpectedOutUsdBadge ? (
+                    <span className="font-normal">{` (${expectedOutUsdDisplay})`}</span>
+                  ) : null}
                 </>
               ) : (
                 <>
@@ -134,6 +146,23 @@ export function WithdrawDetails({
             </p>
           </div>
         </div>
+
+        {shouldShowWorstCasePriceImpact && (
+          <div className="flex items-center justify-between h-5">
+            <p className="text-sm text-text-secondary">Est. / Worst price impact</p>
+            <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
+              {isLoadingQuote ? (
+                <span className="inline-block h-4 w-28 bg-surface-secondary rounded animate-pulse" />
+              ) : (
+                <>
+                  <span className="font-semibold">{`${expectedPriceImpactPercentage.toFixed(2)}%`}</span>
+                  <span className="font-normal">{' | '}</span>
+                  <span className="font-semibold">{`${priceImpactPercentage.toFixed(2)}%`}</span>
+                </>
+              )}
+            </p>
+          </div>
+        )}
 
         {/* Approved allowance (for zap withdrawals) */}
         {allowanceDisplay && (

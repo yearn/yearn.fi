@@ -8,6 +8,7 @@ import { VaultsListEmpty } from '@pages/vaults/components/list/VaultsListEmpty'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { VaultsListRowSkeleton } from '@pages/vaults/components/list/VaultsListRowSkeleton'
+import { VaultsListSearchRecoveryRow } from '@pages/vaults/components/list/VaultsListSearchRecoveryRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import { VaultsWelcomeTour } from '@pages/vaults/components/tour/VaultsWelcomeTour'
 import { getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
@@ -350,6 +351,9 @@ export default function Index(): ReactElement {
       )
     }
 
+    const shouldShowSearchRecoveryRow =
+      search.value !== '' && hiddenByFiltersCount > 0 && blockingFilterActions.length > 0
+
     return (
       <div className={'flex flex-col gap-px bg-surface'}>
         {pinnedSections.map((section) => (
@@ -405,6 +409,13 @@ export default function Index(): ReactElement {
                 />
               )
             }}
+          />
+        ) : null}
+        {shouldShowSearchRecoveryRow ? (
+          <VaultsListSearchRecoveryRow
+            currentSearch={search.value}
+            hiddenByFiltersCount={hiddenByFiltersCount}
+            blockingFilterActions={blockingFilterActions}
           />
         ) : null}
       </div>

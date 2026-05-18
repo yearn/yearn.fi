@@ -25,6 +25,8 @@ type Props = {
   chainId: number
   assetAddress: `0x${string}`
   onDepositSuccess?: () => void
+  onOpenSettings?: () => void
+  isSettingsOpen?: boolean
   collapseDetails?: boolean
   onVariantChange?: (variant: TYvUsdVariant) => void
 }
@@ -127,6 +129,8 @@ export function YvUsdDeposit({
   chainId,
   assetAddress,
   onDepositSuccess,
+  onOpenSettings,
+  isSettingsOpen,
   collapseDetails,
   onVariantChange
 }: Props): ReactElement {
@@ -287,6 +291,8 @@ export function YvUsdDeposit({
         vaultSymbol={getYvUsdDepositSymbol(variant)}
         vaultUserData={selectedVaultUserData}
         handleDepositSuccess={handleDepositSuccess}
+        onOpenSettings={variant ? onOpenSettings : undefined}
+        isSettingsOpen={variant ? isSettingsOpen : false}
         onAmountChange={setDraftDepositAmount}
         onTokenSelectionChange={setSelectedDepositTokenAddress}
         hideDetails={!variant}

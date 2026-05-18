@@ -2,7 +2,7 @@
 
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import { fireEvent, render } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import { act } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -18,6 +18,10 @@ const vault = {
   apr: { forwardAPR: { type: '' }, type: '' },
   staking: { source: 'None' }
 } as unknown as TKongVaultInput
+
+function hover(element: Element): void {
+  element.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+}
 
 describe('VaultForwardAPY', () => {
   it('shows subline tooltip when hovering the value', () => {
@@ -46,7 +50,7 @@ describe('VaultForwardAPY', () => {
     expect(trigger).not.toBeNull()
     expect(queryByText('+ 2500 ARB/week')).toBeNull()
 
-    fireEvent.mouseEnter(trigger as Element)
+    hover(trigger as Element)
     act(() => {
       vi.advanceTimersByTime(150)
     })

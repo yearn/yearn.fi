@@ -1,12 +1,25 @@
 import { type Address, formatUnits, isAddressEqual } from 'viem'
 
-export const HIGH_PRICE_IMPACT_THRESHOLD = 5
-
 export type DepositValueInfo = {
   vaultShareValueInAsset: bigint
   vaultShareValueUsdRaw: number
+  minVaultShareValueInAsset: bigint
+  minVaultShareValueUsdRaw: number
+  hasIncompleteUsdValuation: boolean
   priceImpactPercentage: number
-  isHighPriceImpact: boolean
+  worstCasePriceImpactPercentage: number
+}
+
+function calculatePriceImpactPercentage({
+  inputUsdValue,
+  outputUsdValue
+}: {
+  inputUsdValue: number
+  outputUsdValue: number
+}): number {
+  return inputUsdValue > 0 && outputUsdValue > 0
+    ? Math.max(0, ((inputUsdValue - outputUsdValue) / inputUsdValue) * 100)
+    : 0
 }
 
 export function resolveValuationShareCount({
@@ -38,38 +51,54 @@ export function calculateDepositValueInfo({
   inputTokenDecimals,
   inputTokenUsdPrice,
   normalizedVaultShares,
+  normalizedMinVaultShares = normalizedVaultShares,
   vaultDecimals,
   pricePerShare,
   assetTokenDecimals,
-  assetUsdPrice,
-  highPriceImpactThreshold = HIGH_PRICE_IMPACT_THRESHOLD
+  assetUsdPrice
 }: {
   depositAmountBn: bigint
   inputTokenDecimals: number
   inputTokenUsdPrice: number
   normalizedVaultShares: bigint
+  normalizedMinVaultShares?: bigint
   vaultDecimals: number
   pricePerShare: bigint
   assetTokenDecimals: number
   assetUsdPrice: number
-  highPriceImpactThreshold?: number
 }): DepositValueInfo {
   const vaultShareValueInAsset =
     normalizedVaultShares > 0n && pricePerShare > 0n
       ? (normalizedVaultShares * pricePerShare) / 10n ** BigInt(vaultDecimals)
       : 0n
+  const minVaultShareValueInAsset =
+    normalizedMinVaultShares > 0n && pricePerShare > 0n
+      ? (normalizedMinVaultShares * pricePerShare) / 10n ** BigInt(vaultDecimals)
+      : 0n
 
   const vaultShareValueUsdRaw = Number(formatUnits(vaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
+  const minVaultShareValueUsdRaw = Number(formatUnits(minVaultShareValueInAsset, assetTokenDecimals)) * assetUsdPrice
   const usdValueToDeposit = Number(formatUnits(depositAmountBn, inputTokenDecimals)) * inputTokenUsdPrice
-  const priceImpactPercentage =
-    usdValueToDeposit > 0 && vaultShareValueUsdRaw > 0
-      ? ((usdValueToDeposit - vaultShareValueUsdRaw) / usdValueToDeposit) * 100
-      : 0
+  const hasIncompleteUsdValuation =
+    depositAmountBn > 0n &&
+    (normalizedVaultShares > 0n || normalizedMinVaultShares > 0n) &&
+    (inputTokenUsdPrice <= 0 || assetUsdPrice <= 0)
+  const priceImpactPercentage = calculatePriceImpactPercentage({
+    inputUsdValue: usdValueToDeposit,
+    outputUsdValue: vaultShareValueUsdRaw
+  })
+  const worstCasePriceImpactPercentage = calculatePriceImpactPercentage({
+    inputUsdValue: usdValueToDeposit,
+    outputUsdValue: minVaultShareValueUsdRaw
+  })
 
   return {
     vaultShareValueInAsset,
     vaultShareValueUsdRaw,
+    minVaultShareValueInAsset,
+    minVaultShareValueUsdRaw,
+    hasIncompleteUsdValuation,
     priceImpactPercentage,
-    isHighPriceImpact: priceImpactPercentage > highPriceImpactThreshold
+    worstCasePriceImpactPercentage
   }
 }

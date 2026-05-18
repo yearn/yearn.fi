@@ -1268,6 +1268,8 @@ function Index(): ReactElement | null {
           chainId={chainId}
           mode={resolvedWidgetMode}
           onModeChange={setWidgetMode}
+          onOpenSettings={toggleWidgetSettings}
+          isSettingsOpen={isWidgetSettingsOpen}
           onDepositVariantChange={setYvUsdApyVariant}
           showTabs={false}
           collapseDetails={shouldCollapseWidgetDetails}
@@ -1305,6 +1307,8 @@ function Index(): ReactElement | null {
           currentVault={resolvedCurrentVault}
           chainId={chainId}
           mode={mobileDrawerAction}
+          onOpenSettings={toggleWidgetSettings}
+          isSettingsOpen={isWidgetSettingsOpen}
           onDepositVariantChange={setYvUsdApyVariant}
           showTabs={false}
         />

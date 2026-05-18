@@ -68,6 +68,7 @@ export function useYvUsdLockedZapDeposit(params: UseYvUsdLockedZapDepositParams)
       isAllowanceSufficient,
       allowance,
       expectedOut,
+      minExpectedOut: expectedOut,
       isLoadingRoute: false,
       isCrossChain: false,
       routerAddress: YVUSD_LOCKED_ZAP_ADDRESS,

@@ -7,9 +7,10 @@ import { toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
 import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
 import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
+import { clampZapSlippage } from '@shared/utils/slippage'
 import type { QueryObserverResult } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
-import { createContext, memo, useCallback, useContext, useState } from 'react'
+import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 import { deserialize, serialize } from 'wagmi'
 
@@ -51,7 +52,7 @@ const YearnContext = createContext<TYearnContext>({
   allVaults: {},
   isLoadingVaultList: false,
   maxLoss: DEFAULT_MAX_LOSS,
-  zapSlippage: 0.1,
+  zapSlippage: DEFAULT_SLIPPAGE,
   zapProvider: Solver.enum.Cowswap,
   isAutoStakingEnabled: true,
   mutateVaultList: (): Promise<QueryObserverResult<TKongVaultList, Error>> =>
@@ -92,10 +93,17 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
   const shouldEnableVaultList = (isVaultsRoute && !isVaultDetailPage) || isPortfolioRoute
   const [isManuallyEnabled, setIsManuallyEnabled] = useState(false)
   const isVaultListEnabled = shouldEnableVaultList || isManuallyEnabled
+  const sanitizedZapSlippage = clampZapSlippage(zapSlippage ?? DEFAULT_SLIPPAGE)
 
   const enableVaultListFetch = useCallback(() => {
     setIsManuallyEnabled(true)
   }, [])
+
+  useEffect(() => {
+    if ((zapSlippage ?? DEFAULT_SLIPPAGE) !== sanitizedZapSlippage) {
+      setZapSlippage(sanitizedZapSlippage)
+    }
+  }, [sanitizedZapSlippage, setZapSlippage, zapSlippage])
 
   const prices = useFetchYearnPrices()
   //RG this endpoint returns empty objects for retired and migrations
@@ -115,11 +123,11 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
       value={{
         currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
         prices,
-        zapSlippage: zapSlippage ?? DEFAULT_SLIPPAGE,
+        zapSlippage: sanitizedZapSlippage,
         maxLoss: maxLoss ?? DEFAULT_MAX_LOSS,
         zapProvider: zapProvider ?? Solver.enum.Cowswap,
         isAutoStakingEnabled: isAutoStakingEnabled ?? true,
-        setZapSlippage,
+        setZapSlippage: (value: number) => setZapSlippage(clampZapSlippage(value)),
         setMaxLoss,
         setZapProvider,
         setIsAutoStakingEnabled,

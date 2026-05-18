@@ -66,6 +66,7 @@ export type UseWidgetDepositFlowReturn = T<
     isAllowanceSufficient: boolean
     allowance: bigint
     expectedOut: bigint
+    minExpectedOut: bigint
     isLoadingRoute: boolean
     isCrossChain: boolean
     tx?: {
@@ -92,6 +93,7 @@ export type UseWidgetWithdrawFlowReturn = T<
     isAllowanceSufficient: boolean // always true for direct withdraw (no approval needed)
     allowance: bigint
     expectedOut: bigint
+    minExpectedOut: bigint
     isLoadingRoute: boolean
     isCrossChain: boolean
     routerAddress?: TAddress

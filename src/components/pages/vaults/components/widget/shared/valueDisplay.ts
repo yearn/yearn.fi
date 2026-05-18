@@ -32,6 +32,13 @@ function formatScientificFromNumber(amount: number): string {
   return amount.toExponential(2).replace('e+', 'e')
 }
 
+function formatStandardWithSignificantDigits(amount: number, significantDigits = 7): string {
+  return new Intl.NumberFormat('en-US', {
+    minimumSignificantDigits: 1,
+    maximumSignificantDigits: Math.min(Math.max(significantDigits, 1), 21)
+  }).format(amount)
+}
+
 function formatWidgetNormalizedValue(normalizedValue: number): string {
   if (Number.isNaN(normalizedValue)) {
     return '0'
@@ -64,6 +71,32 @@ export function formatWidgetValue(value: bigint | number, decimals = 18): string
     return formatWidgetNormalizedValue(value)
   }
   return formatWidgetNormalizedValue(Number(formatUnits(value, decimals)))
+}
+
+export function formatWidgetPreciseValue(value: bigint | number, decimals = 18, significantDigits = 7): string {
+  const normalizedValue = typeof value === 'number' ? value : Number(formatUnits(value, decimals))
+
+  if (Number.isNaN(normalizedValue)) {
+    return '0'
+  }
+
+  if (!Number.isFinite(normalizedValue)) {
+    return '∞'
+  }
+
+  if (normalizedValue === 0) {
+    return '0'
+  }
+
+  const sign = normalizedValue < 0 ? '-' : ''
+  const absolute = Math.abs(normalizedValue)
+  const subscript = formatWithSubscriptZeros(absolute, significantDigits)
+
+  if (subscript) {
+    return `${sign}${subscript}`
+  }
+
+  return `${sign}${formatStandardWithSignificantDigits(absolute, significantDigits)}`
 }
 
 export function formatWidgetAllowance(allowance?: bigint, decimals?: number): string | null {

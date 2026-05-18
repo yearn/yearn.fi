@@ -5,6 +5,7 @@ import { useYvUsdLockedZapWithdraw } from '@pages/vaults/hooks/actions/useYvUsdL
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { toAddress } from '@shared/utils'
+import { toBasisPoints } from '@shared/utils/slippage'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
 import type { WithdrawalSource, WithdrawRouteType } from './types'
@@ -158,7 +159,7 @@ export function useWithdrawFlow({
     destinationChainId,
     decimalsOut: outputDecimals,
     enabled: ensoEnabled,
-    slippage: slippage * 100
+    slippage: toBasisPoints(slippage)
   })
 
   const activeFlow = useMemo((): UseWidgetWithdrawFlowReturn => {
@@ -179,6 +180,7 @@ export function useWithdrawFlow({
           isAllowanceSufficient: true,
           allowance: directWithdraw.periphery.allowance,
           expectedOut: directWithdraw.periphery.expectedOut,
+          minExpectedOut: directWithdraw.periphery.minExpectedOut,
           isLoadingRoute:
             directUnstake.actions.prepareWithdraw.isLoading ||
             directUnstake.actions.prepareWithdraw.isFetching ||
