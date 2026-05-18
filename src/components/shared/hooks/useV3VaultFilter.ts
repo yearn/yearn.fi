@@ -27,6 +27,7 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { isZeroAddress } from '@shared/utils'
 import { useMemo } from 'react'
+import { matchesSelectedV3Kind } from './useV3VaultFilter.utils'
 import {
   createCheckHasAvailableBalance,
   createCheckHasHoldings,
@@ -80,6 +81,7 @@ export function useV3VaultFilter(
   underlyingAssets?: string[] | null,
   minTvl?: number,
   showHiddenVaults?: boolean,
+  includeYieldSplittersByDefault?: boolean,
   enabled?: boolean
 ): TV3VaultFilterResult {
   const { vaults, allVaults, getPrice, isLoadingVaultList } = useYearn()
@@ -277,7 +279,6 @@ export function useV3VaultFilter(
     const hasChainFilter = Boolean(chains?.length)
     const hasCategoryFilter = Boolean(categories?.length)
     const hasAggressivenessFilter = Boolean(aggressiveness?.length)
-    const hasTypeFilter = Boolean(types?.length)
     const hasUnderlyingAssetFilter = normalizedUnderlyingAssets.size > 0
 
     const matchesSearch = (searchableText: string): boolean => {
@@ -353,13 +354,14 @@ export function useV3VaultFilter(
 
       const shouldIncludeByCategory = hasUserHoldings || !hasCategoryFilter || Boolean(categories?.includes(category))
       const isPinnedByUserContext = hasUserHoldings || isMigratableVault || isRetiredVault
-      const isStrategy = kind === 'strategy'
-      const shouldIncludeByFeaturedGate = showHiddenVaults || isStrategy || isFeatured || isPinnedByUserContext
-      const shouldIncludeByKind =
-        hasUserHoldings ||
-        !hasTypeFilter ||
-        (Boolean(types?.includes('multi')) && kind === 'allocator') ||
-        (Boolean(types?.includes('single')) && kind === 'strategy')
+      const isStrategyLike = kind === 'strategy' || kind === 'yieldSplitter'
+      const shouldIncludeByFeaturedGate = showHiddenVaults || isStrategyLike || isFeatured || isPinnedByUserContext
+      const shouldIncludeByKind = matchesSelectedV3Kind({
+        kind,
+        types,
+        hasUserHoldings,
+        includeYieldSplittersByDefault: Boolean(includeYieldSplittersByDefault)
+      })
       const shouldIncludeByAggressiveness =
         hasUserHoldings ||
         !hasAggressivenessFilter ||
@@ -412,6 +414,7 @@ export function useV3VaultFilter(
     minTvlValue,
     holdingsVaults,
     showHiddenVaults,
+    includeYieldSplittersByDefault,
     searchRegex,
     lowercaseSearch,
     isSearchEnabled

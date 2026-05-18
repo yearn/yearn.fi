@@ -46,7 +46,14 @@ export function SuggestedVaultCard({
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
 
-  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
+  const productTypeLabel =
+    listKind === 'yieldSplitter'
+      ? 'Yield Splitter'
+      : isAllocatorVault
+        ? 'Single Asset'
+        : isLegacyVault
+          ? 'Legacy'
+          : 'LP Token'
   const chainDescription = getChainDescription(chainID)
   const categoryDescription = getCategoryDescription(vaultCategory)
   const productTypeDescription = getProductTypeDescription(listKind)

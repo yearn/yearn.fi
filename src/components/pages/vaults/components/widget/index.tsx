@@ -1,10 +1,10 @@
 import {
   getVaultAPR,
+  getVaultDepositAssetAddress,
   getVaultInfo,
   getVaultMigration,
   getVaultStaking,
   getVaultSymbol,
-  getVaultToken,
   getVaultVersion,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
@@ -83,7 +83,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
   const [internalMode, setInternalMode] = useState<ActionType>(actions[0])
   const currentMode = mode ?? internalMode
   const setMode = onModeChange ?? setInternalMode
-  const assetToken = getVaultToken(currentVault).address
+  const assetToken = getVaultDepositAssetAddress(currentVault)
   const vaultAPR = getVaultAPR(currentVault)
   const vaultSymbol = getVaultSymbol(currentVault)
   const vaultStaking = getVaultStaking(currentVault)

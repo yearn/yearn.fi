@@ -1,11 +1,16 @@
 import { normalizeVaultCategory } from '@pages/vaults/utils/normalizeVaultCategory'
 import { toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
-import type { TKongVaultListItem, TKongVaultListItemStakingReward } from '@shared/utils/schemas/kongVaultListSchema'
+import type {
+  TKongVaultListItem,
+  TKongVaultListItemStakingReward,
+  TKongVaultListItemYieldSplitter
+} from '@shared/utils/schemas/kongVaultListSchema'
 import type {
   TKongVaultSnapshot,
   TKongVaultSnapshotComposition,
   TKongVaultSnapshotDebt,
-  TKongVaultSnapshotStakingReward
+  TKongVaultSnapshotStakingReward,
+  TKongVaultSnapshotYieldSplitter
 } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { zeroAddress } from 'viem'
 
@@ -204,6 +209,38 @@ const normalizePricePerShare = (value: string | number | null | undefined, decim
   return toNormalizedBN(value, decimals).normalized
 }
 
+const resolveOptionalAddress = (value?: string | null): `0x${string}` | undefined => {
+  if (!value) {
+    return undefined
+  }
+
+  const address = toAddress(value)
+  return address === zeroAddress ? undefined : address
+}
+
+type TDepositAssetOverride = {
+  enabled?: boolean
+  depositAssetAddress?: string | null
+  depositAssetName?: string | null
+  depositAssetSymbol?: string | null
+}
+
+const applyYieldSplitterDepositAssetToToken = (
+  token: TKongVaultToken,
+  yieldSplitter?: TDepositAssetOverride | null
+): TKongVaultToken => {
+  if (!yieldSplitter?.enabled) {
+    return token
+  }
+
+  return {
+    ...token,
+    address: resolveOptionalAddress(yieldSplitter.depositAssetAddress) ?? token.address,
+    name: yieldSplitter.depositAssetName || token.name,
+    symbol: yieldSplitter.depositAssetSymbol || token.symbol
+  }
+}
+
 const deriveDefaultCategory = ({
   name,
   symbol,
@@ -309,6 +346,25 @@ export type TKongVaultStaking = {
   rewards: TKongVaultStakingReward[] | null
 }
 
+export type TKongVaultYieldSplitter = {
+  enabled: true
+  sourceVaultAddress: `0x${string}`
+  sourceVaultName: string
+  sourceVaultSymbol: string
+  wantVaultAddress: `0x${string}`
+  wantVaultName: string
+  wantVaultSymbol: string
+  depositAssetAddress?: `0x${string}`
+  depositAssetName: string
+  depositAssetSymbol: string
+  rewardTokenAddresses: `0x${string}`[]
+  rewardHandlerAddress?: `0x${string}`
+  tokenizedStrategyAddress?: `0x${string}`
+  displayType: string
+  displayKind: string
+  uiDescription: string
+}
+
 export type TKongVaultMigration = {
   available: boolean
   address: `0x${string}`
@@ -362,6 +418,7 @@ export type TKongVaultView = {
   featuringScore: number
   strategies: TKongVaultStrategy[] | null
   staking: TKongVaultStaking
+  yieldSplitter: TKongVaultYieldSplitter | null
   migration: TKongVaultMigration
   info: TKongVaultInfo
 }
@@ -384,6 +441,9 @@ export const getVaultVersion = (vault: TKongVaultInput, snapshot?: TKongVaultSna
   }
   if (vault.apiVersion) {
     return vault.apiVersion
+  }
+  if (getVaultYieldSplitter(vault, snapshot)?.enabled) {
+    return '3'
   }
   return vault.v3 ? '3' : '2'
 }
@@ -470,12 +530,12 @@ export const getVaultDescription = (vault: TKongVaultInput, snapshot?: TKongVaul
   if (isVaultView(vault)) {
     return vault.description
   }
-  return snapshot?.meta?.description ?? ''
+  return snapshot?.meta?.description ?? getVaultYieldSplitter(vault, snapshot)?.uiDescription ?? ''
 }
 
 export const getVaultToken = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultToken => {
   if (isVaultView(vault)) {
-    return vault.token
+    return applyYieldSplitterDepositAssetToToken(vault.token, vault.yieldSplitter)
   }
   const metaToken = snapshot?.meta?.token
   const snapshotAsset = snapshot?.asset
@@ -489,13 +549,16 @@ export const getVaultToken = (vault: TKongVaultInput, snapshot?: TKongVaultSnaps
     snapshot?.meta?.displaySymbol ||
     ''
 
-  return {
-    address: toAddress(metaToken?.address ?? snapshotAsset?.address ?? listAsset?.address ?? zeroAddress),
-    name: metaToken?.name ?? snapshotAsset?.name ?? listAsset?.name ?? getVaultName(vault, snapshot),
-    symbol,
-    description: metaToken?.description ?? '',
-    decimals: resolveDecimals(metaToken?.decimals, snapshotAsset?.decimals, listAsset?.decimals, vault.decimals)
-  }
+  return applyYieldSplitterDepositAssetToToken(
+    {
+      address: toAddress(metaToken?.address ?? snapshotAsset?.address ?? listAsset?.address ?? zeroAddress),
+      name: metaToken?.name ?? snapshotAsset?.name ?? listAsset?.name ?? getVaultName(vault, snapshot),
+      symbol,
+      description: metaToken?.description ?? '',
+      decimals: resolveDecimals(metaToken?.decimals, snapshotAsset?.decimals, listAsset?.decimals, vault.decimals)
+    },
+    getVaultYieldSplitter(vault, snapshot)
+  )
 }
 
 export const getVaultDecimals = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): number => {
@@ -705,6 +768,107 @@ export const getVaultStaking = (vault: TKongVaultInput, snapshot?: TKongVaultSna
     rewards: mapStakingRewards(snapshotStaking?.rewards ?? listStaking?.rewards)
   }
 }
+
+const mapYieldSplitter = (
+  yieldSplitter: TKongVaultSnapshotYieldSplitter | TKongVaultListItemYieldSplitter | undefined
+): TKongVaultYieldSplitter | null => {
+  if (!yieldSplitter?.enabled) {
+    return null
+  }
+
+  return {
+    enabled: true,
+    sourceVaultAddress: toAddress(yieldSplitter.sourceVaultAddress),
+    sourceVaultName: yieldSplitter.sourceVaultName ?? '',
+    sourceVaultSymbol: yieldSplitter.sourceVaultSymbol ?? '',
+    wantVaultAddress: toAddress(yieldSplitter.wantVaultAddress),
+    wantVaultName: yieldSplitter.wantVaultName ?? '',
+    wantVaultSymbol: yieldSplitter.wantVaultSymbol ?? '',
+    depositAssetAddress: resolveOptionalAddress(yieldSplitter.depositAssetAddress),
+    depositAssetName: yieldSplitter.depositAssetName ?? '',
+    depositAssetSymbol: yieldSplitter.depositAssetSymbol ?? '',
+    rewardTokenAddresses: (yieldSplitter.rewardTokenAddresses ?? []).map((address) => toAddress(address)),
+    rewardHandlerAddress: resolveOptionalAddress(yieldSplitter.rewardHandlerAddress),
+    tokenizedStrategyAddress: resolveOptionalAddress(yieldSplitter.tokenizedStrategyAddress),
+    displayType: yieldSplitter.displayType ?? 'Yield Splitter',
+    displayKind: yieldSplitter.displayKind ?? 'Vault-to-Vault',
+    uiDescription: yieldSplitter.uiDescription ?? ''
+  }
+}
+
+const pickYieldSplitterAddress = (
+  primary: `0x${string}` | undefined,
+  fallback: `0x${string}` | undefined
+): `0x${string}` | undefined => primary ?? fallback
+
+const pickRequiredYieldSplitterAddress = (primary: `0x${string}`, fallback: `0x${string}`): `0x${string}` =>
+  primary !== zeroAddress ? primary : fallback
+
+const mergeYieldSplitters = (
+  primary: TKongVaultSnapshotYieldSplitter | TKongVaultListItemYieldSplitter | undefined,
+  fallback: TKongVaultSnapshotYieldSplitter | TKongVaultListItemYieldSplitter | undefined
+): TKongVaultYieldSplitter | null => {
+  const primaryMapped = mapYieldSplitter(primary)
+  const fallbackMapped = mapYieldSplitter(fallback)
+
+  if (!primaryMapped) {
+    return fallbackMapped
+  }
+  if (!fallbackMapped) {
+    return primaryMapped
+  }
+
+  return {
+    enabled: true,
+    sourceVaultAddress: pickRequiredYieldSplitterAddress(
+      primaryMapped.sourceVaultAddress,
+      fallbackMapped.sourceVaultAddress
+    ),
+    sourceVaultName: primaryMapped.sourceVaultName || fallbackMapped.sourceVaultName,
+    sourceVaultSymbol: primaryMapped.sourceVaultSymbol || fallbackMapped.sourceVaultSymbol,
+    wantVaultAddress: pickRequiredYieldSplitterAddress(primaryMapped.wantVaultAddress, fallbackMapped.wantVaultAddress),
+    wantVaultName: primaryMapped.wantVaultName || fallbackMapped.wantVaultName,
+    wantVaultSymbol: primaryMapped.wantVaultSymbol || fallbackMapped.wantVaultSymbol,
+    depositAssetAddress: pickYieldSplitterAddress(
+      primaryMapped.depositAssetAddress,
+      fallbackMapped.depositAssetAddress
+    ),
+    depositAssetName: primaryMapped.depositAssetName || fallbackMapped.depositAssetName,
+    depositAssetSymbol: primaryMapped.depositAssetSymbol || fallbackMapped.depositAssetSymbol,
+    rewardTokenAddresses:
+      primaryMapped.rewardTokenAddresses.length > 0
+        ? primaryMapped.rewardTokenAddresses
+        : fallbackMapped.rewardTokenAddresses,
+    rewardHandlerAddress: pickYieldSplitterAddress(
+      primaryMapped.rewardHandlerAddress,
+      fallbackMapped.rewardHandlerAddress
+    ),
+    tokenizedStrategyAddress: pickYieldSplitterAddress(
+      primaryMapped.tokenizedStrategyAddress,
+      fallbackMapped.tokenizedStrategyAddress
+    ),
+    displayType: primaryMapped.displayType || fallbackMapped.displayType,
+    displayKind: primaryMapped.displayKind || fallbackMapped.displayKind,
+    uiDescription: primaryMapped.uiDescription || fallbackMapped.uiDescription
+  }
+}
+
+export const getVaultYieldSplitter = (
+  vault: TKongVaultInput,
+  snapshot?: TKongVaultSnapshot
+): TKongVaultYieldSplitter | null => {
+  if (isVaultView(vault)) {
+    return vault.yieldSplitter
+  }
+
+  return mergeYieldSplitters(snapshot?.yieldSplitter, vault.yieldSplitter)
+}
+
+export const isYieldSplitterVault = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): boolean =>
+  Boolean(getVaultYieldSplitter(vault, snapshot)?.enabled)
+
+export const getVaultDepositAssetAddress = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): `0x${string}` =>
+  getVaultYieldSplitter(vault, snapshot)?.depositAssetAddress ?? getVaultToken(vault, snapshot).address
 
 export const getVaultMigration = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultMigration => {
   if (isVaultView(vault)) {
@@ -931,6 +1095,7 @@ export const getVaultView = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsh
     featuringScore: getVaultFeaturingScore(vault),
     strategies: getVaultStrategies(vault, snapshot),
     staking: getVaultStaking(vault, snapshot),
+    yieldSplitter: getVaultYieldSplitter(vault, snapshot),
     migration: getVaultMigration(vault, snapshot),
     info: getVaultInfo(vault, snapshot)
   }

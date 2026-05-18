@@ -19,6 +19,7 @@ type TVaultsAuxiliaryListProps = {
   title?: string
   vaults: TKongVaultInput[]
   vaultFlags: TVaultFlagsRecord
+  vaultHrefOverrides?: Record<string, string | undefined>
   apyDisplayVariant?: TVaultForwardAPYVariant
   resolveApyDisplayVariant?: (vault: TKongVaultInput) => TVaultForwardAPYVariant
   compareVaultKeys?: string[]
@@ -45,6 +46,7 @@ export function VaultsAuxiliaryList({
   title,
   vaults,
   vaultFlags,
+  vaultHrefOverrides,
   apyDisplayVariant,
   resolveApyDisplayVariant,
   compareVaultKeys,
@@ -83,6 +85,7 @@ export function VaultsAuxiliaryList({
             <VaultsListRow
               currentVault={vault}
               flags={vaultFlags[key]}
+              hrefOverride={vaultHrefOverrides?.[key]}
               apyDisplayVariant={rowApyDisplayVariant}
               compareVaultKeys={compareVaultKeys}
               onToggleCompare={onToggleCompare}

@@ -12,6 +12,7 @@ import {
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { getCanonicalHoldingsVaultAddress } from '@pages/vaults/domain/normalizeVault'
 import { isNonYearnErc4626Vault } from '@pages/vaults/domain/vaultWarnings'
+import { getHeldYieldSplitterModeSummary } from '@pages/vaults/domain/yieldSplitterModes'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
 import { useYvUsdCharts } from '@pages/vaults/hooks/useYvUsdCharts'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
@@ -232,17 +233,20 @@ export function usePortfolioModel(): TPortfolioModel {
 
     visibleHoldingsVaults.forEach((vault) => {
       const key = getVaultKey(vault)
+      const yieldModeSummary = getHeldYieldSplitterModeSummary(vault, allVaults, getBalance)
       flags[key] = {
         hasHoldings: true,
         isMigratable: Boolean(getVaultMigration(vault)?.available),
         isRetired: Boolean(getVaultInfo(vault)?.isRetired),
         isHidden: Boolean(getVaultInfo(vault)?.isHidden),
-        isNotYearn: isYvUsdVault(vault) ? false : isNonYearnErc4626Vault({ vault: vault as TKongVault })
+        isNotYearn: isYvUsdVault(vault) ? false : isNonYearnErc4626Vault({ vault: vault as TKongVault }),
+        yieldModeLabel: yieldModeSummary?.label,
+        yieldModeTooltip: yieldModeSummary?.tooltip
       }
     })
 
     return flags
-  }, [visibleHoldingsVaults])
+  }, [allVaults, getBalance, visibleHoldingsVaults])
 
   const isSearchingBalances =
     (isActive || isUserConnecting) && (isWalletLoading || isUserConnecting || isIdentityLoading)
@@ -280,12 +284,27 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const holdingsRows = useMemo(
     () =>
-      sortedHoldings.map((vault) => ({
-        key: getVaultKey(vault),
-        vault,
-        hrefOverride: getPortfolioRowHref(vault)
-      })),
-    [sortedHoldings]
+      sortedHoldings.map((vault) => {
+        const modeSummary = getHeldYieldSplitterModeSummary(vault, allVaults, getBalance)
+        const baseHref = getPortfolioRowHref(vault)
+
+        if (!modeSummary?.preferredVaultAddress) {
+          return {
+            key: getVaultKey(vault),
+            vault,
+            hrefOverride: baseHref
+          }
+        }
+
+        return {
+          key: getVaultKey(vault),
+          vault,
+          hrefOverride: baseHref
+            ? `${baseHref}?yieldMode=${modeSummary.preferredVaultAddress}`
+            : `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}?yieldMode=${modeSummary.preferredVaultAddress}`
+        }
+      }),
+    [allVaults, getBalance, sortedHoldings]
   )
 
   const suggestedRows = useMemo((): TSuggestedItem[] => {

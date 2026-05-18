@@ -49,6 +49,9 @@ export function getCategoryDescription(category?: string | null): string | null 
 }
 
 export function getProductTypeDescription(listKind: TVaultListKind): string {
+  if (listKind === 'yieldSplitter') {
+    return 'Yield splitters accept one deposit asset, keep principal in a source vault, and stream yield into a different vault asset.'
+  }
   if (listKind === 'legacy') {
     return 'These vaults use a Legacy Yearn vault architecture. They were previously called "v2 Vaults").'
   }
@@ -58,12 +61,15 @@ export function getProductTypeDescription(listKind: TVaultListKind): string {
   return 'Single-asset vaults accept one token and allocate it across strategies. They were previously called "v3 Vaults".'
 }
 
-export function getKindDescription(kindType?: 'multi' | 'single', kindLabel?: string): string {
+export function getKindDescription(kindType?: 'multi' | 'single' | 'route', kindLabel?: string): string {
   if (kindType === 'multi') {
     return 'Allocator vaults route deposits across multiple strategies.'
   }
   if (kindType === 'single') {
     return 'Strategy vaults contain a single active strategy and are allocated to by Allocator vaults.'
+  }
+  if (kindType === 'route') {
+    return 'Vault-to-vault routes accept deposits in one asset and direct yield into a separate destination vault.'
   }
   return kindLabel ? `${kindLabel} vault classification from Yearn.` : 'Vault strategy classification from Yearn.'
 }

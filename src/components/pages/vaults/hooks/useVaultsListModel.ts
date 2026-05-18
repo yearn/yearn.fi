@@ -5,6 +5,7 @@ import {
   type TKongVaultInput,
   type TKongVaultView
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { getHeldYieldSplitterModeSummary } from '@pages/vaults/domain/yieldSplitterModes'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import {
@@ -18,10 +19,12 @@ import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { useWallet } from '@shared/contexts/useWallet'
+import { useYearn } from '@shared/contexts/useYearn'
 import { useV2VaultFilter } from '@shared/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@shared/hooks/useV3VaultFilter'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
+import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
 
 type TVaultsPinnedSection = {
@@ -34,6 +37,7 @@ type TVaultsListModelArgs = {
   listVaultType: TVaultType
   listChains: number[] | null
   listV3Types: string[]
+  includeYieldSplittersByDefault?: boolean
   listCategories: string[] | null
   listAggressiveness: string[] | null
   listUnderlyingAssets: string[] | null
@@ -53,6 +57,7 @@ type TVaultsListModel = {
   holdingsVaults: TKongVaultInput[]
   availableVaults: TKongVaultInput[]
   vaultFlags: Record<string, { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }>
+  vaultHrefOverrides: Record<string, string | undefined>
   underlyingAssetVaults: Record<string, TKongVault>
   pinnedSections: TVaultsPinnedSection[]
   pinnedVaults: TKongVaultInput[]
@@ -128,6 +133,7 @@ export function useVaultsListModel({
   listVaultType,
   listChains,
   listV3Types,
+  includeYieldSplittersByDefault = false,
   listCategories,
   listAggressiveness,
   listUnderlyingAssets,
@@ -147,6 +153,7 @@ export function useVaultsListModel({
   const isV2View = enabled && (listVaultType === 'factory' || isAllVaults)
   const { listVault: yvUsdVault } = useYvUsdVaults()
   const { getBalance } = useWallet()
+  const { allVaults } = useYearn()
 
   const listV2Types = useMemo(
     () => (listShowLegacyVaults ? ['factory', 'legacy'] : ['factory']),
@@ -192,6 +199,7 @@ export function useVaultsListModel({
     isV3View ? listUnderlyingAssets : null,
     listMinTvl,
     isV3View ? listShowHiddenVaults : undefined,
+    isV3View ? includeYieldSplittersByDefault : undefined,
     isV3View
   )
 
@@ -272,12 +280,49 @@ export function useVaultsListModel({
 
   const vaultFlags = useMemo(() => {
     const baseFlags = selectVaultsByType(listVaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags)
+    const vaultKeys = new Set(
+      [...filteredVaults, ...holdingsVaults, ...availableVaults].map((vault) => getVaultKey(vault))
+    )
+    const yieldModeFlags = Array.from(vaultKeys).reduce<
+      Record<string, { yieldModeLabel?: string; yieldModeTooltip?: string }>
+    >((accumulator, vaultKey) => {
+      const vault =
+        filteredVaults.find((candidate) => getVaultKey(candidate) === vaultKey) ||
+        holdingsVaults.find((candidate) => getVaultKey(candidate) === vaultKey) ||
+        availableVaults.find((candidate) => getVaultKey(candidate) === vaultKey)
+
+      if (!vault) {
+        return accumulator
+      }
+
+      const summary = getHeldYieldSplitterModeSummary(vault, allVaults, getBalance)
+      if (summary) {
+        accumulator[vaultKey] = {
+          yieldModeLabel: summary.label,
+          yieldModeTooltip: summary.tooltip
+        }
+      }
+      return accumulator
+    }, {})
     if (!yvUsdVault) {
-      return baseFlags
+      return Object.entries(baseFlags).reduce<typeof baseFlags>((accumulator, [key, value]) => {
+        accumulator[key] = {
+          ...value,
+          ...yieldModeFlags[key]
+        }
+        return accumulator
+      }, {})
     }
     const yvUsdKey = getVaultKey(yvUsdVault)
+    const mergedBaseFlags = Object.entries(baseFlags).reduce<typeof baseFlags>((accumulator, [key, value]) => {
+      accumulator[key] = {
+        ...value,
+        ...yieldModeFlags[key]
+      }
+      return accumulator
+    }, {})
     return {
-      ...baseFlags,
+      ...mergedBaseFlags,
       [yvUsdKey]: {
         hasHoldings: yvUsdHasHoldings,
         isMigratable: false,
@@ -285,7 +330,44 @@ export function useVaultsListModel({
         isHidden: false
       }
     }
-  }, [listVaultType, v3FilterResult.vaultFlags, v2FilterResult.vaultFlags, yvUsdHasHoldings, yvUsdVault])
+  }, [
+    allVaults,
+    availableVaults,
+    filteredVaults,
+    getBalance,
+    holdingsVaults,
+    listVaultType,
+    v3FilterResult.vaultFlags,
+    v2FilterResult.vaultFlags,
+    yvUsdHasHoldings,
+    yvUsdVault
+  ])
+
+  const vaultHrefOverrides = useMemo(() => {
+    const vaultKeys = new Set(
+      [...filteredVaults, ...holdingsVaults, ...availableVaults].map((vault) => getVaultKey(vault))
+    )
+
+    return Array.from(vaultKeys).reduce<Record<string, string | undefined>>((accumulator, vaultKey) => {
+      const vault =
+        filteredVaults.find((candidate) => getVaultKey(candidate) === vaultKey) ||
+        holdingsVaults.find((candidate) => getVaultKey(candidate) === vaultKey) ||
+        availableVaults.find((candidate) => getVaultKey(candidate) === vaultKey)
+
+      if (!vault) {
+        return accumulator
+      }
+
+      const summary = getHeldYieldSplitterModeSummary(vault, allVaults, getBalance)
+      if (summary?.preferredVaultAddress) {
+        accumulator[vaultKey] =
+          `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}` +
+          `?yieldMode=${summary.preferredVaultAddress}`
+      }
+
+      return accumulator
+    }, {})
+  }, [allVaults, availableVaults, filteredVaults, getBalance, holdingsVaults])
 
   const isLoadingVaultList =
     listVaultType === 'all'
@@ -313,6 +395,7 @@ export function useVaultsListModel({
     isV3View ? listUnderlyingAssets : null,
     listMinTvl,
     isV3View ? listShowHiddenVaults : undefined,
+    false,
     isV3View
   )
 
@@ -448,6 +531,7 @@ export function useVaultsListModel({
     holdingsVaults,
     availableVaults,
     vaultFlags,
+    vaultHrefOverrides,
     underlyingAssetVaults,
     pinnedSections,
     pinnedVaults,
