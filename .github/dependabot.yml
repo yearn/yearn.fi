@@ -10,6 +10,11 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    cooldown:
+      default-days: 7
+      semver-major-days: 7
+      semver-minor-days: 7
+      semver-patch-days: 7
     groups:
       security-updates:
         applies-to: security-updates
@@ -23,3 +28,7 @@ updates:
         applies-to: version-updates
         update-types:
           - "minor"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
