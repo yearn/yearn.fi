@@ -26,14 +26,14 @@ export const BENCHMARK_WALLETS: TPortfolioBenchmarkWallet[] = [
   },
   {
     id: 'medium',
-    label: 'SA Treasury',
+    label: 'medium benchmark wallet',
     address: MEDIUM_BENCHMARK_WALLET_ADDRESS,
     description: 'Medium portfolio; catches common multi-vault loading regressions.',
     budgetMs: 8_000
   },
   {
     id: 'light',
-    label: 'galloway.eth',
+    label: 'light benchmark wallet',
     address: LIGHT_BENCHMARK_WALLET_ADDRESS,
     description: 'Small portfolio; catches shell and direct-load regressions that should be fast.',
     budgetMs: 4_000
