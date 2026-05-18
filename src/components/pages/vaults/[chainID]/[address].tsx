@@ -46,6 +46,7 @@ import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
+import { getVaultUserHistoryVaults } from '@pages/vaults/utils/vaultUserHistoryVaults'
 import { isYvBtcAddress, YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import {
   getYvUsdInfinifiPointsNote,
@@ -970,6 +971,17 @@ function Index(): ReactElement | null {
     ])
   }, [currentVault, refetchSnapshot, refetchYBoldSnapshot, onRefresh, isYBold])
 
+  const detailUserHistoryVaults = useMemo(
+    () =>
+      currentVault
+        ? getVaultUserHistoryVaults({
+            chainId,
+            vaultAddress: currentVault.address
+          })
+        : undefined,
+    [chainId, currentVault]
+  )
+
   useEffect(() => {
     updateCollapsedWidgetHeight()
   }, [updateCollapsedWidgetHeight])
@@ -1006,6 +1018,7 @@ function Index(): ReactElement | null {
             chartHeightMdPx={230}
             enableUserCharts={canShowUserCharts}
             userUnitLabel={currentVault.token?.symbol || currentVault.symbol || 'assets'}
+            userHistoryVaults={detailUserHistoryVaults}
           />
         )
       },
@@ -1048,6 +1061,7 @@ function Index(): ReactElement | null {
     isYvUsd,
     sectionRefs,
     snapshotVault?.inceptTime,
+    detailUserHistoryVaults,
     vaultAddresses
   ])
 
@@ -1411,6 +1425,9 @@ function Index(): ReactElement | null {
         vaultAddress={resolvedCurrentVault.address}
         chartHeightPx={chartHeightPx}
         chartHeightMdPx={chartHeightMdPx}
+        enableUserCharts={canShowUserCharts}
+        userUnitLabel={resolvedCurrentVault.token?.symbol || resolvedCurrentVault.symbol || 'assets'}
+        userHistoryVaults={detailUserHistoryVaults}
       />
     )
   }
