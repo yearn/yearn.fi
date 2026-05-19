@@ -6,6 +6,8 @@ declare module 'react' {
   namespace JSX {
     interface IntrinsicElements {
       'portfolio-activity': CustomElementProps
+      'portfolio-activity-tab': CustomElementProps
+      'portfolio-claim-rewards-tab': CustomElementProps
       'portfolio-content': CustomElementProps
       'portfolio-holdings': CustomElementProps
       'portfolio-holdings-table': CustomElementProps

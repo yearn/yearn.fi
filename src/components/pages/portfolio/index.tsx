@@ -1665,8 +1665,8 @@ function PortfolioTabSelector({
           mergeWithHeader ? 'rounded-b-lg border-x border-b border-border' : 'rounded-lg border border-border'
         )}
       >
-        {PORTFOLIO_TABS.map((tab) => (
-          <portfolio-tab-button key={tab.key}>
+        {PORTFOLIO_TABS.map((tab) => {
+          const button = (
             <button
               data-testid={`portfolio-${tab.key}-tab`}
               type={'button'}
@@ -1682,8 +1682,16 @@ function PortfolioTabSelector({
             >
               {tab.label}
             </button>
-          </portfolio-tab-button>
-        ))}
+          )
+
+          if (tab.key === 'activity') {
+            return <portfolio-activity-tab key={tab.key}>{button}</portfolio-activity-tab>
+          }
+          if (tab.key === 'claim-rewards') {
+            return <portfolio-claim-rewards-tab key={tab.key}>{button}</portfolio-claim-rewards-tab>
+          }
+          return <portfolio-tab-button key={tab.key}>{button}</portfolio-tab-button>
+        })}
       </portfolio-tab-list>
     </div>
   )
