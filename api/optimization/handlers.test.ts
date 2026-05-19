@@ -52,6 +52,7 @@ vi.mock('./_lib/rpc', () => ({
   fetchVaultOnChainState: fetchVaultOnChainStateMock
 }))
 
+import { MAX_VAULT_STATE_STRATEGIES } from './_lib/address'
 import alignmentHandler from './alignment'
 import changeHandler from './change'
 import vaultStateHandler from './vault-state'
@@ -142,6 +143,49 @@ describe('optimization handlers', () => {
       },
       unallocatedBps: 6000
     })
+  })
+
+  it('rejects invalid vault-state strategy addresses before fetching on-chain state', async () => {
+    const res = createMockResponse()
+
+    await vaultStateHandler(
+      {
+        body: {
+          chainId: 1,
+          strategies: ['not-an-address'],
+          vault: '0x1111111111111111111111111111111111111111'
+        },
+        method: 'POST'
+      } as VercelRequest,
+      res
+    )
+
+    expect(res.statusCode).toBe(400)
+    expect(res.body).toEqual({ error: 'Invalid strategy addresses' })
+    expect(fetchVaultOnChainStateMock).not.toHaveBeenCalled()
+  })
+
+  it('caps vault-state strategy address count before fetching on-chain state', async () => {
+    const res = createMockResponse()
+
+    await vaultStateHandler(
+      {
+        body: {
+          chainId: 1,
+          strategies: Array.from(
+            { length: MAX_VAULT_STATE_STRATEGIES + 1 },
+            (_, index) => `0x${index.toString(16).padStart(40, '0')}`
+          ),
+          vault: '0x1111111111111111111111111111111111111111'
+        },
+        method: 'POST'
+      } as VercelRequest,
+      res
+    )
+
+    expect(res.statusCode).toBe(400)
+    expect(res.body).toEqual({ error: 'Too many strategy addresses' })
+    expect(fetchVaultOnChainStateMock).not.toHaveBeenCalled()
   })
 
   it('keeps CORS headers on change Redis authentication failures', async () => {

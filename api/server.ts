@@ -33,6 +33,7 @@ import {
 } from './lib/holdings/services/debug'
 import { fetchRecentAddressScopedActivityEvents } from './lib/holdings/services/graphql'
 import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
+import { parseVaultStateStrategies } from './optimization/_lib/address'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
 import { parseExplainMetadata } from './optimization/_lib/explain-parse'
@@ -763,9 +764,7 @@ async function handleOptimizationVaultState(req: Request): Promise<Response> {
   const payload = body && typeof body === 'object' ? (body as Record<string, unknown>) : {}
   const vault = typeof payload.vault === 'string' ? payload.vault : null
   const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
-  const strategies = Array.isArray(payload.strategies)
-    ? payload.strategies.filter((strategy: unknown): strategy is string => typeof strategy === 'string')
-    : []
+  const strategyResult = parseVaultStateStrategies(payload.strategies)
 
   if (!vault || !isValidAddress(vault)) {
     return Response.json({ error: 'Invalid vault address' }, { status: 400 })
@@ -775,12 +774,12 @@ async function handleOptimizationVaultState(req: Request): Promise<Response> {
     return Response.json({ error: 'Invalid chainId' }, { status: 400 })
   }
 
-  if (strategies.length === 0) {
-    return Response.json({ error: 'No strategy addresses provided' }, { status: 400 })
+  if ('error' in strategyResult) {
+    return Response.json({ error: strategyResult.error }, { status: 400 })
   }
 
   try {
-    const state = await fetchVaultOnChainState(chainId, vault, strategies)
+    const state = await fetchVaultOnChainState(chainId, vault, strategyResult.strategies)
     const strategyDebts = Object.fromEntries(
       [...state.strategyDebts].map(([strategyAddress, debt]) => [strategyAddress, debt.toString()])
     )

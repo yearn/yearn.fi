@@ -30,6 +30,14 @@ function resolveClientPort(env: Record<string, string>) {
   return Number.isInteger(configuredPort) && configuredPort > 0 ? configuredPort : 3000
 }
 
+function resolveAllowedHosts(env: Record<string, string>) {
+  const rawHosts = env.ALLOWED_HOSTS?.trim() || env.VITE_ALLOWED_HOSTS?.trim() || ''
+  return rawHosts
+    .split(',')
+    .map((host) => host.trim())
+    .filter(Boolean)
+}
+
 function buildProxy(apiProxyTarget: string) {
   return {
     '/api': {
@@ -99,6 +107,8 @@ export default defineConfig(({ mode }) => {
   const apiProxyTarget = resolveApiProxyTarget(env)
   const host = resolveClientHost(env)
   const port = resolveClientPort(env)
+  const allowedHosts = resolveAllowedHosts(env)
+  const allowedHostConfig = allowedHosts.length > 0 ? { allowedHosts } : {}
   const proxy = buildProxy(apiProxyTarget)
 
   return {
@@ -120,11 +130,13 @@ export default defineConfig(({ mode }) => {
     server: {
       host,
       port,
+      ...allowedHostConfig,
       proxy
     },
     preview: {
       host,
       port,
+      ...allowedHostConfig,
       proxy
     },
     build: {

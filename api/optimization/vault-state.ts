@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { isValidEthereumAddress, parseVaultStateStrategies } from './_lib/address'
 import { OPTIMIZATION_POST_CORS_HEADERS, setCorsHeaders } from './_lib/cors'
 import { fetchVaultOnChainState } from './_lib/rpc'
 
@@ -18,22 +19,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const payload = req.body && typeof req.body === 'object' ? (req.body as Record<string, unknown>) : {}
   const vault = typeof payload.vault === 'string' ? payload.vault : null
   const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
-  const strategies = Array.isArray(payload.strategies)
-    ? payload.strategies.filter((s: unknown): s is string => typeof s === 'string')
-    : []
+  const strategyResult = parseVaultStateStrategies(payload.strategies)
 
-  if (!vault || !/^0x[a-fA-F0-9]{40}$/.test(vault)) {
+  if (!vault || !isValidEthereumAddress(vault)) {
     return res.status(400).json({ error: 'Invalid vault address' })
   }
   if (chainId === null || !Number.isFinite(chainId)) {
     return res.status(400).json({ error: 'Invalid chainId' })
   }
-  if (strategies.length === 0) {
-    return res.status(400).json({ error: 'No strategy addresses provided' })
+  if ('error' in strategyResult) {
+    return res.status(400).json({ error: strategyResult.error })
   }
 
   try {
-    const state = await fetchVaultOnChainState(chainId, vault, strategies)
+    const state = await fetchVaultOnChainState(chainId, vault, strategyResult.strategies)
 
     const strategyDebts: Record<string, string> = {}
     for (const [addr, debt] of state.strategyDebts) {
