@@ -1,4 +1,3 @@
-import { serve } from 'bun'
 import type {
   TTenderlyFundRequest,
   TTenderlyIncreaseTimeRequest,
@@ -90,6 +89,18 @@ type TTenderlyJsonRpcError = {
   }
 }
 
+type TBunServer = {
+  requestIP(req: Request): { address: string } | null
+}
+
+declare const Bun: {
+  serve(options: {
+    fetch(req: Request, server: TBunServer): Response | Promise<Response>
+    idleTimeout: number
+    port: number
+  }): unknown
+}
+
 async function handleYvUsdAprs(req: Request): Promise<Response> {
   if (req.method !== 'GET') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 })
@@ -136,9 +147,9 @@ const CORS_HEADERS = {
 
 function withCors(response: Response): Response {
   const newHeaders = new Headers(response.headers)
-  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+  Object.entries(CORS_HEADERS).forEach(([key, value]) => {
     newHeaders.set(key, value)
-  }
+  })
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -153,7 +164,10 @@ function handleCorsPreFlight(): Response {
   })
 }
 
-function withCorsHeaders(headers: HeadersInit | undefined, corsHeaders: Readonly<Record<string, string>>): HeadersInit {
+function withCorsHeaders(
+  headers: Record<string, string> | undefined,
+  corsHeaders: Readonly<Record<string, string>>
+): Record<string, string> {
   return { ...corsHeaders, ...(headers ?? {}) }
 }
 
@@ -161,7 +175,7 @@ function jsonWithCors(
   body: unknown,
   status: number,
   corsHeaders: Readonly<Record<string, string>>,
-  headers?: HeadersInit
+  headers?: Record<string, string>
 ): Response {
   return Response.json(body, {
     status,
@@ -245,14 +259,13 @@ function validateInvalidateBody(body: unknown): body is InvalidateRequestBody {
   const candidate = body as Record<string, unknown>
   if (!Array.isArray(candidate.vaults) || candidate.vaults.length === 0) return false
 
-  for (const vault of candidate.vaults) {
+  return candidate.vaults.every((vault) => {
     if (!vault || typeof vault !== 'object') return false
     const value = vault as Record<string, unknown>
     if (typeof value.address !== 'string' || !isValidAddress(value.address)) return false
     if (typeof value.chainId !== 'number' || !Number.isInteger(value.chainId)) return false
-  }
-
-  return true
+    return true
+  })
 }
 
 function parseHoldingsEventFetchType(value: string | null): HoldingsEventFetchType {
@@ -726,8 +739,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       }
     )
 
-    const hasHoldings = holdings.dataPoints.some((dp) => dp.value > 0)
-    if (!hasHoldings) {
+    if (!holdings.hasActivity) {
       await updateHoldingsProgress(activeProgressId, {
         status: 'complete',
         progress: 100,
@@ -1379,7 +1391,7 @@ async function main() {
 
   await initializeSchema()
 
-  serve({
+  Bun.serve({
     async fetch(req, server) {
       const url = new URL(req.url)
       console.log(`[Server] ${req.method} ${url.pathname}`)
@@ -1436,6 +1448,18 @@ async function main() {
           return withCors(await handleYvUsdAprs(req))
         }
 
+        if (url.pathname === '/api/optimization/change') {
+          return withCors(await handleOptimizationChange(req))
+        }
+
+        if (url.pathname === '/api/optimization/alignment') {
+          return withCors(await handleOptimizationAlignment(req))
+        }
+
+        if (url.pathname === '/api/optimization/vault-state') {
+          return withCors(await handleOptimizationVaultState(req))
+        }
+
         if (url.pathname === '/api/tenderly/status') {
           return withCors(handleTenderlyStatus(req))
         }
@@ -1470,18 +1494,6 @@ async function main() {
             return withCors(accessDeniedResponse)
           }
           return withCors(await handleTenderlyFund(req))
-        }
-
-        if (url.pathname === '/api/optimization/change') {
-          return await handleOptimizationChange(req)
-        }
-
-        if (url.pathname === '/api/optimization/alignment') {
-          return await handleOptimizationAlignment(req)
-        }
-
-        if (url.pathname === '/api/optimization/vault-state') {
-          return await handleOptimizationVaultState(req)
         }
 
         return withCors(new Response('Not found', { status: 404 }))

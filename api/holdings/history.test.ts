@@ -54,7 +54,7 @@ describe('holdings history route', () => {
 
   it('returns zero-filled settled history for wallets that only have same-day activity', async () => {
     getHistoricalHoldingsChartMock.mockResolvedValue({
-      address: 'TEST_WALLET_ADDRESS',
+      address: TEST_WALLET_ADDRESS,
       periodDays: 365,
       timeframe: '1y',
       denomination: 'usd',
@@ -79,7 +79,7 @@ describe('holdings history route', () => {
 
     expect(res.statusCode).toBe(200)
     expect(res.body).toEqual({
-      address: 'TEST_WALLET_ADDRESS',
+      address: TEST_WALLET_ADDRESS,
       version: 'all',
       denomination: 'usd',
       timeframe: '1y',
@@ -92,7 +92,7 @@ describe('holdings history route', () => {
 
   it('passes multi-vault filters to historical holdings chart', async () => {
     getHistoricalHoldingsChartMock.mockResolvedValue({
-      address: 'TEST_WALLET_ADDRESS',
+      address: TEST_WALLET_ADDRESS,
       periodDays: 365,
       timeframe: '1y',
       denomination: 'usd',

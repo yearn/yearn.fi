@@ -11,7 +11,9 @@ Frontend hooks
   ├─ GET /api/holdings/progress
   ├─ GET /api/holdings/breakdown
   ├─ GET /api/holdings/activity
-  └─ GET /api/holdings/protocol-return/history
+  ├─ GET /api/holdings/activity-facets
+  ├─ GET /api/holdings/protocol-return/history
+  └─ GET /api/holdings/pnl/simple-history
       │
       ▼
 Holdings services
@@ -58,10 +60,13 @@ The API internally values each day at `23:59:59 UTC`.
 | `defillama.ts` | yearn-prices / DefiLlama | Switchable historical price client with request batching and retries |
 | `nestedVaultPrices.ts` | Local | Expand and derive nested vault asset pricing where a vault asset is another Yearn vault |
 | `aggregator.ts` | Local | Holdings history, ETH-denominated history, and breakdown calculations |
-| `activity.ts` | Local | Recent user activity classification: deposit, withdraw, stake, unstake |
+| `activity.ts` | Local | Recent user activity classification: deposit, withdraw, stake, unstake, transfer, swap |
+| `activityReceiptEnrichment.ts` | Chain RPC | Optional transaction and receipt enrichment for zaps, reward claims, and direct V2 vault actions |
 | `pnlEvents.ts` | Local | Shared raw event records for protocol-return history |
 | `pnlSimple.ts` | Local | Protocol-return exposure history without FIFO cost-basis accounting |
-| `cache.ts` | PostgreSQL | Daily totals, rate limits, and lazy vault invalidation |
+| `cache.ts` | PostgreSQL | Daily totals and lazy vault invalidation |
+| `progress.ts` | PostgreSQL | Short-lived progress records and logs for long history requests |
+| `ratelimit.ts` | PostgreSQL | Simple per-client request windows for public holdings routes |
 
 ## Event Semantics
 
@@ -112,7 +117,7 @@ DefiLlama behavior:
 
 ## Endpoints
 
-All public holdings routes support CORS, `GET`, and `OPTIONS`. When database caching is enabled, they rate-limit by forwarded IP, falling back to a simple header fingerprint.
+Public holdings data routes support CORS, `GET`, and `OPTIONS`. When database caching is enabled, history, breakdown, activity, activity facets, and protocol-return history rate-limit by forwarded IP, falling back to a simple header fingerprint. `/api/holdings/progress` is read-only progress polling and does not run the rate limiter.
 
 ### `GET /api/holdings/history`
 
@@ -138,8 +143,10 @@ Query params:
 | `vaults` | No | - | Comma-separated multi-vault filter, e.g. `1:0xvault,8453:0xvault` |
 | `fetchType` | No | `seq` | `seq` or `parallel` |
 | `paginationMode` | No | `paged` | `paged` or `all` |
+| `progressId` | No | - | Stable progress ID clients can poll through `/api/holdings/progress` |
+| `debug` | No | - | Enables the route debug context |
 | `refresh` | Local only | `false` | `true` or `1` clears the user's cached totals before computing |
-| `debug`, `debugLots`, `debugVault`, `debugTx` | Local only | - | Debug logging controls in `api/server.ts` |
+| `debugLots`, `debugVault`, `debugTx` | Local only | - | Extra debug filters in `api/server.ts` |
 
 Response:
 
@@ -156,7 +163,42 @@ Response:
 }
 ```
 
-Returns `404` when the wallet has no non-zero history points for the request.
+Returns `404` when the wallet has no indexed holdings activity for the request.
+
+### `GET /api/holdings/progress`
+
+Reads DB-backed progress for long-running holdings routes. `history` and `protocol-return/history` can write progress when the caller passes a valid `progressId`.
+
+Example:
+
+```bash
+curl "http://localhost:3001/api/holdings/progress?id=portfolio:0x..."
+```
+
+Query params:
+
+| Param | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `id` | Yes | - | Progress ID previously passed to a progress-enabled holdings route |
+
+Response:
+
+```json
+{
+  "id": "portfolio:0x...",
+  "route": "history",
+  "addressHash": "sha256...",
+  "status": "running",
+  "progress": 45,
+  "message": "Fetching historical prices",
+  "detail": null,
+  "startedAt": 1778111999000,
+  "updatedAt": 1778112005000,
+  "logs": []
+}
+```
+
+Progress records expire after 10 minutes. The route returns `404` when the ID is invalid, expired, missing, or DB progress is unavailable, and it always sends `Cache-Control: no-store`.
 
 ### `GET /api/holdings/breakdown`
 
@@ -228,6 +270,7 @@ Recent classified vault activity.
 ```bash
 curl "http://localhost:3001/api/holdings/activity?address=0x..."
 curl "http://localhost:3001/api/holdings/activity?address=0x...&limit=20&offset=20"
+curl "http://localhost:3001/api/holdings/activity?address=0x...&type=withdraw&chainId=1&includeFacets=1"
 ```
 
 Query params:
@@ -238,8 +281,13 @@ Query params:
 | `version` | No | `all` | `v2`, `v3`, or `all` |
 | `limit` | No | `10` | Integer clamped to `1..50` |
 | `offset` | No | `0` | Non-negative integer |
+| `type` | No | `all` | `deposit`, `withdraw`, `stake`, `unstake`, `transfer`, `swap`, or `all` |
+| `chainId` | No | - | Positive integer chain filter |
+| `startTimestamp` | No | - | Inclusive Unix timestamp lower bound |
+| `endTimestamp` | No | - | Inclusive Unix timestamp upper bound |
+| `includeFacets` | No | `false` | `true` or `1` includes `facets.chainIds` for the returned page |
 
-Response:
+Response (`facets` appears only when `includeFacets=true` or `includeFacets=1`):
 
 ```json
 {
@@ -247,6 +295,9 @@ Response:
   "version": "all",
   "limit": 10,
   "offset": 0,
+  "facets": {
+    "chainIds": [1, 8453]
+  },
   "pageInfo": {
     "hasMore": true,
     "nextOffset": 10
@@ -257,11 +308,21 @@ Response:
       "txHash": "0x...",
       "timestamp": 1778111999,
       "action": "deposit",
+      "displayType": "zap",
+      "transferDirection": "in",
       "vaultAddress": "0x...",
       "familyVaultAddress": "0x...",
       "assetSymbol": "USDC",
       "assetAmount": "1000000",
       "assetAmountFormatted": 1,
+      "inputTokenAddress": "0x...",
+      "inputTokenSymbol": "USDC",
+      "inputTokenAmount": "1000000",
+      "inputTokenAmountFormatted": 1,
+      "outputTokenAddress": "0x...",
+      "outputTokenSymbol": "yvUSDC",
+      "outputTokenAmount": "1000000",
+      "outputTokenAmountFormatted": 1,
       "shareAmount": "1000000",
       "shareAmountFormatted": 1,
       "status": "ok"
@@ -270,7 +331,41 @@ Response:
 }
 ```
 
-Activity classification merges address-scoped events with transaction-scoped context, so router-mediated staking, unstaking, deposit, and withdraw flows can be represented as user actions.
+Activity classification merges address-scoped events with transaction-scoped context, so router-mediated staking, unstaking, deposit, withdraw, transfer, and swap flows can be represented as user actions. Configure `VITE_RPC_URI_FOR_<chainId>` for richer receipt enrichment of zaps, reward claims, and direct V2 vault actions; without it the API still returns indexed activity rows, but some enriched input/output fields may be absent.
+
+### `GET /api/holdings/activity-facets`
+
+Returns activity chain facets without fetching the full paginated activity response. This is useful for building chain filter controls before the user requests activity rows.
+
+```bash
+curl "http://localhost:3001/api/holdings/activity-facets?address=0x..."
+curl "http://localhost:3001/api/holdings/activity-facets?address=0x...&limitPerSource=500&offsetPerSource=500"
+```
+
+Query params:
+
+| Param | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `address` | Yes | - | User EVM address |
+| `version` | No | `all` | `v2`, `v3`, or `all` |
+| `limitPerSource` | No | `250` | Per-event-source page size, clamped to `1..1000` |
+| `offsetPerSource` | No | `0` | Per-event-source non-negative offset |
+
+Response:
+
+```json
+{
+  "address": "0x...",
+  "version": "all",
+  "facets": {
+    "chainIds": [1, 8453]
+  },
+  "pageInfo": {
+    "hasMore": false,
+    "nextOffsetPerSource": null
+  }
+}
+```
 
 ### `GET /api/holdings/protocol-return/history`
 
@@ -297,7 +392,9 @@ Query params:
 | `vaults` | No | - | Comma-separated multi-vault filter |
 | `fetchType` | No | `seq` | `seq` or `parallel` |
 | `paginationMode` | No | `paged` | `paged` or `all` |
-| `debug`, `debugLots`, `debugVault`, `debugTx` | Local only | - | Debug logging controls in `api/server.ts` |
+| `progressId` | No | - | Stable progress ID clients can poll through `/api/holdings/progress` |
+| `debug` | No | - | Enables the route debug context |
+| `debugLots`, `debugVault`, `debugTx` | Local only | - | Extra debug filters in `api/server.ts` |
 
 Metric model:
 
@@ -393,7 +490,8 @@ Response:
 | `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
 | `ENVIO_PASSWORD` | No | `''` | Envio Hasura admin secret; skipped when empty or `testing` |
 | `DATABASE_URL_PREVIEW` | No | `null` | Preview PostgreSQL URL, preferred over `DATABASE_URL` when set |
-| `DATABASE_URL` | No | `null` | Default PostgreSQL URL; caching and rate-limit persistence are disabled when absent |
+| `DATABASE_URL` | No | `null` | Default PostgreSQL URL; caching, progress, and rate-limit persistence are disabled when absent |
+| `VITE_RPC_URI_FOR_<id>` | No | `null` | Optional chain RPC URL for activity receipt and transaction enrichment |
 | `HOLDINGS_PRICE_PROVIDER` | No | `auto` | `auto`, `yearn-prices`, or `defillama` |
 | `YEARN_PRICES_BASE_URL` | No | `https://prices.yearn.dev` | Base URL for yearn-prices; `/api/prices/...` is appended automatically |
 | `YEARN_PRICES_API_URL` | No | `YEARN_PRICES_BASE_URL` fallback | Legacy alias for `YEARN_PRICES_BASE_URL` |
@@ -440,6 +538,8 @@ Server-side cache is optional. When `DATABASE_URL_PREVIEW` or `DATABASE_URL` is 
 2. HTTP cache:
    - History, breakdown, and protocol-return history: `s-maxage=300, stale-while-revalidate=600`.
    - Activity: `s-maxage=60, stale-while-revalidate=300`.
+   - Activity facets: `s-maxage=300, stale-while-revalidate=900`.
+   - Progress: `no-store`.
 3. Client TanStack Query cache:
    - Portfolio history and protocol-return history hooks keep chart responses fresh for one hour.
    - Other frontend hooks configure their own durations.
@@ -456,6 +556,12 @@ Cache behavior:
 - If any relevant vault was invalidated after the oldest cached row was written, the user's cached totals for that version are cleared and recomputed.
 - Recalculated totals are not cached when any token price batch failed, because partial price data can undercount chart totals.
 - `refresh=true` or `refresh=1` in the local Bun server clears the user's cached totals before recomputing.
+
+### Progress and Rate Limits
+
+- Progress writes only when DB persistence is enabled and the supplied `progressId` matches `[a-zA-Z0-9:_-]{1,160}`.
+- Progress status is `running`, `complete`, or `error`; progress is clamped to `0..100`, logs are capped to the latest `20` entries, and rows expire after `10 minutes`.
+- DB-backed rate limiting allows `10` requests per minute per client identifier. If DB access fails, the rate limiter allows the request and logs the failure.
 
 ### Token Prices
 
@@ -510,6 +616,8 @@ Legacy `holdings_totals.user_address` rows are migrated to `user_address_hash`, 
 
 - Enable DB caching in shared environments; otherwise a history request must rebuild events, PPS, and prices every time.
 - Keep `API_KEY_PORTFOLIO` or `YEARN_PRICES_API_KEY` configured if `HOLDINGS_PRICE_PROVIDER=auto` should prefer yearn-prices.
+- Configure `VITE_RPC_URI_FOR_<chainId>` for chains where activity rows should include richer zap, reward-claim, and direct V2 vault enrichment.
+- Pass a stable `progressId` from the frontend for long history and protocol-return requests, then poll `/api/holdings/progress?id=...`; progress rows are DB-backed and expire quickly.
 - Use `/api/admin/invalidate-cache` after indexer deployments add or repair vault coverage.
 - Stale rate-limit rows are cleaned opportunistically when holdings rate checks run.
 - Short-lived progress rows are cleaned opportunistically when progress-enabled holdings requests run; if DB progress is unavailable, clients show a neutral loading placeholder instead of estimated progress.
