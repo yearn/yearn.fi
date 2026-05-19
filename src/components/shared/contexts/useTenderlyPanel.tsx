@@ -4,7 +4,9 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
+import { useSessionStorage } from '@shared/hooks/useSessionStorage'
 import type {
+  TTenderlyAdminSecretValidationResponse,
   TTenderlyFundableAsset,
   TTenderlyFundRequest,
   TTenderlyIncreaseTimeRequest,
@@ -44,6 +46,8 @@ type TTenderlyPanelContext = {
   isStatusLoading: boolean
   isPanelAvailable: boolean
   isOpen: boolean
+  adminSecret: string
+  isAdminSecretValidated: boolean
   status?: TTenderlyPanelStatus
   selectedCanonicalChainId?: number
   selectedExecutionChainId?: number
@@ -55,6 +59,9 @@ type TTenderlyPanelContext = {
   openPanel: () => void
   closePanel: () => void
   togglePanel: () => void
+  setAdminSecret: (adminSecret: string) => void
+  validateAndSetAdminSecret: (adminSecret: string) => Promise<void>
+  clearAdminSecret: () => void
   setSelectedCanonicalChainId: (chainId: number) => void
   refetchStatus: () => Promise<void>
   createBaselineSnapshot: () => Promise<void>
@@ -70,12 +77,17 @@ const TenderlyPanelContext = createContext<TTenderlyPanelContext>({
   isStatusLoading: false,
   isPanelAvailable: false,
   isOpen: false,
+  adminSecret: '',
+  isAdminSecretValidated: false,
   snapshotRecords: [],
   fundableAssets: [],
   pendingAction: null,
   openPanel: (): void => undefined,
   closePanel: (): void => undefined,
   togglePanel: (): void => undefined,
+  setAdminSecret: (): void => undefined,
+  validateAndSetAdminSecret: async (): Promise<void> => undefined,
+  clearAdminSecret: (): void => undefined,
   setSelectedCanonicalChainId: (): void => undefined,
   refetchStatus: async (): Promise<void> => undefined,
   createBaselineSnapshot: async (): Promise<void> => undefined,
@@ -86,16 +98,33 @@ const TenderlyPanelContext = createContext<TTenderlyPanelContext>({
   fundWallet: async (): Promise<void> => undefined
 })
 
+const TENDERLY_ADMIN_SECRET_STORAGE_KEY = 'yearn.fi/tenderly-admin-secret@0.0.1'
+
+function buildTenderlyApiHeaders(options?: { hasBody?: boolean; adminSecret?: string }): HeadersInit | undefined {
+  const headers: Record<string, string> = {}
+  if (options?.hasBody) {
+    headers['content-type'] = 'application/json'
+  }
+
+  const adminSecret = options?.adminSecret?.trim()
+  if (adminSecret) {
+    headers['x-tenderly-admin-secret'] = adminSecret
+  }
+
+  return Object.keys(headers).length > 0 ? headers : undefined
+}
+
 async function fetchTenderlyApi<TResponse, TRequest = undefined>(
   path: string,
   options?: {
     method?: 'GET' | 'POST'
     body?: TRequest
+    adminSecret?: string
   }
 ): Promise<TResponse> {
   const response = await fetch(path, {
     method: options?.method || 'GET',
-    headers: options?.body ? { 'content-type': 'application/json' } : undefined,
+    headers: buildTenderlyApiHeaders({ hasBody: Boolean(options?.body), adminSecret: options?.adminSecret }),
     body: options?.body ? JSON.stringify(options.body) : undefined
   })
   const payload = (await response.json().catch(() => undefined)) as { error?: string } & TResponse
@@ -119,6 +148,8 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
   const [isOpen, setIsOpen] = useState(false)
   const [selectedCanonicalChainId, setSelectedCanonicalChainIdState] = useState<number | undefined>(undefined)
   const [pendingAction, setPendingAction] = useState<string | null>(null)
+  const [adminSecretValue, setAdminSecretValue] = useSessionStorage(TENDERLY_ADMIN_SECRET_STORAGE_KEY, '')
+  const [validatedAdminSecret, setValidatedAdminSecret] = useState('')
   const { value: snapshotStorageValue, set: setSnapshotStorage } = useLocalStorageValue<TTenderlySnapshotStorage>(
     TENDERLY_SNAPSHOT_STORAGE_KEY,
     {
@@ -127,6 +158,31 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
   )
   const snapshotStorage = snapshotStorageValue || {}
   const isTenderlyMode = isTenderlyModeEnabled()
+  const adminSecret = adminSecretValue.trim()
+  const isAdminSecretValidated = adminSecret.length > 0 && adminSecret === validatedAdminSecret
+  const setAdminSecret = useCallback(
+    (nextAdminSecret: string): void => {
+      setAdminSecretValue(nextAdminSecret)
+      setValidatedAdminSecret('')
+    },
+    [setAdminSecretValue]
+  )
+  const validateAndSetAdminSecret = useCallback(
+    async (nextAdminSecret: string): Promise<void> => {
+      const nextAdminSecretValue = nextAdminSecret.trim()
+      await fetchTenderlyApi<TTenderlyAdminSecretValidationResponse>('/api/tenderly/validate-admin-secret', {
+        method: 'POST',
+        adminSecret: nextAdminSecretValue
+      })
+      setAdminSecretValue(nextAdminSecret)
+      setValidatedAdminSecret(nextAdminSecretValue)
+    },
+    [setAdminSecretValue]
+  )
+  const clearAdminSecret = useCallback((): void => {
+    setAdminSecretValue('')
+    setValidatedAdminSecret('')
+  }, [setAdminSecretValue])
 
   const refetchStatus = useCallback(async (): Promise<void> => {
     if (!isTenderlyMode) {
@@ -224,9 +280,10 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
     async (request: TTenderlySnapshotRequest): Promise<TTenderlySnapshotRecord> =>
       await fetchTenderlyApi<TTenderlySnapshotRecord, TTenderlySnapshotRequest>('/api/tenderly/snapshot', {
         method: 'POST',
-        body: request
+        body: request,
+        adminSecret
       }),
-    []
+    [adminSecret]
   )
 
   const createSnapshotWithKind = useCallback(
@@ -260,6 +317,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
         try {
           await fetchTenderlyApi('/api/tenderly/revert', {
             method: 'POST',
+            adminSecret,
             body: {
               canonicalChainId: snapshotRecord.canonicalChainId,
               snapshotId: snapshotRecord.snapshotId
@@ -314,7 +372,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
         setPendingAction(null)
       }
     },
-    [refreshTenderlyDependentState, requestSnapshotRecord, updateSnapshotStorage]
+    [adminSecret, refreshTenderlyDependentState, requestSnapshotRecord, updateSnapshotStorage]
   )
 
   const increaseTime = useCallback(
@@ -327,6 +385,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
       try {
         await fetchTenderlyApi('/api/tenderly/increase-time', {
           method: 'POST',
+          adminSecret,
           body: {
             canonicalChainId: selectedCanonicalChainId,
             seconds: params.seconds,
@@ -342,7 +401,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
         setPendingAction(null)
       }
     },
-    [refreshTenderlyDependentState, selectedCanonicalChainId]
+    [adminSecret, refreshTenderlyDependentState, selectedCanonicalChainId]
   )
 
   const fundWallet = useCallback(
@@ -358,6 +417,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
       try {
         await fetchTenderlyApi('/api/tenderly/fund', {
           method: 'POST',
+          adminSecret,
           body: {
             canonicalChainId: selectedCanonicalChainId,
             walletAddress: address,
@@ -373,7 +433,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
         setPendingAction(null)
       }
     },
-    [address, refreshTenderlyDependentState, selectedCanonicalChainId]
+    [address, adminSecret, refreshTenderlyDependentState, selectedCanonicalChainId]
   )
 
   const createBaselineSnapshot = useCallback(async (): Promise<void> => {
@@ -463,6 +523,8 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
       isStatusLoading,
       isPanelAvailable,
       isOpen,
+      adminSecret: adminSecretValue,
+      isAdminSecretValidated,
       status,
       selectedCanonicalChainId,
       selectedExecutionChainId: selectedChain?.executionChainId,
@@ -474,6 +536,9 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
       openPanel: (): void => setIsOpen(true),
       closePanel: (): void => setIsOpen(false),
       togglePanel: (): void => setIsOpen((current) => !current),
+      setAdminSecret,
+      validateAndSetAdminSecret,
+      clearAdminSecret,
       setSelectedCanonicalChainId: setSelectedCanonicalChainIdState,
       refetchStatus,
       createBaselineSnapshot,
@@ -488,6 +553,8 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
       isStatusLoading,
       isPanelAvailable,
       isOpen,
+      adminSecretValue,
+      isAdminSecretValidated,
       status,
       selectedCanonicalChainId,
       selectedChain?.executionChainId,
@@ -496,6 +563,9 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
       fundableAssets,
       address,
       pendingAction,
+      setAdminSecret,
+      validateAndSetAdminSecret,
+      clearAdminSecret,
       refetchStatus,
       createBaselineSnapshot,
       createSnapshot,

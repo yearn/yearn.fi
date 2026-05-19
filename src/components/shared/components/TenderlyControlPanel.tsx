@@ -1,3 +1,4 @@
+import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useMediaQuery } from '@react-hookz/web'
 import { useTenderlyPanel } from '@shared/contexts/useTenderlyPanel'
@@ -11,8 +12,8 @@ import {
   truncateHex
 } from '@shared/utils'
 import type { TTenderlyFastForwardUnit } from '@shared/utils/tenderlyPanel'
-import type { ReactElement } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import type { FormEvent, ReactElement } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 
 type TDesktopPanelKey = 'snapshots' | 'faucet' | 'fast-forward'
 
@@ -110,13 +111,15 @@ function ChainSelector(props: {
 function BaselineGateCard(props: {
   pendingAction: string | null
   disabled?: boolean
+  message?: string
   onCreateBaseline: () => Promise<void>
 }): ReactElement {
   return (
     <div className="rounded-3xl border border-border bg-surface-secondary p-4">
       <p className="text-sm font-semibold text-text-primary">{'Create a baseline snapshot first'}</p>
       <p className="mt-1 text-xs text-text-secondary">
-        {'All Tenderly mutations stay locked until this chain has a baseline snapshot you can return to.'}
+        {props.message ||
+          'All Tenderly mutations stay locked until this chain has a baseline snapshot you can return to.'}
       </p>
       <div className="mt-4">
         <ActionButton
@@ -219,7 +222,12 @@ function useTenderlyControlState() {
     clearSnapshotHistory,
     revertToSnapshot,
     increaseTime,
-    fundWallet
+    fundWallet,
+    adminSecret,
+    isAdminSecretValidated,
+    setAdminSecret,
+    validateAndSetAdminSecret,
+    clearAdminSecret
   } = useTenderlyPanel()
   const [customAmount, setCustomAmount] = useState('14')
   const [customUnit, setCustomUnit] = useState<TTenderlyFastForwardUnit>('days')
@@ -235,7 +243,14 @@ function useTenderlyControlState() {
     () => availableChains.find((chain) => chain.canonicalChainId === selectedCanonicalChainId),
     [availableChains, selectedCanonicalChainId]
   )
-  const controlsUnlocked = Boolean(baselineSnapshot)
+  const isAdminSecretConfigured = Boolean(status?.isTenderlyAdminSecretConfigured)
+  const isAdminSecretReady = isAdminSecretConfigured && adminSecret.trim().length > 0 && isAdminSecretValidated
+  const controlsUnlocked = isAdminSecretReady && Boolean(baselineSnapshot)
+  const adminGateMessage = !isAdminSecretConfigured
+    ? 'Set TENDERLY_ADMIN_SECRET on the API server before running Tenderly mutations.'
+    : !isAdminSecretReady
+      ? 'Enter the Tenderly admin secret before running Tenderly mutations.'
+      : undefined
   const lastRestorableSnapshot = useMemo(() => getLastRestorableTenderlySnapshot(snapshotRecords), [snapshotRecords])
 
   const selectedAssetAddressOrFallback =
@@ -311,6 +326,13 @@ function useTenderlyControlState() {
     selectedExecutionChainId,
     snapshotRecords,
     baselineSnapshot,
+    adminSecret,
+    setAdminSecret,
+    validateAndSetAdminSecret,
+    clearAdminSecret,
+    isAdminSecretConfigured,
+    isAdminSecretReady,
+    adminGateMessage,
     controlsUnlocked,
     lastRestorableSnapshot,
     fundableAssets,
@@ -362,7 +384,8 @@ function SnapshotPanel(props: { state: TTenderlyControlState; onClose?: () => vo
         {!state.controlsUnlocked ? (
           <BaselineGateCard
             pendingAction={state.pendingAction}
-            disabled={!state.selectedCanonicalChainId}
+            disabled={!state.selectedCanonicalChainId || !state.isAdminSecretReady}
+            message={state.adminGateMessage}
             onCreateBaseline={state.createBaselineSnapshot}
           />
         ) : (
@@ -414,7 +437,8 @@ function FastForwardPanel(props: { state: TTenderlyControlState; onClose?: () =>
         {!state.controlsUnlocked ? (
           <BaselineGateCard
             pendingAction={state.pendingAction}
-            disabled={!state.selectedCanonicalChainId}
+            disabled={!state.selectedCanonicalChainId || !state.isAdminSecretReady}
+            message={state.adminGateMessage}
             onCreateBaseline={state.createBaselineSnapshot}
           />
         ) : (
@@ -483,7 +507,8 @@ function WalletFaucetPanel(props: { state: TTenderlyControlState; onClose?: () =
         {!state.controlsUnlocked ? (
           <BaselineGateCard
             pendingAction={state.pendingAction}
-            disabled={!state.selectedCanonicalChainId}
+            disabled={!state.selectedCanonicalChainId || !state.isAdminSecretReady}
+            message={state.adminGateMessage}
             onCreateBaseline={state.createBaselineSnapshot}
           />
         ) : (
@@ -592,7 +617,8 @@ function MobileTenderlyPanelContent(props: { state: TTenderlyControlState }): Re
       {!state.controlsUnlocked ? (
         <BaselineGateCard
           pendingAction={state.pendingAction}
-          disabled={!state.selectedCanonicalChainId}
+          disabled={!state.selectedCanonicalChainId || !state.isAdminSecretReady}
+          message={state.adminGateMessage}
           onCreateBaseline={state.createBaselineSnapshot}
         />
       ) : (
@@ -627,7 +653,11 @@ function MobileTenderlyPanelContent(props: { state: TTenderlyControlState }): Re
   )
 }
 
-function DesktopTenderlyPanel(props: { state: TTenderlyControlState }): ReactElement {
+function DesktopTenderlyPanel(props: {
+  state: TTenderlyControlState
+  isSecretModalOpen: boolean
+  openSecretModal: () => void
+}): ReactElement {
   const { state } = props
   const [activePanel, setActivePanel] = useState<TDesktopPanelKey | null>(null)
   const panelRootRef = useRef<HTMLDivElement | null>(null)
@@ -684,6 +714,7 @@ function DesktopTenderlyPanel(props: { state: TTenderlyControlState }): ReactEle
             />
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            <ActionButton label={'secret'} onClick={props.openSecretModal} isActive={props.isSecretModalOpen} />
             <ActionButton
               label={'snapshot'}
               onClick={() => setActivePanel((current) => (current === 'snapshots' ? null : 'snapshots'))}
@@ -717,18 +748,203 @@ function DesktopTenderlyPanel(props: { state: TTenderlyControlState }): ReactEle
   )
 }
 
-function TenderlyControlPanelBody(props: { isOpen: boolean; closePanel: () => void }): ReactElement {
-  const state = useTenderlyControlState()
-  const isDesktop = useMediaQuery('(min-width: 768px)', { initializeWithValue: true }) ?? false
+function TenderlySecretModal(props: {
+  state: TTenderlyControlState
+  isOpen: boolean
+  onClose: () => void
+  onUnlock?: () => void
+}): ReactElement {
+  const [draftSecret, setDraftSecret] = useState(props.state.adminSecret)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [isValidating, setIsValidating] = useState(false)
+  const isConfigured = props.state.isAdminSecretConfigured
+  const canSave = isConfigured && draftSecret.trim().length > 0 && !isValidating
 
-  if (isDesktop) {
-    return <DesktopTenderlyPanel state={state} />
+  useEffect(() => {
+    if (props.isOpen) {
+      setDraftSecret(props.state.adminSecret)
+      setValidationError(null)
+    }
+  }, [props.isOpen, props.state.adminSecret])
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault()
+    if (!canSave) {
+      return
+    }
+
+    setIsValidating(true)
+    setValidationError(null)
+    try {
+      await props.state.validateAndSetAdminSecret(draftSecret)
+      if (props.onUnlock) {
+        props.onUnlock()
+      } else {
+        props.onClose()
+      }
+    } catch (error) {
+      setValidationError(error instanceof Error ? error.message : 'Invalid Tenderly admin secret')
+    } finally {
+      setIsValidating(false)
+    }
+  }
+
+  const handleForget = (): void => {
+    setDraftSecret('')
+    props.state.clearAdminSecret()
   }
 
   return (
-    <BottomDrawer isOpen={props.isOpen} onClose={props.closePanel} title={'Tenderly Controls'}>
-      <MobileTenderlyPanelContent state={state} />
-    </BottomDrawer>
+    <Transition show={props.isOpen} as={Fragment}>
+      <Dialog as={'div'} className={'relative z-[110]'} onClose={props.onClose}>
+        <TransitionChild
+          as={Fragment}
+          enter={'duration-200 ease-out'}
+          enterFrom={'opacity-0'}
+          enterTo={'opacity-100'}
+          leave={'duration-150 ease-in'}
+          leaveFrom={'opacity-100'}
+          leaveTo={'opacity-0'}
+        >
+          <div className={'fixed inset-0 bg-black/40 backdrop-blur-sm'} />
+        </TransitionChild>
+
+        <div className={'fixed inset-0 overflow-y-auto'}>
+          <div className={'flex min-h-full items-center justify-center p-4'}>
+            <TransitionChild
+              as={Fragment}
+              enter={'duration-200 ease-out'}
+              enterFrom={'opacity-0 scale-95'}
+              enterTo={'opacity-100 scale-100'}
+              leave={'duration-150 ease-in'}
+              leaveFrom={'opacity-100 scale-100'}
+              leaveTo={'opacity-0 scale-95'}
+            >
+              <Dialog.Panel className={'w-full max-w-md rounded-3xl border border-border bg-surface p-5 shadow-2xl'}>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <Dialog.Title className={'text-base font-semibold text-text-primary'}>
+                      {'Tenderly admin secret'}
+                    </Dialog.Title>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      {isConfigured
+                        ? 'Enter the local API server value for TENDERLY_ADMIN_SECRET to unlock Tenderly controls.'
+                        : 'Set TENDERLY_ADMIN_SECRET on the API server before using Tenderly controls.'}
+                    </p>
+                  </div>
+                  <ActionButton label={'close'} onClick={props.onClose} className="shrink-0" />
+                </div>
+
+                <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+                  {!isConfigured ? (
+                    <div className="rounded-2xl border border-border bg-surface-secondary p-3">
+                      <p className="text-sm font-semibold text-text-primary">{'Tenderly admin secret is not set'}</p>
+                      <p className="mt-1 text-xs text-text-secondary">
+                        {'Add '}
+                        <span className="font-mono text-text-primary">{'TENDERLY_ADMIN_SECRET'}</span>
+                        {' to the local API server environment, then restart the API server.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <label>
+                      <span className="block text-xs font-semibold text-text-primary">{'Secret'}</span>
+                      <input
+                        type="password"
+                        value={draftSecret}
+                        onChange={(event) => {
+                          setDraftSecret(event.target.value)
+                          setValidationError(null)
+                        }}
+                        className="mt-2 w-full rounded-full border border-border bg-surface-secondary px-3 py-2 text-sm text-text-primary"
+                        placeholder={'TENDERLY_ADMIN_SECRET'}
+                        autoComplete="off"
+                        autoFocus
+                      />
+                    </label>
+                  )}
+                  <p className="text-xs text-text-secondary">
+                    {'Environment variable: '}
+                    <span className="font-mono text-text-primary">{'TENDERLY_ADMIN_SECRET'}</span>
+                  </p>
+                  {validationError ? <p className="text-xs font-medium text-red">{validationError}</p> : null}
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <ActionButton
+                      label={'forget'}
+                      onClick={handleForget}
+                      disabled={!props.state.adminSecret && !draftSecret}
+                    />
+                    <button
+                      type="submit"
+                      disabled={!canSave}
+                      className={cl(
+                        'rounded-full border border-text-primary bg-text-primary px-3 py-2 text-xs font-semibold text-surface transition-all',
+                        'disabled:cursor-not-allowed disabled:opacity-50',
+                        canSave ? 'hover:opacity-90 active:scale-[0.98]' : ''
+                      )}
+                    >
+                      {isValidating ? 'validating...' : 'unlock controls'}
+                    </button>
+                  </div>
+                </form>
+              </Dialog.Panel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
+  )
+}
+
+function TenderlyControlPanelBody(props: { isOpen: boolean; closePanel: () => void }): ReactElement {
+  const state = useTenderlyControlState()
+  const isDesktop = useMediaQuery('(min-width: 768px)', { initializeWithValue: true }) ?? false
+  const [isSecretModalOpen, setIsSecretModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (props.isOpen && !state.isAdminSecretReady) {
+      setIsSecretModalOpen(true)
+    }
+  }, [props.isOpen, state.isAdminSecretReady])
+
+  const closeSecretModal = (): void => {
+    setIsSecretModalOpen(false)
+    if (!state.isAdminSecretReady) {
+      props.closePanel()
+    }
+  }
+
+  const openSecretModal = (): void => setIsSecretModalOpen(true)
+
+  if (!state.isAdminSecretReady) {
+    return (
+      <TenderlySecretModal
+        state={state}
+        isOpen={isSecretModalOpen}
+        onClose={closeSecretModal}
+        onUnlock={() => setIsSecretModalOpen(false)}
+      />
+    )
+  }
+
+  if (isDesktop) {
+    return (
+      <>
+        <DesktopTenderlyPanel state={state} isSecretModalOpen={isSecretModalOpen} openSecretModal={openSecretModal} />
+        <TenderlySecretModal state={state} isOpen={isSecretModalOpen} onClose={() => setIsSecretModalOpen(false)} />
+      </>
+    )
+  }
+
+  return (
+    <>
+      <BottomDrawer isOpen={props.isOpen} onClose={props.closePanel} title={'Tenderly Controls'}>
+        <div className="flex justify-end px-4 pt-4">
+          <ActionButton label={'secret'} onClick={openSecretModal} isActive={isSecretModalOpen} />
+        </div>
+        <MobileTenderlyPanelContent state={state} />
+      </BottomDrawer>
+      <TenderlySecretModal state={state} isOpen={isSecretModalOpen} onClose={() => setIsSecretModalOpen(false)} />
+    </>
   )
 }
 

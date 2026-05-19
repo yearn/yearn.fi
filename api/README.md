@@ -37,6 +37,7 @@ The local server adds CORS to all handled routes and includes dev-only Tenderly 
 | `/api/yvusd/aprs` | `GET` | Vercel + local | Proxies the yvUSD APR service |
 | `/api/vault/meta` | `GET` | Vercel | Serves SPA HTML with vault-specific SEO and OG tags |
 | `/api/tenderly/status` | `GET` | local only | Returns configured local Tenderly chains |
+| `/api/tenderly/validate-admin-secret` | `POST` | local only | Validates the local Tenderly admin secret without mutating the VNet |
 | `/api/tenderly/snapshot` | `POST` | local only | Creates a Tenderly EVM snapshot |
 | `/api/tenderly/revert` | `POST` | local only | Reverts a Tenderly EVM snapshot |
 | `/api/tenderly/increase-time` | `POST` | local only | Advances Tenderly chain time and optionally mines |
@@ -87,7 +88,7 @@ The optimization routes expose the current DOA optimization payloads and the loc
 
 ## Tenderly Local Routes
 
-Tenderly admin routes only exist in `api/server.ts` and are blocked unless the request comes from localhost.
+Tenderly admin routes only exist in `api/server.ts` and are blocked unless the request comes from localhost, carries a loopback or same-host browser origin when present, and provides `x-tenderly-admin-secret: $TENDERLY_ADMIN_SECRET`.
 
 Required env for a configured chain:
 
@@ -95,6 +96,7 @@ Required env for a configured chain:
 - `VITE_TENDERLY_CHAIN_ID_FOR_<canonicalChainId>`.
 - `VITE_TENDERLY_RPC_URI_FOR_<canonicalChainId>`.
 - `TENDERLY_ADMIN_RPC_URI_FOR_<canonicalChainId>` for snapshot, revert, time travel, and funding actions.
+- `TENDERLY_ADMIN_SECRET` for all Tenderly admin mutations.
 
 ## Environment Variables
 
@@ -119,6 +121,7 @@ Required env for a configured chain:
 | `API_KEY_PORTFOLIO` | holdings | Fallback bearer token for yearn-prices |
 | `DEFILLAMA_API_KEY` | holdings | Enables DefiLlama Pro |
 | `ADMIN_SECRET` | holdings admin | Required for `/api/admin/invalidate-cache` |
+| `TENDERLY_ADMIN_SECRET` | local Tenderly | Required for Tenderly admin mutations |
 | `UPSTASH_REDIS_REST_URL` | optimization | Upstash Redis REST URL for optimization payloads |
 | `UPSTASH_REDIS_REST_TOKEN` | optimization | Upstash Redis REST token for optimization payloads |
 | `HOLDINGS_DEBUG` | local holdings | Enables holdings debug logs in `api/server.ts` |

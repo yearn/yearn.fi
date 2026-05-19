@@ -39,6 +39,7 @@ describe('buildTenderlyPanelStatus', () => {
       })
     ).toEqual({
       isTenderlyModeEnabled: true,
+      isTenderlyAdminSecretConfigured: false,
       configuredChains: [
         {
           canonicalChainId: 1,
@@ -48,6 +49,15 @@ describe('buildTenderlyPanelStatus', () => {
         }
       ]
     })
+  })
+
+  it('reports whether TENDERLY_ADMIN_SECRET is configured', () => {
+    expect(
+      buildTenderlyPanelStatus({
+        VITE_TENDERLY_MODE: 'true',
+        TENDERLY_ADMIN_SECRET: 'local-tenderly-admin-secret'
+      }).isTenderlyAdminSecretConfigured
+    ).toBe(true)
   })
 })
 

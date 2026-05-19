@@ -9,7 +9,12 @@ export type TTenderlyConfiguredChainStatus = {
 
 export type TTenderlyPanelStatus = {
   isTenderlyModeEnabled: boolean
+  isTenderlyAdminSecretConfigured: boolean
   configuredChains: TTenderlyConfiguredChainStatus[]
+}
+
+export type TTenderlyAdminSecretValidationResponse = {
+  success: true
 }
 
 export type TTenderlySnapshotKind = 'baseline' | 'snapshot'

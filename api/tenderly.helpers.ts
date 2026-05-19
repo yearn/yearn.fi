@@ -66,6 +66,7 @@ export function parseTenderlyServerChains(env: TTenderlyServerEnv): TTenderlySer
 export function buildTenderlyPanelStatus(env: TTenderlyServerEnv): TTenderlyPanelStatus {
   return {
     isTenderlyModeEnabled: isTruthyEnvValue(env.VITE_TENDERLY_MODE),
+    isTenderlyAdminSecretConfigured: readEnvString(env.TENDERLY_ADMIN_SECRET).length > 0,
     configuredChains: parseTenderlyServerChains(env).map((chain) => ({
       canonicalChainId: chain.canonicalChainId,
       canonicalChainName: chain.canonicalChainName,

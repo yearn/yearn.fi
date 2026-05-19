@@ -134,7 +134,7 @@ async function handleYvUsdAprs(req: Request): Promise<Response> {
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-secret'
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-secret, x-tenderly-admin-secret'
 }
 
 function withCors(response: Response): Response {
@@ -393,6 +393,27 @@ function handleTenderlyStatus(req: Request): Response {
       { status: 500 }
     )
   }
+}
+
+function buildTenderlyAdminDeniedResponse(
+  req: Request,
+  requestIpAddress: string | null | undefined
+): Response | undefined {
+  return buildTenderlyAdminAccessDeniedResponse({
+    adminSecret: process.env.TENDERLY_ADMIN_SECRET,
+    providedSecret: req.headers.get('x-tenderly-admin-secret'),
+    requestHost: req.headers.get('host'),
+    requestIpAddress,
+    requestOrigin: req.headers.get('origin')
+  })
+}
+
+function handleTenderlyAdminSecretValidation(req: Request): Response {
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  return Response.json({ success: true })
 }
 
 async function handleTenderlySnapshot(req: Request): Promise<Response> {
@@ -1427,8 +1448,16 @@ async function main() {
           return withCors(handleTenderlyStatus(req))
         }
 
+        if (url.pathname === '/api/tenderly/validate-admin-secret') {
+          const accessDeniedResponse = buildTenderlyAdminDeniedResponse(req, server.requestIP(req)?.address)
+          if (accessDeniedResponse) {
+            return withCors(accessDeniedResponse)
+          }
+          return withCors(handleTenderlyAdminSecretValidation(req))
+        }
+
         if (url.pathname === '/api/tenderly/snapshot') {
-          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          const accessDeniedResponse = buildTenderlyAdminDeniedResponse(req, server.requestIP(req)?.address)
           if (accessDeniedResponse) {
             return withCors(accessDeniedResponse)
           }
@@ -1436,7 +1465,7 @@ async function main() {
         }
 
         if (url.pathname === '/api/tenderly/revert') {
-          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          const accessDeniedResponse = buildTenderlyAdminDeniedResponse(req, server.requestIP(req)?.address)
           if (accessDeniedResponse) {
             return withCors(accessDeniedResponse)
           }
@@ -1444,7 +1473,7 @@ async function main() {
         }
 
         if (url.pathname === '/api/tenderly/increase-time') {
-          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          const accessDeniedResponse = buildTenderlyAdminDeniedResponse(req, server.requestIP(req)?.address)
           if (accessDeniedResponse) {
             return withCors(accessDeniedResponse)
           }
@@ -1452,7 +1481,7 @@ async function main() {
         }
 
         if (url.pathname === '/api/tenderly/fund') {
-          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          const accessDeniedResponse = buildTenderlyAdminDeniedResponse(req, server.requestIP(req)?.address)
           if (accessDeniedResponse) {
             return withCors(accessDeniedResponse)
           }
