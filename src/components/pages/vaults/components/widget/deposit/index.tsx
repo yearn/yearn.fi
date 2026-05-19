@@ -944,27 +944,31 @@ export function WidgetDeposit({
       <div className="flex items-center gap-2">
         <div className="flex-1">
           {hideActionButton ? null : !account ? (
-            <Button
-              data-testid={'wallet-connect-button'}
-              onClick={openLoginModal}
-              variant="filled"
-              className="w-full"
-              classNameOverride="yearn--button--nextgen w-full"
-            >
-              Connect Wallet
-            </Button>
+            <wallet-connect-action>
+              <Button
+                data-testid={'wallet-connect-button'}
+                onClick={openLoginModal}
+                variant="filled"
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                Connect Wallet
+              </Button>
+            </wallet-connect-action>
           ) : (
-            <Button
-              data-testid={'deposit-submit-button'}
-              onClick={() => setShowTransactionOverlay(true)}
-              variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-              isBusy={activeFlow.periphery.isLoadingRoute}
-              disabled={isDepositButtonDisabled}
-              className="w-full"
-              classNameOverride="yearn--button--nextgen w-full"
-            >
-              {depositButtonLabel}
-            </Button>
+            <vault-submit-action>
+              <Button
+                data-testid={'deposit-submit-button'}
+                onClick={() => setShowTransactionOverlay(true)}
+                variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
+                isBusy={activeFlow.periphery.isLoadingRoute}
+                disabled={isDepositButtonDisabled}
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                {depositButtonLabel}
+              </Button>
+            </vault-submit-action>
           )}
         </div>
         {showSettingsButton ? (

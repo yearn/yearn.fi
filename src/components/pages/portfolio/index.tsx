@@ -1617,7 +1617,7 @@ function PortfolioHeaderSection({
     <portfolio-overview className="h-full bg-surface" data-testid={'portfolio-overview'}>
       <div className="grid grid-cols-2 gap-px bg-border md:hidden">
         {mobileMetrics.map((item) => (
-          <div
+          <portfolio-metric
             key={item.key}
             className={metricCardClassName}
             data-testid={item.key === 'total-balance' ? 'portfolio-total-balance' : undefined}
@@ -1626,12 +1626,12 @@ function PortfolioHeaderSection({
             <div className="pt-0.5">{item.value}</div>
             {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
             {item.footnote ? <div className="pt-1.5">{item.footnote}</div> : null}
-          </div>
+          </portfolio-metric>
         ))}
       </div>
       <div className="hidden h-full grid-rows-5 gap-px bg-border md:grid">
         {metrics.map((item) => (
-          <div
+          <portfolio-metric
             key={item.key}
             className={metricCardClassName}
             data-testid={item.key === 'total-balance' ? 'portfolio-total-balance' : undefined}
@@ -1640,7 +1640,7 @@ function PortfolioHeaderSection({
             <div className="pt-0.5">{item.value}</div>
             {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
             {item.footnote ? <div className="pt-1.5">{item.footnote}</div> : null}
-          </div>
+          </portfolio-metric>
         ))}
       </div>
     </portfolio-overview>
@@ -1658,7 +1658,7 @@ function PortfolioTabSelector({
 }): ReactElement {
   return (
     <div className={'flex gap-2 md:gap-3 w-full'}>
-      <div
+      <portfolio-tab-list
         data-testid={'portfolio-tabs'}
         className={cl(
           'flex h-10 w-full items-stretch justify-between overflow-hidden bg-surface-secondary text-sm text-text-primary divide-x divide-border',
@@ -1666,24 +1666,25 @@ function PortfolioTabSelector({
         )}
       >
         {PORTFOLIO_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            data-testid={`portfolio-${tab.key}-tab`}
-            type={'button'}
-            onClick={() => onSelectTab(tab.key)}
-            className={cl(
-              'flex h-full flex-1 items-center justify-center px-2 font-medium transition-colors md:px-4',
-              'focus-visible:outline-none focus-visible:ring-0',
-              activeTab === tab.key
-                ? 'bg-surface text-text-primary font-semibold'
-                : 'bg-transparent text-text-secondary hover:bg-surface/30 hover:text-text-primary'
-            )}
-            aria-pressed={activeTab === tab.key}
-          >
-            {tab.label}
-          </button>
+          <portfolio-tab-button key={tab.key}>
+            <button
+              data-testid={`portfolio-${tab.key}-tab`}
+              type={'button'}
+              onClick={() => onSelectTab(tab.key)}
+              className={cl(
+                'flex h-full flex-1 items-center justify-center px-2 font-medium transition-colors md:px-4',
+                'focus-visible:outline-none focus-visible:ring-0',
+                activeTab === tab.key
+                  ? 'bg-surface text-text-primary font-semibold'
+                  : 'bg-transparent text-text-secondary hover:bg-surface/30 hover:text-text-primary'
+              )}
+              aria-pressed={activeTab === tab.key}
+            >
+              {tab.label}
+            </button>
+          </portfolio-tab-button>
         ))}
-      </div>
+      </portfolio-tab-list>
     </div>
   )
 }
@@ -2781,12 +2782,12 @@ function PortfolioHoldingsSection({
                 ]}
               />
             </div>
-            <div
+            <portfolio-holdings-table
               className="overflow-hidden rounded-lg md:rounded-t-none border-x border-b border-border"
               data-testid={'portfolio-holdings-table'}
             >
               {renderHoldingsContent()}
-            </div>
+            </portfolio-holdings-table>
           </div>
         </div>
       )}

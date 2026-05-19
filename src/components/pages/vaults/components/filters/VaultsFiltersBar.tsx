@@ -279,18 +279,20 @@ export function VaultsFiltersBar({
                 {'Filter Vaults'}
               </button>
               {filters.trailingControls}
-              <button
-                type={'button'}
-                data-testid={'vaults-search-toggle'}
-                className={cl(
-                  'flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition-colors hover:border-hover hover:text-text-primary',
-                  search.value ? 'text-text-primary' : ''
-                )}
-                onClick={(): void => setIsMobileSearchExpanded(true)}
-                aria-label={'Search vaults'}
-              >
-                <IconSearch className={'size-4'} />
-              </button>
+              <vault-search-toggle>
+                <button
+                  type={'button'}
+                  data-testid={'vaults-search-toggle'}
+                  className={cl(
+                    'flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition-colors hover:border-hover hover:text-text-primary',
+                    search.value ? 'text-text-primary' : ''
+                  )}
+                  onClick={(): void => setIsMobileSearchExpanded(true)}
+                  aria-label={'Search vaults'}
+                >
+                  <IconSearch className={'size-4'} />
+                </button>
+              </vault-search-toggle>
             </div>
           )}
           <MobileFiltersDrawer
@@ -853,31 +855,33 @@ function MobileChainDropdown({
   return (
     <Listbox value={selectedChain?.id ?? null} onChange={handleChange}>
       <div className={'relative'}>
-        <ListboxButton
-          data-testid={'vaults-chain-filter'}
-          className={
-            'flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-text-primary transition-colors hover:border-hover'
-          }
-        >
-          <div className={'flex items-center gap-2'}>
-            {selectedChain ? (
-              <>
-                {selectedChain.icon ? (
-                  <span className={'size-5 overflow-hidden rounded-full'}>{selectedChain.icon}</span>
-                ) : null}
-                <span>{selectedChain.label}</span>
-              </>
-            ) : (
-              <>
-                <span className={'size-5 overflow-hidden rounded-full'}>
-                  <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
-                </span>
-                <span>{allChainsLabel}</span>
-              </>
-            )}
-          </div>
-          <IconChevron className={'size-4 text-text-secondary'} />
-        </ListboxButton>
+        <vault-chain-filter>
+          <ListboxButton
+            data-testid={'vaults-chain-filter'}
+            className={
+              'flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-text-primary transition-colors hover:border-hover'
+            }
+          >
+            <div className={'flex items-center gap-2'}>
+              {selectedChain ? (
+                <>
+                  {selectedChain.icon ? (
+                    <span className={'size-5 overflow-hidden rounded-full'}>{selectedChain.icon}</span>
+                  ) : null}
+                  <span>{selectedChain.label}</span>
+                </>
+              ) : (
+                <>
+                  <span className={'size-5 overflow-hidden rounded-full'}>
+                    <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
+                  </span>
+                  <span>{allChainsLabel}</span>
+                </>
+              )}
+            </div>
+            <IconChevron className={'size-4 text-text-secondary'} />
+          </ListboxButton>
+        </vault-chain-filter>
         <Transition
           as={Fragment}
           enter={'transition ease-out duration-100'}

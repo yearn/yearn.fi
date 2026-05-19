@@ -26,7 +26,7 @@ type TVaultsChainSelectorProps = {
   onSelectAllChains: () => void
   onSelectChain: (chainId: number) => void
   onOpenChainModal: () => void
-  selectorRef?: RefObject<HTMLDivElement | null>
+  selectorRef?: RefObject<HTMLElement | null>
   dataTestId?: string
 }
 
@@ -59,7 +59,7 @@ export function VaultsChainSelector({
   }
 
   return (
-    <div
+    <vault-chain-selector
       ref={selectorRef}
       data-testid={dataTestId}
       className={cl(
@@ -155,7 +155,7 @@ export function VaultsChainSelector({
           </span>
         </button>
       ) : null}
-    </div>
+    </vault-chain-selector>
   )
 }
 

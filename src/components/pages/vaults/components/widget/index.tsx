@@ -171,7 +171,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
 
   if (hideTabSelector) {
     return (
-      <div className="flex flex-col gap-0 w-full h-full" data-testid={widgetTestId}>
+      <vault-widget className="flex flex-col gap-0 w-full h-full" data-testid={widgetTestId}>
         <div
           className={cl('bg-surface relative w-full min-w-0', {
             'rounded-lg': !disableBorderRadius
@@ -179,12 +179,12 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
         >
           {selectedComponent}
         </div>
-      </div>
+      </vault-widget>
     )
   }
 
   return (
-    <div className="flex flex-col gap-0 w-full h-full flex-1" data-testid={widgetTestId}>
+    <vault-widget className="flex flex-col gap-0 w-full h-full flex-1" data-testid={widgetTestId}>
       <div
         className={cl('bg-app overflow-hidden relative w-full min-w-0 flex flex-col flex-1', {
           'rounded-b-lg': !disableBorderRadius
@@ -200,7 +200,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
         ) : null}
         <div className="bg-surface flex-1 flex flex-col [&>div]:flex-1 [&>div]:h-full">{selectedComponent}</div>
       </div>
-    </div>
+    </vault-widget>
   )
 })
 
@@ -232,7 +232,7 @@ export function WidgetTabs({
   const isWalletTabActive = !!isWalletOpen
 
   return (
-    <div
+    <vault-widget-tabs
       className={cl('bg-surface-secondary border border-border gap-2 flex min-h-9 p-1', className, {
         'rounded-b-lg': !disableBorderRadius
       })}
@@ -264,7 +264,7 @@ export function WidgetTabs({
           {'My Info'}
         </TabButton>
       ) : null}
-    </div>
+    </vault-widget-tabs>
   )
 }
 
@@ -279,22 +279,24 @@ type TabButtonProps = {
 
 function TabButton({ children, onClick, isActive, className, dataTour, dataTestId }: TabButtonProps): ReactElement {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      data-testid={dataTestId}
-      data-tour={dataTour}
-      className={cl(
-        'flex-1 px-3 py-3 md:py-2.5 text-sm min-h-9 md:text-xs font-semibold transition-all duration-200',
-        'border border-transparent focus-visible:outline-none focus-visible:ring-0',
-        'rounded-md ',
-        isActive
-          ? 'bg-surface text-text-primary !border-border'
-          : 'bg-surface-secondary text-text-secondary hover:text-text-primary',
-        className
-      )}
-    >
-      {children}
-    </button>
+    <vault-widget-tab>
+      <button
+        type="button"
+        onClick={onClick}
+        data-testid={dataTestId}
+        data-tour={dataTour}
+        className={cl(
+          'flex-1 px-3 py-3 md:py-2.5 text-sm min-h-9 md:text-xs font-semibold transition-all duration-200',
+          'border border-transparent focus-visible:outline-none focus-visible:ring-0',
+          'rounded-md ',
+          isActive
+            ? 'bg-surface text-text-primary !border-border'
+            : 'bg-surface-secondary text-text-secondary hover:text-text-primary',
+          className
+        )}
+      >
+        {children}
+      </button>
+    </vault-widget-tab>
   )
 }

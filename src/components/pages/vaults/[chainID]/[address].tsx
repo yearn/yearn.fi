@@ -1866,26 +1866,30 @@ function Index(): ReactElement | null {
           )}
         >
           <div className="flex gap-3 max-w-[1232px] mx-auto">
-            <button
-              type="button"
-              data-testid={
-                widgetActions[0] === WidgetActionType.Migrate ? 'migrate-submit-button' : 'deposit-submit-button'
-              }
-              onClick={() => handleFloatingButtonClick(widgetActions[0])}
-              className="yearn--button--nextgen flex-1"
-              data-variant="filled"
-            >
-              {widgetActions[0] === WidgetActionType.Migrate ? 'Migrate' : 'Deposit'}
-            </button>
-            <button
-              type="button"
-              data-testid={'withdraw-submit-button'}
-              onClick={() => handleFloatingButtonClick(widgetActions[1])}
-              className="yearn--button flex-1"
-              data-variant="light"
-            >
-              Withdraw
-            </button>
+            <vault-submit-action>
+              <button
+                type="button"
+                data-testid={
+                  widgetActions[0] === WidgetActionType.Migrate ? 'migrate-submit-button' : 'deposit-submit-button'
+                }
+                onClick={() => handleFloatingButtonClick(widgetActions[0])}
+                className="yearn--button--nextgen flex-1"
+                data-variant="filled"
+              >
+                {widgetActions[0] === WidgetActionType.Migrate ? 'Migrate' : 'Deposit'}
+              </button>
+            </vault-submit-action>
+            <vault-submit-action>
+              <button
+                type="button"
+                data-testid={'withdraw-submit-button'}
+                onClick={() => handleFloatingButtonClick(widgetActions[1])}
+                className="yearn--button flex-1"
+                data-variant="light"
+              >
+                Withdraw
+              </button>
+            </vault-submit-action>
           </div>
         </div>
       )}

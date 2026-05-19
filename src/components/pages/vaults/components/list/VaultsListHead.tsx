@@ -165,7 +165,7 @@ export function VaultsListHead({
 
   return (
     <div className={cl('mt-4 hidden w-full grid-cols-1 md:mt-0 md:grid', wrapperClassName)}>
-      <div
+      <vault-sort-control
         data-testid={'vaults-sort-control'}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 py-2 pl-6 pr-16 md:pl-6 md:pr-20',
@@ -187,7 +187,7 @@ export function VaultsListHead({
         <div className={cl(rightColumnSpan, 'z-10', 'grid grid-cols-2 gap-4', rightGridColumns, 'mt-4 md:mt-0')}>
           {rest.map((item): ReactElement => renderItem(item, !isToggleItem(item) && sortBy === item.value, true))}
         </div>
-      </div>
+      </vault-sort-control>
     </div>
   )
 }

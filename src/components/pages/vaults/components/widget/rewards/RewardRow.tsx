@@ -45,7 +45,7 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
   const buttonVariant: 'filled' | 'light' = canClaim && !showSwitchChainButton ? 'filled' : 'light'
 
   return (
-    <div className="flex flex-col" data-testid={`rewards-row-${chainId}-${tokenAddress.toLowerCase()}`}>
+    <reward-row className="flex flex-col" data-testid={`rewards-row-${chainId}-${tokenAddress.toLowerCase()}`}>
       {!isFirst && <div className="h-px w-full bg-border" />}
       <div className="flex flex-col gap-3 py-3 md:flex-row md:items-center md:justify-between md:gap-4">
         <div className="flex w-full items-center justify-between gap-3 md:w-auto md:flex-1 md:justify-start">
@@ -64,18 +64,20 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
         </div>
 
         <div className="w-full md:w-auto md:shrink-0">
-          <Button
-            data-testid={'rewards-claim-button'}
-            onClick={showSwitchChainButton ? onSwitchChain : onClaim}
-            isDisabled={!showSwitchChainButton && !canClaim}
-            isBusy={isClaimPending}
-            variant={buttonVariant}
-            classNameOverride="yearn--button--nextgen w-full md:w-auto"
-          >
-            {showSwitchChainButton ? 'Switch Chain' : 'Claim'}
-          </Button>
+          <rewards-claim-action>
+            <Button
+              data-testid={'rewards-claim-button'}
+              onClick={showSwitchChainButton ? onSwitchChain : onClaim}
+              isDisabled={!showSwitchChainButton && !canClaim}
+              isBusy={isClaimPending}
+              variant={buttonVariant}
+              classNameOverride="yearn--button--nextgen w-full md:w-auto"
+            >
+              {showSwitchChainButton ? 'Switch Chain' : 'Claim'}
+            </Button>
+          </rewards-claim-action>
         </div>
       </div>
-    </div>
+    </reward-row>
   )
 }

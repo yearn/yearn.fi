@@ -311,19 +311,21 @@ export default function Index(): ReactElement {
   const filtersContent = <VaultsFiltersPanel sections={filters.sections} />
 
   const compareToggleControl = (
-    <button
-      type={'button'}
-      data-testid={'vaults-compare-toggle'}
-      className={cl(
-        'flex shrink-0 items-center justify-center h-10 px-4 gap-1 rounded-lg bg-surface border border-border hover:border-hover text-sm font-medium text-text-secondary transition-colors hover:text-text-primary data-[active=true]:border-primary/50 data-[active=true]:text-primary',
-        isCompareMode ? 'bg-primary/50' : null
-      )}
-      onClick={handleToggleCompareMode}
-      data-active={isCompareMode}
-    >
-      <IconGitCompare className={'size-4'} />
-      {'Compare'}
-    </button>
+    <vault-compare-toggle>
+      <button
+        type={'button'}
+        data-testid={'vaults-compare-toggle'}
+        className={cl(
+          'flex shrink-0 items-center justify-center h-10 px-4 gap-1 rounded-lg bg-surface border border-border hover:border-hover text-sm font-medium text-text-secondary transition-colors hover:text-text-primary data-[active=true]:border-primary/50 data-[active=true]:text-primary',
+          isCompareMode ? 'bg-primary/50' : null
+        )}
+        onClick={handleToggleCompareMode}
+        data-active={isCompareMode}
+      >
+        <IconGitCompare className={'size-4'} />
+        {'Compare'}
+      </button>
+    </vault-compare-toggle>
   )
 
   const vaultListContent = useMemo(() => {

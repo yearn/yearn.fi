@@ -1034,27 +1034,31 @@ export function WidgetWithdraw({
       <div className="flex items-center gap-2">
         <div className="flex-1">
           {!account ? (
-            <Button
-              data-testid={'wallet-connect-button'}
-              onClick={openLoginModal}
-              variant="filled"
-              className="w-full"
-              classNameOverride="yearn--button--nextgen w-full"
-            >
-              Connect Wallet
-            </Button>
+            <wallet-connect-action>
+              <Button
+                data-testid={'wallet-connect-button'}
+                onClick={openLoginModal}
+                variant="filled"
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                Connect Wallet
+              </Button>
+            </wallet-connect-action>
           ) : (
-            <Button
-              data-testid={'withdraw-submit-button'}
-              onClick={handleOpenTransactionOverlay}
-              variant={isFetchingQuote ? 'busy' : 'filled'}
-              isBusy={isFetchingQuote}
-              disabled={isWithdrawButtonDisabled}
-              className="w-full"
-              classNameOverride="yearn--button--nextgen w-full"
-            >
-              {withdrawButtonLabel}
-            </Button>
+            <vault-submit-action>
+              <Button
+                data-testid={'withdraw-submit-button'}
+                onClick={handleOpenTransactionOverlay}
+                variant={isFetchingQuote ? 'busy' : 'filled'}
+                isBusy={isFetchingQuote}
+                disabled={isWithdrawButtonDisabled}
+                className="w-full"
+                classNameOverride="yearn--button--nextgen w-full"
+              >
+                {withdrawButtonLabel}
+              </Button>
+            </vault-submit-action>
           )}
         </div>
         {showSettingsButton ? (

@@ -1058,7 +1058,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   }, [isOpen, overlayState, receipt.data?.transactionHash, step?.label, step?.prepare.refetch, isStepReady])
 
   return (
-    <div
+    <transaction-status
       data-testid={'transaction-status'}
       className="absolute z-50"
       style={{
@@ -1105,18 +1105,24 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         >
           {/* Confirming State */}
           {overlayState === 'confirming' && (
-            <div className="flex flex-col items-center" data-testid={`${dataTestIdPrefix}-transaction-confirming`}>
+            <transaction-state
+              className="flex flex-col items-center"
+              data-testid={`${dataTestIdPrefix}-transaction-confirming`}
+            >
               <Spinner />
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Confirm in your wallet</h3>
               <p className="text-sm text-text-secondary whitespace-pre-line">
                 {executedStepRef.current?.confirmMessage}
               </p>
-            </div>
+            </transaction-state>
           )}
 
           {/* Pending State */}
           {overlayState === 'pending' && (
-            <div className="flex flex-col items-center" data-testid={`${dataTestIdPrefix}-transaction-pending`}>
+            <transaction-state
+              className="flex flex-col items-center"
+              data-testid={`${dataTestIdPrefix}-transaction-pending`}
+            >
               <Spinner />
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">
                 {getPendingTransactionTitle({
@@ -1138,12 +1144,15 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
                   View on block explorer
                 </a>
               ) : null}
-            </div>
+            </transaction-state>
           )}
 
           {/* Refreshing State */}
           {overlayState === 'refreshing' && (
-            <div className="flex flex-col items-center" data-testid={`${dataTestIdPrefix}-transaction-refreshing`}>
+            <transaction-state
+              className="flex flex-col items-center"
+              data-testid={`${dataTestIdPrefix}-transaction-refreshing`}
+            >
               <Spinner />
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction confirmed</h3>
               <p className="text-sm text-text-secondary">Updating balances...</p>
@@ -1157,12 +1166,15 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
                   View on block explorer
                 </a>
               ) : null}
-            </div>
+            </transaction-state>
           )}
 
           {/* Submitted State */}
           {overlayState === 'submitted' && (
-            <div className="flex flex-col items-center" data-testid={`${dataTestIdPrefix}-transaction-submitted`}>
+            <transaction-state
+              className="flex flex-col items-center"
+              data-testid={`${dataTestIdPrefix}-transaction-submitted`}
+            >
               <Spinner />
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction submitted</h3>
               <p className="text-sm text-text-secondary whitespace-pre-line">
@@ -1179,12 +1191,12 @@ Execution may happen separately after the required confirmations are collected.`
                   View on block explorer
                 </a>
               ) : null}
-            </div>
+            </transaction-state>
           )}
 
           {/* Success State */}
           {overlayState === 'success' && (
-            <div className="flex flex-col items-center" data-testid={'transaction-success'}>
+            <transaction-state className="flex flex-col items-center" data-testid={'transaction-success'}>
               <div className="relative">
                 <span id={confettiId} className="absolute top-1/2 left-1/2" />
                 <AnimatedCheckmark isVisible />
@@ -1201,12 +1213,12 @@ Execution may happen separately after the required confirmations are collected.`
               >
                 {successButtonLabel}
               </Button>
-            </div>
+            </transaction-state>
           )}
 
           {/* Error State */}
           {overlayState === 'error' && (
-            <div className="flex flex-col items-center" data-testid={'transaction-error'}>
+            <transaction-state className="flex flex-col items-center" data-testid={'transaction-error'}>
               <ErrorIcon />
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction failed</h3>
               <p className="text-sm text-text-secondary mb-6">{errorMessage}</p>
@@ -1218,10 +1230,10 @@ Execution may happen separately after the required confirmations are collected.`
               >
                 Try Again
               </Button>
-            </div>
+            </transaction-state>
           )}
         </div>
       </div>
-    </div>
+    </transaction-status>
   )
 }
