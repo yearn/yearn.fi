@@ -154,7 +154,7 @@ export function resolveLockedRequestedWithdrawAssets({
     return 0n
   }
 
-  if (maxDisplayAmount > 0n && requestedDisplayAmount >= maxDisplayAmount) {
+  if (maxDisplayAmount > 0n && requestedDisplayAmount === maxDisplayAmount) {
     return maxWithdrawAssets
   }
 

@@ -18,6 +18,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:cull": "bun scripts/test-cull-report.mjs",
     "clean": "bash clean.sh",
     "prepare": "husky"
   },

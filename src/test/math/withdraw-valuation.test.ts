@@ -1,0 +1,65 @@
+import { calculateWithdrawValueInfo } from '@pages/vaults/components/widget/withdraw/valuation'
+import { describe, expect, it } from 'vitest'
+
+const ONE_ETHER = 10n ** 18n
+
+describe('calculateWithdrawValueInfo', () => {
+  it('does not invent slippage when a route cannot be built', () => {
+    const valueInfo = calculateWithdrawValueInfo({
+      withdrawAmountBn: 100n * ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1,
+      expectedOut: 0n,
+      outputDecimals: 18,
+      outputUsdPrice: 1
+    })
+
+    expect(valueInfo.priceImpactPercentage).toBe(0)
+    expect(valueInfo.worstCasePriceImpactPercentage).toBe(0)
+  })
+
+  it('does not infer price impact when the output price is unavailable for a nonzero quote', () => {
+    const valueInfo = calculateWithdrawValueInfo({
+      withdrawAmountBn: 100n * ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1,
+      expectedOut: 100n * ONE_ETHER,
+      outputDecimals: 18,
+      outputUsdPrice: 0
+    })
+
+    expect(valueInfo.priceImpactPercentage).toBe(0)
+    expect(valueInfo.worstCasePriceImpactPercentage).toBe(0)
+    expect(valueInfo.hasIncompleteUsdValuation).toBe(true)
+  })
+
+  it('tracks the worst-case execution floor separately from the quoted output', () => {
+    const valueInfo = calculateWithdrawValueInfo({
+      withdrawAmountBn: 100n * ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1,
+      expectedOut: 100n * ONE_ETHER,
+      minExpectedOut: 99n * ONE_ETHER,
+      outputDecimals: 18,
+      outputUsdPrice: 1
+    })
+
+    expect(valueInfo.priceImpactPercentage).toBe(0)
+    expect(valueInfo.worstCasePriceImpactPercentage).toBe(1)
+  })
+
+  it('preserves favorable execution as negative price impact for UI display', () => {
+    const valueInfo = calculateWithdrawValueInfo({
+      withdrawAmountBn: 100n * ONE_ETHER,
+      assetTokenDecimals: 18,
+      assetUsdPrice: 1,
+      expectedOut: 105n * ONE_ETHER,
+      minExpectedOut: 102n * ONE_ETHER,
+      outputDecimals: 18,
+      outputUsdPrice: 1
+    })
+
+    expect(valueInfo.priceImpactPercentage).toBe(-5)
+    expect(valueInfo.worstCasePriceImpactPercentage).toBe(-2)
+  })
+})

@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Test Structure Reorganization</title>
+    <style>
+      :root {
+        --bg: #f7f8fa;
+        --panel: #ffffff;
+        --ink: #111318;
+        --muted: #626a76;
+        --line: #d9dde5;
+        --green: #0f6b4f;
+        --blue: #275ea8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      main {
+        width: min(1040px, calc(100vw - 40px));
+        margin: 0 auto;
+        padding: 40px 0 64px;
+      }
+
+      header {
+        border-bottom: 1px solid #b9c0cc;
+        padding-bottom: 24px;
+        margin-bottom: 28px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.15;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
+
+      h2 {
+        font-size: 22px;
+        margin-top: 30px;
+        margin-bottom: 12px;
+      }
+
+      h3 {
+        font-size: 17px;
+        margin-bottom: 8px;
+      }
+
+      p {
+        margin: 10px 0 0;
+      }
+
+      code {
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.92em;
+      }
+
+      .lede {
+        max-width: 860px;
+        color: var(--muted);
+      }
+
+      .meta,
+      .grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 999px;
+        padding: 6px 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .card,
+      .section {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin: 24px 0 8px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .card strong {
+        display: block;
+        font-size: 26px;
+        line-height: 1;
+      }
+
+      .card span {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .section {
+        padding: 18px;
+        margin-top: 12px;
+      }
+
+      .callout {
+        border-left: 4px solid var(--blue);
+        padding: 12px 14px;
+        background: #eef4fc;
+        margin-top: 16px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid var(--line);
+        padding: 12px;
+        font-size: 14px;
+      }
+
+      th {
+        background: #f0f2f5;
+        color: #343946;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      .ok {
+        color: var(--green);
+        font-weight: 700;
+      }
+
+      @media (max-width: 820px) {
+        main {
+          width: min(100vw - 24px, 1040px);
+          padding-top: 24px;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Test Structure Reorganization</h1>
+        <p class="lede">
+          Durable frontend/domain tests have been moved out of colocated
+          implementation folders and into the new curated <code>src/test</code>
+          structure. Colocated tests remain allowed while an agent is building,
+          but before commit they should be deleted, converted to E2E, or moved
+          into this durable tree.
+        </p>
+        <div class="meta">
+          <span class="pill">Branch: <code>codex/end-to-end-testing</code></span>
+          <span class="pill">Prepared: 2026-05-19</span>
+          <span class="pill">Frontend/domain moved tests: <code>39</code></span>
+        </div>
+      </header>
+
+      <section class="grid" aria-label="Summary">
+        <div class="card">
+          <strong>5</strong>
+          <span>durable test buckets</span>
+        </div>
+        <div class="card">
+          <strong>39</strong>
+          <span>moved frontend/domain test files</span>
+        </div>
+        <div class="card">
+          <strong>242</strong>
+          <span>moved-test assertions passing</span>
+        </div>
+        <div class="card">
+          <strong>422</strong>
+          <span>full Vitest assertions passing</span>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>New Structure</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Bucket</th>
+              <th>Purpose</th>
+              <th>Examples Moved Here</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>src/test/math</code></td>
+              <td>Bigint, valuation, APY/APR, slippage, points, and yvUSD conversion math.</td>
+              <td><code>vaultApy</code>, <code>yvUsd</code>, <code>valuation</code>, <code>cooldownUtils</code>, <code>slippage</code></td>
+            </tr>
+            <tr>
+              <td><code>src/test/transactions</code></td>
+              <td>Transaction state, approval overlays, Safe behavior, quote handling, rewards, polling, and price-impact UI logic.</td>
+              <td><code>TransactionOverlay</code>, <code>ApprovalOverlay</code>, <code>useMerkleRewards</code>, <code>ensoRoute</code>, <code>transactionStatusPoller</code></td>
+            </tr>
+            <tr>
+              <td><code>src/test/api-contracts</code></td>
+              <td>Schemas, URL and route normalization, backend response contracts, and Kong selector behavior.</td>
+              <td><code>kongVaultSnapshotSchema</code>, <code>kongVaultListSchema</code>, <code>curveUrlUtils</code>, <code>routes</code></td>
+            </tr>
+            <tr>
+              <td><code>src/test/formatting</code></td>
+              <td>User-visible formatting rules for money, percentages, fees, and compact/precise values.</td>
+              <td><code>format</code>, <code>strategiesPercentFormat</code>, <code>vaultFees</code>, <code>valueDisplay</code></td>
+            </tr>
+            <tr>
+              <td><code>src/test/vaults</code></td>
+              <td>Durable vault and portfolio domain behavior that is not purely math or transaction state.</td>
+              <td><code>vaultWarnings</code>, <code>usePortfolioHistory</code>, <code>claimRewards.helpers</code>, filter recovery model coverage</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section">
+        <h2>Process Update</h2>
+        <ul>
+          <li>Agents may write colocated tests beside changed files during implementation.</li>
+          <li>Before handoff or commit, run <code>bun run test:cull</code>.</li>
+          <li>Temporary or low-signal colocated tests should be deleted.</li>
+          <li>Durable frontend/domain coverage should move into <code>src/test</code>.</li>
+          <li>User-visible flows should move toward <code>e2e/</code> smoke coverage.</li>
+          <li>API and script tests can remain colocated with their route/script boundary.</li>
+        </ul>
+        <div class="callout">
+          The cull script now treats <code>src/test</code> as the curated durable
+          tree, so moved tests are reported as keep candidates with an explicit
+          reason instead of being re-flagged by filename heuristics.
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Verification</h2>
+        <ul>
+          <li><span class="ok">Passed</span>: <code>bunx vitest run src/test</code> - 39 files, 242 tests.</li>
+          <li><span class="ok">Passed</span>: <code>bun run lint:fix</code>.</li>
+          <li><span class="ok">Passed</span>: <code>bun run tslint</code>.</li>
+          <li><span class="ok">Passed</span>: <code>bun run test</code> - 67 files, 422 tests.</li>
+          <li><span class="ok">Passed</span>: <code>bun run test:cull</code> with <code>src/test</code> classified as curated keep coverage.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
