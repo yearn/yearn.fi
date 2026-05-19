@@ -12,6 +12,11 @@ jobs:
     name: Playwright smoke
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      VITE_BASE_YEARN_ASSETS_URI: https://cdn.jsdelivr.net/gh/yearn/tokenassets@main
+      VITE_KONG_REST_URL: https://kong.yearn.fi/api/rest
+      VITE_WALLETCONNECT_PROJECT_ID: e2e-smoke-walletconnect-project-id
+      VITE_YDAEMON_BASE_URI: https://ydaemon.yearn.fi
 
     steps:
       - name: Check out Git repository
