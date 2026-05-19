@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { HoldingsEventFetchType, HoldingsEventPaginationMode, VaultVersion } from '../lib/holdings'
-import { checkRateLimit, ensureSchemaInitialized } from '../lib/holdings'
+import { checkRateLimit, ensureHoldingsStorageInitialized } from '../lib/holdings'
 
 function simpleHash(str: string): string {
   let hash = 0
@@ -78,9 +78,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    await ensureSchemaInitialized()
+    await ensureHoldingsStorageInitialized()
   } catch (error) {
-    console.error('Holdings breakdown schema initialization error:', error)
+    console.error('Holdings breakdown storage initialization error:', error)
     return res.status(500).json({ error: 'Failed to initialize holdings storage' })
   }
 
