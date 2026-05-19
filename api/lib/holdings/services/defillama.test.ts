@@ -127,6 +127,7 @@ describe('parseDefiLlamaResponse', () => {
       headers: {
         Authorization: 'Bearer test-yearn-prices-key'
       },
+      redirect: 'error',
       signal: expect.any(AbortSignal)
     })
     expect(prices.get(tokenKey)?.get(requestedTimestamp)).toBe(1.002)
@@ -168,8 +169,30 @@ describe('parseDefiLlamaResponse', () => {
       headers: {
         Authorization: 'Bearer portfolio-test-key'
       },
+      redirect: 'error',
       signal: expect.any(AbortSignal)
     })
+  })
+
+  it('blocks non-HTTPS yearn-prices upstreams before fetching', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.stubEnv('HOLDINGS_PRICE_PROVIDER', 'yearn-prices')
+    vi.stubEnv('YEARN_PRICES_BASE_URL', 'http://127.0.0.1:8080')
+    vi.stubEnv('YEARN_PRICES_API_KEY', 'test-yearn-prices-key')
+
+    const fetchStub = vi.fn()
+    vi.stubGlobal('fetch', fetchStub)
+
+    await expect(
+      fetchHistoricalPricesForTokenTimestamps([
+        {
+          chainId: 1,
+          address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+          timestamps: [1700000000]
+        }
+      ])
+    ).rejects.toThrow('Failed to fetch token prices from yearn-prices')
+    expect(fetchStub).not.toHaveBeenCalled()
   })
 
   it('uses yearn-prices range requests for contiguous daily timestamp history', async () => {
@@ -236,6 +259,7 @@ describe('parseDefiLlamaResponse', () => {
       headers: {
         Authorization: 'Bearer portfolio-test-key'
       },
+      redirect: 'error',
       signal: expect.any(AbortSignal)
     })
     expect(prices.get(firstTokenKey)?.get(firstTimestamp)).toBe(1.001)
@@ -625,7 +649,7 @@ describe('parseDefiLlamaResponse', () => {
       expect(requestUrl.origin).toBe('https://pro-api.llama.fi')
       expect(requestUrl.pathname).toBe('/test-llama-key/coins/batchHistorical')
       expect(requestUrl.toString().length).toBeLessThanOrEqual(3_500)
-      expect(requestInit).toEqual({ signal: expect.any(AbortSignal) })
+      expect(requestInit).toEqual({ redirect: 'error', signal: expect.any(AbortSignal) })
       expect(Object.keys(requestCoinsParam).length).toBeGreaterThan(0)
     })
     expect(prices.size).toBe(90)
@@ -669,14 +693,14 @@ describe('parseDefiLlamaResponse', () => {
 
     expect(firstRequestUrl.origin).toBe('https://pro-api.llama.fi')
     expect(firstRequestUrl.pathname).toBe('/test-llama-key/coins/batchHistorical')
-    expect(firstRequestInit).toEqual({ signal: expect.any(AbortSignal) })
+    expect(firstRequestInit).toEqual({ redirect: 'error', signal: expect.any(AbortSignal) })
     expect(firstCoinsParam).toEqual({
       'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': [1700000000]
     })
     expect(String(secondRequestInput)).toBe(
       'https://coins.llama.fi/batchHistorical?coins=%7B%22ethereum%3A0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48%22%3A%5B1700000000%5D%7D'
     )
-    expect(secondRequestInit).toEqual({ signal: expect.any(AbortSignal) })
+    expect(secondRequestInit).toEqual({ redirect: 'error', signal: expect.any(AbortSignal) })
     expect(prices.get('ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')?.get(1700000000)).toBe(1)
   })
 
@@ -723,7 +747,7 @@ describe('parseDefiLlamaResponse', () => {
       expect(requestUrl.origin).toBe('https://pro-api.llama.fi')
       expect(requestUrl.pathname).toBe('/test-llama-key/coins/batchHistorical')
       expect(requestUrl.toString().length).toBeLessThanOrEqual(3_500)
-      expect(requestInit).toEqual({ signal: expect.any(AbortSignal) })
+      expect(requestInit).toEqual({ redirect: 'error', signal: expect.any(AbortSignal) })
     })
     expect(prices.size).toBe(20)
   })

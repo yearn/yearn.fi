@@ -1,6 +1,19 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+const ENSO_ROUTE_PATH = '/api/v1/shortcuts/route'
+const ENSO_API_ORIGIN = new URL(ENSO_API_BASE).origin
+
+function buildEnsoRouteUrl(params: URLSearchParams): URL {
+  const url = new URL(ENSO_ROUTE_PATH, ENSO_API_BASE)
+  url.search = params.toString()
+
+  if (url.protocol !== 'https:' || url.origin !== ENSO_API_ORIGIN || url.pathname !== ENSO_ROUTE_PATH) {
+    throw new Error('Invalid Enso route upstream URL')
+  }
+
+  return url
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -52,9 +65,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       params.set('routingStrategy', routingStrategy)
     }
 
-    const url = `${ENSO_API_BASE}/api/v1/shortcuts/route?${params}`
+    const ensoUrl = buildEnsoRouteUrl(params)
 
-    const response = await fetch(url, {
+    const response = await fetch(ensoUrl, {
+      redirect: 'error',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json'

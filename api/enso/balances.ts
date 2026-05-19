@@ -2,6 +2,19 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { ENSO_BALANCES_CACHE_CONTROL } from './cache'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+const ENSO_BALANCES_PATH = '/api/v1/wallet/balances'
+const ENSO_API_ORIGIN = new URL(ENSO_API_BASE).origin
+
+function buildEnsoBalancesUrl(params: URLSearchParams): URL {
+  const url = new URL(ENSO_BALANCES_PATH, ENSO_API_BASE)
+  url.search = params.toString()
+
+  if (url.protocol !== 'https:' || url.origin !== ENSO_API_ORIGIN || url.pathname !== ENSO_BALANCES_PATH) {
+    throw new Error('Invalid Enso balances upstream URL')
+  }
+
+  return url
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -27,9 +40,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       chainId: 'all'
     })
 
-    const url = `${ENSO_API_BASE}/api/v1/wallet/balances?${params}`
+    const ensoUrl = buildEnsoBalancesUrl(params)
 
-    const response = await fetch(url, {
+    const response = await fetch(ensoUrl, {
+      redirect: 'error',
       headers: {
         Authorization: `Bearer ${apiKey}`
       }

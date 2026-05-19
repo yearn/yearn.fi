@@ -447,6 +447,61 @@ function buildRangeCoinsParam(coins: TCoinRequest[]): Record<string, [number, nu
   }, {})
 }
 
+function joinUrlPath(...segments: string[]): string {
+  const path = segments
+    .map((segment) => segment.replace(/^\/+|\/+$/g, ''))
+    .filter(Boolean)
+    .join('/')
+  return `/${path}`
+}
+
+function getYearnPricesApiBaseUrl(): string {
+  return holdingsConfig.yearnPricesBaseUrl.endsWith('/api')
+    ? holdingsConfig.yearnPricesBaseUrl
+    : `${holdingsConfig.yearnPricesBaseUrl}/api`
+}
+
+function assertHttpsUrl(url: URL): void {
+  if (url.protocol !== 'https:') {
+    throw new Error(`Blocked historical price request to non-HTTPS upstream: ${url.origin}`)
+  }
+}
+
+function assertExpectedUpstream(url: URL, baseUrl: string, expectedPath: string): void {
+  const base = new URL(baseUrl)
+  assertHttpsUrl(url)
+
+  if (url.origin !== base.origin || url.pathname !== joinUrlPath(base.pathname, expectedPath)) {
+    throw new Error(`Blocked historical price request to unexpected upstream: ${url.origin}${url.pathname}`)
+  }
+}
+
+function validateHistoricalPriceRequest(request: TDefiLlamaBatchRequest): URL {
+  const url = new URL(request.url)
+
+  if (request.variant === 'free_get') {
+    assertExpectedUpstream(url, holdingsConfig.defillamaBaseUrl, 'batchHistorical')
+    return url
+  }
+
+  if (request.variant === 'pro_get') {
+    assertExpectedUpstream(
+      url,
+      holdingsConfig.defillamaProBaseUrl,
+      `${holdingsConfig.defillamaApiKey}/coins/batchHistorical`
+    )
+    return url
+  }
+
+  if (request.variant === 'yearn_prices_get') {
+    assertExpectedUpstream(url, getYearnPricesApiBaseUrl(), 'prices/batchHistorical')
+    return url
+  }
+
+  assertExpectedUpstream(url, getYearnPricesApiBaseUrl(), 'prices/rangeHistorical')
+  return url
+}
+
 export function buildBatchHistoricalUrl(coins: TCoinRequest[]): string {
   const encodedCoins = encodeURIComponent(JSON.stringify(buildCoinsParam(coins)))
   return `${holdingsConfig.defillamaBaseUrl}/batchHistorical?coins=${encodedCoins}`
@@ -459,18 +514,12 @@ function buildProBatchHistoricalGetUrl(coins: TCoinRequest[]): string {
 
 function buildYearnPricesBatchHistoricalUrl(coins: TCoinRequest[]): string {
   const encodedCoins = encodeURIComponent(JSON.stringify(buildCoinsParam(coins, { normalizeTimestampsToDayEnd: true })))
-  const apiBaseUrl = holdingsConfig.yearnPricesBaseUrl.endsWith('/api')
-    ? holdingsConfig.yearnPricesBaseUrl
-    : `${holdingsConfig.yearnPricesBaseUrl}/api`
-  return `${apiBaseUrl}/prices/batchHistorical?coins=${encodedCoins}`
+  return `${getYearnPricesApiBaseUrl()}/prices/batchHistorical?coins=${encodedCoins}`
 }
 
 function buildYearnPricesRangeHistoricalUrl(coins: TCoinRequest[]): string {
   const encodedCoins = encodeURIComponent(JSON.stringify(buildRangeCoinsParam(coins)))
-  const apiBaseUrl = holdingsConfig.yearnPricesBaseUrl.endsWith('/api')
-    ? holdingsConfig.yearnPricesBaseUrl
-    : `${holdingsConfig.yearnPricesBaseUrl}/api`
-  return `${apiBaseUrl}/prices/rangeHistorical?coins=${encodedCoins}`
+  return `${getYearnPricesApiBaseUrl()}/prices/rangeHistorical?coins=${encodedCoins}`
 }
 
 function buildYearnPricesRequest(coins: TCoinRequest[]): Pick<TDefiLlamaBatchRequest, 'url' | 'variant'> {
@@ -696,8 +745,9 @@ async function fetchBatch(
         }
 
         try {
-          const response = await fetch(request.url, {
+          const response = await fetch(validateHistoricalPriceRequest(request), {
             ...request.init,
+            redirect: 'error',
             signal: AbortSignal.timeout(tuning.timeoutMs)
           })
 

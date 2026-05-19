@@ -55,6 +55,9 @@ import {
 import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+const ENSO_ROUTE_PATH = '/api/v1/shortcuts/route'
+const ENSO_BALANCES_PATH = '/api/v1/wallet/balances'
+const ENSO_API_ORIGIN = new URL(ENSO_API_BASE).origin
 const DEFAULT_API_PORT = 3001
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
@@ -498,6 +501,28 @@ function handleEnsoStatus(): Response {
   return Response.json({ configured: !!apiKey })
 }
 
+function buildEnsoRouteUrl(params: URLSearchParams): URL {
+  const ensoUrl = new URL(ENSO_ROUTE_PATH, ENSO_API_BASE)
+  ensoUrl.search = params.toString()
+
+  if (ensoUrl.protocol !== 'https:' || ensoUrl.origin !== ENSO_API_ORIGIN || ensoUrl.pathname !== ENSO_ROUTE_PATH) {
+    throw new Error('Invalid Enso route upstream URL')
+  }
+
+  return ensoUrl
+}
+
+function buildEnsoBalancesUrl(params: URLSearchParams): URL {
+  const ensoUrl = new URL(ENSO_BALANCES_PATH, ENSO_API_BASE)
+  ensoUrl.search = params.toString()
+
+  if (ensoUrl.protocol !== 'https:' || ensoUrl.origin !== ENSO_API_ORIGIN || ensoUrl.pathname !== ENSO_BALANCES_PATH) {
+    throw new Error('Invalid Enso balances upstream URL')
+  }
+
+  return ensoUrl
+}
+
 async function handleEnsoRoute(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const fromAddress = url.searchParams.get('fromAddress')
@@ -539,10 +564,11 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
     params.set('routingStrategy', routingStrategy)
   }
 
-  const ensoUrl = `${ENSO_API_BASE}/api/v1/shortcuts/route?${params}`
+  const ensoUrl = buildEnsoRouteUrl(params)
 
   try {
     const response = await fetch(ensoUrl, {
+      redirect: 'error',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
@@ -583,10 +609,11 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
     chainId: chainId || 'all'
   })
 
-  const ensoUrl = `${ENSO_API_BASE}/api/v1/wallet/balances?${params}`
+  const ensoUrl = buildEnsoBalancesUrl(params)
 
   try {
     const response = await fetch(ensoUrl, {
+      redirect: 'error',
       headers: {
         Authorization: `Bearer ${apiKey}`
       }
