@@ -1,5 +1,6 @@
 import { Button } from '@shared/components/Button'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { cl } from '@shared/utils'
 import { formatAmount, formatUSD } from '@shared/utils/format'
 import type { ReactElement } from 'react'
 
@@ -16,6 +17,7 @@ type TRewardRowProps = {
   isFirst?: boolean
   isAllChainsView?: boolean
   onSwitchChain?: () => void
+  claimButtonClassName?: string
 }
 
 function getTokenLogoUrl(chainId: number, tokenAddress: `0x${string}`): string {
@@ -35,7 +37,8 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
     isClaimReady,
     isFirst,
     isAllChainsView,
-    onSwitchChain
+    onSwitchChain,
+    claimButtonClassName
   } = props
 
   const isWrongChain = currentChainId !== chainId
@@ -69,7 +72,7 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
             isDisabled={!showSwitchChainButton && !canClaim}
             isBusy={isClaimPending}
             variant={buttonVariant}
-            classNameOverride="yearn--button--nextgen w-full md:w-auto"
+            classNameOverride={cl('yearn--button--nextgen w-full md:w-auto', claimButtonClassName)}
           >
             {showSwitchChainButton ? 'Switch Chain' : 'Claim'}
           </Button>

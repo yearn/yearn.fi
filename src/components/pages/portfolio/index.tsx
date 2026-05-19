@@ -33,11 +33,13 @@ import {
   getVaultToken,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
-import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
+import { useClaimMerkleRewards } from '@pages/vaults/hooks/rewards/useClaimMerkleRewards'
+import { buildMerkleRewardKey, useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { resolveNextSingleChainSelection } from '@pages/vaults/utils/chainSelection'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
+import { Button } from '@shared/components/Button'
 import { METRIC_VALUE_CLASS, MetricHeader, type TMetricBlock } from '@shared/components/MetricsCard'
 import { SearchBar } from '@shared/components/SearchBar'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
@@ -76,6 +78,7 @@ import { getNetwork } from '@shared/utils/wagmi'
 import type { CSSProperties, ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
+import { useWriteContract } from 'wagmi'
 import Link from '/src/components/Link'
 import type {
   TGrowthDisplayMode,
@@ -109,6 +112,7 @@ const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
 const metricTooltipContentClassName = 'flex max-w-[280px] flex-col gap-1 leading-relaxed'
 const metricCardClassName = 'bg-surface px-5 py-3 md:px-5 md:py-2.5'
+const portfolioRewardClaimButtonClassName = 'w-full md:w-[112px]'
 const PORTFOLIO_TABS = [
   { key: 'positions', label: 'Account Overview' },
   { key: 'activity', label: 'Activity' },
@@ -2261,6 +2265,86 @@ function ChainMerkleRewardsFetcher({
   return null
 }
 
+function getMerkleRewardKeys(groupedRewards: TGroupedMerkleReward[]): string[] {
+  return groupedRewards.flatMap((groupedReward) =>
+    groupedReward.rewards.map((reward) => buildMerkleRewardKey(reward.root, reward.token.address))
+  )
+}
+
+function getMerkleRewardTokenCount(groupedRewards: TGroupedMerkleReward[]): number {
+  return groupedRewards.filter((groupedReward) => groupedReward.totalUnclaimed > 0n).length
+}
+
+function MerkleClaimAllButton({
+  chainData,
+  userAddress,
+  onStartClaim,
+  onSwitchChain
+}: {
+  chainData: TChainRewardData
+  userAddress: `0x${string}`
+  onStartClaim: (step: TransactionStep, merkleRewardKeys: string[], chainId: number) => void
+  onSwitchChain: () => void
+}): ReactElement | null {
+  const currentChainId = useChainId()
+  const { isPending } = useWriteContract()
+  const merkleRewardTokenCount = getMerkleRewardTokenCount(chainData.merkleRewards)
+  const isWrongChain = currentChainId !== chainData.chainId
+
+  const { prepare } = useClaimMerkleRewards({
+    groupedRewards: chainData.merkleRewards,
+    userAddress,
+    chainId: chainData.chainId,
+    enabled: merkleRewardTokenCount > 1
+  })
+
+  const step = useMemo((): TransactionStep | undefined => {
+    if (!prepare.isSuccess || !prepare.data?.request) {
+      return undefined
+    }
+
+    return {
+      prepare,
+      label: 'Claim',
+      confirmMessage: 'Claim all Merkl rewards',
+      successTitle: 'Rewards Claimed',
+      successMessage: 'You claimed all Merkl rewards',
+      showConfetti: true
+    }
+  }, [prepare])
+
+  const handleClaimAll = useCallback(() => {
+    if (isWrongChain) {
+      onSwitchChain()
+      return
+    }
+    if (!step) return
+
+    onStartClaim(step, getMerkleRewardKeys(chainData.merkleRewards), chainData.chainId)
+  }, [chainData.chainId, chainData.merkleRewards, isWrongChain, onStartClaim, onSwitchChain, step])
+
+  if (merkleRewardTokenCount < 2) {
+    return null
+  }
+
+  return (
+    <div className="flex flex-col">
+      <div className="h-px w-full bg-border" />
+      <div className="mt-3 flex justify-end">
+        <Button
+          onClick={handleClaimAll}
+          isDisabled={!isWrongChain && !step}
+          isBusy={isPending}
+          variant={isWrongChain || !step ? 'light' : 'filled'}
+          classNameOverride={cl('yearn--button--nextgen min-h-[36px] px-3', portfolioRewardClaimButtonClassName)}
+        >
+          {isWrongChain ? 'Switch Chain' : 'Claim all'}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioClaimRewardsProps): ReactElement {
   const { address: userAddress } = useWeb3()
   const { vaults } = useYearn()
@@ -2491,6 +2575,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                   isFirst={srIdx === 0 && rewardIdx === 0}
                   isAllChainsView={isAllChainsView}
                   onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+                  claimButtonClassName={portfolioRewardClaimButtonClassName}
                 />
               ))
             )}
@@ -2504,8 +2589,15 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                 isFirst={idx === 0 && chainData.stakingRewards.length === 0}
                 isAllChainsView={isAllChainsView}
                 onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+                claimButtonClassName={portfolioRewardClaimButtonClassName}
               />
             ))}
+            <MerkleClaimAllButton
+              chainData={chainData}
+              userAddress={userAddress!}
+              onStartClaim={handleStartClaim}
+              onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+            />
             {needsSwitchChain(chainData) && (
               <SwitchChainPrompt
                 chainId={chainData.chainId}
