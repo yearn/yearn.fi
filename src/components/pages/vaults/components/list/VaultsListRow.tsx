@@ -452,7 +452,7 @@ function VaultsListRowComponent({
   }, [defaultExpandedView, isExpanded])
 
   return (
-    <div
+    <vault-row
       className={cl(
         'w-full overflow-hidden transition-colors bg-surface relative max-md:border-b-1 max-md:border-border'
       )}
@@ -534,7 +534,7 @@ function VaultsListRowComponent({
           />
         ) : null}
 
-        <div
+        <vault-row-summary
           className={cl(
             leftColumnSpan,
             'z-10',
@@ -826,10 +826,10 @@ function VaultsListRowComponent({
               </div>
             </div>
           </div>
-        </div>
+        </vault-row-summary>
 
         {/* Desktop metrics grid */}
-        <div
+        <vault-row-metrics
           className={cl(rightColumnSpan, 'z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:items-center', rightGridColumns)}
         >
           <div
@@ -933,7 +933,7 @@ function VaultsListRowComponent({
               <VaultHoldingsAmount value={holdingsValue} formatOptions={holdingsFormatOptions} />
             </div>
           ) : null}
-        </div>
+        </vault-row-metrics>
       </Link>
 
       {isExpanded ? (
@@ -962,7 +962,7 @@ function VaultsListRowComponent({
           />
         </APYDetailsModal>
       ) : null}
-    </div>
+    </vault-row>
   )
 }
 

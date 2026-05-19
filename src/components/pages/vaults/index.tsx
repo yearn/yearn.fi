@@ -39,7 +39,7 @@ function VaultsListSection({
   const shouldShowSubtleOverlay = isUpdatingList && !isUpdatingProductType
   const isBusy = isUpdatingList || isUpdatingProductType
   return (
-    <div aria-busy={isBusy || undefined} className={'relative w-full rounded-lg bg-surface'}>
+    <vault-list-section aria-busy={isBusy || undefined} className={'relative w-full rounded-lg bg-surface'}>
       <div className={isUpdatingProductType ? 'pointer-events-none opacity-70 transition' : 'transition'}>
         <div
           className={'relative md:sticky md:z-30'}
@@ -54,11 +54,11 @@ function VaultsListSection({
           />
           {listHead}
         </div>
-        <div
+        <vault-list-body
           className={'flex flex-col border md:border-t-0 border-border rounded-lg md:rounded-t-none overflow-hidden'}
         >
           {children}
-        </div>
+        </vault-list-body>
       </div>
       {shouldShowSubtleOverlay ? (
         <div aria-hidden={true} className={'pointer-events-none absolute inset-0 z-30 rounded-lg bg-app/30'} />
@@ -74,7 +74,7 @@ function VaultsListSection({
           </span>
         </output>
       ) : null}
-    </div>
+    </vault-list-section>
   )
 }
 
@@ -461,7 +461,7 @@ export default function Index(): ReactElement {
   const shouldShowCompareBar = isCompareMode && compareCount >= 1 && !isCompareOpen
   const compareBarElement = shouldShowCompareBar ? (
     <div className={'fixed bottom-4 left-1/2 z-55 w-[calc(100%-2rem)] max-w-[720px] -translate-x-1/2'}>
-      <div
+      <vaults-compare-bar
         className={
           'flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xl sm:flex-row sm:items-center sm:justify-between'
         }
@@ -486,7 +486,7 @@ export default function Index(): ReactElement {
             {`Compare (${compareCount})`}
           </Button>
         </div>
-      </div>
+      </vaults-compare-bar>
     </div>
   ) : null
 
@@ -501,10 +501,10 @@ export default function Index(): ReactElement {
 
   return (
     <>
-      <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'} data-testid={'vaults-page'}>
+      <vault-list-page className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'} data-testid={'vaults-page'}>
         <div className={'mx-auto w-full max-w-[1232px] px-4 pb-4'}>
           <div ref={varsRef} className={'flex flex-col'} style={{ '--vaults-filters-height': '0px' } as CSSProperties}>
-            <div
+            <vault-list-controls
               ref={filtersRef}
               className={'sticky z-40 w-full bg-app pb-2 shrink-0'}
               style={{ top: 'var(--header-height)' }}
@@ -547,8 +547,8 @@ export default function Index(): ReactElement {
                 }
                 isStackedLayout={shouldStackFilters}
               />
-            </div>
-            <div data-tour="vaults-list" data-testid={'vaults-list'}>
+            </vault-list-controls>
+            <vault-list data-tour="vaults-list" data-testid={'vaults-list'}>
               <VaultsListSection
                 isUpdatingProductType={isUpdatingProductType}
                 isUpdatingList={isUpdatingList}
@@ -556,10 +556,10 @@ export default function Index(): ReactElement {
               >
                 {vaultListContent}
               </VaultsListSection>
-            </div>
+            </vault-list>
           </div>
         </div>
-      </div>
+      </vault-list-page>
       {compareBarElement}
       {compareModalElement}
       <VaultsWelcomeTour onTourStateChange={setTourState} />

@@ -7,6 +7,34 @@
 /* Theme System */
 @import './src/styles/themes.css';
 
+portfolio-activity,
+portfolio-content,
+portfolio-holdings,
+portfolio-layout,
+portfolio-overview,
+portfolio-page,
+portfolio-rewards,
+portfolio-suggestions,
+portfolio-tabs,
+vault-detail-content,
+vault-detail-desktop,
+vault-detail-header,
+vault-detail-mobile,
+vault-detail-page,
+vault-detail-section,
+vault-interaction-widget,
+vault-list,
+vault-list-body,
+vault-list-controls,
+vault-list-page,
+vault-list-section,
+vault-row,
+vault-row-metrics,
+vault-row-summary,
+vaults-compare-bar {
+  display: block;
+}
+
 @theme {
   /* Font families */
   --font-family-aeonik:

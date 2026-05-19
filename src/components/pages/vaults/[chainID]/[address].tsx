@@ -1514,7 +1514,7 @@ function Index(): ReactElement | null {
   }
 
   return (
-    <div
+    <vault-detail-page
       data-testid={'vault-detail-page'}
       className={
         'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-[calc(7rem+env(safe-area-inset-bottom,0px))] sm:pb-8'
@@ -1552,7 +1552,7 @@ function Index(): ReactElement | null {
           </div>
         ) : null}
 
-        <header
+        <vault-detail-header
           data-testid={'vault-detail-header'}
           className={cl(
             'h-full rounded-3xl',
@@ -1585,9 +1585,9 @@ function Index(): ReactElement | null {
               setIsHeaderAutoCompressed(isForceCompressed)
             }}
           />
-        </header>
+        </vault-detail-header>
 
-        <div className="md:hidden md:mt-4 mb-4">
+        <vault-detail-mobile className="md:hidden md:mt-4 mb-4">
           <Breadcrumbs
             className={'mb-3'}
             items={[
@@ -1624,9 +1624,9 @@ function Index(): ReactElement | null {
               </div>
             </div>
           </div>
-        </div>
+        </vault-detail-mobile>
 
-        <div className="md:hidden space-y-4">
+        <vault-detail-mobile className="md:hidden space-y-4">
           {isYvUsd ? (
             <YvUsdMobileKeyMetrics
               currentVault={currentVault}
@@ -1670,7 +1670,7 @@ function Index(): ReactElement | null {
                 const isOpen = openSections[typedKey]
 
                 return (
-                  <div
+                  <vault-detail-section
                     key={section.key}
                     ref={section.ref}
                     data-scroll-spy-key={section.key}
@@ -1693,14 +1693,14 @@ function Index(): ReactElement | null {
                       />
                     </button>
                     {isOpen ? <div>{section.content}</div> : null}
-                  </div>
+                  </vault-detail-section>
                 )
               })}
           </section>
-        </div>
+        </vault-detail-mobile>
 
-        <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
-          <div
+        <vault-detail-content className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
+          <vault-interaction-widget
             data-testid={'vault-detail-action-panel'}
             ref={widgetContainerRef}
             className={cl(
@@ -1769,9 +1769,9 @@ function Index(): ReactElement | null {
                 </div>
               ) : null}
             </div>
-          </div>
+          </vault-interaction-widget>
 
-          <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
+          <vault-detail-desktop className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
             {isRetired && retiredVaultAlertMessage ? (
               <VaultWarningAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
             ) : null}
@@ -1794,7 +1794,7 @@ function Index(): ReactElement | null {
                   const isOpen = openSections[typedKey]
 
                   return (
-                    <div
+                    <vault-detail-section
                       key={section.key}
                       ref={section.ref}
                       data-scroll-spy-key={section.key}
@@ -1821,12 +1821,12 @@ function Index(): ReactElement | null {
                         />
                       </button>
                       {isOpen ? <div>{section.content}</div> : null}
-                    </div>
+                    </vault-detail-section>
                   )
                 }
 
                 return (
-                  <div
+                  <vault-detail-section
                     key={section.key}
                     ref={section.ref}
                     data-scroll-spy-key={section.key}
@@ -1835,7 +1835,7 @@ function Index(): ReactElement | null {
                     style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
                   >
                     {section.content}
-                  </div>
+                  </vault-detail-section>
                 )
               })()
 
@@ -1852,8 +1852,8 @@ function Index(): ReactElement | null {
               ]
             })}
             {renderableSections.length > 0 ? <div aria-hidden className={'h-[65vh]'} /> : null}
-          </div>
-        </section>
+          </vault-detail-desktop>
+        </vault-detail-content>
       </div>
 
       {/* Mobile Floating Action Buttons - visible until desktop widget appears (md:), hidden when drawer is open */}
@@ -1900,7 +1900,7 @@ function Index(): ReactElement | null {
         {renderMobileWidget()}
       </BottomDrawer>
       <VaultDetailsWelcomeTour onTourStateChange={setVaultTourState} />
-    </div>
+    </vault-detail-page>
   )
 }
 
