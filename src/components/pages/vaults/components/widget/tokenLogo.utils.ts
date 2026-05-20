@@ -1,3 +1,5 @@
+import { sanitizeTokenLogoURI } from '@shared/utils/tokenLogo'
+
 type TokenLogoSourceParams = {
   address?: string
   chainId?: number
@@ -23,12 +25,14 @@ export function getTokenLogoSources({ address, chainId, logoURI, size = 32 }: To
 } {
   const fallbackSrc = getDefaultTokenLogoSrc({ address, chainId, size }) ?? ''
 
-  if (!logoURI) {
+  const sanitizedLogoURI = sanitizeTokenLogoURI(logoURI)
+
+  if (!sanitizedLogoURI) {
     return { src: fallbackSrc }
   }
 
   return {
-    src: logoURI,
-    altSrc: fallbackSrc && fallbackSrc !== logoURI ? fallbackSrc : undefined
+    src: sanitizedLogoURI,
+    altSrc: fallbackSrc && fallbackSrc !== sanitizedLogoURI ? fallbackSrc : undefined
   }
 }

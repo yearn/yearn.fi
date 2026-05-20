@@ -167,6 +167,7 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
             height={height}
             decoding="async"
             {...rest}
+            referrerPolicy="no-referrer"
           />
         ) : null}
       </div>

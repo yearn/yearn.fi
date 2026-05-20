@@ -7,6 +7,7 @@ import type { TAddress } from '../types/address'
 import type { TDict, TNDict, TToken, TTokenList } from '../types/mixed'
 import { DEFAULT_ERC20 } from '../utils'
 import { zeroNormalizedBN } from '../utils/format'
+import { sanitizeTokenLogoURI } from '../utils/tokenLogo'
 import { toAddress } from '../utils/tools.address'
 import { useWeb3 } from './useWeb3'
 
@@ -40,7 +41,7 @@ export function toTokenListToken(token: TToken): TTokenList['tokens'][0] {
     address: token.address,
     chainId: token.chainID,
     decimals: token.decimals,
-    logoURI: token.logoURI,
+    logoURI: sanitizeTokenLogoURI(token.logoURI),
     name: token.name,
     symbol: token.symbol
   }
@@ -54,7 +55,7 @@ export function toTToken(token: TTokenList['tokens'][0]): TToken {
     address: token.address,
     chainID: token.chainId,
     decimals: token.decimals,
-    logoURI: token.logoURI,
+    logoURI: sanitizeTokenLogoURI(token.logoURI),
     name: token.name,
     symbol: token.symbol,
     value: 0,
@@ -120,7 +121,7 @@ export const WithTokenList = ({
           symbol: eachToken.symbol,
           decimals: eachToken.decimals,
           chainID: eachToken.chainId,
-          logoURI: eachToken.logoURI,
+          logoURI: sanitizeTokenLogoURI(eachToken.logoURI),
           value: 0,
           balance: zeroNormalizedBN
         }
@@ -141,7 +142,7 @@ export const WithTokenList = ({
             symbol: eachToken.symbol,
             decimals: eachToken.decimals,
             chainID: 1337,
-            logoURI: eachToken.logoURI,
+            logoURI: sanitizeTokenLogoURI(eachToken.logoURI),
             value: 0,
             balance: zeroNormalizedBN
           }
@@ -182,7 +183,7 @@ export const WithTokenList = ({
               symbol: eachToken.symbol,
               decimals: eachToken.decimals,
               chainID: chainId,
-              logoURI: eachToken.logoURI,
+              logoURI: sanitizeTokenLogoURI(eachToken.logoURI),
               value: 0,
               balance: zeroNormalizedBN
             }
@@ -203,7 +204,7 @@ export const WithTokenList = ({
                 symbol: eachToken.symbol,
                 decimals: eachToken.decimals,
                 chainID: 1337,
-                logoURI: eachToken.logoURI,
+                logoURI: sanitizeTokenLogoURI(eachToken.logoURI),
                 value: 0,
                 balance: zeroNormalizedBN
               }
@@ -237,7 +238,7 @@ export const WithTokenList = ({
             symbol: eachToken.symbol,
             decimals: eachToken.decimals,
             chainID: eachToken.chainId,
-            logoURI: eachToken.logoURI,
+            logoURI: sanitizeTokenLogoURI(eachToken.logoURI),
             value: 0,
             balance: zeroNormalizedBN
           }
@@ -257,7 +258,7 @@ export const WithTokenList = ({
               symbol: eachToken.symbol,
               decimals: eachToken.decimals,
               chainID: 1337,
-              logoURI: eachToken.logoURI,
+              logoURI: sanitizeTokenLogoURI(eachToken.logoURI),
               value: 0,
               balance: zeroNormalizedBN
             }
