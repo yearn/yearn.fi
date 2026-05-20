@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { VaultMetadata } from '../types'
 import type { TransactionActivityEvents } from './graphql'
 import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnlEvents'
@@ -12,11 +12,6 @@ import {
   materializeProtocolReturnVaults
 } from './pnlSimple'
 import type { TRawPnlEvent } from './pnlTypes'
-
-vi.mock('../db/connection', () => ({
-  getPool: vi.fn(() => null),
-  isDatabaseEnabled: vi.fn(() => false)
-}))
 
 const USER = '0x1111111111111111111111111111111111111111'
 const OTHER = '0x2222222222222222222222222222222222222222'

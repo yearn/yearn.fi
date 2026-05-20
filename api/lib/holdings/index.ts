@@ -1,5 +1,4 @@
 export { holdingsConfig, validateConfig } from './config'
-export { ensureSchemaInitialized, initializeSchema, isDatabaseEnabled } from './db/connection'
 export {
   getHoldingsActivity,
   getHoldingsActivityFacets,
@@ -37,3 +36,8 @@ export {
   type THoldingsPnLSimpleStatus
 } from './services/pnlSimple'
 export { checkRateLimit } from './services/ratelimit'
+export {
+  ensureHoldingsStorageInitialized,
+  initializeHoldingsStorage,
+  isHoldingsStorageEnabled
+} from './storage/redis'
