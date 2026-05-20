@@ -20,6 +20,7 @@ type TSearchBar = {
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
   onBlur?: () => void
   autoFocus?: boolean
+  dataTestId?: string
 }
 
 export function SearchBar(props: TSearchBar): ReactElement {
@@ -79,6 +80,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
       <div className={'flex h-full w-full items-center gap-2 overflow-hidden'}>
         <input
           id={'search'}
+          data-testid={props.dataTestId}
           suppressHydrationWarning
           className={cl(
             props.inputClassName,

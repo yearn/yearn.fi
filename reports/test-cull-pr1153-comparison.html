@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Test Cull Review: PR 1153 vs Repository-Wide Suggestions</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f8fa;
+        --panel: #ffffff;
+        --ink: #111318;
+        --muted: #5f6673;
+        --line: #d9dde5;
+        --line-strong: #b9c0cc;
+        --keep: #0f6b4f;
+        --review: #7a4d00;
+        --cull: #9b2525;
+        --blue: #275ea8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      main {
+        width: min(1180px, calc(100vw - 40px));
+        margin: 0 auto;
+        padding: 40px 0 64px;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line-strong);
+        padding-bottom: 24px;
+        margin-bottom: 28px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+        margin: 0;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        font-size: 34px;
+        max-width: 900px;
+      }
+
+      h2 {
+        font-size: 22px;
+        margin-top: 34px;
+        margin-bottom: 12px;
+      }
+
+      h3 {
+        font-size: 17px;
+        margin-bottom: 10px;
+      }
+
+      p {
+        margin: 10px 0 0;
+      }
+
+      code {
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.92em;
+      }
+
+      .lede {
+        color: var(--muted);
+        font-size: 16px;
+        max-width: 920px;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 999px;
+        padding: 6px 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin: 24px 0 8px;
+      }
+
+      .summary-card,
+      .section-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .summary-card {
+        padding: 16px;
+      }
+
+      .summary-card strong {
+        display: block;
+        font-size: 26px;
+        line-height: 1;
+      }
+
+      .summary-card span {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 8px;
+      }
+
+      .section-card {
+        padding: 18px;
+        margin-top: 12px;
+      }
+
+      .callout {
+        border-left: 4px solid var(--blue);
+        padding: 12px 14px;
+        background: #eef4fc;
+        margin: 18px 0;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        border-radius: 999px;
+        padding: 2px 9px;
+        font-size: 12px;
+        font-weight: 650;
+        border: 1px solid currentColor;
+        white-space: nowrap;
+      }
+
+      .tag.keep {
+        color: var(--keep);
+        background: #edf8f4;
+      }
+
+      .tag.review {
+        color: var(--review);
+        background: #fff7e8;
+      }
+
+      .tag.cull {
+        color: var(--cull);
+        background: #fff0f0;
+      }
+
+      .tag.script {
+        color: var(--blue);
+        background: #eef4fc;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        display: block;
+      }
+
+      thead,
+      tbody,
+      tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+      }
+
+      th,
+      td {
+        vertical-align: top;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        padding: 12px;
+        font-size: 14px;
+      }
+
+      th {
+        color: #343946;
+        background: #f0f2f5;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .path {
+        overflow-wrap: anywhere;
+        font-weight: 650;
+      }
+
+      .narrow {
+        width: 150px;
+      }
+
+      .wide {
+        width: 33%;
+      }
+
+      ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      @media (max-width: 860px) {
+        main {
+          width: min(100vw - 24px, 1180px);
+          padding-top: 24px;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        .summary-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        table,
+        thead,
+        tbody,
+        tr,
+        th,
+        td {
+          display: block;
+          width: 100%;
+        }
+
+        thead {
+          display: none;
+        }
+
+        tr {
+          border-bottom: 1px solid var(--line);
+        }
+
+        td {
+          border-bottom: 0;
+          padding: 10px 12px;
+        }
+
+        td::before {
+          content: attr(data-label);
+          display: block;
+          color: var(--muted);
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          margin-bottom: 4px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Test Cull Review: PR 1153 vs Repository-Wide Suggestions</h1>
+        <p class="lede">
+          This report compares the test-culling script's repository-wide
+          suggestions with the tests removed by PR 1153's key commit. It focuses
+          on files where the script and PR disagree, plus current test files the
+          script newly flags as culling candidates.
+        </p>
+        <div class="meta">
+          <span class="pill">Branch: <code>codex/end-to-end-testing</code></span>
+          <span class="pill">PR 1153 commit: <code>a9938f1162e6729d4598db48a157a3ddfc1624f8</code></span>
+          <span class="pill">Script: <code>bun run test:cull -- --all</code></span>
+          <span class="pill">Prepared: 2026-05-19</span>
+        </div>
+      </header>
+
+      <section class="summary-grid" aria-label="Summary">
+        <div class="summary-card">
+          <strong>54</strong>
+          <span>test files deleted by the PR 1153 commit</span>
+        </div>
+        <div class="summary-card">
+          <strong>46</strong>
+          <span>PR-deleted tests the script also treats as cull candidates</span>
+        </div>
+        <div class="summary-card">
+          <strong>8</strong>
+          <span>PR-deleted tests where the script says keep</span>
+        </div>
+        <div class="summary-card">
+          <strong>25</strong>
+          <span>current repo-wide cull candidates not removed by PR 1153</span>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <h2>Executive Read</h2>
+        <p>
+          I agree with the broad direction of PR 1153: a lot of component-render,
+          copy, fixture-shape, and string-mapping tests are low signal. The
+          place I would be more conservative is around transaction flow,
+          external URL validation, quote/slippage math, Safe status polling,
+          rewards accounting, fee display, route normalization, and API response
+          schema retention. Those tests protect user funds, user trust, or
+          external integration boundaries in a way E2E smoke tests usually do
+          not cover cheaply.
+        </p>
+        <div class="callout">
+          Recommendation: keep durable safety/math/integration-boundary unit
+          tests, allow temporary PR tests during agent-assisted implementation,
+          cull low-signal temporary tests before merge, and cover public user
+          flows with E2E smoke tests.
+        </div>
+        <div class="legend" aria-label="Legend">
+          <span class="tag keep">My read: keep</span>
+          <span class="tag review">My read: review</span>
+          <span class="tag cull">My read: cull</span>
+          <span class="tag script">Script suggestion</span>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <h2>Implementation Status</h2>
+        <p>
+          Applied on <code>codex/end-to-end-testing</code>: 56 test files were
+          removed. That includes the low-signal tests removed by PR 1153, while
+          preserving the disagreement files marked keep or lean-keep below, plus
+          the new repository-wide candidates marked cull or lean-cull in this
+          report.
+        </p>
+        <ul>
+          <li>
+            Preserved disagreement coverage for transaction overlay state,
+            yvUSD deposit refetch behavior, vault warning logic, Curve URL
+            safety, route normalization, and Kong vault snapshot schema fields.
+          </li>
+          <li>
+            Removed the disagreement tests marked cull:
+            <code>YvUsdBreakdown.test.tsx</code> and
+            <code>YvUsdHeaderBanner.test.tsx</code>.
+          </li>
+          <li>
+            Removed new repo-wide cull or lean-cull candidates, including
+            one-line portfolio refresh helpers, mocked vault detail/header
+            tests, temporary risk/facet tests, duplicated vault search recovery
+            coverage, and <code>MetricsCard.test.tsx</code>.
+          </li>
+          <li>
+            Cleaned three stale survivor-test issues found during verification:
+            holdings route tests now pass a valid wallet address, the yvUSD
+            locked-withdraw helper now lets over-limit input stay over-limit,
+            and an unused Tenderly test constant was removed.
+          </li>
+        </ul>
+      </section>
+
+      <h2>Disagreement: PR Deletes, Script Says Keep</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Test File</th>
+            <th class="narrow">Script</th>
+            <th class="wide">What It Tests</th>
+            <th class="wide">My Read</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/widget/shared/TransactionOverlay.test.ts</code></td>
+            <td data-label="Script"><span class="tag keep">candidate-keep</span></td>
+            <td data-label="What It Tests">
+              Transaction overlay helper state: permit auto-continue only when
+              the next step is ready, completion callback deferral, and when a
+              deferred completion should flush.
+            </td>
+            <td data-label="My Read">
+              <span class="tag keep">Keep</span>
+              This is safety-adjacent state-machine coverage. A regression here
+              can skip transaction steps, double-trigger completion, or leave the
+              user in the wrong post-transaction state.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/widget/yvUSD/YvUsdDeposit.test.tsx</code></td>
+            <td data-label="Script"><span class="tag keep">candidate-keep</span></td>
+            <td data-label="What It Tests">
+              yvUSD deposit helpers that decide whether a locked deposit should
+              also schedule an unlocked-branch refetch so balances and unlocked
+              state refresh after the transaction.
+            </td>
+            <td data-label="My Read">
+              <span class="tag review">Review, lean keep</span>
+              This is narrow, but it guards stale post-deposit account state.
+              Keep if this behavior has user-visible balance consequences;
+              otherwise replace with a higher-level yvUSD deposit smoke.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/yvUSD/YvUsdBreakdown.test.tsx</code></td>
+            <td data-label="Script"><span class="tag keep">candidate-keep</span></td>
+            <td data-label="What It Tests">
+              Server-rendered yvUSD breakdown copy, including the sentence about
+              withdrawals being open for five days after cooldown ends.
+            </td>
+            <td data-label="My Read">
+              <span class="tag cull">Cull</span>
+              Mostly copy assertion. If the five-day rule is important, test the
+              rule or constant directly instead of the rendered text blob.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/yvUSD/YvUsdHeaderBanner.test.tsx</code></td>
+            <td data-label="Script"><span class="tag keep">candidate-keep</span></td>
+            <td data-label="What It Tests">
+              Header banner rendering for yvUSD: headline text, supporting copy,
+              link rendering, and asset presence.
+            </td>
+            <td data-label="My Read">
+              <span class="tag cull">Cull</span>
+              This is low-signal component render coverage. A public E2E or
+              visual smoke is a better fit if the banner matters.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/domain/vaultWarnings.test.ts</code></td>
+            <td data-label="Script"><span class="tag keep">candidate-keep</span></td>
+            <td data-label="What It Tests">
+              Warning derivation for Yearn vs non-Yearn ERC-4626 vaults,
+              snapshot fallback behavior, yvBTC exception handling, and warning
+              content.
+            </td>
+            <td data-label="My Read">
+              <span class="tag review">Keep the logic, trim copy</span>
+              The origin/exception logic is worth keeping because it affects
+              user risk signaling. Copy-specific expectations can be removed or
+              softened.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/shared/utils/curveUrlUtils.test.ts</code></td>
+            <td data-label="Script"><span class="tag keep">candidate-keep</span></td>
+            <td data-label="What It Tests">
+              Curve URL normalization and allow-listing, including rejection of
+              invalid URLs and unsafe schemes like JavaScript or FTP.
+            </td>
+            <td data-label="My Read">
+              <span class="tag keep">Keep</span>
+              This is security and link-safety coverage. It is cheap, precise,
+              and not something a public smoke test will reliably protect.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/shared/utils/routes.test.ts</code></td>
+            <td data-label="Script"><span class="tag keep">candidate-keep</span></td>
+            <td data-label="What It Tests">
+              Path normalization and exact matching for the vaults index route,
+              including slash and query/hash cases.
+            </td>
+            <td data-label="My Read">
+              <span class="tag review">Review, lean keep</span>
+              Route matching bugs can affect navigation and active page state.
+              Keep if this utility gates redirects, nav state, or query
+              behavior; otherwise E2E can cover the public path.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/shared/utils/schemas/kongVaultSnapshotSchema.test.ts</code></td>
+            <td data-label="Script"><span class="tag keep">candidate-keep</span></td>
+            <td data-label="What It Tests">
+              Kong vault snapshot schema parsing while retaining Katana
+              estimated component fields and oracle net APR/APY fields.
+            </td>
+            <td data-label="My Read">
+              <span class="tag keep">Keep</span>
+              This protects an external data contract. It is valuable if the
+              schema has previously dropped optional nested performance fields.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>New Repository-Wide Cull Candidates</h2>
+      <p>
+        These files are current <code>--all</code> suggestions that PR 1153 did
+        not delete. The script marks each as <code>candidate-cull</code>, but my
+        read separates temporary/low-signal tests from durable coverage worth
+        preserving.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Test File</th>
+            <th class="narrow">Script</th>
+            <th class="wide">What It Tests</th>
+            <th class="wide">My Read</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/portfolio/claimRewards.helpers.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Merging chain Merkle reward data while preserving initial empty loading states for the portfolio rewards view.</td>
+            <td data-label="My Read"><span class="tag review">Review</span> Keep only if this prevents a known loading-state regression; otherwise the behavior is simple enough to remove.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/portfolio/hooks/usePortfolioEntryRefresh.helpers.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">A boolean helper deciding when to request one active portfolio entry refresh.</td>
+            <td data-label="My Read"><span class="tag cull">Cull</span> Thin wrapper around obvious boolean conditions.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/portfolio/hooks/usePortfolioHistory.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Portfolio chart live-point insertion and replacement, including ETH denomination and null live snapshot handling.</td>
+            <td data-label="My Read"><span class="tag review">Review, lean keep</span> Portfolio value charts are user-facing financial state. This is worth keeping if expected values are independent of implementation details.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/portfolio/hooks/usePortfolioModel.helpers.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Detection of locked or unlocked yvUSD holdings in a portfolio model.</td>
+            <td data-label="My Read"><span class="tag review">Review, lean cull</span> Mostly set membership. Keep only if it gates an important yvUSD portfolio path that is not covered elsewhere.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/portfolio/types/api.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Portfolio activity API schema acceptance for transfer, zap, and swap activity entries.</td>
+            <td data-label="My Read"><span class="tag review">Review</span> Keep if it protects response-shape compatibility with Kong; remove if it only restates the schema definition.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/detail/VaultDetailsHeader.test.tsx</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">SSR-rendered vault detail header variants for yvUSD/yvBTC, with mocked hooks and display state.</td>
+            <td data-label="My Read"><span class="tag cull">Cull or convert</span> Heavy component mocking gives limited confidence. Prefer a vault-detail E2E smoke for the real page.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/detail/VaultRiskSection.test.tsx</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Temporary yvBTC risk section behavior reusing yvUSD-style risk labels and copy.</td>
+            <td data-label="My Read"><span class="tag cull">Cull</span> Temporary copy/component assertion. Keep only with an explicit expiry if launch risk copy needs short-term protection.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/detail/strategiesPercentFormat.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Strategy percentage/APY formatting, including rounding, upper limits, and infinity handling.</td>
+            <td data-label="My Read"><span class="tag keep">Keep</span> Precise financial display formatting is cheap to test and easy to regress.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/widget/WalletPanel.helpers.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Filtering notifications awaiting Safe execution and detecting newly completed awaiting-execution states.</td>
+            <td data-label="My Read"><span class="tag keep">Keep</span> Safe transaction feedback is a real workflow boundary. This belongs in durable unit coverage.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/widget/deposit/ApprovalOverlay.test.tsx</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Connected-chain fallback for Safe sessions and pending Safe approval states becoming submitted or errored.</td>
+            <td data-label="My Read"><span class="tag keep">Keep</span> Approval and Safe state transitions are high-value transaction coverage.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/widget/deposit/DepositDetails.test.tsx</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Deposit detail rows for swaps/zaps, including worst-case price impact, received amount copy, and positive slippage display.</td>
+            <td data-label="My Read"><span class="tag review">Review</span> The rendered markup assertions are brittle, but price-impact display is safety-relevant. Prefer extracting and keeping helper-level coverage.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/widget/deposit/useFetchMaxQuote.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Max-quote slippage resolution, fallback slippage, and remaining slippage calculation.</td>
+            <td data-label="My Read"><span class="tag keep">Keep</span> Slippage logic affects transaction expectations and user funds. This is exactly the kind of unit test to preserve.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/widget/shared/valueDisplay.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Widget value formatting, compact display, and seven-significant-digit precision.</td>
+            <td data-label="My Read"><span class="tag review">Review, lean keep</span> Low blast radius, but precision display can affect user trust. Keep if this format is product-critical.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/widget/withdraw/WithdrawDetails.test.tsx</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Withdraw detail rows for USD badges, worst-case price impact, receive copy, and positive slippage.</td>
+            <td data-label="My Read"><span class="tag review">Review</span> Same pattern as deposit details: keep extracted calculation/label logic, not full mocked component markup.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/hooks/rewards/useMerkleRewards.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Yearn Merkl reward filtering, KAT alias allow-listing, claimed reward hiding, stale claimed-field handling, and deferred unclaimed rendering.</td>
+            <td data-label="My Read"><span class="tag keep">Keep</span> Rewards are money-like user state. Filtering or claimed-status bugs are expensive and hard for E2E to cover exhaustively.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/hooks/solvers/ensoRoute.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Enso route response normalization, missing chainId filling, 422 validation errors, array validation errors, and swap detection.</td>
+            <td data-label="My Read"><span class="tag keep">Keep</span> This protects an external solver boundary and error interpretation. Strong candidate for durable unit tests.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/hooks/useVaultsListModel.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Pinning yvUSD in the vault list when active filters match.</td>
+            <td data-label="My Read"><span class="tag review">Review, lean cull</span> Primarily ranking UX. Prefer page-level E2E unless this ranking has business-critical obligations.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/hooks/useVaultsPageModel.blocking-filters.test.tsx</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Search/filter recovery behavior when matching vaults are hidden by blocking filters such as minimum TVL.</td>
+            <td data-label="My Read"><span class="tag review">Review, convert</span> Useful user-facing behavior, but the hook test is heavily mocked. A vault-search E2E smoke would be better.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/index.search-recovery.test.tsx</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Vault page bottom recovery row when search results are hidden by active filters.</td>
+            <td data-label="My Read"><span class="tag cull">Cull or convert</span> Duplicates the filter-recovery behavior at another mocked layer. Replace with one E2E smoke.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/utils/vaultFees.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Vault fee derivation, basis-point rounding, and label formatting from vault payloads.</td>
+            <td data-label="My Read"><span class="tag keep">Keep</span> Fee display is financial information. This is durable calculation/formatting coverage.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/utils/vaultListFacets.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">List facet derivation that treats yvBTC and ordinary v3 vaults as strategy entries.</td>
+            <td data-label="My Read"><span class="tag cull">Cull or expire</span> Looks like temporary launch-classification coverage. Keep only if the facet is a durable product rule.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/shared/components/MetricsCard.test.tsx</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Mobile label rendering when a metrics card tooltip is present.</td>
+            <td data-label="My Read"><span class="tag cull">Cull</span> Component render detail with low behavioral value.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/shared/hooks/balanceQueryConfig.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Wallet balance query refetch policy: refetch on focus, not on mount or reconnect.</td>
+            <td data-label="My Read"><span class="tag review">Review</span> Very thin, but stale balances matter. Keep if this was a regression fix; otherwise fold into broader wallet refresh coverage.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/shared/hooks/transactionStatusPoller.helpers.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">Transaction polling decisions for normal pending txs, submitted Safe txs awaiting execution, terminal submitted txs, and balance refresh before successful Safe execution.</td>
+            <td data-label="My Read"><span class="tag keep">Keep</span> Durable transaction-status coverage. It protects Safe behavior and post-transaction balance refresh.</td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/shared/utils/format.test.ts</code></td>
+            <td data-label="Script"><span class="tag cull">candidate-cull</span></td>
+            <td data-label="What It Tests">USD amount formatting remains en-US for compact and non-compact output even when browser language is not English.</td>
+            <td data-label="My Read"><span class="tag keep">Keep</span> Locale-independent currency formatting is easy to break and visible across the app.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section class="section-card">
+        <h2>Suggested Policy</h2>
+        <ul>
+          <li>
+            Keep unit tests for money math, slippage, fees, rewards, URL safety,
+            external API normalization, transaction state machines, Safe polling,
+            and schema fields that protect app/backend contracts.
+          </li>
+          <li>
+            Cull tests that only assert static copy, component shell rendering,
+            mocked hook wiring, temporary launch banners, or one-line boolean
+            wrappers.
+          </li>
+          <li>
+            Convert user-facing flows to E2E smoke tests: vault discovery/search,
+            vault detail rendering, connect-wallet affordances, deposit/withdraw
+            quote display, and transaction overlay happy/error states.
+          </li>
+          <li>
+            Use <code>bun run test:cull</code> at the end of agent turns for
+            changed tests, and use <code>bun run test:cull -- --all</code>
+            sparingly as a periodic repo hygiene review.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

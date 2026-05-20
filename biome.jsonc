@@ -71,6 +71,8 @@
       "!**/.next",
       "!**/.git",
       "!**/generated",
+      "!**/playwright-report",
+      "!**/test-results",
       "!**/wagmi.ts",
       "!**/wagmi.d.ts",
       "!**/bun.lock",

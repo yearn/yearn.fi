@@ -1,5 +1,8 @@
 set -e
 
+echo 'husky: checking test locations'
+bun scripts/check-test-location.mjs
+
 echo 'husky: running lint-staged checks'
 bunx lint-staged
 

@@ -394,6 +394,7 @@ export function MobileNavMenu({
                   <div className={'flex flex-col gap-1'}>
                     <Link
                       href={'/vaults'}
+                      data-testid={'nav-vaults-link'}
                       onClick={onClose}
                       className={navItemClass(pathname.startsWith('/vaults'), false)}
                     >
@@ -401,6 +402,7 @@ export function MobileNavMenu({
                     </Link>
                     <Link
                       href={'/portfolio'}
+                      data-testid={'nav-portfolio-link'}
                       onClick={onClose}
                       className={navItemClass(pathname.startsWith('/portfolio'), false)}
                     >
@@ -412,6 +414,7 @@ export function MobileNavMenu({
 
                   <div className={'flex flex-col gap-1'}>
                     <button
+                      data-testid={walletIdentity ? 'wallet-account-button' : 'wallet-connect-button'}
                       onClick={handleWalletClick}
                       className={
                         'relative flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
@@ -586,6 +589,7 @@ export function MobileNavMenu({
 
           {!isActive && (
             <button
+              data-testid={'wallet-connect-button'}
               onClick={handleConnectWallet}
               className={cl(
                 'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
@@ -599,6 +603,7 @@ export function MobileNavMenu({
           {isActive && (
             <div className={'flex flex-col gap-2'}>
               <button
+                data-testid={'portfolio-view-button'}
                 onClick={handleViewPortfolio}
                 className={cl(
                   'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',

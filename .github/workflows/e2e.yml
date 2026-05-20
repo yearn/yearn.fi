@@ -1,0 +1,50 @@
+name: E2E Smoke
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Playwright smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VITE_BASE_YEARN_ASSETS_URI: https://cdn.jsdelivr.net/gh/yearn/tokenassets@main
+      VITE_KONG_REST_URL: https://kong.yearn.fi/api/rest
+      VITE_WALLETCONNECT_PROJECT_ID: e2e-smoke-walletconnect-project-id
+      VITE_YDAEMON_BASE_URI: https://ydaemon.yearn.fi
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+
+      - name: Install project dependencies
+        run: bun install
+
+      - name: Install Playwright browser
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run smoke tests
+        run: bun run test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

@@ -76,6 +76,7 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
     <div
       onMouseDown={(e) => e.stopPropagation()}
       onClick={handleClick}
+      data-testid={walletIdentity ? 'wallet-account-button' : 'wallet-connect-button'}
       className={cl('relative', shouldShowSpinner ? 'cursor-wait' : 'cursor-pointer')}
     >
       {walletIdentity && notificationStatus && (
@@ -249,6 +250,7 @@ function AppHeader(): ReactElement {
   return (
     <div
       id={'head'}
+      data-testid={'app-header'}
       className={cl('sticky inset-x-0 top-0 z-50 w-full backdrop-blur-md', isHomePage ? 'bg-transparent' : 'bg-app')}
     >
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
@@ -269,6 +271,7 @@ function AppHeader(): ReactElement {
                   <div className={'hidden md:flex gap-4'}>
                     <Link href={'/vaults'}>
                       <span
+                        data-testid={'nav-vaults-link'}
                         className={
                           'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
                         }
@@ -279,6 +282,7 @@ function AppHeader(): ReactElement {
 
                     <Link href={'/portfolio'}>
                       <span
+                        data-testid={'nav-portfolio-link'}
                         className={
                           'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
                         }
@@ -306,6 +310,7 @@ function AppHeader(): ReactElement {
                   </div>
                 </div>
                 <button
+                  data-testid={'mobile-nav-menu-button'}
                   className={cl(
                     'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 transition-colors md:hidden',
                     isHomePage ? 'text-white hover:bg-white/10' : 'text-text-primary hover:bg-surface-secondary'

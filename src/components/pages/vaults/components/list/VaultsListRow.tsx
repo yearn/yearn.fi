@@ -242,6 +242,8 @@ type TVaultsListRowProps = {
   showProductTypeChipOverride?: boolean
   mobileSecondaryMetric?: 'tvl' | 'holdings'
   expandedChartVariant?: 'default' | 'portfolio-user-tvl-overlay'
+  rowTestId?: string
+  holdingsTestId?: string
 }
 
 function VaultsListRowComponent({
@@ -269,7 +271,9 @@ function VaultsListRowComponent({
   showProductTypeChipOverride,
   mobileSecondaryMetric = 'tvl',
   showAllocatorChip = true,
-  expandedChartVariant = 'default'
+  expandedChartVariant = 'default',
+  rowTestId,
+  holdingsTestId = 'vault-user-holdings'
 }: TVaultsListRowProps): ReactElement {
   const navigate = useNavigate()
   const trackEvent = usePlausible()
@@ -320,6 +324,7 @@ function VaultsListRowComponent({
   const holdingsColumnSpan = 'col-span-4'
   const showCompareToggle = Boolean(onToggleCompare)
   const vaultKey = `${chainID}_${toAddress(vaultAddress)}`
+  const vaultRowTestId = `vault-row-${chainID}-${toAddress(vaultAddress)}`
   const isCompareSelected = compareVaultKeys?.includes(vaultKey) ?? false
   const isHoveringInteractive = interactiveHoverCount > 0
   const handleInteractiveHoverChange = (isHovering: boolean): void => {
@@ -447,297 +452,408 @@ function VaultsListRowComponent({
   }, [defaultExpandedView, isExpanded])
 
   return (
-    <div
+    <vault-row
       className={cl(
         'w-full overflow-hidden transition-colors bg-surface relative max-md:border-b-1 max-md:border-border'
       )}
     >
-      <button
-        type={'button'}
-        aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
-        aria-expanded={isExpanded}
-        data-tour="vaults-row-expand"
-        onClick={(event): void => {
-          event.stopPropagation()
-          if (!isExpanded) {
-            trackEvent(PLAUSIBLE_EVENTS.VAULT_EXPAND, {
+      <vault-row-expand>
+        <button
+          type={'button'}
+          data-testid={'vault-row-expand-button'}
+          aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+          aria-expanded={isExpanded}
+          data-tour="vaults-row-expand"
+          onClick={(event): void => {
+            event.stopPropagation()
+            if (!isExpanded) {
+              trackEvent(PLAUSIBLE_EVENTS.VAULT_EXPAND, {
+                props: {
+                  vaultAddress: toAddress(vaultAddress),
+                  vaultSymbol,
+                  chainID: chainID.toString()
+                }
+              })
+            }
+            handleExpandedChange(!isExpanded)
+          }}
+          className={cl(
+            'absolute top-6.5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
+            'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+          )}
+        >
+          <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
+        </button>
+      </vault-row-expand>
+      <vault-row-link>
+        <Link
+          href={href}
+          className={cl(
+            'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
+            'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',
+            'cursor-pointer relative group'
+          )}
+          data-testid={rowTestId ?? vaultRowTestId}
+          data-tour="vaults-row"
+          onMouseEnter={prefetchSnapshot}
+          onFocus={prefetchSnapshot}
+          onClickCapture={(event): void => {
+            const target = event.target as HTMLElement | null
+            if (!target) return
+            if (target.closest('button, input, select, textarea, [role="button"], [role="checkbox"]')) {
+              event.preventDefault()
+              return
+            }
+            if (showCompareToggle && onToggleCompare) {
+              event.preventDefault()
+              onToggleCompare(currentVault)
+              return
+            }
+            trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW, {
               props: {
                 vaultAddress: toAddress(vaultAddress),
                 vaultSymbol,
                 chainID: chainID.toString()
               }
             })
-          }
-          handleExpandedChange(!isExpanded)
-        }}
-        className={cl(
-          'absolute top-6.5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
-          'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
-        )}
-      >
-        <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
-      </button>
-      <Link
-        href={href}
-        className={cl(
-          'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
-          'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',
-          'cursor-pointer relative group'
-        )}
-        data-tour="vaults-row"
-        onMouseEnter={prefetchSnapshot}
-        onFocus={prefetchSnapshot}
-        onClickCapture={(event): void => {
-          const target = event.target as HTMLElement | null
-          if (!target) return
-          if (target.closest('button, input, select, textarea, [role="button"], [role="checkbox"]')) {
-            event.preventDefault()
-            return
-          }
-          if (showCompareToggle && onToggleCompare) {
-            event.preventDefault()
-            onToggleCompare(currentVault)
-            return
-          }
-          trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW, {
-            props: {
-              vaultAddress: toAddress(vaultAddress),
-              vaultSymbol,
-              chainID: chainID.toString()
-            }
-          })
-        }}
-      >
-        <div
-          className={cl(
-            'absolute inset-0',
-            'opacity-0 transition-opacity duration-100 pointer-events-none',
-            !isHoveringInteractive ? 'group-hover:opacity-20 group-focus-visible:opacity-20' : '',
-            'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
-          )}
-        />
-        {isExpanded ? (
+          }}
+        >
           <div
             className={cl(
               'absolute inset-0',
               'opacity-0 transition-opacity duration-100 pointer-events-none',
-              !isHoveringInteractive ? 'group-hover:opacity-100 group-focus-visible:opacity-100' : '',
-              'bg-[linear-gradient(180deg,transparent,var(--color-surface))]'
+              !isHoveringInteractive ? 'group-hover:opacity-20 group-focus-visible:opacity-20' : '',
+              'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
             )}
           />
-        ) : null}
+          {isExpanded ? (
+            <div
+              className={cl(
+                'absolute inset-0',
+                'opacity-0 transition-opacity duration-100 pointer-events-none',
+                !isHoveringInteractive ? 'group-hover:opacity-100 group-focus-visible:opacity-100' : '',
+                'bg-[linear-gradient(180deg,transparent,var(--color-surface))]'
+              )}
+            />
+          ) : null}
 
-        <div
-          className={cl(
-            leftColumnSpan,
-            'z-10',
-            'flex flex-col items-start sm:pt-0 md:flex-row md:items-center md:justify-between'
-          )}
-        >
-          <div
+          <vault-row-summary
             className={cl(
-              'flex w-full overflow-visible border-b border-border pb-2',
-              'gap-6',
-              'md:border-none md:pb-0'
+              leftColumnSpan,
+              'z-10',
+              'flex flex-col items-start sm:pt-0 md:flex-row md:items-center md:justify-between'
             )}
           >
-            {showCompareToggle ? (
-              // biome-ignore lint/a11y/useSemanticElements: native checkbox has double-firing issues with parent Link's onClickCapture
-              <div
-                role={'checkbox'}
-                aria-checked={isCompareSelected}
-                aria-label={
-                  isCompareSelected ? `Remove ${vaultName} from comparison` : `Add ${vaultName} to comparison`
-                }
-                tabIndex={0}
-                className={'flex cursor-pointer items-center justify-center'}
-                onClick={(event): void => {
-                  event.stopPropagation()
-                  event.preventDefault()
-                  onToggleCompare?.(currentVault)
-                }}
-                onKeyDown={(event): void => {
-                  event.stopPropagation()
-                  if (event.key === ' ' || event.key === 'Enter') {
+            <div
+              className={cl(
+                'flex w-full overflow-visible border-b border-border pb-2',
+                'gap-6',
+                'md:border-none md:pb-0'
+              )}
+            >
+              {showCompareToggle ? (
+                // biome-ignore lint/a11y/useSemanticElements: native checkbox has double-firing issues with parent Link's onClickCapture
+                <div
+                  role={'checkbox'}
+                  aria-checked={isCompareSelected}
+                  aria-label={
+                    isCompareSelected ? `Remove ${vaultName} from comparison` : `Add ${vaultName} to comparison`
+                  }
+                  tabIndex={0}
+                  className={'flex cursor-pointer items-center justify-center'}
+                  onClick={(event): void => {
+                    event.stopPropagation()
                     event.preventDefault()
                     onToggleCompare?.(currentVault)
-                  }
-                }}
-              >
-                <div
-                  className={cl(
-                    'size-4 rounded border-2 flex items-center justify-center transition-colors',
-                    isCompareSelected
-                      ? 'bg-blue-500 border-blue-500'
-                      : 'border-text-secondary/50 hover:border-text-secondary'
-                  )}
+                  }}
+                  onKeyDown={(event): void => {
+                    event.stopPropagation()
+                    if (event.key === ' ' || event.key === 'Enter') {
+                      event.preventDefault()
+                      onToggleCompare?.(currentVault)
+                    }
+                  }}
                 >
-                  {isCompareSelected ? (
-                    <svg className={'size-3 text-white'} fill={'none'} viewBox={'0 0 24 24'} stroke={'currentColor'}>
-                      <path strokeLinecap={'round'} strokeLinejoin={'round'} strokeWidth={3} d={'M5 13l4 4L19 7'} />
-                    </svg>
+                  <div
+                    className={cl(
+                      'size-4 rounded border-2 flex items-center justify-center transition-colors',
+                      isCompareSelected
+                        ? 'bg-blue-500 border-blue-500'
+                        : 'border-text-secondary/50 hover:border-text-secondary'
+                    )}
+                  >
+                    {isCompareSelected ? (
+                      <svg className={'size-3 text-white'} fill={'none'} viewBox={'0 0 24 24'} stroke={'currentColor'}>
+                        <path strokeLinecap={'round'} strokeLinejoin={'round'} strokeWidth={3} d={'M5 13l4 4L19 7'} />
+                      </svg>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+              <div
+                className={cl('relative flex items-center justify-center self-center', 'size-10', 'min-h-10 min-w-10')}
+              >
+                <TokenLogo
+                  src={tokenLogoSrc}
+                  tokenSymbol={isYvUsd ? 'yvUSD' : vaultToken.symbol || ''}
+                  width={40}
+                  height={40}
+                />
+                <div
+                  className={
+                    'absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface'
+                  }
+                >
+                  <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={16} height={16} />
+                </div>
+              </div>
+              <div className={'min-w-0 flex-1'}>
+                <vault-name
+                  data-testid={'vault-name'}
+                  title={vaultName}
+                  className={
+                    'block truncate-safe whitespace-nowrap font-black text-text-primary md:mb-0 text-lg leading-tight'
+                  }
+                >
+                  {getVaultName(currentVault)}
+                </vault-name>
+                <div className={'mt-1 flex items-center gap-2 text-xs text-text-primary/70 whitespace-nowrap'}>
+                  <div className={'hidden md:block'}>
+                    <VaultsListChip
+                      label={network.name}
+                      icon={<TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />}
+                      showIconInChip={false}
+                      isActive={activeChainIds.includes(chainID)}
+                      isCollapsed={isChipsCompressed}
+                      showCollapsedTooltip={showCollapsedTooltip}
+                      tooltipDescription={chainDescription}
+                      onClick={onToggleChain ? (): void => onToggleChain(chainID) : undefined}
+                      onHoverChange={handleInteractiveHoverChange}
+                      ariaLabel={`Filter by ${network.name}`}
+                    />
+                  </div>
+                  {vaultCategory ? (
+                    <VaultsListChip
+                      label={vaultCategory}
+                      isActive={activeCategoryLabels.includes(vaultCategory)}
+                      isCollapsed={isChipsCompressed}
+                      showCollapsedTooltip={showCollapsedTooltip}
+                      tooltipDescription={categoryDescription || undefined}
+                      onClick={onToggleCategory ? (): void => onToggleCategory(vaultCategory) : undefined}
+                      onHoverChange={handleInteractiveHoverChange}
+                      ariaLabel={`Filter by ${vaultCategory}`}
+                    />
+                  ) : null}
+                  {showAssetCategoryChip ? (
+                    <VaultsListChip
+                      label={assetCategory}
+                      isActive={activeCategoryLabels.includes(assetCategory)}
+                      isCollapsed={isChipsCompressed}
+                      showCollapsedTooltip={showCollapsedTooltip}
+                      tooltipDescription={assetCategoryDescription || undefined}
+                      onClick={onToggleCategory ? (): void => onToggleCategory(assetCategory) : undefined}
+                      onHoverChange={handleInteractiveHoverChange}
+                      ariaLabel={`Filter by ${assetCategory}`}
+                    />
+                  ) : null}
+                  {showProductTypeChip ? (
+                    <VaultsListChip
+                      label={productTypeLabel}
+                      isActive={isProductTypeActive}
+                      isCollapsed={shouldCollapseProductType}
+                      showCollapsedTooltip={showCollapsedTooltip}
+                      tooltipDescription={productTypeDescription}
+                      onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
+                      onHoverChange={handleInteractiveHoverChange}
+                      ariaLabel={productTypeAriaLabel}
+                    />
+                  ) : null}
+                  {showFeesChip ? (
+                    <VaultsListChip
+                      label={feesChipLabel}
+                      isActive={isFeesChipActive}
+                      isCollapsed={isChipsCompressed}
+                      showCollapsedTooltip={showCollapsedTooltip}
+                      tooltipDescription={'Filter vaults with this same management and performance fee structure.'}
+                      onClick={onToggleFeeStructure ? (): void => onToggleFeeStructure(feeStructureKey) : undefined}
+                      onHoverChange={handleInteractiveHoverChange}
+                      ariaLabel={formatFeeStructureFilterAriaLabel(fees)}
+                    />
+                  ) : null}
+                  {showKindChip && kindLabel ? (
+                    <VaultsListChip
+                      label={kindLabel}
+                      isActive={isKindActive}
+                      isCollapsed={isChipsCompressed}
+                      showCollapsedTooltip={showCollapsedTooltip}
+                      tooltipDescription={kindDescription}
+                      onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
+                      onHoverChange={handleInteractiveHoverChange}
+                      ariaLabel={`Filter by ${kindLabel}`}
+                    />
+                  ) : null}
+                  {flags?.isRetired ? (
+                    <VaultsListChip
+                      label={'Retired'}
+                      icon={retiredIcon}
+                      isCollapsed={isChipsCompressed}
+                      showCollapsedTooltip={showCollapsedTooltip}
+                      tooltipDescription={RETIRED_TAG_DESCRIPTION}
+                      onHoverChange={handleInteractiveHoverChange}
+                    />
+                  ) : null}
+                  {flags?.isMigratable ? (
+                    <VaultsListChip
+                      label={'Migratable'}
+                      isCollapsed={isChipsCompressed}
+                      showCollapsedTooltip={showCollapsedTooltip}
+                      tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}
+                      onHoverChange={handleInteractiveHoverChange}
+                    />
+                  ) : null}
+                  {isHiddenVault ? (
+                    <VaultsListChip
+                      label={'Hidden'}
+                      icon={<IconEyeOff className={'size-3.5'} />}
+                      isCollapsed={isChipsCompressed}
+                      showCollapsedTooltip={showCollapsedTooltip}
+                      tooltipDescription={HIDDEN_TAG_DESCRIPTION}
+                      onHoverChange={handleInteractiveHoverChange}
+                    />
+                  ) : null}
+                  {flags?.isNotYearn ? (
+                    <VaultsListChip
+                      label={'Not Yearn'}
+                      isCollapsed={isChipsCompressed}
+                      showCollapsedTooltip={showCollapsedTooltip}
+                      tooltipDescription={NOT_YEARN_TAG_DESCRIPTION}
+                      onHoverChange={handleInteractiveHoverChange}
+                    />
+                  ) : null}
+                  {showHoldingsChip && isMobile ? (
+                    <span
+                      className={
+                        'inline-flex items-center rounded-lg border border-primary/50 px-1 py-0.5 text-xs font-medium transition-colors bg-surface-secondary text-primary gap-1 shadow-[0_0_12px_rgba(59,130,246,0.12)]'
+                      }
+                      aria-label={'Holdings'}
+                    >
+                      <span className={'flex size-4 items-center justify-center text-primary'}>{holdingsIcon}</span>
+                      {formatTvlDisplay(holdingsValue, holdingsFormatOptions)}
+                    </span>
                   ) : null}
                 </div>
               </div>
-            ) : null}
-            <div
-              className={cl('relative flex items-center justify-center self-center', 'size-10', 'min-h-10 min-w-10')}
-            >
-              <TokenLogo
-                src={tokenLogoSrc}
-                tokenSymbol={isYvUsd ? 'yvUSD' : vaultToken.symbol || ''}
-                width={40}
-                height={40}
-              />
-              <div
-                className={
-                  'absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface'
-                }
-              >
-                <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={16} height={16} />
-              </div>
             </div>
-            <div className={'min-w-0 flex-1'}>
-              <strong
-                title={vaultName}
-                className={
-                  'block truncate-safe whitespace-nowrap font-black text-text-primary md:mb-0 text-lg leading-tight'
-                }
-              >
-                {getVaultName(currentVault)}
-              </strong>
-              <div className={'mt-1 flex items-center gap-2 text-xs text-text-primary/70 whitespace-nowrap'}>
-                <div className={'hidden md:block'}>
-                  <VaultsListChip
-                    label={network.name}
-                    icon={<TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={14} height={14} />}
-                    showIconInChip={false}
-                    isActive={activeChainIds.includes(chainID)}
-                    isCollapsed={isChipsCompressed}
-                    showCollapsedTooltip={showCollapsedTooltip}
-                    tooltipDescription={chainDescription}
-                    onClick={onToggleChain ? (): void => onToggleChain(chainID) : undefined}
-                    onHoverChange={handleInteractiveHoverChange}
-                    ariaLabel={`Filter by ${network.name}`}
-                  />
+            <div className={'mt-2 flex w-full flex-col gap-2 md:hidden'}>
+              <div className={'grid w-full grid-cols-2 gap-2 text-sm text-text-secondary'}>
+                <div className={'flex items-center justify-center gap-2 whitespace-nowrap'}>
+                  <span className={'text-text-primary/60'}>{'Est. APY:'}</span>
+                  <vault-est-apy data-testid={isMobile ? 'vault-est-apy' : undefined}>
+                    {resolvedYvUsdMetrics ? (
+                      <Tooltip
+                        className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
+                        openDelayMs={150}
+                        tooltip={yvUsdApyTooltip ?? ''}
+                        align={'center'}
+                        zIndex={90}
+                      >
+                        <button
+                          type={'button'}
+                          onClick={handleYvUsdApyClick}
+                          onMouseEnter={() => handleInteractiveHoverChange(true)}
+                          onMouseLeave={() => handleInteractiveHoverChange(false)}
+                          className={'inline-flex flex-col items-start gap-0.5 text-left leading-none'}
+                          aria-label={'View yvUSD APY details'}
+                        >
+                          <span className={'text-[10px] uppercase tracking-wide text-text-secondary'}>{'Up to'}</span>
+                          <b
+                            className={
+                              'yearn--table-data-section-item-value inline-flex items-center gap-2 text-lg font-semibold text-text-primary'
+                            }
+                          >
+                            {yvUsdApyValue}
+                          </b>
+                        </button>
+                      </Tooltip>
+                    ) : (
+                      <VaultForwardAPY
+                        currentVault={currentVault}
+                        className={'flex-row items-center text-left'}
+                        valueClassName={'text-lg font-semibold'}
+                        showSubline={false}
+                        displayVariant={apyDisplayVariant}
+                        showBoostDetails={showBoostDetails}
+                        onInteractiveHoverChange={handleInteractiveHoverChange}
+                      />
+                    )}
+                  </vault-est-apy>
                 </div>
-                {vaultCategory ? (
-                  <VaultsListChip
-                    label={vaultCategory}
-                    isActive={activeCategoryLabels.includes(vaultCategory)}
-                    isCollapsed={isChipsCompressed}
-                    showCollapsedTooltip={showCollapsedTooltip}
-                    tooltipDescription={categoryDescription || undefined}
-                    onClick={onToggleCategory ? (): void => onToggleCategory(vaultCategory) : undefined}
-                    onHoverChange={handleInteractiveHoverChange}
-                    ariaLabel={`Filter by ${vaultCategory}`}
-                  />
-                ) : null}
-                {showAssetCategoryChip ? (
-                  <VaultsListChip
-                    label={assetCategory}
-                    isActive={activeCategoryLabels.includes(assetCategory)}
-                    isCollapsed={isChipsCompressed}
-                    showCollapsedTooltip={showCollapsedTooltip}
-                    tooltipDescription={assetCategoryDescription || undefined}
-                    onClick={onToggleCategory ? (): void => onToggleCategory(assetCategory) : undefined}
-                    onHoverChange={handleInteractiveHoverChange}
-                    ariaLabel={`Filter by ${assetCategory}`}
-                  />
-                ) : null}
-                {showProductTypeChip ? (
-                  <VaultsListChip
-                    label={productTypeLabel}
-                    isActive={isProductTypeActive}
-                    isCollapsed={shouldCollapseProductType}
-                    showCollapsedTooltip={showCollapsedTooltip}
-                    tooltipDescription={productTypeDescription}
-                    onClick={onToggleVaultType ? (): void => onToggleVaultType(productType) : undefined}
-                    onHoverChange={handleInteractiveHoverChange}
-                    ariaLabel={productTypeAriaLabel}
-                  />
-                ) : null}
-                {showFeesChip ? (
-                  <VaultsListChip
-                    label={feesChipLabel}
-                    isActive={isFeesChipActive}
-                    isCollapsed={isChipsCompressed}
-                    showCollapsedTooltip={showCollapsedTooltip}
-                    tooltipDescription={'Filter vaults with this same management and performance fee structure.'}
-                    onClick={onToggleFeeStructure ? (): void => onToggleFeeStructure(feeStructureKey) : undefined}
-                    onHoverChange={handleInteractiveHoverChange}
-                    ariaLabel={formatFeeStructureFilterAriaLabel(fees)}
-                  />
-                ) : null}
-                {showKindChip && kindLabel ? (
-                  <VaultsListChip
-                    label={kindLabel}
-                    isActive={isKindActive}
-                    isCollapsed={isChipsCompressed}
-                    showCollapsedTooltip={showCollapsedTooltip}
-                    tooltipDescription={kindDescription}
-                    onClick={kindType && onToggleType ? (): void => onToggleType(kindType) : undefined}
-                    onHoverChange={handleInteractiveHoverChange}
-                    ariaLabel={`Filter by ${kindLabel}`}
-                  />
-                ) : null}
-                {flags?.isRetired ? (
-                  <VaultsListChip
-                    label={'Retired'}
-                    icon={retiredIcon}
-                    isCollapsed={isChipsCompressed}
-                    showCollapsedTooltip={showCollapsedTooltip}
-                    tooltipDescription={RETIRED_TAG_DESCRIPTION}
-                    onHoverChange={handleInteractiveHoverChange}
-                  />
-                ) : null}
-                {flags?.isMigratable ? (
-                  <VaultsListChip
-                    label={'Migratable'}
-                    isCollapsed={isChipsCompressed}
-                    showCollapsedTooltip={showCollapsedTooltip}
-                    tooltipDescription={MIGRATABLE_TAG_DESCRIPTION}
-                    onHoverChange={handleInteractiveHoverChange}
-                  />
-                ) : null}
-                {isHiddenVault ? (
-                  <VaultsListChip
-                    label={'Hidden'}
-                    icon={<IconEyeOff className={'size-3.5'} />}
-                    isCollapsed={isChipsCompressed}
-                    showCollapsedTooltip={showCollapsedTooltip}
-                    tooltipDescription={HIDDEN_TAG_DESCRIPTION}
-                    onHoverChange={handleInteractiveHoverChange}
-                  />
-                ) : null}
-                {flags?.isNotYearn ? (
-                  <VaultsListChip
-                    label={'Not Yearn'}
-                    isCollapsed={isChipsCompressed}
-                    showCollapsedTooltip={showCollapsedTooltip}
-                    tooltipDescription={NOT_YEARN_TAG_DESCRIPTION}
-                    onHoverChange={handleInteractiveHoverChange}
-                  />
-                ) : null}
-                {showHoldingsChip && isMobile ? (
-                  <span
-                    className={
-                      'inline-flex items-center rounded-lg border border-primary/50 px-1 py-0.5 text-xs font-medium transition-colors bg-surface-secondary text-primary gap-1 shadow-[0_0_12px_rgba(59,130,246,0.12)]'
-                    }
-                    aria-label={'Holdings'}
-                  >
-                    <span className={'flex size-4 items-center justify-center text-primary'}>{holdingsIcon}</span>
-                    {formatTvlDisplay(holdingsValue, holdingsFormatOptions)}
+                <div className={'flex items-center justify-center gap-2 whitespace-nowrap'}>
+                  <span className={'text-text-primary/60'}>
+                    {mobileSecondaryMetric === 'holdings' ? 'Holdings:' : 'TVL:'}
                   </span>
-                ) : null}
+                  {mobileSecondaryMetric === 'holdings' ? (
+                    <vault-holdings
+                      data-testid={isMobile ? holdingsTestId : undefined}
+                      className={'text-lg font-semibold text-text-primary'}
+                    >
+                      {showHoldingsValue ? formatTvlDisplay(holdingsValue, holdingsFormatOptions) : '—'}
+                    </vault-holdings>
+                  ) : resolvedYvUsdMetrics ? (
+                    <vault-tvl data-testid={isMobile ? 'vault-tvl' : undefined}>
+                      <Tooltip
+                        className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
+                        openDelayMs={150}
+                        toggleOnClick={false}
+                        tooltip={yvUsdTvlTooltip ?? ''}
+                      >
+                        <span className={'text-lg font-semibold text-text-primary font-number'}>
+                          <RenderAmount
+                            value={resolvedYvUsdMetrics.combinedTvl}
+                            symbol={'USD'}
+                            decimals={0}
+                            options={{
+                              shouldCompactValue: true,
+                              maximumFractionDigits: 2,
+                              minimumFractionDigits: 0
+                            }}
+                          />
+                        </span>
+                      </Tooltip>
+                    </vault-tvl>
+                  ) : (
+                    <vault-tvl data-testid={isMobile ? 'vault-tvl' : undefined}>
+                      <VaultTVL
+                        currentVault={currentVault}
+                        valueClassName={'text-lg font-semibold text-text-primary'}
+                      />
+                    </vault-tvl>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-          <div className={'mt-2 flex w-full flex-col gap-2 md:hidden'}>
-            <div className={'grid w-full grid-cols-2 gap-2 text-sm text-text-secondary'}>
-              <div className={'flex items-center justify-center gap-2 whitespace-nowrap'}>
-                <span className={'text-text-primary/60'}>{'Est. APY:'}</span>
-                {resolvedYvUsdMetrics ? (
+          </vault-row-summary>
+
+          {/* Desktop metrics grid */}
+          <vault-row-metrics
+            className={cl(
+              rightColumnSpan,
+              'z-10 gap-4 mt-4',
+              'hidden md:mt-0 md:grid md:items-center',
+              rightGridColumns
+            )}
+          >
+            <vault-est-apy
+              className={cl('yearn--table-data-section-item', apyColumnSpan)}
+              datatype={'number'}
+              data-testid={isMobile ? undefined : 'vault-est-apy'}
+            >
+              {resolvedYvUsdMetrics ? (
+                <div
+                  className={'flex justify-end text-right'}
+                  onMouseEnter={() => handleInteractiveHoverChange(true)}
+                  onMouseLeave={() => handleInteractiveHoverChange(false)}
+                >
                   <Tooltip
                     className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
                     openDelayMs={150}
@@ -748,49 +864,57 @@ function VaultsListRowComponent({
                     <button
                       type={'button'}
                       onClick={handleYvUsdApyClick}
-                      onMouseEnter={() => handleInteractiveHoverChange(true)}
-                      onMouseLeave={() => handleInteractiveHoverChange(false)}
-                      className={'inline-flex flex-col items-start gap-0.5 text-left leading-none'}
+                      className={'inline-flex items-center gap-2 text-right'}
                       aria-label={'View yvUSD APY details'}
                     >
-                      <span className={'text-[10px] uppercase tracking-wide text-text-secondary'}>{'Up to'}</span>
-                      <b
-                        className={
-                          'yearn--table-data-section-item-value inline-flex items-center gap-2 text-lg font-semibold text-text-primary'
-                        }
-                      >
-                        {yvUsdApyValue}
-                      </b>
+                      {resolvedYvUsdMetrics.hasInfinifiPointsNote ? (
+                        <IconInfinifiPoints className={'size-3.5 shrink-0'} aria-label={'Infinifi points'} />
+                      ) : null}
+                      <span className={'relative inline-flex'}>
+                        <span
+                          className={
+                            'pointer-events-none absolute bottom-full left-0 mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-text-secondary'
+                          }
+                        >
+                          {'Up to'}
+                        </span>
+                        <b className={'yearn--table-data-section-item-value font-semibold text-text-primary'}>
+                          {formatApyDisplay(resolvedYvUsdMetrics.lockedApy)}
+                        </b>
+                      </span>
                     </button>
                   </Tooltip>
-                ) : (
-                  <VaultForwardAPY
-                    currentVault={currentVault}
-                    className={'flex-row items-center text-left'}
-                    valueClassName={'text-lg font-semibold'}
-                    showSubline={false}
-                    displayVariant={apyDisplayVariant}
-                    showBoostDetails={showBoostDetails}
-                    onInteractiveHoverChange={handleInteractiveHoverChange}
-                  />
-                )}
-              </div>
-              <div className={'flex items-center justify-center gap-2 whitespace-nowrap'}>
-                <span className={'text-text-primary/60'}>
-                  {mobileSecondaryMetric === 'holdings' ? 'Holdings:' : 'TVL:'}
-                </span>
-                {mobileSecondaryMetric === 'holdings' ? (
-                  <span className={'text-lg font-semibold text-text-primary'}>
-                    {showHoldingsValue ? formatTvlDisplay(holdingsValue, holdingsFormatOptions) : '—'}
-                  </span>
-                ) : resolvedYvUsdMetrics ? (
+                </div>
+              ) : (
+                <VaultForwardAPY
+                  currentVault={currentVault}
+                  showSubline={false}
+                  showSublineTooltip
+                  displayVariant={apyDisplayVariant}
+                  showBoostDetails={showBoostDetails}
+                  onInteractiveHoverChange={handleInteractiveHoverChange}
+                />
+              )}
+            </vault-est-apy>
+            {/* TVL */}
+            <vault-tvl
+              className={cl('yearn--table-data-section-item', tvlColumnSpan)}
+              datatype={'number'}
+              data-testid={isMobile ? undefined : 'vault-tvl'}
+            >
+              {resolvedYvUsdMetrics ? (
+                <div
+                  className={'flex justify-end text-right'}
+                  onMouseEnter={() => handleInteractiveHoverChange(true)}
+                  onMouseLeave={() => handleInteractiveHoverChange(false)}
+                >
                   <Tooltip
                     className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
                     openDelayMs={150}
                     toggleOnClick={false}
                     tooltip={yvUsdTvlTooltip ?? ''}
                   >
-                    <span className={'text-lg font-semibold text-text-primary font-number'}>
+                    <p className={'yearn--table-data-section-item-value'}>
                       <RenderAmount
                         value={resolvedYvUsdMetrics.combinedTvl}
                         symbol={'USD'}
@@ -801,111 +925,28 @@ function VaultsListRowComponent({
                           minimumFractionDigits: 0
                         }}
                       />
-                    </span>
+                    </p>
                   </Tooltip>
-                ) : (
-                  <VaultTVL currentVault={currentVault} valueClassName={'text-lg font-semibold text-text-primary'} />
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop metrics grid */}
-        <div
-          className={cl(rightColumnSpan, 'z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:items-center', rightGridColumns)}
-        >
-          <div className={cl('yearn--table-data-section-item', apyColumnSpan)} datatype={'number'}>
-            {resolvedYvUsdMetrics ? (
-              <div
-                className={'flex justify-end text-right'}
-                onMouseEnter={() => handleInteractiveHoverChange(true)}
-                onMouseLeave={() => handleInteractiveHoverChange(false)}
+                </div>
+              ) : (
+                <div className={'flex justify-end text-right'}>
+                  <VaultTVL currentVault={currentVault} showNativeTooltip tooltipClassName={'md:justify-end'} />
+                </div>
+              )}
+            </vault-tvl>
+            {!showHoldingsColumn ? <div className={'col-span-1'} /> : null}
+            {showHoldingsColumn ? (
+              <vault-holdings
+                className={cl('yearn--table-data-section-item', holdingsColumnSpan)}
+                datatype={'number'}
+                data-testid={isMobile ? undefined : holdingsTestId}
               >
-                <Tooltip
-                  className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
-                  openDelayMs={150}
-                  tooltip={yvUsdApyTooltip ?? ''}
-                  align={'center'}
-                  zIndex={90}
-                >
-                  <button
-                    type={'button'}
-                    onClick={handleYvUsdApyClick}
-                    className={'inline-flex items-center gap-2 text-right'}
-                    aria-label={'View yvUSD APY details'}
-                  >
-                    {resolvedYvUsdMetrics.hasInfinifiPointsNote ? (
-                      <IconInfinifiPoints className={'size-3.5 shrink-0'} aria-label={'Infinifi points'} />
-                    ) : null}
-                    <span className={'relative inline-flex'}>
-                      <span
-                        className={
-                          'pointer-events-none absolute bottom-full left-0 mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-text-secondary'
-                        }
-                      >
-                        {'Up to'}
-                      </span>
-                      <b className={'yearn--table-data-section-item-value font-semibold text-text-primary'}>
-                        {formatApyDisplay(resolvedYvUsdMetrics.lockedApy)}
-                      </b>
-                    </span>
-                  </button>
-                </Tooltip>
-              </div>
-            ) : (
-              <VaultForwardAPY
-                currentVault={currentVault}
-                showSubline={false}
-                showSublineTooltip
-                displayVariant={apyDisplayVariant}
-                showBoostDetails={showBoostDetails}
-                onInteractiveHoverChange={handleInteractiveHoverChange}
-              />
-            )}
-          </div>
-          {/* TVL */}
-          <div className={cl('yearn--table-data-section-item', tvlColumnSpan)} datatype={'number'}>
-            {resolvedYvUsdMetrics ? (
-              <div
-                className={'flex justify-end text-right'}
-                onMouseEnter={() => handleInteractiveHoverChange(true)}
-                onMouseLeave={() => handleInteractiveHoverChange(false)}
-              >
-                <Tooltip
-                  className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
-                  openDelayMs={150}
-                  toggleOnClick={false}
-                  tooltip={yvUsdTvlTooltip ?? ''}
-                >
-                  <p className={'yearn--table-data-section-item-value'}>
-                    <RenderAmount
-                      value={resolvedYvUsdMetrics.combinedTvl}
-                      symbol={'USD'}
-                      decimals={0}
-                      options={{
-                        shouldCompactValue: true,
-                        maximumFractionDigits: 2,
-                        minimumFractionDigits: 0
-                      }}
-                    />
-                  </p>
-                </Tooltip>
-              </div>
-            ) : (
-              <div className={'flex justify-end text-right'}>
-                <VaultTVL currentVault={currentVault} showNativeTooltip tooltipClassName={'md:justify-end'} />
-              </div>
-            )}
-          </div>
-          {!showHoldingsColumn ? <div className={'col-span-1'} /> : null}
-          {showHoldingsColumn ? (
-            <div className={cl('yearn--table-data-section-item', holdingsColumnSpan)} datatype={'number'}>
-              <VaultHoldingsAmount value={holdingsValue} formatOptions={holdingsFormatOptions} />
-            </div>
-          ) : null}
-        </div>
-      </Link>
+                <VaultHoldingsAmount value={holdingsValue} formatOptions={holdingsFormatOptions} />
+              </vault-holdings>
+            ) : null}
+          </vault-row-metrics>
+        </Link>
+      </vault-row-link>
 
       {isExpanded ? (
         <Suspense fallback={<ExpandedRowFallback />}>
@@ -933,7 +974,7 @@ function VaultsListRowComponent({
           />
         </APYDetailsModal>
       ) : null}
-    </div>
+    </vault-row>
   )
 }
 

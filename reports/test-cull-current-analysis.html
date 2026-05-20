@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Current Test Cull Analysis</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f8fa;
+        --panel: #ffffff;
+        --ink: #101318;
+        --muted: #5f6673;
+        --line: #d9dde5;
+        --line-strong: #b7becb;
+        --keep: #0d6b4e;
+        --review: #795000;
+        --cull: #9b2525;
+        --e2e: #275ea8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      main {
+        width: min(1180px, calc(100vw - 40px));
+        margin: 0 auto;
+        padding: 40px 0 64px;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line-strong);
+        padding-bottom: 24px;
+        margin-bottom: 28px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.15;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        font-size: 34px;
+        max-width: 860px;
+      }
+
+      h2 {
+        font-size: 22px;
+        margin-top: 34px;
+        margin-bottom: 12px;
+      }
+
+      h3 {
+        font-size: 17px;
+        margin-bottom: 8px;
+      }
+
+      p {
+        margin: 10px 0 0;
+      }
+
+      code {
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 0.92em;
+      }
+
+      .lede {
+        color: var(--muted);
+        max-width: 920px;
+      }
+
+      .meta,
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 999px;
+        padding: 6px 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin: 24px 0 8px;
+      }
+
+      .card,
+      .section {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .card strong {
+        display: block;
+        font-size: 26px;
+        line-height: 1;
+      }
+
+      .card span {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 8px;
+      }
+
+      .section {
+        padding: 18px;
+        margin-top: 12px;
+      }
+
+      .callout {
+        border-left: 4px solid var(--e2e);
+        padding: 12px 14px;
+        background: #eef4fc;
+        margin-top: 16px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        border-radius: 999px;
+        padding: 2px 9px;
+        font-size: 12px;
+        font-weight: 650;
+        border: 1px solid currentColor;
+        white-space: nowrap;
+      }
+
+      .tag.keep {
+        color: var(--keep);
+        background: #edf8f4;
+      }
+
+      .tag.review {
+        color: var(--review);
+        background: #fff7e8;
+      }
+
+      .tag.cull {
+        color: var(--cull);
+        background: #fff0f0;
+      }
+
+      .tag.e2e {
+        color: var(--e2e);
+        background: #eef4fc;
+      }
+
+      table {
+        display: block;
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      thead,
+      tbody,
+      tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+      }
+
+      th,
+      td {
+        vertical-align: top;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        padding: 12px;
+        font-size: 14px;
+      }
+
+      th {
+        color: #343946;
+        background: #f0f2f5;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .path {
+        font-weight: 650;
+        overflow-wrap: anywhere;
+      }
+
+      .narrow {
+        width: 150px;
+      }
+
+      .wide {
+        width: 34%;
+      }
+
+      ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      @media (max-width: 860px) {
+        main {
+          width: min(100vw - 24px, 1180px);
+          padding-top: 24px;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        table,
+        thead,
+        tbody,
+        tr,
+        th,
+        td {
+          display: block;
+          width: 100%;
+        }
+
+        thead {
+          display: none;
+        }
+
+        tr {
+          border-bottom: 1px solid var(--line);
+        }
+
+        td {
+          border-bottom: 0;
+          padding: 10px 12px;
+        }
+
+        td::before {
+          content: attr(data-label);
+          display: block;
+          color: var(--muted);
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          margin-bottom: 4px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Current Test Cull Analysis</h1>
+        <p class="lede">
+          This is the second-pass read after applying the PR 1153-style test
+          removal and the extra repo-wide culls. It analyzes the current
+          <code>bun run test:cull</code> output for the working tree on
+          <code>codex/end-to-end-testing</code>.
+        </p>
+        <div class="meta">
+          <span class="pill">Command: <code>bun run test:cull</code></span>
+          <span class="pill">Base: <code>origin/release/26-04-17</code></span>
+          <span class="pill">Scope: current branch, index, worktree, untracked</span>
+          <span class="pill">Prepared: 2026-05-19</span>
+        </div>
+      </header>
+
+      <section class="grid" aria-label="Cull output summary">
+        <div class="card">
+          <strong>7</strong>
+          <span>keep candidates reported by the script</span>
+        </div>
+        <div class="card">
+          <strong>1</strong>
+          <span>E2E smoke candidate reported by the script</span>
+        </div>
+        <div class="card">
+          <strong>54</strong>
+          <span>cull candidates, all already deleted in the working tree</span>
+        </div>
+        <div class="card">
+          <strong>1</strong>
+          <span>needs-review test, a small cleanup only</span>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Readout</h2>
+        <p>
+          I would not delete anything else based on this run. The cull
+          candidates are the intended deletion set and are still listed because
+          the branch has not been committed yet. The script also reports a few
+          added tests from the branch and three modified survivor tests; those
+          should stay.
+        </p>
+        <div class="callout">
+          The only apparent disagreement is expected: the script still labels
+          the deleted yvUSD breakdown/banner tests as <code>candidate-keep</code>
+          because the heuristic sees yvUSD/state-adjacent names. My read remains
+          that those two deletions are correct because the files mostly asserted
+          static rendered copy and assets.
+        </div>
+        <div class="legend">
+          <span class="tag keep">Keep</span>
+          <span class="tag e2e">E2E smoke</span>
+          <span class="tag cull">Cull accepted</span>
+          <span class="tag review">Needs review</span>
+        </div>
+      </section>
+
+      <h2>Keep Candidates</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Test File</th>
+            <th class="narrow">Script Status</th>
+            <th class="wide">What It Is Testing</th>
+            <th class="wide">My Read</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-label="Test File" class="path"><code>api/holdings/history.test.ts</code></td>
+            <td data-label="Script Status"><span class="tag keep">M keep</span></td>
+            <td data-label="What It Is Testing">
+              Holdings history route behavior: valid wallet query handling,
+              zero-filled settled history response shape, and multi-vault
+              filter forwarding to the historical holdings chart service.
+            </td>
+            <td data-label="My Read">
+              <span class="tag keep">Keep</span>
+              Durable API boundary coverage. The recent edit fixed the test to
+              pass the valid wallet constant instead of a literal placeholder.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>api/holdings/pnl/simple-history.test.ts</code></td>
+            <td data-label="Script Status"><span class="tag keep">M keep</span></td>
+            <td data-label="What It Is Testing">
+              The simple PnL history alias forwards wallet, version, execution
+              mode, pagination mode, timeframe, and multi-vault filters to the
+              protocol-return history service.
+            </td>
+            <td data-label="My Read">
+              <span class="tag keep">Keep</span>
+              This protects a route alias and filter propagation. It is
+              integration-boundary coverage, not component noise.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>api/optimization/_lib/redis.test.ts</code></td>
+            <td data-label="Script Status"><span class="tag keep">A keep</span></td>
+            <td data-label="What It Is Testing">
+              Upstash Redis credential handling: standard REST URL/token
+              construction and missing-configuration rejection.
+            </td>
+            <td data-label="My Read">
+              <span class="tag keep">Keep</span>
+              Configuration mistakes here fail backend optimization reads. The
+              expected behavior is specific and independently meaningful.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>api/optimization/_lib/rpc.test.ts</code></td>
+            <td data-label="Script Status"><span class="tag keep">A keep</span></td>
+            <td data-label="What It Is Testing">
+              Multicall response decoding for vault total assets and strategy
+              debts, including unallocated basis-point calculation.
+            </td>
+            <td data-label="My Read">
+              <span class="tag keep">Keep</span>
+              On-chain ABI decoding and debt math are high-value unit coverage.
+              A smoke test would not catch offset-decoding regressions cheaply.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>api/optimization/handlers.test.ts</code></td>
+            <td data-label="Script Status"><span class="tag keep">A keep</span></td>
+            <td data-label="What It Is Testing">
+              Optimization API handlers: CORS preflight, CORS on success/error
+              responses, Redis authentication error mapping, validation errors,
+              and vault change history selection.
+            </td>
+            <td data-label="My Read">
+              <span class="tag keep">Keep</span>
+              These are public API behaviors with cross-origin consumers. The
+              test is broader than a pure unit, but the assertions protect real
+              integration contracts.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/yvUSD/YvUsdBreakdown.test.tsx</code></td>
+            <td data-label="Script Status"><span class="tag keep">D keep</span></td>
+            <td data-label="What It Is Testing">
+              Rendered yvUSD breakdown copy, especially the cooldown/withdrawal
+              window text.
+            </td>
+            <td data-label="My Read">
+              <span class="tag cull">Cull accepted</span>
+              This is a known heuristic false positive. If the cooldown rule
+              needs protection, keep it in a constant/helper test, not a rendered
+              copy assertion.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Test File" class="path"><code>src/components/pages/vaults/components/yvUSD/YvUsdHeaderBanner.test.tsx</code></td>
+            <td data-label="Script Status"><span class="tag keep">D keep</span></td>
+            <td data-label="What It Is Testing">
+              Rendered yvUSD header banner copy, link, and image/asset presence.
+            </td>
+            <td data-label="My Read">
+              <span class="tag cull">Cull accepted</span>
+              Static banner rendering should be covered by public-page smoke or
+              visual review when needed. It does not need durable unit coverage.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>E2E Smoke Candidate</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Test File</th>
+            <th class="narrow">Script Status</th>
+            <th class="wide">What It Is Testing</th>
+            <th class="wide">My Read</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-label="Test File" class="path"><code>e2e/public-smoke.spec.ts</code></td>
+            <td data-label="Script Status"><span class="tag e2e">A e2e-smoke</span></td>
+            <td data-label="What It Is Testing">
+              Public smoke flows: landing page title and Explore Vaults
+              navigation, vaults page search/rows, and portfolio page loading
+              without a connected wallet.
+            </td>
+            <td data-label="My Read">
+              <span class="tag e2e">Keep</span>
+              This is exactly the intended reallocation: small E2E coverage for
+              real public paths that replaces many low-signal component tests.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Needs Review</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Test File</th>
+            <th class="narrow">Script Status</th>
+            <th class="wide">What Changed</th>
+            <th class="wide">My Read</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-label="Test File" class="path"><code>scripts/tenderly-vnet-status.test.ts</code></td>
+            <td data-label="Script Status"><span class="tag review">M review</span></td>
+            <td data-label="What Changed">
+              Removed an unused <code>TEST_TX_FROM_ADDRESS</code> constant that
+              produced a lint warning and TypeScript unused-variable failure.
+              The actual tests still cover profile resolution, response
+              normalization, VNet matching, RPC naming, and status rendering.
+            </td>
+            <td data-label="My Read">
+              <span class="tag keep">Keep</span>
+              No culling needed. The edit only removes dead test scaffolding and
+              leaves the script behavior coverage intact.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Cull Candidates</h2>
+      <section class="section">
+        <h3>Accepted Deletions</h3>
+        <p>
+          The script reports 54 <code>candidate-cull</code> files. All 54 are
+          already deleted in the current working tree. I agree with leaving
+          these deleted: they are the low-signal component/config/copy/layout
+          tests from the PR 1153 removal set, plus the new repo-wide candidates
+          previously marked cull or lean-cull.
+        </p>
+        <p>
+          The important nuance is that several tests the script still marks as
+          cull but I previously marked keep or review are not in this deleted
+          set. Those survivors include transaction overlay, approval overlay,
+          slippage, rewards, Enso route normalization, fee formatting, wallet
+          panel/Safe logic, transaction status polling, and locale-safe format
+          tests.
+        </p>
+      </section>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Group</th>
+            <th class="wide">Deleted Tests</th>
+            <th class="wide">Why This Is OK</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-label="Group"><span class="tag cull">Component shell</span></td>
+            <td data-label="Deleted Tests">
+              <code>Link</code>, <code>SuggestedVaultCard</code>,
+              <code>QuickStatsGrid</code>, list rows/empty states, table APY
+              display components, <code>Tooltip</code>, <code>YearnApps</code>,
+              and <code>MetricsCard</code>.
+            </td>
+            <td data-label="Why This Is OK">
+              Mostly asserts rendered markup, layout labels, or component
+              wiring. These are better covered by public E2E smoke, visual
+              review, or not tested at all.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Group"><span class="tag cull">Temporary launch UX</span></td>
+            <td data-label="Deleted Tests">
+              yvBTC/yvUSD temporary risk/facet/header-style coverage and
+              vault-detail presentation tests.
+            </td>
+            <td data-label="Why This Is OK">
+              These tests protect short-lived copy and launch presentation,
+              which becomes stale quickly. Durable rules should move to helpers
+              if they become product policy.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Group"><span class="tag cull">Simple helper wrappers</span></td>
+            <td data-label="Deleted Tests">
+              Portfolio refresh/model helpers, vault suggestion/eligibility
+              helpers, blocking-filter insight helpers, chain selection,
+              vault logo, Tenderly panel, Wagmi config, and chain config tests.
+            </td>
+            <td data-label="Why This Is OK">
+              These tests mostly restate branch conditions, mapping tables, or
+              config values. The cost of maintaining them is higher than the
+              confidence they provide.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Group"><span class="tag cull">Mock-heavy hooks</span></td>
+            <td data-label="Deleted Tests">
+              Balance query/routing/fetch hooks, wallet/notification/chart
+              contexts, vault list model, vault search recovery, and ensure-list
+              fetch tests.
+            </td>
+            <td data-label="Why This Is OK">
+              These are brittle tests around mocked hook wiring. User-visible
+              behavior should be represented by a small number of E2E flows
+              instead.
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Group"><span class="tag cull">Widget selection routes</span></td>
+            <td data-label="Deleted Tests">
+              Token selector, input amount, deposit/withdraw route choice,
+              approval spender, token filtering, token selector list utilities,
+              and withdraw step helpers.
+            </td>
+            <td data-label="Why This Is OK">
+              The deeper transaction safety tests were kept. These deleted files
+              mostly cover selection plumbing and UI branches that are less
+              durable.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section class="section">
+        <h2>Recommendation</h2>
+        <ul>
+          <li>
+            Make no additional deletions from this cull run.
+          </li>
+          <li>
+            Treat the two deleted yvUSD <code>candidate-keep</code> entries as
+            known heuristic false positives.
+          </li>
+          <li>
+            Keep the added optimization API tests and the added public E2E
+            smoke test.
+          </li>
+          <li>
+            After this branch is committed, rerun <code>bun run test:cull</code>;
+            the accepted deleted files should disappear from the default report.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

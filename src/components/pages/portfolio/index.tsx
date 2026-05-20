@@ -1492,9 +1492,9 @@ function IndexedActivityRow({
 
 function PortfolioPageLayout({ children }: { children: ReactElement }): ReactElement {
   return (
-    <div className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
+    <portfolio-layout className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-8'}>
       <div className={'mx-auto flex w-full max-w-[1232px] flex-col gap-4 px-4 pb-16'}>{children}</div>
-    </div>
+    </portfolio-layout>
   )
 }
 
@@ -1614,28 +1614,36 @@ function PortfolioHeaderSection({
   const mobileMetrics = [metrics[0], metrics[2], metrics[1], metrics[4]]
 
   return (
-    <section className="h-full bg-surface">
+    <portfolio-overview className="h-full bg-surface" data-testid={'portfolio-overview'}>
       <div className="grid grid-cols-2 gap-px bg-border md:hidden">
         {mobileMetrics.map((item) => (
-          <div key={item.key} className={metricCardClassName}>
+          <portfolio-metric
+            key={item.key}
+            className={metricCardClassName}
+            data-testid={item.key === 'total-balance' ? 'portfolio-total-balance' : undefined}
+          >
             <div className="flex items-center justify-between">{item.header}</div>
             <div className="pt-0.5">{item.value}</div>
             {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
             {item.footnote ? <div className="pt-1.5">{item.footnote}</div> : null}
-          </div>
+          </portfolio-metric>
         ))}
       </div>
       <div className="hidden h-full grid-rows-5 gap-px bg-border md:grid">
         {metrics.map((item) => (
-          <div key={item.key} className={metricCardClassName}>
+          <portfolio-metric
+            key={item.key}
+            className={metricCardClassName}
+            data-testid={item.key === 'total-balance' ? 'portfolio-total-balance' : undefined}
+          >
             <div className="flex items-center justify-between">{item.header}</div>
             <div className="pt-0.5">{item.value}</div>
             {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
             {item.footnote ? <div className="pt-1.5">{item.footnote}</div> : null}
-          </div>
+          </portfolio-metric>
         ))}
       </div>
-    </section>
+    </portfolio-overview>
   )
 }
 
@@ -1650,30 +1658,41 @@ function PortfolioTabSelector({
 }): ReactElement {
   return (
     <div className={'flex gap-2 md:gap-3 w-full'}>
-      <div
+      <portfolio-tab-list
+        data-testid={'portfolio-tabs'}
         className={cl(
           'flex h-10 w-full items-stretch justify-between overflow-hidden bg-surface-secondary text-sm text-text-primary divide-x divide-border',
           mergeWithHeader ? 'rounded-b-lg border-x border-b border-border' : 'rounded-lg border border-border'
         )}
       >
-        {PORTFOLIO_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type={'button'}
-            onClick={() => onSelectTab(tab.key)}
-            className={cl(
-              'flex h-full flex-1 items-center justify-center px-2 font-medium transition-colors md:px-4',
-              'focus-visible:outline-none focus-visible:ring-0',
-              activeTab === tab.key
-                ? 'bg-surface text-text-primary font-semibold'
-                : 'bg-transparent text-text-secondary hover:bg-surface/30 hover:text-text-primary'
-            )}
-            aria-pressed={activeTab === tab.key}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+        {PORTFOLIO_TABS.map((tab) => {
+          const button = (
+            <button
+              data-testid={`portfolio-${tab.key}-tab`}
+              type={'button'}
+              onClick={() => onSelectTab(tab.key)}
+              className={cl(
+                'flex h-full flex-1 items-center justify-center px-2 font-medium transition-colors md:px-4',
+                'focus-visible:outline-none focus-visible:ring-0',
+                activeTab === tab.key
+                  ? 'bg-surface text-text-primary font-semibold'
+                  : 'bg-transparent text-text-secondary hover:bg-surface/30 hover:text-text-primary'
+              )}
+              aria-pressed={activeTab === tab.key}
+            >
+              {tab.label}
+            </button>
+          )
+
+          if (tab.key === 'activity') {
+            return <portfolio-activity-tab key={tab.key}>{button}</portfolio-activity-tab>
+          }
+          if (tab.key === 'claim-rewards') {
+            return <portfolio-claim-rewards-tab key={tab.key}>{button}</portfolio-claim-rewards-tab>
+          }
+          return <portfolio-tab-button key={tab.key}>{button}</portfolio-tab-button>
+        })}
+      </portfolio-tab-list>
     </div>
   )
 }
@@ -2123,7 +2142,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   }
 
   return (
-    <section className={'flex flex-col'}>
+    <portfolio-activity className={'flex flex-col'}>
       {!isActive ? (
         <EmptySectionCard
           title="Connect a wallet to view activity"
@@ -2134,7 +2153,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       ) : (
         renderActivityContent()
       )}
-    </section>
+    </portfolio-activity>
   )
 }
 
@@ -2521,7 +2540,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
   if (!isActive) {
     return (
-      <section className="flex flex-col gap-2">
+      <portfolio-rewards className="flex flex-col gap-2" data-testid={'rewards-page'}>
         <div>
           <h2 className="text-xl font-semibold text-text-primary sm:text-2xl">Claim rewards</h2>
           <p className="text-xs text-text-secondary sm:text-sm">
@@ -2534,12 +2553,12 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
           ctaLabel="Connect wallet"
           onClick={openLoginModal}
         />
-      </section>
+      </portfolio-rewards>
     )
   }
 
   return (
-    <section className="relative flex flex-col gap-2 sm:gap-2">
+    <portfolio-rewards className="relative flex flex-col gap-2 sm:gap-2" data-testid={'rewards-page'}>
       {stakingVaults.map((vault) => (
         <ChainStakingRewardsFetcher
           key={getVaultKey(vault)}
@@ -2635,6 +2654,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
       {isOverlayOpen && (
         <TransactionOverlay
+          dataTestIdPrefix={'rewards'}
           isOpen={isOverlayOpen}
           onClose={handleOverlayClose}
           step={activeStep}
@@ -2645,7 +2665,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
           contentAlign="center"
         />
       )}
-    </section>
+    </portfolio-rewards>
   )
 }
 
@@ -2691,6 +2711,8 @@ function PortfolioHoldingsSection({
         {holdingsRows.map((row) => (
           <VaultsListRow
             key={row.key}
+            rowTestId={`portfolio-holding-row-${getVaultChainID(row.vault)}-${toAddress(getVaultAddress(row.vault))}`}
+            holdingsTestId={'portfolio-holding-value'}
             currentVault={row.vault}
             flags={vaultFlags[row.key]}
             hrefOverride={row.hrefOverride}
@@ -2709,7 +2731,7 @@ function PortfolioHoldingsSection({
   }
 
   return (
-    <section className="flex flex-col gap-2">
+    <portfolio-holdings className="flex flex-col gap-2" data-testid={'portfolio-holdings'}>
       {!isActive ? (
         <div className="flex flex-col gap-2">
           <EmptySectionCard
@@ -2768,13 +2790,16 @@ function PortfolioHoldingsSection({
                 ]}
               />
             </div>
-            <div className="overflow-hidden rounded-lg md:rounded-t-none border-x border-b border-border">
+            <portfolio-holdings-table
+              className="overflow-hidden rounded-lg md:rounded-t-none border-x border-b border-border"
+              data-testid={'portfolio-holdings-table'}
+            >
               {renderHoldingsContent()}
-            </div>
+            </portfolio-holdings-table>
           </div>
         </div>
       )}
-    </section>
+    </portfolio-holdings>
   )
 }
 
@@ -2802,7 +2827,7 @@ function PortfolioSuggestedSection({
     : 'Vaults picked for you based on performance and popularity.'
 
   return (
-    <section className="flex flex-col gap-2">
+    <portfolio-suggestions className="flex flex-col gap-2">
       <Tooltip
         className="h-auto justify-start gap-0"
         openDelayMs={150}
@@ -2843,7 +2868,7 @@ function PortfolioSuggestedSection({
           return <SuggestedVaultCard key={row.key} vault={row.vault} />
         })}
       </div>
-    </section>
+    </portfolio-suggestions>
   )
 }
 
@@ -3002,9 +3027,9 @@ function PortfolioPage(): ReactElement {
         }
 
         return (
-          <div className="flex flex-col gap-6 sm:gap-4">
+          <portfolio-content className="flex flex-col gap-6 sm:gap-4">
             {model.isActive ? (
-              <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
+              <portfolio-overview className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
                 <div className="grid items-stretch min-[920px]:grid-cols-[minmax(640px,1fr)_minmax(200px,340px)]">
                   <PortfolioHistoryChartControls
                     activeTab={historyChartTab}
@@ -3034,7 +3059,7 @@ function PortfolioPage(): ReactElement {
                     />
                   </div>
                 </div>
-              </div>
+              </portfolio-overview>
             ) : null}
             <PortfolioHoldingsSection
               hasHoldings={model.hasHoldings}
@@ -3053,7 +3078,7 @@ function PortfolioPage(): ReactElement {
               isActive={model.isActive}
               suggestedRows={model.suggestedRows}
             />
-          </div>
+          </portfolio-content>
         )
       case 'activity':
         return <PortfolioActivitySection isActive={model.isActive} openLoginModal={model.openLoginModal} />
@@ -3066,8 +3091,9 @@ function PortfolioPage(): ReactElement {
 
   return (
     <PortfolioPageLayout>
-      <div
+      <portfolio-page
         ref={varsRef}
+        data-testid={'portfolio-page'}
         className="flex flex-col"
         style={{ '--portfolio-breadcrumbs-height': '0px', '--portfolio-tabs-height': '0px' } as CSSProperties}
       >
@@ -3084,17 +3110,17 @@ function PortfolioPage(): ReactElement {
         <div className="hidden flex-col gap-3 md:flex">
           <div className="px-1">{overviewHeading}</div>
         </div>
-        <div
+        <portfolio-tabs
           ref={tabsRef}
           className="sticky z-30 bg-app pb-2"
           style={{ top: 'calc(var(--header-height) + var(--portfolio-breadcrumbs-height))' }}
         >
           <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} />
-        </div>
+        </portfolio-tabs>
         <div className={'pt-4'} key={activeTab}>
           {renderTabContent()}
         </div>
-      </div>
+      </portfolio-page>
     </PortfolioPageLayout>
   )
 }

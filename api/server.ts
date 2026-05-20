@@ -1,4 +1,3 @@
-import { serve } from 'bun'
 import type {
   TTenderlyFundRequest,
   TTenderlyIncreaseTimeRequest,
@@ -34,6 +33,7 @@ import {
 import { fetchRecentAddressScopedActivityEvents } from './lib/holdings/services/graphql'
 import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
+import { OPTIMIZATION_GET_CORS_HEADERS, OPTIMIZATION_POST_CORS_HEADERS } from './optimization/_lib/cors'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
 import { parseExplainMetadata } from './optimization/_lib/explain-parse'
 import {
@@ -59,10 +59,6 @@ const DEFAULT_API_PORT = 3001
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
-
-function isHistoryQueryEnabled(historyParam: string | null): boolean {
-  return historyParam === '1' || historyParam === 'true'
-}
 
 function resolveApiPort(env: NodeJS.ProcessEnv): number {
   const rawPort = env.API_PORT?.trim() || env.API_SERVER_PORT?.trim() || String(DEFAULT_API_PORT)
@@ -91,6 +87,18 @@ type TTenderlyJsonRpcError = {
     message: string
     data?: unknown
   }
+}
+
+type TBunServer = {
+  requestIP(req: Request): { address: string } | null
+}
+
+declare const Bun: {
+  serve(options: {
+    fetch(req: Request, server: TBunServer): Response | Promise<Response>
+    idleTimeout: number
+    port: number
+  }): unknown
 }
 
 async function handleYvUsdAprs(req: Request): Promise<Response> {
@@ -139,9 +147,9 @@ const CORS_HEADERS = {
 
 function withCors(response: Response): Response {
   const newHeaders = new Headers(response.headers)
-  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+  Object.entries(CORS_HEADERS).forEach(([key, value]) => {
     newHeaders.set(key, value)
-  }
+  })
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -154,6 +162,29 @@ function handleCorsPreFlight(): Response {
     status: 204,
     headers: CORS_HEADERS
   })
+}
+
+function withCorsHeaders(
+  headers: Record<string, string> | undefined,
+  corsHeaders: Readonly<Record<string, string>>
+): Record<string, string> {
+  return { ...corsHeaders, ...(headers ?? {}) }
+}
+
+function jsonWithCors(
+  body: unknown,
+  status: number,
+  corsHeaders: Readonly<Record<string, string>>,
+  headers?: Record<string, string>
+): Response {
+  return Response.json(body, {
+    status,
+    headers: withCorsHeaders(headers, corsHeaders)
+  })
+}
+
+function isHistoryQueryEnabled(historyParam: string | null): boolean {
+  return historyParam === '1' || historyParam === 'true'
 }
 
 async function handleHoldingsProgress(req: Request): Promise<Response> {
@@ -228,14 +259,13 @@ function validateInvalidateBody(body: unknown): body is InvalidateRequestBody {
   const candidate = body as Record<string, unknown>
   if (!Array.isArray(candidate.vaults) || candidate.vaults.length === 0) return false
 
-  for (const vault of candidate.vaults) {
+  return candidate.vaults.every((vault) => {
     if (!vault || typeof vault !== 'object') return false
     const value = vault as Record<string, unknown>
     if (typeof value.address !== 'string' || !isValidAddress(value.address)) return false
     if (typeof value.chainId !== 'number' || !Number.isInteger(value.chainId)) return false
-  }
-
-  return true
+    return true
+  })
 }
 
 function parseHoldingsEventFetchType(value: string | null): HoldingsEventFetchType {
@@ -610,196 +640,6 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
   } catch (error) {
     console.error('Error proxying Enso request:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-const CHANGE_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
-const ALIGNMENT_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
-const VAULT_STATE_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
-
-async function handleOptimizationChange(req: Request): Promise<Response> {
-  if (req.method !== 'GET') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 })
-  }
-
-  try {
-    const optimizations = await readOptimizations()
-    if (!optimizations || optimizations.length === 0) {
-      return Response.json({ error: 'No optimization data available' }, { status: 404 })
-    }
-
-    const url = new URL(req.url)
-    const requestedVault = url.searchParams.get('vault')
-    if (requestedVault) {
-      if (isHistoryQueryEnabled(url.searchParams.get('history'))) {
-        const selectedHistory = optimizations.filter((optimization) => {
-          return optimization.vault.toLowerCase() === requestedVault.toLowerCase()
-        })
-        if (selectedHistory.length === 0) {
-          return Response.json({ error: `Vault not found in optimization payload: ${requestedVault}` }, { status: 404 })
-        }
-
-        return Response.json(selectedHistory, {
-          headers: {
-            'Cache-Control': CHANGE_CACHE_CONTROL
-          }
-        })
-      }
-
-      const selected = findVaultOptimization(optimizations, requestedVault)
-      if (!selected) {
-        return Response.json({ error: `Vault not found in optimization payload: ${requestedVault}` }, { status: 404 })
-      }
-
-      return Response.json(selected, {
-        headers: {
-          'Cache-Control': CHANGE_CACHE_CONTROL
-        }
-      })
-    }
-
-    return Response.json(optimizations, {
-      headers: {
-        'Cache-Control': CHANGE_CACHE_CONTROL
-      }
-    })
-  } catch (error) {
-    if (isRedisAuthenticationError(error)) {
-      return Response.json({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, { status: 500 })
-    }
-
-    if (isRedisConnectivityError(error)) {
-      return Response.json({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, { status: 503 })
-    }
-
-    const message = error instanceof Error ? error.message : String(error)
-    return Response.json({ error: message }, { status: 500 })
-  }
-}
-
-async function handleOptimizationAlignment(req: Request): Promise<Response> {
-  if (req.method !== 'GET') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 })
-  }
-
-  const url = new URL(req.url)
-  const vault = url.searchParams.get('vault')
-  if (!vault) {
-    return Response.json({ error: 'vault parameter required' }, { status: 400 })
-  }
-
-  const envioUrl = process.env.ENVIO_GRAPHQL_URL
-  if (!envioUrl) {
-    return Response.json({ error: 'ENVIO_GRAPHQL_URL not configured' }, { status: 503 })
-  }
-
-  try {
-    const optimizations = await readOptimizations()
-    if (!optimizations || optimizations.length === 0) {
-      return Response.json({ error: 'No optimization data available' }, { status: 404 })
-    }
-
-    const optimization = findVaultOptimization(optimizations, vault)
-    if (!optimization) {
-      return Response.json({ error: `Vault not found: ${vault}` }, { status: 404 })
-    }
-
-    const metadataChainId = optimization.source.chainId ? undefined : parseExplainMetadata(optimization.explain).chainId
-    const chainId = optimization.source.chainId ?? metadataChainId
-    if (!chainId) {
-      return Response.json({ error: 'Could not determine chain ID for vault' }, { status: 400 })
-    }
-
-    const timestampStr = optimization.source.latestMatchedTimestampUtc ?? optimization.source.timestampUtc
-    if (!timestampStr) {
-      return Response.json({ error: 'No timestamp available for vault snapshot' }, { status: 400 })
-    }
-
-    const fromTs = Math.floor(new Date(timestampStr.replace(' UTC', 'Z').replace(' ', 'T')).getTime() / 1000)
-    const numStrategies = optimization.strategyDebtRatios.length
-    const toTs = fromTs + numStrategies * 10 * 60 * 2
-    const decimals = getVaultDecimals(vault)
-    const events = await fetchAlignedEvents(
-      envioUrl,
-      vault,
-      chainId,
-      optimization.strategyDebtRatios,
-      fromTs,
-      toTs,
-      decimals
-    )
-
-    return Response.json(events, {
-      headers: {
-        'Cache-Control': ALIGNMENT_CACHE_CONTROL
-      }
-    })
-  } catch (error) {
-    if (isRedisAuthenticationError(error)) {
-      return Response.json({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, { status: 500 })
-    }
-
-    if (isRedisConnectivityError(error)) {
-      return Response.json({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, { status: 503 })
-    }
-
-    const message = error instanceof Error ? error.message : String(error)
-    return Response.json({ error: message }, { status: 500 })
-  }
-}
-
-async function handleOptimizationVaultState(req: Request): Promise<Response> {
-  if (req.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 })
-  }
-
-  let body: unknown
-  try {
-    body = await req.json()
-  } catch {
-    return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
-  }
-
-  const payload = body && typeof body === 'object' ? (body as Record<string, unknown>) : {}
-  const vault = typeof payload.vault === 'string' ? payload.vault : null
-  const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
-  const strategies = Array.isArray(payload.strategies)
-    ? payload.strategies.filter((strategy: unknown): strategy is string => typeof strategy === 'string')
-    : []
-
-  if (!vault || !isValidAddress(vault)) {
-    return Response.json({ error: 'Invalid vault address' }, { status: 400 })
-  }
-
-  if (chainId === null || !Number.isFinite(chainId)) {
-    return Response.json({ error: 'Invalid chainId' }, { status: 400 })
-  }
-
-  if (strategies.length === 0) {
-    return Response.json({ error: 'No strategy addresses provided' }, { status: 400 })
-  }
-
-  try {
-    const state = await fetchVaultOnChainState(chainId, vault, strategies)
-    const strategyDebts = Object.fromEntries(
-      [...state.strategyDebts].map(([strategyAddress, debt]) => [strategyAddress, debt.toString()])
-    )
-
-    return Response.json(
-      {
-        totalAssets: state.totalAssets.toString(),
-        strategyDebts,
-        unallocatedBps: state.unallocatedBps
-      },
-      {
-        headers: {
-          'Cache-Control': VAULT_STATE_CACHE_CONTROL
-        }
-      }
-    )
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    return Response.json({ error: message }, { status: 503 })
   }
 }
 
@@ -1279,6 +1119,203 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
   }
 }
 
+const CHANGE_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
+const ALIGNMENT_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const VAULT_STATE_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+
+async function handleOptimizationChange(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: OPTIMIZATION_GET_CORS_HEADERS })
+  }
+
+  if (req.method !== 'GET') {
+    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_GET_CORS_HEADERS)
+  }
+
+  try {
+    const optimizations = await readOptimizations()
+    if (!optimizations || optimizations.length === 0) {
+      return jsonWithCors({ error: 'No optimization data available' }, 404, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    const url = new URL(req.url)
+    const requestedVault = url.searchParams.get('vault')
+    if (requestedVault) {
+      if (isHistoryQueryEnabled(url.searchParams.get('history'))) {
+        const selectedHistory = optimizations.filter(
+          (optimization) => optimization.vault.toLowerCase() === requestedVault.toLowerCase()
+        )
+        if (selectedHistory.length === 0) {
+          return jsonWithCors(
+            { error: `Vault not found in optimization payload: ${requestedVault}` },
+            404,
+            OPTIMIZATION_GET_CORS_HEADERS
+          )
+        }
+
+        return jsonWithCors(selectedHistory, 200, OPTIMIZATION_GET_CORS_HEADERS, {
+          'Cache-Control': CHANGE_CACHE_CONTROL
+        })
+      }
+
+      const selected = findVaultOptimization(optimizations, requestedVault)
+      if (!selected) {
+        return jsonWithCors(
+          { error: `Vault not found in optimization payload: ${requestedVault}` },
+          404,
+          OPTIMIZATION_GET_CORS_HEADERS
+        )
+      }
+
+      return jsonWithCors(selected, 200, OPTIMIZATION_GET_CORS_HEADERS, {
+        'Cache-Control': CHANGE_CACHE_CONTROL
+      })
+    }
+
+    return jsonWithCors(optimizations, 200, OPTIMIZATION_GET_CORS_HEADERS, {
+      'Cache-Control': CHANGE_CACHE_CONTROL
+    })
+  } catch (error) {
+    if (isRedisAuthenticationError(error)) {
+      return jsonWithCors({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    if (isRedisConnectivityError(error)) {
+      return jsonWithCors({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, 503, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    const message = error instanceof Error ? error.message : String(error)
+    return jsonWithCors({ error: message }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+  }
+}
+
+async function handleOptimizationAlignment(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: OPTIMIZATION_GET_CORS_HEADERS })
+  }
+
+  if (req.method !== 'GET') {
+    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_GET_CORS_HEADERS)
+  }
+
+  const url = new URL(req.url)
+  const vault = url.searchParams.get('vault')
+  if (!vault) {
+    return jsonWithCors({ error: 'vault parameter required' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
+  }
+
+  const envioUrl = process.env.ENVIO_GRAPHQL_URL
+  if (!envioUrl) {
+    return jsonWithCors({ error: 'ENVIO_GRAPHQL_URL not configured' }, 503, OPTIMIZATION_GET_CORS_HEADERS)
+  }
+
+  try {
+    const optimizations = await readOptimizations()
+    if (!optimizations || optimizations.length === 0) {
+      return jsonWithCors({ error: 'No optimization data available' }, 404, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    const optimization = findVaultOptimization(optimizations, vault)
+    if (!optimization) {
+      return jsonWithCors({ error: `Vault not found: ${vault}` }, 404, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    const metadata = optimization.source.chainId ? null : parseExplainMetadata(optimization.explain)
+    const chainId = optimization.source.chainId ?? metadata?.chainId
+    if (!chainId) {
+      return jsonWithCors({ error: 'Could not determine chain ID for vault' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    const timestampStr = optimization.source.latestMatchedTimestampUtc ?? optimization.source.timestampUtc
+    if (!timestampStr) {
+      return jsonWithCors({ error: 'No timestamp available for vault snapshot' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    const fromTs = Math.floor(new Date(timestampStr.replace(' UTC', 'Z').replace(' ', 'T')).getTime() / 1000)
+    const toTs = fromTs + optimization.strategyDebtRatios.length * 10 * 60 * 2
+    const decimals = getVaultDecimals(vault)
+    const events = await fetchAlignedEvents(
+      envioUrl,
+      vault,
+      chainId,
+      optimization.strategyDebtRatios,
+      fromTs,
+      toTs,
+      decimals
+    )
+
+    return jsonWithCors(events, 200, OPTIMIZATION_GET_CORS_HEADERS, {
+      'Cache-Control': ALIGNMENT_CACHE_CONTROL
+    })
+  } catch (error) {
+    if (isRedisAuthenticationError(error)) {
+      return jsonWithCors({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    if (isRedisConnectivityError(error)) {
+      return jsonWithCors({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, 503, OPTIMIZATION_GET_CORS_HEADERS)
+    }
+
+    const message = error instanceof Error ? error.message : String(error)
+    return jsonWithCors({ error: message }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+  }
+}
+
+async function handleOptimizationVaultState(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: OPTIMIZATION_POST_CORS_HEADERS })
+  }
+
+  if (req.method !== 'POST') {
+    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_POST_CORS_HEADERS)
+  }
+
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return jsonWithCors({ error: 'Invalid JSON body' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
+  }
+
+  const payload = body && typeof body === 'object' ? (body as Record<string, unknown>) : {}
+  const vault = typeof payload.vault === 'string' ? payload.vault : null
+  const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
+  const strategies = Array.isArray(payload.strategies)
+    ? payload.strategies.filter((strategy: unknown): strategy is string => typeof strategy === 'string')
+    : []
+
+  if (!vault || !isValidAddress(vault)) {
+    return jsonWithCors({ error: 'Invalid vault address' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
+  }
+  if (chainId === null || !Number.isFinite(chainId)) {
+    return jsonWithCors({ error: 'Invalid chainId' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
+  }
+  if (strategies.length === 0) {
+    return jsonWithCors({ error: 'No strategy addresses provided' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
+  }
+
+  try {
+    const state = await fetchVaultOnChainState(chainId, vault, strategies)
+    const strategyDebts = Object.fromEntries(
+      [...state.strategyDebts.entries()].map(([address, debt]) => [address, debt.toString()])
+    )
+
+    return jsonWithCors(
+      {
+        totalAssets: state.totalAssets.toString(),
+        strategyDebts,
+        unallocatedBps: state.unallocatedBps
+      },
+      200,
+      OPTIMIZATION_POST_CORS_HEADERS,
+      { 'Cache-Control': VAULT_STATE_CACHE_CONTROL }
+    )
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return jsonWithCors({ error: message }, 503, OPTIMIZATION_POST_CORS_HEADERS)
+  }
+}
+
 async function handleInvalidateCache(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 })
@@ -1354,7 +1391,7 @@ async function main() {
 
   await initializeSchema()
 
-  serve({
+  Bun.serve({
     async fetch(req, server) {
       const url = new URL(req.url)
       console.log(`[Server] ${req.method} ${url.pathname}`)

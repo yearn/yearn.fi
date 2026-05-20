@@ -163,7 +163,10 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   }
 
   return (
-    <div className={cl('flex w-full flex-col pt-4', isPanelOpen ? 'flex-1 min-h-0' : '')}>
+    <vault-rewards
+      className={cl('flex w-full flex-col pt-4', isPanelOpen ? 'flex-1 min-h-0' : '')}
+      data-testid={'rewards-page'}
+    >
       <div
         className={cl(
           'relative overflow-hidden rounded-lg border border-border bg-surface',
@@ -185,14 +188,17 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
               <IconCross className="size-3.5" />
             </button>
           ) : (
-            <Button
-              onClick={handleOpenRewards}
-              variant={'filled'}
-              isDisabled={!onOpenRewards}
-              classNameOverride="yearn--button-nextgen min-h-[44px] px-3 rounded-lg text-md bg-primary text-white hover:bg-primary/90"
-            >
-              {'View rewards'}
-            </Button>
+            <rewards-open-action>
+              <Button
+                data-testid={'rewards-open-button'}
+                onClick={handleOpenRewards}
+                variant={'filled'}
+                isDisabled={!onOpenRewards}
+                classNameOverride="yearn--button-nextgen min-h-[44px] px-3 rounded-lg text-md bg-primary text-white hover:bg-primary/90"
+              >
+                {'View rewards'}
+              </Button>
+            </rewards-open-action>
           )}
         </div>
         {isPanelOpen ? (
@@ -253,6 +259,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
           </div>
         ) : null}
         <TransactionOverlay
+          dataTestIdPrefix={'rewards'}
           isOpen={isOverlayOpen}
           onClose={handleOverlayClose}
           step={activeStep}
@@ -263,6 +270,6 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
           contentAlign="center"
         />
       </div>
-    </div>
+    </vault-rewards>
   )
 }
