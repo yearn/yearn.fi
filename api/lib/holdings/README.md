@@ -198,7 +198,7 @@ Response:
 }
 ```
 
-Progress records expire after 10 minutes. The route returns `404` when the ID is invalid, expired, missing, or Redis progress is unavailable, and it always sends `Cache-Control: no-store`.
+Progress records expire after 10 minutes. The route returns `204` when the ID is invalid, expired, missing, or Redis progress is unavailable, and it always sends `Cache-Control: no-store`.
 
 ### `GET /api/holdings/breakdown`
 
