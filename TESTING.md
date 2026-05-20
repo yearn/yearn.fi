@@ -43,6 +43,22 @@ Keep smoke tests small and stable:
 
 Avoid turning Playwright into component testing. If the assertion is mostly checking copy, Tailwind classes, or implementation wiring, it probably belongs in neither E2E nor long-lived unit tests.
 
+## Stable Selectors
+
+Use accessible roles and labels when they are durable. Use `data-testid` for product concepts whose visible text, formatting, or duplicate hidden text can change. Selector names should describe user-facing surfaces, not React component names or CSS structure.
+
+Core selector families:
+
+- Global: `app-header`, `wallet-connect-button`, `wallet-account-button`, `nav-vaults-link`, `nav-portfolio-link`
+- Vaults list: `vaults-page`, `vaults-search-input`, `vaults-chain-filter`, `vaults-filter-button`, `vaults-sort-control`, `vaults-list`, `vault-row-${chainId}-${vaultAddress}`, `vault-name`, `vault-est-apy`, `vault-tvl`, `vault-user-holdings`
+- Vault detail: `vault-detail-page`, `vault-detail-header`, `vault-detail-your-deposits`, `vault-detail-est-apy`, `vault-detail-tvl`, `vault-detail-action-panel`
+- Actions: `deposit-tab`, `withdraw-tab`, `deposit-amount-input`, `deposit-asset-selector`, `deposit-submit-button`, `withdraw-amount-input`, `withdraw-asset-selector`, `withdraw-submit-button`
+- Transactions: `transaction-status`, `transaction-success`, `transaction-error`, plus scoped progress states like `deposit-transaction-pending`
+- Portfolio: `portfolio-page`, `portfolio-tabs`, `portfolio-total-balance`, `portfolio-holdings-table`, `portfolio-holding-row-${chainId}-${vaultAddress}`, `portfolio-holding-value`
+- Rewards: `rewards-page`, `rewards-row-${chainId}-${tokenAddress}`, `rewards-claim-button`
+
+Dynamic addresses are normalized with `toAddress`, so tests should use lowercase checksum-insensitive addresses from route or API data rather than formatted labels.
+
 ## Agent Verification
 
 Before approving a UI or flow-heavy PR, ask an agent to run smoke verification against the PR preview or local branch:

@@ -138,6 +138,7 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
         </div>
 
         <button
+          data-testid={'portfolio-view-button'}
           onClick={handleViewPortfolio}
           className={cl(
             'flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors',

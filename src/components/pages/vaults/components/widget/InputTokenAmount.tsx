@@ -44,6 +44,8 @@ interface Props {
   }
   onRemoveZap?: () => void
   zapNotificationText?: string
+  dataTestId?: string
+  tokenSelectorTestId?: string
 }
 
 export const InputTokenAmount: FC<Props> = ({
@@ -69,7 +71,9 @@ export const InputTokenAmount: FC<Props> = ({
   tokenLogoURI,
   zapToken,
   onRemoveZap,
-  zapNotificationText
+  zapNotificationText,
+  dataTestId,
+  tokenSelectorTestId
 }) => {
   const account = useAccount()
   const { openLoginModal } = useWeb3()
@@ -214,62 +218,68 @@ export const InputTokenAmount: FC<Props> = ({
 
         {/* Middle row - Input and token selector */}
         <div className="flex items-center gap-2 relative">
-          <input
-            disabled={disabled}
-            placeholder={placeholder ?? '0.00'}
-            value={formValue}
-            onChange={handleInputChange}
-            onFocus={() => setActive(true)}
-            onBlur={() => setActive(false)}
-            inputMode="decimal"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            className={cl(
-              'bg-transparent outline-none text-2xl md:text-2xl font-medium flex-1 min-w-0 transition-colors duration-200',
-              'text-[16px] md:text-2xl',
-              errorMessage ? 'text-red-500' : disabled ? 'text-text-secondary' : 'text-text-primary',
-              'placeholder:text-text-secondary'
-            )}
-          />
+          <vault-token-amount-input>
+            <input
+              data-testid={dataTestId}
+              disabled={disabled}
+              placeholder={placeholder ?? '0.00'}
+              value={formValue}
+              onChange={handleInputChange}
+              onFocus={() => setActive(true)}
+              onBlur={() => setActive(false)}
+              inputMode="decimal"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              className={cl(
+                'bg-transparent outline-none text-2xl md:text-2xl font-medium flex-1 min-w-0 transition-colors duration-200',
+                'text-[16px] md:text-2xl',
+                errorMessage ? 'text-red-500' : disabled ? 'text-text-secondary' : 'text-text-primary',
+                'placeholder:text-text-secondary'
+              )}
+            />
+          </vault-token-amount-input>
 
           {/* Token selector button */}
           {(symbol || showTokenSelector) && (
-            <button
-              type="button"
-              onClick={handleTokenButtonClick}
-              data-token-selector-button
-              disabled={!showTokenSelector && disabled}
-              className={cl(
-                'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 transition-colors',
-                'text-text-primary text-base md:text-xl font-medium',
-                'min-h-[44px]',
-                showTokenSelector
-                  ? 'bg-transparent hover:bg-surface-secondary active:bg-surface-secondary'
-                  : disabled
-                    ? 'bg-transparent cursor-not-allowed'
-                    : 'bg-transparent'
-              )}
-            >
-              {tokenAddress && tokenChainId && (
-                <TokenLogo
-                  src={tokenLogoSources.src}
-                  altSrc={tokenLogoSources.altSrc}
-                  tokenSymbol={symbol ?? ''}
-                  tokenName={symbol ?? ''}
-                  chainId={tokenChainId}
-                  width={32}
-                  height={32}
-                  className="rounded-full"
-                />
-              )}
-              <span>{symbol ?? 'Select Token'}</span>
-              {showTokenSelector && (
-                <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              )}
-            </button>
+            <vault-token-selector>
+              <button
+                type="button"
+                onClick={handleTokenButtonClick}
+                data-token-selector-button
+                data-testid={tokenSelectorTestId}
+                disabled={!showTokenSelector && disabled}
+                className={cl(
+                  'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 transition-colors',
+                  'text-text-primary text-base md:text-xl font-medium',
+                  'min-h-[44px]',
+                  showTokenSelector
+                    ? 'bg-transparent hover:bg-surface-secondary active:bg-surface-secondary'
+                    : disabled
+                      ? 'bg-transparent cursor-not-allowed'
+                      : 'bg-transparent'
+                )}
+              >
+                {tokenAddress && tokenChainId && (
+                  <TokenLogo
+                    src={tokenLogoSources.src}
+                    altSrc={tokenLogoSources.altSrc}
+                    tokenSymbol={symbol ?? ''}
+                    tokenName={symbol ?? ''}
+                    chainId={tokenChainId}
+                    width={32}
+                    height={32}
+                    className="rounded-full"
+                  />
+                )}
+                <span>{symbol ?? 'Select Token'}</span>
+                {showTokenSelector && (
+                  <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
+              </button>
+            </vault-token-selector>
           )}
         </div>
 
@@ -331,32 +341,35 @@ export const InputTokenAmount: FC<Props> = ({
               </div>
 
               {/* Token selector button */}
-              <button
-                type="button"
-                onClick={onTokenSelectorClick}
-                disabled={disabled}
-                className={cl(
-                  'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 transition-colors shrink-0',
-                  'text-text-primary text-base md:text-xl font-medium',
-                  'min-h-[44px]',
-                  disabled ? 'bg-transparent cursor-not-allowed' : 'bg-transparent hover:bg-surface-secondary'
-                )}
-              >
-                {zapToken.address && zapToken.chainId && (
-                  <TokenLogo
-                    src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${zapToken.chainId}/${zapToken.address.toLowerCase()}/logo-32.png`}
-                    tokenSymbol={zapToken.symbol}
-                    chainId={zapToken.chainId}
-                    width={32}
-                    height={32}
-                    className="rounded-full"
-                  />
-                )}
-                <span>{zapToken.symbol}</span>
-                <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
+              <vault-token-selector>
+                <button
+                  type="button"
+                  onClick={onTokenSelectorClick}
+                  data-testid={tokenSelectorTestId}
+                  disabled={disabled}
+                  className={cl(
+                    'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 transition-colors shrink-0',
+                    'text-text-primary text-base md:text-xl font-medium',
+                    'min-h-[44px]',
+                    disabled ? 'bg-transparent cursor-not-allowed' : 'bg-transparent hover:bg-surface-secondary'
+                  )}
+                >
+                  {zapToken.address && zapToken.chainId && (
+                    <TokenLogo
+                      src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${zapToken.chainId}/${zapToken.address.toLowerCase()}/logo-32.png`}
+                      tokenSymbol={zapToken.symbol}
+                      chainId={zapToken.chainId}
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                  )}
+                  <span>{zapToken.symbol}</span>
+                  <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </vault-token-selector>
             </div>
             <div className="flex items-center justify-between">
               <div className="text-sm text-text-secondary">${outputUsdValue}</div>

@@ -11,6 +11,7 @@ export type TMetricBlock = {
   value: ReactElement
   footnote?: ReactElement
   secondaryLabel?: ReactElement
+  dataTestId?: string
 }
 
 export function MetricsCard({
@@ -67,6 +68,7 @@ export function MetricsCard({
           return (
             <div
               key={item.key}
+              data-testid={item.dataTestId}
               className={cl(
                 'flex flex-1 flex-col gap-1 px-3 py-3',
                 isGrid ? 'bg-surface' : '',

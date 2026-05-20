@@ -26,7 +26,8 @@ type TVaultsChainSelectorProps = {
   onSelectAllChains: () => void
   onSelectChain: (chainId: number) => void
   onOpenChainModal: () => void
-  selectorRef?: RefObject<HTMLDivElement | null>
+  selectorRef?: RefObject<HTMLElement | null>
+  dataTestId?: string
 }
 
 export function VaultsChainSelector({
@@ -40,7 +41,8 @@ export function VaultsChainSelector({
   onSelectAllChains,
   onSelectChain,
   onOpenChainModal,
-  selectorRef
+  selectorRef,
+  dataTestId
 }: TVaultsChainSelectorProps): ReactElement {
   const trackEvent = usePlausible()
   const shouldStretchChainButtons = !enableResponsiveLayout && !isStacked
@@ -57,8 +59,9 @@ export function VaultsChainSelector({
   }
 
   return (
-    <div
+    <vault-chain-selector
       ref={selectorRef}
+      data-testid={dataTestId}
       className={cl(
         'flex h-10 items-stretch overflow-x-auto scrollbar-themed rounded-lg border border-border bg-surface-secondary text-sm text-text-primary divide-x divide-border',
         isStacked ? 'min-w-0 shrink-0' : enableResponsiveLayout ? 'min-w-0' : 'w-full'
@@ -152,7 +155,7 @@ export function VaultsChainSelector({
           </span>
         </button>
       ) : null}
-    </div>
+    </vault-chain-selector>
   )
 }
 
