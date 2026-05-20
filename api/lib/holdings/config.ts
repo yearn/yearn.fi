@@ -1,7 +1,8 @@
 export interface HoldingsConfig {
   readonly envioGraphqlUrl: string
   readonly envioPassword: string
-  readonly databaseUrl: string | null
+  readonly redisUrl: string | null
+  readonly redisToken: string | null
   readonly kongBaseUrl: string
   readonly yearnPricesBaseUrl: string
   readonly yearnPricesApiKey: string
@@ -22,8 +23,11 @@ export const holdingsConfig: HoldingsConfig = {
   get envioPassword() {
     return process.env.ENVIO_PASSWORD ?? ''
   },
-  get databaseUrl() {
-    return process.env.DATABASE_URL_PREVIEW ?? process.env.DATABASE_URL ?? null
+  get redisUrl() {
+    return process.env.UPSTASH_REDIS_REST_URL_PORTFOLIO?.trim() || null
+  },
+  get redisToken() {
+    return process.env.UPSTASH_REDIS_REST_TOKEN_PORTFOLIO?.trim() || null
   },
   kongBaseUrl: 'https://kong.yearn.fi',
   get yearnPricesBaseUrl() {
@@ -47,7 +51,9 @@ export function validateConfig(): void {
   if (!process.env.ENVIO_GRAPHQL_URL) {
     console.warn('[Holdings] ENVIO_GRAPHQL_URL not set, using default localhost:8080')
   }
-  if (!process.env.DATABASE_URL_PREVIEW && !process.env.DATABASE_URL) {
-    console.warn('[Holdings] DATABASE_URL_PREVIEW / DATABASE_URL not set, caching disabled')
+  if (!process.env.UPSTASH_REDIS_REST_URL_PORTFOLIO || !process.env.UPSTASH_REDIS_REST_TOKEN_PORTFOLIO) {
+    console.warn(
+      '[Holdings] UPSTASH_REDIS_REST_URL_PORTFOLIO / UPSTASH_REDIS_REST_TOKEN_PORTFOLIO not set, storage disabled'
+    )
   }
 }

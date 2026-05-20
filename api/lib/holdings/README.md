@@ -21,7 +21,7 @@ Holdings services
   ├─ Envio GraphQL: deposits, withdrawals, transfers
   ├─ Kong: vault metadata and historical PPS
   ├─ yearn-prices or DefiLlama: historical token prices
-  └─ PostgreSQL: optional server-side cache, progress, rate limits, invalidations
+  └─ Upstash Redis: optional server-side cache, progress, rate limits, invalidations
 ```
 
 In production, files under `api/` run as Vercel functions. In local development, `api/server.ts` exposes the same holdings routes on the Bun API server at `localhost:3001` and adds local-only debug and refresh controls.
@@ -64,9 +64,9 @@ The API internally values each day at `23:59:59 UTC`.
 | `activityReceiptEnrichment.ts` | Chain RPC | Optional transaction and receipt enrichment for zaps, reward claims, and direct V2 vault actions |
 | `pnlEvents.ts` | Local | Shared raw event records for protocol-return history |
 | `pnlSimple.ts` | Local | Protocol-return exposure history without FIFO cost-basis accounting |
-| `cache.ts` | PostgreSQL | Daily totals and lazy vault invalidation |
-| `progress.ts` | PostgreSQL | Short-lived progress records and logs for long history requests |
-| `ratelimit.ts` | PostgreSQL | Simple per-client request windows for public holdings routes |
+| `cache.ts` | Upstash Redis | Daily totals and lazy vault invalidation |
+| `progress.ts` | Upstash Redis | Short-lived progress records and logs for long history requests |
+| `ratelimit.ts` | Upstash Redis | Simple per-client request windows for public holdings routes |
 
 ## Event Semantics
 
@@ -167,7 +167,7 @@ Returns `404` when the wallet has no indexed holdings activity for the request.
 
 ### `GET /api/holdings/progress`
 
-Reads DB-backed progress for long-running holdings routes. `history` and `protocol-return/history` can write progress when the caller passes a valid `progressId`.
+Reads Redis-backed progress for long-running holdings routes. `history` and `protocol-return/history` can write progress when the caller passes a valid `progressId`.
 
 Example:
 
@@ -198,7 +198,7 @@ Response:
 }
 ```
 
-Progress records expire after 10 minutes. The route returns `404` when the ID is invalid, expired, missing, or DB progress is unavailable, and it always sends `Cache-Control: no-store`.
+Progress records expire after 10 minutes. The route returns `404` when the ID is invalid, expired, missing, or Redis progress is unavailable, and it always sends `Cache-Control: no-store`.
 
 ### `GET /api/holdings/breakdown`
 
@@ -489,8 +489,8 @@ Response:
 |----------|----------|---------|-------------|
 | `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
 | `ENVIO_PASSWORD` | No | `''` | Envio Hasura admin secret; skipped when empty or `testing` |
-| `DATABASE_URL_PREVIEW` | No | `null` | Preview PostgreSQL URL, preferred over `DATABASE_URL` when set |
-| `DATABASE_URL` | No | `null` | Default PostgreSQL URL; caching, progress, and rate-limit persistence are disabled when absent |
+| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | No | `null` | Upstash Redis REST URL for holdings cache, progress, rate limits, and invalidations |
+| `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | No | `null` | Upstash Redis REST token for holdings storage |
 | `VITE_RPC_URI_FOR_<id>` | No | `null` | Optional chain RPC URL for activity receipt and transaction enrichment |
 | `HOLDINGS_PRICE_PROVIDER` | No | `auto` | `auto`, `yearn-prices`, or `defillama` |
 | `YEARN_PRICES_BASE_URL` | No | `https://prices.yearn.dev` | Base URL for yearn-prices; `/api/prices/...` is appended automatically |
@@ -526,15 +526,15 @@ If aggregates are unavailable, the code falls back to sequential pagination. For
 
 ## Caching
 
-Server-side cache is optional. When `DATABASE_URL_PREVIEW` or `DATABASE_URL` is absent, the APIs still work but recompute history and refetch prices/PPS on each request.
+Server-side cache is optional. When `UPSTASH_REDIS_REST_URL_PORTFOLIO` or `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` is absent, the APIs still work but recompute history and refetch prices/PPS on each request.
 
 ### Cache Layers
 
-1. PostgreSQL:
-   - `holdings_totals`: daily USD totals per hashed user address, vault version, and date.
-   - `rate_limits`: simple per-client request windows, cleaned opportunistically after the active window expires.
-   - `vault_invalidations`: per-vault invalidation timestamps for lazy cache clearing.
-   - `holdings_progress`: authoritative short-lived progress records keyed by hashed wallet identity for long history requests across Vercel function instances.
+1. Upstash Redis:
+   - `holdings:totals:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
+   - `holdings:rate-limit:<clientHash>`: simple per-client request windows with a 60-second TTL.
+   - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
+   - `holdings:progress:<progressId>`: authoritative short-lived progress records keyed by caller-supplied progress ID for long history requests across Vercel function instances.
 2. HTTP cache:
    - History, breakdown, and protocol-return history: `s-maxage=300, stale-while-revalidate=600`.
    - Activity: `s-maxage=60, stale-while-revalidate=300`.
@@ -550,75 +550,41 @@ The history cache stores aggregate daily totals, not per-vault breakdown rows. C
 
 Cache behavior:
 
-- Unfiltered history can read/write `holdings_totals`.
+- Unfiltered history can read/write `holdings:totals:<addressHash>:<version>`.
 - Vault-filtered history skips aggregate daily total cache because the cache is user/version scoped, not vault-filter scoped.
-- Cache staleness is checked against `vault_invalidations` only after the request has enough cached daily totals to potentially serve from cache.
+- Cache staleness is checked against `holdings:vault-invalidated:<chainId>:<vaultAddress>` only after the request has enough cached daily totals to potentially serve from cache.
 - If any relevant vault was invalidated after the oldest cached row was written, the user's cached totals for that version are cleared and recomputed.
 - Recalculated totals are not cached when any token price batch failed, because partial price data can undercount chart totals.
 - `refresh=true` or `refresh=1` in the local Bun server clears the user's cached totals before recomputing.
 
 ### Progress and Rate Limits
 
-- Progress writes only when DB persistence is enabled and the supplied `progressId` matches `[a-zA-Z0-9:_-]{1,160}`.
+- Progress writes only when Redis persistence is enabled and the supplied `progressId` matches `[a-zA-Z0-9:_-]{1,160}`.
 - Progress status is `running`, `complete`, or `error`; progress is clamped to `0..100`, logs are capped to the latest `20` entries, and rows expire after `10 minutes`.
-- DB-backed rate limiting allows `10` requests per minute per client identifier. If DB access fails, the rate limiter allows the request and logs the failure.
+- Redis-backed rate limiting allows `10` requests per minute per client identifier. If Redis access fails, the rate limiter allows the request and logs the failure.
 
 ### Token Prices
 
-Token prices are fetched from the selected provider for each request. The holdings DB does not cache positive token prices or price misses.
+Token prices are fetched from the selected provider for each request. Holdings Redis storage does not cache positive token prices or price misses.
 
-## Database Schema
+## Redis Keys
 
-```sql
-CREATE TABLE IF NOT EXISTS holdings_totals (
-  user_address_hash VARCHAR(64) NOT NULL,
-  version VARCHAR(8) NOT NULL DEFAULT 'all',
-  date DATE NOT NULL,
-  usd_value NUMERIC NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW(),
-  PRIMARY KEY (user_address_hash, version, date)
-);
+No schema migration is required. Redis keys are created lazily:
 
-CREATE TABLE IF NOT EXISTS rate_limits (
-  ip VARCHAR(45) PRIMARY KEY,
-  request_count INTEGER DEFAULT 1,
-  window_start TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS vault_invalidations (
-  vault_address VARCHAR(42) NOT NULL,
-  chain_id INTEGER NOT NULL,
-  invalidated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  PRIMARY KEY (vault_address, chain_id)
-);
-
-CREATE TABLE IF NOT EXISTS holdings_progress (
-  id VARCHAR(160) PRIMARY KEY,
-  route VARCHAR(64) NOT NULL,
-  address_hash VARCHAR(64) NOT NULL,
-  status VARCHAR(16) NOT NULL,
-  progress INTEGER NOT NULL,
-  message TEXT NOT NULL,
-  detail TEXT,
-  started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  logs JSONB NOT NULL DEFAULT '[]'::jsonb
-);
-
-CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
-CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
-CREATE INDEX IF NOT EXISTS idx_holdings_progress_updated_at ON holdings_progress(updated_at);
-```
-
-Legacy `holdings_totals.user_address` rows are migrated to `user_address_hash`, and the primary key is migrated to `(user_address_hash, version, date)`.
+| Key | Type | TTL | Purpose |
+|-----|------|-----|---------|
+| `holdings:totals:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
+| `holdings:rate-limit:<clientHash>` | String counter | 60 seconds | Public route rate limiting. |
+| `holdings:vault-invalidated:<chainId>:<vaultAddress>` | String timestamp | None | Lazy invalidation marker for totals cache. |
+| `holdings:progress:<progressId>` | String JSON record | 10 minutes | Progress polling state for long requests. |
 
 ## Operational Notes
 
-- Enable DB caching in shared environments; otherwise a history request must rebuild events, PPS, and prices every time.
+- Enable Redis storage in shared environments; otherwise a history request must rebuild events, PPS, and prices every time.
 - Keep `API_KEY_PORTFOLIO` or `YEARN_PRICES_API_KEY` configured if `HOLDINGS_PRICE_PROVIDER=auto` should prefer yearn-prices.
 - Configure `VITE_RPC_URI_FOR_<chainId>` for chains where activity rows should include richer zap, reward-claim, and direct V2 vault enrichment.
-- Pass a stable `progressId` from the frontend for long history and protocol-return requests, then poll `/api/holdings/progress?id=...`; progress rows are DB-backed and expire quickly.
+- Pass a stable `progressId` from the frontend for long history and protocol-return requests, then poll `/api/holdings/progress?id=...`; progress rows are Redis-backed and expire quickly.
 - Use `/api/admin/invalidate-cache` after indexer deployments add or repair vault coverage.
-- Stale rate-limit rows are cleaned opportunistically when holdings rate checks run.
-- Short-lived progress rows are cleaned opportunistically when progress-enabled holdings requests run; if DB progress is unavailable, clients show a neutral loading placeholder instead of estimated progress.
+- Rate-limit and progress cleanup is handled by Redis TTLs.
+- If Redis progress is unavailable, clients show a neutral loading placeholder instead of estimated progress.
 - `timeframe=all` grows over time from `2024-01-01`, so cache row counts are no longer fixed at `365` per user/version.

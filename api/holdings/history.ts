@@ -6,7 +6,7 @@ import type {
   HoldingsHistoryTimeframe,
   VaultVersion
 } from '../lib/holdings'
-import { checkRateLimit, ensureSchemaInitialized } from '../lib/holdings'
+import { checkRateLimit, ensureHoldingsStorageInitialized } from '../lib/holdings'
 import {
   createHoldingsDebugContext,
   debugError,
@@ -130,9 +130,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    await ensureSchemaInitialized()
+    await ensureHoldingsStorageInitialized()
   } catch (error) {
-    console.error('Holdings history schema initialization error:', error)
+    console.error('Holdings history storage initialization error:', error)
     return res.status(500).json({ error: 'Failed to initialize holdings storage' })
   }
 
