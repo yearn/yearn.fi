@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { ensureSchemaInitialized, isDatabaseEnabled } from '../lib/holdings/db/connection'
+import { ensureHoldingsStorageInitialized, isHoldingsStorageEnabled } from '../lib/holdings'
 import { invalidateVaults, type VaultIdentifier } from '../lib/holdings/services/cache'
 
 function isValidAddress(address: string): boolean {
@@ -50,9 +50,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
-  // Check database is enabled
-  if (!isDatabaseEnabled()) {
-    return res.status(503).json({ error: 'Caching not enabled (DATABASE_URL not configured)' })
+  // Check Redis storage is enabled
+  if (!isHoldingsStorageEnabled()) {
+    return res
+      .status(503)
+      .json({ error: 'Caching not enabled (UPSTASH_REDIS_REST_URL_PORTFOLIO/TOKEN_PORTFOLIO not configured)' })
   }
 
   // Validate request body
@@ -67,7 +69,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    await ensureSchemaInitialized()
+    await ensureHoldingsStorageInitialized()
+    if (!isHoldingsStorageEnabled()) {
+      return res
+        .status(503)
+        .json({ error: 'Caching not enabled (UPSTASH_REDIS_REST_URL_PORTFOLIO/TOKEN_PORTFOLIO not configured)' })
+    }
 
     const vaults: VaultIdentifier[] = body.vaults.map((v) => ({
       address: v.address,

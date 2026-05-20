@@ -18,8 +18,8 @@ import {
   type HoldingsEventPaginationMode,
   type HoldingsHistoryDenomination,
   type HoldingsHistoryTimeframe,
-  initializeSchema,
-  isDatabaseEnabled,
+  initializeHoldingsStorage,
+  isHoldingsStorageEnabled,
   type VaultVersion,
   validateConfig
 } from './lib/holdings'
@@ -1294,8 +1294,11 @@ async function handleInvalidateCache(req: Request): Promise<Response> {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (!isDatabaseEnabled()) {
-    return Response.json({ error: 'Caching not enabled (DATABASE_URL not configured)' }, { status: 503 })
+  if (!isHoldingsStorageEnabled()) {
+    return Response.json(
+      { error: 'Caching not enabled (UPSTASH_REDIS_REST_URL_PORTFOLIO/TOKEN_PORTFOLIO not configured)' },
+      { status: 503 }
+    )
   }
 
   let body: unknown
@@ -1322,6 +1325,14 @@ async function handleInvalidateCache(req: Request): Promise<Response> {
   }
 
   try {
+    await initializeHoldingsStorage()
+    if (!isHoldingsStorageEnabled()) {
+      return Response.json(
+        { error: 'Caching not enabled (UPSTASH_REDIS_REST_URL_PORTFOLIO/TOKEN_PORTFOLIO not configured)' },
+        { status: 503 }
+      )
+    }
+
     const vaults: VaultIdentifier[] = body.vaults.map((vault) => ({
       address: vault.address,
       chainId: vault.chainId
@@ -1352,7 +1363,7 @@ async function main() {
 
   validateConfig()
 
-  await initializeSchema()
+  await initializeHoldingsStorage()
 
   serve({
     async fetch(req, server) {

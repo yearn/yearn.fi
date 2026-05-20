@@ -59,7 +59,6 @@ export interface HoldingsHistoryChartResponse {
 }
 
 const ETHEREUM_WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-const HOLDINGS_TOTALS_CACHE_VERSION = 'v2'
 
 export interface HoldingsBreakdownVaultResponse {
   chainId: number
@@ -100,7 +99,7 @@ export interface HoldingsBreakdownResponse {
 }
 
 export function getHoldingsTotalsCacheVersion(version: VaultVersion): string {
-  return `${version}:${HOLDINGS_TOTALS_CACHE_VERSION}`
+  return version
 }
 
 function filterVaultsByAuthoritativeVersion<
