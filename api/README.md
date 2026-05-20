@@ -109,8 +109,6 @@ Required env for a configured chain:
 | `YVUSD_APR_SERVICE_API` | yvUSD route | Upstream APR service URL |
 | `ENVIO_GRAPHQL_URL` | holdings, optimization alignment | Envio GraphQL endpoint |
 | `ENVIO_PASSWORD` | holdings, optimization alignment | Optional Envio secret or bearer token |
-| `DATABASE_URL_PREVIEW` | holdings | Preferred holdings PostgreSQL URL when set |
-| `DATABASE_URL` | holdings | Default holdings PostgreSQL URL |
 | `VITE_RPC_URI_FOR_<id>` | holdings activity | Optional chain RPC URL for receipt enrichment |
 | `HOLDINGS_PRICE_PROVIDER` | holdings | `auto`, `yearn-prices`, or `defillama` |
 | `YEARN_PRICES_BASE_URL` | holdings | yearn-prices base URL |
@@ -119,6 +117,8 @@ Required env for a configured chain:
 | `API_KEY_PORTFOLIO` | holdings | Fallback bearer token for yearn-prices |
 | `DEFILLAMA_API_KEY` | holdings | Enables DefiLlama Pro |
 | `ADMIN_SECRET` | holdings admin | Required for `/api/admin/invalidate-cache` |
+| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | holdings | Upstash Redis REST URL for holdings cache/progress/rate limits |
+| `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | holdings | Upstash Redis REST token for holdings storage |
 | `UPSTASH_REDIS_REST_URL` | optimization | Upstash Redis REST URL for optimization payloads |
 | `UPSTASH_REDIS_REST_TOKEN` | optimization | Upstash Redis REST token for optimization payloads |
 | `HOLDINGS_DEBUG` | local holdings | Enables holdings debug logs in `api/server.ts` |
