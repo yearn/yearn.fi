@@ -96,7 +96,10 @@ export const useFetchMaxQuote = ({
 
       const response = await fetch(`${ENSO_ROUTE_PROXY}?${params}`)
       const data = await response.json()
-      const normalizedResponse = normalizeEnsoRouteResponse(data, response.status, sourceChainId)
+      const normalizedResponse = normalizeEnsoRouteResponse(data, response.status, {
+        chainId: sourceChainId,
+        fromAddress: account!
+      })
 
       if (normalizedResponse.error) {
         console.warn('[Enso] MAX quote error', {

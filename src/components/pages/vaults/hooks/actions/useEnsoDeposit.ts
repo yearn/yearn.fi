@@ -81,7 +81,8 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
   const { prepareEnsoOrder } = useEnsoOrder({
     getEnsoTransaction: ensoFlow.methods.getEnsoTransaction,
     enabled: canDeposit,
-    chainId: params.chainId
+    chainId: params.chainId,
+    account: params.account
   })
 
   // Adapt ensoFlow to UseWidgetDepositFlowReturn interface

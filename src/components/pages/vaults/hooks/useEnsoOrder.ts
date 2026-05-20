@@ -8,6 +8,7 @@ import type { Address, Hash, Hex } from 'viem'
 import { useWalletClient } from 'wagmi'
 import { supportedWalletChains } from '@/config/supportedChains'
 import { resolveExecutionChainId } from '@/config/tenderly'
+import { getEnsoRouteInvariantError } from './solvers/ensoRoute'
 
 interface EnsoTransaction {
   to: Address
@@ -21,6 +22,7 @@ interface UseEnsoOrderProps {
   getEnsoTransaction: () => EnsoTransaction | undefined
   enabled?: boolean
   chainId: number
+  account?: Address
 }
 
 interface UseEnsoOrderReturn {
@@ -33,7 +35,8 @@ interface UseEnsoOrderReturn {
 export const useEnsoOrder = ({
   getEnsoTransaction,
   enabled = true,
-  chainId
+  chainId,
+  account
 }: UseEnsoOrderProps): UseEnsoOrderReturn => {
   const [isExecuting, setIsExecuting] = useState(false)
   const [error, setError] = useState<Error | null>(null)
@@ -58,6 +61,10 @@ export const useEnsoOrder = ({
       if (!walletClient) throw new Error('No wallet client available')
       if (!publicClient) throw new Error('No public client available')
       if (!executionChainId) throw new Error(`No execution chain configured for chain ${chainId}`)
+      if (!account) throw new Error('No account available for Enso transaction')
+
+      const invariantError = getEnsoRouteInvariantError(ensoTx, { chainId, fromAddress: account })
+      if (invariantError) throw new Error(invariantError)
 
       // Note: Chain switching is handled by TransactionOverlay before calling executeOrder
       // We use the target chain from props, not walletClient.chain which may be stale
@@ -81,7 +88,7 @@ export const useEnsoOrder = ({
       setIsExecuting(false)
       throw err
     }
-  }, [chainId, executionChainId, getEnsoTransaction, walletClient, publicClient])
+  }, [account, chainId, executionChainId, getEnsoTransaction, walletClient, publicClient])
 
   const ensoTx = getEnsoTransaction()
   useEffect(() => {

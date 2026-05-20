@@ -1,4 +1,6 @@
 import { serve } from 'bun'
+import type { Address } from 'viem'
+import { normalizeEnsoRouteResponse } from '../src/components/pages/vaults/hooks/solvers/ensoRoute'
 import type {
   TTenderlyFundRequest,
   TTenderlyIncreaseTimeRequest,
@@ -513,6 +515,10 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
   if (!fromAddress || !chainId || !tokenIn || !tokenOut || !amountIn) {
     return Response.json({ error: 'Missing required parameters' }, { status: 400 })
   }
+  const parsedChainId = Number(chainId)
+  if (!Number.isInteger(parsedChainId) || parsedChainId <= 0 || !isValidAddress(fromAddress)) {
+    return Response.json({ error: 'Missing required parameters' }, { status: 400 })
+  }
 
   const apiKey = process.env.ENSO_API_KEY
   if (!apiKey) {
@@ -555,7 +561,16 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
       return Response.json(data, { status: response.status })
     }
 
-    return Response.json(data)
+    const normalizedResponse = normalizeEnsoRouteResponse(data, response.status, {
+      chainId: parsedChainId,
+      fromAddress: fromAddress as Address
+    })
+
+    if (normalizedResponse.error) {
+      return Response.json(normalizedResponse.error, { status: 502 })
+    }
+
+    return Response.json(normalizedResponse.route)
   } catch (error) {
     console.error('Error proxying Enso route request:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })

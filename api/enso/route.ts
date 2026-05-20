@@ -1,4 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { isAddress } from 'viem'
+import { normalizeEnsoRouteResponse } from '../../src/components/pages/vaults/hooks/solvers/ensoRoute'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 
@@ -15,6 +17,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (!chainId || typeof chainId !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid chainId' })
+  }
+  const parsedChainId = Number(chainId)
+  if (!Number.isInteger(parsedChainId) || parsedChainId <= 0) {
+    return res.status(400).json({ error: 'Missing or invalid chainId' })
+  }
+  if (!isAddress(fromAddress, { strict: false })) {
+    return res.status(400).json({ error: 'Missing or invalid fromAddress' })
   }
   if (!tokenIn || typeof tokenIn !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid tokenIn' })
@@ -67,7 +76,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(response.status).json(data)
     }
 
-    return res.status(200).json(data)
+    const normalizedResponse = normalizeEnsoRouteResponse(data, response.status, {
+      chainId: parsedChainId,
+      fromAddress
+    })
+
+    if (normalizedResponse.error) {
+      return res.status(502).json(normalizedResponse.error)
+    }
+
+    return res.status(200).json(normalizedResponse.route)
   } catch (error) {
     console.error('Error proxying Enso route request:', error)
     return res.status(500).json({ error: 'Internal server error' })

@@ -80,7 +80,8 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
   const { prepareEnsoOrder } = useEnsoOrder({
     getEnsoTransaction: ensoFlow.methods.getEnsoTransaction,
     enabled: canWithdraw,
-    chainId: params.chainId
+    chainId: params.chainId,
+    account: params.account
   })
 
   // Adapt ensoFlow to UseWidgetWithdrawFlowReturn interface

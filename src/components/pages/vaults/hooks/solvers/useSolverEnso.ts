@@ -5,20 +5,16 @@ import { getApproveAbi } from '@shared/utils/approve'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
 import { useTokenAllowance } from '../useTokenAllowance'
-import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
+import {
+  type EnsoError,
+  type EnsoRouteResponse,
+  getEnsoRouterAddress,
+  normalizeEnsoRouteResponse,
+  routeHasSwapStep
+} from './ensoRoute'
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
 export type EnsoRoutingStrategy = 'router' | 'delegate' | 'router-legacy' | 'delegate-legacy' | 'ensowallet'
-
-// Known Enso router addresses per chain for pre-fetching allowance
-const ENSO_ROUTER_ADDRESSES: Record<number, Address> = {
-  1: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Ethereum
-  10: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Optimism
-  137: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Polygon
-  42161: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Arbitrum
-  8453: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Base
-  747474: '0x3067BDBa0e6628497d527bEF511c22DA8b32cA3F' // Katana
-}
 
 interface UseSolverEnsoProps {
   tokenIn: Address
@@ -89,7 +85,7 @@ export const useSolverEnso = ({
   const visibleRouteHasSwap = routeHasSwapStep(visibleRoute)
 
   // Use known Enso router for pre-fetching allowance, fall back to actual router from route
-  const knownRouterAddress = ENSO_ROUTER_ADDRESSES[chainId]
+  const knownRouterAddress = getEnsoRouterAddress(chainId)
   const allowanceSpender = routerAddress || knownRouterAddress
 
   const { allowance = 0n, isLoading: isLoadingAllowance } = useTokenAllowance({
@@ -135,7 +131,7 @@ export const useSolverEnso = ({
         return
       }
 
-      const normalizedResponse = normalizeEnsoRouteResponse(data, response.status, chainId)
+      const normalizedResponse = normalizeEnsoRouteResponse(data, response.status, { chainId, fromAddress })
       if (normalizedResponse.error) {
         console.warn('[Enso] Route error', {
           chainId,
@@ -236,7 +232,12 @@ export const useSolverEnso = ({
 
   const isValidInput = amountIn > 0n
   const canRequestRoute =
-    enabled && !!fromAddress && isValidInput && !isZeroAddress(tokenIn) && !isZeroAddress(tokenOut)
+    enabled &&
+    !!fromAddress &&
+    !!knownRouterAddress &&
+    isValidInput &&
+    !isZeroAddress(tokenIn) &&
+    !isZeroAddress(tokenOut)
   const hasCurrentRoute = resolvedRequestKey === requestKey
   const hasCurrentError = errorRequestKey === requestKey
   const isLoadingCurrentRequest = isLoadingRoute || (canRequestRoute && !hasCurrentRoute && !hasCurrentError)
