@@ -8,6 +8,9 @@ import type {
 import { canonicalChains } from '../src/config/chainDefinitions'
 
 type TTenderlyServerEnv = Record<string, string | undefined>
+const supportedCanonicalChainById = new Map<number, (typeof canonicalChains)[number]>(
+  canonicalChains.map((chain) => [chain.id, chain])
+)
 
 export type TTenderlyServerChainConfig = {
   canonicalChainId: number
@@ -49,6 +52,20 @@ export function parseTenderlyServerChains(env: TTenderlyServerEnv): TTenderlySer
     const executionChainId = Number(rawExecutionChainId)
     if (!Number.isInteger(executionChainId) || executionChainId <= 0) {
       throw new Error(`Invalid Tenderly execution chain ID for canonical chain ${chain.id}: ${rawExecutionChainId}`)
+    }
+
+    const collidingCanonicalChain = supportedCanonicalChainById.get(executionChainId)
+    if (collidingCanonicalChain && collidingCanonicalChain.id !== chain.id) {
+      throw new Error(
+        `Tenderly canonical chain ${chain.id} (${chain.name}) uses execution chain ID ${executionChainId}, which shadows supported canonical chain ${collidingCanonicalChain.id} (${collidingCanonicalChain.name}). Tenderly execution chain IDs must not shadow supported canonical chain IDs.`
+      )
+    }
+
+    const existingChain = accumulator.find((configuredChain) => configuredChain.executionChainId === executionChainId)
+    if (existingChain) {
+      throw new Error(
+        `Duplicate Tenderly execution chain ID ${executionChainId} configured for canonical chains ${existingChain.canonicalChainId} and ${chain.id}`
+      )
     }
 
     accumulator.push({

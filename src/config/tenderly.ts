@@ -38,6 +38,7 @@ function canToggleTenderlyModeForRuntime({ isDev, hostname }: { isDev: boolean; 
 // Legacy localhost fork support is intentionally limited to 1337.
 // The older 5402 alias is retired unless we explicitly revive that workflow.
 const LOCAL_EXECUTION_CHAIN_ALIASES = new Map<number, TCanonicalChainId>([[1337, 1]])
+const supportedCanonicalChainById = new Map<number, Chain>(canonicalChains.map((chain) => [chain.id, chain]))
 
 function readEnvString(value: TEnvValue): string {
   if (typeof value === 'string') {
@@ -162,6 +163,13 @@ export function parseTenderlyRuntime(env: TTenderlyEnv): TTenderlyRuntime {
     const executionChainId = Number(rawExecutionChainId)
     if (!Number.isInteger(executionChainId) || executionChainId <= 0) {
       throw new Error(`Invalid Tenderly execution chain ID for canonical chain ${chain.id}: ${rawExecutionChainId}`)
+    }
+
+    const collidingCanonicalChain = supportedCanonicalChainById.get(executionChainId)
+    if (collidingCanonicalChain && collidingCanonicalChain.id !== chain.id) {
+      throw new Error(
+        `Tenderly canonical chain ${chain.id} (${chain.name}) uses execution chain ID ${executionChainId}, which shadows supported canonical chain ${collidingCanonicalChain.id} (${collidingCanonicalChain.name}). Tenderly execution chain IDs must not shadow supported canonical chain IDs.`
+      )
     }
 
     accumulator.push({
