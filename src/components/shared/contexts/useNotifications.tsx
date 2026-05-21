@@ -1,7 +1,7 @@
 import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import type { TNotification, TNotificationStatus, TNotificationsContext } from '@shared/types/notifications'
 import type React from 'react'
-import { createContext, startTransition, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, startTransition, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import { useIndexedDBStore } from 'use-indexeddb'
 import {
   appendCachedNotification,
@@ -25,6 +25,8 @@ const defaultProps: TNotificationsContext = {
 const NotificationsContext = createContext<TNotificationsContext>(defaultProps)
 export const WithNotifications = ({ children }: { children: React.ReactElement }): React.ReactElement => {
   const { address } = useWeb3()
+  const activeAddressRef = useRef(address)
+  activeAddressRef.current = address
   const [cachedEntries, setCachedEntries] = useState<TNotification[]>([])
   const [entryNonce, setEntryNonce] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(true)
@@ -50,13 +52,14 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
     setIsLoading(true)
     setError(null)
     setCachedEntries([])
-    if (!address) {
+    setNotificationStatus(null)
+    if (!activeAddressRef.current) {
       setIsLoading(false)
       return
     }
     try {
       const entriesFromDB = await getAll()
-      setCachedEntries(filterNotificationsByAddress(entriesFromDB || [], address))
+      setCachedEntries(filterNotificationsByAddress(entriesFromDB || [], activeAddressRef.current))
     } catch (error) {
       console.error('Failed to fetch notifications from IndexedDB:', error)
       setCachedEntries([])
@@ -87,13 +90,16 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
         if (notification) {
           const updatedNotification = { ...notification, ...entry }
           await update(updatedNotification)
+          const shouldExposeNotification = isNotificationForAddress(updatedNotification, activeAddressRef.current)
           startTransition(() => {
             setCachedEntries((currentEntries) =>
-              isNotificationForAddress(updatedNotification, address)
+              shouldExposeNotification
                 ? mergeCachedNotificationEntry(currentEntries, id, updatedNotification)
                 : currentEntries.filter((entry) => entry.id !== id)
             )
-            setNotificationStatus(entry?.status || null)
+            if (shouldExposeNotification) {
+              setNotificationStatus(entry?.status || null)
+            }
           })
         } else {
           console.warn(`Notification with id ${id} not found`)
@@ -109,13 +115,16 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
     async (notification: TNotification): Promise<number> => {
       try {
         const id = await add(notification)
+        const shouldExposeNotification = isNotificationForAddress(notification, activeAddressRef.current)
         startTransition(() => {
           setCachedEntries((currentEntries) =>
-            isNotificationForAddress(notification, address)
+            shouldExposeNotification
               ? appendCachedNotification(currentEntries, { ...notification, id })
               : currentEntries
           )
-          setNotificationStatus(notification.status)
+          if (shouldExposeNotification) {
+            setNotificationStatus(notification.status)
+          }
         })
         return id
       } catch (error) {
