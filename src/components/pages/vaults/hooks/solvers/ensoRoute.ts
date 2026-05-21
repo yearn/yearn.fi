@@ -79,6 +79,23 @@ function normalizeEnsoErrorText(value: string | string[] | undefined): string | 
   return value
 }
 
+function resolveEnsoErrorStatusCode(payloadStatusCode: number | undefined, responseStatusCode: number): number {
+  if (
+    typeof payloadStatusCode === 'number' &&
+    Number.isInteger(payloadStatusCode) &&
+    payloadStatusCode >= 400 &&
+    payloadStatusCode <= 599
+  ) {
+    return payloadStatusCode
+  }
+
+  if (Number.isInteger(responseStatusCode) && responseStatusCode >= 400 && responseStatusCode <= 599) {
+    return responseStatusCode
+  }
+
+  return 502
+}
+
 function buildEnsoError(data: unknown, statusCode: number): EnsoError {
   const payload = (data && typeof data === 'object' ? data : {}) as EnsoRouteErrorPayload
   const error = normalizeEnsoErrorText(payload.error)
@@ -89,7 +106,7 @@ function buildEnsoError(data: unknown, statusCode: number): EnsoError {
     error: error || message || 'EnsoRouteError',
     message: description || message || error || 'Unable to find route',
     requestId: payload.requestId,
-    statusCode: payload.statusCode || statusCode
+    statusCode: resolveEnsoErrorStatusCode(payload.statusCode, statusCode)
   }
 }
 

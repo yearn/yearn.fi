@@ -54,6 +54,14 @@ describe('normalizeEnsoRouteResponse', () => {
     expect(normalizeEnsoRouteResponse({ ...validRoutePayload, amountOut }, 200).route).toBeUndefined()
   })
 
+  it('turns malformed successful route payloads into non-2xx errors', () => {
+    expect(normalizeEnsoRouteResponse({ ...validRoutePayload, amountOut: '1e3' }, 200).error).toMatchObject({
+      error: 'EnsoRouteError',
+      message: 'Unable to find route',
+      statusCode: 502
+    })
+  })
+
   it.each([
     '',
     ' ',

@@ -1,4 +1,5 @@
 import { serve } from 'bun'
+import { normalizeEnsoRouteResponse } from '../src/components/pages/vaults/hooks/solvers/ensoRoute'
 import type {
   TTenderlyFundRequest,
   TTenderlyIncreaseTimeRequest,
@@ -555,7 +556,18 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
       return Response.json(data, { status: response.status })
     }
 
-    return Response.json(data)
+    const parsedChainId = Number(chainId)
+    const normalizedResponse = normalizeEnsoRouteResponse(
+      data,
+      response.status,
+      Number.isFinite(parsedChainId) ? parsedChainId : undefined
+    )
+
+    if (normalizedResponse.error) {
+      return Response.json(normalizedResponse.error, { status: normalizedResponse.error.statusCode })
+    }
+
+    return Response.json(normalizedResponse.route)
   } catch (error) {
     console.error('Error proxying Enso route request:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
