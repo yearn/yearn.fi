@@ -49,6 +49,42 @@ export function isIframe(): boolean {
   return false
 }
 
+const TRUSTED_EMBED_HOSTS = new Set(['app.safe.global', 'app.gnosis-safe.io'])
+
+function getAncestorOrigin(): string | undefined {
+  const ancestorOrigin = window.location.ancestorOrigins?.[0]?.toString()
+  if (ancestorOrigin) {
+    return ancestorOrigin
+  }
+
+  if (!document.referrer) {
+    return undefined
+  }
+
+  try {
+    return new URL(document.referrer).origin
+  } catch (_error) {
+    return undefined
+  }
+}
+
+export function isTrustedEmbed(): boolean {
+  if (typeof window === 'undefined' || typeof document === 'undefined' || !isIframe()) {
+    return false
+  }
+
+  const ancestorOrigin = getAncestorOrigin()
+  if (!ancestorOrigin) {
+    return false
+  }
+
+  try {
+    return TRUSTED_EMBED_HOSTS.has(new URL(ancestorOrigin).hostname)
+  } catch (_error) {
+    return false
+  }
+}
+
 /***************************************************************************
  ** Helper function to sort elements based on the type of the element.
  **************************************************************************/
