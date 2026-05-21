@@ -49,7 +49,7 @@ export function isIframe(): boolean {
   return false
 }
 
-const TRUSTED_EMBED_HOSTS = new Set(['app.safe.global', 'app.gnosis-safe.io'])
+const TRUSTED_EMBED_ORIGINS = new Set(['https://app.safe.global', 'https://app.gnosis-safe.io'])
 
 function getAncestorOrigin(): string | undefined {
   const ancestorOrigin = window.location.ancestorOrigins?.[0]?.toString()
@@ -79,7 +79,7 @@ export function isTrustedEmbed(): boolean {
   }
 
   try {
-    return TRUSTED_EMBED_HOSTS.has(new URL(ancestorOrigin).hostname)
+    return TRUSTED_EMBED_ORIGINS.has(new URL(ancestorOrigin).origin)
   } catch (_error) {
     return false
   }
