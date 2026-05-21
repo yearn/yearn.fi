@@ -34,6 +34,11 @@ import {
 import { fetchRecentAddressScopedActivityEvents } from './lib/holdings/services/graphql'
 import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
+import {
+  getOptimizationCorsHeaders,
+  OPTIMIZATION_GET_CORS_HEADERS,
+  OPTIMIZATION_POST_CORS_HEADERS
+} from './optimization/_lib/cors'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
 import { parseExplainMetadata } from './optimization/_lib/explain-parse'
 import {
@@ -153,6 +158,26 @@ function handleCorsPreFlight(): Response {
   return new Response(null, {
     status: 204,
     headers: CORS_HEADERS
+  })
+}
+
+function withOptimizationCors(response: Response, req: Request, headers: Readonly<Record<string, string>>): Response {
+  const newHeaders = new Headers(response.headers)
+  Object.entries(getOptimizationCorsHeaders(req.headers.get('Origin'), headers)).forEach(([key, value]) => {
+    newHeaders.set(key, value)
+  })
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders
+  })
+}
+
+function handleOptimizationCorsPreFlight(req: Request, headers: Readonly<Record<string, string>>): Response {
+  return new Response(null, {
+    status: 204,
+    headers: getOptimizationCorsHeaders(req.headers.get('Origin'), headers)
   })
 }
 
@@ -1375,6 +1400,30 @@ async function main() {
       console.log(`[Server] ${req.method} ${url.pathname}`)
 
       try {
+        if (url.pathname === '/api/optimization/change') {
+          if (req.method === 'OPTIONS') {
+            return handleOptimizationCorsPreFlight(req, OPTIMIZATION_GET_CORS_HEADERS)
+          }
+
+          return withOptimizationCors(await handleOptimizationChange(req), req, OPTIMIZATION_GET_CORS_HEADERS)
+        }
+
+        if (url.pathname === '/api/optimization/alignment') {
+          if (req.method === 'OPTIONS') {
+            return handleOptimizationCorsPreFlight(req, OPTIMIZATION_GET_CORS_HEADERS)
+          }
+
+          return withOptimizationCors(await handleOptimizationAlignment(req), req, OPTIMIZATION_GET_CORS_HEADERS)
+        }
+
+        if (url.pathname === '/api/optimization/vault-state') {
+          if (req.method === 'OPTIONS') {
+            return handleOptimizationCorsPreFlight(req, OPTIMIZATION_POST_CORS_HEADERS)
+          }
+
+          return withOptimizationCors(await handleOptimizationVaultState(req), req, OPTIMIZATION_POST_CORS_HEADERS)
+        }
+
         if (req.method === 'OPTIONS') {
           return handleCorsPreFlight()
         }
@@ -1424,18 +1473,6 @@ async function main() {
 
         if (url.pathname === '/api/yvusd/aprs') {
           return withCors(await handleYvUsdAprs(req))
-        }
-
-        if (url.pathname === '/api/optimization/change') {
-          return withCors(await handleOptimizationChange(req))
-        }
-
-        if (url.pathname === '/api/optimization/alignment') {
-          return withCors(await handleOptimizationAlignment(req))
-        }
-
-        if (url.pathname === '/api/optimization/vault-state') {
-          return withCors(await handleOptimizationVaultState(req))
         }
 
         if (url.pathname === '/api/tenderly/status') {

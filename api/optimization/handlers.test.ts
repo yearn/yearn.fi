@@ -58,6 +58,9 @@ import alignmentHandler from './alignment'
 import changeHandler from './change'
 import vaultStateHandler from './vault-state'
 
+const TRUSTED_ORIGIN = 'https://yearn.fi'
+const UNTRUSTED_ORIGIN = 'https://attacker.example'
+
 type TMockVercelResponse = VercelResponse & {
   body: unknown
   headers: Record<string, string>
@@ -105,18 +108,29 @@ describe('optimization handlers', () => {
     vi.unstubAllEnvs()
   })
 
-  it('returns POST preflight headers for vault-state', async () => {
+  it('returns POST preflight headers for allowed vault-state origins', async () => {
     const res = createMockResponse()
 
-    await vaultStateHandler({ method: 'OPTIONS' } as VercelRequest, res)
+    await vaultStateHandler({ headers: { origin: TRUSTED_ORIGIN }, method: 'OPTIONS' } as VercelRequest, res)
 
     expect(res.statusCode).toBe(204)
-    expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
+    expect(res.headers['Access-Control-Allow-Origin']).toBe(TRUSTED_ORIGIN)
     expect(res.headers['Access-Control-Allow-Methods']).toBe('POST, OPTIONS')
     expect(res.headers['Access-Control-Allow-Headers']).toBe('Content-Type')
   })
 
-  it('keeps CORS headers on vault-state POST responses', async () => {
+  it('omits preflight CORS headers for disallowed vault-state origins', async () => {
+    const res = createMockResponse()
+
+    await vaultStateHandler({ headers: { origin: UNTRUSTED_ORIGIN }, method: 'OPTIONS' } as VercelRequest, res)
+
+    expect(res.statusCode).toBe(204)
+    expect(res.headers['Access-Control-Allow-Origin']).toBeUndefined()
+    expect(res.headers['Access-Control-Allow-Methods']).toBeUndefined()
+    expect(res.headers['Access-Control-Allow-Headers']).toBeUndefined()
+  })
+
+  it('keeps CORS headers on vault-state POST responses for allowed origins', async () => {
     fetchVaultOnChainStateMock.mockResolvedValue({
       totalAssets: 1000n,
       strategyDebts: new Map([['0x2222222222222222222222222222222222222222', 400n]]),
@@ -131,13 +145,71 @@ describe('optimization handlers', () => {
           strategies: ['0x2222222222222222222222222222222222222222'],
           vault: '0x1111111111111111111111111111111111111111'
         },
+        headers: { origin: TRUSTED_ORIGIN },
         method: 'POST'
       } as VercelRequest,
       res
     )
 
     expect(res.statusCode).toBe(200)
-    expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
+    expect(res.headers['Access-Control-Allow-Origin']).toBe(TRUSTED_ORIGIN)
+    expect(res.body).toEqual({
+      totalAssets: '1000',
+      strategyDebts: {
+        '0x2222222222222222222222222222222222222222': '400'
+      },
+      unallocatedBps: 6000
+    })
+  })
+
+  it('does not grant CORS read access to disallowed vault-state origins', async () => {
+    fetchVaultOnChainStateMock.mockResolvedValue({
+      totalAssets: 1000n,
+      strategyDebts: new Map([['0x2222222222222222222222222222222222222222', 400n]]),
+      unallocatedBps: 6000
+    })
+    const res = createMockResponse()
+
+    await vaultStateHandler(
+      {
+        body: {
+          chainId: 1,
+          strategies: ['0x2222222222222222222222222222222222222222'],
+          vault: '0x1111111111111111111111111111111111111111'
+        },
+        headers: { origin: UNTRUSTED_ORIGIN },
+        method: 'POST'
+      } as VercelRequest,
+      res
+    )
+
+    expect(res.statusCode).toBe(200)
+    expect(res.headers['Access-Control-Allow-Origin']).toBeUndefined()
+  })
+
+  it('omits CORS allow-origin for server-side vault-state callers without an Origin header', async () => {
+    fetchVaultOnChainStateMock.mockResolvedValue({
+      totalAssets: 1000n,
+      strategyDebts: new Map([['0x2222222222222222222222222222222222222222', 400n]]),
+      unallocatedBps: 6000
+    })
+    const res = createMockResponse()
+
+    await vaultStateHandler(
+      {
+        body: {
+          chainId: 1,
+          strategies: ['0x2222222222222222222222222222222222222222'],
+          vault: '0x1111111111111111111111111111111111111111'
+        },
+        headers: {},
+        method: 'POST'
+      } as VercelRequest,
+      res
+    )
+
+    expect(res.statusCode).toBe(200)
+    expect(res.headers['Access-Control-Allow-Origin']).toBeUndefined()
     expect(res.body).toEqual({
       totalAssets: '1000',
       strategyDebts: {
@@ -245,10 +317,10 @@ describe('optimization handlers', () => {
     readOptimizationsMock.mockRejectedValue(new MockRedisAuthenticationError('invalid token'))
     const res = createMockResponse()
 
-    await changeHandler({ method: 'GET', query: {} } as VercelRequest, res)
+    await changeHandler({ headers: { origin: TRUSTED_ORIGIN }, method: 'GET', query: {} } as VercelRequest, res)
 
     expect(res.statusCode).toBe(500)
-    expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
+    expect(res.headers['Access-Control-Allow-Origin']).toBe(TRUSTED_ORIGIN)
     expect(res.body).toEqual({
       error:
         'Backend Redis authentication failed. Check UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN credentials.'
@@ -273,10 +345,10 @@ describe('optimization handlers', () => {
   it('keeps CORS headers on alignment validation responses', async () => {
     const res = createMockResponse()
 
-    await alignmentHandler({ method: 'GET', query: {} } as VercelRequest, res)
+    await alignmentHandler({ headers: { origin: TRUSTED_ORIGIN }, method: 'GET', query: {} } as VercelRequest, res)
 
     expect(res.statusCode).toBe(400)
-    expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
+    expect(res.headers['Access-Control-Allow-Origin']).toBe(TRUSTED_ORIGIN)
     expect(res.body).toEqual({ error: 'vault parameter required' })
   })
 
@@ -416,13 +488,14 @@ describe('optimization handlers', () => {
         query: {
           vault: targetVault,
           history: '1'
-        }
+        },
+        headers: { origin: TRUSTED_ORIGIN }
       } as VercelRequest,
       res
     )
 
     expect(res.statusCode).toBe(200)
-    expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
+    expect(res.headers['Access-Control-Allow-Origin']).toBe(TRUSTED_ORIGIN)
     expect(res.body).toEqual(targetHistory)
     expect(findVaultOptimizationMock).not.toHaveBeenCalled()
   })

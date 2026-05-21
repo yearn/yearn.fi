@@ -18,7 +18,7 @@ function isHistoryQueryEnabled(historyParam: string | string[] | undefined): boo
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  setCorsHeaders(res, OPTIMIZATION_GET_CORS_HEADERS)
+  setCorsHeaders(res, OPTIMIZATION_GET_CORS_HEADERS, req.headers.origin)
 
   if (req.method === 'OPTIONS') {
     return res.status(204).send(null)

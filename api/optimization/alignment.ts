@@ -16,7 +16,7 @@ const CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 const ALIGNMENT_ERROR_MESSAGE = 'Unable to load optimization alignment'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  setCorsHeaders(res, OPTIMIZATION_GET_CORS_HEADERS)
+  setCorsHeaders(res, OPTIMIZATION_GET_CORS_HEADERS, req.headers.origin)
 
   if (req.method === 'OPTIONS') {
     return res.status(204).send(null)

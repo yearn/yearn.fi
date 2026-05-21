@@ -8,7 +8,7 @@ const MAX_VAULT_STATE_BODY_BYTES = 10 * 1024
 const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  setCorsHeaders(res, OPTIMIZATION_POST_CORS_HEADERS)
+  setCorsHeaders(res, OPTIMIZATION_POST_CORS_HEADERS, req.headers.origin)
 
   if (req.method === 'OPTIONS') {
     return res.status(204).send(null)
