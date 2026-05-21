@@ -1,4 +1,5 @@
 import { serve } from 'bun'
+import { handleClustersName } from './clusters'
 import type {
   TTenderlyFundRequest,
   TTenderlyIncreaseTimeRequest,
@@ -1420,6 +1421,10 @@ async function main() {
 
         if (url.pathname === '/api/yvusd/aprs') {
           return withCors(await handleYvUsdAprs(req))
+        }
+
+        if (url.pathname === '/api/clusters/name') {
+          return withCors(await handleClustersName(req))
         }
 
         if (url.pathname === '/api/optimization/change') {
