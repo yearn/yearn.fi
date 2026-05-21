@@ -7,6 +7,12 @@ const DEFAULT_TRUSTED_ORIGINS = [
   'http://127.0.0.1:5173'
 ] as const
 
+export const OPTIMIZATION_CORS_HEADER_NAMES = [
+  'Access-Control-Allow-Origin',
+  'Access-Control-Allow-Methods',
+  'Access-Control-Allow-Headers'
+] as const
+
 export const OPTIMIZATION_GET_CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type'
@@ -36,13 +42,18 @@ export function getOptimizationCorsHeaders(
   origin: string | null | undefined,
   headers: Readonly<Record<string, string>>
 ): Record<string, string> {
+  const varyHeader = {
+    Vary: 'Origin'
+  }
+
   if (!isTrustedOptimizationOrigin(origin)) {
-    return {}
+    return varyHeader
   }
 
   return {
     'Access-Control-Allow-Origin': origin,
-    ...headers
+    ...headers,
+    ...varyHeader
   }
 }
 

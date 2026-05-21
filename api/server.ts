@@ -36,6 +36,7 @@ import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } fr
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
 import {
   getOptimizationCorsHeaders,
+  OPTIMIZATION_CORS_HEADER_NAMES,
   OPTIMIZATION_GET_CORS_HEADERS,
   OPTIMIZATION_POST_CORS_HEADERS
 } from './optimization/_lib/cors'
@@ -163,6 +164,9 @@ function handleCorsPreFlight(): Response {
 
 function withOptimizationCors(response: Response, req: Request, headers: Readonly<Record<string, string>>): Response {
   const newHeaders = new Headers(response.headers)
+  OPTIMIZATION_CORS_HEADER_NAMES.forEach((headerName) => {
+    newHeaders.delete(headerName)
+  })
   Object.entries(getOptimizationCorsHeaders(req.headers.get('Origin'), headers)).forEach(([key, value]) => {
     newHeaders.set(key, value)
   })
@@ -179,6 +183,18 @@ function handleOptimizationCorsPreFlight(req: Request, headers: Readonly<Record<
     status: 204,
     headers: getOptimizationCorsHeaders(req.headers.get('Origin'), headers)
   })
+}
+
+function getOptimizationRouteCorsHeaders(pathname: string): Readonly<Record<string, string>> | null {
+  if (pathname === '/api/optimization/change' || pathname === '/api/optimization/alignment') {
+    return OPTIMIZATION_GET_CORS_HEADERS
+  }
+
+  if (pathname === '/api/optimization/vault-state') {
+    return OPTIMIZATION_POST_CORS_HEADERS
+  }
+
+  return null
 }
 
 async function handleHoldingsProgress(req: Request): Promise<Response> {
@@ -1514,12 +1530,17 @@ async function main() {
         return withCors(new Response('Not found', { status: 404 }))
       } catch (error) {
         console.error('💥 Request handler error:', error)
-        return withCors(
-          Response.json(
-            { error: 'Internal server error', message: error instanceof Error ? error.message : String(error) },
-            { status: 500 }
-          )
+        const errorResponse = Response.json(
+          { error: 'Internal server error', message: error instanceof Error ? error.message : String(error) },
+          { status: 500 }
         )
+        const optimizationCorsHeaders = getOptimizationRouteCorsHeaders(url.pathname)
+
+        if (optimizationCorsHeaders) {
+          return withOptimizationCors(errorResponse, req, optimizationCorsHeaders)
+        }
+
+        return withCors(errorResponse)
       }
     },
     port: API_PORT,

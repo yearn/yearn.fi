@@ -54,6 +54,7 @@ vi.mock('./_lib/rpc', () => ({
   getRpcConfig: (chainId: number) => (chainId === 1 ? { primary: 'https://rpc.example', fallbacks: [] } : undefined)
 }))
 
+import { getOptimizationCorsHeaders, OPTIMIZATION_GET_CORS_HEADERS } from './_lib/cors'
 import alignmentHandler from './alignment'
 import changeHandler from './change'
 import vaultStateHandler from './vault-state'
@@ -108,6 +109,20 @@ describe('optimization handlers', () => {
     vi.unstubAllEnvs()
   })
 
+  it('allows configured optimization CORS origins without falling back to wildcard', () => {
+    vi.stubEnv('OPTIMIZATION_CORS_ALLOWED_ORIGINS', 'https://preview.yearn.fi, https://staging.yearn.fi ')
+
+    expect(getOptimizationCorsHeaders('https://preview.yearn.fi', OPTIMIZATION_GET_CORS_HEADERS)).toEqual({
+      'Access-Control-Allow-Origin': 'https://preview.yearn.fi',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      Vary: 'Origin'
+    })
+    expect(getOptimizationCorsHeaders(UNTRUSTED_ORIGIN, OPTIMIZATION_GET_CORS_HEADERS)).toEqual({
+      Vary: 'Origin'
+    })
+  })
+
   it('returns POST preflight headers for allowed vault-state origins', async () => {
     const res = createMockResponse()
 
@@ -117,6 +132,7 @@ describe('optimization handlers', () => {
     expect(res.headers['Access-Control-Allow-Origin']).toBe(TRUSTED_ORIGIN)
     expect(res.headers['Access-Control-Allow-Methods']).toBe('POST, OPTIONS')
     expect(res.headers['Access-Control-Allow-Headers']).toBe('Content-Type')
+    expect(res.headers.Vary).toBe('Origin')
   })
 
   it('omits preflight CORS headers for disallowed vault-state origins', async () => {
@@ -128,6 +144,7 @@ describe('optimization handlers', () => {
     expect(res.headers['Access-Control-Allow-Origin']).toBeUndefined()
     expect(res.headers['Access-Control-Allow-Methods']).toBeUndefined()
     expect(res.headers['Access-Control-Allow-Headers']).toBeUndefined()
+    expect(res.headers.Vary).toBe('Origin')
   })
 
   it('keeps CORS headers on vault-state POST responses for allowed origins', async () => {
