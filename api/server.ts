@@ -843,6 +843,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
 
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
   let activeProgressId: string | null = null
+  const progressScope = { route: 'history', address }
 
   try {
     activeProgressId = await startHoldingsProgress({
@@ -851,11 +852,15 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       address,
       message: 'Fetching historical user data'
     })
-    await updateHoldingsProgress(activeProgressId, {
-      progress: 8,
-      message: 'Fetching historical user data',
-      detail: null
-    })
+    await updateHoldingsProgress(
+      activeProgressId,
+      {
+        progress: 8,
+        message: 'Fetching historical user data',
+        detail: null
+      },
+      progressScope
+    )
 
     if (refresh) {
       const cleared = await clearUserCache(address, getHoldingsTotalsCacheVersion(version))
@@ -909,21 +914,29 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
     )
 
     if (!holdings.hasActivity) {
-      await updateHoldingsProgress(activeProgressId, {
-        status: 'complete',
-        progress: 100,
-        message: 'No historical holdings found',
-        detail: null
-      })
+      await updateHoldingsProgress(
+        activeProgressId,
+        {
+          status: 'complete',
+          progress: 100,
+          message: 'No historical holdings found',
+          detail: null
+        },
+        progressScope
+      )
       return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
 
-    await updateHoldingsProgress(activeProgressId, {
-      status: 'complete',
-      progress: 100,
-      message: 'Historical user data ready',
-      detail: `${holdings.dataPoints.length} chart points`
-    })
+    await updateHoldingsProgress(
+      activeProgressId,
+      {
+        status: 'complete',
+        progress: 100,
+        message: 'Historical user data ready',
+        detail: `${holdings.dataPoints.length} chart points`
+      },
+      progressScope
+    )
 
     return Response.json(
       {
@@ -943,11 +956,15 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       }
     )
   } catch (error) {
-    await updateHoldingsProgress(activeProgressId, {
-      status: 'error',
-      message: 'Failed to fetch historical user data',
-      detail: error instanceof Error ? error.message : String(error)
-    })
+    await updateHoldingsProgress(
+      activeProgressId,
+      {
+        status: 'error',
+        message: 'Failed to fetch historical user data',
+        detail: error instanceof Error ? error.message : String(error)
+      },
+      progressScope
+    )
     console.error('Error fetching holdings history:', error)
     const message = error instanceof Error ? error.message : String(error)
     const stack = error instanceof Error ? error.stack : undefined
@@ -1186,6 +1203,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
 
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
   let activeProgressId: string | null = null
+  const progressScope = { route: 'pnl-simple-history', address }
 
   try {
     activeProgressId = await startHoldingsProgress({
@@ -1194,11 +1212,15 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
       address,
       message: 'Fetching historical user data'
     })
-    await updateHoldingsProgress(activeProgressId, {
-      progress: 8,
-      message: 'Fetching historical user data',
-      detail: null
-    })
+    await updateHoldingsProgress(
+      activeProgressId,
+      {
+        progress: 8,
+        message: 'Fetching historical user data',
+        detail: null
+      },
+      progressScope
+    )
 
     const history = await withHoldingsDebugContext(
       createHoldingsDebugContext('protocol-return-history', address, debugEnabled, {
@@ -1252,21 +1274,29 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
     )
 
     if (history.summary.totalVaults === 0) {
-      await updateHoldingsProgress(activeProgressId, {
-        status: 'complete',
-        progress: 100,
-        message: 'No historical holdings found',
-        detail: null
-      })
+      await updateHoldingsProgress(
+        activeProgressId,
+        {
+          status: 'complete',
+          progress: 100,
+          message: 'No historical holdings found',
+          detail: null
+        },
+        progressScope
+      )
       return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
 
-    await updateHoldingsProgress(activeProgressId, {
-      status: 'complete',
-      progress: 100,
-      message: 'Historical user data ready',
-      detail: `${history.dataPoints.length} chart points`
-    })
+    await updateHoldingsProgress(
+      activeProgressId,
+      {
+        status: 'complete',
+        progress: 100,
+        message: 'Historical user data ready',
+        detail: `${history.dataPoints.length} chart points`
+      },
+      progressScope
+    )
 
     return Response.json(history, {
       headers: {
@@ -1274,11 +1304,15 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
       }
     })
   } catch (error) {
-    await updateHoldingsProgress(activeProgressId, {
-      status: 'error',
-      message: 'Failed to fetch historical user data',
-      detail: error instanceof Error ? error.message : String(error)
-    })
+    await updateHoldingsProgress(
+      activeProgressId,
+      {
+        status: 'error',
+        message: 'Failed to fetch historical user data',
+        detail: error instanceof Error ? error.message : String(error)
+      },
+      progressScope
+    )
     console.error('Error fetching holdings protocol return history:', error)
     const message = error instanceof Error ? error.message : String(error)
     const stack = error instanceof Error ? error.stack : undefined

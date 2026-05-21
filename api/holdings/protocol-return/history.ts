@@ -180,6 +180,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const progressId = typeof progressIdParam === 'string' ? progressIdParam : null
   const debugEnabled = isHoldingsDebugRequested(typeof debugParam === 'string' ? debugParam : null)
   let activeProgressId: string | null = null
+  const progressScope = { route: 'pnl-simple-history', address }
 
   try {
     activeProgressId = await startHoldingsProgress({
@@ -188,11 +189,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       address,
       message: 'Fetching historical user data'
     })
-    await updateHoldingsProgress(activeProgressId, {
-      progress: 8,
-      message: 'Fetching historical user data',
-      detail: null
-    })
+    await updateHoldingsProgress(
+      activeProgressId,
+      {
+        progress: 8,
+        message: 'Fetching historical user data',
+        detail: null
+      },
+      progressScope
+    )
     const { getHoldingsProtocolReturnHistory } = await import('../../lib/holdings')
     const history = await withHoldingsDebugContext(
       createHoldingsDebugContext('protocol-return-history', address, debugEnabled, {
@@ -237,30 +242,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     )
 
     if (history.summary.totalVaults === 0) {
-      await updateHoldingsProgress(activeProgressId, {
-        status: 'complete',
-        progress: 100,
-        message: 'No historical holdings found',
-        detail: null
-      })
+      await updateHoldingsProgress(
+        activeProgressId,
+        {
+          status: 'complete',
+          progress: 100,
+          message: 'No historical holdings found',
+          detail: null
+        },
+        progressScope
+      )
       return res.status(404).json({ error: 'No holdings found for address' })
     }
 
-    await updateHoldingsProgress(activeProgressId, {
-      status: 'complete',
-      progress: 100,
-      message: 'Historical user data ready',
-      detail: `${history.dataPoints.length} chart points`
-    })
+    await updateHoldingsProgress(
+      activeProgressId,
+      {
+        status: 'complete',
+        progress: 100,
+        message: 'Historical user data ready',
+        detail: `${history.dataPoints.length} chart points`
+      },
+      progressScope
+    )
 
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
     return res.status(200).json(history)
   } catch (error) {
-    await updateHoldingsProgress(activeProgressId, {
-      status: 'error',
-      message: 'Failed to fetch historical user data',
-      detail: error instanceof Error ? error.message : String(error)
-    })
+    await updateHoldingsProgress(
+      activeProgressId,
+      {
+        status: 'error',
+        message: 'Failed to fetch historical user data',
+        detail: error instanceof Error ? error.message : String(error)
+      },
+      progressScope
+    )
     console.error('Holdings protocol return history error:', error)
 
     if (process.env.NODE_ENV === 'development') {

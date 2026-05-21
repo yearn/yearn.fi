@@ -23,6 +23,16 @@ export type HoldingsProgressRecord = {
   logs: HoldingsProgressLog[]
 }
 
+type HoldingsProgressScope = {
+  route: string
+  address: string
+}
+
+type HoldingsProgressOwner = {
+  route: string
+  addressHash: string
+}
+
 const PROGRESS_TTL_SECONDS = 10 * 60
 const MAX_PROGRESS_LOGS = 20
 const PROGRESS_KEY_PREFIX = 'holdings:progress'
@@ -43,7 +53,7 @@ function getProgressKey(id: string): string {
   return `${PROGRESS_KEY_PREFIX}:${id}`
 }
 
-function isSameProgressOwner(record: HoldingsProgressRecord, scope: { route: string; addressHash: string }): boolean {
+function isSameProgressOwner(record: HoldingsProgressRecord, scope: HoldingsProgressOwner): boolean {
   return record.route === scope.route && record.addressHash === scope.addressHash
 }
 
@@ -146,8 +156,12 @@ async function persistProgressRecord(record: HoldingsProgressRecord): Promise<bo
       return false
     }
 
-    await redis.set(getProgressKey(record.id), JSON.stringify(nextRecord), { ex: PROGRESS_TTL_SECONDS })
-    return true
+    const result = await redis.set(
+      getProgressKey(record.id),
+      JSON.stringify(nextRecord),
+      existingRecord ? { ex: PROGRESS_TTL_SECONDS } : { ex: PROGRESS_TTL_SECONDS, nx: true }
+    )
+    return result === 'OK'
   } catch (error) {
     handleHoldingsRedisError('progress save failed', error)
     return false
@@ -203,10 +217,10 @@ export async function startHoldingsProgress({
   return (await persistProgressRecord(record)) ? id : null
 }
 
-function getProgressScope(route: string, address: string): { route: string; addressHash: string } {
+function getProgressOwner(scope: HoldingsProgressScope): HoldingsProgressOwner {
   return {
-    route,
-    addressHash: getUserAddressCacheKey(address)
+    route: scope.route,
+    addressHash: getUserAddressCacheKey(scope.address)
   }
 }
 
@@ -218,17 +232,14 @@ export async function updateHoldingsProgress(
     detail?: string | null
     status?: HoldingsProgressStatus
   },
-  scope?: {
-    route: string
-    address: string
-  }
+  scope: HoldingsProgressScope
 ): Promise<void> {
   if (!isValidProgressId(id)) {
     return
   }
 
   const record = await getPersistedProgressRecord(id)
-  if (!record || (scope && !isSameProgressOwner(record, getProgressScope(scope.route, scope.address)))) {
+  if (!record || !isSameProgressOwner(record, getProgressOwner(scope))) {
     return
   }
 
@@ -246,14 +257,15 @@ export async function updateHoldingsProgress(
 
 export async function appendHoldingsProgressLog(
   id: string | null | undefined,
-  log: HoldingsProgressLog
+  log: HoldingsProgressLog,
+  scope: HoldingsProgressScope
 ): Promise<void> {
   if (!isValidProgressId(id)) {
     return
   }
 
   const record = await getPersistedProgressRecord(id)
-  if (!record) {
+  if (!record || !isSameProgressOwner(record, getProgressOwner(scope))) {
     return
   }
 
@@ -283,6 +295,6 @@ export async function getHoldingsProgress({
   }
 
   const record = await getPersistedProgressRecord(id)
-  const scope = getProgressScope(route, address)
+  const scope = getProgressOwner({ route, address })
   return record && isSameProgressOwner(record, scope) ? record : null
 }

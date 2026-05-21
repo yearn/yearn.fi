@@ -64,6 +64,13 @@ export function getHoldingsDebugContext(): HoldingsDebugContext | undefined {
   return storage.getStore()
 }
 
+function getProgressScope(context: HoldingsDebugContext): { route: string; address: string } {
+  return {
+    route: context.route === 'protocol-return-history' ? 'pnl-simple-history' : context.route,
+    address: context.address
+  }
+}
+
 export function getHoldingsDebugFilters(): {
   lotsEnabled: boolean
   vaultFilter: string | null
@@ -86,7 +93,7 @@ export function debugLog(scope: string, message: string, payload?: Record<string
   }
 
   const elapsedMs = Date.now() - context.startedAt
-  void appendHoldingsProgressLog(context.progressId, { elapsedMs, scope, message })
+  void appendHoldingsProgressLog(context.progressId, { elapsedMs, scope, message }, getProgressScope(context))
 
   if (!context.enabled) {
     return
@@ -97,7 +104,15 @@ export function debugLog(scope: string, message: string, payload?: Record<string
 
 export function reportHoldingsProgress(progress: number, message: string, detail?: string | null): void {
   const context = getHoldingsDebugContext()
-  void updateHoldingsProgress(context?.progressId, { progress, message, detail: detail ?? null })
+  if (!context) {
+    return
+  }
+
+  void updateHoldingsProgress(
+    context.progressId,
+    { progress, message, detail: detail ?? null },
+    getProgressScope(context)
+  )
 }
 
 export function debugError(scope: string, message: string, error: unknown, payload?: Record<string, unknown>): void {
