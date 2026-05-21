@@ -11,10 +11,34 @@ interface TokenLogoProps extends Omit<ImageProps, 'alt' | 'src'> {
   chainId?: number
 }
 
+function isClearlyUnsafeImageSrc(src?: string): boolean {
+  const trimmedSrc = src?.trim().toLowerCase()
+  if (!trimmedSrc) {
+    return true
+  }
+
+  return (
+    trimmedSrc.startsWith('//') ||
+    trimmedSrc.startsWith('data:') ||
+    trimmedSrc.startsWith('blob:') ||
+    trimmedSrc.startsWith('javascript:') ||
+    trimmedSrc.startsWith('file:')
+  )
+}
+
+function getSafeInitialImageSrc(src: string, altSrc?: string): string {
+  if (!isClearlyUnsafeImageSrc(src)) {
+    return src
+  }
+
+  return isClearlyUnsafeImageSrc(altSrc) ? '' : (altSrc ?? '')
+}
+
 function TokenLogo(props: TokenLogoProps): ReactElement {
   const { src, altSrc, tokenSymbol, tokenName, chainId, className, width = 32, height = 32, ...rest } = props
-  const [imageSrc, setImageSrc] = useState<string>(src)
-  const [hasError, setHasError] = useState(false)
+  const safeInitialImageSrc = getSafeInitialImageSrc(src, altSrc)
+  const [imageSrc, setImageSrc] = useState<string>(safeInitialImageSrc)
+  const [hasError, setHasError] = useState(!safeInitialImageSrc)
   const [isLoading, setIsLoading] = useState(true)
   const [isVisible, setIsVisible] = useState(props.loading !== 'lazy' || props.priority === true)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -49,10 +73,11 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
 
   // Reset states when src changes
   useEffect(() => {
-    setImageSrc(src)
-    setHasError(false)
+    const safeSrc = getSafeInitialImageSrc(src, altSrc)
+    setImageSrc(safeSrc)
+    setHasError(!safeSrc)
     setIsLoading(true)
-  }, [src])
+  }, [altSrc, src])
 
   // Handle already-cached images where onLoad might not fire
   useEffect(() => {
@@ -73,7 +98,7 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
     setIsLoading(false)
 
     // Try altSrc first if we haven't already
-    if (altSrc && imageSrc !== altSrc) {
+    if (altSrc && imageSrc !== altSrc && !isClearlyUnsafeImageSrc(altSrc)) {
       setImageSrc(altSrc)
       setIsLoading(true)
       return
