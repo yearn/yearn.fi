@@ -178,6 +178,30 @@ type TActivityModalFilters = {
   endDate: string
 }
 type TActivityDateField = 'startDate' | 'endDate'
+type TAddressScopedState<T> = {
+  address: string | null
+  value: T
+}
+type TAddressScopedStateSetter<T> = (value: T | ((previous: T) => T)) => void
+
+function useAddressScopedState<T>(address: string | null, defaultValue: T): [T, TAddressScopedStateSetter<T>] {
+  const [state, setState] = useState<TAddressScopedState<T>>({ address, value: defaultValue })
+  const value = state.address === address ? state.value : defaultValue
+  const setValue = useCallback<TAddressScopedStateSetter<T>>(
+    (nextValue) => {
+      setState((previous) => {
+        const previousValue = previous.address === address ? previous.value : defaultValue
+        const value =
+          typeof nextValue === 'function' ? (nextValue as (previousValue: T) => T)(previousValue) : nextValue
+
+        return { address, value }
+      })
+    },
+    [address, defaultValue]
+  )
+
+  return [value, setValue]
+}
 
 function getTodayDateInputValue(): string {
   const today = new Date()
@@ -1686,20 +1710,19 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   const [activityFilters, setActivityFilters] = useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
   const [activityDateRangeDraftFilters, setActivityDateRangeDraftFilters] =
     useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
-  const [activityChainId, setActivityChainId] = useState<number | null>(null)
-  const [lastKnownActivityChainIds, setLastKnownActivityChainIds] = useState<number[] | null>(null)
   const [isActivityZapFilterActive, setIsActivityZapFilterActive] = useState(false)
-  const [activitySearch, setActivitySearch] = useState('')
-  const [isActivityMobileSearchExpanded, setIsActivityMobileSearchExpanded] = useState(false)
   const [isActivityDateRangeOpen, setIsActivityDateRangeOpen] = useState(false)
   const normalizedActiveAddress = typeof address === 'string' && address ? address.toLowerCase() : null
-
-  useEffect(() => {
-    setActivityChainId(null)
-    setLastKnownActivityChainIds(null)
-    setActivitySearch('')
-    setIsActivityMobileSearchExpanded(false)
-  }, [normalizedActiveAddress])
+  const [activityChainId, setActivityChainId] = useAddressScopedState<number | null>(normalizedActiveAddress, null)
+  const [lastKnownActivityChainIds, setLastKnownActivityChainIds] = useAddressScopedState<number[] | null>(
+    normalizedActiveAddress,
+    null
+  )
+  const [activitySearch, setActivitySearch] = useAddressScopedState(normalizedActiveAddress, '')
+  const [isActivityMobileSearchExpanded, setIsActivityMobileSearchExpanded] = useAddressScopedState(
+    normalizedActiveAddress,
+    false
+  )
 
   const activityStartTimestamp = useMemo(
     () => getActivityDateBoundaryTimestamp(activityFilters.startDate, 'start'),
