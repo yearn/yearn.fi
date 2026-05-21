@@ -43,6 +43,10 @@ function getProgressKey(id: string): string {
   return `${PROGRESS_KEY_PREFIX}:${id}`
 }
 
+function isSameProgressOwner(record: HoldingsProgressRecord, scope: { route: string; addressHash: string }): boolean {
+  return record.route === scope.route && record.addressHash === scope.addressHash
+}
+
 function clampProgress(progress: number): number {
   if (!Number.isFinite(progress)) {
     return 0
@@ -127,6 +131,10 @@ async function persistProgressRecord(record: HoldingsProgressRecord): Promise<bo
 
   try {
     const existingRecord = await getPersistedProgressRecord(record.id)
+    if (existingRecord && !isSameProgressOwner(existingRecord, record)) {
+      return false
+    }
+
     const existingProgress = existingRecord?.progress ?? 0
     const nextRecord: HoldingsProgressRecord = {
       ...record,
@@ -195,6 +203,13 @@ export async function startHoldingsProgress({
   return (await persistProgressRecord(record)) ? id : null
 }
 
+function getProgressScope(route: string, address: string): { route: string; addressHash: string } {
+  return {
+    route,
+    addressHash: getUserAddressCacheKey(address)
+  }
+}
+
 export async function updateHoldingsProgress(
   id: string | null | undefined,
   update: {
@@ -202,6 +217,10 @@ export async function updateHoldingsProgress(
     message?: string
     detail?: string | null
     status?: HoldingsProgressStatus
+  },
+  scope?: {
+    route: string
+    address: string
   }
 ): Promise<void> {
   if (!isValidProgressId(id)) {
@@ -209,7 +228,7 @@ export async function updateHoldingsProgress(
   }
 
   const record = await getPersistedProgressRecord(id)
-  if (!record) {
+  if (!record || (scope && !isSameProgressOwner(record, getProgressScope(scope.route, scope.address)))) {
     return
   }
 
@@ -246,10 +265,24 @@ export async function appendHoldingsProgressLog(
   await persistProgressRecord(nextRecord)
 }
 
-export async function getHoldingsProgress(id: string | null | undefined): Promise<HoldingsProgressRecord | null> {
+export async function getHoldingsProgress({
+  id,
+  route,
+  address
+}: {
+  id: string | null | undefined
+  route: string | null | undefined
+  address: string | null | undefined
+}): Promise<HoldingsProgressRecord | null> {
   if (!isValidProgressId(id)) {
     return null
   }
 
-  return getPersistedProgressRecord(id)
+  if (!route || !address) {
+    return null
+  }
+
+  const record = await getPersistedProgressRecord(id)
+  const scope = getProgressScope(route, address)
+  return record && isSameProgressOwner(record, scope) ? record : null
 }

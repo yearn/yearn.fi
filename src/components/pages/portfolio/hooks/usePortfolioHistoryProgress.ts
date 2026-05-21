@@ -27,15 +27,20 @@ export function createPortfolioHistoryProgressId(parts: string[]): string {
 
 export function usePortfolioHistoryProgress(
   progressId: string | null,
+  address: string | null | undefined,
+  route: 'history' | 'pnl-simple-history',
   enabled: boolean
 ): TPortfolioHistoryProgress | null {
   const endpoint = useMemo(
-    () => (progressId ? `/api/holdings/progress?id=${encodeURIComponent(progressId)}` : null),
-    [progressId]
+    () =>
+      progressId && address
+        ? `/api/holdings/progress?id=${encodeURIComponent(progressId)}&address=${encodeURIComponent(address)}&route=${encodeURIComponent(route)}`
+        : null,
+    [address, progressId, route]
   )
 
   const query = useQuery<TPortfolioHistoryProgressResponse | null>({
-    queryKey: ['portfolio-history-progress', progressId],
+    queryKey: ['portfolio-history-progress', progressId, address?.toLowerCase(), route],
     enabled: Boolean(endpoint) && enabled,
     queryFn: async () => {
       const response = await globalThis.fetch(endpoint as string, { headers: { Accept: 'application/json' } })

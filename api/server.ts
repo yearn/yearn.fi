@@ -158,7 +158,15 @@ function handleCorsPreFlight(): Response {
 
 async function handleHoldingsProgress(req: Request): Promise<Response> {
   const url = new URL(req.url)
-  const progress = await getHoldingsProgress(url.searchParams.get('id'))
+  const id = url.searchParams.get('id')
+  const address = url.searchParams.get('address')
+  const route = url.searchParams.get('route')
+
+  if (!id || !address || !route) {
+    return Response.json({ error: 'Missing required parameters: id, address, route', status: 400 }, { status: 400 })
+  }
+
+  const progress = await getHoldingsProgress({ id, route, address })
 
   if (!progress) {
     return Response.json({ error: 'Progress not found', status: 404 }, { status: 404 })
@@ -834,9 +842,10 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
   }
 
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+  let activeProgressId: string | null = null
 
   try {
-    const activeProgressId = await startHoldingsProgress({
+    activeProgressId = await startHoldingsProgress({
       id: progressId,
       route: 'history',
       address,
@@ -934,7 +943,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
       }
     )
   } catch (error) {
-    await updateHoldingsProgress(progressId, {
+    await updateHoldingsProgress(activeProgressId, {
       status: 'error',
       message: 'Failed to fetch historical user data',
       detail: error instanceof Error ? error.message : String(error)
@@ -1176,9 +1185,10 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
   }
 
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+  let activeProgressId: string | null = null
 
   try {
-    const activeProgressId = await startHoldingsProgress({
+    activeProgressId = await startHoldingsProgress({
       id: progressId,
       route: 'pnl-simple-history',
       address,
@@ -1264,7 +1274,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
       }
     })
   } catch (error) {
-    await updateHoldingsProgress(progressId, {
+    await updateHoldingsProgress(activeProgressId, {
       status: 'error',
       message: 'Failed to fetch historical user data',
       detail: error instanceof Error ? error.message : String(error)

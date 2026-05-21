@@ -192,9 +192,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)
   const progressId = typeof progressIdParam === 'string' ? progressIdParam : null
   const debugEnabled = isHoldingsDebugRequested(typeof debugParam === 'string' ? debugParam : null)
+  let activeProgressId: string | null = null
 
   try {
-    const activeProgressId = await startHoldingsProgress({
+    activeProgressId = await startHoldingsProgress({
       id: progressId,
       route: 'history',
       address,
@@ -274,7 +275,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }))
     })
   } catch (error) {
-    await updateHoldingsProgress(progressId, {
+    await updateHoldingsProgress(activeProgressId, {
       status: 'error',
       message: 'Failed to fetch historical user data',
       detail: error instanceof Error ? error.message : String(error)

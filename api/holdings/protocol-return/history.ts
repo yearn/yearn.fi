@@ -179,9 +179,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)
   const progressId = typeof progressIdParam === 'string' ? progressIdParam : null
   const debugEnabled = isHoldingsDebugRequested(typeof debugParam === 'string' ? debugParam : null)
+  let activeProgressId: string | null = null
 
   try {
-    const activeProgressId = await startHoldingsProgress({
+    activeProgressId = await startHoldingsProgress({
       id: progressId,
       route: 'pnl-simple-history',
       address,
@@ -255,7 +256,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
     return res.status(200).json(history)
   } catch (error) {
-    await updateHoldingsProgress(progressId, {
+    await updateHoldingsProgress(activeProgressId, {
       status: 'error',
       message: 'Failed to fetch historical user data',
       detail: error instanceof Error ? error.message : String(error)

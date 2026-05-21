@@ -75,7 +75,7 @@ export function usePortfolioHistory(
     (error as { status?: number } | null)?.status
   const isEmpty = !isLoadingState && Boolean(address) && (errorStatus === 404 || Boolean(data && data.length === 0))
   const visibleError = isEmpty ? null : error
-  const progress = usePortfolioHistoryProgress(progressId, isLoadingState)
+  const progress = usePortfolioHistoryProgress(progressId, address, 'history', isLoadingState)
 
   return {
     data,

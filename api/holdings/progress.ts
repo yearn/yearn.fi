@@ -15,7 +15,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const id = req.query.id
-  const progress = await getHoldingsProgress(typeof id === 'string' ? id : null)
+  const address = req.query.address
+  const route = req.query.route
+
+  if (typeof id !== 'string' || typeof address !== 'string' || typeof route !== 'string') {
+    return res.status(400).json({ error: 'Missing required parameters: id, address, route' })
+  }
+
+  const progress = await getHoldingsProgress({ id, route, address })
 
   if (!progress) {
     return res.status(404).json({ error: 'Progress not found' })

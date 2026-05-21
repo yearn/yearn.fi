@@ -70,7 +70,7 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
   const isEmpty =
     !isLoadingState && Boolean(address) && (errorStatus === 404 || Boolean(history && history.length === 0))
   const visibleError = isEmpty ? null : error
-  const progress = usePortfolioHistoryProgress(progressId, isLoadingState)
+  const progress = usePortfolioHistoryProgress(progressId, address, 'pnl-simple-history', isLoadingState)
 
   return {
     data: history,
