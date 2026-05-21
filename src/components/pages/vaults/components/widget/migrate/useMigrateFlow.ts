@@ -137,6 +137,8 @@ export const useMigrateFlow = ({
 
   // Check what type of permit the vault token supports
   useEffect(() => {
+    let isCurrent = true
+
     const checkPermitSupport = async () => {
       if (!enabled || !client || !hasMigratorConfig) {
         setPermitType('none')
@@ -146,11 +148,17 @@ export const useMigrateFlow = ({
 
       setIsCheckingPermit(true)
       const type = await detectPermitType(client, vaultFrom)
-      setPermitType(type)
-      setIsCheckingPermit(false)
+      if (isCurrent) {
+        setPermitType(type)
+        setIsCheckingPermit(false)
+      }
     }
 
     checkPermitSupport()
+
+    return () => {
+      isCurrent = false
+    }
   }, [client, vaultFrom, enabled, hasMigratorConfig])
 
   // Check current allowance to the router

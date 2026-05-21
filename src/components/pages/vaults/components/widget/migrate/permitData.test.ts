@@ -14,12 +14,25 @@ const domainTypes = {
   ]
 } as const
 
-const makeClient = (domainSeparator: `0x${string}`) => ({
+type ClientOptions = {
+  nonce?: bigint
+  name?: string
+  version?: string
+  apiVersion?: string
+  eip712Version?: string
+}
+
+const makeClient = (domainSeparator: `0x${string}`, options: ClientOptions = {}) => ({
   readContract: vi.fn(({ functionName }) => {
-    if (functionName === 'nonces') return Promise.resolve(7n)
-    if (functionName === 'name') return Promise.resolve('Yearn Token')
-    if (functionName === 'version') return Promise.resolve('1')
-    if (functionName === 'apiVersion') return Promise.reject(new Error('missing'))
+    if (functionName === 'nonces') return Promise.resolve(options.nonce ?? 7n)
+    if (functionName === 'name') return Promise.resolve(options.name ?? 'Yearn Token')
+    if (functionName === 'version') return Promise.resolve(options.version ?? '1')
+    if (functionName === 'apiVersion') {
+      return options.apiVersion ? Promise.resolve(options.apiVersion) : Promise.reject(new Error('missing'))
+    }
+    if (functionName === 'EIP712_VERSION') {
+      return options.eip712Version ? Promise.resolve(options.eip712Version) : Promise.reject(new Error('missing'))
+    }
     if (functionName === 'DOMAIN_SEPARATOR') return Promise.resolve(domainSeparator)
     return Promise.reject(new Error(`unexpected read: ${functionName}`))
   })
@@ -61,6 +74,27 @@ describe('migration permit data', () => {
       nonce: 7n,
       deadline
     })
+  })
+
+  it('enables permit data when a fallback Yearn Vault domain candidate is verified', async () => {
+    const deadline = 123n
+    const domain = { name: 'Yearn Vault', version: '3.0.4', chainId: 1, verifyingContract: vaultAddress } as const
+    const client = makeClient(hashDomain({ domain: { ...domain, chainId: 1n }, types: domainTypes }), {
+      name: 'yvToken Name',
+      apiVersion: '3.0.4'
+    })
+
+    const data = await buildVerifiedPermitData({
+      client: client as any,
+      vaultAddress,
+      account,
+      spender,
+      value: 42n,
+      chainId: 1,
+      deadline
+    })
+
+    expect(data?.domain).toEqual(domain)
   })
 
   it('disables permit data when the token domain separator cannot be verified', async () => {

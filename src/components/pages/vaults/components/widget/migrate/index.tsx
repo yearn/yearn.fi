@@ -34,6 +34,11 @@ interface Props {
   handleMigrateSuccess?: () => void
 }
 
+type PermitSignatureState = {
+  key: string
+  signature: TPermitSignature
+}
+
 export const WidgetMigrate: FC<Props> = ({
   vaultAddress,
   assetAddress,
@@ -54,7 +59,7 @@ export const WidgetMigrate: FC<Props> = ({
   const client = usePublicClient({ chainId })
 
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
-  const [permitSignature, setPermitSignature] = useState<TPermitSignature | undefined>()
+  const [permitSignatureState, setPermitSignatureState] = useState<PermitSignatureState | undefined>()
   const [isLoadingPermitData, setIsLoadingPermitData] = useState(false)
   const [permitDomainVerified, setPermitDomainVerified] = useState(false)
   const lastPermitDeadlineRef = useRef<bigint | undefined>(undefined)
@@ -67,6 +72,20 @@ export const WidgetMigrate: FC<Props> = ({
 
   // Use only vault token balance (not staked)
   const migrateBalance = vaultToken?.balance.raw ?? 0n
+
+  const permitSigningKey = useMemo(
+    () =>
+      [
+        (account ?? '').toLowerCase(),
+        vaultAddress.toLowerCase(),
+        chainId,
+        migrationContract.toLowerCase(),
+        vaultVersion ?? '',
+        migrateBalance.toString()
+      ].join(':'),
+    [account, vaultAddress, chainId, migrationContract, vaultVersion, migrateBalance]
+  )
+  const permitSignature = permitSignatureState?.key === permitSigningKey ? permitSignatureState.signature : undefined
 
   // Migration flow
   const { actions, periphery } = useMigrateFlow({
@@ -117,14 +136,23 @@ export const WidgetMigrate: FC<Props> = ({
   // For permit flow: needs permit signing if no valid signature
   const needsPermitSign = isPermitFlow && !permitSignature
 
+  useEffect(() => {
+    setPermitSignatureState(undefined)
+    lastPermitDeadlineRef.current = undefined
+  }, [permitSigningKey, periphery.routerAddress])
+
   // Verify permit domain before offering the permit path.
   useEffect(() => {
+    let isCurrent = true
+
     const verifyPermitDomain = async () => {
       if (!account || !client || migrateBalance === 0n) {
         setPermitDomainVerified(false)
+        setIsLoadingPermitData(false)
         return
       }
 
+      setPermitDomainVerified(false)
       setIsLoadingPermitData(true)
 
       try {
@@ -138,15 +166,25 @@ export const WidgetMigrate: FC<Props> = ({
           chainId,
           deadline
         })
-        setPermitDomainVerified(Boolean(data))
+        if (isCurrent) {
+          setPermitDomainVerified(Boolean(data))
+        }
       } catch {
-        setPermitDomainVerified(false)
+        if (isCurrent) {
+          setPermitDomainVerified(false)
+        }
       } finally {
-        setIsLoadingPermitData(false)
+        if (isCurrent) {
+          setIsLoadingPermitData(false)
+        }
       }
     }
 
     verifyPermitDomain()
+
+    return () => {
+      isCurrent = false
+    }
   }, [account, client, vaultAddress, chainId, periphery.routerAddress, migrateBalance])
 
   const getPermitData = useCallback(async () => {
@@ -168,22 +206,33 @@ export const WidgetMigrate: FC<Props> = ({
   }, [account, client, vaultAddress, chainId, periphery.routerAddress, migrateBalance])
 
   // Handle permit signed callback
-  const handlePermitSigned = useCallback((signature: `0x${string}`) => {
-    // Parse signature into r, s, v using viem utilities
-    const r = slice(signature, 0, 32)
-    const s = slice(signature, 32, 64)
-    const vRaw = hexToNumber(slice(signature, 64, 65))
-    // Normalize v to 27 or 28 (some wallets return 0 or 1)
-    const v = vRaw < 27 ? vRaw + 27 : vRaw
+  const handlePermitSigned = useCallback(
+    (signature: `0x${string}`) => {
+      // Parse signature into r, s, v using viem utilities
+      const r = slice(signature, 0, 32)
+      const s = slice(signature, 32, 64)
+      const vRaw = hexToNumber(slice(signature, 64, 65))
+      // Normalize v to 27 or 28 (some wallets return 0 or 1)
+      const v = vRaw < 27 ? vRaw + 27 : vRaw
+      const deadline = lastPermitDeadlineRef.current
 
-    setPermitSignature({
-      r,
-      s,
-      v,
-      deadline: lastPermitDeadlineRef.current ?? createPermitDeadline(),
-      signature
-    })
-  }, [])
+      if (deadline === undefined) {
+        throw new Error('Missing permit deadline')
+      }
+
+      setPermitSignatureState({
+        key: permitSigningKey,
+        signature: {
+          r,
+          s,
+          v,
+          deadline,
+          signature
+        }
+      })
+    },
+    [permitSigningKey]
+  )
   // Transaction steps
   const currentStep: TransactionStep | undefined = useMemo(() => {
     // PERMIT FLOW
@@ -298,7 +347,7 @@ export const WidgetMigrate: FC<Props> = ({
         vaultSymbol
       }
     })
-    setPermitSignature(undefined) // Clear permit signature after successful migration
+    setPermitSignatureState(undefined) // Clear permit signature after successful migration
     refetchVaultUserData()
     onMigrateSuccess?.()
   }, [trackEvent, chainId, vaultAddress, migrationTarget, vaultSymbol, refetchVaultUserData, onMigrateSuccess])
@@ -307,7 +356,7 @@ export const WidgetMigrate: FC<Props> = ({
     setShowTransactionOverlay(false)
     // Clear permit signature if user closes during permit flow (they can re-sign)
     if (needsPermitSign) {
-      setPermitSignature(undefined)
+      setPermitSignatureState(undefined)
     }
   }, [needsPermitSign])
 
