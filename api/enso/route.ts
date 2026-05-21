@@ -1,29 +1,25 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { checkEnsoRateLimit, fetchWithEnsoTimeout, isAbortError } from './guard'
+import { validateEnsoQuoteQuery } from './validation'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
+const ENSO_ROUTE_RATE_LIMIT = 30
+const ENSO_ROUTE_TIMEOUT_MS = 8_000
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { fromAddress, chainId, tokenIn, tokenOut, amountIn, slippage, routingStrategy, destinationChainId, receiver } =
-    req.query
+  const rateLimit = checkEnsoRateLimit(req, 'route', ENSO_ROUTE_RATE_LIMIT)
+  if (!rateLimit.allowed) {
+    res.setHeader('Retry-After', String(rateLimit.retryAfter))
+    return res.status(429).json({ error: 'Too many Enso route requests' })
+  }
 
-  if (!fromAddress || typeof fromAddress !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid fromAddress' })
-  }
-  if (!chainId || typeof chainId !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid chainId' })
-  }
-  if (!tokenIn || typeof tokenIn !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid tokenIn' })
-  }
-  if (!tokenOut || typeof tokenOut !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid tokenOut' })
-  }
-  if (!amountIn || typeof amountIn !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid amountIn' })
+  const validated = validateEnsoQuoteQuery(req.query)
+  if (!validated.ok) {
+    return res.status(400).json({ error: validated.error })
   }
 
   const apiKey = process.env.ENSO_API_KEY
@@ -33,33 +29,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const {
+      fromAddress,
+      chainId,
+      tokenIn,
+      tokenOut,
+      amountIn,
+      slippage,
+      routingStrategy,
+      destinationChainId,
+      receiver
+    } = validated.value
     const params = new URLSearchParams({
       fromAddress,
       chainId,
       tokenIn,
       tokenOut,
       amountIn,
-      slippage: (slippage as string) || '100'
+      slippage
     })
 
-    if (destinationChainId && typeof destinationChainId === 'string') {
+    if (destinationChainId) {
       params.set('destinationChainId', destinationChainId)
     }
-    if (receiver && typeof receiver === 'string') {
+    if (receiver) {
       params.set('receiver', receiver)
     }
-    if (routingStrategy && typeof routingStrategy === 'string') {
+    if (routingStrategy) {
       params.set('routingStrategy', routingStrategy)
     }
 
     const url = `${ENSO_API_BASE}/api/v1/shortcuts/route?${params}`
 
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    })
+    const response = await fetchWithEnsoTimeout(
+      url,
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      },
+      ENSO_ROUTE_TIMEOUT_MS
+    )
 
     const data = await response.json()
 
@@ -69,6 +80,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json(data)
   } catch (error) {
+    if (isAbortError(error)) {
+      return res.status(504).json({ error: 'Enso route request timed out' })
+    }
+
     console.error('Error proxying Enso route request:', error)
     return res.status(500).json({ error: 'Internal server error' })
   }
