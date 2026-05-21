@@ -2,6 +2,7 @@ import { setThemePreference, useThemePreference } from '@hooks/useThemePreferenc
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import { yToast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
+import { filterNotificationsByAddress } from '@shared/contexts/useNotifications.helpers'
 import useWallet from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -53,8 +54,10 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
   }, [address, toast])
 
   const recentActivity = useMemo(() => {
-    return cachedEntries.toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)).slice(0, 3)
-  }, [cachedEntries])
+    return filterNotificationsByAddress(cachedEntries, address)
+      .toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0))
+      .slice(0, 3)
+  }, [cachedEntries, address])
 
   const handleViewPortfolio = useCallback(() => {
     navigate('/portfolio')

@@ -3,7 +3,13 @@ import type { TNotification, TNotificationStatus, TNotificationsContext } from '
 import type React from 'react'
 import { createContext, startTransition, useCallback, useContext, useMemo, useState } from 'react'
 import { useIndexedDBStore } from 'use-indexeddb'
-import { appendCachedNotification, mergeCachedNotificationEntry } from './useNotifications.helpers'
+import {
+  appendCachedNotification,
+  filterNotificationsByAddress,
+  isNotificationForAddress,
+  mergeCachedNotificationEntry
+} from './useNotifications.helpers'
+import { useWeb3 } from './useWeb3'
 
 const defaultProps: TNotificationsContext = {
   cachedEntries: [],
@@ -18,6 +24,7 @@ const defaultProps: TNotificationsContext = {
 
 const NotificationsContext = createContext<TNotificationsContext>(defaultProps)
 export const WithNotifications = ({ children }: { children: React.ReactElement }): React.ReactElement => {
+  const { address } = useWeb3()
   const [cachedEntries, setCachedEntries] = useState<TNotification[]>([])
   const [entryNonce, setEntryNonce] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(true)
@@ -42,9 +49,14 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
     void entryNonce
     setIsLoading(true)
     setError(null)
+    setCachedEntries([])
+    if (!address) {
+      setIsLoading(false)
+      return
+    }
     try {
       const entriesFromDB = await getAll()
-      setCachedEntries(entriesFromDB || [])
+      setCachedEntries(filterNotificationsByAddress(entriesFromDB || [], address))
     } catch (error) {
       console.error('Failed to fetch notifications from IndexedDB:', error)
       setCachedEntries([])
@@ -52,7 +64,7 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
     } finally {
       setIsLoading(false)
     }
-  }, [getAll, entryNonce])
+  }, [getAll, entryNonce, address])
 
   /************************************************************************************************
    * The updateEntry function is responsible for updating an existing notification in the IndexedDB.
@@ -76,7 +88,11 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
           const updatedNotification = { ...notification, ...entry }
           await update(updatedNotification)
           startTransition(() => {
-            setCachedEntries((currentEntries) => mergeCachedNotificationEntry(currentEntries, id, updatedNotification))
+            setCachedEntries((currentEntries) =>
+              isNotificationForAddress(updatedNotification, address)
+                ? mergeCachedNotificationEntry(currentEntries, id, updatedNotification)
+                : currentEntries.filter((entry) => entry.id !== id)
+            )
             setNotificationStatus(entry?.status || null)
           })
         } else {
@@ -86,7 +102,7 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
         console.error('Failed to update notification:', error)
       }
     },
-    [getByID, update]
+    [getByID, update, address]
   )
 
   const addNotification = useCallback(
@@ -94,7 +110,11 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
       try {
         const id = await add(notification)
         startTransition(() => {
-          setCachedEntries((currentEntries) => appendCachedNotification(currentEntries, { ...notification, id }))
+          setCachedEntries((currentEntries) =>
+            isNotificationForAddress(notification, address)
+              ? appendCachedNotification(currentEntries, { ...notification, id })
+              : currentEntries
+          )
           setNotificationStatus(notification.status)
         })
         return id
@@ -104,7 +124,7 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
         return -1
       }
     },
-    [add]
+    [add, address]
   )
 
   const deleteByIDWithErrorHandling = useCallback(
@@ -131,9 +151,14 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
   /**************************************************************************
    * Context value that is passed to all children of this component.
    *************************************************************************/
+  const walletCachedEntries = useMemo(
+    () => filterNotificationsByAddress(cachedEntries, address),
+    [cachedEntries, address]
+  )
+
   const contextValue = useMemo(
     (): TNotificationsContext => ({
-      cachedEntries,
+      cachedEntries: walletCachedEntries,
       isLoading,
       error,
       deleteByID: deleteByIDWithErrorHandling,
@@ -142,7 +167,15 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
       notificationStatus,
       setNotificationStatus
     }),
-    [cachedEntries, isLoading, error, deleteByIDWithErrorHandling, updateEntry, addNotification, notificationStatus]
+    [
+      walletCachedEntries,
+      isLoading,
+      error,
+      deleteByIDWithErrorHandling,
+      updateEntry,
+      addNotification,
+      notificationStatus
+    ]
   )
 
   return <NotificationsContext.Provider value={contextValue}>{children}</NotificationsContext.Provider>
