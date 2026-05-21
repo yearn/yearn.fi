@@ -495,8 +495,7 @@ async function handleTenderlyFund(req: Request): Promise<Response> {
 }
 
 function handleEnsoStatus(): Response {
-  const apiKey = process.env.ENSO_API_KEY
-  return Response.json({ configured: !!apiKey })
+  return Response.json({ status: 'ok' })
 }
 
 async function handleEnsoRoute(req: Request): Promise<Response> {
