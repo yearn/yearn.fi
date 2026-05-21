@@ -1,5 +1,6 @@
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema } from '@shared/hooks/useFetch'
+import type { TNotification } from '@shared/types/notifications'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import {
@@ -19,6 +20,29 @@ type TPortfolioActivityFilters = {
 const ACTIVITY_FACET_LIMIT_PER_SOURCE = 500
 const MAX_ACTIVITY_RETRIES = 3
 const DEFAULT_ACTIVITY_RETRY_DELAY = 1000
+
+function normalizeWalletAddress(address: string | null | undefined): string | null {
+  return typeof address === 'string' && address ? address.toLowerCase() : null
+}
+
+export function getUnresolvedLocalActivityEntries(
+  cachedEntries: TNotification[],
+  activeAddress: string | null | undefined
+): TNotification[] {
+  const normalizedActiveAddress = normalizeWalletAddress(activeAddress)
+
+  if (normalizedActiveAddress === null) {
+    return []
+  }
+
+  return cachedEntries
+    .filter(
+      (entry) =>
+        entry.status !== 'success' &&
+        normalizeWalletAddress(entry.address as string | null | undefined) === normalizedActiveAddress
+    )
+    .toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0))
+}
 
 export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortfolioActivityFilters = {}) {
   const { address } = useWeb3()

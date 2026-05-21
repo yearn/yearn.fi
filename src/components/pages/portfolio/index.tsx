@@ -88,7 +88,7 @@ import {
   resolvePortfolioGrowthDisplayMode
 } from './components/PortfolioHistoryChart'
 import type { TPortfolioVaultGrowthChartMode } from './components/PortfolioVaultGrowthChart'
-import { usePortfolioActivity } from './hooks/usePortfolioActivity'
+import { getUnresolvedLocalActivityEntries, usePortfolioActivity } from './hooks/usePortfolioActivity'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
 import type {
@@ -1681,6 +1681,7 @@ function PortfolioTabSelector({
 function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivityProps): ReactElement {
   const { allVaults } = useYearn()
   const { getToken } = useTokenList()
+  const { address } = useWeb3()
   const { cachedEntries, isLoading: notificationsLoading, error: notificationsError } = useNotifications()
   const [activityFilters, setActivityFilters] = useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
   const [activityDateRangeDraftFilters, setActivityDateRangeDraftFilters] =
@@ -1691,6 +1692,15 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   const [activitySearch, setActivitySearch] = useState('')
   const [isActivityMobileSearchExpanded, setIsActivityMobileSearchExpanded] = useState(false)
   const [isActivityDateRangeOpen, setIsActivityDateRangeOpen] = useState(false)
+  const normalizedActiveAddress = typeof address === 'string' && address ? address.toLowerCase() : null
+
+  useEffect(() => {
+    setActivityChainId(null)
+    setLastKnownActivityChainIds(null)
+    setActivitySearch('')
+    setIsActivityMobileSearchExpanded(false)
+  }, [normalizedActiveAddress])
+
   const activityStartTimestamp = useMemo(
     () => getActivityDateBoundaryTimestamp(activityFilters.startDate, 'start'),
     [activityFilters.startDate]
@@ -1759,11 +1769,8 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     [activityChainId, activityChainOptions, displayedActivityNetworks]
   )
   const unresolvedLocalEntries = useMemo(
-    () =>
-      cachedEntries
-        .filter((entry) => entry.status !== 'success')
-        .toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)),
-    [cachedEntries]
+    () => getUnresolvedLocalActivityEntries(cachedEntries, normalizedActiveAddress),
+    [cachedEntries, normalizedActiveAddress]
   )
   const hasUnresolvedLocalEntries = unresolvedLocalEntries.length > 0
   const hasIndexedEntries = indexedEntries.length > 0
