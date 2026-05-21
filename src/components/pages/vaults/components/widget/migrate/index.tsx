@@ -49,7 +49,7 @@ export const WidgetMigrate: FC<Props> = ({
   const { openLoginModal } = useWeb3()
   const { getToken } = useWallet()
   const trackEvent = usePlausible()
-  const { getPrice } = useYearn()
+  const { getPrice, zapSlippage } = useYearn()
   const client = usePublicClient({ chainId })
 
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
@@ -76,6 +76,7 @@ export const WidgetMigrate: FC<Props> = ({
     account,
     chainId,
     enabled: migrateBalance > 0n && !isZeroAddress(migrationContract),
+    slippage: zapSlippage,
     permitSignature
   })
 

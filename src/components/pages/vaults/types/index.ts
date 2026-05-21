@@ -138,6 +138,8 @@ export type UseMigrateFlowReturn = T<
     supportsPermit: boolean
     permitDeadline: bigint
     routerAddress: TAddress
+    expectedSharesOut: bigint
+    minSharesOut: bigint
     error?: string
   }
 >
