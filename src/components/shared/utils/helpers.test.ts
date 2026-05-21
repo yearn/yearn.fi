@@ -66,6 +66,12 @@ describe('isTrustedEmbed', () => {
     expect(isTrustedEmbed()).toBe(true)
   })
 
+  it('does not trust a known host over an unlisted origin', () => {
+    mockBrowser({ ancestorOrigins: ['https://app.safe.global:444'] })
+
+    expect(isTrustedEmbed()).toBe(false)
+  })
+
   it('falls back to a trusted document referrer when ancestor origins are unavailable', () => {
     mockBrowser({ referrer: 'https://app.gnosis-safe.io/apps' })
 
