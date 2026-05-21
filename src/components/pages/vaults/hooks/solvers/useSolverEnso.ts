@@ -8,8 +8,8 @@ import { useTokenAllowance } from '../useTokenAllowance'
 import {
   type EnsoError,
   type EnsoRouteResponse,
+  getEnsoRouteInvariantError,
   normalizeEnsoRouteResponse,
-  parseEnsoRouteBigInt,
   routeHasSwapStep
 } from './ensoRoute'
 
@@ -161,6 +161,40 @@ export const useSolverEnso = ({
         return
       }
       const resolvedRoute = normalizedResponse.route
+      const invariantError =
+        resolvedRoute && receiver
+          ? getEnsoRouteInvariantError(resolvedRoute.tx, {
+              chainId,
+              fromAddress,
+              tokenIn,
+              tokenOut,
+              receiver,
+              expectedOut: resolvedRoute.amountOut,
+              minExpectedOut: resolvedRoute.minAmountOut
+            })
+          : 'Enso route receiver is missing'
+
+      if (invariantError) {
+        console.warn('[Enso] Route invariant error', {
+          chainId,
+          destinationChainId,
+          tokenIn,
+          tokenOut,
+          amountIn: amountIn.toString(),
+          message: invariantError
+        })
+        setRoute(undefined)
+        setError({
+          error: 'EnsoRouteInvariantError',
+          message: invariantError,
+          statusCode: response.status
+        })
+        setResolvedRequestKey(undefined)
+        setErrorRequestKey(requestKey)
+
+        return
+      }
+
       setError(undefined)
       setRoute(resolvedRoute)
       setResolvedRequestKey(requestKey)
@@ -256,13 +290,13 @@ export const useSolverEnso = ({
     chainId,
     query: { enabled: !!prepareApproveEnabled && !!routerAddress }
   })
-  const parsedAmountOut = parseEnsoRouteBigInt(visibleRoute?.amountOut)
-  const parsedMinAmountOut = parseEnsoRouteBigInt(visibleRoute?.minAmountOut)
-  const expectedOut =
-    parsedAmountOut !== undefined ? toNormalizedBN(parsedAmountOut, decimalsOut) : toNormalizedBN(0n, decimalsOut)
+  const expectedOut = visibleRoute?.amountOut
+    ? toNormalizedBN(BigInt(visibleRoute.amountOut), decimalsOut)
+    : toNormalizedBN(0n, decimalsOut)
 
-  const minExpectedOut =
-    parsedMinAmountOut !== undefined ? toNormalizedBN(parsedMinAmountOut, decimalsOut) : toNormalizedBN(0n, decimalsOut)
+  const minExpectedOut = visibleRoute?.minAmountOut
+    ? toNormalizedBN(BigInt(visibleRoute.minAmountOut), decimalsOut)
+    : toNormalizedBN(0n, decimalsOut)
   return {
     actions: {
       prepareApprove

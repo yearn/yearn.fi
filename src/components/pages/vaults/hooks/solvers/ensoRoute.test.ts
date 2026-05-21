@@ -1,5 +1,6 @@
+import { type Address, encodeAbiParameters, encodeFunctionData, type Hex } from 'viem'
 import { describe, expect, it } from 'vitest'
-import { normalizeEnsoRouteResponse, parseEnsoRouteBigInt, routeHasSwapStep } from './ensoRoute'
+import { getEnsoRouteInvariantError, normalizeEnsoRouteResponse, parseEnsoRouteBigInt, routeHasSwapStep } from './ensoRoute'
 
 describe('normalizeEnsoRouteResponse', () => {
   const validRoutePayload = {
@@ -211,5 +212,122 @@ describe('normalizeEnsoRouteResponse', () => {
     )
 
     expect(routeHasSwapStep(normalized.route)).toBe(false)
+  })
+})
+
+const SAFE_ROUTE_SINGLE_ABI = [
+  {
+    type: 'function',
+    name: 'safeRouteSingle',
+    stateMutability: 'payable',
+    inputs: [
+      {
+        name: 'tokenIn',
+        type: 'tuple',
+        components: [
+          { name: 'tokenType', type: 'uint8' },
+          { name: 'data', type: 'bytes' }
+        ]
+      },
+      {
+        name: 'tokenOut',
+        type: 'tuple',
+        components: [
+          { name: 'tokenType', type: 'uint8' },
+          { name: 'data', type: 'bytes' }
+        ]
+      },
+      { name: 'receiver', type: 'address' },
+      { name: 'data', type: 'bytes' }
+    ],
+    outputs: [{ name: 'response', type: 'bytes' }]
+  }
+] as const
+
+const ACCOUNT = '0x0000000000000000000000000000000000000002' as Address
+const TOKEN_IN = '0x0000000000000000000000000000000000000003' as Address
+const VAULT = '0x0000000000000000000000000000000000000004' as Address
+const OTHER = '0x0000000000000000000000000000000000000005' as Address
+
+function tokenData(token: Address, amount: bigint): Hex {
+  return encodeAbiParameters(
+    [
+      { name: 'token', type: 'address' },
+      { name: 'amount', type: 'uint256' }
+    ],
+    [token, amount]
+  )
+}
+
+function safeRouteSingleCalldata(receiver: Address, minExpectedOut: bigint): Hex {
+  return encodeFunctionData({
+    abi: SAFE_ROUTE_SINGLE_ABI,
+    functionName: 'safeRouteSingle',
+    args: [
+      { tokenType: 0, data: tokenData(TOKEN_IN, 100n) },
+      { tokenType: 0, data: tokenData(VAULT, minExpectedOut) },
+      receiver,
+      '0x'
+    ]
+  })
+}
+
+describe('getEnsoRouteInvariantError', () => {
+  const baseTx = {
+    to: '0x0000000000000000000000000000000000000001' as Address,
+    data: safeRouteSingleCalldata(ACCOUNT, 95n),
+    value: '0',
+    from: ACCOUNT,
+    chainId: 1
+  }
+
+  const baseContext = {
+    chainId: 1,
+    fromAddress: ACCOUNT,
+    tokenIn: TOKEN_IN,
+    tokenOut: VAULT,
+    receiver: ACCOUNT,
+    expectedOut: 100n,
+    minExpectedOut: 95n
+  }
+
+  it('accepts supported Enso calldata when receiver and min-out match the displayed context', () => {
+    expect(getEnsoRouteInvariantError(baseTx, baseContext)).toBeUndefined()
+  })
+
+  it('rejects Enso calldata when the decoded receiver differs from the connected account', () => {
+    expect(
+      getEnsoRouteInvariantError(
+        {
+          ...baseTx,
+          data: safeRouteSingleCalldata(OTHER, 95n)
+        },
+        baseContext
+      )
+    ).toBe('Enso route receiver does not match the connected account')
+  })
+
+  it('rejects Enso calldata when decoded min-out differs from the displayed minimum', () => {
+    expect(
+      getEnsoRouteInvariantError(
+        {
+          ...baseTx,
+          data: safeRouteSingleCalldata(ACCOUNT, 94n)
+        },
+        baseContext
+      )
+    ).toBe('Enso route minimum output does not match the displayed minimum')
+  })
+
+  it('rejects unsupported or malformed Enso calldata', () => {
+    expect(
+      getEnsoRouteInvariantError(
+        {
+          ...baseTx,
+          data: '0x1234'
+        },
+        baseContext
+      )
+    ).toBe('Enso route calldata could not be verified')
   })
 })

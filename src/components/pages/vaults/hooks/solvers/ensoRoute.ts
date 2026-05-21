@@ -1,4 +1,5 @@
-import type { Address, Hex } from 'viem'
+import type { Abi, Address, Hex } from 'viem'
+import { decodeAbiParameters, decodeFunctionData, isAddressEqual } from 'viem'
 
 export interface EnsoError {
   error: string
@@ -47,6 +48,82 @@ export function isCanonicalEnsoIntegerString(value: unknown): value is string {
 
 export function parseEnsoRouteBigInt(value: unknown): bigint | undefined {
   return isCanonicalEnsoIntegerString(value) ? BigInt(value) : undefined
+}
+
+export interface EnsoRouteInvariantContext {
+  chainId: number
+  fromAddress: Address
+  tokenIn: Address
+  tokenOut: Address
+  receiver: Address
+  expectedOut: bigint | string
+  minExpectedOut: bigint | string
+}
+
+const ENSO_ROUTER_ABI = [
+  {
+    type: 'function',
+    name: 'safeRouteSingle',
+    stateMutability: 'payable',
+    inputs: [
+      {
+        name: 'tokenIn',
+        type: 'tuple',
+        components: [
+          { name: 'tokenType', type: 'uint8' },
+          { name: 'data', type: 'bytes' }
+        ]
+      },
+      {
+        name: 'tokenOut',
+        type: 'tuple',
+        components: [
+          { name: 'tokenType', type: 'uint8' },
+          { name: 'data', type: 'bytes' }
+        ]
+      },
+      { name: 'receiver', type: 'address' },
+      { name: 'data', type: 'bytes' }
+    ],
+    outputs: [{ name: 'response', type: 'bytes' }]
+  },
+  {
+    type: 'function',
+    name: 'safeRouteMulti',
+    stateMutability: 'payable',
+    inputs: [
+      {
+        name: 'tokensIn',
+        type: 'tuple[]',
+        components: [
+          { name: 'tokenType', type: 'uint8' },
+          { name: 'data', type: 'bytes' }
+        ]
+      },
+      {
+        name: 'tokensOut',
+        type: 'tuple[]',
+        components: [
+          { name: 'tokenType', type: 'uint8' },
+          { name: 'data', type: 'bytes' }
+        ]
+      },
+      { name: 'receiver', type: 'address' },
+      { name: 'data', type: 'bytes' }
+    ],
+    outputs: [{ name: 'response', type: 'bytes' }]
+  }
+] as const satisfies Abi
+
+type EnsoToken = {
+  tokenType: number
+  data: Hex
+}
+
+type DecodedEnsoRouteCalldata = {
+  receiver: Address
+  tokenOut: Address
+  minExpectedOut: bigint
 }
 
 function isEnsoRouteCandidate(data: unknown): data is EnsoRouteCandidate {
@@ -108,6 +185,81 @@ function buildEnsoError(data: unknown, statusCode: number): EnsoError {
     requestId: payload.requestId,
     statusCode: resolveEnsoErrorStatusCode(payload.statusCode, statusCode)
   }
+}
+
+function normalizeRawAmount(value: bigint | string): bigint {
+  return typeof value === 'bigint' ? value : BigInt(value)
+}
+
+function decodeEnsoTokenAmount(token: EnsoToken): { token: Address; amount: bigint } | undefined {
+  try {
+    const [tokenAddress, amount] = decodeAbiParameters(
+      [
+        { name: 'token', type: 'address' },
+        { name: 'amount', type: 'uint256' }
+      ],
+      token.data
+    )
+
+    return { token: tokenAddress, amount }
+  } catch {
+    return undefined
+  }
+}
+
+function decodeEnsoRouteCalldata(data: Hex): DecodedEnsoRouteCalldata | undefined {
+  try {
+    const decoded = decodeFunctionData({
+      abi: ENSO_ROUTER_ABI,
+      data
+    })
+
+    if (decoded.functionName === 'safeRouteSingle') {
+      const [, tokenOut, receiver] = decoded.args
+      const decodedTokenOut = decodeEnsoTokenAmount(tokenOut)
+
+      return decodedTokenOut
+        ? { receiver, tokenOut: decodedTokenOut.token, minExpectedOut: decodedTokenOut.amount }
+        : undefined
+    }
+
+    if (decoded.functionName === 'safeRouteMulti') {
+      const [, tokensOut, receiver] = decoded.args
+      if (tokensOut.length !== 1) {
+        return undefined
+      }
+
+      const decodedTokenOut = decodeEnsoTokenAmount(tokensOut[0])
+
+      return decodedTokenOut
+        ? { receiver, tokenOut: decodedTokenOut.token, minExpectedOut: decodedTokenOut.amount }
+        : undefined
+    }
+
+    return undefined
+  } catch {
+    return undefined
+  }
+}
+
+export function getEnsoRouteInvariantError(
+  tx: EnsoRouteResponse['tx'],
+  context: EnsoRouteInvariantContext
+): string | undefined {
+  if (tx.chainId !== context.chainId) return 'Enso route chain does not match the requested chain'
+  if (!isAddressEqual(tx.from, context.fromAddress)) return 'Enso route sender does not match the connected account'
+
+  const decoded = decodeEnsoRouteCalldata(tx.data)
+  if (!decoded) return 'Enso route calldata could not be verified'
+  if (!isAddressEqual(decoded.receiver, context.receiver))
+    return 'Enso route receiver does not match the connected account'
+  if (!isAddressEqual(decoded.tokenOut, context.tokenOut))
+    return 'Enso route output token does not match the requested vault'
+  if (decoded.minExpectedOut !== normalizeRawAmount(context.minExpectedOut)) {
+    return 'Enso route minimum output does not match the displayed minimum'
+  }
+
+  return undefined
 }
 
 export function normalizeEnsoRouteResponse(
