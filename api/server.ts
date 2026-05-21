@@ -616,6 +616,9 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
 const CHANGE_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
 const ALIGNMENT_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 const VAULT_STATE_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const OPTIMIZATION_CHANGE_ERROR_MESSAGE = 'Unable to load optimization changes'
+const OPTIMIZATION_ALIGNMENT_ERROR_MESSAGE = 'Unable to load optimization alignment'
+const OPTIMIZATION_VAULT_STATE_ERROR_MESSAGE = 'Unable to load vault state'
 
 async function handleOptimizationChange(req: Request): Promise<Response> {
   if (req.method !== 'GET') {
@@ -672,8 +675,8 @@ async function handleOptimizationChange(req: Request): Promise<Response> {
       return Response.json({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, { status: 503 })
     }
 
-    const message = error instanceof Error ? error.message : String(error)
-    return Response.json({ error: message }, { status: 500 })
+    console.error(OPTIMIZATION_CHANGE_ERROR_MESSAGE, error)
+    return Response.json({ error: OPTIMIZATION_CHANGE_ERROR_MESSAGE }, { status: 500 })
   }
 }
 
@@ -690,7 +693,8 @@ async function handleOptimizationAlignment(req: Request): Promise<Response> {
 
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
-    return Response.json({ error: 'ENVIO_GRAPHQL_URL not configured' }, { status: 503 })
+    console.error(OPTIMIZATION_ALIGNMENT_ERROR_MESSAGE, new Error('ENVIO_GRAPHQL_URL not configured'))
+    return Response.json({ error: OPTIMIZATION_ALIGNMENT_ERROR_MESSAGE }, { status: 503 })
   }
 
   try {
@@ -743,8 +747,8 @@ async function handleOptimizationAlignment(req: Request): Promise<Response> {
       return Response.json({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, { status: 503 })
     }
 
-    const message = error instanceof Error ? error.message : String(error)
-    return Response.json({ error: message }, { status: 500 })
+    console.error(OPTIMIZATION_ALIGNMENT_ERROR_MESSAGE, error)
+    return Response.json({ error: OPTIMIZATION_ALIGNMENT_ERROR_MESSAGE }, { status: 500 })
   }
 }
 
@@ -798,8 +802,8 @@ async function handleOptimizationVaultState(req: Request): Promise<Response> {
       }
     )
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    return Response.json({ error: message }, { status: 503 })
+    console.error(OPTIMIZATION_VAULT_STATE_ERROR_MESSAGE, error)
+    return Response.json({ error: OPTIMIZATION_VAULT_STATE_ERROR_MESSAGE }, { status: 503 })
   }
 }
 

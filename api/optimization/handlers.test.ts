@@ -100,7 +100,8 @@ function createMockResponse(): TMockVercelResponse {
 
 describe('optimization handlers', () => {
   afterEach(() => {
-    vi.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.resetAllMocks()
     vi.unstubAllEnvs()
   })
 
@@ -254,6 +255,21 @@ describe('optimization handlers', () => {
     })
   })
 
+  it('redacts backend errors from change responses and logs details', async () => {
+    const sensitiveError = new Error('Invalid redis payload (doa:optimizations:1:latest): private schema detail')
+    readOptimizationsMock.mockRejectedValue(sensitiveError)
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const res = createMockResponse()
+
+    await changeHandler({ method: 'GET', query: {} } as VercelRequest, res)
+
+    expect(res.statusCode).toBe(500)
+    expect(res.body).toEqual({ error: 'Unable to load optimization changes' })
+    expect(JSON.stringify(res.body)).not.toContain('redis payload')
+    expect(JSON.stringify(res.body)).not.toContain('private schema')
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Unable to load optimization changes', sensitiveError)
+  })
+
   it('keeps CORS headers on alignment validation responses', async () => {
     const res = createMockResponse()
 
@@ -262,6 +278,29 @@ describe('optimization handlers', () => {
     expect(res.statusCode).toBe(400)
     expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
     expect(res.body).toEqual({ error: 'vault parameter required' })
+  })
+
+  it('redacts alignment configuration errors and logs details', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const res = createMockResponse()
+
+    await alignmentHandler(
+      {
+        method: 'GET',
+        query: {
+          vault: '0x1111111111111111111111111111111111111111'
+        }
+      } as VercelRequest,
+      res
+    )
+
+    const loggedError = consoleErrorSpy.mock.calls[0]?.[1]
+
+    expect(res.statusCode).toBe(503)
+    expect(res.body).toEqual({ error: 'Unable to load optimization alignment' })
+    expect(JSON.stringify(res.body)).not.toContain('ENVIO_GRAPHQL_URL')
+    expect(loggedError).toBeInstanceOf(Error)
+    expect((loggedError as Error).message).toBe('ENVIO_GRAPHQL_URL not configured')
   })
 
   it('redacts upstream GraphQL errors from alignment responses and logs details', async () => {

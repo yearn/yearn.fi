@@ -33,7 +33,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
-    return res.status(503).json({ error: 'ENVIO_GRAPHQL_URL not configured' })
+    console.error(ALIGNMENT_ERROR_MESSAGE, new Error('ENVIO_GRAPHQL_URL not configured'))
+    return res.status(503).json({ error: ALIGNMENT_ERROR_MESSAGE })
   }
 
   try {

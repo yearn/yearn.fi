@@ -10,6 +10,7 @@ import {
 } from './_lib/redis'
 
 const CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
+const CHANGE_ERROR_MESSAGE = 'Unable to load optimization changes'
 
 function isHistoryQueryEnabled(historyParam: string | string[] | undefined): boolean {
   const value = Array.isArray(historyParam) ? historyParam[0] : historyParam
@@ -68,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    const message = error instanceof Error ? error.message : String(error)
-    return res.status(500).json({ error: message })
+    console.error(CHANGE_ERROR_MESSAGE, error)
+    return res.status(500).json({ error: CHANGE_ERROR_MESSAGE })
   }
 }
