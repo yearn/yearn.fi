@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getVaultAPR, getVaultStaking, getVaultStrategies } from './kongVaultSelectors'
+import { YBOLD_STAKING_ADDRESS } from './normalizeVault'
 
 const LIST_REWARD = {
   address: '0x3333333333333333333333333333333333333333',
@@ -70,6 +71,37 @@ describe('getVaultStaking', () => {
     expect(staking.source).toBe('VeYFI')
     expect(staking.rewards ?? []).toHaveLength(1)
     expect(staking.rewards?.[0].symbol).toBe('SR')
+  })
+
+  it('enables direct staking only when staking metadata matches the registry', () => {
+    const staking = getVaultStaking({
+      chainId: 1,
+      staking: {
+        address: YBOLD_STAKING_ADDRESS,
+        available: true,
+        source: 'yBOLD',
+        rewards: []
+      }
+    } as any)
+
+    expect(staking.available).toBe(true)
+    expect(staking.isDirectStakingEnabled).toBe(true)
+  })
+
+  it('keeps display staking metadata available when the registry does not match', () => {
+    const staking = getVaultStaking({
+      chainId: 1,
+      staking: {
+        address: '0x2222222222222222222222222222222222222222',
+        available: true,
+        source: 'yBOLD',
+        rewards: []
+      }
+    } as any)
+
+    expect(staking.available).toBe(true)
+    expect(staking.address).toBe('0x2222222222222222222222222222222222222222')
+    expect(staking.isDirectStakingEnabled).toBe(false)
   })
 })
 

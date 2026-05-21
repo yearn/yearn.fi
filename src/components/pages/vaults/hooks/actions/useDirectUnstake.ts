@@ -1,3 +1,4 @@
+import { isRegisteredStakingContract } from '@pages/vaults/domain/stakingRegistry'
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
 import { type AppUseSimulateContractReturnType, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import type { Address } from 'viem'
@@ -16,7 +17,12 @@ interface UseDirectUnstakeParams {
 }
 
 export function useDirectUnstake(params: UseDirectUnstakeParams): UseWidgetWithdrawFlowReturn {
-  const isValidInput = params.amount > 0n && !!params.stakingAddress
+  const hasRegisteredStakingContract = isRegisteredStakingContract({
+    chainId: params.chainId,
+    stakingAddress: params.stakingAddress,
+    stakingSource: params.stakingSource
+  })
+  const isValidInput = hasRegisteredStakingContract && params.amount > 0n && !!params.stakingAddress
   const prepareWithdrawEnabled = isValidInput && !!params.account && params.enabled
 
   const unstakeCalls = getDirectUnstakeCalls({

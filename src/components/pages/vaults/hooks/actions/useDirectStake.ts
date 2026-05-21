@@ -1,3 +1,4 @@
+import { isRegisteredStakingContract } from '@pages/vaults/domain/stakingRegistry'
 import type { UseWidgetDepositFlowReturn } from '@pages/vaults/types'
 import { type AppUseSimulateContractReturnType, useReadContract, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { getApproveAbi } from '@shared/utils/approve'
@@ -16,6 +17,23 @@ interface UseDirectStakeParams {
   enabled: boolean
 }
 
+export function getDirectStakeApprovalArgs(params: {
+  chainId: number
+  stakingAddress?: Address
+  stakingSource?: string
+  amount: bigint
+}): readonly [Address, bigint] | undefined {
+  const hasRegisteredStakingContract = isRegisteredStakingContract({
+    chainId: params.chainId,
+    stakingAddress: params.stakingAddress,
+    stakingSource: params.stakingSource
+  })
+
+  return hasRegisteredStakingContract && params.amount > 0n && params.stakingAddress
+    ? [params.stakingAddress, params.amount]
+    : undefined
+}
+
 export function useDirectStake(params: UseDirectStakeParams): UseWidgetDepositFlowReturn {
   // Check current allowance (vault tokens → staking contract)
   const { allowance = 0n } = useTokenAllowance({
@@ -27,7 +45,11 @@ export function useDirectStake(params: UseDirectStakeParams): UseWidgetDepositFl
   })
 
   const stakingSource = normalizeStakingSource(params.stakingSource)
-  const previewCall = getStakePreviewCall(params.stakingSource, params.amount)
+  const approvalArgs = getDirectStakeApprovalArgs(params)
+  const hasRegisteredStakingContract = !!approvalArgs
+  const previewCall = hasRegisteredStakingContract
+    ? getStakePreviewCall(params.stakingSource, params.amount)
+    : undefined
 
   const { data: previewExpectedAmountData } = useReadContract({
     address: params.stakingAddress,
@@ -36,14 +58,15 @@ export function useDirectStake(params: UseDirectStakeParams): UseWidgetDepositFl
     args: previewCall?.args as any,
     chainId: params.chainId,
     query: {
-      enabled: params.enabled && params.amount > 0n && !!params.stakingAddress && !!previewCall
+      enabled:
+        params.enabled && hasRegisteredStakingContract && params.amount > 0n && !!params.stakingAddress && !!previewCall
     }
   })
 
   const previewExpectedAmount = (previewExpectedAmountData as bigint | undefined) ?? 0n
   const expectedOut = stakingSource === 'default' ? params.amount : previewExpectedAmount
 
-  const isValidInput = params.amount > 0n && !!params.stakingAddress
+  const isValidInput = !!approvalArgs
   const isAllowanceSufficient = allowance >= params.amount
   const prepareApproveEnabled = !isAllowanceSufficient && isValidInput && !!params.account
   const prepareDepositEnabled = isAllowanceSufficient && isValidInput && !!params.account
@@ -53,7 +76,7 @@ export function useDirectStake(params: UseDirectStakeParams): UseWidgetDepositFl
     abi: getApproveAbi(params.vaultAddress),
     functionName: 'approve',
     address: params.vaultAddress,
-    args: params.amount > 0n && params.stakingAddress ? [params.stakingAddress, params.amount] : undefined,
+    args: approvalArgs,
     chainId: params.chainId,
     query: { enabled: prepareApproveEnabled }
   })

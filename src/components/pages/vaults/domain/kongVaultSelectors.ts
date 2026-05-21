@@ -8,6 +8,7 @@ import type {
   TKongVaultSnapshotStakingReward
 } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { zeroAddress } from 'viem'
+import { isRegisteredStakingContract } from './stakingRegistry'
 
 const KNOWN_STABLECOIN_SYMBOLS = new Set([
   'USDC',
@@ -305,6 +306,7 @@ export type TKongVaultStakingReward = {
 export type TKongVaultStaking = {
   address: `0x${string}`
   available: boolean
+  isDirectStakingEnabled: boolean
   source: string
   rewards: TKongVaultStakingReward[] | null
 }
@@ -697,11 +699,21 @@ export const getVaultStaking = (vault: TKongVaultInput, snapshot?: TKongVaultSna
   }
   const snapshotStaking = snapshot?.staking
   const listStaking = vault.staking
+  const address = toAddress(snapshotStaking?.address ?? listStaking?.address ?? zeroAddress)
+  const source = snapshotStaking?.source ?? listStaking?.source ?? ''
+  const available = Boolean(snapshotStaking?.available ?? listStaking?.available ?? false)
 
   return {
-    address: toAddress(snapshotStaking?.address ?? listStaking?.address ?? zeroAddress),
-    available: Boolean(snapshotStaking?.available ?? listStaking?.available ?? false),
-    source: snapshotStaking?.source ?? listStaking?.source ?? '',
+    address,
+    available,
+    isDirectStakingEnabled:
+      available &&
+      isRegisteredStakingContract({
+        chainId: getVaultChainID(vault),
+        stakingAddress: address,
+        stakingSource: source
+      }),
+    source,
     rewards: mapStakingRewards(snapshotStaking?.rewards ?? listStaking?.rewards)
   }
 }
