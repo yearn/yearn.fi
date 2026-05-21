@@ -40,6 +40,17 @@ export type VaultOptimizationRecord = VaultOptimization & {
   source: OptimizationSourceMeta
 }
 
+export class AmbiguousVaultOptimizationError extends Error {
+  constructor(vaultAddress: string) {
+    super(`Vault matches optimization records on multiple chains; provide chainId: ${vaultAddress}`)
+    this.name = 'AmbiguousVaultOptimizationError'
+  }
+}
+
+export function isAmbiguousVaultOptimizationError(error: unknown): error is AmbiguousVaultOptimizationError {
+  return error instanceof AmbiguousVaultOptimizationError
+}
+
 interface ReadOptimizationsCache {
   value: VaultOptimizationRecord[] | null
   expiresAtMs: number
@@ -321,10 +332,22 @@ export async function readOptimizations(): Promise<VaultOptimizationRecord[] | n
   }
 }
 
-export function findVaultOptimization<T extends VaultOptimization>(
+export function findVaultOptimization<T extends VaultOptimizationRecord>(
   optimizations: readonly T[],
-  vaultAddress: string
+  vaultAddress: string,
+  chainId?: number
 ): T | undefined {
   const normalizedAddress = vaultAddress.toLowerCase()
-  return optimizations.find((opt) => opt.vault.toLowerCase() === normalizedAddress)
+  const matches = optimizations.filter((opt) => opt.vault.toLowerCase() === normalizedAddress)
+
+  if (chainId !== undefined) {
+    return matches.find((opt) => opt.source.chainId === chainId)
+  }
+
+  const matchedChainIds = new Set(matches.map((opt) => opt.source.chainId).filter((value) => value !== null))
+  if (matchedChainIds.size > 1) {
+    throw new AmbiguousVaultOptimizationError(vaultAddress)
+  }
+
+  return matches[0]
 }

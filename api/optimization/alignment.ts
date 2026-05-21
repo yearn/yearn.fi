@@ -5,6 +5,7 @@ import { fetchAlignedEvents } from './_lib/envio'
 import { parseExplainMetadata } from './_lib/explain-parse'
 import {
   findVaultOptimization,
+  isAmbiguousVaultOptimizationError,
   isRedisAuthenticationError,
   isRedisConnectivityError,
   REDIS_AUTHENTICATION_ERROR_MESSAGE,
@@ -14,6 +15,16 @@ import {
 
 const CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 const ALIGNMENT_ERROR_MESSAGE = 'Unable to load optimization alignment'
+
+function parseOptionalChainId(chainIdParam: string | string[] | undefined): number | undefined | null {
+  const value = Array.isArray(chainIdParam) ? chainIdParam[0] : chainIdParam
+  if (value === undefined) {
+    return undefined
+  }
+
+  const chainId = Number.parseInt(value, 10)
+  return /^\d+$/.test(value) && Number.isSafeInteger(chainId) && chainId > 0 ? chainId : null
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res, OPTIMIZATION_GET_CORS_HEADERS, req.headers.origin)
@@ -31,6 +42,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'vault parameter required' })
   }
 
+  const requestedChainId = parseOptionalChainId(req.query.chainId)
+  if (requestedChainId === null) {
+    return res.status(400).json({ error: 'chainId must be a positive integer' })
+  }
+
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
     console.error(ALIGNMENT_ERROR_MESSAGE, new Error('ENVIO_GRAPHQL_URL not configured'))
@@ -43,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'No optimization data available' })
     }
 
-    const optimization = findVaultOptimization(optimizations, vault)
+    const optimization = findVaultOptimization(optimizations, vault, requestedChainId)
     if (!optimization) {
       return res.status(404).json({ error: `Vault not found: ${vault}` })
     }
@@ -85,6 +101,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (isRedisConnectivityError(error)) {
       return res.status(503).json({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE })
+    }
+
+    const message = error instanceof Error ? error.message : String(error)
+    if (isAmbiguousVaultOptimizationError(error)) {
+      return res.status(400).json({ error: message })
     }
 
     console.error(ALIGNMENT_ERROR_MESSAGE, error)

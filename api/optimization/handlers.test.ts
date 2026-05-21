@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const {
   MockRedisAuthenticationError,
+  MockAmbiguousVaultOptimizationError,
   MockRedisConnectivityError,
   fetchAlignedEventsMock,
   fetchVaultOnChainStateMock,
@@ -12,10 +13,12 @@ const {
   readOptimizationsMock
 } = vi.hoisted(() => {
   class MockRedisAuthenticationError extends Error {}
+  class MockAmbiguousVaultOptimizationError extends Error {}
   class MockRedisConnectivityError extends Error {}
 
   return {
     MockRedisAuthenticationError,
+    MockAmbiguousVaultOptimizationError,
     MockRedisConnectivityError,
     fetchAlignedEventsMock: vi.fn(),
     fetchVaultOnChainStateMock: vi.fn(),
@@ -43,6 +46,7 @@ vi.mock('./_lib/redis', () => ({
     'Backend Redis authentication failed. Check UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN credentials.',
   REDIS_CONNECTIVITY_ERROR_MESSAGE: 'Backend connectivity unavailable. Unable to access Redis.',
   findVaultOptimization: findVaultOptimizationMock,
+  isAmbiguousVaultOptimizationError: (error: unknown) => error instanceof MockAmbiguousVaultOptimizationError,
   isRedisAuthenticationError: (error: unknown) => error instanceof MockRedisAuthenticationError,
   isRedisConnectivityError: (error: unknown) => error instanceof MockRedisConnectivityError,
   readOptimizations: readOptimizationsMock
@@ -515,5 +519,161 @@ describe('optimization handlers', () => {
     expect(res.headers['Access-Control-Allow-Origin']).toBe(TRUSTED_ORIGIN)
     expect(res.body).toEqual(targetHistory)
     expect(findVaultOptimizationMock).not.toHaveBeenCalled()
+  })
+
+  it('passes chainId to change vault lookup', async () => {
+    const vault = '0x1111111111111111111111111111111111111111'
+    const selected = {
+      vault,
+      strategyDebtRatios: [],
+      currentApr: 100,
+      proposedApr: 110,
+      explain: 'selected',
+      source: {
+        key: 'doa:optimizations:10:latest',
+        chainId: 10,
+        revision: 'latest',
+        isLatestAlias: true,
+        timestampUtc: null,
+        latestMatchedTimestampUtc: null
+      }
+    }
+    const optimizations = [selected]
+    readOptimizationsMock.mockResolvedValue(optimizations)
+    findVaultOptimizationMock.mockReturnValue(selected)
+    const res = createMockResponse()
+
+    await changeHandler(
+      {
+        method: 'GET',
+        query: {
+          vault,
+          chainId: '10'
+        }
+      } as VercelRequest,
+      res
+    )
+
+    expect(findVaultOptimizationMock).toHaveBeenCalledWith(optimizations, vault, 10)
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toBe(selected)
+  })
+
+  it('returns a client error when change vault lookup is ambiguous without chainId', async () => {
+    const vault = '0x1111111111111111111111111111111111111111'
+    readOptimizationsMock.mockResolvedValue([
+      {
+        vault,
+        strategyDebtRatios: [],
+        currentApr: 100,
+        proposedApr: 110,
+        explain: 'selected',
+        source: {
+          key: 'doa:optimizations:1:latest',
+          chainId: 1,
+          revision: 'latest',
+          isLatestAlias: true,
+          timestampUtc: null,
+          latestMatchedTimestampUtc: null
+        }
+      }
+    ])
+    findVaultOptimizationMock.mockImplementation(() => {
+      throw new MockAmbiguousVaultOptimizationError(
+        `Vault matches optimization records on multiple chains; provide chainId: ${vault}`
+      )
+    })
+    const res = createMockResponse()
+
+    await changeHandler({ method: 'GET', query: { vault } } as VercelRequest, res)
+
+    expect(res.statusCode).toBe(400)
+    expect(res.body).toEqual({
+      error: `Vault matches optimization records on multiple chains; provide chainId: ${vault}`
+    })
+  })
+
+  it('passes chainId to alignment vault lookup', async () => {
+    vi.stubEnv('ENVIO_GRAPHQL_URL', 'https://envio.example/graphql')
+    const vault = '0x1111111111111111111111111111111111111111'
+    const selected = {
+      vault,
+      strategyDebtRatios: [],
+      currentApr: 100,
+      proposedApr: 110,
+      explain: 'selected',
+      source: {
+        key: 'doa:optimizations:10:latest',
+        chainId: 10,
+        revision: 'latest',
+        isLatestAlias: true,
+        timestampUtc: '2026-04-22 10:00:00 UTC',
+        latestMatchedTimestampUtc: null
+      }
+    }
+    const optimizations = [selected]
+    readOptimizationsMock.mockResolvedValue(optimizations)
+    findVaultOptimizationMock.mockReturnValue(selected)
+    getVaultDecimalsMock.mockReturnValue(18)
+    fetchAlignedEventsMock.mockResolvedValue([])
+    const res = createMockResponse()
+
+    await alignmentHandler(
+      {
+        method: 'GET',
+        query: {
+          vault,
+          chainId: '10'
+        }
+      } as VercelRequest,
+      res
+    )
+
+    expect(findVaultOptimizationMock).toHaveBeenCalledWith(optimizations, vault, 10)
+    expect(fetchAlignedEventsMock).toHaveBeenCalledWith(
+      'https://envio.example/graphql',
+      vault,
+      10,
+      [],
+      expect.any(Number),
+      expect.any(Number),
+      18
+    )
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('returns a client error when alignment vault lookup is ambiguous without chainId', async () => {
+    vi.stubEnv('ENVIO_GRAPHQL_URL', 'https://envio.example/graphql')
+    const vault = '0x1111111111111111111111111111111111111111'
+    readOptimizationsMock.mockResolvedValue([
+      {
+        vault,
+        strategyDebtRatios: [],
+        currentApr: 100,
+        proposedApr: 110,
+        explain: 'selected',
+        source: {
+          key: 'doa:optimizations:1:latest',
+          chainId: 1,
+          revision: 'latest',
+          isLatestAlias: true,
+          timestampUtc: '2026-04-22 10:00:00 UTC',
+          latestMatchedTimestampUtc: null
+        }
+      }
+    ])
+    findVaultOptimizationMock.mockImplementation(() => {
+      throw new MockAmbiguousVaultOptimizationError(
+        `Vault matches optimization records on multiple chains; provide chainId: ${vault}`
+      )
+    })
+    const res = createMockResponse()
+
+    await alignmentHandler({ method: 'GET', query: { vault } } as VercelRequest, res)
+
+    expect(res.statusCode).toBe(400)
+    expect(res.body).toEqual({
+      error: `Vault matches optimization records on multiple chains; provide chainId: ${vault}`
+    })
   })
 })
