@@ -1479,12 +1479,13 @@ async function main() {
         return withCors(new Response('Not found', { status: 404 }))
       } catch (error) {
         console.error('💥 Request handler error:', error)
-        return withCors(
-          Response.json(
-            { error: 'Internal server error', message: error instanceof Error ? error.message : String(error) },
-            { status: 500 }
-          )
+        const errorResponse = Response.json(
+          { error: 'Internal server error', message: error instanceof Error ? error.message : String(error) },
+          { status: 500 }
         )
+        return isTenderlyAdminMutationRoute(url.pathname)
+          ? withTenderlyAdminCors(errorResponse, req)
+          : withCors(errorResponse)
       }
     },
     port: API_PORT,
