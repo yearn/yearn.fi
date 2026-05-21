@@ -248,6 +248,11 @@ const ACCOUNT = '0x0000000000000000000000000000000000000002' as Address
 const TOKEN_IN = '0x0000000000000000000000000000000000000003' as Address
 const VAULT = '0x0000000000000000000000000000000000000004' as Address
 const OTHER = '0x0000000000000000000000000000000000000005' as Address
+const NATIVE_TOKEN = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
+const ENSO_TOKEN_TYPE = {
+  Native: 0,
+  ERC20: 1
+} as const
 
 function tokenData(token: Address, amount: bigint): Hex {
   return encodeAbiParameters(
@@ -259,13 +264,41 @@ function tokenData(token: Address, amount: bigint): Hex {
   )
 }
 
-function safeRouteSingleCalldata(receiver: Address, minExpectedOut: bigint): Hex {
+function nativeTokenData(amount: bigint): Hex {
+  return encodeAbiParameters([{ name: 'amount', type: 'uint256' }], [amount])
+}
+
+function tokenAmountData(tokenType: number, token: Address, amount: bigint): Hex {
+  return tokenType === ENSO_TOKEN_TYPE.Native ? nativeTokenData(amount) : tokenData(token, amount)
+}
+
+function safeRouteSingleCalldata({
+  receiver,
+  minExpectedOut,
+  tokenIn = TOKEN_IN,
+  tokenOut = VAULT,
+  amountIn = 100n,
+  inputTokenType = ENSO_TOKEN_TYPE.ERC20,
+  outputTokenType = ENSO_TOKEN_TYPE.ERC20,
+  inputData,
+  outputData
+}: {
+  receiver: Address
+  minExpectedOut: bigint
+  tokenIn?: Address
+  tokenOut?: Address
+  amountIn?: bigint
+  inputTokenType?: number
+  outputTokenType?: number
+  inputData?: Hex
+  outputData?: Hex
+}): Hex {
   return encodeFunctionData({
     abi: SAFE_ROUTE_SINGLE_ABI,
     functionName: 'safeRouteSingle',
     args: [
-      { tokenType: 0, data: tokenData(TOKEN_IN, 100n) },
-      { tokenType: 0, data: tokenData(VAULT, minExpectedOut) },
+      { tokenType: inputTokenType, data: inputData ?? tokenAmountData(inputTokenType, tokenIn, amountIn) },
+      { tokenType: outputTokenType, data: outputData ?? tokenAmountData(outputTokenType, tokenOut, minExpectedOut) },
       receiver,
       '0x'
     ]
@@ -275,7 +308,7 @@ function safeRouteSingleCalldata(receiver: Address, minExpectedOut: bigint): Hex
 describe('getEnsoRouteInvariantError', () => {
   const baseTx = {
     to: '0x0000000000000000000000000000000000000001' as Address,
-    data: safeRouteSingleCalldata(ACCOUNT, 95n),
+    data: safeRouteSingleCalldata({ receiver: ACCOUNT, minExpectedOut: 95n }),
     value: '0',
     from: ACCOUNT,
     chainId: 1
@@ -285,6 +318,7 @@ describe('getEnsoRouteInvariantError', () => {
     chainId: 1,
     fromAddress: ACCOUNT,
     tokenIn: TOKEN_IN,
+    amountIn: 100n,
     tokenOut: VAULT,
     receiver: ACCOUNT,
     expectedOut: 100n,
@@ -295,12 +329,33 @@ describe('getEnsoRouteInvariantError', () => {
     expect(getEnsoRouteInvariantError(baseTx, baseContext)).toBeUndefined()
   })
 
+  it('accepts native input calldata when the transaction value matches the requested amount', () => {
+    expect(
+      getEnsoRouteInvariantError(
+        {
+          ...baseTx,
+          data: safeRouteSingleCalldata({
+            receiver: ACCOUNT,
+            minExpectedOut: 95n,
+            tokenIn: NATIVE_TOKEN,
+            inputTokenType: ENSO_TOKEN_TYPE.Native
+          }),
+          value: '100'
+        },
+        {
+          ...baseContext,
+          tokenIn: NATIVE_TOKEN
+        }
+      )
+    ).toBeUndefined()
+  })
+
   it('rejects Enso calldata when the decoded receiver differs from the connected account', () => {
     expect(
       getEnsoRouteInvariantError(
         {
           ...baseTx,
-          data: safeRouteSingleCalldata(OTHER, 95n)
+          data: safeRouteSingleCalldata({ receiver: OTHER, minExpectedOut: 95n })
         },
         baseContext
       )
@@ -312,11 +367,64 @@ describe('getEnsoRouteInvariantError', () => {
       getEnsoRouteInvariantError(
         {
           ...baseTx,
-          data: safeRouteSingleCalldata(ACCOUNT, 94n)
+          data: safeRouteSingleCalldata({ receiver: ACCOUNT, minExpectedOut: 94n })
         },
         baseContext
       )
     ).toBe('Enso route minimum output does not match the displayed minimum')
+  })
+
+  it('rejects Enso calldata when decoded input token differs from the requested token', () => {
+    expect(
+      getEnsoRouteInvariantError(
+        {
+          ...baseTx,
+          data: safeRouteSingleCalldata({ receiver: ACCOUNT, minExpectedOut: 95n, tokenIn: OTHER })
+        },
+        baseContext
+      )
+    ).toBe('Enso route input token does not match the requested token')
+  })
+
+  it('rejects Enso calldata when decoded input amount differs from the requested amount', () => {
+    expect(
+      getEnsoRouteInvariantError(
+        {
+          ...baseTx,
+          data: safeRouteSingleCalldata({ receiver: ACCOUNT, minExpectedOut: 95n, amountIn: 101n })
+        },
+        baseContext
+      )
+    ).toBe('Enso route input amount does not match the requested amount')
+  })
+
+  it('rejects Enso calldata when transaction value differs from the decoded input token type', () => {
+    expect(
+      getEnsoRouteInvariantError(
+        {
+          ...baseTx,
+          value: '1'
+        },
+        baseContext
+      )
+    ).toBe('Enso route transaction value does not match the requested input')
+  })
+
+  it('rejects calldata with token data that does not match the declared Enso token type', () => {
+    expect(
+      getEnsoRouteInvariantError(
+        {
+          ...baseTx,
+          data: safeRouteSingleCalldata({
+            receiver: ACCOUNT,
+            minExpectedOut: 95n,
+            outputTokenType: ENSO_TOKEN_TYPE.Native,
+            outputData: tokenData(VAULT, 95n)
+          })
+        },
+        baseContext
+      )
+    ).toBe('Enso route calldata could not be verified')
   })
 
   it('rejects unsupported or malformed Enso calldata', () => {

@@ -167,6 +167,7 @@ export const useSolverEnso = ({
               chainId,
               fromAddress,
               tokenIn,
+              amountIn,
               tokenOut,
               receiver,
               expectedOut: resolvedRoute.amountOut,

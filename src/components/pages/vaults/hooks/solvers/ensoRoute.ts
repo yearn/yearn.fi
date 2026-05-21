@@ -54,11 +54,19 @@ export interface EnsoRouteInvariantContext {
   chainId: number
   fromAddress: Address
   tokenIn: Address
+  amountIn: bigint | string
   tokenOut: Address
   receiver: Address
   expectedOut: bigint | string
   minExpectedOut: bigint | string
 }
+
+const ENSO_NATIVE_TOKEN_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
+const ENSO_TOKEN_TYPE = {
+  Native: 0,
+  ERC20: 1
+} as const
+const ABI_WORD_HEX_LENGTH = 64
 
 const ENSO_ROUTER_ABI = [
   {
@@ -122,8 +130,11 @@ type EnsoToken = {
 
 type DecodedEnsoRouteCalldata = {
   receiver: Address
+  tokenIn: Address
+  amountIn: bigint
   tokenOut: Address
   minExpectedOut: bigint
+  usesNativeInput: boolean
 }
 
 function isEnsoRouteCandidate(data: unknown): data is EnsoRouteCandidate {
@@ -187,12 +198,38 @@ function buildEnsoError(data: unknown, statusCode: number): EnsoError {
   }
 }
 
-function normalizeRawAmount(value: bigint | string): bigint {
-  return typeof value === 'bigint' ? value : BigInt(value)
+function normalizeRawAmount(value: bigint | string): bigint | undefined {
+  try {
+    return typeof value === 'bigint' ? value : BigInt(value)
+  } catch {
+    return undefined
+  }
 }
 
-function decodeEnsoTokenAmount(token: EnsoToken): { token: Address; amount: bigint } | undefined {
+function hasAbiWordLength(data: Hex, words: number): boolean {
+  return data.length === 2 + words * ABI_WORD_HEX_LENGTH
+}
+
+function decodeEnsoTokenAmount(token: EnsoToken): { token: Address; amount: bigint; isNative: boolean } | undefined {
   try {
+    if (token.tokenType === ENSO_TOKEN_TYPE.Native) {
+      if (!hasAbiWordLength(token.data, 1)) {
+        return undefined
+      }
+
+      const [amount] = decodeAbiParameters([{ name: 'amount', type: 'uint256' }], token.data)
+
+      return { token: ENSO_NATIVE_TOKEN_ADDRESS, amount, isNative: true }
+    }
+
+    if (token.tokenType !== ENSO_TOKEN_TYPE.ERC20) {
+      return undefined
+    }
+
+    if (!hasAbiWordLength(token.data, 2)) {
+      return undefined
+    }
+
     const [tokenAddress, amount] = decodeAbiParameters(
       [
         { name: 'token', type: 'address' },
@@ -201,10 +238,30 @@ function decodeEnsoTokenAmount(token: EnsoToken): { token: Address; amount: bigi
       token.data
     )
 
-    return { token: tokenAddress, amount }
+    return { token: tokenAddress, amount, isNative: false }
   } catch {
     return undefined
   }
+}
+
+function buildDecodedEnsoRouteCalldata(
+  tokenIn: EnsoToken,
+  tokenOut: EnsoToken,
+  receiver: Address
+): DecodedEnsoRouteCalldata | undefined {
+  const decodedTokenIn = decodeEnsoTokenAmount(tokenIn)
+  const decodedTokenOut = decodeEnsoTokenAmount(tokenOut)
+
+  return decodedTokenIn && decodedTokenOut
+    ? {
+        receiver,
+        tokenIn: decodedTokenIn.token,
+        amountIn: decodedTokenIn.amount,
+        tokenOut: decodedTokenOut.token,
+        minExpectedOut: decodedTokenOut.amount,
+        usesNativeInput: decodedTokenIn.isNative
+      }
+    : undefined
 }
 
 function decodeEnsoRouteCalldata(data: Hex): DecodedEnsoRouteCalldata | undefined {
@@ -215,25 +272,18 @@ function decodeEnsoRouteCalldata(data: Hex): DecodedEnsoRouteCalldata | undefine
     })
 
     if (decoded.functionName === 'safeRouteSingle') {
-      const [, tokenOut, receiver] = decoded.args
-      const decodedTokenOut = decodeEnsoTokenAmount(tokenOut)
+      const [tokenIn, tokenOut, receiver] = decoded.args
 
-      return decodedTokenOut
-        ? { receiver, tokenOut: decodedTokenOut.token, minExpectedOut: decodedTokenOut.amount }
-        : undefined
+      return buildDecodedEnsoRouteCalldata(tokenIn, tokenOut, receiver)
     }
 
     if (decoded.functionName === 'safeRouteMulti') {
-      const [, tokensOut, receiver] = decoded.args
-      if (tokensOut.length !== 1) {
+      const [tokensIn, tokensOut, receiver] = decoded.args
+      if (tokensIn.length !== 1 || tokensOut.length !== 1) {
         return undefined
       }
 
-      const decodedTokenOut = decodeEnsoTokenAmount(tokensOut[0])
-
-      return decodedTokenOut
-        ? { receiver, tokenOut: decodedTokenOut.token, minExpectedOut: decodedTokenOut.amount }
-        : undefined
+      return buildDecodedEnsoRouteCalldata(tokensIn[0], tokensOut[0], receiver)
     }
 
     return undefined
@@ -251,11 +301,24 @@ export function getEnsoRouteInvariantError(
 
   const decoded = decodeEnsoRouteCalldata(tx.data)
   if (!decoded) return 'Enso route calldata could not be verified'
+  const amountIn = normalizeRawAmount(context.amountIn)
+  const minExpectedOut = normalizeRawAmount(context.minExpectedOut)
+  const txValue = normalizeRawAmount(tx.value || '0')
+  if (amountIn === undefined || minExpectedOut === undefined || txValue === undefined) {
+    return 'Enso route amounts could not be verified'
+  }
+
+  if (!isAddressEqual(decoded.tokenIn, context.tokenIn))
+    return 'Enso route input token does not match the requested token'
+  if (decoded.amountIn !== amountIn) return 'Enso route input amount does not match the requested amount'
+  if (txValue !== (decoded.usesNativeInput ? amountIn : 0n)) {
+    return 'Enso route transaction value does not match the requested input'
+  }
   if (!isAddressEqual(decoded.receiver, context.receiver))
     return 'Enso route receiver does not match the connected account'
   if (!isAddressEqual(decoded.tokenOut, context.tokenOut))
     return 'Enso route output token does not match the requested vault'
-  if (decoded.minExpectedOut !== normalizeRawAmount(context.minExpectedOut)) {
+  if (decoded.minExpectedOut !== minExpectedOut) {
     return 'Enso route minimum output does not match the displayed minimum'
   }
 
