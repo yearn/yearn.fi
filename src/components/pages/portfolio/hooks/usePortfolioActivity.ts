@@ -1,5 +1,6 @@
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema } from '@shared/hooks/useFetch'
+import type { TNotification } from '@shared/types/notifications'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import {
@@ -16,27 +17,91 @@ type TPortfolioActivityFilters = {
   endTimestamp?: number | null
 }
 
+type TPortfolioActivityFacetState = {
+  address: string | null
+  offsetPerSource: number
+  discoveredChainIds: number[] | null
+  isScanComplete: boolean
+}
+
 const ACTIVITY_FACET_LIMIT_PER_SOURCE = 500
 const MAX_ACTIVITY_RETRIES = 3
 const DEFAULT_ACTIVITY_RETRY_DELAY = 1000
 
+function normalizeWalletAddress(address: string | null | undefined): string | null {
+  return typeof address === 'string' && address ? address.toLowerCase() : null
+}
+
+function getInitialFacetState(address: string | null): TPortfolioActivityFacetState {
+  return {
+    address,
+    offsetPerSource: 0,
+    discoveredChainIds: null,
+    isScanComplete: false
+  }
+}
+
+export function getActivePortfolioActivityFacetState(
+  facetState: TPortfolioActivityFacetState,
+  address: string | null
+): TPortfolioActivityFacetState {
+  return facetState.address === address ? facetState : getInitialFacetState(address)
+}
+
+export function mergePortfolioActivityFacetState(
+  previous: TPortfolioActivityFacetState,
+  address: string | null,
+  chainIds: number[],
+  nextOffsetPerSource: number | null
+): TPortfolioActivityFacetState {
+  const currentState = getActivePortfolioActivityFacetState(previous, address)
+  const discoveredChainIds = Array.from(new Set([...(currentState.discoveredChainIds ?? []), ...chainIds])).sort(
+    (firstChainId, secondChainId) => firstChainId - secondChainId
+  )
+
+  return {
+    ...currentState,
+    discoveredChainIds,
+    offsetPerSource: nextOffsetPerSource ?? currentState.offsetPerSource,
+    isScanComplete: nextOffsetPerSource === null
+  }
+}
+
+export function getUnresolvedLocalActivityEntries(
+  cachedEntries: TNotification[],
+  activeAddress: string | null | undefined
+): TNotification[] {
+  const normalizedActiveAddress = normalizeWalletAddress(activeAddress)
+
+  if (normalizedActiveAddress === null) {
+    return []
+  }
+
+  return cachedEntries
+    .filter(
+      (entry) =>
+        entry.status !== 'success' &&
+        normalizeWalletAddress(entry.address as string | null | undefined) === normalizedActiveAddress
+    )
+    .toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0))
+}
+
 export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortfolioActivityFilters = {}) {
   const { address } = useWeb3()
+  const normalizedAddress = normalizeWalletAddress(address)
   const isEnabled = Boolean(address) && enabled
   const type = filters.type ?? 'all'
   const chainId = filters.chainId ?? null
   const startTimestamp = filters.startTimestamp ?? null
   const endTimestamp = filters.endTimestamp ?? null
   const shouldFetchFacets = type === 'all' && chainId === null && startTimestamp === null && endTimestamp === null
-  const [facetOffsetPerSource, setFacetOffsetPerSource] = useState(0)
-  const [discoveredFacetChainIds, setDiscoveredFacetChainIds] = useState<number[] | null>(null)
-  const [isFacetScanComplete, setIsFacetScanComplete] = useState(false)
-
-  useEffect(() => {
-    setFacetOffsetPerSource(0)
-    setDiscoveredFacetChainIds(null)
-    setIsFacetScanComplete(false)
-  }, [address])
+  const [facetState, setFacetState] = useState<TPortfolioActivityFacetState>(() =>
+    getInitialFacetState(normalizedAddress)
+  )
+  const activeFacetState = getActivePortfolioActivityFacetState(facetState, normalizedAddress)
+  const facetOffsetPerSource = activeFacetState.offsetPerSource
+  const discoveredFacetChainIds = activeFacetState.discoveredChainIds
+  const isFacetScanComplete = activeFacetState.isScanComplete
 
   const shouldRetryActivityRequest = (failureCount: number, error: unknown): boolean => {
     const status = (error as { response?: { status?: number }; status?: number })?.response?.status
@@ -126,19 +191,15 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
       return
     }
 
-    setDiscoveredFacetChainIds((previousChainIds) =>
-      Array.from(new Set([...(previousChainIds ?? []), ...page.facets.chainIds])).sort(
-        (firstChainId, secondChainId) => firstChainId - secondChainId
+    setFacetState((previous) =>
+      mergePortfolioActivityFacetState(
+        previous,
+        normalizedAddress,
+        page.facets.chainIds,
+        page.pageInfo.nextOffsetPerSource
       )
     )
-
-    if (page.pageInfo.nextOffsetPerSource !== null) {
-      setFacetOffsetPerSource(page.pageInfo.nextOffsetPerSource)
-      return
-    }
-
-    setIsFacetScanComplete(true)
-  }, [facetsQuery.data, shouldFetchFacets])
+  }, [facetsQuery.data, normalizedAddress, shouldFetchFacets])
 
   const entries: TPortfolioActivityEntry[] = query.data?.pages.flatMap((page) => page.entries) ?? []
   const facetChainIds = discoveredFacetChainIds

@@ -88,7 +88,7 @@ import {
   resolvePortfolioGrowthDisplayMode
 } from './components/PortfolioHistoryChart'
 import type { TPortfolioVaultGrowthChartMode } from './components/PortfolioVaultGrowthChart'
-import { usePortfolioActivity } from './hooks/usePortfolioActivity'
+import { getUnresolvedLocalActivityEntries, usePortfolioActivity } from './hooks/usePortfolioActivity'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
 import type {
@@ -178,6 +178,30 @@ type TActivityModalFilters = {
   endDate: string
 }
 type TActivityDateField = 'startDate' | 'endDate'
+type TAddressScopedState<T> = {
+  address: string | null
+  value: T
+}
+type TAddressScopedStateSetter<T> = (value: T | ((previous: T) => T)) => void
+
+function useAddressScopedState<T>(address: string | null, defaultValue: T): [T, TAddressScopedStateSetter<T>] {
+  const [state, setState] = useState<TAddressScopedState<T>>({ address, value: defaultValue })
+  const value = state.address === address ? state.value : defaultValue
+  const setValue = useCallback<TAddressScopedStateSetter<T>>(
+    (nextValue) => {
+      setState((previous) => {
+        const previousValue = previous.address === address ? previous.value : defaultValue
+        const value =
+          typeof nextValue === 'function' ? (nextValue as (previousValue: T) => T)(previousValue) : nextValue
+
+        return { address, value }
+      })
+    },
+    [address, defaultValue]
+  )
+
+  return [value, setValue]
+}
 
 function getTodayDateInputValue(): string {
   const today = new Date()
@@ -1681,16 +1705,25 @@ function PortfolioTabSelector({
 function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivityProps): ReactElement {
   const { allVaults } = useYearn()
   const { getToken } = useTokenList()
+  const { address } = useWeb3()
   const { cachedEntries, isLoading: notificationsLoading, error: notificationsError } = useNotifications()
   const [activityFilters, setActivityFilters] = useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
   const [activityDateRangeDraftFilters, setActivityDateRangeDraftFilters] =
     useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
-  const [activityChainId, setActivityChainId] = useState<number | null>(null)
-  const [lastKnownActivityChainIds, setLastKnownActivityChainIds] = useState<number[] | null>(null)
   const [isActivityZapFilterActive, setIsActivityZapFilterActive] = useState(false)
-  const [activitySearch, setActivitySearch] = useState('')
-  const [isActivityMobileSearchExpanded, setIsActivityMobileSearchExpanded] = useState(false)
   const [isActivityDateRangeOpen, setIsActivityDateRangeOpen] = useState(false)
+  const normalizedActiveAddress = typeof address === 'string' && address ? address.toLowerCase() : null
+  const [activityChainId, setActivityChainId] = useAddressScopedState<number | null>(normalizedActiveAddress, null)
+  const [lastKnownActivityChainIds, setLastKnownActivityChainIds] = useAddressScopedState<number[] | null>(
+    normalizedActiveAddress,
+    null
+  )
+  const [activitySearch, setActivitySearch] = useAddressScopedState(normalizedActiveAddress, '')
+  const [isActivityMobileSearchExpanded, setIsActivityMobileSearchExpanded] = useAddressScopedState(
+    normalizedActiveAddress,
+    false
+  )
+
   const activityStartTimestamp = useMemo(
     () => getActivityDateBoundaryTimestamp(activityFilters.startDate, 'start'),
     [activityFilters.startDate]
@@ -1759,11 +1792,8 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     [activityChainId, activityChainOptions, displayedActivityNetworks]
   )
   const unresolvedLocalEntries = useMemo(
-    () =>
-      cachedEntries
-        .filter((entry) => entry.status !== 'success')
-        .toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)),
-    [cachedEntries]
+    () => getUnresolvedLocalActivityEntries(cachedEntries, normalizedActiveAddress),
+    [cachedEntries, normalizedActiveAddress]
   )
   const hasUnresolvedLocalEntries = unresolvedLocalEntries.length > 0
   const hasIndexedEntries = indexedEntries.length > 0

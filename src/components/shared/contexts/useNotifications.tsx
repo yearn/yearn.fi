@@ -1,9 +1,15 @@
 import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import type { TNotification, TNotificationStatus, TNotificationsContext } from '@shared/types/notifications'
 import type React from 'react'
-import { createContext, startTransition, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, startTransition, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import { useIndexedDBStore } from 'use-indexeddb'
-import { appendCachedNotification, mergeCachedNotificationEntry } from './useNotifications.helpers'
+import {
+  appendCachedNotification,
+  filterNotificationsByAddress,
+  isNotificationForAddress,
+  mergeCachedNotificationEntry
+} from './useNotifications.helpers'
+import { useWeb3 } from './useWeb3'
 
 const defaultProps: TNotificationsContext = {
   cachedEntries: [],
@@ -18,6 +24,9 @@ const defaultProps: TNotificationsContext = {
 
 const NotificationsContext = createContext<TNotificationsContext>(defaultProps)
 export const WithNotifications = ({ children }: { children: React.ReactElement }): React.ReactElement => {
+  const { address } = useWeb3()
+  const activeAddressRef = useRef(address)
+  activeAddressRef.current = address
   const [cachedEntries, setCachedEntries] = useState<TNotification[]>([])
   const [entryNonce, setEntryNonce] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(true)
@@ -42,9 +51,15 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
     void entryNonce
     setIsLoading(true)
     setError(null)
+    setCachedEntries([])
+    setNotificationStatus(null)
+    if (!activeAddressRef.current) {
+      setIsLoading(false)
+      return
+    }
     try {
       const entriesFromDB = await getAll()
-      setCachedEntries(entriesFromDB || [])
+      setCachedEntries(filterNotificationsByAddress(entriesFromDB || [], activeAddressRef.current))
     } catch (error) {
       console.error('Failed to fetch notifications from IndexedDB:', error)
       setCachedEntries([])
@@ -52,7 +67,7 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
     } finally {
       setIsLoading(false)
     }
-  }, [getAll, entryNonce])
+  }, [getAll, entryNonce, address])
 
   /************************************************************************************************
    * The updateEntry function is responsible for updating an existing notification in the IndexedDB.
@@ -75,9 +90,16 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
         if (notification) {
           const updatedNotification = { ...notification, ...entry }
           await update(updatedNotification)
+          const shouldExposeNotification = isNotificationForAddress(updatedNotification, activeAddressRef.current)
           startTransition(() => {
-            setCachedEntries((currentEntries) => mergeCachedNotificationEntry(currentEntries, id, updatedNotification))
-            setNotificationStatus(entry?.status || null)
+            setCachedEntries((currentEntries) =>
+              shouldExposeNotification
+                ? mergeCachedNotificationEntry(currentEntries, id, updatedNotification)
+                : currentEntries.filter((entry) => entry.id !== id)
+            )
+            if (shouldExposeNotification) {
+              setNotificationStatus(entry?.status || null)
+            }
           })
         } else {
           console.warn(`Notification with id ${id} not found`)
@@ -86,16 +108,23 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
         console.error('Failed to update notification:', error)
       }
     },
-    [getByID, update]
+    [getByID, update, address]
   )
 
   const addNotification = useCallback(
     async (notification: TNotification): Promise<number> => {
       try {
         const id = await add(notification)
+        const shouldExposeNotification = isNotificationForAddress(notification, activeAddressRef.current)
         startTransition(() => {
-          setCachedEntries((currentEntries) => appendCachedNotification(currentEntries, { ...notification, id }))
-          setNotificationStatus(notification.status)
+          setCachedEntries((currentEntries) =>
+            shouldExposeNotification
+              ? appendCachedNotification(currentEntries, { ...notification, id })
+              : currentEntries
+          )
+          if (shouldExposeNotification) {
+            setNotificationStatus(notification.status)
+          }
         })
         return id
       } catch (error) {
@@ -104,7 +133,7 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
         return -1
       }
     },
-    [add]
+    [add, address]
   )
 
   const deleteByIDWithErrorHandling = useCallback(
@@ -131,9 +160,14 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
   /**************************************************************************
    * Context value that is passed to all children of this component.
    *************************************************************************/
+  const walletCachedEntries = useMemo(
+    () => filterNotificationsByAddress(cachedEntries, address),
+    [cachedEntries, address]
+  )
+
   const contextValue = useMemo(
     (): TNotificationsContext => ({
-      cachedEntries,
+      cachedEntries: walletCachedEntries,
       isLoading,
       error,
       deleteByID: deleteByIDWithErrorHandling,
@@ -142,7 +176,15 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
       notificationStatus,
       setNotificationStatus
     }),
-    [cachedEntries, isLoading, error, deleteByIDWithErrorHandling, updateEntry, addNotification, notificationStatus]
+    [
+      walletCachedEntries,
+      isLoading,
+      error,
+      deleteByIDWithErrorHandling,
+      updateEntry,
+      addNotification,
+      notificationStatus
+    ]
   )
 
   return <NotificationsContext.Provider value={contextValue}>{children}</NotificationsContext.Provider>
