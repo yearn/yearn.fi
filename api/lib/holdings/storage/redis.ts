@@ -36,7 +36,7 @@ export function isHoldingsStorageEnabled(): boolean {
 }
 
 export function isHoldingsStorageConfigured(): boolean {
-  return hasRedisConfig()
+  return Boolean(holdingsConfig.redisUrl || holdingsConfig.redisToken)
 }
 
 export function getHoldingsRedisClient(): Redis | null {
