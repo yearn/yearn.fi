@@ -1,9 +1,9 @@
 import { ERC_4626_ROUTER_ABI } from '@shared/contracts/abi/erc4626Router.abi'
 import { VAULT_MIGRATOR_ABI } from '@shared/contracts/abi/vaultMigrator.abi'
+import { YEARN_4626_ROUTER } from '@shared/utils/constants'
+import { getMigratorConfig } from '@shared/utils/migratorRegistry'
 import { base, mainnet } from 'viem/chains'
 import { describe, expect, it } from 'vitest'
-import { YEARN_4626_ROUTER } from './constants'
-import { getMigratorConfig } from './migratorRegistry'
 
 const ETHEREUM_MIGRATOR = '0x9327e2fdc57c7d70782f29ab46f6385afaf4503c'
 const UNKNOWN_ROUTER = '0x0000000000000000000000000000000000000001'

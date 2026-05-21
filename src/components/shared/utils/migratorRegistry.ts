@@ -1,8 +1,8 @@
 import { ERC_4626_ROUTER_ABI } from '@shared/contracts/abi/erc4626Router.abi'
 import { VAULT_MIGRATOR_ABI } from '@shared/contracts/abi/vaultMigrator.abi'
+import { YEARN_4626_ROUTER, YEARN_4626_ROUTER_CHAIN_ID } from '@shared/utils/constants'
 import type { Abi, Address } from 'viem'
 import { mainnet } from 'viem/chains'
-import { YEARN_4626_ROUTER, YEARN_4626_ROUTER_CHAIN_ID } from './constants'
 
 export type MigratorConfig = {
   abi: Abi

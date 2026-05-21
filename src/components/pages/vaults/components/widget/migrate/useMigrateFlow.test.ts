@@ -2,7 +2,8 @@ import {
   buildProtectedMigrateArgs,
   calculateMigrateMinSharesOut,
   encodeProtectedMigrateData,
-  migratorSupportsMinSharesOut
+  migratorSupportsMinSharesOut,
+  supportsMigratePermitFlow
 } from '@pages/vaults/components/widget/migrate/useMigrateFlow'
 import { ERC_4626_ROUTER_ABI } from '@shared/contracts/abi/erc4626Router.abi'
 import { VAULT_MIGRATOR_ABI } from '@shared/contracts/abi/vaultMigrator.abi'
@@ -11,6 +12,38 @@ import { describe, expect, it } from 'vitest'
 
 const VAULT_FROM = '0x0000000000000000000000000000000000000001' as Address
 const VAULT_TO = '0x0000000000000000000000000000000000000002' as Address
+
+describe('supportsMigratePermitFlow', () => {
+  it('requires a resolved migrator config before allowing permit flow', () => {
+    expect(
+      supportsMigratePermitFlow({
+        hasMigratorConfig: false,
+        permitType: 'eip2612',
+        vaultVersion: '3.0'
+      })
+    ).toBe(false)
+  })
+
+  it('allows EIP-2612 permit flow for configured V3 migrations', () => {
+    expect(
+      supportsMigratePermitFlow({
+        hasMigratorConfig: true,
+        permitType: 'eip2612',
+        vaultVersion: '3.0'
+      })
+    ).toBe(true)
+  })
+
+  it('keeps V2 vaults on the approve flow', () => {
+    expect(
+      supportsMigratePermitFlow({
+        hasMigratorConfig: true,
+        permitType: 'eip2612',
+        vaultVersion: '2.0'
+      })
+    ).toBe(false)
+  })
+})
 
 describe('calculateMigrateMinSharesOut', () => {
   it('applies slippage to a positive destination share preview', () => {

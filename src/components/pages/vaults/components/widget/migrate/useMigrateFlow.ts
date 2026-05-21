@@ -94,6 +94,19 @@ export function encodeProtectedMigrateData({
   })
 }
 
+export const supportsMigratePermitFlow = ({
+  hasMigratorConfig,
+  permitType,
+  vaultVersion
+}: {
+  hasMigratorConfig: boolean
+  permitType: PermitType
+  vaultVersion?: string
+}): boolean => {
+  const isV2Vault = !vaultVersion?.startsWith('3') && !vaultVersion?.startsWith('~3')
+  return hasMigratorConfig && permitType === 'eip2612' && !isV2Vault
+}
+
 export const useMigrateFlow = ({
   vaultFrom,
   vaultTo,
@@ -194,12 +207,9 @@ export const useMigrateFlow = ({
   const hasReliableQuote = !isQuoteLoading && !isQuoteError && (expectedSharesOut ?? 0n) > 0n && minSharesOut > 0n
   const canProtectMigration = supportsMinSharesOut && hasReliableQuote
 
-  // Check if this is a V2 vault (V2 vaults have non-standard permit that doesn't work with router's selfPermit)
-  const isV2Vault = !vaultVersion?.startsWith('3') && !vaultVersion?.startsWith('~3')
-
   // Only use permit flow for V3 vaults with EIP-2612 style permits
   // V2 vaults have a different permit signature (Bytes[65] instead of v,r,s) that's incompatible with selfPermit
-  const supportsPermit = permitType === 'eip2612' && !isV2Vault
+  const supportsPermit = supportsMigratePermitFlow({ hasMigratorConfig, permitType, vaultVersion })
 
   // Determine route type: permit (if V3 with EIP-2612) or approve (V2 or no permit)
   const routeType: MigrateRouteType = supportsPermit ? 'permit' : 'approve'
