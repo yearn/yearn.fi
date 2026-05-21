@@ -123,7 +123,15 @@ describe('Tenderly admin browser-origin access', () => {
 
   it('does not add wildcard CORS to Tenderly admin mutation responses', () => {
     const response = withTenderlyAdminCors(
-      Response.json({ ok: true }),
+      Response.json(
+        { ok: true },
+        {
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true'
+          }
+        }
+      ),
       new Request('http://localhost:3001/api/tenderly/snapshot', {
         method: 'POST',
         headers: { Origin: 'http://evil.localhost:3000' }
@@ -131,6 +139,7 @@ describe('Tenderly admin browser-origin access', () => {
     )
 
     expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull()
+    expect(response.headers.get('Access-Control-Allow-Credentials')).toBeNull()
     expect(response.headers.get('Access-Control-Allow-Methods')).toBe('POST, OPTIONS')
   })
 })

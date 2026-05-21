@@ -112,6 +112,9 @@ export function withTenderlyAdminCors(response: Response, req: Request): Respons
   const origin = req.headers.get('Origin')
   const newHeaders = new Headers(response.headers)
 
+  newHeaders.delete('Access-Control-Allow-Origin')
+  newHeaders.delete('Access-Control-Allow-Credentials')
+
   Object.entries(TENDERLY_ADMIN_CORS_HEADERS).forEach(([key, value]) => {
     newHeaders.set(key, value)
   })
