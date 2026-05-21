@@ -28,20 +28,24 @@ function logFallbackRateLimit(reason: string): void {
   console.warn(`[Holdings Redis] Using fallback rate limiter: ${reason}`)
 }
 
-function cleanupFallbackEntries(now: number): void {
-  for (const [key, entry] of fallbackRateLimitEntries) {
-    if (entry.resetAt <= now) {
-      fallbackRateLimitEntries.delete(key)
-    }
-  }
+function logRateLimitFailClosed(reason: string): void {
+  console.warn(`[Holdings Redis] Rate limiter failed closed: ${reason}`)
+}
 
-  while (fallbackRateLimitEntries.size > MAX_FALLBACK_KEYS) {
-    const oldestKey = fallbackRateLimitEntries.keys().next().value
-    if (!oldestKey) {
-      break
-    }
-    fallbackRateLimitEntries.delete(oldestKey)
-  }
+function cleanupFallbackEntries(now: number, protectedKey?: string): void {
+  Array.from(fallbackRateLimitEntries.entries())
+    .filter(([, entry]) => entry.resetAt <= now)
+    .forEach(([key]) => {
+      fallbackRateLimitEntries.delete(key)
+    })
+
+  const excessEntryCount = Math.max(0, fallbackRateLimitEntries.size - MAX_FALLBACK_KEYS)
+  Array.from(fallbackRateLimitEntries.keys())
+    .filter((key) => key !== protectedKey)
+    .slice(0, excessEntryCount)
+    .forEach((key) => {
+      fallbackRateLimitEntries.delete(key)
+    })
 }
 
 function checkFallbackRateLimit(clientIdentifier: string): RateLimitResult {
@@ -54,6 +58,7 @@ function checkFallbackRateLimit(clientIdentifier: string): RateLimitResult {
 
   entry.count += 1
   fallbackRateLimitEntries.set(key, entry)
+  cleanupFallbackEntries(now, key)
 
   if (entry.count > MAX_REQUESTS) {
     return { allowed: false, retryAfter: Math.max(1, Math.ceil((entry.resetAt - now) / 1000)) }
@@ -83,9 +88,15 @@ export async function checkRateLimit(clientIdentifier: string): Promise<RateLimi
     }
 
     if (requestCount > MAX_REQUESTS) {
-      const ttl = await redis.ttl(key)
-      const retryAfter = ttl > 0 ? ttl : WINDOW_SECONDS
-      return { allowed: false, retryAfter }
+      try {
+        const ttl = await redis.ttl(key)
+        const retryAfter = ttl > 0 ? ttl : WINDOW_SECONDS
+        return { allowed: false, retryAfter }
+      } catch (error) {
+        handleHoldingsRedisError('rate limit ttl lookup failed', error)
+        logRateLimitFailClosed('query_failed')
+        return { allowed: false, retryAfter: WINDOW_SECONDS }
+      }
     }
 
     return { allowed: true }

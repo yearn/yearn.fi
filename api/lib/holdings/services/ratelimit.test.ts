@@ -47,6 +47,21 @@ describe('Redis rate limiting', () => {
     expect(result).toEqual({ allowed: false, retryAfter: 42 })
   })
 
+  it('fails closed when Redis reports over limit but the ttl lookup fails', async () => {
+    getHoldingsRedisClientMock.mockReturnValue({
+      incr: vi.fn().mockResolvedValue(11),
+      expire: vi.fn(),
+      ttl: vi.fn().mockRejectedValue(new Error('ttl lookup failed'))
+    })
+
+    const { checkRateLimit } = await import('./ratelimit')
+    const result = await checkRateLimit('127.0.0.1')
+
+    expect(result).toEqual({ allowed: false, retryAfter: 60 })
+    expect(handleHoldingsRedisErrorMock).toHaveBeenCalledWith('rate limit ttl lookup failed', expect.any(Error))
+    expect(warnMock).toHaveBeenCalledWith('[Holdings Redis] Rate limiter failed closed: query_failed')
+  })
+
   it('rate limits with the fallback when holdings storage is disabled', async () => {
     isHoldingsStorageEnabledMock.mockReturnValue(false)
 
