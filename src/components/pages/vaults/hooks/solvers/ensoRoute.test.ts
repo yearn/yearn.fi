@@ -1,6 +1,11 @@
 import { type Address, encodeAbiParameters, encodeFunctionData, type Hex } from 'viem'
 import { describe, expect, it } from 'vitest'
-import { getEnsoRouteInvariantError, normalizeEnsoRouteResponse, parseEnsoRouteBigInt, routeHasSwapStep } from './ensoRoute'
+import {
+  getEnsoRouteInvariantError,
+  normalizeEnsoRouteResponse,
+  parseEnsoRouteBigInt,
+  routeHasSwapStep
+} from './ensoRoute'
 
 describe('normalizeEnsoRouteResponse', () => {
   const validRoutePayload = {
