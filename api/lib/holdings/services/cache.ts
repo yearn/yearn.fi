@@ -244,17 +244,23 @@ export async function checkCacheStaleness(
   vaults: VaultIdentifier[],
   cacheOldestTimestamp: Date | null
 ): Promise<boolean> {
-  if (!isHoldingsStorageEnabled() || vaults.length === 0 || !cacheOldestTimestamp) {
-    if (vaults.length > 0 && cacheOldestTimestamp !== null) {
-      debugLog('cache', 'skipping cache staleness check because Redis storage is disabled', { vaults: vaults.length })
-    }
+  if (vaults.length === 0 || !cacheOldestTimestamp) {
     return false
+  }
+
+  if (!isHoldingsStorageEnabled()) {
+    debugLog('cache', 'treating cache as stale because Redis storage is disabled during staleness check', {
+      vaults: vaults.length
+    })
+    return true
   }
 
   const redis = getHoldingsRedisClient()
   if (!redis) {
-    debugLog('cache', 'skipping cache staleness check because Redis client is unavailable', { vaults: vaults.length })
-    return false
+    debugLog('cache', 'treating cache as stale because Redis client is unavailable during staleness check', {
+      vaults: vaults.length
+    })
+    return true
   }
 
   try {
