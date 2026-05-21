@@ -1,8 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { OPTIMIZATION_POST_CORS_HEADERS, setCorsHeaders } from './_lib/cors'
-import { fetchVaultOnChainState } from './_lib/rpc'
+import { fetchVaultOnChainState, getRpcConfig, MAX_VAULT_STATE_STRATEGIES } from './_lib/rpc'
 
 const CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const MAX_VAULT_STATE_BODY_BYTES = 10 * 1024
+const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res, OPTIMIZATION_POST_CORS_HEADERS)
@@ -16,18 +18,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const payload = req.body && typeof req.body === 'object' ? (req.body as Record<string, unknown>) : {}
+  if (Buffer.byteLength(JSON.stringify(payload), 'utf8') > MAX_VAULT_STATE_BODY_BYTES) {
+    return res.status(400).json({ error: 'Request body too large' })
+  }
+
   const vault = typeof payload.vault === 'string' ? payload.vault : null
   const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
-  const strategies = Array.isArray(payload.strategies)
-    ? payload.strategies.filter((s: unknown): s is string => typeof s === 'string')
-    : []
 
-  if (!vault || !/^0x[a-fA-F0-9]{40}$/.test(vault)) {
+  if (!vault || !ADDRESS_PATTERN.test(vault)) {
     return res.status(400).json({ error: 'Invalid vault address' })
   }
   if (chainId === null || !Number.isFinite(chainId)) {
     return res.status(400).json({ error: 'Invalid chainId' })
   }
+  if (!getRpcConfig(chainId)) {
+    return res.status(400).json({ error: 'Unsupported chainId' })
+  }
+  if (!Array.isArray(payload.strategies)) {
+    return res.status(400).json({ error: 'No strategy addresses provided' })
+  }
+  if (payload.strategies.length > MAX_VAULT_STATE_STRATEGIES) {
+    return res.status(400).json({ error: `Too many strategy addresses: maximum ${MAX_VAULT_STATE_STRATEGIES}` })
+  }
+  if (
+    !payload.strategies.every(
+      (strategy): strategy is string => typeof strategy === 'string' && ADDRESS_PATTERN.test(strategy)
+    )
+  ) {
+    return res.status(400).json({ error: 'Invalid strategy address' })
+  }
+  const strategies = payload.strategies
   if (strategies.length === 0) {
     return res.status(400).json({ error: 'No strategy addresses provided' })
   }

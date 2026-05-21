@@ -49,7 +49,9 @@ vi.mock('./_lib/redis', () => ({
 }))
 
 vi.mock('./_lib/rpc', () => ({
-  fetchVaultOnChainState: fetchVaultOnChainStateMock
+  MAX_VAULT_STATE_STRATEGIES: 32,
+  fetchVaultOnChainState: fetchVaultOnChainStateMock,
+  getRpcConfig: (chainId: number) => (chainId === 1 ? { primary: 'https://rpc.example', fallbacks: [] } : undefined)
 }))
 
 import alignmentHandler from './alignment'
@@ -142,6 +144,75 @@ describe('optimization handlers', () => {
       },
       unallocatedBps: 6000
     })
+    expect(fetchVaultOnChainStateMock).toHaveBeenCalledWith(1, '0x1111111111111111111111111111111111111111', [
+      '0x2222222222222222222222222222222222222222'
+    ])
+  })
+
+  it('rejects invalid vault-state requests before RPC execution', async () => {
+    const cases: Array<{ body: Record<string, unknown>; error: string }> = [
+      {
+        body: {
+          chainId: 1,
+          strategies: ['0x2222222222222222222222222222222222222222'],
+          vault: 'not-an-address'
+        },
+        error: 'Invalid vault address'
+      },
+      {
+        body: {
+          chainId: 999999,
+          strategies: ['0x2222222222222222222222222222222222222222'],
+          vault: '0x1111111111111111111111111111111111111111'
+        },
+        error: 'Unsupported chainId'
+      },
+      {
+        body: {
+          chainId: 1,
+          strategies: ['not-an-address'],
+          vault: '0x1111111111111111111111111111111111111111'
+        },
+        error: 'Invalid strategy address'
+      },
+      {
+        body: {
+          chainId: 1,
+          strategies: [123],
+          vault: '0x1111111111111111111111111111111111111111'
+        },
+        error: 'Invalid strategy address'
+      },
+      {
+        body: {
+          chainId: 1,
+          strategies: Array.from({ length: 33 }, () => '0x2222222222222222222222222222222222222222'),
+          vault: '0x1111111111111111111111111111111111111111'
+        },
+        error: 'Too many strategy addresses: maximum 32'
+      },
+      {
+        body: {
+          chainId: 1,
+          note: 'x'.repeat(10 * 1024),
+          strategies: ['0x2222222222222222222222222222222222222222'],
+          vault: '0x1111111111111111111111111111111111111111'
+        },
+        error: 'Request body too large'
+      }
+    ]
+
+    await Promise.all(
+      cases.map(async (testCase) => {
+        const res = createMockResponse()
+
+        await vaultStateHandler({ body: testCase.body, method: 'POST' } as VercelRequest, res)
+
+        expect(res.statusCode).toBe(400)
+        expect(res.body).toEqual({ error: testCase.error })
+        expect(fetchVaultOnChainStateMock).not.toHaveBeenCalled()
+      })
+    )
   })
 
   it('keeps CORS headers on change Redis authentication failures', async () => {

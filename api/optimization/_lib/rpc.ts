@@ -58,6 +58,9 @@ export function getRandomRpcEndpoint(chainId: number): string | undefined {
   return endpoints[Math.floor(Math.random() * endpoints.length)]
 }
 
+export const MAX_VAULT_STATE_STRATEGIES = 32
+const MAX_SEQUENTIAL_FALLBACK_STRATEGIES = 8
+
 const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11'
 
 const VAULT_SELECTORS = {
@@ -171,6 +174,8 @@ async function fetchVaultStateViaMulticall(
   vaultAddress: string,
   strategyAddresses: string[]
 ): Promise<{ totalAssets: bigint; strategyDebts: Map<string, bigint> }> {
+  assertStrategyCount(strategyAddresses)
+
   const calls = [
     { target: vaultAddress, callData: VAULT_SELECTORS.totalAssets },
     ...strategyAddresses.map((addr) => ({
@@ -204,6 +209,11 @@ async function fetchVaultStateSequential(
   vaultAddress: string,
   strategyAddresses: string[]
 ): Promise<{ totalAssets: bigint; strategyDebts: Map<string, bigint> }> {
+  assertStrategyCount(strategyAddresses)
+  if (strategyAddresses.length > MAX_SEQUENTIAL_FALLBACK_STRATEGIES) {
+    throw new Error(`Too many strategies for sequential fallback: maximum ${MAX_SEQUENTIAL_FALLBACK_STRATEGIES}`)
+  }
+
   const totalAssetsResult = await jsonRpcCall<string>(endpoint, 'eth_call', [
     { to: vaultAddress, data: VAULT_SELECTORS.totalAssets },
     'latest'
@@ -229,6 +239,8 @@ export async function fetchVaultOnChainState(
   strategyDebts: Map<string, bigint>
   unallocatedBps: number
 }> {
+  assertStrategyCount(strategyAddresses)
+
   const endpoints = getAllRpcEndpoints(chainId)
   if (endpoints.length === 0) {
     throw new Error(`No RPC endpoints configured for chain ${chainId}`)
@@ -259,6 +271,12 @@ export async function fetchVaultOnChainState(
   }
 
   throw lastError ?? new Error('All RPC endpoints failed')
+}
+
+function assertStrategyCount(strategyAddresses: string[]): void {
+  if (strategyAddresses.length > MAX_VAULT_STATE_STRATEGIES) {
+    throw new Error(`Too many strategy addresses: maximum ${MAX_VAULT_STATE_STRATEGIES}`)
+  }
 }
 
 function computeUnallocated(
