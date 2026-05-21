@@ -11,19 +11,38 @@ interface TokenLogoProps extends Omit<ImageProps, 'alt' | 'src'> {
   chainId?: number
 }
 
+const UNSAFE_IMAGE_PROTOCOLS = ['data:', 'blob:', 'javascript:', 'file:'] as const
+
+function removeAsciiWhitespaceAndControls(value: string): string {
+  return Array.from(value)
+    .filter((character) => {
+      const charCode = character.charCodeAt(0)
+
+      return charCode > 0x20 && charCode !== 0x7f
+    })
+    .join('')
+}
+
 function isClearlyUnsafeImageSrc(src?: string): boolean {
-  const trimmedSrc = src?.trim().toLowerCase()
+  const trimmedSrc = src?.trim()
   if (!trimmedSrc) {
     return true
   }
 
-  return (
-    trimmedSrc.startsWith('//') ||
-    trimmedSrc.startsWith('data:') ||
-    trimmedSrc.startsWith('blob:') ||
-    trimmedSrc.startsWith('javascript:') ||
-    trimmedSrc.startsWith('file:')
-  )
+  if (trimmedSrc.startsWith('//')) {
+    return true
+  }
+
+  try {
+    const parsedSrc = new URL(trimmedSrc)
+    return parsedSrc.protocol !== 'http:' && parsedSrc.protocol !== 'https:'
+  } catch {
+    const normalizedSrc = removeAsciiWhitespaceAndControls(trimmedSrc).toLowerCase()
+
+    return (
+      normalizedSrc.startsWith('//') || UNSAFE_IMAGE_PROTOCOLS.some((protocol) => normalizedSrc.startsWith(protocol))
+    )
+  }
 }
 
 function getSafeInitialImageSrc(src: string, altSrc?: string): string {
