@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { OPTIMIZATION_POST_CORS_HEADERS, setCorsHeaders } from './_lib/cors'
 import { fetchVaultOnChainState, getRpcConfig, MAX_VAULT_STATE_STRATEGIES } from './_lib/rpc'
 
-const CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const CACHE_CONTROL = 'private, no-store'
 const MAX_VAULT_STATE_BODY_BYTES = 10 * 1024
 const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/
 
