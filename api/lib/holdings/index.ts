@@ -39,5 +39,6 @@ export { checkRateLimit } from './services/ratelimit'
 export {
   ensureHoldingsStorageInitialized,
   initializeHoldingsStorage,
+  isHoldingsStorageConfigured,
   isHoldingsStorageEnabled
 } from './storage/redis'

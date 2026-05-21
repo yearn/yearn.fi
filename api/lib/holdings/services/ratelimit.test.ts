@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getHoldingsRedisClientMock = vi.fn()
-const isHoldingsStorageEnabledMock = vi.fn()
+const isHoldingsStorageConfiguredMock = vi.fn()
 const handleHoldingsRedisErrorMock = vi.fn()
 const warnMock = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
 vi.mock('../storage/redis', () => ({
   getHoldingsRedisClient: getHoldingsRedisClientMock,
-  isHoldingsStorageEnabled: isHoldingsStorageEnabledMock,
+  isHoldingsStorageConfigured: isHoldingsStorageConfiguredMock,
   handleHoldingsRedisError: handleHoldingsRedisErrorMock
 }))
 
@@ -15,7 +15,17 @@ describe('Redis rate limiting', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
-    isHoldingsStorageEnabledMock.mockReturnValue(true)
+    isHoldingsStorageConfiguredMock.mockReturnValue(true)
+  })
+
+  it('allows requests when Redis storage is not configured', async () => {
+    isHoldingsStorageConfiguredMock.mockReturnValue(false)
+
+    const { checkRateLimit } = await import('./ratelimit')
+    const result = await checkRateLimit('127.0.0.1')
+
+    expect(result).toEqual({ allowed: true })
+    expect(getHoldingsRedisClientMock).not.toHaveBeenCalled()
   })
 
   it('sets a one-minute ttl on the first request in a window', async () => {
@@ -62,64 +72,31 @@ describe('Redis rate limiting', () => {
     expect(warnMock).toHaveBeenCalledWith('[Holdings Redis] Rate limiter failed closed: query_failed')
   })
 
-  it('rate limits with the fallback when holdings storage is disabled', async () => {
-    isHoldingsStorageEnabledMock.mockReturnValue(false)
-
-    const { checkRateLimit } = await import('./ratelimit')
-    let result = { allowed: true }
-    for (let i = 0; i < 11; i += 1) {
-      result = await checkRateLimit('127.0.0.1')
-    }
-
-    expect(result).toEqual({ allowed: false, retryAfter: 60 })
-    expect(warnMock).toHaveBeenCalledWith('[Holdings Redis] Using fallback rate limiter: database_disabled')
-  })
-
-  it('rate limits with the fallback when Redis is unavailable', async () => {
+  it('denies with degraded metadata when configured Redis storage is unavailable', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     getHoldingsRedisClientMock.mockReturnValue(null)
 
     const { checkRateLimit } = await import('./ratelimit')
-    let result = { allowed: true }
-    for (let i = 0; i < 11; i += 1) {
-      result = await checkRateLimit('127.0.0.1')
-    }
+    const result = await checkRateLimit('127.0.0.1')
 
-    expect(result).toEqual({ allowed: false, retryAfter: 60 })
-    expect(warnMock).toHaveBeenCalledWith('[Holdings Redis] Using fallback rate limiter: pool_unavailable')
+    expect(result).toEqual({ allowed: false, retryAfter: 60, degraded: true, reason: 'storage_unavailable' })
+    expect(consoleErrorSpy).toHaveBeenCalledWith('[Holdings Redis] rate limit storage unavailable')
+
+    consoleErrorSpy.mockRestore()
   })
 
-  it('rate limits with the fallback when the Redis query fails', async () => {
+  it('denies with degraded metadata when Redis rate-limit operations fail', async () => {
+    const error = new Error('network timeout')
     getHoldingsRedisClientMock.mockReturnValue({
-      incr: vi.fn().mockRejectedValue(new Error('network error')),
+      incr: vi.fn().mockRejectedValue(error),
       expire: vi.fn(),
-      ttl: vi.fn()
-    })
-
-    const { checkRateLimit } = await import('./ratelimit')
-    let result = { allowed: true }
-    for (let i = 0; i < 11; i += 1) {
-      result = await checkRateLimit('127.0.0.1')
-    }
-
-    expect(result).toEqual({ allowed: false, retryAfter: 60 })
-    expect(handleHoldingsRedisErrorMock).toHaveBeenCalledWith('rate limit check failed', expect.any(Error))
-    expect(warnMock).toHaveBeenCalledWith('[Holdings Redis] Using fallback rate limiter: query_failed')
-  })
-
-  it('uses Redis when the database-backed limiter succeeds', async () => {
-    const incrMock = vi.fn().mockResolvedValue(1)
-    const expireMock = vi.fn().mockResolvedValue(1)
-    getHoldingsRedisClientMock.mockReturnValue({
-      incr: incrMock,
-      expire: expireMock,
       ttl: vi.fn()
     })
 
     const { checkRateLimit } = await import('./ratelimit')
     const result = await checkRateLimit('127.0.0.1')
 
-    expect(result).toEqual({ allowed: true })
-    expect(incrMock).toHaveBeenCalledTimes(1)
-    expect(warnMock).not.toHaveBeenCalled()
+    expect(result).toEqual({ allowed: false, retryAfter: 60, degraded: true, reason: 'storage_unavailable' })
+    expect(handleHoldingsRedisErrorMock).toHaveBeenCalledWith('rate limit check failed', error)
   })
 })
