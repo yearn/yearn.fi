@@ -13,6 +13,7 @@ import {
 } from './_lib/redis'
 
 const CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const ALIGNMENT_ERROR_MESSAGE = 'Unable to load optimization alignment'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res, OPTIMIZATION_GET_CORS_HEADERS)
@@ -85,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(503).json({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE })
     }
 
-    const message = error instanceof Error ? error.message : String(error)
-    return res.status(500).json({ error: message })
+    console.error(ALIGNMENT_ERROR_MESSAGE, error)
+    return res.status(500).json({ error: ALIGNMENT_ERROR_MESSAGE })
   }
 }

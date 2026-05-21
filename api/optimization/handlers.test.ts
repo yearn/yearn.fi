@@ -215,6 +215,31 @@ describe('optimization handlers', () => {
     )
   })
 
+  it('redacts backend errors from vault-state responses and logs details', async () => {
+    const sensitiveError = new Error('RPC error -32000: upstream provider leaked internal details')
+    fetchVaultOnChainStateMock.mockRejectedValue(sensitiveError)
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const res = createMockResponse()
+
+    await vaultStateHandler(
+      {
+        body: {
+          chainId: 1,
+          strategies: ['0x2222222222222222222222222222222222222222'],
+          vault: '0x1111111111111111111111111111111111111111'
+        },
+        method: 'POST'
+      } as VercelRequest,
+      res
+    )
+
+    expect(res.statusCode).toBe(503)
+    expect(res.body).toEqual({ error: 'Unable to load vault state' })
+    expect(JSON.stringify(res.body)).not.toContain('RPC error')
+    expect(JSON.stringify(res.body)).not.toContain('upstream provider')
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Unable to load vault state', sensitiveError)
+  })
+
   it('keeps CORS headers on change Redis authentication failures', async () => {
     readOptimizationsMock.mockRejectedValue(new MockRedisAuthenticationError('invalid token'))
     const res = createMockResponse()
@@ -237,6 +262,58 @@ describe('optimization handlers', () => {
     expect(res.statusCode).toBe(400)
     expect(res.headers['Access-Control-Allow-Origin']).toBe('*')
     expect(res.body).toEqual({ error: 'vault parameter required' })
+  })
+
+  it('redacts upstream GraphQL errors from alignment responses and logs details', async () => {
+    vi.stubEnv('ENVIO_GRAPHQL_URL', 'https://envio.example/graphql')
+    const targetVault = '0x1111111111111111111111111111111111111111'
+    const sensitiveError = new Error('GraphQL errors: relation "private_table" does not exist')
+    readOptimizationsMock.mockResolvedValue([
+      {
+        vault: targetVault,
+        strategyDebtRatios: [
+          {
+            strategy: '0x2222222222222222222222222222222222222222',
+            currentRatio: 1000,
+            targetRatio: 2000
+          }
+        ],
+        currentApr: 250,
+        proposedApr: 275,
+        explain: 'latest explain',
+        source: {
+          key: 'doa:optimizations:1:latest',
+          chainId: 1,
+          revision: 'latest',
+          isLatestAlias: true,
+          timestampUtc: null,
+          latestMatchedTimestampUtc: '2026-04-22 10:00:00 UTC'
+        }
+      }
+    ])
+    findVaultOptimizationMock.mockImplementation((items, vault) =>
+      items.find((item: { vault: string }) => item.vault === vault)
+    )
+    getVaultDecimalsMock.mockReturnValue(18)
+    fetchAlignedEventsMock.mockRejectedValue(sensitiveError)
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const res = createMockResponse()
+
+    await alignmentHandler(
+      {
+        method: 'GET',
+        query: {
+          vault: targetVault
+        }
+      } as VercelRequest,
+      res
+    )
+
+    expect(res.statusCode).toBe(500)
+    expect(res.body).toEqual({ error: 'Unable to load optimization alignment' })
+    expect(JSON.stringify(res.body)).not.toContain('GraphQL errors')
+    expect(JSON.stringify(res.body)).not.toContain('private_table')
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Unable to load optimization alignment', sensitiveError)
   })
 
   it('returns vault history when change history query is enabled', async () => {

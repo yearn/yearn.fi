@@ -3,6 +3,7 @@ import { OPTIMIZATION_POST_CORS_HEADERS, setCorsHeaders } from './_lib/cors'
 import { fetchVaultOnChainState, getRpcConfig, MAX_VAULT_STATE_STRATEGIES } from './_lib/rpc'
 
 const CACHE_CONTROL = 'private, no-store'
+const VAULT_STATE_ERROR_MESSAGE = 'Unable to load vault state'
 const MAX_VAULT_STATE_BODY_BYTES = 10 * 1024
 const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/
 
@@ -66,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       unallocatedBps: state.unallocatedBps
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    return res.status(503).json({ error: message })
+    console.error(VAULT_STATE_ERROR_MESSAGE, error)
+    return res.status(503).json({ error: VAULT_STATE_ERROR_MESSAGE })
   }
 }
