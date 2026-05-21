@@ -33,6 +33,19 @@ interface UseMigrateFlowProps {
 
 const MAX_BASIS_POINTS = 10_000n
 
+export function migratorSupportsMinSharesOut({
+  abi,
+  functionName
+}: Pick<MigratorConfig, 'abi' | 'functionName'>): boolean {
+  return abi.some(
+    (item) =>
+      item.type === 'function' &&
+      item.name === functionName &&
+      item.inputs.length === 4 &&
+      item.inputs[3]?.name === 'minSharesOut'
+  )
+}
+
 export function calculateMigrateMinSharesOut({
   expectedSharesOut,
   slippageBps
@@ -46,6 +59,40 @@ export function calculateMigrateMinSharesOut({
   const multiplier = MAX_BASIS_POINTS - sanitizedSlippageBps
 
   return (expectedSharesOut * multiplier) / MAX_BASIS_POINTS
+}
+
+export function buildProtectedMigrateArgs({
+  vaultFrom,
+  vaultTo,
+  balance,
+  minSharesOut
+}: {
+  vaultFrom: Address
+  vaultTo: Address
+  balance: bigint
+  minSharesOut: bigint
+}): readonly [Address, Address, bigint, bigint] {
+  return [vaultFrom, vaultTo, balance, minSharesOut]
+}
+
+export function encodeProtectedMigrateData({
+  migratorConfig,
+  vaultFrom,
+  vaultTo,
+  balance,
+  minSharesOut
+}: {
+  migratorConfig: MigratorConfig
+  vaultFrom: Address
+  vaultTo: Address
+  balance: bigint
+  minSharesOut: bigint
+}): `0x${string}` {
+  return encodeFunctionData({
+    abi: migratorConfig.abi,
+    functionName: migratorConfig.functionName,
+    args: buildProtectedMigrateArgs({ vaultFrom, vaultTo, balance, minSharesOut })
+  })
 }
 
 export const useMigrateFlow = ({
@@ -83,6 +130,7 @@ export const useMigrateFlow = ({
 
   // Use fallback router address if config specifies one, otherwise use the provided router
   const effectiveRouter = (migratorConfig.routerAddress ?? router) as Address
+  const supportsMinSharesOut = useMemo(() => migratorSupportsMinSharesOut(migratorConfig), [migratorConfig])
 
   // Check what type of permit the vault token supports
   useEffect(() => {
@@ -116,16 +164,16 @@ export const useMigrateFlow = ({
   const slippageBps = toBasisPoints(slippage)
 
   const {
-    data: previewedAssets,
+    data: expectedAssetsOut,
     isError: isPreviewAssetsError,
     isLoading: isPreviewAssetsLoading
   } = useReadContract({
     address: vaultFrom,
     abi: erc4626Abi,
-    functionName: 'convertToAssets',
+    functionName: 'previewRedeem',
     args: [balance],
     chainId,
-    query: { enabled: enabled && hasBalance }
+    query: { enabled: enabled && hasBalance && supportsMinSharesOut }
   })
 
   const {
@@ -136,9 +184,9 @@ export const useMigrateFlow = ({
     address: vaultTo,
     abi: erc4626Abi,
     functionName: 'previewDeposit',
-    args: [previewedAssets ?? 0n],
+    args: [expectedAssetsOut ?? 0n],
     chainId,
-    query: { enabled: enabled && hasBalance && (previewedAssets ?? 0n) > 0n }
+    query: { enabled: enabled && hasBalance && supportsMinSharesOut && (expectedAssetsOut ?? 0n) > 0n }
   })
 
   const minSharesOut = useMemo(
@@ -152,6 +200,7 @@ export const useMigrateFlow = ({
   const isQuoteLoading = isPreviewAssetsLoading || isPreviewSharesLoading
   const isQuoteError = isPreviewAssetsError || isPreviewSharesError
   const hasReliableQuote = !isQuoteLoading && !isQuoteError && (expectedSharesOut ?? 0n) > 0n && minSharesOut > 0n
+  const canProtectMigration = supportsMinSharesOut && hasReliableQuote
 
   // Check if this is a V2 vault (V2 vaults have non-standard permit that doesn't work with router's selfPermit)
   const isV2Vault = !vaultVersion?.startsWith('3') && !vaultVersion?.startsWith('~3')
@@ -180,12 +229,15 @@ export const useMigrateFlow = ({
   })
 
   const prepareMigrateEnabled =
-    routeType === 'approve' && hasBalance && !!account && enabled && isAllowanceSufficient && hasReliableQuote
+    routeType === 'approve' && hasBalance && !!account && enabled && isAllowanceSufficient && canProtectMigration
   const prepareMigrate: AppUseSimulateContractReturnType = useSimulateContract({
     abi: migratorConfig.abi,
     functionName: migratorConfig.functionName,
     address: effectiveRouter,
-    args: balance > 0n && hasReliableQuote ? [vaultFrom, vaultTo, balance, minSharesOut] : undefined,
+    args:
+      balance > 0n && canProtectMigration
+        ? buildProtectedMigrateArgs({ vaultFrom, vaultTo, balance, minSharesOut })
+        : undefined,
     account,
     chainId,
     query: { enabled: prepareMigrateEnabled }
@@ -194,7 +246,7 @@ export const useMigrateFlow = ({
   // Prepare multicall transaction (for permit flow: selfPermit + migrate)
   const hasValidPermitSignature = !!permitSignature && permitSignature.deadline > BigInt(Math.floor(Date.now() / 1000))
   const prepareMulticallEnabled =
-    routeType === 'permit' && hasBalance && !!account && enabled && hasValidPermitSignature && hasReliableQuote
+    routeType === 'permit' && hasBalance && !!account && enabled && hasValidPermitSignature && canProtectMigration
 
   // Encode multicall data: selfPermit + migrate
   const multicallData = useMemo(() => {
@@ -209,23 +261,10 @@ export const useMigrateFlow = ({
       args: [vaultFrom, balance, permitSignature.deadline, permitSignature.v, permitSignature.r, permitSignature.s]
     })
 
-    const migrateData = encodeFunctionData({
-      abi: migratorConfig.abi,
-      functionName: migratorConfig.functionName,
-      args: [vaultFrom, vaultTo, balance, minSharesOut]
-    })
+    const migrateData = encodeProtectedMigrateData({ migratorConfig, vaultFrom, vaultTo, balance, minSharesOut })
 
     return [selfPermitData, migrateData]
-  }, [
-    prepareMulticallEnabled,
-    permitSignature,
-    balance,
-    vaultFrom,
-    vaultTo,
-    minSharesOut,
-    migratorConfig.abi,
-    migratorConfig.functionName
-  ])
+  }, [prepareMulticallEnabled, permitSignature, balance, vaultFrom, vaultTo, minSharesOut, migratorConfig])
 
   const prepareMulticall: AppUseSimulateContractReturnType = useSimulateContract({
     abi: ERC_4626_ROUTER_ABI,
@@ -240,6 +279,7 @@ export const useMigrateFlow = ({
   // Determine error state
   const error = useMemo(() => {
     if (isCheckingPermit) return undefined
+    if (hasBalance && !supportsMinSharesOut) return 'Migration output floor unavailable'
     if (hasBalance && !isQuoteLoading && !hasReliableQuote) return 'Migration quote unavailable'
     if (routeType === 'approve' && prepareMigrate.isError) return 'Migration simulation failed'
     if (routeType === 'permit' && prepareMulticall.isError) return 'Migration simulation failed'
@@ -247,6 +287,7 @@ export const useMigrateFlow = ({
   }, [
     isCheckingPermit,
     hasBalance,
+    supportsMinSharesOut,
     isQuoteLoading,
     hasReliableQuote,
     routeType,
