@@ -63,4 +63,21 @@ describe('Redis cache writes', () => {
     ])
     expect(result.oldestUpdatedAt?.getTime()).toBe(2000)
   })
+
+  it('treats failed staleness checks as stale cache', async () => {
+    const mgetMock = vi.fn().mockRejectedValue(new Error('redis unavailable'))
+    isHoldingsStorageEnabledMock.mockReturnValue(true)
+    getHoldingsRedisClientMock.mockReturnValue({
+      mget: mgetMock
+    })
+
+    const { checkCacheStaleness } = await import('./cache')
+    const isStale = await checkCacheStaleness(
+      [{ address: '0x0000000000000000000000000000000000000001', chainId: 1 }],
+      new Date('2026-03-31T00:00:00Z')
+    )
+
+    expect(isStale).toBe(true)
+    expect(handleHoldingsRedisErrorMock).toHaveBeenCalledWith('cache staleness check failed', expect.any(Error))
+  })
 })

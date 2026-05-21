@@ -292,7 +292,7 @@ export async function checkCacheStaleness(
   } catch (error) {
     handleHoldingsRedisError('cache staleness check failed', error)
     debugError('cache', 'cache staleness check failed', error, { vaults: vaults.length })
-    return false
+    return true
   }
 }
 

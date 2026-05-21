@@ -322,7 +322,7 @@ describe('getHistoricalHoldings', () => {
     ])
   })
 
-  it('recomputes stale fully cached history after vault invalidation', async () => {
+  it('recomputes unsafe fully cached history after staleness validation', async () => {
     const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
     const vaultAddress = '0x00000000000000000000000000000000000000ee'
     const tokenAddress = '0x0000000000000000000000000000000000000ee0'
@@ -393,6 +393,10 @@ describe('getHistoricalHoldings', () => {
     const { getHistoricalHoldings } = await import('./aggregator')
     const response = await getHistoricalHoldings(userAddress, 'all')
 
+    expect(checkCacheStalenessMock).toHaveBeenCalledWith(
+      [{ address: vaultAddress, chainId: 1 }],
+      new Date('2026-03-31T00:00:00Z')
+    )
     expect(clearUserCacheMock).toHaveBeenCalledWith(userAddress, 'all')
     expect(fetchMultipleVaultsPPSMock).toHaveBeenCalled()
     expect(fetchHistoricalPricesMock).toHaveBeenCalledWith(
