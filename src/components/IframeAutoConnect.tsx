@@ -1,5 +1,5 @@
 import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
-import { isIframe } from '@shared/utils/helpers'
+import { isIframe, isTrustedEmbed } from '@shared/utils/helpers'
 import type { FC, PropsWithChildren } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 
@@ -9,25 +9,12 @@ export const IframeAutoConnect: FC<PropsWithChildren> = ({ children }) => {
   const { disconnectAsync } = useDisconnect()
 
   useAsyncTrigger(async () => {
-    if (typeof window === 'undefined' || !isIframe()) {
+    if (typeof window === 'undefined' || !isIframe() || !isTrustedEmbed()) {
       return
     }
 
     try {
-      const ancestorOrigin = window.location.ancestorOrigins?.[0]
-      const isSafeParent = ancestorOrigin?.toString().includes('safe')
-
       if (connector && connector?.id !== 'safe' && !connector?.id?.toLowerCase().includes('ledger')) {
-        if (!isSafeParent) {
-          const ledgerConnector = connectors.find((c) => c.id.toLowerCase().includes('ledger'))
-          if (ledgerConnector) {
-            await disconnectAsync({ connector })
-            const isAuth = await ledgerConnector.isAuthorized()
-            if (!isAuth) {
-              await connectAsync({ connector: ledgerConnector })
-            }
-          }
-        }
         const safeConnector = connectors.find((c) => c.id === 'safe')
         if (safeConnector) {
           await disconnectAsync({ connector })
@@ -37,12 +24,6 @@ export const IframeAutoConnect: FC<PropsWithChildren> = ({ children }) => {
           }
         }
       } else if (!connector) {
-        if (!isSafeParent) {
-          const ledgerConnector = connectors.find((c) => c.id.toLowerCase().includes('ledger'))
-          if (ledgerConnector) {
-            await connectAsync({ connector: ledgerConnector })
-          }
-        }
         const safeConnector = connectors.find((c) => c.id === 'safe')
         if (safeConnector) {
           await connectAsync({ connector: safeConnector })
