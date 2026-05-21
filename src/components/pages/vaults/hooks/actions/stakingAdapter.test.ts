@@ -5,7 +5,10 @@ import { VEYFI_GAUGE_ABI } from '@shared/contracts/abi/veYFIGauge.abi'
 import { describe, expect, it } from 'vitest'
 import {
   getDirectStakeCall,
+  getDirectStakeSelector,
   getDirectUnstakeCalls,
+  getDirectUnstakeFallbackSelector,
+  getDirectUnstakeSelector,
   getRedeemPreviewCall,
   getStakePreviewCall,
   getStakingWithdrawableAssets,
@@ -17,6 +20,17 @@ describe('stakingAdapter', () => {
     expect(normalizeStakingSource('VeYFI')).toBe('VeYFI')
     expect(normalizeStakingSource('yBOLD')).toBe('yBOLD')
     expect(normalizeStakingSource('Legacy')).toBe('default')
+  })
+
+  it('maps staking sources to registry-bound function selectors', () => {
+    expect(getDirectStakeSelector('VeYFI')).toBe('deposit(uint256)')
+    expect(getDirectStakeSelector('yBOLD')).toBe('deposit(uint256,address)')
+    expect(getDirectStakeSelector('Legacy')).toBe('stake(uint256)')
+    expect(getDirectUnstakeSelector({ stakingSource: 'yBOLD' })).toBe('withdraw(uint256,address,address)')
+    expect(getDirectUnstakeSelector({ stakingSource: 'yBOLD', redeemAll: true })).toBe(
+      'redeem(uint256,address,address)'
+    )
+    expect(getDirectUnstakeFallbackSelector('yBOLD')).toBe('withdraw(uint256)')
   })
 
   it('builds stake preview calls for source-specific ERC4626 staking', () => {

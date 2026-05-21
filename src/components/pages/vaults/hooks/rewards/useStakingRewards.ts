@@ -1,4 +1,5 @@
 import type { TStakingReward } from '@pages/vaults/components/widget/rewards/types'
+import { hasRegisteredStakingSelector, type StakingFunctionSelector } from '@pages/vaults/domain/stakingRegistry'
 import { JUICED_STAKING_REWARDS_ABI } from '@shared/contracts/abi/juicedStakingRewards.abi'
 import { STAKING_REWARDS_ABI } from '@shared/contracts/abi/stakingRewards.abi'
 import { V3_STAKING_REWARDS_ABI } from '@shared/contracts/abi/V3StakingRewards.abi'
@@ -32,11 +33,46 @@ type UseStakingRewardsReturn = {
   refetch: () => void
 }
 
+function getStakingRewardsReadSelector(stakingSource?: string): StakingFunctionSelector {
+  if (stakingSource === 'V3 Staking') return 'earnedMulti(address)'
+  if (stakingSource === 'Juiced') return 'earned(address,address)'
+  return 'earned(address)'
+}
+
+export function isStakingRewardsReadEnabled({
+  stakingAddress,
+  stakingSource,
+  rewardTokens,
+  userAddress,
+  chainId,
+  enabled = true
+}: UseStakingRewardsParams): boolean {
+  return Boolean(
+    enabled &&
+      stakingAddress &&
+      userAddress &&
+      rewardTokens.length > 0 &&
+      hasRegisteredStakingSelector({
+        chainId,
+        stakingAddress,
+        stakingSource,
+        selector: getStakingRewardsReadSelector(stakingSource)
+      })
+  )
+}
+
 export function useStakingRewards(params: UseStakingRewardsParams): UseStakingRewardsReturn {
   const { stakingAddress, stakingSource, rewardTokens, userAddress, chainId, enabled = true } = params
   const executionChainId = resolveExecutionChainId(chainId)
 
-  const isEnabled = enabled && !!stakingAddress && !!userAddress && rewardTokens.length > 0
+  const isEnabled = isStakingRewardsReadEnabled({
+    stakingAddress,
+    stakingSource,
+    rewardTokens,
+    userAddress,
+    chainId,
+    enabled
+  })
 
   // V3 staking uses earnedMulti to get all rewards in one call
   const isV3Staking = stakingSource === 'V3 Staking'

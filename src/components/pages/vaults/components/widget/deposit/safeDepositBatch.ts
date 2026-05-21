@@ -1,5 +1,6 @@
 import type { DepositRouteType } from '@pages/vaults/components/widget/deposit/types'
-import { getDirectStakeCall } from '@pages/vaults/hooks/actions/stakingAdapter'
+import { hasRegisteredStakingSelector } from '@pages/vaults/domain/stakingRegistry'
+import { getDirectStakeCall, getDirectStakeSelector } from '@pages/vaults/hooks/actions/stakingAdapter'
 import { YVUSD_LOCKED_ZAP_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { vaultAbi } from '@shared/contracts/abi/vaultV2.abi'
 import { yvUsdLockedZapAbi } from '@shared/contracts/abi/yvUsdLockedZap.abi'
@@ -135,6 +136,20 @@ function buildDirectStakeCall(params: TBuildSafeDepositBatchParams & { account: 
   }
 }
 
+function canBuildDirectStakeBatch(params: TBuildSafeDepositBatchParams): boolean {
+  return Boolean(
+    params.stakingAddress &&
+      params.approvalSpenderAddress &&
+      isAddressEqual(params.approvalSpenderAddress, params.stakingAddress) &&
+      hasRegisteredStakingSelector({
+        chainId: params.chainId,
+        stakingAddress: params.stakingAddress,
+        stakingSource: params.stakingSource,
+        selector: getDirectStakeSelector(params.stakingSource)
+      })
+  )
+}
+
 function buildEnsoCall(ensoTx?: TEnsoTransaction): TSafeBatchCall | undefined {
   if (!ensoTx) {
     return undefined
@@ -151,6 +166,10 @@ export function buildSafeDepositBatch(
   params: TBuildSafeDepositBatchParams
 ): { calls: readonly TSafeBatchCall[]; chainId: number } | undefined {
   if (!params.account || !params.approvalSpenderAddress || params.amount <= 0n) {
+    return undefined
+  }
+
+  if (params.routeType === 'DIRECT_STAKE' && !canBuildDirectStakeBatch(params)) {
     return undefined
   }
 

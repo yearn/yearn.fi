@@ -1,9 +1,9 @@
-import { isRegisteredStakingContract } from '@pages/vaults/domain/stakingRegistry'
+import { hasRegisteredStakingSelector } from '@pages/vaults/domain/stakingRegistry'
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
 import { type AppUseSimulateContractReturnType, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import type { Address } from 'viem'
 import { maxUint256 } from 'viem'
-import { getDirectUnstakeCalls } from './stakingAdapter'
+import { getDirectUnstakeCalls, getDirectUnstakeFallbackSelector, getDirectUnstakeSelector } from './stakingAdapter'
 
 interface UseDirectUnstakeParams {
   stakingAddress?: Address
@@ -17,10 +17,17 @@ interface UseDirectUnstakeParams {
 }
 
 export function useDirectUnstake(params: UseDirectUnstakeParams): UseWidgetWithdrawFlowReturn {
-  const hasRegisteredStakingContract = isRegisteredStakingContract({
+  const hasRegisteredStakingContract = hasRegisteredStakingSelector({
     chainId: params.chainId,
     stakingAddress: params.stakingAddress,
-    stakingSource: params.stakingSource
+    stakingSource: params.stakingSource,
+    selector: getDirectUnstakeSelector({ stakingSource: params.stakingSource, redeemAll: params.redeemAll })
+  })
+  const hasRegisteredFallbackSelector = hasRegisteredStakingSelector({
+    chainId: params.chainId,
+    stakingAddress: params.stakingAddress,
+    stakingSource: params.stakingSource,
+    selector: getDirectUnstakeFallbackSelector(params.stakingSource) ?? getDirectUnstakeSelector(params)
   })
   const isValidInput = hasRegisteredStakingContract && params.amount > 0n && !!params.stakingAddress
   const prepareWithdrawEnabled = isValidInput && !!params.account && params.enabled
@@ -44,7 +51,11 @@ export function useDirectUnstake(params: UseDirectUnstakeParams): UseWidgetWithd
   })
 
   const shouldTryFallback =
-    prepareWithdrawEnabled && !!unstakeCalls.fallback && !!params.stakingAddress && preparePrimaryWithdraw.isError
+    prepareWithdrawEnabled &&
+    hasRegisteredFallbackSelector &&
+    !!unstakeCalls.fallback &&
+    !!params.stakingAddress &&
+    preparePrimaryWithdraw.isError
 
   const prepareFallbackWithdraw: AppUseSimulateContractReturnType = useSimulateContract({
     abi: (unstakeCalls.fallback?.abi || []) as any,
@@ -56,8 +67,9 @@ export function useDirectUnstake(params: UseDirectUnstakeParams): UseWidgetWithd
     query: { enabled: shouldTryFallback }
   })
 
-  const prepareWithdraw: AppUseSimulateContractReturnType =
-    unstakeCalls.fallback && preparePrimaryWithdraw.isError ? prepareFallbackWithdraw : preparePrimaryWithdraw
+  const prepareWithdraw: AppUseSimulateContractReturnType = shouldTryFallback
+    ? prepareFallbackWithdraw
+    : preparePrimaryWithdraw
 
   return {
     actions: {

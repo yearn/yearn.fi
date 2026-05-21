@@ -1,7 +1,11 @@
 import { zeroAddress } from 'viem'
 import { describe, expect, it } from 'vitest'
 import { YBOLD_STAKING_ADDRESS } from './normalizeVault'
-import { getRegisteredStakingContract, isRegisteredStakingContract } from './stakingRegistry'
+import {
+  getRegisteredStakingContract,
+  hasRegisteredStakingSelector,
+  isRegisteredStakingContract
+} from './stakingRegistry'
 
 describe('stakingRegistry', () => {
   it('matches a registered chain, address, and source', () => {
@@ -63,5 +67,25 @@ describe('stakingRegistry', () => {
 
     expect(entry?.address).toBe(YBOLD_STAKING_ADDRESS)
     expect(entry?.adapter).toBe('tokenizedStrategy')
+  })
+
+  it('requires registered function selectors for action preparation', () => {
+    expect(
+      hasRegisteredStakingSelector({
+        chainId: 1,
+        stakingAddress: YBOLD_STAKING_ADDRESS,
+        stakingSource: 'yBOLD',
+        selector: 'deposit(uint256,address)'
+      })
+    ).toBe(true)
+
+    expect(
+      hasRegisteredStakingSelector({
+        chainId: 1,
+        stakingAddress: YBOLD_STAKING_ADDRESS,
+        stakingSource: 'yBOLD',
+        selector: 'getReward()'
+      })
+    ).toBe(false)
   })
 })

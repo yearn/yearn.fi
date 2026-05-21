@@ -1,3 +1,4 @@
+import { hasRegisteredStakingSelector } from '@pages/vaults/domain/stakingRegistry'
 import { JUICED_STAKING_REWARDS_ABI } from '@shared/contracts/abi/juicedStakingRewards.abi'
 import { STAKING_REWARDS_ABI } from '@shared/contracts/abi/stakingRewards.abi'
 import { V3_STAKING_REWARDS_ABI } from '@shared/contracts/abi/V3StakingRewards.abi'
@@ -11,10 +12,28 @@ type UseClaimStakingRewardsParams = {
   enabled?: boolean
 }
 
+export function isClaimStakingRewardsEnabled({
+  stakingAddress,
+  stakingSource,
+  chainId,
+  enabled = true
+}: UseClaimStakingRewardsParams): boolean {
+  return Boolean(
+    enabled &&
+      stakingAddress &&
+      hasRegisteredStakingSelector({
+        chainId,
+        stakingAddress,
+        stakingSource,
+        selector: 'getReward()'
+      })
+  )
+}
+
 export function useClaimStakingRewards(params: UseClaimStakingRewardsParams) {
   const { stakingAddress, stakingSource, chainId, enabled = true } = params
 
-  const isEnabled = enabled && !!stakingAddress
+  const isEnabled = isClaimStakingRewardsEnabled({ stakingAddress, stakingSource, chainId, enabled })
   const isV3Staking = stakingSource === 'V3 Staking'
   const isVeYFIGauge = stakingSource === 'VeYFI'
   const isJuiced = stakingSource === 'Juiced' || stakingSource === 'OP Boost'

@@ -1,10 +1,15 @@
-import { isRegisteredStakingContract } from '@pages/vaults/domain/stakingRegistry'
+import { hasRegisteredStakingSelector } from '@pages/vaults/domain/stakingRegistry'
 import type { UseWidgetDepositFlowReturn } from '@pages/vaults/types'
 import { type AppUseSimulateContractReturnType, useReadContract, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { getApproveAbi } from '@shared/utils/approve'
 import type { Address } from 'viem'
 import { useTokenAllowance } from '../useTokenAllowance'
-import { getDirectStakeCall, getStakePreviewCall, normalizeStakingSource } from './stakingAdapter'
+import {
+  getDirectStakeCall,
+  getDirectStakeSelector,
+  getStakePreviewCall,
+  normalizeStakingSource
+} from './stakingAdapter'
 
 interface UseDirectStakeParams {
   stakingAddress?: Address
@@ -23,10 +28,11 @@ export function getDirectStakeApprovalArgs(params: {
   stakingSource?: string
   amount: bigint
 }): readonly [Address, bigint] | undefined {
-  const hasRegisteredStakingContract = isRegisteredStakingContract({
+  const hasRegisteredStakingContract = hasRegisteredStakingSelector({
     chainId: params.chainId,
     stakingAddress: params.stakingAddress,
-    stakingSource: params.stakingSource
+    stakingSource: params.stakingSource,
+    selector: getDirectStakeSelector(params.stakingSource)
   })
 
   return hasRegisteredStakingContract && params.amount > 0n && params.stakingAddress
