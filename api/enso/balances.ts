@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { ENSO_BALANCES_CACHE_CONTROL } from './cache'
-import { checkEnsoRateLimit, fetchWithEnsoTimeout, isAbortError } from './guard'
+import { checkEnsoRateLimit, isAbortError, withEnsoTimeout } from './guard'
 import { validateEnsoBalancesQuery } from './validation'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
@@ -39,30 +39,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const url = `${ENSO_API_BASE}/api/v1/wallet/balances?${params}`
 
-    const response = await fetchWithEnsoTimeout(
-      url,
-      {
+    const result = await withEnsoTimeout(ENSO_BALANCES_TIMEOUT_MS, async (signal) => {
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${apiKey}`
-        }
-      },
-      ENSO_BALANCES_TIMEOUT_MS
-    )
+        },
+        signal
+      })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`Enso API error: ${response.status}`, errorText)
-      return res.status(response.status).json({
+      if (!response.ok) {
+        const errorText = await response.text()
+
+        return { errorText, response }
+      }
+
+      const data = await response.json()
+
+      return { data, response }
+    })
+
+    if (!result.response.ok) {
+      const errorText = 'errorText' in result ? result.errorText : ''
+      console.error(`Enso API error: ${result.response.status}`, errorText)
+      return res.status(result.response.status).json({
         error: 'Enso API error',
-        status: response.status,
+        status: result.response.status,
         details: errorText
       })
     }
 
-    const data = await response.json()
-
     res.setHeader('Cache-Control', ENSO_BALANCES_CACHE_CONTROL)
-    return res.status(200).json(data)
+    return res.status(200).json(result.data)
   } catch (error) {
     if (isAbortError(error)) {
       return res.status(504).json({ error: 'Enso balances request timed out' })

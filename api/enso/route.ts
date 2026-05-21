@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { checkEnsoRateLimit, fetchWithEnsoTimeout, isAbortError } from './guard'
+import { checkEnsoRateLimit, isAbortError, withEnsoTimeout } from './guard'
 import { validateEnsoQuoteQuery } from './validation'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
@@ -61,18 +61,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const url = `${ENSO_API_BASE}/api/v1/shortcuts/route?${params}`
 
-    const response = await fetchWithEnsoTimeout(
-      url,
-      {
+    const { data, response } = await withEnsoTimeout(ENSO_ROUTE_TIMEOUT_MS, async (signal) => {
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
-        }
-      },
-      ENSO_ROUTE_TIMEOUT_MS
-    )
+        },
+        signal
+      })
+      const data = await response.json()
 
-    const data = await response.json()
+      return { data, response }
+    })
 
     if (!response.ok) {
       return res.status(response.status).json(data)

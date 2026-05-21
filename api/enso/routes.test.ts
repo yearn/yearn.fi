@@ -73,6 +73,12 @@ function okJson(payload: unknown): Response {
   })
 }
 
+function rejectOnAbort(signal: AbortSignal | null | undefined): Promise<never> {
+  return new Promise((_resolve, reject) => {
+    signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+  })
+}
+
 describe('Enso API proxy guards', () => {
   beforeEach(() => {
     resetEnsoRateLimitForTests()
@@ -214,6 +220,29 @@ describe('Enso API proxy guards', () => {
     expect(res.body).toEqual({ error: 'Enso route request timed out' })
   })
 
+  it('keeps the quote timeout active while reading the upstream body', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((_url: string | URL | Request, init?: RequestInit) =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => rejectOnAbort(init?.signal)
+        } as Response)
+      )
+    )
+
+    const res = createMockResponse()
+    const request = routeHandler(quoteRequest(), res as any)
+
+    await vi.advanceTimersByTimeAsync(8_000)
+    await request
+
+    expect(res.statusCode).toBe(504)
+    expect(res.body).toEqual({ error: 'Enso route request timed out' })
+  })
+
   it('maps balance upstream aborts to HTTP 504 without leaking upstream details', async () => {
     vi.useFakeTimers()
     vi.stubGlobal(
@@ -223,6 +252,29 @@ describe('Enso API proxy guards', () => {
           new Promise((_resolve, reject) => {
             init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
           })
+      )
+    )
+
+    const res = createMockResponse()
+    const request = balancesHandler(balancesRequest(), res as any)
+
+    await vi.advanceTimersByTimeAsync(6_000)
+    await request
+
+    expect(res.statusCode).toBe(504)
+    expect(res.body).toEqual({ error: 'Enso balances request timed out' })
+  })
+
+  it('keeps the balance timeout active while reading the upstream body', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((_url: string | URL | Request, init?: RequestInit) =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => rejectOnAbort(init?.signal)
+        } as Response)
       )
     )
 

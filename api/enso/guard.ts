@@ -51,22 +51,23 @@ export function resetEnsoRateLimitForTests() {
   buckets.clear()
 }
 
-export async function fetchWithEnsoTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+export async function withEnsoTimeout<T>(
+  timeoutMs: number,
+  operation: (signal: AbortSignal) => Promise<T>
+): Promise<T> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
-    return await fetch(url, {
-      ...init,
-      signal: controller.signal
-    })
+    return await operation(controller.signal)
   } finally {
     clearTimeout(timeout)
   }
 }
 
 export function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException
-    ? error.name === 'AbortError'
-    : error instanceof Error && error.name === 'AbortError'
+  const isDomAbortError =
+    typeof DOMException === 'function' && error instanceof DOMException && error.name === 'AbortError'
+
+  return isDomAbortError || (error instanceof Error && error.name === 'AbortError')
 }
