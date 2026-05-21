@@ -344,7 +344,7 @@ export function findVaultOptimization<T extends VaultOptimizationRecord>(
     return matches.find((opt) => opt.source.chainId === chainId)
   }
 
-  const matchedChainIds = new Set(matches.map((opt) => opt.source.chainId).filter((value) => value !== null))
+  const matchedChainIds = new Set(matches.map((opt) => opt.source.chainId))
   if (matchedChainIds.size > 1) {
     throw new AmbiguousVaultOptimizationError(vaultAddress)
   }

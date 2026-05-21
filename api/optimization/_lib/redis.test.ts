@@ -51,7 +51,7 @@ describe('findVaultOptimization', () => {
     vi.resetModules()
   })
 
-  function optimization(vault: string, chainId: number) {
+  function optimization(vault: string, chainId: number | null) {
     return {
       vault,
       strategyDebtRatios: [],
@@ -59,7 +59,7 @@ describe('findVaultOptimization', () => {
       proposedApr: 110,
       explain: 'explain',
       source: {
-        key: `doa:optimizations:${chainId}:latest`,
+        key: chainId === null ? 'doa:optimizations:legacy' : `doa:optimizations:${chainId}:latest`,
         chainId,
         revision: 'latest',
         isLatestAlias: true,
@@ -83,6 +83,15 @@ describe('findVaultOptimization', () => {
     const vault = '0x1111111111111111111111111111111111111111'
 
     expect(() => findVaultOptimization([optimization(vault, 1), optimization(vault, 10)], vault)).toThrow(
+      AmbiguousVaultOptimizationError
+    )
+  })
+
+  it('rejects address-only lookup when a duplicate vault has unknown chain scope', async () => {
+    const { AmbiguousVaultOptimizationError, findVaultOptimization } = await import('./redis')
+    const vault = '0x1111111111111111111111111111111111111111'
+
+    expect(() => findVaultOptimization([optimization(vault, null), optimization(vault, 10)], vault)).toThrow(
       AmbiguousVaultOptimizationError
     )
   })

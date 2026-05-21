@@ -59,9 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             (requestedChainId === undefined || optimization.source.chainId === requestedChainId)
           )
         })
-        const matchedChainIds = new Set(
-          selectedHistory.map((optimization) => optimization.source.chainId).filter((chainId) => chainId !== null)
-        )
+        const matchedChainIds = new Set(selectedHistory.map((optimization) => optimization.source.chainId))
         if (requestedChainId === undefined && matchedChainIds.size > 1) {
           return res.status(400).json({
             error: `Vault matches optimization records on multiple chains; provide chainId: ${requestedVault}`

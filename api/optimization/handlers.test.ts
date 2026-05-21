@@ -521,6 +521,60 @@ describe('optimization handlers', () => {
     expect(findVaultOptimizationMock).not.toHaveBeenCalled()
   })
 
+  it('returns a client error when change history has duplicate vaults across known and unknown chain scopes', async () => {
+    const vault = '0x1111111111111111111111111111111111111111'
+    readOptimizationsMock.mockResolvedValue([
+      {
+        vault,
+        strategyDebtRatios: [],
+        currentApr: 100,
+        proposedApr: 110,
+        explain: 'known chain',
+        source: {
+          key: 'doa:optimizations:1:latest',
+          chainId: 1,
+          revision: 'latest',
+          isLatestAlias: true,
+          timestampUtc: null,
+          latestMatchedTimestampUtc: null
+        }
+      },
+      {
+        vault,
+        strategyDebtRatios: [],
+        currentApr: 120,
+        proposedApr: 130,
+        explain: 'unknown chain scope',
+        source: {
+          key: 'doa:optimizations:legacy',
+          chainId: null,
+          revision: 'latest',
+          isLatestAlias: true,
+          timestampUtc: null,
+          latestMatchedTimestampUtc: null
+        }
+      }
+    ])
+    const res = createMockResponse()
+
+    await changeHandler(
+      {
+        method: 'GET',
+        query: {
+          vault,
+          history: '1'
+        }
+      } as VercelRequest,
+      res
+    )
+
+    expect(res.statusCode).toBe(400)
+    expect(res.body).toEqual({
+      error: `Vault matches optimization records on multiple chains; provide chainId: ${vault}`
+    })
+    expect(findVaultOptimizationMock).not.toHaveBeenCalled()
+  })
+
   it('passes chainId to change vault lookup', async () => {
     const vault = '0x1111111111111111111111111111111111111111'
     const selected = {
