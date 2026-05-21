@@ -5,17 +5,18 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { usePublicClient } from '@shared/hooks/useAppWagmi'
-import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
+import type { TPermitSignature } from '@shared/hooks/usePermit'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { formatTAmount, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { hexToNumber, slice } from 'viem'
 import { useAccount } from 'wagmi'
 import { useYearn } from '@/components/shared/contexts/useYearn'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
+import { buildVerifiedPermitData, createPermitDeadline } from './permitData'
 import { useMigrateError } from './useMigrateError'
 import { useMigrateFlow } from './useMigrateFlow'
 
@@ -54,8 +55,9 @@ export const WidgetMigrate: FC<Props> = ({
 
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [permitSignature, setPermitSignature] = useState<TPermitSignature | undefined>()
-  const [permitData, setPermitData] = useState<any>(undefined)
   const [isLoadingPermitData, setIsLoadingPermitData] = useState(false)
+  const [permitDomainVerified, setPermitDomainVerified] = useState(false)
+  const lastPermitDeadlineRef = useRef<bigint | undefined>(undefined)
 
   // Get destination vault token info
   const destinationVault = getToken({ address: migrationTarget, chainID: chainId })
@@ -77,7 +79,8 @@ export const WidgetMigrate: FC<Props> = ({
     chainId,
     enabled: migrateBalance > 0n && !isZeroAddress(migrationContract),
     slippage: zapSlippage,
-    permitSignature
+    permitSignature,
+    permitDomainVerified
   })
 
   // Error handling
@@ -114,127 +117,73 @@ export const WidgetMigrate: FC<Props> = ({
   // For permit flow: needs permit signing if no valid signature
   const needsPermitSign = isPermitFlow && !permitSignature
 
-  // Check if this is a V3 vault
-  const isV3Vault = vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3')
-
-  // Pre-fetch permit data when in permit flow
+  // Verify permit domain before offering the permit path.
   useEffect(() => {
-    const fetchPermitData = async () => {
-      if (!isPermitFlow || !account || !client || migrateBalance === 0n) {
-        setPermitData(undefined)
+    const verifyPermitDomain = async () => {
+      if (!account || !client || migrateBalance === 0n) {
+        setPermitDomainVerified(false)
         return
       }
 
       setIsLoadingPermitData(true)
 
       try {
-        // Read contract metadata
-        const [nonceResult, nameResult, versionResult, apiVersionResult] = await Promise.allSettled([
-          client.readContract({
-            address: vaultAddress,
-            abi: PERMIT_ABI,
-            functionName: 'nonces',
-            args: [account]
-          }),
-          client.readContract({
-            address: vaultAddress,
-            abi: PERMIT_ABI,
-            functionName: 'name'
-          }),
-          client.readContract({
-            address: vaultAddress,
-            abi: PERMIT_ABI,
-            functionName: 'version'
-          }),
-          client.readContract({
-            address: vaultAddress,
-            abi: PERMIT_ABI,
-            functionName: 'apiVersion'
-          })
-        ])
-
-        const nonce = nonceResult.status === 'fulfilled' ? nonceResult.value : 0n
-        const tokenName = nameResult.status === 'fulfilled' ? nameResult.value : ''
-
-        const domainName = isV3Vault ? 'Yearn Vault' : tokenName
-
-        const version =
-          apiVersionResult.status === 'fulfilled' && apiVersionResult.value
-            ? apiVersionResult.value
-            : versionResult.status === 'fulfilled' && versionResult.value
-              ? versionResult.value
-              : '1'
-
-        setPermitData({
-          domain: {
-            name: domainName,
-            version: version || '1',
-            chainId,
-            verifyingContract: vaultAddress
-          },
-          types: {
-            Permit: [
-              { name: 'owner', type: 'address' },
-              { name: 'spender', type: 'address' },
-              { name: 'value', type: 'uint256' },
-              { name: 'nonce', type: 'uint256' },
-              { name: 'deadline', type: 'uint256' }
-            ]
-          },
-          message: {
-            owner: account,
-            spender: periphery.routerAddress,
-            value: migrateBalance,
-            nonce,
-            deadline: periphery.permitDeadline
-          },
-          primaryType: 'Permit'
+        const deadline = createPermitDeadline()
+        const data = await buildVerifiedPermitData({
+          client,
+          vaultAddress,
+          account,
+          spender: periphery.routerAddress,
+          value: migrateBalance,
+          chainId,
+          deadline
         })
+        setPermitDomainVerified(Boolean(data))
       } catch {
-        setPermitData(undefined)
+        setPermitDomainVerified(false)
       } finally {
         setIsLoadingPermitData(false)
       }
     }
 
-    fetchPermitData()
-  }, [
-    isPermitFlow,
-    account,
-    client,
-    vaultAddress,
-    chainId,
-    periphery.routerAddress,
-    migrateBalance,
-    periphery.permitDeadline,
-    isV3Vault
-  ])
+    verifyPermitDomain()
+  }, [account, client, vaultAddress, chainId, periphery.routerAddress, migrateBalance])
 
-  // Getter for permit data (returns cached data)
   const getPermitData = useCallback(async () => {
-    return permitData
-  }, [permitData])
+    if (!account || !client || migrateBalance === 0n) return undefined
+
+    const deadline = createPermitDeadline()
+    const data = await buildVerifiedPermitData({
+      client,
+      vaultAddress,
+      account,
+      spender: periphery.routerAddress,
+      value: migrateBalance,
+      chainId,
+      deadline
+    })
+
+    lastPermitDeadlineRef.current = data?.message.deadline
+    return data
+  }, [account, client, vaultAddress, chainId, periphery.routerAddress, migrateBalance])
 
   // Handle permit signed callback
-  const handlePermitSigned = useCallback(
-    (signature: `0x${string}`) => {
-      // Parse signature into r, s, v using viem utilities
-      const r = slice(signature, 0, 32)
-      const s = slice(signature, 32, 64)
-      const vRaw = hexToNumber(slice(signature, 64, 65))
-      // Normalize v to 27 or 28 (some wallets return 0 or 1)
-      const v = vRaw < 27 ? vRaw + 27 : vRaw
+  const handlePermitSigned = useCallback((signature: `0x${string}`) => {
+    // Parse signature into r, s, v using viem utilities
+    const r = slice(signature, 0, 32)
+    const s = slice(signature, 32, 64)
+    const vRaw = hexToNumber(slice(signature, 64, 65))
+    // Normalize v to 27 or 28 (some wallets return 0 or 1)
+    const v = vRaw < 27 ? vRaw + 27 : vRaw
 
-      setPermitSignature({
-        r,
-        s,
-        v,
-        deadline: periphery.permitDeadline,
-        signature
-      })
-    },
-    [periphery.permitDeadline]
-  )
+    setPermitSignature({
+      r,
+      s,
+      v,
+      deadline: lastPermitDeadlineRef.current ?? createPermitDeadline(),
+      signature
+    })
+  }, [])
   // Transaction steps
   const currentStep: TransactionStep | undefined = useMemo(() => {
     // PERMIT FLOW

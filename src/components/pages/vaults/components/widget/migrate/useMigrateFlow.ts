@@ -14,9 +14,6 @@ import { toBasisPoints } from '@shared/utils/slippage'
 import { useEffect, useMemo, useState } from 'react'
 import { type Address, encodeFunctionData, erc20Abi } from 'viem'
 
-// Default permit deadline: 20 minutes from now
-const DEFAULT_PERMIT_DEADLINE_MINUTES = 20
-
 interface UseMigrateFlowProps {
   vaultFrom: Address
   vaultTo: Address
@@ -28,6 +25,7 @@ interface UseMigrateFlowProps {
   enabled: boolean
   slippage: number
   permitSignature?: TPermitSignature // Provided after user signs permit
+  permitDomainVerified?: boolean
 }
 
 const MAX_BASIS_POINTS = 10_000n
@@ -117,7 +115,8 @@ export const useMigrateFlow = ({
   chainId,
   enabled,
   slippage,
-  permitSignature
+  permitSignature,
+  permitDomainVerified = true
 }: UseMigrateFlowProps): UseMigrateFlowReturn => {
   const client = usePublicClient({ chainId })
   const [permitType, setPermitType] = useState<PermitType>('none')
@@ -209,15 +208,11 @@ export const useMigrateFlow = ({
 
   // Only use permit flow for V3 vaults with EIP-2612 style permits
   // V2 vaults have a different permit signature (Bytes[65] instead of v,r,s) that's incompatible with selfPermit
-  const supportsPermit = supportsMigratePermitFlow({ hasMigratorConfig, permitType, vaultVersion })
+  const supportsPermit =
+    supportsMigratePermitFlow({ hasMigratorConfig, permitType, vaultVersion }) && permitDomainVerified
 
   // Determine route type: permit (if V3 with EIP-2612) or approve (V2 or no permit)
   const routeType: MigrateRouteType = supportsPermit ? 'permit' : 'approve'
-
-  // Permit deadline - 20 minutes from now
-  const permitDeadline = useMemo(() => {
-    return BigInt(Math.floor(Date.now() / 1000) + 60 * DEFAULT_PERMIT_DEADLINE_MINUTES)
-  }, [])
 
   // Prepare approve (when using approve flow and allowance insufficient)
   const prepareApproveEnabled =
@@ -314,7 +309,6 @@ export const useMigrateFlow = ({
       prepareMulticallEnabled,
       routeType,
       supportsPermit,
-      permitDeadline,
       routerAddress: effectiveRouter,
       expectedSharesOut: expectedSharesOut ?? 0n,
       minSharesOut,
