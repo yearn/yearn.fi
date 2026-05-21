@@ -71,6 +71,29 @@ describe('parseTenderlyRuntime', () => {
     ).toThrow(/Duplicate Tenderly execution chain ID 73571 configured for canonical chains 1 and 10/)
   })
 
+  it('rejects Tenderly execution chain ids that shadow other canonical chain ids', () => {
+    expect(() =>
+      parseTenderlyRuntime({
+        VITE_TENDERLY_MODE: 'true',
+        VITE_TENDERLY_CHAIN_ID_FOR_1: '10',
+        VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
+      })
+    ).toThrow(
+      /Tenderly canonical chain 1 \(Ethereum\) uses execution chain ID 10, which shadows supported canonical chain 10 .*Tenderly execution chain IDs must not shadow supported canonical chain IDs/
+    )
+  })
+
+  it('accepts identity Tenderly execution chain ids for the same canonical chain', () => {
+    const runtime = parseTenderlyRuntime({
+      VITE_TENDERLY_MODE: 'true',
+      VITE_TENDERLY_CHAIN_ID_FOR_1: '1',
+      VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
+    })
+
+    expect(runtime.canonicalToExecutionChainId.get(1)).toBe(1)
+    expect(runtime.executionToCanonicalChainId.get(1)).toBe(1)
+  })
+
   it('filters canonical chains and resolves execution chain ids from runtime config', () => {
     const runtime = parseTenderlyRuntime({
       VITE_TENDERLY_MODE: 'true',
