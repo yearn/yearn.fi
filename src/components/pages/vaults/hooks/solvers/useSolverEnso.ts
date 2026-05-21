@@ -5,7 +5,13 @@ import { getApproveAbi } from '@shared/utils/approve'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
 import { useTokenAllowance } from '../useTokenAllowance'
-import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
+import {
+  type EnsoError,
+  type EnsoRouteResponse,
+  normalizeEnsoRouteResponse,
+  parseEnsoRouteBigInt,
+  routeHasSwapStep
+} from './ensoRoute'
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
 export type EnsoRoutingStrategy = 'router' | 'delegate' | 'router-legacy' | 'delegate-legacy' | 'ensowallet'
@@ -250,13 +256,13 @@ export const useSolverEnso = ({
     chainId,
     query: { enabled: !!prepareApproveEnabled && !!routerAddress }
   })
-  const expectedOut = visibleRoute?.amountOut
-    ? toNormalizedBN(BigInt(visibleRoute.amountOut), decimalsOut)
-    : toNormalizedBN(0n, decimalsOut)
+  const parsedAmountOut = parseEnsoRouteBigInt(visibleRoute?.amountOut)
+  const parsedMinAmountOut = parseEnsoRouteBigInt(visibleRoute?.minAmountOut)
+  const expectedOut =
+    parsedAmountOut !== undefined ? toNormalizedBN(parsedAmountOut, decimalsOut) : toNormalizedBN(0n, decimalsOut)
 
-  const minExpectedOut = visibleRoute?.minAmountOut
-    ? toNormalizedBN(BigInt(visibleRoute.minAmountOut), decimalsOut)
-    : toNormalizedBN(0n, decimalsOut)
+  const minExpectedOut =
+    parsedMinAmountOut !== undefined ? toNormalizedBN(parsedMinAmountOut, decimalsOut) : toNormalizedBN(0n, decimalsOut)
   return {
     actions: {
       prepareApprove

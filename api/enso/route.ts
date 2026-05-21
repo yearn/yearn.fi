@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { normalizeEnsoRouteResponse } from '../../src/components/pages/vaults/hooks/solvers/ensoRoute'
 import { checkEnsoRateLimit, isAbortError, withEnsoTimeout } from './guard'
 import { validateEnsoQuoteQuery } from './validation'
 
@@ -78,7 +79,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(response.status).json(data)
     }
 
-    return res.status(200).json(data)
+    const parsedChainId = Number(chainId)
+    const normalizedResponse = normalizeEnsoRouteResponse(
+      data,
+      response.status,
+      Number.isFinite(parsedChainId) ? parsedChainId : undefined
+    )
+
+    if (normalizedResponse.error) {
+      return res.status(normalizedResponse.error.statusCode).json(normalizedResponse.error)
+    }
+
+    return res.status(200).json(normalizedResponse.route)
   } catch (error) {
     if (isAbortError(error)) {
       return res.status(504).json({ error: 'Enso route request timed out' })

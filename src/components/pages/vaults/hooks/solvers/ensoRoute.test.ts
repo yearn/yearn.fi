@@ -1,25 +1,92 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
+import { normalizeEnsoRouteResponse, parseEnsoRouteBigInt, routeHasSwapStep } from './ensoRoute'
 
 describe('normalizeEnsoRouteResponse', () => {
+  const validRoutePayload = {
+    tx: {
+      to: '0x0000000000000000000000000000000000000001',
+      data: '0x1234',
+      value: '0',
+      from: '0x0000000000000000000000000000000000000002',
+      chainId: 1
+    },
+    amountOut: '100',
+    minAmountOut: '95',
+    gas: '123456',
+    route: []
+  }
+
   it('keeps valid Enso route payloads as routes', () => {
+    expect(normalizeEnsoRouteResponse(validRoutePayload, 200)).toEqual({
+      route: validRoutePayload
+    })
+  })
+
+  it.each([
+    '0',
+    '1',
+    '100000000000000000000000000000000000000'
+  ])('accepts canonical non-negative integer quote fields: %s', (value) => {
     const routePayload = {
-      tx: {
-        to: '0x0000000000000000000000000000000000000001',
-        data: '0x1234',
-        value: '0',
-        from: '0x0000000000000000000000000000000000000002',
-        chainId: 1
-      },
-      amountOut: '100',
-      minAmountOut: '95',
-      gas: '123456',
-      route: []
+      ...validRoutePayload,
+      amountOut: value,
+      minAmountOut: value,
+      gas: value
     }
 
     expect(normalizeEnsoRouteResponse(routePayload, 200)).toEqual({
       route: routePayload
     })
+  })
+
+  it.each([
+    '',
+    ' ',
+    ' 1',
+    '1 ',
+    '-1',
+    '1.1',
+    '1e3',
+    '0x10',
+    'NaN',
+    'abc'
+  ])('rejects malformed amountOut values: %s', (amountOut) => {
+    expect(normalizeEnsoRouteResponse({ ...validRoutePayload, amountOut }, 200).route).toBeUndefined()
+  })
+
+  it.each([
+    '',
+    ' ',
+    ' 1',
+    '1 ',
+    '-1',
+    '1.1',
+    '1e3',
+    '0x10',
+    'NaN',
+    'abc'
+  ])('rejects malformed minAmountOut values: %s', (minAmountOut) => {
+    expect(normalizeEnsoRouteResponse({ ...validRoutePayload, minAmountOut }, 200).route).toBeUndefined()
+  })
+
+  it.each([
+    '',
+    ' ',
+    ' 1',
+    '1 ',
+    '-1',
+    '1.1',
+    '1e3',
+    '0x10',
+    'NaN',
+    'abc'
+  ])('rejects malformed gas values: %s', (gas) => {
+    expect(normalizeEnsoRouteResponse({ ...validRoutePayload, gas }, 200).route).toBeUndefined()
+  })
+
+  it('returns undefined instead of throwing when parsing malformed route integers defensively', () => {
+    expect(parseEnsoRouteBigInt('123')).toBe(123n)
+    expect(parseEnsoRouteBigInt('1e3')).toBeUndefined()
   })
 
   it('fills tx.chainId from the request context when Enso omits it in a 200 response', () => {

@@ -41,6 +41,14 @@ type EnsoRouteCandidate = Omit<EnsoRouteResponse, 'tx'> & {
   }
 }
 
+export function isCanonicalEnsoIntegerString(value: unknown): value is string {
+  return typeof value === 'string' && /^(0|[1-9]\d*)$/.test(value)
+}
+
+export function parseEnsoRouteBigInt(value: unknown): bigint | undefined {
+  return isCanonicalEnsoIntegerString(value) ? BigInt(value) : undefined
+}
+
 function isEnsoRouteCandidate(data: unknown): data is EnsoRouteCandidate {
   if (!data || typeof data !== 'object') {
     return false
@@ -56,9 +64,9 @@ function isEnsoRouteCandidate(data: unknown): data is EnsoRouteCandidate {
     typeof candidate.tx.data === 'string' &&
     typeof candidate.tx.value === 'string' &&
     typeof candidate.tx.from === 'string' &&
-    typeof candidate.amountOut === 'string' &&
-    typeof candidate.minAmountOut === 'string' &&
-    typeof candidate.gas === 'string' &&
+    isCanonicalEnsoIntegerString(candidate.amountOut) &&
+    isCanonicalEnsoIntegerString(candidate.minAmountOut) &&
+    isCanonicalEnsoIntegerString(candidate.gas) &&
     Array.isArray(candidate.route)
   )
 }
