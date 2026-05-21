@@ -62,6 +62,18 @@ describe('fetchVaultOnChainState', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
+  it('rejects invalid vault-state addresses before RPC execution', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchVaultOnChainState(1, 'not-a-vault', STRATEGY_ADDRESSES)).rejects.toThrow('Invalid vault address')
+    await expect(fetchVaultOnChainState(1, VAULT_ADDRESS, ['not-a-strategy'])).rejects.toThrow(
+      'Invalid strategy address'
+    )
+
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('does not run sequential fallback for larger accepted strategy arrays', async () => {
     const strategies = Array.from({ length: 9 }, (_, index) => `0x${(index + 1).toString(16).padStart(40, '0')}`)
     const fetchMock = vi.fn().mockResolvedValue({

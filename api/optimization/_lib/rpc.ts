@@ -60,6 +60,7 @@ export function getRandomRpcEndpoint(chainId: number): string | undefined {
 
 export const MAX_VAULT_STATE_STRATEGIES = 32
 const MAX_SEQUENTIAL_FALLBACK_STRATEGIES = 8
+const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/
 
 const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11'
 
@@ -239,7 +240,7 @@ export async function fetchVaultOnChainState(
   strategyDebts: Map<string, bigint>
   unallocatedBps: number
 }> {
-  assertStrategyCount(strategyAddresses)
+  assertVaultStateInputs(vaultAddress, strategyAddresses)
 
   const endpoints = getAllRpcEndpoints(chainId)
   if (endpoints.length === 0) {
@@ -276,6 +277,18 @@ export async function fetchVaultOnChainState(
 function assertStrategyCount(strategyAddresses: string[]): void {
   if (strategyAddresses.length > MAX_VAULT_STATE_STRATEGIES) {
     throw new Error(`Too many strategy addresses: maximum ${MAX_VAULT_STATE_STRATEGIES}`)
+  }
+}
+
+function assertVaultStateInputs(vaultAddress: string, strategyAddresses: string[]): void {
+  if (!ADDRESS_PATTERN.test(vaultAddress)) {
+    throw new Error('Invalid vault address')
+  }
+
+  assertStrategyCount(strategyAddresses)
+
+  if (!strategyAddresses.every((strategyAddress) => ADDRESS_PATTERN.test(strategyAddress))) {
+    throw new Error('Invalid strategy address')
   }
 }
 
