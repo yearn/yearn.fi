@@ -13,7 +13,6 @@ import { getMigratorConfig, type MigratorConfig } from '@shared/utils/migratorRe
 import { toBasisPoints } from '@shared/utils/slippage'
 import { useEffect, useMemo, useState } from 'react'
 import { type Address, encodeFunctionData, erc20Abi } from 'viem'
-import { YEARN_4626_ROUTER } from '@/components/shared/utils'
 
 // Default permit deadline: 20 minutes from now
 const DEFAULT_PERMIT_DEADLINE_MINUTES = 20
@@ -111,31 +110,24 @@ export const useMigrateFlow = ({
   const [permitType, setPermitType] = useState<PermitType>('none')
   const [isCheckingPermit, setIsCheckingPermit] = useState(true)
 
-  // Get migrator config from registry or fallback to ERC_4626_ROUTER
-  const migratorConfig = useMemo((): MigratorConfig => {
-    const config = getMigratorConfig(router)
+  // Get migrator config from the active chain registry or Ethereum-only ERC_4626_ROUTER fallback.
+  const migratorConfig = useMemo((): MigratorConfig | undefined => {
+    return getMigratorConfig(chainId, router, vaultVersion)
+  }, [chainId, router, vaultVersion])
 
-    // Fallback to ERC_4626_ROUTER for unknown contracts (v3 migration)
-    if (!config) {
-      const isSourceV3 = vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3')
-      return {
-        abi: ERC_4626_ROUTER_ABI,
-        functionName: isSourceV3 ? 'migrate' : 'migrateFromV2',
-        routerAddress: YEARN_4626_ROUTER
-      }
-    }
-
-    return config
-  }, [router, vaultVersion])
-
-  // Use fallback router address if config specifies one, otherwise use the provided router
-  const effectiveRouter = (migratorConfig.routerAddress ?? router) as Address
-  const supportsMinSharesOut = useMemo(() => migratorSupportsMinSharesOut(migratorConfig), [migratorConfig])
+  // Use the chain-scoped router config when present.
+  const hasMigratorConfig = !!migratorConfig
+  const effectiveRouter = (migratorConfig?.routerAddress ?? router) as Address
+  const supportsMinSharesOut = useMemo(
+    () => (migratorConfig ? migratorSupportsMinSharesOut(migratorConfig) : false),
+    [migratorConfig]
+  )
 
   // Check what type of permit the vault token supports
   useEffect(() => {
     const checkPermitSupport = async () => {
-      if (!enabled || !client) {
+      if (!enabled || !client || !hasMigratorConfig) {
+        setPermitType('none')
         setIsCheckingPermit(false)
         return
       }
@@ -147,7 +139,7 @@ export const useMigrateFlow = ({
     }
 
     checkPermitSupport()
-  }, [client, vaultFrom, enabled])
+  }, [client, vaultFrom, enabled, hasMigratorConfig])
 
   // Check current allowance to the router
   const { allowance = 0n } = useTokenAllowance({
@@ -156,7 +148,7 @@ export const useMigrateFlow = ({
     spender: effectiveRouter,
     watch: true,
     chainId,
-    enabled
+    enabled: enabled && hasMigratorConfig
   })
 
   const isAllowanceSufficient = allowance >= balance
@@ -218,7 +210,8 @@ export const useMigrateFlow = ({
   }, [])
 
   // Prepare approve (when using approve flow and allowance insufficient)
-  const prepareApproveEnabled = routeType === 'approve' && !isAllowanceSufficient && hasBalance && !!account && enabled
+  const prepareApproveEnabled =
+    routeType === 'approve' && !isAllowanceSufficient && hasBalance && !!account && enabled && hasMigratorConfig
   const prepareApprove: AppUseSimulateContractReturnType = useSimulateContract({
     abi: erc20Abi,
     functionName: 'approve',
@@ -231,8 +224,8 @@ export const useMigrateFlow = ({
   const prepareMigrateEnabled =
     routeType === 'approve' && hasBalance && !!account && enabled && isAllowanceSufficient && canProtectMigration
   const prepareMigrate: AppUseSimulateContractReturnType = useSimulateContract({
-    abi: migratorConfig.abi,
-    functionName: migratorConfig.functionName,
+    abi: migratorConfig?.abi ?? ERC_4626_ROUTER_ABI,
+    functionName: (migratorConfig?.functionName ?? 'migrate') as 'migrate',
     address: effectiveRouter,
     args:
       balance > 0n && canProtectMigration
@@ -250,7 +243,7 @@ export const useMigrateFlow = ({
 
   // Encode multicall data: selfPermit + migrate
   const multicallData = useMemo(() => {
-    if (!prepareMulticallEnabled || !permitSignature || balance <= 0n) {
+    if (!prepareMulticallEnabled || !permitSignature || balance <= 0n || !migratorConfig) {
       return undefined
     }
 
