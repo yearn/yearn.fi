@@ -11,10 +11,53 @@ interface TokenLogoProps extends Omit<ImageProps, 'alt' | 'src'> {
   chainId?: number
 }
 
+const UNSAFE_IMAGE_PROTOCOLS = ['data:', 'blob:', 'javascript:', 'file:'] as const
+
+function removeAsciiWhitespaceAndControls(value: string): string {
+  return Array.from(value)
+    .filter((character) => {
+      const charCode = character.charCodeAt(0)
+
+      return charCode > 0x20 && charCode !== 0x7f
+    })
+    .join('')
+}
+
+function isClearlyUnsafeImageSrc(src?: string): boolean {
+  const trimmedSrc = src?.trim()
+  if (!trimmedSrc) {
+    return true
+  }
+
+  if (trimmedSrc.startsWith('//')) {
+    return true
+  }
+
+  try {
+    const parsedSrc = new URL(trimmedSrc)
+    return parsedSrc.protocol !== 'http:' && parsedSrc.protocol !== 'https:'
+  } catch {
+    const normalizedSrc = removeAsciiWhitespaceAndControls(trimmedSrc).toLowerCase()
+
+    return (
+      normalizedSrc.startsWith('//') || UNSAFE_IMAGE_PROTOCOLS.some((protocol) => normalizedSrc.startsWith(protocol))
+    )
+  }
+}
+
+function getSafeInitialImageSrc(src: string, altSrc?: string): string {
+  if (!isClearlyUnsafeImageSrc(src)) {
+    return src
+  }
+
+  return isClearlyUnsafeImageSrc(altSrc) ? '' : (altSrc ?? '')
+}
+
 function TokenLogo(props: TokenLogoProps): ReactElement {
   const { src, altSrc, tokenSymbol, tokenName, chainId, className, width = 32, height = 32, ...rest } = props
-  const [imageSrc, setImageSrc] = useState<string>(src)
-  const [hasError, setHasError] = useState(false)
+  const safeInitialImageSrc = getSafeInitialImageSrc(src, altSrc)
+  const [imageSrc, setImageSrc] = useState<string>(safeInitialImageSrc)
+  const [hasError, setHasError] = useState(!safeInitialImageSrc)
   const [isLoading, setIsLoading] = useState(true)
   const [isVisible, setIsVisible] = useState(props.loading !== 'lazy' || props.priority === true)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -49,10 +92,11 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
 
   // Reset states when src changes
   useEffect(() => {
-    setImageSrc(src)
-    setHasError(false)
+    const safeSrc = getSafeInitialImageSrc(src, altSrc)
+    setImageSrc(safeSrc)
+    setHasError(!safeSrc)
     setIsLoading(true)
-  }, [src])
+  }, [altSrc, src])
 
   // Handle already-cached images where onLoad might not fire
   useEffect(() => {
@@ -73,7 +117,7 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
     setIsLoading(false)
 
     // Try altSrc first if we haven't already
-    if (altSrc && imageSrc !== altSrc) {
+    if (altSrc && imageSrc !== altSrc && !isClearlyUnsafeImageSrc(altSrc)) {
       setImageSrc(altSrc)
       setIsLoading(true)
       return

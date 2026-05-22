@@ -13,6 +13,7 @@ export function Markdown({ content, className }: TMarkdownProps): ReactElement {
       <ReactMarkdown
         skipHtml
         components={{
+          img: () => null,
           a: ({ node: _node, className: linkClassName, children, ...props }) => (
             <a
               {...props}

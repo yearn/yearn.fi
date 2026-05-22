@@ -1,4 +1,5 @@
 import { usePlausible } from '@hooks/usePlausible'
+import { getTokenLogoSources } from '@pages/vaults/components/widget/tokenLogo.utils'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { TokenLogo } from '@shared/components/TokenLogo'
@@ -59,6 +60,12 @@ export const WidgetMigrate: FC<Props> = ({
 
   // Get destination vault token info
   const destinationVault = getToken({ address: migrationTarget, chainID: chainId })
+  const destinationVaultLogoSources = getTokenLogoSources({
+    address: assetAddress,
+    chainId,
+    logoURI: destinationVault?.logoURI,
+    size: 128
+  })
 
   // Get user's vault balance from props
   const { vaultToken, isLoading: isLoadingVaultData, refetch: refetchVaultUserData } = vaultUserData
@@ -458,11 +465,8 @@ export const WidgetMigrate: FC<Props> = ({
           >
             <div className="flex items-center gap-3">
               <TokenLogo
-                src={
-                  destinationVault?.logoURI ||
-                  `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`
-                }
-                altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`}
+                src={destinationVaultLogoSources.src}
+                altSrc={destinationVaultLogoSources.altSrc}
                 tokenSymbol={destinationVault?.symbol || migrationTargetSymbol}
                 tokenName={destinationVault?.name}
                 width={32}

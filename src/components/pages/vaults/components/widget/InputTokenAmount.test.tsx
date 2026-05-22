@@ -59,11 +59,11 @@ describe('InputTokenAmount', () => {
         symbol={'yvUSD'}
         tokenAddress={'0x0000000000000000000000000000000000000002'}
         tokenChainId={1}
-        tokenLogoURI={'https://example.com/input-logo.png'}
+        tokenLogoURI={'https://token-assets.yearn.fi/input-logo.png'}
       />
     )
 
-    expect(html).toContain('https://example.com/input-logo.png')
+    expect(html).toContain('https://token-assets.yearn.fi/input-logo.png')
   })
 
   it('renders the display balance separately from the max-action balance', async () => {

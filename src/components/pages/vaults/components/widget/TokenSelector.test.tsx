@@ -71,7 +71,7 @@ describe('TokenSelector', () => {
           buildToken({
             name: 'Override Token',
             symbol: 'OVR',
-            logoURI: 'https://example.com/override.png'
+            logoURI: 'https://token-assets.yearn.fi/override.png'
           })
         ]}
       />
@@ -79,7 +79,7 @@ describe('TokenSelector', () => {
 
     expect(html).toContain('Override Token')
     expect(html).toContain('OVR')
-    expect(html).toContain('https://example.com/override.png')
+    expect(html).toContain('https://token-assets.yearn.fi/override.png')
     expect(html).not.toContain('Base Token')
   })
 
@@ -188,19 +188,19 @@ describe('TokenSelector', () => {
             address: BASE_TOKEN_ADDRESS,
             name: 'Base Token',
             symbol: 'BASE',
-            logoURI: 'https://example.com/base.png'
+            logoURI: 'https://token-assets.yearn.fi/base.png'
           }),
           [VAULT_TOKEN_ADDRESS]: buildToken({
             address: VAULT_TOKEN_ADDRESS,
             name: 'Vault Token',
             symbol: 'vBASE',
-            logoURI: 'https://example.com/vault.png'
+            logoURI: 'https://token-assets.yearn.fi/vault.png'
           }),
           [STAKING_TOKEN_ADDRESS]: buildToken({
             address: STAKING_TOKEN_ADDRESS,
             name: 'Staking Token',
             symbol: 'stBASE',
-            logoURI: 'https://example.com/staking.png'
+            logoURI: 'https://token-assets.yearn.fi/staking.png'
           })
         }
       },
@@ -210,7 +210,7 @@ describe('TokenSelector', () => {
             address: BASE_TOKEN_ADDRESS,
             name: 'Base Token',
             symbol: 'BASE',
-            logoURI: 'https://example.com/base.png'
+            logoURI: 'https://token-assets.yearn.fi/base.png'
           })
         }
         if (address === VAULT_TOKEN_ADDRESS) {
@@ -218,14 +218,14 @@ describe('TokenSelector', () => {
             address: VAULT_TOKEN_ADDRESS,
             name: 'Vault Token',
             symbol: 'vBASE',
-            logoURI: 'https://example.com/vault.png'
+            logoURI: 'https://token-assets.yearn.fi/vault.png'
           })
         }
         return buildToken({
           address: STAKING_TOKEN_ADDRESS,
           name: 'Staking Token',
           symbol: 'stBASE',
-          logoURI: 'https://example.com/staking.png'
+          logoURI: 'https://token-assets.yearn.fi/staking.png'
         })
       }
     })
@@ -241,9 +241,9 @@ describe('TokenSelector', () => {
       />
     )
 
-    expect(html).toContain('https://example.com/base.png')
-    expect(html).not.toContain('https://example.com/vault.png')
-    expect(html).not.toContain('https://example.com/staking.png')
+    expect(html).toContain('https://token-assets.yearn.fi/base.png')
+    expect(html).not.toContain('https://token-assets.yearn.fi/vault.png')
+    expect(html).not.toContain('https://token-assets.yearn.fi/staking.png')
   })
 
   it('never shows hidden vault share or staking tokens', () => {
