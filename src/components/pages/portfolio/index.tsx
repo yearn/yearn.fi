@@ -1955,6 +1955,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
             startTimestamp: activityStartTimestamp
           })
         )
+        .filter((entry) => !isActivityZapFilterActive || isZapNotification(entry))
         .toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)),
     [
       activityChainId,
@@ -1963,7 +1964,8 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       activitySearch,
       activityStartTimestamp,
       cachedEntries,
-      indexedTxHashes
+      indexedTxHashes,
+      isActivityZapFilterActive
     ]
   )
   const recentLocalActivityEntries = useMemo(
