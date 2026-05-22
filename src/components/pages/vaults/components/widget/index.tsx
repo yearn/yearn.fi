@@ -22,6 +22,7 @@ interface Props {
   vaultAddress?: TAddress
   gaugeAddress?: TAddress
   disableDepositStaking?: boolean
+  disableStakingActions?: boolean
   actions: ActionType[]
   chainId: number
   vaultUserData: VaultUserData
@@ -63,6 +64,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
     vaultAddress,
     gaugeAddress,
     disableDepositStaking,
+    disableStakingActions,
     actions,
     chainId,
     vaultUserData,
@@ -91,6 +93,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
   const vaultInfo = getVaultInfo(currentVault)
   const vaultMigration = getVaultMigration(currentVault)
   const resolvedStakingAddress = isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)
+  const enabledStakingAddress = disableStakingActions ? undefined : resolvedStakingAddress
 
   useImperativeHandle(ref, () => ({
     setMode(newMode: ActionType): void {
@@ -112,7 +115,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
           <WidgetDeposit
             vaultAddress={toAddress(vaultAddress)}
             assetAddress={toAddress(assetToken)}
-            stakingAddress={disableDepositStaking ? undefined : resolvedStakingAddress}
+            stakingAddress={disableDepositStaking || disableStakingActions ? undefined : resolvedStakingAddress}
             chainId={chainId}
             vaultAPR={vaultAPR?.forwardAPR?.netAPR || 0}
             vaultSymbol={vaultSymbol || ''}
@@ -133,7 +136,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
           <WidgetWithdraw
             vaultAddress={toAddress(vaultAddress)}
             assetAddress={toAddress(assetToken)}
-            stakingAddress={resolvedStakingAddress}
+            stakingAddress={enabledStakingAddress}
             chainId={chainId}
             vaultSymbol={vaultSymbol || ''}
             stakingSource={vaultStaking?.source}
@@ -153,7 +156,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
           <WidgetMigrate
             vaultAddress={toAddress(vaultAddress)}
             assetAddress={toAddress(assetToken)}
-            stakingAddress={resolvedStakingAddress}
+            stakingAddress={enabledStakingAddress}
             chainId={chainId}
             vaultSymbol={vaultSymbol || ''}
             vaultVersion={vaultVersion}

@@ -1,3 +1,4 @@
+import type { StakingFunctionSelector } from '@pages/vaults/domain/stakingRegistry'
 import { erc4626Abi } from '@shared/contracts/abi/4626.abi'
 import { STAKING_REWARDS_ABI } from '@shared/contracts/abi/stakingRewards.abi'
 import { TOKENIZED_STRATEGY_ABI } from '@shared/contracts/abi/tokenizedStrategy.abi'
@@ -43,6 +44,32 @@ export function normalizeStakingSource(stakingSource?: string): StakingSourceKin
   if (stakingSource === 'VeYFI') return 'VeYFI'
   if (stakingSource === 'yBOLD') return 'yBOLD'
   return 'default'
+}
+
+export function getDirectStakeSelector(stakingSource?: string): StakingFunctionSelector {
+  const source = normalizeStakingSource(stakingSource)
+  if (source === 'VeYFI') return 'deposit(uint256)'
+  if (source === 'yBOLD') return 'deposit(uint256,address)'
+  return 'stake(uint256)'
+}
+
+export function getDirectUnstakeSelector({
+  stakingSource,
+  redeemAll
+}: {
+  stakingSource?: string
+  redeemAll?: boolean
+}): StakingFunctionSelector {
+  const source = normalizeStakingSource(stakingSource)
+  if (redeemAll && (source === 'VeYFI' || source === 'yBOLD')) return 'redeem(uint256,address,address)'
+  if (source === 'VeYFI' || source === 'yBOLD') return 'withdraw(uint256,address,address)'
+  return 'withdraw(uint256)'
+}
+
+export function getDirectUnstakeFallbackSelector(stakingSource?: string): StakingFunctionSelector | undefined {
+  const source = normalizeStakingSource(stakingSource)
+  if (source === 'VeYFI' || source === 'yBOLD') return 'withdraw(uint256)'
+  return 'withdraw(uint256,address,address)'
 }
 
 export function getStakePreviewCall(stakingSource: string | undefined, amount: bigint): StakingCall | undefined {

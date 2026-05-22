@@ -175,6 +175,7 @@ const EMPTY_VAULT_FOR_APY_DATA: TKongVaultView = {
   staking: {
     address: '0x0000000000000000000000000000000000000000',
     available: false,
+    isDirectStakingEnabled: false,
     source: '',
     rewards: []
   },
@@ -640,12 +641,15 @@ function Index(): ReactElement | null {
   const stakingAddress = !isZeroAddress(currentVault?.staking?.address)
     ? toAddress(currentVault?.staking?.address)
     : undefined
-  const disableDepositStaking = shouldDisableStakingForDeposit || !currentVault?.staking?.available
+  const isDirectStakingEnabled = Boolean(currentVault?.staking?.isDirectStakingEnabled)
+  const enabledStakingAddress = isDirectStakingEnabled ? stakingAddress : undefined
+  const disableDepositStaking =
+    shouldDisableStakingForDeposit || !currentVault?.staking?.available || !isDirectStakingEnabled
 
   const vaultUserData = useVaultUserData({
     vaultAddress: toAddress(currentVault?.address ?? '0x'),
     assetAddress: toAddress(currentVault?.token?.address ?? '0x'),
-    stakingAddress,
+    stakingAddress: enabledStakingAddress,
     stakingSource: currentVault?.staking?.source,
     chainId,
     account: address
@@ -1470,6 +1474,7 @@ function Index(): ReactElement | null {
         currentVault={resolvedCurrentVault}
         gaugeAddress={resolvedCurrentVault.staking.address}
         disableDepositStaking={disableDepositStaking}
+        disableStakingActions={!resolvedCurrentVault.staking.isDirectStakingEnabled}
         actions={widgetActions}
         chainId={chainId}
         vaultUserData={vaultUserData}
@@ -1517,6 +1522,7 @@ function Index(): ReactElement | null {
         currentVault={resolvedCurrentVault}
         gaugeAddress={resolvedCurrentVault.staking.address}
         disableDepositStaking={disableDepositStaking}
+        disableStakingActions={!resolvedCurrentVault.staking.isDirectStakingEnabled}
         actions={widgetActions}
         chainId={chainId}
         vaultUserData={vaultUserData}
@@ -1757,7 +1763,7 @@ function Index(): ReactElement | null {
                   isActive={isWidgetWalletOpen && !isWidgetRewardsOpen}
                   currentVault={currentVault}
                   vaultAddress={toAddress(currentVault.address)}
-                  stakingAddress={stakingAddress}
+                  stakingAddress={enabledStakingAddress}
                   chainId={chainId}
                   vaultUserData={vaultUserData}
                 />
@@ -1765,7 +1771,7 @@ function Index(): ReactElement | null {
               {shouldShowWidgetRewards ? (
                 <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
                   <WidgetRewards
-                    stakingAddress={stakingAddress}
+                    stakingAddress={enabledStakingAddress}
                     stakingSource={currentVault.staking.source}
                     rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
                       address: r.address,
