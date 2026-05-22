@@ -37,7 +37,7 @@ vi.mock('@shared/utils', () => ({
 }))
 
 vi.mock('@shared/components/TokenLogo', () => ({
-  TokenLogo: (props: { src?: string; altSrc?: string }) => <img src={props.src} data-alt-src={props.altSrc} alt="" />
+  TokenLogo: (props: { src?: string; altSrc?: string }) => <span data-src={props.src} data-alt-src={props.altSrc} />
 }))
 
 describe('InputTokenAmount', () => {

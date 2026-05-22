@@ -2,9 +2,10 @@ import { getNetwork, getRpcUriFor } from '@shared/utils/wagmi'
 import type { Chain, Transport } from 'viem'
 import { mainnet } from 'viem/chains'
 import { fallback, http } from 'wagmi'
+import { env } from '@/env'
 
 function getLegacyRpcUri(chainId: number): string {
-  const value = import.meta.env.VITE_JSON_RPC_URI?.[chainId] || import.meta.env.VITE_JSON_RPC_URL?.[chainId]
+  const value = env.NEXT_PUBLIC_JSON_RPC_URI?.[chainId] || env.NEXT_PUBLIC_JSON_RPC_URL?.[chainId]
   return typeof value === 'string' ? value.trim() : ''
 }
 

@@ -19,6 +19,7 @@ import { formatPercent } from '@shared/utils/format'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { env } from '@/env'
 
 type TTrendingVaultsProps = {
   suggestedVaults: TKongVaultInput[]
@@ -65,8 +66,8 @@ function TrendingVaultMarqueeItem({ vault }: { vault: TKongVaultInput }): ReactE
   const chain = getNetwork(chainID)
   const staking = getVaultStaking(vault)
   const tvl = getVaultTVL(vault)
-  const tokenIcon = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+  const tokenIcon = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
+  const chainLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
 
   const apyDisplay = useMemo((): string => {
     if (apyData.mode === 'historical' || apyData.mode === 'noForward') {

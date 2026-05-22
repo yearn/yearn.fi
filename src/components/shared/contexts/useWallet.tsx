@@ -15,6 +15,7 @@ import type { QueryKey } from '@tanstack/react-query'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useDeferredValue, useMemo, useRef } from 'react'
+import { env } from '@/env'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
 import { useBalancesCombined } from '../hooks/useBalancesCombined'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
@@ -29,7 +30,7 @@ import { useYearn } from './useYearn'
 import { useYearnTokens } from './useYearn.helper'
 import { useTokenList } from './WithTokenList'
 
-const USE_ENSO_BALANCES = import.meta.env.VITE_BALANCE_SOURCE !== 'multicall'
+const USE_ENSO_BALANCES = env.NEXT_PUBLIC_BALANCE_SOURCE !== 'multicall'
 
 type TTokenAndChain = { address: TAddress; chainID: number }
 

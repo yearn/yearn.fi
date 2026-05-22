@@ -15,6 +15,7 @@ import { calculateRemainingEnsoSlippagePercentage, ZAP_SLIPPAGE_HARD_CAP } from 
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
+import { env } from '@/env'
 import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
@@ -427,7 +428,7 @@ export function WidgetDeposit({
   }, [ensoSlippageCalibrationKey])
 
   useEffect(() => {
-    if (!import.meta.env.DEV) {
+    if (!env.DEV) {
       return
     }
 
@@ -490,7 +491,7 @@ export function WidgetDeposit({
 
   useEffect(() => {
     if (
-      !import.meta.env.DEV ||
+      !env.DEV ||
       routeType !== 'ENSO' ||
       isLoadingQuote ||
       depositAmount.isDebouncing ||

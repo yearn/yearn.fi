@@ -9,6 +9,7 @@ import { calculateRemainingEnsoSlippagePercentage, ZAP_SLIPPAGE_HARD_CAP } from 
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
+import { env } from '@/env'
 import { ApprovalOverlay } from '../deposit/ApprovalOverlay'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { SettingsPanel } from '../SettingsPanel'
@@ -526,7 +527,7 @@ export function WidgetWithdraw({
   }, [ensoSlippageCalibrationKey])
 
   useEffect(() => {
-    if (!import.meta.env.DEV) {
+    if (!env.DEV) {
       return
     }
 
@@ -592,7 +593,7 @@ export function WidgetWithdraw({
 
   useEffect(() => {
     if (
-      !import.meta.env.DEV ||
+      !env.DEV ||
       routeType !== 'ENSO' ||
       isFetchingQuote ||
       withdrawAmount.isDebouncing ||

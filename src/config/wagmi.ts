@@ -1,3 +1,4 @@
+import { env } from '@/env'
 import { registerConfig } from '@shared/utils/wagmi'
 import { connectorsForWallets } from '@rainbow-me/rainbowkit'
 import {
@@ -14,8 +15,8 @@ import { supportedAppChains, supportedWalletChains } from './supportedChains'
 import { getWagmiConfigChains } from './wagmiChains'
 import { buildTransports } from './wagmiTransports'
 
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string
-const appName = (import.meta.env.VITE_WALLETCONNECT_PROJECT_NAME as string) || 'Yearn Finance'
+const projectId = env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID as string
+const appName = (env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_NAME as string) || 'Yearn Finance'
 
 const connectors = connectorsForWallets(
   [

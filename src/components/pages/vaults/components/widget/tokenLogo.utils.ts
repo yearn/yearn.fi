@@ -1,3 +1,5 @@
+import { env } from '@/env'
+
 type TokenLogoSourceParams = {
   address?: string
   chainId?: number
@@ -14,7 +16,7 @@ export function getDefaultTokenLogoSrc({
     return undefined
   }
 
-  return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${address.toLowerCase()}/logo-${size}.png`
+  return `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${address.toLowerCase()}/logo-${size}.png`
 }
 
 export function getTokenLogoSources({ address, chainId, logoURI, size = 32 }: TokenLogoSourceParams): {

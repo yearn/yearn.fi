@@ -24,6 +24,7 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { formatApyDisplay, toAddress } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
+import { env } from '@/env'
 
 export function SuggestedVaultCard({
   vault,
@@ -55,8 +56,8 @@ export function SuggestedVaultCard({
   const chain = getNetwork(chainID)
   const tokenIcon = isYvUsd
     ? getVaultPrimaryLogoSrc(vault)
-    : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+    : `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
+  const chainLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const listKind = deriveListKind(vault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'

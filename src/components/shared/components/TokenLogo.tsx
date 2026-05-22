@@ -1,6 +1,7 @@
 import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { env } from '@/env'
 import type { ImageProps } from '/src/components/Image'
 
 interface TokenLogoProps extends Omit<ImageProps, 'alt' | 'src'> {
@@ -156,6 +157,7 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
           </div>
         ) : null}
         {isVisible && !hasError ? (
+          // biome-ignore lint/performance/noImgElement: token logos need custom fallback and error handling.
           <img
             ref={imgRef}
             src={imageSrc}
@@ -180,8 +182,9 @@ function TokenLogo(props: TokenLogoProps): ReactElement {
             right: '-2px'
           }}
         >
+          {/* biome-ignore lint/performance/noImgElement: chain badge shares the token logo fallback primitive. */}
           <img
-            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`}
+            src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`}
             alt="Network"
             width={chainIconSize - 4}
             height={chainIconSize - 4}

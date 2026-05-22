@@ -139,6 +139,7 @@ function Image(props: CustomImageProps): ReactElement {
     <div ref={imageRef} style={containerStyle} className="relative overflow-hidden">
       {errorPlaceholder}
       {isVisible && (
+        // biome-ignore lint/performance/noImgElement: this compatibility image primitive owns fallback and lazy-loading behavior.
         <img
           ref={imgRef}
           src={imageSrc as string}

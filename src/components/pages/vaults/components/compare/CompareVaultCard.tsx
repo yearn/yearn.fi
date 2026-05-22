@@ -26,6 +26,7 @@ import { cl, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement, ReactNode } from 'react'
+import { env } from '@/env'
 
 type TCompareVaultCardProps = {
   vault: TKongVaultInput
@@ -86,7 +87,7 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
   const vaultKind = getVaultKind(vault)
   const vaultInfo = getVaultInfo(vault)
   const network = getNetwork(chainID)
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+  const chainLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const vaultKey = getVaultKey(vault)
   const vaultHref = `/vaults/${chainID}/${toAddress(vaultAddress)}`
   const listKind = deriveListKind(vault)
@@ -137,7 +138,7 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
           <div className={'min-w-0 flex-1'}>
             <div className={'flex items-center gap-3'}>
               <TokenLogo
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${vaultToken.address.toLowerCase()}/logo-128.png`}
+                src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${vaultToken.address.toLowerCase()}/logo-128.png`}
                 tokenSymbol={vaultToken.symbol}
                 width={36}
                 height={36}

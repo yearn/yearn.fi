@@ -107,7 +107,7 @@ export function MetricHeader({
     'cursor-default underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:decoration-neutral-600'
 
   return (
-    <p className={'flex items-center gap-1 text-xs font-normal uppercase tracking-wide text-text-secondary'}>
+    <div className={'flex items-center gap-1 text-xs font-normal uppercase tracking-wide text-text-secondary'}>
       {tooltip ? (
         <>
           <Tooltip
@@ -126,6 +126,6 @@ export function MetricHeader({
       ) : (
         <span>{label}</span>
       )}
-    </p>
+    </div>
   )
 }

@@ -63,6 +63,7 @@ import {
   useRef,
   useState
 } from 'react'
+import { env } from '@/env'
 import { useVaultsListModel } from './useVaultsListModel'
 import { useVaultsQueryState } from './useVaultsQueryState'
 import { VAULTS_FILTERS_STORAGE_KEY } from './vaultsFiltersStorage'
@@ -704,7 +705,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       const label = getUnderlyingAssetLabel(assetKey)
       const token = getVaultToken(vault)
       const tokenAddress = token.address.toLowerCase()
-      const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${getVaultChainID(vault)}/${tokenAddress}/logo-32.png`
+      const tokenLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${getVaultChainID(vault)}/${tokenAddress}/logo-32.png`
       return {
         label,
         value: assetKey,

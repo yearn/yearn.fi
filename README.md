@@ -23,7 +23,7 @@
     git remote add upstream https://github.com/yearn/yearn.fi.git
     ```
 
-- Optional: Create `.env` file in root directory of repo then copy contents of `.env.example` to `.env` and replace values with your own keys. If you do not do this the default values from `next.config.js` will be used.
+- Optional: Create a `.env` file in the repo root, copy `.env.example`, and replace values with your own keys. Client-readable values must use the `NEXT_PUBLIC_` prefix; server-only secrets must stay unprefixed.
 
     ``` bash
     cp .env.example .env

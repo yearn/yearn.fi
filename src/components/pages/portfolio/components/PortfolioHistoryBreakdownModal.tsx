@@ -15,6 +15,7 @@ import { cl, formatUSD, SUPPORTED_NETWORKS, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
+import { env } from '@/env'
 import { usePortfolioBreakdown } from '../hooks/usePortfolioBreakdown'
 import type { TPortfolioBreakdownResponse, TPortfolioBreakdownVault } from '../types/api'
 
@@ -159,8 +160,8 @@ export function PortfolioHistoryBreakdownModal({
         const currentVault = allVaults[normalizedVaultAddress] as TKongVaultInput | undefined
         const fallbackTokenAddress = vault.metadata?.tokenAddress
         const fallbackLogoSrc = fallbackTokenAddress
-          ? `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainId}/${toAddress(fallbackTokenAddress).toLowerCase()}/logo-128.png`
-          : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainId}/${normalizedVaultAddress.toLowerCase()}/logo-128.png`
+          ? `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainId}/${toAddress(fallbackTokenAddress).toLowerCase()}/logo-128.png`
+          : `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainId}/${normalizedVaultAddress.toLowerCase()}/logo-128.png`
 
         return {
           chainId: vault.chainId,
@@ -171,7 +172,7 @@ export function PortfolioHistoryBreakdownModal({
           displaySymbol: currentVault ? getVaultSymbol(currentVault) : vault.metadata?.symbol || 'Unknown',
           logoSrc: currentVault ? getVaultPrimaryLogoSrc(currentVault) : fallbackLogoSrc,
           altLogoSrc: currentVault
-            ? `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${getVaultChainID(currentVault)}/${toAddress(getVaultToken(currentVault).address).toLowerCase()}/logo-128.png`
+            ? `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${getVaultChainID(currentVault)}/${toAddress(getVaultToken(currentVault).address).toLowerCase()}/logo-128.png`
             : undefined,
           usdValue: vault.usdValue,
           status: vault.status

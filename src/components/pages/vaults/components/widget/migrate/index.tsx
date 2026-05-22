@@ -13,6 +13,7 @@ import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { hexToNumber, slice } from 'viem'
 import { useAccount } from 'wagmi'
 import { useYearn } from '@/components/shared/contexts/useYearn'
+import { env } from '@/env'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
@@ -460,9 +461,9 @@ export const WidgetMigrate: FC<Props> = ({
               <TokenLogo
                 src={
                   destinationVault?.logoURI ||
-                  `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`
+                  `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`
                 }
-                altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`}
+                altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`}
                 tokenSymbol={destinationVault?.symbol || migrationTargetSymbol}
                 tokenName={destinationVault?.name}
                 width={32}

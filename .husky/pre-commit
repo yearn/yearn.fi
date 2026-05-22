@@ -3,5 +3,8 @@ set -e
 echo 'husky: running lint-staged checks'
 bunx lint-staged
 
+echo 'husky: running client/server boundary check'
+bun run check:client-server-boundary
+
 echo 'husky: running type check'
 bun run tslint

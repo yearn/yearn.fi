@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { VaultForwardAPY } from './VaultForwardAPY'
 
-vi.mock('@vaults/hooks/useVaultApyData', () => ({
+vi.mock('@pages/vaults/hooks/useVaultApyData', () => ({
   useVaultApyData: vi.fn()
 }))
 

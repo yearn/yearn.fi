@@ -13,6 +13,7 @@ import type { TToken } from '@shared/types'
 import { cl, formatTAmount, isZeroAddress, toAddress } from '@shared/utils'
 import { type FC, useCallback, useMemo, useState } from 'react'
 import { isAddress } from 'viem'
+import { env } from '@/env'
 import { CloseIcon } from './shared/Icons'
 import { getTokenLogoSources } from './tokenLogo.utils'
 import {
@@ -421,7 +422,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
               type="button"
             >
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo.svg`}
+                src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo.svg`}
                 alt={chain.name}
                 width={20}
                 height={20}

@@ -1,14 +1,14 @@
 # yearn.fi
 
-Yearn Finance vaults interface — React 19 + TypeScript SPA (Vite, TanStack Query, Tailwind CSS 4, Wagmi/Viem).
+Yearn Finance vaults interface — Next.js 16 App Router + React 19 + TypeScript, TanStack Query, Tailwind CSS 4, Wagmi/Viem.
 
 ## Commands
 
 ```bash
 bun install                              # Install dependencies
-bun run dev                              # Vite dev server + Bun API server; prompts for an API port when needed
-bun run preview                          # Vite preview + Bun API server; prompts for an API port when needed
-bun run build                            # TypeScript check + Vite build
+bun run dev                              # Next dev server on 127.0.0.1:3000
+bun run preview                          # Next production server on 127.0.0.1:3000 after a build
+bun run build                            # Next production build
 bun run test                             # Full Vitest suite
 bunx vitest run src/path/to/test.ts      # Single test file
 bun run lint:fix                         # Biome format and fix
@@ -60,23 +60,26 @@ When writing a new `useEffect`, add a brief comment explaining why an alternativ
 
 ## Architecture
 
-**Tech stack:** React 19, Vite, React Router (lazy-loaded), Tailwind CSS 4, TanStack Query, Wagmi/Viem/RainbowKit
+**Tech stack:** Next.js 16 App Router, React 19, Tailwind CSS 4, TanStack Query, Wagmi/Viem/RainbowKit
 
-**Path aliases** (defined in vite.config.ts):
+**Path aliases** (defined in tsconfig.json and next.config.ts):
 - `@/*` → `src/*`
 - `@shared/*` → `src/components/shared/*`
 - `@pages/*` → `src/components/pages/*`
 - `@components/*` → `src/components/*`
 
 **Key directories:**
+- `app/` — Next App Router pages, route handlers, metadata, redirects, and root layout
 - `src/components/shared/` — shared library (contexts, hooks, utils, types, contracts)
 - `src/components/pages/` — route pages (landing, portfolio, vaults)
-- `api/` — Vercel serverless functions (prod) / Bun dev server (local)
+- `src/server/` — focused API endpoint implementations and shared server-side helpers used by `app/api/**/route.ts`
 
 **Key patterns:**
 - Context provider chain defined in `App.tsx` — read that file for the full order
+- Next route wrappers in `app/**/page.tsx` own route-level metadata and render client page components from `src/components/pages/`
+- `src/navigation/` provides the compatibility layer for existing React Router-style hooks/components while the app runs on Next navigation
+- `/api/*` is served by explicit Next route handlers under `app/api/**/route.ts`; there is no catch-all API dispatcher
 - Vault data flows through `useYearn` context → filtered/sorted via hooks in `@shared/hooks/`
-- Dual server: `bun run dev` starts Vite plus a Bun API server and keeps `/api/*` proxied to the selected API port. In prod, `api/` runs as Vercel serverless functions.
 
 ## Multi-Chain
 

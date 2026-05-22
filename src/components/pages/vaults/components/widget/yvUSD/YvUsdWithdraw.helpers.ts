@@ -154,16 +154,16 @@ export function resolveLockedRequestedWithdrawAssets({
     return 0n
   }
 
-  if (maxDisplayAmount > 0n && requestedDisplayAmount >= maxDisplayAmount) {
-    return maxWithdrawAssets
-  }
-
   if (typeof previewWithdrawShares !== 'bigint' || previewWithdrawShares <= 0n) {
     return 0n
   }
 
   if (maxDisplayAmount > 0n && requestedDisplayAmount > maxDisplayAmount) {
     return previewWithdrawShares
+  }
+
+  if (maxDisplayAmount > 0n && requestedDisplayAmount === maxDisplayAmount) {
+    return maxWithdrawAssets
   }
 
   return previewWithdrawShares > maxWithdrawAssets ? maxWithdrawAssets : previewWithdrawShares

@@ -13,6 +13,7 @@ import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 import { deserialize, serialize } from 'wagmi'
+import { env } from '@/env'
 
 export const DEFAULT_SLIPPAGE = 0.5
 export const DEFAULT_MAX_LOSS = 1n
@@ -41,7 +42,7 @@ export type TYearnContext = {
 }
 
 const YearnContext = createContext<TYearnContext>({
-  currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
+  currentPartner: toAddress(env.NEXT_PUBLIC_PARTNER_ID_ADDRESS),
   earned: {
     earned: {},
     totalRealizedGainsUSD: 0,
@@ -121,7 +122,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
   return (
     <YearnContext.Provider
       value={{
-        currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
+        currentPartner: toAddress(env.NEXT_PUBLIC_PARTNER_ID_ADDRESS),
         prices,
         zapSlippage: sanitizedZapSlippage,
         maxLoss: maxLoss ?? DEFAULT_MAX_LOSS,

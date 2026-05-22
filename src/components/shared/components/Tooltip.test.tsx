@@ -40,9 +40,13 @@ describe('Tooltip', () => {
     )
 
     const trigger = container.firstChild as HTMLElement
-    click(trigger)
+    act(() => {
+      click(trigger)
+    })
     expect(queryByText('Tip')).not.toBeNull()
-    click(trigger)
+    act(() => {
+      click(trigger)
+    })
     expect(queryByText('Tip')).toBeNull()
   })
 

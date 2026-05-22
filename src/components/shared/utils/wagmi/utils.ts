@@ -8,6 +8,7 @@ import {
   resolveTenderlyRpcUriForExecutionChainId,
   supportedChainLookup
 } from '@/config/tenderly'
+import { env } from '@/env'
 import type { TAddress } from '../../types/address'
 import type { TDict, TNDict } from '../../types/mixed'
 import { retrieveConfig } from './config'
@@ -77,8 +78,8 @@ export function getRpcUriFor(chainId: number | string): string {
     }
   }
 
-  const key = `VITE_RPC_URI_FOR_${chainId}`
-  const value = import.meta.env[key]
+  const key = `NEXT_PUBLIC_RPC_URI_FOR_${chainId}`
+  const value = env[key]
   if (typeof value !== 'string') {
     return ''
   }
@@ -159,11 +160,10 @@ function toExtendedChain(chain: Chain): TExtendedChain {
   } as TExtendedChain
 
   const newRPC = getRpcUriFor(extendedChain.id)
-  const oldRPC =
-    import.meta.env.VITE_JSON_RPC_URI?.[extendedChain.id] || import.meta.env.VITE_JSON_RPC_URL?.[extendedChain.id]
+  const oldRPC = env.NEXT_PUBLIC_JSON_RPC_URI?.[extendedChain.id] || env.NEXT_PUBLIC_JSON_RPC_URL?.[extendedChain.id]
   if (!newRPC && oldRPC) {
     console.debug(
-      `VITE_JSON_RPC_URI[${extendedChain.id}] is deprecated. Please use VITE_RPC_URI_FOR_${extendedChain.id}`
+      `NEXT_PUBLIC_JSON_RPC_URI[${extendedChain.id}] is deprecated. Please use NEXT_PUBLIC_RPC_URI_FOR_${extendedChain.id}`
     )
   }
 
@@ -232,8 +232,7 @@ export function getClient(chainID: number): PublicClient {
     indexedWagmiChains[executionChainId] || retrieveConfig().chains.find((chain) => chain.id === executionChainId)
 
   const newRPC = getRpcUriFor(executionChainId)
-  const oldRPC =
-    import.meta.env.VITE_JSON_RPC_URI?.[executionChainId] || import.meta.env.VITE_JSON_RPC_URL?.[executionChainId]
+  const oldRPC = env.NEXT_PUBLIC_JSON_RPC_URI?.[executionChainId] || env.NEXT_PUBLIC_JSON_RPC_URL?.[executionChainId]
 
   const url =
     newRPC ||

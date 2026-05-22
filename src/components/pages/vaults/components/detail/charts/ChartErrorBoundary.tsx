@@ -1,5 +1,6 @@
 import type { ErrorInfo, ReactNode } from 'react'
 import { Component } from 'react'
+import { env } from '@/env'
 
 type ChartErrorBoundaryProps = {
   children: ReactNode
@@ -21,7 +22,7 @@ export class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, Chart
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    if (import.meta.env.DEV) {
+    if (env.DEV) {
       console.error('Chart rendering error', error, errorInfo)
     }
   }

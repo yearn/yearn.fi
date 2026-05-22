@@ -3,6 +3,7 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { cl } from '@shared/utils'
 import { formatAmount, formatUSD } from '@shared/utils/format'
 import type { ReactElement } from 'react'
+import { env } from '@/env'
 
 type TRewardRowProps = {
   chainId: number
@@ -21,7 +22,7 @@ type TRewardRowProps = {
 }
 
 function getTokenLogoUrl(chainId: number, tokenAddress: `0x${string}`): string {
-  return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-128.png`
+  return `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-128.png`
 }
 
 export function RewardRow(props: TRewardRowProps): ReactElement {

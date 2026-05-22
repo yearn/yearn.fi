@@ -5,39 +5,32 @@ import Link from './Link'
 
 describe('Link', () => {
   it('renders external links as <a> with safe defaults', () => {
-    const originalWindow = globalThis.window
-    ;(globalThis as unknown as { window: unknown }).window = {
-      location: { href: 'https://yearn.fi/', hostname: 'yearn.fi' }
-    }
+    const html = renderToStaticMarkup(<Link href="https://example.com">Example</Link>)
 
-    try {
-      const html = renderToStaticMarkup(<Link href="https://example.com">Example</Link>)
-
-      expect(html).toContain('href="https://example.com"')
-      expect(html).toContain('target="_blank"')
-      expect(html).toContain('rel="noopener noreferrer"')
-    } finally {
-      ;(globalThis as unknown as { window: unknown }).window = originalWindow
-    }
+    expect(html).toContain('href="https://example.com"')
+    expect(html).toContain('target="_blank"')
+    expect(html).toContain('rel="noopener noreferrer"')
   })
 
   it('renders internal links through react-router', () => {
-    const originalWindow = globalThis.window
-    ;(globalThis as unknown as { window: unknown }).window = {
-      location: { href: 'https://yearn.fi/', hostname: 'yearn.fi' }
-    }
+    const html = renderToStaticMarkup(
+      <MemoryRouter>
+        <Link href="/vaults">Vaults</Link>
+      </MemoryRouter>
+    )
 
-    try {
-      const html = renderToStaticMarkup(
-        <MemoryRouter>
-          <Link href="/vaults">Vaults</Link>
-        </MemoryRouter>
-      )
+    expect(html).toContain('href="/vaults"')
+    expect(html).not.toContain('target="_blank"')
+  })
 
-      expect(html).toContain('href="/vaults"')
-      expect(html).not.toContain('target="_blank"')
-    } finally {
-      ;(globalThis as unknown as { window: unknown }).window = originalWindow
-    }
+  it('normalizes first-party absolute URLs for stable SSR', () => {
+    const html = renderToStaticMarkup(
+      <MemoryRouter>
+        <Link href="https://yearn.fi/v3">Yearn V3</Link>
+      </MemoryRouter>
+    )
+
+    expect(html).toContain('href="/v3"')
+    expect(html).not.toContain('target="_blank"')
   })
 })

@@ -12,7 +12,12 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, './src/components/shared'),
       '@pages': path.resolve(__dirname, './src/components/pages'),
       '@components': path.resolve(__dirname, './src/components'),
-      '@hooks': path.resolve(__dirname, './src/hooks')
+      '@hooks': path.resolve(__dirname, './src/hooks'),
+      '@plausible-analytics/tracker': path.resolve(
+        __dirname,
+        './node_modules/@plausible-analytics/tracker/plausible.js'
+      ),
+      'react-router': path.resolve(__dirname, './src/navigation/react-router.tsx')
     }
   },
   test: {

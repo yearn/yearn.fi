@@ -11,6 +11,7 @@ import { copyToClipboard } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
+import { env } from '@/env'
 import Link from '/src/components/Link'
 import { STRATEGY_PANEL_ROW_DESKTOP_LAYOUT } from './strategiesLayout'
 import { formatStrategiesApy, formatStrategiesPercent } from './strategiesPercentFormat'
@@ -111,9 +112,7 @@ export function VaultsListStrategy({
             </div>
             <div className="shrink-0 flex items-center md:hidden">
               <TokenLogo
-                src={`${
-                  import.meta.env.VITE_BASE_YEARN_ASSETS_URI
-                }/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                 tokenSymbol={name}
                 tokenName={name}
                 width={20}
@@ -123,9 +122,7 @@ export function VaultsListStrategy({
             </div>
             <div className="shrink-0 hidden md:flex md:items-center">
               <TokenLogo
-                src={`${
-                  import.meta.env.VITE_BASE_YEARN_ASSETS_URI
-                }/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                 tokenSymbol={name}
                 tokenName={name}
                 width={28}

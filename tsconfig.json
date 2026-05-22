@@ -8,6 +8,7 @@
       "@pages/*": ["src/components/pages/*"],
       "@components/*": ["src/components/*"],
       "@hooks/*": ["src/hooks/*"],
+      "react-router": ["src/navigation/react-router.tsx"],
       "/src/*": ["src/*"]
     },
     /* Basic Options */
@@ -15,7 +16,7 @@
     "module": "ESNext",
     "lib": ["es6", "es7", "ESNext", "dom"],
     "allowJs": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "removeComments": false,
     "strict": true,
     "noImplicitAny": true,
@@ -39,19 +40,33 @@
     "noEmit": true,
     "incremental": true,
     "isolatedModules": true,
-    "types": ["vite/client"]
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
-  "exclude": ["node_modules", "_app", "api", "worktrees", "vitest.config.ts", "docs/temp/yvusd-gpt-pro-bundle"],
+  "exclude": [
+    "node_modules",
+    "_app",
+    "worktrees",
+    "vitest.config.ts",
+    "src/server/**/*.test.ts",
+    "docs/temp/yvusd-gpt-pro-bundle"
+  ],
   "include": [
     "**/*.css",
     "**/*.ts",
     "**/*.tsx",
     "**/*.d.tsx",
+    "app",
+    "next-env.d.ts",
     "public",
     "postcss.config.js",
     "tailwind.config.js",
-    "vite.config.ts",
+    "next.config.ts",
     "worker/index.js",
-    "env.d.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ]
 }

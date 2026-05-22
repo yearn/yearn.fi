@@ -16,6 +16,7 @@ import { erc20Abi } from 'viem'
 import type { Connector } from 'wagmi'
 import { readContract } from 'wagmi/actions'
 import { resolveExecutionChainId } from '@/config/tenderly'
+import { env } from '@/env'
 
 function getExecutionChainID(chainID: number): number {
   const executionChainId = resolveExecutionChainId(chainID)
@@ -41,7 +42,7 @@ const ALTERNATE_ERC20_APPROVE_ABI = [
   }
 ] as const
 
-const isDevelopment = import.meta.env.MODE === 'development'
+const isDevelopment = env.MODE === 'development'
 
 /*******************************************************************************
  ** isApprovedERC20 is a _VIEW_ function that checks if a token is approved for
@@ -220,7 +221,7 @@ export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxR
     address: props.contractAddress,
     abi: PARTNER_VAULT_ABI,
     functionName: 'deposit',
-    args: [props.vaultAddress, props.partnerAddress || toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS), props.amount]
+    args: [props.vaultAddress, props.partnerAddress || toAddress(env.NEXT_PUBLIC_PARTNER_ID_ADDRESS), props.amount]
   })
 }
 

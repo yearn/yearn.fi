@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { LinkProps as RouterLinkProps } from 'react-router'
 import { Link as RouterLink } from 'react-router'
+import { resolveLinkTarget } from '@/navigation/url'
 
 export type LinkProps = {
   href?: string
@@ -12,23 +13,14 @@ export type LinkProps = {
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
 } & Omit<RouterLinkProps, 'to'>
 
-function isExternalLink(url: string): boolean {
-  try {
-    const urlObj = new URL(url, window.location.href)
-    return urlObj.hostname !== window.location.hostname
-  } catch {
-    return false
-  }
-}
-
 export default function Link(props: LinkProps): React.ReactElement {
   const { href, to, children, className, target, rel, onClick, ...rest } = props
 
   // Use href or to, with href taking precedence
-  const url = href || to || ''
+  const { href: url, isExternal } = resolveLinkTarget(href || to || '')
 
   // Check if it's an external link
-  if (isExternalLink(url)) {
+  if (isExternal) {
     return (
       <a
         href={url}

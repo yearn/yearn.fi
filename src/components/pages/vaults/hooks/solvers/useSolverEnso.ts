@@ -4,6 +4,7 @@ import { isZeroAddress, toNormalizedBN } from '@shared/utils'
 import { getApproveAbi } from '@shared/utils/approve'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
+import { env } from '@/env'
 import { useTokenAllowance } from '../useTokenAllowance'
 import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
 
@@ -159,7 +160,7 @@ export const useSolverEnso = ({
       setRoute(resolvedRoute)
       setResolvedRequestKey(requestKey)
       setErrorRequestKey(undefined)
-      if (import.meta.env.DEV && resolvedRoute) {
+      if (env.DEV && resolvedRoute) {
         console.log('[ENSO] route response', {
           chainId,
           destinationChainId,
