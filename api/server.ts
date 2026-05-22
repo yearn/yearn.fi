@@ -5,6 +5,7 @@ import type {
   TTenderlyRevertRequest,
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
+import { handleClustersName } from './clusters/name'
 import { ENSO_BALANCES_CACHE_CONTROL } from './enso/cache'
 import {
   clearUserCache,
@@ -499,8 +500,7 @@ async function handleTenderlyFund(req: Request): Promise<Response> {
 }
 
 function handleEnsoStatus(): Response {
-  const apiKey = process.env.ENSO_API_KEY
-  return Response.json({ configured: !!apiKey })
+  return Response.json({ status: 'ok' })
 }
 
 async function handleEnsoRoute(req: Request): Promise<Response> {
@@ -1425,6 +1425,10 @@ async function main() {
 
         if (url.pathname === '/api/yvusd/aprs') {
           return withCors(await handleYvUsdAprs(req))
+        }
+
+        if (url.pathname === '/api/clusters/name') {
+          return withCors(await handleClustersName(req))
         }
 
         if (url.pathname === '/api/optimization/change') {

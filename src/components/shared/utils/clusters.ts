@@ -1,26 +1,6 @@
-const DEFAULT_API_URL = 'https://api.clusters.xyz/v1'
 const DEFAULT_IMAGE_CDN = 'https://cdn.clusters.xyz/profile'
 
 const clusterNameCache = new Map<string, string | null>()
-
-const getApiBaseUrl = (): string => {
-  const envUrl = import.meta.env.VITE_CLUSTERS_API_URL
-  return (envUrl && envUrl.trim().length > 0 ? envUrl : DEFAULT_API_URL).replace(/\/$/, '')
-}
-
-const getApiKey = (): string | undefined => {
-  const key = import.meta.env.VITE_CLUSTERS_API_KEY
-  return key && key.trim().length > 0 ? key : undefined
-}
-
-const buildRequestHeaders = (): HeadersInit => {
-  const headers: Record<string, string> = { Accept: 'application/json' }
-  const apiKey = getApiKey()
-  if (apiKey) {
-    headers['X-API-KEY'] = apiKey
-  }
-  return headers
-}
 
 const normalizeNamePart = (value: string): string => value.trim().toLowerCase()
 
@@ -64,8 +44,8 @@ export async function fetchClusterName(address: string): Promise<string | null> 
   }
 
   try {
-    const response = await fetch(`${getApiBaseUrl()}/names/address/${normalizedAddress}`, {
-      headers: buildRequestHeaders()
+    const response = await fetch(`/api/clusters/name?address=${encodeURIComponent(normalizedAddress)}`, {
+      headers: { Accept: 'application/json' }
     })
 
     if (!response.ok) {

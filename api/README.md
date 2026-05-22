@@ -28,7 +28,7 @@ The local server adds CORS to all handled routes and includes dev-only Tenderly 
 | `/api/holdings/protocol-return/history` | `GET` | Vercel + local | Protocol-return history for vault exposure |
 | `/api/holdings/pnl/simple-history` | `GET` | Vercel + local | Compatibility alias for protocol-return history |
 | `/api/admin/invalidate-cache` | `POST` | Vercel + local | Lazy vault cache invalidation, admin-protected |
-| `/api/enso/status` | `GET` | Vercel + local | Returns whether `ENSO_API_KEY` is configured |
+| `/api/enso/status` | `GET` | Vercel + local | Returns coarse Enso endpoint liveness |
 | `/api/enso/balances` | `GET` | Vercel + local | Proxies Enso wallet balances |
 | `/api/enso/route` | `GET` | Vercel + local | Proxies Enso route quotes/transactions |
 | `/api/optimization/change` | `GET` | Vercel + local | Latest or historical optimization payloads from Redis |
@@ -56,7 +56,7 @@ The holdings implementation is the largest API surface here. See [`lib/holdings/
 
 `/api/enso/*` routes keep `ENSO_API_KEY` server-side and forward requests to `https://api.enso.finance`.
 
-- `/api/enso/status` returns `{ "configured": boolean }`; the Vercel handler does not currently enforce the HTTP method.
+- `/api/enso/status` returns `{ "status": "ok" }`; the Vercel handler does not currently enforce the HTTP method.
 - `/api/enso/balances` requires `eoaAddress`; Vercel always requests `chainId=all`, while the local server also accepts an optional `chainId`.
 - `/api/enso/route` requires `fromAddress`, `chainId`, `tokenIn`, `tokenOut`, and `amountIn`. Optional params are `slippage`, `routingStrategy`, `destinationChainId`, and `receiver`.
 - `/api/enso/balances` sets `Cache-Control: private, no-store, max-age=0, must-revalidate`.
