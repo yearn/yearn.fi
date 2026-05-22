@@ -5,17 +5,19 @@ import { MERKLE_DISTRIBUTOR_ADDRESS } from '@shared/utils/constants'
 
 type UseClaimMerkleRewardsParams = {
   groupedReward?: TGroupedMerkleReward
+  groupedRewards?: TGroupedMerkleReward[]
   userAddress?: `0x${string}`
   chainId: number
   enabled?: boolean
 }
 
 export function useClaimMerkleRewards(params: UseClaimMerkleRewardsParams) {
-  const { groupedReward, userAddress, chainId, enabled = true } = params
+  const { groupedReward, groupedRewards, userAddress, chainId, enabled = true } = params
 
-  const hasClaimableRewards = !!groupedReward && groupedReward.totalUnclaimed > 0n
+  const rewardGroups = groupedRewards ?? (groupedReward ? [groupedReward] : [])
+  const rewards = rewardGroups.flatMap((group) => group.rewards)
+  const hasClaimableRewards = rewardGroups.some((group) => group.totalUnclaimed > 0n)
   const isEnabled = enabled && !!userAddress && hasClaimableRewards
-  const rewards = groupedReward?.rewards ?? []
 
   const prepare = useSimulateContract({
     address: MERKLE_DISTRIBUTOR_ADDRESS,
