@@ -77,7 +77,7 @@ When writing a new `useEffect`, add a brief comment explaining why an alternativ
 **Key patterns:**
 - Context provider chain defined in `App.tsx` — read that file for the full order
 - Next route wrappers in `app/**/page.tsx` own route-level metadata and render client page components from `src/components/pages/`
-- `src/navigation/` provides the compatibility layer for existing React Router-style hooks/components while the app runs on Next navigation
+- `src/navigation/` provides small client helpers backed by Next navigation context
 - `/api/*` is served by explicit Next route handlers under `app/api/**/route.ts`; there is no catch-all API dispatcher
 - Vault data flows through `useYearn` context → filtered/sorted via hooks in `@shared/hooks/`
 

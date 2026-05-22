@@ -1,10 +1,10 @@
 import type { FC, PropsWithChildren } from 'react'
 import { useMemo } from 'react'
-import { useLocation } from 'react-router'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { supportedAppChains, type TSupportedChainId } from '@/config/supportedChains'
 import { getCanonicalChain, resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/tenderly'
 import { chainsContext, type TChainsContext } from '@/context/chainsContext'
+import { useLocation } from '@/navigation/client'
 
 const DEFAULT_CHAIN_ID = 1 as TSupportedChainId
 

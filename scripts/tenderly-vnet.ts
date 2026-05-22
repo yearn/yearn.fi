@@ -2,7 +2,6 @@
 
 import { accessSync, chmodSync, constants, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 type TParsedCliArgs = {
   flags: Record<string, string>
@@ -538,8 +537,7 @@ async function main(): Promise<void> {
     return
   }
 
-  const scriptDir = resolve(fileURLToPath(import.meta.url), '..')
-  const envFromFile = readEnvFile(resolve(scriptDir, '../.env'))
+  const envFromFile = readEnvFile(resolve(process.cwd(), '.env'))
   const env = { ...envFromFile, ...process.env }
   const { apiKey, accountSlug, projectSlug, profile } = resolveTenderlyCredentials(flags, env)
   const rpcName = resolveRpcName(flags, env, profile)
@@ -629,7 +627,10 @@ async function main(): Promise<void> {
   })
 }
 
-if (fileURLToPath(import.meta.url) === process.argv[1]) {
+if (
+  process.argv[1]?.endsWith('/scripts/tenderly-vnet.ts') ||
+  process.argv[1]?.endsWith('\\scripts\\tenderly-vnet.ts')
+) {
   void main().catch((error: unknown) => {
     const message = error instanceof Error ? sanitizeConsoleText(error.message) : 'Tenderly VNet bootstrap failed'
     console.error(message)

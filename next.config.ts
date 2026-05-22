@@ -25,7 +25,6 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   turbopack: {
     resolveAlias: {
-      'react-router': './src/navigation/react-router.tsx',
       '@safe-global/safe-apps-sdk': './node_modules/@safe-global/safe-apps-sdk/dist/esm'
     }
   },

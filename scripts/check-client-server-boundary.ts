@@ -30,10 +30,6 @@ const aliasPrefixes = [
   ['src/', 'src/']
 ] as const
 
-const exactAliases: Record<string, string> = {
-  'react-router': 'src/navigation/react-router.tsx'
-}
-
 function toDisplayPath(filePath: string): string {
   return path.relative(PROJECT_ROOT, filePath).split(path.sep).join('/')
 }
@@ -87,10 +83,6 @@ function resolveCandidate(candidatePath: string): string | undefined {
 }
 
 function resolveImport(importer: string, specifier: string): string | undefined {
-  if (specifier in exactAliases) {
-    return resolveCandidate(path.join(PROJECT_ROOT, exactAliases[specifier]))
-  }
-
   if (specifier.startsWith('.')) {
     return resolveCandidate(path.resolve(path.dirname(importer), specifier))
   }

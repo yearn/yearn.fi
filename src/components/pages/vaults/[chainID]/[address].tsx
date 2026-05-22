@@ -78,7 +78,6 @@ import {
   useRef,
   useState
 } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router'
 import { isAddressEqual } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
 import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
@@ -86,6 +85,7 @@ import { getVaultPrimaryLogoSrc } from '@/components/pages/vaults/utils/vaultLog
 import { getCategoryDescription, getProductTypeDescription } from '@/components/pages/vaults/utils/vaultTagCopy'
 import { useWeb3 } from '@/components/shared/contexts/useWeb3'
 import { useDevFlags } from '@/contexts/useDevFlags'
+import { useLocation, useNavigate, useParams } from '@/navigation/client'
 
 const resolveHeaderOffset = (): number => {
   if (typeof window === 'undefined') return 0

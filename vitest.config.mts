@@ -1,7 +1,6 @@
 import path from 'path'
 import { defineConfig } from 'vitest/config'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   esbuild: {
     jsx: 'automatic'
@@ -16,15 +15,16 @@ export default defineConfig({
       '@plausible-analytics/tracker': path.resolve(
         __dirname,
         './node_modules/@plausible-analytics/tracker/plausible.js'
-      ),
-      'react-router': path.resolve(__dirname, './src/navigation/react-router.tsx')
+      )
     }
   },
   test: {
     globals: true,
     environment: 'node',
-    deps: {
-      inline: ['@shared']
+    server: {
+      deps: {
+        inline: ['@shared']
+      }
     }
   }
 })

@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router'
+import { useLocation } from '@/navigation/client'
 
 export function usePathname(): string {
   const location = useLocation()

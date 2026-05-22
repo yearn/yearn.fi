@@ -1,6 +1,5 @@
 /// <reference types="node" />
 
-import { fileURLToPath } from 'node:url'
 import { getAddress } from 'viem'
 
 type TParsedCliArgs = {
@@ -343,7 +342,7 @@ async function main(): Promise<void> {
   await runCommand(parsedArgs)
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1]?.endsWith('/scripts/tenderly.ts') || process.argv[1]?.endsWith('\\scripts\\tenderly.ts')) {
   void main().catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error)
     console.error(message)

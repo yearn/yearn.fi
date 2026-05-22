@@ -6,7 +6,7 @@
 
 **Architecture:** Keep the quote math in the withdraw flow, where raw `bigint` quote values and token decimals already exist. Pass either raw amount metadata or preformatted USD strings into presentational components so `InputTokenAmount` and `WithdrawDetails` do not have to reverse-engineer values from compact strings like `16.1K`. Reuse existing shared formatting utilities (`formatCounterValue` / `formatAmount`) instead of introducing a new currency formatter.
 
-**Tech Stack:** React 19, TypeScript, Vitest, Vite, Wagmi/Viem, shared formatting helpers in `src/components/shared/utils/format.ts`
+**Tech Stack:** React 19, TypeScript, Vitest, Next.js, Wagmi/Viem, shared formatting helpers in `src/components/shared/utils/format.ts`
 
 ---
 

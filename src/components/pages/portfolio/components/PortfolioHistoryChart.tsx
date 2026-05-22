@@ -23,9 +23,9 @@ import { cl, formatPercent, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils
 import { getVaultName as getDisplayVaultName } from '@shared/utils/helpers'
 import type { ReactElement } from 'react'
 import { useEffect, useId, useMemo, useState } from 'react'
-import { Link } from 'react-router'
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 import type { AxisDomain } from 'recharts/types/util/types'
+import { Link } from '@/navigation/client'
 import type {
   TPortfolioHistoryChartData,
   TPortfolioHistoryDenomination,

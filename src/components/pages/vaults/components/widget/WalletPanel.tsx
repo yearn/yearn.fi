@@ -36,7 +36,7 @@ import {
 } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate } from '@/navigation/client'
 import { getAwaitingExecutionEntries } from './WalletPanel.helpers'
 import { formatDuration, parseCooldownStatus, resolveCooldownWindowState } from './yvUSD/cooldownUtils'
 

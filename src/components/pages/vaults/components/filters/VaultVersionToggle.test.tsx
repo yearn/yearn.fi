@@ -1,14 +1,14 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
+import { MemoryNavigationProvider } from '@/navigation/client'
 
 import { VaultVersionToggle } from './VaultVersionToggle'
 
 function renderToggle(entry: string): string {
   return renderToStaticMarkup(
-    <MemoryRouter initialEntries={[entry]}>
+    <MemoryNavigationProvider initialEntries={[entry]}>
       <VaultVersionToggle />
-    </MemoryRouter>
+    </MemoryNavigationProvider>
   )
 }
 

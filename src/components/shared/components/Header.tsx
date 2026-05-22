@@ -15,7 +15,6 @@ import { normalizePathname } from '@shared/utils/routes'
 import { truncateHex } from '@shared/utils/tools.address'
 import type { KeyboardEvent, MouseEvent, ReactElement } from 'react'
 import { useMemo, useState } from 'react'
-import { useLocation } from 'react-router'
 import { useAccount, useSwitchChain } from 'wagmi'
 import {
   canToggleTenderlyMode,
@@ -25,6 +24,7 @@ import {
   resolveConnectedTenderlyExecutionChain,
   tenderlyConfiguredRuntime
 } from '@/config/tenderly'
+import { useLocation } from '@/navigation/client'
 import Link from '/src/components/Link'
 import { AccountDropdown } from './AccountDropdown'
 import { HeaderNavMenu } from './HeaderNavMenu'

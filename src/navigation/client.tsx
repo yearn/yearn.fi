@@ -2,7 +2,7 @@
 
 import NextLink from 'next/link'
 import type { AnchorHTMLAttributes, ReactElement, ReactNode } from 'react'
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import { NavigationContext, type TNavigateOptions, type TNavigationContext } from './context'
 import { resolveLinkTarget } from './url'
 
@@ -50,7 +50,7 @@ function getBrowserNavigationContext(): TNavigationContext {
   }
 }
 
-export function MemoryRouter({
+export function MemoryNavigationProvider({
   children,
   initialEntries = ['/']
 }: {
@@ -73,10 +73,6 @@ export function MemoryRouter({
   return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>
 }
 
-export function BrowserRouter({ children }: { children: ReactNode }): ReactElement {
-  return <>{children}</>
-}
-
 export function Link(props: LinkProps): ReactElement {
   const { to, children, preventScrollReset, reloadDocument, replace, state, ...anchorProps } = props
   const { href, isExternal } = resolveLinkTarget(to || '')
@@ -94,16 +90,6 @@ export function Link(props: LinkProps): ReactElement {
       {children}
     </NextLink>
   )
-}
-
-export function Navigate({ to, replace = false }: { to: string; replace?: boolean }): null {
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    navigate(to, { replace })
-  }, [navigate, replace, to])
-
-  return null
 }
 
 export function useLocation(): TLocation {

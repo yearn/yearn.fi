@@ -1,7 +1,7 @@
 import { Button } from '@shared/components/Button'
 import { EmptyState } from '@shared/components/EmptyState'
 import type { ReactElement } from 'react'
-import { Link } from 'react-router'
+import { Link } from '@/navigation/client'
 
 type TEmptySectionCardProps = {
   title: string

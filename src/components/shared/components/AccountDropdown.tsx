@@ -18,7 +18,7 @@ import { cl, formatUSD } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate } from '@/navigation/client'
 import { DropdownPanel } from './DropdownPanel'
 
 type TAccountDropdownProps = {

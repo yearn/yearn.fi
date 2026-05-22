@@ -2,7 +2,7 @@ import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { useSupportedChains } from '@shared/hooks/useSupportedChains'
 import type { TDict, TSortDirection } from '@shared/types'
 import { useCallback, useMemo } from 'react'
-import { useSearchParams } from 'react-router'
+import { useSearchParams } from '@/navigation/client'
 
 type TQueryArgs = {
   search: string | null | undefined

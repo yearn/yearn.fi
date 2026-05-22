@@ -8,7 +8,6 @@
       "@pages/*": ["src/components/pages/*"],
       "@components/*": ["src/components/*"],
       "@hooks/*": ["src/hooks/*"],
-      "react-router": ["src/navigation/react-router.tsx"],
       "/src/*": ["src/*"]
     },
     /* Basic Options */
@@ -50,7 +49,7 @@
     "node_modules",
     "_app",
     "worktrees",
-    "vitest.config.ts",
+    "vitest.config.mts",
     "src/server/**/*.test.ts",
     "docs/temp/yvusd-gpt-pro-bundle"
   ],

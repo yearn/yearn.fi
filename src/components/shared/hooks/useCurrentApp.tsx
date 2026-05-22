@@ -2,7 +2,7 @@ import landingManifest from '@shared/data/landing-manifest.json'
 import vaultsManifest from '@shared/data/vaults-manifest.json'
 import type { TDict } from '@shared/types'
 import { useMemo } from 'react'
-import { useLocation } from 'react-router'
+import { useLocation } from '@/navigation/client'
 
 type TCurrentApp = {
   name: 'Home' | 'Vaults' | string

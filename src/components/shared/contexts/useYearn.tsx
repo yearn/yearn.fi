@@ -11,9 +11,9 @@ import { clampZapSlippage } from '@shared/utils/slippage'
 import type { QueryObserverResult } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
-import { useLocation } from 'react-router'
 import { deserialize, serialize } from 'wagmi'
 import { env } from '@/env'
+import { useLocation } from '@/navigation/client'
 
 export const DEFAULT_SLIPPAGE = 0.5
 export const DEFAULT_MAX_LOSS = 1n

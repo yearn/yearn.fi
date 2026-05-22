@@ -72,8 +72,8 @@ import { getVaultName } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import type { ReactElement, Ref } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
 import { env } from '@/env'
+import { Link } from '@/navigation/client'
 
 type TVaultKindType = 'multi' | 'single' | undefined
 

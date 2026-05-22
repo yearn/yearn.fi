@@ -11,7 +11,7 @@ import { Tooltip } from '@shared/components/Tooltip'
 import { cl } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement } from 'react'
-import { useSearchParams } from 'react-router'
+import { useSearchParams } from '@/navigation/client'
 
 type TVaultVersionToggleProps = {
   className?: string

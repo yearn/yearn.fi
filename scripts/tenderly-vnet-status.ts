@@ -1,7 +1,6 @@
 /// <reference types="node" />
 
 import { resolve as resolvePath } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { parseTenderlyServerChains, type TTenderlyServerChainConfig } from '../src/config/tenderlyServer'
 import { buildPredictablePublicRpcUrl, readEnvFile, sanitizeConsoleText } from './tenderly-vnet'
 
@@ -912,8 +911,7 @@ async function main(): Promise<void> {
     return
   }
 
-  const scriptDir = resolvePath(fileURLToPath(import.meta.url), '..')
-  const envFromFile = readEnvFile(resolvePath(scriptDir, '../.env'))
+  const envFromFile = readEnvFile(resolvePath(process.cwd(), '.env'))
   const env = { ...envFromFile, ...process.env }
   const report = await buildTenderlyStatusReport(flags, env)
 

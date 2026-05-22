@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import type { LinkProps as RouterLinkProps } from 'react-router'
-import { Link as RouterLink } from 'react-router'
+import type { LinkProps as NavigationLinkProps } from '@/navigation/client'
+import { Link as NavigationLink } from '@/navigation/client'
 import { resolveLinkTarget } from '@/navigation/url'
 
 export type LinkProps = {
@@ -11,7 +11,7 @@ export type LinkProps = {
   target?: string
   rel?: string
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
-} & Omit<RouterLinkProps, 'to'>
+} & Omit<NavigationLinkProps, 'to'>
 
 export default function Link(props: LinkProps): React.ReactElement {
   const { href, to, children, className, target, rel, onClick, ...rest } = props
@@ -35,10 +35,10 @@ export default function Link(props: LinkProps): React.ReactElement {
     )
   }
 
-  // Internal link using React Router
+  // Internal link using the Next navigation adapter.
   return (
-    <RouterLink to={url} className={className} target={target} rel={rel} onClick={onClick} {...rest}>
+    <NavigationLink to={url} className={className} target={target} rel={rel} onClick={onClick} {...rest}>
       {children}
-    </RouterLink>
+    </NavigationLink>
   )
 }

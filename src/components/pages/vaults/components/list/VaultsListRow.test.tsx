@@ -5,8 +5,8 @@ import { YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ComponentProps } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryNavigationProvider } from '@/navigation/client'
 
 import { VaultsListRow } from './VaultsListRow'
 
@@ -73,9 +73,9 @@ function renderRowHtml(vault: TKongVaultInput, props?: Partial<ComponentProps<ty
 
   return renderToStaticMarkup(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
+      <MemoryNavigationProvider>
         <VaultsListRow currentVault={vault} {...props} />
-      </MemoryRouter>
+      </MemoryNavigationProvider>
     </QueryClientProvider>
   )
 }

@@ -6,7 +6,7 @@ import { getSupportedChainsForVaultType, normalizeVaultTypeParam } from '@pages/
 import type { TSortDirection } from '@shared/types'
 import { copyToClipboard } from '@shared/utils/helpers'
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useSearchParams } from 'react-router'
+import { useLocation, useSearchParams } from '@/navigation/client'
 
 type TVaultsQueryStateConfig = {
   defaultTypes?: string[]
