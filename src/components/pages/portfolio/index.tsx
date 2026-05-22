@@ -73,12 +73,12 @@ import { formatUSD } from '@shared/utils/format'
 import { copyToClipboard } from '@shared/utils/helpers'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { getNetwork } from '@shared/utils/wagmi'
+import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { CSSProperties, ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { env } from '@/env'
-import { useSearchParams } from '@/navigation/client'
 import Image from '/src/components/Image'
-import Link from '/src/components/Link'
 import type {
   TGrowthDisplayMode,
   TPortfolioHistoryChartTab,
@@ -2858,7 +2858,9 @@ function PortfolioPage(): ReactElement {
     null
   )
   const [historyVaultGrowthMode, setHistoryVaultGrowthMode] = useState<TPortfolioVaultGrowthChartMode>('position')
-  const [searchParams, setSearchParams] = useSearchParams()
+  const searchParams = useSearchParams()
+  const pathname = usePathname() || '/portfolio'
+  const router = useRouter()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
   const tabsRef = useRef<HTMLDivElement>(null)
@@ -2866,6 +2868,14 @@ function PortfolioPage(): ReactElement {
   const { onRefresh } = useWallet()
 
   usePortfolioEntryRefresh({ isActive: model.isActive, onRefresh })
+
+  const replaceSearchParams = useCallback(
+    (nextParams: URLSearchParams): void => {
+      const query = nextParams.toString()
+      router.replace(`${pathname}${query ? `?${query}` : ''}`, { scroll: false })
+    },
+    [pathname, router]
+  )
 
   const activeTab = useMemo((): TPortfolioTabKey => {
     const tabParam = searchParams.get('tab')
@@ -2931,15 +2941,15 @@ function PortfolioPage(): ReactElement {
 
   const handleTabSelect = useCallback(
     (tab: TPortfolioTabKey) => {
-      const nextParams = new URLSearchParams(searchParams)
+      const nextParams = new URLSearchParams(searchParams.toString())
       if (tab === 'positions') {
         nextParams.delete('tab')
       } else {
         nextParams.set('tab', tab)
       }
-      setSearchParams(nextParams, { replace: true })
+      replaceSearchParams(nextParams)
     },
-    [searchParams, setSearchParams]
+    [replaceSearchParams, searchParams]
   )
 
   useEffect(() => {

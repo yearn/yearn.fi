@@ -9,11 +9,11 @@ import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
 import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
 import { clampZapSlippage } from '@shared/utils/slippage'
 import type { QueryObserverResult } from '@tanstack/react-query'
+import { usePathname } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
 import { deserialize, serialize } from 'wagmi'
 import { env } from '@/env'
-import { useLocation } from '@/navigation/client'
 
 export const DEFAULT_SLIPPAGE = 0.5
 export const DEFAULT_MAX_LOSS = 1n
@@ -69,7 +69,7 @@ const YearnContext = createContext<TYearnContext>({
 })
 
 export const YearnContextApp = memo(function YearnContextApp({ children }: { children: ReactElement }): ReactElement {
-  const location = useLocation()
+  const pathname = usePathname() || '/'
   const { value: maxLoss, set: setMaxLoss } = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
     defaultValue: DEFAULT_MAX_LOSS,
     parse: (str, fallback): bigint => (str ? deserialize(str) : (fallback ?? DEFAULT_MAX_LOSS)),
@@ -88,9 +88,9 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
     }
   )
 
-  const isVaultsRoute = location.pathname.startsWith('/vaults')
-  const isVaultDetailPage = isVaultsRoute && location.pathname.split('/').length === 4
-  const isPortfolioRoute = location.pathname.startsWith('/portfolio')
+  const isVaultsRoute = pathname.startsWith('/vaults')
+  const isVaultDetailPage = isVaultsRoute && pathname.split('/').length === 4
+  const isPortfolioRoute = pathname.startsWith('/portfolio')
   const shouldEnableVaultList = (isVaultsRoute && !isVaultDetailPage) || isPortfolioRoute
   const [isManuallyEnabled, setIsManuallyEnabled] = useState(false)
   const isVaultListEnabled = shouldEnableVaultList || isManuallyEnabled

@@ -4,10 +4,10 @@ import { SectionHeader } from '@shared/components/SectionHeader'
 import { TvlStat } from '@shared/components/TvlStat'
 import { useFetch } from '@shared/hooks/useFetch'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
+import Link from 'next/link'
 import type { ReactElement } from 'react'
 import * as z from 'zod'
 import Image from '/src/components/Image'
-import Link from '/src/components/Link'
 
 function AnimatedLogos(): ReactElement {
   return (

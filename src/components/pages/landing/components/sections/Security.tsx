@@ -1,6 +1,6 @@
 import { SectionHeader } from '@shared/components/SectionHeader'
+import Link from 'next/link'
 import type { FC } from 'react'
-import Link from '/src/components/Link'
 
 enum SecurityCardType {
   Audits = 'audits',
@@ -38,7 +38,7 @@ const SecurityCard: FC<{
   const { title, description, href, bgColor } = Cards[type]
 
   return (
-    <Link href={href} className={'flex'}>
+    <Link href={href} target={'_blank'} rel={'noopener noreferrer'} className={'flex'}>
       <div
         className={`${bgColor} group cursor-pointer overflow-hidden rounded-lg transition-all duration-300 hover:brightness-90 sm:rounded-2xl`}
       >

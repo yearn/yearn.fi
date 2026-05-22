@@ -1,4 +1,3 @@
-import Link from '@components/Link'
 import { usePlausible } from '@hooks/usePlausible'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHistoricalAPY } from '@pages/vaults/components/table/VaultHistoricalAPY'
@@ -25,6 +24,7 @@ import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { cl, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { getNetwork } from '@shared/utils/wagmi'
+import Link from 'next/link'
 import type { ReactElement, ReactNode } from 'react'
 import { env } from '@/env'
 

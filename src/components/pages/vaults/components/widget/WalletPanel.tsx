@@ -35,8 +35,8 @@ import {
   truncateHex
 } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi/utils'
+import { useRouter } from 'next/navigation'
 import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
-import { useNavigate } from '@/navigation/client'
 import { getAwaitingExecutionEntries } from './WalletPanel.helpers'
 import { formatDuration, parseCooldownStatus, resolveCooldownWindowState } from './yvUSD/cooldownUtils'
 
@@ -236,7 +236,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
 }) => {
   const { address, isActive: isWalletActive, openLoginModal } = useWeb3()
   const { cachedEntries } = useNotifications()
-  const navigate = useNavigate()
+  const router = useRouter()
   const { getPrice } = useYearn()
   const [activeTab, setActiveTab] = useState<WalletTabKey>('balances')
   const {
@@ -500,7 +500,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
                       <h4 className="text-sm font-semibold text-text-primary">Recent transactions</h4>
                       <button
                         type="button"
-                        onClick={() => navigate('/portfolio?tab=activity')}
+                        onClick={() => router.push('/portfolio?tab=activity')}
                         className="rounded-md border border-border bg-surface-secondary px-2.5 py-1 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
                       >
                         All activity

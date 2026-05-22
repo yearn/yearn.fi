@@ -1,4 +1,3 @@
-import Link from '@components/Link'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
@@ -23,6 +22,7 @@ import { isYvUsdVault, YVUSD_LOCKED_ADDRESS, YVUSD_LOCKED_COOLDOWN_DAYS } from '
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { formatApyDisplay, toAddress } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi'
+import Link from 'next/link'
 import type { ReactElement } from 'react'
 import { env } from '@/env'
 
@@ -74,7 +74,7 @@ export function SuggestedVaultCard({
 
   return (
     <Link
-      to={`/vaults/${chainID}/${toAddress(vaultAddress)}`}
+      href={`/vaults/${chainID}/${toAddress(vaultAddress)}`}
       className={
         'group flex h-fit min-h-[156px] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_12px_32px_rgba(4,8,32,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(4,8,32,0.12)]'
       }

@@ -3,7 +3,6 @@ import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import { MemoryNavigationProvider } from '@/navigation/client'
 
 import { SuggestedVaultCard } from './SuggestedVaultCard'
 
@@ -45,11 +44,7 @@ function renderCard(vault: TKongVaultInput): string {
   }
 
   try {
-    return renderToStaticMarkup(
-      <MemoryNavigationProvider>
-        <SuggestedVaultCard vault={vault} />
-      </MemoryNavigationProvider>
-    )
+    return renderToStaticMarkup(<SuggestedVaultCard vault={vault} />)
   } finally {
     ;(globalThis as unknown as { window: unknown }).window = originalWindow
   }

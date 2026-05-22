@@ -1,5 +1,5 @@
+import Link from 'next/link'
 import type { FC, ReactElement } from 'react'
-import Link from '/src/components/Link'
 
 export const SectionHeader: FC<{
   tagline?: string
@@ -9,6 +9,8 @@ export const SectionHeader: FC<{
   align?: 'left' | 'right' | 'center'
   isH1?: boolean
 }> = ({ tagline, title, description, cta, align = 'left', isH1 = false }) => {
+  const isExternalCta = cta ? /^https?:\/\//i.test(cta.href) : false
+
   return (
     <div
       className={`flex flex-col ${align === 'right' ? 'items-center md:items-end' : align === 'center' ? 'items-center' : 'items-center md:items-start'} gap-y-2 min-[375px]:gap-y-3 px-0 sm:gap-y-4 sm:px-2 md:px-0 w-full max-w-full`}
@@ -47,7 +49,12 @@ export const SectionHeader: FC<{
           {description}
           {!!cta && (
             <span className={'hidden md:inline'}>
-              <Link href={cta.href} className={'ml-2 text-white'}>
+              <Link
+                href={cta.href}
+                target={isExternalCta ? '_blank' : undefined}
+                rel={isExternalCta ? 'noopener noreferrer' : undefined}
+                className={'ml-2 text-white'}
+              >
                 {cta.label} {'→'}
               </Link>
             </span>
@@ -56,7 +63,12 @@ export const SectionHeader: FC<{
       )}
       {!!cta && (
         <span className={'block min-h-[44px] pt-2 md:hidden'}>
-          <Link href={cta.href} className={'text-neutral-900'}>
+          <Link
+            href={cta.href}
+            target={isExternalCta ? '_blank' : undefined}
+            rel={isExternalCta ? 'noopener noreferrer' : undefined}
+            className={'text-neutral-900'}
+          >
             {cta.label} {'→'}
           </Link>
         </span>

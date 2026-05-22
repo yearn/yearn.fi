@@ -20,12 +20,12 @@ import { LogoYearnMark } from '@shared/icons/LogoYearnMark'
 import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
 import { cl, formatUSD } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
 import { env } from '@/env'
-import { useNavigate } from '@/navigation/client'
 import Image from '/src/components/Image'
-import Link from '/src/components/Link'
 import { IconTelegram } from '../icons/IconTelegram'
 
 type TNavItem = {
@@ -71,7 +71,13 @@ function MobileNavTile({
     item.iconWrapperClass ?? cl(isDark ? 'bg-[#0a0a0a] text-neutral-200' : 'bg-white text-neutral-700')
 
   return (
-    <Link href={item.href} onClick={onClick} className={'w-full'}>
+    <Link
+      href={item.href}
+      onClick={onClick}
+      target={isExternalHref(item.href) ? '_blank' : undefined}
+      rel={isExternalHref(item.href) ? 'noopener noreferrer' : undefined}
+      className={'w-full'}
+    >
       <div
         className={cl(
           'group/nav-item flex items-center rounded-lg p-2 transition-colors',
@@ -127,7 +133,7 @@ export function MobileNavMenu({
   const { cumulatedValueInV2Vaults, cumulatedValueInV3Vaults, isLoading: isWalletLoading } = useWallet()
   const { shouldHideDust, onSwitchHideDust } = useAppSettings()
   const themePreference = useThemePreference()
-  const navigate = useNavigate()
+  const router = useRouter()
 
   useEffect(() => {
     if (!isOpen) {
@@ -317,12 +323,12 @@ export function MobileNavMenu({
   }
 
   const handleViewPortfolio = (): void => {
-    navigate('/portfolio')
+    router.push('/portfolio')
     setIsWalletDrawerOpen(false)
   }
 
   const handleViewRecentActivity = (): void => {
-    navigate('/portfolio?tab=activity')
+    router.push('/portfolio?tab=activity')
     setIsWalletDrawerOpen(false)
   }
 
@@ -521,6 +527,7 @@ export function MobileNavMenu({
                     <Link
                       href={'https://discord.com/invite/yearn'}
                       target={'_blank'}
+                      rel={'noopener noreferrer'}
                       className={
                         'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
                       }
@@ -531,6 +538,7 @@ export function MobileNavMenu({
                     <Link
                       href={'https://github.com/yearn'}
                       target={'_blank'}
+                      rel={'noopener noreferrer'}
                       className={
                         'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
                       }
@@ -541,6 +549,7 @@ export function MobileNavMenu({
                     <Link
                       href={'https://x.com/yearnfi'}
                       target={'_blank'}
+                      rel={'noopener noreferrer'}
                       className={
                         'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
                       }

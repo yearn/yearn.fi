@@ -1,15 +1,25 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
-import { MemoryNavigationProvider } from '@/navigation/client'
+import { describe, expect, it, vi } from 'vitest'
 
 import { VaultVersionToggle } from './VaultVersionToggle'
 
+const { mockRouterReplace, mockSearchParams } = vi.hoisted(() => ({
+  mockRouterReplace: vi.fn(),
+  mockSearchParams: vi.fn(() => new URLSearchParams())
+}))
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/vaults',
+  useRouter: () => ({
+    replace: mockRouterReplace
+  }),
+  useSearchParams: () => mockSearchParams()
+}))
+
 function renderToggle(entry: string): string {
-  return renderToStaticMarkup(
-    <MemoryNavigationProvider initialEntries={[entry]}>
-      <VaultVersionToggle />
-    </MemoryNavigationProvider>
-  )
+  const url = new URL(entry, 'https://yearn.fi')
+  mockSearchParams.mockReturnValue(new URLSearchParams(url.search))
+  return renderToStaticMarkup(<VaultVersionToggle />)
 }
 
 describe('VaultVersionToggle', () => {

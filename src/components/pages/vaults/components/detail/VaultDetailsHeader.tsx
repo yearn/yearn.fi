@@ -70,10 +70,10 @@ import {
 } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
+import Link from 'next/link'
 import type { ReactElement, Ref } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { env } from '@/env'
-import { Link } from '@/navigation/client'
 
 type TVaultKindType = 'multi' | 'single' | undefined
 
@@ -1099,11 +1099,11 @@ export function VaultDetailsHeaderPresentation({
       className={'grid w-full grid-cols-1 gap-y-0 gap-x-6 text-left md:auto-rows-min md:grid-cols-20 bg-app rounded-lg'}
     >
       <div className={'hidden md:flex items-center gap-2 text-sm text-text-secondary md:col-span-20 px-1'}>
-        <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
+        <Link href={'/'} className={'transition-colors hover:text-text-primary'}>
           {'Home'}
         </Link>
         <span>{'>'}</span>
-        <Link to={'/vaults'} className={'transition-colors hover:text-text-primary'}>
+        <Link href={'/v3'} className={'transition-colors hover:text-text-primary'}>
           {'Vaults'}
         </Link>
         <span>{'>'}</span>

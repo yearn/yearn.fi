@@ -1,4 +1,3 @@
-import Link from '@components/Link'
 import { useScrollSpy } from '@hooks/useScrollSpy'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import {
@@ -66,6 +65,8 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
+import Link from 'next/link'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactElement, ReactNode } from 'react'
 import {
   cloneElement,
@@ -85,7 +86,6 @@ import { getVaultPrimaryLogoSrc } from '@/components/pages/vaults/utils/vaultLog
 import { getCategoryDescription, getProductTypeDescription } from '@/components/pages/vaults/utils/vaultTagCopy'
 import { useWeb3 } from '@/components/shared/contexts/useWeb3'
 import { useDevFlags } from '@/contexts/useDevFlags'
-import { useLocation, useNavigate, useParams } from '@/navigation/client'
 
 const resolveHeaderOffset = (): number => {
   if (typeof window === 'undefined') return 0
@@ -451,9 +451,9 @@ function Index(): ReactElement | null {
   const { headerDisplayMode } = useDevFlags()
   const mobileDetailsSectionId = useId()
 
-  const params = useParams()
-  const location = useLocation()
-  const navigate = useNavigate()
+  const params = useParams<{ chainID?: string; address?: string }>()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const chainId = Number(params.chainID)
   const { getBalance, onRefresh, isLoading: isWalletLoading } = useWallet()
   const { address } = useWeb3()
@@ -476,7 +476,9 @@ function Index(): ReactElement | null {
   const isDualVariantVault = isYvUsd || isYvBtc
   const isLockedYvUsdRoute =
     chainId === YVUSD_CHAIN_ID && params.address ? toAddress(params.address) === YVUSD_LOCKED_ADDRESS : false
-  const unlockedYvUsdPath = `/vaults/${YVUSD_CHAIN_ID}/${YVUSD_UNLOCKED_ADDRESS}${location.search}${location.hash}`
+  const currentSearch = searchParams.toString()
+  const currentHash = typeof window === 'undefined' ? '' : window.location.hash
+  const unlockedYvUsdPath = `/vaults/${YVUSD_CHAIN_ID}/${YVUSD_UNLOCKED_ADDRESS}${currentSearch ? `?${currentSearch}` : ''}${currentHash}`
   const vaultKey = `${params.chainID}-${params.address}`
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [mobileDrawerAction, setMobileDrawerAction] = useState<WidgetActionType>(WidgetActionType.Deposit)
@@ -546,8 +548,8 @@ function Index(): ReactElement | null {
     if (!isLockedYvUsdRoute) {
       return
     }
-    navigate(unlockedYvUsdPath, { replace: true })
-  }, [isLockedYvUsdRoute, navigate, unlockedYvUsdPath])
+    router.replace(unlockedYvUsdPath)
+  }, [isLockedYvUsdRoute, router, unlockedYvUsdPath])
 
   const baseVault = useMemo(() => {
     if (!params.address) return undefined

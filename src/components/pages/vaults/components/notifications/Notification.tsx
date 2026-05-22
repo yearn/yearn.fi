@@ -9,10 +9,10 @@ import { IconLoader } from '@shared/icons/IconLoader'
 import type { TNotification, TNotificationStatus } from '@shared/types/notifications'
 import { cl, SUPPORTED_NETWORKS, truncateHex } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi'
+import Link from 'next/link'
 import type { ReactElement } from 'react'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { env } from '@/env'
-import Link from '/src/components/Link'
 
 const NETWORK_BY_CHAIN_ID = new Map(SUPPORTED_NETWORKS.map((network) => [network.id, network] as const)) as ReadonlyMap<
   number,

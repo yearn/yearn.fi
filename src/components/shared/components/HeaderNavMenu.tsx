@@ -8,11 +8,11 @@ import { LogoGithub } from '@shared/icons/LogoGithub'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import { LogoYearnMark } from '@shared/icons/LogoYearnMark'
 import { cl } from '@shared/utils'
+import Link from 'next/link'
 import type { ReactElement } from 'react'
 import { useRef, useState } from 'react'
 import { env } from '@/env'
 import Image from '/src/components/Image'
-import Link from '/src/components/Link'
 import { DropdownPanel } from './DropdownPanel'
 import type { TAppTile } from './YearnApps'
 
@@ -40,7 +40,11 @@ function NavTile({ item, isDark }: { item: TNavTile; isDark: boolean }): ReactEl
     item.iconWrapperClass ?? cl(isDark ? 'bg-[#0a0a0a] text-neutral-200' : 'bg-white text-neutral-700')
 
   return (
-    <Link href={item.href}>
+    <Link
+      href={item.href}
+      target={isExternalHref(item.href) ? '_blank' : undefined}
+      rel={isExternalHref(item.href) ? 'noopener noreferrer' : undefined}
+    >
       <div
         className={cl(
           'group/nav-item flex items-center rounded-lg p-2 transition-colors',

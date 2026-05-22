@@ -5,8 +5,8 @@ import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { getSupportedChainsForVaultType, normalizeVaultTypeParam } from '@pages/vaults/utils/vaultTypeUtils'
 import type { TSortDirection } from '@shared/types'
 import { copyToClipboard } from '@shared/utils/helpers'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useSearchParams } from '@/navigation/client'
 
 type TVaultsQueryStateConfig = {
   defaultTypes?: string[]
@@ -352,8 +352,11 @@ function readSnapshotFromStorage(storageKey: string, defaults: TVaultsQueryDefau
 }
 
 export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQueryState {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const location = useLocation()
+  const searchParams = useSearchParams()
+  const pathname = usePathname() || config.defaultPathname || '/vaults'
+  const router = useRouter()
+  const searchParamsString = searchParams.toString()
+  const urlSearchParams = useMemo(() => new URLSearchParams(searchParamsString), [searchParamsString])
   const defaults = useMemo(
     (): TVaultsQueryDefaults => ({
       defaultTypes: config.defaultTypes ?? [],
@@ -370,10 +373,17 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
   const shouldSyncUrlOnChange = Boolean(config.syncUrlOnChange)
   const isInitialMountRef = useRef(true)
   const isOwnUrlUpdateRef = useRef(false)
+  const replaceSearchParams = useCallback(
+    (nextParams: URLSearchParams): void => {
+      const query = nextParams.toString()
+      router.replace(`${pathname}${query ? `?${query}` : ''}`, { scroll: false })
+    },
+    [pathname, router]
+  )
 
   const [snapshot, setSnapshot] = useState<TVaultsQuerySnapshot>(() => {
-    if (hasVaultQueryParams(searchParams)) {
-      return buildSnapshotFromParams(searchParams, defaults)
+    if (hasVaultQueryParams(urlSearchParams)) {
+      return buildSnapshotFromParams(urlSearchParams, defaults)
     }
     if (shouldSyncUrlOnChange) {
       return buildSnapshotFromParams(new URLSearchParams(), defaults)
@@ -387,7 +397,7 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     return buildSnapshotFromParams(new URLSearchParams(), defaults)
   })
 
-  const hasVaultParams = hasVaultQueryParams(searchParams)
+  const hasVaultParams = hasVaultQueryParams(urlSearchParams)
 
   useEffect(() => {
     if (!hasVaultParams) {
@@ -397,16 +407,16 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
       isOwnUrlUpdateRef.current = false
       return
     }
-    const nextSnapshot = buildSnapshotFromParams(searchParams, defaults)
+    const nextSnapshot = buildSnapshotFromParams(urlSearchParams, defaults)
     setSnapshot((prev) => (areQuerySnapshotsEqual(prev, nextSnapshot) ? prev : nextSnapshot))
     if (!shouldClearUrlAfterInit) {
       return
     }
-    const clearedParams = clearVaultQueryParams(searchParams)
-    if (clearedParams.toString() !== searchParams.toString()) {
-      setSearchParams(clearedParams, { replace: true })
+    const clearedParams = clearVaultQueryParams(urlSearchParams)
+    if (clearedParams.toString() !== urlSearchParams.toString()) {
+      replaceSearchParams(clearedParams)
     }
-  }, [defaults, hasVaultParams, searchParams, setSearchParams, shouldClearUrlAfterInit])
+  }, [defaults, hasVaultParams, replaceSearchParams, shouldClearUrlAfterInit, urlSearchParams])
 
   useEffect(() => {
     if (!shouldPersistToStorage || typeof window === 'undefined') {
@@ -598,15 +608,15 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
   const onShareFilters = useCallback((): void => {
     const nextParams = buildShareParams()
     if (shouldShareUpdateUrl) {
-      setSearchParams(nextParams, { replace: true })
+      replaceSearchParams(nextParams)
     }
     if (typeof window === 'undefined') {
       return
     }
     const query = nextParams.toString()
-    const shareUrl = `${window.location.origin}${location.pathname}${query ? `?${query}` : ''}`
+    const shareUrl = `${window.location.origin}${pathname}${query ? `?${query}` : ''}`
     copyToClipboard(shareUrl)
-  }, [buildShareParams, location.pathname, setSearchParams, shouldShareUpdateUrl])
+  }, [buildShareParams, pathname, replaceSearchParams, shouldShareUpdateUrl])
 
   const lastSyncedQueryRef = useRef<string | null>(null)
 
@@ -620,16 +630,16 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     }
     const nextParams = buildUrlParamsFromSnapshot(snapshot)
     const nextQuery = nextParams.toString()
-    const currentQuery = searchParams.toString()
+    const currentQuery = urlSearchParams.toString()
     if (nextQuery === currentQuery || nextQuery === lastSyncedQueryRef.current) {
       return
     }
     lastSyncedQueryRef.current = nextQuery
     isOwnUrlUpdateRef.current = true
     startTransition(() => {
-      setSearchParams(nextParams, { replace: true })
+      replaceSearchParams(nextParams)
     })
-  }, [snapshot, buildUrlParamsFromSnapshot, searchParams, setSearchParams, shouldSyncUrlOnChange])
+  }, [snapshot, buildUrlParamsFromSnapshot, replaceSearchParams, shouldSyncUrlOnChange, urlSearchParams])
 
   return {
     vaultType: snapshot.vaultType,

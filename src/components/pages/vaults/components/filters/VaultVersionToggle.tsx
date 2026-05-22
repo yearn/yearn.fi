@@ -10,8 +10,8 @@ import {
 import { Tooltip } from '@shared/components/Tooltip'
 import { cl } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactElement } from 'react'
-import { useSearchParams } from '@/navigation/client'
 
 type TVaultVersionToggleProps = {
   className?: string
@@ -39,7 +39,9 @@ export function VaultVersionToggle({
   onTypeChange,
   isPending
 }: TVaultVersionToggleProps): ReactElement {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const searchParams = useSearchParams()
+  const pathname = usePathname() || '/vaults'
+  const router = useRouter()
   const trackEvent = usePlausible()
   const normalizedType = normalizeVaultTypeParam(searchParams.get('type'))
   const resolvedType = activeType ?? normalizedType
@@ -50,14 +52,15 @@ export function VaultVersionToggle({
       onTypeChange(config.type)
       return
     }
-    const nextParams = new URLSearchParams(searchParams)
+    const nextParams = new URLSearchParams(searchParams.toString())
     if (config.typeParam === 'all') {
       nextParams.delete('type')
     } else {
       nextParams.set('type', config.typeParam)
     }
     sanitizeChainsParam(nextParams, getSupportedChainsForVaultType(config.type))
-    setSearchParams(nextParams, { replace: true })
+    const query = nextParams.toString()
+    router.replace(`${pathname}${query ? `?${query}` : ''}`, { scroll: false })
   }
 
   function isActive(type: TVaultType): boolean {

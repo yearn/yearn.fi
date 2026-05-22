@@ -12,10 +12,10 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconClose } from '@shared/icons/IconClose'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { cl, formatUSD, SUPPORTED_NETWORKS, toAddress } from '@shared/utils'
+import Link from 'next/link'
 import type { ReactElement } from 'react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { env } from '@/env'
-import { Link } from '@/navigation/client'
 import { usePortfolioBreakdown } from '../hooks/usePortfolioBreakdown'
 import type { TPortfolioBreakdownResponse, TPortfolioBreakdownVault } from '../types/api'
 
@@ -279,7 +279,7 @@ export function PortfolioHistoryBreakdownModal({
                             />
                             <div className={'min-w-0 flex-1'}>
                               <Link
-                                to={vault.vaultHref}
+                                href={vault.vaultHref}
                                 className={
                                   'block truncate text-sm font-medium text-text-primary transition-colors hover:text-accent-500 sm:text-base'
                                 }

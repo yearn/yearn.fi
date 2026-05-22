@@ -1,4 +1,3 @@
-import Link from '@components/Link'
 import { usePlausible } from '@hooks/usePlausible'
 import { APYDetailsModal } from '@pages/vaults/components/table/APYDetailsModal'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
@@ -65,10 +64,11 @@ import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useQueryClient } from '@tanstack/react-query'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { MouseEvent, ReactElement } from 'react'
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { env } from '@/env'
-import { useNavigate } from '@/navigation/client'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
 import { VaultsListChip } from './VaultsListChip'
 
@@ -272,7 +272,7 @@ function VaultsListRowComponent({
   showAllocatorChip = true,
   expandedChartVariant = 'default'
 }: TVaultsListRowProps): ReactElement {
-  const navigate = useNavigate()
+  const router = useRouter()
   const trackEvent = usePlausible()
   const chainID = getVaultChainID(currentVault)
   const vaultAddress = getVaultAddress(currentVault)
@@ -914,7 +914,7 @@ function VaultsListRowComponent({
             currentVault={currentVault}
             expandedView={expandedView}
             onExpandedViewChange={setExpandedView}
-            onNavigateToVault={() => navigate(href)}
+            onNavigateToVault={() => router.push(href)}
             showKindTag={showKindChip}
             showHiddenTag={isHiddenVault}
             isHidden={isHiddenVault}

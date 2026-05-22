@@ -1,8 +1,8 @@
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { useSupportedChains } from '@shared/hooks/useSupportedChains'
 import type { TDict, TSortDirection } from '@shared/types'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useMemo } from 'react'
-import { useSearchParams } from '@/navigation/client'
 
 type TQueryArgs = {
   search: string | null | undefined
@@ -32,7 +32,9 @@ type TUseQueryArgumentsProps = {
 
 function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
   const allChains = useSupportedChains().map((chain): number => chain.id)
-  const [searchParams, setSearchParams] = useSearchParams()
+  const searchParams = useSearchParams()
+  const pathname = usePathname() || props.defaultPathname || '/vaults'
+  const router = useRouter()
 
   const defaultSortBy = props.defaultSortBy || 'featuringScore'
 
@@ -62,9 +64,10 @@ function useQueryArguments(props: TUseQueryArgumentsProps): TQueryArgs {
           newSearchParams.set(key, value as string)
         }
       })
-      setSearchParams(newSearchParams, { replace: true })
+      const query = newSearchParams.toString()
+      router.replace(`${pathname}${query ? `?${query}` : ''}`, { scroll: false })
     },
-    [setSearchParams]
+    [pathname, router]
   )
 
   const createStringHandler = useCallback(

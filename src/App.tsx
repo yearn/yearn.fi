@@ -21,6 +21,7 @@ import { IconCheckmark } from '@shared/icons/IconCheckmark'
 import { cl } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { usePathname } from 'next/navigation'
 import type { ReactElement, ReactNode } from 'react'
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { Toaster } from 'react-hot-toast'
@@ -28,9 +29,7 @@ import { WagmiProvider } from 'wagmi'
 import { TenderlyControlPanel } from '@/components/shared/components/TenderlyControlPanel'
 import { wagmiConfig } from '@/config/wagmi'
 import { ChainsProvider } from '@/context/ChainsProvider'
-import { usePathname } from '@/hooks/usePathname'
 import { initializePlausible } from '@/hooks/usePlausible'
-import { NextNavigationProvider } from '@/navigation/NextNavigationProvider'
 import { disableServiceWorkerDev } from '@/utils/disableServiceWorkerDev'
 
 const bigintPrototype = BigInt.prototype as unknown as { toJSON?: () => string }
@@ -144,11 +143,7 @@ function AppContent({ children }: { children: ReactNode }): ReactElement {
 }
 
 function App({ children }: { children: ReactNode }): ReactElement {
-  return (
-    <NextNavigationProvider>
-      <AppContent>{children}</AppContent>
-    </NextNavigationProvider>
-  )
+  return <AppContent>{children}</AppContent>
 }
 
 export default App

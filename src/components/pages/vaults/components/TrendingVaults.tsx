@@ -1,4 +1,3 @@
-import Link from '@components/Link'
 import { SuggestedVaultCard } from '@pages/vaults/components/SuggestedVaultCard'
 import {
   getVaultAddress,
@@ -17,6 +16,7 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, toAddress } from '@shared/utils'
 import { formatPercent } from '@shared/utils/format'
 import { getNetwork } from '@shared/utils/wagmi'
+import Link from 'next/link'
 import type { CSSProperties, ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { env } from '@/env'
@@ -88,7 +88,7 @@ function TrendingVaultMarqueeItem({ vault }: { vault: TKongVaultInput }): ReactE
 
   return (
     <Link
-      to={`/vaults/${chainID}/${toAddress(vaultAddress)}`}
+      href={`/vaults/${chainID}/${toAddress(vaultAddress)}`}
       className={cl(
         'inline-flex items-center gap-2 rounded-md border border-border bg-surface px-2 py-1.5',
         'shadow-[0_8px_18px_rgba(4,8,32,0.06)] transition-colors hover:bg-surface-secondary'

@@ -16,9 +16,9 @@ import { IconSun } from '@shared/icons/IconSun'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import { cl, formatUSD } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
+import { useRouter } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from '@/navigation/client'
 import { DropdownPanel } from './DropdownPanel'
 
 type TAccountDropdownProps = {
@@ -32,7 +32,7 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
   const { address, ens, clusters, onDesactivate } = useWeb3()
   const { cumulatedValueInV2Vaults, cumulatedValueInV3Vaults, isLoading: isWalletLoading } = useWallet()
   const { cachedEntries } = useNotifications()
-  const navigate = useNavigate()
+  const router = useRouter()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
   const { toast } = yToast()
@@ -57,9 +57,9 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
   }, [cachedEntries])
 
   const handleViewPortfolio = useCallback(() => {
-    navigate('/portfolio')
+    router.push('/portfolio')
     onClose()
-  }, [navigate, onClose])
+  }, [router, onClose])
 
   const handleDisconnect = useCallback(() => {
     onDesactivate()
@@ -67,9 +67,9 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
   }, [onDesactivate, onClose])
 
   const handleViewAllActivity = useCallback(() => {
-    navigate('/portfolio?tab=activity')
+    router.push('/portfolio?tab=activity')
     onClose()
-  }, [navigate, onClose])
+  }, [router, onClose])
 
   function formatDate(timestamp?: number): string {
     if (!timestamp) return ''

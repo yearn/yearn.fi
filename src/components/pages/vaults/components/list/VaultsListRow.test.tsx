@@ -6,19 +6,27 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ComponentProps } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { MemoryNavigationProvider } from '@/navigation/client'
 
 import { VaultsListRow } from './VaultsListRow'
 
-const { mockUseMediaQuery, mockUseYvUsdVaults, mockUseVaultSnapshot, mockVaultForwardAPY } = vi.hoisted(() => ({
-  mockUseMediaQuery: vi.fn(() => false),
-  mockUseYvUsdVaults: vi.fn((): any => ({
-    metrics: undefined,
-    unlockedVault: undefined,
-    lockedVault: undefined
-  })),
-  mockUseVaultSnapshot: vi.fn((): any => ({ data: undefined })),
-  mockVaultForwardAPY: vi.fn((_props?: unknown) => <div>{'APY'}</div>)
+const { mockRouterPush, mockUseMediaQuery, mockUseYvUsdVaults, mockUseVaultSnapshot, mockVaultForwardAPY } = vi.hoisted(
+  () => ({
+    mockRouterPush: vi.fn(),
+    mockUseMediaQuery: vi.fn(() => false),
+    mockUseYvUsdVaults: vi.fn((): any => ({
+      metrics: undefined,
+      unlockedVault: undefined,
+      lockedVault: undefined
+    })),
+    mockUseVaultSnapshot: vi.fn((): any => ({ data: undefined })),
+    mockVaultForwardAPY: vi.fn((_props?: unknown) => <div>{'APY'}</div>)
+  })
+)
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockRouterPush
+  })
 }))
 
 vi.mock('@react-hookz/web', () => ({
@@ -73,9 +81,7 @@ function renderRowHtml(vault: TKongVaultInput, props?: Partial<ComponentProps<ty
 
   return renderToStaticMarkup(
     <QueryClientProvider client={queryClient}>
-      <MemoryNavigationProvider>
-        <VaultsListRow currentVault={vault} {...props} />
-      </MemoryNavigationProvider>
+      <VaultsListRow currentVault={vault} {...props} />
     </QueryClientProvider>
   )
 }
