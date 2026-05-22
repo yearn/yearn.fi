@@ -34,6 +34,12 @@ import {
 import { fetchRecentAddressScopedActivityEvents } from './lib/holdings/services/graphql'
 import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
+import {
+  getOptimizationCorsHeaders,
+  OPTIMIZATION_CORS_HEADER_NAMES,
+  OPTIMIZATION_GET_CORS_HEADERS,
+  OPTIMIZATION_POST_CORS_HEADERS
+} from './optimization/_lib/cors'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
 import { parseExplainMetadata } from './optimization/_lib/explain-parse'
 import {
@@ -154,6 +160,41 @@ function handleCorsPreFlight(): Response {
     status: 204,
     headers: CORS_HEADERS
   })
+}
+
+function withOptimizationCors(response: Response, req: Request, headers: Readonly<Record<string, string>>): Response {
+  const newHeaders = new Headers(response.headers)
+  OPTIMIZATION_CORS_HEADER_NAMES.forEach((headerName) => {
+    newHeaders.delete(headerName)
+  })
+  Object.entries(getOptimizationCorsHeaders(req.headers.get('Origin'), headers)).forEach(([key, value]) => {
+    newHeaders.set(key, value)
+  })
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders
+  })
+}
+
+function handleOptimizationCorsPreFlight(req: Request, headers: Readonly<Record<string, string>>): Response {
+  return new Response(null, {
+    status: 204,
+    headers: getOptimizationCorsHeaders(req.headers.get('Origin'), headers)
+  })
+}
+
+function getOptimizationRouteCorsHeaders(pathname: string): Readonly<Record<string, string>> | null {
+  if (pathname === '/api/optimization/change' || pathname === '/api/optimization/alignment') {
+    return OPTIMIZATION_GET_CORS_HEADERS
+  }
+
+  if (pathname === '/api/optimization/vault-state') {
+    return OPTIMIZATION_POST_CORS_HEADERS
+  }
+
+  return null
 }
 
 async function handleHoldingsProgress(req: Request): Promise<Response> {
@@ -621,6 +662,9 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
 const CHANGE_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
 const ALIGNMENT_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 const VAULT_STATE_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const OPTIMIZATION_CHANGE_ERROR_MESSAGE = 'Unable to load optimization changes'
+const OPTIMIZATION_ALIGNMENT_ERROR_MESSAGE = 'Unable to load optimization alignment'
+const OPTIMIZATION_VAULT_STATE_ERROR_MESSAGE = 'Unable to load vault state'
 
 async function handleOptimizationChange(req: Request): Promise<Response> {
   if (req.method !== 'GET') {
@@ -677,8 +721,8 @@ async function handleOptimizationChange(req: Request): Promise<Response> {
       return Response.json({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, { status: 503 })
     }
 
-    const message = error instanceof Error ? error.message : String(error)
-    return Response.json({ error: message }, { status: 500 })
+    console.error(OPTIMIZATION_CHANGE_ERROR_MESSAGE, error)
+    return Response.json({ error: OPTIMIZATION_CHANGE_ERROR_MESSAGE }, { status: 500 })
   }
 }
 
@@ -695,7 +739,8 @@ async function handleOptimizationAlignment(req: Request): Promise<Response> {
 
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
-    return Response.json({ error: 'ENVIO_GRAPHQL_URL not configured' }, { status: 503 })
+    console.error(OPTIMIZATION_ALIGNMENT_ERROR_MESSAGE, new Error('ENVIO_GRAPHQL_URL not configured'))
+    return Response.json({ error: OPTIMIZATION_ALIGNMENT_ERROR_MESSAGE }, { status: 503 })
   }
 
   try {
@@ -748,8 +793,8 @@ async function handleOptimizationAlignment(req: Request): Promise<Response> {
       return Response.json({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, { status: 503 })
     }
 
-    const message = error instanceof Error ? error.message : String(error)
-    return Response.json({ error: message }, { status: 500 })
+    console.error(OPTIMIZATION_ALIGNMENT_ERROR_MESSAGE, error)
+    return Response.json({ error: OPTIMIZATION_ALIGNMENT_ERROR_MESSAGE }, { status: 500 })
   }
 }
 
@@ -803,8 +848,8 @@ async function handleOptimizationVaultState(req: Request): Promise<Response> {
       }
     )
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    return Response.json({ error: message }, { status: 503 })
+    console.error(OPTIMIZATION_VAULT_STATE_ERROR_MESSAGE, error)
+    return Response.json({ error: OPTIMIZATION_VAULT_STATE_ERROR_MESSAGE }, { status: 503 })
   }
 }
 
@@ -1376,6 +1421,30 @@ async function main() {
       console.log(`[Server] ${req.method} ${url.pathname}`)
 
       try {
+        if (url.pathname === '/api/optimization/change') {
+          if (req.method === 'OPTIONS') {
+            return handleOptimizationCorsPreFlight(req, OPTIMIZATION_GET_CORS_HEADERS)
+          }
+
+          return withOptimizationCors(await handleOptimizationChange(req), req, OPTIMIZATION_GET_CORS_HEADERS)
+        }
+
+        if (url.pathname === '/api/optimization/alignment') {
+          if (req.method === 'OPTIONS') {
+            return handleOptimizationCorsPreFlight(req, OPTIMIZATION_GET_CORS_HEADERS)
+          }
+
+          return withOptimizationCors(await handleOptimizationAlignment(req), req, OPTIMIZATION_GET_CORS_HEADERS)
+        }
+
+        if (url.pathname === '/api/optimization/vault-state') {
+          if (req.method === 'OPTIONS') {
+            return handleOptimizationCorsPreFlight(req, OPTIMIZATION_POST_CORS_HEADERS)
+          }
+
+          return withOptimizationCors(await handleOptimizationVaultState(req), req, OPTIMIZATION_POST_CORS_HEADERS)
+        }
+
         if (req.method === 'OPTIONS') {
           return handleCorsPreFlight()
         }
@@ -1427,18 +1496,6 @@ async function main() {
           return withCors(await handleYvUsdAprs(req))
         }
 
-        if (url.pathname === '/api/optimization/change') {
-          return withCors(await handleOptimizationChange(req))
-        }
-
-        if (url.pathname === '/api/optimization/alignment') {
-          return withCors(await handleOptimizationAlignment(req))
-        }
-
-        if (url.pathname === '/api/optimization/vault-state') {
-          return withCors(await handleOptimizationVaultState(req))
-        }
-
         if (url.pathname === '/api/tenderly/status') {
           return withCors(handleTenderlyStatus(req))
         }
@@ -1478,12 +1535,17 @@ async function main() {
         return withCors(new Response('Not found', { status: 404 }))
       } catch (error) {
         console.error('💥 Request handler error:', error)
-        return withCors(
-          Response.json(
-            { error: 'Internal server error', message: error instanceof Error ? error.message : String(error) },
-            { status: 500 }
-          )
+        const errorResponse = Response.json(
+          { error: 'Internal server error', message: error instanceof Error ? error.message : String(error) },
+          { status: 500 }
         )
+        const optimizationCorsHeaders = getOptimizationRouteCorsHeaders(url.pathname)
+
+        if (optimizationCorsHeaders) {
+          return withOptimizationCors(errorResponse, req, optimizationCorsHeaders)
+        }
+
+        return withCors(errorResponse)
       }
     },
     port: API_PORT,

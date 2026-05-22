@@ -1,20 +1,74 @@
 import type { VercelResponse } from '@vercel/node'
 
+const DEFAULT_TRUSTED_ORIGINS = [
+  'https://yearn.fi',
+  'https://www.yearn.fi',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+] as const
+
+export const OPTIMIZATION_CORS_HEADER_NAMES = [
+  'Access-Control-Allow-Origin',
+  'Access-Control-Allow-Methods',
+  'Access-Control-Allow-Headers'
+] as const
+
 export const OPTIMIZATION_GET_CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type'
 } as const
 
 export const OPTIMIZATION_POST_CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type'
 } as const
 
-export function setCorsHeaders(res: VercelResponse, headers: Readonly<Record<string, string>>): VercelResponse {
-  res.setHeader('Access-Control-Allow-Origin', headers['Access-Control-Allow-Origin'])
-  res.setHeader('Access-Control-Allow-Methods', headers['Access-Control-Allow-Methods'])
-  res.setHeader('Access-Control-Allow-Headers', headers['Access-Control-Allow-Headers'])
+function getConfiguredTrustedOrigins(): string[] {
+  return (process.env.OPTIMIZATION_CORS_ALLOWED_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+}
+
+export function isTrustedOptimizationOrigin(origin: string | null | undefined): origin is string {
+  if (!origin) {
+    return false
+  }
+
+  return new Set([...DEFAULT_TRUSTED_ORIGINS, ...getConfiguredTrustedOrigins()]).has(origin)
+}
+
+export function getOptimizationCorsHeaders(
+  origin: string | null | undefined,
+  headers: Readonly<Record<string, string>>
+): Record<string, string> {
+  const varyHeader = {
+    Vary: 'Origin'
+  }
+
+  if (!isTrustedOptimizationOrigin(origin)) {
+    return varyHeader
+  }
+
+  return {
+    'Access-Control-Allow-Origin': origin,
+    ...headers,
+    ...varyHeader
+  }
+}
+
+function getVercelOriginHeader(origin: string | string[] | undefined): string | undefined {
+  return Array.isArray(origin) ? origin[0] : origin
+}
+
+export function setCorsHeaders(
+  res: VercelResponse,
+  headers: Readonly<Record<string, string>>,
+  origin: string | string[] | undefined
+): VercelResponse {
+  Object.entries(getOptimizationCorsHeaders(getVercelOriginHeader(origin), headers)).forEach(([name, value]) => {
+    res.setHeader(name, value)
+  })
+
   return res
 }

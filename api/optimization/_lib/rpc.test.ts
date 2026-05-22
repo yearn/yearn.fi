@@ -1,6 +1,6 @@
 import { ethers } from 'ethers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchVaultOnChainState } from './rpc'
+import { fetchVaultOnChainState, MAX_VAULT_STATE_STRATEGIES } from './rpc'
 
 const VAULT_ADDRESS = '0x1111111111111111111111111111111111111111'
 const STRATEGY_ADDRESSES = ['0x2222222222222222222222222222222222222222', '0x3333333333333333333333333333333333333333']
@@ -42,5 +42,54 @@ describe('fetchVaultOnChainState', () => {
     })
     expect(state.unallocatedBps).toBe(6000)
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects strategy arrays over the shared maximum before RPC execution', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      fetchVaultOnChainState(
+        1,
+        VAULT_ADDRESS,
+        Array.from(
+          { length: MAX_VAULT_STATE_STRATEGIES + 1 },
+          (_, index) => `0x${(index + 1).toString(16).padStart(40, '0')}`
+        )
+      )
+    ).rejects.toThrow(`Too many strategy addresses: maximum ${MAX_VAULT_STATE_STRATEGIES}`)
+
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects invalid vault-state addresses before RPC execution', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchVaultOnChainState(1, 'not-a-vault', STRATEGY_ADDRESSES)).rejects.toThrow('Invalid vault address')
+    await expect(fetchVaultOnChainState(1, VAULT_ADDRESS, ['not-a-strategy'])).rejects.toThrow(
+      'Invalid strategy address'
+    )
+
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('does not run sequential fallback for larger accepted strategy arrays', async () => {
+    const strategies = Array.from({ length: 9 }, (_, index) => `0x${(index + 1).toString(16).padStart(40, '0')}`)
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ jsonrpc: '2.0', id: 1, error: { code: -32000, message: 'multicall failed' } })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchVaultOnChainState(1, VAULT_ADDRESS, strategies)).rejects.toThrow(
+      'Too many strategies for sequential fallback: maximum 8'
+    )
+
+    expect(fetchMock).toHaveBeenCalledTimes(4)
+    fetchMock.mock.calls.forEach((call) => {
+      const body = JSON.parse(String(call[1].body))
+      expect(body.params[0].to).toBe('0xcA11bde05977b3631167028862bE2a173976CA11')
+    })
   })
 })

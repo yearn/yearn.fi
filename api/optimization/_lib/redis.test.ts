@@ -45,3 +45,54 @@ describe('readOptimizations', () => {
     await expect(readOptimizations()).rejects.toThrow(REDIS_MISSING_CONFIGURATION_MESSAGE)
   })
 })
+
+describe('findVaultOptimization', () => {
+  afterEach(() => {
+    vi.resetModules()
+  })
+
+  function optimization(vault: string, chainId: number | null) {
+    return {
+      vault,
+      strategyDebtRatios: [],
+      currentApr: 100,
+      proposedApr: 110,
+      explain: 'explain',
+      source: {
+        key: chainId === null ? 'doa:optimizations:legacy' : `doa:optimizations:${chainId}:latest`,
+        chainId,
+        revision: 'latest',
+        isLatestAlias: true,
+        timestampUtc: null,
+        latestMatchedTimestampUtc: null
+      }
+    }
+  }
+
+  it('selects the matching chain when duplicate vault addresses exist', async () => {
+    const { findVaultOptimization } = await import('./redis')
+    const vault = '0x1111111111111111111111111111111111111111'
+    const chainOne = optimization(vault, 1)
+    const chainTen = optimization(vault, 10)
+
+    expect(findVaultOptimization([chainOne, chainTen], vault.toUpperCase(), 10)).toBe(chainTen)
+  })
+
+  it('rejects address-only lookup when duplicate vault addresses exist on multiple chains', async () => {
+    const { AmbiguousVaultOptimizationError, findVaultOptimization } = await import('./redis')
+    const vault = '0x1111111111111111111111111111111111111111'
+
+    expect(() => findVaultOptimization([optimization(vault, 1), optimization(vault, 10)], vault)).toThrow(
+      AmbiguousVaultOptimizationError
+    )
+  })
+
+  it('rejects address-only lookup when a duplicate vault has unknown chain scope', async () => {
+    const { AmbiguousVaultOptimizationError, findVaultOptimization } = await import('./redis')
+    const vault = '0x1111111111111111111111111111111111111111'
+
+    expect(() => findVaultOptimization([optimization(vault, null), optimization(vault, 10)], vault)).toThrow(
+      AmbiguousVaultOptimizationError
+    )
+  })
+})
