@@ -23,7 +23,8 @@ import {
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
-import { isYvUsdAddress, YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
+import { getVaultUserHistoryVaults } from '@pages/vaults/utils/vaultUserHistoryVaults'
+import { isYvUsdAddress, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import {
   AllocationChart,
   DARK_MODE_COLORS,
@@ -129,15 +130,10 @@ export default function VaultsListRowExpandedContent({
       : chartTab === 'historical-apy' || chartTab === 'historical-pps' || chartTab === 'historical-tvl'
         ? chartTab
         : undefined
-  const yvUsdUserHistoryVaults = useMemo(
-    () => [
-      { chainId: YVUSD_CHAIN_ID, vaultAddress: YVUSD_UNLOCKED_ADDRESS },
-      { chainId: YVUSD_CHAIN_ID, vaultAddress: YVUSD_LOCKED_ADDRESS }
-    ],
-    []
+  const vaultUserHistoryVaults = useMemo(
+    () => getVaultUserHistoryVaults({ chainId: chainID, vaultAddress }),
+    [chainID, vaultAddress]
   )
-  const nonYvUsdUserHistoryVaults = useMemo(() => [{ chainId: chainID, vaultAddress }], [chainID, vaultAddress])
-  const vaultUserHistoryVaults = isYvUsd ? yvUsdUserHistoryVaults : nonYvUsdUserHistoryVaults
   const viewOptions = useMemo<Array<{ id: TVaultsExpandedView; label: string }>>(
     () => [
       { id: 'strategies', label: 'Strategies' },

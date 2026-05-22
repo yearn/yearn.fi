@@ -3,6 +3,7 @@ import path from 'path'
 import { defineConfig, loadEnv } from 'vite'
 
 const DEFAULT_HOST = '127.0.0.1'
+const DEFAULT_ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 const DEFAULT_API_PORT = '3001'
 const API_HEALTHCHECK_PATH = '/api/enso/balances'
 const API_HEALTHCHECK_EXPECTED_ERROR = 'Missing eoaAddress'
@@ -28,6 +29,11 @@ function resolveClientHost(env: Record<string, string>) {
 function resolveClientPort(env: Record<string, string>) {
   const configuredPort = Number(env.PORT)
   return Number.isInteger(configuredPort) && configuredPort > 0 ? configuredPort : 3000
+}
+
+function resolveAllowedHosts(env: Record<string, string>) {
+  const configuredHosts = env.ALLOWED_HOSTS?.split(',').map((host) => host.trim().toLowerCase()) ?? []
+  return [...new Set([...DEFAULT_ALLOWED_HOSTS, ...configuredHosts].filter(Boolean))]
 }
 
 function buildProxy(apiProxyTarget: string) {
@@ -99,6 +105,7 @@ export default defineConfig(({ mode }) => {
   const apiProxyTarget = resolveApiProxyTarget(env)
   const host = resolveClientHost(env)
   const port = resolveClientPort(env)
+  const allowedHosts = resolveAllowedHosts(env)
   const proxy = buildProxy(apiProxyTarget)
 
   return {
@@ -120,11 +127,13 @@ export default defineConfig(({ mode }) => {
     server: {
       host,
       port,
+      allowedHosts,
       proxy
     },
     preview: {
       host,
       port,
+      allowedHosts,
       proxy
     },
     build: {
