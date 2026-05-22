@@ -161,7 +161,12 @@ async function handleHoldingsProgress(req: Request): Promise<Response> {
   const progress = await getHoldingsProgress(url.searchParams.get('id'))
 
   if (!progress) {
-    return Response.json({ error: 'Progress not found', status: 404 }, { status: 404 })
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Cache-Control': 'no-store'
+      }
+    })
   }
 
   return Response.json(progress, {
