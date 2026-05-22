@@ -1,6 +1,6 @@
 import { patchYBoldVaults } from '@pages/vaults/domain/normalizeVault'
-import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import { useDeepCompareMemo } from '@react-hookz/web'
+import { YEARN_VAULT_LIST_ENDPOINT } from '@shared/data/publicQueryEndpoints'
 import { fetchWithSchema, getFetchQueryKey, useFetch } from '@shared/hooks/useFetch'
 import type { TDict } from '@shared/types'
 import { SUPPORTED_NETWORKS, toAddress } from '@shared/utils'
@@ -11,7 +11,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 
 const DEFAULT_CHAIN_IDS = SUPPORTED_NETWORKS.map((network) => network.id)
-const VAULT_LIST_ENDPOINT = `${KONG_REST_BASE}/list/vaults`
 
 export const isCatalogYearnVault = (item: TKongVaultListItem): boolean =>
   item.origin === 'yearn' && item.inclusion?.isYearn !== false
@@ -32,7 +31,7 @@ function useFetchYearnVaults(
     isLoading,
     refetch
   } = useFetch<TKongVaultList>({
-    endpoint: VAULT_LIST_ENDPOINT,
+    endpoint: YEARN_VAULT_LIST_ENDPOINT,
     schema: kongVaultListSchema,
     config: {
       cacheDuration: 15 * 60 * 1000,
@@ -93,7 +92,7 @@ function useFetchYearnVaults(
 const prefetchedEndpoints = new Set<string>()
 
 function usePrefetchYearnVaults(enabled = true): void {
-  const endpoints = useMemo(() => [VAULT_LIST_ENDPOINT], [])
+  const endpoints = useMemo(() => [YEARN_VAULT_LIST_ENDPOINT], [])
   const queryClient = useQueryClient()
 
   useEffect(() => {

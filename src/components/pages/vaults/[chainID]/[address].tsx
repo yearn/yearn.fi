@@ -56,6 +56,7 @@ import {
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
+import { useMediaQuery } from '@react-hookz/web'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { JsonLd } from '@shared/components/JsonLd'
 import { TokenLogo } from '@shared/components/TokenLogo'
@@ -474,6 +475,9 @@ function Index(): ReactElement | null {
   const isYvUsd = isYvUsdAddress(params.address)
   const isYvBtc = isYvBtcAddress(params.address)
   const isDualVariantVault = isYvUsd || isYvBtc
+  const isDesktopViewport = useMediaQuery('(min-width: 768px)', { initializeWithValue: false })
+  const shouldRenderDesktopCharts = isDesktopViewport === true
+  const shouldRenderMobileCharts = isDesktopViewport === false
   const isLockedYvUsdRoute =
     chainId === YVUSD_CHAIN_ID && params.address ? toAddress(params.address) === YVUSD_LOCKED_ADDRESS : false
   const currentSearch = searchParams.toString()
@@ -1039,20 +1043,22 @@ function Index(): ReactElement | null {
         key: 'charts' as const,
         shouldRender: Number.isInteger(chainId),
         ref: sectionRefs.charts,
-        content: isYvUsd ? (
-          <YvUsdChartsSection chartHeightPx={180} chartHeightMdPx={230} enableUserPositionChart={canShowUserCharts} />
-        ) : (
-          <VaultChartsSection
-            key={`${currentVault.address}-${address ?? 'disconnected'}`}
-            chainId={chainId}
-            vaultAddress={currentVault.address}
-            chartHeightPx={180}
-            chartHeightMdPx={230}
-            enableUserCharts={canShowUserCharts}
-            userUnitLabel={currentVault.token?.symbol || currentVault.symbol || 'assets'}
-            userHistoryVaults={detailUserHistoryVaults}
-          />
-        )
+        content: shouldRenderDesktopCharts ? (
+          isYvUsd ? (
+            <YvUsdChartsSection chartHeightPx={180} chartHeightMdPx={230} enableUserPositionChart={canShowUserCharts} />
+          ) : (
+            <VaultChartsSection
+              key={`${currentVault.address}-${address ?? 'disconnected'}`}
+              chainId={chainId}
+              vaultAddress={currentVault.address}
+              chartHeightPx={180}
+              chartHeightMdPx={230}
+              enableUserCharts={canShowUserCharts}
+              userUnitLabel={currentVault.token?.symbol || currentVault.symbol || 'assets'}
+              userHistoryVaults={detailUserHistoryVaults}
+            />
+          )
+        ) : null
       },
       {
         key: 'about' as const,
@@ -1092,6 +1098,7 @@ function Index(): ReactElement | null {
     currentVault,
     isYvUsd,
     sectionRefs,
+    shouldRenderDesktopCharts,
     snapshotVault?.inceptTime,
     detailUserHistoryVaults,
     vaultAddresses
@@ -1705,11 +1712,11 @@ function Index(): ReactElement | null {
               <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-4 py-3" />
             ) : null}
 
-            {Number.isInteger(chainId) && (
+            {Number.isInteger(chainId) && shouldRenderMobileCharts ? (
               <div className="border border-border rounded-lg bg-surface overflow-hidden">
                 {renderDetailCharts(180, 230)}
               </div>
-            )}
+            ) : null}
 
             <section id={mobileDetailsSectionId} ref={detailsRef} aria-label="Vault details" className="space-y-4 pb-8">
               {renderableSections

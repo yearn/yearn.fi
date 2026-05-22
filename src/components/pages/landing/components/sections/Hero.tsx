@@ -2,6 +2,7 @@ import { usePlausible } from '@hooks/usePlausible'
 import { Button } from '@shared/components/Button'
 import { SectionHeader } from '@shared/components/SectionHeader'
 import { TvlStat } from '@shared/components/TvlStat'
+import { YEARN_TVL_ENDPOINT } from '@shared/data/publicQueryEndpoints'
 import { useFetch } from '@shared/hooks/useFetch'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import Link from 'next/link'
@@ -75,7 +76,7 @@ function AnimatedLogos(): ReactElement {
 export function Hero(): ReactElement {
   const trackEvent = usePlausible()
   const { data: tvl } = useFetch<number>({
-    endpoint: 'https://api.llama.fi/tvl/yearn',
+    endpoint: YEARN_TVL_ENDPOINT,
     schema: z.number()
   })
 

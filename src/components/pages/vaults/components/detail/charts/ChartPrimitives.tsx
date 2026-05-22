@@ -45,13 +45,15 @@ export const ChartContainer = forwardRef<HTMLDivElement, ChartContainerProps>(
         <div
           data-chart={chartId}
           ref={ref}
-          className={cl('flex aspect-video justify-center text-xs', className)}
+          className={cl('flex aspect-video h-full min-h-0 w-full min-w-0 justify-center text-xs', className)}
           style={{ ...chartStyleVars, ...style } as CSSProperties}
           {...props}
         >
           <ChartStyle id={chartId} config={config} />
           <ChartAppearanceStyle id={chartId} />
-          <Recharts.ResponsiveContainer>{children}</Recharts.ResponsiveContainer>
+          <Recharts.ResponsiveContainer width={'100%'} height={'100%'} minWidth={1} minHeight={1}>
+            {children}
+          </Recharts.ResponsiveContainer>
         </div>
       </ChartContext.Provider>
     )

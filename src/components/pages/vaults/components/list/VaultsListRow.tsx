@@ -22,7 +22,6 @@ import {
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
-import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import {
   formatFeeStructureFilterAriaLabel,
   formatFeeStructureLabel,
@@ -54,6 +53,7 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
@@ -118,10 +118,6 @@ const YVUSD_HOLDINGS_FORMAT_OPTIONS = {
 } as const
 
 const prefetchedSnapshotEndpoints = new Set<string>()
-
-function buildSnapshotEndpoint(chainId: number, address: string): string {
-  return `${KONG_REST_BASE}/snapshot/${chainId}/${toAddress(address)}`
-}
 
 function getVaultProductTypePresentation(listKind: ReturnType<typeof deriveListKind>): TVaultProductTypePresentation {
   if (listKind === 'allocator' || listKind === 'strategy') {
@@ -370,7 +366,10 @@ function VaultsListRowComponent({
   }
 
   const prefetchSnapshot = useCallback((): void => {
-    const endpoint = buildSnapshotEndpoint(chainID, vaultAddress)
+    const endpoint = buildVaultSnapshotEndpoint(chainID, vaultAddress)
+    if (!endpoint) {
+      return
+    }
     if (prefetchedSnapshotEndpoints.has(endpoint)) {
       return
     }
