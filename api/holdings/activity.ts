@@ -1,6 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { setVercelCdnCacheHeaders } from '../lib/cacheHeaders'
 import type { HoldingsActivityTypeFilter, VaultVersion } from '../lib/holdings'
 import { checkRateLimit, ensureHoldingsStorageInitialized } from '../lib/holdings'
+
+const HOLDINGS_ACTIVITY_CDN_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=300'
 
 function simpleHash(str: string): string {
   const hash = Array.from(str).reduce((currentHash, char) => {
@@ -160,7 +163,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       parseBoolean(includeFacetsParam)
     )
 
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
+    setVercelCdnCacheHeaders(res, HOLDINGS_ACTIVITY_CDN_CACHE_CONTROL)
     return res.status(200).json(activity)
   } catch (error) {
     console.error('Holdings activity error:', error)

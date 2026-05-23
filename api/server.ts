@@ -6,6 +6,7 @@ import type {
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
 import { ENSO_BALANCES_CACHE_CONTROL } from './enso/cache'
+import { getVercelCdnCacheHeaders } from './lib/cacheHeaders'
 import {
   clearUserCache,
   getHistoricalHoldingsChart,
@@ -59,6 +60,7 @@ const DEFAULT_API_PORT = 3001
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
+const YVUSD_APR_CDN_CACHE_CONTROL = 'public, s-maxage=30, stale-while-revalidate=120'
 
 function isHistoryQueryEnabled(historyParam: string | null): boolean {
   return historyParam === '1' || historyParam === 'true'
@@ -121,9 +123,7 @@ async function handleYvUsdAprs(req: Request): Promise<Response> {
 
     const data = await response.json()
     return Response.json(data, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120'
-      }
+      headers: getVercelCdnCacheHeaders(YVUSD_APR_CDN_CACHE_CONTROL)
     })
   } catch (error) {
     console.error('Error proxying yvUSD APR request:', error)
@@ -621,6 +621,9 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
 const CHANGE_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
 const ALIGNMENT_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 const VAULT_STATE_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const HOLDINGS_HISTORY_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600'
+const HOLDINGS_ACTIVITY_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=300'
+const HOLDINGS_ACTIVITY_FACETS_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=900'
 
 async function handleOptimizationChange(req: Request): Promise<Response> {
   if (req.method !== 'GET') {
@@ -645,9 +648,7 @@ async function handleOptimizationChange(req: Request): Promise<Response> {
         }
 
         return Response.json(selectedHistory, {
-          headers: {
-            'Cache-Control': CHANGE_CACHE_CONTROL
-          }
+          headers: getVercelCdnCacheHeaders(CHANGE_CACHE_CONTROL)
         })
       }
 
@@ -657,16 +658,12 @@ async function handleOptimizationChange(req: Request): Promise<Response> {
       }
 
       return Response.json(selected, {
-        headers: {
-          'Cache-Control': CHANGE_CACHE_CONTROL
-        }
+        headers: getVercelCdnCacheHeaders(CHANGE_CACHE_CONTROL)
       })
     }
 
     return Response.json(optimizations, {
-      headers: {
-        'Cache-Control': CHANGE_CACHE_CONTROL
-      }
+      headers: getVercelCdnCacheHeaders(CHANGE_CACHE_CONTROL)
     })
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
@@ -735,9 +732,7 @@ async function handleOptimizationAlignment(req: Request): Promise<Response> {
     )
 
     return Response.json(events, {
-      headers: {
-        'Cache-Control': ALIGNMENT_CACHE_CONTROL
-      }
+      headers: getVercelCdnCacheHeaders(ALIGNMENT_CACHE_CONTROL)
     })
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
@@ -797,9 +792,7 @@ async function handleOptimizationVaultState(req: Request): Promise<Response> {
         unallocatedBps: state.unallocatedBps
       },
       {
-        headers: {
-          'Cache-Control': VAULT_STATE_CACHE_CONTROL
-        }
+        headers: getVercelCdnCacheHeaders(VAULT_STATE_CACHE_CONTROL)
       }
     )
   } catch (error) {
@@ -933,9 +926,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
         }))
       },
       {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-        }
+        headers: getVercelCdnCacheHeaders(HOLDINGS_HISTORY_CACHE_CONTROL)
       }
     )
   } catch (error) {
@@ -989,9 +980,7 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
     )
 
     return Response.json(activity, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
-      }
+      headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_CACHE_CONTROL)
     })
   } catch (error) {
     console.error('Error fetching holdings activity:', error)
@@ -1047,9 +1036,7 @@ async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
         }
       },
       {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900'
-        }
+        headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_FACETS_CACHE_CONTROL)
       }
     )
   } catch (error) {
@@ -1141,9 +1128,7 @@ async function handleHoldingsBreakdown(req: Request): Promise<Response> {
     )
 
     return Response.json(breakdown, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-      }
+      headers: getVercelCdnCacheHeaders(HOLDINGS_HISTORY_CACHE_CONTROL)
     })
   } catch (error) {
     console.error('Error fetching holdings breakdown:', error)
@@ -1264,9 +1249,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
     })
 
     return Response.json(history, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-      }
+      headers: getVercelCdnCacheHeaders(HOLDINGS_HISTORY_CACHE_CONTROL)
     })
   } catch (error) {
     await updateHoldingsProgress(progressId, {

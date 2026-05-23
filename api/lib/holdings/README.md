@@ -536,10 +536,11 @@ Server-side cache is optional. When `UPSTASH_REDIS_REST_URL_PORTFOLIO` or `UPSTA
    - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
    - `holdings:progress:<progressId>`: authoritative short-lived progress records keyed by caller-supplied progress ID for long history requests across Vercel function instances.
 2. HTTP cache:
-   - History, breakdown, and protocol-return history: `s-maxage=300, stale-while-revalidate=600`.
-   - Activity: `s-maxage=60, stale-while-revalidate=300`.
-   - Activity facets: `s-maxage=300, stale-while-revalidate=900`.
-   - Progress: `no-store`.
+   - Cacheable API responses put shared-cache policy in `Vercel-CDN-Cache-Control` and keep browser-facing `Cache-Control` at `public, max-age=0, must-revalidate`.
+   - History, breakdown, and protocol-return history CDN cache: `s-maxage=300, stale-while-revalidate=600`.
+   - Activity CDN cache: `s-maxage=60, stale-while-revalidate=300`.
+   - Activity facets CDN cache: `s-maxage=300, stale-while-revalidate=900`.
+   - Progress: `Cache-Control: no-store`.
 3. Client TanStack Query cache:
    - Portfolio history and protocol-return history hooks keep chart responses fresh for one hour.
    - Other frontend hooks configure their own durations.

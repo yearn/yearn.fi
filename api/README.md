@@ -68,14 +68,14 @@ The optimization routes expose the current DOA optimization payloads and the loc
 - `/api/optimization/change` reads optimization records from Upstash Redis keys under `doa:optimizations:*`. `vault=0x...` selects one vault, and `history=1` or `history=true` returns all records for that vault instead of the latest one.
 - `/api/optimization/alignment` requires `vault=0x...`, selects the matching optimization, resolves its source chain, and fetches aligned keeper `DebtUpdated` events from Envio. It needs `ENVIO_GRAPHQL_URL`; `ENVIO_PASSWORD` is sent as a bearer token when configured.
 - `/api/optimization/vault-state` accepts `POST` JSON shaped as `{ "vault": "0x...", "chainId": 1, "strategies": ["0x..."] }`, then reads live vault and strategy debt state from configured public RPC endpoints.
-- Cache headers: `change` uses `public, s-maxage=600, stale-while-revalidate=60`; `alignment` and `vault-state` use `public, s-maxage=60, stale-while-revalidate=30`.
+- CDN cache headers: `change` uses `Vercel-CDN-Cache-Control: public, s-maxage=600, stale-while-revalidate=60`; `alignment` and `vault-state` use `Vercel-CDN-Cache-Control: public, s-maxage=60, stale-while-revalidate=30`. Browser-facing `Cache-Control` stays `public, max-age=0, must-revalidate`.
 
 ## yvUSD APR Proxy
 
 `/api/yvusd/aprs` forwards query params to `YVUSD_APR_SERVICE_API`.
 
 - Default upstream: `https://yearn-yvusd-apr-service.vercel.app/api/aprs`.
-- Cache header: `public, s-maxage=30, stale-while-revalidate=120`.
+- CDN cache header: `Vercel-CDN-Cache-Control: public, s-maxage=30, stale-while-revalidate=120`. Browser-facing `Cache-Control` stays `public, max-age=0, must-revalidate`.
 
 ## Vault Metadata HTML
 
