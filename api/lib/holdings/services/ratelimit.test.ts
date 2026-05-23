@@ -1,48 +1,48 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const getHoldingsRedisClientMock = vi.fn()
-const isHoldingsStorageEnabledMock = vi.fn()
-const handleHoldingsRedisErrorMock = vi.fn()
+const checkVercelRateLimitMock = vi.fn()
 
-vi.mock('../storage/redis', () => ({
-  getHoldingsRedisClient: getHoldingsRedisClientMock,
-  isHoldingsStorageEnabled: isHoldingsStorageEnabledMock,
-  handleHoldingsRedisError: handleHoldingsRedisErrorMock
+vi.mock('@vercel/firewall', () => ({
+  checkRateLimit: checkVercelRateLimitMock
 }))
 
-describe('Redis rate limiting', () => {
+describe('Vercel Firewall rate limiting', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
-    isHoldingsStorageEnabledMock.mockReturnValue(true)
+    vi.unstubAllEnvs()
   })
 
-  it('sets a one-minute ttl on the first request in a window', async () => {
-    const incrMock = vi.fn().mockResolvedValue(1)
-    const expireMock = vi.fn().mockResolvedValue(1)
-    getHoldingsRedisClientMock.mockReturnValue({
-      incr: incrMock,
-      expire: expireMock,
-      ttl: vi.fn()
-    })
-
+  it('allows requests without checking Vercel Firewall outside Vercel', async () => {
     const { checkRateLimit } = await import('./ratelimit')
-    const result = await checkRateLimit('127.0.0.1')
+    const result = await checkRateLimit('127.0.0.1', { host: 'localhost:3001' })
 
     expect(result).toEqual({ allowed: true })
-    expect(expireMock).toHaveBeenCalledWith(expect.stringMatching(/^holdings:rate-limit:[a-f0-9]{64}$/), 60)
+    expect(checkVercelRateLimitMock).not.toHaveBeenCalled()
   })
 
-  it('returns retry-after from Redis ttl after the request limit is exceeded', async () => {
-    getHoldingsRedisClientMock.mockReturnValue({
-      incr: vi.fn().mockResolvedValue(11),
-      expire: vi.fn(),
-      ttl: vi.fn().mockResolvedValue(42)
-    })
+  it('checks Vercel Firewall with the client identifier as the rate limit key', async () => {
+    vi.stubEnv('VERCEL', '1')
+    vi.stubEnv('VERCEL_HOLDINGS_RATE_LIMIT_ID', 'test-holdings-limit')
+    checkVercelRateLimitMock.mockResolvedValue({ rateLimited: false })
 
     const { checkRateLimit } = await import('./ratelimit')
-    const result = await checkRateLimit('127.0.0.1')
+    const result = await checkRateLimit('127.0.0.1', { host: 'example.vercel.app', 'x-test': undefined })
 
-    expect(result).toEqual({ allowed: false, retryAfter: 42 })
+    expect(result).toEqual({ allowed: true })
+    expect(checkVercelRateLimitMock).toHaveBeenCalledWith('test-holdings-limit', {
+      headers: { host: 'example.vercel.app' },
+      rateLimitKey: '127.0.0.1'
+    })
+  })
+
+  it('returns a fixed retry-after when Vercel rate limits the request', async () => {
+    vi.stubEnv('VERCEL', '1')
+    checkVercelRateLimitMock.mockResolvedValue({ rateLimited: true })
+
+    const { checkRateLimit } = await import('./ratelimit')
+    const result = await checkRateLimit('127.0.0.1', { host: 'example.vercel.app' })
+
+    expect(result).toEqual({ allowed: false, retryAfter: 60 })
   })
 })

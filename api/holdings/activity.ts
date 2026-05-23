@@ -110,7 +110,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const clientId = getClientIdentifier(req)
-  const rateCheck = await checkRateLimit(clientId)
+  const rateCheck = await checkRateLimit(clientId, req.headers)
   if (!rateCheck.allowed) {
     res.setHeader('Retry-After', String(rateCheck.retryAfter))
     return res.status(429).json({ error: 'Too many requests', retryAfter: rateCheck.retryAfter })
