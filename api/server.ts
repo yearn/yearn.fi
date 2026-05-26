@@ -266,7 +266,7 @@ function parseHoldingsActivityLimit(value: string | null): number {
     return 10
   }
 
-  return Math.min(Math.max(parsed, 1), 50)
+  return Math.min(Math.max(parsed, 1), 200)
 }
 
 function parseHoldingsActivityOffset(value: string | null): number {

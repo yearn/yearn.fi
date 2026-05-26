@@ -180,6 +180,7 @@ type TNormalizedActivityFilters = {
 
 const MAX_FILTERED_ACTIVITY_TRANSACTIONS = 500
 const MAX_FILTERED_ACTIVITY_ATTEMPTS = 5
+const MIN_RECENT_ACTIVITY_EVENTS_PER_SOURCE = 200
 const DEFAULT_ACTIVITY_FILTERS: TNormalizedActivityFilters = {
   type: 'all',
   chainId: null,
@@ -836,7 +837,7 @@ async function loadRecentActivityWindow(
     userAddress,
     version,
     targetTransactionCount,
-    Math.max(targetTransactionCount * 4, 20),
+    Math.max(targetTransactionCount * 4, MIN_RECENT_ACTIVITY_EVENTS_PER_SOURCE),
     0,
     maxTimestamp
   )

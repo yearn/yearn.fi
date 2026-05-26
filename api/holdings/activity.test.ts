@@ -139,6 +139,48 @@ describe('holdings activity route', () => {
     })
   })
 
+  it('allows large initial activity pages up to 200 rows', async () => {
+    getHoldingsActivityMock.mockResolvedValue({
+      address: TEST_ADDRESS,
+      version: 'all',
+      limit: 200,
+      offset: 0,
+      pageInfo: {
+        hasMore: false,
+        nextOffset: null
+      },
+      entries: []
+    })
+
+    const { default: handler } = await import('./activity')
+    const req = {
+      method: 'GET',
+      query: {
+        address: TEST_ADDRESS,
+        limit: '200'
+      },
+      headers: {}
+    } as any
+    const res = createMockResponse()
+
+    await handler(req, res as any)
+
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(
+      TEST_ADDRESS,
+      'all',
+      200,
+      0,
+      {
+        type: 'all',
+        chainId: null,
+        startTimestamp: null,
+        endTimestamp: null
+      },
+      false
+    )
+    expect(res.statusCode).toBe(200)
+  })
+
   it('returns an empty collection when no indexed activity exists', async () => {
     getHoldingsActivityMock.mockResolvedValue({
       address: TEST_ADDRESS,

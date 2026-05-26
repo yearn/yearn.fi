@@ -707,7 +707,7 @@ describe('getHoldingsActivity', () => {
     const { getHoldingsActivity } = await import('./activity')
     const response = await getHoldingsActivity(USER_ADDRESS, 'all', 4)
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 20)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -1207,7 +1207,7 @@ describe('getHoldingsActivity', () => {
     const { getHoldingsActivity } = await import('./activity')
     const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 1)
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 20)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -1300,7 +1300,7 @@ describe('getHoldingsActivity', () => {
     const { getHoldingsActivity } = await import('./activity')
     const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, { type: 'withdraw' })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 80)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -1498,7 +1498,7 @@ describe('getHoldingsActivity', () => {
     const { getHoldingsActivity } = await import('./activity')
     const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, { chainId: 8453 })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 80)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200)
     expect(fetchUserEventsMock).not.toHaveBeenCalled()
     expect(fetchActivityEventsByTransactionHashesMock).toHaveBeenCalledWith(
       new Map([[8453, ['0xeae5d579a571e592719d0815674744238a49993e7a7322c29d81b88343ef1c7b']]]),
@@ -1598,7 +1598,7 @@ describe('getHoldingsActivity', () => {
       endTimestamp: 260
     })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 80, 260)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200, 260)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -1686,7 +1686,7 @@ describe('getHoldingsActivity', () => {
       endTimestamp: 260
     })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 80, 260)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200, 260)
     expect(response.entries.map((entry) => entry.txHash)).toEqual(['0xolder'])
     expect(response.pageInfo).toEqual({
       hasMore: false,
@@ -1773,8 +1773,8 @@ describe('getHoldingsActivity', () => {
       chainId: 8453
     })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(1, USER_ADDRESS, 'all', 80)
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(2, USER_ADDRESS, 'all', 160)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(1, USER_ADDRESS, 'all', 200)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(2, USER_ADDRESS, 'all', 200)
     expect(response.entries.map((entry) => [entry.chainId, entry.txHash])).toEqual([[8453, '0xbase']])
     expect(response.pageInfo).toEqual({
       hasMore: false,
