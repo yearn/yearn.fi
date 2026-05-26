@@ -20,11 +20,9 @@ import {
   type HoldingsHistoryDenomination,
   type HoldingsHistoryTimeframe,
   initializeHoldingsStorage,
-  isHoldingsStorageEnabled,
   type VaultVersion,
   validateConfig
 } from './lib/holdings'
-import { invalidateVaults, type VaultIdentifier } from './lib/holdings/services/cache'
 import {
   createHoldingsDebugContext,
   debugError,
@@ -134,7 +132,7 @@ async function handleYvUsdAprs(req: Request): Promise<Response> {
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-secret'
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 }
 
 function withCors(response: Response): Response {
@@ -222,25 +220,6 @@ function parseVaultFilters(url: URL): Array<{ chainId: number; vaultAddress: str
   }
 
   return [{ chainId: Number(chainId), vaultAddress: vault }]
-}
-
-interface InvalidateRequestBody {
-  vaults: Array<{ address: string; chainId: number }>
-}
-
-function validateInvalidateBody(body: unknown): body is InvalidateRequestBody {
-  if (!body || typeof body !== 'object') return false
-  const candidate = body as Record<string, unknown>
-  if (!Array.isArray(candidate.vaults) || candidate.vaults.length === 0) return false
-
-  for (const vault of candidate.vaults) {
-    if (!vault || typeof vault !== 'object') return false
-    const value = vault as Record<string, unknown>
-    if (typeof value.address !== 'string' || !isValidAddress(value.address)) return false
-    if (typeof value.chainId !== 'number' || !Number.isInteger(value.chainId)) return false
-  }
-
-  return true
 }
 
 function parseHoldingsEventFetchType(value: string | null): HoldingsEventFetchType {
@@ -1267,79 +1246,6 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
   }
 }
 
-async function handleInvalidateCache(req: Request): Promise<Response> {
-  if (req.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 })
-  }
-
-  const adminSecret = process.env.ADMIN_SECRET
-  if (!adminSecret) {
-    return Response.json({ error: 'Admin endpoint not configured' }, { status: 503 })
-  }
-
-  const providedSecret = req.headers.get('x-admin-secret')
-  if (providedSecret !== adminSecret) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!isHoldingsStorageEnabled()) {
-    return Response.json(
-      { error: 'Caching not enabled (UPSTASH_REDIS_REST_URL_PORTFOLIO/TOKEN_PORTFOLIO not configured)' },
-      { status: 503 }
-    )
-  }
-
-  let body: unknown
-  try {
-    body = await req.json()
-  } catch (_error) {
-    return Response.json(
-      {
-        error: 'Invalid request body',
-        expected: { vaults: [{ address: '0x...', chainId: 1 }] }
-      },
-      { status: 400 }
-    )
-  }
-
-  if (!validateInvalidateBody(body)) {
-    return Response.json(
-      {
-        error: 'Invalid request body',
-        expected: { vaults: [{ address: '0x...', chainId: 1 }] }
-      },
-      { status: 400 }
-    )
-  }
-
-  try {
-    await initializeHoldingsStorage()
-    if (!isHoldingsStorageEnabled()) {
-      return Response.json(
-        { error: 'Caching not enabled (UPSTASH_REDIS_REST_URL_PORTFOLIO/TOKEN_PORTFOLIO not configured)' },
-        { status: 503 }
-      )
-    }
-
-    const vaults: VaultIdentifier[] = body.vaults.map((vault) => ({
-      address: vault.address,
-      chainId: vault.chainId
-    }))
-
-    const invalidatedCount = await invalidateVaults(vaults)
-
-    return Response.json({
-      success: true,
-      invalidated: invalidatedCount,
-      vaults: vaults.map((vault) => `${vault.chainId}:${vault.address.toLowerCase()}`),
-      timestamp: new Date().toISOString()
-    })
-  } catch (error) {
-    console.error('[Admin] Invalidate cache error:', error)
-    return Response.json({ error: 'Failed to invalidate cache' }, { status: 500 })
-  }
-}
-
 async function main() {
   process.on('uncaughtException', (error) => {
     console.error('💥 Uncaught Exception:', error)
@@ -1400,10 +1306,6 @@ async function main() {
           url.pathname === '/api/holdings/pnl/simple-history'
         ) {
           return withCors(await handleHoldingsProtocolReturnHistory(req))
-        }
-
-        if (url.pathname === '/api/admin/invalidate-cache') {
-          return withCors(await handleInvalidateCache(req))
         }
 
         if (url.pathname === '/api/yvusd/aprs') {

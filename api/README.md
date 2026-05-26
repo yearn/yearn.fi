@@ -27,7 +27,6 @@ The local server adds CORS to all handled routes and includes dev-only Tenderly 
 | `/api/holdings/activity-facets` | `GET` | Vercel + local | Chain facets for holdings activity filters |
 | `/api/holdings/protocol-return/history` | `GET` | Vercel + local | Protocol-return history for vault exposure |
 | `/api/holdings/pnl/simple-history` | `GET` | Vercel + local | Compatibility alias for protocol-return history |
-| `/api/admin/invalidate-cache` | `POST` | Vercel + local | Lazy vault cache invalidation, admin-protected |
 | `/api/enso/status` | `GET` | Vercel + local | Returns whether `ENSO_API_KEY` is configured |
 | `/api/enso/balances` | `GET` | Vercel + local | Proxies Enso wallet balances |
 | `/api/enso/route` | `GET` | Vercel + local | Proxies Enso route quotes/transactions |
@@ -116,7 +115,6 @@ Required env for a configured chain:
 | `YEARN_PRICES_API_KEY` | holdings | Bearer token for yearn-prices |
 | `API_KEY_PORTFOLIO` | holdings | Fallback bearer token for yearn-prices |
 | `DEFILLAMA_API_KEY` | holdings | Enables DefiLlama Pro |
-| `ADMIN_SECRET` | holdings admin | Required for `/api/admin/invalidate-cache` |
 | `UPSTASH_REDIS_REST_URL_PORTFOLIO` | holdings | Upstash Redis REST URL for holdings cache/progress/rate limits |
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | holdings | Upstash Redis REST token for holdings storage |
 | `UPSTASH_REDIS_REST_URL` | optimization | Upstash Redis REST URL for optimization payloads |
