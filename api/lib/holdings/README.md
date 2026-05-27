@@ -21,7 +21,8 @@ Holdings services
   ├─ Envio GraphQL: deposits, withdrawals, transfers
   ├─ Kong: vault metadata and historical PPS
   ├─ yearn-prices or DefiLlama: historical token prices
-  └─ Upstash Redis: optional server-side cache, progress, rate limits, invalidations
+  ├─ Upstash Redis: optional server-side cache, progress, invalidations
+  └─ Vercel Firewall: public route rate limits
 ```
 
 In production, files under `api/` run as Vercel functions. In local development, `api/server.ts` exposes the same holdings routes on the Bun API server at `localhost:3001` and adds local-only debug and refresh controls.
@@ -66,7 +67,7 @@ The API internally values each day at `23:59:59 UTC`.
 | `pnlSimple.ts` | Local | Protocol-return exposure history without FIFO cost-basis accounting |
 | `cache.ts` | Upstash Redis | Daily totals and lazy vault invalidation |
 | `progress.ts` | Upstash Redis | Short-lived progress records and logs for long history requests |
-| `ratelimit.ts` | Upstash Redis | Simple per-client request windows for public holdings routes |
+| `ratelimit.ts` | Vercel Firewall | Programmatic per-client rate limits for public holdings routes |
 
 ## Event Semantics
 
@@ -117,7 +118,7 @@ DefiLlama behavior:
 
 ## Endpoints
 
-Public holdings data routes support CORS, `GET`, and `OPTIONS`. When database caching is enabled, history, breakdown, activity, activity facets, and protocol-return history rate-limit by forwarded IP, falling back to a simple header fingerprint. `/api/holdings/progress` is read-only progress polling and does not run the rate limiter.
+Public holdings data routes support CORS, `GET`, and `OPTIONS`. On Vercel, history, breakdown, activity, activity facets, and protocol-return history use the Vercel Firewall Rate Limiting SDK keyed by forwarded IP, falling back to a simple header fingerprint. `/api/holdings/progress` is read-only progress polling and does not run the rate limiter.
 
 ### `GET /api/holdings/history`
 
@@ -490,7 +491,8 @@ Unknown chain IDs fail historical price resolution instead of falling back to Et
 |----------|----------|---------|-------------|
 | `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
 | `ENVIO_PASSWORD` | No | `''` | Envio Hasura admin secret; skipped when empty or `testing` |
-| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | No | `null` | Upstash Redis REST URL for holdings cache, progress, rate limits, and invalidations |
+| `VERCEL_HOLDINGS_RATE_LIMIT_ID` | No | `holdings-public-api` | Vercel Firewall rate limit ID for public holdings routes |
+| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | No | `null` | Upstash Redis REST URL for holdings cache, progress, and invalidations |
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | No | `null` | Upstash Redis REST token for holdings storage |
 | `VITE_RPC_URI_FOR_<id>` | No | `null` | Optional chain RPC URL for activity receipt and transaction enrichment |
 | `HOLDINGS_PRICE_PROVIDER` | No | `auto` | `auto`, `yearn-prices`, or `defillama` |
@@ -532,16 +534,19 @@ Server-side cache is optional. When `UPSTASH_REDIS_REST_URL_PORTFOLIO` or `UPSTA
 
 1. Upstash Redis:
    - `holdings:totals:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
-   - `holdings:rate-limit:<clientHash>`: simple per-client request windows with a 60-second TTL.
    - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
    - `holdings:progress:<progressId>`: authoritative short-lived progress records keyed by caller-supplied progress ID for long history requests across Vercel function instances.
-2. HTTP cache:
+2. Vercel Firewall:
+   - `VERCEL_HOLDINGS_RATE_LIMIT_ID` identifies the dashboard Firewall rule used by `@vercel/firewall`.
+   - The default rule ID is `holdings-public-api`.
+   - Configure the dashboard rule with the desired window and request count, currently intended to match the old `10` requests per minute limit.
+3. HTTP cache:
    - Cacheable API responses put shared-cache policy in `Vercel-CDN-Cache-Control` and keep browser-facing `Cache-Control` at `public, max-age=0, must-revalidate`.
    - History, breakdown, and protocol-return history CDN cache: `s-maxage=300, stale-while-revalidate=600`.
    - Activity CDN cache: `s-maxage=60, stale-while-revalidate=300`.
    - Activity facets CDN cache: `s-maxage=300, stale-while-revalidate=900`.
    - Progress: `Cache-Control: no-store`.
-3. Client TanStack Query cache:
+4. Client TanStack Query cache:
    - Portfolio history and protocol-return history hooks keep chart responses fresh for one hour.
    - Other frontend hooks configure their own durations.
 
@@ -562,7 +567,9 @@ Cache behavior:
 
 - Progress writes only when Redis persistence is enabled and the supplied `progressId` matches `[a-zA-Z0-9:_-]{1,160}`.
 - Progress status is `running`, `complete`, or `error`; progress is clamped to `0..100`, logs are capped to the latest `20` entries, and rows expire after `10 minutes`.
-- Redis-backed rate limiting allows `10` requests per minute per client identifier. If Redis access fails, the rate limiter allows the request and logs the failure.
+- Vercel Firewall rate limiting only runs when `VERCEL=1`. Local development allows requests without calling the Firewall SDK.
+- Configure a Vercel Firewall rule with condition `@vercel/firewall` and the rate limit ID from `VERCEL_HOLDINGS_RATE_LIMIT_ID` or the default `holdings-public-api`.
+- The intended production limit is `10` requests per minute per client identifier. If the Firewall SDK check fails, the rate limiter allows the request and logs the failure.
 
 ### Token Prices
 
@@ -575,7 +582,6 @@ No schema migration is required. Redis keys are created lazily:
 | Key | Type | TTL | Purpose |
 |-----|------|-----|---------|
 | `holdings:totals:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
-| `holdings:rate-limit:<clientHash>` | String counter | 60 seconds | Public route rate limiting. |
 | `holdings:vault-invalidated:<chainId>:<vaultAddress>` | String timestamp | None | Lazy invalidation marker for totals cache. |
 | `holdings:progress:<progressId>` | String JSON record | 10 minutes | Progress polling state for long requests. |
 
