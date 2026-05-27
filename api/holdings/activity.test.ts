@@ -139,11 +139,11 @@ describe('holdings activity route', () => {
     })
   })
 
-  it('allows large initial activity pages up to 200 rows', async () => {
+  it('allows large initial activity pages up to 500 rows', async () => {
     getHoldingsActivityMock.mockResolvedValue({
       address: TEST_ADDRESS,
       version: 'all',
-      limit: 200,
+      limit: 500,
       offset: 0,
       pageInfo: {
         hasMore: false,
@@ -157,7 +157,7 @@ describe('holdings activity route', () => {
       method: 'GET',
       query: {
         address: TEST_ADDRESS,
-        limit: '200'
+        limit: '500'
       },
       headers: {}
     } as any
@@ -168,7 +168,7 @@ describe('holdings activity route', () => {
     expect(getHoldingsActivityMock).toHaveBeenCalledWith(
       TEST_ADDRESS,
       'all',
-      200,
+      500,
       0,
       {
         type: 'all',

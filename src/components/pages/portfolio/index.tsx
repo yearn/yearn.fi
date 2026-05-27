@@ -167,7 +167,7 @@ const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: s
   { key: 'transfer', label: 'Transfer' },
   { key: 'swap', label: 'Swap' }
 ]
-const PORTFOLIO_ACTIVITY_PAGE_SIZE = 200
+const PORTFOLIO_ACTIVITY_PAGE_SIZE = 500
 const ACTIVITY_CALENDAR_DAY_LABELS = [
   { key: 'sunday', label: 'S' },
   { key: 'monday', label: 'M' },

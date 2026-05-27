@@ -38,7 +38,7 @@ function parseLimit(value: string | string[] | undefined): number {
     return 10
   }
 
-  return Math.min(Math.max(parsedValue, 1), 200)
+  return Math.min(Math.max(parsedValue, 1), 500)
 }
 
 function parseOffset(value: string | string[] | undefined): number {
