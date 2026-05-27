@@ -28,6 +28,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ogBaseUrl = 'https://og.yearn.fi'
     const ogImageUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainId}/${address}`
     const canonicalUrl = `https://yearn.fi/vaults/${chainId}/${address}`
+    const markdownUrl = `https://yearn.fi/api/vault/markdown?chainId=${chainId}&address=${address}`
+    const snapshotUrl = `https://kong.yearn.fi/api/rest/snapshot/${chainId}/${address}`
 
     const title = 'Yearn Vault'
     const description = "Earn yield on your crypto with Yearn's automated vault strategies"
@@ -50,6 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       name: title,
       description,
       url: canonicalUrl,
+      sameAs: [snapshotUrl, markdownUrl],
       provider: { '@type': 'Organization', name: 'Yearn', url: 'https://yearn.fi' }
     })
 
@@ -74,6 +77,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     <!-- Additional SEO -->
     <link rel="canonical" href="${canonicalUrl}" />
     <link rel="sitemap" type="application/xml" title="Sitemap" href="https://yearn.fi/sitemap.xml" />
+    <link rel="alternate" type="text/markdown" title="Vault markdown" href="${markdownUrl}" />
+    <link rel="alternate" type="application/json" title="Canonical Kong vault snapshot" href="${snapshotUrl}" />
+    <meta name="yearn:chainId" content="${chainId}" />
+    <meta name="yearn:vaultAddress" content="${address}" />
+    <meta name="yearn:markdown" content="${markdownUrl}" />
+    <meta name="yearn:canonicalData" content="${snapshotUrl}" />
 
     <!-- JSON-LD structured data -->
     <script type="application/ld+json">${organizationSchema}</script>

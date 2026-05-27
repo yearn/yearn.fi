@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildVaultsMarkdown, getVaultMarkdownListKind, type TVaultListEntry } from './aio'
+import {
+  buildVaultMarkdown,
+  buildVaultsMarkdown,
+  formatFeePct,
+  getVaultMarkdownListKind,
+  type TVaultListEntry
+} from './aio'
 
 function address(seed: number): string {
   return `0x${seed.toString(16).padStart(40, '0')}`
@@ -112,6 +118,29 @@ describe('buildVaultsMarkdown', () => {
     expect(markdown).toContain('total_vaults: 1')
     expect(markdown).toContain('[Base LP Token]')
     expect(markdown).not.toContain('Ethereum Single Asset')
+  })
+})
+
+describe('buildVaultMarkdown', () => {
+  it('formats decimal and basis-point fee values as percentages', () => {
+    expect(formatFeePct(0.1)).toBe('10.00%')
+    expect(formatFeePct(1_000)).toBe('10.00%')
+
+    const markdown = buildVaultMarkdown(
+      {
+        name: 'USDC Vault',
+        symbol: 'yvUSDC',
+        asset: { name: 'USD Coin', symbol: 'USDC', address: address(10) },
+        tvl: { close: 1_000_000 },
+        apy: { net: 0.03 },
+        fees: { performanceFee: 1_000, managementFee: 0 }
+      },
+      1,
+      address(11)
+    )
+
+    expect(markdown).toContain('| Performance | 10.00% |')
+    expect(markdown).toContain('| Management | 0.00% |')
   })
 })
 

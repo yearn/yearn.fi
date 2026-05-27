@@ -25,7 +25,7 @@ These markdown endpoints are generated live from Kong REST for agent and crawler
 
 - [All Active Vaults (Markdown)](https://yearn.fi/api/vaults/markdown): Kong-derived summary of public active Yearn Single Asset and LP Token vaults
 - [All Active Vaults Filtered by Chain](https://yearn.fi/api/vaults/markdown?chainId=1): Pass a numeric `chainId` to filter by chain
-- [Example Single Vault (Markdown)](https://yearn.fi/api/vault/markdown?chainId=8453&address=0x4B5c90DC6Bc08A10a24487726e614e9d148362E1): Kong-derived detail summary; replace `chainId` and `address`
+- [Example Single Vault (Markdown)](https://yearn.fi/api/vault/markdown?chainId=1&address=0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204): Kong-derived detail summary; replace `chainId` and `address`
 
 ## Vault Data Semantics
 

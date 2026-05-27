@@ -107,6 +107,12 @@ export function formatPct(value: number | null | undefined): string {
   return `${(value * 100).toFixed(2)}%`
 }
 
+export function formatFeePct(value: number | null | undefined): string {
+  if (value == null) return 'N/A'
+  const normalized = Math.abs(value) > 1 ? value / 10_000 : value
+  return formatPct(normalized)
+}
+
 export function resolveVaultApy(vault: TVaultListEntry): number | null {
   const values = [
     vault.performance?.oracle?.netAPY,
@@ -253,8 +259,8 @@ export function buildVaultMarkdown(snapshot: TVaultSnapshot, chainId: number, ad
   const weeklyNet = formatPct(snapshot.apy?.weeklyNet)
   const monthlyNet = formatPct(snapshot.apy?.monthlyNet)
   const inceptionNet = formatPct(snapshot.apy?.inceptionNet)
-  const perfFee = formatPct(snapshot.fees?.performanceFee)
-  const mgmtFee = formatPct(snapshot.fees?.managementFee)
+  const perfFee = formatFeePct(snapshot.fees?.performanceFee)
+  const mgmtFee = formatFeePct(snapshot.fees?.managementFee)
   const riskLevel = snapshot.risk?.riskLevel ?? 'N/A'
   const description = snapshot.meta?.description ?? `Automated yield vault for ${tokenName} (${token}) on ${chainName}.`
   const vaultUrl = `${SITE_URL}/vaults/${chainId}/${address}`

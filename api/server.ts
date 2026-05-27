@@ -480,13 +480,13 @@ async function handleTenderlyFund(req: Request): Promise<Response> {
 }
 
 async function handleSitemap(req: Request): Promise<Response> {
-  if (req.method !== 'GET') {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 })
   }
   try {
     const upstream = await fetch(KONG_VAULT_LIST_URL, { headers: { Accept: 'application/json' } })
     const vaults: TVaultListEntry[] = upstream.ok ? ((await upstream.json()) as TVaultListEntry[]) : []
-    return new Response(buildSitemap(vaults), {
+    return new Response(req.method === 'HEAD' ? null : buildSitemap(vaults), {
       headers: {
         'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600'
@@ -505,7 +505,7 @@ async function handleSitemap(req: Request): Promise<Response> {
 }
 
 async function handleVaultsMarkdown(req: Request): Promise<Response> {
-  if (req.method !== 'GET') {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 })
   }
   const chainIdParam = new URL(req.url).searchParams.get('chainId')
@@ -514,7 +514,7 @@ async function handleVaultsMarkdown(req: Request): Promise<Response> {
     const upstream = await fetch(KONG_VAULT_LIST_URL, { headers: { Accept: 'application/json' } })
     if (!upstream.ok) return Response.json({ error: 'Failed to fetch vault list from upstream' }, { status: 502 })
     const vaults = (await upstream.json()) as TVaultListEntry[]
-    return new Response(buildVaultsMarkdown(vaults, chainId), {
+    return new Response(req.method === 'HEAD' ? null : buildVaultsMarkdown(vaults, chainId), {
       headers: {
         'Content-Type': 'text/markdown; charset=utf-8',
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
@@ -527,7 +527,7 @@ async function handleVaultsMarkdown(req: Request): Promise<Response> {
 }
 
 async function handleVaultMarkdown(req: Request): Promise<Response> {
-  if (req.method !== 'GET') {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 })
   }
   const params = new URL(req.url).searchParams
@@ -547,7 +547,7 @@ async function handleVaultMarkdown(req: Request): Promise<Response> {
       )
     }
     const snapshot = (await upstream.json()) as TVaultSnapshot
-    return new Response(buildVaultMarkdown(snapshot, Number(chainId), address), {
+    return new Response(req.method === 'HEAD' ? null : buildVaultMarkdown(snapshot, Number(chainId), address), {
       headers: {
         'Content-Type': 'text/markdown; charset=utf-8',
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
