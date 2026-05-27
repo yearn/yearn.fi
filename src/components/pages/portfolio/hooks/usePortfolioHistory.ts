@@ -1,5 +1,6 @@
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useFetch } from '@shared/hooks/useFetch'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { useMemo } from 'react'
 import type {
   TPortfolioHistoryChartData,
@@ -10,6 +11,7 @@ import type {
 } from '../types/api'
 import { portfolioHistorySimpleResponseSchema } from '../types/api'
 import { upsertLivePortfolioBalancePoint } from './usePortfolioHistory.helpers'
+import { usePortfolioHistoryLoadTracking } from './usePortfolioHistoryLoadTracking'
 import { createPortfolioHistoryProgressId, usePortfolioHistoryProgress } from './usePortfolioHistoryProgress'
 
 const PORTFOLIO_HISTORY_CACHE_DURATION = 60 * 60 * 1000
@@ -76,6 +78,16 @@ export function usePortfolioHistory(
   const isEmpty = !isLoadingState && Boolean(address) && (errorStatus === 404 || Boolean(data && data.length === 0))
   const visibleError = isEmpty ? null : error
   const progress = usePortfolioHistoryProgress(progressId, isLoadingState)
+  usePortfolioHistoryLoadTracking({
+    eventName: PLAUSIBLE_EVENTS.PORTFOLIO_BALANCE_HISTORY_LOAD,
+    loadKey: endpoint,
+    timeframe,
+    denomination,
+    isLoading: isLoadingState,
+    isEmpty,
+    error,
+    pointCount: rawData?.dataPoints.length
+  })
 
   return {
     data,
