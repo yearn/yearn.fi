@@ -103,7 +103,7 @@ yearn-prices behavior:
 - API key is sent as `Authorization: Bearer <key>`.
 - `YEARN_PRICES_API_KEY` has priority; `API_KEY_PORTFOLIO` is the fallback.
 - Timestamps are normalized to UTC day end before the API request.
-- Contiguous daily histories up to `366` days use `/api/prices/rangeHistorical`.
+- Contiguous daily histories use `/api/prices/rangeHistorical`, split into `183`-day range windows.
 - Sparse or single-day lookups use `/api/prices/batchHistorical`.
 - Returned UTC day-end prices are materialized back onto the originally requested timestamps for the response map.
 - Prices are not read from or written to the local database.
