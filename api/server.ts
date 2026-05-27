@@ -31,7 +31,7 @@ import {
   isHoldingsDebugRequested,
   withHoldingsDebugContext
 } from './lib/holdings/services/debug'
-import { fetchRecentAddressScopedActivityEvents } from './lib/holdings/services/graphql'
+import { fetchAddressActivityChainIdsByExistence } from './lib/holdings/services/graphql'
 import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
@@ -308,18 +308,6 @@ function parseHoldingsActivityTimestamp(value: string | null): number | null {
 
 function parseHoldingsActivityBoolean(value: string | null): boolean {
   return value === 'true' || value === '1'
-}
-
-function parsePositiveIntegerParam(value: string | null, fallback: number, max: number): number {
-  const parsed = Number(value)
-
-  return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, max) : fallback
-}
-
-function parseNonNegativeIntegerParam(value: string | null): number {
-  const parsed = Number(value)
-
-  return Number.isInteger(parsed) && parsed >= 0 ? parsed : 0
 }
 
 function parseUtcDateParam(value: string | null): number | null {
@@ -1005,8 +993,6 @@ async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
   const versionParam = url.searchParams.get('version')
-  const limitPerSource = parsePositiveIntegerParam(url.searchParams.get('limitPerSource'), 250, 1000)
-  const offsetPerSource = parseNonNegativeIntegerParam(url.searchParams.get('offsetPerSource'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -1019,22 +1005,7 @@ async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const events = await fetchRecentAddressScopedActivityEvents(
-      address,
-      version,
-      limitPerSource,
-      undefined,
-      offsetPerSource
-    )
-    const hasMore =
-      events.hasMoreDeposits || events.hasMoreWithdrawals || events.hasMoreTransfersIn || events.hasMoreTransfersOut
-    const chainIds = Array.from(
-      new Set(
-        [...events.deposits, ...events.withdrawals, ...events.transfersIn, ...events.transfersOut].map(
-          (event) => event.chainId
-        )
-      )
-    ).sort((firstChainId, secondChainId) => firstChainId - secondChainId)
+    const chainIds = await fetchAddressActivityChainIdsByExistence(address, version)
 
     return Response.json(
       {
@@ -1042,8 +1013,8 @@ async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
         version,
         facets: { chainIds },
         pageInfo: {
-          hasMore,
-          nextOffsetPerSource: hasMore ? offsetPerSource + limitPerSource : null
+          hasMore: false,
+          nextOffsetPerSource: null
         }
       },
       {

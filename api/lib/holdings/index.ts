@@ -23,6 +23,7 @@ export {
 } from './services/aggregator'
 export { clearUserCache } from './services/cache'
 export {
+  fetchAddressActivityChainIdsByExistence,
   fetchRecentAddressScopedActivityEvents,
   fetchUserEvents,
   type HoldingsEventFetchType,
