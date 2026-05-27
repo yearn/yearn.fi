@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { setVercelCdnCacheHeaders } from '../lib/cacheHeaders'
 import { OPTIMIZATION_GET_CORS_HEADERS, setCorsHeaders } from './_lib/cors'
 import {
   findVaultOptimization,
@@ -43,7 +44,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(404).json({ error: `Vault not found in optimization payload: ${requestedVault}` })
         }
 
-        return res.status(200).setHeader('Cache-Control', CACHE_CONTROL).json(selectedHistory)
+        setVercelCdnCacheHeaders(res, CACHE_CONTROL)
+        return res.status(200).json(selectedHistory)
       }
 
       const selected = findVaultOptimization(optimizations, requestedVault)
@@ -51,10 +53,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ error: `Vault not found in optimization payload: ${requestedVault}` })
       }
 
-      return res.status(200).setHeader('Cache-Control', CACHE_CONTROL).json(selected)
+      setVercelCdnCacheHeaders(res, CACHE_CONTROL)
+      return res.status(200).json(selected)
     }
 
-    return res.status(200).setHeader('Cache-Control', CACHE_CONTROL).json(optimizations)
+    setVercelCdnCacheHeaders(res, CACHE_CONTROL)
+    return res.status(200).json(optimizations)
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
       return res.status(500).json({

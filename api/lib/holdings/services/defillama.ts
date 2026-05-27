@@ -35,6 +35,7 @@ const DEFAULT_YEARN_PRICES_MAX_REQUEST_URL_LENGTH = 8_000
 const DEFAULT_YEARN_PRICES_BATCH_TIMESTAMP_SIZE = 45
 const DEFAULT_YEARN_PRICES_BATCH_MAX_PRICE_POINTS = 150
 const YEARN_PRICES_MAX_RANGE_DAYS = 366
+const YEARN_PRICES_RANGE_WINDOW_DAYS = 183
 const MAX_REQUESTED_PRICE_DISTANCE_SECONDS = 60 * 60
 const MAX_DAILY_PRICE_DISTANCE_SECONDS = 60 * 60 * 24
 const SPLITTABLE_GET_STATUS_CODES = new Set([414, 431, 505])
@@ -80,7 +81,12 @@ type THistoricalPriceResult = Map<string, Map<number, number>> & {
 
 export function getChainPrefix(chainId: number): string {
   const chain = SUPPORTED_CHAINS.find((c) => c.id === chainId)
-  return chain?.defillamaPrefix || 'ethereum'
+
+  if (!chain) {
+    throw new Error(`Unsupported holdings price chain ID: ${chainId}`)
+  }
+
+  return chain.defillamaPrefix
 }
 
 function normalizeToUtcDayEnd(timestamp: number): number {
@@ -98,15 +104,23 @@ function getContiguousUtcDayEndRange(timestamps: number[]): [number, number] | n
     return null
   }
 
-  const isContiguous = dayEndTimestamps.every((timestamp, index) => {
+  return isContiguousUtcDayEndTimestamps(dayEndTimestamps)
+    ? [dayEndTimestamps[0]!, dayEndTimestamps[dayEndTimestamps.length - 1]!]
+    : null
+}
+
+function isContiguousUtcDayEndTimestamps(timestamps: number[]): boolean {
+  return timestamps.every((timestamp, index) => {
     if (index === 0) {
       return true
     }
 
-    return timestamp - dayEndTimestamps[index - 1]! === 86_400
+    return timestamp - timestamps[index - 1]! === 86_400
   })
+}
 
-  return isContiguous ? [dayEndTimestamps[0]!, dayEndTimestamps[dayEndTimestamps.length - 1]!] : null
+function areNumberArraysEqual(left: number[], right: number[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index])
 }
 
 function shouldUseYearnPricesRangeRequest(coins: TCoinRequest[]): boolean {
@@ -114,6 +128,25 @@ function shouldUseYearnPricesRangeRequest(coins: TCoinRequest[]): boolean {
     coins.some((coin) => getNormalizedUtcDayEndTimestamps(coin.timestamps).length > 1) &&
     coins.every((coin) => getContiguousUtcDayEndRange(coin.timestamps) !== null)
   )
+}
+
+function getYearnPricesSharedRangeTimestampGroups(coins: TCoinRequest[]): number[][] | null {
+  if (coins.length === 0) {
+    return null
+  }
+
+  const normalizedTimestampsByCoin = coins.map((coin) => getNormalizedUtcDayEndTimestamps(coin.timestamps))
+  const firstTimestamps = normalizedTimestampsByCoin[0] ?? []
+
+  if (firstTimestamps.length <= 1 || !isContiguousUtcDayEndTimestamps(firstTimestamps)) {
+    return null
+  }
+
+  const allTokensShareRange = normalizedTimestampsByCoin.every((timestamps) =>
+    areNumberArraysEqual(timestamps, firstTimestamps)
+  )
+
+  return allTokensShareRange ? chunkItems(firstTimestamps, YEARN_PRICES_RANGE_WINDOW_DAYS) : null
 }
 
 function normalizeRequestedPriceProvider(value: string | undefined): 'auto' | THistoricalPriceProvider {
@@ -847,16 +880,27 @@ export async function fetchHistoricalPricesForTokenTimestamps(
 
   const fetchStats = { successfulBatches: 0, failedBatches: 0 }
   const fetchPriceGroup = async (coinsToFetch: TCoinRequest[]): Promise<void> => {
-    const shouldUseRangeRequests = tuning.provider === 'yearn-prices' && shouldUseYearnPricesRangeRequest(coinsToFetch)
+    const rangeTimestampGroups =
+      tuning.provider === 'yearn-prices' ? getYearnPricesSharedRangeTimestampGroups(coinsToFetch) : null
+    const shouldUseRangeRequests = rangeTimestampGroups !== null || shouldUseYearnPricesRangeRequest(coinsToFetch)
     const effectiveTuning = shouldUseRangeRequests
       ? {
           ...tuning,
-          timestampBatchSize: YEARN_PRICES_MAX_RANGE_DAYS,
-          maxTimestampsPerTokenPerBatch: YEARN_PRICES_MAX_RANGE_DAYS,
-          maxPricePointsPerBatch: tuning.maxTokensPerBatch * YEARN_PRICES_MAX_RANGE_DAYS
+          timestampBatchSize: YEARN_PRICES_RANGE_WINDOW_DAYS,
+          maxTimestampsPerTokenPerBatch: YEARN_PRICES_RANGE_WINDOW_DAYS,
+          maxPricePointsPerBatch: tuning.maxTokensPerBatch * YEARN_PRICES_RANGE_WINDOW_DAYS
         }
       : tuning
-    const tokenRequests = buildTokenRequests(coinsToFetch, effectiveTuning.timestampBatchSize)
+    const tokenRequests =
+      rangeTimestampGroups === null
+        ? buildTokenRequests(coinsToFetch, effectiveTuning.timestampBatchSize)
+        : rangeTimestampGroups.flatMap((timestampGroup) =>
+            coinsToFetch.map((coin) => ({
+              chain: coin.chain,
+              address: coin.address,
+              timestamps: timestampGroup
+            }))
+          )
     const batches = buildRequestBatches(tokenRequests, effectiveTuning)
     const batchGroups = chunkItems(batches, effectiveTuning.parallelRequests)
     const allRequestedTimestamps = [...new Set(coinsToFetch.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
@@ -875,7 +919,8 @@ export async function fetchHistoricalPricesForTokenTimestamps(
       maxTimestampsPerTokenPerBatch: effectiveTuning.maxTimestampsPerTokenPerBatch,
       maxRequestUrlLength: effectiveTuning.maxRequestUrlLength,
       useProApi: effectiveTuning.useProApi,
-      useRangeRequests: shouldUseRangeRequests
+      useRangeRequests: shouldUseRangeRequests,
+      rangeWindows: rangeTimestampGroups?.length ?? null
     })
 
     await batchGroups.reduce<Promise<void>>(async (previousGroupPromise, batchGroup, groupIndex) => {

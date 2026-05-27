@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { setVercelCdnCacheHeaders } from '../lib/cacheHeaders'
 import { getVaultDecimals } from './_lib/assetLogos'
 import { OPTIMIZATION_GET_CORS_HEADERS, setCorsHeaders } from './_lib/cors'
 import { fetchAlignedEvents } from './_lib/envio'
@@ -75,7 +76,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       decimals
     )
 
-    return res.status(200).setHeader('Cache-Control', CACHE_CONTROL).json(events)
+    setVercelCdnCacheHeaders(res, CACHE_CONTROL)
+    return res.status(200).json(events)
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
       return res.status(500).json({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE })

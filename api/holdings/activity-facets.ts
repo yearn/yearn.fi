@@ -1,6 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { setVercelCdnCacheHeaders } from '../lib/cacheHeaders'
 import type { VaultVersion } from '../lib/holdings'
 import { checkRateLimit, ensureHoldingsStorageInitialized } from '../lib/holdings'
+
+const HOLDINGS_ACTIVITY_FACETS_CDN_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=900'
 
 function simpleHash(str: string): string {
   const hash = Array.from(str).reduce((currentHash, char) => {
@@ -116,7 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       )
     ).sort((firstChainId, secondChainId) => firstChainId - secondChainId)
 
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900')
+    setVercelCdnCacheHeaders(res, HOLDINGS_ACTIVITY_FACETS_CDN_CACHE_CONTROL)
     return res.status(200).json({
       address: address.toLowerCase(),
       version,

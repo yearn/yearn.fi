@@ -6,6 +6,7 @@ import type {
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
 import { ENSO_BALANCES_CACHE_CONTROL } from './enso/cache'
+import { getVercelCdnCacheHeaders } from './lib/cacheHeaders'
 import {
   clearUserCache,
   getHistoricalHoldingsChart,
@@ -19,11 +20,9 @@ import {
   type HoldingsHistoryDenomination,
   type HoldingsHistoryTimeframe,
   initializeHoldingsStorage,
-  isHoldingsStorageEnabled,
   type VaultVersion,
   validateConfig
 } from './lib/holdings'
-import { invalidateVaults, type VaultIdentifier } from './lib/holdings/services/cache'
 import {
   createHoldingsDebugContext,
   debugError,
@@ -59,6 +58,7 @@ const DEFAULT_API_PORT = 3001
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
+const YVUSD_APR_CDN_CACHE_CONTROL = 'public, s-maxage=30, stale-while-revalidate=120'
 
 function isHistoryQueryEnabled(historyParam: string | null): boolean {
   return historyParam === '1' || historyParam === 'true'
@@ -121,9 +121,7 @@ async function handleYvUsdAprs(req: Request): Promise<Response> {
 
     const data = await response.json()
     return Response.json(data, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120'
-      }
+      headers: getVercelCdnCacheHeaders(YVUSD_APR_CDN_CACHE_CONTROL)
     })
   } catch (error) {
     console.error('Error proxying yvUSD APR request:', error)
@@ -134,7 +132,7 @@ async function handleYvUsdAprs(req: Request): Promise<Response> {
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-secret'
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 }
 
 function withCors(response: Response): Response {
@@ -222,25 +220,6 @@ function parseVaultFilters(url: URL): Array<{ chainId: number; vaultAddress: str
   }
 
   return [{ chainId: Number(chainId), vaultAddress: vault }]
-}
-
-interface InvalidateRequestBody {
-  vaults: Array<{ address: string; chainId: number }>
-}
-
-function validateInvalidateBody(body: unknown): body is InvalidateRequestBody {
-  if (!body || typeof body !== 'object') return false
-  const candidate = body as Record<string, unknown>
-  if (!Array.isArray(candidate.vaults) || candidate.vaults.length === 0) return false
-
-  for (const vault of candidate.vaults) {
-    if (!vault || typeof vault !== 'object') return false
-    const value = vault as Record<string, unknown>
-    if (typeof value.address !== 'string' || !isValidAddress(value.address)) return false
-    if (typeof value.chainId !== 'number' || !Number.isInteger(value.chainId)) return false
-  }
-
-  return true
 }
 
 function parseHoldingsEventFetchType(value: string | null): HoldingsEventFetchType {
@@ -621,6 +600,9 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
 const CHANGE_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
 const ALIGNMENT_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 const VAULT_STATE_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const HOLDINGS_HISTORY_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600'
+const HOLDINGS_ACTIVITY_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=300'
+const HOLDINGS_ACTIVITY_FACETS_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=900'
 
 async function handleOptimizationChange(req: Request): Promise<Response> {
   if (req.method !== 'GET') {
@@ -645,9 +627,7 @@ async function handleOptimizationChange(req: Request): Promise<Response> {
         }
 
         return Response.json(selectedHistory, {
-          headers: {
-            'Cache-Control': CHANGE_CACHE_CONTROL
-          }
+          headers: getVercelCdnCacheHeaders(CHANGE_CACHE_CONTROL)
         })
       }
 
@@ -657,16 +637,12 @@ async function handleOptimizationChange(req: Request): Promise<Response> {
       }
 
       return Response.json(selected, {
-        headers: {
-          'Cache-Control': CHANGE_CACHE_CONTROL
-        }
+        headers: getVercelCdnCacheHeaders(CHANGE_CACHE_CONTROL)
       })
     }
 
     return Response.json(optimizations, {
-      headers: {
-        'Cache-Control': CHANGE_CACHE_CONTROL
-      }
+      headers: getVercelCdnCacheHeaders(CHANGE_CACHE_CONTROL)
     })
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
@@ -735,9 +711,7 @@ async function handleOptimizationAlignment(req: Request): Promise<Response> {
     )
 
     return Response.json(events, {
-      headers: {
-        'Cache-Control': ALIGNMENT_CACHE_CONTROL
-      }
+      headers: getVercelCdnCacheHeaders(ALIGNMENT_CACHE_CONTROL)
     })
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
@@ -797,9 +771,7 @@ async function handleOptimizationVaultState(req: Request): Promise<Response> {
         unallocatedBps: state.unallocatedBps
       },
       {
-        headers: {
-          'Cache-Control': VAULT_STATE_CACHE_CONTROL
-        }
+        headers: getVercelCdnCacheHeaders(VAULT_STATE_CACHE_CONTROL)
       }
     )
   } catch (error) {
@@ -933,9 +905,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
         }))
       },
       {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-        }
+        headers: getVercelCdnCacheHeaders(HOLDINGS_HISTORY_CACHE_CONTROL)
       }
     )
   } catch (error) {
@@ -989,9 +959,7 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
     )
 
     return Response.json(activity, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
-      }
+      headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_CACHE_CONTROL)
     })
   } catch (error) {
     console.error('Error fetching holdings activity:', error)
@@ -1047,9 +1015,7 @@ async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
         }
       },
       {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900'
-        }
+        headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_FACETS_CACHE_CONTROL)
       }
     )
   } catch (error) {
@@ -1141,9 +1107,7 @@ async function handleHoldingsBreakdown(req: Request): Promise<Response> {
     )
 
     return Response.json(breakdown, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-      }
+      headers: getVercelCdnCacheHeaders(HOLDINGS_HISTORY_CACHE_CONTROL)
     })
   } catch (error) {
     console.error('Error fetching holdings breakdown:', error)
@@ -1264,9 +1228,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
     })
 
     return Response.json(history, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-      }
+      headers: getVercelCdnCacheHeaders(HOLDINGS_HISTORY_CACHE_CONTROL)
     })
   } catch (error) {
     await updateHoldingsProgress(progressId, {
@@ -1281,79 +1243,6 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
       { error: 'Failed to fetch holdings protocol return history', message, stack, status: 502 },
       { status: 502 }
     )
-  }
-}
-
-async function handleInvalidateCache(req: Request): Promise<Response> {
-  if (req.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 })
-  }
-
-  const adminSecret = process.env.ADMIN_SECRET
-  if (!adminSecret) {
-    return Response.json({ error: 'Admin endpoint not configured' }, { status: 503 })
-  }
-
-  const providedSecret = req.headers.get('x-admin-secret')
-  if (providedSecret !== adminSecret) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!isHoldingsStorageEnabled()) {
-    return Response.json(
-      { error: 'Caching not enabled (UPSTASH_REDIS_REST_URL_PORTFOLIO/TOKEN_PORTFOLIO not configured)' },
-      { status: 503 }
-    )
-  }
-
-  let body: unknown
-  try {
-    body = await req.json()
-  } catch (_error) {
-    return Response.json(
-      {
-        error: 'Invalid request body',
-        expected: { vaults: [{ address: '0x...', chainId: 1 }] }
-      },
-      { status: 400 }
-    )
-  }
-
-  if (!validateInvalidateBody(body)) {
-    return Response.json(
-      {
-        error: 'Invalid request body',
-        expected: { vaults: [{ address: '0x...', chainId: 1 }] }
-      },
-      { status: 400 }
-    )
-  }
-
-  try {
-    await initializeHoldingsStorage()
-    if (!isHoldingsStorageEnabled()) {
-      return Response.json(
-        { error: 'Caching not enabled (UPSTASH_REDIS_REST_URL_PORTFOLIO/TOKEN_PORTFOLIO not configured)' },
-        { status: 503 }
-      )
-    }
-
-    const vaults: VaultIdentifier[] = body.vaults.map((vault) => ({
-      address: vault.address,
-      chainId: vault.chainId
-    }))
-
-    const invalidatedCount = await invalidateVaults(vaults)
-
-    return Response.json({
-      success: true,
-      invalidated: invalidatedCount,
-      vaults: vaults.map((vault) => `${vault.chainId}:${vault.address.toLowerCase()}`),
-      timestamp: new Date().toISOString()
-    })
-  } catch (error) {
-    console.error('[Admin] Invalidate cache error:', error)
-    return Response.json({ error: 'Failed to invalidate cache' }, { status: 500 })
   }
 }
 
@@ -1417,10 +1306,6 @@ async function main() {
           url.pathname === '/api/holdings/pnl/simple-history'
         ) {
           return withCors(await handleHoldingsProtocolReturnHistory(req))
-        }
-
-        if (url.pathname === '/api/admin/invalidate-cache') {
-          return withCors(await handleInvalidateCache(req))
         }
 
         if (url.pathname === '/api/yvusd/aprs') {

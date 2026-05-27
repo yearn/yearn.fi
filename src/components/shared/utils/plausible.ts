@@ -25,5 +25,7 @@ export const PLAUSIBLE_EVENTS = {
   COMPARE_MODAL_OPEN: 'compare_modal_open',
   LANDER_CTA_EXPLORE_VAULTS: 'lander_cta_explore_vaults',
   LANDER_VAULT_CLICK: 'lander_vault_click',
-  LANDER_APP_CLICK: 'lander_app_click'
+  LANDER_APP_CLICK: 'lander_app_click',
+  PORTFOLIO_BALANCE_HISTORY_LOAD: 'portfolio_balance_history_load',
+  PORTFOLIO_PROTOCOL_RETURN_HISTORY_LOAD: 'portfolio_protocol_return_history_load'
 } as const
