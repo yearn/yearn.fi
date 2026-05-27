@@ -81,7 +81,12 @@ type THistoricalPriceResult = Map<string, Map<number, number>> & {
 
 export function getChainPrefix(chainId: number): string {
   const chain = SUPPORTED_CHAINS.find((c) => c.id === chainId)
-  return chain?.defillamaPrefix || 'ethereum'
+
+  if (!chain) {
+    throw new Error(`Unsupported holdings price chain ID: ${chainId}`)
+  }
+
+  return chain.defillamaPrefix
 }
 
 function normalizeToUtcDayEnd(timestamp: number): number {

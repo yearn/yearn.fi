@@ -482,7 +482,7 @@ ttl: none
 | Arbitrum | 42161 | `arbitrum` |
 | Katana | 747474 | `katana` |
 
-`getChainPrefix` falls back to `ethereum` for unknown chain IDs, so new chains should be added to `SUPPORTED_CHAINS` before requests are expected to value correctly.
+Unknown chain IDs fail historical price resolution instead of falling back to Ethereum. Add new chains to `SUPPORTED_CHAINS` before requests are expected to value correctly.
 
 ## Environment Variables
 
