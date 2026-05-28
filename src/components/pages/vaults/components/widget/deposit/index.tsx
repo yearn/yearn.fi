@@ -60,6 +60,7 @@ interface Props {
     amount?: string
   }
   onPrefillApplied?: () => void
+  forceStake?: boolean
   hideSettings?: boolean
   disableBorderRadius?: boolean
   collapseDetails?: boolean
@@ -67,6 +68,7 @@ interface Props {
   contentBelowInput?: ReactNode
   contentAboveButton?: ReactNode
   actionLabelOverride?: string
+  titleOverride?: string
   vaultSharesLabel?: string
   hideDetails?: boolean
   hideActionButton?: boolean
@@ -143,6 +145,7 @@ export function WidgetDeposit({
   onTokenSelectionChange,
   prefill,
   onPrefillApplied,
+  forceStake = false,
   hideSettings: _hideSettings,
   disableBorderRadius,
   collapseDetails,
@@ -150,6 +153,7 @@ export function WidgetDeposit({
   contentBelowInput,
   contentAboveButton,
   actionLabelOverride,
+  titleOverride,
   vaultSharesLabel,
   hideDetails = false,
   hideActionButton = false,
@@ -245,10 +249,12 @@ export function WidgetDeposit({
   }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken, selectedExtraToken])
   const inputTokenLogoURI = selectedExtraToken?.logoURI ?? getTokenLogoURI(inputToken)
 
+  const shouldStakeDeposit = forceStake || isAutoStakingEnabled
+
   const destinationToken = useMemo(() => {
-    if (isAutoStakingEnabled && stakingAddress) return stakingAddress
+    if (shouldStakeDeposit && stakingAddress) return stakingAddress
     return vaultAddress
-  }, [isAutoStakingEnabled, stakingAddress, vaultAddress])
+  }, [shouldStakeDeposit, stakingAddress, vaultAddress])
 
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
@@ -269,8 +275,12 @@ export function WidgetDeposit({
     if (appliedPrefillRef.current === key) return
     appliedPrefillRef.current = key
 
+    const canApplyDirectStakeToken =
+      forceStake && toAddress(prefill.address) === toAddress(vaultAddress) && prefill.chainId === chainId
     const canApplyPrefilledToken =
-      ensoEnabled || (toAddress(prefill.address) === toAddress(assetAddress) && prefill.chainId === chainId)
+      ensoEnabled ||
+      canApplyDirectStakeToken ||
+      (toAddress(prefill.address) === toAddress(assetAddress) && prefill.chainId === chainId)
 
     setSelectedToken(canApplyPrefilledToken ? prefill.address : assetAddress)
     setSelectedChainId(canApplyPrefilledToken ? prefill.chainId : undefined)
@@ -278,7 +288,7 @@ export function WidgetDeposit({
       setDepositInput(prefill.amount)
     }
     onPrefillApplied?.()
-  }, [prefill, ensoEnabled, assetAddress, chainId, setDepositInput, onPrefillApplied])
+  }, [prefill, ensoEnabled, assetAddress, chainId, forceStake, vaultAddress, setDepositInput, onPrefillApplied])
 
   useResetEnsoSelection({
     ensoEnabled,
@@ -346,10 +356,10 @@ export function WidgetDeposit({
     routeType,
     selectedToken,
     vaultAddress,
-    isAutoStakingEnabled
+    isAutoStakingEnabled: shouldStakeDeposit
   })
 
-  const willReceiveStakedShares = routeType === 'DIRECT_STAKE' || (isAutoStakingEnabled && !!stakingAddress)
+  const willReceiveStakedShares = routeType === 'DIRECT_STAKE' || (shouldStakeDeposit && !!stakingAddress)
   const receivedSharesLabel = willReceiveStakedShares ? 'Staked shares' : (vaultSharesLabel ?? 'Vault shares')
   const sharesDecimals = willReceiveStakedShares
     ? (stakingToken?.decimals ?? vault?.decimals ?? 18)
@@ -838,7 +848,13 @@ export function WidgetDeposit({
   )
 
   if (isLoadingVaultData) {
-    return <WidgetLoadingSkeleton title="Deposit" actions={headerActions} disableBorderRadius={disableBorderRadius} />
+    return (
+      <WidgetLoadingSkeleton
+        title={titleOverride ?? 'Deposit'}
+        actions={headerActions}
+        disableBorderRadius={disableBorderRadius}
+      />
+    )
   }
 
   // ============================================================================
@@ -994,7 +1010,7 @@ export function WidgetDeposit({
       })}
       data-tour="vault-detail-deposit-widget"
     >
-      <WidgetHeader title="Deposit" actions={headerActions} />
+      <WidgetHeader title={titleOverride ?? 'Deposit'} actions={headerActions} />
       <div className="flex flex-col flex-1 p-6 pt-2 gap-3">
         {/* Amount Section */}
         <InputTokenAmount

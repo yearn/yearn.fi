@@ -59,9 +59,12 @@ import {
 } from '@pages/vaults/utils/yvUsd'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { Tooltip } from '@shared/components/Tooltip'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
+import { IconCross } from '@shared/icons/IconCross'
+import { IconInfo } from '@shared/icons/IconInfo'
 import { cl, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
@@ -78,7 +81,7 @@ import {
   useState
 } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
-import { isAddressEqual } from 'viem'
+import { formatUnits, isAddressEqual } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
 import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
 import { getVaultPrimaryLogoSrc } from '@/components/pages/vaults/utils/vaultLogo'
@@ -320,35 +323,87 @@ const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
   }
 }
 
-function VaultWarningAlert({ message, className }: { message: string; className: string }): ReactElement {
+function VaultWarningAlert({
+  message,
+  className,
+  action,
+  titleTooltip
+}: {
+  message: string
+  className: string
+  action?: ReactNode
+  titleTooltip?: string | ReactElement
+}): ReactElement {
   const { title, body } = splitFirstSentence(message)
 
   return (
     <div
       className={cl(
-        'rounded-lg border border-border border-l-4 border-l-orange-500 dark:border-l-yellow-500 bg-surface-secondary text-sm text-text-primary',
+        'rounded-lg border border-border border-l-4 border-l-orange-500 bg-surface-secondary text-sm text-text-primary dark:border-l-yellow-500',
         className
       )}
     >
-      <div className="flex items-start gap-3">
-        <svg
-          className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-          />
-        </svg>
-        <div className="flex flex-col">
-          <p className={'font-semibold'}>{title}</p>
-          {body ? <p className="text-text-secondary">{body}</p> : null}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <svg
+            className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <p className={'font-semibold'}>{title}</p>
+              {titleTooltip ? (
+                <Tooltip
+                  className="justify-start gap-0 md:justify-start"
+                  align="start"
+                  side="bottom"
+                  openDelayMs={150}
+                  tooltip={titleTooltip}
+                >
+                  <button
+                    type="button"
+                    aria-label="Why stake yBOLD?"
+                    className="flex size-4 items-center justify-center rounded-full text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <IconInfo className="size-3.5" />
+                  </button>
+                </Tooltip>
+              ) : null}
+            </div>
+            {body ? <p className="text-text-secondary">{body}</p> : null}
+          </div>
         </div>
+        {action ? <div className="shrink-0 sm:pl-4">{action}</div> : null}
       </div>
+    </div>
+  )
+}
+
+function YBoldUnstakedTooltip(): ReactElement {
+  return (
+    <div className="max-w-[320px] rounded-lg border border-border bg-surface p-3 text-left text-xs leading-relaxed text-text-secondary shadow-lg">
+      {
+        'In order to earn yield, BOLD needs to be deposited and staked into ysyBOLD. This site should abstract that process away for the user, but it seems you have some unstaked yBOLD. It always makes sense to stake yBOLD and there is no lockup or fee.'
+      }
+    </div>
+  )
+}
+
+function YBoldStakeInfoBox(): ReactElement {
+  return (
+    <div className="rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm text-text-secondary">
+      {
+        'Once staked, your yBOLD position will earn yield. To withdraw, use the standard withdraw flow. It will unstake and withdraw your position.'
+      }
     </div>
   )
 }
@@ -679,12 +734,23 @@ function Index(): ReactElement | null {
   const hasYvUsdFunds = yvUsdUnlockedShareBalance > 0n || yvUsdLockedShareBalance > 0n
   const hasUserFundsInVault = isYvUsd ? hasYvUsdFunds : vaultShareBalance > 0n || stakingShareBalance > 0n
   const canShowUserCharts = !isWalletLoading && hasUserFundsInVault
+  const [isYBoldStakeOverlayOpen, setIsYBoldStakeOverlayOpen] = useState(false)
   const retiredVaultAlertMessage = useMemo(() => {
     if (!isRetired || !currentVault) return null
     return getRetiredVaultAlertMessage({ vault: currentVault, hasUserFundsInVault })
   }, [currentVault, hasUserFundsInVault, isRetired])
   const yBoldUnstakedAlertMessage =
     isYBold && vaultShareBalance > 0n ? 'You have unstaked yBOLD. Stake your yBOLD to earn yield.' : null
+  const yBoldStakeAction = yBoldUnstakedAlertMessage ? (
+    <button
+      type="button"
+      onClick={() => setIsYBoldStakeOverlayOpen(true)}
+      className="yearn--button--nextgen w-full sm:w-auto"
+      data-variant="filled"
+    >
+      {'Stake'}
+    </button>
+  ) : undefined
   const shouldShowNonYearnVaultAlert = useMemo(() => {
     return isNonYearnErc4626Vault({
       vault: metadataVault,
@@ -1532,6 +1598,21 @@ function Index(): ReactElement | null {
     )
   }
 
+  const yBoldStakePrefillAmount = isYBold
+    ? formatUnits(vaultShareBalance, vaultUserData.vaultToken?.decimals ?? resolvedCurrentVault.decimals ?? 18)
+    : ''
+
+  const handleYBoldStakeSuccess = (): void => {
+    setIsYBoldStakeOverlayOpen(false)
+    refetchSnapshot()
+    refetchYBoldSnapshot()
+    onRefresh([
+      { address: resolvedCurrentVault.address, chainID: resolvedCurrentVault.chainID },
+      { address: resolvedCurrentVault.token.address, chainID: resolvedCurrentVault.chainID },
+      { address: YBOLD_STAKING_ADDRESS, chainID: resolvedCurrentVault.chainID }
+    ])
+  }
+
   return (
     <div
       className={
@@ -1674,7 +1755,12 @@ function Index(): ReactElement | null {
           ) : null}
 
           {yBoldUnstakedAlertMessage ? (
-            <VaultWarningAlert message={yBoldUnstakedAlertMessage} className="px-4 py-3" />
+            <VaultWarningAlert
+              message={yBoldUnstakedAlertMessage}
+              className="px-4 py-3"
+              action={yBoldStakeAction}
+              titleTooltip={<YBoldUnstakedTooltip />}
+            />
           ) : null}
 
           {Number.isInteger(chainId) && (
@@ -1801,7 +1887,12 @@ function Index(): ReactElement | null {
             ) : null}
 
             {yBoldUnstakedAlertMessage ? (
-              <VaultWarningAlert message={yBoldUnstakedAlertMessage} className="px-6 py-4" />
+              <VaultWarningAlert
+                message={yBoldUnstakedAlertMessage}
+                className="px-6 py-4"
+                action={yBoldStakeAction}
+                titleTooltip={<YBoldUnstakedTooltip />}
+              />
             ) : null}
 
             {renderableSections.map((section) => {
@@ -1879,6 +1970,59 @@ function Index(): ReactElement | null {
           </div>
         </section>
       </div>
+
+      {isYBoldStakeOverlayOpen && isYBold ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Stake yBOLD"
+          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/40 px-4 py-4 backdrop-blur-sm sm:items-center"
+        >
+          <button
+            type="button"
+            aria-label="Close stake yBOLD overlay"
+            className="absolute inset-0 cursor-default"
+            onClick={() => setIsYBoldStakeOverlayOpen(false)}
+          />
+          <div className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-[440px] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-2xl">
+            <div className="min-h-0 overflow-y-auto">
+              <Widget
+                key={`ybold-stake-${yBoldStakePrefillAmount}`}
+                vaultAddress={resolvedCurrentVault.address}
+                currentVault={resolvedCurrentVault}
+                gaugeAddress={resolvedCurrentVault.staking.address}
+                disableDepositStaking={false}
+                actions={[WidgetActionType.Deposit]}
+                chainId={chainId}
+                vaultUserData={vaultUserData}
+                mode={WidgetActionType.Deposit}
+                showTabs={false}
+                hideTabSelector
+                disableBorderRadius
+                forceDepositStake
+                depositTitleOverride="Stake yBOLD"
+                depositHeaderActions={
+                  <button
+                    type="button"
+                    onClick={() => setIsYBoldStakeOverlayOpen(false)}
+                    aria-label="Close stake yBOLD overlay"
+                    className="flex size-7 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
+                  >
+                    <IconCross className="size-3.5" />
+                  </button>
+                }
+                depositContentAboveButton={<YBoldStakeInfoBox />}
+                depositPrefill={{
+                  address: toAddress(resolvedCurrentVault.address),
+                  chainId,
+                  amount: yBoldStakePrefillAmount
+                }}
+                handleSuccess={handleYBoldStakeSuccess}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Mobile Floating Action Buttons - visible until desktop widget appears (md:), hidden when drawer is open */}
       {!isMobileDrawerOpen && (

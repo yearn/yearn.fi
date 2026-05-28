@@ -37,6 +37,10 @@ interface Props {
     amount?: string
   } | null
   onDepositPrefillConsumed?: () => void
+  forceDepositStake?: boolean
+  depositContentAboveButton?: ReactNode
+  depositTitleOverride?: string
+  depositHeaderActions?: ReactNode
   hideTabSelector?: boolean
   disableBorderRadius?: boolean
   collapseDetails?: boolean
@@ -74,6 +78,10 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
     isSettingsOpen,
     depositPrefill,
     onDepositPrefillConsumed,
+    forceDepositStake,
+    depositContentAboveButton,
+    depositTitleOverride,
+    depositHeaderActions,
     hideTabSelector,
     disableBorderRadius,
     collapseDetails
@@ -121,6 +129,10 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
             handleDepositSuccess={handleSuccess}
             prefill={depositPrefill ?? undefined}
             onPrefillApplied={onDepositPrefillConsumed}
+            forceStake={forceDepositStake}
+            contentAboveButton={depositContentAboveButton}
+            titleOverride={depositTitleOverride}
+            headerActions={depositHeaderActions}
             onOpenSettings={onOpenSettings}
             isSettingsOpen={isSettingsOpen}
             hideSettings={hideTabSelector}
