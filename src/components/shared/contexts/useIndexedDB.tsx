@@ -7,12 +7,13 @@ import type { IndexedDBConfig } from 'use-indexeddb/dist/interfaces'
 
 const yearnIDBConfig: IndexedDBConfig = {
   databaseName: 'yearn-notifications',
-  version: 1,
+  version: 2,
   stores: [
     {
       name: 'notifications',
       id: { keyPath: 'id', autoIncrement: true },
       indices: [
+        { name: 'address', keyPath: 'address' },
         { name: 'chainId', keyPath: 'chainId' },
         { name: 'amount', keyPath: 'amount' },
         { name: 'blockNumber', keyPath: 'blockNumber' },

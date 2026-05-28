@@ -707,7 +707,7 @@ describe('getHoldingsActivity', () => {
     const { getHoldingsActivity } = await import('./activity')
     const response = await getHoldingsActivity(USER_ADDRESS, 'all', 4)
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 20)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -783,6 +783,47 @@ describe('getHoldingsActivity', () => {
       hasMore: false,
       nextOffset: null
     })
+  })
+
+  it('caps the initial raw event scan for large activity pages', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 500)
+
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 1000)
+    expect(response.pageInfo).toEqual({
+      hasMore: false,
+      nextOffset: null
+    })
+  })
+
+  it('does not repeat identical raw event scans after hitting the per-source cap', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: [],
+      hasMoreDeposits: true,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+
+    const { getHoldingsActivity } = await import('./activity')
+    await getHoldingsActivity(USER_ADDRESS, 'all', 500)
+
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledTimes(1)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 1000)
   })
 
   it('enriches router-mediated deposits with the user input token from the tx receipt', async () => {
@@ -1207,7 +1248,7 @@ describe('getHoldingsActivity', () => {
     const { getHoldingsActivity } = await import('./activity')
     const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 1)
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 20)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -1300,7 +1341,7 @@ describe('getHoldingsActivity', () => {
     const { getHoldingsActivity } = await import('./activity')
     const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, { type: 'withdraw' })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 80)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -1498,7 +1539,7 @@ describe('getHoldingsActivity', () => {
     const { getHoldingsActivity } = await import('./activity')
     const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, { chainId: 8453 })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 80)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200)
     expect(fetchUserEventsMock).not.toHaveBeenCalled()
     expect(fetchActivityEventsByTransactionHashesMock).toHaveBeenCalledWith(
       new Map([[8453, ['0xeae5d579a571e592719d0815674744238a49993e7a7322c29d81b88343ef1c7b']]]),
@@ -1598,7 +1639,7 @@ describe('getHoldingsActivity', () => {
       endTimestamp: 260
     })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 80, 260)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200, 260)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -1686,7 +1727,7 @@ describe('getHoldingsActivity', () => {
       endTimestamp: 260
     })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 80, 260)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200, 260)
     expect(response.entries.map((entry) => entry.txHash)).toEqual(['0xolder'])
     expect(response.pageInfo).toEqual({
       hasMore: false,
@@ -1773,8 +1814,8 @@ describe('getHoldingsActivity', () => {
       chainId: 8453
     })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(1, USER_ADDRESS, 'all', 80)
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(2, USER_ADDRESS, 'all', 160)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(1, USER_ADDRESS, 'all', 200)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(2, USER_ADDRESS, 'all', 200)
     expect(response.entries.map((entry) => [entry.chainId, entry.txHash])).toEqual([[8453, '0xbase']])
     expect(response.pageInfo).toEqual({
       hasMore: false,

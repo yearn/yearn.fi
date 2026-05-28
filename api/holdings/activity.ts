@@ -41,7 +41,7 @@ function parseLimit(value: string | string[] | undefined): number {
     return 10
   }
 
-  return Math.min(Math.max(parsedValue, 1), 50)
+  return Math.min(Math.max(parsedValue, 1), 500)
 }
 
 function parseOffset(value: string | string[] | undefined): number {
@@ -84,12 +84,6 @@ function parseTimestamp(value: string | string[] | undefined): number | null {
   const parsedValue = Number(rawValue)
 
   return Number.isInteger(parsedValue) && parsedValue >= 0 ? parsedValue : null
-}
-
-function parseBoolean(value: string | string[] | undefined): boolean {
-  const rawValue = Array.isArray(value) ? value[0] : value
-
-  return rawValue === 'true' || rawValue === '1'
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -135,8 +129,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     type: typeParam,
     chainId: chainIdParam,
     startTimestamp: startTimestampParam,
-    endTimestamp: endTimestampParam,
-    includeFacets: includeFacetsParam
+    endTimestamp: endTimestampParam
   } = req.query
 
   if (!address || typeof address !== 'string') {
@@ -159,8 +152,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         chainId: parseChainId(chainIdParam),
         startTimestamp: parseTimestamp(startTimestampParam),
         endTimestamp: parseTimestamp(endTimestampParam)
-      },
-      parseBoolean(includeFacetsParam)
+      }
     )
 
     setVercelCdnCacheHeaders(res, HOLDINGS_ACTIVITY_CDN_CACHE_CONTROL)

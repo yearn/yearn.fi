@@ -13,6 +13,7 @@ import {
   clearUserCache,
   getHistoricalHoldingsChart,
   getHoldingsActivity,
+  getHoldingsActivityFacetResponse,
   getHoldingsBreakdown,
   getHoldingsProtocolReturnHistory,
   getHoldingsTotalsCacheVersion,
@@ -32,7 +33,6 @@ import {
   isHoldingsDebugRequested,
   withHoldingsDebugContext
 } from './lib/holdings/services/debug'
-import { fetchRecentAddressScopedActivityEvents } from './lib/holdings/services/graphql'
 import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
@@ -247,7 +247,7 @@ function parseHoldingsActivityLimit(value: string | null): number {
     return 10
   }
 
-  return Math.min(Math.max(parsed, 1), 50)
+  return Math.min(Math.max(parsed, 1), 500)
 }
 
 function parseHoldingsActivityOffset(value: string | null): number {
@@ -285,22 +285,6 @@ function parseHoldingsActivityTimestamp(value: string | null): number | null {
   const parsed = Number(value)
 
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null
-}
-
-function parseHoldingsActivityBoolean(value: string | null): boolean {
-  return value === 'true' || value === '1'
-}
-
-function parsePositiveIntegerParam(value: string | null, fallback: number, max: number): number {
-  const parsed = Number(value)
-
-  return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, max) : fallback
-}
-
-function parseNonNegativeIntegerParam(value: string | null): number {
-  const parsed = Number(value)
-
-  return Number.isInteger(parsed) && parsed >= 0 ? parsed : 0
 }
 
 function parseUtcDateParam(value: string | null): number | null {
@@ -1013,7 +997,6 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const chainId = parseHoldingsActivityChainId(url.searchParams.get('chainId'))
   const startTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('startTimestamp'))
   const endTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('endTimestamp'))
-  const includeFacets = parseHoldingsActivityBoolean(url.searchParams.get('includeFacets'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -1026,19 +1009,12 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const activity = await getHoldingsActivity(
-      address,
-      version,
-      limit,
-      offset,
-      {
-        type,
-        chainId,
-        startTimestamp,
-        endTimestamp
-      },
-      includeFacets
-    )
+    const activity = await getHoldingsActivity(address, version, limit, offset, {
+      type,
+      chainId,
+      startTimestamp,
+      endTimestamp
+    })
 
     return Response.json(activity, {
       headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_CACHE_CONTROL)
@@ -1055,8 +1031,6 @@ async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
   const versionParam = url.searchParams.get('version')
-  const limitPerSource = parsePositiveIntegerParam(url.searchParams.get('limitPerSource'), 250, 1000)
-  const offsetPerSource = parseNonNegativeIntegerParam(url.searchParams.get('offsetPerSource'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -1069,37 +1043,11 @@ async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const events = await fetchRecentAddressScopedActivityEvents(
-      address,
-      version,
-      limitPerSource,
-      undefined,
-      offsetPerSource
-    )
-    const hasMore =
-      events.hasMoreDeposits || events.hasMoreWithdrawals || events.hasMoreTransfersIn || events.hasMoreTransfersOut
-    const chainIds = Array.from(
-      new Set(
-        [...events.deposits, ...events.withdrawals, ...events.transfersIn, ...events.transfersOut].map(
-          (event) => event.chainId
-        )
-      )
-    ).sort((firstChainId, secondChainId) => firstChainId - secondChainId)
+    const facetsResponse = await getHoldingsActivityFacetResponse(address, version)
 
-    return Response.json(
-      {
-        address: address.toLowerCase(),
-        version,
-        facets: { chainIds },
-        pageInfo: {
-          hasMore,
-          nextOffsetPerSource: hasMore ? offsetPerSource + limitPerSource : null
-        }
-      },
-      {
-        headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_FACETS_CACHE_CONTROL)
-      }
-    )
+    return Response.json(facetsResponse, {
+      headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_FACETS_CACHE_CONTROL)
+    })
   } catch (error) {
     console.error('Error fetching holdings activity facets:', error)
     const message = error instanceof Error ? error.message : String(error)

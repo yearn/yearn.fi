@@ -1,13 +1,16 @@
 export { holdingsConfig, validateConfig } from './config'
 export {
   getHoldingsActivity,
-  getHoldingsActivityFacets,
   type HoldingsActivityAction,
   type HoldingsActivityEntry,
   type HoldingsActivityFilters,
   type HoldingsActivityResponse,
   type HoldingsActivityTypeFilter
 } from './services/activity'
+export {
+  getHoldingsActivityFacetResponse,
+  type HoldingsActivityFacetsResponse
+} from './services/activityFacets'
 export {
   getHistoricalHoldings,
   getHistoricalHoldingsChart,
@@ -23,6 +26,7 @@ export {
 } from './services/aggregator'
 export { clearUserCache } from './services/cache'
 export {
+  fetchAddressActivityChainIdsByExistence,
   fetchRecentAddressScopedActivityEvents,
   fetchUserEvents,
   type HoldingsEventFetchType,
