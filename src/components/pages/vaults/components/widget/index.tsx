@@ -41,6 +41,7 @@ interface Props {
   depositContentAboveButton?: ReactNode
   depositTitleOverride?: string
   depositHeaderActions?: ReactNode
+  depositInputTokenLogoURIOverride?: string
   hideTabSelector?: boolean
   disableBorderRadius?: boolean
   collapseDetails?: boolean
@@ -82,6 +83,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
     depositContentAboveButton,
     depositTitleOverride,
     depositHeaderActions,
+    depositInputTokenLogoURIOverride,
     hideTabSelector,
     disableBorderRadius,
     collapseDetails
@@ -133,6 +135,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
             contentAboveButton={depositContentAboveButton}
             titleOverride={depositTitleOverride}
             headerActions={depositHeaderActions}
+            inputTokenLogoURIOverride={depositInputTokenLogoURIOverride}
             onOpenSettings={onOpenSettings}
             isSettingsOpen={isSettingsOpen}
             hideSettings={hideTabSelector}

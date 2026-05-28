@@ -75,6 +75,7 @@ interface Props {
   hideContainerBorder?: boolean
   headerActions?: ReactNode
   tokenSelectorExtraTokens?: TToken[]
+  inputTokenLogoURIOverride?: string
   deferSuccessEffectsUntilClose?: boolean
   deferSuccessEffectsUntilConfettiEnd?: boolean
 }
@@ -160,6 +161,7 @@ export function WidgetDeposit({
   hideContainerBorder = false,
   headerActions,
   tokenSelectorExtraTokens,
+  inputTokenLogoURIOverride,
   deferSuccessEffectsUntilClose = false,
   deferSuccessEffectsUntilConfettiEnd = true
 }: Props): ReactElement {
@@ -247,7 +249,7 @@ export function WidgetDeposit({
     }
     return getToken({ address: depositToken, chainID: sourceChainId })
   }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken, selectedExtraToken])
-  const inputTokenLogoURI = selectedExtraToken?.logoURI ?? getTokenLogoURI(inputToken)
+  const inputTokenLogoURI = inputTokenLogoURIOverride ?? selectedExtraToken?.logoURI ?? getTokenLogoURI(inputToken)
 
   const shouldStakeDeposit = forceStake || isAutoStakingEnabled
 
