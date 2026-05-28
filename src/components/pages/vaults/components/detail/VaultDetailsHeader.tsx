@@ -582,7 +582,7 @@ function VaultOverviewCard({
     },
     {
       key: 'historical-apy',
-      header: <MetricHeader label={'30 Day APY'} tooltip={'Average realized APY over the previous 30 days'} />,
+      header: <MetricHeader label={'Historical APY'} tooltip={'Average realized APY over the previous 30 days'} />,
       value: isDualVariantVault ? (
         <Tooltip
           className={'h-auto w-full gap-0'}

@@ -141,7 +141,7 @@ describe('vaultApy Katana calculations', () => {
     expect(apy).toBeCloseTo(0.04, 6)
   })
 
-  it('calculates Katana 30 day APY from historical base + fixed + app rewards', () => {
+  it('calculates Katana historical APY from historical base + fixed + app rewards', () => {
     const apy = calculateKatanaThirtyDayAPY(withComponents(BASE_VAULT))
     expect(apy).toBeCloseTo(0.4616, 6)
   })

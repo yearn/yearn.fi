@@ -623,7 +623,7 @@ export function resolveHistoricalApyDisplayConfig({
     return { displayConfig }
   }
 
-  const modalTitle = shouldUseKatanaAPRs ? 'Katana 30 Day APY breakdown' : '30 Day APY breakdown'
+  const modalTitle = shouldUseKatanaAPRs ? 'Katana Historical APY breakdown' : 'Historical APY breakdown'
   const modalContent =
     shouldUseKatanaAPRs && katanaExtras ? (
       <KatanaApyTooltipContent
@@ -644,7 +644,7 @@ export function resolveHistoricalApyDisplayConfig({
         <div
           className={'flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-text-primary md:text-sm'}
         >
-          <p>{'30 Day APY '}</p>
+          <p>{'Historical APY '}</p>
           <span className={'font-number'}>{formatApyDisplay(displayValue || 0)}</span>
         </div>
       </div>

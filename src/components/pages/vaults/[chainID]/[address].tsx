@@ -683,6 +683,8 @@ function Index(): ReactElement | null {
     if (!isRetired || !currentVault) return null
     return getRetiredVaultAlertMessage({ vault: currentVault, hasUserFundsInVault })
   }, [currentVault, hasUserFundsInVault, isRetired])
+  const yBoldUnstakedAlertMessage =
+    isYBold && vaultShareBalance > 0n ? 'You have unstaked yBOLD. Stake your yBOLD to earn yield.' : null
   const shouldShowNonYearnVaultAlert = useMemo(() => {
     return isNonYearnErc4626Vault({
       vault: metadataVault,
@@ -1671,6 +1673,10 @@ function Index(): ReactElement | null {
             <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-4 py-3" />
           ) : null}
 
+          {yBoldUnstakedAlertMessage ? (
+            <VaultWarningAlert message={yBoldUnstakedAlertMessage} className="px-4 py-3" />
+          ) : null}
+
           {Number.isInteger(chainId) && (
             <div className="border border-border rounded-lg bg-surface overflow-hidden">
               {renderDetailCharts(180, 230)}
@@ -1792,6 +1798,10 @@ function Index(): ReactElement | null {
 
             {shouldShowNonYearnVaultAlert ? (
               <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-6 py-4" />
+            ) : null}
+
+            {yBoldUnstakedAlertMessage ? (
+              <VaultWarningAlert message={yBoldUnstakedAlertMessage} className="px-6 py-4" />
             ) : null}
 
             {renderableSections.map((section) => {

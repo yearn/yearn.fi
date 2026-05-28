@@ -492,11 +492,34 @@ describe('buildLockedWithdrawTransactionStep', () => {
       underlyingSymbol: 'USDC'
     })
 
-    expect(withdrawStep.label).toBe('Withdraw to yvUSD')
+    expect(withdrawStep.label).toBe('Unlock to yvUSD')
     expect(withdrawUnderlyingStep.label).toBe('Withdraw to USDC')
     expect(withdrawStep.completesFlow).toBe(false)
     expect(withdrawUnderlyingStep.completesFlow).toBe(true)
-    expect(withdrawStep.confirmMessage).toContain('Redeeming')
+    expect(withdrawStep.confirmMessage).toContain('Unlocking')
+  })
+
+  it('builds an unlock-only step that completes after receiving unlocked yvUSD', () => {
+    const unlockStep = buildLockedWithdrawTransactionStep({
+      phase: 'withdraw',
+      mode: 'unlock',
+      lockedStepMethod: 'redeem',
+      prepareLockedWithdraw: mockPrepare('redeem', [49n, '0x1', '0x1']),
+      prepareUnlockedWithdraw: mockPrepare('withdraw', [51n, '0x1', '0x1']),
+      requestedLockedShares: 49_999999999999999999n,
+      receivedLockedAssets: 50_000000000000000000n,
+      expectedUnderlyingOut: 51_000000n,
+      lockedVaultTokenDecimals: 18,
+      lockedAssetDecimals: 18,
+      underlyingDecimals: 6,
+      lockedVaultTokenSymbol: 'yvUSD (Locked)',
+      lockedAssetSymbol: 'yvUSD',
+      underlyingSymbol: 'USDC'
+    })
+
+    expect(unlockStep.label).toBe('Unlock')
+    expect(unlockStep.completesFlow).toBe(true)
+    expect(unlockStep.successMessage).toContain('Received 50.00 yvUSD.')
   })
 
   it('shows withdraw copy when the locked leg falls back to asset-based withdraw', () => {
@@ -516,7 +539,7 @@ describe('buildLockedWithdrawTransactionStep', () => {
       underlyingSymbol: 'USDC'
     })
 
-    expect(withdrawStep.confirmMessage).toContain('Withdrawing')
-    expect(withdrawStep.successTitle).toBe('Locked withdraw successful')
+    expect(withdrawStep.confirmMessage).toContain('Unlocking')
+    expect(withdrawStep.successTitle).toBe('Unlock successful')
   })
 })

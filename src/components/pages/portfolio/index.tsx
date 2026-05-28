@@ -1600,7 +1600,9 @@ function PortfolioHeaderSection({
     },
     {
       key: '30-day-apy',
-      header: <MetricHeader label="30-day APY" tooltip="Blended 30-day performance using your current positions." />,
+      header: (
+        <MetricHeader label="Historical APY" tooltip="Blended 30-day performance using your current positions." />
+      ),
       value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedHistoricalAPY)}</span>
     },
     {
