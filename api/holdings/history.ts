@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { setVercelCdnCacheHeaders } from '../lib/cacheHeaders'
 import type {
   HoldingsEventFetchType,
   HoldingsEventPaginationMode,
@@ -15,6 +16,8 @@ import {
   withHoldingsDebugContext
 } from '../lib/holdings/services/debug'
 import { startHoldingsProgress, updateHoldingsProgress } from '../lib/holdings/services/progress'
+
+const HOLDINGS_HISTORY_CDN_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600'
 
 function simpleHash(str: string): string {
   let hash = 0
@@ -138,7 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Rate limiting
   const clientId = getClientIdentifier(req)
-  const rateCheck = await checkRateLimit(clientId)
+  const rateCheck = await checkRateLimit(clientId, req.headers)
   if (!rateCheck.allowed) {
     res.setHeader('Retry-After', String(rateCheck.retryAfter))
     return res.status(429).json({ error: 'Too many requests', retryAfter: rateCheck.retryAfter })
@@ -262,7 +265,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       detail: `${holdings.dataPoints.length} chart points`
     })
 
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+    setVercelCdnCacheHeaders(res, HOLDINGS_HISTORY_CDN_CACHE_CONTROL)
     return res.status(200).json({
       address: holdings.address,
       version,

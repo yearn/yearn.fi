@@ -1,6 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { setVercelCdnCacheHeaders } from '../lib/cacheHeaders'
 import type { HoldingsEventFetchType, HoldingsEventPaginationMode, VaultVersion } from '../lib/holdings'
 import { checkRateLimit, ensureHoldingsStorageInitialized } from '../lib/holdings'
+
+const HOLDINGS_BREAKDOWN_CDN_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600'
 
 function simpleHash(str: string): string {
   let hash = 0
@@ -85,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const clientId = getClientIdentifier(req)
-  const rateCheck = await checkRateLimit(clientId)
+  const rateCheck = await checkRateLimit(clientId, req.headers)
   if (!rateCheck.allowed) {
     res.setHeader('Retry-After', String(rateCheck.retryAfter))
     return res.status(429).json({ error: 'Too many requests', retryAfter: rateCheck.retryAfter })
@@ -134,7 +137,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       breakdownTimestamp ?? undefined
     )
 
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+    setVercelCdnCacheHeaders(res, HOLDINGS_BREAKDOWN_CDN_CACHE_CONTROL)
     return res.status(200).json(breakdown)
   } catch (error) {
     console.error('Holdings breakdown error:', error)

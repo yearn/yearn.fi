@@ -4,6 +4,7 @@ import { AppSettingsContextApp } from '@pages/vaults/contexts/useAppSettings'
 import { EnsoStatusProvider } from '@pages/vaults/contexts/useEnsoStatus'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import AppHeader from '@shared/components/Header'
+import { JsonLd } from '@shared/components/JsonLd'
 import { Meta } from '@shared/components/Meta'
 import { WithFonts } from '@shared/components/WithFonts'
 import { ChartStyleContextApp } from '@shared/contexts/useChartStyle'
@@ -81,6 +82,34 @@ function App(): ReactElement {
         themeColor={'#000000'}
         og={ogUrl}
         uri={pageUri}
+      />
+      <JsonLd
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: 'Yearn',
+          url: 'https://yearn.fi',
+          logo: 'https://yearn.fi/logo.svg',
+          description: 'DeFi yield aggregator — automatically maximize returns on deposited digital assets.',
+          sameAs: ['https://x.com/yearnfi', 'https://github.com/yearn', 'https://discord.gg/yearn/']
+        }}
+      />
+      <JsonLd
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'Yearn',
+          url: 'https://yearn.fi',
+          description: 'Browse and deposit into automated yield vaults across Ethereum and EVM chains.',
+          potentialAction: {
+            '@type': 'SearchAction',
+            target: {
+              '@type': 'EntryPoint',
+              urlTemplate: 'https://yearn.fi/vaults?search={search_term_string}'
+            },
+            'query-input': 'required name=search_term_string'
+          }
+        }}
       />
       <WithFonts>
         <main className={'font-aeonik size-full min-h-screen'}>

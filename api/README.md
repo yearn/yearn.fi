@@ -27,7 +27,6 @@ The local server adds CORS to all handled routes and includes dev-only Tenderly 
 | `/api/holdings/activity-facets` | `GET` | Vercel + local | Chain facets for holdings activity filters |
 | `/api/holdings/protocol-return/history` | `GET` | Vercel + local | Protocol-return history for vault exposure |
 | `/api/holdings/pnl/simple-history` | `GET` | Vercel + local | Compatibility alias for protocol-return history |
-| `/api/admin/invalidate-cache` | `POST` | Vercel + local | Lazy vault cache invalidation, admin-protected |
 | `/api/enso/status` | `GET` | Vercel + local | Returns whether `ENSO_API_KEY` is configured |
 | `/api/enso/balances` | `GET` | Vercel + local | Proxies Enso wallet balances |
 | `/api/enso/route` | `GET` | Vercel + local | Proxies Enso route quotes/transactions |
@@ -68,14 +67,14 @@ The optimization routes expose the current DOA optimization payloads and the loc
 - `/api/optimization/change` reads optimization records from Upstash Redis keys under `doa:optimizations:*`. `vault=0x...` selects one vault, and `history=1` or `history=true` returns all records for that vault instead of the latest one.
 - `/api/optimization/alignment` requires `vault=0x...`, selects the matching optimization, resolves its source chain, and fetches aligned keeper `DebtUpdated` events from Envio. It needs `ENVIO_GRAPHQL_URL`; `ENVIO_PASSWORD` is sent as a bearer token when configured.
 - `/api/optimization/vault-state` accepts `POST` JSON shaped as `{ "vault": "0x...", "chainId": 1, "strategies": ["0x..."] }`, then reads live vault and strategy debt state from configured public RPC endpoints.
-- Cache headers: `change` uses `public, s-maxage=600, stale-while-revalidate=60`; `alignment` and `vault-state` use `public, s-maxage=60, stale-while-revalidate=30`.
+- CDN cache headers: `change` uses `Vercel-CDN-Cache-Control: public, s-maxage=600, stale-while-revalidate=60`; `alignment` and `vault-state` use `Vercel-CDN-Cache-Control: public, s-maxage=60, stale-while-revalidate=30`. Browser-facing `Cache-Control` stays `public, max-age=0, must-revalidate`.
 
 ## yvUSD APR Proxy
 
 `/api/yvusd/aprs` forwards query params to `YVUSD_APR_SERVICE_API`.
 
 - Default upstream: `https://yearn-yvusd-apr-service.vercel.app/api/aprs`.
-- Cache header: `public, s-maxage=30, stale-while-revalidate=120`.
+- CDN cache header: `Vercel-CDN-Cache-Control: public, s-maxage=30, stale-while-revalidate=120`. Browser-facing `Cache-Control` stays `public, max-age=0, must-revalidate`.
 
 ## Vault Metadata HTML
 
@@ -116,8 +115,8 @@ Required env for a configured chain:
 | `YEARN_PRICES_API_KEY` | holdings | Bearer token for yearn-prices |
 | `API_KEY_PORTFOLIO` | holdings | Fallback bearer token for yearn-prices |
 | `DEFILLAMA_API_KEY` | holdings | Enables DefiLlama Pro |
-| `ADMIN_SECRET` | holdings admin | Required for `/api/admin/invalidate-cache` |
-| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | holdings | Upstash Redis REST URL for holdings cache/progress/rate limits |
+| `VERCEL_HOLDINGS_RATE_LIMIT_ID` | holdings | Optional Vercel Firewall rate limit ID, defaults to `holdings-public-api` |
+| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | holdings | Upstash Redis REST URL for holdings cache/progress/invalidation |
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | holdings | Upstash Redis REST token for holdings storage |
 | `UPSTASH_REDIS_REST_URL` | optimization | Upstash Redis REST URL for optimization payloads |
 | `UPSTASH_REDIS_REST_TOKEN` | optimization | Upstash Redis REST token for optimization payloads |

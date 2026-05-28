@@ -1,5 +1,5 @@
-import { SUPPORTED_CHAINS, type VaultMetadata } from '../types'
-import type { THistoricalPriceRequest } from './defillama'
+import type { VaultMetadata } from '../types'
+import { getChainPrefix, type THistoricalPriceRequest } from './defillama'
 import { getPPS, type PPSTimeline } from './kong'
 import { toVaultKey } from './pnlShared'
 
@@ -18,10 +18,6 @@ const DEFAULT_MAX_NESTED_VAULT_DEPTH = 4
 
 function priceMapKey(chainId: number, tokenAddress: string): string {
   return `${getChainPrefix(chainId)}:${tokenAddress.toLowerCase()}`
-}
-
-function getChainPrefix(chainId: number): string {
-  return SUPPORTED_CHAINS.find((chain) => chain.id === chainId)?.defillamaPrefix || 'ethereum'
 }
 
 function getPriceAtTimestamp(priceMap: Map<number, number>, targetTimestamp: number): number {
