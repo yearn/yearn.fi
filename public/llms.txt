@@ -1,0 +1,58 @@
+# Yearn
+
+> Yearn is a decentralized finance (DeFi) yield aggregator that automatically maximizes yields on deposited assets through battle-tested on-chain strategies. Yearn operates vaults on Ethereum, Katana, Base, Arbitrum, Optimism, and Polygon. Kong REST is the canonical source for live vault data.
+
+## Overview
+
+Yearn vaults accept ERC-20 token deposits and automatically route funds to the highest-yielding strategies, compounding returns over time. The protocol is non-custodial and permissionless — deposits are held entirely in smart contracts.
+
+## Main Pages
+
+- [Home](https://yearn.fi/): Landing page and product overview
+- [Vaults](https://yearn.fi/vaults): Browse all available yield vaults across supported chains
+- [Portfolio](https://yearn.fi/portfolio): View deposited assets and accumulated earnings
+
+## Primary Machine-Readable Vault Data
+
+- [Canonical Active Vault List (JSON)](https://kong.yearn.fi/api/rest/list/vaults): Source of truth for current vault metadata, visibility, APY, TVL, and vault addresses
+- `https://kong.yearn.fi/api/rest/snapshot/{chainId}/{address}`: Canonical vault detail snapshot; replace `chainId` with the numeric chain ID and `address` with the vault contract address
+- `https://yearn.fi/vaults/{chainId}/{address}`: Public vault page URL; maps to the Kong snapshot endpoint above for live vault detail data
+- [Sitemap](https://yearn.fi/sitemap.xml): XML sitemap listing canonical public vault page URLs
+
+## Derived Convenience Markdown
+
+These markdown endpoints are generated live from Kong REST for agent and crawler convenience. Treat Kong JSON as the source of truth, especially for financial values.
+
+- [All Active Vaults (Markdown)](https://yearn.fi/api/vaults/markdown): Kong-derived summary of public active Yearn Single Asset and LP Token vaults
+- [All Active Vaults Filtered by Chain](https://yearn.fi/api/vaults/markdown?chainId=1): Pass a numeric `chainId` to filter by chain
+- [Example Single Vault (Markdown)](https://yearn.fi/api/vault/markdown?chainId=1&address=0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204): Kong-derived detail summary; replace `chainId` and `address`
+
+## Vault Data Semantics
+
+- Public active vaults exclude non-Yearn entries, entries where `inclusion.isYearn` is false, hidden vaults, retired vaults, legacy vaults, and underlying single-strategy entries.
+- `/api/vaults/markdown` does not apply a TVL minimum.
+- Use numeric `chainId` values in URLs and API requests.
+- Treat the vault contract address as the vault identifier, and pair it with `chainId` for cross-chain API calls and page URLs.
+- APY, APR, TVL, strategy composition, and availability are time-sensitive live data. Refresh from Kong at retrieval time.
+- Generated markdown is a thin interpretation layer, not a historical archive or independent data source.
+
+## External Resources
+
+- [Yearn Docs](https://docs.yearn.fi): Technical documentation, strategy explanations, and developer guides
+- [GitHub](https://github.com/yearn): Open-source smart contracts and tooling
+- [Blog](https://blog.yearn.fi): Protocol updates and announcements
+- [Governance Forum](https://gov.yearn.fi): On-chain governance proposals and discussion
+- [Kong API (JSON)](https://kong.yearn.fi/api/rest/list/vaults): Raw JSON vault list from Yearn's data API
+
+## Supported Chains
+
+| Chain | Chain ID |
+|-------|----------|
+| Ethereum | 1 |
+| Optimism | 10 |
+| Polygon | 137 |
+| Fantom | 250 |
+| Base | 8453 |
+| Arbitrum | 42161 |
+| Sonic | 146 |
+| Katana | 747474 |
