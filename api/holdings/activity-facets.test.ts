@@ -4,12 +4,12 @@ const TEST_ADDRESS = '0x2222222222222222222222222222222222222222'
 
 const ensureHoldingsStorageInitializedMock = vi.fn()
 const checkRateLimitMock = vi.fn()
-const fetchAddressActivityChainIdsByExistenceMock = vi.fn()
+const getHoldingsActivityFacetResponseMock = vi.fn()
 
 vi.mock('../lib/holdings', () => ({
   ensureHoldingsStorageInitialized: ensureHoldingsStorageInitializedMock,
   checkRateLimit: checkRateLimitMock,
-  fetchAddressActivityChainIdsByExistence: fetchAddressActivityChainIdsByExistenceMock
+  getHoldingsActivityFacetResponse: getHoldingsActivityFacetResponseMock
 }))
 
 type TMockResponse = {
@@ -50,7 +50,11 @@ describe('holdings activity facets route', () => {
     vi.clearAllMocks()
     ensureHoldingsStorageInitializedMock.mockResolvedValue(undefined)
     checkRateLimitMock.mockResolvedValue({ allowed: true, retryAfter: 0 })
-    fetchAddressActivityChainIdsByExistenceMock.mockResolvedValue([1, 8453])
+    getHoldingsActivityFacetResponseMock.mockResolvedValue({
+      address: TEST_ADDRESS,
+      version: 'all',
+      facets: { chainIds: [1, 8453] }
+    })
     process.env.ENVIO_GRAPHQL_URL = 'https://envio.example/graphql'
   })
 
@@ -60,9 +64,7 @@ describe('holdings activity facets route', () => {
       method: 'GET',
       query: {
         address: TEST_ADDRESS,
-        version: 'all',
-        limitPerSource: '500',
-        offsetPerSource: '1000'
+        version: 'all'
       },
       headers: {}
     } as any
@@ -70,16 +72,12 @@ describe('holdings activity facets route', () => {
 
     await handler(req, res as any)
 
-    expect(fetchAddressActivityChainIdsByExistenceMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all')
+    expect(getHoldingsActivityFacetResponseMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all')
     expect(res.statusCode).toBe(200)
     expect(res.body).toEqual({
       address: TEST_ADDRESS,
       version: 'all',
-      facets: { chainIds: [1, 8453] },
-      pageInfo: {
-        hasMore: false,
-        nextOffsetPerSource: null
-      }
+      facets: { chainIds: [1, 8453] }
     })
   })
 })

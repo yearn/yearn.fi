@@ -76,20 +76,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { fetchAddressActivityChainIdsByExistence } = await import('../lib/holdings')
+    const { getHoldingsActivityFacetResponse } = await import('../lib/holdings')
     const version = parseVersion(versionParam)
-    const chainIds = await fetchAddressActivityChainIdsByExistence(address, version)
+    const facetsResponse = await getHoldingsActivityFacetResponse(address, version)
 
     res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900')
-    return res.status(200).json({
-      address: address.toLowerCase(),
-      version,
-      facets: { chainIds },
-      pageInfo: {
-        hasMore: false,
-        nextOffsetPerSource: null
-      }
-    })
+    return res.status(200).json(facetsResponse)
   } catch (error) {
     console.error('Holdings activity facets error:', error)
 

@@ -785,6 +785,47 @@ describe('getHoldingsActivity', () => {
     })
   })
 
+  it('caps the initial raw event scan for large activity pages', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: [],
+      hasMoreDeposits: false,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+
+    const { getHoldingsActivity } = await import('./activity')
+    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 500)
+
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 1000)
+    expect(response.pageInfo).toEqual({
+      hasMore: false,
+      nextOffset: null
+    })
+  })
+
+  it('does not repeat identical raw event scans after hitting the per-source cap', async () => {
+    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: [],
+      hasMoreDeposits: true,
+      hasMoreWithdrawals: false,
+      hasMoreTransfersIn: false,
+      hasMoreTransfersOut: false
+    })
+
+    const { getHoldingsActivity } = await import('./activity')
+    await getHoldingsActivity(USER_ADDRESS, 'all', 500)
+
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledTimes(1)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 1000)
+  })
+
   it('enriches router-mediated deposits with the user input token from the tx receipt', async () => {
     fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
       deposits: [

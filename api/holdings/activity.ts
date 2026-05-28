@@ -83,12 +83,6 @@ function parseTimestamp(value: string | string[] | undefined): number | null {
   return Number.isInteger(parsedValue) && parsedValue >= 0 ? parsedValue : null
 }
 
-function parseBoolean(value: string | string[] | undefined): boolean {
-  const rawValue = Array.isArray(value) ? value[0] : value
-
-  return rawValue === 'true' || rawValue === '1'
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -132,8 +126,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     type: typeParam,
     chainId: chainIdParam,
     startTimestamp: startTimestampParam,
-    endTimestamp: endTimestampParam,
-    includeFacets: includeFacetsParam
+    endTimestamp: endTimestampParam
   } = req.query
 
   if (!address || typeof address !== 'string') {
@@ -156,8 +149,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         chainId: parseChainId(chainIdParam),
         startTimestamp: parseTimestamp(startTimestampParam),
         endTimestamp: parseTimestamp(endTimestampParam)
-      },
-      parseBoolean(includeFacetsParam)
+      }
     )
 
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')

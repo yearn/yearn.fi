@@ -70,7 +70,6 @@ import { IconUnstake } from '@shared/icons/IconUnstake'
 import { IconWithdraw } from '@shared/icons/IconWithdraw'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import type { TSortDirection } from '@shared/types'
-import type { TNotification } from '@shared/types/notifications'
 import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { copyToClipboard } from '@shared/utils/helpers'
@@ -81,6 +80,17 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useSearchParams } from 'react-router'
 import { useWriteContract } from 'wagmi'
 import Link from '/src/components/Link'
+import {
+  doesActivityEntryMatchSearch,
+  doesLocalActivityMatchFilters,
+  formatIndexedActivityDate,
+  getActivityChainName,
+  getActivityEntryTitle,
+  isRecentLocalActivityEntry,
+  isZapNotification,
+  type TActivityModalFilters,
+  toLocalActivityEntry
+} from './activity.helpers'
 import type {
   TGrowthDisplayMode,
   TPortfolioHistoryChartTab,
@@ -150,14 +160,6 @@ type TPortfolioActivityProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModa
 
 type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'>
 
-const ACTIVITY_ACTION_LABELS: Record<TPortfolioActivityEntry['action'], string> = {
-  deposit: 'Deposit',
-  withdraw: 'Withdraw',
-  stake: 'Stake',
-  unstake: 'Unstake',
-  transfer: 'Transfer',
-  swap: 'Swap'
-}
 const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: string }> = [
   { key: 'all', label: 'All' },
   { key: 'deposit', label: 'Deposit' },
@@ -178,11 +180,6 @@ const ACTIVITY_CALENDAR_DAY_LABELS = [
   { key: 'saturday', label: 'S' }
 ] as const
 
-type TActivityModalFilters = {
-  types: TPortfolioActivityEntry['action'][]
-  startDate: string
-  endDate: string
-}
 type TActivityDateField = 'startDate' | 'endDate'
 
 function getTodayDateInputValue(): string {
@@ -199,8 +196,6 @@ const DEFAULT_ACTIVITY_MODAL_FILTERS: TActivityModalFilters = {
   startDate: '',
   endDate: getTodayDateInputValue()
 }
-const RECENT_LOCAL_ACTIVITY_RETENTION_SECONDS = 24 * 60 * 60
-const ZERO_ACTIVITY_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 function formatActivityDisplayAmount(amountFormatted: number | null, symbol: string | null): string {
   if (amountFormatted === null) {
@@ -269,20 +264,8 @@ function getActivityExplorerUrl(chainId: number, txHash: string): string | null 
   return explorerBaseUrl ? `${explorerBaseUrl}/tx/${txHash}` : null
 }
 
-function getActivityChainName(chainId: number): string {
-  return SUPPORTED_NETWORKS.find((item) => item.id === chainId)?.name ?? `Chain ${chainId}`
-}
-
 function getActivityChainLogoUrl(chainId: number): string {
   return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
-}
-
-function formatIndexedActivityDate(timestamp: number): string {
-  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
 }
 
 function formatIndexedActivityDateTime(timestamp: number): string {
@@ -398,26 +381,6 @@ function getEarlierActivityDate(firstDate: string, secondDate: string): string {
   return firstDate < secondDate ? firstDate : secondDate
 }
 
-function getActivityEntryTitle(entry: TPortfolioActivityEntry): string {
-  if (entry.displayType === 'reward_claim') {
-    return 'Reward Claim'
-  }
-
-  if (entry.action === 'transfer' && entry.inputTokenAddress && entry.outputTokenAddress) {
-    return 'Zap'
-  }
-
-  if (entry.action === 'transfer' && entry.transferDirection === 'in') {
-    return 'Transfer in'
-  }
-
-  if (entry.action === 'transfer' && entry.transferDirection === 'out') {
-    return 'Transfer out'
-  }
-
-  return ACTIVITY_ACTION_LABELS[entry.action]
-}
-
 function getActivityEntryKey(entry: TPortfolioActivityEntry, index: number): string {
   return [
     entry.chainId,
@@ -436,216 +399,6 @@ function getActivityEntryKey(entry: TPortfolioActivityEntry, index: number): str
     entry.timestamp,
     index
   ].join(':')
-}
-
-function getNotificationActivityAction(notification: TNotification): TPortfolioActivityEntry['action'] | null {
-  switch (notification.type) {
-    case 'deposit':
-    case 'deposit and stake':
-    case 'zap':
-    case 'crosschain zap':
-      return 'deposit'
-    case 'withdraw':
-    case 'withdraw zap':
-    case 'crosschain withdraw zap':
-    case 'unstake and withdraw':
-      return 'withdraw'
-    case 'stake':
-      return 'stake'
-    case 'unstake':
-    case 'claim and exit':
-      return 'unstake'
-    case 'migrate':
-      return 'transfer'
-    default:
-      return null
-  }
-}
-
-function isRecentLocalActivityEntry(notification: TNotification, indexedTxHashes: ReadonlySet<string>): boolean {
-  if (notification.status !== 'success' || !notification.txHash || !notification.timeFinished) {
-    return false
-  }
-
-  if (!getNotificationActivityAction(notification)) {
-    return false
-  }
-
-  const isAlreadyIndexed = indexedTxHashes.has(notification.txHash.toLowerCase())
-  const currentTimestamp = Math.floor(Date.now() / 1000)
-  const isRecent = currentTimestamp - notification.timeFinished <= RECENT_LOCAL_ACTIVITY_RETENTION_SECONDS
-
-  return !isAlreadyIndexed && isRecent
-}
-
-function parseLocalActivityAmount(amount: string | undefined): number | null {
-  if (!amount) {
-    return null
-  }
-
-  const parsedAmount = Number(amount.replaceAll(',', ''))
-
-  return Number.isFinite(parsedAmount) ? parsedAmount : null
-}
-
-function isZapNotification(notification: TNotification): boolean {
-  return (
-    notification.type === 'zap' ||
-    notification.type === 'crosschain zap' ||
-    notification.type === 'withdraw zap' ||
-    notification.type === 'crosschain withdraw zap'
-  )
-}
-
-function getLocalActivityShareAmount(
-  notification: TNotification,
-  action: TPortfolioActivityEntry['action'],
-  isExitAction: boolean
-): string {
-  if (isExitAction) {
-    return notification.amount
-  }
-
-  if (action === 'deposit') {
-    return notification.toAmount ?? ''
-  }
-
-  return notification.toAmount ?? notification.amount
-}
-
-function toLocalActivityEntry(notification: TNotification): TPortfolioActivityEntry | null {
-  const action = getNotificationActivityAction(notification)
-  if (!action || !notification.txHash || !notification.timeFinished) {
-    return null
-  }
-
-  const isExitAction = action === 'withdraw' || action === 'unstake'
-  const isZap = isZapNotification(notification)
-  const vaultAddress = isExitAction
-    ? (notification.fromAddress ?? notification.toAddress ?? ZERO_ACTIVITY_ADDRESS)
-    : (notification.toAddress ?? notification.fromAddress ?? ZERO_ACTIVITY_ADDRESS)
-  const assetAddress = isExitAction
-    ? (notification.toAddress ?? notification.fromAddress ?? ZERO_ACTIVITY_ADDRESS)
-    : (notification.fromAddress ?? notification.toAddress ?? ZERO_ACTIVITY_ADDRESS)
-  const assetSymbol = isExitAction
-    ? (notification.toTokenName ?? notification.fromTokenName ?? null)
-    : (notification.fromTokenName ?? notification.toTokenName ?? null)
-  const assetAmount = isExitAction
-    ? (notification.toAmount ?? notification.amount)
-    : (notification.fromAmount ?? notification.amount)
-  const assetAmountFormatted = parseLocalActivityAmount(assetAmount)
-  const shareAmount = getLocalActivityShareAmount(notification, action, isExitAction)
-  const shareAmountFormatted = parseLocalActivityAmount(shareAmount)
-
-  return {
-    chainId: notification.chainId,
-    txHash: notification.txHash,
-    timestamp: notification.timeFinished,
-    action,
-    displayType: isZap ? 'zap' : null,
-    transferDirection: action === 'transfer' ? 'out' : null,
-    vaultAddress,
-    familyVaultAddress: vaultAddress,
-    assetSymbol,
-    assetAmount,
-    assetAmountFormatted,
-    inputTokenAddress: isZap && !isExitAction ? assetAddress : null,
-    inputTokenSymbol: isZap && !isExitAction ? assetSymbol : null,
-    inputTokenAmount: isZap && !isExitAction ? assetAmount : null,
-    inputTokenAmountFormatted: isZap && !isExitAction ? assetAmountFormatted : null,
-    outputTokenAddress: isZap && isExitAction ? assetAddress : null,
-    outputTokenSymbol: isZap && isExitAction ? assetSymbol : null,
-    outputTokenAmount: isZap && isExitAction ? assetAmount : null,
-    outputTokenAmountFormatted: isZap && isExitAction ? assetAmountFormatted : null,
-    shareAmount,
-    shareAmountFormatted,
-    status: 'ok'
-  }
-}
-
-function getActivityVaultDisplayName(
-  entry: TPortfolioActivityEntry,
-  allVaults: Record<string, TKongVault | undefined>
-): string {
-  const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
-  const activityVault = allVaults[toAddress(entry.vaultAddress)]
-
-  return familyVault
-    ? getVaultName(familyVault)
-    : activityVault
-      ? getVaultName(activityVault)
-      : truncateHex(entry.familyVaultAddress, 5)
-}
-
-function doesActivityEntryMatchSearch(
-  entry: TPortfolioActivityEntry,
-  search: string,
-  allVaults: Record<string, TKongVault | undefined>
-): boolean {
-  const normalizedSearch = search.trim().toLowerCase()
-  if (!normalizedSearch) {
-    return true
-  }
-
-  const displayName = getActivityVaultDisplayName(entry, allVaults)
-  const chainName = getActivityChainName(entry.chainId)
-  const actionLabel = getActivityEntryTitle(entry)
-  const formattedDate = formatIndexedActivityDate(entry.timestamp)
-  const symbols = [entry.assetSymbol, entry.inputTokenSymbol, entry.outputTokenSymbol].filter(Boolean).join(' ')
-  const amounts = [
-    entry.assetAmount,
-    entry.shareAmount,
-    entry.inputTokenAmount,
-    entry.outputTokenAmount,
-    entry.assetAmountFormatted,
-    entry.shareAmountFormatted,
-    entry.inputTokenAmountFormatted,
-    entry.outputTokenAmountFormatted
-  ]
-    .filter((value) => value !== null && value !== undefined && value !== '')
-    .join(' ')
-
-  return [displayName, chainName, actionLabel, formattedDate, symbols, amounts, entry.txHash]
-    .join(' ')
-    .toLowerCase()
-    .includes(normalizedSearch)
-}
-
-function doesLocalActivityMatchFilters({
-  chainId,
-  endTimestamp,
-  filters,
-  notification,
-  startTimestamp
-}: {
-  chainId: number | null
-  endTimestamp: number | null
-  filters: TActivityModalFilters
-  notification: TNotification
-  startTimestamp: number | null
-}): boolean {
-  const action = getNotificationActivityAction(notification)
-  if (!action) {
-    return false
-  }
-
-  if (filters.types.length > 0 && !filters.types.includes(action)) {
-    return false
-  }
-
-  if (chainId !== null && notification.chainId !== chainId) {
-    return false
-  }
-
-  if (startTimestamp !== null && (!notification.timeFinished || notification.timeFinished < startTimestamp)) {
-    return false
-  }
-
-  if (endTimestamp !== null && (!notification.timeFinished || notification.timeFinished > endTimestamp)) {
-    return false
-  }
-
-  return true
 }
 
 function formatActivityMonthLabel(date: Date): string {

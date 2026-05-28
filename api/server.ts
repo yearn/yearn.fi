@@ -10,6 +10,7 @@ import {
   clearUserCache,
   getHistoricalHoldingsChart,
   getHoldingsActivity,
+  getHoldingsActivityFacetResponse,
   getHoldingsBreakdown,
   getHoldingsProtocolReturnHistory,
   getHoldingsTotalsCacheVersion,
@@ -31,7 +32,6 @@ import {
   isHoldingsDebugRequested,
   withHoldingsDebugContext
 } from './lib/holdings/services/debug'
-import { fetchAddressActivityChainIdsByExistence } from './lib/holdings/services/graphql'
 import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
@@ -304,10 +304,6 @@ function parseHoldingsActivityTimestamp(value: string | null): number | null {
   const parsed = Number(value)
 
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null
-}
-
-function parseHoldingsActivityBoolean(value: string | null): boolean {
-  return value === 'true' || value === '1'
 }
 
 function parseUtcDateParam(value: string | null): number | null {
@@ -949,7 +945,6 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const chainId = parseHoldingsActivityChainId(url.searchParams.get('chainId'))
   const startTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('startTimestamp'))
   const endTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('endTimestamp'))
-  const includeFacets = parseHoldingsActivityBoolean(url.searchParams.get('includeFacets'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -962,19 +957,12 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const activity = await getHoldingsActivity(
-      address,
-      version,
-      limit,
-      offset,
-      {
-        type,
-        chainId,
-        startTimestamp,
-        endTimestamp
-      },
-      includeFacets
-    )
+    const activity = await getHoldingsActivity(address, version, limit, offset, {
+      type,
+      chainId,
+      startTimestamp,
+      endTimestamp
+    })
 
     return Response.json(activity, {
       headers: {
@@ -1005,24 +993,13 @@ async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const chainIds = await fetchAddressActivityChainIdsByExistence(address, version)
+    const facetsResponse = await getHoldingsActivityFacetResponse(address, version)
 
-    return Response.json(
-      {
-        address: address.toLowerCase(),
-        version,
-        facets: { chainIds },
-        pageInfo: {
-          hasMore: false,
-          nextOffsetPerSource: null
-        }
-      },
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900'
-        }
+    return Response.json(facetsResponse, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900'
       }
-    )
+    })
   } catch (error) {
     console.error('Error fetching holdings activity facets:', error)
     const message = error instanceof Error ? error.message : String(error)
