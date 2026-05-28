@@ -7,6 +7,7 @@ type TTenderlyEnv = Record<string, TEnvValue>
 
 const TENDERLY_MODE_STORAGE_KEY = 'dev-tenderly-mode-enabled'
 const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'])
+const PRIVATE_PREVIEW_HOSTNAME_SUFFIXES = ['.ts.net']
 
 export type TTenderlyChainConfig = {
   canonicalChainId: TCanonicalChainId
@@ -31,8 +32,17 @@ function isLoopbackHostname(hostname: string | undefined): boolean {
   return LOOPBACK_HOSTNAMES.has(hostname.trim().toLowerCase())
 }
 
-function canToggleTenderlyModeForRuntime({ isDev, hostname }: { isDev: boolean; hostname?: string }): boolean {
-  return isDev || isLoopbackHostname(hostname)
+function isPrivatePreviewHostname(hostname: string | undefined): boolean {
+  if (!hostname) {
+    return false
+  }
+
+  const normalizedHostname = hostname.trim().toLowerCase()
+  return PRIVATE_PREVIEW_HOSTNAME_SUFFIXES.some((suffix) => normalizedHostname.endsWith(suffix))
+}
+
+export function canToggleTenderlyModeForRuntime({ isDev, hostname }: { isDev: boolean; hostname?: string }): boolean {
+  return isDev || isLoopbackHostname(hostname) || isPrivatePreviewHostname(hostname)
 }
 
 // Legacy localhost fork support is intentionally limited to 1337.

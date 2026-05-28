@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { canonicalChains } from './chainDefinitions'
 import {
+  canToggleTenderlyModeForRuntime,
   getSupportedCanonicalChainsForRuntime,
   getSupportedChainLookupForRuntime,
   getSupportedExecutionChainsForRuntime,
@@ -14,6 +15,25 @@ import {
   resolveTenderlyExplorerUriForExecutionChainIdForRuntime,
   resolveTenderlyRpcUriForExecutionChainIdForRuntime
 } from './tenderly'
+
+describe('canToggleTenderlyModeForRuntime', () => {
+  it('allows toggling in dev mode', () => {
+    expect(canToggleTenderlyModeForRuntime({ isDev: true, hostname: 'yearn.fi' })).toBe(true)
+  })
+
+  it('allows toggling on loopback hosts', () => {
+    expect(canToggleTenderlyModeForRuntime({ isDev: false, hostname: 'localhost' })).toBe(true)
+    expect(canToggleTenderlyModeForRuntime({ isDev: false, hostname: '127.0.0.1' })).toBe(true)
+  })
+
+  it('allows toggling on private Tailscale preview hosts', () => {
+    expect(canToggleTenderlyModeForRuntime({ isDev: false, hostname: 'dev-vm.tail197cc7.ts.net' })).toBe(true)
+  })
+
+  it('keeps toggling unavailable on regular production hosts', () => {
+    expect(canToggleTenderlyModeForRuntime({ isDev: false, hostname: 'yearn.fi' })).toBe(false)
+  })
+})
 
 describe('parseTenderlyRuntime', () => {
   it('returns the canonical chain set when Tenderly mode is disabled', () => {
