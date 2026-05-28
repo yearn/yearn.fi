@@ -330,6 +330,7 @@ export function WidgetDeposit({
     sourceChainId,
     chainId,
     depositAmount: depositAmount.debouncedBn,
+    expectedShareAmount: activeFlow.periphery.normalizedExpectedOut,
     routeType,
     routerAddress: activeFlow.periphery.routerAddress,
     isCrossChain

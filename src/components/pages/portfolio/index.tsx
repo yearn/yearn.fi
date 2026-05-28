@@ -497,6 +497,22 @@ function isZapNotification(notification: TNotification): boolean {
   )
 }
 
+function getLocalActivityShareAmount(
+  notification: TNotification,
+  action: TPortfolioActivityEntry['action'],
+  isExitAction: boolean
+): string {
+  if (isExitAction) {
+    return notification.amount
+  }
+
+  if (action === 'deposit') {
+    return notification.toAmount ?? ''
+  }
+
+  return notification.toAmount ?? notification.amount
+}
+
 function toLocalActivityEntry(notification: TNotification): TPortfolioActivityEntry | null {
   const action = getNotificationActivityAction(notification)
   if (!action || !notification.txHash || !notification.timeFinished) {
@@ -518,7 +534,7 @@ function toLocalActivityEntry(notification: TNotification): TPortfolioActivityEn
     ? (notification.toAmount ?? notification.amount)
     : (notification.fromAmount ?? notification.amount)
   const assetAmountFormatted = parseLocalActivityAmount(assetAmount)
-  const shareAmount = isExitAction ? notification.amount : (notification.toAmount ?? notification.amount)
+  const shareAmount = getLocalActivityShareAmount(notification, action, isExitAction)
   const shareAmountFormatted = parseLocalActivityAmount(shareAmount)
 
   return {
@@ -547,19 +563,65 @@ function toLocalActivityEntry(notification: TNotification): TPortfolioActivityEn
   }
 }
 
+function getActivityVaultDisplayName(
+  entry: TPortfolioActivityEntry,
+  allVaults: Record<string, TKongVault | undefined>
+): string {
+  const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
+  const activityVault = allVaults[toAddress(entry.vaultAddress)]
+
+  return familyVault
+    ? getVaultName(familyVault)
+    : activityVault
+      ? getVaultName(activityVault)
+      : truncateHex(entry.familyVaultAddress, 5)
+}
+
+function doesActivityEntryMatchSearch(
+  entry: TPortfolioActivityEntry,
+  search: string,
+  allVaults: Record<string, TKongVault | undefined>
+): boolean {
+  const normalizedSearch = search.trim().toLowerCase()
+  if (!normalizedSearch) {
+    return true
+  }
+
+  const displayName = getActivityVaultDisplayName(entry, allVaults)
+  const chainName = getActivityChainName(entry.chainId)
+  const actionLabel = getActivityEntryTitle(entry)
+  const formattedDate = formatIndexedActivityDate(entry.timestamp)
+  const symbols = [entry.assetSymbol, entry.inputTokenSymbol, entry.outputTokenSymbol].filter(Boolean).join(' ')
+  const amounts = [
+    entry.assetAmount,
+    entry.shareAmount,
+    entry.inputTokenAmount,
+    entry.outputTokenAmount,
+    entry.assetAmountFormatted,
+    entry.shareAmountFormatted,
+    entry.inputTokenAmountFormatted,
+    entry.outputTokenAmountFormatted
+  ]
+    .filter((value) => value !== null && value !== undefined && value !== '')
+    .join(' ')
+
+  return [displayName, chainName, actionLabel, formattedDate, symbols, amounts, entry.txHash]
+    .join(' ')
+    .toLowerCase()
+    .includes(normalizedSearch)
+}
+
 function doesLocalActivityMatchFilters({
   chainId,
   endTimestamp,
   filters,
   notification,
-  search,
   startTimestamp
 }: {
   chainId: number | null
   endTimestamp: number | null
   filters: TActivityModalFilters
   notification: TNotification
-  search: string
   startTimestamp: number | null
 }): boolean {
   const action = getNotificationActivityAction(notification)
@@ -583,24 +645,7 @@ function doesLocalActivityMatchFilters({
     return false
   }
 
-  const normalizedSearch = search.trim().toLowerCase()
-  if (!normalizedSearch) {
-    return true
-  }
-
-  const searchableText = [
-    notification.type,
-    getActivityChainName(notification.chainId),
-    notification.fromTokenName,
-    notification.toTokenName,
-    notification.amount,
-    notification.txHash
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase()
-
-  return searchableText.includes(normalizedSearch)
+  return true
 }
 
 function formatActivityMonthLabel(date: Date): string {
@@ -1952,7 +1997,6 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
             endTimestamp: activityEndTimestamp,
             filters: activityFilters,
             notification: entry,
-            search: activitySearch,
             startTimestamp: activityStartTimestamp
           })
         )
@@ -1962,7 +2006,6 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       activityChainId,
       activityEndTimestamp,
       activityFilters,
-      activitySearch,
       activityStartTimestamp,
       cachedEntries,
       indexedTxHashes,
@@ -1971,8 +2014,11 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   )
   const recentLocalActivityEntries = useMemo(
     () =>
-      recentLocalEntries.map(toLocalActivityEntry).filter((entry): entry is TPortfolioActivityEntry => Boolean(entry)),
-    [recentLocalEntries]
+      recentLocalEntries
+        .map(toLocalActivityEntry)
+        .filter((entry): entry is TPortfolioActivityEntry => Boolean(entry))
+        .filter((entry) => doesActivityEntryMatchSearch(entry, activitySearch, allVaults)),
+    [activitySearch, allVaults, recentLocalEntries]
   )
   const hasUnresolvedLocalEntries = unresolvedLocalEntries.length > 0
   const hasLocalEntries = hasUnresolvedLocalEntries || recentLocalActivityEntries.length > 0
@@ -1984,8 +2030,6 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     activityFilters.startDate !== '' ||
     activityFilters.endDate !== DEFAULT_ACTIVITY_MODAL_FILTERS.endDate
   const visibleIndexedEntries = useMemo(() => {
-    const normalizedSearch = activitySearch.trim().toLowerCase()
-
     return indexedEntries.filter((entry) => {
       if (activityFilters.types.length > 0 && !activityFilters.types.includes(entry.action)) {
         return false
@@ -1998,26 +2042,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         return false
       }
 
-      if (!normalizedSearch) {
-        return true
-      }
-
-      const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
-      const activityVault = allVaults[toAddress(entry.vaultAddress)]
-      const displayName = familyVault
-        ? getVaultName(familyVault)
-        : activityVault
-          ? getVaultName(activityVault)
-          : truncateHex(entry.familyVaultAddress, 5)
-      const chainName = getActivityChainName(entry.chainId)
-      const actionLabel = getActivityEntryTitle(entry)
-      const formattedDate = formatIndexedActivityDate(entry.timestamp)
-      const symbols = [entry.assetSymbol, entry.inputTokenSymbol, entry.outputTokenSymbol].filter(Boolean).join(' ')
-
-      return [displayName, chainName, actionLabel, formattedDate, symbols, entry.txHash]
-        .join(' ')
-        .toLowerCase()
-        .includes(normalizedSearch)
+      return doesActivityEntryMatchSearch(entry, activitySearch, allVaults)
     })
   }, [activityFilters.types, activitySearch, allVaults, indexedEntries, isActivityZapFilterActive])
   const visibleActivityEntries = useMemo(
