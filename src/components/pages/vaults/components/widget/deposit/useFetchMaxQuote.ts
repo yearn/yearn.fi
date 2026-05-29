@@ -1,5 +1,9 @@
 import { getRedeemPreviewCall } from '@pages/vaults/hooks/actions/stakingAdapter'
-import { type EnsoRouteResponse, normalizeEnsoRouteResponse } from '@pages/vaults/hooks/solvers/ensoRoute'
+import {
+  type EnsoRouteResponse,
+  normalizeEnsoRouteResponse,
+  parseEnsoRouteBigInt
+} from '@pages/vaults/hooks/solvers/ensoRoute'
 import { calculateRemainingEnsoSlippagePercentage, clampZapSlippage, toBasisPoints } from '@shared/utils/slippage'
 import { useCallback, useState } from 'react'
 import { type Address, formatUnits, isAddressEqual } from 'viem'
@@ -166,9 +170,15 @@ export const useFetchMaxQuote = ({
       })
 
       if (bootstrapRoute) {
+        const parsedAmountOut = parseEnsoRouteBigInt(bootstrapRoute.amountOut)
+        const parsedMinAmountOut = parseEnsoRouteBigInt(bootstrapRoute.minAmountOut)
+        if (parsedAmountOut === undefined || parsedMinAmountOut === undefined) {
+          return
+        }
+
         const [normalizedExpectedOut, normalizedMinExpectedOut] = await Promise.all([
-          normalizeVaultShares(BigInt(bootstrapRoute.amountOut)),
-          normalizeVaultShares(BigInt(bootstrapRoute.minAmountOut))
+          normalizeVaultShares(parsedAmountOut),
+          normalizeVaultShares(parsedMinAmountOut)
         ])
 
         const depositValueInfo = calculateDepositValueInfo({
@@ -200,7 +210,11 @@ export const useFetchMaxQuote = ({
         return
       }
 
-      const gasEstimate = BigInt(routeForGas.gas)
+      const gasEstimate = parseEnsoRouteBigInt(routeForGas.gas)
+      if (gasEstimate === undefined) {
+        return
+      }
+
       const gasPrice = MAX_QUOTE_GAS_PRICE_GWEI * 1_000_000_000n
       const gasReserve = (gasEstimate * gasPrice * MAX_QUOTE_GAS_RESERVE_MULTIPLIER) / 100n
 

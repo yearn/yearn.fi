@@ -5,7 +5,13 @@ import { getApproveAbi } from '@shared/utils/approve'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
 import { useTokenAllowance } from '../useTokenAllowance'
-import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
+import {
+  type EnsoError,
+  type EnsoRouteResponse,
+  getEnsoRouteInvariantError,
+  normalizeEnsoRouteResponse,
+  routeHasSwapStep
+} from './ensoRoute'
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
 export type EnsoRoutingStrategy = 'router' | 'delegate' | 'router-legacy' | 'delegate-legacy' | 'ensowallet'
@@ -155,6 +161,41 @@ export const useSolverEnso = ({
         return
       }
       const resolvedRoute = normalizedResponse.route
+      const invariantError =
+        resolvedRoute && receiver
+          ? getEnsoRouteInvariantError(resolvedRoute.tx, {
+              chainId,
+              fromAddress,
+              tokenIn,
+              amountIn,
+              tokenOut,
+              receiver,
+              expectedOut: resolvedRoute.amountOut,
+              minExpectedOut: resolvedRoute.minAmountOut
+            })
+          : 'Enso route receiver is missing'
+
+      if (invariantError) {
+        console.warn('[Enso] Route invariant error', {
+          chainId,
+          destinationChainId,
+          tokenIn,
+          tokenOut,
+          amountIn: amountIn.toString(),
+          message: invariantError
+        })
+        setRoute(undefined)
+        setError({
+          error: 'EnsoRouteInvariantError',
+          message: invariantError,
+          statusCode: response.status
+        })
+        setResolvedRequestKey(undefined)
+        setErrorRequestKey(requestKey)
+
+        return
+      }
+
       setError(undefined)
       setRoute(resolvedRoute)
       setResolvedRequestKey(requestKey)
