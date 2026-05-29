@@ -3,7 +3,8 @@ import path from 'path'
 import { defineConfig, loadEnv } from 'vite'
 
 const DEFAULT_HOST = '127.0.0.1'
-const DEFAULT_API_SERVER_PORT = '3001'
+const DEFAULT_ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+const DEFAULT_API_PORT = '3001'
 const API_HEALTHCHECK_PATH = '/api/enso/balances'
 const API_HEALTHCHECK_EXPECTED_ERROR = 'Missing eoaAddress'
 const API_HEALTHCHECK_TIMEOUT_MS = 500
@@ -11,10 +12,14 @@ const API_HEALTHCHECK_RETRIES = 10
 const API_HEALTHCHECK_DELAY_MS = 300
 
 function resolveApiProxyTarget(env: Record<string, string>) {
-  return (
-    env.API_PROXY_TARGET ||
-    `http://${env.API_PROXY_HOST || DEFAULT_HOST}:${env.API_SERVER_PORT || DEFAULT_API_SERVER_PORT}`
-  )
+  const explicitTarget = env.API_PROXY_TARGET?.trim() || env.VITE_API_PROXY_TARGET?.trim()
+  if (explicitTarget) {
+    return explicitTarget.replace(/\/$/, '')
+  }
+
+  const host = env.API_PROXY_HOST || DEFAULT_HOST
+  const apiPort = env.API_PORT?.trim() || env.VITE_API_PORT?.trim() || env.API_SERVER_PORT?.trim() || DEFAULT_API_PORT
+  return `http://${host}:${apiPort}`
 }
 
 function resolveClientHost(env: Record<string, string>) {
@@ -26,8 +31,18 @@ function resolveClientPort(env: Record<string, string>) {
   return Number.isInteger(configuredPort) && configuredPort > 0 ? configuredPort : 3000
 }
 
+function resolveAllowedHosts(env: Record<string, string>) {
+  const configuredHosts = env.ALLOWED_HOSTS?.split(',').map((host) => host.trim().toLowerCase()) ?? []
+  return [...new Set([...DEFAULT_ALLOWED_HOSTS, ...configuredHosts].filter(Boolean))]
+}
+
 function buildProxy(apiProxyTarget: string) {
   return {
+    '/sitemap.xml': {
+      target: apiProxyTarget,
+      changeOrigin: true,
+      rewrite: () => '/api/sitemap'
+    },
     '/api': {
       target: apiProxyTarget,
       changeOrigin: true
@@ -38,6 +53,10 @@ function buildProxy(apiProxyTarget: string) {
       rewrite: (path: string) => path.replace('/proxy/plausible', '')
     }
   }
+}
+
+function shouldSuppressRollupWarning(warning: { code?: string; id?: string }): boolean {
+  return warning.code === 'INVALID_ANNOTATION' && warning.id?.includes('/node_modules/') === true
 }
 
 function sleep(ms: number) {
@@ -82,10 +101,16 @@ function previewApiGuard(apiProxyTarget: string) {
 }
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = {
+    ...loadEnv(mode, process.cwd(), ''),
+    ...Object.fromEntries(
+      Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+    )
+  }
   const apiProxyTarget = resolveApiProxyTarget(env)
   const host = resolveClientHost(env)
   const port = resolveClientPort(env)
+  const allowedHosts = resolveAllowedHosts(env)
   const proxy = buildProxy(apiProxyTarget)
 
   return {
@@ -107,17 +132,27 @@ export default defineConfig(({ mode }) => {
     server: {
       host,
       port,
+      allowedHosts,
       proxy
     },
     preview: {
       host,
       port,
+      allowedHosts,
       proxy
     },
     build: {
       outDir: 'dist',
       sourcemap: true,
+      chunkSizeWarningLimit: 700,
       rollupOptions: {
+        onwarn(warning, warn) {
+          if (shouldSuppressRollupWarning(warning)) {
+            return
+          }
+
+          warn(warning)
+        },
         output: {
           manualChunks: {
             'react-vendor': ['react', 'react-dom', 'react-router'],

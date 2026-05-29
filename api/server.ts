@@ -5,8 +5,36 @@ import type {
   TTenderlyRevertRequest,
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
+import { ENSO_BALANCES_CACHE_CONTROL } from './enso/cache'
+import type { TVaultListEntry, TVaultSnapshot } from './lib/aio'
+import { buildSitemap, buildVaultMarkdown, buildVaultsMarkdown, KONG_REST_BASE, KONG_VAULT_LIST_URL } from './lib/aio'
+import { getVercelCdnCacheHeaders } from './lib/cacheHeaders'
+import {
+  clearUserCache,
+  getHistoricalHoldingsChart,
+  getHoldingsActivity,
+  getHoldingsActivityFacetResponse,
+  getHoldingsBreakdown,
+  getHoldingsProtocolReturnHistory,
+  getHoldingsTotalsCacheVersion,
+  type HoldingsActivityTypeFilter,
+  type HoldingsEventFetchType,
+  type HoldingsEventPaginationMode,
+  type HoldingsHistoryDenomination,
+  type HoldingsHistoryTimeframe,
+  initializeHoldingsStorage,
+  type VaultVersion,
+  validateConfig
+} from './lib/holdings'
+import {
+  createHoldingsDebugContext,
+  debugError,
+  debugLog,
+  isHoldingsDebugRequested,
+  withHoldingsDebugContext
+} from './lib/holdings/services/debug'
+import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
-import { OPTIMIZATION_GET_CORS_HEADERS, OPTIMIZATION_POST_CORS_HEADERS } from './optimization/_lib/cors'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
 import { parseExplainMetadata } from './optimization/_lib/explain-parse'
 import {
@@ -28,28 +56,28 @@ import {
 import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
-const DEFAULT_API_SERVER_PORT = '3001'
+const DEFAULT_API_PORT = 3001
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
+const YVUSD_APR_CDN_CACHE_CONTROL = 'public, s-maxage=30, stale-while-revalidate=120'
 
 function isHistoryQueryEnabled(historyParam: string | null): boolean {
   return historyParam === '1' || historyParam === 'true'
 }
 
-function resolveApiServerPort(env: NodeJS.ProcessEnv): number {
-  const configuredPort = env.API_SERVER_PORT
-  if (configuredPort) {
-    const parsedConfiguredPort = Number(configuredPort)
-    if (Number.isInteger(parsedConfiguredPort) && parsedConfiguredPort > 0) {
-      return parsedConfiguredPort
-    }
+function resolveApiPort(env: NodeJS.ProcessEnv): number {
+  const rawPort = env.API_PORT?.trim() || env.API_SERVER_PORT?.trim() || String(DEFAULT_API_PORT)
+  const port = Number(rawPort)
+
+  if (!Number.isInteger(port) || port <= 0) {
+    throw new Error(`Invalid API port value: ${rawPort}`)
   }
 
-  return Number(DEFAULT_API_SERVER_PORT)
+  return port
 }
 
-const API_SERVER_PORT = resolveApiServerPort(process.env)
+const API_PORT = resolveApiPort(process.env)
 
 type TTenderlyJsonRpcSuccess = {
   id: string | number | null
@@ -65,22 +93,6 @@ type TTenderlyJsonRpcError = {
     message: string
     data?: unknown
   }
-}
-
-function withCorsHeaders(headers: HeadersInit | undefined, corsHeaders: Readonly<Record<string, string>>): HeadersInit {
-  return { ...corsHeaders, ...(headers ?? {}) }
-}
-
-function jsonWithCors(
-  body: unknown,
-  status: number,
-  corsHeaders: Readonly<Record<string, string>>,
-  headers?: HeadersInit
-): Response {
-  return Response.json(body, {
-    status,
-    headers: withCorsHeaders(headers, corsHeaders)
-  })
 }
 
 async function handleYvUsdAprs(req: Request): Promise<Response> {
@@ -111,14 +123,196 @@ async function handleYvUsdAprs(req: Request): Promise<Response> {
 
     const data = await response.json()
     return Response.json(data, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120'
-      }
+      headers: getVercelCdnCacheHeaders(YVUSD_APR_CDN_CACHE_CONTROL)
     })
   } catch (error) {
     console.error('Error proxying yvUSD APR request:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
+}
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+}
+
+function withCors(response: Response): Response {
+  const newHeaders = new Headers(response.headers)
+  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+    newHeaders.set(key, value)
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders
+  })
+}
+
+function handleCorsPreFlight(): Response {
+  return new Response(null, {
+    status: 204,
+    headers: CORS_HEADERS
+  })
+}
+
+async function handleHoldingsProgress(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const progress = await getHoldingsProgress(url.searchParams.get('id'))
+
+  if (!progress) {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Cache-Control': 'no-store'
+      }
+    })
+  }
+
+  return Response.json(progress, {
+    headers: {
+      'Cache-Control': 'no-store'
+    }
+  })
+}
+
+function isValidAddress(address: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(address)
+}
+
+function parseVaultFilters(url: URL): Array<{ chainId: number; vaultAddress: string }> | null | undefined {
+  const vaults = url.searchParams.get('vaults')
+
+  if (vaults !== null) {
+    const entries = vaults
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+    const parsedEntries = entries.map((entry) => {
+      const [entryChainId, entryVaultAddress] = entry.split(':')
+      const parsedChainId = Number(entryChainId)
+
+      if (
+        !entryChainId ||
+        !entryVaultAddress ||
+        !Number.isInteger(parsedChainId) ||
+        !isValidAddress(entryVaultAddress)
+      ) {
+        return null
+      }
+
+      return { chainId: parsedChainId, vaultAddress: entryVaultAddress }
+    })
+
+    if (parsedEntries.some((entry) => entry === null)) {
+      return null
+    }
+
+    return parsedEntries.filter((entry): entry is { chainId: number; vaultAddress: string } => entry !== null)
+  }
+
+  const vault = url.searchParams.get('vault')
+  if (vault === null) {
+    return undefined
+  }
+
+  const chainId = url.searchParams.get('chainId')
+  if (!isValidAddress(vault) || !chainId || !Number.isInteger(Number(chainId))) {
+    return null
+  }
+
+  return [{ chainId: Number(chainId), vaultAddress: vault }]
+}
+
+function parseHoldingsEventFetchType(value: string | null): HoldingsEventFetchType {
+  return value === 'parallel' ? 'parallel' : 'seq'
+}
+
+function parseHoldingsEventPaginationMode(value: string | null): HoldingsEventPaginationMode {
+  return value === 'all' ? 'all' : 'paged'
+}
+
+function parseHoldingsHistoryDenomination(value: string | null): HoldingsHistoryDenomination {
+  return value === 'eth' ? 'eth' : 'usd'
+}
+
+function parseHoldingsHistoryTimeframe(value: string | null): HoldingsHistoryTimeframe {
+  return value === 'all' ? 'all' : '1y'
+}
+
+function parseHoldingsActivityLimit(value: string | null): number {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed)) {
+    return 10
+  }
+
+  return Math.min(Math.max(parsed, 1), 500)
+}
+
+function parseHoldingsActivityOffset(value: string | null): number {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed)) {
+    return 0
+  }
+
+  return Math.max(parsed, 0)
+}
+
+function parseHoldingsActivityType(value: string | null): HoldingsActivityTypeFilter {
+  return value === 'deposit' ||
+    value === 'withdraw' ||
+    value === 'stake' ||
+    value === 'unstake' ||
+    value === 'transfer' ||
+    value === 'swap'
+    ? value
+    : 'all'
+}
+
+function parseHoldingsActivityChainId(value: string | null): number | null {
+  const parsed = Number(value)
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null
+}
+
+function parseHoldingsActivityTimestamp(value: string | null): number | null {
+  if (!value) {
+    return null
+  }
+
+  const parsed = Number(value)
+
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null
+}
+
+function parseUtcDateParam(value: string | null): number | null {
+  if (!value) {
+    return null
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) {
+    return null
+  }
+
+  const [, year, month, day] = match
+  const yearNumber = Number(year)
+  const monthNumber = Number(month)
+  const dayNumber = Number(day)
+  const utcDate = new Date(Date.UTC(yearNumber, monthNumber - 1, dayNumber))
+
+  if (
+    utcDate.getUTCFullYear() !== yearNumber ||
+    utcDate.getUTCMonth() !== monthNumber - 1 ||
+    utcDate.getUTCDate() !== dayNumber
+  ) {
+    return null
+  }
+
+  const timestamp = Math.floor(utcDate.getTime() / 1000)
+  return Number.isFinite(timestamp) ? timestamp : null
 }
 
 async function parseJsonBody<T>(req: Request): Promise<T> {
@@ -269,6 +463,86 @@ async function handleTenderlyFund(req: Request): Promise<Response> {
   }
 }
 
+async function handleSitemap(req: Request): Promise<Response> {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+  try {
+    const upstream = await fetch(KONG_VAULT_LIST_URL, { headers: { Accept: 'application/json' } })
+    const vaults: TVaultListEntry[] = upstream.ok ? ((await upstream.json()) as TVaultListEntry[]) : []
+    return new Response(req.method === 'HEAD' ? null : buildSitemap(vaults), {
+      headers: {
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600'
+      }
+    })
+  } catch (error) {
+    console.error('Error generating sitemap:', error)
+    return new Response(
+      '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>',
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/xml; charset=utf-8' }
+      }
+    )
+  }
+}
+
+async function handleVaultsMarkdown(req: Request): Promise<Response> {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+  const chainIdParam = new URL(req.url).searchParams.get('chainId')
+  const chainId = chainIdParam && /^\d+$/.test(chainIdParam) ? Number(chainIdParam) : undefined
+  try {
+    const upstream = await fetch(KONG_VAULT_LIST_URL, { headers: { Accept: 'application/json' } })
+    if (!upstream.ok) return Response.json({ error: 'Failed to fetch vault list from upstream' }, { status: 502 })
+    const vaults = (await upstream.json()) as TVaultListEntry[]
+    return new Response(req.method === 'HEAD' ? null : buildVaultsMarkdown(vaults, chainId), {
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error generating vaults markdown:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+async function handleVaultMarkdown(req: Request): Promise<Response> {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+  const params = new URL(req.url).searchParams
+  const chainId = params.get('chainId')
+  const address = params.get('address')
+  if (!chainId || !address) return Response.json({ error: 'Missing chainId or address' }, { status: 400 })
+  if (!/^\d+$/.test(chainId)) return Response.json({ error: 'Invalid chainId' }, { status: 400 })
+  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return Response.json({ error: 'Invalid address' }, { status: 400 })
+  try {
+    const upstream = await fetch(`${KONG_REST_BASE}/snapshot/${chainId}/${address}`, {
+      headers: { Accept: 'application/json' }
+    })
+    if (!upstream.ok) {
+      return Response.json(
+        { error: upstream.status === 404 ? 'Vault not found' : 'Upstream error' },
+        { status: upstream.status === 404 ? 404 : 502 }
+      )
+    }
+    const snapshot = (await upstream.json()) as TVaultSnapshot
+    return new Response(req.method === 'HEAD' ? null : buildVaultMarkdown(snapshot, Number(chainId), address), {
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error generating vault markdown:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 function handleEnsoStatus(): Response {
   const apiKey = process.env.ENSO_API_KEY
   return Response.json({ configured: !!apiKey })
@@ -282,6 +556,7 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
   const tokenOut = url.searchParams.get('tokenOut')
   const amountIn = url.searchParams.get('amountIn')
   const slippage = url.searchParams.get('slippage') || '100'
+  const routingStrategy = url.searchParams.get('routingStrategy')
   const destinationChainId = url.searchParams.get('destinationChainId')
   const receiver = url.searchParams.get('receiver')
 
@@ -310,6 +585,9 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
   if (receiver) {
     params.set('receiver', receiver)
   }
+  if (routingStrategy) {
+    params.set('routingStrategy', routingStrategy)
+  }
 
   const ensoUrl = `${ENSO_API_BASE}/api/v1/shortcuts/route?${params}`
 
@@ -337,6 +615,7 @@ async function handleEnsoRoute(req: Request): Promise<Response> {
 async function handleEnsoBalances(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const eoaAddress = url.searchParams.get('eoaAddress')
+  const chainId = url.searchParams.get('chainId')
 
   if (!eoaAddress) {
     return Response.json({ error: 'Missing eoaAddress' }, { status: 400 })
@@ -351,7 +630,7 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
   const params = new URLSearchParams({
     eoaAddress,
     useEoa: 'true',
-    chainId: 'all'
+    chainId: chainId || 'all'
   })
 
   const ensoUrl = `${ENSO_API_BASE}/api/v1/wallet/balances?${params}`
@@ -375,7 +654,7 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
     const data = await response.json()
     return Response.json(data, {
       headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+        'Cache-Control': ENSO_BALANCES_CACHE_CONTROL
       }
     })
   } catch (error) {
@@ -387,20 +666,19 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
 const CHANGE_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
 const ALIGNMENT_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 const VAULT_STATE_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const HOLDINGS_HISTORY_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600'
+const HOLDINGS_ACTIVITY_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=300'
+const HOLDINGS_ACTIVITY_FACETS_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=900'
 
 async function handleOptimizationChange(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: OPTIMIZATION_GET_CORS_HEADERS })
-  }
-
   if (req.method !== 'GET') {
-    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_GET_CORS_HEADERS)
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
   }
 
   try {
     const optimizations = await readOptimizations()
     if (!optimizations || optimizations.length === 0) {
-      return jsonWithCors({ error: 'No optimization data available' }, 404, OPTIMIZATION_GET_CORS_HEADERS)
+      return Response.json({ error: 'No optimization data available' }, { status: 404 })
     }
 
     const url = new URL(req.url)
@@ -411,99 +689,83 @@ async function handleOptimizationChange(req: Request): Promise<Response> {
           return optimization.vault.toLowerCase() === requestedVault.toLowerCase()
         })
         if (selectedHistory.length === 0) {
-          return jsonWithCors(
-            { error: `Vault not found in optimization payload: ${requestedVault}` },
-            404,
-            OPTIMIZATION_GET_CORS_HEADERS
-          )
+          return Response.json({ error: `Vault not found in optimization payload: ${requestedVault}` }, { status: 404 })
         }
 
-        return jsonWithCors(selectedHistory, 200, OPTIMIZATION_GET_CORS_HEADERS, {
-          'Cache-Control': CHANGE_CACHE_CONTROL
+        return Response.json(selectedHistory, {
+          headers: getVercelCdnCacheHeaders(CHANGE_CACHE_CONTROL)
         })
       }
 
       const selected = findVaultOptimization(optimizations, requestedVault)
       if (!selected) {
-        return jsonWithCors(
-          { error: `Vault not found in optimization payload: ${requestedVault}` },
-          404,
-          OPTIMIZATION_GET_CORS_HEADERS
-        )
+        return Response.json({ error: `Vault not found in optimization payload: ${requestedVault}` }, { status: 404 })
       }
 
-      return jsonWithCors(selected, 200, OPTIMIZATION_GET_CORS_HEADERS, {
-        'Cache-Control': CHANGE_CACHE_CONTROL
+      return Response.json(selected, {
+        headers: getVercelCdnCacheHeaders(CHANGE_CACHE_CONTROL)
       })
     }
 
-    return jsonWithCors(optimizations, 200, OPTIMIZATION_GET_CORS_HEADERS, {
-      'Cache-Control': CHANGE_CACHE_CONTROL
+    return Response.json(optimizations, {
+      headers: getVercelCdnCacheHeaders(CHANGE_CACHE_CONTROL)
     })
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
-      return jsonWithCors({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+      return Response.json({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, { status: 500 })
     }
 
     if (isRedisConnectivityError(error)) {
-      return jsonWithCors({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, 503, OPTIMIZATION_GET_CORS_HEADERS)
+      return Response.json({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, { status: 503 })
     }
 
     const message = error instanceof Error ? error.message : String(error)
-    return jsonWithCors({ error: message }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+    return Response.json({ error: message }, { status: 500 })
   }
 }
 
 async function handleOptimizationAlignment(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: OPTIMIZATION_GET_CORS_HEADERS })
-  }
-
   if (req.method !== 'GET') {
-    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_GET_CORS_HEADERS)
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
   }
 
   const url = new URL(req.url)
   const vault = url.searchParams.get('vault')
   if (!vault) {
-    return jsonWithCors({ error: 'vault parameter required' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
+    return Response.json({ error: 'vault parameter required' }, { status: 400 })
   }
 
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
-    return jsonWithCors({ error: 'ENVIO_GRAPHQL_URL not configured' }, 503, OPTIMIZATION_GET_CORS_HEADERS)
+    return Response.json({ error: 'ENVIO_GRAPHQL_URL not configured' }, { status: 503 })
   }
 
   try {
     const optimizations = await readOptimizations()
     if (!optimizations || optimizations.length === 0) {
-      return jsonWithCors({ error: 'No optimization data available' }, 404, OPTIMIZATION_GET_CORS_HEADERS)
+      return Response.json({ error: 'No optimization data available' }, { status: 404 })
     }
 
     const optimization = findVaultOptimization(optimizations, vault)
     if (!optimization) {
-      return jsonWithCors({ error: `Vault not found: ${vault}` }, 404, OPTIMIZATION_GET_CORS_HEADERS)
+      return Response.json({ error: `Vault not found: ${vault}` }, { status: 404 })
     }
 
-    let chainId = optimization.source.chainId
+    const metadataChainId = optimization.source.chainId ? undefined : parseExplainMetadata(optimization.explain).chainId
+    const chainId = optimization.source.chainId ?? metadataChainId
     if (!chainId) {
-      const metadata = parseExplainMetadata(optimization.explain)
-      chainId = metadata.chainId
-    }
-    if (!chainId) {
-      return jsonWithCors({ error: 'Could not determine chain ID for vault' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
+      return Response.json({ error: 'Could not determine chain ID for vault' }, { status: 400 })
     }
 
     const timestampStr = optimization.source.latestMatchedTimestampUtc ?? optimization.source.timestampUtc
     if (!timestampStr) {
-      return jsonWithCors({ error: 'No timestamp available for vault snapshot' }, 400, OPTIMIZATION_GET_CORS_HEADERS)
+      return Response.json({ error: 'No timestamp available for vault snapshot' }, { status: 400 })
     }
+
     const fromTs = Math.floor(new Date(timestampStr.replace(' UTC', 'Z').replace(' ', 'T')).getTime() / 1000)
     const numStrategies = optimization.strategyDebtRatios.length
     const toTs = fromTs + numStrategies * 10 * 60 * 2
-
     const decimals = getVaultDecimals(vault)
-
     const events = await fetchAlignedEvents(
       envioUrl,
       vault,
@@ -514,151 +776,658 @@ async function handleOptimizationAlignment(req: Request): Promise<Response> {
       decimals
     )
 
-    return jsonWithCors(events, 200, OPTIMIZATION_GET_CORS_HEADERS, {
-      'Cache-Control': ALIGNMENT_CACHE_CONTROL
+    return Response.json(events, {
+      headers: getVercelCdnCacheHeaders(ALIGNMENT_CACHE_CONTROL)
     })
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
-      return jsonWithCors({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+      return Response.json({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, { status: 500 })
     }
 
     if (isRedisConnectivityError(error)) {
-      return jsonWithCors({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, 503, OPTIMIZATION_GET_CORS_HEADERS)
+      return Response.json({ error: REDIS_CONNECTIVITY_ERROR_MESSAGE }, { status: 503 })
     }
 
     const message = error instanceof Error ? error.message : String(error)
-    return jsonWithCors({ error: message }, 500, OPTIMIZATION_GET_CORS_HEADERS)
+    return Response.json({ error: message }, { status: 500 })
   }
 }
 
 async function handleOptimizationVaultState(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: OPTIMIZATION_POST_CORS_HEADERS })
-  }
-
   if (req.method !== 'POST') {
-    return jsonWithCors({ error: 'Method not allowed' }, 405, OPTIMIZATION_POST_CORS_HEADERS)
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
   }
 
   let body: unknown
   try {
     body = await req.json()
   } catch {
-    return jsonWithCors({ error: 'Invalid JSON body' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
+    return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
   const payload = body && typeof body === 'object' ? (body as Record<string, unknown>) : {}
   const vault = typeof payload.vault === 'string' ? payload.vault : null
   const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
   const strategies = Array.isArray(payload.strategies)
-    ? payload.strategies.filter((s: unknown): s is string => typeof s === 'string')
+    ? payload.strategies.filter((strategy: unknown): strategy is string => typeof strategy === 'string')
     : []
 
-  if (!vault || !/^0x[a-fA-F0-9]{40}$/.test(vault)) {
-    return jsonWithCors({ error: 'Invalid vault address' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
+  if (!vault || !isValidAddress(vault)) {
+    return Response.json({ error: 'Invalid vault address' }, { status: 400 })
   }
+
   if (chainId === null || !Number.isFinite(chainId)) {
-    return jsonWithCors({ error: 'Invalid chainId' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
+    return Response.json({ error: 'Invalid chainId' }, { status: 400 })
   }
+
   if (strategies.length === 0) {
-    return jsonWithCors({ error: 'No strategy addresses provided' }, 400, OPTIMIZATION_POST_CORS_HEADERS)
+    return Response.json({ error: 'No strategy addresses provided' }, { status: 400 })
   }
 
   try {
     const state = await fetchVaultOnChainState(chainId, vault, strategies)
+    const strategyDebts = Object.fromEntries(
+      [...state.strategyDebts].map(([strategyAddress, debt]) => [strategyAddress, debt.toString()])
+    )
 
-    const strategyDebts: Record<string, string> = {}
-    for (const [addr, debt] of state.strategyDebts) {
-      strategyDebts[addr] = debt.toString()
-    }
-
-    return jsonWithCors(
+    return Response.json(
       {
         totalAssets: state.totalAssets.toString(),
         strategyDebts,
         unallocatedBps: state.unallocatedBps
       },
-      200,
-      OPTIMIZATION_POST_CORS_HEADERS,
-      { 'Cache-Control': VAULT_STATE_CACHE_CONTROL }
+      {
+        headers: getVercelCdnCacheHeaders(VAULT_STATE_CACHE_CONTROL)
+      }
     )
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    return jsonWithCors({ error: message }, 503, OPTIMIZATION_POST_CORS_HEADERS)
+    return Response.json({ error: message }, { status: 503 })
   }
 }
 
-serve({
-  async fetch(req, server) {
-    const url = new URL(req.url)
+async function handleHoldingsHistory(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const versionParam = url.searchParams.get('version')
+  const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
+  const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+  const denomination = parseHoldingsHistoryDenomination(url.searchParams.get('denomination'))
+  const timeframe = parseHoldingsHistoryTimeframe(url.searchParams.get('timeframe'))
+  const vaultFilters = parseVaultFilters(url)
+  const debugEnabled =
+    isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
+  const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
+  const debugVault = url.searchParams.get('debugVault')
+  const debugTx = url.searchParams.get('debugTx')
+  const refreshParam = url.searchParams.get('refresh')
+  const progressId = url.searchParams.get('progressId')
+  const refresh = refreshParam === 'true' || refreshParam === '1'
 
-    if (url.pathname === '/api/enso/status') {
-      return handleEnsoStatus()
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  if (vaultFilters === null) {
+    return Response.json({ error: 'Invalid vault filter', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const activeProgressId = await startHoldingsProgress({
+      id: progressId,
+      route: 'history',
+      address,
+      message: 'Fetching historical user data'
+    })
+    await updateHoldingsProgress(activeProgressId, {
+      progress: 8,
+      message: 'Fetching historical user data',
+      detail: null
+    })
+
+    if (refresh) {
+      const cleared = await clearUserCache(address, getHoldingsTotalsCacheVersion(version))
+      console.log(`[Server] Cleared ${cleared} cached entries for ${address}`)
     }
 
-    if (url.pathname === '/api/enso/balances') {
-      return handleEnsoBalances(req)
-    }
+    const holdings = await withHoldingsDebugContext(
+      createHoldingsDebugContext('history', address, debugEnabled, {
+        lotsEnabled: debugLotsEnabled,
+        vaultFilter: debugVault,
+        txFilter: debugTx,
+        progressId: activeProgressId
+      }),
+      async () => {
+        debugLog('route', 'started holdings history request', {
+          version,
+          fetchType,
+          paginationMode,
+          refresh,
+          debugLotsEnabled,
+          debugVault: debugVault?.toLowerCase() ?? null,
+          debugTx: debugTx?.toLowerCase() ?? null
+        })
 
-    if (url.pathname === '/api/enso/route') {
-      return handleEnsoRoute(req)
-    }
-
-    if (url.pathname === '/api/yvusd/aprs') {
-      return handleYvUsdAprs(req)
-    }
-
-    if (url.pathname === '/api/tenderly/status') {
-      return handleTenderlyStatus(req)
-    }
-
-    if (url.pathname === '/api/tenderly/snapshot') {
-      const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
-      if (accessDeniedResponse) {
-        return accessDeniedResponse
+        try {
+          const response = await getHistoricalHoldingsChart(
+            address,
+            version,
+            fetchType,
+            paginationMode,
+            denomination,
+            timeframe,
+            vaultFilters
+          )
+          debugLog('route', 'completed holdings history request', {
+            version,
+            fetchType,
+            paginationMode,
+            denomination,
+            timeframe,
+            refresh,
+            points: response.dataPoints.length,
+            nonZeroPoints: response.dataPoints.filter((point) => point.value > 0).length
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings history request failed', error, { version, fetchType, paginationMode })
+          throw error
+        }
       }
-      return handleTenderlySnapshot(req)
+    )
+
+    if (!holdings.hasActivity) {
+      await updateHoldingsProgress(activeProgressId, {
+        status: 'complete',
+        progress: 100,
+        message: 'No historical holdings found',
+        detail: null
+      })
+      return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
 
-    if (url.pathname === '/api/tenderly/revert') {
-      const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
-      if (accessDeniedResponse) {
-        return accessDeniedResponse
+    await updateHoldingsProgress(activeProgressId, {
+      status: 'complete',
+      progress: 100,
+      message: 'Historical user data ready',
+      detail: `${holdings.dataPoints.length} chart points`
+    })
+
+    return Response.json(
+      {
+        address: holdings.address,
+        version,
+        denomination,
+        timeframe,
+        dataPoints: holdings.dataPoints.map((dp) => ({
+          date: dp.date,
+          value: dp.value
+        }))
+      },
+      {
+        headers: getVercelCdnCacheHeaders(HOLDINGS_HISTORY_CACHE_CONTROL)
       }
-      return handleTenderlyRevert(req)
-    }
+    )
+  } catch (error) {
+    await updateHoldingsProgress(progressId, {
+      status: 'error',
+      message: 'Failed to fetch historical user data',
+      detail: error instanceof Error ? error.message : String(error)
+    })
+    console.error('Error fetching holdings history:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json({ error: 'Failed to fetch historical holdings', message, stack, status: 502 }, { status: 502 })
+  }
+}
 
-    if (url.pathname === '/api/tenderly/increase-time') {
-      const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
-      if (accessDeniedResponse) {
-        return accessDeniedResponse
+async function handleHoldingsActivity(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const versionParam = url.searchParams.get('version')
+  const limit = parseHoldingsActivityLimit(url.searchParams.get('limit'))
+  const offset = parseHoldingsActivityOffset(url.searchParams.get('offset'))
+  const type = parseHoldingsActivityType(url.searchParams.get('type'))
+  const chainId = parseHoldingsActivityChainId(url.searchParams.get('chainId'))
+  const startTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('startTimestamp'))
+  const endTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('endTimestamp'))
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const activity = await getHoldingsActivity(address, version, limit, offset, {
+      type,
+      chainId,
+      startTimestamp,
+      endTimestamp
+    })
+
+    return Response.json(activity, {
+      headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_CACHE_CONTROL)
+    })
+  } catch (error) {
+    console.error('Error fetching holdings activity:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json({ error: 'Failed to fetch holdings activity', message, stack, status: 502 }, { status: 502 })
+  }
+}
+
+async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const versionParam = url.searchParams.get('version')
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const facetsResponse = await getHoldingsActivityFacetResponse(address, version)
+
+    return Response.json(facetsResponse, {
+      headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_FACETS_CACHE_CONTROL)
+    })
+  } catch (error) {
+    console.error('Error fetching holdings activity facets:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json(
+      { error: 'Failed to fetch holdings activity facets', message, stack, status: 502 },
+      { status: 502 }
+    )
+  }
+}
+
+async function handleHoldingsBreakdown(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const dateParam = url.searchParams.get('date')
+  const versionParam = url.searchParams.get('version')
+  const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
+  const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+  const debugEnabled =
+    isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
+  const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
+  const debugVault = url.searchParams.get('debugVault')
+  const debugTx = url.searchParams.get('debugTx')
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  const breakdownTimestamp = parseUtcDateParam(dateParam)
+  if (dateParam && breakdownTimestamp === null) {
+    return Response.json({ error: 'Invalid date format, expected YYYY-MM-DD', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const breakdown = await withHoldingsDebugContext(
+      createHoldingsDebugContext('breakdown', address, debugEnabled, {
+        lotsEnabled: debugLotsEnabled,
+        vaultFilter: debugVault,
+        txFilter: debugTx
+      }),
+      async () => {
+        debugLog('route', 'started holdings breakdown request', {
+          version,
+          date: dateParam,
+          fetchType,
+          paginationMode,
+          debugLotsEnabled,
+          debugVault: debugVault?.toLowerCase() ?? null,
+          debugTx: debugTx?.toLowerCase() ?? null
+        })
+
+        try {
+          const response = await getHoldingsBreakdown(
+            address,
+            version,
+            fetchType,
+            paginationMode,
+            breakdownTimestamp ?? undefined
+          )
+          debugLog('route', 'completed holdings breakdown request', {
+            version,
+            date: response.date,
+            fetchType,
+            paginationMode,
+            timestamp: response.timestamp,
+            totalVaults: response.summary.totalVaults,
+            vaultsWithShares: response.summary.vaultsWithShares,
+            totalUsdValue: response.summary.totalUsdValue
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings breakdown request failed', error, {
+            version,
+            date: dateParam,
+            fetchType,
+            paginationMode
+          })
+          throw error
+        }
       }
-      return handleTenderlyIncreaseTime(req)
-    }
+    )
 
-    if (url.pathname === '/api/tenderly/fund') {
-      const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
-      if (accessDeniedResponse) {
-        return accessDeniedResponse
+    return Response.json(breakdown, {
+      headers: getVercelCdnCacheHeaders(HOLDINGS_HISTORY_CACHE_CONTROL)
+    })
+  } catch (error) {
+    console.error('Error fetching holdings breakdown:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json({ error: 'Failed to fetch holdings breakdown', message, stack, status: 502 }, { status: 502 })
+  }
+}
+
+async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Response> {
+  const url = new URL(req.url)
+  const address = url.searchParams.get('address')
+  const versionParam = url.searchParams.get('version')
+  const vaultFilters = parseVaultFilters(url)
+  const timeframe = parseHoldingsHistoryTimeframe(url.searchParams.get('timeframe'))
+  const debugEnabled =
+    isHoldingsDebugRequested(url.searchParams.get('debug')) || isHoldingsDebugRequested(process.env.HOLDINGS_DEBUG)
+  const debugLotsEnabled = isHoldingsDebugRequested(url.searchParams.get('debugLots'))
+  const debugVault = url.searchParams.get('debugVault')
+  const debugTx = url.searchParams.get('debugTx')
+  const fetchType = parseHoldingsEventFetchType(url.searchParams.get('fetchType'))
+  const paginationMode = parseHoldingsEventPaginationMode(url.searchParams.get('paginationMode'))
+  const progressId = url.searchParams.get('progressId')
+
+  if (!address) {
+    return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
+  }
+
+  if (!isValidAddress(address)) {
+    return Response.json({ error: 'Invalid Ethereum address', status: 400 }, { status: 400 })
+  }
+
+  if (vaultFilters === null) {
+    return Response.json({ error: 'Invalid vault filter', status: 400 }, { status: 400 })
+  }
+
+  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
+
+  try {
+    const activeProgressId = await startHoldingsProgress({
+      id: progressId,
+      route: 'pnl-simple-history',
+      address,
+      message: 'Fetching historical user data'
+    })
+    await updateHoldingsProgress(activeProgressId, {
+      progress: 8,
+      message: 'Fetching historical user data',
+      detail: null
+    })
+
+    const history = await withHoldingsDebugContext(
+      createHoldingsDebugContext('protocol-return-history', address, debugEnabled, {
+        lotsEnabled: debugLotsEnabled,
+        vaultFilter: debugVault,
+        txFilter: debugTx,
+        progressId: activeProgressId
+      }),
+      async () => {
+        debugLog('route', 'started holdings protocol return history request', {
+          version,
+          timeframe,
+          vaults: vaultFilters?.map((vault) => `${vault.chainId}:${vault.vaultAddress.toLowerCase()}`) ?? null,
+          fetchType,
+          paginationMode,
+          debugLotsEnabled,
+          debugVault: debugVault?.toLowerCase() ?? null,
+          debugTx: debugTx?.toLowerCase() ?? null
+        })
+
+        try {
+          const response = await getHoldingsProtocolReturnHistory(
+            address,
+            version,
+            fetchType,
+            paginationMode,
+            timeframe,
+            vaultFilters
+          )
+          debugLog('route', 'completed holdings protocol return history request', {
+            version,
+            timeframe,
+            vaults: vaultFilters?.map((vault) => `${vault.chainId}:${vault.vaultAddress.toLowerCase()}`) ?? null,
+            fetchType,
+            paginationMode,
+            totalVaults: response.summary.totalVaults,
+            points: response.dataPoints.length
+          })
+          return response
+        } catch (error) {
+          debugError('route', 'holdings protocol return history request failed', error, {
+            version,
+            timeframe,
+            vaults: vaultFilters?.map((vault) => `${vault.chainId}:${vault.vaultAddress.toLowerCase()}`) ?? null,
+            fetchType,
+            paginationMode
+          })
+          throw error
+        }
       }
-      return handleTenderlyFund(req)
+    )
+
+    if (history.summary.totalVaults === 0) {
+      await updateHoldingsProgress(activeProgressId, {
+        status: 'complete',
+        progress: 100,
+        message: 'No historical holdings found',
+        detail: null
+      })
+      return Response.json({ error: 'No holdings found for address', status: 404 }, { status: 404 })
     }
 
-    if (url.pathname === '/api/optimization/change') {
-      return handleOptimizationChange(req)
-    }
+    await updateHoldingsProgress(activeProgressId, {
+      status: 'complete',
+      progress: 100,
+      message: 'Historical user data ready',
+      detail: `${history.dataPoints.length} chart points`
+    })
 
-    if (url.pathname === '/api/optimization/alignment') {
-      return handleOptimizationAlignment(req)
-    }
+    return Response.json(history, {
+      headers: getVercelCdnCacheHeaders(HOLDINGS_HISTORY_CACHE_CONTROL)
+    })
+  } catch (error) {
+    await updateHoldingsProgress(progressId, {
+      status: 'error',
+      message: 'Failed to fetch historical user data',
+      detail: error instanceof Error ? error.message : String(error)
+    })
+    console.error('Error fetching holdings protocol return history:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    return Response.json(
+      { error: 'Failed to fetch holdings protocol return history', message, stack, status: 502 },
+      { status: 502 }
+    )
+  }
+}
 
-    if (url.pathname === '/api/optimization/vault-state') {
-      return handleOptimizationVaultState(req)
-    }
+async function main() {
+  process.on('uncaughtException', (error) => {
+    console.error('💥 Uncaught Exception:', error)
+  })
 
-    return new Response('Not found', { status: 404 })
-  },
-  port: API_SERVER_PORT
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason)
+  })
+
+  validateConfig()
+
+  await initializeHoldingsStorage()
+
+  serve({
+    async fetch(req, server) {
+      const url = new URL(req.url)
+      console.log(`[Server] ${req.method} ${url.pathname}`)
+
+      try {
+        if (req.method === 'OPTIONS') {
+          return handleCorsPreFlight()
+        }
+
+        if (url.pathname === '/api/sitemap') {
+          return withCors(await handleSitemap(req))
+        }
+
+        if (url.pathname === '/api/vaults/markdown') {
+          return withCors(await handleVaultsMarkdown(req))
+        }
+
+        if (url.pathname === '/api/vault/markdown') {
+          return withCors(await handleVaultMarkdown(req))
+        }
+
+        if (url.pathname === '/api/enso/status') {
+          return withCors(handleEnsoStatus())
+        }
+
+        if (url.pathname === '/api/enso/balances') {
+          return withCors(await handleEnsoBalances(req))
+        }
+
+        if (url.pathname === '/api/enso/route') {
+          return withCors(await handleEnsoRoute(req))
+        }
+
+        if (url.pathname === '/api/holdings/history') {
+          return withCors(await handleHoldingsHistory(req))
+        }
+
+        if (url.pathname === '/api/holdings/progress') {
+          return withCors(await handleHoldingsProgress(req))
+        }
+
+        if (url.pathname === '/api/holdings/activity') {
+          return withCors(await handleHoldingsActivity(req))
+        }
+
+        if (url.pathname === '/api/holdings/activity-facets') {
+          return withCors(await handleHoldingsActivityFacets(req))
+        }
+
+        if (url.pathname === '/api/holdings/breakdown') {
+          return withCors(await handleHoldingsBreakdown(req))
+        }
+
+        if (
+          url.pathname === '/api/holdings/protocol-return/history' ||
+          url.pathname === '/api/holdings/pnl/simple-history'
+        ) {
+          return withCors(await handleHoldingsProtocolReturnHistory(req))
+        }
+
+        if (url.pathname === '/api/yvusd/aprs') {
+          return withCors(await handleYvUsdAprs(req))
+        }
+
+        if (url.pathname === '/api/optimization/change') {
+          return withCors(await handleOptimizationChange(req))
+        }
+
+        if (url.pathname === '/api/optimization/alignment') {
+          return withCors(await handleOptimizationAlignment(req))
+        }
+
+        if (url.pathname === '/api/optimization/vault-state') {
+          return withCors(await handleOptimizationVaultState(req))
+        }
+
+        if (url.pathname === '/api/tenderly/status') {
+          return withCors(handleTenderlyStatus(req))
+        }
+
+        if (url.pathname === '/api/tenderly/snapshot') {
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          if (accessDeniedResponse) {
+            return withCors(accessDeniedResponse)
+          }
+          return withCors(await handleTenderlySnapshot(req))
+        }
+
+        if (url.pathname === '/api/tenderly/revert') {
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          if (accessDeniedResponse) {
+            return withCors(accessDeniedResponse)
+          }
+          return withCors(await handleTenderlyRevert(req))
+        }
+
+        if (url.pathname === '/api/tenderly/increase-time') {
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          if (accessDeniedResponse) {
+            return withCors(accessDeniedResponse)
+          }
+          return withCors(await handleTenderlyIncreaseTime(req))
+        }
+
+        if (url.pathname === '/api/tenderly/fund') {
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          if (accessDeniedResponse) {
+            return withCors(accessDeniedResponse)
+          }
+          return withCors(await handleTenderlyFund(req))
+        }
+
+        return withCors(new Response('Not found', { status: 404 }))
+      } catch (error) {
+        console.error('💥 Request handler error:', error)
+        return withCors(
+          Response.json(
+            { error: 'Internal server error', message: error instanceof Error ? error.message : String(error) },
+            { status: 500 }
+          )
+        )
+      }
+    },
+    port: API_PORT,
+    idleTimeout: 120
+  })
+
+  console.log(`🚀 API server running on http://localhost:${API_PORT}`)
+  console.log(`📊 Holdings API: http://localhost:${API_PORT}/api/holdings/history?address=0x...`)
+  console.log(`🗂️ Holdings Activity API: http://localhost:${API_PORT}/api/holdings/activity?address=0x...`)
+  console.log(`🧩 Holdings Breakdown API: http://localhost:${API_PORT}/api/holdings/breakdown?address=0x...`)
+  console.log(`💹 PnL API: http://localhost:${API_PORT}/api/holdings/pnl?address=0x...`)
+  console.log(`📈 Simple PnL API: http://localhost:${API_PORT}/api/holdings/pnl/simple?address=0x...`)
+  console.log(`📊 Simple PnL History API: http://localhost:${API_PORT}/api/holdings/pnl/simple-history?address=0x...`)
+  console.log(`🧾 PnL Drilldown API: http://localhost:${API_PORT}/api/holdings/pnl/drilldown?address=0x...`)
+}
+
+main().catch((error) => {
+  console.error('Failed to start server:', error)
+  process.exit(1)
 })
-
-console.log(`🚀 API server running on http://localhost:${API_SERVER_PORT}`)

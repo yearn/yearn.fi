@@ -1,4 +1,5 @@
 import { useClaimMerkleRewards } from '@pages/vaults/hooks/rewards/useClaimMerkleRewards'
+import { buildMerkleRewardKey } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useChainId } from '@shared/hooks/useAppWagmi'
 import { toNormalizedValue } from '@shared/utils'
 import type { ReactElement } from 'react'
@@ -12,14 +13,24 @@ type TMerkleRewardRowProps = {
   groupedReward: TGroupedMerkleReward
   userAddress: `0x${string}`
   chainId: number
-  onStartClaim: (step: TransactionStep) => void
+  onStartClaim: (step: TransactionStep, merkleRewardKeys?: string[]) => void
   isFirst?: boolean
   isAllChainsView?: boolean
   onSwitchChain?: () => void
+  claimButtonClassName?: string
 }
 
 export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
-  const { groupedReward, userAddress, chainId, onStartClaim, isFirst, isAllChainsView, onSwitchChain } = props
+  const {
+    groupedReward,
+    userAddress,
+    chainId,
+    onStartClaim,
+    isFirst,
+    isAllChainsView,
+    onSwitchChain,
+    claimButtonClassName
+  } = props
 
   const currentChainId = useChainId()
   const { isPending } = useWriteContract()
@@ -49,8 +60,11 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
 
   const handleClaim = useCallback(() => {
     if (!step) return
-    onStartClaim(step)
-  }, [step, onStartClaim])
+    onStartClaim(
+      step,
+      groupedReward.rewards.map((reward) => buildMerkleRewardKey(reward.root, reward.token.address))
+    )
+  }, [step, onStartClaim, groupedReward.rewards])
 
   return (
     <RewardRow
@@ -66,6 +80,7 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
       isFirst={isFirst}
       isAllChainsView={isAllChainsView}
       onSwitchChain={onSwitchChain}
+      claimButtonClassName={claimButtonClassName}
     />
   )
 }

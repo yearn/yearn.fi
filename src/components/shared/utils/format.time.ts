@@ -35,6 +35,4 @@ export function duration(value: number, withSuffix?: boolean): string {
   return dayjs.duration(value, 'milliseconds').humanize(withSuffix)
 }
 
-export { date as formatDate }
-export { since as formatSince }
-export { duration as formatDuration }
+export { date as formatDate, duration as formatDuration, since as formatSince }

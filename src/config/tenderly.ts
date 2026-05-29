@@ -5,6 +5,9 @@ type TEnvValue = boolean | string | undefined
 
 type TTenderlyEnv = Record<string, TEnvValue>
 
+const TENDERLY_MODE_STORAGE_KEY = 'dev-tenderly-mode-enabled'
+const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'])
+
 export type TTenderlyChainConfig = {
   canonicalChainId: TCanonicalChainId
   executionChainId: number
@@ -18,6 +21,18 @@ export type TTenderlyRuntime = {
   configuredCanonicalChainIds: readonly TCanonicalChainId[]
   canonicalToExecutionChainId: ReadonlyMap<number, number>
   executionToCanonicalChainId: ReadonlyMap<number, TCanonicalChainId>
+}
+
+function isLoopbackHostname(hostname: string | undefined): boolean {
+  if (!hostname) {
+    return false
+  }
+
+  return LOOPBACK_HOSTNAMES.has(hostname.trim().toLowerCase())
+}
+
+function canToggleTenderlyModeForRuntime({ isDev, hostname }: { isDev: boolean; hostname?: string }): boolean {
+  return isDev || isLoopbackHostname(hostname)
 }
 
 // Legacy localhost fork support is intentionally limited to 1337.
@@ -93,6 +108,26 @@ function buildExecutionChain(chain: Chain, config: TTenderlyChainConfig): Chain 
         : undefined,
     testnet: true
   }
+}
+
+export function resolveInitialTenderlyModeEnabled({
+  isConfigured,
+  canToggle,
+  storedPreference
+}: {
+  isConfigured: boolean
+  canToggle: boolean
+  storedPreference?: string | null
+}): boolean {
+  if (!isConfigured) {
+    return false
+  }
+
+  if (!canToggle) {
+    return true
+  }
+
+  return storedPreference !== 'false'
 }
 
 export function parseTenderlyRuntime(env: TTenderlyEnv): TTenderlyRuntime {
@@ -174,7 +209,32 @@ export function parseTenderlyRuntime(env: TTenderlyEnv): TTenderlyRuntime {
   }
 }
 
-export const tenderlyRuntime = parseTenderlyRuntime(import.meta.env)
+function readStoredTenderlyModePreference(): string | null | undefined {
+  if (typeof window === 'undefined') {
+    return undefined
+  }
+
+  try {
+    return window.localStorage.getItem(TENDERLY_MODE_STORAGE_KEY)
+  } catch {
+    return undefined
+  }
+}
+
+const disabledTenderlyRuntime = parseTenderlyRuntime({})
+const tenderlyModeCanToggle = canToggleTenderlyModeForRuntime({
+  isDev: import.meta.env.DEV,
+  hostname: typeof window === 'undefined' ? undefined : window.location.hostname
+})
+
+export const tenderlyConfiguredRuntime = parseTenderlyRuntime(import.meta.env)
+export const tenderlyRuntime = resolveInitialTenderlyModeEnabled({
+  isConfigured: tenderlyConfiguredRuntime.isEnabled,
+  canToggle: tenderlyModeCanToggle,
+  storedPreference: readStoredTenderlyModePreference()
+})
+  ? tenderlyConfiguredRuntime
+  : disabledTenderlyRuntime
 
 export function getSupportedCanonicalChainsForRuntime(runtime: TTenderlyRuntime): readonly Chain[] {
   return runtime.isEnabled
@@ -223,8 +283,61 @@ export function isTenderlyModeEnabled(): boolean {
   return tenderlyRuntime.isEnabled
 }
 
+export function isTenderlyModeConfigured(): boolean {
+  return tenderlyConfiguredRuntime.isEnabled
+}
+
+export function canToggleTenderlyMode(): boolean {
+  return tenderlyModeCanToggle && tenderlyConfiguredRuntime.isEnabled
+}
+
+export function persistTenderlyModeEnabled(value: boolean): void {
+  if (typeof window === 'undefined' || !canToggleTenderlyMode()) {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(TENDERLY_MODE_STORAGE_KEY, value ? 'true' : 'false')
+  } catch {
+    // If storage is unavailable, the app will stay on the current mode after reload.
+  }
+}
+
 export function getTenderlyBackedCanonicalChainIds(): readonly TCanonicalChainId[] {
   return tenderlyRuntime.configuredCanonicalChainIds
+}
+
+export function resolveConnectedTenderlyExecutionChainForRuntime(
+  runtime: TTenderlyRuntime,
+  chainId: number | undefined
+): { canonicalChainId: TCanonicalChainId; executionChainId: number; canonicalChainName: string } | undefined {
+  const canonicalChainId = resolveConnectedCanonicalChainIdForRuntime(runtime, chainId)
+  if (canonicalChainId === undefined) {
+    return undefined
+  }
+
+  const executionChainId = resolveExecutionChainIdForRuntime(runtime, canonicalChainId)
+  if (
+    executionChainId === undefined ||
+    executionChainId === canonicalChainId ||
+    !Number.isInteger(chainId) ||
+    chainId !== executionChainId
+  ) {
+    return undefined
+  }
+
+  return {
+    canonicalChainId,
+    executionChainId,
+    canonicalChainName:
+      canonicalChains.find((chain) => chain.id === canonicalChainId)?.name || `chain ${canonicalChainId}`
+  }
+}
+
+export function resolveConnectedTenderlyExecutionChain(
+  chainId: number | undefined
+): { canonicalChainId: TCanonicalChainId; executionChainId: number; canonicalChainName: string } | undefined {
+  return resolveConnectedTenderlyExecutionChainForRuntime(tenderlyRuntime, chainId)
 }
 
 export function isCanonicalChainEnabled(chainId: number): chainId is TCanonicalChainId {

@@ -1,15 +1,18 @@
 import { usePlausible } from '@hooks/usePlausible'
-import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
+import { type TVaultAddressItem, VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
 import {
   type TVaultChartTab,
   type TVaultChartTimeframe,
   VaultChartsSection
 } from '@pages/vaults/components/detail/VaultChartsSection'
 import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
+import { resolveForwardApyDisplayConfig } from '@pages/vaults/components/table/apyDisplayConfig'
+import type { TVaultForwardAPYVariant } from '@pages/vaults/components/table/VaultForwardAPY'
 import {
   getVaultAddress,
   getVaultChainID,
   getVaultName,
+  getVaultStaking,
   getVaultStrategies,
   getVaultSymbol,
   getVaultToken,
@@ -18,8 +21,10 @@ import {
   type TKongVaultInput,
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
-import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
+import { getVaultUserHistoryVaults } from '@pages/vaults/utils/vaultUserHistoryVaults'
+import { isYvUsdAddress, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import {
   AllocationChart,
   DARK_MODE_COLORS,
@@ -32,8 +37,8 @@ import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
 import { formatCounterValue, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
-import type { MouseEvent, ReactElement } from 'react'
-import { useMemo } from 'react'
+import type { MouseEvent, ReactElement, ReactNode } from 'react'
+import { cloneElement, isValidElement, useMemo } from 'react'
 import { type TVaultsExpandedView, VaultsExpandedSelector } from './VaultsExpandedSelector'
 
 const EXPANDED_VIEW_TO_CHART_TAB: Record<
@@ -47,7 +52,6 @@ const EXPANDED_VIEW_TO_CHART_TAB: Record<
 
 type TExpandedChartView = keyof typeof EXPANDED_VIEW_TO_CHART_TAB
 type TMergedStrategy = TKongVaultStrategy & { name: string }
-
 function isExpandedChartView(view: TVaultsExpandedView): view is TExpandedChartView {
   return view in EXPANDED_VIEW_TO_CHART_TAB
 }
@@ -60,6 +64,11 @@ type TVaultsListRowExpandedContentProps = {
   showKindTag?: boolean
   showHiddenTag?: boolean
   isHidden?: boolean
+  showUserViews?: boolean
+  chartVariant?: 'default' | 'portfolio-user-tvl-overlay'
+  apyDisplayVariant?: TVaultForwardAPYVariant
+  showBoostDetails?: boolean
+  expandedApyTooltip?: ReactNode
 }
 
 export default function VaultsListRowExpandedContent({
@@ -69,19 +78,95 @@ export default function VaultsListRowExpandedContent({
   onNavigateToVault,
   showKindTag = true,
   showHiddenTag = false,
-  isHidden
+  isHidden,
+  showUserViews = false,
+  chartVariant = 'default',
+  apyDisplayVariant = 'default',
+  showBoostDetails = true,
+  expandedApyTooltip
 }: TVaultsListRowExpandedContentProps): ReactElement {
   const trackEvent = usePlausible()
   const chartTimeframe: TVaultChartTimeframe = '1y'
   const chainID = getVaultChainID(currentVault)
   const vaultAddress = getVaultAddress(currentVault)
-  const isYvUsd = isYvUsdAddress(vaultAddress)
   const { data: snapshotVault } = useVaultSnapshot({
     chainId: chainID,
     address: vaultAddress
   })
+  const isYvUsd = isYvUsdAddress(vaultAddress)
+  const token = getVaultToken(currentVault)
+  const staking = getVaultStaking(currentVault, snapshotVault)
+  const vaultAddresses = useMemo((): TVaultAddressItem[] => {
+    if (isYvUsd) {
+      const addresses: TVaultAddressItem[] = [
+        { address: YVUSD_UNLOCKED_ADDRESS, label: 'Unlocked Vault Contract Address' },
+        { address: YVUSD_LOCKED_ADDRESS, label: 'Locked Vault Contract Address' }
+      ]
+      if (token.address) {
+        addresses.push({ address: toAddress(token.address), label: 'Token Contract Address' })
+      }
+      if (staking.available && staking.address) {
+        addresses.push({ address: toAddress(staking.address), label: 'Staking Contract Address' })
+      }
+      return addresses
+    }
+
+    const addresses: TVaultAddressItem[] = [{ address: toAddress(vaultAddress), label: 'Vault Contract Address' }]
+    if (token.address) {
+      addresses.push({ address: token.address, label: 'Token Contract Address' })
+    }
+    if (staking.available && staking.address) {
+      addresses.push({ address: toAddress(staking.address), label: 'Staking Contract Address' })
+    }
+    return addresses
+  }, [isYvUsd, staking.available, staking.address, token.address, vaultAddress])
+  const vaultApyData = useVaultApyData(currentVault)
   const snapshotMergedVault = useMemo(() => getVaultView(currentVault, snapshotVault), [currentVault, snapshotVault])
   const chartTab = isExpandedChartView(expandedView) ? EXPANDED_VIEW_TO_CHART_TAB[expandedView] : undefined
+  const shouldUsePortfolioUserTvlOverlay = chartVariant === 'portfolio-user-tvl-overlay' && showUserViews
+  const yvUsdChartTab =
+    shouldUsePortfolioUserTvlOverlay && chartTab === 'historical-tvl'
+      ? 'user-position'
+      : chartTab === 'historical-apy' || chartTab === 'historical-pps' || chartTab === 'historical-tvl'
+        ? chartTab
+        : undefined
+  const vaultUserHistoryVaults = useMemo(
+    () => getVaultUserHistoryVaults({ chainId: chainID, vaultAddress }),
+    [chainID, vaultAddress]
+  )
+  const viewOptions = useMemo<Array<{ id: TVaultsExpandedView; label: string }>>(
+    () => [
+      { id: 'strategies', label: 'Strategies' },
+      { id: 'apy', label: 'APY' },
+      { id: 'performance', label: 'Performance' },
+      { id: 'tvl', label: shouldUsePortfolioUserTvlOverlay ? 'Your Position' : 'TVL' }
+    ],
+    [shouldUsePortfolioUserTvlOverlay]
+  )
+  const { displayConfig } = useMemo(
+    () =>
+      resolveForwardApyDisplayConfig({
+        currentVault,
+        data: vaultApyData,
+        displayVariant: apyDisplayVariant,
+        showSubline: false,
+        showSublineTooltip: true,
+        showBoostDetails,
+        canOpenModal: false
+      }),
+    [currentVault, vaultApyData, apyDisplayVariant, showBoostDetails]
+  )
+  const apyTooltipContent = isYvUsd ? expandedApyTooltip : displayConfig.tooltip?.content
+  const plainApyTooltipContent = useMemo(() => {
+    if (!isValidElement<{ className?: string }>(apyTooltipContent)) {
+      return apyTooltipContent
+    }
+    const tooltipContent = apyTooltipContent as ReactElement<{ className?: string }>
+    const className = tooltipContent.props.className
+    return cloneElement(tooltipContent, {
+      className: `${className ?? ''} bg-transparent border-0 shadow-none`
+    })
+  }, [apyTooltipContent])
 
   const handleGoToVault = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation()
@@ -102,9 +187,11 @@ export default function VaultsListRowExpandedContent({
           <div className={'col-span-12 border-r border-border'}>
             <VaultAboutSection
               currentVault={snapshotMergedVault}
-              className={'md:px-15'}
+              className={'md:px-15 md:pb-2'}
+              vaultAddresses={vaultAddresses}
+              additionalFeaturesContent={plainApyTooltipContent}
               showKindTag={showKindTag}
-              showVaultAddress={true}
+              showVaultAddress={false}
               showHiddenTag={showHiddenTag}
               isHidden={isHidden}
             />
@@ -113,6 +200,7 @@ export default function VaultsListRowExpandedContent({
             <VaultsExpandedSelector
               activeView={expandedView}
               onViewChange={onExpandedViewChange}
+              viewOptions={viewOptions}
               rightElement={
                 <button
                   type={'button'}
@@ -129,10 +217,11 @@ export default function VaultsListRowExpandedContent({
               isYvUsd ? (
                 <YvUsdChartsSection
                   shouldRenderSelectors={false}
-                  chartTab={chartTab}
+                  chartTab={yvUsdChartTab}
                   timeframe={chartTimeframe}
                   chartHeightPx={200}
                   chartHeightMdPx={200}
+                  enableUserPositionChart={shouldUsePortfolioUserTvlOverlay}
                 />
               ) : (
                 <VaultChartsSection
@@ -143,6 +232,10 @@ export default function VaultsListRowExpandedContent({
                   timeframe={chartTimeframe}
                   chartHeightPx={200}
                   chartHeightMdPx={200}
+                  enableUserCharts={false}
+                  userUnitLabel={snapshotMergedVault.token?.symbol || snapshotMergedVault.symbol || 'assets'}
+                  overlayUserPositionOnTvlTab={shouldUsePortfolioUserTvlOverlay}
+                  userHistoryVaults={vaultUserHistoryVaults}
                 />
               )
             ) : (

@@ -13,7 +13,7 @@ export type TAppSettingsContext = {
 }
 const defaultProps: TAppSettingsContext = {
   searchValue: '',
-  shouldHideDust: false,
+  shouldHideDust: true,
   shouldHideLowTVLVaults: false,
   onSwitchHideDust: (): void => undefined,
   onSwitchHideLowTVLVaults: (): void => undefined,
@@ -27,7 +27,7 @@ export const AppSettingsContextApp = memo(function AppSettingsContextApp({
   children: ReactElement
 }): ReactElement {
   const [searchValue, setSearchValue] = useSessionStorage('yearn.fi/vaults-search@0.0.1', '')
-  const [shouldHideDust, setShouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust@0.0.1', false)
+  const [shouldHideDust, setShouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust@0.0.2', true)
   const [shouldHideLowTVLVaults, setShouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl@0.0.1', false)
 
   /* 🔵 - Yearn Finance ******************************************************

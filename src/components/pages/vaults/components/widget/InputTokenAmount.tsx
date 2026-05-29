@@ -204,7 +204,7 @@ export const InputTokenAmount: FC<Props> = ({
               disabled={disabled || isMaxButtonLoading}
             >
               {isMaxButtonLoading ? (
-                <div className="w-3 h-3 border-2 border-border border-t-transparent rounded-full animate-spin" />
+                <div className="w-3 h-3 border-2 border-border border-t-primary rounded-full animate-spin" />
               ) : (
                 'Max'
               )}

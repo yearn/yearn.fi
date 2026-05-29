@@ -26,9 +26,7 @@ function calculatePriceImpactPercentage({
     return 0
   }
 
-  return outputUsdValueRaw > 0
-    ? Math.max(0, ((withdrawUsdValueRaw - outputUsdValueRaw) / withdrawUsdValueRaw) * 100)
-    : 0
+  return outputUsdValueRaw > 0 ? ((withdrawUsdValueRaw - outputUsdValueRaw) / withdrawUsdValueRaw) * 100 : 0
 }
 
 export function calculateWithdrawValueInfo({

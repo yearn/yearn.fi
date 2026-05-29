@@ -9,7 +9,7 @@ import {
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { getHoldingsAliasVaultAddress } from '@pages/vaults/domain/normalizeVault'
-import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
+import { YVUSD_CHAIN_ID, YVUSD_DECIMALS, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
@@ -112,11 +112,17 @@ export function useYearnTokens({
         { chainID: 8453, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
         { chainID: 42161, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
         { chainID: 747474, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
-        { chainID: YVUSD_CHAIN_ID, address: YVUSD_UNLOCKED_ADDRESS, decimals: 18, name: 'yvUSD', symbol: 'yvUSD' },
+        {
+          chainID: YVUSD_CHAIN_ID,
+          address: YVUSD_UNLOCKED_ADDRESS,
+          decimals: YVUSD_DECIMALS,
+          name: 'yvUSD',
+          symbol: 'yvUSD'
+        },
         {
           chainID: YVUSD_CHAIN_ID,
           address: YVUSD_LOCKED_ADDRESS,
-          decimals: 18,
+          decimals: YVUSD_DECIMALS,
           name: 'yvUSD (Locked)',
           symbol: 'yvUSD'
         }

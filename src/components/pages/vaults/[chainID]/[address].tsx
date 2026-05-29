@@ -8,20 +8,23 @@ import {
   resolveDesktopWidgetHeaderOffset
 } from '@pages/vaults/components/detail/desktopWidgetSizing'
 import { MobileKeyMetrics, YvUsdApyStatBox } from '@pages/vaults/components/detail/QuickStatsGrid'
-import { VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
+import { type TVaultAddressItem, VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
 import { VaultChartsSection } from '@pages/vaults/components/detail/VaultChartsSection'
 import { VaultDetailsHeader, VaultDetailsHeaderPresentation } from '@pages/vaults/components/detail/VaultDetailsHeader'
 import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSection'
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
 import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
+import { resolveForwardApyDisplayConfig } from '@pages/vaults/components/table/apyDisplayConfig'
 import { VaultDetailsWelcomeTour } from '@pages/vaults/components/tour/VaultDetailsWelcomeTour'
 import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
+import { YvBtcWidget } from '@pages/vaults/components/widget/yvBTC/YvBtcWidget'
 import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
+import { YvUsdApyTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import {
   getVaultChainID,
@@ -37,11 +40,16 @@ import {
 } from '@pages/vaults/domain/normalizeVault'
 import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from '@pages/vaults/domain/vaultWarnings'
 import { useEnsureVaultListFetch } from '@pages/vaults/hooks/useEnsureVaultListFetch'
+import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
+import { getVaultUserHistoryVaults } from '@pages/vaults/utils/vaultUserHistoryVaults'
+import { isYvBtcAddress, YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import {
+  getYvUsdInfinifiPointsNote,
   getYvUsdSharePrice,
   isYvUsdAddress,
   type TYvUsdVariant,
@@ -50,6 +58,7 @@ import {
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
+import { JsonLd } from '@shared/components/JsonLd'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -57,8 +66,18 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
-import type { ReactElement } from 'react'
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import type { ReactElement, ReactNode } from 'react'
+import {
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import { isAddressEqual } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
@@ -88,6 +107,95 @@ const resolveHeaderOffset = (): number => {
 }
 
 const desktopWidgetHeightClassNames = getDesktopWidgetHeightClassNames()
+
+const EMPTY_VAULT_FOR_APY_DATA: TKongVaultView = {
+  address: '0x0000000000000000000000000000000000000000',
+  version: '0',
+  type: 'Standard',
+  kind: 'Single Strategy',
+  symbol: '',
+  name: '',
+  description: '',
+  category: '',
+  decimals: 18,
+  chainID: 1,
+  token: {
+    address: '0x0000000000000000000000000000000000000000',
+    name: '',
+    symbol: '',
+    description: '',
+    decimals: 18
+  },
+  tvl: {
+    tvl: 0,
+    totalAssets: 0n,
+    price: 0
+  },
+  apr: {
+    type: '',
+    netAPR: 0,
+    fees: {
+      performance: 0,
+      withdrawal: 0,
+      management: 0
+    },
+    extra: {
+      stakingRewardsAPR: 0,
+      gammaRewardAPR: 0
+    },
+    points: {
+      weekAgo: 0,
+      monthAgo: 0,
+      inception: 0
+    },
+    pricePerShare: {
+      today: 0,
+      weekAgo: null,
+      monthAgo: null
+    },
+    forwardAPR: {
+      type: '',
+      netAPR: 0,
+      composite: {
+        boost: 0,
+        poolAPY: 0,
+        boostedAPR: 0,
+        baseAPR: 0,
+        cvxAPR: 0,
+        rewardsAPR: 0,
+        v3OracleCurrentAPR: 0,
+        v3OracleStratRatioAPR: 0,
+        keepCRV: 0,
+        keepVELO: 0,
+        cvxKeepCRV: 0
+      }
+    }
+  },
+  featuringScore: 0,
+  strategies: [],
+  staking: {
+    address: '0x0000000000000000000000000000000000000000',
+    available: false,
+    source: '',
+    rewards: []
+  },
+  migration: {
+    available: false,
+    address: '0x0000000000000000000000000000000000000000',
+    contract: '0x0000000000000000000000000000000000000000'
+  },
+  info: {
+    sourceURL: '',
+    riskLevel: 0,
+    riskScore: [],
+    riskScoreComment: '',
+    uiNotice: '',
+    isRetired: false,
+    isBoosted: false,
+    isHighlighted: false,
+    isHidden: false
+  }
+}
 
 const RETIRED_VAULT_ALERT_MESSAGES = {
   noFunds: 'This vault is retired.',
@@ -139,6 +247,35 @@ const splitFirstSentence = (message: string): { title: string; body?: string } =
   const title = message.slice(0, firstPeriodIndex + 1).trim()
   const body = message.slice(firstPeriodIndex + 1).trim()
   return body ? { title, body } : { title }
+}
+
+const buildVaultStructuredData = (currentVault: TKongVaultView): Record<string, unknown> => {
+  const annualPercentageRate = Number.isFinite(currentVault.apr.netAPR)
+    ? {
+        '@type': 'QuantitativeValue',
+        value: Number((currentVault.apr.netAPR * 100).toFixed(2)),
+        unitText: 'PERCENT'
+      }
+    : undefined
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FinancialProduct',
+    name: currentVault.name,
+    description: currentVault.description || `Deposit ${currentVault.token.symbol} to earn automated yield on Yearn.`,
+    url: `https://yearn.fi/vaults/${currentVault.chainID}/${currentVault.address}`,
+    ...(annualPercentageRate ? { annualPercentageRate } : {}),
+    provider: {
+      '@type': 'Organization',
+      name: 'Yearn',
+      url: 'https://yearn.fi'
+    },
+    offers: {
+      '@type': 'Offer',
+      category: 'Yield Vault',
+      description: `Automated yield vault for ${currentVault.token.symbol} on chain ${currentVault.chainID}`
+    }
+  }
 }
 
 const isSnapshotLikelyV3Vault = (snapshot: TKongVaultSnapshot): boolean => {
@@ -318,7 +455,7 @@ function Index(): ReactElement | null {
   const location = useLocation()
   const navigate = useNavigate()
   const chainId = Number(params.chainID)
-  const { getBalance, onRefresh } = useWallet()
+  const { getBalance, onRefresh, isLoading: isWalletLoading } = useWallet()
   const { address } = useWeb3()
   const { vaults, allVaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const {
@@ -327,7 +464,16 @@ function Index(): ReactElement | null {
     lockedVault: yvUsdLockedVault,
     isLoading: isLoadingYvUsd
   } = useYvUsdVaults()
+  const {
+    listVault: yvBtcVault,
+    unlockedVault: yvBtcUnlockedVault,
+    lockedVault: yvBtcLockedVault,
+    metrics: yvBtcMetrics,
+    isLoading: isLoadingYvBtc
+  } = useYvBtcVaults()
   const isYvUsd = isYvUsdAddress(params.address)
+  const isYvBtc = isYvBtcAddress(params.address)
+  const isDualVariantVault = isYvUsd || isYvBtc
   const isLockedYvUsdRoute =
     chainId === YVUSD_CHAIN_ID && params.address ? toAddress(params.address) === YVUSD_LOCKED_ADDRESS : false
   const unlockedYvUsdPath = `/vaults/${YVUSD_CHAIN_ID}/${YVUSD_UNLOCKED_ADDRESS}${location.search}${location.hash}`
@@ -378,6 +524,7 @@ function Index(): ReactElement | null {
   const [activeSection, setActiveSection] = useState<SectionKey>('charts')
   const [sectionScrollOffset, setSectionScrollOffset] = useState(0)
   const [isHeaderCompressed, setIsHeaderCompressed] = useState(false)
+  const [isHeaderAutoCompressed, setIsHeaderAutoCompressed] = useState(false)
   const [yvUsdApyVariant, setYvUsdApyVariant] = useState<TYvUsdVariant>('locked')
   const isCollapsibleMode = headerDisplayMode === 'collapsible'
   const scrollPadding = 16
@@ -427,11 +574,11 @@ function Index(): ReactElement | null {
   const isSnapshotNotFound = (snapshotError as any)?.response?.status === 404
 
   const isYBold = useMemo(() => {
-    if (isYvUsd) return false
+    if (isDualVariantVault) return false
     if (!baseVault?.address && !params.address) return false
     const resolvedAddress = toAddress(baseVault?.address ?? params.address ?? '0x')
     return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
-  }, [isYvUsd, baseVault?.address, params.address])
+  }, [isDualVariantVault, baseVault?.address, params.address])
 
   const yBoldStakingVault = useMemo(() => {
     if (!isYBold) return undefined
@@ -480,7 +627,7 @@ function Index(): ReactElement | null {
   const snapshotShouldDisableStaking = mergedSnapshot?.meta?.shouldDisableStaking
   const hasTriggeredVaultListFetch = useEnsureVaultListFetch({
     hasVaultList,
-    isYvUsd,
+    isYvUsd: isDualVariantVault,
     snapshotVault,
     enableVaultListFetch
   })
@@ -495,14 +642,31 @@ function Index(): ReactElement | null {
     if (isYvUsd) {
       return yvUsdVault ?? yvUsdUnlockedVault ?? yvUsdLockedVault
     }
+    if (isYvBtc) {
+      return yvBtcVault ?? yvBtcUnlockedVault ?? yvBtcLockedVault
+    }
     if (!vaultViewInput) return undefined
     return getVaultView(vaultViewInput, mergedSnapshot)
-  }, [isYvUsd, yvUsdVault, yvUsdUnlockedVault, yvUsdLockedVault, vaultViewInput, mergedSnapshot])
+  }, [
+    isYvUsd,
+    isYvBtc,
+    yvUsdVault,
+    yvUsdUnlockedVault,
+    yvUsdLockedVault,
+    yvBtcVault,
+    yvBtcUnlockedVault,
+    yvBtcLockedVault,
+    vaultViewInput,
+    mergedSnapshot
+  ])
 
   const shouldBootstrapYvUsdVaultList = isYvUsd && !hasVaultList && !hasTriggeredVaultListFetch
-  const isLoadingVault = isYvUsd
-    ? isLoadingYvUsd || shouldBootstrapYvUsdVaultList
+  const shouldBootstrapYvBtcVaultList = isYvBtc && !hasVaultList && !hasTriggeredVaultListFetch
+  const isLoadingVault = isDualVariantVault
+    ? (isYvUsd && (isLoadingYvUsd || shouldBootstrapYvUsdVaultList)) ||
+      (isYvBtc && (isLoadingYvBtc || shouldBootstrapYvBtcVaultList))
     : !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
+  const vaultApyData = useVaultApyData(currentVault ?? EMPTY_VAULT_FOR_APY_DATA)
   const stakingAddress = !isZeroAddress(currentVault?.staking?.address)
     ? toAddress(currentVault?.staking?.address)
     : undefined
@@ -521,6 +685,18 @@ function Index(): ReactElement | null {
     !!address && currentVault?.address && Number.isInteger(currentVault?.chainID)
       ? getBalance({ address: toAddress(currentVault.address), chainID: currentVault.chainID }).raw
       : 0n
+  const yvUsdUnlockedShareBalance =
+    !!address && isYvUsd
+      ? getBalance({
+          address: toAddress(yvUsdUnlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS),
+          chainID: YVUSD_CHAIN_ID
+        }).raw
+      : 0n
+  const yvUsdLockedShareBalance =
+    !!address && isYvUsd
+      ? getBalance({ address: toAddress(yvUsdLockedVault?.address ?? YVUSD_LOCKED_ADDRESS), chainID: YVUSD_CHAIN_ID })
+          .raw
+      : 0n
 
   const stakingShareBalance =
     !!address && !!stakingAddress && Number.isInteger(currentVault?.chainID) && !!currentVault
@@ -530,7 +706,9 @@ function Index(): ReactElement | null {
   const isMigratable = Boolean(currentVault?.migration?.available)
   const canShowMigrateAction = isMigratable && vaultShareBalance > 0n
   const isRetired = Boolean(currentVault?.info?.isRetired)
-  const hasUserFundsInVault = vaultShareBalance > 0n || stakingShareBalance > 0n
+  const hasYvUsdFunds = yvUsdUnlockedShareBalance > 0n || yvUsdLockedShareBalance > 0n
+  const hasUserFundsInVault = isYvUsd ? hasYvUsdFunds : vaultShareBalance > 0n || stakingShareBalance > 0n
+  const canShowUserCharts = !isWalletLoading && hasUserFundsInVault
   const retiredVaultAlertMessage = useMemo(() => {
     if (!isRetired || !currentVault) return null
     return getRetiredVaultAlertMessage({ vault: currentVault, hasUserFundsInVault })
@@ -541,6 +719,90 @@ function Index(): ReactElement | null {
       snapshot: mergedSnapshot
     })
   }, [metadataVault, mergedSnapshot])
+  const vaultAddresses = useMemo((): TVaultAddressItem[] => {
+    if (!currentVault) {
+      return []
+    }
+
+    if (isDualVariantVault) {
+      const unlockedAddress = isYvBtc ? YVBTC_UNLOCKED_ADDRESS : YVUSD_UNLOCKED_ADDRESS
+      const lockedAddress = isYvBtc ? YVBTC_LOCKED_ADDRESS : YVUSD_LOCKED_ADDRESS
+      const addresses: TVaultAddressItem[] = [
+        { address: unlockedAddress, label: 'Unlocked Vault Contract Address' },
+        { address: lockedAddress, label: 'Locked Vault Contract Address' }
+      ]
+      if (!isZeroAddress(currentVault.token.address)) {
+        addresses.push({ address: toAddress(currentVault.token.address), label: 'Token Contract Address' })
+      }
+      if (currentVault.staking.available && !isZeroAddress(currentVault.staking.address)) {
+        addresses.push({ address: toAddress(currentVault.staking.address), label: 'Staking Contract Address' })
+      }
+      return addresses
+    }
+
+    const addresses: TVaultAddressItem[] = [
+      { address: toAddress(currentVault.address), label: 'Vault Contract Address' }
+    ]
+    if (!isZeroAddress(currentVault.token.address)) {
+      addresses.push({ address: toAddress(currentVault.token.address), label: 'Token Contract Address' })
+    }
+    if (currentVault.staking.available && !isZeroAddress(currentVault.staking.address)) {
+      addresses.push({ address: toAddress(currentVault.staking.address), label: 'Staking Contract Address' })
+    }
+    return addresses
+  }, [currentVault, isDualVariantVault, isYvBtc])
+  const additionalFeaturesContent = useMemo((): ReactNode => {
+    if (!currentVault) {
+      return null
+    }
+
+    const dualUnlockedVault = isYvBtc ? yvBtcUnlockedVault : yvUsdVault
+    const dualLockedVault = isYvBtc ? yvBtcLockedVault : yvUsdLockedVault
+    const unlockedApy =
+      dualUnlockedVault?.apr.forwardAPR.netAPR ?? currentVault.apr.forwardAPR.netAPR ?? currentVault.apr.netAPR ?? 0
+    const lockedApy = dualLockedVault?.apr.forwardAPR.netAPR ?? dualLockedVault?.apr.netAPR ?? 0
+
+    const tooltipContent = isDualVariantVault ? (
+      <YvUsdApyTooltipContent
+        lockedValue={lockedApy}
+        unlockedValue={unlockedApy}
+        infinifiPointsNote={
+          isYvUsd && (currentVault.address === YVUSD_UNLOCKED_ADDRESS || currentVault.address === YVUSD_LOCKED_ADDRESS)
+            ? getYvUsdInfinifiPointsNote()
+            : undefined
+        }
+      />
+    ) : (
+      resolveForwardApyDisplayConfig({
+        currentVault,
+        data: vaultApyData,
+        displayVariant: 'default',
+        showSubline: false,
+        showSublineTooltip: true,
+        showBoostDetails: true,
+        canOpenModal: false
+      }).displayConfig.tooltip?.content
+    )
+
+    if (!isValidElement<{ className?: string }>(tooltipContent)) {
+      return tooltipContent
+    }
+
+    return cloneElement(tooltipContent, {
+      className: `${tooltipContent.props.className ?? ''} bg-transparent border-0 shadow-none`
+    })
+  }, [
+    currentVault,
+    isDualVariantVault,
+    isYvBtc,
+    isYvUsd,
+    vaultApyData,
+    yvBtcLockedVault,
+    yvBtcUnlockedVault,
+    yvUsdLockedVault?.apr.forwardAPR.netAPR,
+    yvUsdLockedVault?.apr.netAPR,
+    yvUsdVault?.apr.forwardAPR.netAPR
+  ])
   const widgetActions = useMemo(() => {
     if (isRetired || isMigratable) {
       return canShowMigrateAction ? [WidgetActionType.Migrate, WidgetActionType.Withdraw] : [WidgetActionType.Withdraw]
@@ -739,6 +1001,17 @@ function Index(): ReactElement | null {
     ])
   }, [currentVault, refetchSnapshot, refetchYBoldSnapshot, onRefresh, isYBold])
 
+  const detailUserHistoryVaults = useMemo(
+    () =>
+      currentVault
+        ? getVaultUserHistoryVaults({
+            chainId,
+            vaultAddress: currentVault.address
+          })
+        : undefined,
+    [chainId, currentVault]
+  )
+
   useEffect(() => {
     updateCollapsedWidgetHeight()
   }, [updateCollapsedWidgetHeight])
@@ -765,13 +1038,17 @@ function Index(): ReactElement | null {
         shouldRender: Number.isInteger(chainId),
         ref: sectionRefs.charts,
         content: isYvUsd ? (
-          <YvUsdChartsSection chartHeightPx={180} chartHeightMdPx={230} />
+          <YvUsdChartsSection chartHeightPx={180} chartHeightMdPx={230} enableUserPositionChart={canShowUserCharts} />
         ) : (
           <VaultChartsSection
+            key={`${currentVault.address}-${address ?? 'disconnected'}`}
             chainId={chainId}
             vaultAddress={currentVault.address}
             chartHeightPx={180}
             chartHeightMdPx={230}
+            enableUserCharts={canShowUserCharts}
+            userUnitLabel={currentVault.token?.symbol || currentVault.symbol || 'assets'}
+            userHistoryVaults={detailUserHistoryVaults}
           />
         )
       },
@@ -779,7 +1056,13 @@ function Index(): ReactElement | null {
         key: 'about' as const,
         shouldRender: true,
         ref: sectionRefs.about,
-        content: <VaultAboutSection currentVault={currentVault} />
+        content: (
+          <VaultAboutSection
+            currentVault={currentVault}
+            vaultAddresses={vaultAddresses}
+            additionalFeaturesContent={additionalFeaturesContent}
+          />
+        )
       },
       {
         key: 'strategies' as const,
@@ -800,7 +1083,17 @@ function Index(): ReactElement | null {
         content: <VaultInfoSection currentVault={currentVault} inceptTime={snapshotVault?.inceptTime ?? null} />
       }
     ]
-  }, [chainId, currentVault, isYvUsd, sectionRefs, snapshotVault?.inceptTime])
+  }, [
+    canShowUserCharts,
+    additionalFeaturesContent,
+    chainId,
+    currentVault,
+    isYvUsd,
+    sectionRefs,
+    snapshotVault?.inceptTime,
+    detailUserHistoryVaults,
+    vaultAddresses
+  ])
 
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const sectionTabs = renderableSections.map((section) => ({
@@ -1135,10 +1428,25 @@ function Index(): ReactElement | null {
   const mobileProductTypeLabel = getMobileProductTypeLabel()
   const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
+  const yvBtcMobileApyBox = (
+    <YvUsdApyStatBox
+      lockedApy={yvBtcMetrics.locked.apy}
+      unlockedApy={yvBtcMetrics.unlocked.apy}
+      activeVariant={yvUsdApyVariant}
+      onVariantChange={setYvUsdApyVariant}
+      title={'yvBTC APY'}
+    />
+  )
 
   function renderDetailCharts(chartHeightPx: number, chartHeightMdPx: number): ReactElement {
     if (isYvUsd) {
-      return <YvUsdChartsSection chartHeightPx={chartHeightPx} chartHeightMdPx={chartHeightMdPx} />
+      return (
+        <YvUsdChartsSection
+          chartHeightPx={chartHeightPx}
+          chartHeightMdPx={chartHeightMdPx}
+          enableUserPositionChart={canShowUserCharts}
+        />
+      )
     }
 
     return (
@@ -1147,6 +1455,9 @@ function Index(): ReactElement | null {
         vaultAddress={resolvedCurrentVault.address}
         chartHeightPx={chartHeightPx}
         chartHeightMdPx={chartHeightMdPx}
+        enableUserCharts={canShowUserCharts}
+        userUnitLabel={resolvedCurrentVault.token?.symbol || resolvedCurrentVault.symbol || 'assets'}
+        userHistoryVaults={detailUserHistoryVaults}
       />
     )
   }
@@ -1162,6 +1473,20 @@ function Index(): ReactElement | null {
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
           onDepositVariantChange={setYvUsdApyVariant}
+          showTabs={false}
+          collapseDetails={shouldCollapseWidgetDetails}
+        />
+      )
+    }
+    if (isYvBtc) {
+      return (
+        <YvBtcWidget
+          chainId={chainId}
+          mode={resolvedWidgetMode}
+          onModeChange={setWidgetMode}
+          onOpenSettings={toggleWidgetSettings}
+          isSettingsOpen={isWidgetSettingsOpen}
+          onVariantChange={setYvUsdApyVariant}
           showTabs={false}
           collapseDetails={shouldCollapseWidgetDetails}
         />
@@ -1202,6 +1527,18 @@ function Index(): ReactElement | null {
         />
       )
     }
+    if (isYvBtc) {
+      return (
+        <YvBtcWidget
+          chainId={chainId}
+          mode={mobileDrawerAction}
+          onOpenSettings={toggleWidgetSettings}
+          isSettingsOpen={isWidgetSettingsOpen}
+          onVariantChange={setYvUsdApyVariant}
+          showTabs={false}
+        />
+      )
+    }
 
     return (
       <Widget
@@ -1224,357 +1561,394 @@ function Index(): ReactElement | null {
   }
 
   return (
-    <div
-      className={
-        'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-[calc(7rem+env(safe-area-inset-bottom,0px))] sm:pb-8'
-      }
-    >
-      <div className={'mx-auto w-full max-w-[1232px] px-4'}>
-        {isCollapsibleMode ? (
-          <div
-            aria-hidden="true"
-            className={'pointer-events-none invisible fixed inset-x-0 top-0 -z-10 hidden md:block'}
-            inert={true}
-            tabIndex={-1}
-          >
-            <div className={'mx-auto w-full max-w-[1232px] px-4'}>
-              <div ref={compressedHeaderMeasureRef}>
-                <VaultDetailsHeaderPresentation
-                  currentVault={currentVault}
-                  depositedValue={vaultUserData.depositedValue}
-                  yvUsdApyVariant={yvUsdApyVariant}
-                  isCompressed={true}
-                  sectionTabs={sectionTabs}
-                  activeSectionKey={activeSection}
-                  onSelectSection={(): void => undefined}
-                  widgetActions={widgetActions}
-                  widgetMode={resolvedWidgetMode}
-                  onWidgetModeChange={(): void => undefined}
-                  onYvUsdApyVariantChange={(): void => undefined}
-                  isWidgetWalletOpen={isWidgetWalletOpen}
-                  onWidgetWalletOpen={(): void => undefined}
-                  onWidgetCloseOverlays={(): void => undefined}
-                  includeTourAttributes={false}
-                />
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        <header
-          className={cl(
-            'h-full rounded-3xl',
-            'relative flex-col items-center justify-center',
-            'hidden md:flex',
-            'md:sticky md:z-30'
-          )}
-          style={{ top: headerStickyTop }}
-          ref={headerRef}
-        >
-          <VaultDetailsHeader
-            currentVault={currentVault}
-            depositedValue={vaultUserData.depositedValue}
-            yvUsdApyVariant={yvUsdApyVariant}
-            isCollapsibleMode={isCollapsibleMode}
-            sectionTabs={sectionTabs}
-            activeSectionKey={activeSection}
-            onSelectSection={(key): void => handleSelectSection(key as SectionKey)}
-            sectionSelectorRef={sectionSelectorRef}
-            widgetActions={widgetActions}
-            widgetMode={resolvedWidgetMode}
-            onWidgetModeChange={setWidgetMode}
-            onYvUsdApyVariantChange={setYvUsdApyVariant}
-            isWidgetWalletOpen={isWidgetWalletOpen}
-            onWidgetWalletOpen={openWidgetWallet}
-            onWidgetCloseOverlays={closeWidgetOverlays}
-            onCompressionChange={setIsHeaderCompressed}
-          />
-        </header>
-
-        <div className="md:hidden md:mt-4 mb-4">
-          <Breadcrumbs
-            className={'mb-3'}
-            items={[
-              { label: 'Home', href: '/' },
-              { label: 'Vaults', href: '/vaults' },
-              { label: `${getVaultName(currentVault)}`, isCurrent: true }
-            ]}
-          />
-          {isYvUsd ? <YvUsdHeaderBanner className={'mb-3 md:min-h-26'} /> : null}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
-              <TokenLogo
-                src={getVaultPrimaryLogoSrc(currentVault)}
-                tokenSymbol={currentVault.token.symbol || ''}
-                width={40}
-                height={40}
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className={'text-lg font-black leading-tight truncate-safe text-text-primary'}>
-                {getVaultName(currentVault)}
-              </h1>
-              <div className="flex items-center gap-1 mt-1">
-                {currentVault.category ? (
-                  <VaultsListChip
-                    label={currentVault.category}
-                    tooltipDescription={getCategoryDescription(currentVault.category) || undefined}
-                  />
-                ) : null}
-                <VaultsListChip
-                  label={mobileProductTypeLabel}
-                  tooltipDescription={getProductTypeDescription(mobileListKind)}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="md:hidden space-y-4">
-          {isYvUsd ? (
-            <YvUsdMobileKeyMetrics
-              currentVault={currentVault}
-              apyVariant={yvUsdApyVariant}
-              onApyVariantChange={setYvUsdApyVariant}
-            />
-          ) : (
-            <MobileKeyMetrics
-              currentVault={currentVault}
-              depositedValue={vaultUserData.depositedValue}
-              tokenPrice={currentVault.tvl.price || 0}
-            />
-          )}
-
-          {isRetired && retiredVaultAlertMessage ? (
-            <VaultWarningAlert message={retiredVaultAlertMessage} className="px-4 py-3" />
-          ) : null}
-
-          {shouldShowNonYearnVaultAlert ? (
-            <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-4 py-3" />
-          ) : null}
-
-          {Number.isInteger(chainId) && (
-            <div className="border border-border rounded-lg bg-surface overflow-hidden">
-              {renderDetailCharts(180, 230)}
-            </div>
-          )}
-
-          <section id={mobileDetailsSectionId} ref={detailsRef} aria-label="Vault details" className="space-y-4 pb-8">
-            {renderableSections
-              .filter((section) => section.key !== 'charts')
-              .map((section) => {
-                const typedKey = section.key as Exclude<SectionKey, 'charts'>
-                const isOpen = openSections[typedKey]
-
-                return (
-                  <div
-                    key={section.key}
-                    ref={section.ref}
-                    data-scroll-spy-key={section.key}
-                    className={'border border-border rounded-lg bg-surface'}
-                  >
-                    <button
-                      type={'button'}
-                      className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
-                      onClick={(): void =>
-                        setOpenSections((previous) => ({
-                          ...previous,
-                          [typedKey]: !previous[typedKey]
-                        }))
-                      }
-                    >
-                      <span className={'text-base font-semibold text-text-primary'}>{collapsibleTitles[typedKey]}</span>
-                      <IconChevron
-                        className={'size-4 text-text-secondary transition-transform duration-200'}
-                        direction={isOpen ? 'up' : 'down'}
-                      />
-                    </button>
-                    {isOpen ? <div>{section.content}</div> : null}
-                  </div>
-                )
-              })}
-          </section>
-        </div>
-
-        <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
-          <div
-            ref={widgetContainerRef}
-            className={cl(
-              'hidden md:block',
-              'order-1 md:order-2',
-              'md:col-span-7 md:col-start-14 md:sticky pt-4',
-              'flex flex-col overflow-hidden',
-              desktopWidgetHeightClassNames.container
-            )}
-            style={{ top: 'var(--vault-header-height, var(--header-height))' }}
-          >
+    <>
+      {currentVault && <JsonLd schema={buildVaultStructuredData(currentVault)} />}
+      <div
+        className={
+          'min-h-[calc(100vh-var(--header-height))] w-full bg-app pb-[calc(7rem+env(safe-area-inset-bottom,0px))] sm:pb-8'
+        }
+      >
+        <div className={'mx-auto w-full max-w-[1232px] px-4'}>
+          {isCollapsibleMode ? (
             <div
-              ref={widgetStackRef}
-              className={cl(
-                'relative grid w-full min-w-0 flex-1 min-h-0 overflow-hidden',
-                desktopWidgetHeightClassNames.stack,
-                isWidgetRewardsOpen ? 'grid-rows-[auto_minmax(0,1fr)]' : 'grid-rows-[minmax(0,1fr)_auto]'
-              )}
-              style={isWidgetRewardsOpen && collapsedWidgetHeight ? { height: collapsedWidgetHeight } : undefined}
+              aria-hidden="true"
+              className={'pointer-events-none invisible fixed inset-x-0 top-0 -z-10 hidden md:block'}
+              inert={true}
+              tabIndex={-1}
             >
-              <div ref={widgetPrimaryRef} className="flex w-full min-w-0 flex-col min-h-0">
-                {isWidgetRewardsOpen ? (
-                  <button
-                    type="button"
-                    onClick={toggleWidgetCollapse}
-                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface px-6 py-4"
-                  >
-                    <span className="text-base font-semibold text-text-primary">{collapsedWidgetTitle}</span>
-                    <IconChevron className="size-4 text-text-secondary transition-transform" direction={'down'} />
-                  </button>
-                ) : (
-                  <div
-                    className={cl('flex flex-col min-h-0', isWidgetPanelActive ? 'flex' : 'hidden')}
-                    aria-hidden={!isWidgetPanelActive}
-                  >
-                    {renderDesktopWidget()}
-                  </div>
-                )}
-                <WalletPanel
-                  isActive={isWidgetWalletOpen && !isWidgetRewardsOpen}
-                  currentVault={currentVault}
-                  vaultAddress={toAddress(currentVault.address)}
-                  stakingAddress={stakingAddress}
-                  chainId={chainId}
-                  vaultUserData={vaultUserData}
-                />
-              </div>
-              {shouldShowWidgetRewards ? (
-                <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
-                  <WidgetRewards
-                    stakingAddress={stakingAddress}
-                    stakingSource={currentVault.staking.source}
-                    rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
-                      address: r.address,
-                      symbol: r.symbol,
-                      decimals: r.decimals,
-                      price: r.price,
-                      isFinished: r.isFinished
-                    }))}
-                    chainId={chainId}
-                    isPanelOpen={isWidgetRewardsOpen}
-                    onOpenRewards={openWidgetRewards}
-                    onCloseRewards={closeWidgetRewards}
-                    onClaimSuccess={handleRewardsClaimSuccess}
+              <div className={'mx-auto w-full max-w-[1232px] px-4'}>
+                <div ref={compressedHeaderMeasureRef}>
+                  <VaultDetailsHeaderPresentation
+                    currentVault={currentVault}
+                    depositedValue={vaultUserData.depositedValue}
+                    yvUsdApyVariant={yvUsdApyVariant}
+                    isCompressed={true}
+                    sectionTabs={sectionTabs}
+                    activeSectionKey={activeSection}
+                    onSelectSection={(): void => undefined}
+                    widgetActions={widgetActions}
+                    widgetMode={resolvedWidgetMode}
+                    onWidgetModeChange={(): void => undefined}
+                    onYvUsdApyVariantChange={(): void => undefined}
+                    isWidgetWalletOpen={isWidgetWalletOpen}
+                    onWidgetWalletOpen={(): void => undefined}
+                    onWidgetCloseOverlays={(): void => undefined}
+                    includeTourAttributes={false}
                   />
                 </div>
-              ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          <header
+            className={cl(
+              'h-full rounded-3xl',
+              'relative flex-col items-center justify-center',
+              'hidden md:flex',
+              'md:sticky md:z-30'
+            )}
+            style={{ top: headerStickyTop }}
+            ref={headerRef}
+          >
+            <VaultDetailsHeader
+              currentVault={currentVault}
+              depositedValue={vaultUserData.depositedValue}
+              yvUsdApyVariant={yvUsdApyVariant}
+              isCollapsibleMode={isCollapsibleMode}
+              sectionTabs={sectionTabs}
+              activeSectionKey={activeSection}
+              onSelectSection={(key): void => handleSelectSection(key as SectionKey)}
+              sectionSelectorRef={sectionSelectorRef}
+              widgetActions={widgetActions}
+              widgetMode={resolvedWidgetMode}
+              onWidgetModeChange={setWidgetMode}
+              onYvUsdApyVariantChange={setYvUsdApyVariant}
+              isWidgetWalletOpen={isWidgetWalletOpen}
+              onWidgetWalletOpen={openWidgetWallet}
+              onWidgetCloseOverlays={closeWidgetOverlays}
+              onCompressionChange={setIsHeaderCompressed}
+              onCompressionStateChange={({ isCompressed, isForceCompressed }): void => {
+                setIsHeaderCompressed(isCompressed)
+                setIsHeaderAutoCompressed(isForceCompressed)
+              }}
+            />
+          </header>
+
+          <div className="md:hidden md:mt-4 mb-4">
+            <Breadcrumbs
+              className={'mb-3'}
+              items={[
+                { label: 'Home', href: '/' },
+                { label: 'Vaults', href: '/vaults' },
+                { label: `${getVaultName(currentVault)}`, isCurrent: true }
+              ]}
+            />
+            {isYvUsd ? <YvUsdHeaderBanner className={'mb-3 md:min-h-26'} /> : null}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
+                <TokenLogo
+                  src={getVaultPrimaryLogoSrc(currentVault)}
+                  tokenSymbol={currentVault.token.symbol || ''}
+                  width={40}
+                  height={40}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className={'text-lg font-black leading-tight truncate-safe text-text-primary'}>
+                  {getVaultName(currentVault)}
+                </h1>
+                <div className="flex items-center gap-1 mt-1">
+                  {currentVault.category ? (
+                    <VaultsListChip
+                      label={currentVault.category}
+                      tooltipDescription={getCategoryDescription(currentVault.category) || undefined}
+                    />
+                  ) : null}
+                  <VaultsListChip
+                    label={mobileProductTypeLabel}
+                    tooltipDescription={getProductTypeDescription(mobileListKind)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
+          <div className="md:hidden space-y-4">
+            {isYvUsd ? (
+              <YvUsdMobileKeyMetrics
+                currentVault={currentVault}
+                apyVariant={yvUsdApyVariant}
+                onApyVariantChange={setYvUsdApyVariant}
+              />
+            ) : isYvBtc ? (
+              <MobileKeyMetrics
+                currentVault={currentVault}
+                depositedValue={vaultUserData.depositedValue}
+                tokenPrice={currentVault.tvl.price || 0}
+                apyBox={yvBtcMobileApyBox}
+              />
+            ) : (
+              <MobileKeyMetrics
+                currentVault={currentVault}
+                depositedValue={vaultUserData.depositedValue}
+                tokenPrice={currentVault.tvl.price || 0}
+              />
+            )}
+
             {isRetired && retiredVaultAlertMessage ? (
-              <VaultWarningAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
+              <VaultWarningAlert message={retiredVaultAlertMessage} className="px-4 py-3" />
             ) : null}
 
             {shouldShowNonYearnVaultAlert ? (
-              <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-6 py-4" />
+              <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-4 py-3" />
             ) : null}
 
-            {renderableSections.map((section) => {
-              const isCollapsible =
-                section.key === 'about' ||
-                section.key === 'risk' ||
-                section.key === 'strategies' ||
-                section.key === 'info'
-              if (isCollapsible) {
-                const typedKey = section.key as SectionKey
-                const isOpen = openSections[typedKey]
+            {Number.isInteger(chainId) && (
+              <div className="border border-border rounded-lg bg-surface overflow-hidden">
+                {renderDetailCharts(180, 230)}
+              </div>
+            )}
 
-                return (
-                  <div
-                    key={section.key}
-                    ref={section.ref}
-                    data-scroll-spy-key={section.key}
-                    data-tour={sectionTourTargets[section.key as SectionKey]}
-                    className={'border border-border rounded-lg bg-surface'}
-                    style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
-                  >
-                    <button
-                      type={'button'}
-                      className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
-                      onClick={(): void =>
-                        setOpenSections((previous) => ({
-                          ...previous,
-                          [typedKey]: !previous[typedKey]
-                        }))
-                      }
+            <section id={mobileDetailsSectionId} ref={detailsRef} aria-label="Vault details" className="space-y-4 pb-8">
+              {renderableSections
+                .filter((section) => section.key !== 'charts')
+                .map((section) => {
+                  const typedKey = section.key as Exclude<SectionKey, 'charts'>
+                  const isOpen = openSections[typedKey]
+
+                  return (
+                    <div
+                      key={section.key}
+                      ref={section.ref}
+                      data-scroll-spy-key={section.key}
+                      className={'border border-border rounded-lg bg-surface'}
                     >
-                      <span className={'text-base font-semibold text-text-primary'}>{collapsibleTitles[typedKey]}</span>
-                      <IconChevron
-                        className={'size-4 text-text-secondary transition-transform duration-200'}
-                        direction={isOpen ? 'up' : 'down'}
-                      />
+                      <button
+                        type={'button'}
+                        className={'flex w-full items-center justify-between gap-3 px-4 py-3'}
+                        onClick={(): void =>
+                          setOpenSections((previous) => ({
+                            ...previous,
+                            [typedKey]: !previous[typedKey]
+                          }))
+                        }
+                      >
+                        <span className={'text-base font-semibold text-text-primary'}>
+                          {collapsibleTitles[typedKey]}
+                        </span>
+                        <IconChevron
+                          className={'size-4 text-text-secondary transition-transform duration-200'}
+                          direction={isOpen ? 'up' : 'down'}
+                        />
+                      </button>
+                      {isOpen ? <div>{section.content}</div> : null}
+                    </div>
+                  )
+                })}
+            </section>
+          </div>
+
+          <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
+            <div
+              ref={widgetContainerRef}
+              className={cl(
+                'hidden md:block',
+                'order-1 md:order-2',
+                'md:col-span-7 md:col-start-14 md:sticky pt-4',
+                'flex flex-col overflow-hidden',
+                desktopWidgetHeightClassNames.container
+              )}
+              style={{ top: 'var(--vault-header-height, var(--header-height))' }}
+            >
+              <div
+                ref={widgetStackRef}
+                className={cl(
+                  'relative grid w-full min-w-0 flex-1 min-h-0 overflow-hidden',
+                  desktopWidgetHeightClassNames.stack,
+                  isWidgetRewardsOpen ? 'grid-rows-[auto_minmax(0,1fr)]' : 'grid-rows-[minmax(0,1fr)_auto]'
+                )}
+                style={isWidgetRewardsOpen && collapsedWidgetHeight ? { height: collapsedWidgetHeight } : undefined}
+              >
+                <div ref={widgetPrimaryRef} className="flex w-full min-w-0 flex-col min-h-0">
+                  {isWidgetRewardsOpen ? (
+                    <button
+                      type="button"
+                      onClick={toggleWidgetCollapse}
+                      className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface px-6 py-4"
+                    >
+                      <span className="text-base font-semibold text-text-primary">{collapsedWidgetTitle}</span>
+                      <IconChevron className="size-4 text-text-secondary transition-transform" direction={'down'} />
                     </button>
-                    {isOpen ? <div>{section.content}</div> : null}
-                  </div>
-                )
-              }
-
-              return (
-                <div
-                  key={section.key}
-                  ref={section.ref}
-                  data-scroll-spy-key={section.key}
-                  data-tour={sectionTourTargets[section.key as SectionKey]}
-                  className={'border border-border rounded-lg bg-surface'}
-                  style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
-                >
-                  {section.content}
+                  ) : (
+                    <div
+                      className={cl('flex flex-col min-h-0', isWidgetPanelActive ? 'flex' : 'hidden')}
+                      aria-hidden={!isWidgetPanelActive}
+                    >
+                      {renderDesktopWidget()}
+                    </div>
+                  )}
+                  <WalletPanel
+                    isActive={isWidgetWalletOpen && !isWidgetRewardsOpen}
+                    currentVault={currentVault}
+                    vaultAddress={toAddress(currentVault.address)}
+                    stakingAddress={stakingAddress}
+                    chainId={chainId}
+                    vaultUserData={vaultUserData}
+                  />
                 </div>
-              )
-            })}
-            {renderableSections.length > 0 ? <div aria-hidden className={'h-[65vh]'} /> : null}
-          </div>
-        </section>
-      </div>
+                {shouldShowWidgetRewards ? (
+                  <div
+                    ref={widgetRewardsRef}
+                    className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}
+                  >
+                    <WidgetRewards
+                      stakingAddress={stakingAddress}
+                      stakingSource={currentVault.staking.source}
+                      rewardTokens={(currentVault.staking.rewards ?? []).map((r) => ({
+                        address: r.address,
+                        symbol: r.symbol,
+                        decimals: r.decimals,
+                        price: r.price,
+                        isFinished: r.isFinished
+                      }))}
+                      chainId={chainId}
+                      isPanelOpen={isWidgetRewardsOpen}
+                      onOpenRewards={openWidgetRewards}
+                      onCloseRewards={closeWidgetRewards}
+                      onClaimSuccess={handleRewardsClaimSuccess}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
 
-      {/* Mobile Floating Action Buttons - visible until desktop widget appears (md:), hidden when drawer is open */}
-      {!isMobileDrawerOpen && (
-        <div
-          className={cl(
-            'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 md:hidden',
-            'backdrop-blur-md',
-            'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]'
-          )}
-        >
-          <div className="flex gap-3 max-w-[1232px] mx-auto">
-            <button
-              type="button"
-              onClick={() => handleFloatingButtonClick(widgetActions[0])}
-              className="yearn--button--nextgen flex-1"
-              data-variant="filled"
-            >
-              {widgetActions[0] === WidgetActionType.Migrate ? 'Migrate' : 'Deposit'}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFloatingButtonClick(widgetActions[1])}
-              className="yearn--button flex-1"
-              data-variant="light"
-            >
-              Withdraw
-            </button>
-          </div>
+            <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
+              {isRetired && retiredVaultAlertMessage ? (
+                <VaultWarningAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
+              ) : null}
+
+              {shouldShowNonYearnVaultAlert ? (
+                <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-6 py-4" />
+              ) : null}
+
+              {renderableSections.map((section) => {
+                const isCollapsible =
+                  section.key === 'about' ||
+                  section.key === 'risk' ||
+                  section.key === 'strategies' ||
+                  section.key === 'info'
+                const needsScaledYvUsdBanner = isYvUsd && isHeaderAutoCompressed && section.key === 'charts'
+
+                const sectionNode = (() => {
+                  if (isCollapsible) {
+                    const typedKey = section.key as SectionKey
+                    const isOpen = openSections[typedKey]
+
+                    return (
+                      <div
+                        key={section.key}
+                        ref={section.ref}
+                        data-scroll-spy-key={section.key}
+                        data-tour={sectionTourTargets[section.key as SectionKey]}
+                        className={'border border-border rounded-lg bg-surface'}
+                        style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
+                      >
+                        <button
+                          type={'button'}
+                          className={'flex w-full items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4'}
+                          onClick={(): void =>
+                            setOpenSections((previous) => ({
+                              ...previous,
+                              [typedKey]: !previous[typedKey]
+                            }))
+                          }
+                        >
+                          <span className={'text-base font-semibold text-text-primary'}>
+                            {collapsibleTitles[typedKey]}
+                          </span>
+                          <IconChevron
+                            className={'size-4 text-text-secondary transition-transform duration-200'}
+                            direction={isOpen ? 'up' : 'down'}
+                          />
+                        </button>
+                        {isOpen ? <div>{section.content}</div> : null}
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div
+                      key={section.key}
+                      ref={section.ref}
+                      data-scroll-spy-key={section.key}
+                      data-tour={sectionTourTargets[section.key as SectionKey]}
+                      className={'border border-border rounded-lg bg-surface'}
+                      style={{ scrollMarginTop: `${sectionScrollOffset}px` }}
+                    >
+                      {section.content}
+                    </div>
+                  )
+                })()
+
+                if (!needsScaledYvUsdBanner) {
+                  return sectionNode
+                }
+
+                return [
+                  sectionNode,
+                  <YvUsdHeaderBanner
+                    key={'yvusd-header-banner-compressed'}
+                    className={'w-full max-h-[72px] min-h-[72px]'}
+                  />
+                ]
+              })}
+              {renderableSections.length > 0 ? <div aria-hidden className={'h-[65vh]'} /> : null}
+            </div>
+          </section>
         </div>
-      )}
 
-      <BottomDrawer
-        isOpen={isMobileDrawerOpen}
-        onClose={() => setIsMobileDrawerOpen(false)}
-        title={currentVault.name}
-        headerActions={isYvUsd ? undefined : <MobileDrawerSettingsButton />}
-        panelRef={mobileDrawerPanelRef}
-      >
-        {renderMobileWidget()}
-      </BottomDrawer>
-      <VaultDetailsWelcomeTour onTourStateChange={setVaultTourState} />
-    </div>
+        {/* Mobile Floating Action Buttons - visible until desktop widget appears (md:), hidden when drawer is open */}
+        {!isMobileDrawerOpen && (
+          <div
+            className={cl(
+              'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 md:hidden',
+              'backdrop-blur-md',
+              'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]'
+            )}
+          >
+            <div className="flex gap-3 max-w-[1232px] mx-auto">
+              <button
+                type="button"
+                onClick={() => handleFloatingButtonClick(widgetActions[0])}
+                className="yearn--button--nextgen flex-1"
+                data-variant="filled"
+              >
+                {widgetActions[0] === WidgetActionType.Migrate ? 'Migrate' : 'Deposit'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFloatingButtonClick(widgetActions[1])}
+                className="yearn--button flex-1"
+                data-variant="light"
+              >
+                Withdraw
+              </button>
+            </div>
+          </div>
+        )}
+
+        <BottomDrawer
+          isOpen={isMobileDrawerOpen}
+          onClose={() => setIsMobileDrawerOpen(false)}
+          title={currentVault.name}
+          headerActions={isYvUsd ? undefined : <MobileDrawerSettingsButton />}
+          panelRef={mobileDrawerPanelRef}
+        >
+          {renderMobileWidget()}
+        </BottomDrawer>
+        <VaultDetailsWelcomeTour onTourStateChange={setVaultTourState} />
+      </div>
+    </>
   )
 }
 

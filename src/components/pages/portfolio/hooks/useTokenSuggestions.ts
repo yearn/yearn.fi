@@ -8,6 +8,7 @@ import { useMemo } from 'react'
 export type TTokenSuggestion = {
   vault: TKongVault
   matchedSymbol: string
+  matchedChainID: number
 }
 
 export function useTokenSuggestions(holdingsKeySet: Set<string>): TTokenSuggestion[] {
@@ -15,19 +16,26 @@ export function useTokenSuggestions(holdingsKeySet: Set<string>): TTokenSuggesti
   const { vaults } = useYearn()
 
   return useMemo(() => {
-    const userTokens = Object.values(balances ?? {}).flatMap((perChain) =>
-      Object.values(perChain ?? {}).filter(
-        (token) => token?.balance && token.balance.raw > 0n && token.symbol && token.value > 1
-      )
+    const userTokens = Object.entries(balances ?? {}).flatMap(([chainIDKey, perChain]) =>
+      Object.values(perChain ?? {})
+        .filter((token) => token?.balance && token.balance.raw > 0n && token.symbol && token.value > 1)
+        .map((token) => {
+          const parsedChainID = Number(chainIDKey)
+          return { token, chainID: Number.isFinite(parsedChainID) ? parsedChainID : token.chainID }
+        })
     )
 
-    const symbolTotals = userTokens.reduce((acc, { symbol, value }) => {
-      const normalized = normalizeSymbol(symbol)
+    const symbolTotals = userTokens.reduce((acc, { token, chainID }) => {
+      const normalized = normalizeSymbol(token.symbol)
       if (!normalized) return acc
-      return acc.set(normalized, (acc.get(normalized) ?? 0) + value)
-    }, new Map<string, number>())
+      const previous = acc.get(normalized)
+      const totalValue = (previous?.totalValue ?? 0) + token.value
+      const chainValues = new Map(previous?.chainValues ?? [])
+      chainValues.set(chainID, (chainValues.get(chainID) ?? 0) + token.value)
+      return acc.set(normalized, { totalValue, chainValues })
+    }, new Map<string, { totalValue: number; chainValues: Map<number, number> }>())
 
-    const sortedSymbols = [...symbolTotals.entries()].sort((a, b) => b[1] - a[1])
+    const sortedSymbols = [...symbolTotals.entries()].sort((a, b) => b[1].totalValue - a[1].totalValue)
 
     const eligible = getEligibleVaults(vaults, holdingsKeySet)
 
@@ -38,18 +46,19 @@ export function useTokenSuggestions(holdingsKeySet: Set<string>): TTokenSuggesti
     }, new Map<string, TKongVault[]>())
 
     return sortedSymbols.reduce<{ results: TTokenSuggestion[]; usedVaults: Set<string> }>(
-      (acc, [symbol]) => {
+      (acc, [symbol, { chainValues }]) => {
         if (acc.results.length >= 4) return acc
         const candidates = vaultsBySymbol.get(symbol)
         if (!candidates?.length) return acc
 
         const bestVault = selectPreferredVault(candidates.filter((vault) => !acc.usedVaults.has(getVaultKey(vault))))
+        const matchedChainID = [...chainValues.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
 
-        if (!bestVault) return acc
+        if (!bestVault || !matchedChainID) return acc
 
         acc.usedVaults.add(getVaultKey(bestVault))
         return {
-          results: [...acc.results, { vault: bestVault, matchedSymbol: symbol }],
+          results: [...acc.results, { vault: bestVault, matchedSymbol: symbol, matchedChainID }],
           usedVaults: acc.usedVaults
         }
       },

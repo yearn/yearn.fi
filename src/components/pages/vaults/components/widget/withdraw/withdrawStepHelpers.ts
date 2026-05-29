@@ -21,6 +21,7 @@ type TBuildWithdrawTransactionStepArgs = {
   approveNotificationParams?: TCreateNotificationParams
   unstakeNotificationParams?: TCreateNotificationParams
   withdrawNotificationParams?: TCreateNotificationParams
+  safeWithdrawBatch?: TransactionStep['batch']
 }
 
 type TWithdrawCtaStateArgs = {
@@ -65,8 +66,24 @@ export function buildWithdrawTransactionStep({
   stakingTokenSymbol,
   approveNotificationParams,
   unstakeNotificationParams,
-  withdrawNotificationParams
+  withdrawNotificationParams,
+  safeWithdrawBatch
 }: TBuildWithdrawTransactionStepArgs): TransactionStep | undefined {
+  if (needsApproval && approvePrepare && safeWithdrawBatch) {
+    return {
+      prepare: approvePrepare,
+      batch: safeWithdrawBatch,
+      label: 'Approve & Withdraw',
+      confirmMessage: 'Submitting approval and withdraw to your Safe',
+      successTitle: isCrossChain ? 'Transaction Submitted' : 'Withdraw successful!',
+      successMessage: isCrossChain
+        ? 'Your cross-chain withdraw has been submitted.\nIt may take a few minutes to complete on the destination chain.'
+        : `You have withdrawn ${formattedWithdrawAmount} ${assetTokenSymbol || ''}.`,
+      completesFlow: true,
+      notification: withdrawNotificationParams
+    }
+  }
+
   if (needsApproval && approvePrepare) {
     return {
       prepare: approvePrepare,
@@ -150,7 +167,7 @@ export function isWithdrawLastStep({
   routeType: WithdrawRouteType
 }): boolean {
   if (!currentStep) return true
-  if (needsApproval) return false
+  if (needsApproval) return Boolean(currentStep.batch && currentStep.completesFlow)
   if (routeType === 'DIRECT_UNSTAKE_WITHDRAW') {
     return currentStep.label === 'Withdraw'
   }

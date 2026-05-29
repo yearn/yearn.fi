@@ -9,6 +9,8 @@ type TUseZodProps<T> = {
   config?: Omit<UseQueryOptions<T, Error, T, QueryKey>, 'queryKey' | 'queryFn' | 'enabled'> & {
     /** Enable the query (default: true when endpoint exists) */
     enabled?: boolean
+    /** Stable query key when the endpoint contains request-only params */
+    cacheKey?: QueryKey
     /** Cache duration in milliseconds (default: 2 minutes) */
     cacheDuration?: number
     /** Enable background revalidation on interval (default: false) */
@@ -19,6 +21,8 @@ type TUseZodProps<T> = {
     maxRetries?: number
     /** Keep previous data while fetching (default: true) */
     keepPreviousData?: boolean
+    /** Request timeout in milliseconds (default: 15 seconds) */
+    timeout?: number
   }
 }
 
@@ -31,8 +35,12 @@ export const getFetchQueryKey = (endpoint: string | null | undefined): TFetchQue
   return ['fetch', endpoint]
 }
 
-export async function fetchWithSchema<T>(endpoint: string, schema: z.Schema<T>): Promise<T> {
-  const data = await baseFetcher<T>(endpoint)
+export async function fetchWithSchema<T>(
+  endpoint: string,
+  schema: z.Schema<T>,
+  options?: { timeout?: number }
+): Promise<T> {
+  const data = await baseFetcher<T>(endpoint, { timeout: options?.timeout })
   const parsedData = schema.safeParse(data)
 
   if (!parsedData.success) {
@@ -51,12 +59,14 @@ export function useFetch<T>({ endpoint, schema, config }: TUseZodProps<T>): UseQ
     maxRetries = 3,
     keepPreviousData: keepPreviousDataFlag = true,
     enabled: enabledOverride,
+    cacheKey,
+    timeout,
     retry,
     retryDelay,
     ...queryConfig
   } = config ?? {}
 
-  const queryKey = getFetchQueryKey(endpoint) ?? ['fetch', 'disabled']
+  const queryKey = cacheKey ?? getFetchQueryKey(endpoint) ?? ['fetch', 'disabled']
   const isEnabled = Boolean(endpoint) && (enabledOverride ?? true)
   const shouldRetry =
     retry ??
@@ -79,7 +89,7 @@ export function useFetch<T>({ endpoint, schema, config }: TUseZodProps<T>): UseQ
   const result = useQuery<T, Error>({
     queryKey,
     enabled: isEnabled,
-    queryFn: () => fetchWithSchema(endpoint as string, schema),
+    queryFn: () => fetchWithSchema(endpoint as string, schema, { timeout }),
     staleTime: cacheDuration,
     refetchInterval: shouldEnableRefreshInterval ? refreshInterval : false,
     refetchOnWindowFocus: false,

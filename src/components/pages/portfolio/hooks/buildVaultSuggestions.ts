@@ -7,6 +7,7 @@ export type TVaultSuggestion = {
   vault: TKongVault
   externalProtocol: string
   underlyingSymbol: string
+  matchedChainID: number
 }
 
 export function buildVaultSuggestions(
@@ -37,7 +38,14 @@ export function buildVaultSuggestions(
       const bestVault = bestVaultByUnderlying.get(normalized)
       if (!bestVault) return []
 
-      return [{ vault: bestVault, externalProtocol: token.protocol, underlyingSymbol: token.underlyingSymbol }]
+      return [
+        {
+          vault: bestVault,
+          externalProtocol: token.protocol,
+          underlyingSymbol: token.underlyingSymbol,
+          matchedChainID: token.chainId
+        }
+      ]
     })
     .filter((suggestion) => {
       const vaultKey = getVaultKey(suggestion.vault)

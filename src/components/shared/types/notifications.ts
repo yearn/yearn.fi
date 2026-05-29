@@ -36,10 +36,11 @@ export type TNotification = {
   fromAmount?: string
   toAddress?: TAddress // Vault token to receive
   toTokenName?: string
-  toAmount?: string // Expected output amount for withdrawals
+  toAmount?: string // Expected output amount for deposits/withdrawals
   txHash?: Hash
   timeFinished?: number
   blockNumber?: bigint
+  awaitingExecution?: boolean
   status: TNotificationStatus
 }
 
@@ -64,7 +65,7 @@ export type TCreateNotificationParams = {
   executionChainId?: number
   toAddress?: TAddress // optional for approve/claim
   toSymbol?: string
-  toAmount?: string // expected output amount for withdrawals
+  toAmount?: string // expected output amount for deposits/withdrawals
   toChainId?: number // only when cross-chain
 }
 
@@ -73,6 +74,7 @@ export type TUpdateNotificationParams = {
   txHash?: Hash
   status?: TNotificationStatus
   receipt?: TransactionReceipt
+  awaitingExecution?: boolean
 }
 
 export type TNotificationsActionsContext = {

@@ -13,6 +13,7 @@ import {
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { getHoldingsAliasVaultAddress } from '@pages/vaults/domain/normalizeVault'
 import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
+import { getVaultFeeStructureKey } from '@pages/vaults/utils/vaultFees'
 import {
   deriveAssetCategory,
   deriveListKind,
@@ -43,6 +44,7 @@ type TVaultIndexEntry = {
   kind: ReturnType<typeof deriveListKind>
   category: string
   aggressiveness: TVaultAggressiveness | null
+  feeStructureKey: string
   isHidden: boolean
   isActive: boolean
   isMigratable: boolean
@@ -74,6 +76,7 @@ export function useV2VaultFilter(
   underlyingAssets?: string[] | null,
   minTvl?: number,
   showHiddenVaults?: boolean,
+  feeStructureKey?: string | null,
   enabled?: boolean
 ): TOptimizedV2VaultFilterResult {
   const { vaults, allVaults, getPrice, isLoadingVaultList } = useYearn()
@@ -175,6 +178,7 @@ export function useV2VaultFilter(
         kind,
         category: deriveAssetCategory(vault),
         aggressiveness: deriveV3Aggressiveness(vault),
+        feeStructureKey: getVaultFeeStructureKey(vault),
         isHidden: Boolean(getVaultInfo(vault)?.isHidden),
         isActive: Boolean(updates.isActive),
         isMigratable: Boolean(updates.isMigratable),
@@ -265,6 +269,7 @@ export function useV2VaultFilter(
     const hasCategoryFilter = Boolean(categories?.length)
     const hasAggressivenessFilter = Boolean(aggressiveness?.length)
     const hasUnderlyingAssetFilter = normalizedUnderlyingAssets.size > 0
+    const hasFeeStructureFilter = Boolean(feeStructureKey)
     const availableUnderlyingAssets = new Set<string>()
     const underlyingAssetVaults: Record<string, TKongVault> = {}
 
@@ -286,6 +291,7 @@ export function useV2VaultFilter(
         kind,
         category,
         aggressiveness: aggressivenessScore,
+        feeStructureKey: entryFeeStructureKey,
         isHidden,
         isActive,
         isMigratable,
@@ -324,14 +330,14 @@ export function useV2VaultFilter(
         isHidden
       }
 
-      const matchesKind = hasUserHoldings || !hasTypeFilter || Boolean(types?.includes(kind))
-      const matchesCategory = hasUserHoldings || !hasCategoryFilter || Boolean(categories?.includes(category))
+      const matchesKind = !hasTypeFilter || Boolean(types?.includes(kind))
+      const matchesCategory = !hasCategoryFilter || Boolean(categories?.includes(category))
       const matchesAggressiveness =
-        hasUserHoldings ||
         !hasAggressivenessFilter ||
         (aggressivenessScore !== null && Boolean(aggressiveness?.includes(aggressivenessScore)))
+      const matchesFeeStructure = !hasFeeStructureFilter || entryFeeStructureKey === feeStructureKey
 
-      if (matchesKind && matchesCategory && matchesAggressiveness) {
+      if (matchesKind && matchesCategory && matchesAggressiveness && matchesFeeStructure) {
         const assetKey = normalizeUnderlyingAssetSymbol(getVaultToken(vault)?.symbol)
         if (assetKey && !underlyingAssetVaults[assetKey]) {
           availableUnderlyingAssets.add(assetKey)
@@ -340,8 +346,7 @@ export function useV2VaultFilter(
           availableUnderlyingAssets.add(assetKey)
         }
 
-        const matchesUnderlyingAsset =
-          hasUserHoldings || !hasUnderlyingAssetFilter || (assetKey && expandedUnderlyingAssets.has(assetKey))
+        const matchesUnderlyingAsset = !hasUnderlyingAssetFilter || (assetKey && expandedUnderlyingAssets.has(assetKey))
         if (!matchesUnderlyingAsset) {
           return
         }
@@ -369,7 +374,8 @@ export function useV2VaultFilter(
     searchRegex,
     lowercaseSearch,
     isSearchEnabled,
-    showHiddenVaults
+    showHiddenVaults,
+    feeStructureKey
   ])
 
   return {

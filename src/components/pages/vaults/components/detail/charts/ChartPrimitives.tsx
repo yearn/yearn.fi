@@ -126,7 +126,8 @@ export const ChartTooltipContent = forwardRef<HTMLDivElement, ChartTooltipConten
       formatter,
       color,
       nameKey,
-      labelKey
+      labelKey,
+      style
     },
     ref
   ) => {
@@ -165,10 +166,13 @@ export const ChartTooltipContent = forwardRef<HTMLDivElement, ChartTooltipConten
     return (
       <div
         ref={ref}
-        className={cl(
-          'grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border bg-white px-2.5 py-1.5 text-xs shadow-xl',
-          className
-        )}
+        className={cl('grid min-w-[8rem] items-start gap-1.5 rounded-lg px-2.5 py-1.5 text-xs', className)}
+        style={{
+          backgroundColor: 'var(--chart-tooltip-bg)',
+          border: '1px solid var(--chart-tooltip-border)',
+          boxShadow: 'var(--chart-tooltip-shadow)',
+          ...style
+        }}
       >
         {!nestLabel ? tooltipLabel : null}
         <div className={'grid gap-1.5'}>

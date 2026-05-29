@@ -1,9 +1,11 @@
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useVaultChartTimeseries } from '@pages/vaults/hooks/useVaultChartTimeseries'
+import { useVaultUserHistory } from '@pages/vaults/hooks/useVaultUserHistory'
 import { transformVaultChartData } from '@pages/vaults/utils/charts'
+import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement } from 'react'
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { ChartErrorBoundary } from './charts/ChartErrorBoundary'
 import ChartSkeleton from './charts/ChartSkeleton'
 import ChartsLoader from './charts/ChartsLoader'
@@ -12,6 +14,9 @@ import { FixedHeightChartContainer } from './charts/FixedHeightChartContainer'
 const APYChart = lazy(() => import('./charts/APYChart').then((m) => ({ default: m.APYChart })))
 const PPSChart = lazy(() => import('./charts/PPSChart').then((m) => ({ default: m.PPSChart })))
 const TVLChart = lazy(() => import('./charts/TVLChart').then((m) => ({ default: m.TVLChart })))
+const VaultTvlGrowthChart = lazy(() =>
+  import('./charts/VaultTvlGrowthChart').then((m) => ({ default: m.VaultTvlGrowthChart }))
+)
 
 type VaultChartsSectionProps = {
   chainId: number
@@ -23,24 +28,71 @@ type VaultChartsSectionProps = {
   shouldRenderSelectors?: boolean
   chartHeightPx?: number
   chartHeightMdPx?: number
+  enableUserCharts?: boolean
+  userUnitLabel?: string
+  overlayUserPositionOnTvlTab?: boolean
+  userHistoryVaults?: Array<{ chainId: number; vaultAddress: string }>
 }
 
 export const VAULT_CHART_TIMEFRAME_OPTIONS = [
   { label: '30D', value: '30d' },
   { label: '90D', value: '90d' },
   { label: '1Y', value: '1y' },
-  { label: 'All', value: 'all' }
+  { label: 'ALL', value: 'all' }
 ] as const
 
 export type TVaultChartTimeframe = (typeof VAULT_CHART_TIMEFRAME_OPTIONS)[number]['value']
 
-export type TVaultChartTab = 'historical-pps' | 'historical-apy' | 'historical-tvl'
+type TBaseVaultChartTab = 'historical-pps' | 'historical-apy' | 'historical-tvl'
+type TUserVaultChartTab = 'user-position'
+export type TVaultChartTab = TBaseVaultChartTab | TUserVaultChartTab
 
-export const VAULT_CHART_TABS: Array<{ id: TVaultChartTab; label: string }> = [
+export const VAULT_CHART_TABS: Array<{ id: TBaseVaultChartTab; label: string }> = [
   { id: 'historical-apy', label: '30-Day APY' },
   { id: 'historical-pps', label: 'Performance' },
   { id: 'historical-tvl', label: 'TVL' }
 ]
+
+const USER_VAULT_CHART_TABS: Array<{ id: TUserVaultChartTab; label: string }> = [
+  { id: 'user-position', label: 'Your Position' }
+]
+
+function isUserChartTab(tab: TVaultChartTab): tab is TUserVaultChartTab {
+  return tab === 'user-position'
+}
+
+export function VaultChartTimeframeDropdown({
+  timeframe,
+  onTimeframeChange
+}: {
+  timeframe: TVaultChartTimeframe
+  onTimeframeChange: (timeframe: TVaultChartTimeframe) => void
+}): ReactElement {
+  return (
+    <label className={'relative min-w-[92px]'}>
+      <span className={'sr-only'}>{'Chart timeframe'}</span>
+      <select
+        value={timeframe}
+        onChange={(event) => onTimeframeChange(event.target.value as TVaultChartTimeframe)}
+        className={cl(
+          'h-10 w-full appearance-none rounded-lg border border-border bg-surface-secondary py-2 pr-8 pl-3 md:h-8 md:py-1',
+          'text-xs font-semibold uppercase text-text-primary shadow-inner transition-colors',
+          'hover:border-text-tertiary focus:border-primary focus:outline-none'
+        )}
+        aria-label={'Chart timeframe'}
+      >
+        {VAULT_CHART_TIMEFRAME_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <IconChevron
+        className={'pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-text-secondary'}
+      />
+    </label>
+  )
+}
 
 export function VaultChartsSection({
   chainId,
@@ -51,7 +103,11 @@ export function VaultChartsSection({
   onTimeframeChange,
   shouldRenderSelectors = true,
   chartHeightPx,
-  chartHeightMdPx
+  chartHeightMdPx,
+  enableUserCharts = false,
+  userUnitLabel = 'assets',
+  overlayUserPositionOnTvlTab = false,
+  userHistoryVaults
 }: VaultChartsSectionProps): ReactElement {
   const { data, error, isLoading } = useVaultChartTimeseries({
     chainId,
@@ -60,9 +116,6 @@ export function VaultChartsSection({
 
   const transformed = useMemo(() => transformVaultChartData(data), [data])
 
-  const chartsLoading = isLoading || !transformed.aprApyData || !transformed.ppsData || !transformed.tvlData
-  const hasError = Boolean(error)
-
   const [uncontrolledTab, setUncontrolledTab] = useState<TVaultChartTab>('historical-apy')
   const [uncontrolledTimeframe, setUncontrolledTimeframe] = useState<TVaultChartTimeframe>('1y')
 
@@ -70,7 +123,49 @@ export function VaultChartsSection({
   const activeTimeframe = timeframe ?? uncontrolledTimeframe
   const setActiveTab = onChartTabChange ?? setUncontrolledTab
   const setActiveTimeframe = onTimeframeChange ?? setUncontrolledTimeframe
-  const showApyDisclaimer = shouldRenderSelectors && activeTab === 'historical-apy' && chainId === KATANA_CHAIN_ID
+  const availableTabs = useMemo(
+    () => [...VAULT_CHART_TABS, ...(enableUserCharts ? USER_VAULT_CHART_TABS : [])],
+    [enableUserCharts]
+  )
+  const fallbackTab = availableTabs[0]?.id ?? 'historical-apy'
+  const resolvedActiveTab = availableTabs.some((tab) => tab.id === activeTab) ? activeTab : fallbackTab
+  const activeTabIsUserChart = isUserChartTab(resolvedActiveTab)
+  const shouldOverlayUserPositionOnTvlTab = overlayUserPositionOnTvlTab && resolvedActiveTab === 'historical-tvl'
+  const showApyDisclaimer =
+    shouldRenderSelectors && resolvedActiveTab === 'historical-apy' && chainId === KATANA_CHAIN_ID
+  const {
+    balanceData: userBalanceData,
+    growthData: userGrowthData,
+    isLoading: isUserHistoryLoading,
+    isEmpty: isUserHistoryEmpty,
+    error: userHistoryError
+  } = useVaultUserHistory({
+    chainId,
+    vaultAddress,
+    vaults: userHistoryVaults,
+    timeframe: activeTimeframe,
+    enabled: (enableUserCharts && activeTabIsUserChart) || shouldOverlayUserPositionOnTvlTab
+  })
+
+  useEffect(() => {
+    if (resolvedActiveTab === activeTab) {
+      return
+    }
+
+    setActiveTab(resolvedActiveTab)
+  }, [activeTab, resolvedActiveTab, setActiveTab])
+
+  const vaultChartsLoading = isLoading || !transformed.aprApyData || !transformed.ppsData || !transformed.tvlData
+  const chartsLoading = shouldOverlayUserPositionOnTvlTab
+    ? isUserHistoryLoading
+    : activeTabIsUserChart
+      ? isUserHistoryLoading
+      : vaultChartsLoading
+  const hasError = Boolean(
+    shouldOverlayUserPositionOnTvlTab ? userHistoryError : activeTabIsUserChart ? userHistoryError : error
+  )
+  const showUserEmptyState =
+    (activeTabIsUserChart || shouldOverlayUserPositionOnTvlTab) && !chartsLoading && !hasError && isUserHistoryEmpty
 
   return (
     <div className={'space-y-3 md:space-y-4 pt-4 rounded-lg'}>
@@ -78,7 +173,7 @@ export function VaultChartsSection({
         <div className={'flex flex-col gap-2 md:gap-3 px-3 md:px-4 md:flex-row md:items-start md:justify-between'}>
           <div className={'flex flex-col'}>
             <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
-              {VAULT_CHART_TABS.map((tab) => (
+              {availableTabs.map((tab) => (
                 <button
                   key={tab.id}
                   type={'button'}
@@ -87,7 +182,7 @@ export function VaultChartsSection({
                     'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold transition-all',
                     'min-h-[36px] md:min-h-0 active:scale-[0.98]',
                     SELECTOR_BAR_STYLES.buttonBase,
-                    activeTab === tab.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
+                    resolvedActiveTab === tab.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
                   )}
                 >
                   {tab.label}
@@ -100,26 +195,8 @@ export function VaultChartsSection({
               </p>
             ) : null}
           </div>
-          <div className={'hidden md:flex flex-wrap gap-2 md:gap-3'}>
-            <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
-              {VAULT_CHART_TIMEFRAME_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type={'button'}
-                  className={cl(
-                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                    SELECTOR_BAR_STYLES.buttonBase,
-                    option.value === activeTimeframe
-                      ? SELECTOR_BAR_STYLES.buttonActive
-                      : SELECTOR_BAR_STYLES.buttonInactive
-                  )}
-                  onClick={() => setActiveTimeframe(option.value)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+          <div className={'hidden w-full items-center justify-end md:flex md:w-auto'}>
+            <VaultChartTimeframeDropdown timeframe={activeTimeframe} onTimeframeChange={setActiveTimeframe} />
           </div>
         </div>
       ) : null}
@@ -131,20 +208,47 @@ export function VaultChartsSection({
       ) : chartsLoading ? (
         <div className={'relative'}>
           <ChartSkeleton />
-          <ChartsLoader loadingState={isLoading ? 'Loading charts' : 'Preparing charts'} />
+          <ChartsLoader
+            loadingState={
+              activeTabIsUserChart ? 'Loading your history' : isLoading ? 'Loading charts' : 'Preparing charts'
+            }
+          />
+        </div>
+      ) : showUserEmptyState ? (
+        <div className={'bg-neutral-300 p-6 text-center text-sm text-text-secondary'}>
+          {'No wallet history is available for this vault yet.'}
         </div>
       ) : (
         <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx} className={'mx-4'}>
           <ChartErrorBoundary>
             <Suspense fallback={<ChartSkeleton />}>
-              {activeTab === 'historical-pps' && transformed.ppsData ? (
+              {resolvedActiveTab === 'user-position' && (userBalanceData || userGrowthData) ? (
+                <VaultTvlGrowthChart
+                  balanceData={userBalanceData}
+                  growthData={userGrowthData}
+                  timeframe={activeTimeframe}
+                  unitLabel={userUnitLabel}
+                />
+              ) : null}
+              {resolvedActiveTab === 'historical-pps' && transformed.ppsData ? (
                 <PPSChart chartData={transformed.ppsData} timeframe={activeTimeframe} />
               ) : null}
-              {activeTab === 'historical-apy' && transformed.aprApyData ? (
+              {resolvedActiveTab === 'historical-apy' && transformed.aprApyData ? (
                 <APYChart chartData={transformed.aprApyData} timeframe={activeTimeframe} />
               ) : null}
-              {activeTab === 'historical-tvl' && transformed.tvlData ? (
-                <TVLChart chartData={transformed.tvlData} timeframe={activeTimeframe} />
+              {resolvedActiveTab === 'historical-tvl' ? (
+                shouldOverlayUserPositionOnTvlTab ? (
+                  userBalanceData || userGrowthData ? (
+                    <VaultTvlGrowthChart
+                      balanceData={userBalanceData}
+                      growthData={userGrowthData}
+                      timeframe={activeTimeframe}
+                      unitLabel={userUnitLabel}
+                    />
+                  ) : null
+                ) : transformed.tvlData ? (
+                  <TVLChart chartData={transformed.tvlData} timeframe={activeTimeframe} />
+                ) : null
               ) : null}
             </Suspense>
           </ChartErrorBoundary>

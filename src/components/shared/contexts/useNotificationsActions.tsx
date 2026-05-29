@@ -41,7 +41,8 @@ export const WithNotificationsActions = ({ children }: { children: React.ReactEl
         status: 'pending',
         txHash: undefined,
         timeFinished: undefined,
-        blockNumber: undefined
+        blockNumber: undefined,
+        awaitingExecution: false
       })
       return id
     },
@@ -50,15 +51,20 @@ export const WithNotificationsActions = ({ children }: { children: React.ReactEl
 
   const updateNotification = useCallback(
     async (params: TUpdateNotificationParams): Promise<void> => {
-      // Set timeFinished for receipt confirmations or 'submitted' status (cross-chain zaps)
-      const shouldSetTimeFinished = params.receipt || params.status === 'submitted'
+      const shouldSetTimeFinished = Boolean(
+        params.receipt || (params.status === 'submitted' && !params.awaitingExecution)
+      )
 
       await updateEntry(
         {
           txHash: params.txHash ?? params.receipt?.transactionHash,
           timeFinished: shouldSetTimeFinished ? Date.now() / 1000 : undefined,
           blockNumber: params.receipt?.blockNumber,
-          status: params.status
+          status: params.status,
+          awaitingExecution:
+            params.receipt || params.status === 'success' || params.status === 'error'
+              ? false
+              : params.awaitingExecution
         },
         params.id
       )

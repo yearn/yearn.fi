@@ -69,6 +69,7 @@ export type UseWidgetDepositFlowReturn = T<
     minExpectedOut: bigint
     isLoadingRoute: boolean
     isCrossChain: boolean
+    routeHasSwap?: boolean
     tx?: {
       to: TAddress
       data: Hex
@@ -96,6 +97,7 @@ export type UseWidgetWithdrawFlowReturn = T<
     minExpectedOut: bigint
     isLoadingRoute: boolean
     isCrossChain: boolean
+    routeHasSwap?: boolean
     routerAddress?: TAddress
     tx?: {
       to: TAddress

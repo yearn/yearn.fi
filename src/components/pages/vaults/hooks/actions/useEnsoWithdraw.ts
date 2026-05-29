@@ -1,6 +1,7 @@
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
 import { useEffect, useMemo } from 'react'
 import type { Address } from 'viem'
+import type { EnsoRoutingStrategy } from '../solvers/useSolverEnso'
 import { useSolverEnso } from '../solvers/useSolverEnso'
 import { useEnsoOrder } from '../useEnsoOrder'
 
@@ -16,6 +17,7 @@ interface UseEnsoWithdrawParams {
   decimalsOut: number
   enabled: boolean
   slippage?: number
+  routingStrategy?: EnsoRoutingStrategy
 }
 
 export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdrawFlowReturn {
@@ -28,7 +30,8 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
         params.withdrawToken,
         params.account ?? 'no-account',
         params.receiver ?? 'no-receiver',
-        params.slippage ?? 'default'
+        params.slippage ?? 'default',
+        params.routingStrategy ?? 'default-strategy'
       ].join(':'),
     [
       params.chainId,
@@ -37,7 +40,8 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
       params.withdrawToken,
       params.account,
       params.receiver,
-      params.slippage
+      params.slippage,
+      params.routingStrategy
     ]
   )
 
@@ -52,6 +56,7 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
     destinationChainId: params.destinationChainId,
     decimalsOut: params.decimalsOut,
     slippage: params.slippage,
+    routingStrategy: params.routingStrategy,
     requestKey: routeQueryKey,
     enabled: params.enabled
   })
@@ -94,8 +99,11 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
         minExpectedOut: ensoFlow.periphery.minExpectedOut.raw,
         isLoadingRoute: ensoFlow.periphery.isLoadingRoute,
         isCrossChain: ensoFlow.periphery.isCrossChain,
+        routeHasSwap: ensoFlow.periphery.routeHasSwap,
         routerAddress: ensoFlow.periphery.routerAddress,
         error: ensoFlow.periphery.error?.message,
+        tx: ensoFlow.periphery.route?.tx,
+        gas: ensoFlow.periphery.route?.gas,
         resetQuote: ensoFlow.methods.resetRoute
       }
     }),

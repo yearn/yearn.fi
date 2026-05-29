@@ -193,6 +193,25 @@ function findTimestampBounds(series: TTimeseriesPoint[][]): { earliest: number; 
   }
 }
 
+function isPositiveFiniteValue(value: number | null): value is number {
+  return value !== null && Number.isFinite(value) && value > 0
+}
+
+export function normalizeMissingTvlData(series: TTimeseriesPoint[]): TTimeseriesPoint[] {
+  return series.map((point, index) => {
+    if (point.value !== 0) {
+      return point
+    }
+
+    const hasPreviousPositiveValue = series
+      .slice(0, index)
+      .some((previousPoint) => isPositiveFiniteValue(previousPoint.value))
+    const hasNextPositiveValue = series.slice(index + 1).some((nextPoint) => isPositiveFiniteValue(nextPoint.value))
+
+    return hasPreviousPositiveValue && hasNextPositiveValue ? { ...point, value: null } : point
+  })
+}
+
 export function fillMissingDailyData(series: TTimeseriesPoint[], earliest: number, latest: number): TTimeseriesPoint[] {
   if (!series.length) {
     return []
@@ -306,7 +325,7 @@ export function transformVaultChartData(timeseries?: TChartTimeseriesResponse | 
 
   const apyWeeklyFilled = fillMissingDailyData(apyWeekly, bounds.earliest, bounds.latest)
   const apyMonthlyFilled = fillMissingDailyData(apyMonthly, bounds.earliest, bounds.latest)
-  const tvlFilled = fillMissingDailyData(tvl, bounds.earliest, bounds.latest)
+  const tvlFilled = normalizeMissingTvlData(fillMissingDailyData(tvl, bounds.earliest, bounds.latest))
   const ppsFilled = fillMissingDailyData(pps, bounds.earliest, bounds.latest)
 
   const aprFilled = calculateAprFromPps(ppsFilled)
