@@ -1,4 +1,5 @@
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
+import { usePlausible } from '@hooks/usePlausible'
 import {
   getVaultChainID,
   getVaultName,
@@ -12,6 +13,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconClose } from '@shared/icons/IconClose'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { cl, formatUSD, SUPPORTED_NETWORKS, toAddress } from '@shared/utils'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement } from 'react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
@@ -95,6 +97,7 @@ export function PortfolioHistoryBreakdownModal({
   isOpen,
   onClose
 }: TPortfolioHistoryBreakdownModalProps): ReactElement {
+  const trackEvent = usePlausible()
   const { allVaults } = useYearn()
   const { data, isLoading, error } = usePortfolioBreakdown(date, isOpen)
   const [closingDataSnapshot, setClosingDataSnapshot] = useState<{
@@ -282,7 +285,15 @@ export function PortfolioHistoryBreakdownModal({
                                 className={
                                   'block truncate text-sm font-medium text-text-primary transition-colors hover:text-accent-500 sm:text-base'
                                 }
-                                onClick={onClose}
+                                onClick={() => {
+                                  trackEvent(PLAUSIBLE_EVENTS.PORTFOLIO_HISTORY_BREAKDOWN_OPEN_VAULT, {
+                                    props: {
+                                      chainID: String(vault.chainId),
+                                      status: vault.status
+                                    }
+                                  })
+                                  onClose()
+                                }}
                               >
                                 {vault.displayName}
                               </Link>
