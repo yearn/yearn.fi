@@ -5,7 +5,7 @@ import { vaultsMetadata } from '../metadata'
 import VaultsPageClient from './page-client'
 
 export const metadata = vaultsMetadata
-export const dynamic = 'force-dynamic'
+export const revalidate = 21600
 
 export default async function Page(): Promise<ReactElement> {
   const dehydratedState = await getVaultsPageDehydratedState()

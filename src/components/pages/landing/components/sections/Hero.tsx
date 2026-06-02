@@ -6,7 +6,9 @@ import { YEARN_TVL_ENDPOINT } from '@shared/data/publicQueryEndpoints'
 import { useFetch } from '@shared/hooks/useFetch'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { ReactElement } from 'react'
+import { useEffect } from 'react'
 import * as z from 'zod'
 import Image from '/src/components/Image'
 
@@ -75,10 +77,19 @@ function AnimatedLogos(): ReactElement {
 
 export function Hero(): ReactElement {
   const trackEvent = usePlausible()
+  const router = useRouter()
   const { data: tvl } = useFetch<number>({
     endpoint: YEARN_TVL_ENDPOINT,
     schema: z.number()
   })
+
+  useEffect(() => {
+    const prefetchTimer = window.setTimeout(() => {
+      router.prefetch('/vaults')
+    }, 500)
+
+    return () => window.clearTimeout(prefetchTimer)
+  }, [router])
 
   return (
     <>
@@ -111,7 +122,11 @@ export function Hero(): ReactElement {
                 description={"Yearn is DeFi's Yield Aggregator"}
               />
               <div className={'flex flex-row items-center justify-center gap-4'}>
-                <Link href={'/vaults'} onClick={() => trackEvent(PLAUSIBLE_EVENTS.LANDER_CTA_EXPLORE_VAULTS, {})}>
+                <Link
+                  href={'/vaults'}
+                  prefetch={true}
+                  onClick={() => trackEvent(PLAUSIBLE_EVENTS.LANDER_CTA_EXPLORE_VAULTS, {})}
+                >
                   <Button className={'!text-[18px] max-w-xs !px-4 !py-3 !rounded-full !bg-primary'} variant={'primary'}>
                     {'Explore Vaults'}
                   </Button>
@@ -155,6 +170,7 @@ export function Hero(): ReactElement {
             <div className={'flex flex-col items-center justify-center'}>
               <Link
                 href={'/vaults'}
+                prefetch={true}
                 className={'block w-full max-w-[280px]'}
                 onClick={() => trackEvent(PLAUSIBLE_EVENTS.LANDER_CTA_EXPLORE_VAULTS, {})}
               >

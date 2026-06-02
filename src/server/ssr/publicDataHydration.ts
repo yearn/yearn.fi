@@ -2,6 +2,7 @@ import { type DehydratedState, dehydrate, QueryClient } from '@tanstack/react-qu
 import * as z from 'zod'
 import { YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS } from '@/components/pages/vaults/utils/yvBtc'
 import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@/components/pages/vaults/utils/yvUsd'
+import { PUBLIC_VAULT_DATA_CACHE_TIME } from '@/components/shared/data/publicQueryCache'
 import {
   buildVaultSnapshotEndpoint,
   YEARN_TVL_ENDPOINT,
@@ -12,8 +13,8 @@ import { kongVaultListSchema } from '@/components/shared/utils/schemas/kongVault
 import { kongVaultSnapshotSchema } from '@/components/shared/utils/schemas/kongVaultSnapshotSchema'
 
 const LANDING_TVL_STALE_TIME = 2 * 60 * 1000
-const VAULT_LIST_STALE_TIME = 15 * 60 * 1000
-const VAULT_SNAPSHOT_STALE_TIME = 30 * 1000
+const VAULT_LIST_STALE_TIME = PUBLIC_VAULT_DATA_CACHE_TIME
+const VAULT_SNAPSHOT_STALE_TIME = PUBLIC_VAULT_DATA_CACHE_TIME
 const LANDING_TVL_TIMEOUT_MS = 1500
 const VAULT_LIST_TIMEOUT_MS = 3500
 const VAULT_SNAPSHOT_TIMEOUT_MS = 1200

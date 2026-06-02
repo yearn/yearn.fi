@@ -1,3 +1,4 @@
+import { PUBLIC_VAULT_DATA_CACHE_TIME } from '@shared/data/publicQueryCache'
 import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
 import { useFetch } from '@shared/hooks/useFetch'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
@@ -18,7 +19,7 @@ export function useVaultSnapshot({ chainId, address }: UseVaultSnapshotProps) {
     endpoint,
     schema: kongVaultSnapshotSchema,
     config: {
-      cacheDuration: 30 * 1000,
+      cacheDuration: PUBLIC_VAULT_DATA_CACHE_TIME,
       keepPreviousData: false
     }
   })

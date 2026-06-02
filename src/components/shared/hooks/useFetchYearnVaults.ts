@@ -1,5 +1,6 @@
 import { patchYBoldVaults } from '@pages/vaults/domain/normalizeVault'
 import { useDeepCompareMemo } from '@react-hookz/web'
+import { PUBLIC_VAULT_DATA_CACHE_TIME } from '@shared/data/publicQueryCache'
 import { YEARN_VAULT_LIST_ENDPOINT } from '@shared/data/publicQueryEndpoints'
 import { fetchWithSchema, getFetchQueryKey, useFetch } from '@shared/hooks/useFetch'
 import type { TDict } from '@shared/types'
@@ -34,7 +35,7 @@ function useFetchYearnVaults(
     endpoint: YEARN_VAULT_LIST_ENDPOINT,
     schema: kongVaultListSchema,
     config: {
-      cacheDuration: 15 * 60 * 1000,
+      cacheDuration: PUBLIC_VAULT_DATA_CACHE_TIME,
       enabled: isEnabled
     }
   })
@@ -113,7 +114,7 @@ function usePrefetchYearnVaults(enabled = true): void {
       void queryClient.prefetchQuery({
         queryKey,
         queryFn: () => fetchWithSchema(endpoint, kongVaultListSchema),
-        staleTime: 15 * 60 * 1000
+        staleTime: PUBLIC_VAULT_DATA_CACHE_TIME
       })
     })
   }, [enabled, endpoints, queryClient])
