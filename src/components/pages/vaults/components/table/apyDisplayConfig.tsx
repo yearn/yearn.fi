@@ -280,7 +280,6 @@ export function resolveForwardApyDisplayConfig({
     const katanaDetails = (
       <KatanaApyTooltipContent
         katanaNativeYield={katanaBreakdownBaseApr}
-        fixedRateKatanRewardsAPR={katanaExtras?.fixedRateKatanaRewards ?? 0}
         katanaAppRewardsAPR={katanaExtras?.katanaAppRewardsAPR ?? 0}
         steerPointsPerDollar={katanaExtras?.steerPointsPerDollar}
         isEligibleForSpectraBoost={isEligibleForSpectraBoost}
@@ -628,7 +627,6 @@ export function resolveHistoricalApyDisplayConfig({
     shouldUseKatanaAPRs && katanaExtras ? (
       <KatanaApyTooltipContent
         katanaNativeYield={standardThirtyDayApr}
-        fixedRateKatanRewardsAPR={katanaExtras.fixedRateKatanaRewards ?? 0}
         katanaAppRewardsAPR={katanaExtras.katanaAppRewardsAPR ?? 0}
         steerPointsPerDollar={katanaExtras.steerPointsPerDollar}
         isEligibleForSpectraBoost={isEligibleForSpectraBoost}
