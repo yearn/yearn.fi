@@ -63,19 +63,12 @@ describe('holdings activity route', () => {
       })
     )
 
-    expect(getHoldingsActivityMock).toHaveBeenCalledWith(
-      TEST_ADDRESS,
-      'all',
-      10,
-      0,
-      {
-        type: 'all',
-        chainId: null,
-        startTimestamp: null,
-        endTimestamp: null
-      },
-      false
-    )
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0, {
+      type: 'all',
+      chainId: null,
+      startTimestamp: null,
+      endTimestamp: null
+    })
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toEqual({
       address: TEST_ADDRESS,
@@ -164,19 +157,12 @@ describe('holdings activity route', () => {
       })
     )
 
-    expect(getHoldingsActivityMock).toHaveBeenCalledWith(
-      TEST_ADDRESS,
-      'all',
-      10,
-      0,
-      {
-        type: 'withdraw',
-        chainId: 137,
-        startTimestamp: 1776729600,
-        endTimestamp: 1777334399
-      },
-      false
-    )
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0, {
+      type: 'withdraw',
+      chainId: 137,
+      startTimestamp: 1776729600,
+      endTimestamp: 1777334399
+    })
     expect(response.status).toBe(200)
   })
 
@@ -201,19 +187,12 @@ describe('holdings activity route', () => {
       })
     )
 
-    expect(getHoldingsActivityMock).toHaveBeenCalledWith(
-      TEST_ADDRESS,
-      'all',
-      10,
-      0,
-      {
-        type: 'transfer',
-        chainId: null,
-        startTimestamp: null,
-        endTimestamp: null
-      },
-      false
-    )
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0, {
+      type: 'transfer',
+      chainId: null,
+      startTimestamp: null,
+      endTimestamp: null
+    })
     expect(response.status).toBe(200)
   })
 
@@ -238,19 +217,12 @@ describe('holdings activity route', () => {
       })
     )
 
-    expect(getHoldingsActivityMock).toHaveBeenCalledWith(
-      TEST_ADDRESS,
-      'all',
-      10,
-      0,
-      {
-        type: 'swap',
-        chainId: null,
-        startTimestamp: null,
-        endTimestamp: null
-      },
-      false
-    )
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0, {
+      type: 'swap',
+      chainId: null,
+      startTimestamp: null,
+      endTimestamp: null
+    })
     expect(response.status).toBe(200)
   })
 })

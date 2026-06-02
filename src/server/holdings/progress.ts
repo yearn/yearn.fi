@@ -9,7 +9,10 @@ export async function GET(request: Request): Promise<Response> {
   const progress = await getHoldingsProgress(queryString(request, 'id') ?? null)
 
   if (!progress) {
-    return json({ error: 'Progress not found' }, { status: 404, headers: GET_CORS_HEADERS })
+    return noContent({
+      ...GET_CORS_HEADERS,
+      'Cache-Control': 'no-store'
+    })
   }
 
   return json(progress, {

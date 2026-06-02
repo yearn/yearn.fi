@@ -6,36 +6,8 @@ vi.mock('../lib/holdings/services/progress', () => ({
   getHoldingsProgress: getHoldingsProgressMock
 }))
 
-type TMockResponse = {
-  statusCode: number
-  headers: Record<string, string>
-  body: unknown
-  setHeader: (name: string, value: string) => void
-  status: (code: number) => TMockResponse
-  json: (payload: unknown) => TMockResponse
-  end: () => TMockResponse
-}
-
-function createMockResponse(): TMockResponse {
-  return {
-    statusCode: 200,
-    headers: {},
-    body: null,
-    setHeader(name: string, value: string) {
-      this.headers[name] = value
-    },
-    status(code: number) {
-      this.statusCode = code
-      return this
-    },
-    json(payload: unknown) {
-      this.body = payload
-      return this
-    },
-    end() {
-      return this
-    }
-  }
+function createRequest(id: string): Request {
+  return new Request(`https://yearn.fi/api/holdings/progress?id=${encodeURIComponent(id)}`)
 }
 
 describe('holdings progress route', () => {
@@ -48,19 +20,11 @@ describe('holdings progress route', () => {
     getHoldingsProgressMock.mockResolvedValue(null)
 
     const { default: handler } = await import('./progress')
-    const req = {
-      method: 'GET',
-      query: {
-        id: 'portfolio-history:usd:1y:test'
-      }
-    } as any
-    const res = createMockResponse()
+    const response = await handler(createRequest('portfolio-history:usd:1y:test'))
 
-    await handler(req, res as any)
-
-    expect(res.statusCode).toBe(204)
-    expect(res.body).toBeNull()
-    expect(res.headers['Cache-Control']).toBe('no-store')
+    expect(response.status).toBe(204)
+    expect(await response.text()).toBe('')
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
   })
 
   it('returns the persisted progress record', async () => {
@@ -79,18 +43,10 @@ describe('holdings progress route', () => {
     getHoldingsProgressMock.mockResolvedValue(progress)
 
     const { default: handler } = await import('./progress')
-    const req = {
-      method: 'GET',
-      query: {
-        id: progress.id
-      }
-    } as any
-    const res = createMockResponse()
+    const response = await handler(createRequest(progress.id))
 
-    await handler(req, res as any)
-
-    expect(res.statusCode).toBe(200)
-    expect(res.body).toEqual(progress)
-    expect(res.headers['Cache-Control']).toBe('no-store')
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual(progress)
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
   })
 })
