@@ -52,6 +52,7 @@
     "@types/node": "25.3.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "@vercel/node": "5.8.9",
     "bump": "0.2.5",
     "husky": "9.1.7",
     "jsdom": "29.1.1",
