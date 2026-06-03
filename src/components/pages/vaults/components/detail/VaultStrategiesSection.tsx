@@ -1,3 +1,7 @@
+import {
+  resolveStrategyDisplayFees,
+  type TStrategyDisplayFees
+} from '@pages/vaults/components/detail/strategyDisplayFees'
 import { ALL_VAULTSV3_KINDS_KEYS } from '@pages/vaults/constants'
 import {
   getVaultAPR,
@@ -30,10 +34,11 @@ const AllocationChart = lazy(() =>
 type TStrategyRow = TKongVaultStrategy & {
   name: string
   isVault: boolean
+  fees: TStrategyDisplayFees
 }
 
 export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVaultInput }): ReactElement {
-  const { vaults } = useYearn()
+  const { allVaults, vaults } = useYearn()
   const isDark = useDarkMode()
   const vaultVersion = getVaultVersion(currentVault)
   const vaultVariant = vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3') ? 'v3' : 'v2'
@@ -54,14 +59,22 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
 
   const mergedList = useMemo(() => {
     return strategies.map((strategy): TStrategyRow => {
-      const linkedVault = vaults[toAddress(strategy.address)]
+      const linkedVault = allVaults[toAddress(strategy.address)]
+      const catalogVault = vaults[toAddress(strategy.address)]
+      const linkedVaultFees = linkedVault ? getVaultAPR(linkedVault).fees : undefined
       return {
         ...strategy,
         name: strategy.name || (linkedVault ? getVaultName(linkedVault) : `Strategy ${strategy.address}`),
-        isVault: Boolean(linkedVault?.address)
+        isVault: Boolean(catalogVault?.address),
+        fees: resolveStrategyDisplayFees({
+          linkedVaultFees,
+          parentVaultFees: fees,
+          strategyPerformanceFee: strategy.details?.performanceFee,
+          variant: vaultVariant
+        })
       }
     })
-  }, [strategies, vaults])
+  }, [allVaults, fees, strategies, vaultVariant, vaults])
 
   const allocatedRatio = mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
   const unallocatedPercentage = Math.max(0, 10000 - allocatedRatio)
@@ -244,7 +257,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
                   apr={strategy.estimatedAPY}
                   netApr={strategy.netAPR}
                   katRewardsAPR={strategy.katRewardsAPR}
-                  fees={fees}
+                  fees={strategy.fees}
                 />
               ))}
             {unallocatedPercentage > 0 && unallocatedValue > 0n ? (
@@ -303,7 +316,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
                   apr={strategy.estimatedAPY}
                   netApr={strategy.netAPR}
                   katRewardsAPR={strategy.katRewardsAPR}
-                  fees={fees}
+                  fees={strategy.fees}
                 />
               ))}
           </div>
