@@ -31,7 +31,6 @@ const KATANA_APY_DATA = {
   hasKelp: false,
   hasKelpNEngenlayer: false,
   katanaExtras: {
-    fixedRateKatanaRewards: 4,
     katanaAppRewardsAPR: 3,
     steerPointsPerDollar: 0
   },

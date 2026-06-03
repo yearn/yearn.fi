@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { portfolioActivityResponseSchema } from './api'
+import { portfolioActivityFacetsResponseSchema, portfolioActivityResponseSchema } from './api'
 
 describe('portfolioActivityResponseSchema', () => {
   it('accepts transfer activity entries with a direction', () => {
@@ -125,5 +125,19 @@ describe('portfolioActivityResponseSchema', () => {
     })
 
     expect(parsed.entries[0]?.action).toBe('swap')
+  })
+})
+
+describe('portfolioActivityFacetsResponseSchema', () => {
+  it('accepts chain facets without pagination metadata', () => {
+    const parsed = portfolioActivityFacetsResponseSchema.parse({
+      address: '0x2222222222222222222222222222222222222222',
+      version: 'all',
+      facets: {
+        chainIds: [1, 8453]
+      }
+    })
+
+    expect(parsed.facets.chainIds).toEqual([1, 8453])
   })
 })

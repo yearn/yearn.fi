@@ -33,20 +33,6 @@ function parseVersion(value: string | string[] | undefined): VaultVersion {
   return value === 'v2' || value === 'v3' ? value : 'all'
 }
 
-function parsePositiveInteger(value: string | string[] | undefined, fallback: number, max: number): number {
-  const rawValue = Array.isArray(value) ? value[0] : value
-  const parsedValue = Number(rawValue)
-
-  return Number.isInteger(parsedValue) && parsedValue > 0 ? Math.min(parsedValue, max) : fallback
-}
-
-function parseNonNegativeInteger(value: string | string[] | undefined): number {
-  const rawValue = Array.isArray(value) ? value[0] : value
-  const parsedValue = Number(rawValue)
-
-  return Number.isInteger(parsedValue) && parsedValue >= 0 ? parsedValue : 0
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -82,12 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  const {
-    address,
-    version: versionParam,
-    limitPerSource: limitPerSourceParam,
-    offsetPerSource: offsetPerSourceParam
-  } = req.query
+  const { address, version: versionParam } = req.query
 
   if (!address || typeof address !== 'string') {
     return res.status(400).json({ error: 'Missing required parameter: address' })
@@ -98,37 +79,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { fetchRecentAddressScopedActivityEvents } = await import('../lib/holdings')
+    const { getHoldingsActivityFacetResponse } = await import('../lib/holdings')
     const version = parseVersion(versionParam)
-    const limitPerSource = parsePositiveInteger(limitPerSourceParam, 250, 1000)
-    const offsetPerSource = parseNonNegativeInteger(offsetPerSourceParam)
-    const events = await fetchRecentAddressScopedActivityEvents(
-      address,
-      version,
-      limitPerSource,
-      undefined,
-      offsetPerSource
-    )
-    const hasMore =
-      events.hasMoreDeposits || events.hasMoreWithdrawals || events.hasMoreTransfersIn || events.hasMoreTransfersOut
-    const chainIds = Array.from(
-      new Set(
-        [...events.deposits, ...events.withdrawals, ...events.transfersIn, ...events.transfersOut].map(
-          (event) => event.chainId
-        )
-      )
-    ).sort((firstChainId, secondChainId) => firstChainId - secondChainId)
+    const facetsResponse = await getHoldingsActivityFacetResponse(address, version)
 
     setVercelCdnCacheHeaders(res, HOLDINGS_ACTIVITY_FACETS_CDN_CACHE_CONTROL)
-    return res.status(200).json({
-      address: address.toLowerCase(),
-      version,
-      facets: { chainIds },
-      pageInfo: {
-        hasMore,
-        nextOffsetPerSource: hasMore ? offsetPerSource + limitPerSource : null
-      }
-    })
+    return res.status(200).json(facetsResponse)
   } catch (error) {
     console.error('Holdings activity facets error:', error)
 

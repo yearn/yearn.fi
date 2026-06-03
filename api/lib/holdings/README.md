@@ -271,7 +271,7 @@ Recent classified vault activity.
 ```bash
 curl "http://localhost:3001/api/holdings/activity?address=0x..."
 curl "http://localhost:3001/api/holdings/activity?address=0x...&limit=20&offset=20"
-curl "http://localhost:3001/api/holdings/activity?address=0x...&type=withdraw&chainId=1&includeFacets=1"
+curl "http://localhost:3001/api/holdings/activity?address=0x...&type=withdraw&chainId=1"
 ```
 
 Query params:
@@ -279,16 +279,15 @@ Query params:
 | Param | Required | Default | Description |
 |-------|----------|---------|-------------|
 | `address` | Yes | - | User EVM address |
-| `version` | No | `all` | `v2`, `v3`, or `all` |
-| `limit` | No | `10` | Integer clamped to `1..50` |
+| `version` | No | `all` | Backend vault generation scope: `v2`, `v3`, or `all`. The portfolio activity UI uses `all`. |
+| `limit` | No | `10` | Integer clamped to `1..500` |
 | `offset` | No | `0` | Non-negative integer |
 | `type` | No | `all` | `deposit`, `withdraw`, `stake`, `unstake`, `transfer`, `swap`, or `all` |
 | `chainId` | No | - | Positive integer chain filter |
 | `startTimestamp` | No | - | Inclusive Unix timestamp lower bound |
 | `endTimestamp` | No | - | Inclusive Unix timestamp upper bound |
-| `includeFacets` | No | `false` | `true` or `1` includes `facets.chainIds` for the returned page |
 
-Response (`facets` appears only when `includeFacets=true` or `includeFacets=1`):
+Response:
 
 ```json
 {
@@ -296,9 +295,6 @@ Response (`facets` appears only when `includeFacets=true` or `includeFacets=1`):
   "version": "all",
   "limit": 10,
   "offset": 0,
-  "facets": {
-    "chainIds": [1, 8453]
-  },
   "pageInfo": {
     "hasMore": true,
     "nextOffset": 10
@@ -340,7 +336,7 @@ Returns activity chain facets without fetching the full paginated activity respo
 
 ```bash
 curl "http://localhost:3001/api/holdings/activity-facets?address=0x..."
-curl "http://localhost:3001/api/holdings/activity-facets?address=0x...&limitPerSource=500&offsetPerSource=500"
+curl "http://localhost:3001/api/holdings/activity-facets?address=0x...&version=all"
 ```
 
 Query params:
@@ -348,9 +344,7 @@ Query params:
 | Param | Required | Default | Description |
 |-------|----------|---------|-------------|
 | `address` | Yes | - | User EVM address |
-| `version` | No | `all` | `v2`, `v3`, or `all` |
-| `limitPerSource` | No | `250` | Per-event-source page size, clamped to `1..1000` |
-| `offsetPerSource` | No | `0` | Per-event-source non-negative offset |
+| `version` | No | `all` | Backend vault generation scope: `v2`, `v3`, or `all`. The portfolio activity UI uses `all`. |
 
 Response:
 
@@ -360,10 +354,6 @@ Response:
   "version": "all",
   "facets": {
     "chainIds": [1, 8453]
-  },
-  "pageInfo": {
-    "hasMore": false,
-    "nextOffsetPerSource": null
   }
 }
 ```

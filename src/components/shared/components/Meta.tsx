@@ -44,6 +44,9 @@ export function Meta(meta: TMeta): ReactElement {
       <meta property="og:title" content={meta.title} />
       <meta property="og:description" content={meta.description} />
 
+      {/* Sitemap discovery */}
+      <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+
       {/* Icons and Manifests */}
       <link rel="manifest" href="/manifest.json" />
       <link rel="mask-icon" href="/favicons/safari-pinned-tab.svg" color={meta.themeColor} />

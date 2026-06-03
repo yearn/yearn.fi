@@ -6,11 +6,14 @@ import type {
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
 import { ENSO_BALANCES_CACHE_CONTROL } from './enso/cache'
+import type { TVaultListEntry, TVaultSnapshot } from './lib/aio'
+import { buildSitemap, buildVaultMarkdown, buildVaultsMarkdown, KONG_REST_BASE, KONG_VAULT_LIST_URL } from './lib/aio'
 import { getVercelCdnCacheHeaders } from './lib/cacheHeaders'
 import {
   clearUserCache,
   getHistoricalHoldingsChart,
   getHoldingsActivity,
+  getHoldingsActivityFacetResponse,
   getHoldingsBreakdown,
   getHoldingsProtocolReturnHistory,
   getHoldingsTotalsCacheVersion,
@@ -30,7 +33,6 @@ import {
   isHoldingsDebugRequested,
   withHoldingsDebugContext
 } from './lib/holdings/services/debug'
-import { fetchRecentAddressScopedActivityEvents } from './lib/holdings/services/graphql'
 import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
@@ -245,7 +247,7 @@ function parseHoldingsActivityLimit(value: string | null): number {
     return 10
   }
 
-  return Math.min(Math.max(parsed, 1), 50)
+  return Math.min(Math.max(parsed, 1), 500)
 }
 
 function parseHoldingsActivityOffset(value: string | null): number {
@@ -283,22 +285,6 @@ function parseHoldingsActivityTimestamp(value: string | null): number | null {
   const parsed = Number(value)
 
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null
-}
-
-function parseHoldingsActivityBoolean(value: string | null): boolean {
-  return value === 'true' || value === '1'
-}
-
-function parsePositiveIntegerParam(value: string | null, fallback: number, max: number): number {
-  const parsed = Number(value)
-
-  return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, max) : fallback
-}
-
-function parseNonNegativeIntegerParam(value: string | null): number {
-  const parsed = Number(value)
-
-  return Number.isInteger(parsed) && parsed >= 0 ? parsed : 0
 }
 
 function parseUtcDateParam(value: string | null): number | null {
@@ -474,6 +460,86 @@ async function handleTenderlyFund(req: Request): Promise<Response> {
       { error: error instanceof Error ? error.message : 'Failed to fund wallet on Tenderly' },
       { status: 400 }
     )
+  }
+}
+
+async function handleSitemap(req: Request): Promise<Response> {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+  try {
+    const upstream = await fetch(KONG_VAULT_LIST_URL, { headers: { Accept: 'application/json' } })
+    const vaults: TVaultListEntry[] = upstream.ok ? ((await upstream.json()) as TVaultListEntry[]) : []
+    return new Response(req.method === 'HEAD' ? null : buildSitemap(vaults), {
+      headers: {
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600'
+      }
+    })
+  } catch (error) {
+    console.error('Error generating sitemap:', error)
+    return new Response(
+      '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>',
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/xml; charset=utf-8' }
+      }
+    )
+  }
+}
+
+async function handleVaultsMarkdown(req: Request): Promise<Response> {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+  const chainIdParam = new URL(req.url).searchParams.get('chainId')
+  const chainId = chainIdParam && /^\d+$/.test(chainIdParam) ? Number(chainIdParam) : undefined
+  try {
+    const upstream = await fetch(KONG_VAULT_LIST_URL, { headers: { Accept: 'application/json' } })
+    if (!upstream.ok) return Response.json({ error: 'Failed to fetch vault list from upstream' }, { status: 502 })
+    const vaults = (await upstream.json()) as TVaultListEntry[]
+    return new Response(req.method === 'HEAD' ? null : buildVaultsMarkdown(vaults, chainId), {
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error generating vaults markdown:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+async function handleVaultMarkdown(req: Request): Promise<Response> {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+  const params = new URL(req.url).searchParams
+  const chainId = params.get('chainId')
+  const address = params.get('address')
+  if (!chainId || !address) return Response.json({ error: 'Missing chainId or address' }, { status: 400 })
+  if (!/^\d+$/.test(chainId)) return Response.json({ error: 'Invalid chainId' }, { status: 400 })
+  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return Response.json({ error: 'Invalid address' }, { status: 400 })
+  try {
+    const upstream = await fetch(`${KONG_REST_BASE}/snapshot/${chainId}/${address}`, {
+      headers: { Accept: 'application/json' }
+    })
+    if (!upstream.ok) {
+      return Response.json(
+        { error: upstream.status === 404 ? 'Vault not found' : 'Upstream error' },
+        { status: upstream.status === 404 ? 404 : 502 }
+      )
+    }
+    const snapshot = (await upstream.json()) as TVaultSnapshot
+    return new Response(req.method === 'HEAD' ? null : buildVaultMarkdown(snapshot, Number(chainId), address), {
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error generating vault markdown:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -931,7 +997,6 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const chainId = parseHoldingsActivityChainId(url.searchParams.get('chainId'))
   const startTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('startTimestamp'))
   const endTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('endTimestamp'))
-  const includeFacets = parseHoldingsActivityBoolean(url.searchParams.get('includeFacets'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -944,19 +1009,12 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const activity = await getHoldingsActivity(
-      address,
-      version,
-      limit,
-      offset,
-      {
-        type,
-        chainId,
-        startTimestamp,
-        endTimestamp
-      },
-      includeFacets
-    )
+    const activity = await getHoldingsActivity(address, version, limit, offset, {
+      type,
+      chainId,
+      startTimestamp,
+      endTimestamp
+    })
 
     return Response.json(activity, {
       headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_CACHE_CONTROL)
@@ -973,8 +1031,6 @@ async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
   const versionParam = url.searchParams.get('version')
-  const limitPerSource = parsePositiveIntegerParam(url.searchParams.get('limitPerSource'), 250, 1000)
-  const offsetPerSource = parseNonNegativeIntegerParam(url.searchParams.get('offsetPerSource'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -987,37 +1043,11 @@ async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const events = await fetchRecentAddressScopedActivityEvents(
-      address,
-      version,
-      limitPerSource,
-      undefined,
-      offsetPerSource
-    )
-    const hasMore =
-      events.hasMoreDeposits || events.hasMoreWithdrawals || events.hasMoreTransfersIn || events.hasMoreTransfersOut
-    const chainIds = Array.from(
-      new Set(
-        [...events.deposits, ...events.withdrawals, ...events.transfersIn, ...events.transfersOut].map(
-          (event) => event.chainId
-        )
-      )
-    ).sort((firstChainId, secondChainId) => firstChainId - secondChainId)
+    const facetsResponse = await getHoldingsActivityFacetResponse(address, version)
 
-    return Response.json(
-      {
-        address: address.toLowerCase(),
-        version,
-        facets: { chainIds },
-        pageInfo: {
-          hasMore,
-          nextOffsetPerSource: hasMore ? offsetPerSource + limitPerSource : null
-        }
-      },
-      {
-        headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_FACETS_CACHE_CONTROL)
-      }
-    )
+    return Response.json(facetsResponse, {
+      headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_FACETS_CACHE_CONTROL)
+    })
   } catch (error) {
     console.error('Error fetching holdings activity facets:', error)
     const message = error instanceof Error ? error.message : String(error)
@@ -1267,6 +1297,18 @@ async function main() {
       try {
         if (req.method === 'OPTIONS') {
           return handleCorsPreFlight()
+        }
+
+        if (url.pathname === '/api/sitemap') {
+          return withCors(await handleSitemap(req))
+        }
+
+        if (url.pathname === '/api/vaults/markdown') {
+          return withCors(await handleVaultsMarkdown(req))
+        }
+
+        if (url.pathname === '/api/vault/markdown') {
+          return withCors(await handleVaultMarkdown(req))
         }
 
         if (url.pathname === '/api/enso/status') {

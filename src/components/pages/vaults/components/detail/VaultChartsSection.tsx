@@ -48,7 +48,7 @@ type TUserVaultChartTab = 'user-position'
 export type TVaultChartTab = TBaseVaultChartTab | TUserVaultChartTab
 
 export const VAULT_CHART_TABS: Array<{ id: TBaseVaultChartTab; label: string }> = [
-  { id: 'historical-apy', label: 'Historical APY' },
+  { id: 'historical-apy', label: '30-Day APY' },
   { id: 'historical-pps', label: 'Performance' },
   { id: 'historical-tvl', label: 'TVL' }
 ]

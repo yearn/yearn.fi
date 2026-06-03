@@ -1,7 +1,6 @@
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema } from '@shared/hooks/useFetch'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
 import {
   portfolioActivityFacetsResponseSchema,
   portfolioActivityResponseSchema,
@@ -16,7 +15,6 @@ type TPortfolioActivityFilters = {
   endTimestamp?: number | null
 }
 
-const ACTIVITY_FACET_LIMIT_PER_SOURCE = 500
 const MAX_ACTIVITY_RETRIES = 3
 const DEFAULT_ACTIVITY_RETRY_DELAY = 1000
 
@@ -28,15 +26,6 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
   const startTimestamp = filters.startTimestamp ?? null
   const endTimestamp = filters.endTimestamp ?? null
   const shouldFetchFacets = type === 'all' && chainId === null && startTimestamp === null && endTimestamp === null
-  const [facetOffsetPerSource, setFacetOffsetPerSource] = useState(0)
-  const [discoveredFacetChainIds, setDiscoveredFacetChainIds] = useState<number[] | null>(null)
-  const [isFacetScanComplete, setIsFacetScanComplete] = useState(false)
-
-  useEffect(() => {
-    setFacetOffsetPerSource(0)
-    setDiscoveredFacetChainIds(null)
-    setIsFacetScanComplete(false)
-  }, [address])
 
   const shouldRetryActivityRequest = (failureCount: number, error: unknown): boolean => {
     const status = (error as { response?: { status?: number }; status?: number })?.response?.status
@@ -97,17 +86,14 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
     retry: shouldRetryActivityRequest,
     retryDelay: getActivityRetryDelay
   })
-  const hasLoadedFirstActivityPage = Boolean(query.data?.pages[0])
 
   const facetsQuery = useQuery({
-    queryKey: ['portfolio-activity-facets', address, 'all', facetOffsetPerSource],
-    enabled: isEnabled && shouldFetchFacets && hasLoadedFirstActivityPage && !isFacetScanComplete,
+    queryKey: ['portfolio-activity-facets', address, 'all'],
+    enabled: isEnabled && shouldFetchFacets,
     queryFn: () => {
       const params = new URLSearchParams({
         address: address ?? '',
-        version: 'all',
-        limitPerSource: String(ACTIVITY_FACET_LIMIT_PER_SOURCE),
-        offsetPerSource: String(facetOffsetPerSource)
+        version: 'all'
       })
 
       return fetchWithSchema(`/api/holdings/activity-facets?${params}`, portfolioActivityFacetsResponseSchema, {
@@ -120,28 +106,8 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
     retryDelay: getActivityRetryDelay
   })
 
-  useEffect(() => {
-    const page = facetsQuery.data
-    if (!page || !shouldFetchFacets) {
-      return
-    }
-
-    setDiscoveredFacetChainIds((previousChainIds) =>
-      Array.from(new Set([...(previousChainIds ?? []), ...page.facets.chainIds])).sort(
-        (firstChainId, secondChainId) => firstChainId - secondChainId
-      )
-    )
-
-    if (page.pageInfo.nextOffsetPerSource !== null) {
-      setFacetOffsetPerSource(page.pageInfo.nextOffsetPerSource)
-      return
-    }
-
-    setIsFacetScanComplete(true)
-  }, [facetsQuery.data, shouldFetchFacets])
-
   const entries: TPortfolioActivityEntry[] = query.data?.pages.flatMap((page) => page.entries) ?? []
-  const facetChainIds = discoveredFacetChainIds
+  const facetChainIds = facetsQuery.data?.facets.chainIds ?? null
   const availableChainIds =
     facetChainIds ??
     (shouldFetchFacets && query.data
