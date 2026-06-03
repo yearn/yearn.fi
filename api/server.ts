@@ -54,6 +54,7 @@ import {
   resolveTenderlyFundRpcRequest
 } from './tenderly.helpers'
 import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
+import { handleVaultTimelockStrategiesRequest } from './vaults/timelock-strategies'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 const DEFAULT_API_PORT = 3001
@@ -1305,6 +1306,10 @@ async function main() {
 
         if (url.pathname === '/api/vaults/markdown') {
           return withCors(await handleVaultsMarkdown(req))
+        }
+
+        if (url.pathname === '/api/vaults/timelock-strategies') {
+          return withCors(await handleVaultTimelockStrategiesRequest(req))
         }
 
         if (url.pathname === '/api/vault/markdown') {
