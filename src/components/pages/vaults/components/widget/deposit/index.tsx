@@ -58,8 +58,10 @@ interface Props {
     address: `0x${string}`
     chainId: number
     amount?: string
+    requestKey?: number | string
   }
   onPrefillApplied?: () => void
+  onUserTokenSelectionChange?: (address: `0x${string}`, chainId: number) => void
   forceStake?: boolean
   hideSettings?: boolean
   disableBorderRadius?: boolean
@@ -146,6 +148,7 @@ export function WidgetDeposit({
   onTokenSelectionChange,
   prefill,
   onPrefillApplied,
+  onUserTokenSelectionChange,
   forceStake = false,
   hideSettings: _hideSettings,
   disableBorderRadius,
@@ -273,7 +276,7 @@ export function WidgetDeposit({
 
   useEffect(() => {
     if (!prefill) return
-    const key = `${prefill.address}-${prefill.chainId}-${prefill.amount}`
+    const key = `${prefill.requestKey ?? ''}-${prefill.address}-${prefill.chainId}-${prefill.amount}`
     if (appliedPrefillRef.current === key) return
     appliedPrefillRef.current = key
 
@@ -297,6 +300,7 @@ export function WidgetDeposit({
     selectedToken,
     selectedChainId,
     assetAddress,
+    allowedTokenAddress: forceStake ? vaultAddress : undefined,
     chainId,
     showTokenSelector,
     setSelectedToken,
@@ -844,9 +848,10 @@ export function WidgetDeposit({
       setDepositInput('')
       setSelectedToken(address)
       setSelectedChainId(tokenChainId)
+      onUserTokenSelectionChange?.(address, tokenChainId ?? chainId)
       setShowTokenSelector(false)
     },
-    [setDepositInput]
+    [chainId, onUserTokenSelectionChange, setDepositInput]
   )
 
   if (isLoadingVaultData) {
