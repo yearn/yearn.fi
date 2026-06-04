@@ -5,7 +5,7 @@ import { landingMetadata } from './metadata'
 import HomePageClient from './page-client'
 
 export const metadata = landingMetadata
-export const dynamic = 'force-dynamic'
+export const revalidate = 21600
 
 export default async function Page(): Promise<ReactElement> {
   const dehydratedState = await getLandingPageDehydratedState()
