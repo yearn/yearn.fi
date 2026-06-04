@@ -70,7 +70,7 @@ function App(): ReactElement {
   const [, , chainID, address] = isVaultDetailPage ? asPath.split('/') : []
   const ogUrl = isVaultDetailPage
     ? `${ogBaseUrl}/api/og/yearn/vault/${chainID}/${address}`
-    : manifest.og || 'https://yearn.fi/og.png'
+    : manifest.og || 'https://yearn.fi/apps/vaults-og.png'
   const pageUri = isVaultDetailPage ? `https://yearn.fi${asPath}` : manifest.uri || 'https://yearn.fi'
 
   return (
