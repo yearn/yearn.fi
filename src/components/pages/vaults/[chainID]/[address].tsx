@@ -1641,6 +1641,7 @@ function Index(): ReactElement | null {
         isSettingsOpen={isWidgetSettingsOpen}
         depositPrefill={yBoldStakeDepositPrefill}
         forceDepositStake={shouldForceYBoldStakeDeposit}
+        depositTitleOverride={shouldForceYBoldStakeDeposit ? 'Stake' : undefined}
         onDepositUserTokenSelectionChange={handleDepositUserTokenSelectionChange}
         collapseDetails={shouldCollapseWidgetDetails}
       />
@@ -1691,6 +1692,7 @@ function Index(): ReactElement | null {
         isSettingsOpen={isWidgetSettingsOpen}
         depositPrefill={yBoldStakeDepositPrefill}
         forceDepositStake={shouldForceYBoldStakeDeposit}
+        depositTitleOverride={shouldForceYBoldStakeDeposit ? 'Stake' : undefined}
         onDepositUserTokenSelectionChange={handleDepositUserTokenSelectionChange}
         hideTabSelector={hideMobileDrawerTabs}
         disableBorderRadius

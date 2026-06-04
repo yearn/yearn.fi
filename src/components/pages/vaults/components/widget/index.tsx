@@ -39,6 +39,7 @@ interface Props {
   } | null
   onDepositPrefillConsumed?: () => void
   forceDepositStake?: boolean
+  depositTitleOverride?: string
   onDepositUserTokenSelectionChange?: (address: TAddress, chainId: number) => void
   hideTabSelector?: boolean
   disableBorderRadius?: boolean
@@ -78,6 +79,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
     depositPrefill,
     onDepositPrefillConsumed,
     forceDepositStake,
+    depositTitleOverride,
     onDepositUserTokenSelectionChange,
     hideTabSelector,
     disableBorderRadius,
@@ -127,6 +129,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
             prefill={depositPrefill ?? undefined}
             onPrefillApplied={onDepositPrefillConsumed}
             forceStake={forceDepositStake}
+            titleOverride={depositTitleOverride}
             onUserTokenSelectionChange={onDepositUserTokenSelectionChange}
             onOpenSettings={onOpenSettings}
             isSettingsOpen={isSettingsOpen}
