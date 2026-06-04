@@ -1,4 +1,9 @@
-export const KONG_REST_BASE = (process.env.VITE_KONG_REST_URL || 'https://kong.yearn.fi/api/rest').replace(/\/$/, '')
+export const KONG_REST_BASE = (
+  process.env.KONG_REST_URL ||
+  process.env.NEXT_PUBLIC_KONG_REST_URL ||
+  process.env.VITE_KONG_REST_URL ||
+  'https://kong.yearn.fi/api/rest'
+).replace(/\/$/, '')
 export const SITE_URL = 'https://yearn.fi'
 export const KONG_VAULT_LIST_URL = `${KONG_REST_BASE}/list/vaults`
 export const KONG_SNAPSHOT_URL_PATTERN = `${KONG_REST_BASE}/snapshot/{chainId}/{address}`

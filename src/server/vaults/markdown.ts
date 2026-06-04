@@ -1,15 +1,27 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { GET_CORS_HEADERS, json, noContent, queryString } from '../http'
 import type { TVaultListEntry } from '../lib/aio'
 import { buildVaultsMarkdown, KONG_VAULT_LIST_URL } from '../lib/aio'
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
+const MARKDOWN_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600'
+const MARKDOWN_HEADERS = {
+  ...GET_CORS_HEADERS,
+  'Content-Type': 'text/markdown; charset=utf-8',
+  'Cache-Control': MARKDOWN_CACHE_CONTROL
+} as const
 
-  const { chainId: chainIdParam } = req.query
-  const chainId =
-    chainIdParam && typeof chainIdParam === 'string' && /^\d+$/.test(chainIdParam) ? Number(chainIdParam) : undefined
+function markdownResponse(markdown: string | null): Response {
+  return new Response(markdown, {
+    headers: MARKDOWN_HEADERS
+  })
+}
+
+function resolveChainId(request: Request): number | undefined {
+  const chainIdParam = queryString(request, 'chainId')
+  return chainIdParam && /^\d+$/.test(chainIdParam) ? Number(chainIdParam) : undefined
+}
+
+async function handleVaultsMarkdown(request: Request, includeBody: boolean): Promise<Response> {
+  const chainId = resolveChainId(request)
 
   try {
     const response = await fetch(KONG_VAULT_LIST_URL, {
@@ -17,16 +29,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     if (!response.ok) {
-      return res.status(502).json({ error: 'Failed to fetch vault list from upstream' })
+      return json({ error: 'Failed to fetch vault list from upstream' }, { status: 502, headers: GET_CORS_HEADERS })
     }
 
     const vaults = (await response.json()) as TVaultListEntry[]
-
-    res.setHeader('Content-Type', 'text/markdown; charset=utf-8')
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-    return res.status(200).send(buildVaultsMarkdown(vaults, chainId))
+    return markdownResponse(includeBody ? buildVaultsMarkdown(vaults, chainId) : null)
   } catch (error) {
     console.error('Error generating vaults markdown:', error)
-    return res.status(500).json({ error: 'Internal server error' })
+    return json({ error: 'Internal server error' }, { status: 500, headers: GET_CORS_HEADERS })
   }
 }
+
+export function OPTIONS(): Response {
+  return noContent(GET_CORS_HEADERS)
+}
+
+export async function GET(request: Request): Promise<Response> {
+  return handleVaultsMarkdown(request, true)
+}
+
+export async function HEAD(request: Request): Promise<Response> {
+  return handleVaultsMarkdown(request, false)
+}
+
+export default GET
