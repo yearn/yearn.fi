@@ -6,7 +6,7 @@ import { VaultVersionToggle } from '@pages/vaults/components/filters/VaultVersio
 import { VaultsAuxiliaryList } from '@pages/vaults/components/list/VaultsAuxiliaryList'
 import { VaultsListEmpty } from '@pages/vaults/components/list/VaultsListEmpty'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
-import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
+import { VaultsListRowPresentation } from '@pages/vaults/components/list/VaultsListRow'
 import { VaultsListRowSkeleton } from '@pages/vaults/components/list/VaultsListRowSkeleton'
 import { VaultsListSearchRecoveryRow } from '@pages/vaults/components/list/VaultsListSearchRecoveryRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
@@ -107,6 +107,9 @@ export default function Index(): ReactElement {
     mainVaults,
     yvUsdVaults,
     vaultFlags,
+    vaultHoldingsValues,
+    hasWalletAddress,
+    isWalletLoading,
     listChains,
     totalMatchingVaults,
     hiddenByFiltersCount,
@@ -388,6 +391,9 @@ export default function Index(): ReactElement {
             expandedVaultKeys={expandedVaultKeys}
             onExpandedChange={handleExpandedChange}
             yvUsdVaults={yvUsdVaults}
+            vaultHoldingsValues={vaultHoldingsValues}
+            hasWalletAddress={hasWalletAddress}
+            isWalletLoading={isWalletLoading}
           />
         ))}
         {mainVaults.length > 0 ? (
@@ -400,9 +406,12 @@ export default function Index(): ReactElement {
               const key = getVaultKey(vault)
               const rowApyDisplayVariant = resolveApyDisplayVariant(vault)
               return (
-                <VaultsListRow
+                <VaultsListRowPresentation
                   currentVault={vault}
                   flags={vaultFlags[key]}
+                  hasWalletAddress={hasWalletAddress}
+                  isWalletLoading={isWalletLoading}
+                  holdingsValue={vaultHoldingsValues[key] ?? 0}
                   apyDisplayVariant={rowApyDisplayVariant}
                   compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
                   onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
@@ -446,8 +455,10 @@ export default function Index(): ReactElement {
     handleExpandedChange,
     handleToggleCompare,
     hiddenByFiltersCount,
+    hasWalletAddress,
     isCompareMode,
     isLoading,
+    isWalletLoading,
     listChains,
     listVaultType,
     mainVaults,
@@ -462,7 +473,8 @@ export default function Index(): ReactElement {
     resolveApyDisplayVariant,
     search.value,
     shouldCollapseChips,
-    vaultFlags
+    vaultFlags,
+    vaultHoldingsValues
   ])
 
   const compareCount = compareVaultKeys.length

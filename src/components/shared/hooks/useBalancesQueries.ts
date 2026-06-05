@@ -121,6 +121,11 @@ export function useBalancesQueries(
   const priorityQueryData = priorityQueries.map((query) => query.data)
   const secondaryQueryData = secondaryQueries.map((query) => query.data)
   const dataRef = useRef<TChainTokens>({})
+  const ownerRef = useRef(userAddress)
+  if (ownerRef.current !== userAddress) {
+    ownerRef.current = userAddress
+    dataRef.current = {}
+  }
 
   const data = useMemo(() => {
     dataRef.current = mergeStagedQueryData({

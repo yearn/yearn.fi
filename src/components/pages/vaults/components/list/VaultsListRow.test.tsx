@@ -36,7 +36,9 @@ vi.mock('@react-hookz/web', () => ({
 vi.mock('@shared/contexts/useWallet', () => ({
   useWallet: () => ({
     getBalance: () => ({ raw: 0n, normalized: 0 }),
-    getToken: () => ({ value: 0 })
+    getToken: () => ({ value: 0 }),
+    getVaultHoldingsUsd: () => 0,
+    isLoading: false
   })
 }))
 
@@ -81,7 +83,7 @@ function renderRowHtml(vault: TKongVaultInput, props?: Partial<ComponentProps<ty
 
   return renderToStaticMarkup(
     <QueryClientProvider client={queryClient}>
-      <VaultsListRow currentVault={vault} {...props} />
+      <VaultsListRow currentVault={vault} yvUsdVaults={mockUseYvUsdVaults()} {...props} />
     </QueryClientProvider>
   )
 }

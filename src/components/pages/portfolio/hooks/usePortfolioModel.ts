@@ -29,6 +29,7 @@ import {
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
 import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
@@ -170,15 +171,8 @@ function getStablecoinHoldingMatch(balances: ReturnType<typeof useWallet>['balan
 }
 
 export function usePortfolioModel(): TPortfolioModel {
-  const {
-    cumulatedValueInV2Vaults,
-    cumulatedValueInV3Vaults,
-    isLoading: isWalletLoading,
-    hasCompletedBalanceLoad,
-    getBalance,
-    getVaultHoldingsUsd,
-    balances
-  } = useWallet()
+  const { isLoading: isWalletLoading, hasCompletedBalanceLoad, getBalance, getVaultHoldingsUsd, balances } = useWallet()
+  const { totalValue: totalPortfolioValue } = useWalletVaultTotals()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
   const { vaults, allVaults, isLoadingVaultList, getPrice } = useYearn()
   const { listVault: yvUsdVault, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
@@ -477,7 +471,6 @@ export function usePortfolioModel(): TPortfolioModel {
     () => sortedHoldings.some((vault) => getVaultChainID(vault) === KATANA_CHAIN_ID),
     [sortedHoldings]
   )
-  const totalPortfolioValue = (cumulatedValueInV2Vaults || 0) + (cumulatedValueInV3Vaults || 0)
   const ethPrice = getPrice({ address: ETH_TOKEN_ADDRESS, chainID: 1 }).normalized
 
   const liveBalanceSnapshot = useMemo<TPortfolioLiveBalanceSnapshot | null>(() => {

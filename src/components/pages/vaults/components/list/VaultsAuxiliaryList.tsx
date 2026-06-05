@@ -1,4 +1,4 @@
-import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
+import { VaultsListRowPresentation } from '@pages/vaults/components/list/VaultsListRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import type { TVaultForwardAPYVariant } from '@pages/vaults/components/table/VaultForwardAPY'
 import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
@@ -39,6 +39,9 @@ type TVaultsAuxiliaryListProps = {
   expandedVaultKeys?: Record<string, boolean>
   onExpandedChange?: (vaultKey: string, next: boolean) => void
   yvUsdVaults?: TYvUsdListVaults
+  vaultHoldingsValues?: Record<string, number>
+  hasWalletAddress?: boolean
+  isWalletLoading?: boolean
 }
 
 function getVaultListKey(vault: TKongVaultInput): string {
@@ -71,7 +74,10 @@ export function VaultsAuxiliaryList({
   shouldCollapseChips,
   expandedVaultKeys,
   onExpandedChange,
-  yvUsdVaults
+  yvUsdVaults,
+  vaultHoldingsValues,
+  hasWalletAddress = false,
+  isWalletLoading = false
 }: TVaultsAuxiliaryListProps): ReactElement | null {
   if (vaults.length === 0) {
     return null
@@ -92,9 +98,12 @@ export function VaultsAuxiliaryList({
           const rowApyDisplayVariant = resolveApyDisplayVariant?.(vault) ?? apyDisplayVariant
           const isExpanded = expandedVaultKeys ? Boolean(expandedVaultKeys[key]) : undefined
           return (
-            <VaultsListRow
+            <VaultsListRowPresentation
               currentVault={vault}
               flags={vaultFlags[key]}
+              hasWalletAddress={hasWalletAddress}
+              isWalletLoading={isWalletLoading}
+              holdingsValue={vaultHoldingsValues?.[key] ?? 0}
               apyDisplayVariant={rowApyDisplayVariant}
               compareVaultKeys={compareVaultKeys}
               onToggleCompare={onToggleCompare}

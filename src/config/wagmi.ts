@@ -1,6 +1,6 @@
 import { env } from '@/env'
 import { registerConfig } from '@shared/utils/wagmi'
-import { connectorsForWallets } from '@rainbow-me/rainbowkit'
+import { connectorsForWallets, type WalletList } from '@rainbow-me/rainbowkit'
 import {
   frameWallet,
   injectedWallet,
@@ -11,30 +11,40 @@ import {
   walletConnectWallet
 } from '@rainbow-me/rainbowkit/wallets'
 import { cookieStorage, createConfig, createStorage } from 'wagmi'
+import { agentWallet, isAgentWalletEnabled } from '@/config/agentWallet'
 import { supportedAppChains, supportedWalletChains } from './supportedChains'
 import { getWagmiConfigChains } from './wagmiChains'
 import { buildTransports } from './wagmiTransports'
 
 const projectId = env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID as string
 const appName = (env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_NAME as string) || 'Yearn Finance'
+const agentWallets = isAgentWalletEnabled() ? [agentWallet] : []
+const popularWallets = [
+  injectedWallet,
+  rabbyWallet,
+  frameWallet,
+  walletConnectWallet,
+  rainbowWallet,
+  ledgerWallet,
+  safeWallet
+]
 
-const connectors = connectorsForWallets(
-  [
-    {
-      groupName: 'Popular',
-      wallets: [
-        injectedWallet,
-        rabbyWallet,
-        frameWallet,
-        walletConnectWallet,
-        rainbowWallet,
-        ledgerWallet,
-        safeWallet
+const walletGroups: WalletList = [
+  ...(agentWallets.length > 0
+    ? [
+        {
+          groupName: 'Development',
+          wallets: agentWallets
+        }
       ]
-    }
-  ],
-  { projectId, appName }
-)
+    : []),
+  {
+    groupName: 'Popular',
+    wallets: popularWallets
+  }
+]
+
+const connectors = connectorsForWallets(walletGroups, { projectId, appName })
 
 const wagmiChains = getWagmiConfigChains(supportedWalletChains, supportedAppChains)
 

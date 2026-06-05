@@ -3,6 +3,7 @@ import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import { yToast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import useWallet from '@shared/contexts/useWallet'
+import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconArrowLeft } from '@shared/icons/IconArrowLeft'
@@ -30,14 +31,13 @@ type TView = 'account' | 'settings'
 
 function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void; onClose: () => void }): ReactElement {
   const { address, ens, clusters, onDesactivate } = useWeb3()
-  const { cumulatedValueInV2Vaults, cumulatedValueInV3Vaults, isLoading: isWalletLoading } = useWallet()
+  const { isLoading: isWalletLoading } = useWallet()
+  const { totalValue } = useWalletVaultTotals()
   const { cachedEntries } = useNotifications()
   const router = useRouter()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
   const { toast } = yToast()
-
-  const totalValue = cumulatedValueInV2Vaults + cumulatedValueInV3Vaults
 
   const displayName = useMemo(() => {
     if (ens) return ens

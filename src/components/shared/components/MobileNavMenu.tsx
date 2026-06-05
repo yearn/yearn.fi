@@ -3,6 +3,7 @@ import { setThemePreference, useThemePreference } from '@hooks/useThemePreferenc
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconClose } from '@shared/icons/IconClose'
@@ -111,6 +112,95 @@ function MobileNavTile({
   )
 }
 
+type TMobileWalletDrawerContentProps = {
+  displayName: string
+  isActive: boolean
+  onConnectWallet: () => void
+  onDisconnect: () => void
+  onViewPortfolio: () => void
+  onViewRecentActivity: () => void
+}
+
+function MobileWalletDrawerContent({
+  displayName,
+  isActive,
+  onConnectWallet,
+  onDisconnect,
+  onViewPortfolio,
+  onViewRecentActivity
+}: TMobileWalletDrawerContentProps): ReactElement {
+  const { isLoading: isWalletLoading } = useWallet()
+  const { totalValue } = useWalletVaultTotals()
+
+  return (
+    <div className={'px-4 py-4'}>
+      <div className={'mb-4 flex items-start justify-between'}>
+        <div className={'flex flex-col'}>
+          <p className={'text-sm font-medium text-text-primary'}>{displayName}</p>
+          {!isActive ? (
+            <p className={'text-sm text-text-secondary'}>{'Not connected'}</p>
+          ) : isWalletLoading ? (
+            <div className={'mt-1 h-7 w-20 animate-pulse rounded bg-surface-tertiary'} />
+          ) : (
+            <p className={'text-2xl font-bold text-text-primary'}>
+              <span>{formatUSD(Math.floor(totalValue), 0, 0)}</span>
+              <span className={'text-text-secondary'}>
+                {totalValue > 0 ? `.${(totalValue % 1).toFixed(2).substring(2)}` : ''}
+              </span>
+            </p>
+          )}
+        </div>
+        {isActive && (
+          <button
+            onClick={onDisconnect}
+            className={cl(
+              'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+              'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+            )}
+          >
+            {'Disconnect'}
+          </button>
+        )}
+      </div>
+
+      {!isActive && (
+        <button
+          onClick={onConnectWallet}
+          className={cl(
+            'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
+            'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
+          )}
+        >
+          {'Connect wallet'}
+        </button>
+      )}
+
+      {isActive && (
+        <div className={'flex flex-col gap-2'}>
+          <button
+            onClick={onViewPortfolio}
+            className={cl(
+              'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
+              'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
+            )}
+          >
+            {'View portfolio'}
+          </button>
+          <button
+            onClick={onViewRecentActivity}
+            className={cl(
+              'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
+              'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
+            )}
+          >
+            {'Recent activity'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function MobileNavMenu({
   isOpen,
   onClose,
@@ -130,7 +220,6 @@ export function MobileNavMenu({
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false)
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
   const { isActive, openLoginModal, onDesactivate, address, ens, clusters } = useWeb3()
-  const { cumulatedValueInV2Vaults, cumulatedValueInV3Vaults, isLoading: isWalletLoading } = useWallet()
   const { shouldHideDust, onSwitchHideDust } = useAppSettings()
   const themePreference = useThemePreference()
   const router = useRouter()
@@ -306,7 +395,6 @@ export function MobileNavMenu({
   ]
 
   const displayName = walletIdentity || ens || clusters?.name || (address ? truncateHex(address, 4) : 'Wallet')
-  const totalValue = cumulatedValueInV2Vaults + cumulatedValueInV3Vaults
 
   const handleWalletClick = (): void => {
     onClose()
@@ -565,71 +653,16 @@ export function MobileNavMenu({
         </Dialog>
       </Transition>
       <BottomDrawer isOpen={isWalletDrawerOpen} onClose={() => setIsWalletDrawerOpen(false)} title={'Wallet'}>
-        <div className={'px-4 py-4'}>
-          <div className={'mb-4 flex items-start justify-between'}>
-            <div className={'flex flex-col'}>
-              <p className={'text-sm font-medium text-text-primary'}>{displayName}</p>
-              {!isActive ? (
-                <p className={'text-sm text-text-secondary'}>{'Not connected'}</p>
-              ) : isWalletLoading ? (
-                <div className={'mt-1 h-7 w-20 animate-pulse rounded bg-surface-tertiary'} />
-              ) : (
-                <p className={'text-2xl font-bold text-text-primary'}>
-                  <span>{formatUSD(Math.floor(totalValue), 0, 0)}</span>
-                  <span className={'text-text-secondary'}>
-                    {totalValue > 0 ? `.${(totalValue % 1).toFixed(2).substring(2)}` : ''}
-                  </span>
-                </p>
-              )}
-            </div>
-            {isActive && (
-              <button
-                onClick={handleDisconnect}
-                className={cl(
-                  'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
-                  'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
-                )}
-              >
-                {'Disconnect'}
-              </button>
-            )}
-          </div>
-
-          {!isActive && (
-            <button
-              onClick={handleConnectWallet}
-              className={cl(
-                'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
-                'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
-              )}
-            >
-              {'Connect wallet'}
-            </button>
-          )}
-
-          {isActive && (
-            <div className={'flex flex-col gap-2'}>
-              <button
-                onClick={handleViewPortfolio}
-                className={cl(
-                  'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
-                  'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
-                )}
-              >
-                {'View portfolio'}
-              </button>
-              <button
-                onClick={handleViewRecentActivity}
-                className={cl(
-                  'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
-                  'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
-                )}
-              >
-                {'Recent activity'}
-              </button>
-            </div>
-          )}
-        </div>
+        {isWalletDrawerOpen ? (
+          <MobileWalletDrawerContent
+            displayName={displayName}
+            isActive={isActive}
+            onConnectWallet={handleConnectWallet}
+            onDisconnect={handleDisconnect}
+            onViewPortfolio={handleViewPortfolio}
+            onViewRecentActivity={handleViewRecentActivity}
+          />
+        ) : null}
       </BottomDrawer>
       <BottomDrawer isOpen={isSettingsDrawerOpen} onClose={() => setIsSettingsDrawerOpen(false)} title={'Settings'}>
         <div className={'px-4 py-4'}>

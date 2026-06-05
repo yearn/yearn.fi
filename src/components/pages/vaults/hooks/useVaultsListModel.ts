@@ -18,7 +18,13 @@ import { getVaultFeeStructureKey } from '@pages/vaults/utils/vaultFees'
 import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { isYvBtcVault } from '@pages/vaults/utils/yvBtc'
-import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
+import {
+  getYvUsdSharePrice,
+  isYvUsdAddress,
+  YVUSD_CHAIN_ID,
+  YVUSD_LOCKED_ADDRESS,
+  YVUSD_UNLOCKED_ADDRESS
+} from '@pages/vaults/utils/yvUsd'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useV2VaultFilter } from '@shared/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@shared/hooks/useV3VaultFilter'
@@ -52,11 +58,13 @@ type TVaultsListModel = {
   holdingsVaults: TKongVaultInput[]
   availableVaults: TKongVaultInput[]
   vaultFlags: Record<string, { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }>
+  vaultHoldingsValues: Record<string, number>
   underlyingAssetVaults: Record<string, TKongVault>
   pinnedSections: TVaultsPinnedSection[]
   pinnedVaults: TKongVaultInput[]
   mainVaults: TKongVaultInput[]
   yvUsdVaults: TYvUsdListVaults
+  isWalletLoading: boolean
   totalMatchingVaults: number
   totalHoldingsMatching: number
   isLoadingVaultList: boolean
@@ -154,7 +162,7 @@ export function useVaultsListModel({
   const isV2View = enabled && (listVaultType === 'factory' || isAllVaults)
   const yvUsdVaults = useYvUsdVaults()
   const { listVault: yvUsdVault } = yvUsdVaults
-  const { getBalance } = useWallet()
+  const { getBalance, getVaultHoldingsUsd, isLoading: isWalletLoading } = useWallet()
 
   const listV2Types = useMemo(
     () => (listShowLegacyVaults ? ['factory', 'legacy'] : ['factory']),
@@ -192,6 +200,13 @@ export function useVaultsListModel({
     const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).raw
     return unlockedBalance > 0n || lockedBalance > 0n
   }, [getBalance])
+  const yvUsdHoldingsValue = useMemo(() => {
+    const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
+    const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
+    const unlockedSharePrice = getYvUsdSharePrice(yvUsdVaults.unlockedVault)
+    const lockedSharePrice = getYvUsdSharePrice(yvUsdVaults.lockedVault)
+    return unlockedBalance * unlockedSharePrice + lockedBalance * lockedSharePrice
+  }, [getBalance, yvUsdVaults.lockedVault, yvUsdVaults.unlockedVault])
   const yvUsdListVaults = useMemo(
     (): TYvUsdListVaults => ({
       metrics: yvUsdVaults.metrics,
@@ -390,6 +405,19 @@ export function useVaultsListModel({
     return sortedVaults.filter((vault) => !pinnedVaultKeys.has(getVaultKey(vault)))
   }, [pinnedVaultKeys, pinnedVaults.length, sortedVaults])
 
+  const vaultHoldingsValues = useMemo(() => {
+    if (isWalletLoading) {
+      return {}
+    }
+
+    const values: Record<string, number> = {}
+    for (const vault of [...pinnedVaults, ...mainVaults]) {
+      const key = getVaultKey(vault)
+      values[key] = isYvUsdAddress(getVaultAddress(vault)) ? yvUsdHoldingsValue : getVaultHoldingsUsd(vault)
+    }
+    return values
+  }, [getVaultHoldingsUsd, isWalletLoading, mainVaults, pinnedVaults, yvUsdHoldingsValue])
+
   const underlyingAssetVaults = useMemo(() => {
     if (listVaultType === 'all') {
       return { ...v3FilterResult.underlyingAssetVaults, ...v2FilterResult.underlyingAssetVaults }
@@ -405,11 +433,13 @@ export function useVaultsListModel({
     holdingsVaults,
     availableVaults,
     vaultFlags,
+    vaultHoldingsValues,
     underlyingAssetVaults,
     pinnedSections,
     pinnedVaults,
     mainVaults,
     yvUsdVaults: yvUsdListVaults,
+    isWalletLoading,
     totalMatchingVaults,
     totalHoldingsMatching,
     isLoadingVaultList

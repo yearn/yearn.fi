@@ -242,7 +242,13 @@ type TVaultsListRowProps = {
   yvUsdVaults?: TYvUsdListVaults
 }
 
-function VaultsListRowComponent({
+type TVaultsListRowPresentationProps = TVaultsListRowProps & {
+  hasWalletAddress?: boolean
+  isWalletLoading?: boolean
+  holdingsValue?: number
+}
+
+function VaultsListRowPresentationComponent({
   currentVault,
   flags,
   hrefOverride,
@@ -268,8 +274,11 @@ function VaultsListRowComponent({
   mobileSecondaryMetric = 'tvl',
   showAllocatorChip = true,
   expandedChartVariant = 'default',
-  yvUsdVaults
-}: TVaultsListRowProps): ReactElement {
+  yvUsdVaults,
+  hasWalletAddress = false,
+  isWalletLoading = false,
+  holdingsValue: resolvedHoldingsValue = 0
+}: TVaultsListRowPresentationProps): ReactElement {
   const router = useRouter()
   const trackEvent = usePlausible()
   const chainID = getVaultChainID(currentVault)
@@ -285,8 +294,6 @@ function VaultsListRowComponent({
   const network = getNetwork(chainID)
   const chainLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
-  const { address } = useWeb3()
-  const { getVaultHoldingsUsd, getBalance, isLoading: isWalletLoading } = useWallet()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const defaultExpandedView: TVaultsExpandedView =
     expandedChartVariant === 'portfolio-user-tvl-overlay' ? 'tvl' : 'strategies'
@@ -313,7 +320,7 @@ function VaultsListRowComponent({
   const leftColumnSpan = 'col-span-12'
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
-  const showHoldingsColumn = !!address
+  const showHoldingsColumn = hasWalletAddress
   const apyColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-6'
   const tvlColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-5'
   const holdingsColumnSpan = 'col-span-4'
@@ -424,25 +431,8 @@ function VaultsListRowComponent({
     if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
       return 0
     }
-    if (isYvUsd) {
-      const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-      const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-      const unlockedSharePrice = getYvUsdSharePrice(yvUsdVaultsForRow?.unlockedVault)
-      const lockedSharePrice = getYvUsdSharePrice(yvUsdVaultsForRow?.lockedVault)
-      return unlockedBalance * unlockedSharePrice + lockedBalance * lockedSharePrice
-    }
-    return getVaultHoldingsUsd(currentVault)
-  }, [
-    showHoldingsChip,
-    mobileSecondaryMetric,
-    isYvUsd,
-    isWalletLoading,
-    getBalance,
-    yvUsdVaultsForRow?.lockedVault,
-    yvUsdVaultsForRow?.unlockedVault,
-    currentVault,
-    getVaultHoldingsUsd
-  ])
+    return resolvedHoldingsValue
+  }, [showHoldingsChip, mobileSecondaryMetric, isWalletLoading, resolvedHoldingsValue])
 
   useEffect(() => {
     if (isExpanded) {
@@ -941,5 +931,43 @@ function VaultsListRowComponent({
   )
 }
 
-export const VaultsListRow = memo(VaultsListRowComponent)
+export const VaultsListRowPresentation = memo(VaultsListRowPresentationComponent)
+VaultsListRowPresentation.displayName = 'VaultsListRowPresentation'
+
+function VaultsListRowWithWallet(props: TVaultsListRowProps): ReactElement {
+  const { currentVault, yvUsdVaults } = props
+  const vaultAddress = getVaultAddress(currentVault)
+  const isYvUsd = isYvUsdAddress(vaultAddress)
+  const yvUsdVaultsForRow = isYvUsd ? yvUsdVaults : undefined
+  const { address } = useWeb3()
+  const { getVaultHoldingsUsd, getBalance, isLoading: isWalletLoading } = useWallet()
+  const holdingsValue = useMemo(() => {
+    if (isYvUsd) {
+      const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
+      const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
+      const unlockedSharePrice = getYvUsdSharePrice(yvUsdVaultsForRow?.unlockedVault)
+      const lockedSharePrice = getYvUsdSharePrice(yvUsdVaultsForRow?.lockedVault)
+      return unlockedBalance * unlockedSharePrice + lockedBalance * lockedSharePrice
+    }
+    return getVaultHoldingsUsd(currentVault)
+  }, [
+    currentVault,
+    getBalance,
+    getVaultHoldingsUsd,
+    isYvUsd,
+    yvUsdVaultsForRow?.lockedVault,
+    yvUsdVaultsForRow?.unlockedVault
+  ])
+
+  return (
+    <VaultsListRowPresentation
+      {...props}
+      hasWalletAddress={Boolean(address)}
+      isWalletLoading={isWalletLoading}
+      holdingsValue={holdingsValue}
+    />
+  )
+}
+
+export const VaultsListRow = memo(VaultsListRowWithWallet)
 VaultsListRow.displayName = 'VaultsListRow'

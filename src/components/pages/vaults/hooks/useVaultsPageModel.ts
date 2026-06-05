@@ -184,6 +184,9 @@ type TVaultsListData = {
   mainVaults: TKongVaultInput[]
   yvUsdVaults: TYvUsdListVaults
   vaultFlags: Record<string, { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }>
+  vaultHoldingsValues: Record<string, number>
+  hasWalletAddress: boolean
+  isWalletLoading: boolean
   listChains: number[] | null
   totalMatchingVaults: number
   hiddenByFiltersCount: number
@@ -385,7 +388,9 @@ export function useVaultsPageModel(): TVaultsPageModel {
     yvUsdVaults,
     totalMatchingVaults,
     totalHoldingsMatching,
-    isLoadingVaultList
+    isLoadingVaultList,
+    isWalletLoading,
+    vaultHoldingsValues
   } = useVaultsListModel({
     listVaultType,
     listChains,
@@ -1165,6 +1170,9 @@ export function useVaultsPageModel(): TVaultsPageModel {
         mainVaults,
         yvUsdVaults,
         vaultFlags,
+        vaultHoldingsValues,
+        hasWalletAddress,
+        isWalletLoading,
         listChains,
         totalMatchingVaults,
         hiddenByFiltersCount,
