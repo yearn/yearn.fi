@@ -35,7 +35,7 @@ const aeonikMono = localFont({
 })
 
 const defaultDescription = 'The yield protocol for digital assets'
-const defaultOgImage = '/og.png'
+const defaultOgImage = '/apps/vaults-og.png'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://yearn.fi'),

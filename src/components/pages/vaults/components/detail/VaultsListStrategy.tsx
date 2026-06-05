@@ -1,4 +1,5 @@
-import type { TKongVaultApr, TKongVaultStrategy } from '@pages/vaults/domain/kongVaultSelectors'
+import type { TStrategyDisplayFees } from '@pages/vaults/components/detail/strategyDisplayFees'
+import type { TKongVaultStrategy } from '@pages/vaults/domain/kongVaultSelectors'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { IconChevron } from '@shared/icons/IconChevron'
@@ -44,7 +45,7 @@ export function VaultsListStrategy({
   apr: number | null | undefined
   netApr: number | null | undefined
   katRewardsAPR?: number | null
-  fees: TKongVaultApr['fees']
+  fees: TStrategyDisplayFees
   totalValueUsd: number
 }): ReactElement {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -191,11 +192,11 @@ export function VaultsListStrategy({
           <div className={'flex flex-col gap-1 text-sm pt-2'}>
             <div className={'flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3'}>
               <span className={'w-full text-text-secondary md:w-36'}>Management Fee:</span>
-              <span>{formatStrategiesPercent((fees?.management || 0) * 100)}</span>
+              <span>{formatStrategiesPercent(fees.management * 100)}</span>
             </div>
             <div className={'flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3'}>
               <span className={'w-full text-text-secondary md:w-36'}>Performance Fee:</span>
-              <span>{formatStrategiesPercent((details?.performanceFee || 0) / 100)}</span>
+              <span>{formatStrategiesPercent(fees.performance * 100)}</span>
             </div>
             <div className={'flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3'}>
               <span className={'w-full text-text-secondary md:w-36'}>Last Report:</span>
