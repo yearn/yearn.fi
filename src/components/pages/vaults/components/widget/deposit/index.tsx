@@ -1,5 +1,6 @@
 import { buildSafeDepositBatch } from '@pages/vaults/components/widget/deposit/safeDepositBatch'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
+import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
@@ -14,7 +15,7 @@ import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { calculateRemainingEnsoSlippagePercentage, ZAP_SLIPPAGE_HARD_CAP } from '@shared/utils/slippage'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { formatUnits } from 'viem'
+import { formatUnits, isAddressEqual } from 'viem'
 import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
@@ -183,7 +184,7 @@ export function WidgetDeposit({
     ensoEnabled,
     isWalletSafe
   } = useWidgetContext({ chainId, vaultAddress })
-  const { allVaults } = useYearn()
+  const { allVaults, setIsAutoStakingEnabled } = useYearn()
 
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
@@ -191,6 +192,10 @@ export function WidgetDeposit({
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
+  const [isYBoldAutoStakeWarningDismissing, setIsYBoldAutoStakeWarningDismissing] = useState(false)
+  const [isYBoldAutoStakeWarningExiting, setIsYBoldAutoStakeWarningExiting] = useState(false)
+  const yBoldAutoStakeWarningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const yBoldAutoStakeWarningExitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const {
     assetToken,
@@ -872,6 +877,76 @@ export function WidgetDeposit({
     [chainId, onUserTokenSelectionChange, setDepositInput]
   )
 
+  const showYBoldAutoStakeWarning =
+    !forceStake &&
+    !isAutoStakingEnabled &&
+    isAddressEqual(vaultAddress, YBOLD_VAULT_ADDRESS) &&
+    Boolean(stakingAddress && isAddressEqual(stakingAddress, YBOLD_STAKING_ADDRESS))
+
+  useEffect(
+    () => () => {
+      if (yBoldAutoStakeWarningTimeoutRef.current) {
+        clearTimeout(yBoldAutoStakeWarningTimeoutRef.current)
+      }
+      if (yBoldAutoStakeWarningExitTimeoutRef.current) {
+        clearTimeout(yBoldAutoStakeWarningExitTimeoutRef.current)
+      }
+    },
+    []
+  )
+
+  useEffect(() => {
+    if (!showYBoldAutoStakeWarning) return
+
+    if (yBoldAutoStakeWarningTimeoutRef.current) {
+      clearTimeout(yBoldAutoStakeWarningTimeoutRef.current)
+      yBoldAutoStakeWarningTimeoutRef.current = null
+    }
+    if (yBoldAutoStakeWarningExitTimeoutRef.current) {
+      clearTimeout(yBoldAutoStakeWarningExitTimeoutRef.current)
+      yBoldAutoStakeWarningExitTimeoutRef.current = null
+    }
+    setIsYBoldAutoStakeWarningDismissing(false)
+    setIsYBoldAutoStakeWarningExiting(false)
+  }, [showYBoldAutoStakeWarning])
+
+  const handleYBoldAutoStakeToggle = useCallback(() => {
+    const nextIsAutoStakingEnabled = !isAutoStakingEnabled
+    setIsAutoStakingEnabled(nextIsAutoStakingEnabled)
+
+    if (nextIsAutoStakingEnabled && showYBoldAutoStakeWarning) {
+      setIsYBoldAutoStakeWarningDismissing(true)
+      setIsYBoldAutoStakeWarningExiting(false)
+      if (yBoldAutoStakeWarningTimeoutRef.current) {
+        clearTimeout(yBoldAutoStakeWarningTimeoutRef.current)
+      }
+      if (yBoldAutoStakeWarningExitTimeoutRef.current) {
+        clearTimeout(yBoldAutoStakeWarningExitTimeoutRef.current)
+      }
+      yBoldAutoStakeWarningExitTimeoutRef.current = setTimeout(() => {
+        setIsYBoldAutoStakeWarningExiting(true)
+        yBoldAutoStakeWarningExitTimeoutRef.current = null
+        yBoldAutoStakeWarningTimeoutRef.current = setTimeout(() => {
+          setIsYBoldAutoStakeWarningDismissing(false)
+          setIsYBoldAutoStakeWarningExiting(false)
+          yBoldAutoStakeWarningTimeoutRef.current = null
+        }, 300)
+      }, 1000)
+      return
+    }
+
+    if (yBoldAutoStakeWarningTimeoutRef.current) {
+      clearTimeout(yBoldAutoStakeWarningTimeoutRef.current)
+      yBoldAutoStakeWarningTimeoutRef.current = null
+    }
+    if (yBoldAutoStakeWarningExitTimeoutRef.current) {
+      clearTimeout(yBoldAutoStakeWarningExitTimeoutRef.current)
+      yBoldAutoStakeWarningExitTimeoutRef.current = null
+    }
+    setIsYBoldAutoStakeWarningDismissing(false)
+    setIsYBoldAutoStakeWarningExiting(false)
+  }, [isAutoStakingEnabled, setIsAutoStakingEnabled, showYBoldAutoStakeWarning])
+
   if (isLoadingVaultData && !showTransactionOverlay) {
     return (
       <WidgetLoadingSkeleton
@@ -965,6 +1040,49 @@ export function WidgetDeposit({
       hasAmount={depositAmount.bn > 0n}
     />
   )
+  const shouldRenderYBoldAutoStakeWarning = showYBoldAutoStakeWarning || isYBoldAutoStakeWarningDismissing
+  const isYBoldAutoStakeToggleOn = isAutoStakingEnabled || isYBoldAutoStakeWarningDismissing
+  const yBoldAutoStakeWarning = shouldRenderYBoldAutoStakeWarning ? (
+    <div
+      className={cl(
+        'rounded-lg border border-primary/80 bg-surface-tertiary/80 px-3 py-2 text-sm text-text-primary transition-all duration-300 ease-out',
+        isYBoldAutoStakeWarningExiting
+          ? 'pointer-events-none -translate-y-1 scale-[0.98] opacity-0'
+          : 'translate-y-0 scale-100 opacity-100'
+      )}
+    >
+      <div className="flex items-center justify-between gap-5">
+        <p className="text-sm leading-5 text-text-primary">
+          <span className="font-semibold">Automatic staking off.</span>
+          <span className="block">If this is not intentional, turn it on by clicking the toggle to the right.</span>
+        </p>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isYBoldAutoStakeToggleOn}
+          aria-label="Toggle automatic staking"
+          disabled={isYBoldAutoStakeWarningDismissing}
+          onClick={handleYBoldAutoStakeToggle}
+          className={cl(
+            'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors',
+            isYBoldAutoStakeToggleOn
+              ? 'border-blue-600 bg-blue-600'
+              : 'border-text-primary/30 bg-text-primary/15 shadow-inner hover:bg-text-primary/20'
+          )}
+        >
+          <span
+            className={cl(
+              'inline-block h-4 w-4 rounded-full border bg-surface shadow-sm transition-transform',
+              isYBoldAutoStakeToggleOn
+                ? 'border-border'
+                : 'border-text-primary/30 [html[data-theme=blue-dark]_&]:bg-white [html[data-theme=dark]_&]:bg-white [html[data-theme=midnight]_&]:bg-white [html[data-theme=soft-dark]_&]:bg-white',
+              isYBoldAutoStakeToggleOn ? 'translate-x-6' : 'translate-x-1'
+            )}
+          />
+        </button>
+      </div>
+    </div>
+  ) : null
 
   const showActionRow = !hideActionButton || !!onOpenSettings
   const showSettingsButton = !!account && !!onOpenSettings
@@ -987,6 +1105,7 @@ export function WidgetDeposit({
     <div className="flex flex-col gap-3">
       {priceImpactWarning}
       {contentAboveButton}
+      {yBoldAutoStakeWarning}
       <div className="flex items-center gap-2">
         <div className="flex-1">
           {hideActionButton ? null : !account ? (
