@@ -31,7 +31,8 @@ import {
   shouldAutoContinueFromSuccessState,
   shouldAutoContinuePermitSuccess,
   shouldRefetchNextStepAfterReceipt,
-  shouldRunDeferredCompletion
+  shouldRunDeferredCompletion,
+  shouldStartStepOnOpen
 } from './transactionOverlay.helpers'
 
 export type PermitDataDirect = {
@@ -835,11 +836,21 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Start step when overlay opens
   useEffect(() => {
-    if (isOpen && overlayState === 'idle' && step && !hasStartedRef.current) {
+    if (
+      shouldStartStepOnOpen({
+        isOpen,
+        overlayState,
+        hasStep: Boolean(step),
+        hasStarted: hasStartedRef.current,
+        isStepReady,
+        isPermitStepReady: Boolean(step?.isPermit && step.permitData),
+        hasPrepareError: Boolean(step?.prepare.isError)
+      })
+    ) {
       hasStartedRef.current = true
       executeStep()
     }
-  }, [isOpen, overlayState, step, executeStep])
+  }, [executeStep, isOpen, isStepReady, overlayState, step])
 
   useEffect(() => {
     if (!isOpen || !isWaitingForNextStep || !step) return
