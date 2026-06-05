@@ -11,6 +11,7 @@
     "preview:client": "next start --hostname 127.0.0.1 --port 3000",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
+    "measure:ssr": "bun scripts/measure-ssr-baseline.ts",
     "check:client-server-boundary": "bun scripts/check-client-server-boundary.ts",
     "tslint": "tsc -p tsconfig.json --noEmit",
     "bump": "bump",
