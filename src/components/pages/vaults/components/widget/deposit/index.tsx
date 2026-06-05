@@ -351,6 +351,10 @@ export function WidgetDeposit({
     sourceChainId,
     chainId,
     depositAmount: depositAmount.debouncedBn,
+    expectedShareAmount:
+      routeType === 'ENSO' && activeFlow.periphery.routeHasSwap
+        ? activeFlow.periphery.minExpectedOut
+        : activeFlow.periphery.expectedOut,
     routeType,
     routerAddress: activeFlow.periphery.routerAddress,
     isCrossChain

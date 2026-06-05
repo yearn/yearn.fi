@@ -18,7 +18,6 @@ import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
-import { Notification } from '@pages/vaults/components/notifications/Notification'
 import { SuggestedVaultCard } from '@pages/vaults/components/SuggestedVaultCard'
 import { MerkleRewardRow } from '@pages/vaults/components/widget/rewards/MerkleRewardRow'
 import { StakingRewardRow } from '@pages/vaults/components/widget/rewards/StakingRewardRow'
@@ -1729,12 +1728,33 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       }),
     [activityChainId, activityChainOptions, displayedActivityNetworks]
   )
-  const unresolvedLocalEntries = useMemo(
+  const unresolvedLocalActivityEntries = useMemo(
     () =>
       cachedEntries
         .filter((entry) => entry.status !== 'success')
-        .toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)),
-    [cachedEntries]
+        .filter((entry) =>
+          doesLocalActivityMatchFilters({
+            chainId: activityChainId,
+            endTimestamp: activityEndTimestamp,
+            filters: activityFilters,
+            notification: entry,
+            startTimestamp: activityStartTimestamp
+          })
+        )
+        .filter((entry) => !isActivityZapFilterActive || isZapNotification(entry))
+        .map((entry) => toLocalActivityEntry(entry, { fallbackTimestamp: Math.floor(Date.now() / 1000) }))
+        .filter((entry): entry is TPortfolioActivityEntry => Boolean(entry))
+        .filter((entry) => doesActivityEntryMatchSearch(entry, activitySearch, allVaults)),
+    [
+      activityChainId,
+      activityEndTimestamp,
+      activityFilters,
+      activitySearch,
+      activityStartTimestamp,
+      allVaults,
+      cachedEntries,
+      isActivityZapFilterActive
+    ]
   )
   const indexedTxHashes = useMemo(
     () => new Set(indexedEntries.map((entry) => entry.txHash.toLowerCase())),
@@ -1768,13 +1788,12 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   const recentLocalActivityEntries = useMemo(
     () =>
       recentLocalEntries
-        .map(toLocalActivityEntry)
+        .map((entry) => toLocalActivityEntry(entry))
         .filter((entry): entry is TPortfolioActivityEntry => Boolean(entry))
         .filter((entry) => doesActivityEntryMatchSearch(entry, activitySearch, allVaults)),
     [activitySearch, allVaults, recentLocalEntries]
   )
-  const hasUnresolvedLocalEntries = unresolvedLocalEntries.length > 0
-  const hasLocalEntries = hasUnresolvedLocalEntries || recentLocalActivityEntries.length > 0
+  const hasLocalEntries = unresolvedLocalActivityEntries.length > 0 || recentLocalActivityEntries.length > 0
   const hasIndexedEntries = indexedEntries.length > 0
   const hasActiveIndexedFilters =
     activityChainId !== null ||
@@ -1800,10 +1819,10 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   }, [activityFilters.types, activitySearch, allVaults, indexedEntries, isActivityZapFilterActive])
   const visibleActivityEntries = useMemo(
     () =>
-      [...recentLocalActivityEntries, ...visibleIndexedEntries].toSorted(
+      [...unresolvedLocalActivityEntries, ...recentLocalActivityEntries, ...visibleIndexedEntries].toSorted(
         (firstEntry, secondEntry) => secondEntry.timestamp - firstEntry.timestamp
       ),
-    [recentLocalActivityEntries, visibleIndexedEntries]
+    [recentLocalActivityEntries, unresolvedLocalActivityEntries, visibleIndexedEntries]
   )
 
   function handleActivityChainSelect(chainId: number): void {
@@ -2074,22 +2093,6 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
 
     return (
       <div className="flex flex-col gap-6">
-        {hasUnresolvedLocalEntries && (
-          <div className="flex flex-col gap-3">
-            <div>
-              <h3 className="text-sm font-semibold text-text-primary">{'Pending local transactions'}</h3>
-              <p className="text-xs text-text-secondary">
-                {'These entries come from this browser and may appear before the indexer catches up.'}
-              </p>
-            </div>
-            <div className="flex flex-col">
-              {unresolvedLocalEntries.map((entry) => (
-                <Notification key={`notification-${entry.id}`} notification={entry} variant="v3" />
-              ))}
-            </div>
-          </div>
-        )}
-
         <div className="flex flex-col gap-2">
           {renderActivityFilters()}
           <div className="overflow-visible bg-surface md:rounded-lg md:border md:border-border">
