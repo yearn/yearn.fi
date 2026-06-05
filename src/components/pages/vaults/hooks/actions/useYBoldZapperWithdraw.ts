@@ -39,7 +39,11 @@ export function useYBoldZapperWithdraw(params: UseYBoldZapperWithdrawParams): Us
 
   const effectiveApprovedShares = getEffectiveApprovedShares(allowance, params.optimisticApprovedShares)
   const isValidInput = params.requiredVaultShares > 0n
-  const { data: previewWithdrawSharesData } = useReadContract({
+  const {
+    data: previewWithdrawSharesData,
+    isLoading: isLoadingPreviewWithdraw,
+    isFetching: isFetchingPreviewWithdraw
+  } = useReadContract({
     address: YBOLD_STAKING_ADDRESS,
     abi: TOKENIZED_STRATEGY_ABI,
     functionName: 'previewWithdraw',
@@ -56,7 +60,11 @@ export function useYBoldZapperWithdraw(params: UseYBoldZapperWithdrawParams): Us
   const prepareWithdrawEnabled =
     !!params.account && params.enabled && isValidInput && hasZapperShares && isAllowanceSufficient
 
-  const { data: expectedOut = 0n } = useReadContract({
+  const {
+    data: expectedOut = 0n,
+    isLoading: isLoadingPreviewRedeem,
+    isFetching: isFetchingPreviewRedeem
+  } = useReadContract({
     address: YBOLD_ZAPPER_ADDRESS,
     abi: yBoldZapperAbi,
     functionName: 'previewRedeem',
@@ -83,6 +91,8 @@ export function useYBoldZapperWithdraw(params: UseYBoldZapperWithdrawParams): Us
     chainId: params.chainId,
     query: { enabled: prepareWithdrawEnabled }
   })
+  const isLoadingRoute =
+    isLoadingPreviewWithdraw || isFetchingPreviewWithdraw || isLoadingPreviewRedeem || isFetchingPreviewRedeem
 
   return {
     actions: {
@@ -97,7 +107,7 @@ export function useYBoldZapperWithdraw(params: UseYBoldZapperWithdrawParams): Us
       shareAmount: zapperShares,
       expectedOut,
       minExpectedOut: expectedOut,
-      isLoadingRoute: false,
+      isLoadingRoute,
       isCrossChain: false,
       routerAddress: YBOLD_ZAPPER_ADDRESS,
       error: undefined

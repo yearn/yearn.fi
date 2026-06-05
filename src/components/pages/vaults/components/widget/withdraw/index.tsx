@@ -237,18 +237,6 @@ export function WidgetWithdraw({
     setIsDetailsPanelOpen(false)
   }
 
-  useResetEnsoSelection({
-    ensoEnabled,
-    selectedToken,
-    selectedChainId,
-    assetAddress: resolvedDisplayAssetAddress,
-    chainId,
-    showTokenSelector,
-    setSelectedToken,
-    setSelectedChainId,
-    setShowTokenSelector
-  })
-
   useEffect(() => {
     if (!showTransactionOverlay) {
       setFallbackStep('unstake')
