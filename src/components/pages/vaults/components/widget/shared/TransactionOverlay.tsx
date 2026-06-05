@@ -59,6 +59,7 @@ export type TransactionStep = {
   confirmMessage: string
   successTitle: string
   successMessage: string
+  isEnabled?: boolean
   completesFlow?: boolean
   showConfetti?: boolean
   notification?: TCreateNotificationParams
@@ -255,8 +256,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const executedStepBlockRef = useRef<bigint | undefined>(undefined)
 
   // Check if current step is ready to execute
+  const isStepEnabled = step?.isEnabled ?? true
   const isStepReady = Boolean(
-    step?.batch ? step.batch.calls.length > 0 : step?.prepare.isSuccess && step?.prepare.data?.request
+    isStepEnabled &&
+      (step?.batch ? step.batch.calls.length > 0 : step?.prepare.isSuccess && step?.prepare.data?.request)
   )
   const executedStepLabel = executedStepRef.current?.label
   const executedStepFunctionName = (
@@ -278,8 +281,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const sendCallsResetRef = useRef(sendCalls.reset)
   const pendingCompletionRef = useRef<CompletionDeferral>('none')
   const handledConfettiRequestRef = useRef(0)
+  const handledSuccessReceiptRef = useRef<`0x${string}` | null>(null)
   const [isAutoContinuing, setIsAutoContinuing] = useState(false)
   const [confettiRequestNonce, setConfettiRequestNonce] = useState(0)
+  const [isWaitingForNextStep, setIsWaitingForNextStep] = useState(false)
 
   useEffect(() => {
     writeContractResetRef.current = writeContract.reset
@@ -426,9 +431,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       executedStepRef.current = null
       wasLastStepRef.current = false
       executedStepBlockRef.current = undefined
+      handledSuccessReceiptRef.current = null
       pendingCompletionRef.current = 'none'
       autoContinueNonceRef.current += 1
       setIsAutoContinuing(false)
+      setIsWaitingForNextStep(false)
       handledConfettiRequestRef.current = 0
       setConfettiRequestNonce(0)
     }
@@ -721,6 +728,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       return
     }
 
+    if (step.isEnabled === false) {
+      console.warn('[TransactionOverlay] Transaction not enabled', getStepDebugInfo(step))
+      setOverlayState('error')
+      setErrorMessage('Transaction not ready. Please try again.')
+      return
+    }
+
     if (step.isPermit && step.permitData) {
       await executePermitStep(step)
       return
@@ -737,11 +751,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     hasAdvancedFromStepRef.current = executedStepLabel
     autoContinueNonceRef.current += 1
     setIsAutoContinuing(false)
+    setIsWaitingForNextStep(true)
 
-    // Reset for next step - parent will provide the new step
+    // Reset for next step. The parent provides a fresh step after allowance or
+    // balance state updates, so wait for that prepared step before executing.
     resetTxState()
-    executeStep()
-  }, [resetTxState, executeStep])
+  }, [resetTxState])
 
   const waitForAutoContinueBlock = useCallback(async (executedStepLabel?: string) => {
     // Most flows can continue immediately once the next simulation is ready.
@@ -827,6 +842,15 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   }, [isOpen, overlayState, step, executeStep])
 
   useEffect(() => {
+    if (!isOpen || !isWaitingForNextStep || !step) return
+    if (step.label === executedStepRef.current?.label) return
+    if (!isStepReady) return
+
+    setIsWaitingForNextStep(false)
+    executeStep()
+  }, [executeStep, isOpen, isStepReady, isWaitingForNextStep, step])
+
+  useEffect(() => {
     const nextOverlayState = resolvePendingSafeOverlayState({
       overlayState,
       isWalletSafe,
@@ -862,11 +886,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   useEffect(() => {
     // For multi-step flows, wait until next step is ready before showing success
     // Check that step has changed (different label) and is ready
-    if (
-      receipt.isSuccess &&
-      receipt.data?.transactionHash &&
-      (overlayState === 'pending' || overlayState === 'submitted')
-    ) {
+    const receiptHash = receipt.data?.transactionHash
+    const isUnhandledReceipt = Boolean(receiptHash && handledSuccessReceiptRef.current !== receiptHash)
+
+    if (receipt.isSuccess && receiptHash && (overlayState === 'pending' || overlayState === 'submitted')) {
       executedStepBlockRef.current = receipt.data.blockNumber
       const executedStepLabel = executedStepRef.current?.label
       if (!hasReportedStepSuccessRef.current && executedStepLabel) {
@@ -879,10 +902,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     const canShowSuccess = wasLastStepRef.current || isNextStepReady
     if (
       receipt.isSuccess &&
-      receipt.data?.transactionHash &&
+      receiptHash &&
+      isUnhandledReceipt &&
       (overlayState === 'pending' || overlayState === 'submitted') &&
       canShowSuccess
     ) {
+      handledSuccessReceiptRef.current = receiptHash
+
       if (
         shouldAutoContinueFromSuccessState({
           canShowSuccess,
@@ -939,6 +965,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       const capturedStep = executedStepRef.current
       const capturedReceipt = receipt.data
       const capturedStatus = capturedStep?.notification?.type === 'crosschain zap' ? 'submitted' : 'success'
+      autoContinueNonceRef.current += 1
+      setIsAutoContinuing(false)
+      setIsWaitingForNextStep(false)
       resetTxState()
 
       // Cross-chain source execution is confirmed before destination funds arrive.

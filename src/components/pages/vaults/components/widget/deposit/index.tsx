@@ -625,6 +625,16 @@ export function WidgetDeposit({
   })
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
+  const approvalFlowKey = useMemo(
+    () =>
+      [routeType, depositToken, destinationToken, sourceChainId, chainId, depositAmount.debouncedBn.toString()].join(
+        ':'
+      ),
+    [chainId, depositAmount.debouncedBn, depositToken, destinationToken, routeType, sourceChainId]
+  )
+  const [completedApprovalFlowKey, setCompletedApprovalFlowKey] = useState<string | null>(null)
+  const hasCompletedApprovalInActiveFlow = completedApprovalFlowKey === approvalFlowKey
+  const effectiveNeedsApproval = needsApproval && !hasCompletedApprovalInActiveFlow
   const safeDepositBatch = useMemo(() => {
     if (!isWalletSafe || !needsApproval) {
       return undefined
@@ -681,19 +691,21 @@ export function WidgetDeposit({
         successMessage: isCrossChain
           ? `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`
           : `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+        isEnabled: activeFlow.periphery.prepareApproveEnabled && safeDepositBatch.calls.length > 0,
         completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams
       }
     }
 
-    if (needsApproval) {
+    if (effectiveNeedsApproval) {
       return {
         prepare: activeFlow.actions.prepareApprove,
         label: 'Approve',
         confirmMessage: `Approving ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Approval successful',
         successMessage: `Approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nReady to deposit.`,
+        isEnabled: activeFlow.periphery.prepareApproveEnabled,
         completesFlow: false,
         notification: approveNotificationParams
       }
@@ -706,6 +718,7 @@ export function WidgetDeposit({
         confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Transaction Submitted',
         successMessage: `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
+        isEnabled: activeFlow.periphery.prepareDepositEnabled,
         completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams
@@ -718,14 +731,17 @@ export function WidgetDeposit({
       confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
       successTitle: `${actionLabel} successful!`,
       successMessage: `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+      isEnabled: activeFlow.periphery.prepareDepositEnabled,
       completesFlow: true,
       showConfetti: true,
       notification: depositNotificationParams
     }
   }, [
-    needsApproval,
+    effectiveNeedsApproval,
     activeFlow.actions.prepareApprove,
     activeFlow.actions.prepareDeposit,
+    activeFlow.periphery.prepareApproveEnabled,
+    activeFlow.periphery.prepareDepositEnabled,
     safeDepositBatch,
     formattedDepositAmount,
     inputToken?.symbol,
@@ -786,6 +802,15 @@ export function WidgetDeposit({
     ]
   )
 
+  const handleDepositStepSuccess = useCallback(
+    (label: string) => {
+      if (label === 'Approve' || label === 'Sign Permit') {
+        setCompletedApprovalFlowKey(approvalFlowKey)
+      }
+    },
+    [approvalFlowKey]
+  )
+
   const handleDepositSuccess = useCallback(() => {
     const amountToDeposit = formatUnits(depositAmount.bn, inputToken?.decimals ?? 18)
     const priceUsd = inputTokenPrice
@@ -806,6 +831,7 @@ export function WidgetDeposit({
       }
     })
 
+    setCompletedApprovalFlowKey(null)
     setDepositInput('')
     // Cross-chain deposits: the transaction submits on source chain but funds
     // don't arrive on destination until minutes later, so there is no on-chain
@@ -950,14 +976,19 @@ export function WidgetDeposit({
 
   const showActionRow = !hideActionButton || !!onOpenSettings
   const showSettingsButton = !!account && !!onOpenSettings
-  const depositButtonLabel = getDepositButtonLabel(isLoadingQuote, needsApproval, routeType, actionLabelOverride)
+  const depositButtonLabel = getDepositButtonLabel(
+    isLoadingQuote,
+    effectiveNeedsApproval,
+    routeType,
+    actionLabelOverride
+  )
   const isDepositButtonDisabled =
     !!effectiveDepositError ||
     depositAmount.bn === 0n ||
     isLoadingQuote ||
     depositAmount.isDebouncing ||
-    (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
-    (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled) ||
+    (effectiveNeedsApproval && !activeFlow.periphery.prepareApproveEnabled) ||
+    (!effectiveNeedsApproval && !activeFlow.periphery.prepareDepositEnabled) ||
     (ensoRouteHasSwap && (priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance))
 
   const actionRow = showActionRow ? (
@@ -1093,11 +1124,12 @@ export function WidgetDeposit({
         isOpen={showTransactionOverlay}
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
-        isLastStep={!needsApproval}
+        isLastStep={!effectiveNeedsApproval}
         deferOnAllCompleteUntilClose={deferSuccessEffectsUntilClose}
         deferOnAllCompleteUntilConfettiEnd={deferSuccessEffectsUntilConfettiEnd}
         autoContinueToNextStep
         autoContinueStepLabels={['Approve', 'Sign Permit']}
+        onStepSuccess={handleDepositStepSuccess}
         onBeforeSuccess={handleDepositTransactionSuccess}
         onAllComplete={handleDepositSuccess}
       />

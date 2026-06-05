@@ -22,6 +22,10 @@ type TBuildWithdrawTransactionStepArgs = {
   unstakeNotificationParams?: TCreateNotificationParams
   withdrawNotificationParams?: TCreateNotificationParams
   safeWithdrawBatch?: TransactionStep['batch']
+  prepareApproveEnabled?: boolean
+  prepareWithdrawEnabled?: boolean
+  directUnstakePrepareEnabled?: boolean
+  directWithdrawPrepareEnabled?: boolean
 }
 
 type TWithdrawCtaStateArgs = {
@@ -45,6 +49,9 @@ export function getWithdrawTransactionName(routeType: WithdrawRouteType, isFetch
   if (routeType === 'DIRECT_UNSTAKE_WITHDRAW') {
     return 'Unstake & Withdraw'
   }
+  if (routeType === 'YBOLD_ZAPPER_WITHDRAW') {
+    return 'Withdraw'
+  }
   return isFetchingQuote ? 'Fetching quote' : 'Withdraw'
 }
 
@@ -67,7 +74,11 @@ export function buildWithdrawTransactionStep({
   approveNotificationParams,
   unstakeNotificationParams,
   withdrawNotificationParams,
-  safeWithdrawBatch
+  safeWithdrawBatch,
+  prepareApproveEnabled = true,
+  prepareWithdrawEnabled = true,
+  directUnstakePrepareEnabled = prepareWithdrawEnabled,
+  directWithdrawPrepareEnabled = prepareWithdrawEnabled
 }: TBuildWithdrawTransactionStepArgs): TransactionStep | undefined {
   if (needsApproval && approvePrepare && safeWithdrawBatch) {
     return {
@@ -79,6 +90,7 @@ export function buildWithdrawTransactionStep({
       successMessage: isCrossChain
         ? 'Your cross-chain withdraw has been submitted.\nIt may take a few minutes to complete on the destination chain.'
         : `You have withdrawn ${formattedWithdrawAmount} ${assetTokenSymbol || ''}.`,
+      isEnabled: prepareApproveEnabled && safeWithdrawBatch.calls.length > 0,
       completesFlow: true,
       notification: withdrawNotificationParams
     }
@@ -91,6 +103,7 @@ export function buildWithdrawTransactionStep({
       confirmMessage: `Approving ${formattedApprovalAmount} ${approvalTokenSymbol || ''}`,
       successTitle: 'Approval successful',
       successMessage: `Approved ${formattedApprovalAmount} ${approvalTokenSymbol || ''}.\nReady to withdraw.`,
+      isEnabled: prepareApproveEnabled,
       completesFlow: false,
       notification: approveNotificationParams
     }
@@ -106,6 +119,7 @@ export function buildWithdrawTransactionStep({
         confirmMessage: `Unstaking ${formattedRequiredShares} ${unstakeSymbol}`,
         successTitle: 'Unstake successful!',
         successMessage: `You have unstaked ${formattedRequiredShares} ${unstakeSymbol}.\nPreparing your withdraw.`,
+        isEnabled: directUnstakePrepareEnabled,
         completesFlow: false,
         notification: unstakeNotificationParams
       }
@@ -121,6 +135,7 @@ export function buildWithdrawTransactionStep({
       confirmMessage: `Withdrawing ${formattedWithdrawAmount} ${assetTokenSymbol || ''}`,
       successTitle: 'Withdraw successful!',
       successMessage: `You have withdrawn ${formattedWithdrawAmount} ${assetTokenSymbol || ''}.`,
+      isEnabled: directWithdrawPrepareEnabled,
       completesFlow: true,
       notification: withdrawNotificationParams
     }
@@ -140,6 +155,7 @@ export function buildWithdrawTransactionStep({
       confirmMessage: `${actionVerb} ${formattedWithdrawAmount} ${assetTokenSymbol || ''}`,
       successTitle: 'Transaction Submitted',
       successMessage: `Your cross-chain ${withdrawLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
+      isEnabled: prepareWithdrawEnabled,
       completesFlow: true,
       notification: withdrawNotificationParams
     }
@@ -152,6 +168,7 @@ export function buildWithdrawTransactionStep({
     confirmMessage: `${actionVerb} ${formattedWithdrawAmount} ${assetTokenSymbol || ''}`,
     successTitle: `${withdrawLabel} successful!`,
     successMessage: `You have ${successAction} ${formattedWithdrawAmount} ${assetTokenSymbol || ''}.`,
+    isEnabled: prepareWithdrawEnabled,
     completesFlow: true,
     notification: withdrawNotificationParams
   }

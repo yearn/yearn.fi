@@ -754,6 +754,7 @@ function Index(): ReactElement | null {
   const hasUserFundsInVault = isYvUsd ? hasYvUsdFunds : vaultShareBalance > 0n || stakingShareBalance > 0n
   const canShowUserCharts = !isWalletLoading && hasUserFundsInVault
   const [isYBoldStakePrefillActive, setIsYBoldStakePrefillActive] = useState(false)
+  const [yBoldStakePrefillAmountSnapshot, setYBoldStakePrefillAmountSnapshot] = useState<string | null>(null)
   const [yBoldStakePrefillRequestKey, setYBoldStakePrefillRequestKey] = useState(0)
   const retiredVaultAlertMessage = useMemo(() => {
     if (!isRetired || !currentVault) return null
@@ -1025,6 +1026,9 @@ function Index(): ReactElement | null {
   }
 
   const activateYBoldStakePrefill = useCallback((): void => {
+    setYBoldStakePrefillAmountSnapshot(
+      formatUnits(vaultShareBalance, vaultUserData.vaultToken?.decimals ?? currentVault?.decimals ?? 18)
+    )
     setIsYBoldStakePrefillActive(true)
     setYBoldStakePrefillRequestKey((current) => current + 1)
     setWidgetMode(WidgetActionType.Deposit)
@@ -1036,7 +1040,7 @@ function Index(): ReactElement | null {
     if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
       setIsMobileDrawerOpen(true)
     }
-  }, [])
+  }, [currentVault?.decimals, vaultShareBalance, vaultUserData.vaultToken?.decimals])
 
   const yBoldStakeAction = yBoldUnstakedAlertMessage ? (
     <button
@@ -1515,9 +1519,10 @@ function Index(): ReactElement | null {
   const mobileProductTypeLabel = getMobileProductTypeLabel()
   const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
-  const yBoldStakePrefillAmount = isYBold
+  const liveYBoldStakePrefillAmount = isYBold
     ? formatUnits(vaultShareBalance, vaultUserData.vaultToken?.decimals ?? resolvedCurrentVault.decimals ?? 18)
     : ''
+  const yBoldStakePrefillAmount = yBoldStakePrefillAmountSnapshot ?? liveYBoldStakePrefillAmount
   const shouldForceYBoldStakeDeposit = isYBold && isYBoldStakePrefillActive
   const yBoldStakeDepositPrefill = shouldForceYBoldStakeDeposit
     ? {
@@ -1533,6 +1538,7 @@ function Index(): ReactElement | null {
     }
 
     setIsYBoldStakePrefillActive(false)
+    setYBoldStakePrefillAmountSnapshot(null)
     refetchSnapshot()
     refetchYBoldSnapshot()
     onRefresh([
