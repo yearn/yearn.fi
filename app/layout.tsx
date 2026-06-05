@@ -3,7 +3,6 @@ import localFont from 'next/font/local'
 import Script from 'next/script'
 import type { ReactNode } from 'react'
 import { Suspense } from 'react'
-import App from '@/App'
 import '../style.css'
 
 const aeonik = localFont({
@@ -170,9 +169,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Script id="yearn-theme-init" strategy="beforeInteractive">
           {themeScript}
         </Script>
-        <Suspense>
-          <App>{children}</App>
-        </Suspense>
+        <Suspense>{children}</Suspense>
       </body>
     </html>
   )

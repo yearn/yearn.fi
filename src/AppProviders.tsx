@@ -18,40 +18,20 @@ import { IconAlertError } from '@shared/icons/IconAlertError'
 import { IconCheckmark } from '@shared/icons/IconCheckmark'
 import { isIframe } from '@shared/utils/helpers'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { usePathname } from 'next/navigation'
 import type { ReactElement, ReactNode } from 'react'
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { WagmiProvider } from 'wagmi'
+import { AppClientEffects } from '@/AppClientEffects'
 import { TenderlyControlPanel } from '@/components/shared/components/TenderlyControlPanel'
 import { wagmiConfig } from '@/config/wagmi'
 import { ChainsProvider } from '@/context/ChainsProvider'
-import { initializePlausible } from '@/hooks/usePlausible'
-import { disableServiceWorkerDev } from '@/utils/disableServiceWorkerDev'
 
 const bigintPrototype = BigInt.prototype as unknown as { toJSON?: () => string }
 if (!bigintPrototype.toJSON) {
   bigintPrototype.toJSON = function toJSON() {
     return this.toString()
   }
-}
-
-function AppClientEffects(): null {
-  const pathname = usePathname()
-
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0)
-  }, [pathname])
-
-  useEffect(() => {
-    initializePlausible()
-
-    if (process.env.NODE_ENV === 'development') {
-      void disableServiceWorkerDev()
-    }
-  }, [])
-
-  return null
 }
 
 export function AppProviders({ children }: { children: ReactNode }): ReactElement {

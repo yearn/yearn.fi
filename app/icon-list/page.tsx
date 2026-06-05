@@ -1,6 +1,7 @@
 import { buildIconUsageMap } from '@pages/icon-list/sourceUsage'
 import { redirect } from 'next/navigation'
 import type { ReactElement } from 'react'
+import PublicApp from '@/PublicApp'
 import IconListPageClient from './page-client'
 
 export default async function Page(): Promise<ReactElement> {
@@ -10,5 +11,9 @@ export default async function Page(): Promise<ReactElement> {
 
   const usageMap = await buildIconUsageMap()
 
-  return <IconListPageClient usageMap={usageMap} />
+  return (
+    <PublicApp>
+      <IconListPageClient usageMap={usageMap} />
+    </PublicApp>
+  )
 }
