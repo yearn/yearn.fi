@@ -1123,15 +1123,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
             contentAlign === 'center' ? 'justify-center' : 'justify-start pt-8'
           )}
         >
-          {/* Idle State */}
-          {overlayState === 'idle' && (
-            <>
-              <Spinner />
-              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Preparing transaction</h3>
-              <p className="text-sm text-text-secondary">Getting the next transaction ready...</p>
-            </>
-          )}
-
           {/* Confirming State */}
           {overlayState === 'confirming' && (
             <>
