@@ -417,7 +417,7 @@ export const WidgetMigrate: FC<Props> = ({
   }, [isPermitFlow, needsPermitSign, needsApproval])
 
   // Loading state
-  if (isLoadingVaultData) {
+  if (isLoadingVaultData && !showTransactionOverlay) {
     return (
       <div className="flex flex-col border border-border rounded-lg relative h-full">
         <WidgetHeader title="Migrate" />

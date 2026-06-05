@@ -37,7 +37,7 @@ export function SuggestedVaultCard({
   matchedChainName?: string
 }): ReactElement {
   const apyData = useVaultApyData(vault)
-  const apyLabel = apyData.mode === 'historical' || apyData.mode === 'noForward' ? '30D APY' : 'Est. APY'
+  const apyLabel = apyData.mode === 'historical' || apyData.mode === 'noForward' ? 'Historical APY' : 'Est. APY'
   const chainID = getVaultChainID(vault)
   const vaultAddress = getVaultAddress(vault)
   const token = getVaultToken(vault)

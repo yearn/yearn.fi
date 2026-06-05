@@ -1,4 +1,6 @@
+import { YBOLD_ZAPPER_ADDRESS } from '@pages/vaults/utils/yBold'
 import { YVUSD_LOCKED_ZAP_ADDRESS } from '@pages/vaults/utils/yvUsd'
+import { yBoldZapperAbi } from '@shared/contracts/abi/yBoldZapper.abi'
 import { yvUsdLockedZapAbi } from '@shared/contracts/abi/yvUsdLockedZap.abi'
 import { getApproveAbi } from '@shared/utils/approve'
 import type { Address, Hex } from 'viem'
@@ -26,6 +28,7 @@ type TBuildSafeWithdrawBatchParams = {
   chainId: number
   approvalSpenderAddress?: Address
   routerAddress?: Address
+  maxLoss?: bigint
   ensoTx?: TEnsoTransaction
 }
 
@@ -92,6 +95,18 @@ function buildYvUsdLockedZapWithdrawCall(params: TBuildSafeWithdrawBatchParams &
   }
 }
 
+function buildYBoldZapperWithdrawCall(params: TBuildSafeWithdrawBatchParams & { account: Address }): TSafeBatchCall {
+  return {
+    to: YBOLD_ZAPPER_ADDRESS,
+    data: encodeFunctionData({
+      abi: yBoldZapperAbi,
+      functionName: 'zapOut',
+      args: [params.amount, params.account, params.maxLoss ?? 0n]
+    }),
+    value: 0n
+  }
+}
+
 function buildEnsoCall(ensoTx?: TEnsoTransaction): TSafeBatchCall | undefined {
   if (!ensoTx) {
     return undefined
@@ -120,11 +135,13 @@ export function buildSafeWithdrawBatch(
   const executionCall =
     params.routeType === 'ENSO'
       ? buildEnsoCall(params.ensoTx)
-      : params.routeType === 'DIRECT_WITHDRAW' &&
-          params.routerAddress &&
-          isAddressEqual(params.routerAddress, YVUSD_LOCKED_ZAP_ADDRESS)
-        ? buildYvUsdLockedZapWithdrawCall({ ...params, account: params.account })
-        : undefined
+      : params.routeType === 'YBOLD_ZAPPER_WITHDRAW'
+        ? buildYBoldZapperWithdrawCall({ ...params, account: params.account })
+        : params.routeType === 'DIRECT_WITHDRAW' &&
+            params.routerAddress &&
+            isAddressEqual(params.routerAddress, YVUSD_LOCKED_ZAP_ADDRESS)
+          ? buildYvUsdLockedZapWithdrawCall({ ...params, account: params.account })
+          : undefined
 
   if (!executionCall) {
     return undefined

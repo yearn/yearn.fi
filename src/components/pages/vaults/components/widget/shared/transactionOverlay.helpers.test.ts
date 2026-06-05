@@ -13,7 +13,8 @@ import {
   shouldAutoContinueFromSuccessState,
   shouldAutoContinuePermitSuccess,
   shouldRefetchNextStepAfterReceipt,
-  shouldRunDeferredCompletion
+  shouldRunDeferredCompletion,
+  shouldStartStepOnOpen
 } from './transactionOverlay.helpers'
 
 describe('resolveOverlayConnectedChainId', () => {
@@ -124,6 +125,38 @@ describe('transactionOverlay.helpers', () => {
         trigger: 'confetti'
       })
     ).toBe(false)
+  })
+})
+
+describe('shouldStartStepOnOpen', () => {
+  const baseParams = {
+    isOpen: true,
+    overlayState: 'idle' as const,
+    hasStep: true,
+    hasStarted: false,
+    isStepReady: false,
+    isPermitStepReady: false,
+    hasPrepareError: false
+  }
+
+  it('starts a ready contract step when the overlay opens', () => {
+    expect(shouldStartStepOnOpen({ ...baseParams, isStepReady: true })).toBe(true)
+  })
+
+  it('waits when a contract step has not prepared yet', () => {
+    expect(shouldStartStepOnOpen(baseParams)).toBe(false)
+  })
+
+  it('starts ready permit steps without contract simulation readiness', () => {
+    expect(shouldStartStepOnOpen({ ...baseParams, isPermitStepReady: true })).toBe(true)
+  })
+
+  it('starts errored prepare steps so the overlay can surface the error state', () => {
+    expect(shouldStartStepOnOpen({ ...baseParams, hasPrepareError: true })).toBe(true)
+  })
+
+  it('does not restart once execution has already started', () => {
+    expect(shouldStartStepOnOpen({ ...baseParams, isStepReady: true, hasStarted: true })).toBe(false)
   })
 })
 
