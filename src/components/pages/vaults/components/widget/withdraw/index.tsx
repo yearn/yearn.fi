@@ -900,8 +900,7 @@ export function WidgetWithdraw({
       if (stakingAddress) {
         tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
       }
-      refetchVaultUserData()
-      await refreshWalletBalances(tokensToRefresh)
+      await Promise.all([Promise.resolve(refetchVaultUserData()), refreshWalletBalances(tokensToRefresh)])
     },
     [
       withdrawToken,
@@ -951,7 +950,7 @@ export function WidgetWithdraw({
     onWithdrawSuccess
   ])
 
-  if (isLoadingVaultData) {
+  if (isLoadingVaultData && !showTransactionOverlay) {
     return <WidgetLoadingSkeleton title="Withdraw" actions={headerActions} disableBorderRadius={disableBorderRadius} />
   }
 

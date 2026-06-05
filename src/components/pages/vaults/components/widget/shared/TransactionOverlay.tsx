@@ -1084,6 +1084,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     }
   }, [isOpen, overlayState, receipt.data?.transactionHash, step?.label, step?.prepare.refetch, isStepReady])
 
+  if (!isOpen) {
+    return null
+  }
+
   return (
     <div
       className="absolute z-50"
@@ -1092,23 +1096,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        pointerEvents: isOpen ? 'auto' : 'none'
+        pointerEvents: 'auto'
       }}
     >
       {/* Semi-transparent backdrop with fade animation */}
-      <div
-        className={cl(
-          'absolute inset-0 bg-black/5 rounded-lg transition-opacity duration-200',
-          isOpen ? 'opacity-100' : 'opacity-0'
-        )}
-      />
+      <div className="absolute inset-0 bg-black/5 rounded-lg transition-opacity duration-200 opacity-100" />
       {/* Overlay content with slide and fade animation */}
-      <div
-        className={cl(
-          'absolute inset-0 bg-surface rounded-lg transition-all duration-300 ease-out flex flex-col',
-          isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        )}
-      >
+      <div className="absolute inset-0 bg-surface rounded-lg transition-all duration-300 ease-out flex flex-col opacity-100 translate-y-0">
         {/* Close button - only shown in success/error/submitted states */}
         {(overlayState === 'success' || overlayState === 'error' || overlayState === 'submitted') && (
           <button
@@ -1129,6 +1123,15 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
             contentAlign === 'center' ? 'justify-center' : 'justify-start pt-8'
           )}
         >
+          {/* Idle State */}
+          {overlayState === 'idle' && (
+            <>
+              <Spinner />
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Preparing transaction</h3>
+              <p className="text-sm text-text-secondary">Getting the next transaction ready...</p>
+            </>
+          )}
+
           {/* Confirming State */}
           {overlayState === 'confirming' && (
             <>

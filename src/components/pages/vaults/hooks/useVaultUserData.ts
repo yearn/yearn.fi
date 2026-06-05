@@ -27,7 +27,7 @@ export interface VaultUserData {
 
   // State
   isLoading: boolean
-  refetch: () => void
+  refetch: () => void | Promise<void>
 }
 
 interface UseVaultUserDataParams {
@@ -180,13 +180,11 @@ export const useVaultUserData = ({
   })
 
   // Combined refetch
-  const refetch = useCallback(() => {
+  const refetch = useCallback(async () => {
     if (!shouldReadVault) {
       return
     }
-    refetchTokens()
-    refetchPPS()
-    refetchStakingWithdrawableAssets()
+    await Promise.allSettled([refetchTokens(), refetchPPS(), refetchStakingWithdrawableAssets()])
   }, [refetchTokens, refetchPPS, refetchStakingWithdrawableAssets, shouldReadVault])
 
   const effectiveStakingWithdrawableAssets = stakingCapacity?.withdrawableAssets ?? stakingShareBalance
