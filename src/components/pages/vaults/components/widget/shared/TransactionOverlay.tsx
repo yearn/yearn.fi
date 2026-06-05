@@ -8,7 +8,7 @@ import {
 } from '@shared/hooks/useAppWagmi'
 import { useSafeTransactionDetails } from '@shared/hooks/useSafeTransactionDetails'
 import type { TCreateNotificationParams } from '@shared/types/notifications'
-import { cl } from '@shared/utils'
+import { cl, isSafeConnectorId } from '@shared/utils'
 import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
 import { getPublicClient } from '@wagmi/core'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
@@ -202,7 +202,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const { switchChainAsync } = useSwitchChain()
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>()
   const { address: account, chain, connector } = useAccount()
-  const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false
+  const isWalletSafe = isSafeConnectorId(connector?.id)
   const connectedChainId = resolveOverlayConnectedChainId({
     accountChainId: chain?.id,
     currentChainId,
