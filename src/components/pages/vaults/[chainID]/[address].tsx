@@ -21,7 +21,6 @@ import type { TWidgetRef } from '@pages/vaults/components/widget'
 import { Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
-import { getDefaultTokenLogoSrc } from '@pages/vaults/components/widget/tokenLogo.utils'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { YvBtcWidget } from '@pages/vaults/components/widget/yvBTC/YvBtcWidget'
 import { YvUsdWidget } from '@pages/vaults/components/widget/yvUSD/YvUsdWidget'
@@ -65,7 +64,6 @@ import { Tooltip } from '@shared/components/Tooltip'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
-import { IconCross } from '@shared/icons/IconCross'
 import { IconInfo } from '@shared/icons/IconInfo'
 import { cl, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
@@ -429,16 +427,6 @@ function YBoldUnstakedTooltip(): ReactElement {
   )
 }
 
-function YBoldStakeInfoBox(): ReactElement {
-  return (
-    <div className="rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm text-text-secondary">
-      {
-        'Once staked, your yBOLD position will earn yield. To withdraw, use the standard withdraw flow. It will unstake and withdraw your position.'
-      }
-    </div>
-  )
-}
-
 function YvUsdMobileKeyMetrics({
   currentVault,
   apyVariant,
@@ -765,14 +753,16 @@ function Index(): ReactElement | null {
   const hasYvUsdFunds = yvUsdUnlockedShareBalance > 0n || yvUsdLockedShareBalance > 0n
   const hasUserFundsInVault = isYvUsd ? hasYvUsdFunds : vaultShareBalance > 0n || stakingShareBalance > 0n
   const canShowUserCharts = !isWalletLoading && hasUserFundsInVault
-  const [isYBoldStakeOverlayOpen, setIsYBoldStakeOverlayOpen] = useState(false)
+  const [isYBoldStakePrefillActive, setIsYBoldStakePrefillActive] = useState(false)
+  const [yBoldStakePrefillAmountSnapshot, setYBoldStakePrefillAmountSnapshot] = useState<string | null>(null)
+  const [yBoldStakePrefillRequestKey, setYBoldStakePrefillRequestKey] = useState(0)
   const retiredVaultAlertMessage = useMemo(() => {
     if (!isRetired || !currentVault) return null
     return getRetiredVaultAlertMessage({ vault: currentVault, hasUserFundsInVault })
   }, [currentVault, hasUserFundsInVault, isRetired])
   const yBoldUnstakedAlertMessage =
     isYBold && vaultShareBalance > 0n
-      ? 'You have unstaked yBOLD. click the button to the right to stake your yBOLD to earn yield.'
+      ? 'You have unstaked yBOLD. Click the button to the right to stake your yBOLD to earn yield.'
       : null
   const shouldShowNonYearnVaultAlert = useMemo(() => {
     return isNonYearnErc4626Vault({
@@ -993,6 +983,7 @@ function Index(): ReactElement | null {
     setIsWidgetSettingsOpen((prev) => {
       const next = !prev
       if (next) {
+        setIsYBoldStakePrefillActive(false)
         setIsWidgetWalletOpen(false)
         setIsWidgetRewardsOpen(false)
       }
@@ -1001,27 +992,30 @@ function Index(): ReactElement | null {
   }
 
   const openWidgetWallet = (): void => {
-    setIsYBoldStakeOverlayOpen(false)
+    setIsYBoldStakePrefillActive(false)
     setIsWidgetWalletOpen(true)
     setIsWidgetSettingsOpen(false)
     setIsWidgetRewardsOpen(false)
   }
 
   const closeWidgetOverlays = (): void => {
-    setIsYBoldStakeOverlayOpen(false)
+    setIsYBoldStakePrefillActive(false)
     setIsWidgetSettingsOpen(false)
     setIsWidgetWalletOpen(false)
     setIsWidgetRewardsOpen(false)
   }
 
   const handleWidgetModeChange = (mode: WidgetActionType): void => {
-    setIsYBoldStakeOverlayOpen(false)
+    if (mode !== WidgetActionType.Deposit) {
+      setIsYBoldStakePrefillActive(false)
+    }
     setWidgetMode(mode)
   }
 
   const isWidgetPanelActive = !isWidgetWalletOpen
 
   const openWidgetRewards = (): void => {
+    setIsYBoldStakePrefillActive(false)
     updateCollapsedWidgetHeight()
     setIsWidgetRewardsOpen(true)
     setIsWidgetSettingsOpen(false)
@@ -1031,26 +1025,27 @@ function Index(): ReactElement | null {
     setIsWidgetRewardsOpen(false)
   }
 
-  const openYBoldStakeWidget = useCallback((): void => {
-    setIsYBoldStakeOverlayOpen(true)
+  const activateYBoldStakePrefill = useCallback((): void => {
+    setYBoldStakePrefillAmountSnapshot(
+      formatUnits(vaultShareBalance, vaultUserData.vaultToken?.decimals ?? currentVault?.decimals ?? 18)
+    )
+    setIsYBoldStakePrefillActive(true)
+    setYBoldStakePrefillRequestKey((current) => current + 1)
+    setWidgetMode(WidgetActionType.Deposit)
+    setMobileDrawerAction(WidgetActionType.Deposit)
     setIsWidgetSettingsOpen(false)
     setIsWidgetWalletOpen(false)
     setIsWidgetRewardsOpen(false)
 
     if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
-      setMobileDrawerAction(WidgetActionType.Deposit)
       setIsMobileDrawerOpen(true)
     }
-  }, [])
-
-  const closeYBoldStakeWidget = useCallback((): void => {
-    setIsYBoldStakeOverlayOpen(false)
-  }, [])
+  }, [currentVault?.decimals, vaultShareBalance, vaultUserData.vaultToken?.decimals])
 
   const yBoldStakeAction = yBoldUnstakedAlertMessage ? (
     <button
       type="button"
-      onClick={openYBoldStakeWidget}
+      onClick={activateYBoldStakePrefill}
       className="yearn--button--nextgen w-full sm:w-auto"
       data-variant="filled"
     >
@@ -1430,7 +1425,7 @@ function Index(): ReactElement | null {
   }, [vaultTourState.isOpen, vaultTourState.stepId, handleSelectSection])
 
   const handleFloatingButtonClick = useCallback((action: WidgetActionType): void => {
-    setIsYBoldStakeOverlayOpen(false)
+    setIsYBoldStakePrefillActive(false)
     setMobileDrawerAction(action)
     setIsMobileDrawerOpen(true)
   }, [])
@@ -1524,6 +1519,51 @@ function Index(): ReactElement | null {
   const mobileProductTypeLabel = getMobileProductTypeLabel()
   const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
+  const liveYBoldStakePrefillAmount = isYBold
+    ? formatUnits(vaultShareBalance, vaultUserData.vaultToken?.decimals ?? resolvedCurrentVault.decimals ?? 18)
+    : ''
+  const yBoldStakePrefillAmount = yBoldStakePrefillAmountSnapshot ?? liveYBoldStakePrefillAmount
+  const shouldForceYBoldStakeDeposit = isYBold && isYBoldStakePrefillActive
+  const yBoldStakeDepositPrefill = shouldForceYBoldStakeDeposit
+    ? {
+        address: toAddress(resolvedCurrentVault.address),
+        chainId,
+        amount: yBoldStakePrefillAmount,
+        requestKey: yBoldStakePrefillRequestKey
+      }
+    : null
+  const handleWidgetSuccess = (): void => {
+    if (!shouldForceYBoldStakeDeposit) {
+      return
+    }
+
+    setIsYBoldStakePrefillActive(false)
+    setYBoldStakePrefillAmountSnapshot(null)
+    refetchSnapshot()
+    refetchYBoldSnapshot()
+    onRefresh([
+      { address: resolvedCurrentVault.address, chainID: resolvedCurrentVault.chainID },
+      { address: resolvedCurrentVault.token.address, chainID: resolvedCurrentVault.chainID },
+      { address: YBOLD_STAKING_ADDRESS, chainID: resolvedCurrentVault.chainID }
+    ])
+  }
+  const handleDepositUserTokenSelectionChange = (nextAddress: `0x${string}`, nextChainId: number): void => {
+    if (!shouldForceYBoldStakeDeposit) {
+      return
+    }
+
+    const isSelectedYBold =
+      nextChainId === chainId && isAddressEqual(toAddress(nextAddress), toAddress(resolvedCurrentVault.address))
+    if (!isSelectedYBold) {
+      setIsYBoldStakePrefillActive(false)
+    }
+  }
+  const handleMobileWidgetModeChange = (mode: WidgetActionType): void => {
+    if (mode !== WidgetActionType.Deposit) {
+      setIsYBoldStakePrefillActive(false)
+    }
+    setMobileDrawerAction(mode)
+  }
   const yvBtcMobileApyBox = (
     <YvUsdApyStatBox
       lockedApy={yvBtcMetrics.locked.apy}
@@ -1595,15 +1635,20 @@ function Index(): ReactElement | null {
         vaultAddress={resolvedCurrentVault.address}
         currentVault={resolvedCurrentVault}
         gaugeAddress={resolvedCurrentVault.staking.address}
-        disableDepositStaking={disableDepositStaking}
+        disableDepositStaking={shouldForceYBoldStakeDeposit ? false : disableDepositStaking}
         actions={widgetActions}
         chainId={chainId}
         vaultUserData={vaultUserData}
+        handleSuccess={handleWidgetSuccess}
         mode={resolvedWidgetMode}
-        onModeChange={setWidgetMode}
+        onModeChange={handleWidgetModeChange}
         showTabs={false}
         onOpenSettings={toggleWidgetSettings}
         isSettingsOpen={isWidgetSettingsOpen}
+        depositPrefill={yBoldStakeDepositPrefill}
+        forceDepositStake={shouldForceYBoldStakeDeposit}
+        depositTitleOverride={shouldForceYBoldStakeDeposit ? 'Stake' : undefined}
+        onDepositUserTokenSelectionChange={handleDepositUserTokenSelectionChange}
         collapseDetails={shouldCollapseWidgetDetails}
       />
     )
@@ -1642,78 +1687,21 @@ function Index(): ReactElement | null {
         vaultAddress={resolvedCurrentVault.address}
         currentVault={resolvedCurrentVault}
         gaugeAddress={resolvedCurrentVault.staking.address}
-        disableDepositStaking={disableDepositStaking}
+        disableDepositStaking={shouldForceYBoldStakeDeposit ? false : disableDepositStaking}
         actions={widgetActions}
         chainId={chainId}
         vaultUserData={vaultUserData}
+        handleSuccess={handleWidgetSuccess}
         mode={mobileDrawerAction}
-        onModeChange={setMobileDrawerAction}
+        onModeChange={handleMobileWidgetModeChange}
         onOpenSettings={toggleWidgetSettings}
         isSettingsOpen={isWidgetSettingsOpen}
+        depositPrefill={yBoldStakeDepositPrefill}
+        forceDepositStake={shouldForceYBoldStakeDeposit}
+        depositTitleOverride={shouldForceYBoldStakeDeposit ? 'Stake' : undefined}
+        onDepositUserTokenSelectionChange={handleDepositUserTokenSelectionChange}
         hideTabSelector={hideMobileDrawerTabs}
         disableBorderRadius
-      />
-    )
-  }
-
-  const yBoldStakePrefillAmount = isYBold
-    ? formatUnits(vaultShareBalance, vaultUserData.vaultToken?.decimals ?? resolvedCurrentVault.decimals ?? 18)
-    : ''
-  const yBoldLogoURI = isYBold
-    ? getDefaultTokenLogoSrc({
-        address: YBOLD_VAULT_ADDRESS,
-        chainId,
-        size: 32
-      })
-    : undefined
-
-  const handleYBoldStakeSuccess = (): void => {
-    setIsYBoldStakeOverlayOpen(false)
-    refetchSnapshot()
-    refetchYBoldSnapshot()
-    onRefresh([
-      { address: resolvedCurrentVault.address, chainID: resolvedCurrentVault.chainID },
-      { address: resolvedCurrentVault.token.address, chainID: resolvedCurrentVault.chainID },
-      { address: YBOLD_STAKING_ADDRESS, chainID: resolvedCurrentVault.chainID }
-    ])
-  }
-
-  function renderYBoldStakeWidget(disableBorderRadius = false): ReactElement {
-    return (
-      <Widget
-        key={`ybold-stake-${yBoldStakePrefillAmount}`}
-        vaultAddress={resolvedCurrentVault.address}
-        currentVault={resolvedCurrentVault}
-        gaugeAddress={resolvedCurrentVault.staking.address}
-        disableDepositStaking={false}
-        actions={[WidgetActionType.Deposit]}
-        chainId={chainId}
-        vaultUserData={vaultUserData}
-        mode={WidgetActionType.Deposit}
-        showTabs={false}
-        hideTabSelector
-        disableBorderRadius={disableBorderRadius}
-        collapseDetails={shouldCollapseWidgetDetails}
-        forceDepositStake
-        depositTitleOverride="Stake yBOLD"
-        depositInputTokenLogoURIOverride={yBoldLogoURI}
-        depositHeaderActions={
-          <button
-            type="button"
-            onClick={closeYBoldStakeWidget}
-            aria-label="Close stake yBOLD widget"
-            className="flex size-7 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
-          >
-            <IconCross className="size-3.5" />
-          </button>
-        }
-        depositContentAboveButton={<YBoldStakeInfoBox />}
-        depositPrefill={{
-          address: toAddress(resolvedCurrentVault.address),
-          chainId,
-          amount: yBoldStakePrefillAmount
-        }}
-        handleSuccess={handleYBoldStakeSuccess}
       />
     )
   }
@@ -1922,8 +1910,7 @@ function Index(): ReactElement | null {
                 'hidden md:block',
                 'order-1 md:order-2',
                 'md:col-span-7 md:col-start-14 md:sticky pt-4',
-                'flex flex-col',
-                isYBoldStakeOverlayOpen && isYBold ? 'overflow-visible' : 'overflow-hidden',
+                'flex flex-col overflow-hidden',
                 desktopWidgetHeightClassNames.container
               )}
               style={{ top: 'var(--vault-header-height, var(--header-height))' }}
@@ -1931,14 +1918,13 @@ function Index(): ReactElement | null {
               <div
                 ref={widgetStackRef}
                 className={cl(
-                  'relative grid w-full min-w-0 flex-1 min-h-0',
-                  isYBoldStakeOverlayOpen && isYBold ? 'overflow-visible' : 'overflow-hidden',
+                  'relative grid w-full min-w-0 flex-1 min-h-0 overflow-hidden',
                   desktopWidgetHeightClassNames.stack,
                   isWidgetRewardsOpen ? 'grid-rows-[auto_minmax(0,1fr)]' : 'grid-rows-[minmax(0,1fr)_auto]'
                 )}
                 style={isWidgetRewardsOpen && collapsedWidgetHeight ? { height: collapsedWidgetHeight } : undefined}
               >
-                <div ref={widgetPrimaryRef} className="relative flex w-full min-w-0 flex-col min-h-0">
+                <div ref={widgetPrimaryRef} className="flex w-full min-w-0 flex-col min-h-0">
                   {isWidgetRewardsOpen ? (
                     <button
                       type="button"
@@ -1964,11 +1950,6 @@ function Index(): ReactElement | null {
                     chainId={chainId}
                     vaultUserData={vaultUserData}
                   />
-                  {isYBoldStakeOverlayOpen && isYBold ? (
-                    <div className="absolute left-0 right-0 top-0 z-20 rounded-lg bg-surface shadow-xl will-change-transform animate-[ybold-stake-slide-in_220ms_ease-out_both] motion-reduce:animate-none motion-reduce:transform-none">
-                      {renderYBoldStakeWidget()}
-                    </div>
-                  ) : null}
                 </div>
                 {shouldShowWidgetRewards ? (
                   <div
@@ -2123,21 +2104,14 @@ function Index(): ReactElement | null {
         <BottomDrawer
           isOpen={isMobileDrawerOpen}
           onClose={() => {
-            setIsYBoldStakeOverlayOpen(false)
+            setIsYBoldStakePrefillActive(false)
             setIsMobileDrawerOpen(false)
           }}
           title={currentVault.name}
           headerActions={isYvUsd ? undefined : <MobileDrawerSettingsButton />}
           panelRef={mobileDrawerPanelRef}
         >
-          <div className="relative">
-            {renderMobileWidget()}
-            {isYBoldStakeOverlayOpen && isYBold ? (
-              <div className="absolute inset-0 z-10 overflow-y-auto bg-surface-secondary will-change-transform animate-[ybold-stake-slide-in_220ms_ease-out_both] motion-reduce:animate-none motion-reduce:transform-none">
-                {renderYBoldStakeWidget(true)}
-              </div>
-            ) : null}
-          </div>
+          {renderMobileWidget()}
         </BottomDrawer>
         <VaultDetailsWelcomeTour onTourStateChange={setVaultTourState} />
       </div>

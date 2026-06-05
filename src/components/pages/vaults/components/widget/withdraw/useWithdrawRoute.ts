@@ -1,4 +1,5 @@
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
+import { isYBoldZapperWithdrawRoute } from '@pages/vaults/utils/yBold'
 import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
@@ -6,22 +7,27 @@ import type { WithdrawalSource, WithdrawRouteType } from './types'
 
 interface UseWithdrawRouteProps {
   vaultAddress: Address
+  sourceToken: Address
   withdrawToken: Address
   assetAddress: Address
+  stakingAddress?: Address
   withdrawalSource: WithdrawalSource
   chainId: number
   outputChainId: number
   isUnstake: boolean
 }
 
-interface ResolveWithdrawRouteTypeProps extends Omit<UseWithdrawRouteProps, 'vaultAddress' | 'chainId'> {
+interface ResolveWithdrawRouteTypeProps extends Omit<UseWithdrawRouteProps, 'chainId'> {
   ensoEnabled: boolean
   chainId: number
 }
 
 export const resolveWithdrawRouteType = ({
+  vaultAddress,
+  sourceToken,
   withdrawToken,
   assetAddress,
+  stakingAddress,
   withdrawalSource,
   chainId,
   outputChainId,
@@ -33,10 +39,26 @@ export const resolveWithdrawRouteType = ({
     return 'DIRECT_UNSTAKE'
   }
 
+  // Case 2: ysyBOLD → BOLD through the native yBOLD zapper
+  if (
+    isYBoldZapperWithdrawRoute({
+      sourceToken,
+      withdrawToken,
+      assetAddress,
+      vaultAddress,
+      stakingAddress,
+      withdrawalSource,
+      chainId,
+      outputChainId
+    })
+  ) {
+    return 'YBOLD_ZAPPER_WITHDRAW'
+  }
+
   const isUnstakeAndWithdrawFallback =
     withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(assetAddress) && chainId === outputChainId
 
-  // Case 2: Staked shares → asset fallback (unstake then withdraw)
+  // Case 3: Staked shares → asset fallback (unstake then withdraw)
   if (isUnstakeAndWithdrawFallback) {
     return 'DIRECT_UNSTAKE_WITHDRAW'
   }
@@ -46,7 +68,7 @@ export const resolveWithdrawRouteType = ({
     return 'DIRECT_WITHDRAW'
   }
 
-  // Case 3: Direct withdraw (vault → asset, same token, from vault source)
+  // Case 4: Direct withdraw (vault → asset, same token, from vault source)
   if (
     toAddress(withdrawToken) === toAddress(assetAddress) &&
     withdrawalSource === 'vault' &&
@@ -55,7 +77,7 @@ export const resolveWithdrawRouteType = ({
     return 'DIRECT_WITHDRAW'
   }
 
-  // Case 4: Everything else uses Enso
+  // Case 5: Everything else uses Enso
   return 'ENSO'
 }
 
@@ -68,8 +90,10 @@ export const resolveWithdrawRouteType = ({
  */
 export const useWithdrawRoute = ({
   vaultAddress,
+  sourceToken,
   withdrawToken,
   assetAddress,
+  stakingAddress,
   withdrawalSource,
   chainId,
   outputChainId,
@@ -79,13 +103,27 @@ export const useWithdrawRoute = ({
 
   return useMemo(() => {
     return resolveWithdrawRouteType({
+      vaultAddress,
+      sourceToken,
       withdrawToken,
       assetAddress,
+      stakingAddress,
       withdrawalSource,
       chainId,
       outputChainId,
       isUnstake,
       ensoEnabled
     })
-  }, [ensoEnabled, isUnstake, withdrawToken, chainId, outputChainId, assetAddress, withdrawalSource])
+  }, [
+    ensoEnabled,
+    isUnstake,
+    vaultAddress,
+    sourceToken,
+    withdrawToken,
+    chainId,
+    outputChainId,
+    assetAddress,
+    stakingAddress,
+    withdrawalSource
+  ])
 }

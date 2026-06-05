@@ -12,4 +12,5 @@ export * from './selectorStyles'
 export * from './tenderlyPanel'
 export * from './tools.address'
 export * from './tools.is'
+export * from './walletConnectors'
 // export * from './tools.math';

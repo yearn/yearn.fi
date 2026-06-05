@@ -1,3 +1,4 @@
+import { YBOLD_ZAPPER_ADDRESS } from '@pages/vaults/utils/yBold'
 import { toAddress } from '@shared/utils'
 import type { Address } from 'viem'
 import type { DepositRouteType } from './types'
@@ -42,6 +43,13 @@ export function getDepositApprovalSpender({
     return {
       spenderAddress: toAddress(routerAddress || destinationToken),
       spenderName: routerAddress ? 'Yearn Zap' : (vaultSymbol ?? 'Vault')
+    }
+  }
+
+  if (routeType === 'YBOLD_ZAPPER') {
+    return {
+      spenderAddress: toAddress(routerAddress || YBOLD_ZAPPER_ADDRESS),
+      spenderName: 'yBOLD Zap'
     }
   }
 

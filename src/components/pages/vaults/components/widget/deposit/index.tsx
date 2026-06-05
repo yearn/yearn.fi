@@ -1,5 +1,6 @@
 import { buildSafeDepositBatch } from '@pages/vaults/components/widget/deposit/safeDepositBatch'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
+import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
@@ -14,7 +15,7 @@ import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { calculateRemainingEnsoSlippagePercentage, ZAP_SLIPPAGE_HARD_CAP } from '@shared/utils/slippage'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { formatUnits } from 'viem'
+import { formatUnits, isAddressEqual } from 'viem'
 import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
@@ -58,8 +59,10 @@ interface Props {
     address: `0x${string}`
     chainId: number
     amount?: string
+    requestKey?: number | string
   }
   onPrefillApplied?: () => void
+  onUserTokenSelectionChange?: (address: `0x${string}`, chainId: number) => void
   forceStake?: boolean
   hideSettings?: boolean
   disableBorderRadius?: boolean
@@ -146,6 +149,7 @@ export function WidgetDeposit({
   onTokenSelectionChange,
   prefill,
   onPrefillApplied,
+  onUserTokenSelectionChange,
   forceStake = false,
   hideSettings: _hideSettings,
   disableBorderRadius,
@@ -180,7 +184,7 @@ export function WidgetDeposit({
     ensoEnabled,
     isWalletSafe
   } = useWidgetContext({ chainId, vaultAddress })
-  const { allVaults } = useYearn()
+  const { allVaults, setIsAutoStakingEnabled } = useYearn()
 
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
@@ -188,6 +192,10 @@ export function WidgetDeposit({
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
+  const [isYBoldAutoStakeWarningDismissing, setIsYBoldAutoStakeWarningDismissing] = useState(false)
+  const [isYBoldAutoStakeWarningExiting, setIsYBoldAutoStakeWarningExiting] = useState(false)
+  const yBoldAutoStakeWarningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const yBoldAutoStakeWarningExitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const {
     assetToken,
@@ -273,7 +281,7 @@ export function WidgetDeposit({
 
   useEffect(() => {
     if (!prefill) return
-    const key = `${prefill.address}-${prefill.chainId}-${prefill.amount}`
+    const key = `${prefill.requestKey ?? ''}-${prefill.address}-${prefill.chainId}-${prefill.amount}`
     if (appliedPrefillRef.current === key) return
     appliedPrefillRef.current = key
 
@@ -297,6 +305,7 @@ export function WidgetDeposit({
     selectedToken,
     selectedChainId,
     assetAddress,
+    allowedTokenAddress: forceStake ? vaultAddress : undefined,
     chainId,
     showTokenSelector,
     setSelectedToken,
@@ -621,6 +630,16 @@ export function WidgetDeposit({
   })
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
+  const approvalFlowKey = useMemo(
+    () =>
+      [routeType, depositToken, destinationToken, sourceChainId, chainId, depositAmount.debouncedBn.toString()].join(
+        ':'
+      ),
+    [chainId, depositAmount.debouncedBn, depositToken, destinationToken, routeType, sourceChainId]
+  )
+  const [completedApprovalFlowKey, setCompletedApprovalFlowKey] = useState<string | null>(null)
+  const hasCompletedApprovalInActiveFlow = completedApprovalFlowKey === approvalFlowKey
+  const effectiveNeedsApproval = needsApproval && !hasCompletedApprovalInActiveFlow
   const safeDepositBatch = useMemo(() => {
     if (!isWalletSafe || !needsApproval) {
       return undefined
@@ -677,19 +696,21 @@ export function WidgetDeposit({
         successMessage: isCrossChain
           ? `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`
           : `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+        isEnabled: activeFlow.periphery.prepareApproveEnabled && safeDepositBatch.calls.length > 0,
         completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams
       }
     }
 
-    if (needsApproval) {
+    if (effectiveNeedsApproval) {
       return {
         prepare: activeFlow.actions.prepareApprove,
         label: 'Approve',
         confirmMessage: `Approving ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Approval successful',
         successMessage: `Approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nReady to deposit.`,
+        isEnabled: activeFlow.periphery.prepareApproveEnabled,
         completesFlow: false,
         notification: approveNotificationParams
       }
@@ -702,6 +723,7 @@ export function WidgetDeposit({
         confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Transaction Submitted',
         successMessage: `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
+        isEnabled: activeFlow.periphery.prepareDepositEnabled,
         completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams
@@ -714,14 +736,17 @@ export function WidgetDeposit({
       confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
       successTitle: `${actionLabel} successful!`,
       successMessage: `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+      isEnabled: activeFlow.periphery.prepareDepositEnabled,
       completesFlow: true,
       showConfetti: true,
       notification: depositNotificationParams
     }
   }, [
-    needsApproval,
+    effectiveNeedsApproval,
     activeFlow.actions.prepareApprove,
     activeFlow.actions.prepareDeposit,
+    activeFlow.periphery.prepareApproveEnabled,
+    activeFlow.periphery.prepareDepositEnabled,
     safeDepositBatch,
     formattedDepositAmount,
     inputToken?.symbol,
@@ -753,6 +778,17 @@ export function WidgetDeposit({
     onResult: setDepositInput
   })
 
+  const depositRefreshTargets = useMemo(() => {
+    const targets = [
+      { address: depositToken, chainID: sourceChainId },
+      { address: vaultAddress, chainID: chainId }
+    ]
+    if (stakingAddress) {
+      targets.push({ address: stakingAddress, chainID: chainId })
+    }
+    return targets
+  }, [chainId, depositToken, sourceChainId, stakingAddress, vaultAddress])
+
   // Called by TransactionOverlay after the final tx confirms on-chain, while the
   // overlay is in "refreshing" state. We await the wallet balance refetch so the
   // success screen appears only once balances are fresh. Not called for cross-chain
@@ -760,26 +796,18 @@ export function WidgetDeposit({
   const handleDepositTransactionSuccess = useCallback(
     async (_label: string) => {
       if (isCrossChain) return
-      const tokensToRefresh = [
-        { address: depositToken, chainID: sourceChainId },
-        { address: vaultAddress, chainID: chainId }
-      ]
-      if (stakingAddress) {
-        tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
-      }
-      refetchVaultUserData()
-      await refreshWalletBalances(tokensToRefresh)
+      await Promise.all([Promise.resolve(refetchVaultUserData()), refreshWalletBalances(depositRefreshTargets)])
     },
-    [
-      isCrossChain,
-      depositToken,
-      sourceChainId,
-      vaultAddress,
-      chainId,
-      stakingAddress,
-      refreshWalletBalances,
-      refetchVaultUserData
-    ]
+    [isCrossChain, depositRefreshTargets, refreshWalletBalances, refetchVaultUserData]
+  )
+
+  const handleDepositStepSuccess = useCallback(
+    (label: string) => {
+      if (label === 'Approve' || label === 'Sign Permit') {
+        setCompletedApprovalFlowKey(approvalFlowKey)
+      }
+    },
+    [approvalFlowKey]
   )
 
   const handleDepositSuccess = useCallback(() => {
@@ -802,20 +830,18 @@ export function WidgetDeposit({
       }
     })
 
+    setCompletedApprovalFlowKey(null)
     setDepositInput('')
+    if (forceStake && routeType === 'DIRECT_STAKE') {
+      setSelectedToken(assetAddress)
+      setSelectedChainId(undefined)
+    }
     // Cross-chain deposits: the transaction submits on source chain but funds
     // don't arrive on destination until minutes later, so there is no on-chain
     // receipt — onBeforeSuccess never fires for these. Refresh balances here
     // instead so the sent tokens are reflected after the bridge completes.
     if (isCrossChain) {
-      const tokensToRefresh = [
-        { address: depositToken, chainID: sourceChainId },
-        { address: vaultAddress, chainID: chainId }
-      ]
-      if (stakingAddress) {
-        tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
-      }
-      refreshWalletBalances(tokensToRefresh)
+      refreshWalletBalances(depositRefreshTargets)
       refetchVaultUserData()
     }
     onDepositSuccess?.()
@@ -830,11 +856,12 @@ export function WidgetDeposit({
     vaultSymbol,
     depositToken,
     routeType,
+    forceStake,
+    assetAddress,
     setDepositInput,
     isCrossChain,
+    depositRefreshTargets,
     refreshWalletBalances,
-    sourceChainId,
-    stakingAddress,
     onDepositSuccess,
     refetchVaultUserData
   ])
@@ -844,12 +871,83 @@ export function WidgetDeposit({
       setDepositInput('')
       setSelectedToken(address)
       setSelectedChainId(tokenChainId)
+      onUserTokenSelectionChange?.(address, tokenChainId ?? chainId)
       setShowTokenSelector(false)
     },
-    [setDepositInput]
+    [chainId, onUserTokenSelectionChange, setDepositInput]
   )
 
-  if (isLoadingVaultData) {
+  const showYBoldAutoStakeWarning =
+    !forceStake &&
+    !isAutoStakingEnabled &&
+    isAddressEqual(vaultAddress, YBOLD_VAULT_ADDRESS) &&
+    Boolean(stakingAddress && isAddressEqual(stakingAddress, YBOLD_STAKING_ADDRESS))
+
+  useEffect(
+    () => () => {
+      if (yBoldAutoStakeWarningTimeoutRef.current) {
+        clearTimeout(yBoldAutoStakeWarningTimeoutRef.current)
+      }
+      if (yBoldAutoStakeWarningExitTimeoutRef.current) {
+        clearTimeout(yBoldAutoStakeWarningExitTimeoutRef.current)
+      }
+    },
+    []
+  )
+
+  useEffect(() => {
+    if (!showYBoldAutoStakeWarning) return
+
+    if (yBoldAutoStakeWarningTimeoutRef.current) {
+      clearTimeout(yBoldAutoStakeWarningTimeoutRef.current)
+      yBoldAutoStakeWarningTimeoutRef.current = null
+    }
+    if (yBoldAutoStakeWarningExitTimeoutRef.current) {
+      clearTimeout(yBoldAutoStakeWarningExitTimeoutRef.current)
+      yBoldAutoStakeWarningExitTimeoutRef.current = null
+    }
+    setIsYBoldAutoStakeWarningDismissing(false)
+    setIsYBoldAutoStakeWarningExiting(false)
+  }, [showYBoldAutoStakeWarning])
+
+  const handleYBoldAutoStakeToggle = useCallback(() => {
+    const nextIsAutoStakingEnabled = !isAutoStakingEnabled
+    setIsAutoStakingEnabled(nextIsAutoStakingEnabled)
+
+    if (nextIsAutoStakingEnabled && showYBoldAutoStakeWarning) {
+      setIsYBoldAutoStakeWarningDismissing(true)
+      setIsYBoldAutoStakeWarningExiting(false)
+      if (yBoldAutoStakeWarningTimeoutRef.current) {
+        clearTimeout(yBoldAutoStakeWarningTimeoutRef.current)
+      }
+      if (yBoldAutoStakeWarningExitTimeoutRef.current) {
+        clearTimeout(yBoldAutoStakeWarningExitTimeoutRef.current)
+      }
+      yBoldAutoStakeWarningExitTimeoutRef.current = setTimeout(() => {
+        setIsYBoldAutoStakeWarningExiting(true)
+        yBoldAutoStakeWarningExitTimeoutRef.current = null
+        yBoldAutoStakeWarningTimeoutRef.current = setTimeout(() => {
+          setIsYBoldAutoStakeWarningDismissing(false)
+          setIsYBoldAutoStakeWarningExiting(false)
+          yBoldAutoStakeWarningTimeoutRef.current = null
+        }, 300)
+      }, 1000)
+      return
+    }
+
+    if (yBoldAutoStakeWarningTimeoutRef.current) {
+      clearTimeout(yBoldAutoStakeWarningTimeoutRef.current)
+      yBoldAutoStakeWarningTimeoutRef.current = null
+    }
+    if (yBoldAutoStakeWarningExitTimeoutRef.current) {
+      clearTimeout(yBoldAutoStakeWarningExitTimeoutRef.current)
+      yBoldAutoStakeWarningExitTimeoutRef.current = null
+    }
+    setIsYBoldAutoStakeWarningDismissing(false)
+    setIsYBoldAutoStakeWarningExiting(false)
+  }, [isAutoStakingEnabled, setIsAutoStakingEnabled, showYBoldAutoStakeWarning])
+
+  if (isLoadingVaultData && !showTransactionOverlay) {
     return (
       <WidgetLoadingSkeleton
         title={titleOverride ?? 'Deposit'}
@@ -942,23 +1040,72 @@ export function WidgetDeposit({
       hasAmount={depositAmount.bn > 0n}
     />
   )
+  const shouldRenderYBoldAutoStakeWarning = showYBoldAutoStakeWarning || isYBoldAutoStakeWarningDismissing
+  const isYBoldAutoStakeToggleOn = isAutoStakingEnabled || isYBoldAutoStakeWarningDismissing
+  const yBoldAutoStakeWarning = shouldRenderYBoldAutoStakeWarning ? (
+    <div
+      className={cl(
+        'rounded-lg border border-primary/80 bg-surface-tertiary/80 px-3 py-2 text-sm text-text-primary transition-all duration-300 ease-out',
+        isYBoldAutoStakeWarningExiting
+          ? 'pointer-events-none -translate-y-1 scale-[0.98] opacity-0'
+          : 'translate-y-0 scale-100 opacity-100'
+      )}
+    >
+      <div className="flex items-center justify-between gap-5">
+        <p className="text-sm leading-5 text-text-primary">
+          <span className="font-semibold">Automatic staking off.</span>
+          <span className="block">If this is not intentional, turn it on by clicking the toggle to the right.</span>
+        </p>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isYBoldAutoStakeToggleOn}
+          aria-label="Toggle automatic staking"
+          disabled={isYBoldAutoStakeWarningDismissing}
+          onClick={handleYBoldAutoStakeToggle}
+          className={cl(
+            'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors',
+            isYBoldAutoStakeToggleOn
+              ? 'border-blue-600 bg-blue-600'
+              : 'border-text-primary/30 bg-text-primary/15 shadow-inner hover:bg-text-primary/20'
+          )}
+        >
+          <span
+            className={cl(
+              'inline-block h-4 w-4 rounded-full border bg-surface shadow-sm transition-transform',
+              isYBoldAutoStakeToggleOn
+                ? 'border-border'
+                : 'border-text-primary/30 [html[data-theme=blue-dark]_&]:bg-white [html[data-theme=dark]_&]:bg-white [html[data-theme=midnight]_&]:bg-white [html[data-theme=soft-dark]_&]:bg-white',
+              isYBoldAutoStakeToggleOn ? 'translate-x-6' : 'translate-x-1'
+            )}
+          />
+        </button>
+      </div>
+    </div>
+  ) : null
 
   const showActionRow = !hideActionButton || !!onOpenSettings
   const showSettingsButton = !!account && !!onOpenSettings
-  const depositButtonLabel = getDepositButtonLabel(isLoadingQuote, needsApproval, routeType, actionLabelOverride)
+  const depositButtonLabel = getDepositButtonLabel(
+    isLoadingQuote,
+    effectiveNeedsApproval,
+    routeType,
+    actionLabelOverride
+  )
   const isDepositButtonDisabled =
     !!effectiveDepositError ||
     depositAmount.bn === 0n ||
     isLoadingQuote ||
     depositAmount.isDebouncing ||
-    (!activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareApproveEnabled) ||
-    (activeFlow.periphery.isAllowanceSufficient && !activeFlow.periphery.prepareDepositEnabled) ||
+    (effectiveNeedsApproval && !activeFlow.periphery.prepareApproveEnabled) ||
+    (!effectiveNeedsApproval && !activeFlow.periphery.prepareDepositEnabled) ||
     (ensoRouteHasSwap && (priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance))
 
   const actionRow = showActionRow ? (
     <div className="flex flex-col gap-3">
       {priceImpactWarning}
       {contentAboveButton}
+      {yBoldAutoStakeWarning}
       <div className="flex items-center gap-2">
         <div className="flex-1">
           {hideActionButton ? null : !account ? (
@@ -1088,11 +1235,12 @@ export function WidgetDeposit({
         isOpen={showTransactionOverlay}
         onClose={() => setShowTransactionOverlay(false)}
         step={currentStep}
-        isLastStep={!needsApproval}
+        isLastStep={!effectiveNeedsApproval}
         deferOnAllCompleteUntilClose={deferSuccessEffectsUntilClose}
         deferOnAllCompleteUntilConfettiEnd={deferSuccessEffectsUntilConfettiEnd}
         autoContinueToNextStep
         autoContinueStepLabels={['Approve', 'Sign Permit']}
+        onStepSuccess={handleDepositStepSuccess}
         onBeforeSuccess={handleDepositTransactionSuccess}
         onAllComplete={handleDepositSuccess}
       />
