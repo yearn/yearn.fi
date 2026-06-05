@@ -6,7 +6,7 @@ import {
   type TKongVaultView
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
-import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import { type TYvUsdListVaults, useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import {
   AGGRESSIVENESS_OPTIONS,
   AVAILABLE_TOGGLE_VALUE,
@@ -56,7 +56,7 @@ type TVaultsListModel = {
   pinnedSections: TVaultsPinnedSection[]
   pinnedVaults: TKongVaultInput[]
   mainVaults: TKongVaultInput[]
-  suggestedVaults: TKongVault[]
+  yvUsdVaults: TYvUsdListVaults
   totalMatchingVaults: number
   totalHoldingsMatching: number
   isLoadingVaultList: boolean
@@ -152,7 +152,8 @@ export function useVaultsListModel({
 
   const isV3View = enabled && (listVaultType === 'v3' || isAllVaults)
   const isV2View = enabled && (listVaultType === 'factory' || isAllVaults)
-  const { listVault: yvUsdVault } = useYvUsdVaults()
+  const yvUsdVaults = useYvUsdVaults()
+  const { listVault: yvUsdVault } = yvUsdVaults
   const { getBalance } = useWallet()
 
   const listV2Types = useMemo(
@@ -191,6 +192,14 @@ export function useVaultsListModel({
     const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).raw
     return unlockedBalance > 0n || lockedBalance > 0n
   }, [getBalance])
+  const yvUsdListVaults = useMemo(
+    (): TYvUsdListVaults => ({
+      metrics: yvUsdVaults.metrics,
+      unlockedVault: yvUsdVaults.unlockedVault,
+      lockedVault: yvUsdVaults.lockedVault
+    }),
+    [yvUsdVaults.lockedVault, yvUsdVaults.metrics, yvUsdVaults.unlockedVault]
+  )
   const v3FilterResult = useV3VaultFilter(
     isV3View ? listV3Types : null,
     listChains,
@@ -208,19 +217,6 @@ export function useVaultsListModel({
     isV2View ? listV2Types : null,
     listChains,
     searchValue,
-    isV2View ? listCategoriesSanitized : null,
-    isV2View ? listAggressivenessSanitized : null,
-    isV2View ? listUnderlyingAssets : null,
-    listMinTvl,
-    listShowHiddenVaults,
-    listFeeStructureKey,
-    isV2View
-  )
-
-  const { filteredVaults: filteredV2VaultsAllChains } = useV2VaultFilter(
-    isV2View ? listV2Types : null,
-    null,
-    '',
     isV2View ? listCategoriesSanitized : null,
     isV2View ? listAggressivenessSanitized : null,
     isV2View ? listUnderlyingAssets : null,
@@ -313,21 +309,6 @@ export function useVaultsListModel({
     return holdingsVaults.length
   }, [holdingsVaults.length])
 
-  const allocatorTypesForTrending = useMemo(() => (isV3View ? ['multi'] : null), [isV3View])
-
-  const { filteredVaults: filteredVaultsAllChains } = useV3VaultFilter(
-    allocatorTypesForTrending,
-    null,
-    '',
-    isV3View ? listCategoriesSanitized : null,
-    isV3View ? listAggressivenessSanitized : null,
-    isV3View ? listUnderlyingAssets : null,
-    listMinTvl,
-    isV3View ? listShowHiddenVaults : undefined,
-    listFeeStructureKey,
-    isV3View
-  )
-
   const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
 
   const holdingsKeySet = useMemo(() => new Set(holdingsVaults.map((vault) => getVaultKey(vault))), [holdingsVaults])
@@ -349,13 +330,6 @@ export function useVaultsListModel({
     () => sortedVaults.filter((vault) => availableKeySet.has(getVaultKey(vault))),
     [sortedVaults, availableKeySet]
   )
-
-  const sortedSuggestedV3Candidates = useSortVaults(
-    removePrelaunchYvBtcVaults(removeRawYvUsdVariants(filteredVaultsAllChains)),
-    'featuringScore',
-    'desc'
-  )
-  const sortedSuggestedV2Candidates = useSortVaults(filteredV2VaultsAllChains, 'featuringScore', 'desc')
 
   const pinnedSections = useMemo(() => {
     const sections: TVaultsPinnedSection[] = [...getProductPinnedSections({ shouldShowYvUsd, yvUsdVault })]
@@ -416,26 +390,6 @@ export function useVaultsListModel({
     return sortedVaults.filter((vault) => !pinnedVaultKeys.has(getVaultKey(vault)))
   }, [pinnedVaultKeys, pinnedVaults.length, sortedVaults])
 
-  const suggestedV3Vaults = useMemo(
-    () => sortedSuggestedV3Candidates.filter((vault) => !holdingsKeySet.has(getVaultKey(vault))).slice(0, 8),
-    [sortedSuggestedV3Candidates, holdingsKeySet]
-  )
-
-  const suggestedV2Vaults = useMemo(
-    () => sortedSuggestedV2Candidates.filter((vault) => !holdingsKeySet.has(getVaultKey(vault))).slice(0, 8),
-    [sortedSuggestedV2Candidates, holdingsKeySet]
-  )
-
-  const suggestedVaults = useMemo(() => {
-    if (listVaultType === 'all') {
-      return [...suggestedV3Vaults, ...suggestedV2Vaults].slice(0, 8)
-    }
-    if (listVaultType === 'v3') {
-      return suggestedV3Vaults
-    }
-    return suggestedV2Vaults
-  }, [listVaultType, suggestedV3Vaults, suggestedV2Vaults])
-
   const underlyingAssetVaults = useMemo(() => {
     if (listVaultType === 'all') {
       return { ...v3FilterResult.underlyingAssetVaults, ...v2FilterResult.underlyingAssetVaults }
@@ -455,7 +409,7 @@ export function useVaultsListModel({
     pinnedSections,
     pinnedVaults,
     mainVaults,
-    suggestedVaults,
+    yvUsdVaults: yvUsdListVaults,
     totalMatchingVaults,
     totalHoldingsMatching,
     isLoadingVaultList

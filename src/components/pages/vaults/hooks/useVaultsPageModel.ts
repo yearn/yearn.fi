@@ -10,7 +10,6 @@ import {
   getVaultChainID,
   getVaultToken,
   getVaultTVL,
-  type TKongVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
@@ -66,6 +65,7 @@ import {
 import { env } from '@/env'
 import { useVaultsListModel } from './useVaultsListModel'
 import { useVaultsQueryState } from './useVaultsQueryState'
+import type { TYvUsdListVaults } from './useYvUsdVaults'
 import { VAULTS_FILTERS_STORAGE_KEY } from './vaultsFiltersStorage'
 
 const DEFAULT_VAULT_TYPES = ['multi', 'single']
@@ -182,6 +182,7 @@ type TVaultsListData = {
   pinnedSections: TVaultsPinnedSection[]
   pinnedVaults: TKongVaultInput[]
   mainVaults: TKongVaultInput[]
+  yvUsdVaults: TYvUsdListVaults
   vaultFlags: Record<string, { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }>
   listChains: number[] | null
   totalMatchingVaults: number
@@ -216,10 +217,6 @@ export type TVaultsPageModel = {
   refs: {
     varsRef: RefObject<HTMLDivElement | null>
     filtersRef: RefObject<HTMLDivElement | null>
-  }
-  header: {
-    vaultType: TVaultType
-    suggestedVaults: TKongVault[]
   }
   filtersBar: TVaultsFiltersBarModel
   list: TVaultsListModel
@@ -385,7 +382,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
     pinnedSections,
     pinnedVaults,
     mainVaults,
-    suggestedVaults,
+    yvUsdVaults,
     totalMatchingVaults,
     totalHoldingsMatching,
     isLoadingVaultList
@@ -1128,10 +1125,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
       varsRef,
       filtersRef
     },
-    header: {
-      vaultType: displayedVaultType,
-      suggestedVaults
-    },
     filtersBar: {
       search: {
         value: searchValue,
@@ -1170,6 +1163,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
         pinnedSections,
         pinnedVaults,
         mainVaults,
+        yvUsdVaults,
         vaultFlags,
         listChains,
         totalMatchingVaults,

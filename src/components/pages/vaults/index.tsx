@@ -11,8 +11,10 @@ import { VaultsListRowSkeleton } from '@pages/vaults/components/list/VaultsListR
 import { VaultsListSearchRecoveryRow } from '@pages/vaults/components/list/VaultsListSearchRecoveryRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import { VaultsWelcomeTour } from '@pages/vaults/components/tour/VaultsWelcomeTour'
-import { getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import type { TYvUsdListVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { toggleInArray } from '@pages/vaults/utils/constants'
+import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
@@ -28,6 +30,10 @@ type TVaultsListSectionProps = {
   isUpdatingList: boolean
   listHead: ReactElement
   children: ReactNode
+}
+
+function getYvUsdVaultsForRow(vault: TKongVaultInput, yvUsdVaults?: TYvUsdListVaults): TYvUsdListVaults | undefined {
+  return isYvUsdAddress(getVaultAddress(vault)) ? yvUsdVaults : undefined
 }
 
 function VaultsListSection({
@@ -99,6 +105,7 @@ export default function Index(): ReactElement {
     pinnedSections,
     pinnedVaults,
     mainVaults,
+    yvUsdVaults,
     vaultFlags,
     listChains,
     totalMatchingVaults,
@@ -380,6 +387,7 @@ export default function Index(): ReactElement {
             showStrategies={displayedShowStrategies}
             expandedVaultKeys={expandedVaultKeys}
             onExpandedChange={handleExpandedChange}
+            yvUsdVaults={yvUsdVaults}
           />
         ))}
         {mainVaults.length > 0 ? (
@@ -411,6 +419,7 @@ export default function Index(): ReactElement {
                   showStrategies={displayedShowStrategies}
                   isExpanded={Boolean(expandedVaultKeys[key])}
                   onExpandedChange={handleExpandedChange}
+                  yvUsdVaults={getYvUsdVaultsForRow(vault, yvUsdVaults)}
                 />
               )
             }}

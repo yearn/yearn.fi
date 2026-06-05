@@ -7,7 +7,7 @@ import { useVaultSnapshot } from './useVaultSnapshot'
 import { useYvUsdPoints } from './useYvUsdPoints'
 import { buildSyntheticBaseVault, buildYvUsdVaultsModel, type TYvUsdMetrics } from './useYvUsdVaults.helpers'
 
-type TYvUsdVaults = {
+export type TYvUsdVaults = {
   assetAddress: `0x${string}`
   baseVault: TKongVaultView
   listVault: TKongVaultView
@@ -19,6 +19,8 @@ type TYvUsdVaults = {
   }
   isLoading: boolean
 }
+
+export type TYvUsdListVaults = Pick<TYvUsdVaults, 'metrics' | 'unlockedVault' | 'lockedVault'>
 
 export function useYvUsdVaults(): TYvUsdVaults {
   const { vaults, isLoadingVaultList } = useYearn()

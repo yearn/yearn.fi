@@ -20,7 +20,7 @@ import {
   getVaultTVL,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
-import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import type { TYvUsdListVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
 import {
   formatFeeStructureFilterAriaLabel,
@@ -190,7 +190,7 @@ function getYvUsdListMetrics({
   currentVault: TKongVaultInput
   apr: ReturnType<typeof getVaultAPR>
   isYvUsd: boolean
-  yvUsdMetrics: ReturnType<typeof useYvUsdVaults>['metrics']
+  yvUsdMetrics: TYvUsdListVaults['metrics']
 }): TYvUsdListMetrics | null {
   if (!isYvUsd) {
     return null
@@ -239,6 +239,7 @@ type TVaultsListRowProps = {
   showProductTypeChipOverride?: boolean
   mobileSecondaryMetric?: 'tvl' | 'holdings'
   expandedChartVariant?: 'default' | 'portfolio-user-tvl-overlay'
+  yvUsdVaults?: TYvUsdListVaults
 }
 
 function VaultsListRowComponent({
@@ -266,7 +267,8 @@ function VaultsListRowComponent({
   showProductTypeChipOverride,
   mobileSecondaryMetric = 'tvl',
   showAllocatorChip = true,
-  expandedChartVariant = 'default'
+  expandedChartVariant = 'default',
+  yvUsdVaults
 }: TVaultsListRowProps): ReactElement {
   const router = useRouter()
   const trackEvent = usePlausible()
@@ -322,11 +324,13 @@ function VaultsListRowComponent({
   const handleInteractiveHoverChange = (isHovering: boolean): void => {
     setInteractiveHoverCount((count) => Math.max(0, count + (isHovering ? 1 : -1)))
   }
-  const { metrics: yvUsdMetrics, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
-  const resolvedYvUsdMetrics = useMemo(
-    () => getYvUsdListMetrics({ currentVault, apr, isYvUsd, yvUsdMetrics }),
-    [apr, currentVault, isYvUsd, yvUsdMetrics]
-  )
+  const yvUsdVaultsForRow = isYvUsd ? yvUsdVaults : undefined
+  const resolvedYvUsdMetrics = useMemo(() => {
+    if (!yvUsdVaultsForRow) {
+      return null
+    }
+    return getYvUsdListMetrics({ currentVault, apr, isYvUsd, yvUsdMetrics: yvUsdVaultsForRow.metrics })
+  }, [apr, currentVault, isYvUsd, yvUsdVaultsForRow])
 
   const yvUsdApyTooltip = resolvedYvUsdMetrics ? (
     <YvUsdApyTooltipContent
@@ -423,8 +427,8 @@ function VaultsListRowComponent({
     if (isYvUsd) {
       const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
       const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-      const unlockedSharePrice = getYvUsdSharePrice(yvUsdUnlockedVault)
-      const lockedSharePrice = getYvUsdSharePrice(yvUsdLockedVault)
+      const unlockedSharePrice = getYvUsdSharePrice(yvUsdVaultsForRow?.unlockedVault)
+      const lockedSharePrice = getYvUsdSharePrice(yvUsdVaultsForRow?.lockedVault)
       return unlockedBalance * unlockedSharePrice + lockedBalance * lockedSharePrice
     }
     return getVaultHoldingsUsd(currentVault)
@@ -434,8 +438,8 @@ function VaultsListRowComponent({
     isYvUsd,
     isWalletLoading,
     getBalance,
-    yvUsdLockedVault,
-    yvUsdUnlockedVault,
+    yvUsdVaultsForRow?.lockedVault,
+    yvUsdVaultsForRow?.unlockedVault,
     currentVault,
     getVaultHoldingsUsd
   ])

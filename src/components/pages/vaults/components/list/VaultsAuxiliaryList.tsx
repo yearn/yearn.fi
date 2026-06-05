@@ -2,6 +2,8 @@ import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import type { TVaultForwardAPYVariant } from '@pages/vaults/components/table/VaultForwardAPY'
 import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import type { TYvUsdListVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import { cl, toAddress } from '@shared/utils'
 
 import type { ReactElement } from 'react'
@@ -36,10 +38,15 @@ type TVaultsAuxiliaryListProps = {
   shouldCollapseChips?: boolean
   expandedVaultKeys?: Record<string, boolean>
   onExpandedChange?: (vaultKey: string, next: boolean) => void
+  yvUsdVaults?: TYvUsdListVaults
 }
 
 function getVaultListKey(vault: TKongVaultInput): string {
   return `${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}`
+}
+
+function getYvUsdVaultsForRow(vault: TKongVaultInput, yvUsdVaults?: TYvUsdListVaults): TYvUsdListVaults | undefined {
+  return isYvUsdAddress(getVaultAddress(vault)) ? yvUsdVaults : undefined
 }
 
 // TODO: the contents of this component override the type filers. This should only happen for HOLDINGS and not AVAILABLE TO DEPOSIT
@@ -63,7 +70,8 @@ export function VaultsAuxiliaryList({
   showStrategies,
   shouldCollapseChips,
   expandedVaultKeys,
-  onExpandedChange
+  onExpandedChange,
+  yvUsdVaults
 }: TVaultsAuxiliaryListProps): ReactElement | null {
   if (vaults.length === 0) {
     return null
@@ -103,6 +111,7 @@ export function VaultsAuxiliaryList({
               showStrategies={showStrategies}
               isExpanded={isExpanded}
               onExpandedChange={onExpandedChange}
+              yvUsdVaults={getYvUsdVaultsForRow(vault, yvUsdVaults)}
             />
           )
         }}
