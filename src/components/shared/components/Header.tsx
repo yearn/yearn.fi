@@ -1,3 +1,5 @@
+'use client'
+
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { toast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
