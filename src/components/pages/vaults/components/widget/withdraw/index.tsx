@@ -5,7 +5,7 @@ import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
 import { cl, formatTAmount, toAddress, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import { calculateRemainingEnsoSlippagePercentage, ZAP_SLIPPAGE_HARD_CAP } from '@shared/utils/slippage'
+import { calculateRemainingEnsoSlippagePercentage, toBasisPoints, ZAP_SLIPPAGE_HARD_CAP } from '@shared/utils/slippage'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
@@ -237,18 +237,6 @@ export function WidgetWithdraw({
     setIsDetailsPanelOpen(false)
   }
 
-  useResetEnsoSelection({
-    ensoEnabled,
-    selectedToken,
-    selectedChainId,
-    assetAddress: resolvedDisplayAssetAddress,
-    chainId,
-    showTokenSelector,
-    setSelectedToken,
-    setSelectedChainId,
-    setShowTokenSelector
-  })
-
   useEffect(() => {
     if (!showTransactionOverlay) {
       setFallbackStep('unstake')
@@ -401,6 +389,7 @@ export function WidgetWithdraw({
 
   const isCrossChain = destinationChainId !== chainId
   const ensoRouteHasSwap = routeType === 'ENSO' && Boolean(activeFlow.periphery.routeHasSwap)
+  const effectiveSourceShares = activeFlow.periphery.shareAmount ?? effectiveRequiredShares
   const effectiveExpectedOut = expectedOutOverride ?? activeFlow.periphery.expectedOut
   const effectiveMinExpectedOut = expectedOutOverride ?? activeFlow.periphery.minExpectedOut
   const displayedExpectedOut = routeType === 'ENSO' && ensoRouteHasSwap ? effectiveMinExpectedOut : effectiveExpectedOut
@@ -416,7 +405,7 @@ export function WidgetWithdraw({
       chainId,
       destinationChainId,
       withdrawAmount: withdrawAmount.debouncedBn,
-      requiredShares: effectiveRequiredShares,
+      requiredShares: effectiveSourceShares,
       expectedOut: displayedExpectedOut,
       routeType,
       routerAddress: activeFlow.periphery.routerAddress,
@@ -453,7 +442,7 @@ export function WidgetWithdraw({
     const hasApprovalStep = Boolean(activeFlow.actions.prepareApprove)
     const isAllowanceSufficient =
       activeFlow.periphery.isAllowanceSufficient ||
-      (optimisticApprovedShares !== null && optimisticApprovedShares >= effectiveRequiredShares)
+      (optimisticApprovedShares !== null && optimisticApprovedShares >= effectiveSourceShares)
     const approvalToken = withdrawalSource === 'staking' ? stakingToken : vault
 
     return {
@@ -470,7 +459,7 @@ export function WidgetWithdraw({
     activeFlow.periphery.isAllowanceSufficient,
     activeFlow.periphery.routerAddress,
     optimisticApprovedShares,
-    effectiveRequiredShares,
+    effectiveSourceShares,
     withdrawalSource,
     stakingToken,
     vault,
@@ -747,7 +736,7 @@ export function WidgetWithdraw({
     decimals: assetToken?.decimals ?? 18
   })
   const formattedRequiredShares = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
-  const formattedApprovalAmount = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
+  const formattedApprovalAmount = formatTAmount({ value: effectiveSourceShares, decimals: sharesDecimals })
   const safeWithdrawBatch = useMemo(() => {
     if (!isWalletSafe || !approvalState.needsApproval) {
       return undefined
@@ -757,11 +746,12 @@ export function WidgetWithdraw({
       routeType,
       account,
       sourceToken: toAddress(sourceToken),
-      amount: effectiveRequiredShares,
+      amount: effectiveSourceShares,
       currentAllowance: activeFlow.periphery.allowance,
       chainId,
       approvalSpenderAddress: approvalState.spenderAddress,
       routerAddress: activeFlow.periphery.routerAddress ? toAddress(activeFlow.periphery.routerAddress) : undefined,
+      maxLoss: BigInt(toBasisPoints(zapSlippage)),
       ensoTx: activeFlow.periphery.tx
         ? {
             to: toAddress(activeFlow.periphery.tx.to),
@@ -778,10 +768,11 @@ export function WidgetWithdraw({
     approvalState.needsApproval,
     approvalState.spenderAddress,
     chainId,
-    effectiveRequiredShares,
+    effectiveSourceShares,
     isWalletSafe,
     routeType,
-    sourceToken
+    sourceToken,
+    zapSlippage
   ])
 
   const currentStep: TransactionStep | undefined = useMemo(
@@ -805,13 +796,19 @@ export function WidgetWithdraw({
         approveNotificationParams,
         unstakeNotificationParams,
         withdrawNotificationParams,
-        safeWithdrawBatch
+        safeWithdrawBatch,
+        prepareApproveEnabled: Boolean(activeFlow.periphery.prepareApproveEnabled),
+        prepareWithdrawEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled),
+        directUnstakePrepareEnabled: Boolean(directUnstakeFlow.periphery.prepareWithdrawEnabled),
+        directWithdrawPrepareEnabled: Boolean(directWithdrawFlow.periphery.prepareWithdrawEnabled)
       }),
     [
       approvalState.needsApproval,
       activeFlow.actions.prepareApprove,
       activeFlow.actions.prepareWithdraw,
       directUnstakeFlow.actions.prepareWithdraw,
+      directUnstakeFlow.periphery.prepareWithdrawEnabled,
+      directWithdrawFlow.periphery.prepareWithdrawEnabled,
       effectiveDirectWithdrawPrepare,
       fallbackStep,
       routeType,
@@ -826,7 +823,9 @@ export function WidgetWithdraw({
       approveNotificationParams,
       unstakeNotificationParams,
       withdrawNotificationParams,
-      safeWithdrawBatch
+      safeWithdrawBatch,
+      activeFlow.periphery.prepareApproveEnabled,
+      activeFlow.periphery.prepareWithdrawEnabled
     ]
   )
 
@@ -854,13 +853,14 @@ export function WidgetWithdraw({
         void refreshWalletBalances(tokensToRefresh)
         refetchVaultUserData()
       } else if (label === 'Approve') {
-        setOptimisticApprovedShares(effectiveRequiredShares)
+        setOptimisticApprovedShares(effectiveSourceShares)
       }
     },
     [
       routeType,
       isMaxWithdraw,
       effectiveRequiredShares,
+      effectiveSourceShares,
       vaultAddress,
       chainId,
       stakingAddress,
@@ -888,8 +888,7 @@ export function WidgetWithdraw({
       if (stakingAddress) {
         tokensToRefresh.push({ address: stakingAddress, chainID: chainId })
       }
-      refetchVaultUserData()
-      await refreshWalletBalances(tokensToRefresh)
+      await Promise.all([Promise.resolve(refetchVaultUserData()), refreshWalletBalances(tokensToRefresh)])
     },
     [
       withdrawToken,
@@ -939,7 +938,7 @@ export function WidgetWithdraw({
     onWithdrawSuccess
   ])
 
-  if (isLoadingVaultData) {
+  if (isLoadingVaultData && !showTransactionOverlay) {
     return <WidgetLoadingSkeleton title="Withdraw" actions={headerActions} disableBorderRadius={disableBorderRadius} />
   }
 

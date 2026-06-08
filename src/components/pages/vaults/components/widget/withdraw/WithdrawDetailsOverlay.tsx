@@ -38,6 +38,7 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
 }) => {
   const isFromStaking = withdrawalSource === 'staking'
   const isUnstake = routeType === 'DIRECT_UNSTAKE'
+  const isYBoldZapperWithdraw = routeType === 'YBOLD_ZAPPER_WITHDRAW'
   const isUnstakeAndWithdrawFallback = routeType === 'DIRECT_UNSTAKE_WITHDRAW'
 
   const renderReceiveValue = () => {
@@ -97,6 +98,12 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
                 Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> will be unstaked.
                 You'll receive <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
               </>
+            ) : isYBoldZapperWithdraw ? (
+              <>
+                Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> staked shares will be
+                redeemed through the yBOLD zapper. You'll receive{' '}
+                <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
+              </>
             ) : isUnstakeAndWithdrawFallback ? (
               <>
                 Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> staked shares will be
@@ -138,6 +145,11 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
               <>
                 Unstaking converts your staked position back to vault shares. Your vault shares continue to earn yield
                 and can be redeemed for the underlying asset anytime.
+              </>
+            ) : isYBoldZapperWithdraw ? (
+              <>
+                The yBOLD zapper redeems your staked shares directly to the underlying asset in a single transaction.
+                The final amount respects your configured slippage.
               </>
             ) : isUnstakeAndWithdrawFallback ? (
               <>

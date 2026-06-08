@@ -75,7 +75,11 @@ export const useWithdrawNotifications = ({
 
   // Approve notification: approving source token (vault/staking shares) to Enso router
   const approveNotificationParams = useMemo((): TCreateNotificationParams | undefined => {
-    if (!vault || !account || routeType !== 'ENSO' || !routerAddress) return undefined
+    if (!vault || !account || !routerAddress || (routeType !== 'ENSO' && routeType !== 'YBOLD_ZAPPER_WITHDRAW')) {
+      return undefined
+    }
+
+    const spenderSymbol = routeType === 'ENSO' ? 'Enso Router' : 'Yearn Zap'
 
     return {
       type: 'approve',
@@ -84,7 +88,7 @@ export const useWithdrawNotifications = ({
       fromSymbol: sourceTokenInfo.symbol,
       fromChainId: chainId,
       toAddress: toAddress(routerAddress),
-      toSymbol: 'Enso Router'
+      toSymbol: spenderSymbol
     }
   }, [vault, account, routeType, routerAddress, requiredShares, sourceTokenInfo, sourceToken, chainId])
 
@@ -134,6 +138,8 @@ export const useWithdrawNotifications = ({
       notificationType = 'unstake'
     } else if (routeType === 'DIRECT_UNSTAKE_WITHDRAW') {
       notificationType = 'withdraw'
+    } else if (routeType === 'YBOLD_ZAPPER_WITHDRAW') {
+      notificationType = 'unstake and withdraw'
     }
 
     return {

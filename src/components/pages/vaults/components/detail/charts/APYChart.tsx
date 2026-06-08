@@ -35,8 +35,8 @@ const SERIES_META: Record<SeriesKey, { chartLabel: string; legendLabel: string; 
     color: 'var(--chart-3)'
   },
   thirtyDayApy: {
-    chartLabel: '30-day APY %',
-    legendLabel: '30-day APY',
+    chartLabel: 'Historical APY %',
+    legendLabel: 'Historical APY',
     color: 'var(--chart-1)'
   }
 }
