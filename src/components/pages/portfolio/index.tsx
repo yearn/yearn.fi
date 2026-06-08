@@ -18,7 +18,6 @@ import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
-import { Notification } from '@pages/vaults/components/notifications/Notification'
 import { SuggestedVaultCard } from '@pages/vaults/components/SuggestedVaultCard'
 import { MerkleRewardRow } from '@pages/vaults/components/widget/rewards/MerkleRewardRow'
 import { StakingRewardRow } from '@pages/vaults/components/widget/rewards/StakingRewardRow'
@@ -79,6 +78,13 @@ import type { CSSProperties, ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { env } from '@/env'
 import Image from '/src/components/Image'
+import {
+  doesActivityEntryMatchSearch,
+  doesLocalActivityMatchFilters,
+  isRecentLocalActivityEntry,
+  isZapNotification,
+  toLocalActivityEntry
+} from './activity.helpers'
 import type {
   TGrowthDisplayMode,
   TPortfolioHistoryChartTab,
@@ -1760,14 +1766,72 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       }),
     [activityChainId, activityChainOptions, displayedActivityNetworks]
   )
-  const unresolvedLocalEntries = useMemo(
+  const unresolvedLocalActivityEntries = useMemo(
     () =>
       cachedEntries
         .filter((entry) => entry.status !== 'success')
-        .toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)),
-    [cachedEntries]
+        .filter((entry) =>
+          doesLocalActivityMatchFilters({
+            chainId: activityChainId,
+            endTimestamp: activityEndTimestamp,
+            filters: activityFilters,
+            notification: entry,
+            startTimestamp: activityStartTimestamp
+          })
+        )
+        .filter((entry) => !isActivityZapFilterActive || isZapNotification(entry))
+        .map((entry) => toLocalActivityEntry(entry, { fallbackTimestamp: Math.floor(Date.now() / 1000) }))
+        .filter((entry): entry is TPortfolioActivityEntry => Boolean(entry))
+        .filter((entry) => doesActivityEntryMatchSearch(entry, activitySearch, allVaults)),
+    [
+      activityChainId,
+      activityEndTimestamp,
+      activityFilters,
+      activitySearch,
+      activityStartTimestamp,
+      allVaults,
+      cachedEntries,
+      isActivityZapFilterActive
+    ]
   )
-  const hasUnresolvedLocalEntries = unresolvedLocalEntries.length > 0
+  const indexedTxHashes = useMemo(
+    () => new Set(indexedEntries.map((entry) => entry.txHash.toLowerCase())),
+    [indexedEntries]
+  )
+  const recentLocalEntries = useMemo(
+    () =>
+      cachedEntries
+        .filter((entry) => isRecentLocalActivityEntry(entry, indexedTxHashes))
+        .filter((entry) =>
+          doesLocalActivityMatchFilters({
+            chainId: activityChainId,
+            endTimestamp: activityEndTimestamp,
+            filters: activityFilters,
+            notification: entry,
+            startTimestamp: activityStartTimestamp
+          })
+        )
+        .filter((entry) => !isActivityZapFilterActive || isZapNotification(entry))
+        .toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)),
+    [
+      activityChainId,
+      activityEndTimestamp,
+      activityFilters,
+      activityStartTimestamp,
+      cachedEntries,
+      indexedTxHashes,
+      isActivityZapFilterActive
+    ]
+  )
+  const recentLocalActivityEntries = useMemo(
+    () =>
+      recentLocalEntries
+        .map((entry) => toLocalActivityEntry(entry))
+        .filter((entry): entry is TPortfolioActivityEntry => Boolean(entry))
+        .filter((entry) => doesActivityEntryMatchSearch(entry, activitySearch, allVaults)),
+    [activitySearch, allVaults, recentLocalEntries]
+  )
+  const hasLocalEntries = unresolvedLocalActivityEntries.length > 0 || recentLocalActivityEntries.length > 0
   const hasIndexedEntries = indexedEntries.length > 0
   const hasActiveIndexedFilters =
     activityChainId !== null ||
@@ -1776,8 +1840,6 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     activityFilters.startDate !== '' ||
     activityFilters.endDate !== DEFAULT_ACTIVITY_MODAL_FILTERS.endDate
   const visibleIndexedEntries = useMemo(() => {
-    const normalizedSearch = activitySearch.trim().toLowerCase()
-
     return indexedEntries.filter((entry) => {
       if (activityFilters.types.length > 0 && !activityFilters.types.includes(entry.action)) {
         return false
@@ -1790,28 +1852,16 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         return false
       }
 
-      if (!normalizedSearch) {
-        return true
-      }
-
-      const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
-      const activityVault = allVaults[toAddress(entry.vaultAddress)]
-      const displayName = familyVault
-        ? getVaultName(familyVault)
-        : activityVault
-          ? getVaultName(activityVault)
-          : truncateHex(entry.familyVaultAddress, 5)
-      const chainName = getActivityChainName(entry.chainId)
-      const actionLabel = getActivityEntryTitle(entry)
-      const formattedDate = formatIndexedActivityDate(entry.timestamp)
-      const symbols = [entry.assetSymbol, entry.inputTokenSymbol, entry.outputTokenSymbol].filter(Boolean).join(' ')
-
-      return [displayName, chainName, actionLabel, formattedDate, symbols, entry.txHash]
-        .join(' ')
-        .toLowerCase()
-        .includes(normalizedSearch)
+      return doesActivityEntryMatchSearch(entry, activitySearch, allVaults)
     })
   }, [activityFilters.types, activitySearch, allVaults, indexedEntries, isActivityZapFilterActive])
+  const visibleActivityEntries = useMemo(
+    () =>
+      [...unresolvedLocalActivityEntries, ...recentLocalActivityEntries, ...visibleIndexedEntries].toSorted(
+        (firstEntry, secondEntry) => secondEntry.timestamp - firstEntry.timestamp
+      ),
+    [recentLocalActivityEntries, unresolvedLocalActivityEntries, visibleIndexedEntries]
+  )
 
   function handleActivityChainSelect(chainId: number): void {
     setActivityChainId(resolveNextSingleChainSelection(selectedActivityChains, chainId)?.[0] ?? null)
@@ -1952,8 +2002,71 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     )
   }
 
-  function renderIndexedActivity(): ReactElement {
-    if (indexedLoading) {
+  function renderActivityRow(entry: TPortfolioActivityEntry, index: number): ReactElement {
+    const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
+    const activityVault = allVaults[toAddress(entry.vaultAddress)]
+    const sourceVault =
+      entry.action === 'swap' && entry.inputTokenAddress ? allVaults[toAddress(entry.inputTokenAddress)] : null
+    const assetToken = familyVault ? getVaultToken(familyVault) : activityVault ? getVaultToken(activityVault) : null
+    const familyVaultSymbol = familyVault
+      ? getVaultSymbol(familyVault)
+      : activityVault
+        ? getVaultSymbol(activityVault)
+        : entry.assetSymbol
+    const displayName = familyVault
+      ? getVaultName(familyVault)
+      : activityVault
+        ? getVaultName(activityVault)
+        : (entry.assetSymbol ?? truncateHex(entry.familyVaultAddress, 5))
+    const stakingToken =
+      entry.action === 'stake' || entry.action === 'unstake'
+        ? getToken({ address: toAddress(entry.vaultAddress), chainID: entry.chainId })
+        : null
+    const stakingTokenSymbol =
+      stakingToken && toAddress(stakingToken.address) === toAddress(entry.vaultAddress)
+        ? stakingToken.symbol || null
+        : null
+    const shareSymbol =
+      entry.action === 'stake' || entry.action === 'unstake'
+        ? (stakingTokenSymbol ?? familyVaultSymbol)
+        : familyVault
+          ? getVaultSymbol(familyVault)
+          : activityVault
+            ? getVaultSymbol(activityVault)
+            : entry.assetSymbol
+    const fallbackLogoAddress =
+      entry.familyVaultAddress && !isZeroAddress(entry.familyVaultAddress)
+        ? entry.familyVaultAddress
+        : entry.vaultAddress
+    const assetAddress =
+      assetToken && !isZeroAddress(assetToken.address)
+        ? assetToken.address
+        : fallbackLogoAddress && !isZeroAddress(fallbackLogoAddress)
+          ? fallbackLogoAddress
+          : null
+
+    return (
+      <IndexedActivityRow
+        entry={entry}
+        displayName={displayName}
+        isFirstRow={index === 0}
+        isLastRow={index === visibleActivityEntries.length - 1}
+        isChainFilterActive={activityChainId === entry.chainId}
+        isZapFilterActive={isActivityZapFilterActive}
+        isVaultFilterActive={activitySearch === displayName}
+        sourceShareSymbol={sourceVault ? getVaultSymbol(sourceVault) : null}
+        shareSymbol={shareSymbol}
+        assetAddress={assetAddress}
+        onSelectChain={handleActivityChainSelect}
+        onOpenDateRange={handleActivityDateChipOpen}
+        onSelectZap={handleActivityZapSelect}
+        onSelectVault={handleActivityVaultSelect}
+      />
+    )
+  }
+
+  function renderActivityList(): ReactElement {
+    if (indexedLoading && visibleActivityEntries.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center gap-2 py-6 text-sm text-text-secondary">
           <IconSpinner className="size-5 animate-spin text-text-secondary" />
@@ -1962,7 +2075,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       )
     }
 
-    if (indexedError) {
+    if (indexedError && visibleActivityEntries.length === 0) {
       return (
         <div className="py-6 text-center">
           <p className="text-sm font-medium text-red-600">{'Error loading activity'}</p>
@@ -1971,95 +2084,30 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       )
     }
 
-    if (indexedEmpty || visibleIndexedEntries.length === 0) {
+    if (visibleActivityEntries.length === 0) {
       return (
         <div className="py-6 text-center text-sm text-text-secondary">
           {hasActiveIndexedFilters || activitySearch.trim()
-            ? 'No indexed activity matches these filters.'
-            : 'No indexed activity to show.'}
+            ? 'No activity matches these filters.'
+            : 'No activity to show.'}
         </div>
       )
     }
 
     return (
       <VirtualizedVaultsList
-        items={visibleIndexedEntries}
+        items={visibleActivityEntries}
         estimateSize={132}
         itemSpacingClassName="border-b-2 border-border md:border-b"
         getItemKey={getActivityEntryKey}
         onEndReached={indexedHasMore ? handleIndexedActivityEndReached : undefined}
-        renderItem={(entry, index) => {
-          const familyVault = allVaults[toAddress(entry.familyVaultAddress)]
-          const activityVault = allVaults[toAddress(entry.vaultAddress)]
-          const sourceVault =
-            entry.action === 'swap' && entry.inputTokenAddress ? allVaults[toAddress(entry.inputTokenAddress)] : null
-          const assetToken = familyVault
-            ? getVaultToken(familyVault)
-            : activityVault
-              ? getVaultToken(activityVault)
-              : null
-          const familyVaultSymbol = familyVault
-            ? getVaultSymbol(familyVault)
-            : activityVault
-              ? getVaultSymbol(activityVault)
-              : entry.assetSymbol
-          const displayName = familyVault
-            ? getVaultName(familyVault)
-            : activityVault
-              ? getVaultName(activityVault)
-              : truncateHex(entry.familyVaultAddress, 5)
-          const stakingToken =
-            entry.action === 'stake' || entry.action === 'unstake'
-              ? getToken({ address: toAddress(entry.vaultAddress), chainID: entry.chainId })
-              : null
-          const stakingTokenSymbol =
-            stakingToken && toAddress(stakingToken.address) === toAddress(entry.vaultAddress)
-              ? stakingToken.symbol || null
-              : null
-          const shareSymbol =
-            entry.action === 'stake' || entry.action === 'unstake'
-              ? (stakingTokenSymbol ?? familyVaultSymbol)
-              : familyVault
-                ? getVaultSymbol(familyVault)
-                : activityVault
-                  ? getVaultSymbol(activityVault)
-                  : entry.assetSymbol
-          const fallbackLogoAddress =
-            entry.familyVaultAddress && !isZeroAddress(entry.familyVaultAddress)
-              ? entry.familyVaultAddress
-              : entry.vaultAddress
-          const assetAddress =
-            assetToken && !isZeroAddress(assetToken.address)
-              ? assetToken.address
-              : fallbackLogoAddress && !isZeroAddress(fallbackLogoAddress)
-                ? fallbackLogoAddress
-                : null
-
-          return (
-            <IndexedActivityRow
-              entry={entry}
-              displayName={displayName}
-              isFirstRow={index === 0}
-              isLastRow={index === visibleIndexedEntries.length - 1}
-              isChainFilterActive={activityChainId === entry.chainId}
-              isZapFilterActive={isActivityZapFilterActive}
-              isVaultFilterActive={activitySearch === displayName}
-              sourceShareSymbol={sourceVault ? getVaultSymbol(sourceVault) : null}
-              shareSymbol={shareSymbol}
-              assetAddress={assetAddress}
-              onSelectChain={handleActivityChainSelect}
-              onOpenDateRange={handleActivityDateChipOpen}
-              onSelectZap={handleActivityZapSelect}
-              onSelectVault={handleActivityVaultSelect}
-            />
-          )
-        }}
+        renderItem={renderActivityRow}
       />
     )
   }
 
   function renderActivityContent(): ReactElement {
-    if (notificationsLoading && indexedLoading && !hasUnresolvedLocalEntries) {
+    if (notificationsLoading && indexedLoading && !hasLocalEntries) {
       return (
         <div className="flex flex-col items-center justify-center gap-2 py-6 text-sm text-text-secondary">
           <IconSpinner className="size-5 animate-spin text-text-secondary" />
@@ -2068,7 +2116,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       )
     }
 
-    if (notificationsError && !hasUnresolvedLocalEntries && !hasIndexedEntries && indexedEmpty) {
+    if (notificationsError && !hasLocalEntries && !hasIndexedEntries && indexedEmpty) {
       return (
         <div className="py-6 text-center">
           <p className="text-sm font-medium text-red-600">{'Error loading activity'}</p>
@@ -2077,32 +2125,16 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       )
     }
 
-    if (!hasUnresolvedLocalEntries && !hasIndexedEntries && indexedEmpty && !hasActiveIndexedFilters) {
+    if (!hasLocalEntries && !hasIndexedEntries && indexedEmpty && !hasActiveIndexedFilters) {
       return <div className="py-6 text-center text-sm text-text-secondary">{'No transactions to show.'}</div>
     }
 
     return (
       <div className="flex flex-col gap-6">
-        {hasUnresolvedLocalEntries && (
-          <div className="flex flex-col gap-3">
-            <div>
-              <h3 className="text-sm font-semibold text-text-primary">{'Pending local transactions'}</h3>
-              <p className="text-xs text-text-secondary">
-                {'These entries come from this browser and may appear before the indexer catches up.'}
-              </p>
-            </div>
-            <div className="flex flex-col">
-              {unresolvedLocalEntries.map((entry) => (
-                <Notification key={`notification-${entry.id}`} notification={entry} variant="v3" />
-              ))}
-            </div>
-          </div>
-        )}
-
         <div className="flex flex-col gap-2">
           {renderActivityFilters()}
           <div className="overflow-visible bg-surface md:rounded-lg md:border md:border-border">
-            {renderIndexedActivity()}
+            {renderActivityList()}
           </div>
           {indexedHasMore && (
             <div className="flex justify-center">

@@ -9,7 +9,7 @@ interface SourceSelectorProps {
 export const SourceSelector: FC<SourceSelectorProps> = ({ value, onChange }) => {
   return (
     <div className="">
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 mb-3">
         <div className="relative">
           <select
             value={value || ''}

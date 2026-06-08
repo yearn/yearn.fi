@@ -39,7 +39,7 @@ const KATANA_APY_DATA = {
 } as TVaultApyData
 
 describe('resolveHistoricalApyDisplayConfig', () => {
-  it('includes Spectra boost details in Katana 30 Day APY modal content', () => {
+  it('includes Spectra boost details in Katana Historical APY modal content', () => {
     const { modalConfig } = resolveHistoricalApyDisplayConfig({
       currentVault: KATANA_SPECTRA_VAULT,
       data: KATANA_APY_DATA,

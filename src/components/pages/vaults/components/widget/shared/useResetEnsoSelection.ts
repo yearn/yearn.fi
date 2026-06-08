@@ -6,6 +6,7 @@ interface UseResetEnsoSelectionParams {
   selectedToken?: Address
   selectedChainId?: number
   assetAddress: Address
+  allowedTokenAddress?: Address
   chainId: number
   showTokenSelector: boolean
   setSelectedToken: Dispatch<SetStateAction<Address | undefined>>
@@ -18,6 +19,7 @@ export function useResetEnsoSelection({
   selectedToken,
   selectedChainId,
   assetAddress,
+  allowedTokenAddress,
   chainId,
   showTokenSelector,
   setSelectedToken,
@@ -29,7 +31,13 @@ export function useResetEnsoSelection({
       return
     }
 
-    const hasNonAssetTokenSelected = selectedToken !== undefined && !isAddressEqual(selectedToken, assetAddress)
+    const hasAllowedTokenSelected =
+      selectedToken !== undefined &&
+      allowedTokenAddress !== undefined &&
+      isAddressEqual(selectedToken, allowedTokenAddress) &&
+      (selectedChainId === undefined || selectedChainId === chainId)
+    const hasNonAssetTokenSelected =
+      selectedToken !== undefined && !isAddressEqual(selectedToken, assetAddress) && !hasAllowedTokenSelected
     const hasCrossChainSelection = selectedChainId !== undefined && selectedChainId !== chainId
 
     if (!hasNonAssetTokenSelected && !hasCrossChainSelection && !showTokenSelector) {
@@ -50,6 +58,7 @@ export function useResetEnsoSelection({
     selectedToken,
     selectedChainId,
     assetAddress,
+    allowedTokenAddress,
     chainId,
     showTokenSelector,
     setSelectedToken,

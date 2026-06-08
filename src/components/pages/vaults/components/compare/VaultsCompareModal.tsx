@@ -212,7 +212,7 @@ function DesktopCompareGrid({
           ))}
 
           <MetricLabel
-            label={'30 Day APY'}
+            label={'Historical APY'}
             sublabel={'Average realized APY'}
             onMouseEnter={(): void => setActiveColumn(null)}
           />

@@ -59,7 +59,7 @@ export function KatanaApyTooltipContent({
   currentVault
 }: Omit<TKatanaTooltipProps, 'children' | 'position' | 'className'>): ReactElement {
   const width = maxWidth || 'w-full max-w-[360px]'
-  const resolvedNativeYieldLabel = nativeYieldLabel ?? 'Katana Native 30 Day APY'
+  const resolvedNativeYieldLabel = nativeYieldLabel ?? 'Katana Native Historical APY'
   const baseAssetsUrl = env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI
   const chainId = getVaultChainID(currentVault)
   const tokenAddress = getVaultToken(currentVault).address.toLowerCase()
