@@ -1,7 +1,12 @@
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import type { ReactNode } from 'react'
 
-export type WithdrawRouteType = 'DIRECT_WITHDRAW' | 'DIRECT_UNSTAKE' | 'DIRECT_UNSTAKE_WITHDRAW' | 'ENSO'
+export type WithdrawRouteType =
+  | 'DIRECT_WITHDRAW'
+  | 'DIRECT_UNSTAKE'
+  | 'DIRECT_UNSTAKE_WITHDRAW'
+  | 'YBOLD_ZAPPER_WITHDRAW'
+  | 'ENSO'
 
 export type WithdrawalSource = 'vault' | 'staking' | null
 

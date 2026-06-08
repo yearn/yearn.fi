@@ -97,6 +97,7 @@ type TResolveCooldownSharesToStartParams = {
 
 type TBuildLockedWithdrawStepParams = {
   phase: TLockedWithdrawStepPhase
+  mode?: 'unlock' | 'unlock-and-withdraw'
   lockedStepMethod: TLockedWithdrawMethod
   prepareLockedWithdraw: TransactionStep['prepare']
   prepareUnlockedWithdraw: TransactionStep['prepare']
@@ -154,7 +155,7 @@ export function resolveLockedRequestedWithdrawAssets({
     return 0n
   }
 
-  if (maxDisplayAmount > 0n && requestedDisplayAmount >= maxDisplayAmount) {
+  if (maxDisplayAmount > 0n && requestedDisplayAmount === maxDisplayAmount) {
     return maxWithdrawAssets
   }
 
@@ -473,6 +474,7 @@ export function buildLockedWithdrawNoZapExecutionPlan(params: {
 
 export function buildLockedWithdrawTransactionStep({
   phase,
+  mode = 'unlock-and-withdraw',
   lockedStepMethod,
   prepareLockedWithdraw,
   prepareUnlockedWithdraw,
@@ -500,14 +502,28 @@ export function buildLockedWithdrawTransactionStep({
   })
 
   if (phase === 'withdraw') {
+    if (mode === 'unlock') {
+      return {
+        prepare: prepareLockedWithdraw,
+        label: 'Unlock',
+        confirmMessage:
+          lockedStepMethod === 'redeem'
+            ? `Unlocking ${formattedLockedShares} ${lockedVaultTokenSymbol} from the locked vault`
+            : `Unlocking ${formattedLockedAssets} ${lockedAssetSymbol} from the locked vault`,
+        successTitle: 'Unlock successful',
+        successMessage: `Received ${formattedLockedAssets} ${lockedAssetSymbol}.`,
+        completesFlow: true
+      }
+    }
+
     return {
       prepare: prepareLockedWithdraw,
-      label: 'Withdraw to yvUSD',
+      label: 'Unlock to yvUSD',
       confirmMessage:
         lockedStepMethod === 'redeem'
-          ? `Redeeming ${formattedLockedShares} ${lockedVaultTokenSymbol} from the locked vault`
-          : `Withdrawing ${formattedLockedAssets} ${lockedAssetSymbol} from the locked vault`,
-      successTitle: lockedStepMethod === 'redeem' ? 'Locked redeem successful' : 'Locked withdraw successful',
+          ? `Unlocking ${formattedLockedShares} ${lockedVaultTokenSymbol} from the locked vault`
+          : `Unlocking ${formattedLockedAssets} ${lockedAssetSymbol} from the locked vault`,
+      successTitle: 'Unlock successful',
       successMessage: `Received ${formattedLockedAssets} ${lockedAssetSymbol}. Continuing to withdraw ${formattedUnderlyingOut} ${underlyingSymbol}.`,
       completesFlow: false
     }
