@@ -60,11 +60,12 @@
     "@vitejs/plugin-react": "5.1.4",
     "bump": "0.2.5",
     "husky": "9.1.7",
+    "jsdom": "29.1.1",
     "lint-staged": "16.2.7",
     "postcss": "8.5.15",
     "tailwindcss": "4.1.18",
     "typescript": "5.9.3",
     "vite": "7.3.2",
-    "vitest": "1.6.1"
+    "vitest": "4.1.8"
   }
 }

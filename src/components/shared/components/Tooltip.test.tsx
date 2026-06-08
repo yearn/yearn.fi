@@ -1,18 +1,35 @@
 // @vitest-environment jsdom
-import { render } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 import { act } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Tooltip } from './Tooltip'
 
 function hover(element: HTMLElement): void {
-  element.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+  fireEvent.mouseEnter(element)
 }
 
 function click(element: HTMLElement): void {
-  element.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  fireEvent.click(element)
 }
 
 describe('Tooltip', () => {
+  beforeEach(() => {
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      configurable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: true,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn()
+      }))
+    })
+  })
+
   it('delays opening when openDelayMs is set', () => {
     vi.useFakeTimers()
     const { container, queryByText } = render(
@@ -22,7 +39,9 @@ describe('Tooltip', () => {
     )
 
     const trigger = container.firstChild as HTMLElement
-    hover(trigger)
+    act(() => {
+      hover(trigger)
+    })
     expect(queryByText('Tip')).toBeNull()
 
     act(() => {
@@ -40,9 +59,13 @@ describe('Tooltip', () => {
     )
 
     const trigger = container.firstChild as HTMLElement
-    click(trigger)
+    act(() => {
+      click(trigger)
+    })
     expect(queryByText('Tip')).not.toBeNull()
-    click(trigger)
+    act(() => {
+      click(trigger)
+    })
     expect(queryByText('Tip')).toBeNull()
   })
 

@@ -2,13 +2,13 @@
 
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import { render } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 import { act } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { VaultForwardAPY } from './VaultForwardAPY'
 
-vi.mock('@vaults/hooks/useVaultApyData', () => ({
+vi.mock('@pages/vaults/hooks/useVaultApyData', () => ({
   useVaultApyData: vi.fn()
 }))
 
@@ -20,7 +20,7 @@ const vault = {
 } as unknown as TKongVaultInput
 
 function hover(element: Element): void {
-  element.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+  fireEvent.mouseEnter(element)
 }
 
 describe('VaultForwardAPY', () => {
@@ -50,8 +50,8 @@ describe('VaultForwardAPY', () => {
     expect(trigger).not.toBeNull()
     expect(queryByText('+ 2500 ARB/week')).toBeNull()
 
-    hover(trigger as Element)
     act(() => {
+      hover(trigger as Element)
       vi.advanceTimersByTime(150)
     })
 
