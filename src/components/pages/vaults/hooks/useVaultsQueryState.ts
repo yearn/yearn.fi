@@ -1,11 +1,26 @@
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
-import { DEFAULT_MIN_TVL, readBooleanParam } from '@pages/vaults/utils/constants'
-import { normalizeUnderlyingAssetSymbol } from '@pages/vaults/utils/vaultListFacets'
+import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
+import {
+  areQuerySnapshotsEqual,
+  areStringListsEqual,
+  buildSnapshotFromParams,
+  buildUrlParamsFromSnapshot,
+  clearVaultQueryParams,
+  hasVaultQueryParams,
+  normalizeChainsSelection,
+  normalizeMinTvl,
+  normalizeUnderlyingAssetList,
+  normalizeV3Types,
+  parseSortDirection,
+  sanitizeStringList,
+  type TVaultsQueryDefaults,
+  type TVaultsQuerySnapshot
+} from '@pages/vaults/utils/vaultsQueryState'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { getSupportedChainsForVaultType, normalizeVaultTypeParam } from '@pages/vaults/utils/vaultTypeUtils'
 import type { TSortDirection } from '@shared/types'
 import { copyToClipboard } from '@shared/utils/helpers'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 type TVaultsQueryStateConfig = {
@@ -20,6 +35,7 @@ type TVaultsQueryStateConfig = {
   clearUrlAfterInit?: boolean
   shareUpdatesUrl?: boolean
   syncUrlOnChange?: boolean
+  initialSnapshot?: TVaultsQuerySnapshot
 }
 
 type TVaultsQueryState = {
@@ -53,257 +69,6 @@ type TVaultsQueryState = {
   onResetMultiSelect: () => void
   onResetExtraFilters: () => void
   onShareFilters: () => void
-}
-
-type TVaultsQuerySnapshot = {
-  vaultType: TVaultType
-  search: string
-  types: string[]
-  categories: string[]
-  chains: number[] | null
-  aggressiveness: string[]
-  underlyingAssets: string[]
-  minTvl: number
-  showLegacyVaults: boolean
-  showHiddenVaults: boolean
-  showStrategies: boolean
-  sortBy: TPossibleSortBy
-  sortDirection: TSortDirection
-}
-
-type TVaultsQueryDefaults = {
-  defaultTypes: string[]
-  defaultCategories: string[]
-  defaultSortBy: TPossibleSortBy
-}
-
-type TNormalizedSortDirection = 'asc' | 'desc'
-
-const DEFAULT_SORT_DIRECTION: TNormalizedSortDirection = 'desc'
-const V3_TYPES = new Set(['multi', 'single'])
-const VAULTS_QUERY_KEYS = [
-  'type',
-  'search',
-  'types',
-  'categories',
-  'chains',
-  'aggr',
-  'assets',
-  'minTvl',
-  'showLegacy',
-  'showHidden',
-  'showStrategies',
-  'sortBy',
-  'sortDirection'
-]
-
-function hasVaultQueryParams(params: URLSearchParams): boolean {
-  return VAULTS_QUERY_KEYS.some((key) => params.has(key))
-}
-
-function clearVaultQueryParams(params: URLSearchParams): URLSearchParams {
-  const nextParams = new URLSearchParams(params)
-  VAULTS_QUERY_KEYS.forEach((key) => {
-    nextParams.delete(key)
-  })
-  return nextParams
-}
-
-function applyBooleanParam(params: URLSearchParams, key: string, value: boolean): void {
-  if (value) {
-    params.set(key, '1')
-  } else {
-    params.delete(key)
-  }
-}
-
-function sanitizeStringList(values: string[] | null | undefined): string[] {
-  if (!values || values.length === 0) {
-    return []
-  }
-  const seen = new Set<string>()
-  const sanitized: string[] = []
-  for (const value of values) {
-    const trimmed = value.trim()
-    if (!trimmed || seen.has(trimmed)) {
-      continue
-    }
-    seen.add(trimmed)
-    sanitized.push(trimmed)
-  }
-  return sanitized
-}
-
-function sanitizeNumberList(values: number[] | null | undefined): number[] {
-  if (!values || values.length === 0) {
-    return []
-  }
-  const seen = new Set<number>()
-  const sanitized: number[] = []
-  for (const value of values) {
-    const numeric = Number(value)
-    if (!Number.isFinite(numeric) || seen.has(numeric)) {
-      continue
-    }
-    seen.add(numeric)
-    sanitized.push(numeric)
-  }
-  return sanitized
-}
-
-function normalizeStringList(values: string[] | null | undefined): string[] {
-  const sanitized = sanitizeStringList(values)
-  return sanitized.sort((left, right) => left.localeCompare(right))
-}
-
-function normalizeNumberList(values: number[] | null | undefined): number[] {
-  const sanitized = sanitizeNumberList(values)
-  return sanitized.sort((left, right) => left - right)
-}
-
-function normalizeUnderlyingAssetList(values: string[] | null | undefined): string[] {
-  const sanitized = sanitizeStringList(values)
-    .map((value) => normalizeUnderlyingAssetSymbol(value))
-    .filter(Boolean)
-  return normalizeStringList(sanitized)
-}
-
-function normalizeMinTvl(value: string | number | null | undefined, fallback = DEFAULT_MIN_TVL): number {
-  if (value === null || value === undefined || value === '') {
-    return fallback
-  }
-  const numeric = Number(value)
-  if (!Number.isFinite(numeric)) {
-    return fallback
-  }
-  return Math.max(0, numeric)
-}
-
-function areStringListsEqual(left: string[] | null | undefined, right: string[] | null | undefined): boolean {
-  const normalizedLeft = normalizeStringList(left)
-  const normalizedRight = normalizeStringList(right)
-  if (normalizedLeft.length !== normalizedRight.length) {
-    return false
-  }
-  return normalizedLeft.every((value, index) => value === normalizedRight[index])
-}
-
-function areNumberListsEqual(left: number[] | null | undefined, right: number[] | null | undefined): boolean {
-  const normalizedLeft = normalizeNumberList(left)
-  const normalizedRight = normalizeNumberList(right)
-  if (normalizedLeft.length !== normalizedRight.length) {
-    return false
-  }
-  return normalizedLeft.every((value, index) => value === normalizedRight[index])
-}
-
-function parseStringList(raw: string | null): string[] {
-  if (!raw || raw === 'none') {
-    return []
-  }
-  return sanitizeStringList(
-    raw
-      .split('_')
-      .map((value) => value.trim())
-      .filter(Boolean)
-  )
-}
-
-function parseNumberList(raw: string | null): number[] {
-  if (!raw || raw === '0') {
-    return []
-  }
-  return sanitizeNumberList(
-    raw
-      .split('_')
-      .map((value) => Number(value))
-      .filter((value) => Number.isFinite(value))
-  )
-}
-
-function normalizeV3Types(types: string[] | null | undefined): string[] {
-  return sanitizeStringList(types).filter((value) => V3_TYPES.has(value))
-}
-
-function normalizeChainsSelection(values: number[] | null | undefined, supportedChains: number[]): number[] | null {
-  const supportedSet = new Set(supportedChains)
-  const normalized = normalizeNumberList(values).filter((chainId) => supportedSet.has(chainId))
-  if (normalized.length === 0) {
-    return null
-  }
-  const normalizedSupported = normalizeNumberList(supportedChains)
-  if (
-    normalized.length === normalizedSupported.length &&
-    normalized.every((chainId, index) => chainId === normalizedSupported[index])
-  ) {
-    return null
-  }
-  return normalized
-}
-
-function parseSortDirection(raw: string | null): TNormalizedSortDirection {
-  return raw === 'asc' || raw === 'desc' ? raw : DEFAULT_SORT_DIRECTION
-}
-
-function areQuerySnapshotsEqual(left: TVaultsQuerySnapshot, right: TVaultsQuerySnapshot): boolean {
-  return (
-    left.vaultType === right.vaultType &&
-    left.search === right.search &&
-    areStringListsEqual(left.types, right.types) &&
-    areStringListsEqual(left.categories, right.categories) &&
-    areNumberListsEqual(left.chains ?? [], right.chains ?? []) &&
-    areStringListsEqual(left.aggressiveness, right.aggressiveness) &&
-    areStringListsEqual(left.underlyingAssets, right.underlyingAssets) &&
-    left.minTvl === right.minTvl &&
-    left.showLegacyVaults === right.showLegacyVaults &&
-    left.showHiddenVaults === right.showHiddenVaults &&
-    left.showStrategies === right.showStrategies &&
-    left.sortBy === right.sortBy &&
-    left.sortDirection === right.sortDirection
-  )
-}
-
-function buildSnapshotFromParams(params: URLSearchParams, defaults: TVaultsQueryDefaults): TVaultsQuerySnapshot {
-  const vaultType = normalizeVaultTypeParam(params.get('type'))
-  const rawTypes = parseStringList(params.get('types'))
-  const hasTypesParam = params.has('types')
-  const normalizedTypes = normalizeV3Types(rawTypes)
-  const types = hasTypesParam ? normalizedTypes : defaults.defaultTypes
-  const categories = params.has('categories') ? parseStringList(params.get('categories')) : defaults.defaultCategories
-  const chains = normalizeChainsSelection(
-    parseNumberList(params.get('chains')),
-    getSupportedChainsForVaultType(vaultType)
-  )
-  const aggressiveness = parseStringList(params.get('aggr'))
-  const underlyingAssets = normalizeUnderlyingAssetList(
-    params.has('assets') ? parseStringList(params.get('assets')) : []
-  )
-  const minTvl = normalizeMinTvl(params.get('minTvl'), DEFAULT_MIN_TVL)
-  const search = params.get('search') ?? ''
-  const showLegacyParam = params.get('showLegacy')
-  const showLegacyFromParam = showLegacyParam !== null ? readBooleanParam(params, 'showLegacy') : false
-  const legacyFallback = rawTypes.includes('legacy')
-  const showLegacyVaults = showLegacyParam !== null ? showLegacyFromParam : legacyFallback
-  const showHiddenVaults = false
-  const showStrategies = readBooleanParam(params, 'showStrategies')
-  const sortBy = (params.get('sortBy') as TPossibleSortBy) || defaults.defaultSortBy
-  const sortDirection = parseSortDirection(params.get('sortDirection'))
-
-  return {
-    vaultType,
-    search,
-    types,
-    categories,
-    chains,
-    aggressiveness,
-    underlyingAssets,
-    minTvl,
-    showLegacyVaults,
-    showHiddenVaults,
-    showStrategies,
-    sortBy,
-    sortDirection
-  }
 }
 
 function readSnapshotFromStorage(storageKey: string, defaults: TVaultsQueryDefaults): TVaultsQuerySnapshot | null {
@@ -352,11 +117,8 @@ function readSnapshotFromStorage(storageKey: string, defaults: TVaultsQueryDefau
 }
 
 export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQueryState {
-  const searchParams = useSearchParams()
   const pathname = usePathname() || config.defaultPathname || '/vaults'
   const router = useRouter()
-  const searchParamsString = searchParams.toString()
-  const urlSearchParams = useMemo(() => new URLSearchParams(searchParamsString), [searchParamsString])
   const defaults = useMemo(
     (): TVaultsQueryDefaults => ({
       defaultTypes: config.defaultTypes ?? [],
@@ -373,6 +135,12 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
   const shouldSyncUrlOnChange = Boolean(config.syncUrlOnChange)
   const isInitialMountRef = useRef(true)
   const isOwnUrlUpdateRef = useRef(false)
+  const getCurrentUrlSearchParams = useCallback((): URLSearchParams => {
+    if (typeof window === 'undefined') {
+      return new URLSearchParams()
+    }
+    return new URLSearchParams(window.location.search)
+  }, [])
   const replaceSearchParams = useCallback(
     (nextParams: URLSearchParams): void => {
       const query = nextParams.toString()
@@ -382,8 +150,12 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
   )
 
   const [snapshot, setSnapshot] = useState<TVaultsQuerySnapshot>(() => {
-    if (hasVaultQueryParams(urlSearchParams)) {
-      return buildSnapshotFromParams(urlSearchParams, defaults)
+    if (config.initialSnapshot) {
+      return config.initialSnapshot
+    }
+    const initialParams = getCurrentUrlSearchParams()
+    if (hasVaultQueryParams(initialParams)) {
+      return buildSnapshotFromParams(initialParams, defaults)
     }
     if (shouldSyncUrlOnChange) {
       return buildSnapshotFromParams(new URLSearchParams(), defaults)
@@ -397,26 +169,35 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     return buildSnapshotFromParams(new URLSearchParams(), defaults)
   })
 
-  const hasVaultParams = hasVaultQueryParams(urlSearchParams)
-
   useEffect(() => {
-    if (!hasVaultParams) {
-      return
+    if (typeof window === 'undefined') {
+      return undefined
     }
-    if (isOwnUrlUpdateRef.current) {
-      isOwnUrlUpdateRef.current = false
-      return
+
+    const syncSnapshotFromLocation = (): void => {
+      const urlSearchParams = getCurrentUrlSearchParams()
+      if (!hasVaultQueryParams(urlSearchParams)) {
+        return
+      }
+      if (isOwnUrlUpdateRef.current) {
+        isOwnUrlUpdateRef.current = false
+        return
+      }
+      const nextSnapshot = buildSnapshotFromParams(urlSearchParams, defaults)
+      setSnapshot((prev) => (areQuerySnapshotsEqual(prev, nextSnapshot) ? prev : nextSnapshot))
+      if (!shouldClearUrlAfterInit) {
+        return
+      }
+      const clearedParams = clearVaultQueryParams(urlSearchParams)
+      if (clearedParams.toString() !== urlSearchParams.toString()) {
+        replaceSearchParams(clearedParams)
+      }
     }
-    const nextSnapshot = buildSnapshotFromParams(urlSearchParams, defaults)
-    setSnapshot((prev) => (areQuerySnapshotsEqual(prev, nextSnapshot) ? prev : nextSnapshot))
-    if (!shouldClearUrlAfterInit) {
-      return
-    }
-    const clearedParams = clearVaultQueryParams(urlSearchParams)
-    if (clearedParams.toString() !== urlSearchParams.toString()) {
-      replaceSearchParams(clearedParams)
-    }
-  }, [defaults, hasVaultParams, replaceSearchParams, shouldClearUrlAfterInit, urlSearchParams])
+
+    syncSnapshotFromLocation()
+    window.addEventListener('popstate', syncSnapshotFromLocation)
+    return () => window.removeEventListener('popstate', syncSnapshotFromLocation)
+  }, [defaults, getCurrentUrlSearchParams, replaceSearchParams, shouldClearUrlAfterInit])
 
   useEffect(() => {
     if (!shouldPersistToStorage || typeof window === 'undefined') {
@@ -513,7 +294,7 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
 
   const onChangeSortDirection = useCallback((value: TSortDirection | ''): void => {
     isOwnUrlUpdateRef.current = true
-    setSnapshot((prev) => ({ ...prev, sortDirection: value || DEFAULT_SORT_DIRECTION }))
+    setSnapshot((prev) => ({ ...prev, sortDirection: value || 'desc' }))
   }, [])
 
   const onResetMultiSelect = useCallback((): void => {
@@ -539,71 +320,9 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     }))
   }, [])
 
-  const buildUrlParamsFromSnapshot = useCallback(
-    (snap: TVaultsQuerySnapshot): URLSearchParams => {
-      const params = new URLSearchParams()
-      const supportedChains = getSupportedChainsForVaultType(snap.vaultType)
-
-      if (snap.vaultType === 'v3') {
-        params.set('type', 'single')
-      } else if (snap.vaultType === 'factory') {
-        params.set('type', 'lp')
-      }
-
-      const trimmedSearch = snap.search.trim()
-      if (trimmedSearch) {
-        params.set('search', trimmedSearch)
-      }
-
-      const normalizedTypes = normalizeV3Types(snap.types)
-      if (!areStringListsEqual(normalizedTypes, defaultTypes) && normalizedTypes.length > 0) {
-        params.set('types', normalizeStringList(normalizedTypes).join('_'))
-      }
-
-      const normalizedCategories = sanitizeStringList(snap.categories)
-      if (!areStringListsEqual(normalizedCategories, defaultCategories) && normalizedCategories.length > 0) {
-        params.set('categories', normalizeStringList(normalizedCategories).join('_'))
-      }
-
-      const normalizedChains = normalizeChainsSelection(snap.chains, supportedChains)
-      if (normalizedChains && normalizedChains.length > 0) {
-        params.set('chains', normalizedChains.join('_'))
-      }
-
-      const normalizedAggressiveness = normalizeStringList(snap.aggressiveness)
-      if (normalizedAggressiveness.length > 0) {
-        params.set('aggr', normalizedAggressiveness.join('_'))
-      }
-
-      const normalizedUnderlyingAssets = normalizeUnderlyingAssetList(snap.underlyingAssets)
-      if (normalizedUnderlyingAssets.length > 0) {
-        params.set('assets', normalizedUnderlyingAssets.join('_'))
-      }
-
-      if (snap.minTvl !== DEFAULT_MIN_TVL) {
-        params.set('minTvl', String(snap.minTvl))
-      }
-
-      applyBooleanParam(params, 'showLegacy', snap.showLegacyVaults)
-      applyBooleanParam(params, 'showStrategies', snap.showStrategies)
-
-      if (snap.sortBy !== defaultSortBy) {
-        params.set('sortBy', snap.sortBy)
-      }
-
-      const normalizedSortDirection = parseSortDirection(snap.sortDirection)
-      if (normalizedSortDirection !== DEFAULT_SORT_DIRECTION) {
-        params.set('sortDirection', normalizedSortDirection)
-      }
-
-      return params
-    },
-    [defaultTypes, defaultCategories, defaultSortBy]
-  )
-
   const buildShareParams = useCallback((): URLSearchParams => {
-    return buildUrlParamsFromSnapshot(snapshot)
-  }, [buildUrlParamsFromSnapshot, snapshot])
+    return buildUrlParamsFromSnapshot(snapshot, defaults)
+  }, [defaults, snapshot])
 
   const onShareFilters = useCallback((): void => {
     const nextParams = buildShareParams()
@@ -628,9 +347,9 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
       isInitialMountRef.current = false
       return
     }
-    const nextParams = buildUrlParamsFromSnapshot(snapshot)
+    const nextParams = buildUrlParamsFromSnapshot(snapshot, defaults)
     const nextQuery = nextParams.toString()
-    const currentQuery = urlSearchParams.toString()
+    const currentQuery = getCurrentUrlSearchParams().toString()
     if (nextQuery === currentQuery || nextQuery === lastSyncedQueryRef.current) {
       return
     }
@@ -639,7 +358,7 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     startTransition(() => {
       replaceSearchParams(nextParams)
     })
-  }, [snapshot, buildUrlParamsFromSnapshot, replaceSearchParams, shouldSyncUrlOnChange, urlSearchParams])
+  }, [snapshot, defaults, getCurrentUrlSearchParams, replaceSearchParams, shouldSyncUrlOnChange])
 
   return {
     vaultType: snapshot.vaultType,

@@ -2,15 +2,9 @@ import { usePlausible } from '@hooks/usePlausible'
 import { TOOLTIP_DELAY_MS } from '@pages/vaults/utils/vaultTagCopy'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { getVaultTypeDescription, getVaultTypeLabel } from '@pages/vaults/utils/vaultTypeCopy'
-import {
-  getSupportedChainsForVaultType,
-  normalizeVaultTypeParam,
-  sanitizeChainsParam
-} from '@pages/vaults/utils/vaultTypeUtils'
 import { Tooltip } from '@shared/components/Tooltip'
 import { cl } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactElement } from 'react'
 
 type TVaultVersionToggleProps = {
@@ -23,14 +17,9 @@ type TVaultVersionToggleProps = {
 
 type TButtonConfig = {
   type: TVaultType
-  typeParam: string
 }
 
-const BUTTON_CONFIGS: TButtonConfig[] = [
-  { type: 'all', typeParam: 'all' },
-  { type: 'v3', typeParam: 'single' },
-  { type: 'factory', typeParam: 'lp' }
-]
+const BUTTON_CONFIGS: TButtonConfig[] = [{ type: 'all' }, { type: 'v3' }, { type: 'factory' }]
 
 export function VaultVersionToggle({
   className,
@@ -39,28 +28,12 @@ export function VaultVersionToggle({
   onTypeChange,
   isPending
 }: TVaultVersionToggleProps): ReactElement {
-  const searchParams = useSearchParams()
-  const pathname = usePathname() || '/vaults'
-  const router = useRouter()
   const trackEvent = usePlausible()
-  const normalizedType = normalizeVaultTypeParam(searchParams.get('type'))
-  const resolvedType = activeType ?? normalizedType
+  const resolvedType = activeType ?? 'all'
 
   function handleClick(config: TButtonConfig): void {
     trackEvent(PLAUSIBLE_EVENTS.FILTER_VAULT_TYPE, { props: { value: config.type } })
-    if (onTypeChange) {
-      onTypeChange(config.type)
-      return
-    }
-    const nextParams = new URLSearchParams(searchParams.toString())
-    if (config.typeParam === 'all') {
-      nextParams.delete('type')
-    } else {
-      nextParams.set('type', config.typeParam)
-    }
-    sanitizeChainsParam(nextParams, getSupportedChainsForVaultType(config.type))
-    const query = nextParams.toString()
-    router.replace(`${pathname}${query ? `?${query}` : ''}`, { scroll: false })
+    onTypeChange?.(config.type)
   }
 
   function isActive(type: TVaultType): boolean {

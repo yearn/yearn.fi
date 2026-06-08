@@ -41,6 +41,11 @@ import {
   normalizeUnderlyingAssetSymbol,
   type TVaultAggressiveness
 } from '@pages/vaults/utils/vaultListFacets'
+import {
+  DEFAULT_VAULT_QUERY_SORT_BY,
+  DEFAULT_VAULT_QUERY_TYPES,
+  type TVaultsQuerySnapshot
+} from '@pages/vaults/utils/vaultsQueryState'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { getSupportedChainsForVaultType } from '@pages/vaults/utils/vaultTypeUtils'
 import { useMediaQuery } from '@react-hookz/web'
@@ -68,8 +73,8 @@ import { useVaultsQueryState } from './useVaultsQueryState'
 import type { TYvUsdListVaults } from './useYvUsdVaults'
 import { VAULTS_FILTERS_STORAGE_KEY } from './vaultsFiltersStorage'
 
-const DEFAULT_VAULT_TYPES = ['multi', 'single']
-const DEFAULT_SORT_BY: TPossibleSortBy = 'tvl'
+const DEFAULT_VAULT_TYPES = DEFAULT_VAULT_QUERY_TYPES
+const DEFAULT_SORT_BY: TPossibleSortBy = DEFAULT_VAULT_QUERY_SORT_BY
 
 const areArraysEquivalent = (
   a: Array<string | number> | null | undefined,
@@ -225,7 +230,7 @@ export type TVaultsPageModel = {
   list: TVaultsListModel
 }
 
-export function useVaultsPageModel(): TVaultsPageModel {
+export function useVaultsPageModel(initialQueryState?: TVaultsQuerySnapshot): TVaultsPageModel {
   const { address } = useWeb3()
   const hasWalletAddress = !!address
   const {
@@ -267,7 +272,8 @@ export function useVaultsPageModel(): TVaultsPageModel {
     storageKey: VAULTS_FILTERS_STORAGE_KEY,
     clearUrlAfterInit: false,
     shareUpdatesUrl: true,
-    syncUrlOnChange: true
+    syncUrlOnChange: true,
+    initialSnapshot: initialQueryState
   })
 
   usePrefetchYearnVaults(vaultType === 'v3')

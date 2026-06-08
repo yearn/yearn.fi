@@ -9,11 +9,13 @@ import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
 import { VaultsListRowPresentation } from '@pages/vaults/components/list/VaultsListRow'
 import { VaultsListRowSkeleton } from '@pages/vaults/components/list/VaultsListRowSkeleton'
 import { VaultsListSearchRecoveryRow } from '@pages/vaults/components/list/VaultsListSearchRecoveryRow'
+import { VaultsStaticList } from '@pages/vaults/components/list/VaultsStaticList'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import { VaultsWelcomeTour } from '@pages/vaults/components/tour/VaultsWelcomeTour'
 import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TYvUsdListVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { toggleInArray } from '@pages/vaults/utils/constants'
+import type { TVaultsQuerySnapshot } from '@pages/vaults/utils/vaultsQueryState'
 import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
@@ -23,6 +25,7 @@ import { cl } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { TPublicVaultListViewModel } from '@/server/ssr/publicVaultListViewModel'
 import { useVaultsPageModel } from './hooks/useVaultsPageModel'
 
 type TVaultsListSectionProps = {
@@ -30,6 +33,11 @@ type TVaultsListSectionProps = {
   isUpdatingList: boolean
   listHead: ReactElement
   children: ReactNode
+}
+
+type TVaultsPageProps = {
+  initialQueryState?: TVaultsQuerySnapshot
+  initialPublicVaultList?: TPublicVaultListViewModel
 }
 
 function getYvUsdVaultsForRow(vault: TKongVaultInput, yvUsdVaults?: TYvUsdListVaults): TYvUsdListVaults | undefined {
@@ -84,8 +92,8 @@ function VaultsListSection({
   )
 }
 
-export default function Index(): ReactElement {
-  const { refs, filtersBar, list } = useVaultsPageModel()
+export default function Index({ initialQueryState, initialPublicVaultList }: TVaultsPageProps): ReactElement {
+  const { refs, filtersBar, list } = useVaultsPageModel(initialQueryState)
   const trackEvent = usePlausible()
   const { varsRef, filtersRef } = refs
   const { search, filters, chains, shouldStackFilters, activeVaultType, onChangeVaultType } = filtersBar
@@ -337,6 +345,10 @@ export default function Index(): ReactElement {
 
   const vaultListContent = useMemo(() => {
     if (isLoading) {
+      if (initialPublicVaultList?.vaults.length) {
+        return <VaultsStaticList vaults={initialPublicVaultList.vaults} />
+      }
+
       return (
         <div className={'flex flex-col gap-px bg-border'}>
           <VirtualizedVaultsList
@@ -456,6 +468,7 @@ export default function Index(): ReactElement {
     handleToggleCompare,
     hiddenByFiltersCount,
     hasWalletAddress,
+    initialPublicVaultList?.vaults,
     isCompareMode,
     isLoading,
     isWalletLoading,
