@@ -146,6 +146,7 @@ export function YvUsdWithdraw({
   const [showCooldownOverlay, setShowCooldownOverlay] = useState(false)
   const [showCancelCooldownOverlay, setShowCancelCooldownOverlay] = useState(false)
   const [showLockedWithdrawOverlay, setShowLockedWithdrawOverlay] = useState(false)
+  const [lockedWithdrawMode, setLockedWithdrawMode] = useState<'unlock' | 'unlock-and-withdraw'>('unlock-and-withdraw')
   const [showCooldownInfoOverlay, setShowCooldownInfoOverlay] = useState(false)
   const [draftWithdrawAmount, setDraftWithdrawAmount] = useState<bigint>(0n)
   const [pendingPrefillAmount, setPendingPrefillAmount] = useState<string | undefined>(undefined)
@@ -933,7 +934,7 @@ export function YvUsdWithdraw({
 
   const handleLockedWithdrawStepSuccess = useCallback(
     (label: string): void => {
-      if (label !== 'Withdraw to yvUSD') {
+      if (label !== 'Unlock to yvUSD') {
         return
       }
 
@@ -1000,6 +1001,7 @@ export function YvUsdWithdraw({
     if (!showLockedWithdrawOverlay) {
       setLockedWithdrawPhase('withdraw')
       setLockedWithdrawExecutionSnapshot(null)
+      setLockedWithdrawMode('unlock-and-withdraw')
     }
   }, [showLockedWithdrawOverlay])
 
@@ -1026,6 +1028,26 @@ export function YvUsdWithdraw({
     lockedInputAddress,
     lockedDisplayAssetDecimals
   ])
+
+  const openLockedWithdrawOverlay = useCallback(
+    (mode: 'unlock' | 'unlock-and-withdraw'): void => {
+      setLockedWithdrawMode(mode)
+      setLockedWithdrawExecutionSnapshot({
+        lockedStepMethod: currentLockedWithdrawMethod,
+        requestedLockedAssets: lockedRequestedWithdrawAssets,
+        requestedLockedShares: lockedRequestedWithdrawShares,
+        receivedLockedAssets: currentReceivedLockedAssets
+      })
+      setLockedWithdrawPhase('withdraw')
+      setShowLockedWithdrawOverlay(true)
+    },
+    [
+      currentLockedWithdrawMethod,
+      lockedRequestedWithdrawAssets,
+      lockedRequestedWithdrawShares,
+      currentReceivedLockedAssets
+    ]
+  )
 
   if (isLoading || !unlockedVault || !lockedVault) {
     return (
@@ -1067,10 +1089,11 @@ export function YvUsdWithdraw({
     executionLockedWithdrawAssets <= 0n ||
     (lockedWithdrawPhase === 'withdraw' && !canWithdrawNow) ||
     (lockedWithdrawPhase === 'redeem' && !hasLockedWithdrawExecutionSnapshot) ||
-    executionUnderlyingWithdrawAssets <= 0n
+    (lockedWithdrawMode === 'unlock-and-withdraw' && executionUnderlyingWithdrawAssets <= 0n)
       ? undefined
       : buildLockedWithdrawTransactionStep({
           phase: lockedWithdrawPhase,
+          mode: lockedWithdrawMode,
           lockedStepMethod: executionLockedWithdrawMethod,
           prepareLockedWithdraw: prepareLockedWithdrawStep,
           prepareUnlockedWithdraw: prepareUnlockedWithdraw,
@@ -1084,15 +1107,15 @@ export function YvUsdWithdraw({
           lockedAssetSymbol: lockedUserData.assetToken?.symbol ?? 'yvUSD',
           underlyingSymbol: unlockedUserData.assetToken?.symbol ?? 'USDC'
         })
-  const isLockedWithdrawReady =
+  const isLockedUnlockReady =
     draftWithdrawAmount > 0n &&
     (currentLockedWithdrawMethod === 'redeem'
       ? lockedRequestedWithdrawShares > 0n && lockedRequestedWithdrawShares <= maxRedeemShares
       : lockedRequestedWithdrawAssets > 0n && lockedRequestedWithdrawAssets <= maxWithdrawAssets) &&
-    executionUnderlyingWithdrawAssets > 0n &&
     !lockedWithdrawInputError &&
-    !!lockedReadyWithdrawStep?.prepare.isSuccess &&
-    !!lockedReadyWithdrawStep.prepare.data?.request
+    !!prepareLockedWithdrawStep.isSuccess &&
+    !!prepareLockedWithdrawStep.data?.request
+  const isLockedUnlockAndWithdrawReady = isLockedUnlockReady && executionUnderlyingWithdrawAssets > 0n
 
   const withdrawPrefill = getWithdrawPrefill(
     activeVariant,
@@ -1191,23 +1214,22 @@ export function YvUsdWithdraw({
       </div>
       <div className="mt-3 flex flex-col gap-1 text-sm text-text-primary/70">{cooldownStatusContent}</div>
       {showLockedWithdrawAction ? (
-        <div className="mt-3">
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <Button
             variant="filled"
-            disabled={!isLockedWithdrawReady}
+            disabled={!isLockedUnlockReady}
             classNameOverride="yearn--button--nextgen w-full"
-            onClick={() => {
-              setLockedWithdrawExecutionSnapshot({
-                lockedStepMethod: currentLockedWithdrawMethod,
-                requestedLockedAssets: lockedRequestedWithdrawAssets,
-                requestedLockedShares: lockedRequestedWithdrawShares,
-                receivedLockedAssets: currentReceivedLockedAssets
-              })
-              setLockedWithdrawPhase('withdraw')
-              setShowLockedWithdrawOverlay(true)
-            }}
+            onClick={() => openLockedWithdrawOverlay('unlock')}
           >
-            {'Withdraw'}
+            {'Unlock'}
+          </Button>
+          <Button
+            variant="filled"
+            disabled={!isLockedUnlockAndWithdrawReady}
+            classNameOverride="yearn--button--nextgen w-full"
+            onClick={() => openLockedWithdrawOverlay('unlock-and-withdraw')}
+          >
+            {'Unlock + Withdraw'}
           </Button>
         </div>
       ) : showStartCooldownActions || showCancelCooldownAction ? (
@@ -1298,9 +1320,9 @@ export function YvUsdWithdraw({
         isOpen={showLockedWithdrawOverlay}
         onClose={() => setShowLockedWithdrawOverlay(false)}
         step={lockedReadyWithdrawStep}
-        isLastStep={lockedWithdrawPhase === 'redeem'}
-        autoContinueToNextStep
-        autoContinueStepLabels={['Withdraw to yvUSD']}
+        isLastStep={lockedWithdrawMode === 'unlock' || lockedWithdrawPhase === 'redeem'}
+        autoContinueToNextStep={lockedWithdrawMode === 'unlock-and-withdraw'}
+        autoContinueStepLabels={['Unlock to yvUSD']}
         onStepSuccess={handleLockedWithdrawStepSuccess}
         onBeforeSuccess={handleLockedWithdrawBeforeSuccess}
         onAllComplete={handleLockedWithdrawSuccess}

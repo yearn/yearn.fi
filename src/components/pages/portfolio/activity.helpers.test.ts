@@ -1,3 +1,5 @@
+import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
+import { BOLD_ADDRESS } from '@pages/vaults/utils/yBold'
 import type { TNotification } from '@shared/types/notifications'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -34,6 +36,7 @@ function createNotification(overrides: Partial<TNotification> = {}): TNotificati
 
 describe('portfolio activity helpers', () => {
   afterEach(() => {
+    vi.restoreAllMocks()
     vi.useRealTimers()
   })
 
@@ -52,6 +55,40 @@ describe('portfolio activity helpers', () => {
     expect(entry?.assetAmount).toBe('10')
     expect(entry?.shareAmount).toBe('')
     expect(entry?.shareAmountFormatted).toBeNull()
+  })
+
+  it('uses the input amount for legacy local BOLD to ysyBOLD zap rows without a share amount', () => {
+    const entry = toLocalActivityEntry(
+      createNotification({
+        fromAddress: BOLD_ADDRESS,
+        fromTokenName: 'BOLD',
+        fromAmount: '1.886214',
+        toAddress: YBOLD_STAKING_ADDRESS,
+        toTokenName: 'ysyBOLD',
+        toAmount: undefined
+      })
+    )
+
+    expect(entry?.assetSymbol).toBe('BOLD')
+    expect(entry?.shareAmount).toBe('1.886214')
+    expect(entry?.shareAmountFormatted).toBe(1.886214)
+  })
+
+  it('uses the input amount for legacy local BOLD to yBOLD deposit rows without a share amount', () => {
+    const entry = toLocalActivityEntry(
+      createNotification({
+        fromAddress: BOLD_ADDRESS,
+        fromTokenName: 'BOLD',
+        fromAmount: '1.257',
+        toAddress: YBOLD_VAULT_ADDRESS,
+        toTokenName: 'yBOLD',
+        toAmount: undefined
+      })
+    )
+
+    expect(entry?.assetSymbol).toBe('BOLD')
+    expect(entry?.shareAmount).toBe('1.257')
+    expect(entry?.shareAmountFormatted).toBe(1.257)
   })
 
   it('uses the burned vault share amount and received underlying amount for local withdrawals', () => {
@@ -84,6 +121,31 @@ describe('portfolio activity helpers', () => {
     expect(doesActivityEntryMatchSearch(entry!, 'not-present', {})).toBe(false)
   })
 
+  it('can map an unresolved local notification with a fallback timestamp', () => {
+    const fallbackTimestamp = FINISHED_AT + 30
+    const entry = toLocalActivityEntry(
+      createNotification({
+        status: 'submitted',
+        timeFinished: undefined
+      }),
+      { fallbackTimestamp }
+    )
+
+    expect(entry?.timestamp).toBe(fallbackTimestamp)
+    expect(entry?.action).toBe('deposit')
+  })
+
+  it('does not map local notifications without any timestamp', () => {
+    const entry = toLocalActivityEntry(
+      createNotification({
+        status: 'pending',
+        timeFinished: undefined
+      })
+    )
+
+    expect(entry).toBeNull()
+  })
+
   it('applies type, chain, and date filters to local notifications before mapping rows', () => {
     const notification = createNotification()
     const filters = {
@@ -113,8 +175,7 @@ describe('portfolio activity helpers', () => {
   })
 
   it('keeps only recent successful local transactions that are not indexed yet', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date((FINISHED_AT + 60) * 1000))
+    vi.spyOn(Date, 'now').mockReturnValue((FINISHED_AT + 60) * 1000)
 
     const notification = createNotification()
 

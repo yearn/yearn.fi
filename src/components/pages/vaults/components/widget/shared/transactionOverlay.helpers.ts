@@ -166,6 +166,23 @@ export function shouldAutoContinueFromSuccessState(params: {
   return params.canShowSuccess && params.executedStepAutoContinues && !params.wasLastStep
 }
 
+export function shouldStartStepOnOpen(params: {
+  isOpen: boolean
+  overlayState: OverlayState
+  hasStep: boolean
+  hasStarted: boolean
+  isStepReady: boolean
+  isPermitStepReady: boolean
+  hasPrepareError: boolean
+}): boolean {
+  if (!params.isOpen) return false
+  if (params.overlayState !== 'idle') return false
+  if (!params.hasStep) return false
+  if (params.hasStarted) return false
+
+  return params.isStepReady || params.isPermitStepReady || params.hasPrepareError
+}
+
 export function getAutoContinueConfirmDelayMs(params: { isWalletSafe: boolean }): number {
   return params.isWalletSafe ? SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS : 0
 }

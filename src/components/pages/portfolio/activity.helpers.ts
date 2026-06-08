@@ -1,4 +1,6 @@
 import { getVaultName, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
+import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
+import { BOLD_ADDRESS } from '@pages/vaults/utils/yBold'
 import type { TNotification } from '@shared/types/notifications'
 import { SUPPORTED_NETWORKS, toAddress, truncateHex } from '@shared/utils'
 import type { TPortfolioActivityEntry } from './types/api'
@@ -121,15 +123,32 @@ function getLocalActivityShareAmount(
   }
 
   if (action === 'deposit') {
-    return notification.toAmount ?? ''
+    if (notification.toAmount) {
+      return notification.toAmount
+    }
+
+    const isYBoldDeposit =
+      notification.fromAddress &&
+      notification.toAddress &&
+      toAddress(notification.fromAddress) === toAddress(BOLD_ADDRESS) &&
+      [YBOLD_VAULT_ADDRESS, YBOLD_STAKING_ADDRESS].some(
+        (address) => toAddress(notification.toAddress) === toAddress(address)
+      )
+
+    return isYBoldDeposit ? (notification.fromAmount ?? notification.amount) : ''
   }
 
   return notification.toAmount ?? notification.amount
 }
 
-export function toLocalActivityEntry(notification: TNotification): TPortfolioActivityEntry | null {
+export function toLocalActivityEntry(
+  notification: TNotification,
+  options: { fallbackTimestamp?: number } = {}
+): TPortfolioActivityEntry | null {
   const action = getNotificationActivityAction(notification)
-  if (!action || !notification.txHash || !notification.timeFinished) {
+  const timestamp = notification.timeFinished ?? options.fallbackTimestamp
+
+  if (!action || !notification.txHash || timestamp === undefined) {
     return null
   }
 
@@ -154,7 +173,7 @@ export function toLocalActivityEntry(notification: TNotification): TPortfolioAct
   return {
     chainId: notification.chainId,
     txHash: notification.txHash,
-    timestamp: notification.timeFinished,
+    timestamp,
     action,
     displayType: isZap ? 'zap' : null,
     transferDirection: action === 'transfer' ? 'out' : null,

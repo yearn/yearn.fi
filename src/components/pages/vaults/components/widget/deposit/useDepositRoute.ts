@@ -1,4 +1,5 @@
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
+import { isYBoldZapperDepositRoute } from '@pages/vaults/utils/yBold'
 import { useMemo } from 'react'
 import { type Address, isAddressEqual } from 'viem'
 import type { DepositRouteType } from './types'
@@ -44,7 +45,20 @@ export function resolveDepositRouteType({
     return 'DIRECT_STAKE'
   }
 
-  // Case 3: All other cases use Enso (if available)
+  // Case 3: Yearn-native BOLD → staked yBOLD zapper
+  if (
+    isYBoldZapperDepositRoute({
+      depositToken,
+      assetAddress,
+      destinationToken,
+      vaultAddress,
+      stakingAddress
+    })
+  ) {
+    return 'YBOLD_ZAPPER'
+  }
+
+  // Case 4: All other cases use Enso (if available)
   if (ensoEnabled) {
     return 'ENSO'
   }

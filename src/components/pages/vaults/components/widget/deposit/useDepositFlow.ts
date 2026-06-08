@@ -2,6 +2,7 @@ import { getRedeemPreviewCall } from '@pages/vaults/hooks/actions/stakingAdapter
 import { useDirectDeposit } from '@pages/vaults/hooks/actions/useDirectDeposit'
 import { useDirectStake } from '@pages/vaults/hooks/actions/useDirectStake'
 import { useEnsoDeposit } from '@pages/vaults/hooks/actions/useEnsoDeposit'
+import { useYBoldZapperDeposit } from '@pages/vaults/hooks/actions/useYBoldZapperDeposit'
 import { useYvUsdLockedZapDeposit } from '@pages/vaults/hooks/actions/useYvUsdLockedZapDeposit'
 import type { EnsoRoutingStrategy } from '@pages/vaults/hooks/solvers/useSolverEnso'
 import { YVUSD_LOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
@@ -130,6 +131,13 @@ export const useDepositFlow = ({
     enabled: isYvUsdLockedZapDeposit && amount > 0n
   })
 
+  const yBoldZapperDeposit = useYBoldZapperDeposit({
+    amount,
+    account,
+    chainId,
+    enabled: routeType === 'YBOLD_ZAPPER' && amount > 0n
+  })
+
   // Direct stake flow (vault → staking)
   const directStake = useDirectStake({
     stakingAddress,
@@ -163,9 +171,17 @@ export const useDepositFlow = ({
       return isYvUsdLockedZapDeposit ? yvUsdLockedZapDeposit : directDeposit
     }
     if (routeType === 'DIRECT_STAKE') return directStake
+    if (routeType === 'YBOLD_ZAPPER') return yBoldZapperDeposit
     return ensoFlow
-  }, [routeType, isYvUsdLockedZapDeposit, yvUsdLockedZapDeposit, directDeposit, directStake, ensoFlow])
-  console.log('activeFlow', activeFlow)
+  }, [
+    routeType,
+    isYvUsdLockedZapDeposit,
+    yvUsdLockedZapDeposit,
+    directDeposit,
+    directStake,
+    yBoldZapperDeposit,
+    ensoFlow
+  ])
   const shouldNormalizeExpectedOut =
     !!stakingAddress && isAddressEqual(destinationToken, stakingAddress) && activeFlow.periphery.expectedOut > 0n
   const shouldNormalizeMinExpectedOut =

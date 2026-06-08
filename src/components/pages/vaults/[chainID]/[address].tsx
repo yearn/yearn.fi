@@ -60,9 +60,11 @@ import {
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { JsonLd } from '@shared/components/JsonLd'
 import { TokenLogo } from '@shared/components/TokenLogo'
+import { Tooltip } from '@shared/components/Tooltip'
 import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
+import { IconInfo } from '@shared/icons/IconInfo'
 import { cl, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
@@ -79,7 +81,7 @@ import {
   useState
 } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
-import { isAddressEqual } from 'viem'
+import { formatUnits, isAddressEqual } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
 import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
 import { getVaultPrimaryLogoSrc } from '@/components/pages/vaults/utils/vaultLogo'
@@ -350,35 +352,77 @@ const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
   }
 }
 
-function VaultWarningAlert({ message, className }: { message: string; className: string }): ReactElement {
+function VaultWarningAlert({
+  message,
+  className,
+  action,
+  titleTooltip
+}: {
+  message: string
+  className: string
+  action?: ReactNode
+  titleTooltip?: string | ReactElement
+}): ReactElement {
   const { title, body } = splitFirstSentence(message)
 
   return (
     <div
       className={cl(
-        'rounded-lg border border-border border-l-4 border-l-orange-500 dark:border-l-yellow-500 bg-surface-secondary text-sm text-text-primary',
+        'rounded-lg border border-border border-l-4 border-l-orange-500 bg-surface-secondary text-sm text-text-primary dark:border-l-yellow-500',
         className
       )}
     >
-      <div className="flex items-start gap-3">
-        <svg
-          className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-          />
-        </svg>
-        <div className="flex flex-col">
-          <p className={'font-semibold'}>{title}</p>
-          {body ? <p className="text-text-secondary">{body}</p> : null}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <svg
+            className="w-5 h-5 text-orange-500 dark:text-yellow-500 mt-0.5 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <p className={'font-semibold'}>{title}</p>
+              {titleTooltip ? (
+                <Tooltip
+                  className="justify-start gap-0 md:justify-start"
+                  align="start"
+                  side="bottom"
+                  openDelayMs={150}
+                  tooltip={titleTooltip}
+                >
+                  <button
+                    type="button"
+                    aria-label="Why stake yBOLD?"
+                    className="flex size-4 items-center justify-center rounded-full text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <IconInfo className="size-3.5" />
+                  </button>
+                </Tooltip>
+              ) : null}
+            </div>
+            {body ? <p className="text-text-secondary">{body}</p> : null}
+          </div>
         </div>
+        {action ? <div className="shrink-0 sm:pl-4">{action}</div> : null}
       </div>
+    </div>
+  )
+}
+
+function YBoldUnstakedTooltip(): ReactElement {
+  return (
+    <div className="max-w-[320px] rounded-lg border border-border bg-surface p-3 text-left text-xs leading-relaxed text-text-secondary shadow-lg">
+      {
+        'In order to earn yield, BOLD needs to be deposited and staked into ysyBOLD. This site should abstract that process away for the user, but it seems you have some unstaked yBOLD. It always makes sense to stake yBOLD and there is no lockup or fee.'
+      }
     </div>
   )
 }
@@ -709,10 +753,17 @@ function Index(): ReactElement | null {
   const hasYvUsdFunds = yvUsdUnlockedShareBalance > 0n || yvUsdLockedShareBalance > 0n
   const hasUserFundsInVault = isYvUsd ? hasYvUsdFunds : vaultShareBalance > 0n || stakingShareBalance > 0n
   const canShowUserCharts = !isWalletLoading && hasUserFundsInVault
+  const [isYBoldStakePrefillActive, setIsYBoldStakePrefillActive] = useState(false)
+  const [yBoldStakePrefillAmountSnapshot, setYBoldStakePrefillAmountSnapshot] = useState<string | null>(null)
+  const [yBoldStakePrefillRequestKey, setYBoldStakePrefillRequestKey] = useState(0)
   const retiredVaultAlertMessage = useMemo(() => {
     if (!isRetired || !currentVault) return null
     return getRetiredVaultAlertMessage({ vault: currentVault, hasUserFundsInVault })
   }, [currentVault, hasUserFundsInVault, isRetired])
+  const yBoldUnstakedAlertMessage =
+    isYBold && vaultShareBalance > 0n
+      ? 'You have unstaked yBOLD. Click the button to the right to stake your yBOLD to earn yield.'
+      : null
   const shouldShowNonYearnVaultAlert = useMemo(() => {
     return isNonYearnErc4626Vault({
       vault: metadataVault,
@@ -932,6 +983,7 @@ function Index(): ReactElement | null {
     setIsWidgetSettingsOpen((prev) => {
       const next = !prev
       if (next) {
+        setIsYBoldStakePrefillActive(false)
         setIsWidgetWalletOpen(false)
         setIsWidgetRewardsOpen(false)
       }
@@ -940,20 +992,30 @@ function Index(): ReactElement | null {
   }
 
   const openWidgetWallet = (): void => {
+    setIsYBoldStakePrefillActive(false)
     setIsWidgetWalletOpen(true)
     setIsWidgetSettingsOpen(false)
     setIsWidgetRewardsOpen(false)
   }
 
   const closeWidgetOverlays = (): void => {
+    setIsYBoldStakePrefillActive(false)
     setIsWidgetSettingsOpen(false)
     setIsWidgetWalletOpen(false)
     setIsWidgetRewardsOpen(false)
   }
 
+  const handleWidgetModeChange = (mode: WidgetActionType): void => {
+    if (mode !== WidgetActionType.Deposit) {
+      setIsYBoldStakePrefillActive(false)
+    }
+    setWidgetMode(mode)
+  }
+
   const isWidgetPanelActive = !isWidgetWalletOpen
 
   const openWidgetRewards = (): void => {
+    setIsYBoldStakePrefillActive(false)
     updateCollapsedWidgetHeight()
     setIsWidgetRewardsOpen(true)
     setIsWidgetSettingsOpen(false)
@@ -962,6 +1024,34 @@ function Index(): ReactElement | null {
   const closeWidgetRewards = (): void => {
     setIsWidgetRewardsOpen(false)
   }
+
+  const activateYBoldStakePrefill = useCallback((): void => {
+    setYBoldStakePrefillAmountSnapshot(
+      formatUnits(vaultShareBalance, vaultUserData.vaultToken?.decimals ?? currentVault?.decimals ?? 18)
+    )
+    setIsYBoldStakePrefillActive(true)
+    setYBoldStakePrefillRequestKey((current) => current + 1)
+    setWidgetMode(WidgetActionType.Deposit)
+    setMobileDrawerAction(WidgetActionType.Deposit)
+    setIsWidgetSettingsOpen(false)
+    setIsWidgetWalletOpen(false)
+    setIsWidgetRewardsOpen(false)
+
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+      setIsMobileDrawerOpen(true)
+    }
+  }, [currentVault?.decimals, vaultShareBalance, vaultUserData.vaultToken?.decimals])
+
+  const yBoldStakeAction = yBoldUnstakedAlertMessage ? (
+    <button
+      type="button"
+      onClick={activateYBoldStakePrefill}
+      className="yearn--button--nextgen w-full sm:w-auto"
+      data-variant="filled"
+    >
+      {'Stake'}
+    </button>
+  ) : undefined
 
   const updateCollapsedWidgetHeight = useCallback(() => {
     if (isWidgetRewardsOpen) {
@@ -1335,6 +1425,7 @@ function Index(): ReactElement | null {
   }, [vaultTourState.isOpen, vaultTourState.stepId, handleSelectSection])
 
   const handleFloatingButtonClick = useCallback((action: WidgetActionType): void => {
+    setIsYBoldStakePrefillActive(false)
     setMobileDrawerAction(action)
     setIsMobileDrawerOpen(true)
   }, [])
@@ -1428,6 +1519,51 @@ function Index(): ReactElement | null {
   const mobileProductTypeLabel = getMobileProductTypeLabel()
   const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
+  const liveYBoldStakePrefillAmount = isYBold
+    ? formatUnits(vaultShareBalance, vaultUserData.vaultToken?.decimals ?? resolvedCurrentVault.decimals ?? 18)
+    : ''
+  const yBoldStakePrefillAmount = yBoldStakePrefillAmountSnapshot ?? liveYBoldStakePrefillAmount
+  const shouldForceYBoldStakeDeposit = isYBold && isYBoldStakePrefillActive
+  const yBoldStakeDepositPrefill = shouldForceYBoldStakeDeposit
+    ? {
+        address: toAddress(resolvedCurrentVault.address),
+        chainId,
+        amount: yBoldStakePrefillAmount,
+        requestKey: yBoldStakePrefillRequestKey
+      }
+    : null
+  const handleWidgetSuccess = (): void => {
+    if (!shouldForceYBoldStakeDeposit) {
+      return
+    }
+
+    setIsYBoldStakePrefillActive(false)
+    setYBoldStakePrefillAmountSnapshot(null)
+    refetchSnapshot()
+    refetchYBoldSnapshot()
+    onRefresh([
+      { address: resolvedCurrentVault.address, chainID: resolvedCurrentVault.chainID },
+      { address: resolvedCurrentVault.token.address, chainID: resolvedCurrentVault.chainID },
+      { address: YBOLD_STAKING_ADDRESS, chainID: resolvedCurrentVault.chainID }
+    ])
+  }
+  const handleDepositUserTokenSelectionChange = (nextAddress: `0x${string}`, nextChainId: number): void => {
+    if (!shouldForceYBoldStakeDeposit) {
+      return
+    }
+
+    const isSelectedYBold =
+      nextChainId === chainId && isAddressEqual(toAddress(nextAddress), toAddress(resolvedCurrentVault.address))
+    if (!isSelectedYBold) {
+      setIsYBoldStakePrefillActive(false)
+    }
+  }
+  const handleMobileWidgetModeChange = (mode: WidgetActionType): void => {
+    if (mode !== WidgetActionType.Deposit) {
+      setIsYBoldStakePrefillActive(false)
+    }
+    setMobileDrawerAction(mode)
+  }
   const yvBtcMobileApyBox = (
     <YvUsdApyStatBox
       lockedApy={yvBtcMetrics.locked.apy}
@@ -1499,15 +1635,20 @@ function Index(): ReactElement | null {
         vaultAddress={resolvedCurrentVault.address}
         currentVault={resolvedCurrentVault}
         gaugeAddress={resolvedCurrentVault.staking.address}
-        disableDepositStaking={disableDepositStaking}
+        disableDepositStaking={shouldForceYBoldStakeDeposit ? false : disableDepositStaking}
         actions={widgetActions}
         chainId={chainId}
         vaultUserData={vaultUserData}
+        handleSuccess={handleWidgetSuccess}
         mode={resolvedWidgetMode}
-        onModeChange={setWidgetMode}
+        onModeChange={handleWidgetModeChange}
         showTabs={false}
         onOpenSettings={toggleWidgetSettings}
         isSettingsOpen={isWidgetSettingsOpen}
+        depositPrefill={yBoldStakeDepositPrefill}
+        forceDepositStake={shouldForceYBoldStakeDeposit}
+        depositTitleOverride={shouldForceYBoldStakeDeposit ? 'Stake' : undefined}
+        onDepositUserTokenSelectionChange={handleDepositUserTokenSelectionChange}
         collapseDetails={shouldCollapseWidgetDetails}
       />
     )
@@ -1546,14 +1687,19 @@ function Index(): ReactElement | null {
         vaultAddress={resolvedCurrentVault.address}
         currentVault={resolvedCurrentVault}
         gaugeAddress={resolvedCurrentVault.staking.address}
-        disableDepositStaking={disableDepositStaking}
+        disableDepositStaking={shouldForceYBoldStakeDeposit ? false : disableDepositStaking}
         actions={widgetActions}
         chainId={chainId}
         vaultUserData={vaultUserData}
+        handleSuccess={handleWidgetSuccess}
         mode={mobileDrawerAction}
-        onModeChange={setMobileDrawerAction}
+        onModeChange={handleMobileWidgetModeChange}
         onOpenSettings={toggleWidgetSettings}
         isSettingsOpen={isWidgetSettingsOpen}
+        depositPrefill={yBoldStakeDepositPrefill}
+        forceDepositStake={shouldForceYBoldStakeDeposit}
+        depositTitleOverride={shouldForceYBoldStakeDeposit ? 'Stake' : undefined}
+        onDepositUserTokenSelectionChange={handleDepositUserTokenSelectionChange}
         hideTabSelector={hideMobileDrawerTabs}
         disableBorderRadius
       />
@@ -1621,7 +1767,7 @@ function Index(): ReactElement | null {
               sectionSelectorRef={sectionSelectorRef}
               widgetActions={widgetActions}
               widgetMode={resolvedWidgetMode}
-              onWidgetModeChange={setWidgetMode}
+              onWidgetModeChange={handleWidgetModeChange}
               onYvUsdApyVariantChange={setYvUsdApyVariant}
               isWidgetWalletOpen={isWidgetWalletOpen}
               onWidgetWalletOpen={openWidgetWallet}
@@ -1701,6 +1847,15 @@ function Index(): ReactElement | null {
 
             {shouldShowNonYearnVaultAlert ? (
               <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-4 py-3" />
+            ) : null}
+
+            {yBoldUnstakedAlertMessage ? (
+              <VaultWarningAlert
+                message={yBoldUnstakedAlertMessage}
+                className="px-4 py-3"
+                action={yBoldStakeAction}
+                titleTooltip={<YBoldUnstakedTooltip />}
+              />
             ) : null}
 
             {Number.isInteger(chainId) && (
@@ -1831,6 +1986,15 @@ function Index(): ReactElement | null {
                 <VaultWarningAlert message={NON_YEARN_ERC4626_WARNING_MESSAGE} className="px-6 py-4" />
               ) : null}
 
+              {yBoldUnstakedAlertMessage ? (
+                <VaultWarningAlert
+                  message={yBoldUnstakedAlertMessage}
+                  className="px-6 py-4"
+                  action={yBoldStakeAction}
+                  titleTooltip={<YBoldUnstakedTooltip />}
+                />
+              ) : null}
+
               {renderableSections.map((section) => {
                 const isCollapsible =
                   section.key === 'about' ||
@@ -1939,7 +2103,10 @@ function Index(): ReactElement | null {
 
         <BottomDrawer
           isOpen={isMobileDrawerOpen}
-          onClose={() => setIsMobileDrawerOpen(false)}
+          onClose={() => {
+            setIsYBoldStakePrefillActive(false)
+            setIsMobileDrawerOpen(false)
+          }}
           title={currentVault.name}
           headerActions={isYvUsd ? undefined : <MobileDrawerSettingsButton />}
           panelRef={mobileDrawerPanelRef}
