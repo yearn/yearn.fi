@@ -1,6 +1,7 @@
 import { Button } from '@shared/components/Button'
 import { useChainId, useSwitchChain, useWaitForTransactionReceipt } from '@shared/hooks/useAppWagmi'
 import { useSafeTransactionDetails } from '@shared/hooks/useSafeTransactionDetails'
+import { isSafeConnectorId } from '@shared/utils'
 import { getApproveAbi } from '@shared/utils/approve'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { maxUint256 } from 'viem'
@@ -43,7 +44,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
   const { address: account, chain, connector } = useAccount()
   const currentChainId = useChainId()
-  const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false
+  const isWalletSafe = isSafeConnectorId(connector?.id)
   const connectedChainId = resolveApprovalOverlayConnectedChainId({
     accountChainId: chain?.id,
     currentChainId,

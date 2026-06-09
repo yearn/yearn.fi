@@ -1,14 +1,16 @@
 export { holdingsConfig, validateConfig } from './config'
-export { ensureSchemaInitialized, initializeSchema, isDatabaseEnabled } from './db/connection'
 export {
   getHoldingsActivity,
-  getHoldingsActivityFacets,
   type HoldingsActivityAction,
   type HoldingsActivityEntry,
   type HoldingsActivityFilters,
   type HoldingsActivityResponse,
   type HoldingsActivityTypeFilter
 } from './services/activity'
+export {
+  getHoldingsActivityFacetResponse,
+  type HoldingsActivityFacetsResponse
+} from './services/activityFacets'
 export {
   getHistoricalHoldings,
   getHistoricalHoldingsChart,
@@ -24,6 +26,7 @@ export {
 } from './services/aggregator'
 export { clearUserCache } from './services/cache'
 export {
+  fetchAddressActivityChainIdsByExistence,
   fetchRecentAddressScopedActivityEvents,
   fetchUserEvents,
   type HoldingsEventFetchType,
@@ -37,3 +40,8 @@ export {
   type THoldingsPnLSimpleStatus
 } from './services/pnlSimple'
 export { checkRateLimit } from './services/ratelimit'
+export {
+  ensureHoldingsStorageInitialized,
+  initializeHoldingsStorage,
+  isHoldingsStorageEnabled
+} from './storage/redis'

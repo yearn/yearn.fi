@@ -187,8 +187,8 @@ function TenderlyBadge(): ReactElement | null {
     <div
       onClick={() => void handleBadgeClick()}
       onKeyDown={handleBadgeKeyDown}
-      role={isTenderlyActive ? 'button' : undefined}
-      tabIndex={isTenderlyActive ? 0 : undefined}
+      role={isTenderlyActive && !isStatusLoading ? 'button' : undefined}
+      tabIndex={isTenderlyActive && !isStatusLoading ? 0 : undefined}
       title={
         isTenderlyActive
           ? `Tenderly mode enabled${configuredMappings ? ` (${configuredMappings})` : ''}. Click to ${isOpen ? 'hide' : 'show'} controls.`

@@ -1,11 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { setVercelCdnCacheHeaders } from '../../lib/cacheHeaders'
 import type {
   HoldingsEventFetchType,
   HoldingsEventPaginationMode,
   HoldingsHistoryTimeframe,
   VaultVersion
 } from '../../lib/holdings'
-import { checkRateLimit, ensureSchemaInitialized } from '../../lib/holdings'
+import { checkRateLimit, ensureHoldingsStorageInitialized } from '../../lib/holdings'
 import {
   createHoldingsDebugContext,
   debugError,
@@ -14,6 +15,8 @@ import {
   withHoldingsDebugContext
 } from '../../lib/holdings/services/debug'
 import { startHoldingsProgress, updateHoldingsProgress } from '../../lib/holdings/services/progress'
+
+const PROTOCOL_RETURN_HISTORY_CDN_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600'
 
 function simpleHash(str: string): string {
   const hash = Array.from(str).reduce((currentHash, char) => {
@@ -121,14 +124,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    await ensureSchemaInitialized()
+    await ensureHoldingsStorageInitialized()
   } catch (error) {
-    console.error('Holdings protocol return history schema initialization error:', error)
+    console.error('Holdings protocol return history storage initialization error:', error)
     return res.status(500).json({ error: 'Failed to initialize holdings storage' })
   }
 
   const clientId = getClientIdentifier(req)
-  const rateCheck = await checkRateLimit(clientId)
+  const rateCheck = await checkRateLimit(clientId, req.headers)
   if (!rateCheck.allowed) {
     res.setHeader('Retry-After', String(rateCheck.retryAfter))
     return res.status(429).json({ error: 'Too many requests', retryAfter: rateCheck.retryAfter })
@@ -252,7 +255,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       detail: `${history.dataPoints.length} chart points`
     })
 
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+    setVercelCdnCacheHeaders(res, PROTOCOL_RETURN_HISTORY_CDN_CACHE_CONTROL)
     return res.status(200).json(history)
   } catch (error) {
     await updateHoldingsProgress(progressId, {

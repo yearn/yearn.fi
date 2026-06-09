@@ -22,6 +22,7 @@ interface UseDepositNotificationsProps {
   chainId: number
   // Amount
   depositAmount: bigint
+  expectedShareAmount?: bigint
   // Route info
   routeType: DepositRouteType
   routerAddress?: string
@@ -45,6 +46,7 @@ export const useDepositNotifications = ({
   sourceChainId,
   chainId,
   depositAmount,
+  expectedShareAmount,
   routeType,
   routerAddress,
   isCrossChain
@@ -116,6 +118,8 @@ export const useDepositNotifications = ({
     // Use staking token symbol if destination is staking contract
     const destinationTokenSymbol =
       isDepositAndStake && stakingToken ? stakingToken.symbol || vault.symbol || '' : vault.symbol || ''
+    const destinationTokenDecimals =
+      isDepositAndStake && stakingToken ? (stakingToken.decimals ?? vault.decimals ?? 18) : (vault.decimals ?? 18)
 
     return {
       type: notificationType,
@@ -129,6 +133,14 @@ export const useDepositNotifications = ({
       fromChainId: sourceChainId,
       toAddress: toAddress(destinationToken),
       toSymbol: destinationTokenSymbol,
+      toAmount:
+        expectedShareAmount && expectedShareAmount > 0n
+          ? formatTAmount({
+              value: expectedShareAmount,
+              decimals: destinationTokenDecimals,
+              options: { maximumFractionDigits: 8 }
+            })
+          : undefined,
       toChainId: isCrossChain ? chainId : undefined
     }
   }, [
@@ -144,7 +156,8 @@ export const useDepositNotifications = ({
     sourceChainId,
     destinationToken,
     chainId,
-    stakingToken
+    stakingToken,
+    expectedShareAmount
   ])
 
   return {

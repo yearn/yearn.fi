@@ -17,10 +17,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const id = req.query.id
   const progress = await getHoldingsProgress(typeof id === 'string' ? id : null)
 
+  res.setHeader('Cache-Control', 'no-store')
+
   if (!progress) {
-    return res.status(404).json({ error: 'Progress not found' })
+    return res.status(204).end()
   }
 
-  res.setHeader('Cache-Control', 'no-store')
   return res.status(200).json(progress)
 }

@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { setVercelCdnCacheHeaders } from '../lib/cacheHeaders'
 import { OPTIMIZATION_POST_CORS_HEADERS, setCorsHeaders } from './_lib/cors'
 import { fetchVaultOnChainState } from './_lib/rpc'
 
@@ -40,7 +41,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       strategyDebts[addr] = debt.toString()
     }
 
-    return res.status(200).setHeader('Cache-Control', CACHE_CONTROL).json({
+    setVercelCdnCacheHeaders(res, CACHE_CONTROL)
+    return res.status(200).json({
       totalAssets: state.totalAssets.toString(),
       strategyDebts,
       unallocatedBps: state.unallocatedBps

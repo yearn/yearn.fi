@@ -1,6 +1,14 @@
 import { getAddress } from 'viem'
 import { holdingsConfig } from '../config'
-import type { DepositEvent, TransferEvent, UserEvents, V2DepositEvent, V2WithdrawEvent, WithdrawEvent } from '../types'
+import {
+  type DepositEvent,
+  SUPPORTED_CHAINS,
+  type TransferEvent,
+  type UserEvents,
+  type V2DepositEvent,
+  type V2WithdrawEvent,
+  type WithdrawEvent
+} from '../types'
 import { debugError, debugLog } from './debug'
 
 // V3 Vault Queries (with optional maxTimestamp filter)
@@ -352,6 +360,29 @@ const USER_EVENT_COUNTS_AGGREGATE_QUERY = `
   }
 `
 
+const ADDRESS_ACTIVITY_CHAIN_PRESENCE_QUERY = `
+  query GetAddressActivityChainPresence($address: String!, $chainId: Int!) {
+    deposits: Deposit(where: { owner: { _eq: $address }, chainId: { _eq: $chainId } }, limit: 1) {
+      id
+    }
+    withdrawals: Withdraw(where: { owner: { _eq: $address }, chainId: { _eq: $chainId } }, limit: 1) {
+      id
+    }
+    transfersIn: Transfer(where: { receiver: { _eq: $address }, chainId: { _eq: $chainId } }, limit: 1) {
+      id
+    }
+    transfersOut: Transfer(where: { sender: { _eq: $address }, chainId: { _eq: $chainId } }, limit: 1) {
+      id
+    }
+    v2Deposits: V2Deposit(where: { recipient: { _eq: $address }, chainId: { _eq: $chainId } }, limit: 1) {
+      id
+    }
+    v2Withdrawals: V2Withdraw(where: { recipient: { _eq: $address }, chainId: { _eq: $chainId } }, limit: 1) {
+      id
+    }
+  }
+`
+
 interface UserCounts {
   depositCount: number
   withdrawCount: number
@@ -374,6 +405,15 @@ interface UserCountsAggregateQuery {
   transfersOut: AggregateCountField | null
   v2Deposits: AggregateCountField | null
   v2Withdrawals: AggregateCountField | null
+}
+
+interface ChainPresenceQuery {
+  deposits: Array<{ id: string }> | null
+  withdrawals: Array<{ id: string }> | null
+  transfersIn: Array<{ id: string }> | null
+  transfersOut: Array<{ id: string }> | null
+  v2Deposits: Array<{ id: string }> | null
+  v2Withdrawals: Array<{ id: string }> | null
 }
 
 async function executeQuery<T>(query: string, variables: Record<string, unknown>): Promise<T> {
@@ -449,6 +489,60 @@ async function fetchUserCounts(userAddress: string, maxTimestamp?: number): Prom
     )
     return null
   }
+}
+
+function hasAnyRows(rows: Array<{ id: string }> | null | undefined): boolean {
+  return Boolean(rows?.length)
+}
+
+function hasActivityForVersion(data: ChainPresenceQuery, version: VaultVersion): boolean {
+  const hasV3Activity =
+    hasAnyRows(data.deposits) ||
+    hasAnyRows(data.withdrawals) ||
+    hasAnyRows(data.transfersIn) ||
+    hasAnyRows(data.transfersOut)
+  const hasV2Activity = hasAnyRows(data.v2Deposits) || hasAnyRows(data.v2Withdrawals)
+
+  if (version === 'v2') {
+    return hasV2Activity
+  }
+
+  if (version === 'v3') {
+    return hasV3Activity
+  }
+
+  return hasV3Activity || hasV2Activity
+}
+
+export async function fetchAddressActivityChainIdsByExistence(
+  userAddress: string,
+  version: VaultVersion = 'all'
+): Promise<number[]> {
+  const address = getGraphqlAddress(userAddress)
+  const addressLower = address.toLowerCase()
+
+  const chainPresence = await Promise.all(
+    SUPPORTED_CHAINS.map(async (chain) => {
+      const data = await executeQuery<ChainPresenceQuery>(ADDRESS_ACTIVITY_CHAIN_PRESENCE_QUERY, {
+        address,
+        chainId: chain.id
+      })
+
+      return hasActivityForVersion(data, version) ? chain.id : null
+    })
+  )
+
+  const chainIds = chainPresence
+    .filter((chainId): chainId is number => chainId !== null)
+    .sort((firstChainId, secondChainId) => firstChainId - secondChainId)
+
+  debugLog('graphql', 'loaded address activity chain presence', {
+    address: addressLower,
+    version,
+    chainIds
+  })
+
+  return chainIds
 }
 
 // Default maxTimestamp: 10 years from now (queries require a value, can't be null)

@@ -14,7 +14,22 @@ export const IframeAutoConnect: FC<PropsWithChildren> = ({ children }) => {
     }
 
     try {
+      const ancestorOrigin = window.location.ancestorOrigins?.[0]
+      const isSafeParent = ancestorOrigin?.toString().includes('safe')
+
       if (connector && connector?.id !== 'safe' && !connector?.id?.toLowerCase().includes('ledger')) {
+        if (!isSafeParent) {
+          const ledgerConnector = connectors.find((c) => c.id.toLowerCase().includes('ledger'))
+          if (ledgerConnector) {
+            await disconnectAsync({ connector })
+            const isAuth = await ledgerConnector.isAuthorized()
+            if (!isAuth) {
+              await connectAsync({ connector: ledgerConnector })
+            }
+          }
+          return
+        }
+
         const safeConnector = connectors.find((c) => c.id === 'safe')
         if (safeConnector) {
           await disconnectAsync({ connector })
@@ -24,6 +39,14 @@ export const IframeAutoConnect: FC<PropsWithChildren> = ({ children }) => {
           }
         }
       } else if (!connector) {
+        if (!isSafeParent) {
+          const ledgerConnector = connectors.find((c) => c.id.toLowerCase().includes('ledger'))
+          if (ledgerConnector) {
+            await connectAsync({ connector: ledgerConnector })
+          }
+          return
+        }
+
         const safeConnector = connectors.find((c) => c.id === 'safe')
         if (safeConnector) {
           await connectAsync({ connector: safeConnector })

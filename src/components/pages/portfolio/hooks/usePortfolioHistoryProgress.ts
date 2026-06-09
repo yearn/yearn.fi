@@ -39,7 +39,7 @@ export function usePortfolioHistoryProgress(
     enabled: Boolean(endpoint) && enabled,
     queryFn: async () => {
       const response = await globalThis.fetch(endpoint as string, { headers: { Accept: 'application/json' } })
-      if (response.status === 404) {
+      if (response.status === 204 || response.status === 404) {
         return null
       }
       if (!response.ok) {

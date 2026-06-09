@@ -17,11 +17,21 @@ type TStakingRewardRowProps = {
   isFirst?: boolean
   isAllChainsView?: boolean
   onSwitchChain?: () => void
+  claimButtonClassName?: string
 }
 
 export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
-  const { reward, stakingAddress, stakingSource, chainId, onStartClaim, isFirst, isAllChainsView, onSwitchChain } =
-    props
+  const {
+    reward,
+    stakingAddress,
+    stakingSource,
+    chainId,
+    onStartClaim,
+    isFirst,
+    isAllChainsView,
+    onSwitchChain,
+    claimButtonClassName
+  } = props
 
   const currentChainId = useChainId()
   const { isPending } = useWriteContract()
@@ -69,6 +79,7 @@ export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
       isFirst={isFirst}
       isAllChainsView={isAllChainsView}
       onSwitchChain={onSwitchChain}
+      claimButtonClassName={claimButtonClassName}
     />
   )
 }

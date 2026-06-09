@@ -21,7 +21,8 @@ Holdings services
   ├─ Envio GraphQL: deposits, withdrawals, transfers
   ├─ Kong: vault metadata and historical PPS
   ├─ yearn-prices or DefiLlama: historical token prices
-  └─ PostgreSQL: optional server-side cache, progress, rate limits, invalidations
+  ├─ Upstash Redis: optional server-side cache, progress, invalidations
+  └─ Vercel Firewall: public route rate limits
 ```
 
 In production, files under `api/` run as Vercel functions. In local development, `api/server.ts` exposes the same holdings routes on the Bun API server at `localhost:3001` and adds local-only debug and refresh controls.
@@ -64,9 +65,9 @@ The API internally values each day at `23:59:59 UTC`.
 | `activityReceiptEnrichment.ts` | Chain RPC | Optional transaction and receipt enrichment for zaps, reward claims, and direct V2 vault actions |
 | `pnlEvents.ts` | Local | Shared raw event records for protocol-return history |
 | `pnlSimple.ts` | Local | Protocol-return exposure history without FIFO cost-basis accounting |
-| `cache.ts` | PostgreSQL | Daily totals and lazy vault invalidation |
-| `progress.ts` | PostgreSQL | Short-lived progress records and logs for long history requests |
-| `ratelimit.ts` | PostgreSQL | Simple per-client request windows for public holdings routes |
+| `cache.ts` | Upstash Redis | Daily totals and lazy vault invalidation |
+| `progress.ts` | Upstash Redis | Short-lived progress records and logs for long history requests |
+| `ratelimit.ts` | Vercel Firewall | Programmatic per-client rate limits for public holdings routes |
 
 ## Event Semantics
 
@@ -103,7 +104,7 @@ yearn-prices behavior:
 - API key is sent as `Authorization: Bearer <key>`.
 - `YEARN_PRICES_API_KEY` has priority; `API_KEY_PORTFOLIO` is the fallback.
 - Timestamps are normalized to UTC day end before the API request.
-- Contiguous daily histories up to `366` days use `/api/prices/rangeHistorical`.
+- Contiguous daily histories use `/api/prices/rangeHistorical`, split into `183`-day range windows.
 - Sparse or single-day lookups use `/api/prices/batchHistorical`.
 - Returned UTC day-end prices are materialized back onto the originally requested timestamps for the response map.
 - Prices are not read from or written to the local database.
@@ -117,7 +118,7 @@ DefiLlama behavior:
 
 ## Endpoints
 
-Public holdings data routes support CORS, `GET`, and `OPTIONS`. When database caching is enabled, history, breakdown, activity, activity facets, and protocol-return history rate-limit by forwarded IP, falling back to a simple header fingerprint. `/api/holdings/progress` is read-only progress polling and does not run the rate limiter.
+Public holdings data routes support CORS, `GET`, and `OPTIONS`. On Vercel, history, breakdown, activity, activity facets, and protocol-return history use the Vercel Firewall Rate Limiting SDK keyed by forwarded IP, falling back to a simple header fingerprint. `/api/holdings/progress` is read-only progress polling and does not run the rate limiter.
 
 ### `GET /api/holdings/history`
 
@@ -167,7 +168,7 @@ Returns `404` when the wallet has no indexed holdings activity for the request.
 
 ### `GET /api/holdings/progress`
 
-Reads DB-backed progress for long-running holdings routes. `history` and `protocol-return/history` can write progress when the caller passes a valid `progressId`.
+Reads Redis-backed progress for long-running holdings routes. `history` and `protocol-return/history` can write progress when the caller passes a valid `progressId`.
 
 Example:
 
@@ -198,7 +199,7 @@ Response:
 }
 ```
 
-Progress records expire after 10 minutes. The route returns `404` when the ID is invalid, expired, missing, or DB progress is unavailable, and it always sends `Cache-Control: no-store`.
+Progress records expire after 10 minutes. The route returns `204` when the ID is invalid, expired, missing, or Redis progress is unavailable, and it always sends `Cache-Control: no-store`.
 
 ### `GET /api/holdings/breakdown`
 
@@ -270,7 +271,7 @@ Recent classified vault activity.
 ```bash
 curl "http://localhost:3001/api/holdings/activity?address=0x..."
 curl "http://localhost:3001/api/holdings/activity?address=0x...&limit=20&offset=20"
-curl "http://localhost:3001/api/holdings/activity?address=0x...&type=withdraw&chainId=1&includeFacets=1"
+curl "http://localhost:3001/api/holdings/activity?address=0x...&type=withdraw&chainId=1"
 ```
 
 Query params:
@@ -278,16 +279,15 @@ Query params:
 | Param | Required | Default | Description |
 |-------|----------|---------|-------------|
 | `address` | Yes | - | User EVM address |
-| `version` | No | `all` | `v2`, `v3`, or `all` |
-| `limit` | No | `10` | Integer clamped to `1..50` |
+| `version` | No | `all` | Backend vault generation scope: `v2`, `v3`, or `all`. The portfolio activity UI uses `all`. |
+| `limit` | No | `10` | Integer clamped to `1..500` |
 | `offset` | No | `0` | Non-negative integer |
 | `type` | No | `all` | `deposit`, `withdraw`, `stake`, `unstake`, `transfer`, `swap`, or `all` |
 | `chainId` | No | - | Positive integer chain filter |
 | `startTimestamp` | No | - | Inclusive Unix timestamp lower bound |
 | `endTimestamp` | No | - | Inclusive Unix timestamp upper bound |
-| `includeFacets` | No | `false` | `true` or `1` includes `facets.chainIds` for the returned page |
 
-Response (`facets` appears only when `includeFacets=true` or `includeFacets=1`):
+Response:
 
 ```json
 {
@@ -295,9 +295,6 @@ Response (`facets` appears only when `includeFacets=true` or `includeFacets=1`):
   "version": "all",
   "limit": 10,
   "offset": 0,
-  "facets": {
-    "chainIds": [1, 8453]
-  },
   "pageInfo": {
     "hasMore": true,
     "nextOffset": 10
@@ -339,7 +336,7 @@ Returns activity chain facets without fetching the full paginated activity respo
 
 ```bash
 curl "http://localhost:3001/api/holdings/activity-facets?address=0x..."
-curl "http://localhost:3001/api/holdings/activity-facets?address=0x...&limitPerSource=500&offsetPerSource=500"
+curl "http://localhost:3001/api/holdings/activity-facets?address=0x...&version=all"
 ```
 
 Query params:
@@ -347,9 +344,7 @@ Query params:
 | Param | Required | Default | Description |
 |-------|----------|---------|-------------|
 | `address` | Yes | - | User EVM address |
-| `version` | No | `all` | `v2`, `v3`, or `all` |
-| `limitPerSource` | No | `250` | Per-event-source page size, clamped to `1..1000` |
-| `offsetPerSource` | No | `0` | Per-event-source non-negative offset |
+| `version` | No | `all` | Backend vault generation scope: `v2`, `v3`, or `all`. The portfolio activity UI uses `all`. |
 
 Response:
 
@@ -359,10 +354,6 @@ Response:
   "version": "all",
   "facets": {
     "chainIds": [1, 8453]
-  },
-  "pageInfo": {
-    "hasMore": false,
-    "nextOffsetPerSource": null
   }
 }
 ```
@@ -446,27 +437,28 @@ Response:
 
 When a vault filter is present, each history point can also include `currentUnderlying`, `growthUnderlying`, `sharesFormatted`, and `pricePerShare`.
 
-### `POST /api/admin/invalidate-cache`
+### Manual Vault Invalidation
 
-Marks vaults as invalidated so affected user daily totals are lazily cleared and recomputed on the next cached history request. Requires `x-admin-secret: $ADMIN_SECRET` and DB caching.
+Mark vaults as invalidated by writing Redis keys directly in Upstash. Affected user daily totals are lazily cleared and recomputed on the next cached history request that includes the invalidated vault.
 
-```bash
-curl -X POST \
-  -H "content-type: application/json" \
-  -H "x-admin-secret: $ADMIN_SECRET" \
-  -d '{"vaults":[{"address":"0x...","chainId":1}]}' \
-  "http://localhost:3001/api/admin/invalidate-cache"
+Key format:
+
+```text
+holdings:vault-invalidated:<chainId>:<lowercaseVaultAddress>
 ```
 
-Response:
+Value format:
 
-```json
-{
-  "success": true,
-  "invalidated": 1,
-  "vaults": ["1:0x..."],
-  "timestamp": "2026-05-07T00:00:00.000Z"
-}
+```text
+<current epoch milliseconds>
+```
+
+Example:
+
+```text
+key: holdings:vault-invalidated:1:0xbe53a109b494e5c9f97b9cd39fe969be68bf6204
+value: 1779564000000
+ttl: none
 ```
 
 ## Supported Chains
@@ -481,7 +473,7 @@ Response:
 | Arbitrum | 42161 | `arbitrum` |
 | Katana | 747474 | `katana` |
 
-`getChainPrefix` falls back to `ethereum` for unknown chain IDs, so new chains should be added to `SUPPORTED_CHAINS` before requests are expected to value correctly.
+Unknown chain IDs fail historical price resolution instead of falling back to Ethereum. Add new chains to `SUPPORTED_CHAINS` before requests are expected to value correctly.
 
 ## Environment Variables
 
@@ -489,8 +481,9 @@ Response:
 |----------|----------|---------|-------------|
 | `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
 | `ENVIO_PASSWORD` | No | `''` | Envio Hasura admin secret; skipped when empty or `testing` |
-| `DATABASE_URL_PREVIEW` | No | `null` | Preview PostgreSQL URL, preferred over `DATABASE_URL` when set |
-| `DATABASE_URL` | No | `null` | Default PostgreSQL URL; caching, progress, and rate-limit persistence are disabled when absent |
+| `VERCEL_HOLDINGS_RATE_LIMIT_ID` | No | `holdings-public-api` | Vercel Firewall rate limit ID for public holdings routes |
+| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | No | `null` | Upstash Redis REST URL for holdings cache, progress, and invalidations |
+| `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | No | `null` | Upstash Redis REST token for holdings storage |
 | `VITE_RPC_URI_FOR_<id>` | No | `null` | Optional chain RPC URL for activity receipt and transaction enrichment |
 | `HOLDINGS_PRICE_PROVIDER` | No | `auto` | `auto`, `yearn-prices`, or `defillama` |
 | `YEARN_PRICES_BASE_URL` | No | `https://prices.yearn.dev` | Base URL for yearn-prices; `/api/prices/...` is appended automatically |
@@ -498,7 +491,6 @@ Response:
 | `YEARN_PRICES_API_KEY` | No | `API_KEY_PORTFOLIO` fallback | Bearer token for yearn-prices |
 | `API_KEY_PORTFOLIO` | No | `''` | Shared portfolio API key used as the yearn-prices fallback token |
 | `DEFILLAMA_API_KEY` | No | `''` | Enables DefiLlama Pro GET route |
-| `ADMIN_SECRET` | Admin only | `null` | Secret for `/api/admin/invalidate-cache` |
 | `HOLDINGS_DEBUG` | Local only | `false` | Enables holdings debug logs in `api/server.ts` |
 
 Hardcoded service bases:
@@ -526,21 +518,25 @@ If aggregates are unavailable, the code falls back to sequential pagination. For
 
 ## Caching
 
-Server-side cache is optional. When `DATABASE_URL_PREVIEW` or `DATABASE_URL` is absent, the APIs still work but recompute history and refetch prices/PPS on each request.
+Server-side cache is optional. When `UPSTASH_REDIS_REST_URL_PORTFOLIO` or `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` is absent, the APIs still work but recompute history and refetch prices/PPS on each request.
 
 ### Cache Layers
 
-1. PostgreSQL:
-   - `holdings_totals`: daily USD totals per hashed user address, vault version, and date.
-   - `rate_limits`: simple per-client request windows, cleaned opportunistically after the active window expires.
-   - `vault_invalidations`: per-vault invalidation timestamps for lazy cache clearing.
-   - `holdings_progress`: authoritative short-lived progress records keyed by hashed wallet identity for long history requests across Vercel function instances.
-2. HTTP cache:
-   - History, breakdown, and protocol-return history: `s-maxage=300, stale-while-revalidate=600`.
-   - Activity: `s-maxage=60, stale-while-revalidate=300`.
-   - Activity facets: `s-maxage=300, stale-while-revalidate=900`.
-   - Progress: `no-store`.
-3. Client TanStack Query cache:
+1. Upstash Redis:
+   - `holdings:totals:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
+   - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
+   - `holdings:progress:<progressId>`: authoritative short-lived progress records keyed by caller-supplied progress ID for long history requests across Vercel function instances.
+2. Vercel Firewall:
+   - `VERCEL_HOLDINGS_RATE_LIMIT_ID` identifies the dashboard Firewall rule used by `@vercel/firewall`.
+   - The default rule ID is `holdings-public-api`.
+   - Configure the dashboard rule with the desired window and request count, currently intended to match the old `10` requests per minute limit.
+3. HTTP cache:
+   - Cacheable API responses put shared-cache policy in `Vercel-CDN-Cache-Control` and keep browser-facing `Cache-Control` at `public, max-age=0, must-revalidate`.
+   - History, breakdown, and protocol-return history CDN cache: `s-maxage=300, stale-while-revalidate=600`.
+   - Activity CDN cache: `s-maxage=60, stale-while-revalidate=300`.
+   - Activity facets CDN cache: `s-maxage=300, stale-while-revalidate=900`.
+   - Progress: `Cache-Control: no-store`.
+4. Client TanStack Query cache:
    - Portfolio history and protocol-return history hooks keep chart responses fresh for one hour.
    - Other frontend hooks configure their own durations.
 
@@ -550,75 +546,42 @@ The history cache stores aggregate daily totals, not per-vault breakdown rows. C
 
 Cache behavior:
 
-- Unfiltered history can read/write `holdings_totals`.
+- Unfiltered history can read/write `holdings:totals:<addressHash>:<version>`.
 - Vault-filtered history skips aggregate daily total cache because the cache is user/version scoped, not vault-filter scoped.
-- Cache staleness is checked against `vault_invalidations` only after the request has enough cached daily totals to potentially serve from cache.
+- Cache staleness is checked against `holdings:vault-invalidated:<chainId>:<vaultAddress>` only after the request has enough cached daily totals to potentially serve from cache.
 - If any relevant vault was invalidated after the oldest cached row was written, the user's cached totals for that version are cleared and recomputed.
 - Recalculated totals are not cached when any token price batch failed, because partial price data can undercount chart totals.
 - `refresh=true` or `refresh=1` in the local Bun server clears the user's cached totals before recomputing.
 
 ### Progress and Rate Limits
 
-- Progress writes only when DB persistence is enabled and the supplied `progressId` matches `[a-zA-Z0-9:_-]{1,160}`.
+- Progress writes only when Redis persistence is enabled and the supplied `progressId` matches `[a-zA-Z0-9:_-]{1,160}`.
 - Progress status is `running`, `complete`, or `error`; progress is clamped to `0..100`, logs are capped to the latest `20` entries, and rows expire after `10 minutes`.
-- DB-backed rate limiting allows `10` requests per minute per client identifier. If DB access fails, the rate limiter allows the request and logs the failure.
+- Vercel Firewall rate limiting only runs when `VERCEL=1`. Local development allows requests without calling the Firewall SDK.
+- Configure a Vercel Firewall rule with condition `@vercel/firewall` and the rate limit ID from `VERCEL_HOLDINGS_RATE_LIMIT_ID` or the default `holdings-public-api`.
+- The intended production limit is `10` requests per minute per client identifier. If the Firewall SDK check fails, the rate limiter allows the request and logs the failure.
 
 ### Token Prices
 
-Token prices are fetched from the selected provider for each request. The holdings DB does not cache positive token prices or price misses.
+Token prices are fetched from the selected provider for each request. Holdings Redis storage does not cache positive token prices or price misses.
 
-## Database Schema
+## Redis Keys
 
-```sql
-CREATE TABLE IF NOT EXISTS holdings_totals (
-  user_address_hash VARCHAR(64) NOT NULL,
-  version VARCHAR(8) NOT NULL DEFAULT 'all',
-  date DATE NOT NULL,
-  usd_value NUMERIC NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW(),
-  PRIMARY KEY (user_address_hash, version, date)
-);
+No schema migration is required. Redis keys are created lazily:
 
-CREATE TABLE IF NOT EXISTS rate_limits (
-  ip VARCHAR(45) PRIMARY KEY,
-  request_count INTEGER DEFAULT 1,
-  window_start TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS vault_invalidations (
-  vault_address VARCHAR(42) NOT NULL,
-  chain_id INTEGER NOT NULL,
-  invalidated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  PRIMARY KEY (vault_address, chain_id)
-);
-
-CREATE TABLE IF NOT EXISTS holdings_progress (
-  id VARCHAR(160) PRIMARY KEY,
-  route VARCHAR(64) NOT NULL,
-  address_hash VARCHAR(64) NOT NULL,
-  status VARCHAR(16) NOT NULL,
-  progress INTEGER NOT NULL,
-  message TEXT NOT NULL,
-  detail TEXT,
-  started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  logs JSONB NOT NULL DEFAULT '[]'::jsonb
-);
-
-CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
-CREATE INDEX IF NOT EXISTS idx_vault_invalidations_time ON vault_invalidations(invalidated_at);
-CREATE INDEX IF NOT EXISTS idx_holdings_progress_updated_at ON holdings_progress(updated_at);
-```
-
-Legacy `holdings_totals.user_address` rows are migrated to `user_address_hash`, and the primary key is migrated to `(user_address_hash, version, date)`.
+| Key | Type | TTL | Purpose |
+|-----|------|-----|---------|
+| `holdings:totals:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
+| `holdings:vault-invalidated:<chainId>:<vaultAddress>` | String timestamp | None | Lazy invalidation marker for totals cache. |
+| `holdings:progress:<progressId>` | String JSON record | 10 minutes | Progress polling state for long requests. |
 
 ## Operational Notes
 
-- Enable DB caching in shared environments; otherwise a history request must rebuild events, PPS, and prices every time.
+- Enable Redis storage in shared environments; otherwise a history request must rebuild events, PPS, and prices every time.
 - Keep `API_KEY_PORTFOLIO` or `YEARN_PRICES_API_KEY` configured if `HOLDINGS_PRICE_PROVIDER=auto` should prefer yearn-prices.
 - Configure `VITE_RPC_URI_FOR_<chainId>` for chains where activity rows should include richer zap, reward-claim, and direct V2 vault enrichment.
-- Pass a stable `progressId` from the frontend for long history and protocol-return requests, then poll `/api/holdings/progress?id=...`; progress rows are DB-backed and expire quickly.
-- Use `/api/admin/invalidate-cache` after indexer deployments add or repair vault coverage.
-- Stale rate-limit rows are cleaned opportunistically when holdings rate checks run.
-- Short-lived progress rows are cleaned opportunistically when progress-enabled holdings requests run; if DB progress is unavailable, clients show a neutral loading placeholder instead of estimated progress.
+- Pass a stable `progressId` from the frontend for long history and protocol-return requests, then poll `/api/holdings/progress?id=...`; progress rows are Redis-backed and expire quickly.
+- Write `holdings:vault-invalidated:<chainId>:<vaultAddress>` markers in Upstash after indexer deployments add or repair vault coverage.
+- Rate-limit and progress cleanup is handled by Redis TTLs.
+- If Redis progress is unavailable, clients show a neutral loading placeholder instead of estimated progress.
 - `timeframe=all` grows over time from `2024-01-01`, so cache row counts are no longer fixed at `365` per user/version.

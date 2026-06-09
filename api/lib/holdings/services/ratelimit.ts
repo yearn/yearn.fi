@@ -1,71 +1,53 @@
-import { getPool, isDatabaseEnabled } from '../db/connection'
+import { checkRateLimit as checkVercelRateLimit } from '@vercel/firewall'
 
-const WINDOW_MS = 60 * 1000 // 1 minute
-const WINDOW_INTERVAL = '1 minute'
-const MAX_REQUESTS = 10
-const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60 * 1000
-const rateLimitCleanupState = { lastCleanupAt: 0 }
+const WINDOW_SECONDS = 60
+const DEFAULT_RATE_LIMIT_ID = 'holdings-public-api'
 
 export interface RateLimitResult {
   allowed: boolean
   retryAfter?: number
 }
 
-async function cleanupStaleRateLimitRows(pool: NonNullable<Awaited<ReturnType<typeof getPool>>>): Promise<void> {
-  const now = Date.now()
-  if (now - rateLimitCleanupState.lastCleanupAt < RATE_LIMIT_CLEANUP_INTERVAL_MS) {
-    return
-  }
-  rateLimitCleanupState.lastCleanupAt = now
+type RateLimitHeaders = Headers | Record<string, string | string[] | undefined>
 
-  try {
-    await pool.query(`DELETE FROM rate_limits WHERE window_start < NOW() - INTERVAL '${WINDOW_INTERVAL}'`)
-  } catch (error) {
-    console.error('[RateLimit] Failed to delete stale rows:', error)
-  }
+function getRateLimitId(): string {
+  return process.env.VERCEL_HOLDINGS_RATE_LIMIT_ID?.trim() || DEFAULT_RATE_LIMIT_ID
 }
 
-export async function checkRateLimit(ip: string): Promise<RateLimitResult> {
-  if (!isDatabaseEnabled()) {
+function normalizeHeaders(headers?: RateLimitHeaders): Headers | Record<string, string | string[]> | undefined {
+  if (!headers || headers instanceof Headers) {
+    return headers
+  }
+
+  const normalizedHeaders: Record<string, string | string[]> = {}
+  for (const [key, value] of Object.entries(headers)) {
+    if (typeof value !== 'undefined') {
+      normalizedHeaders[key] = value
+    }
+  }
+  return normalizedHeaders
+}
+
+export async function checkRateLimit(clientIdentifier: string, headers?: RateLimitHeaders): Promise<RateLimitResult> {
+  if (process.env.VERCEL !== '1') {
     return { allowed: true }
   }
 
-  const pool = await getPool()
-  if (!pool) {
-    return { allowed: true }
-  }
+  const rateLimitId = getRateLimitId()
 
   try {
-    const result = await pool.query<{ request_count: number; window_start: Date }>(
-      `INSERT INTO rate_limits (ip, request_count, window_start)
-       VALUES ($1, 1, NOW())
-       ON CONFLICT (ip) DO UPDATE SET
-         request_count = CASE
-           WHEN rate_limits.window_start < NOW() - INTERVAL '${WINDOW_INTERVAL}'
-           THEN 1
-           ELSE rate_limits.request_count + 1
-         END,
-         window_start = CASE
-           WHEN rate_limits.window_start < NOW() - INTERVAL '${WINDOW_INTERVAL}'
-           THEN NOW()
-           ELSE rate_limits.window_start
-         END
-       RETURNING request_count, window_start`,
-      [ip]
-    )
+    const result = await checkVercelRateLimit(rateLimitId, {
+      headers: normalizeHeaders(headers),
+      rateLimitKey: clientIdentifier
+    })
 
-    const { request_count, window_start } = result.rows[0]
-    void cleanupStaleRateLimitRows(pool)
-
-    if (request_count > MAX_REQUESTS) {
-      const windowEnd = new Date(window_start).getTime() + WINDOW_MS
-      const retryAfter = Math.max(1, Math.ceil((windowEnd - Date.now()) / 1000))
-      return { allowed: false, retryAfter }
+    if (result.error) {
+      console.warn(`[Holdings] Vercel rate limit check returned ${result.error} for ${rateLimitId}`)
     }
 
-    return { allowed: true }
+    return result.rateLimited ? { allowed: false, retryAfter: WINDOW_SECONDS } : { allowed: true }
   } catch (error) {
-    console.error('[RateLimit] Check failed:', error)
+    console.warn('[Holdings] Vercel rate limit check failed', error)
     return { allowed: true }
   }
 }

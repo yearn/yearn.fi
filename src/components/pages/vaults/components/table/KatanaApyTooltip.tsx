@@ -6,7 +6,6 @@ import type { ReactElement } from 'react'
 
 type TKatanaTooltipProps = {
   katanaNativeYield: number
-  fixedRateKatanRewardsAPR: number
   katanaAppRewardsAPR: number
   steerPointsPerDollar?: number
   isEligibleForSpectraBoost?: boolean
@@ -51,7 +50,6 @@ function KatanaApyRow({ iconSrc, label, value }: TKatanaApyRowProps): ReactEleme
 
 export function KatanaApyTooltipContent({
   katanaNativeYield,
-  fixedRateKatanRewardsAPR,
   katanaAppRewardsAPR,
   steerPointsPerDollar,
   isEligibleForSpectraBoost,
@@ -60,13 +58,12 @@ export function KatanaApyTooltipContent({
   currentVault
 }: Omit<TKatanaTooltipProps, 'children' | 'position' | 'className'>): ReactElement {
   const width = maxWidth || 'w-full max-w-[360px]'
-  const resolvedNativeYieldLabel = nativeYieldLabel ?? 'Katana Native 30 Day APY'
+  const resolvedNativeYieldLabel = nativeYieldLabel ?? 'Katana Native Historical APY'
   const baseAssetsUrl = import.meta.env.VITE_BASE_YEARN_ASSETS_URI
   const chainId = getVaultChainID(currentVault)
   const tokenAddress = getVaultToken(currentVault).address.toLowerCase()
   const tokenLogoSrc = `${baseAssetsUrl}/tokens/${chainId}/${tokenAddress}/logo-32.png`
   const chainLogoSrc = `${baseAssetsUrl}/chains/${chainId}/logo-32.png`
-  const hasFixedRateRewards = fixedRateKatanRewardsAPR > 0
   const hasAppRewards = katanaAppRewardsAPR > 0
   const hasSteerPoints = (steerPointsPerDollar || 0) > 0
 
@@ -82,14 +79,6 @@ export function KatanaApyTooltipContent({
         <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
           {'Yield Earned on Katana'}
         </p>
-        {hasFixedRateRewards ? (
-          <>
-            <KatanaApyRow iconSrc={chainLogoSrc} label={'Base Rewards APR '} value={fixedRateKatanRewardsAPR} />
-            <p className={'-mt-1 mb-2 w-full text-left text-xs text-text-secondary wrap-break-word'}>
-              {'Limited time KAT rewards'}
-            </p>
-          </>
-        ) : null}
         {hasAppRewards ? (
           <>
             <KatanaApyRow iconSrc={chainLogoSrc} label={'App Rewards APR '} value={katanaAppRewardsAPR} />

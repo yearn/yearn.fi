@@ -277,3 +277,67 @@ describe('fetchUserEvents', () => {
     ).toHaveLength(1)
   })
 })
+
+describe('fetchAddressActivityChainIdsByExistence', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('returns supported chain ids with at least one address-scoped event', async () => {
+    const fetchStub = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        query: string
+        variables: Record<string, unknown>
+      }
+
+      expect(body.query).toContain('GetAddressActivityChainPresence')
+      expect(body.query).toContain('limit: 1')
+      expect(body.variables.address).toBe(getAddress(USER))
+
+      const chainId = Number(body.variables.chainId)
+
+      return createGraphqlResponse({
+        deposits: chainId === 1 ? [{ id: 'ethereum-deposit' }] : [],
+        withdrawals: [],
+        transfersIn: chainId === 8453 ? [{ id: 'base-transfer-in' }] : [],
+        transfersOut: [],
+        v2Deposits: [],
+        v2Withdrawals: []
+      })
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const { fetchAddressActivityChainIdsByExistence } = await importGraphqlModule()
+    const chainIds = await fetchAddressActivityChainIdsByExistence(USER, 'all')
+
+    expect(chainIds).toEqual([1, 8453])
+    expect(fetchStub).toHaveBeenCalledTimes(7)
+  })
+
+  it('respects the requested vault version when checking chain presence', async () => {
+    const fetchStub = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        variables: Record<string, unknown>
+      }
+      const chainId = Number(body.variables.chainId)
+
+      return createGraphqlResponse({
+        deposits: chainId === 1 ? [{ id: 'ethereum-v3-deposit' }] : [],
+        withdrawals: [],
+        transfersIn: [],
+        transfersOut: [],
+        v2Deposits: chainId === 137 ? [{ id: 'polygon-v2-deposit' }] : [],
+        v2Withdrawals: []
+      })
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const { fetchAddressActivityChainIdsByExistence } = await importGraphqlModule()
+
+    await expect(fetchAddressActivityChainIdsByExistence(USER, 'v3')).resolves.toEqual([1])
+    await expect(fetchAddressActivityChainIdsByExistence(USER, 'v2')).resolves.toEqual([137])
+  })
+})

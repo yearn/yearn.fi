@@ -6,10 +6,14 @@ import type {
   TTenderlySnapshotRequest
 } from '../src/components/shared/types/tenderly'
 import { ENSO_BALANCES_CACHE_CONTROL } from './enso/cache'
+import type { TVaultListEntry, TVaultSnapshot } from './lib/aio'
+import { buildSitemap, buildVaultMarkdown, buildVaultsMarkdown, KONG_REST_BASE, KONG_VAULT_LIST_URL } from './lib/aio'
+import { getVercelCdnCacheHeaders } from './lib/cacheHeaders'
 import {
   clearUserCache,
   getHistoricalHoldingsChart,
   getHoldingsActivity,
+  getHoldingsActivityFacetResponse,
   getHoldingsBreakdown,
   getHoldingsProtocolReturnHistory,
   getHoldingsTotalsCacheVersion,
@@ -18,12 +22,10 @@ import {
   type HoldingsEventPaginationMode,
   type HoldingsHistoryDenomination,
   type HoldingsHistoryTimeframe,
-  initializeSchema,
-  isDatabaseEnabled,
+  initializeHoldingsStorage,
   type VaultVersion,
   validateConfig
 } from './lib/holdings'
-import { invalidateVaults, type VaultIdentifier } from './lib/holdings/services/cache'
 import {
   createHoldingsDebugContext,
   debugError,
@@ -31,7 +33,6 @@ import {
   isHoldingsDebugRequested,
   withHoldingsDebugContext
 } from './lib/holdings/services/debug'
-import { fetchRecentAddressScopedActivityEvents } from './lib/holdings/services/graphql'
 import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
@@ -52,17 +53,14 @@ import {
   requireTenderlyServerChain,
   resolveTenderlyFundRpcRequest
 } from './tenderly.helpers'
-import {
-  buildTenderlyAdminAccessDeniedResponse,
-  buildTenderlyAdminCorsPreflightResponse,
-  withTenderlyAdminCors
-} from './tenderlyAccess'
+import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 const DEFAULT_API_PORT = 3001
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
+const YVUSD_APR_CDN_CACHE_CONTROL = 'public, s-maxage=30, stale-while-revalidate=120'
 
 function isHistoryQueryEnabled(historyParam: string | null): boolean {
   return historyParam === '1' || historyParam === 'true'
@@ -125,9 +123,7 @@ async function handleYvUsdAprs(req: Request): Promise<Response> {
 
     const data = await response.json()
     return Response.json(data, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120'
-      }
+      headers: getVercelCdnCacheHeaders(YVUSD_APR_CDN_CACHE_CONTROL)
     })
   } catch (error) {
     console.error('Error proxying yvUSD APR request:', error)
@@ -138,7 +134,7 @@ async function handleYvUsdAprs(req: Request): Promise<Response> {
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-secret'
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 }
 
 function withCors(response: Response): Response {
@@ -160,21 +156,17 @@ function handleCorsPreFlight(): Response {
   })
 }
 
-function isTenderlyAdminMutationRoute(pathname: string): boolean {
-  return (
-    pathname === '/api/tenderly/snapshot' ||
-    pathname === '/api/tenderly/revert' ||
-    pathname === '/api/tenderly/increase-time' ||
-    pathname === '/api/tenderly/fund'
-  )
-}
-
 async function handleHoldingsProgress(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const progress = await getHoldingsProgress(url.searchParams.get('id'))
 
   if (!progress) {
-    return Response.json({ error: 'Progress not found', status: 404 }, { status: 404 })
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Cache-Control': 'no-store'
+      }
+    })
   }
 
   return Response.json(progress, {
@@ -232,25 +224,6 @@ function parseVaultFilters(url: URL): Array<{ chainId: number; vaultAddress: str
   return [{ chainId: Number(chainId), vaultAddress: vault }]
 }
 
-interface InvalidateRequestBody {
-  vaults: Array<{ address: string; chainId: number }>
-}
-
-function validateInvalidateBody(body: unknown): body is InvalidateRequestBody {
-  if (!body || typeof body !== 'object') return false
-  const candidate = body as Record<string, unknown>
-  if (!Array.isArray(candidate.vaults) || candidate.vaults.length === 0) return false
-
-  for (const vault of candidate.vaults) {
-    if (!vault || typeof vault !== 'object') return false
-    const value = vault as Record<string, unknown>
-    if (typeof value.address !== 'string' || !isValidAddress(value.address)) return false
-    if (typeof value.chainId !== 'number' || !Number.isInteger(value.chainId)) return false
-  }
-
-  return true
-}
-
 function parseHoldingsEventFetchType(value: string | null): HoldingsEventFetchType {
   return value === 'parallel' ? 'parallel' : 'seq'
 }
@@ -274,7 +247,7 @@ function parseHoldingsActivityLimit(value: string | null): number {
     return 10
   }
 
-  return Math.min(Math.max(parsed, 1), 50)
+  return Math.min(Math.max(parsed, 1), 500)
 }
 
 function parseHoldingsActivityOffset(value: string | null): number {
@@ -312,22 +285,6 @@ function parseHoldingsActivityTimestamp(value: string | null): number | null {
   const parsed = Number(value)
 
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null
-}
-
-function parseHoldingsActivityBoolean(value: string | null): boolean {
-  return value === 'true' || value === '1'
-}
-
-function parsePositiveIntegerParam(value: string | null, fallback: number, max: number): number {
-  const parsed = Number(value)
-
-  return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, max) : fallback
-}
-
-function parseNonNegativeIntegerParam(value: string | null): number {
-  const parsed = Number(value)
-
-  return Number.isInteger(parsed) && parsed >= 0 ? parsed : 0
 }
 
 function parseUtcDateParam(value: string | null): number | null {
@@ -506,6 +463,86 @@ async function handleTenderlyFund(req: Request): Promise<Response> {
   }
 }
 
+async function handleSitemap(req: Request): Promise<Response> {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+  try {
+    const upstream = await fetch(KONG_VAULT_LIST_URL, { headers: { Accept: 'application/json' } })
+    const vaults: TVaultListEntry[] = upstream.ok ? ((await upstream.json()) as TVaultListEntry[]) : []
+    return new Response(req.method === 'HEAD' ? null : buildSitemap(vaults), {
+      headers: {
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600'
+      }
+    })
+  } catch (error) {
+    console.error('Error generating sitemap:', error)
+    return new Response(
+      '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>',
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/xml; charset=utf-8' }
+      }
+    )
+  }
+}
+
+async function handleVaultsMarkdown(req: Request): Promise<Response> {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+  const chainIdParam = new URL(req.url).searchParams.get('chainId')
+  const chainId = chainIdParam && /^\d+$/.test(chainIdParam) ? Number(chainIdParam) : undefined
+  try {
+    const upstream = await fetch(KONG_VAULT_LIST_URL, { headers: { Accept: 'application/json' } })
+    if (!upstream.ok) return Response.json({ error: 'Failed to fetch vault list from upstream' }, { status: 502 })
+    const vaults = (await upstream.json()) as TVaultListEntry[]
+    return new Response(req.method === 'HEAD' ? null : buildVaultsMarkdown(vaults, chainId), {
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error generating vaults markdown:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+async function handleVaultMarkdown(req: Request): Promise<Response> {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+  const params = new URL(req.url).searchParams
+  const chainId = params.get('chainId')
+  const address = params.get('address')
+  if (!chainId || !address) return Response.json({ error: 'Missing chainId or address' }, { status: 400 })
+  if (!/^\d+$/.test(chainId)) return Response.json({ error: 'Invalid chainId' }, { status: 400 })
+  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) return Response.json({ error: 'Invalid address' }, { status: 400 })
+  try {
+    const upstream = await fetch(`${KONG_REST_BASE}/snapshot/${chainId}/${address}`, {
+      headers: { Accept: 'application/json' }
+    })
+    if (!upstream.ok) {
+      return Response.json(
+        { error: upstream.status === 404 ? 'Vault not found' : 'Upstream error' },
+        { status: upstream.status === 404 ? 404 : 502 }
+      )
+    }
+    const snapshot = (await upstream.json()) as TVaultSnapshot
+    return new Response(req.method === 'HEAD' ? null : buildVaultMarkdown(snapshot, Number(chainId), address), {
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+      }
+    })
+  } catch (error) {
+    console.error('Error generating vault markdown:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 function handleEnsoStatus(): Response {
   const apiKey = process.env.ENSO_API_KEY
   return Response.json({ configured: !!apiKey })
@@ -629,6 +666,9 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
 const CHANGE_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
 const ALIGNMENT_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 const VAULT_STATE_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const HOLDINGS_HISTORY_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600'
+const HOLDINGS_ACTIVITY_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=300'
+const HOLDINGS_ACTIVITY_FACETS_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=900'
 
 async function handleOptimizationChange(req: Request): Promise<Response> {
   if (req.method !== 'GET') {
@@ -653,9 +693,7 @@ async function handleOptimizationChange(req: Request): Promise<Response> {
         }
 
         return Response.json(selectedHistory, {
-          headers: {
-            'Cache-Control': CHANGE_CACHE_CONTROL
-          }
+          headers: getVercelCdnCacheHeaders(CHANGE_CACHE_CONTROL)
         })
       }
 
@@ -665,16 +703,12 @@ async function handleOptimizationChange(req: Request): Promise<Response> {
       }
 
       return Response.json(selected, {
-        headers: {
-          'Cache-Control': CHANGE_CACHE_CONTROL
-        }
+        headers: getVercelCdnCacheHeaders(CHANGE_CACHE_CONTROL)
       })
     }
 
     return Response.json(optimizations, {
-      headers: {
-        'Cache-Control': CHANGE_CACHE_CONTROL
-      }
+      headers: getVercelCdnCacheHeaders(CHANGE_CACHE_CONTROL)
     })
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
@@ -743,9 +777,7 @@ async function handleOptimizationAlignment(req: Request): Promise<Response> {
     )
 
     return Response.json(events, {
-      headers: {
-        'Cache-Control': ALIGNMENT_CACHE_CONTROL
-      }
+      headers: getVercelCdnCacheHeaders(ALIGNMENT_CACHE_CONTROL)
     })
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
@@ -805,9 +837,7 @@ async function handleOptimizationVaultState(req: Request): Promise<Response> {
         unallocatedBps: state.unallocatedBps
       },
       {
-        headers: {
-          'Cache-Control': VAULT_STATE_CACHE_CONTROL
-        }
+        headers: getVercelCdnCacheHeaders(VAULT_STATE_CACHE_CONTROL)
       }
     )
   } catch (error) {
@@ -941,9 +971,7 @@ async function handleHoldingsHistory(req: Request): Promise<Response> {
         }))
       },
       {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-        }
+        headers: getVercelCdnCacheHeaders(HOLDINGS_HISTORY_CACHE_CONTROL)
       }
     )
   } catch (error) {
@@ -969,7 +997,6 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const chainId = parseHoldingsActivityChainId(url.searchParams.get('chainId'))
   const startTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('startTimestamp'))
   const endTimestamp = parseHoldingsActivityTimestamp(url.searchParams.get('endTimestamp'))
-  const includeFacets = parseHoldingsActivityBoolean(url.searchParams.get('includeFacets'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -982,24 +1009,15 @@ async function handleHoldingsActivity(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const activity = await getHoldingsActivity(
-      address,
-      version,
-      limit,
-      offset,
-      {
-        type,
-        chainId,
-        startTimestamp,
-        endTimestamp
-      },
-      includeFacets
-    )
+    const activity = await getHoldingsActivity(address, version, limit, offset, {
+      type,
+      chainId,
+      startTimestamp,
+      endTimestamp
+    })
 
     return Response.json(activity, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
-      }
+      headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_CACHE_CONTROL)
     })
   } catch (error) {
     console.error('Error fetching holdings activity:', error)
@@ -1013,8 +1031,6 @@ async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const address = url.searchParams.get('address')
   const versionParam = url.searchParams.get('version')
-  const limitPerSource = parsePositiveIntegerParam(url.searchParams.get('limitPerSource'), 250, 1000)
-  const offsetPerSource = parseNonNegativeIntegerParam(url.searchParams.get('offsetPerSource'))
 
   if (!address) {
     return Response.json({ error: 'Missing required parameter: address', status: 400 }, { status: 400 })
@@ -1027,39 +1043,11 @@ async function handleHoldingsActivityFacets(req: Request): Promise<Response> {
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
 
   try {
-    const events = await fetchRecentAddressScopedActivityEvents(
-      address,
-      version,
-      limitPerSource,
-      undefined,
-      offsetPerSource
-    )
-    const hasMore =
-      events.hasMoreDeposits || events.hasMoreWithdrawals || events.hasMoreTransfersIn || events.hasMoreTransfersOut
-    const chainIds = Array.from(
-      new Set(
-        [...events.deposits, ...events.withdrawals, ...events.transfersIn, ...events.transfersOut].map(
-          (event) => event.chainId
-        )
-      )
-    ).sort((firstChainId, secondChainId) => firstChainId - secondChainId)
+    const facetsResponse = await getHoldingsActivityFacetResponse(address, version)
 
-    return Response.json(
-      {
-        address: address.toLowerCase(),
-        version,
-        facets: { chainIds },
-        pageInfo: {
-          hasMore,
-          nextOffsetPerSource: hasMore ? offsetPerSource + limitPerSource : null
-        }
-      },
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900'
-        }
-      }
-    )
+    return Response.json(facetsResponse, {
+      headers: getVercelCdnCacheHeaders(HOLDINGS_ACTIVITY_FACETS_CACHE_CONTROL)
+    })
   } catch (error) {
     console.error('Error fetching holdings activity facets:', error)
     const message = error instanceof Error ? error.message : String(error)
@@ -1149,9 +1137,7 @@ async function handleHoldingsBreakdown(req: Request): Promise<Response> {
     )
 
     return Response.json(breakdown, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-      }
+      headers: getVercelCdnCacheHeaders(HOLDINGS_HISTORY_CACHE_CONTROL)
     })
   } catch (error) {
     console.error('Error fetching holdings breakdown:', error)
@@ -1272,9 +1258,7 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
     })
 
     return Response.json(history, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-      }
+      headers: getVercelCdnCacheHeaders(HOLDINGS_HISTORY_CACHE_CONTROL)
     })
   } catch (error) {
     await updateHoldingsProgress(progressId, {
@@ -1292,68 +1276,6 @@ async function handleHoldingsProtocolReturnHistory(req: Request): Promise<Respon
   }
 }
 
-async function handleInvalidateCache(req: Request): Promise<Response> {
-  if (req.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 })
-  }
-
-  const adminSecret = process.env.ADMIN_SECRET
-  if (!adminSecret) {
-    return Response.json({ error: 'Admin endpoint not configured' }, { status: 503 })
-  }
-
-  const providedSecret = req.headers.get('x-admin-secret')
-  if (providedSecret !== adminSecret) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!isDatabaseEnabled()) {
-    return Response.json({ error: 'Caching not enabled (DATABASE_URL not configured)' }, { status: 503 })
-  }
-
-  let body: unknown
-  try {
-    body = await req.json()
-  } catch (_error) {
-    return Response.json(
-      {
-        error: 'Invalid request body',
-        expected: { vaults: [{ address: '0x...', chainId: 1 }] }
-      },
-      { status: 400 }
-    )
-  }
-
-  if (!validateInvalidateBody(body)) {
-    return Response.json(
-      {
-        error: 'Invalid request body',
-        expected: { vaults: [{ address: '0x...', chainId: 1 }] }
-      },
-      { status: 400 }
-    )
-  }
-
-  try {
-    const vaults: VaultIdentifier[] = body.vaults.map((vault) => ({
-      address: vault.address,
-      chainId: vault.chainId
-    }))
-
-    const invalidatedCount = await invalidateVaults(vaults)
-
-    return Response.json({
-      success: true,
-      invalidated: invalidatedCount,
-      vaults: vaults.map((vault) => `${vault.chainId}:${vault.address.toLowerCase()}`),
-      timestamp: new Date().toISOString()
-    })
-  } catch (error) {
-    console.error('[Admin] Invalidate cache error:', error)
-    return Response.json({ error: 'Failed to invalidate cache' }, { status: 500 })
-  }
-}
-
 async function main() {
   process.on('uncaughtException', (error) => {
     console.error('💥 Uncaught Exception:', error)
@@ -1365,7 +1287,7 @@ async function main() {
 
   validateConfig()
 
-  await initializeSchema()
+  await initializeHoldingsStorage()
 
   serve({
     async fetch(req, server) {
@@ -1373,12 +1295,20 @@ async function main() {
       console.log(`[Server] ${req.method} ${url.pathname}`)
 
       try {
-        if (req.method === 'OPTIONS' && isTenderlyAdminMutationRoute(url.pathname)) {
-          return buildTenderlyAdminCorsPreflightResponse(req)
-        }
-
         if (req.method === 'OPTIONS') {
           return handleCorsPreFlight()
+        }
+
+        if (url.pathname === '/api/sitemap') {
+          return withCors(await handleSitemap(req))
+        }
+
+        if (url.pathname === '/api/vaults/markdown') {
+          return withCors(await handleVaultsMarkdown(req))
+        }
+
+        if (url.pathname === '/api/vault/markdown') {
+          return withCors(await handleVaultMarkdown(req))
         }
 
         if (url.pathname === '/api/enso/status') {
@@ -1420,10 +1350,6 @@ async function main() {
           return withCors(await handleHoldingsProtocolReturnHistory(req))
         }
 
-        if (url.pathname === '/api/admin/invalidate-cache') {
-          return withCors(await handleInvalidateCache(req))
-        }
-
         if (url.pathname === '/api/yvusd/aprs') {
           return withCors(await handleYvUsdAprs(req))
         }
@@ -1445,47 +1371,46 @@ async function main() {
         }
 
         if (url.pathname === '/api/tenderly/snapshot') {
-          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address, req)
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
           if (accessDeniedResponse) {
-            return withTenderlyAdminCors(accessDeniedResponse, req)
+            return withCors(accessDeniedResponse)
           }
-          return withTenderlyAdminCors(await handleTenderlySnapshot(req), req)
+          return withCors(await handleTenderlySnapshot(req))
         }
 
         if (url.pathname === '/api/tenderly/revert') {
-          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address, req)
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
           if (accessDeniedResponse) {
-            return withTenderlyAdminCors(accessDeniedResponse, req)
+            return withCors(accessDeniedResponse)
           }
-          return withTenderlyAdminCors(await handleTenderlyRevert(req), req)
+          return withCors(await handleTenderlyRevert(req))
         }
 
         if (url.pathname === '/api/tenderly/increase-time') {
-          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address, req)
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
           if (accessDeniedResponse) {
-            return withTenderlyAdminCors(accessDeniedResponse, req)
+            return withCors(accessDeniedResponse)
           }
-          return withTenderlyAdminCors(await handleTenderlyIncreaseTime(req), req)
+          return withCors(await handleTenderlyIncreaseTime(req))
         }
 
         if (url.pathname === '/api/tenderly/fund') {
-          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address, req)
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
           if (accessDeniedResponse) {
-            return withTenderlyAdminCors(accessDeniedResponse, req)
+            return withCors(accessDeniedResponse)
           }
-          return withTenderlyAdminCors(await handleTenderlyFund(req), req)
+          return withCors(await handleTenderlyFund(req))
         }
 
         return withCors(new Response('Not found', { status: 404 }))
       } catch (error) {
         console.error('💥 Request handler error:', error)
-        const errorResponse = Response.json(
-          { error: 'Internal server error', message: error instanceof Error ? error.message : String(error) },
-          { status: 500 }
+        return withCors(
+          Response.json(
+            { error: 'Internal server error', message: error instanceof Error ? error.message : String(error) },
+            { status: 500 }
+          )
         )
-        return isTenderlyAdminMutationRoute(url.pathname)
-          ? withTenderlyAdminCors(errorResponse, req)
-          : withCors(errorResponse)
       }
     },
     port: API_PORT,

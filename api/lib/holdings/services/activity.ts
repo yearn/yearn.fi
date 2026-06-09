@@ -14,11 +14,7 @@ import {
   type TZapperV2ZapOut
 } from './activityReceiptEnrichment'
 import type { TransactionActivityEvents, VaultVersion } from './graphql'
-import {
-  fetchActivityEventsByTransactionHashes,
-  fetchRecentAddressScopedActivityEvents,
-  fetchUserEvents
-} from './graphql'
+import { fetchActivityEventsByTransactionHashes, fetchRecentAddressScopedActivityEvents } from './graphql'
 import {
   formatAmount,
   isKnownCompatibleAssetVaultRollover,
@@ -71,9 +67,6 @@ export interface HoldingsActivityResponse {
   version: VaultVersion
   limit: number
   offset: number
-  facets?: {
-    chainIds: number[]
-  }
   pageInfo: {
     hasMore: boolean
     nextOffset: number | null
@@ -180,31 +173,15 @@ type TNormalizedActivityFilters = {
 
 const MAX_FILTERED_ACTIVITY_TRANSACTIONS = 500
 const MAX_FILTERED_ACTIVITY_ATTEMPTS = 5
+const MAX_RECENT_ACTIVITY_WINDOW_ATTEMPTS = 5
+const MIN_RECENT_ACTIVITY_EVENTS_PER_SOURCE = 200
+const RECENT_ACTIVITY_EVENTS_PER_TRANSACTION_TARGET = 4
+const MAX_RECENT_ACTIVITY_EVENTS_PER_SOURCE = 1000
 const DEFAULT_ACTIVITY_FILTERS: TNormalizedActivityFilters = {
   type: 'all',
   chainId: null,
   startTimestamp: null,
   endTimestamp: null
-}
-
-function getSortedChainIds(events: Array<{ chainId: number }>): number[] {
-  return Array.from(new Set(events.map((event) => event.chainId))).sort((a, b) => a - b)
-}
-
-export async function getHoldingsActivityFacets(
-  userAddress: string,
-  version: VaultVersion
-): Promise<HoldingsActivityResponse['facets']> {
-  const events = await fetchUserEvents(userAddress, version, undefined, 'parallel', 'paged')
-
-  return {
-    chainIds: getSortedChainIds([
-      ...events.deposits,
-      ...events.withdrawals,
-      ...events.transfersIn,
-      ...events.transfersOut
-    ])
-  }
 }
 
 function compareStringDesc(a: string, b: string): number {
@@ -811,7 +788,8 @@ async function loadRecentActivityWindowAttempt(
 
   return getSelectedTransactionKeys(candidateEvents, targetTransactionCount).length >= targetTransactionCount ||
     !hasPotentialMore ||
-    attempt >= 5
+    limitPerSource >= MAX_RECENT_ACTIVITY_EVENTS_PER_SOURCE ||
+    attempt >= MAX_RECENT_ACTIVITY_WINDOW_ATTEMPTS
     ? {
         candidateEvents,
         hasPotentialMore
@@ -820,7 +798,7 @@ async function loadRecentActivityWindowAttempt(
         userAddress,
         version,
         targetTransactionCount,
-        Math.min(limitPerSource * 2, 1000),
+        Math.min(limitPerSource * 2, MAX_RECENT_ACTIVITY_EVENTS_PER_SOURCE),
         attempt + 1,
         maxTimestamp
       )
@@ -836,7 +814,13 @@ async function loadRecentActivityWindow(
     userAddress,
     version,
     targetTransactionCount,
-    Math.max(targetTransactionCount * 4, 20),
+    Math.min(
+      Math.max(
+        targetTransactionCount * RECENT_ACTIVITY_EVENTS_PER_TRANSACTION_TARGET,
+        MIN_RECENT_ACTIVITY_EVENTS_PER_SOURCE
+      ),
+      MAX_RECENT_ACTIVITY_EVENTS_PER_SOURCE
+    ),
     0,
     maxTimestamp
   )
@@ -1380,7 +1364,10 @@ async function getFilteredHoldingsActivity(
   filters: TNormalizedActivityFilters
 ): Promise<Pick<HoldingsActivityResponse, 'entries' | 'pageInfo'>> {
   const requestedEntryCount = boundedOffset + boundedLimit + 1
-  let targetTransactionCount = Math.min(Math.max(requestedEntryCount * 4, 20), MAX_FILTERED_ACTIVITY_TRANSACTIONS)
+  let targetTransactionCount = Math.min(
+    Math.max(requestedEntryCount * RECENT_ACTIVITY_EVENTS_PER_TRANSACTION_TARGET, 20),
+    MAX_FILTERED_ACTIVITY_TRANSACTIONS
+  )
   let attempt = 0
   let filteredEvents: TResolvedActivityEvent[] = []
   let metadata = new Map<string, VaultMetadata>()
@@ -1441,8 +1428,7 @@ export async function getHoldingsActivity(
   version: VaultVersion = 'all',
   limit = 10,
   offset = 0,
-  filters: HoldingsActivityFilters = DEFAULT_ACTIVITY_FILTERS,
-  includeFacets = false
+  filters: HoldingsActivityFilters = DEFAULT_ACTIVITY_FILTERS
 ): Promise<HoldingsActivityResponse> {
   const boundedLimit = Math.max(1, limit)
   const boundedOffset = Math.max(0, offset)
@@ -1456,7 +1442,6 @@ export async function getHoldingsActivity(
     version,
     limit: boundedLimit,
     offset: boundedOffset,
-    ...(includeFacets ? { facets: { chainIds: getSortedChainIds(activityPage.entries) } } : {}),
     pageInfo: activityPage.pageInfo,
     entries: activityPage.entries
   }

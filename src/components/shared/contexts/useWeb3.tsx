@@ -1,7 +1,7 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import type { TAddress } from '@shared/types/address'
-import { fetchClusterName, getClusterImageUrl, isAddress } from '@shared/utils'
+import { fetchClusterName, getClusterImageUrl, isAddress, isSafeConnectorId } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { toAddress } from '@shared/utils/tools.address'
@@ -236,7 +236,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   const isUserConnecting = isConnecting && hasUserRequestedConnectionRef.current
 
   const isIdentityLoading = Boolean((isEnsLoading && !!address) || isFetchingClusters)
-  const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false
+  const isWalletSafe = isSafeConnectorId(connector?.id)
   const isWalletLedger = connector?.id.toLowerCase().includes('ledger') ?? false
 
   const contextValue = useMemo(

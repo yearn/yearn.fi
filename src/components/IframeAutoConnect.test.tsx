@@ -34,8 +34,10 @@ const safeConnector = {
 }
 const originalWindow = globalThis.window
 
-function mockWindow(): void {
-  ;(globalThis as unknown as { window: { location: Record<string, unknown> } }).window = { location: {} }
+function mockWindow(ancestorOrigins: string[] = []): void {
+  ;(globalThis as unknown as { window: { location: { ancestorOrigins: string[] } } }).window = {
+    location: { ancestorOrigins }
+  }
 }
 
 function mockWalletHooks(connector?: { id: string }): void {
@@ -66,7 +68,7 @@ describe('IframeAutoConnect', () => {
   })
 
   it('connects the Safe connector only in a trusted iframe', async () => {
-    mockWindow()
+    mockWindow(['https://app.safe.global'])
     mockWalletHooks()
     vi.mocked(isIframe).mockReturnValue(true)
     vi.mocked(isTrustedEmbed).mockReturnValue(true)

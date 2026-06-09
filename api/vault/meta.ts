@@ -28,30 +28,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ogBaseUrl = 'https://og.yearn.fi'
     const ogImageUrl = `${ogBaseUrl}/api/og/yearn/vault/${chainId}/${address}`
     const canonicalUrl = `https://yearn.fi/vaults/${chainId}/${address}`
+    const markdownUrl = `https://yearn.fi/api/vault/markdown?chainId=${chainId}&address=${address}`
+    const snapshotUrl = `https://kong.yearn.fi/api/rest/snapshot/${chainId}/${address}`
 
     const title = 'Yearn Vault'
     const description = "Earn yield on your crypto with Yearn's automated vault strategies"
+
+    const safeJson = (obj: unknown): string => JSON.stringify(obj).replace(/<\/script>/gi, '<\\/script>')
+
+    const organizationSchema = safeJson({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Yearn',
+      url: 'https://yearn.fi',
+      logo: 'https://yearn.fi/logo.svg',
+      description: 'DeFi yield aggregator — automatically maximize returns on deposited digital assets.',
+      sameAs: ['https://x.com/yearnfi', 'https://github.com/yearn', 'https://discord.gg/yearn/']
+    })
+
+    const vaultSchema = safeJson({
+      '@context': 'https://schema.org',
+      '@type': 'FinancialProduct',
+      name: title,
+      description,
+      url: canonicalUrl,
+      sameAs: [snapshotUrl, markdownUrl],
+      provider: { '@type': 'Organization', name: 'Yearn', url: 'https://yearn.fi' }
+    })
 
     // Inject meta tags
     const metaTags = `
     <title>${title}</title>
     <meta name="description" content="${description}" />
-    
+
     <!-- Open Graph -->
     <meta property="og:title" content="${title}" />
     <meta property="og:description" content="${description}" />
     <meta property="og:image" content="${ogImageUrl}" />
     <meta property="og:url" content="${canonicalUrl}" />
     <meta property="og:type" content="website" />
-    
+
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${title}" />
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${ogImageUrl}" />
-    
+
     <!-- Additional SEO -->
     <link rel="canonical" href="${canonicalUrl}" />
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="https://yearn.fi/sitemap.xml" />
+    <link rel="alternate" type="text/markdown" title="Vault markdown" href="${markdownUrl}" />
+    <link rel="alternate" type="application/json" title="Canonical Kong vault snapshot" href="${snapshotUrl}" />
+    <meta name="yearn:chainId" content="${chainId}" />
+    <meta name="yearn:vaultAddress" content="${address}" />
+    <meta name="yearn:markdown" content="${markdownUrl}" />
+    <meta name="yearn:canonicalData" content="${snapshotUrl}" />
+
+    <!-- JSON-LD structured data -->
+    <script type="application/ld+json">${organizationSchema}</script>
+    <script type="application/ld+json">${vaultSchema}</script>
     `
 
     // Remove existing meta tags that we're replacing

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { getPool, isDatabaseEnabled } from '../db/connection'
+import { getHoldingsRedisClient, handleHoldingsRedisError, isHoldingsStorageEnabled } from '../storage/redis'
 
 export type HoldingsProgressStatus = 'running' | 'complete' | 'error'
 
@@ -23,23 +23,9 @@ export type HoldingsProgressRecord = {
   logs: HoldingsProgressLog[]
 }
 
-type HoldingsProgressRow = {
-  id: string
-  route: string
-  address_hash: string
-  status: HoldingsProgressStatus
-  progress: number
-  message: string
-  detail: string | null
-  started_at: Date | string
-  updated_at: Date | string
-  logs: unknown
-}
-
-const PROGRESS_TTL_INTERVAL = '10 minutes'
-const PERSISTED_PROGRESS_CLEANUP_INTERVAL_MS = 60 * 1000
+const PROGRESS_TTL_SECONDS = 10 * 60
 const MAX_PROGRESS_LOGS = 20
-const persistedProgressCleanupState = { lastCleanupAt: 0 }
+const PROGRESS_KEY_PREFIX = 'holdings:progress'
 
 function isValidProgressId(id: string | null | undefined): id is string {
   return Boolean(id && /^[a-zA-Z0-9:_-]{1,160}$/.test(id))
@@ -53,6 +39,10 @@ function getUserAddressCacheKey(userAddress: string): string {
   return createHash('sha256').update(normalizeUserAddress(userAddress)).digest('hex')
 }
 
+function getProgressKey(id: string): string {
+  return `${PROGRESS_KEY_PREFIX}:${id}`
+}
+
 function clampProgress(progress: number): number {
   if (!Number.isFinite(progress)) {
     return 0
@@ -60,142 +50,116 @@ function clampProgress(progress: number): number {
   return Math.max(0, Math.min(100, Math.round(progress)))
 }
 
-async function cleanupPersistedProgressRecords(): Promise<void> {
-  const now = Date.now()
-  if (now - persistedProgressCleanupState.lastCleanupAt < PERSISTED_PROGRESS_CLEANUP_INTERVAL_MS) {
-    return
-  }
-  persistedProgressCleanupState.lastCleanupAt = now
-
-  if (!isDatabaseEnabled()) {
-    return
-  }
-
-  const pool = await getPool()
-  if (!pool) {
-    return
+function parseJsonValue(value: unknown): unknown {
+  if (typeof value !== 'string') {
+    return value
   }
 
   try {
-    await pool.query(`DELETE FROM holdings_progress WHERE updated_at < NOW() - INTERVAL '${PROGRESS_TTL_INTERVAL}'`)
-  } catch (error) {
-    console.error('[Holdings Progress] Failed to delete stale progress rows:', error)
+    return JSON.parse(value)
+  } catch {
+    return null
   }
-}
-
-function parseTimestamp(value: Date | string): number {
-  return value instanceof Date ? value.getTime() : new Date(value).getTime()
 }
 
 function parseLogs(value: unknown): HoldingsProgressLog[] {
   if (Array.isArray(value)) {
-    return value.filter((entry): entry is HoldingsProgressLog => {
-      const candidate = entry as Partial<HoldingsProgressLog>
-      return (
-        typeof candidate.elapsedMs === 'number' &&
-        typeof candidate.scope === 'string' &&
-        typeof candidate.message === 'string'
-      )
-    })
-  }
-
-  if (typeof value === 'string') {
-    try {
-      return parseLogs(JSON.parse(value))
-    } catch {
-      return []
-    }
+    return value
+      .filter((entry): entry is HoldingsProgressLog => {
+        const candidate = entry as Partial<HoldingsProgressLog>
+        return (
+          typeof candidate.elapsedMs === 'number' &&
+          typeof candidate.scope === 'string' &&
+          typeof candidate.message === 'string'
+        )
+      })
+      .slice(-MAX_PROGRESS_LOGS)
   }
 
   return []
 }
 
-function rowToProgressRecord(row: HoldingsProgressRow): HoldingsProgressRecord {
+function parseProgressRecord(value: unknown): HoldingsProgressRecord | null {
+  const parsed = parseJsonValue(value)
+  if (!parsed || typeof parsed !== 'object') {
+    return null
+  }
+
+  const record = parsed as Partial<HoldingsProgressRecord>
+  const status = record.status === 'complete' || record.status === 'error' ? record.status : 'running'
+  const startedAt = Number(record.startedAt)
+  const updatedAt = Number(record.updatedAt)
+
+  if (
+    typeof record.id !== 'string' ||
+    typeof record.route !== 'string' ||
+    typeof record.addressHash !== 'string' ||
+    typeof record.message !== 'string' ||
+    !Number.isFinite(startedAt) ||
+    !Number.isFinite(updatedAt)
+  ) {
+    return null
+  }
+
   return {
-    id: row.id,
-    route: row.route,
-    addressHash: row.address_hash,
-    status: row.status,
-    progress: clampProgress(Number(row.progress)),
-    message: row.message,
-    detail: row.detail ?? null,
-    startedAt: parseTimestamp(row.started_at),
-    updatedAt: parseTimestamp(row.updated_at),
-    logs: parseLogs(row.logs).slice(-MAX_PROGRESS_LOGS)
+    id: record.id,
+    route: record.route,
+    addressHash: record.addressHash,
+    status,
+    progress: status === 'complete' ? 100 : clampProgress(Number(record.progress)),
+    message: record.message,
+    detail: typeof record.detail === 'string' ? record.detail : null,
+    startedAt,
+    updatedAt,
+    logs: parseLogs(record.logs)
   }
 }
 
 async function persistProgressRecord(record: HoldingsProgressRecord): Promise<boolean> {
-  if (!isDatabaseEnabled()) {
+  if (!isHoldingsStorageEnabled()) {
     return false
   }
 
-  const pool = await getPool()
-  if (!pool) {
+  const redis = getHoldingsRedisClient()
+  if (!redis) {
     return false
   }
 
   try {
-    await pool.query(
-      `INSERT INTO holdings_progress (
-         id, route, address_hash, status, progress, message, detail, started_at, updated_at, logs
-       )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
-       ON CONFLICT (id)
-       DO UPDATE SET
-         route = EXCLUDED.route,
-         address_hash = EXCLUDED.address_hash,
-         status = EXCLUDED.status,
-         progress = CASE
-           WHEN EXCLUDED.status = 'complete' THEN 100
-           ELSE GREATEST(holdings_progress.progress, EXCLUDED.progress)
-         END,
-         message = EXCLUDED.message,
-         detail = EXCLUDED.detail,
-         updated_at = EXCLUDED.updated_at,
-         logs = EXCLUDED.logs
-       WHERE holdings_progress.updated_at <= EXCLUDED.updated_at`,
-      [
-        record.id,
-        record.route,
-        record.addressHash,
-        record.status,
-        record.progress,
-        record.message,
-        record.detail,
-        new Date(record.startedAt),
-        new Date(record.updatedAt),
-        JSON.stringify(record.logs)
-      ]
-    )
+    const existingRecord = await getPersistedProgressRecord(record.id)
+    const existingProgress = existingRecord?.progress ?? 0
+    const nextRecord: HoldingsProgressRecord = {
+      ...record,
+      progress: record.status === 'complete' ? 100 : Math.max(existingProgress, record.progress),
+      logs: record.logs.slice(-MAX_PROGRESS_LOGS)
+    }
+
+    if (existingRecord && existingRecord.updatedAt > record.updatedAt) {
+      return false
+    }
+
+    await redis.set(getProgressKey(record.id), JSON.stringify(nextRecord), { ex: PROGRESS_TTL_SECONDS })
     return true
   } catch (error) {
-    console.error('[Holdings Progress] Failed to save progress row:', error)
+    handleHoldingsRedisError('progress save failed', error)
     return false
   }
 }
 
 async function getPersistedProgressRecord(id: string): Promise<HoldingsProgressRecord | null> {
-  if (!isDatabaseEnabled()) {
+  if (!isHoldingsStorageEnabled()) {
     return null
   }
 
-  const pool = await getPool()
-  if (!pool) {
+  const redis = getHoldingsRedisClient()
+  if (!redis) {
     return null
   }
 
   try {
-    const result = await pool.query<HoldingsProgressRow>(
-      `SELECT id, route, address_hash, status, progress, message, detail, started_at, updated_at, logs
-       FROM holdings_progress
-       WHERE id = $1 AND updated_at >= NOW() - INTERVAL '${PROGRESS_TTL_INTERVAL}'`,
-      [id]
-    )
-    const row = result.rows[0]
-    return row ? rowToProgressRecord(row) : null
+    return parseProgressRecord(await redis.get(getProgressKey(id)))
   } catch (error) {
-    console.error('[Holdings Progress] Failed to get progress row:', error)
+    handleHoldingsRedisError('progress lookup failed', error)
     return null
   }
 }
@@ -211,9 +175,7 @@ export async function startHoldingsProgress({
   address: string
   message: string
 }): Promise<string | null> {
-  void cleanupPersistedProgressRecords()
-
-  if (!isValidProgressId(id) || !isDatabaseEnabled()) {
+  if (!isValidProgressId(id) || !isHoldingsStorageEnabled()) {
     return null
   }
 
@@ -285,8 +247,6 @@ export async function appendHoldingsProgressLog(
 }
 
 export async function getHoldingsProgress(id: string | null | undefined): Promise<HoldingsProgressRecord | null> {
-  void cleanupPersistedProgressRecords()
-
   if (!isValidProgressId(id)) {
     return null
   }

@@ -17,10 +17,20 @@ type TMerkleRewardRowProps = {
   isFirst?: boolean
   isAllChainsView?: boolean
   onSwitchChain?: () => void
+  claimButtonClassName?: string
 }
 
 export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
-  const { groupedReward, userAddress, chainId, onStartClaim, isFirst, isAllChainsView, onSwitchChain } = props
+  const {
+    groupedReward,
+    userAddress,
+    chainId,
+    onStartClaim,
+    isFirst,
+    isAllChainsView,
+    onSwitchChain,
+    claimButtonClassName
+  } = props
 
   const currentChainId = useChainId()
   const { isPending } = useWriteContract()
@@ -70,6 +80,7 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
       isFirst={isFirst}
       isAllChainsView={isAllChainsView}
       onSwitchChain={onSwitchChain}
+      claimButtonClassName={claimButtonClassName}
     />
   )
 }
