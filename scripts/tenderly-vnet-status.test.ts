@@ -10,8 +10,6 @@ import {
   selectMatchingTenderlyVnet
 } from './tenderly-vnet-status'
 
-const TEST_TX_FROM_ADDRESS = process.env.TENDERLY_TEST_TX_FROM_ADDRESS ?? '0x2222222222222222222222222222222222222222'
-
 describe('tenderly-vnet-status', () => {
   it('defaults to the webops profile', () => {
     expect(
