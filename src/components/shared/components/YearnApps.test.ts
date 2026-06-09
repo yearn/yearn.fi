@@ -15,7 +15,7 @@ describe('APP_GROUPS', () => {
     expect(allNames).toEqual(expect.arrayContaining(['Docs', 'Support', 'Blog', 'Discourse']))
   })
 
-  it('exposes both v3 and LP vault entrypoints', () => {
-    expect(allNames).toEqual(expect.arrayContaining(['V3 Vaults', 'LP Vaults']))
+  it('exposes vault management entrypoints', () => {
+    expect(allNames).toEqual(expect.arrayContaining(['yFactory', 'Kalani']))
   })
 })
