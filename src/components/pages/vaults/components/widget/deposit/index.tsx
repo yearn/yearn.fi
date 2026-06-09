@@ -1302,23 +1302,23 @@ export function WidgetDeposit({
         currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, inputToken?.decimals ?? 18) || '0'}
       />
 
-      {/* Token Selector Overlay */}
-      <TokenSelectorOverlay
-        isOpen={showTokenSelector}
-        onClose={() => setShowTokenSelector(false)}
-        onChange={handleTokenChange}
-        mode={'deposit'}
-        chainId={sourceChainId}
-        value={selectedToken}
-        priorityTokens={{ [chainId]: [assetAddress] }}
-        topTokens={tokenSelectorTopTokens}
-        excludeTokens={tokenSelectorExcludedTokens}
-        extraTokens={tokenSelectorExtraTokens}
-        assetAddress={assetAddress}
-        assetChainId={chainId}
-        vaultAddress={vaultAddress}
-        stakingAddress={stakingAddress}
-      />
+      {showTokenSelector ? (
+        <TokenSelectorOverlay
+          onClose={() => setShowTokenSelector(false)}
+          onChange={handleTokenChange}
+          mode={'deposit'}
+          chainId={sourceChainId}
+          value={selectedToken}
+          priorityTokens={{ [chainId]: [assetAddress] }}
+          topTokens={tokenSelectorTopTokens}
+          excludeTokens={tokenSelectorExcludedTokens}
+          extraTokens={tokenSelectorExtraTokens}
+          assetAddress={assetAddress}
+          assetChainId={chainId}
+          vaultAddress={vaultAddress}
+          stakingAddress={stakingAddress}
+        />
+      ) : null}
     </div>
   )
 }

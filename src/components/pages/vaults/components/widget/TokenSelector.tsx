@@ -2,7 +2,7 @@ import {
   getVaultAddress,
   getVaultChainID,
   getVaultInfo,
-  getVaultStaking
+  getVaultStakingAddress
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { TokenLogo } from '@shared/components/TokenLogo'
@@ -10,9 +10,9 @@ import { useWallet } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TToken } from '@shared/types'
-import { cl, formatTAmount, isZeroAddress, toAddress } from '@shared/utils'
+import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { type FC, useCallback, useMemo, useState } from 'react'
-import { isAddress } from 'viem'
+import { isAddress, zeroAddress } from 'viem'
 import { env } from '@/env'
 import { CloseIcon } from './shared/Icons'
 import { getTokenLogoSources } from './tokenLogo.utils'
@@ -90,7 +90,7 @@ const TokenItem: FC<{
       type="button"
       onClick={onSelect}
       className={cl(
-        'flex items-center justify-between w-full px-3 py-2 rounded-lg transition-all active:scale-[0.98]',
+        'flex items-center justify-between w-full px-3 py-2 rounded-lg',
         selected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-surface-secondary'
       )}
     >
@@ -174,9 +174,8 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
       hiddenAddresses.add(toAddress(getVaultAddress(vault)) as `0x${string}`)
 
-      const staking = getVaultStaking(vault)
-      const stakingAddress = toAddress(staking.address)
-      if (!isZeroAddress(stakingAddress)) {
+      const stakingAddress = getVaultStakingAddress(vault)
+      if (stakingAddress !== zeroAddress) {
         hiddenAddresses.add(stakingAddress as `0x${string}`)
       }
     })
@@ -416,7 +415,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
               key={chain.id}
               onClick={() => setSelectedChainId(chain.id)}
               className={cl(
-                'size-9 flex items-center justify-center rounded-md transition-all',
+                'size-9 flex items-center justify-center rounded-md',
                 selectedChainId === chain.id ? 'bg-surface shadow-sm' : 'bg-transparent hover:bg-surface/50'
               )}
               type="button"
@@ -431,7 +430,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
             </button>
           ))}
         </div>
-        <button onClick={onClose} className="p-1 hover:bg-surface-secondary rounded-lg transition-colors" type="button">
+        <button onClick={onClose} className="p-1 hover:bg-surface-secondary rounded-lg" type="button">
           <CloseIcon className="w-5 h-5 text-text-secondary" />
         </button>
       </div>

@@ -1,12 +1,10 @@
 import { TokenSelector } from '@pages/vaults/components/widget/TokenSelector'
 import type { TTokenSelectorMode } from '@pages/vaults/components/widget/tokenSelectorList.utils'
 import type { TToken } from '@shared/types'
-import { cl } from '@shared/utils'
 import type { FC } from 'react'
 import type { Address } from 'viem'
 
 interface TokenSelectorOverlayProps {
-  isOpen: boolean
   onClose: () => void
   onChange: (address: Address, chainId?: number) => void
   chainId: number
@@ -24,7 +22,6 @@ interface TokenSelectorOverlayProps {
 }
 
 export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
-  isOpen,
   onClose,
   onChange,
   chainId,
@@ -48,24 +45,12 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        pointerEvents: isOpen ? 'auto' : 'none'
+        pointerEvents: 'auto'
       }}
     >
-      {/* Semi-transparent backdrop with fade animation */}
-      <div
-        className={cl(
-          'absolute inset-0 bg-black/5 rounded-lg transition-opacity duration-200',
-          isOpen ? 'opacity-100' : 'opacity-0'
-        )}
-        onClick={onClose}
-      />
-      {/* Token selector overlay with slide and fade animation */}
-      <div
-        className={cl(
-          'absolute inset-0 transition-all duration-300 ease-out',
-          isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
-        )}
-      >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/5 rounded-lg" onClick={onClose} />
+      <div className="absolute inset-0">
         <TokenSelector
           value={value}
           onChange={onChange}

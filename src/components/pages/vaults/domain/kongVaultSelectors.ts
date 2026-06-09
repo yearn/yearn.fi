@@ -697,13 +697,22 @@ export const getVaultStaking = (vault: TKongVaultInput, snapshot?: TKongVaultSna
   }
   const snapshotStaking = snapshot?.staking
   const listStaking = vault.staking
+  const stakingAddress = snapshotStaking?.address ?? listStaking?.address
 
   return {
-    address: toAddress(snapshotStaking?.address ?? listStaking?.address ?? zeroAddress),
+    address: stakingAddress ? toAddress(stakingAddress) : zeroAddress,
     available: Boolean(snapshotStaking?.available ?? listStaking?.available ?? false),
     source: snapshotStaking?.source ?? listStaking?.source ?? '',
     rewards: mapStakingRewards(snapshotStaking?.rewards ?? listStaking?.rewards)
   }
+}
+
+export const getVaultStakingAddress = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): `0x${string}` => {
+  if (isVaultView(vault)) {
+    return vault.staking?.address ? toAddress(vault.staking.address) : zeroAddress
+  }
+  const stakingAddress = snapshot?.staking?.address ?? vault.staking?.address
+  return stakingAddress ? toAddress(stakingAddress) : zeroAddress
 }
 
 export const getVaultMigration = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultMigration => {

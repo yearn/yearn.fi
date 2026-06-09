@@ -242,7 +242,7 @@ export const InputTokenAmount: FC<Props> = ({
               data-token-selector-button
               disabled={!showTokenSelector && disabled}
               className={cl(
-                'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 transition-colors',
+                'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2',
                 'text-text-primary text-base md:text-xl font-medium',
                 'min-h-[44px]',
                 showTokenSelector
@@ -337,7 +337,7 @@ export const InputTokenAmount: FC<Props> = ({
                 onClick={onTokenSelectorClick}
                 disabled={disabled}
                 className={cl(
-                  'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 transition-colors shrink-0',
+                  'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 shrink-0',
                   'text-text-primary text-base md:text-xl font-medium',
                   'min-h-[44px]',
                   disabled ? 'bg-transparent cursor-not-allowed' : 'bg-transparent hover:bg-surface-secondary'

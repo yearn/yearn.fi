@@ -1219,28 +1219,28 @@ export function WidgetWithdraw({
         currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, approvalState.tokenDecimals) || '0'}
       />
 
-      {/* Full-screen Token Selector Overlay */}
-      <TokenSelectorOverlay
-        isOpen={showTokenSelector}
-        onClose={() => setShowTokenSelector(false)}
-        onChange={(address, chainIdValue) => {
-          setWithdrawInput('')
-          setSelectedToken(address)
-          setSelectedChainId(chainIdValue)
-          setShowTokenSelector(false)
-          activeFlow.periphery.resetQuote?.()
-        }}
-        chainId={chainId}
-        value={selectedToken}
-        excludeTokens={stakingAddress ? [stakingAddress] : undefined}
-        mode={'withdraw'}
-        priorityTokens={priorityTokens}
-        topTokens={priorityTokens}
-        assetAddress={resolvedDisplayAssetAddress}
-        vaultAddress={vaultAddress}
-        stakingAddress={stakingAddress}
-        allowHiddenVaultTokenSelection={withdrawalSource === 'staking'}
-      />
+      {showTokenSelector ? (
+        <TokenSelectorOverlay
+          onClose={() => setShowTokenSelector(false)}
+          onChange={(address, chainIdValue) => {
+            setWithdrawInput('')
+            setSelectedToken(address)
+            setSelectedChainId(chainIdValue)
+            setShowTokenSelector(false)
+            activeFlow.periphery.resetQuote?.()
+          }}
+          chainId={chainId}
+          value={selectedToken}
+          excludeTokens={stakingAddress ? [stakingAddress] : undefined}
+          mode={'withdraw'}
+          priorityTokens={priorityTokens}
+          topTokens={priorityTokens}
+          assetAddress={resolvedDisplayAssetAddress}
+          vaultAddress={vaultAddress}
+          stakingAddress={stakingAddress}
+          allowHiddenVaultTokenSelection={withdrawalSource === 'staking'}
+        />
+      ) : null}
     </div>
   )
 }
