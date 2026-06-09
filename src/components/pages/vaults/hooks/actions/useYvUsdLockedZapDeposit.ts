@@ -43,6 +43,7 @@ export function useYvUsdLockedZapDeposit(params: UseYvUsdLockedZapDepositParams)
     functionName: 'approve',
     address: params.depositToken,
     args: params.amount > 0n ? [YVUSD_LOCKED_ZAP_ADDRESS, params.amount] : undefined,
+    account: params.account ? toAddress(params.account) : undefined,
     chainId: params.chainId,
     query: { enabled: prepareApproveEnabled }
   })

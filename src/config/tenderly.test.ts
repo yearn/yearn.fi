@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { canonicalChains } from './chainDefinitions'
 import {
+  canToggleTenderlyModeForRuntime,
   getSupportedCanonicalChainsForRuntime,
   getSupportedChainLookupForRuntime,
   getSupportedExecutionChainsForRuntime,
@@ -14,6 +15,25 @@ import {
   resolveTenderlyExplorerUriForExecutionChainIdForRuntime,
   resolveTenderlyRpcUriForExecutionChainIdForRuntime
 } from './tenderly'
+
+describe('canToggleTenderlyModeForRuntime', () => {
+  it('allows toggling in dev mode', () => {
+    expect(canToggleTenderlyModeForRuntime({ isDev: true, hostname: 'yearn.fi' })).toBe(true)
+  })
+
+  it('allows toggling on loopback hosts', () => {
+    expect(canToggleTenderlyModeForRuntime({ isDev: false, hostname: 'localhost' })).toBe(true)
+    expect(canToggleTenderlyModeForRuntime({ isDev: false, hostname: '127.0.0.1' })).toBe(true)
+  })
+
+  it('allows toggling on private Tailscale preview hosts', () => {
+    expect(canToggleTenderlyModeForRuntime({ isDev: false, hostname: 'dev-vm.tail197cc7.ts.net' })).toBe(true)
+  })
+
+  it('keeps toggling unavailable on regular production hosts', () => {
+    expect(canToggleTenderlyModeForRuntime({ isDev: false, hostname: 'yearn.fi' })).toBe(false)
+  })
+})
 
 describe('parseTenderlyRuntime', () => {
   it('returns the canonical chain set when Tenderly mode is disabled', () => {
@@ -49,6 +69,29 @@ describe('parseTenderlyRuntime', () => {
         VITE_TENDERLY_RPC_URI_FOR_10: 'https://rpc.tenderly.optimism.example'
       })
     ).toThrow(/Duplicate Tenderly execution chain ID 73571 configured for canonical chains 1 and 10/)
+  })
+
+  it('rejects Tenderly execution chain ids that shadow other canonical chain ids', () => {
+    expect(() =>
+      parseTenderlyRuntime({
+        VITE_TENDERLY_MODE: 'true',
+        VITE_TENDERLY_CHAIN_ID_FOR_1: '10',
+        VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
+      })
+    ).toThrow(
+      /Tenderly canonical chain 1 \(Ethereum\) uses execution chain ID 10, which shadows supported canonical chain 10 .*Tenderly execution chain IDs must not shadow supported canonical chain IDs/
+    )
+  })
+
+  it('accepts identity Tenderly execution chain ids for the same canonical chain', () => {
+    const runtime = parseTenderlyRuntime({
+      VITE_TENDERLY_MODE: 'true',
+      VITE_TENDERLY_CHAIN_ID_FOR_1: '1',
+      VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
+    })
+
+    expect(runtime.canonicalToExecutionChainId.get(1)).toBe(1)
+    expect(runtime.executionToCanonicalChainId.get(1)).toBe(1)
   })
 
   it('filters canonical chains and resolves execution chain ids from runtime config', () => {

@@ -1,5 +1,5 @@
 import { getAddress } from 'viem'
-import { config } from '../config'
+import { holdingsConfig } from '../config'
 import type { DepositEvent, TransferEvent, UserEvents, V2DepositEvent, V2WithdrawEvent, WithdrawEvent } from '../types'
 import { debugError, debugLog } from './debug'
 
@@ -226,97 +226,6 @@ const RECENT_TRANSFERS_OUT_QUERY = `
   }
 `
 
-const DEPOSITS_BY_TX_FROM_QUERY = `
-  query GetDepositsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Deposit(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
-      id
-      vaultAddress
-      chainId
-      blockNumber
-      blockTimestamp
-      logIndex
-      transactionHash
-      transactionFrom
-      owner
-      sender
-      assets
-      shares
-    }
-  }
-`
-
-const WITHDRAWALS_BY_TX_FROM_QUERY = `
-  query GetWithdrawalsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Withdraw(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
-      id
-      vaultAddress
-      chainId
-      blockNumber
-      blockTimestamp
-      logIndex
-      transactionHash
-      transactionFrom
-      owner
-      assets
-      shares
-    }
-  }
-`
-
-const V2_DEPOSITS_BY_TX_FROM_QUERY = `
-  query GetV2DepositsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    V2Deposit(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
-      id
-      vaultAddress
-      chainId
-      blockNumber
-      blockTimestamp
-      logIndex
-      transactionHash
-      transactionFrom
-      recipient
-      amount
-      shares
-    }
-  }
-`
-
-const V2_WITHDRAWALS_BY_TX_FROM_QUERY = `
-  query GetV2WithdrawalsByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    V2Withdraw(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
-      id
-      vaultAddress
-      chainId
-      blockNumber
-      blockTimestamp
-      logIndex
-      transactionHash
-      transactionFrom
-      recipient
-      amount
-      shares
-    }
-  }
-`
-
-const TRANSFERS_BY_TX_FROM_QUERY = `
-  query GetTransfersByTransactionFrom($transactionFrom: String!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
-    Transfer(where: { transactionFrom: { _eq: $transactionFrom }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
-      id
-      vaultAddress
-      chainId
-      blockNumber
-      blockTimestamp
-      logIndex
-      transactionHash
-      transactionFrom
-      sender
-      receiver
-      value
-    }
-  }
-`
-
 const DEPOSITS_BY_TX_HASHES_QUERY = `
   query GetDepositsByTransactionHashes($chainId: Int!, $transactionHashes: [String!]!, $limit: Int!, $offset: Int!, $maxTimestamp: Int) {
     Deposit(where: { chainId: { _eq: $chainId }, transactionHash: { _in: $transactionHashes }, blockTimestamp: { _lte: $maxTimestamp } }, order_by: [{ blockTimestamp: asc }, { blockNumber: asc }, { logIndex: asc }], limit: $limit, offset: $offset) {
@@ -473,12 +382,12 @@ async function executeQuery<T>(query: string, variables: Record<string, unknown>
   }
 
   // Only add admin secret if explicitly configured (not the default 'testing' value)
-  const password = config.envioPassword
+  const password = holdingsConfig.envioPassword
   if (password && password !== 'testing') {
     headers['x-hasura-admin-secret'] = password
   }
 
-  const response = await fetch(config.envioGraphqlUrl, {
+  const response = await fetch(holdingsConfig.envioGraphqlUrl, {
     method: 'POST',
     headers,
     body: JSON.stringify({ query, variables })
@@ -637,26 +546,6 @@ function dedupeById<T extends { id: string }>(events: T[]): T[] {
       }, new Map<string, T>())
       .values()
   )
-}
-
-function collectAddressTransactionHashes(events: UserEvents): Map<number, string[]> {
-  const groupedHashes = new Map<number, Set<string>>()
-  const allAddressEvents = [...events.deposits, ...events.withdrawals, ...events.transfersIn, ...events.transfersOut]
-
-  allAddressEvents.forEach((event) => {
-    if (!event.transactionHash) {
-      return
-    }
-
-    const txHashes = groupedHashes.get(event.chainId) ?? new Set<string>()
-    txHashes.add(event.transactionHash.toLowerCase())
-    groupedHashes.set(event.chainId, txHashes)
-  })
-
-  return Array.from(groupedHashes.entries()).reduce<Map<number, string[]>>((grouped, [chainId, hashes]) => {
-    grouped.set(chainId, Array.from(hashes.values()))
-    return grouped
-  }, new Map<number, string[]>())
 }
 
 async function fetchTransactionHashBatch<T>(
@@ -881,24 +770,7 @@ type AddressEventResults = [
   TransferEvent[]
 ]
 
-type TransactionFromEventResults = [
-  DepositEvent[],
-  WithdrawEvent[],
-  V2DepositEvent[],
-  V2WithdrawEvent[],
-  TransferEvent[]
-]
-
 const inFlightAddressScopedEventFetches = new Map<string, Promise<AddressEventResults>>()
-
-export interface RawPnlEventContext {
-  addressEvents: UserEvents
-  transactionEvents: {
-    deposits: DepositEvent[]
-    withdrawals: WithdrawEvent[]
-    transfers: TransferEvent[]
-  }
-}
 
 function sortByBlock<T extends { blockTimestamp: number; blockNumber: number; logIndex: number }>(events: T[]): T[] {
   return [...events].sort(
@@ -1158,28 +1030,6 @@ async function fetchAddressScopedEvents(
   return request
 }
 
-function getTransactionFromEventFetches(
-  addressLower: string,
-  maxTimestamp: number | undefined,
-  paginationMode: HoldingsEventPaginationMode
-): Promise<TransactionFromEventResults> {
-  const fetchFn = paginationMode === 'all' ? fetchAllSingleQuery : fetchAllSequential
-
-  return Promise.all([
-    fetchFn<DepositEvent>(DEPOSITS_BY_TX_FROM_QUERY, 'transactionFrom', addressLower, 'Deposit', maxTimestamp),
-    fetchFn<WithdrawEvent>(WITHDRAWALS_BY_TX_FROM_QUERY, 'transactionFrom', addressLower, 'Withdraw', maxTimestamp),
-    fetchFn<V2DepositEvent>(V2_DEPOSITS_BY_TX_FROM_QUERY, 'transactionFrom', addressLower, 'V2Deposit', maxTimestamp),
-    fetchFn<V2WithdrawEvent>(
-      V2_WITHDRAWALS_BY_TX_FROM_QUERY,
-      'transactionFrom',
-      addressLower,
-      'V2Withdraw',
-      maxTimestamp
-    ),
-    fetchFn<TransferEvent>(TRANSFERS_BY_TX_FROM_QUERY, 'transactionFrom', addressLower, 'Transfer', maxTimestamp)
-  ]) as Promise<TransactionFromEventResults>
-}
-
 // Main export - defaults to sequential paged fetching but allows overrides for experimentation/debugging.
 export async function fetchUserEvents(
   userAddress: string,
@@ -1238,21 +1088,31 @@ export async function fetchRecentAddressScopedActivityEvents(
   userAddress: string,
   version: VaultVersion = 'all',
   limitPerSource = 25,
-  maxTimestamp?: number
+  maxTimestamp?: number,
+  offsetPerSource = 0
 ): Promise<RecentAddressActivityEvents> {
   const address = getGraphqlAddress(userAddress)
   const addressLower = address.toLowerCase()
   const boundedLimit = Math.max(1, limitPerSource)
+  const boundedOffset = Math.max(0, offsetPerSource)
 
   const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] = await Promise.all([
-    fetchRecentLimited<DepositEvent>(RECENT_DEPOSITS_QUERY, 'owner', address, 'Deposit', boundedLimit, 0, maxTimestamp),
+    fetchRecentLimited<DepositEvent>(
+      RECENT_DEPOSITS_QUERY,
+      'owner',
+      address,
+      'Deposit',
+      boundedLimit,
+      boundedOffset,
+      maxTimestamp
+    ),
     fetchRecentLimited<WithdrawEvent>(
       RECENT_WITHDRAWALS_QUERY,
       'owner',
       address,
       'Withdraw',
       boundedLimit,
-      0,
+      boundedOffset,
       maxTimestamp
     ),
     fetchRecentLimited<V2DepositEvent>(
@@ -1261,7 +1121,7 @@ export async function fetchRecentAddressScopedActivityEvents(
       address,
       'V2Deposit',
       boundedLimit,
-      0,
+      boundedOffset,
       maxTimestamp
     ),
     fetchRecentLimited<V2WithdrawEvent>(
@@ -1270,7 +1130,7 @@ export async function fetchRecentAddressScopedActivityEvents(
       address,
       'V2Withdraw',
       boundedLimit,
-      0,
+      boundedOffset,
       maxTimestamp
     ),
     fetchRecentLimited<TransferEvent>(
@@ -1279,7 +1139,7 @@ export async function fetchRecentAddressScopedActivityEvents(
       address,
       'Transfer',
       boundedLimit,
-      0,
+      boundedOffset,
       maxTimestamp
     ),
     fetchRecentLimited<TransferEvent>(
@@ -1288,7 +1148,7 @@ export async function fetchRecentAddressScopedActivityEvents(
       address,
       'Transfer',
       boundedLimit,
-      0,
+      boundedOffset,
       maxTimestamp
     )
   ])
@@ -1324,6 +1184,7 @@ export async function fetchRecentAddressScopedActivityEvents(
     hasMoreWithdrawals,
     hasMoreTransfersIn,
     hasMoreTransfersOut,
+    offsetPerSource: boundedOffset,
     maxTimestamp: maxTimestamp ?? null
   })
 
@@ -1385,104 +1246,6 @@ export async function fetchActivityEventsByTransactionHashes(
     ),
     transfers: sortByBlock(dedupeById(txHashTransfers))
   }
-}
-
-export async function fetchRawUserPnlEvents(
-  userAddress: string,
-  version: VaultVersion = 'all',
-  maxTimestamp?: number,
-  fetchType: HoldingsEventFetchType = 'seq',
-  paginationMode: HoldingsEventPaginationMode = 'paged'
-): Promise<RawPnlEventContext> {
-  const address = getGraphqlAddress(userAddress)
-  const addressLower = address.toLowerCase()
-  const addressEventsPromise = fetchAddressScopedEvents(address, maxTimestamp, fetchType, paginationMode)
-  const transactionFromEventsPromise = getTransactionFromEventFetches(address, maxTimestamp, paginationMode)
-
-  const [
-    [
-      addressV3Deposits,
-      addressV3Withdrawals,
-      addressV2DepositsRaw,
-      addressV2WithdrawalsRaw,
-      addressTransfersIn,
-      addressTransfersOut
-    ],
-    [txV3Deposits, txV3Withdrawals, txV2DepositsRaw, txV2WithdrawalsRaw, txTransfers]
-  ] = await Promise.all([addressEventsPromise, transactionFromEventsPromise])
-
-  const addressEvents = {
-    deposits: getDepositsByVersion(addressV3Deposits, addressV2DepositsRaw, version),
-    withdrawals: getWithdrawalsByVersion(addressV3Withdrawals, addressV2WithdrawalsRaw, version),
-    transfersIn: sortByBlock(addressTransfersIn),
-    transfersOut: sortByBlock(addressTransfersOut)
-  }
-  const addressTransactionHashes = collectAddressTransactionHashes(addressEvents)
-  const [txHashV3Deposits, txHashV3Withdrawals, txHashV2DepositsRaw, txHashV2WithdrawalsRaw, txHashTransfers] =
-    await Promise.all([
-      fetchAllByTransactionHashes<DepositEvent>(
-        DEPOSITS_BY_TX_HASHES_QUERY,
-        addressTransactionHashes,
-        'Deposit',
-        maxTimestamp
-      ),
-      fetchAllByTransactionHashes<WithdrawEvent>(
-        WITHDRAWALS_BY_TX_HASHES_QUERY,
-        addressTransactionHashes,
-        'Withdraw',
-        maxTimestamp
-      ),
-      fetchAllByTransactionHashes<V2DepositEvent>(
-        V2_DEPOSITS_BY_TX_HASHES_QUERY,
-        addressTransactionHashes,
-        'V2Deposit',
-        maxTimestamp
-      ),
-      fetchAllByTransactionHashes<V2WithdrawEvent>(
-        V2_WITHDRAWALS_BY_TX_HASHES_QUERY,
-        addressTransactionHashes,
-        'V2Withdraw',
-        maxTimestamp
-      ),
-      fetchAllByTransactionHashes<TransferEvent>(
-        TRANSFERS_BY_TX_HASHES_QUERY,
-        addressTransactionHashes,
-        'Transfer',
-        maxTimestamp
-      )
-    ])
-
-  const context = {
-    addressEvents,
-    transactionEvents: {
-      deposits: sortByBlock(
-        dedupeById([
-          ...getDepositsByVersion(txV3Deposits, txV2DepositsRaw, version),
-          ...getDepositsByVersion(txHashV3Deposits, txHashV2DepositsRaw, version)
-        ])
-      ),
-      withdrawals: sortByBlock(
-        dedupeById([
-          ...getWithdrawalsByVersion(txV3Withdrawals, txV2WithdrawalsRaw, version),
-          ...getWithdrawalsByVersion(txHashV3Withdrawals, txHashV2WithdrawalsRaw, version)
-        ])
-      ),
-      transfers: sortByBlock(dedupeById([...txTransfers, ...txHashTransfers]))
-    }
-  }
-  debugLog('graphql', 'fetched raw user pnl events', {
-    address: addressLower,
-    version,
-    addressDeposits: context.addressEvents.deposits.length,
-    addressWithdrawals: context.addressEvents.withdrawals.length,
-    addressTransfersIn: context.addressEvents.transfersIn.length,
-    addressTransfersOut: context.addressEvents.transfersOut.length,
-    txDeposits: context.transactionEvents.deposits.length,
-    txWithdrawals: context.transactionEvents.withdrawals.length,
-    txTransfers: context.transactionEvents.transfers.length,
-    maxTimestamp: maxTimestamp ?? null
-  })
-  return context
 }
 
 // Shared processing logic for both fetch strategies

@@ -13,162 +13,27 @@ function createGraphqlResponse(data: Record<string, unknown>): Response {
   })
 }
 
+function getEmptyResultKey(query: string): string {
+  return query.includes('V2Deposit')
+    ? 'V2Deposit'
+    : query.includes('V2Withdraw')
+      ? 'V2Withdraw'
+      : query.includes('Withdraw')
+        ? 'Withdraw'
+        : query.includes('Transfer')
+          ? 'Transfer'
+          : 'Deposit'
+}
+
 async function importGraphqlModule() {
   vi.resetModules()
   return import('./graphql')
 }
 
-describe('fetchRawUserPnlEvents', () => {
+describe('fetchUserEvents', () => {
   afterEach(() => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
-  })
-
-  it('enriches transaction events from address event tx hashes when tx-from queries are empty', async () => {
-    const txHashQueries: Array<{ queryName: string; chainId: number; transactionHashes: string[] }> = []
-    const fetchStub = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
-      const body = JSON.parse(String(init?.body ?? '{}')) as {
-        query: string
-        variables: Record<string, unknown>
-      }
-      const query = body.query
-      const variables = body.variables
-
-      if (query.includes('GetUserEventCountsAggregate')) {
-        return createGraphqlResponse({
-          deposits: { aggregate: { count: 0 } },
-          withdrawals: { aggregate: { count: 0 } },
-          transfersIn: { aggregate: { count: 1 } },
-          transfersOut: { aggregate: { count: 0 } },
-          v2Deposits: { aggregate: { count: 0 } },
-          v2Withdrawals: { aggregate: { count: 0 } }
-        })
-      }
-
-      if (query.includes('GetDepositsByTransactionHashes')) {
-        txHashQueries.push({
-          queryName: 'Deposit',
-          chainId: Number(variables.chainId),
-          transactionHashes: [...((variables.transactionHashes as string[]) ?? [])]
-        })
-
-        return createGraphqlResponse({
-          Deposit: [
-            {
-              id: 'tx-hash-deposit',
-              vaultAddress: VAULT,
-              chainId: 1,
-              blockNumber: 2,
-              blockTimestamp: 200,
-              logIndex: 1,
-              transactionHash: TX_HASH,
-              transactionFrom: ROUTER,
-              owner: ROUTER,
-              sender: ROUTER,
-              assets: '1000',
-              shares: '900'
-            }
-          ]
-        })
-      }
-
-      if (query.includes('GetWithdrawalsByTransactionHashes')) {
-        txHashQueries.push({
-          queryName: 'Withdraw',
-          chainId: Number(variables.chainId),
-          transactionHashes: [...((variables.transactionHashes as string[]) ?? [])]
-        })
-
-        return createGraphqlResponse({ Withdraw: [] })
-      }
-
-      if (query.includes('GetTransfersByTransactionHashes')) {
-        txHashQueries.push({
-          queryName: 'Transfer',
-          chainId: Number(variables.chainId),
-          transactionHashes: [...((variables.transactionHashes as string[]) ?? [])]
-        })
-
-        return createGraphqlResponse({ Transfer: [] })
-      }
-
-      if (query.includes('GetV2DepositsByTransactionHashes')) {
-        return createGraphqlResponse({ V2Deposit: [] })
-      }
-
-      if (query.includes('GetV2WithdrawalsByTransactionHashes')) {
-        return createGraphqlResponse({ V2Withdraw: [] })
-      }
-
-      if (query.includes('GetTransfersIn')) {
-        return createGraphqlResponse({
-          Transfer: [
-            {
-              id: 'address-transfer-in',
-              vaultAddress: VAULT,
-              chainId: 1,
-              blockNumber: 2,
-              blockTimestamp: 200,
-              logIndex: 2,
-              transactionHash: TX_HASH,
-              transactionFrom: ROUTER,
-              sender: ROUTER,
-              receiver: USER,
-              value: '900'
-            }
-          ]
-        })
-      }
-
-      if (
-        query.includes('GetDeposits(') ||
-        query.includes('GetWithdrawals(') ||
-        query.includes('GetTransfersOut') ||
-        query.includes('GetV2Deposits(') ||
-        query.includes('GetV2Withdrawals(') ||
-        query.includes('GetDepositsByTransactionFrom') ||
-        query.includes('GetWithdrawalsByTransactionFrom') ||
-        query.includes('GetV2DepositsByTransactionFrom') ||
-        query.includes('GetV2WithdrawalsByTransactionFrom') ||
-        query.includes('GetTransfersByTransactionFrom')
-      ) {
-        const resultKey = query.includes('V2Deposit')
-          ? 'V2Deposit'
-          : query.includes('V2Withdraw')
-            ? 'V2Withdraw'
-            : query.includes('Withdraw')
-              ? 'Withdraw'
-              : query.includes('Transfer')
-                ? 'Transfer'
-                : 'Deposit'
-
-        return createGraphqlResponse({ [resultKey]: [] })
-      }
-
-      throw new Error(`Unexpected query: ${query}`)
-    })
-
-    vi.stubGlobal('fetch', fetchStub)
-
-    const { fetchRawUserPnlEvents } = await importGraphqlModule()
-    const context = await fetchRawUserPnlEvents(USER, 'all', undefined, 'parallel')
-
-    expect(context.addressEvents.transfersIn).toHaveLength(1)
-    expect(context.transactionEvents.deposits).toEqual([
-      expect.objectContaining({
-        id: 'tx-hash-deposit',
-        transactionHash: TX_HASH,
-        owner: ROUTER,
-        assets: '1000',
-        shares: '900'
-      })
-    ])
-    expect(context.transactionEvents.withdrawals).toEqual([])
-    expect(txHashQueries).toEqual([
-      { queryName: 'Deposit', chainId: 1, transactionHashes: [TX_HASH] },
-      { queryName: 'Withdraw', chainId: 1, transactionHashes: [TX_HASH] },
-      { queryName: 'Transfer', chainId: 1, transactionHashes: [TX_HASH] }
-    ])
   })
 
   it('falls back to sequential pagination when aggregate counts are unavailable', async () => {
@@ -237,29 +102,9 @@ describe('fetchRawUserPnlEvents', () => {
         query.includes('GetWithdrawals(') ||
         query.includes('GetTransfersOut') ||
         query.includes('GetV2Deposits(') ||
-        query.includes('GetV2Withdrawals(') ||
-        query.includes('GetDepositsByTransactionFrom') ||
-        query.includes('GetWithdrawalsByTransactionFrom') ||
-        query.includes('GetV2DepositsByTransactionFrom') ||
-        query.includes('GetV2WithdrawalsByTransactionFrom') ||
-        query.includes('GetTransfersByTransactionFrom') ||
-        query.includes('GetDepositsByTransactionHashes') ||
-        query.includes('GetWithdrawalsByTransactionHashes') ||
-        query.includes('GetTransfersByTransactionHashes') ||
-        query.includes('GetV2DepositsByTransactionHashes') ||
-        query.includes('GetV2WithdrawalsByTransactionHashes')
+        query.includes('GetV2Withdrawals(')
       ) {
-        const resultKey = query.includes('V2Deposit')
-          ? 'V2Deposit'
-          : query.includes('V2Withdraw')
-            ? 'V2Withdraw'
-            : query.includes('Withdraw')
-              ? 'Withdraw'
-              : query.includes('Transfer')
-                ? 'Transfer'
-                : 'Deposit'
-
-        return createGraphqlResponse({ [resultKey]: [] })
+        return createGraphqlResponse({ [getEmptyResultKey(query)]: [] })
       }
 
       throw new Error(`Unexpected query: ${query}`)
@@ -267,16 +112,16 @@ describe('fetchRawUserPnlEvents', () => {
 
     vi.stubGlobal('fetch', fetchStub)
 
-    const { fetchRawUserPnlEvents } = await importGraphqlModule()
-    const context = await fetchRawUserPnlEvents(USER, 'all', undefined, 'parallel')
+    const { fetchUserEvents } = await importGraphqlModule()
+    const events = await fetchUserEvents(USER, 'all', undefined, 'parallel')
 
-    expect(context.addressEvents.transfersIn).toHaveLength(1001)
-    expect(context.addressEvents.transfersIn[0]).toEqual(
+    expect(events.transfersIn).toHaveLength(1001)
+    expect(events.transfersIn[0]).toEqual(
       expect.objectContaining({
         id: 'aggregate-transfer-in-0'
       })
     )
-    expect(context.addressEvents.transfersIn[1000]).toEqual(
+    expect(events.transfersIn[1000]).toEqual(
       expect.objectContaining({
         id: 'aggregate-transfer-in-last'
       })
@@ -337,29 +182,9 @@ describe('fetchRawUserPnlEvents', () => {
         query.includes('GetWithdrawals(') ||
         query.includes('GetTransfersOut') ||
         query.includes('GetV2Deposits(') ||
-        query.includes('GetV2Withdrawals(') ||
-        query.includes('GetDepositsByTransactionFrom') ||
-        query.includes('GetWithdrawalsByTransactionFrom') ||
-        query.includes('GetV2DepositsByTransactionFrom') ||
-        query.includes('GetV2WithdrawalsByTransactionFrom') ||
-        query.includes('GetTransfersByTransactionFrom') ||
-        query.includes('GetDepositsByTransactionHashes') ||
-        query.includes('GetWithdrawalsByTransactionHashes') ||
-        query.includes('GetTransfersByTransactionHashes') ||
-        query.includes('GetV2DepositsByTransactionHashes') ||
-        query.includes('GetV2WithdrawalsByTransactionHashes')
+        query.includes('GetV2Withdrawals(')
       ) {
-        const resultKey = query.includes('V2Deposit')
-          ? 'V2Deposit'
-          : query.includes('V2Withdraw')
-            ? 'V2Withdraw'
-            : query.includes('Withdraw')
-              ? 'Withdraw'
-              : query.includes('Transfer')
-                ? 'Transfer'
-                : 'Deposit'
-
-        return createGraphqlResponse({ [resultKey]: [] })
+        return createGraphqlResponse({ [getEmptyResultKey(query)]: [] })
       }
 
       throw new Error(`Unexpected query: ${query}`)
@@ -367,10 +192,10 @@ describe('fetchRawUserPnlEvents', () => {
 
     vi.stubGlobal('fetch', fetchStub)
 
-    const { fetchRawUserPnlEvents } = await importGraphqlModule()
-    const context = await fetchRawUserPnlEvents(USER, 'all', undefined, 'parallel', 'all')
+    const { fetchUserEvents } = await importGraphqlModule()
+    const events = await fetchUserEvents(USER, 'all', undefined, 'parallel', 'all')
 
-    expect(context.addressEvents.transfersIn).toEqual([
+    expect(events.transfersIn).toEqual([
       expect.objectContaining({
         id: 'single-query-transfer-in'
       })
@@ -382,11 +207,10 @@ describe('fetchRawUserPnlEvents', () => {
     ).toBe(false)
   })
 
-  it('reuses in-flight address-scoped fetches across history and pnl consumers', async () => {
+  it('reuses in-flight address-scoped fetches for matching requests', async () => {
     const fetchStub = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
       const body = JSON.parse(String(init?.body ?? '{}')) as {
         query: string
-        variables: Record<string, unknown>
       }
       const query = body.query
 
@@ -415,29 +239,9 @@ describe('fetchRawUserPnlEvents', () => {
         query.includes('GetWithdrawals(') ||
         query.includes('GetTransfersOut') ||
         query.includes('GetV2Deposits(') ||
-        query.includes('GetV2Withdrawals(') ||
-        query.includes('GetDepositsByTransactionFrom') ||
-        query.includes('GetWithdrawalsByTransactionFrom') ||
-        query.includes('GetV2DepositsByTransactionFrom') ||
-        query.includes('GetV2WithdrawalsByTransactionFrom') ||
-        query.includes('GetTransfersByTransactionFrom') ||
-        query.includes('GetDepositsByTransactionHashes') ||
-        query.includes('GetWithdrawalsByTransactionHashes') ||
-        query.includes('GetTransfersByTransactionHashes') ||
-        query.includes('GetV2DepositsByTransactionHashes') ||
-        query.includes('GetV2WithdrawalsByTransactionHashes')
+        query.includes('GetV2Withdrawals(')
       ) {
-        const resultKey = query.includes('V2Deposit')
-          ? 'V2Deposit'
-          : query.includes('V2Withdraw')
-            ? 'V2Withdraw'
-            : query.includes('Withdraw')
-              ? 'Withdraw'
-              : query.includes('Transfer')
-                ? 'Transfer'
-                : 'Deposit'
-
-        return createGraphqlResponse({ [resultKey]: [] })
+        return createGraphqlResponse({ [getEmptyResultKey(query)]: [] })
       }
 
       throw new Error(`Unexpected query: ${query}`)
@@ -445,18 +249,18 @@ describe('fetchRawUserPnlEvents', () => {
 
     vi.stubGlobal('fetch', fetchStub)
 
-    const { fetchRawUserPnlEvents, fetchUserEvents } = await importGraphqlModule()
-    const [historyEvents, pnlContext] = await Promise.all([
+    const { fetchUserEvents } = await importGraphqlModule()
+    const [leftEvents, rightEvents] = await Promise.all([
       fetchUserEvents(USER, 'all', 123456),
-      fetchRawUserPnlEvents(USER, 'all', 123456)
+      fetchUserEvents(USER, 'all', 123456)
     ])
 
-    expect(historyEvents.transfersIn).toEqual([
+    expect(leftEvents.transfersIn).toEqual([
       expect.objectContaining({
         id: 'shared-transfer-in'
       })
     ])
-    expect(pnlContext.addressEvents.transfersIn).toEqual([
+    expect(rightEvents.transfersIn).toEqual([
       expect.objectContaining({
         id: 'shared-transfer-in'
       })
@@ -469,11 +273,6 @@ describe('fetchRawUserPnlEvents', () => {
     expect(
       fetchStub.mock.calls.filter(([, init]) =>
         String((init as RequestInit | undefined)?.body ?? '').includes('GetDeposits(')
-      )
-    ).toHaveLength(1)
-    expect(
-      fetchStub.mock.calls.filter(([, init]) =>
-        String((init as RequestInit | undefined)?.body ?? '').includes('GetTransfersByTransactionFrom')
       )
     ).toHaveLength(1)
   })

@@ -139,7 +139,7 @@ describe('tenderly-vnet-status', () => {
               createdAtAgeLabel: '8s',
               blockNumber: 24_735_515,
               txHash: '0xb00dc057e50c8926896495cb31717bfa7ab47608673789b4b7b478ec114080cb',
-              from: 'TEST_TX_FROM_ADDRESS',
+              from: '0x2222222222222222222222222222222222222222',
               to: '0xc56413869c6cdf96496f2b1ef801fedbdfa7ddb0'
             }
           ],

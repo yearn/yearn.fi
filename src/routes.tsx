@@ -1,11 +1,11 @@
+import PortfolioPage from '@pages/portfolio/index'
+import VaultsPage from '@pages/vaults/index'
 import type { ReactElement } from 'react'
 import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes as RouterRoutes } from 'react-router'
 
 // Lazy load all page components
 const HomePage = lazy(() => import('@pages/landing'))
-const PortfolioPage = lazy(() => import('@pages/portfolio/index'))
-const VaultsPage = lazy(() => import('@pages/vaults/index'))
 const VaultsDetailPage = lazy(() => import('@pages/vaults/[chainID]/[address]'))
 const IconListPage = lazy(() => import('@pages/icon-list/index'))
 

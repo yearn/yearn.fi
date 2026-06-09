@@ -1030,7 +1030,7 @@ export function YvUsdWithdraw({
   if (isLoading || !unlockedVault || !lockedVault) {
     return (
       <div className="p-6 flex items-center justify-center h-[317px]">
-        <div className="w-6 h-6 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-border border-t-primary rounded-full animate-spin" />
       </div>
     )
   }
@@ -1173,7 +1173,7 @@ export function YvUsdWithdraw({
   }
 
   const withdrawTypeSection = isLockedVariant ? (
-    <div className="rounded-lg border border-border bg-surface-secondary mt-3 p-4 text-sm">
+    <div className="rounded-lg border border-primary/80 bg-surface-tertiary/80 mt-3 p-4 text-sm text-text-primary">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <p className="font-semibold text-text-primary">{'Locked withdrawal cooldown'}</p>
@@ -1185,11 +1185,11 @@ export function YvUsdWithdraw({
             {'more info'}
           </button>
         </div>
-        <p className="text-sm text-text-secondary">
+        <p className="text-sm text-text-primary/70">
           {`Cooldown: ${cooldownDurationLabel} | Withdrawal window: ${withdrawalWindowLabel}`}
         </p>
       </div>
-      <div className="mt-3 flex flex-col gap-1 text-sm text-text-secondary">{cooldownStatusContent}</div>
+      <div className="mt-3 flex flex-col gap-1 text-sm text-text-primary/70">{cooldownStatusContent}</div>
       {showLockedWithdrawAction ? (
         <div className="mt-3">
           <Button

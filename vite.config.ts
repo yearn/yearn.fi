@@ -44,6 +44,10 @@ function buildProxy(apiProxyTarget: string) {
   }
 }
 
+function shouldSuppressRollupWarning(warning: { code?: string; id?: string }): boolean {
+  return warning.code === 'INVALID_ANNOTATION' && warning.id?.includes('/node_modules/') === true
+}
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -126,7 +130,15 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: true,
+      chunkSizeWarningLimit: 700,
       rollupOptions: {
+        onwarn(warning, warn) {
+          if (shouldSuppressRollupWarning(warning)) {
+            return
+          }
+
+          warn(warning)
+        },
         output: {
           manualChunks: {
             'react-vendor': ['react', 'react-dom', 'react-router'],

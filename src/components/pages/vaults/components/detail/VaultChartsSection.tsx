@@ -2,6 +2,7 @@ import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useVaultChartTimeseries } from '@pages/vaults/hooks/useVaultChartTimeseries'
 import { useVaultUserHistory } from '@pages/vaults/hooks/useVaultUserHistory'
 import { transformVaultChartData } from '@pages/vaults/utils/charts'
+import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
@@ -30,13 +31,14 @@ type VaultChartsSectionProps = {
   enableUserCharts?: boolean
   userUnitLabel?: string
   overlayUserPositionOnTvlTab?: boolean
+  userHistoryVaults?: Array<{ chainId: number; vaultAddress: string }>
 }
 
 export const VAULT_CHART_TIMEFRAME_OPTIONS = [
   { label: '30D', value: '30d' },
   { label: '90D', value: '90d' },
   { label: '1Y', value: '1y' },
-  { label: 'All', value: 'all' }
+  { label: 'ALL', value: 'all' }
 ] as const
 
 export type TVaultChartTimeframe = (typeof VAULT_CHART_TIMEFRAME_OPTIONS)[number]['value']
@@ -59,6 +61,39 @@ function isUserChartTab(tab: TVaultChartTab): tab is TUserVaultChartTab {
   return tab === 'user-position'
 }
 
+export function VaultChartTimeframeDropdown({
+  timeframe,
+  onTimeframeChange
+}: {
+  timeframe: TVaultChartTimeframe
+  onTimeframeChange: (timeframe: TVaultChartTimeframe) => void
+}): ReactElement {
+  return (
+    <label className={'relative min-w-[92px]'}>
+      <span className={'sr-only'}>{'Chart timeframe'}</span>
+      <select
+        value={timeframe}
+        onChange={(event) => onTimeframeChange(event.target.value as TVaultChartTimeframe)}
+        className={cl(
+          'h-10 w-full appearance-none rounded-lg border border-border bg-surface-secondary py-2 pr-8 pl-3 md:h-8 md:py-1',
+          'text-xs font-semibold uppercase text-text-primary shadow-inner transition-colors',
+          'hover:border-text-tertiary focus:border-primary focus:outline-none'
+        )}
+        aria-label={'Chart timeframe'}
+      >
+        {VAULT_CHART_TIMEFRAME_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <IconChevron
+        className={'pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-text-secondary'}
+      />
+    </label>
+  )
+}
+
 export function VaultChartsSection({
   chainId,
   vaultAddress,
@@ -71,7 +106,8 @@ export function VaultChartsSection({
   chartHeightMdPx,
   enableUserCharts = false,
   userUnitLabel = 'assets',
-  overlayUserPositionOnTvlTab = false
+  overlayUserPositionOnTvlTab = false,
+  userHistoryVaults
 }: VaultChartsSectionProps): ReactElement {
   const { data, error, isLoading } = useVaultChartTimeseries({
     chainId,
@@ -106,6 +142,7 @@ export function VaultChartsSection({
   } = useVaultUserHistory({
     chainId,
     vaultAddress,
+    vaults: userHistoryVaults,
     timeframe: activeTimeframe,
     enabled: (enableUserCharts && activeTabIsUserChart) || shouldOverlayUserPositionOnTvlTab
   })
@@ -158,26 +195,8 @@ export function VaultChartsSection({
               </p>
             ) : null}
           </div>
-          <div className={'hidden md:flex flex-wrap gap-2 md:gap-3'}>
-            <div className={cl('flex items-center gap-0.5 md:gap-1 w-full md:w-auto', SELECTOR_BAR_STYLES.container)}>
-              {VAULT_CHART_TIMEFRAME_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type={'button'}
-                  className={cl(
-                    'flex-1 md:flex-initial rounded-sm px-2 md:px-3 py-2 md:py-1 text-xs font-semibold uppercase tracking-wide transition-all',
-                    'min-h-[36px] md:min-h-0 active:scale-[0.98]',
-                    SELECTOR_BAR_STYLES.buttonBase,
-                    option.value === activeTimeframe
-                      ? SELECTOR_BAR_STYLES.buttonActive
-                      : SELECTOR_BAR_STYLES.buttonInactive
-                  )}
-                  onClick={() => setActiveTimeframe(option.value)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+          <div className={'hidden w-full items-center justify-end md:flex md:w-auto'}>
+            <VaultChartTimeframeDropdown timeframe={activeTimeframe} onTimeframeChange={setActiveTimeframe} />
           </div>
         </div>
       ) : null}

@@ -1,9 +1,9 @@
+import { isPortfolioDustValueVisible } from '@pages/portfolio/hooks/portfolioVisibility'
+import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import {
   getVaultAddress,
-  getVaultAPR,
   getVaultChainID,
   getVaultStaking,
-  getVaultToken,
   getVaultVersion,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
@@ -33,47 +33,13 @@ const USE_ENSO_BALANCES = import.meta.env.VITE_BALANCE_SOURCE !== 'multicall'
 
 type TTokenAndChain = { address: TAddress; chainID: number }
 
-function getTrackedBalanceUsdValue({
-  vault,
-  tokenValue,
-  balanceNormalized,
-  getPrice
-}: {
-  vault: TKongVaultInput
-  tokenValue?: number
-  balanceNormalized: number
-  getPrice: ReturnType<typeof useYearn>['getPrice']
-}): number {
-  if (Number.isFinite(tokenValue) && (tokenValue || 0) > 0) {
-    return tokenValue || 0
-  }
-
-  if (!Number.isFinite(balanceNormalized) || balanceNormalized <= 0) {
-    return 0
-  }
-
-  const chainID = getVaultChainID(vault)
-  const sharePriceUsd = getPrice({ address: getVaultAddress(vault), chainID }).normalized
-  if (sharePriceUsd > 0) {
-    return balanceNormalized * sharePriceUsd
-  }
-
-  const assetToken = getVaultToken(vault)
-  const assetPrice = getPrice({ address: assetToken.address, chainID }).normalized
-  const pricePerShare = getVaultAPR(vault).pricePerShare.today
-  if (assetPrice > 0 && pricePerShare > 0) {
-    return balanceNormalized * assetPrice * pricePerShare
-  }
-
-  return 0
-}
-
 type TWalletContext = {
   getToken: ({ address, chainID }: TTokenAndChain) => TToken
   getBalance: ({ address, chainID }: TTokenAndChain) => TNormalizedBN
   getVaultHoldingsUsd: (vault: TKongVaultInput) => number
   balances: TChainTokens
   isLoading: boolean
+  hasCompletedBalanceLoad: boolean
   cumulatedValueInV2Vaults: number
   cumulatedValueInV3Vaults: number
   onRefresh: (
@@ -89,6 +55,7 @@ const defaultProps = {
   getVaultHoldingsUsd: (): number => 0,
   balances: {},
   isLoading: true,
+  hasCompletedBalanceLoad: false,
   cumulatedValueInV2Vaults: 0,
   cumulatedValueInV3Vaults: 0,
   onRefresh: async (): Promise<TChainTokens> => ({})
@@ -107,6 +74,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   const { vaults, allVaults, isLoadingVaultList, getPrice } = useYearn()
   const { unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
   const { address: userAddress } = useWeb3()
+  const { shouldHideDust } = useAppSettings()
 
   const allTokens = useYearnTokens({
     vaults: allVaults,
@@ -120,7 +88,8 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
     onUpdate,
     onUpdateSome,
-    isLoading
+    isLoading,
+    isSuccess
   } = useBalancesHook({
     tokens: allTokens,
     priorityChainID: 1
@@ -136,9 +105,11 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
    **************************************************************************/
   const settledTokensRawRef = useRef<TYChainTokens>({})
   const settledOwnerRef = useRef(userAddress)
+  const hasCompletedInitialBalanceLoadRef = useRef(false)
   if (settledOwnerRef.current !== userAddress) {
     settledOwnerRef.current = userAddress
     settledTokensRawRef.current = {}
+    hasCompletedInitialBalanceLoadRef.current = false
   }
   if (!isLoading) {
     settledTokensRawRef.current = stableTokensRaw
@@ -158,6 +129,12 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     isLoading,
     isBalancesPending
   })
+  const hasCurrentBalanceLoadCompleted =
+    !userAddress || (allTokens.length > 0 && isSuccess && !isLoading && !isBalancesPending)
+  if (hasCurrentBalanceLoadCompleted) {
+    hasCompletedInitialBalanceLoadRef.current = true
+  }
+  const hasCompletedBalanceLoad = !userAddress || hasCompletedInitialBalanceLoadRef.current
 
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
@@ -274,6 +251,9 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
           const sharePrice =
             normalizedAddress === YVUSD_UNLOCKED_ADDRESS ? yvUsdUnlockedSharePrice : yvUsdLockedSharePrice
           const tokenValue = tokenData.value || tokenData.balance.normalized * sharePrice
+          if (!isPortfolioDustValueVisible(tokenValue, shouldHideDust)) {
+            continue
+          }
           cumulatedValueInV3Vaults += tokenValue
           continue
         }
@@ -292,12 +272,10 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         if (countedVaults.has(vaultKey)) continue
         countedVaults.add(vaultKey)
 
-        const tokenValue = getTrackedBalanceUsdValue({
-          vault: vaultDetails,
-          tokenValue: tokenData.value,
-          balanceNormalized: tokenData.balance.normalized,
-          getPrice
-        })
+        const tokenValue = getVaultHoldingsUsd(vaultDetails)
+        if (!isPortfolioDustValueVisible(tokenValue, shouldHideDust)) {
+          continue
+        }
         const vaultVersion = getVaultVersion(vaultDetails)
         const isV3 = vaultVersion.startsWith('3') || vaultVersion.startsWith('~3')
 
@@ -309,7 +287,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       }
     }
     return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults]
-  }, [allVaults, balances, getPrice, yvUsdLockedSharePrice, yvUsdUnlockedSharePrice])
+  }, [allVaults, balances, getVaultHoldingsUsd, shouldHideDust, yvUsdLockedSharePrice, yvUsdUnlockedSharePrice])
 
   /***************************************************************************
    **	Setup and render the Context provider to use in the app.
@@ -321,6 +299,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       getVaultHoldingsUsd,
       balances,
       isLoading: isWalletLoading,
+      hasCompletedBalanceLoad,
       onRefresh,
       cumulatedValueInV2Vaults,
       cumulatedValueInV3Vaults
@@ -331,6 +310,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       getVaultHoldingsUsd,
       balances,
       isWalletLoading,
+      hasCompletedBalanceLoad,
       onRefresh,
       cumulatedValueInV2Vaults,
       cumulatedValueInV3Vaults

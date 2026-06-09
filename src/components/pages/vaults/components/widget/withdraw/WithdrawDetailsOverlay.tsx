@@ -18,6 +18,7 @@ interface WithdrawDetailsOverlayProps {
   withdrawalSource: WithdrawalSource
   routeType: WithdrawRouteType
   isZap: boolean
+  hasSwap: boolean
   isLoadingQuote: boolean
 }
 
@@ -32,7 +33,8 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
   hasInputValue,
   withdrawalSource,
   routeType,
-  isZap
+  isZap,
+  hasSwap
 }) => {
   const isFromStaking = withdrawalSource === 'staking'
   const isUnstake = routeType === 'DIRECT_UNSTAKE'
@@ -66,7 +68,7 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
     return <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>
   }
 
-  const receiveLabel = isZap && hasInputValue ? "You'll receive at least:" : "You'll receive:"
+  const receiveLabel = isZap && hasSwap && hasInputValue ? "You'll receive at least:" : "You'll receive:"
 
   return (
     <InfoOverlay isOpen={isOpen} onClose={onClose} title="Withdrawal Details">
@@ -78,8 +80,17 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
             {isZap ? (
               <>
                 Your <span className="font-semibold text-text-primary">{sourceTokenSymbol}</span> shares will be
-                redeemed for <span className="font-semibold text-text-primary">{vaultAssetSymbol}</span>, then swapped
-                to <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
+                redeemed for <span className="font-semibold text-text-primary">{vaultAssetSymbol}</span>
+                {hasSwap ? (
+                  <>
+                    , then swapped to <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>.
+                  </>
+                ) : (
+                  <>
+                    . The route then forwards them to{' '}
+                    <span className="font-semibold text-text-primary">{outputTokenSymbol}</span> without a market swap.
+                  </>
+                )}
               </>
             ) : isUnstake ? (
               <>
@@ -112,10 +123,17 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
           <p className="font-medium text-sm text-text-primary">How it works</p>
           <p className="text-sm text-text-secondary">
             {isZap ? (
-              <>
-                Your vault shares are redeemed for the underlying asset, which is then swapped to your desired token
-                using Enso. The final amount may vary slightly due to market conditions.
-              </>
+              hasSwap ? (
+                <>
+                  Your vault shares are redeemed for the underlying asset, which is then swapped to your desired token
+                  using Enso. The final amount may vary slightly due to market conditions.
+                </>
+              ) : (
+                <>
+                  Your vault shares are redeemed for the underlying asset, and Enso batches the required protocol calls
+                  to route the proceeds to your selected token without a market swap.
+                </>
+              )
             ) : isUnstake ? (
               <>
                 Unstaking converts your staked position back to vault shares. Your vault shares continue to earn yield

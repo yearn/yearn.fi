@@ -7,6 +7,7 @@ type TTenderlyEnv = Record<string, TEnvValue>
 
 const TENDERLY_MODE_STORAGE_KEY = 'dev-tenderly-mode-enabled'
 const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'])
+const PRIVATE_PREVIEW_HOSTNAME_SUFFIXES = ['.ts.net']
 
 export type TTenderlyChainConfig = {
   canonicalChainId: TCanonicalChainId
@@ -31,13 +32,23 @@ function isLoopbackHostname(hostname: string | undefined): boolean {
   return LOOPBACK_HOSTNAMES.has(hostname.trim().toLowerCase())
 }
 
-function canToggleTenderlyModeForRuntime({ isDev, hostname }: { isDev: boolean; hostname?: string }): boolean {
-  return isDev || isLoopbackHostname(hostname)
+function isPrivatePreviewHostname(hostname: string | undefined): boolean {
+  if (!hostname) {
+    return false
+  }
+
+  const normalizedHostname = hostname.trim().toLowerCase()
+  return PRIVATE_PREVIEW_HOSTNAME_SUFFIXES.some((suffix) => normalizedHostname.endsWith(suffix))
+}
+
+export function canToggleTenderlyModeForRuntime({ isDev, hostname }: { isDev: boolean; hostname?: string }): boolean {
+  return isDev || isLoopbackHostname(hostname) || isPrivatePreviewHostname(hostname)
 }
 
 // Legacy localhost fork support is intentionally limited to 1337.
 // The older 5402 alias is retired unless we explicitly revive that workflow.
 const LOCAL_EXECUTION_CHAIN_ALIASES = new Map<number, TCanonicalChainId>([[1337, 1]])
+const supportedCanonicalChainById = new Map<number, Chain>(canonicalChains.map((chain) => [chain.id, chain]))
 
 function readEnvString(value: TEnvValue): string {
   if (typeof value === 'string') {
@@ -162,6 +173,13 @@ export function parseTenderlyRuntime(env: TTenderlyEnv): TTenderlyRuntime {
     const executionChainId = Number(rawExecutionChainId)
     if (!Number.isInteger(executionChainId) || executionChainId <= 0) {
       throw new Error(`Invalid Tenderly execution chain ID for canonical chain ${chain.id}: ${rawExecutionChainId}`)
+    }
+
+    const collidingCanonicalChain = supportedCanonicalChainById.get(executionChainId)
+    if (collidingCanonicalChain && collidingCanonicalChain.id !== chain.id) {
+      throw new Error(
+        `Tenderly canonical chain ${chain.id} (${chain.name}) uses execution chain ID ${executionChainId}, which shadows supported canonical chain ${collidingCanonicalChain.id} (${collidingCanonicalChain.name}). Tenderly execution chain IDs must not shadow supported canonical chain IDs.`
+      )
     }
 
     accumulator.push({

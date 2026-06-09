@@ -273,4 +273,4 @@ export function VaultsFiltersPanelControlled({
   return <VaultsFiltersPanel sections={sections} />
 }
 
-export type { TVaultsFiltersPanelSection, TFilterChecklistOption, TFilterToggleOption }
+export type { TFilterChecklistOption, TFilterToggleOption, TVaultsFiltersPanelSection }

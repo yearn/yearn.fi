@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filterVisiblePortfolioHoldings } from './portfolioVisibility'
+import { filterVisiblePortfolioHoldings, isPortfolioDustValueVisible } from './portfolioVisibility'
 
 function makeVault(address: string, isHidden: boolean) {
   return {
@@ -103,5 +103,33 @@ describe('filterVisiblePortfolioHoldings', () => {
     const hidden = makeVault('0x2222222222222222222222222222222222222222', true)
 
     expect(filterVisiblePortfolioHoldings([visible, hidden], true)).toEqual([visible, hidden])
+  })
+
+  it('hides dust vault positions when the dust guard is enabled', () => {
+    const dust = makeVault('0x1111111111111111111111111111111111111111', false)
+    const visible = makeVault('0x2222222222222222222222222222222222222222', false)
+
+    expect(
+      filterVisiblePortfolioHoldings([dust, visible], false, {
+        shouldHideDust: true,
+        getVaultValue: (vault) => (vault === dust ? 0.009 : 0.01)
+      })
+    ).toEqual([visible])
+  })
+
+  it('keeps dust vault positions when the dust guard is disabled', () => {
+    const dust = makeVault('0x1111111111111111111111111111111111111111', false)
+
+    expect(
+      filterVisiblePortfolioHoldings([dust], false, {
+        shouldHideDust: false,
+        getVaultValue: () => 0.009
+      })
+    ).toEqual([dust])
+  })
+
+  it('treats one cent as visible portfolio value', () => {
+    expect(isPortfolioDustValueVisible(0.009, true)).toBe(false)
+    expect(isPortfolioDustValueVisible(0.01, true)).toBe(true)
   })
 })

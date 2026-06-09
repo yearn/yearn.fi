@@ -34,8 +34,10 @@ export function Breadcrumbs({ items, className }: TBreadcrumbsProps): ReactEleme
             </span>
           )
 
+        const itemKey = item.href ?? `${item.label}-${isCurrent ? 'current' : 'static'}`
+
         return (
-          <span key={`${item.label}-${index}`} className={'flex items-center gap-2'}>
+          <span key={itemKey} className={'flex items-center gap-2'}>
             {content}
             {index < lastIndex ? <span>{'>'}</span> : null}
           </span>

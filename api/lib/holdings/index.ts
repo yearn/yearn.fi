@@ -1,23 +1,28 @@
-export { config, validateConfig } from './config'
+export { holdingsConfig, validateConfig } from './config'
 export { ensureSchemaInitialized, initializeSchema, isDatabaseEnabled } from './db/connection'
 export {
   getHoldingsActivity,
+  getHoldingsActivityFacets,
   type HoldingsActivityAction,
   type HoldingsActivityEntry,
-  type HoldingsActivityResponse
+  type HoldingsActivityFilters,
+  type HoldingsActivityResponse,
+  type HoldingsActivityTypeFilter
 } from './services/activity'
 export {
   getHistoricalHoldings,
   getHistoricalHoldingsChart,
   getHoldingsBreakdown,
+  getHoldingsTotalsCacheVersion,
   type HoldingsBreakdownResponse,
   type HoldingsBreakdownVaultResponse,
   type HoldingsHistoryChartResponse,
   type HoldingsHistoryDenomination,
   type HoldingsHistoryResponse,
-  type HoldingsHistoryTimeframe
+  type HoldingsHistoryTimeframe,
+  type HoldingsVaultFilter
 } from './services/aggregator'
-export { clearUserCache, deleteStaleCache } from './services/cache'
+export { clearUserCache } from './services/cache'
 export {
   fetchRecentAddressScopedActivityEvents,
   fetchUserEvents,
@@ -26,21 +31,9 @@ export {
   type VaultVersion
 } from './services/graphql'
 export {
-  getHoldingsPnL,
-  getHoldingsPnLDrilldown,
-  type HoldingsPnLDrilldownResponse,
-  type HoldingsPnLDrilldownVault,
-  type HoldingsPnLResponse,
-  type HoldingsPnLVault,
-  type UnknownTransferInPnlMode
-} from './services/pnl'
-export {
-  getHoldingsPnLSimple,
-  getHoldingsPnLSimpleHistory,
+  getHoldingsProtocolReturnHistory,
   type HoldingsPnLSimpleHistoryPoint,
   type HoldingsPnLSimpleHistoryResponse,
-  type HoldingsPnLSimpleResponse,
-  type HoldingsPnLSimpleVault,
   type THoldingsPnLSimpleStatus
 } from './services/pnlSimple'
 export { checkRateLimit } from './services/ratelimit'

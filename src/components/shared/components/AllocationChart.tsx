@@ -101,4 +101,4 @@ export function AllocationChart({
   )
 }
 
-export { LIGHT_MODE_COLORS, DARK_MODE_COLORS, useDarkMode }
+export { DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode }

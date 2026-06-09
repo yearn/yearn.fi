@@ -1,6 +1,7 @@
 import type { UseWidgetDepositFlowReturn } from '@pages/vaults/types'
 import { useEffect, useMemo } from 'react'
 import type { Address } from 'viem'
+import type { EnsoRoutingStrategy } from '../solvers/useSolverEnso'
 import { useSolverEnso } from '../solvers/useSolverEnso'
 import { useEnsoOrder } from '../useEnsoOrder'
 
@@ -15,6 +16,7 @@ interface UseEnsoDepositParams {
   decimalsOut: number
   enabled: boolean
   slippage?: number
+  routingStrategy?: EnsoRoutingStrategy
 }
 
 export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFlowReturn {
@@ -26,7 +28,8 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         params.depositToken,
         params.vaultAddress,
         params.account ?? 'no-account',
-        params.slippage ?? 'default'
+        params.slippage ?? 'default',
+        params.routingStrategy ?? 'default-strategy'
       ].join(':'),
     [
       params.chainId,
@@ -34,7 +37,8 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
       params.depositToken,
       params.vaultAddress,
       params.account,
-      params.slippage
+      params.slippage,
+      params.routingStrategy
     ]
   )
 
@@ -49,6 +53,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
     receiver: params.account,
     decimalsOut: params.decimalsOut,
     slippage: params.slippage,
+    routingStrategy: params.routingStrategy,
     requestKey: routeQueryKey,
     enabled: params.enabled
   })
@@ -95,6 +100,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         minExpectedOut: ensoFlow.periphery.minExpectedOut.raw,
         isLoadingRoute: ensoFlow.periphery.isLoadingRoute,
         isCrossChain: ensoFlow.periphery.isCrossChain,
+        routeHasSwap: ensoFlow.periphery.routeHasSwap,
         routerAddress: ensoFlow.periphery.routerAddress,
         error: ensoFlow.periphery.error?.message,
         tx: ensoFlow.periphery.route?.tx,

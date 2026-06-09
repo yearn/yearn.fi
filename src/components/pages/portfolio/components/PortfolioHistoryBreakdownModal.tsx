@@ -7,17 +7,16 @@ import {
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { getVaultPrimaryLogoSrc } from '@pages/vaults/utils/vaultLogo'
-import { isYvUsdAddress, YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconClose } from '@shared/icons/IconClose'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { cl, formatUSD, SUPPORTED_NETWORKS, toAddress } from '@shared/utils'
 import type { ReactElement } from 'react'
-import { Fragment, useEffect, useMemo } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { usePortfolioBreakdown } from '../hooks/usePortfolioBreakdown'
-import type { TPortfolioBreakdownVault } from '../types/api'
+import type { TPortfolioBreakdownResponse, TPortfolioBreakdownVault } from '../types/api'
 
 type TPortfolioHistoryBreakdownModalProps = {
   date: string | null
@@ -81,64 +80,14 @@ function getChainName(chainId: number): string {
   return SUPPORTED_NETWORKS.find((network) => network.id === chainId)?.name ?? `Chain ${chainId}`
 }
 
-function getStatusPriority(status: TPortfolioBreakdownVault['status']): number {
-  switch (status) {
-    case 'missing_metadata':
-      return 3
-    case 'missing_pps':
-      return 2
-    case 'missing_price':
-      return 1
-    default:
-      return 0
-  }
-}
-
-function getMergedStatus(statuses: TPortfolioBreakdownVault['status'][]): TPortfolioBreakdownVault['status'] {
-  return statuses.reduce<TPortfolioBreakdownVault['status']>((selectedStatus, currentStatus) => {
-    return getStatusPriority(currentStatus) > getStatusPriority(selectedStatus) ? currentStatus : selectedStatus
-  }, 'ok')
-}
-
-function getBreakdownDisplayKey(vault: TPortfolioBreakdownVault): string {
-  if (vault.chainId === YVUSD_CHAIN_ID && isYvUsdAddress(vault.vaultAddress)) {
-    return `${YVUSD_CHAIN_ID}:${YVUSD_UNLOCKED_ADDRESS}`
-  }
-
-  return `${vault.chainId}:${toAddress(vault.vaultAddress)}`
-}
-
 function getBreakdownDisplayVaults(vaults: TPortfolioBreakdownVault[]): TBreakdownDisplayVault[] {
-  const groupedVaults = new Map<string, TBreakdownDisplayVault>()
-
-  vaults.forEach((vault) => {
-    const displayKey = getBreakdownDisplayKey(vault)
-    const normalizedVaultAddress =
-      vault.chainId === YVUSD_CHAIN_ID && isYvUsdAddress(vault.vaultAddress)
-        ? YVUSD_UNLOCKED_ADDRESS
-        : toAddress(vault.vaultAddress)
-
-    const existingVault = groupedVaults.get(displayKey)
-    if (!existingVault) {
-      groupedVaults.set(displayKey, {
-        chainId: vault.chainId,
-        vaultAddress: normalizedVaultAddress,
-        usdValue: vault.usdValue ?? 0,
-        status: vault.status,
-        metadata: vault.metadata
-      })
-      return
-    }
-
-    groupedVaults.set(displayKey, {
-      ...existingVault,
-      usdValue: existingVault.usdValue + (vault.usdValue ?? 0),
-      status: getMergedStatus([existingVault.status, vault.status]),
-      metadata: existingVault.metadata ?? vault.metadata
-    })
-  })
-
-  return [...groupedVaults.values()]
+  return vaults.map((vault) => ({
+    chainId: vault.chainId,
+    vaultAddress: toAddress(vault.vaultAddress),
+    usdValue: vault.usdValue ?? 0,
+    status: vault.status,
+    metadata: vault.metadata
+  }))
 }
 
 export function PortfolioHistoryBreakdownModal({
@@ -148,6 +97,20 @@ export function PortfolioHistoryBreakdownModal({
 }: TPortfolioHistoryBreakdownModalProps): ReactElement {
   const { allVaults } = useYearn()
   const { data, isLoading, error } = usePortfolioBreakdown(date, isOpen)
+  const [closingDataSnapshot, setClosingDataSnapshot] = useState<{
+    date: string | null
+    data: TPortfolioBreakdownResponse
+  } | null>(null)
+
+  useEffect(() => {
+    if (!isOpen || !data) {
+      return
+    }
+
+    setClosingDataSnapshot({ date, data })
+  }, [data, date, isOpen])
+
+  const resolvedData = !isOpen && closingDataSnapshot?.date === date ? closingDataSnapshot.data : data
 
   useEffect(() => {
     if (!isOpen) {
@@ -188,16 +151,12 @@ export function PortfolioHistoryBreakdownModal({
   }, [isOpen])
 
   const enrichedVaults = useMemo<TEnrichedBreakdownVault[]>(() => {
-    const displayedVaults = getBreakdownDisplayVaults(data?.vaults ?? [])
-    const yvUsdDisplayVault = allVaults[YVUSD_UNLOCKED_ADDRESS] as TKongVaultInput | undefined
+    const displayedVaults = getBreakdownDisplayVaults(resolvedData?.vaults ?? [])
 
     return displayedVaults
       .map((vault): TEnrichedBreakdownVault => {
         const normalizedVaultAddress = toAddress(vault.vaultAddress)
-        const isMergedYvUsdVault = vault.chainId === YVUSD_CHAIN_ID && normalizedVaultAddress === YVUSD_UNLOCKED_ADDRESS
-        const currentVault = isMergedYvUsdVault
-          ? yvUsdDisplayVault
-          : (allVaults[normalizedVaultAddress] as TKongVaultInput | undefined)
+        const currentVault = allVaults[normalizedVaultAddress] as TKongVaultInput | undefined
         const fallbackTokenAddress = vault.metadata?.tokenAddress
         const fallbackLogoSrc = fallbackTokenAddress
           ? `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${vault.chainId}/${toAddress(fallbackTokenAddress).toLowerCase()}/logo-128.png`
@@ -210,11 +169,7 @@ export function PortfolioHistoryBreakdownModal({
           vaultHref: `/vaults/${vault.chainId}/${normalizedVaultAddress}`,
           displayName: currentVault ? getVaultName(currentVault) : vault.metadata?.symbol || normalizedVaultAddress,
           displaySymbol: currentVault ? getVaultSymbol(currentVault) : vault.metadata?.symbol || 'Unknown',
-          logoSrc: currentVault
-            ? getVaultPrimaryLogoSrc(currentVault)
-            : isMergedYvUsdVault
-              ? `${import.meta.env.BASE_URL || '/'}yvUSD-seal.png`
-              : fallbackLogoSrc,
+          logoSrc: currentVault ? getVaultPrimaryLogoSrc(currentVault) : fallbackLogoSrc,
           altLogoSrc: currentVault
             ? `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${getVaultChainID(currentVault)}/${toAddress(getVaultToken(currentVault).address).toLowerCase()}/logo-128.png`
             : undefined,
@@ -223,7 +178,7 @@ export function PortfolioHistoryBreakdownModal({
         }
       })
       .sort((leftVault, rightVault) => rightVault.usdValue - leftVault.usdValue)
-  }, [allVaults, data?.vaults])
+  }, [allVaults, resolvedData?.vaults])
 
   const title = `Vault breakdown on ${formatBreakdownDate(date)}`
   const issueCount = enrichedVaults.filter((vault) => vault.status !== 'ok').length
@@ -264,9 +219,9 @@ export function PortfolioHistoryBreakdownModal({
                     <Dialog.Title className={'text-lg font-semibold text-text-primary sm:text-xl'}>
                       {title}
                     </Dialog.Title>
-                    {data ? (
+                    {resolvedData ? (
                       <p className={'mt-1 text-sm text-text-secondary'}>
-                        {`${enrichedVaults.length} vault${enrichedVaults.length === 1 ? '' : 's'} • ${formatUSD(data.summary.totalUsdValue, 2, 2)}`}
+                        {`${enrichedVaults.length} vault${enrichedVaults.length === 1 ? '' : 's'} • ${formatUSD(resolvedData.summary.totalUsdValue, 2, 2)}`}
                       </p>
                     ) : null}
                   </div>
@@ -292,7 +247,7 @@ export function PortfolioHistoryBreakdownModal({
                     <div className={'flex min-h-[240px] items-center justify-center'}>
                       <p className={'text-sm text-text-secondary'}>{'Unable to load vault breakdown right now.'}</p>
                     </div>
-                  ) : data && enrichedVaults.length > 0 ? (
+                  ) : resolvedData && enrichedVaults.length > 0 ? (
                     <div className={'flex max-h-[70vh] flex-col gap-3 overflow-y-auto overscroll-contain pr-1'}>
                       {issueCount > 0 ? (
                         <div
@@ -362,7 +317,7 @@ export function PortfolioHistoryBreakdownModal({
                   ) : (
                     <div className={'flex min-h-[240px] items-center justify-center'}>
                       <p className={'max-w-md text-center text-sm text-text-secondary'}>
-                        {data?.message || 'No vault breakdown available for this date.'}
+                        {resolvedData?.message || 'No vault breakdown available for this date.'}
                       </p>
                     </div>
                   )}

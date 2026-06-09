@@ -19,9 +19,46 @@ import { cl, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
+import type { AxisDomain } from 'recharts/types/util/types'
 
 export type TPortfolioVaultGrowthChartMode = 'position' | 'index'
 export type TPortfolioVaultGrowthChartTimeframe = '30d' | '90d' | '1y' | 'all'
+
+const NON_NEGATIVE_AUTO_DOMAIN: AxisDomain = [
+  (dataMin: number) => (Number.isFinite(dataMin) && dataMin < 0 ? dataMin : 0),
+  (dataMax: number) => (Number.isFinite(dataMax) ? dataMax : 0)
+]
+const EVEN_Y_AXIS_TICK_COUNT = 5
+const Y_AXIS_ZERO_EPSILON = 1e-9
+const Y_AXIS_HEADROOM_MULTIPLIER = 1.05
+
+function getNiceCeiling(value: number, intervals: number): number {
+  const roughStep = value / intervals
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep))
+  const normalizedStep = roughStep / magnitude
+  const niceStep =
+    normalizedStep <= 1 ? 1 : normalizedStep <= 2 ? 2 : normalizedStep <= 2.5 ? 2.5 : normalizedStep <= 5 ? 5 : 10
+
+  return niceStep * magnitude * intervals
+}
+
+function buildNonNegativeEvenTicks(values: Array<number | null | undefined>, floor = 0): number[] | undefined {
+  const finiteValues = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+
+  if (!finiteValues.length || finiteValues.some((value) => value < -Y_AXIS_ZERO_EPSILON)) {
+    return undefined
+  }
+
+  const maxValue = Math.max(...finiteValues)
+  if (maxValue <= floor) {
+    return [floor]
+  }
+
+  const intervals = EVEN_Y_AXIS_TICK_COUNT - 1
+  const ceiling = floor + getNiceCeiling((maxValue - floor) * Y_AXIS_HEADROOM_MULTIPLIER, intervals)
+
+  return Array.from({ length: EVEN_Y_AXIS_TICK_COUNT }, (_, index) => floor + ((ceiling - floor) * index) / intervals)
+}
 
 export type TPortfolioVaultGrowthChartPoint = {
   timestamp: number
@@ -58,7 +95,7 @@ export type TPortfolioVaultGrowthChartProps = {
   indexBase?: number
   colors?: string[]
   title?: string
-  height?: number
+  height?: number | string
   showModeToggle?: boolean
   className?: string
   emptyMessage?: string
@@ -99,6 +136,10 @@ type TTooltipProps = {
 }
 
 const DEFAULT_COLORS = ['#2578ff', '#46a2ff', '#94adf2', '#7bb3a8', '#e1a23b', '#b67ae5', '#f472b6', '#f97316']
+const PORTFOLIO_VAULT_GROWTH_CHART_MARGIN = {
+  ...CHART_WITH_AXES_MARGIN,
+  bottom: 4
+}
 const MIN_RELEVANCE_SCORE = 0.000001
 
 const MODE_COPY: Record<TPortfolioVaultGrowthChartMode, string> = {
@@ -467,7 +508,11 @@ function formatIndexValue(value: number): string {
   return value >= 1000 ? value.toFixed(0) : value >= 100 ? value.toFixed(1) : value.toFixed(2)
 }
 
-function formatPositionTick(value: number | string): string {
+function formatPositionTick(value: number | string, index?: number): string {
+  if (index === 0) {
+    return ''
+  }
+
   const numericValue = Number(value)
   const absoluteValue = Math.abs(numericValue)
   if (absoluteValue >= 1_000_000) {
@@ -479,7 +524,11 @@ function formatPositionTick(value: number | string): string {
   return `${numericValue < 0 ? '-' : ''}$${absoluteValue.toFixed(0)}`
 }
 
-function formatIndexTick(value: number | string): string {
+function formatIndexTick(value: number | string, index?: number): string {
+  if (index === 0) {
+    return ''
+  }
+
   const numericValue = Number(value)
   return Math.abs(numericValue) >= 1000 ? numericValue.toFixed(0) : numericValue.toFixed(1)
 }
@@ -582,6 +631,26 @@ export function PortfolioVaultGrowthChart({
     return buildSeries({ points, timeframe, vaultOrder, maxVaults, indexBase, colors })
   }, [colors, indexBase, maxVaults, points, precomputedSeries, timeframe, vaultOrder])
   const chartData = useMemo(() => buildChartData(series, activeMode), [activeMode, series])
+  const yAxisFloor = activeMode === 'index' ? 100 : 0
+  const yAxisTicks = useMemo(
+    () =>
+      buildNonNegativeEvenTicks(
+        chartData.flatMap((point) =>
+          Object.entries(point).flatMap(([key, value]) => {
+            if (key === 'timestamp' || key === 'date') {
+              return []
+            }
+            return typeof value === 'number' ? [value] : []
+          })
+        ),
+        yAxisFloor
+      ),
+    [chartData, yAxisFloor]
+  )
+  const yAxisDomain = useMemo<AxisDomain>(
+    () => (yAxisTicks ? [yAxisFloor, yAxisTicks.at(-1) ?? yAxisFloor] : NON_NEGATIVE_AUTO_DOMAIN),
+    [yAxisFloor, yAxisTicks]
+  )
   const chartConfig = useMemo<ChartConfig>(() => {
     return Object.fromEntries(
       series.map((vaultSeries) => [vaultSeries.key, { label: vaultSeries.label, color: vaultSeries.color }])
@@ -643,9 +712,9 @@ export function PortfolioVaultGrowthChart({
           <p className={'text-sm text-text-secondary'}>{emptyMessage}</p>
         </div>
       ) : (
-        <div style={{ height }}>
+        <div className={'min-h-0 flex-1'} style={{ height }}>
           <ChartContainer config={chartConfig} style={{ height: '100%', aspectRatio: 'unset' }}>
-            <ComposedChart data={chartData} margin={CHART_WITH_AXES_MARGIN}>
+            <ComposedChart data={chartData} margin={PORTFOLIO_VAULT_GROWTH_CHART_MARGIN}>
               <CartesianGrid vertical={false} />
               <XAxis
                 dataKey={'date'}
@@ -656,7 +725,11 @@ export function PortfolioVaultGrowthChart({
                 tickLine={{ stroke: 'var(--chart-axis)' }}
               />
               <YAxis
-                domain={['auto', 'auto']}
+                domain={yAxisDomain}
+                allowDataOverflow
+                ticks={yAxisTicks}
+                tickCount={EVEN_Y_AXIS_TICK_COUNT}
+                interval={0}
                 tickFormatter={activeMode === 'position' ? formatPositionTick : formatIndexTick}
                 mirror
                 width={CHART_Y_AXIS_WIDTH}

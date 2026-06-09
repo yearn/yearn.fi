@@ -5,9 +5,10 @@ import { getApproveAbi } from '@shared/utils/approve'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
 import { useTokenAllowance } from '../useTokenAllowance'
-import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse } from './ensoRoute'
+import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
+export type EnsoRoutingStrategy = 'router' | 'delegate' | 'router-legacy' | 'delegate-legacy' | 'ensowallet'
 
 // Known Enso router addresses per chain for pre-fetching allowance
 const ENSO_ROUTER_ADDRESSES: Record<number, Address> = {
@@ -28,6 +29,7 @@ interface UseSolverEnsoProps {
   chainId: number
   destinationChainId?: number
   slippage?: number // in basis points (e.g., 100 = 1%)
+  routingStrategy?: EnsoRoutingStrategy
   requestKey?: string
   enabled?: boolean
   decimalsOut?: number
@@ -44,6 +46,7 @@ interface UseSolverEnsoReturn {
     allowance: bigint
     isAllowanceSufficient: boolean
     route: EnsoRouteResponse | undefined
+    routeHasSwap: boolean
     error: EnsoError | undefined
     isLoadingRoute: boolean
     isLoadingAllowance: boolean
@@ -66,6 +69,7 @@ export const useSolverEnso = ({
   chainId,
   destinationChainId,
   slippage = 100, // 1% default
+  routingStrategy,
   requestKey = 'default',
   decimalsOut = 18,
   enabled = true
@@ -82,6 +86,7 @@ export const useSolverEnso = ({
   const visibleRoute = resolvedRequestKey === requestKey ? route : undefined
   const visibleError = errorRequestKey === requestKey ? error : undefined
   const routerAddress = visibleRoute?.tx?.to
+  const visibleRouteHasSwap = routeHasSwapStep(visibleRoute)
 
   // Use known Enso router for pre-fetching allowance, fall back to actual router from route
   const knownRouterAddress = ENSO_ROUTER_ADDRESSES[chainId]
@@ -116,6 +121,7 @@ export const useSolverEnso = ({
         tokenOut,
         amountIn: amountIn.toString(),
         slippage: normalizedSlippage.toString(),
+        ...(routingStrategy && { routingStrategy }),
         ...(isCrossChain && { destinationChainId: destinationChainId!.toString() }),
         ...(receiver && { receiver })
       })
@@ -148,10 +154,22 @@ export const useSolverEnso = ({
 
         return
       }
+      const resolvedRoute = normalizedResponse.route
       setError(undefined)
-      setRoute(normalizedResponse.route)
+      setRoute(resolvedRoute)
       setResolvedRequestKey(requestKey)
       setErrorRequestKey(undefined)
+      if (import.meta.env.DEV && resolvedRoute) {
+        console.log('[ENSO] route response', {
+          chainId,
+          destinationChainId,
+          tokenIn,
+          tokenOut,
+          amountIn: amountIn.toString(),
+          routeHasSwap: routeHasSwapStep(resolvedRoute),
+          route: resolvedRoute.route
+        })
+      }
     } catch (err) {
       if (abortController.signal.aborted || routeRequestIdRef.current !== requestId) {
         return
@@ -188,6 +206,7 @@ export const useSolverEnso = ({
     chainId,
     destinationChainId,
     slippage,
+    routingStrategy,
     requestKey,
     enabled,
     isCrossChain
@@ -249,6 +268,7 @@ export const useSolverEnso = ({
       allowance,
       isAllowanceSufficient,
       route: visibleRoute,
+      routeHasSwap: visibleRouteHasSwap,
       error: visibleError,
       isLoadingRoute: isLoadingCurrentRequest,
       isLoadingAllowance,

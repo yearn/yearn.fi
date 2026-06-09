@@ -12,8 +12,15 @@ import {
   getYvUsdLockedWithdrawDisplayMode,
   getYvUsdUnderlyingPricePerShare,
   YVUSD_CUSTOM_RISK_SCORE,
+  YVUSD_DECIMALS,
   YVUSD_RISK_SCORE_ITEMS
 } from './yvUsd'
+
+describe('yvUSD token metadata', () => {
+  it('uses Kong vault-share decimals for balance discovery', () => {
+    expect(YVUSD_DECIMALS).toBe(6)
+  })
+})
 
 describe('getWeightedYvUsdApy', () => {
   it('returns the unlocked APY when only unlocked value is present', () => {
