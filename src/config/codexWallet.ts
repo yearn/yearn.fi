@@ -123,8 +123,17 @@ async function requestRpc(rpcUrl: string, method: string, params?: unknown): Pro
   return payload.result
 }
 
-function getConnectorChain(chains: readonly Chain[], chainId: number): Chain {
-  return chains.find((chain) => chain.id === chainId) ?? chains[0]
+type UnsupportedChainError = Error & { code: number }
+
+export function getConnectorChain(chains: readonly Chain[], chainId: number): Chain {
+  const chain = chains.find((candidate) => candidate.id === chainId)
+  if (chain) {
+    return chain
+  }
+
+  const error = new Error(`Codex wallet chain ${chainId} is not configured`) as UnsupportedChainError
+  error.code = 4902
+  throw error
 }
 
 function codexPrivateKeyConnector(walletDetails: WalletDetailsParams) {
@@ -136,6 +145,13 @@ function codexPrivateKeyConnector(walletDetails: WalletDetailsParams) {
   return createConnector((config) => {
     let connected = true
     let connectedChainId = config.chains[0].id
+
+    const switchToConfiguredChain = (chainId: number): Chain => {
+      const chain = getConnectorChain(config.chains, chainId)
+      connectedChainId = chain.id
+      config.emitter.emit('change', { chainId: connectedChainId })
+      return chain
+    }
 
     const getWalletClient = (chainId = connectedChainId) => {
       const chain = getConnectorChain(config.chains, chainId)
@@ -154,8 +170,7 @@ function codexPrivateKeyConnector(walletDetails: WalletDetailsParams) {
 
       if (method === 'wallet_switchEthereumChain') {
         const [requestedChain] = params as [{ chainId: Hex }]
-        connectedChainId = fromHex(requestedChain.chainId, 'number')
-        config.emitter.emit('change', { chainId: connectedChainId })
+        switchToConfiguredChain(fromHex(requestedChain.chainId, 'number'))
         return null
       }
 
@@ -214,7 +229,7 @@ function codexPrivateKeyConnector(walletDetails: WalletDetailsParams) {
       async connect<withCapabilities extends boolean = false>(parameters?: { chainId?: number }) {
         const chainId = parameters?.chainId
         if (chainId) {
-          connectedChainId = chainId
+          connectedChainId = getConnectorChain(config.chains, chainId).id
         }
         connected = true
         return { accounts: [account.address], chainId: connectedChainId } as unknown as {
@@ -240,9 +255,7 @@ function codexPrivateKeyConnector(walletDetails: WalletDetailsParams) {
         return connected
       },
       async switchChain({ chainId }) {
-        connectedChainId = chainId
-        config.emitter.emit('change', { chainId })
-        return getConnectorChain(config.chains, chainId)
+        return switchToConfiguredChain(chainId)
       },
       onAccountsChanged(accounts) {
         config.emitter.emit('change', { accounts: accounts.map((item) => getAddress(item)) })

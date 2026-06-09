@@ -39,7 +39,10 @@ describe('isTenderlyAdminRequestAllowed', () => {
   it('rejects remote client addresses', async () => {
     expect(isTenderlyAdminRequestAllowed('10.0.0.8')).toBe(false)
 
-    const response = buildTenderlyAdminAccessDeniedResponse('10.0.0.8')
+    const response = buildTenderlyAdminAccessDeniedResponse(
+      '10.0.0.8',
+      new Request('http://localhost:3001/api/tenderly/snapshot', { method: 'POST' })
+    )
     expect(response?.status).toBe(403)
     await expect(response?.json()).resolves.toEqual({
       error: 'Tenderly admin routes are only available from localhost'

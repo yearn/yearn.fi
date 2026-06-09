@@ -68,9 +68,9 @@ export function getTenderlyAdminSecret(): string | undefined {
 
 export function buildTenderlyAdminAccessDeniedResponse(
   requestIpAddress: string | null | undefined,
-  req?: Request
+  req: Request
 ): Response | undefined {
-  if (req && !isTenderlyAdminOriginAllowed(req.headers.get('Origin'))) {
+  if (!isTenderlyAdminOriginAllowed(req.headers.get('Origin'))) {
     return Response.json({ error: 'Origin not allowed' }, { status: 403 })
   }
 
@@ -80,7 +80,7 @@ export function buildTenderlyAdminAccessDeniedResponse(
       return Response.json({ error: 'Tenderly admin endpoint not configured' }, { status: 503 })
     }
 
-    if (req?.headers.get('x-admin-secret') === adminSecret) {
+    if (req.headers.get('x-admin-secret') === adminSecret) {
       return undefined
     }
 

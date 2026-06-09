@@ -2,6 +2,12 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { invalidateVaults, type VaultIdentifier } from '../lib/holdings/services/cache'
 import { isHoldingsStorageEnabled } from '../lib/holdings/storage/redis'
 
+const ADMIN_ALLOWED_ORIGIN_DEFAULTS = ['http://localhost:3000', 'http://127.0.0.1:3000']
+const ADMIN_CORS_HEADERS = {
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, x-admin-secret'
+}
+
 function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
@@ -26,10 +32,49 @@ function validateBody(body: unknown): body is InvalidateRequestBody {
   return true
 }
 
+function readCsvValues(value: string | undefined): string[] {
+  return (
+    value
+      ?.split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean) ?? []
+  )
+}
+
+function getAdminAllowedOrigins(): Set<string> {
+  return new Set([...ADMIN_ALLOWED_ORIGIN_DEFAULTS, ...readCsvValues(process.env.ADMIN_ALLOWED_ORIGINS)])
+}
+
+function getRequestOrigin(req: VercelRequest): string | null {
+  const origin = req.headers.origin
+  if (Array.isArray(origin)) {
+    return origin[0] ?? null
+  }
+  return origin ?? null
+}
+
+function applyAdminCorsHeaders(req: VercelRequest, res: VercelResponse): boolean {
+  const origin = getRequestOrigin(req)
+  if (origin && !getAdminAllowedOrigins().has(origin)) {
+    return false
+  }
+
+  for (const [key, value] of Object.entries(ADMIN_CORS_HEADERS)) {
+    res.setHeader(key, value)
+  }
+
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+    res.setHeader('Vary', 'Origin')
+  }
+
+  return true
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-secret')
+  if (!applyAdminCorsHeaders(req, res)) {
+    return res.status(403).json({ error: 'Origin not allowed' })
+  }
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end()
