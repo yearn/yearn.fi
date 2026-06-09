@@ -63,4 +63,27 @@ describe('Redis cache writes', () => {
     ])
     expect(result.oldestUpdatedAt?.getTime()).toBe(2000)
   })
+
+  it('marks vaults as invalidated in Redis', async () => {
+    const msetMock = vi.fn().mockResolvedValue('OK')
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1_779_564_000_000)
+    isHoldingsStorageEnabledMock.mockReturnValue(true)
+    getHoldingsRedisClientMock.mockReturnValue({
+      mset: msetMock
+    })
+
+    const { invalidateVaults } = await import('./cache')
+    const invalidated = await invalidateVaults([
+      {
+        address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
+        chainId: 1
+      }
+    ])
+
+    expect(invalidated).toBe(1)
+    expect(msetMock).toHaveBeenCalledWith({
+      'holdings:vault-invalidated:1:0xbe53a109b494e5c9f97b9cd39fe969be68bf6204': 1_779_564_000_000
+    })
+    nowSpy.mockRestore()
+  })
 })

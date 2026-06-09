@@ -16,14 +16,11 @@
     "tslint": "tsc -p tsconfig.json --noEmit",
     "bump": "bump",
     "test": "vitest run",
-    "benchmark:portfolio:api": "bun scripts/portfolioApiBenchmark.ts",
-    "benchmark:portfolio:report": "bun scripts/portfolioBenchmarkReport.ts",
     "clean": "bash clean.sh",
     "prepare": "husky"
   },
   "dependencies": {
     "@headlessui/react": "2.2.10",
-    "@neondatabase/serverless": "1.0.2",
     "@plausible-analytics/tracker": "0.4.5",
     "@rainbow-me/rainbowkit": "2.2.11",
     "@react-hookz/web": "24.0.4",
