@@ -1,7 +1,12 @@
 import { type DehydratedState, dehydrate, QueryClient } from '@tanstack/react-query'
 import * as z from 'zod'
 import { YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS } from '@/components/pages/vaults/utils/yvBtc'
-import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@/components/pages/vaults/utils/yvUsd'
+import {
+  isYvUsdAddress,
+  YVUSD_CHAIN_ID,
+  YVUSD_LOCKED_ADDRESS,
+  YVUSD_UNLOCKED_ADDRESS
+} from '@/components/pages/vaults/utils/yvUsd'
 import { PUBLIC_VAULT_DATA_CACHE_TIME } from '@/components/shared/data/publicQueryCache'
 import {
   buildVaultSnapshotEndpoint,
@@ -17,7 +22,7 @@ const VAULT_LIST_STALE_TIME = PUBLIC_VAULT_DATA_CACHE_TIME
 const VAULT_SNAPSHOT_STALE_TIME = PUBLIC_VAULT_DATA_CACHE_TIME
 const LANDING_TVL_TIMEOUT_MS = 1500
 const VAULT_LIST_TIMEOUT_MS = 3500
-const VAULT_SNAPSHOT_TIMEOUT_MS = 1200
+const VAULT_SNAPSHOT_TIMEOUT_MS = 7000
 
 type TPublicQueryOptions<T> = {
   queryClient: QueryClient
@@ -92,6 +97,38 @@ async function prefetchYvVaultSnapshots(queryClient: QueryClient): Promise<void>
   ])
 }
 
+function isMatchingSnapshotRoute(
+  chainId: number | string | undefined,
+  address: string | undefined,
+  expectedChainId: number,
+  expectedAddress: string
+): boolean {
+  if (!address || Number(chainId) !== expectedChainId) {
+    return false
+  }
+
+  return address.toLowerCase() === expectedAddress.toLowerCase()
+}
+
+async function prefetchRelatedVaultDetailSnapshots(
+  queryClient: QueryClient,
+  chainId?: number | string,
+  address?: string
+): Promise<void> {
+  if (Number(chainId) !== YVUSD_CHAIN_ID || !isYvUsdAddress(address)) {
+    return
+  }
+
+  await Promise.all([
+    isMatchingSnapshotRoute(chainId, address, YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS)
+      ? Promise.resolve()
+      : prefetchVaultSnapshot(queryClient, YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS),
+    isMatchingSnapshotRoute(chainId, address, YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS)
+      ? Promise.resolve()
+      : prefetchVaultSnapshot(queryClient, YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS)
+  ])
+}
+
 export async function getLandingPageDehydratedState(): Promise<DehydratedState> {
   const queryClient = createSsrQueryClient()
 
@@ -121,9 +158,8 @@ export async function getVaultDetailPageDehydratedState(
   const queryClient = createSsrQueryClient()
 
   await Promise.all([
-    prefetchVaultList(queryClient),
     prefetchVaultSnapshot(queryClient, chainId, address),
-    prefetchYvVaultSnapshots(queryClient)
+    prefetchRelatedVaultDetailSnapshots(queryClient, chainId, address)
   ])
 
   return dehydrateQueryClient(queryClient)

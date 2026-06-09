@@ -79,17 +79,28 @@ describe('public data SSR hydration', () => {
     )
   })
 
-  it('hydrates the requested vault detail snapshot without user-specific data', async () => {
+  it('hydrates only the requested ordinary vault detail snapshot without user-specific data', async () => {
     const state = await getVaultDetailPageDehydratedState(1, DETAIL_ADDRESS)
+    const keys = queryKeys(state)
 
-    expect(queryKeys(state)).toEqual(
+    expect(keys).toContainEqual(['fetch', buildVaultSnapshotEndpoint(1, DETAIL_ADDRESS)])
+    expect(keys).not.toContainEqual(['fetch', YEARN_VAULT_LIST_ENDPOINT])
+    expect(keys).not.toContainEqual(['fetch', buildVaultSnapshotEndpoint(YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS)])
+    expect(keys).not.toContainEqual(['fetch', buildVaultSnapshotEndpoint(YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS)])
+    expect(keys).not.toContainEqual(['fetch', buildVaultSnapshotEndpoint(YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS)])
+  })
+
+  it('hydrates related yvUSD variant data for yvUSD vault details', async () => {
+    const state = await getVaultDetailPageDehydratedState(YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS)
+    const keys = queryKeys(state)
+
+    expect(keys).toEqual(
       expect.arrayContaining([
-        ['fetch', YEARN_VAULT_LIST_ENDPOINT],
-        ['fetch', buildVaultSnapshotEndpoint(1, DETAIL_ADDRESS)],
         ['fetch', buildVaultSnapshotEndpoint(YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS)],
-        ['fetch', buildVaultSnapshotEndpoint(YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS)],
-        ['fetch', buildVaultSnapshotEndpoint(YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS)]
+        ['fetch', buildVaultSnapshotEndpoint(YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS)]
       ])
     )
+    expect(keys).not.toContainEqual(['fetch', YEARN_VAULT_LIST_ENDPOINT])
+    expect(keys).not.toContainEqual(['fetch', buildVaultSnapshotEndpoint(YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS)])
   })
 })
