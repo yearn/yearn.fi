@@ -21,11 +21,15 @@ type TVaultsAuxiliaryListProps = {
   vaultFlags: TVaultFlagsRecord
   apyDisplayVariant?: TVaultForwardAPYVariant
   resolveApyDisplayVariant?: (vault: TKongVaultInput) => TVaultForwardAPYVariant
+  resolveHrefOverride?: (vault: TKongVaultInput) => string | undefined
+  resolveLogoSrcOverride?: (vault: TKongVaultInput) => string | undefined
+  resolveExtraChips?: (vault: TKongVaultInput) => Array<{ label: string; tooltipDescription?: string }> | undefined
+  resolveShowProductTypeChipOverride?: (vault: TKongVaultInput) => boolean | undefined
   compareVaultKeys?: string[]
   onToggleCompare?: (vault: TKongVaultInput) => void
   activeChains?: number[]
   activeCategories?: string[]
-  activeProductType?: 'v3' | 'lp' | 'all'
+  activeProductType?: 'v3' | 'lp' | 'fixed' | 'all'
   activeFeeStructureKey?: string | null
   onToggleChain?: (chainId: number) => void
   onToggleCategory?: (category: string) => void
@@ -49,6 +53,10 @@ export function VaultsAuxiliaryList({
   vaultFlags,
   apyDisplayVariant,
   resolveApyDisplayVariant,
+  resolveHrefOverride,
+  resolveLogoSrcOverride,
+  resolveExtraChips,
+  resolveShowProductTypeChipOverride,
   compareVaultKeys,
   onToggleCompare,
   activeChains,
@@ -83,11 +91,16 @@ export function VaultsAuxiliaryList({
           const key = getVaultListKey(vault)
           const rowApyDisplayVariant = resolveApyDisplayVariant?.(vault) ?? apyDisplayVariant
           const isExpanded = expandedVaultKeys ? Boolean(expandedVaultKeys[key]) : undefined
+          const hrefOverride = resolveHrefOverride?.(vault)
           return (
             <VaultsListRow
               currentVault={vault}
               flags={vaultFlags[key]}
+              hrefOverride={hrefOverride}
+              logoSrcOverride={resolveLogoSrcOverride?.(vault)}
+              extraChips={resolveExtraChips?.(vault)}
               apyDisplayVariant={rowApyDisplayVariant}
+              showProductTypeChipOverride={resolveShowProductTypeChipOverride?.(vault)}
               compareVaultKeys={compareVaultKeys}
               onToggleCompare={onToggleCompare}
               activeChains={activeChains}

@@ -166,28 +166,36 @@ function VaultHeaderIdentity({
   currentVault: currentVaultInput,
   isCompressed,
   className,
+  logoSrcOverride,
+  productTypeLabelOverride,
+  productTypeDescriptionOverride,
+  extraMetadataChips = [],
   includeTourAttributes = true
 }: {
   currentVault: TKongVaultInput
   isCompressed: boolean
   className?: string
+  logoSrcOverride?: string
+  productTypeLabelOverride?: string
+  productTypeDescriptionOverride?: string
+  extraMetadataChips?: Array<{ label: string; tooltipDescription?: string }>
   includeTourAttributes?: boolean
 }): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
   const chainName = getNetwork(currentVault.chainID).name
-  const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
+  const tokenLogoSrc = logoSrcOverride ?? getVaultPrimaryLogoSrc(currentVault)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
   const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
   const showChainChip = !isCompressed
   const showCategoryChip = Boolean(currentVault.category)
   const listKind = deriveListKind(currentVault)
-  const productTypeLabel = getVaultProductTypeLabel(listKind)
+  const productTypeLabel = productTypeLabelOverride ?? getVaultProductTypeLabel(listKind)
   const kindType = getVaultKindType(currentVault.kind, listKind)
   const kindLabel = getVaultKindLabel(kindType, currentVault.kind)
   const chainDescription = getChainDescription(currentVault.chainID)
   const categoryDescription = getCategoryDescription(currentVault.category)
-  const productTypeDescription = getProductTypeDescription(listKind)
+  const productTypeDescription = productTypeDescriptionOverride ?? getProductTypeDescription(listKind)
   const kindDescription = getKindDescription(kindType, kindLabel)
   const isMigratable = Boolean(currentVault.migration?.available)
   const isRetired = Boolean(currentVault.info?.isRetired)
@@ -372,6 +380,15 @@ function VaultHeaderIdentity({
             showCollapsedTooltip={isCompressed}
             tooltipDescription={productTypeDescription}
           />
+          {extraMetadataChips.map((chip) => (
+            <VaultsListChip
+              key={chip.label}
+              label={chip.label}
+              isCollapsed={isCompressed}
+              showCollapsedTooltip={isCompressed}
+              tooltipDescription={chip.tooltipDescription}
+            />
+          ))}
           {showKindChip && kindLabel ? (
             <VaultsListChip
               label={kindLabel}
@@ -1048,6 +1065,10 @@ function UserHoldingsCard({
 type TVaultDetailsHeaderBaseProps = {
   currentVault: TKongVaultInput
   depositedValue: bigint
+  logoSrcOverride?: string
+  productTypeLabelOverride?: string
+  productTypeDescriptionOverride?: string
+  extraMetadataChips?: Array<{ label: string; tooltipDescription?: string }>
   yvUsdApyVariant?: TYvUsdVariant
   sectionTabs?: { key: string; label: string }[]
   activeSectionKey?: string
@@ -1070,6 +1091,10 @@ type TVaultDetailsHeaderPresentationProps = TVaultDetailsHeaderBaseProps & {
 export function VaultDetailsHeaderPresentation({
   currentVault: currentVaultInput,
   depositedValue,
+  logoSrcOverride,
+  productTypeLabelOverride,
+  productTypeDescriptionOverride,
+  extraMetadataChips,
   yvUsdApyVariant,
   sectionTabs = [],
   activeSectionKey,
@@ -1122,6 +1147,10 @@ export function VaultDetailsHeaderPresentation({
                   currentVault={currentVault}
                   isCompressed={isCompressed}
                   className={'min-w-0 flex-[5] pl-6'}
+                  logoSrcOverride={logoSrcOverride}
+                  productTypeLabelOverride={productTypeLabelOverride}
+                  productTypeDescriptionOverride={productTypeDescriptionOverride}
+                  extraMetadataChips={extraMetadataChips}
                   includeTourAttributes={includeTourAttributes}
                 />
                 <div className={'min-w-0 flex-[8] pl-4'}>
@@ -1157,6 +1186,10 @@ export function VaultDetailsHeaderPresentation({
                 currentVault={currentVault}
                 isCompressed={isCompressed}
                 className={'md:w-[20%] md:min-w-[300px] md:max-w-[420px] md:flex-none'}
+                logoSrcOverride={logoSrcOverride}
+                productTypeLabelOverride={productTypeLabelOverride}
+                productTypeDescriptionOverride={productTypeDescriptionOverride}
+                extraMetadataChips={extraMetadataChips}
                 includeTourAttributes={includeTourAttributes}
               />
               <div className={'hidden md:flex md:min-w-0 md:flex-1 self-stretch'}>
@@ -1168,6 +1201,10 @@ export function VaultDetailsHeaderPresentation({
               currentVault={currentVault}
               isCompressed={isCompressed}
               className={'md:col-span-20 md:row-start-2'}
+              logoSrcOverride={logoSrcOverride}
+              productTypeLabelOverride={productTypeLabelOverride}
+              productTypeDescriptionOverride={productTypeDescriptionOverride}
+              extraMetadataChips={extraMetadataChips}
               includeTourAttributes={includeTourAttributes}
             />
           )}

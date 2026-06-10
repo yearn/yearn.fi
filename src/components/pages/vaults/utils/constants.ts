@@ -29,7 +29,7 @@ export function readBooleanParam(searchParams: URLSearchParams, key: string): bo
 }
 
 export function selectVaultsByType<T>(
-  vaultType: 'all' | 'v3' | 'factory',
+  vaultType: 'all' | 'v3' | 'factory' | 'fixed',
   v3Value: T,
   v2Value: T,
   mergeArrays = false
@@ -40,6 +40,15 @@ export function selectVaultsByType<T>(
     }
     if (typeof v3Value === 'object' && typeof v2Value === 'object' && !Array.isArray(v3Value)) {
       return { ...v3Value, ...v2Value } as T
+    }
+    return v3Value
+  }
+  if (vaultType === 'fixed') {
+    if (Array.isArray(v3Value)) {
+      return [] as T
+    }
+    if (typeof v3Value === 'object' && v3Value !== null) {
+      return {} as T
     }
     return v3Value
   }

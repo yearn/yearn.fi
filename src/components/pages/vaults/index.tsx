@@ -11,7 +11,9 @@ import { VaultsListRowSkeleton } from '@pages/vaults/components/list/VaultsListR
 import { VaultsListSearchRecoveryRow } from '@pages/vaults/components/list/VaultsListSearchRecoveryRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import { VaultsWelcomeTour } from '@pages/vaults/components/tour/VaultsWelcomeTour'
-import { getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { TranchedProductsList } from '@pages/vaults/components/tranched/TranchedProductsList'
+import { getTranchedVaultRowByAddress } from '@pages/vaults/constants/tranchedProducts'
+import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { toggleInArray } from '@pages/vaults/utils/constants'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
@@ -181,6 +183,47 @@ export default function Index(): ReactElement {
       delete updated[vaultKey]
       return updated
     })
+  }, [])
+
+  const resolveTranchedHrefOverride = useCallback((vault: TKongVaultInput): string | undefined => {
+    return getTranchedVaultRowByAddress(getVaultAddress(vault))?.href
+  }, [])
+
+  const resolveTranchedLogoSrcOverride = useCallback((vault: TKongVaultInput): string | undefined => {
+    return getTranchedVaultRowByAddress(getVaultAddress(vault))?.logoSrc
+  }, [])
+
+  const resolveTranchedExtraChips = useCallback(
+    (vault: TKongVaultInput): Array<{ label: string; tooltipDescription?: string }> | undefined => {
+      const row = getTranchedVaultRowByAddress(getVaultAddress(vault))
+      if (!row) {
+        return undefined
+      }
+      if (row.product.kind === 'senior') {
+        return [
+          {
+            label: 'Target Rate',
+            tooltipDescription: 'This product is designed around a target coupon paid before junior upside.'
+          }
+        ]
+      }
+      return [
+        {
+          label: 'Junior',
+          tooltipDescription:
+            'Junior products receive excess yield after senior obligations and sit below senior in the waterfall.'
+        }
+      ]
+    },
+    []
+  )
+
+  const resolveTranchedProductTypeChipOverride = useCallback((vault: TKongVaultInput): boolean | undefined => {
+    const row = getTranchedVaultRowByAddress(getVaultAddress(vault))
+    if (!row) {
+      return undefined
+    }
+    return row.product.kind === 'junior' ? undefined : false
   }, [])
 
   const visibleVaults = useMemo(() => [...pinnedVaults, ...mainVaults], [pinnedVaults, mainVaults])
@@ -365,6 +408,10 @@ export default function Index(): ReactElement {
             vaults={section.vaults}
             vaultFlags={vaultFlags}
             resolveApyDisplayVariant={resolveApyDisplayVariant}
+            resolveHrefOverride={resolveTranchedHrefOverride}
+            resolveLogoSrcOverride={resolveTranchedLogoSrcOverride}
+            resolveExtraChips={resolveTranchedExtraChips}
+            resolveShowProductTypeChipOverride={resolveTranchedProductTypeChipOverride}
             compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
             onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
             activeChains={activeChains}
@@ -391,11 +438,16 @@ export default function Index(): ReactElement {
             renderItem={(vault): ReactElement => {
               const key = getVaultKey(vault)
               const rowApyDisplayVariant = resolveApyDisplayVariant(vault)
+              const tranchedHrefOverride = resolveTranchedHrefOverride(vault)
               return (
                 <VaultsListRow
                   currentVault={vault}
                   flags={vaultFlags[key]}
+                  hrefOverride={tranchedHrefOverride}
+                  logoSrcOverride={resolveTranchedLogoSrcOverride(vault)}
+                  extraChips={resolveTranchedExtraChips(vault)}
                   apyDisplayVariant={rowApyDisplayVariant}
+                  showProductTypeChipOverride={resolveTranchedProductTypeChipOverride(vault)}
                   compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
                   onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
                   activeChains={activeChains}
@@ -451,6 +503,10 @@ export default function Index(): ReactElement {
     pinnedSections,
     pinnedVaults.length,
     resolveApyDisplayVariant,
+    resolveTranchedExtraChips,
+    resolveTranchedHrefOverride,
+    resolveTranchedLogoSrcOverride,
+    resolveTranchedProductTypeChipOverride,
     search.value,
     shouldCollapseChips,
     vaultFlags
@@ -547,7 +603,7 @@ export default function Index(): ReactElement {
                 isStackedLayout={shouldStackFilters}
               />
             </div>
-            <div data-tour="vaults-list">
+            <div data-tour="vaults-list" className={'flex flex-col gap-4'}>
               <VaultsListSection
                 isUpdatingProductType={isUpdatingProductType}
                 isUpdatingList={isUpdatingList}
@@ -555,6 +611,7 @@ export default function Index(): ReactElement {
               >
                 {vaultListContent}
               </VaultsListSection>
+              {activeVaultType === 'fixed' ? <TranchedProductsList kind={'senior'} /> : null}
             </div>
           </div>
         </div>

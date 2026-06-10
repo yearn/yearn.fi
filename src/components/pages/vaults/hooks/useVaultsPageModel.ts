@@ -196,7 +196,7 @@ type TVaultsListModel = {
   activeFilters: {
     activeChains: number[]
     activeCategories: string[]
-    activeProductType: 'all' | 'v3' | 'lp'
+    activeProductType: 'all' | 'fixed' | 'v3' | 'lp'
     activeFeeStructureKey: string | null
   }
   data: TVaultsListData
@@ -599,7 +599,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
   ])
   const activeChains = useMemo(() => displayedChains ?? [], [displayedChains])
   const activeCategories = displayedCategoriesSanitized
-  const activeProductType = useMemo<'all' | 'v3' | 'lp'>(
+  const activeProductType = useMemo<'all' | 'fixed' | 'v3' | 'lp'>(
     () => (displayedVaultType === 'factory' ? 'lp' : displayedVaultType),
     [displayedVaultType]
   )
@@ -1008,12 +1008,12 @@ export function useVaultsPageModel(): TVaultsPageModel {
   )
 
   const chainConfig = useMemo((): TChainConfig => {
-    if (listVaultType === 'v3') {
+    if (listVaultType === 'v3' || listVaultType === 'fixed') {
       return {
-        supportedChainIds: V3_SUPPORTED_CHAINS,
-        primaryChainIds: V3_PRIMARY_CHAIN_IDS,
-        defaultSecondaryChainIds: V3_DEFAULT_SECONDARY_CHAIN_IDS,
-        chainDisplayOrder: V3_SUPPORTED_CHAINS,
+        supportedChainIds: listVaultType === 'fixed' ? [1] : V3_SUPPORTED_CHAINS,
+        primaryChainIds: listVaultType === 'fixed' ? [1] : V3_PRIMARY_CHAIN_IDS,
+        defaultSecondaryChainIds: listVaultType === 'fixed' ? [] : V3_DEFAULT_SECONDARY_CHAIN_IDS,
+        chainDisplayOrder: listVaultType === 'fixed' ? [1] : V3_SUPPORTED_CHAINS,
         showMoreChainsButton: false,
         allChainsLabel: 'All Chains'
       }

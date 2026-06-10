@@ -28,6 +28,7 @@ type TButtonConfig = {
 
 const BUTTON_CONFIGS: TButtonConfig[] = [
   { type: 'all', typeParam: 'all' },
+  { type: 'fixed', typeParam: 'fixed' },
   { type: 'v3', typeParam: 'single' },
   { type: 'factory', typeParam: 'lp' }
 ]
@@ -66,8 +67,10 @@ export function VaultVersionToggle({
         return resolvedType === 'all'
       case 'factory':
         return resolvedType === 'factory'
+      case 'fixed':
+        return resolvedType === 'fixed'
       default:
-        return resolvedType !== 'all' && resolvedType !== 'factory'
+        return resolvedType !== 'all' && resolvedType !== 'factory' && resolvedType !== 'fixed'
     }
   }
 

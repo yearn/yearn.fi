@@ -220,6 +220,8 @@ type TVaultsListRowProps = {
   currentVault: TKongVaultInput
   flags?: TVaultRowFlags
   hrefOverride?: string
+  logoSrcOverride?: string
+  extraChips?: Array<{ label: string; tooltipDescription?: string }>
   apyDisplayVariant?: TVaultForwardAPYVariant
   showBoostDetails?: boolean
   compareVaultKeys?: string[]
@@ -229,7 +231,7 @@ type TVaultsListRowProps = {
   onToggleChain?: (chainId: number) => void
   onToggleCategory?: (category: string) => void
   onToggleType?: (type: string) => void
-  activeProductType?: 'v3' | 'lp' | 'all'
+  activeProductType?: 'v3' | 'lp' | 'fixed' | 'all'
   activeFeeStructureKey?: string | null
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   onToggleFeeStructure?: (feeStructureKey: string) => void
@@ -248,6 +250,8 @@ function VaultsListRowComponent({
   currentVault,
   flags,
   hrefOverride,
+  logoSrcOverride,
+  extraChips,
   apyDisplayVariant = 'default',
   showBoostDetails = true,
   compareVaultKeys,
@@ -285,7 +289,7 @@ function VaultsListRowComponent({
   const href = hrefOverride ?? `/vaults/${chainID}/${toAddress(vaultAddress)}`
   const network = getNetwork(chainID)
   const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
-  const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
+  const tokenLogoSrc = logoSrcOverride ?? getVaultPrimaryLogoSrc(currentVault)
   const { address } = useWeb3()
   const { getVaultHoldingsUsd, getBalance, isLoading: isWalletLoading } = useWallet()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
@@ -657,6 +661,16 @@ function VaultsListRowComponent({
                     ariaLabel={productTypeAriaLabel}
                   />
                 ) : null}
+                {extraChips?.map((chip) => (
+                  <VaultsListChip
+                    key={chip.label}
+                    label={chip.label}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={chip.tooltipDescription}
+                    onHoverChange={handleInteractiveHoverChange}
+                  />
+                ))}
                 {showFeesChip ? (
                   <VaultsListChip
                     label={feesChipLabel}
