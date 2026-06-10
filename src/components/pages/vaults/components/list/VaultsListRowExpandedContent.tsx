@@ -8,6 +8,8 @@ import {
 import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
 import { resolveForwardApyDisplayConfig } from '@pages/vaults/components/table/apyDisplayConfig'
 import type { TVaultForwardAPYVariant } from '@pages/vaults/components/table/VaultForwardAPY'
+import { TranchedVaultChartsSection } from '@pages/vaults/components/tranched/TranchedVaultChartsSection'
+import { getTranchedVaultRowByAddress } from '@pages/vaults/constants/tranchedProducts'
 import {
   getVaultAddress,
   getVaultChainID,
@@ -122,6 +124,7 @@ export default function VaultsListRowExpandedContent({
   }, [isYvUsd, staking.available, staking.address, token.address, vaultAddress])
   const vaultApyData = useVaultApyData(currentVault)
   const snapshotMergedVault = useMemo(() => getVaultView(currentVault, snapshotVault), [currentVault, snapshotVault])
+  const tranchedVaultRow = useMemo(() => getTranchedVaultRowByAddress(vaultAddress), [vaultAddress])
   const chartTab = isExpandedChartView(expandedView) ? EXPANDED_VIEW_TO_CHART_TAB[expandedView] : undefined
   const shouldUsePortfolioUserTvlOverlay = chartVariant === 'portfolio-user-tvl-overlay' && showUserViews
   const yvUsdChartTab =
@@ -214,7 +217,16 @@ export default function VaultsListRowExpandedContent({
               }
             />
             {chartTab ? (
-              isYvUsd ? (
+              tranchedVaultRow ? (
+                <TranchedVaultChartsSection
+                  product={tranchedVaultRow.product}
+                  shouldRenderSelectors={false}
+                  chartTab={chartTab}
+                  timeframe={chartTimeframe}
+                  chartHeightPx={200}
+                  chartHeightMdPx={200}
+                />
+              ) : isYvUsd ? (
                 <YvUsdChartsSection
                   shouldRenderSelectors={false}
                   chartTab={yvUsdChartTab}
