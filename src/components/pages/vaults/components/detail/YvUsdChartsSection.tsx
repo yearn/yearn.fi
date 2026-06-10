@@ -180,24 +180,32 @@ export function YvUsdChartsSection({
         </div>
       ) : (
         <div className="space-y-0">
-          <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx} className={'mx-4'}>
-            <ChartErrorBoundary>
-              {activeTabIsUserChart ? (
-                userBalanceData || userGrowthData ? (
-                  <Suspense fallback={<ChartSkeleton />}>
-                    <VaultTvlGrowthChart
-                      balanceData={userBalanceData}
-                      growthData={userGrowthData}
-                      timeframe={activeTimeframe}
-                      unitLabel={'USDC'}
-                    />
-                  </Suspense>
-                ) : null
-              ) : (
-                renderActiveChart({ activeTab: resolvedActiveTab, activeTimeframe, apyData, performanceData, tvlData })
-              )}
-            </ChartErrorBoundary>
-          </FixedHeightChartContainer>
+          <div className={'px-4'}>
+            <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx}>
+              <ChartErrorBoundary>
+                {activeTabIsUserChart ? (
+                  userBalanceData || userGrowthData ? (
+                    <Suspense fallback={<ChartSkeleton />}>
+                      <VaultTvlGrowthChart
+                        balanceData={userBalanceData}
+                        growthData={userGrowthData}
+                        timeframe={activeTimeframe}
+                        unitLabel={'USDC'}
+                      />
+                    </Suspense>
+                  ) : null
+                ) : (
+                  renderActiveChart({
+                    activeTab: resolvedActiveTab,
+                    activeTimeframe,
+                    apyData,
+                    performanceData,
+                    tvlData
+                  })
+                )}
+              </ChartErrorBoundary>
+            </FixedHeightChartContainer>
+          </div>
           {!activeTabIsUserChart && activeChartData ? (
             <YvUsdChartLegend chartData={activeChartData} timeframe={activeTimeframe} />
           ) : null}
