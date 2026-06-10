@@ -11,6 +11,7 @@ type TTokenLogoV2Props = Omit<ImgHTMLAttributes<HTMLImageElement>, 'alt' | 'onEr
   tokenSymbol?: string
   tokenName?: string
   chainId?: number
+  priority?: boolean
 }
 
 type TTokenLogoV2InnerProps = Omit<TTokenLogoV2Props, 'src' | 'altSrc'> & {
@@ -57,7 +58,20 @@ function getFontSizeClass({ fallbackText, width }: { fallbackText: string; width
 }
 
 function TokenLogoV2Inner(props: TTokenLogoV2InnerProps): ReactElement {
-  const { sources, fallbackText, tokenSymbol, tokenName, chainId, className, width = 32, height = 32, ...rest } = props
+  const {
+    sources,
+    fallbackText,
+    tokenSymbol,
+    tokenName,
+    chainId,
+    className,
+    width = 32,
+    height = 32,
+    priority,
+    loading,
+    fetchPriority,
+    ...rest
+  } = props
   const [sourceIndex, setSourceIndex] = useState(0)
   const activeSrc = sources[sourceIndex]
   const showFallback = !activeSrc
@@ -95,6 +109,8 @@ function TokenLogoV2Inner(props: TTokenLogoV2InnerProps): ReactElement {
             width={width}
             height={height}
             decoding="async"
+            loading={priority ? 'eager' : loading}
+            fetchPriority={priority ? 'high' : fetchPriority}
             {...rest}
           />
         )}
