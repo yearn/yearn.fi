@@ -232,7 +232,6 @@ export function useYearnTokens({
               address: stakingAddress,
               chainID,
               symbol,
-              decimals,
               name,
               for: 'vault-staking',
               isStakingToken: true,
