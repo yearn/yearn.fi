@@ -1,6 +1,6 @@
 import { useLocalStorageValue } from '@react-hookz/web'
 import type { Dispatch, ReactElement, SetStateAction } from 'react'
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import { isAddressEqual } from 'viem'
 import { env } from '@/env'
 import { useAsyncTrigger } from '../hooks/useAsyncTrigger'
@@ -68,6 +68,33 @@ export function toTToken(token: TTokenList['tokens'][0]): TToken {
   }
 }
 
+export function getUnloadedTokenListURIs({
+  hashList,
+  loadedURIs
+}: {
+  hashList: string
+  loadedURIs: ReadonlySet<string>
+}): string[] {
+  return hashList.split(',').filter((eachURI) => eachURI && !loadedURIs.has(eachURI))
+}
+
+function mergeTokenListTokens(
+  currentTokens: TNDict<TDict<TToken>>,
+  incomingTokens: TNDict<TDict<TToken>>
+): TNDict<TDict<TToken>> {
+  const nextTokens: TNDict<TDict<TToken>> = { ...currentTokens }
+
+  Object.entries(incomingTokens).forEach(([chainId, tokensByAddress]) => {
+    const parsedChainId = Number(chainId)
+    nextTokens[parsedChainId] = {
+      ...(nextTokens[parsedChainId] || {}),
+      ...tokensByAddress
+    }
+  })
+
+  return nextTokens
+}
+
 const TokenList = createContext<TTokenListProps>(defaultProps)
 const TokenListActions = createContext<TTokenListActions>({
   enableTokenListFetch: defaultProps.enableTokenListFetch
@@ -94,6 +121,7 @@ export const WithTokenList = ({
   const [tokenListCustom, setTokenListCustom] = useState<TNDict<TDict<TToken>>>({})
   const [isInitialized, setIsInitialized] = useState([false, false, false])
   const [isManuallyEnabled, setIsManuallyEnabled] = useState(false)
+  const loadedTokenListURIsRef = useRef<Set<string>>(new Set())
   const isFetchEnabled = enabled || isManuallyEnabled
   const hashList = useMemo((): string => lists.join(','), [lists])
   const enableTokenListFetch = useCallback((): void => {
@@ -116,9 +144,16 @@ export const WithTokenList = ({
     if (!isFetchEnabled) {
       return
     }
-    const unhashedLists = hashList.split(',')
+    const unloadedLists = getUnloadedTokenListURIs({
+      hashList,
+      loadedURIs: loadedTokenListURIsRef.current
+    })
+    if (unloadedLists.length === 0) {
+      setIsInitialized((prev) => [true, prev[1], prev[2]])
+      return
+    }
     const responses = await Promise.allSettled(
-      unhashedLists.map(async (eachURI: string): Promise<TTokenList> => {
+      unloadedLists.map(async (eachURI: string): Promise<TTokenList> => {
         const res = await fetch(eachURI)
         return res.json()
       })
@@ -129,7 +164,8 @@ export const WithTokenList = ({
     for (const [index, response] of responses.entries()) {
       if (response.status === 'fulfilled') {
         tokens.push(...response.value.tokens)
-        fromList.push({ ...response.value, uri: unhashedLists[index] })
+        loadedTokenListURIsRef.current.add(unloadedLists[index])
+        fromList.push({ ...response.value, uri: unloadedLists[index] })
       }
     }
 
@@ -173,7 +209,7 @@ export const WithTokenList = ({
         }
       }
     }
-    setTokenList(tokenListTokens)
+    setTokenList((prev) => mergeTokenListTokens(prev, tokenListTokens))
     setIsInitialized((prev) => [true, prev[1], prev[2]])
   }, [hashList, isFetchEnabled])
 
