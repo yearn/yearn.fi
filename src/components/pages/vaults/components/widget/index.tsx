@@ -119,7 +119,8 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
           <WidgetDeposit
             vaultAddress={toAddress(vaultAddress)}
             assetAddress={toAddress(assetToken)}
-            stakingAddress={disableDepositStaking ? undefined : resolvedStakingAddress}
+            stakingAddress={resolvedStakingAddress}
+            disableDepositStaking={disableDepositStaking}
             chainId={chainId}
             vaultAPR={vaultAPR?.forwardAPR?.netAPR || 0}
             vaultSymbol={vaultSymbol || ''}
