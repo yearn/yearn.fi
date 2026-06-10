@@ -1,7 +1,7 @@
 import { usePlausible } from '@hooks/usePlausible'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
-import { TokenLogo } from '@shared/components/TokenLogo'
+import { TokenLogoV2 } from '@shared/components/TokenLogoV2'
 import { useWalletTokens } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { usePublicClient } from '@shared/hooks/useAppWagmi'
@@ -458,7 +458,7 @@ export const WidgetMigrate: FC<Props> = ({
             className="w-full flex items-center justify-between p-3 bg-surface-secondary hover:bg-surface-secondary/80 rounded-lg transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <TokenLogo
+              <TokenLogoV2
                 src={
                   destinationVault?.logoURI ||
                   `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`

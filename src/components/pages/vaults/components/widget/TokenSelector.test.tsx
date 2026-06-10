@@ -303,6 +303,83 @@ describe('TokenSelector', () => {
     expect(html).not.toContain('https://example.com/vault.png')
   })
 
+  it('uses known vault asset logo fallback path for staking tokens from all vaults', () => {
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        1: {
+          [STAKING_TOKEN_ADDRESS]: buildToken({
+            address: STAKING_TOKEN_ADDRESS,
+            name: 'Gauge Token',
+            symbol: 'yG-yvBASE-1',
+            logoURI: 'https://example.com/gauge.png',
+            balance: {
+              raw: 5n,
+              normalized: 5,
+              display: '5',
+              decimals: 18
+            }
+          })
+        }
+      },
+      getToken: () =>
+        buildToken({
+          address: '0x0000000000000000000000000000000000000000',
+          name: '',
+          symbol: '',
+          logoURI: undefined,
+          balance: {
+            raw: 0n,
+            normalized: 0,
+            display: '0',
+            decimals: 18
+          }
+        })
+    })
+    mockUseYearn.mockReturnValue({
+      allVaults: {
+        [VAULT_TOKEN_ADDRESS]: {
+          chainID: 1,
+          version: '3.0.0',
+          address: VAULT_TOKEN_ADDRESS,
+          token: {
+            address: BASE_TOKEN_ADDRESS,
+            symbol: 'BASE',
+            name: 'Base Token',
+            description: '',
+            decimals: 18
+          },
+          staking: {
+            address: STAKING_TOKEN_ADDRESS,
+            available: true,
+            source: '',
+            rewards: null
+          },
+          info: {
+            sourceURL: '',
+            riskLevel: 0,
+            riskScore: [],
+            riskScoreComment: '',
+            uiNotice: '',
+            isRetired: false,
+            isBoosted: false,
+            isHighlighted: false,
+            isHidden: false
+          }
+        }
+      },
+      getPrice: () => ({ normalized: 0 })
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector value={STAKING_TOKEN_ADDRESS} onChange={() => undefined} chainId={1} mode="deposit" />
+    )
+
+    expect(html).toContain(`/tokens/1/${BASE_TOKEN_ADDRESS}/logo-32.png`)
+    expect(html).toContain('Gauge')
+    expect(html).not.toContain('https://example.com/gauge.png')
+  })
+
   it('never shows hidden vault share or staking tokens', () => {
     mockUseWallet.mockReturnValue({
       isLoading: false,

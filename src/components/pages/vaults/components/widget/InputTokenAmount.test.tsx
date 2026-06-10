@@ -36,8 +36,8 @@ vi.mock('@shared/utils', () => ({
   simpleToExact: vi.fn(() => 0n)
 }))
 
-vi.mock('@shared/components/TokenLogo', () => ({
-  TokenLogo: (props: { src?: string; altSrc?: string }) => <span data-src={props.src} data-alt-src={props.altSrc} />
+vi.mock('@shared/components/TokenLogoV2', () => ({
+  TokenLogoV2: (props: { src?: string; altSrc?: string }) => <span data-src={props.src} data-alt-src={props.altSrc} />
 }))
 
 describe('InputTokenAmount', () => {

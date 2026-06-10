@@ -2,10 +2,11 @@ import {
   getVaultAddress,
   getVaultChainID,
   getVaultInfo,
-  getVaultStakingAddress
+  getVaultStakingAddress,
+  getVaultToken
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
-import { TokenLogo } from '@shared/components/TokenLogo'
+import { TokenLogoV2 } from '@shared/components/TokenLogoV2'
 import { useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
@@ -26,6 +27,15 @@ import {
 } from './tokenSelectorList.utils'
 
 type TTokenType = 'asset' | 'vault' | 'staking' | undefined
+type TTokenLogoSourceToken = {
+  address: string
+  chainID: number
+  logoURI?: string
+}
+type TKnownVaultTokenMeta = {
+  logoToken: TTokenLogoSourceToken
+  tokenType: Exclude<TTokenType, undefined>
+}
 
 const AVAILABLE_CHAINS = [
   { id: 1, name: 'Ethereum' },
@@ -64,7 +74,7 @@ const TokenTypeChip: FC<{ type: TTokenType }> = ({ type }) => {
   const config = {
     asset: { label: 'Asset', className: 'bg-blue-500/10 text-blue-600' },
     vault: { label: 'Vault', className: 'bg-green-500/10 text-green-600' },
-    staking: { label: 'Staking', className: 'bg-purple-500/10 text-purple-600' }
+    staking: { label: 'Gauge', className: 'bg-purple-500/10 text-purple-600' }
   }
 
   const { label, className } = config[type]
@@ -76,7 +86,7 @@ const TokenItem: FC<{
   selected: boolean
   onSelect: () => void
   tokenType?: TTokenType
-  logoToken?: Pick<TToken, 'address' | 'chainID' | 'logoURI'>
+  logoToken?: TTokenLogoSourceToken
 }> = ({ token, selected, onSelect, tokenType, logoToken }) => {
   const logoSources = getTokenLogoSources({
     address: logoToken?.address ?? token.address,
@@ -84,7 +94,6 @@ const TokenItem: FC<{
     logoURI: logoToken ? logoToken.logoURI : token.logoURI,
     size: 32
   })
-
   return (
     <button
       type="button"
@@ -95,7 +104,7 @@ const TokenItem: FC<{
       )}
     >
       <div className="flex items-center gap-2">
-        <TokenLogo
+        <TokenLogoV2
           src={logoSources.src}
           altSrc={logoSources.altSrc}
           tokenSymbol={token.symbol}
@@ -204,7 +213,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     ],
     [excludeTokens, hiddenVaultExemptAddresses, hiddenVaultTokenAddresses, selectedChainId]
   )
-  const assetLogoToken = useMemo(() => {
+  const assetLogoToken = useMemo<TTokenLogoSourceToken | undefined>(() => {
     if (selectedChainId !== assetChainId || !assetAddress) {
       return undefined
     }
@@ -221,6 +230,31 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       logoURI: resolvedAssetLogoURI
     }
   }, [assetAddress, assetChainId, getToken, selectedChainId])
+  const knownVaultTokenMetaByAddress = useMemo((): Record<string, TKnownVaultTokenMeta> => {
+    const entries = Object.values(allVaults)
+      .filter((vault) => getVaultChainID(vault) === selectedChainId)
+      .flatMap((vault): Array<[string, TKnownVaultTokenMeta]> => {
+        const vaultAsset = getVaultToken(vault)
+        const logoToken = {
+          address: toAddress(vaultAsset.address),
+          chainID: selectedChainId,
+          logoURI: undefined
+        }
+        const vaultEntry: [string, TKnownVaultTokenMeta] = [
+          toAddress(getVaultAddress(vault)).toLowerCase(),
+          { logoToken, tokenType: 'vault' }
+        ]
+        const stakingAddress = getVaultStakingAddress(vault)
+        const stakingEntries: Array<[string, TKnownVaultTokenMeta]> =
+          stakingAddress === zeroAddress
+            ? []
+            : [[toAddress(stakingAddress).toLowerCase(), { logoToken, tokenType: 'staking' }]]
+
+        return [vaultEntry, ...stakingEntries]
+      })
+
+    return Object.fromEntries(entries)
+  }, [allVaults, selectedChainId])
 
   // Get all tokens with balances from wallet context
   const tokens = useMemo(() => {
@@ -409,9 +443,9 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       if (stakingAddress && addr === stakingAddress.toLowerCase()) return 'staking'
       if (vaultAddress && addr === vaultAddress.toLowerCase()) return 'vault'
       if (assetAddress && addr === assetAddress.toLowerCase()) return 'asset'
-      return undefined
+      return knownVaultTokenMetaByAddress[toAddress(tokenAddress).toLowerCase()]?.tokenType
     },
-    [assetAddress, vaultAddress, stakingAddress]
+    [assetAddress, knownVaultTokenMetaByAddress, vaultAddress, stakingAddress]
   )
   return (
     <div
@@ -477,9 +511,10 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                 onSelect={() => handleSelect(token.address as `0x${string}`)}
                 tokenType={getTokenType(token.address)}
                 logoToken={
-                  getTokenType(token.address) === 'vault' || getTokenType(token.address) === 'staking'
+                  knownVaultTokenMetaByAddress[toAddress(token.address).toLowerCase()]?.logoToken ??
+                  (getTokenType(token.address) === 'vault' || getTokenType(token.address) === 'staking'
                     ? assetLogoToken
-                    : undefined
+                    : undefined)
                 }
               />
             ))}

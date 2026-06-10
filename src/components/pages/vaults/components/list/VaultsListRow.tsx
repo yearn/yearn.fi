@@ -68,6 +68,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { MouseEvent, ReactElement } from 'react'
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { TokenLogoV2 } from '@/components/shared/components/TokenLogoV2'
 import { env } from '@/env'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
 import { VaultsListChip } from './VaultsListChip'
@@ -577,7 +578,7 @@ function VaultsListRowPresentationComponent({
             <div
               className={cl('relative flex items-center justify-center self-center', 'size-10', 'min-h-10 min-w-10')}
             >
-              <TokenLogo
+              <TokenLogoV2
                 src={tokenLogoSrc}
                 tokenSymbol={isYvUsd ? 'yvUSD' : vaultToken.symbol || ''}
                 width={40}
@@ -588,7 +589,7 @@ function VaultsListRowPresentationComponent({
                   'absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface'
                 }
               >
-                <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={16} height={16} />
+                <TokenLogoV2 src={chainLogoSrc} tokenSymbol={network.name} width={16} height={16} />
               </div>
             </div>
             <div className={'min-w-0 flex-1'}>
