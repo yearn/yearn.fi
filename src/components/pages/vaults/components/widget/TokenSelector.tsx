@@ -2,8 +2,7 @@ import {
   getVaultAddress,
   getVaultChainID,
   getVaultInfo,
-  getVaultStakingAddress,
-  getVaultToken
+  getVaultStakingAddress
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { TokenLogoV2 } from '@shared/components/TokenLogoV2'
@@ -16,7 +15,7 @@ import { type FC, useCallback, useMemo, useState } from 'react'
 import { isAddress, zeroAddress } from 'viem'
 import { env } from '@/env'
 import { CloseIcon } from './shared/Icons'
-import { getTokenLogoSources } from './tokenLogo.utils'
+import { getKnownVaultTokenLogoMetaByAddress, getTokenLogoSources, type TTokenLogoSourceToken } from './tokenLogo.utils'
 import {
   filterAndSortTokenSelectorTokens,
   getDepositMinValueExemptTokenAddresses,
@@ -27,15 +26,6 @@ import {
 } from './tokenSelectorList.utils'
 
 type TTokenType = 'asset' | 'vault' | 'staking' | undefined
-type TTokenLogoSourceToken = {
-  address: string
-  chainID: number
-  logoURI?: string
-}
-type TKnownVaultTokenMeta = {
-  logoToken: TTokenLogoSourceToken
-  tokenType: Exclude<TTokenType, undefined>
-}
 
 const AVAILABLE_CHAINS = [
   { id: 1, name: 'Ethereum' },
@@ -230,31 +220,10 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       logoURI: resolvedAssetLogoURI
     }
   }, [assetAddress, assetChainId, getToken, selectedChainId])
-  const knownVaultTokenMetaByAddress = useMemo((): Record<string, TKnownVaultTokenMeta> => {
-    const entries = Object.values(allVaults)
-      .filter((vault) => getVaultChainID(vault) === selectedChainId)
-      .flatMap((vault): Array<[string, TKnownVaultTokenMeta]> => {
-        const vaultAsset = getVaultToken(vault)
-        const logoToken = {
-          address: toAddress(vaultAsset.address),
-          chainID: selectedChainId,
-          logoURI: undefined
-        }
-        const vaultEntry: [string, TKnownVaultTokenMeta] = [
-          toAddress(getVaultAddress(vault)).toLowerCase(),
-          { logoToken, tokenType: 'vault' }
-        ]
-        const stakingAddress = getVaultStakingAddress(vault)
-        const stakingEntries: Array<[string, TKnownVaultTokenMeta]> =
-          stakingAddress === zeroAddress
-            ? []
-            : [[toAddress(stakingAddress).toLowerCase(), { logoToken, tokenType: 'staking' }]]
-
-        return [vaultEntry, ...stakingEntries]
-      })
-
-    return Object.fromEntries(entries)
-  }, [allVaults, selectedChainId])
+  const knownVaultTokenMetaByAddress = useMemo(
+    () => getKnownVaultTokenLogoMetaByAddress({ allVaults, chainId: selectedChainId }),
+    [allVaults, selectedChainId]
+  )
 
   // Get all tokens with balances from wallet context
   const tokens = useMemo(() => {

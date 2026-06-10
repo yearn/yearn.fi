@@ -27,6 +27,7 @@ import { useWidgetContext } from '../shared/useWidgetContext'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
 import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
+import { getKnownVaultTokenLogoMetaByAddress } from '../tokenLogo.utils'
 import { DEPOSIT_COMMON_TOKENS_BY_CHAIN } from '../withdraw/constants'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
@@ -260,7 +261,19 @@ export function WidgetDeposit({
     }
     return getToken({ address: depositToken, chainID: sourceChainId })
   }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken, selectedExtraToken])
-  const inputTokenLogoURI = inputTokenLogoURIOverride ?? selectedExtraToken?.logoURI ?? getTokenLogoURI(inputToken)
+  const knownVaultTokenLogoMetaByAddress = useMemo(
+    () => getKnownVaultTokenLogoMetaByAddress({ allVaults, chainId: sourceChainId }),
+    [allVaults, sourceChainId]
+  )
+  const knownInputTokenLogoToken = inputToken?.address
+    ? knownVaultTokenLogoMetaByAddress[toAddress(inputToken.address).toLowerCase()]?.logoToken
+    : undefined
+  const inputTokenLogoURI =
+    inputTokenLogoURIOverride ??
+    selectedExtraToken?.logoURI ??
+    (knownInputTokenLogoToken ? knownInputTokenLogoToken.logoURI : getTokenLogoURI(inputToken))
+  const inputTokenLogoAddress = knownInputTokenLogoToken?.address ?? inputToken?.address
+  const inputTokenLogoChainID = knownInputTokenLogoToken?.chainID ?? inputToken?.chainID
 
   const openTokenSelector = (): void => {
     enableTokenListFetch()
@@ -1188,8 +1201,8 @@ export function WidgetDeposit({
           showTokenSelector={ensoEnabled}
           inputTokenUsdPrice={inputTokenPrice}
           outputTokenUsdPrice={outputTokenPrice}
-          tokenAddress={inputToken?.address}
-          tokenChainId={inputToken?.chainID}
+          tokenAddress={inputTokenLogoAddress}
+          tokenChainId={inputTokenLogoChainID}
           tokenLogoURI={inputTokenLogoURI}
           onTokenSelectorClick={openTokenSelector}
         />
