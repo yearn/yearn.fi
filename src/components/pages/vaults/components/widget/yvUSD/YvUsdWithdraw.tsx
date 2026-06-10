@@ -11,7 +11,7 @@ import {
   YVUSD_WITHDRAW_WINDOW_DAYS
 } from '@pages/vaults/utils/yvUsd'
 import { Button } from '@shared/components/Button'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletActions } from '@shared/contexts/useWallet'
 import { erc4626Abi } from '@shared/contracts/abi/4626.abi'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
 import { type AppUseSimulateContractReturnType, useReadContract, useSimulateContract } from '@shared/hooks/useAppWagmi'
@@ -140,7 +140,7 @@ export function YvUsdWithdraw({
   collapseDetails
 }: Props): ReactElement {
   const { address: account } = useAccount()
-  const { onRefresh: refreshWalletBalances } = useWallet()
+  const { onRefresh: refreshWalletBalances } = useWalletActions()
   const { unlockedVault, lockedVault, assetAddress: yvUsdAssetAddress, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
   const [showCooldownOverlay, setShowCooldownOverlay] = useState(false)

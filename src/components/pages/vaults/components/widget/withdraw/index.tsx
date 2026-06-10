@@ -1,6 +1,6 @@
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import { Button } from '@shared/components/Button'
-import { useTokenList } from '@shared/contexts/WithTokenList'
+import { useTokenListActions } from '@shared/contexts/WithTokenList'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
@@ -140,7 +140,7 @@ export function WidgetWithdraw({
     ensoEnabled,
     isWalletSafe
   } = useWidgetContext({ chainId, vaultAddress })
-  const { enableTokenListFetch } = useTokenList()
+  const { enableTokenListFetch } = useTokenListActions()
 
   const resolvedDisplayAssetAddress = displayAssetAddress ?? assetAddress
 

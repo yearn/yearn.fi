@@ -60,7 +60,7 @@ import { useMediaQuery } from '@react-hookz/web'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletActions, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconInfo } from '@shared/icons/IconInfo'
@@ -470,7 +470,9 @@ function Index(): ReactElement | null {
   const searchParams = useSearchParams()
   const router = useRouter()
   const chainId = Number(params.chainID)
-  const { getBalance, onRefresh, isLoading: isWalletLoading } = useWallet()
+  const { getBalance } = useWalletTokens()
+  const { onRefresh } = useWalletActions()
+  const { isLoading: isWalletLoading } = useWalletStatus()
   const { address } = useWeb3()
   const { vaults, allVaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const {

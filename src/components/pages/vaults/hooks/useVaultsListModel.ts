@@ -25,7 +25,7 @@ import {
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletHoldings, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useV2VaultFilter } from '@shared/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@shared/hooks/useV3VaultFilter'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
@@ -162,7 +162,9 @@ export function useVaultsListModel({
   const isV2View = enabled && (listVaultType === 'factory' || isAllVaults)
   const yvUsdVaults = useYvUsdVaults()
   const { listVault: yvUsdVault } = yvUsdVaults
-  const { getBalance, getVaultHoldingsUsd, isLoading: isWalletLoading } = useWallet()
+  const { getBalance } = useWalletTokens()
+  const { getVaultHoldingsUsd } = useWalletHoldings()
+  const { isLoading: isWalletLoading } = useWalletStatus()
 
   const listV2Types = useMemo(
     () => (listShowLegacyVaults ? ['factory', 'legacy'] : ['factory']),

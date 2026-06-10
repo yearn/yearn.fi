@@ -44,7 +44,7 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { YearnLogoSpinner } from '@shared/components/YearnLogoSpinner'
 import { useNotifications } from '@shared/contexts/useNotifications'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletActions } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
@@ -2897,7 +2897,7 @@ function PortfolioPage(): ReactElement {
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
   const tabsRef = useRef<HTMLDivElement>(null)
   const historyFetchTimeframe: TPortfolioHistoryTimeframe = historyTimeframe === 'all' ? 'all' : '1y'
-  const { onRefresh } = useWallet()
+  const { onRefresh } = useWalletActions()
 
   usePortfolioEntryRefresh({ isActive: model.isActive, onRefresh })
 

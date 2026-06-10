@@ -22,6 +22,9 @@ export type TTokenListProps = {
   enableTokenListFetch: () => void
   setTokenList: Dispatch<SetStateAction<TNDict<TDict<TToken>>>>
 }
+
+type TTokenListActions = Pick<TTokenListProps, 'enableTokenListFetch'>
+
 const defaultProps: TTokenListProps = {
   tokenLists: {},
   currentNetworkTokenList: {},
@@ -66,6 +69,9 @@ export function toTToken(token: TTokenList['tokens'][0]): TToken {
 }
 
 const TokenList = createContext<TTokenListProps>(defaultProps)
+const TokenListActions = createContext<TTokenListActions>({
+  enableTokenListFetch: defaultProps.enableTokenListFetch
+})
 type TTokenListProviderProps = {
   children: ReactElement
   lists?: string[]
@@ -93,6 +99,12 @@ export const WithTokenList = ({
   const enableTokenListFetch = useCallback((): void => {
     setIsManuallyEnabled(true)
   }, [])
+  const actionsValue = useMemo(
+    (): TTokenListActions => ({
+      enableTokenListFetch
+    }),
+    [enableTokenListFetch]
+  )
 
   /************************************************************************************
    ** This is the main function that will be called when the component mounts and
@@ -404,7 +416,12 @@ export const WithTokenList = ({
     ]
   )
 
-  return <TokenList.Provider value={contextValue}>{children}</TokenList.Provider>
+  return (
+    <TokenListActions.Provider value={actionsValue}>
+      <TokenList.Provider value={contextValue}>{children}</TokenList.Provider>
+    </TokenListActions.Provider>
+  )
 }
 
 export const useTokenList = (): TTokenListProps => useContext(TokenList)
+export const useTokenListActions = (): TTokenListActions => useContext(TokenListActions)

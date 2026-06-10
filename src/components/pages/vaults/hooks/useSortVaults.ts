@@ -17,7 +17,7 @@ import {
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletHoldings, useWalletTokens } from '@shared/contexts/useWallet'
 import type { TSortDirection } from '@shared/types'
 import { normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@shared/utils/constants'
@@ -42,7 +42,8 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
   sortBy: TPossibleSortBy,
   sortDirection: TSortDirection
 ): TVault[] {
-  const { getBalance, getVaultHoldingsUsd } = useWallet()
+  const { getBalance } = useWalletTokens()
+  const { getVaultHoldingsUsd } = useWalletHoldings()
   const { unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault, metrics: yvUsdMetrics } = useYvUsdVaults()
   const yvUsdDepositedValue = useMemo((): number => {
     const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized

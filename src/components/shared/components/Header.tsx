@@ -4,7 +4,7 @@ import { setThemePreference, useThemePreference } from '@hooks/useThemePreferenc
 import { toast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useTenderlyPanel } from '@shared/contexts/useTenderlyPanel'
-import useWallet from '@shared/contexts/useWallet'
+import { useWalletStatus } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconBurgerPlain } from '@shared/icons/IconBurgerPlain'
 import { IconMoon } from '@shared/icons/IconMoon'
@@ -39,7 +39,7 @@ type TWalletSelectorProps = {
 
 function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorProps): ReactElement {
   const { isActive, isUserConnecting, isIdentityLoading, address, ens, clusters, openLoginModal } = useWeb3()
-  const { isLoading: isWalletLoading } = useWallet()
+  const { isLoading: isWalletLoading } = useWalletStatus()
 
   const walletIdentity = useMemo((): string | undefined => {
     if (isUserConnecting) return 'Connecting...'

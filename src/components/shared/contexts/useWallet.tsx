@@ -40,6 +40,11 @@ type TWalletContext = {
   ) => Promise<TChainTokens>
 }
 
+type TWalletTokensContext = Pick<TWalletContext, 'getToken' | 'getBalance' | 'balances'>
+type TWalletStatusContext = Pick<TWalletContext, 'isLoading' | 'hasCompletedBalanceLoad'>
+type TWalletHoldingsContext = Pick<TWalletContext, 'getVaultHoldingsUsd'>
+type TWalletActionsContext = Pick<TWalletContext, 'onRefresh'>
+
 const defaultProps = {
   getToken: (): TToken => DEFAULT_ERC20,
   getBalance: (): TNormalizedBN => zeroNormalizedBN,
@@ -54,7 +59,10 @@ const defaultProps = {
  ** This context controls most of the user's wallet data we may need to
  ** interact with our app, aka mostly the balances and the token prices.
  ******************************************************************************/
-const WalletContext = createContext<TWalletContext>(defaultProps)
+const WalletTokensContext = createContext<TWalletTokensContext>(defaultProps)
+const WalletStatusContext = createContext<TWalletStatusContext>(defaultProps)
+const WalletHoldingsContext = createContext<TWalletHoldingsContext>(defaultProps)
+const WalletActionsContext = createContext<TWalletActionsContext>(defaultProps)
 export const WalletContextApp = memo(function WalletContextApp(props: {
   children: ReactElement
   shouldWorkOnTestnet?: boolean
@@ -122,10 +130,21 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     hasCompletedInitialBalanceLoadRef.current = true
   }
   const hasCompletedBalanceLoad = !userAddress || hasCompletedInitialBalanceLoadRef.current
+  const refreshSourcesRef = useRef({
+    onUpdate,
+    onUpdateSome,
+    userAddress
+  })
+  refreshSourcesRef.current = {
+    onUpdate,
+    onUpdateSome,
+    userAddress
+  }
 
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
       const invalidateHoldingsQueries = async (): Promise<void> => {
+        const { userAddress } = refreshSourcesRef.current
         if (!userAddress) {
           return
         }
@@ -154,15 +173,17 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       }
 
       if (tokenToUpdate) {
+        const { onUpdateSome } = refreshSourcesRef.current
         const updatedBalances = await onUpdateSome(tokenToUpdate)
         await invalidateHoldingsQueries()
         return updatedBalances as TYChainTokens
       }
+      const { onUpdate } = refreshSourcesRef.current
       const updatedBalances = await onUpdate(true)
       await invalidateHoldingsQueries()
       return updatedBalances as TYChainTokens
     },
-    [onUpdate, onUpdateSome, queryClient, userAddress]
+    [queryClient]
   )
 
   /**************************************************************************
@@ -216,21 +237,63 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   /***************************************************************************
    **	Setup and render the Context provider to use in the app.
    ***************************************************************************/
-  const contextValue = useMemo(
-    (): TWalletContext => ({
+  const tokensValue = useMemo(
+    (): TWalletTokensContext => ({
       getToken,
       getBalance,
-      getVaultHoldingsUsd,
-      balances,
+      balances
+    }),
+    [getBalance, getToken, balances]
+  )
+  const statusValue = useMemo(
+    (): TWalletStatusContext => ({
       isLoading: isWalletLoading,
-      hasCompletedBalanceLoad,
+      hasCompletedBalanceLoad
+    }),
+    [hasCompletedBalanceLoad, isWalletLoading]
+  )
+  const holdingsValue = useMemo(
+    (): TWalletHoldingsContext => ({
+      getVaultHoldingsUsd
+    }),
+    [getVaultHoldingsUsd]
+  )
+  const actionsValue = useMemo(
+    (): TWalletActionsContext => ({
       onRefresh
     }),
-    [getToken, getBalance, getVaultHoldingsUsd, balances, isWalletLoading, hasCompletedBalanceLoad, onRefresh]
+    [onRefresh]
   )
 
-  return <WalletContext.Provider value={contextValue}>{props.children}</WalletContext.Provider>
+  return (
+    <WalletActionsContext.Provider value={actionsValue}>
+      <WalletStatusContext.Provider value={statusValue}>
+        <WalletTokensContext.Provider value={tokensValue}>
+          <WalletHoldingsContext.Provider value={holdingsValue}>{props.children}</WalletHoldingsContext.Provider>
+        </WalletTokensContext.Provider>
+      </WalletStatusContext.Provider>
+    </WalletActionsContext.Provider>
+  )
 })
 
-export const useWallet = (): TWalletContext => useContext(WalletContext)
+export const useWalletTokens = (): TWalletTokensContext => useContext(WalletTokensContext)
+export const useWalletStatus = (): TWalletStatusContext => useContext(WalletStatusContext)
+export const useWalletHoldings = (): TWalletHoldingsContext => useContext(WalletHoldingsContext)
+export const useWalletActions = (): TWalletActionsContext => useContext(WalletActionsContext)
+export const useWallet = (): TWalletContext => {
+  const tokensValue = useWalletTokens()
+  const statusValue = useWalletStatus()
+  const holdingsValue = useWalletHoldings()
+  const actionsValue = useWalletActions()
+
+  return useMemo(
+    (): TWalletContext => ({
+      ...tokensValue,
+      ...holdingsValue,
+      ...statusValue,
+      ...actionsValue
+    }),
+    [actionsValue, holdingsValue, statusValue, tokensValue]
+  )
+}
 export default useWallet

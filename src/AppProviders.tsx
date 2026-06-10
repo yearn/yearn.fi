@@ -10,7 +10,7 @@ import { WithNotifications } from '@shared/contexts/useNotifications'
 import { WithNotificationsActions } from '@shared/contexts/useNotificationsActions'
 import { TenderlyPanelProvider } from '@shared/contexts/useTenderlyPanel'
 import { WalletContextApp } from '@shared/contexts/useWallet'
-import { useWeb3, Web3ContextApp } from '@shared/contexts/useWeb3'
+import { Web3ContextApp } from '@shared/contexts/useWeb3'
 import { YearnContextApp } from '@shared/contexts/useYearn'
 import { WithTokenList } from '@shared/contexts/WithTokenList'
 import { IconAlertCritical } from '@shared/icons/IconAlertCritical'
@@ -52,8 +52,7 @@ function isVaultDetailPathname(pathname: string): boolean {
 
 function TokenListGate({ children }: { children: ReactElement }): ReactElement {
   const pathname = usePathname() || '/'
-  const { address } = useWeb3()
-  const shouldLoadTokenLists = !isVaultDetailPathname(pathname) || Boolean(address)
+  const shouldLoadTokenLists = !isVaultDetailPathname(pathname)
 
   return (
     <WithTokenList lists={appTokenLists} enabled={shouldLoadTokenLists}>

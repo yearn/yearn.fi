@@ -28,7 +28,7 @@ import {
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletHoldings, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -148,7 +148,7 @@ function getPortfolioRowHref(vault: TKongVaultInput): string | undefined {
   return `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
 }
 
-function getStablecoinHoldingMatch(balances: ReturnType<typeof useWallet>['balances']): TStablecoinHoldingMatch {
+function getStablecoinHoldingMatch(balances: ReturnType<typeof useWalletTokens>['balances']): TStablecoinHoldingMatch {
   return (
     Object.entries(balances ?? {})
       .flatMap(([chainIDKey, perChain]) =>
@@ -171,7 +171,9 @@ function getStablecoinHoldingMatch(balances: ReturnType<typeof useWallet>['balan
 }
 
 export function usePortfolioModel(): TPortfolioModel {
-  const { isLoading: isWalletLoading, hasCompletedBalanceLoad, getBalance, getVaultHoldingsUsd, balances } = useWallet()
+  const { getBalance, balances } = useWalletTokens()
+  const { getVaultHoldingsUsd } = useWalletHoldings()
+  const { isLoading: isWalletLoading, hasCompletedBalanceLoad } = useWalletStatus()
   const { totalValue: totalPortfolioValue } = useWalletVaultTotals()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
   const { vaults, allVaults, isLoadingVaultList, getPrice } = useYearn()

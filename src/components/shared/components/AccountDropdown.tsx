@@ -2,7 +2,7 @@ import { setThemePreference, useThemePreference } from '@hooks/useThemePreferenc
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import { yToast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
-import useWallet from '@shared/contexts/useWallet'
+import { useWalletStatus } from '@shared/contexts/useWallet'
 import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -31,7 +31,7 @@ type TView = 'account' | 'settings'
 
 function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void; onClose: () => void }): ReactElement {
   const { address, ens, clusters, onDesactivate } = useWeb3()
-  const { isLoading: isWalletLoading } = useWallet()
+  const { isLoading: isWalletLoading } = useWalletStatus()
   const { totalValue } = useWalletVaultTotals()
   const { cachedEntries } = useNotifications()
   const router = useRouter()

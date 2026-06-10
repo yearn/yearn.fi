@@ -51,7 +51,7 @@ import { useMediaQuery } from '@react-hookz/web'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletHoldings, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
@@ -940,7 +940,9 @@ function VaultsListRowWithWallet(props: TVaultsListRowProps): ReactElement {
   const isYvUsd = isYvUsdAddress(vaultAddress)
   const yvUsdVaultsForRow = isYvUsd ? yvUsdVaults : undefined
   const { address } = useWeb3()
-  const { getVaultHoldingsUsd, getBalance, isLoading: isWalletLoading } = useWallet()
+  const { getBalance } = useWalletTokens()
+  const { getVaultHoldingsUsd } = useWalletHoldings()
+  const { isLoading: isWalletLoading } = useWalletStatus()
   const holdingsValue = useMemo(() => {
     if (isYvUsd) {
       const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized

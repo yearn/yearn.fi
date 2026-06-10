@@ -11,7 +11,7 @@ import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdSharePrice, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { useMemo } from 'react'
 import { isZeroAddress, toAddress } from '../utils'
-import { useWallet } from './useWallet'
+import { useWalletHoldings, useWalletTokens } from './useWallet'
 import { useYearn } from './useYearn'
 
 type TWalletVaultTotals = {
@@ -22,7 +22,8 @@ type TWalletVaultTotals = {
 
 export function useWalletVaultTotals(): TWalletVaultTotals {
   const { allVaults } = useYearn()
-  const { balances, getVaultHoldingsUsd } = useWallet()
+  const { balances } = useWalletTokens()
+  const { getVaultHoldingsUsd } = useWalletHoldings()
   const { unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
   const { shouldHideDust } = useAppSettings()
   const yvUsdUnlockedSharePrice = getYvUsdSharePrice(yvUsdUnlockedVault)

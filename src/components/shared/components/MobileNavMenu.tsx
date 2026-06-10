@@ -2,7 +2,7 @@ import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletStatus } from '@shared/contexts/useWallet'
 import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconChevron } from '@shared/icons/IconChevron'
@@ -129,7 +129,7 @@ function MobileWalletDrawerContent({
   onViewPortfolio,
   onViewRecentActivity
 }: TMobileWalletDrawerContentProps): ReactElement {
-  const { isLoading: isWalletLoading } = useWallet()
+  const { isLoading: isWalletLoading } = useWalletStatus()
   const { totalValue } = useWalletVaultTotals()
 
   return (

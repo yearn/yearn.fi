@@ -1,6 +1,6 @@
 import { useLocalStorageValue } from '@react-hookz/web'
 import { toast } from '@shared/components/yToast'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletActions } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
@@ -111,7 +111,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
   const queryClient = useQueryClient()
   const { chainIdIntent } = useChains()
   const { chainID, address } = useWeb3()
-  const { onRefresh } = useWallet()
+  const { onRefresh } = useWalletActions()
   const { allVaults, enableVaultListFetch } = useYearn()
   const { tokenLists } = useTokenList()
   const [status, setStatus] = useState<TTenderlyPanelStatus | undefined>(undefined)

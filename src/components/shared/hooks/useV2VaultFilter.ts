@@ -24,7 +24,7 @@ import {
   type TVaultAggressiveness
 } from '@pages/vaults/utils/vaultListFacets'
 import { useDeepCompareMemo } from '@react-hookz/web'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { isZeroAddress } from '@shared/utils'
 import { useMemo } from 'react'
@@ -80,7 +80,8 @@ export function useV2VaultFilter(
   enabled?: boolean
 ): TOptimizedV2VaultFilterResult {
   const { vaults, allVaults, getPrice, isLoadingVaultList } = useYearn()
-  const { getBalance, isLoading: isWalletLoading } = useWallet()
+  const { getBalance } = useWalletTokens()
+  const { isLoading: isWalletLoading } = useWalletStatus()
   const { shouldHideDust } = useAppSettings()
   const isEnabled = enabled ?? true
   const searchValue = search ?? ''

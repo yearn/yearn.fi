@@ -2,7 +2,7 @@ import { usePlausible } from '@hooks/usePlausible'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletTokens } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { usePublicClient } from '@shared/hooks/useAppWagmi'
 import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
@@ -48,7 +48,7 @@ export const WidgetMigrate: FC<Props> = ({
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
-  const { getToken } = useWallet()
+  const { getToken } = useWalletTokens()
   const trackEvent = usePlausible()
   const { getPrice } = useYearn()
   const client = usePublicClient({ chainId })

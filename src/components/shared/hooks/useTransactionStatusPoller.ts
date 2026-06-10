@@ -1,5 +1,5 @@
 import { useNotifications } from '@shared/contexts/useNotifications'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletActions } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchSafeTransactionDetails } from '@shared/hooks/useSafeTransactionDetails'
 import type { TNotification } from '@shared/types/notifications'
@@ -23,7 +23,7 @@ import {
  ************************************************************************************************/
 export function useTransactionStatusPoller(notification: TNotification): void {
   const { updateEntry } = useNotifications()
-  const { onRefresh } = useWallet()
+  const { onRefresh } = useWalletActions()
   const { address } = useWeb3()
   const queryClient = useQueryClient()
   const pollIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined)

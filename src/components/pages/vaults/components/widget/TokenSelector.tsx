@@ -6,7 +6,7 @@ import {
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TToken } from '@shared/types'
@@ -81,7 +81,7 @@ const TokenItem: FC<{
   const logoSources = getTokenLogoSources({
     address: logoToken?.address ?? token.address,
     chainId: logoToken?.chainID ?? token.chainID,
-    logoURI: logoToken?.logoURI ?? token.logoURI,
+    logoURI: logoToken ? logoToken.logoURI : token.logoURI,
     size: 32
   })
 
@@ -142,7 +142,8 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 }) => {
   const [searchText, setSearchText] = useState('')
   const [selectedChainId, setSelectedChainId] = useState(chainId)
-  const { getToken, isLoading, balances } = useWallet()
+  const { getToken, balances } = useWalletTokens()
+  const { isLoading } = useWalletStatus()
   const { tokenLists } = useTokenList()
   const { allVaults, getPrice } = useYearn()
   const customAddress = useMemo(
@@ -208,7 +209,17 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       return undefined
     }
 
-    return getToken({ address: toAddress(assetAddress), chainID: assetChainId })
+    const resolvedAssetToken = getToken({ address: toAddress(assetAddress), chainID: assetChainId })
+    const resolvedAssetLogoURI =
+      resolvedAssetToken.address && toAddress(resolvedAssetToken.address) === toAddress(assetAddress)
+        ? resolvedAssetToken.logoURI
+        : undefined
+
+    return {
+      address: toAddress(assetAddress),
+      chainID: assetChainId,
+      logoURI: resolvedAssetLogoURI
+    }
   }, [assetAddress, assetChainId, getToken, selectedChainId])
 
   // Get all tokens with balances from wallet context

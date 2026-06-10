@@ -14,7 +14,22 @@ const { mockUseWallet, mockUseYearn } = vi.hoisted(() => ({
 }))
 
 vi.mock('@shared/contexts/useWallet', () => ({
-  useWallet: mockUseWallet
+  useWallet: mockUseWallet,
+  useWalletStatus: () => {
+    const wallet = mockUseWallet()
+    return {
+      isLoading: wallet.isLoading,
+      hasCompletedBalanceLoad: wallet.hasCompletedBalanceLoad ?? !wallet.isLoading
+    }
+  },
+  useWalletTokens: () => {
+    const wallet = mockUseWallet()
+    return {
+      balances: wallet.balances,
+      getBalance: wallet.getBalance,
+      getToken: wallet.getToken
+    }
+  }
 }))
 
 vi.mock('@shared/contexts/WithTokenList', () => ({
@@ -244,6 +259,48 @@ describe('TokenSelector', () => {
     expect(html).toContain('https://example.com/base.png')
     expect(html).not.toContain('https://example.com/vault.png')
     expect(html).not.toContain('https://example.com/staking.png')
+  })
+
+  it('uses the asset logo fallback path for vault entries before asset token metadata loads', () => {
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        1: {
+          [VAULT_TOKEN_ADDRESS]: buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Vault Token',
+            symbol: 'yvBASE',
+            logoURI: 'https://example.com/vault.png'
+          })
+        }
+      },
+      getToken: () =>
+        buildToken({
+          address: '0x0000000000000000000000000000000000000000',
+          name: '',
+          symbol: '',
+          logoURI: undefined,
+          balance: {
+            raw: 0n,
+            normalized: 0,
+            display: '0',
+            decimals: 18
+          }
+        })
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector
+        value={VAULT_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={1}
+        assetAddress={BASE_TOKEN_ADDRESS}
+        vaultAddress={VAULT_TOKEN_ADDRESS}
+      />
+    )
+
+    expect(html).toContain(`/tokens/1/${BASE_TOKEN_ADDRESS}/logo-32.png`)
+    expect(html).not.toContain('https://example.com/vault.png')
   })
 
   it('never shows hidden vault share or staking tokens', () => {
