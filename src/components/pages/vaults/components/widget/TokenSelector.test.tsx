@@ -310,7 +310,7 @@ describe('TokenSelector', () => {
         1: {
           [STAKING_TOKEN_ADDRESS]: buildToken({
             address: STAKING_TOKEN_ADDRESS,
-            name: 'Gauge Token',
+            name: 'yGauge Base Vault',
             symbol: 'yG-yvBASE-1',
             logoURI: 'https://example.com/gauge.png',
             balance: {
@@ -376,6 +376,7 @@ describe('TokenSelector', () => {
     )
 
     expect(html).toContain(`/tokens/1/${BASE_TOKEN_ADDRESS}/logo-32.png`)
+    expect(html).toContain('yG-yvBASE-1')
     expect(html).toContain('Gauge')
     expect(html).not.toContain('https://example.com/gauge.png')
   })

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { TChainTokens } from '../types'
 import { zeroNormalizedBN } from '../utils'
 import {
+  applyTokenListMetadataToBalances,
   hasWalletBalanceSnapshot,
   shouldExposeWalletLoading,
   shouldUpdateVisibleBalanceSnapshot
@@ -20,8 +21,61 @@ const TOKEN_BALANCE_SNAPSHOT = {
     }
   }
 } satisfies TChainTokens
+const TOKEN_LIST_METADATA_ADDRESS = '0x0000000000000000000000000000000000000123'
 
 describe('useWallet.helpers', () => {
+  it('overlays token-list metadata without changing wallet balance data', () => {
+    const balances = {
+      1: {
+        [TOKEN_LIST_METADATA_ADDRESS.toLowerCase()]: {
+          address: TOKEN_LIST_METADATA_ADDRESS,
+          name: 'Kong Vault Token',
+          symbol: 'yvBASE-1',
+          decimals: 18,
+          chainID: 1,
+          logoURI: 'https://example.com/kong.png',
+          value: 123,
+          balance: {
+            raw: 42n,
+            normalized: 42,
+            display: '42',
+            decimals: 18
+          }
+        }
+      }
+    } satisfies TChainTokens
+
+    const result = applyTokenListMetadataToBalances({
+      balances,
+      tokenLists: {
+        1: {
+          [TOKEN_LIST_METADATA_ADDRESS]: {
+            address: TOKEN_LIST_METADATA_ADDRESS,
+            name: 'yGauge Base Vault',
+            symbol: 'yG-yvBASE-1',
+            decimals: 18,
+            chainID: 1,
+            logoURI: 'https://example.com/tokenlist.png',
+            value: 0,
+            balance: zeroNormalizedBN
+          }
+        }
+      }
+    })
+
+    expect(result[1][TOKEN_LIST_METADATA_ADDRESS.toLowerCase()]).toMatchObject({
+      name: 'yGauge Base Vault',
+      symbol: 'yG-yvBASE-1',
+      logoURI: 'https://example.com/tokenlist.png',
+      value: 123,
+      balance: {
+        raw: 42n,
+        normalized: 42,
+        display: '42'
+      }
+    })
+  })
+
   it('detects when the wallet has a settled balance snapshot', () => {
     expect(hasWalletBalanceSnapshot({})).toBe(false)
     expect(hasWalletBalanceSnapshot({ 1: {} })).toBe(false)

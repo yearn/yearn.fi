@@ -13,6 +13,7 @@ import { getVaultHoldingsUsdValue } from '../hooks/useVaultFilterUtils'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
 import { DEFAULT_ERC20, zeroNormalizedBN } from '../utils'
 import {
+  applyTokenListMetadataToBalances,
   hasWalletBalanceSnapshot,
   shouldExposeWalletLoading,
   shouldUpdateVisibleBalanceSnapshot
@@ -77,7 +78,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     isLoadingVaultList,
     isEnabled: Boolean(userAddress)
   })
-  const { getToken: getTokenListToken } = useTokenList()
+  const { getToken: getTokenListToken, tokenLists } = useTokenList()
   const useBalancesHook = USE_ENSO_BALANCES ? useBalancesCombined : useBalancesWithQuery
   const {
     data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
@@ -115,7 +116,14 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   }
   const visibleTokensRaw = settledTokensRawRef.current
   const deferredTokensRaw = useDeferredValue(visibleTokensRaw)
-  const balances = useMemo((): TNDict<TDict<TToken>> => deferredTokensRaw as TYChainTokens, [deferredTokensRaw])
+  const balances = useMemo(
+    (): TNDict<TDict<TToken>> =>
+      applyTokenListMetadataToBalances({
+        balances: deferredTokensRaw as TYChainTokens,
+        tokenLists
+      }),
+    [deferredTokensRaw, tokenLists]
+  )
   const isBalancesPending = deferredTokensRaw !== visibleTokensRaw
   const hasVisibleBalances = hasWalletBalanceSnapshot(visibleTokensRaw)
   const isWalletLoading = shouldExposeWalletLoading({

@@ -472,21 +472,24 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           </div>
         ) : (
           <div className="space-y-1">
-            {filteredTokens.map((token) => (
-              <TokenItem
-                key={token.address}
-                token={token}
-                selected={token.address === value}
-                onSelect={() => handleSelect(token.address as `0x${string}`)}
-                tokenType={getTokenType(token.address)}
-                logoToken={
-                  knownVaultTokenMetaByAddress[toAddress(token.address).toLowerCase()]?.logoToken ??
-                  (getTokenType(token.address) === 'vault' || getTokenType(token.address) === 'staking'
-                    ? assetLogoToken
-                    : undefined)
-                }
-              />
-            ))}
+            {filteredTokens.map((token) => {
+              const knownVaultTokenMeta = knownVaultTokenMetaByAddress[toAddress(token.address).toLowerCase()]
+              const tokenType = getTokenType(token.address)
+              const shouldUseAssetLogoFallback = tokenType === 'vault' || tokenType === 'staking'
+
+              return (
+                <TokenItem
+                  key={token.address}
+                  token={token}
+                  selected={token.address === value}
+                  onSelect={() => handleSelect(token.address as `0x${string}`)}
+                  tokenType={tokenType}
+                  logoToken={
+                    knownVaultTokenMeta?.logoToken ?? (shouldUseAssetLogoFallback ? assetLogoToken : undefined)
+                  }
+                />
+              )
+            })}
           </div>
         )}
       </div>
