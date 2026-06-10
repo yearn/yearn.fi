@@ -10,7 +10,7 @@ import { WithNotifications } from '@shared/contexts/useNotifications'
 import { WithNotificationsActions } from '@shared/contexts/useNotificationsActions'
 import { TenderlyPanelProvider } from '@shared/contexts/useTenderlyPanel'
 import { WalletContextApp } from '@shared/contexts/useWallet'
-import { Web3ContextApp } from '@shared/contexts/useWeb3'
+import { useWeb3, Web3ContextApp } from '@shared/contexts/useWeb3'
 import { YearnContextApp } from '@shared/contexts/useYearn'
 import { WithTokenList } from '@shared/contexts/WithTokenList'
 import { IconAlertCritical } from '@shared/icons/IconAlertCritical'
@@ -18,6 +18,7 @@ import { IconAlertError } from '@shared/icons/IconAlertError'
 import { IconCheckmark } from '@shared/icons/IconCheckmark'
 import { isIframe } from '@shared/utils/helpers'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { usePathname } from 'next/navigation'
 import type { ReactElement, ReactNode } from 'react'
 import { useState } from 'react'
 import { Toaster } from 'react-hot-toast'
@@ -34,6 +35,33 @@ if (!bigintPrototype.toJSON) {
   }
 }
 
+const appTokenLists = [
+  'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/yearn.json',
+  'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/popular.json'
+]
+
+function isVaultDetailPathname(pathname: string): boolean {
+  const [section, chainID, address, ...rest] = pathname.split('/').filter(Boolean)
+  return (
+    rest.length === 0 &&
+    (section === 'vaults' || section === 'v3') &&
+    /^\d+$/.test(chainID ?? '') &&
+    /^0x[0-9a-fA-F]{40}$/.test(address ?? '')
+  )
+}
+
+function TokenListGate({ children }: { children: ReactElement }): ReactElement {
+  const pathname = usePathname() || '/'
+  const { address } = useWeb3()
+  const shouldLoadTokenLists = !isVaultDetailPathname(pathname) || Boolean(address)
+
+  return (
+    <WithTokenList lists={appTokenLists} enabled={shouldLoadTokenLists}>
+      {children}
+    </WithTokenList>
+  )
+}
+
 export function AppProviders({ children }: { children: ReactNode }): ReactElement {
   const [queryClient] = useState(() => new QueryClient())
 
@@ -44,12 +72,7 @@ export function AppProviders({ children }: { children: ReactNode }): ReactElemen
           <RainbowKitProvider>
             <IframeAutoConnect>
               <Web3ContextApp>
-                <WithTokenList
-                  lists={[
-                    'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/yearn.json',
-                    'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/popular.json'
-                  ]}
-                >
+                <TokenListGate>
                   <AppSettingsContextApp>
                     <EnsoStatusProvider>
                       <ChartStyleContextApp>
@@ -71,7 +94,7 @@ export function AppProviders({ children }: { children: ReactNode }): ReactElemen
                       </ChartStyleContextApp>
                     </EnsoStatusProvider>
                   </AppSettingsContextApp>
-                </WithTokenList>
+                </TokenListGate>
               </Web3ContextApp>
             </IframeAutoConnect>
           </RainbowKitProvider>

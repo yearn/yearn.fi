@@ -5,6 +5,7 @@ import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { useYearn } from '@shared/contexts/useYearn'
+import { useTokenList } from '@shared/contexts/WithTokenList'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
@@ -186,6 +187,7 @@ export function WidgetDeposit({
     isWalletSafe
   } = useWidgetContext({ chainId, vaultAddress })
   const { allVaults, setIsAutoStakingEnabled } = useYearn()
+  const { enableTokenListFetch } = useTokenList()
 
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
@@ -259,6 +261,11 @@ export function WidgetDeposit({
     return getToken({ address: depositToken, chainID: sourceChainId })
   }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken, selectedExtraToken])
   const inputTokenLogoURI = inputTokenLogoURIOverride ?? selectedExtraToken?.logoURI ?? getTokenLogoURI(inputToken)
+
+  const openTokenSelector = (): void => {
+    enableTokenListFetch()
+    setShowTokenSelector(true)
+  }
 
   const shouldStakeDeposit = forceStake || isAutoStakingEnabled
 
@@ -1184,7 +1191,7 @@ export function WidgetDeposit({
           tokenAddress={inputToken?.address}
           tokenChainId={inputToken?.chainID}
           tokenLogoURI={inputTokenLogoURI}
-          onTokenSelectorClick={() => setShowTokenSelector(true)}
+          onTokenSelectorClick={openTokenSelector}
         />
 
         {contentBelowInput}

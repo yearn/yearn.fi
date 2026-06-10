@@ -1,5 +1,6 @@
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import { Button } from '@shared/components/Button'
+import { useTokenList } from '@shared/contexts/WithTokenList'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
@@ -139,6 +140,7 @@ export function WidgetWithdraw({
     ensoEnabled,
     isWalletSafe
   } = useWidgetContext({ chainId, vaultAddress })
+  const { enableTokenListFetch } = useTokenList()
 
   const resolvedDisplayAssetAddress = displayAssetAddress ?? assetAddress
 
@@ -688,6 +690,10 @@ export function WidgetWithdraw({
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
   const shouldShowZapUi = !isBaseWithdrawToken
   const canShowAssetTokenSelector = canOpenTokenSelector && !shouldShowZapUi
+  const openTokenSelector = (): void => {
+    enableTokenListFetch()
+    setShowTokenSelector(true)
+  }
   const displayedPriceImpactPercentage =
     routeType === 'ENSO' && ensoRouteHasSwap
       ? withdrawValueInfo.worstCasePriceImpactPercentage
@@ -1107,7 +1113,7 @@ export function WidgetWithdraw({
               tokenAddress={assetToken?.address}
               tokenChainId={assetToken?.chainID}
               showTokenSelector={canShowAssetTokenSelector}
-              onTokenSelectorClick={canOpenTokenSelector ? () => setShowTokenSelector(true) : undefined}
+              onTokenSelectorClick={canOpenTokenSelector ? openTokenSelector : undefined}
               onInputChange={(value: bigint) => {
                 if (value === inputBalance) {
                   const exactAmount = formatUnits(inputBalance, assetToken?.decimals ?? 18)

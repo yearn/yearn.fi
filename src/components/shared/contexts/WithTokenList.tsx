@@ -19,6 +19,7 @@ export type TTokenListProps = {
   isCustomToken: (props: { address: TAddress; chainID: number }) => boolean
   getToken: (props: { address: TAddress; chainID: number }) => TToken | undefined
   addCustomToken: (token: TToken) => void
+  enableTokenListFetch: () => void
   setTokenList: Dispatch<SetStateAction<TNDict<TDict<TToken>>>>
 }
 const defaultProps: TTokenListProps = {
@@ -29,6 +30,7 @@ const defaultProps: TTokenListProps = {
   isCustomToken: (): boolean => false,
   getToken: (): TToken | undefined => undefined,
   addCustomToken: (): void => undefined,
+  enableTokenListFetch: (): void => undefined,
   setTokenList: (): void => undefined
 }
 
@@ -67,13 +69,15 @@ const TokenList = createContext<TTokenListProps>(defaultProps)
 type TTokenListProviderProps = {
   children: ReactElement
   lists?: string[]
+  enabled?: boolean
 }
 export const WithTokenList = ({
   children,
   lists = [
     'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/etherscan.json',
     'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/tokenlistooor.json'
-  ]
+  ],
+  enabled = true
 }: TTokenListProviderProps): ReactElement => {
   const isDevelopment = env.MODE === 'development'
   const { chainID } = useWeb3()
@@ -83,7 +87,12 @@ export const WithTokenList = ({
   const [tokenListExtra, setTokenListExtra] = useState<TNDict<TDict<TToken>>>({})
   const [tokenListCustom, setTokenListCustom] = useState<TNDict<TDict<TToken>>>({})
   const [isInitialized, setIsInitialized] = useState([false, false, false])
+  const [isManuallyEnabled, setIsManuallyEnabled] = useState(false)
+  const isFetchEnabled = enabled || isManuallyEnabled
   const hashList = useMemo((): string => lists.join(','), [lists])
+  const enableTokenListFetch = useCallback((): void => {
+    setIsManuallyEnabled(true)
+  }, [])
 
   /************************************************************************************
    ** This is the main function that will be called when the component mounts and
@@ -92,6 +101,9 @@ export const WithTokenList = ({
    ** This is the list coming from the props.
    ************************************************************************************/
   useAsyncTrigger(async (): Promise<void> => {
+    if (!isFetchEnabled) {
+      return
+    }
     const unhashedLists = hashList.split(',')
     const responses = await Promise.allSettled(
       unhashedLists.map(async (eachURI: string): Promise<TTokenList> => {
@@ -151,7 +163,7 @@ export const WithTokenList = ({
     }
     setTokenList(tokenListTokens)
     setIsInitialized((prev) => [true, prev[1], prev[2]])
-  }, [hashList])
+  }, [hashList, isFetchEnabled])
 
   /************************************************************************************
    ** This trigger will load the lists from the extraTokenlist state. It's not about
@@ -159,6 +171,9 @@ export const WithTokenList = ({
    ** the Smol tokenlist repository.
    ************************************************************************************/
   useAsyncTrigger(async (): Promise<void> => {
+    if (!isFetchEnabled) {
+      return
+    }
     const tokenListTokens: TNDict<TDict<TToken>> = {}
     const fromList: TTokenList[] = []
 
@@ -215,13 +230,16 @@ export const WithTokenList = ({
     }
     setTokenListExtra(tokenListTokens)
     setIsInitialized((prev) => [prev[0], true, prev[2]])
-  }, [extraTokenlist])
+  }, [extraTokenlist, isFetchEnabled])
 
   /************************************************************************************
    ** This trigger will load the lists from the extraTokens state. It's about individual
    ** tokens, that can be added by the user.
    ************************************************************************************/
   useAsyncTrigger(async (): Promise<void> => {
+    if (!isFetchEnabled) {
+      return
+    }
     if (extraTokens === undefined) {
       return
     }
@@ -268,7 +286,7 @@ export const WithTokenList = ({
       setTokenListCustom(tokenListTokens)
     }
     setIsInitialized((prev) => [prev[0], prev[1], true])
-  }, [extraTokens])
+  }, [extraTokens, isFetchEnabled])
 
   /************************************************************************************
    ** This will aggregate all the token lists into one big list, that will be used
@@ -371,9 +389,19 @@ export const WithTokenList = ({
       isInitialized: isInitialized[0] && isInitialized[1] && isInitialized[2],
       setTokenList,
       addCustomToken,
+      enableTokenListFetch,
       getToken
     }),
-    [addCustomToken, aggregatedTokenList, currentNetworkList, getToken, isCustomToken, isInitialized, isFromExtraList]
+    [
+      addCustomToken,
+      aggregatedTokenList,
+      currentNetworkList,
+      enableTokenListFetch,
+      getToken,
+      isCustomToken,
+      isInitialized,
+      isFromExtraList
+    ]
   )
 
   return <TokenList.Provider value={contextValue}>{children}</TokenList.Provider>
