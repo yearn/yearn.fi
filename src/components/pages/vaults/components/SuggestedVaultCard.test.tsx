@@ -11,6 +11,10 @@ vi.mock('@pages/vaults/hooks/useVaultApyData', () => ({
   useVaultApyData: vi.fn()
 }))
 
+vi.mock('@hooks/usePlausible', () => ({
+  usePlausible: () => vi.fn()
+}))
+
 vi.mock('@pages/vaults/hooks/useYvUsdVaults', () => ({
   useYvUsdVaults: () => ({
     metrics: {
