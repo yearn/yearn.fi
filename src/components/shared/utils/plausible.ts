@@ -19,6 +19,8 @@ export const PLAUSIBLE_EVENTS = {
   VAULT_EXPAND: 'vault_expand',
   VAULT_CLICK_LIST_ROW: 'vault_click_list_row',
   VAULT_CLICK_LIST_ROW_EXPANDED: 'vault_click_list_row_expanded',
+  VAULT_CLICK_PORTFOLIO_LIST_ROW: 'vault_click_portfolio_list_row',
+  VAULT_CLICK_PORTFOLIO_SUGGESTED: 'vault_click_portfolio_suggested',
   VAULT_CLICK_COMPARE: 'vault_click_compare',
   COMPARE_MODE_TOGGLE: 'compare_mode_toggle',
   COMPARE_VAULT_ADD: 'compare_vault_add',
@@ -34,3 +36,5 @@ export const PLAUSIBLE_EVENTS = {
   PORTFOLIO_HISTORY_BREAKDOWN_OPEN_VAULT: 'portfolio_history_breakdown_open_vault',
   PORTFOLIO_ACTIVITY_INTERACT: 'portfolio_activity_interact'
 } as const
+
+export type TPlausibleEventName = (typeof PLAUSIBLE_EVENTS)[keyof typeof PLAUSIBLE_EVENTS]

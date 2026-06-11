@@ -2907,6 +2907,7 @@ function PortfolioHoldingsSection({
             showHoldingsChipOverride={false}
             mobileSecondaryMetric="holdings"
             expandedChartVariant="portfolio-user-tvl-overlay"
+            clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_LIST_ROW}
           />
         ))}
       </div>
@@ -3030,6 +3031,7 @@ function PortfolioSuggestedSection({
                 matchedSymbol={row.underlyingSymbol}
                 externalProtocol={row.externalProtocol}
                 matchedChainName={matchedChainName}
+                clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_SUGGESTED}
               />
             )
           }
@@ -3042,10 +3044,17 @@ function PortfolioSuggestedSection({
                 vault={row.vault}
                 matchedSymbol={row.matchedSymbol}
                 matchedChainName={matchedChainName}
+                clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_SUGGESTED}
               />
             )
           }
-          return <SuggestedVaultCard key={row.key} vault={row.vault} />
+          return (
+            <SuggestedVaultCard
+              key={row.key}
+              vault={row.vault}
+              clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_SUGGESTED}
+            />
+          )
         })}
       </div>
     </section>
