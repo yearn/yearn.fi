@@ -1,6 +1,7 @@
 import { VaultsListRowSkeleton } from '@pages/vaults/components/list/VaultsListRowSkeleton'
 import { getVaultTypeLabel, type TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
+import { IconChevron } from '@shared/icons/IconChevron'
 import { IconFilter } from '@shared/icons/IconFilter'
 import { IconGitCompare } from '@shared/icons/IconGitCompare'
 import { IconSearch } from '@shared/icons/IconSearch'
@@ -8,8 +9,12 @@ import { LogoYearn } from '@shared/icons/LogoYearn'
 import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'
 
-const SKELETON_ROWS = Array.from({ length: 8 }, (_, index) => index)
+const SKELETON_ROWS = Array.from({ length: 16 }, (_, index) => index)
 const VAULT_TYPE_FILTERS: TVaultType[] = ['all', 'v3', 'factory']
+const VAULT_LIST_HEAD_ITEMS = [
+  { label: 'Est. APY', className: 'col-span-6' },
+  { label: 'TVL', className: 'col-span-5' }
+] as const
 const CHAIN_FILTERS = [
   { label: 'All Chains', icon: 'yearn' },
   { label: 'Ethereum', icon: 'E' },
@@ -240,6 +245,33 @@ function VaultsLoadingFilters(): ReactElement {
   )
 }
 
+function VaultsLoadingListHead(): ReactElement {
+  return (
+    <div className={'relative z-10 hidden w-full grid-cols-1 rounded-t-lg border border-border bg-transparent md:grid'}>
+      <div className={'grid w-full grid-cols-1 rounded-t-xl bg-surface py-2 pl-6 pr-20 md:grid-cols-24'}>
+        <div className={'col-span-12 flex flex-row items-center justify-between py-4 md:py-0'}>
+          <p className={'yearn--table-head-label text-text-primary/60'}>{'Vault'}</p>
+        </div>
+        <div className={'col-span-12 z-10 mt-4 grid grid-cols-2 gap-4 md:mt-0 md:grid-cols-12'}>
+          {VAULT_LIST_HEAD_ITEMS.map((item) => (
+            <div
+              key={item.label}
+              className={cl('yearn--table-head-label-wrapper gap-1 justify-end text-right', item.className)}
+              datatype={'number'}
+            >
+              <p className={'yearn--table-head-label text-right text-text-primary/60'}>&nbsp;{item.label}</p>
+              <span className={'flex items-center justify-center'}>
+                <IconChevron className={'size-4 min-w-[16px] text-text-primary/40'} />
+              </span>
+            </div>
+          ))}
+          <div className={'col-span-1'} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Loading(): ReactElement {
   return (
     <main className={'min-h-[calc(100vh-var(--header-height))] w-full bg-app'}>
@@ -256,13 +288,20 @@ export default function Loading(): ReactElement {
             <VaultsLoadingFilters />
           </div>
 
-          <div className={'overflow-hidden rounded-lg border border-border'}>
-            {SKELETON_ROWS.map((rowIndex) => (
-              <VaultsListRowSkeleton
-                key={`vaults-loading-row-${rowIndex}`}
-                className={rowIndex === SKELETON_ROWS.length - 1 ? undefined : 'border-b border-border'}
-              />
-            ))}
+          <div className={'relative w-full rounded-lg bg-surface'}>
+            <VaultsLoadingListHead />
+            <div
+              className={
+                'flex flex-col overflow-hidden rounded-lg border border-border md:rounded-t-none md:border-t-0'
+              }
+            >
+              {SKELETON_ROWS.map((rowIndex) => (
+                <VaultsListRowSkeleton
+                  key={`vaults-loading-row-${rowIndex}`}
+                  className={rowIndex === SKELETON_ROWS.length - 1 ? undefined : 'border-b border-border'}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
