@@ -1,4 +1,5 @@
 import Link from '@components/Link'
+import { usePlausible } from '@hooks/usePlausible'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
@@ -7,6 +8,7 @@ import {
   getVaultCategory,
   getVaultChainID,
   getVaultName,
+  getVaultSymbol,
   getVaultToken,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
@@ -22,6 +24,7 @@ import {
 import { isYvUsdVault, YVUSD_LOCKED_ADDRESS, YVUSD_LOCKED_COOLDOWN_DAYS } from '@pages/vaults/utils/yvUsd'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { formatApyDisplay, toAddress } from '@shared/utils'
+import type { TPlausibleEventName } from '@shared/utils/plausible'
 import { getNetwork } from '@shared/utils/wagmi'
 import type { ReactElement } from 'react'
 
@@ -29,17 +32,21 @@ export function SuggestedVaultCard({
   vault,
   matchedSymbol,
   externalProtocol,
-  matchedChainName
+  matchedChainName,
+  clickEventName
 }: {
   vault: TKongVaultInput
   matchedSymbol?: string
   externalProtocol?: string
   matchedChainName?: string
+  clickEventName?: TPlausibleEventName
 }): ReactElement {
+  const trackEvent = usePlausible()
   const apyData = useVaultApyData(vault)
   const apyLabel = apyData.mode === 'historical' || apyData.mode === 'noForward' ? 'Historical APY' : 'Est. APY'
   const chainID = getVaultChainID(vault)
   const vaultAddress = getVaultAddress(vault)
+  const vaultSymbol = getVaultSymbol(vault)
   const token = getVaultToken(vault)
   const vaultCategory = getVaultCategory(vault)
   const yvUsdVaults = useYvUsdVaults()
@@ -77,6 +84,18 @@ export function SuggestedVaultCard({
       className={
         'group flex h-fit min-h-[156px] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_12px_32px_rgba(4,8,32,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(4,8,32,0.12)]'
       }
+      onClick={(): void => {
+        if (!clickEventName) {
+          return
+        }
+        trackEvent(clickEventName, {
+          props: {
+            vaultAddress: toAddress(vaultAddress),
+            vaultSymbol,
+            chainID: chainID.toString()
+          }
+        })
+      }}
     >
       <div className={'flex flex-1 flex-col gap-2 px-6 pb-4 pt-4'}>
         <div className={'flex items-center gap-3'}>

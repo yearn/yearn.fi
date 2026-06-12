@@ -61,7 +61,7 @@ import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { IconHandCoins } from '@shared/icons/IconHandCoins'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { cl, formatApyDisplay, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
-import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
+import { PLAUSIBLE_EVENTS, type TPlausibleEventName } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useQueryClient } from '@tanstack/react-query'
@@ -242,6 +242,7 @@ type TVaultsListRowProps = {
   showProductTypeChipOverride?: boolean
   mobileSecondaryMetric?: 'tvl' | 'holdings'
   expandedChartVariant?: 'default' | 'portfolio-user-tvl-overlay'
+  clickEventName?: TPlausibleEventName
 }
 
 function VaultsListRowComponent({
@@ -269,7 +270,8 @@ function VaultsListRowComponent({
   showProductTypeChipOverride,
   mobileSecondaryMetric = 'tvl',
   showAllocatorChip = true,
-  expandedChartVariant = 'default'
+  expandedChartVariant = 'default',
+  clickEventName = PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW
 }: TVaultsListRowProps): ReactElement {
   const navigate = useNavigate()
   const trackEvent = usePlausible()
@@ -499,7 +501,7 @@ function VaultsListRowComponent({
             onToggleCompare(currentVault)
             return
           }
-          trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW, {
+          trackEvent(clickEventName, {
             props: {
               vaultAddress: toAddress(vaultAddress),
               vaultSymbol,
