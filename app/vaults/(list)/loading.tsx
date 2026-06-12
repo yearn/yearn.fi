@@ -6,8 +6,9 @@ import { IconFilter } from '@shared/icons/IconFilter'
 import { IconGitCompare } from '@shared/icons/IconGitCompare'
 import { IconSearch } from '@shared/icons/IconSearch'
 import { LogoYearn } from '@shared/icons/LogoYearn'
-import { cl } from '@shared/utils'
+import { cl, SUPPORTED_NETWORKS } from '@shared/utils'
 import type { ReactElement } from 'react'
+import { env } from '@/env'
 
 const SKELETON_ROWS = Array.from({ length: 16 }, (_, index) => index)
 const VAULT_TYPE_FILTERS: TVaultType[] = ['all', 'v3', 'factory']
@@ -15,12 +16,13 @@ const VAULT_LIST_HEAD_ITEMS = [
   { label: 'Est. APY', className: 'col-span-6' },
   { label: 'TVL', className: 'col-span-5' }
 ] as const
+const LOADING_CHAIN_IDS = [1, 747474, 8453, 10] as const
 const CHAIN_FILTERS = [
-  { label: 'All Chains', icon: 'yearn' },
-  { label: 'Ethereum', icon: 'E' },
-  { label: 'Katana', icon: 'K' },
-  { label: 'Base', icon: 'B' },
-  { label: 'OP Mainnet', icon: 'O' }
+  { label: 'All Chains', chainId: null },
+  ...LOADING_CHAIN_IDS.map((chainId) => ({
+    label: SUPPORTED_NETWORKS.find((network) => network.id === chainId)?.name ?? `Chain ${chainId}`,
+    chainId
+  }))
 ] as const
 
 function DisabledVaultTypeToggle({ stretch = false }: { stretch?: boolean }): ReactElement {
@@ -52,8 +54,8 @@ function DisabledVaultTypeToggle({ stretch = false }: { stretch?: boolean }): Re
   )
 }
 
-function DisabledChainIcon({ icon }: { icon: (typeof CHAIN_FILTERS)[number]['icon'] }): ReactElement {
-  if (icon === 'yearn') {
+function DisabledChainIcon({ chainId, label }: { chainId: number | null; label: string }): ReactElement {
+  if (chainId === null) {
     return (
       <span className={'size-5 overflow-hidden rounded-full'}>
         <LogoYearn className={'size-full'} back={'text-text-primary'} front={'text-surface'} />
@@ -62,13 +64,18 @@ function DisabledChainIcon({ icon }: { icon: (typeof CHAIN_FILTERS)[number]['ico
   }
 
   return (
-    <span
-      aria-hidden={true}
-      className={
-        'flex size-5 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-text-secondary'
-      }
-    >
-      {icon}
+    <span aria-hidden={true} className={'size-5 overflow-hidden rounded-full bg-surface/80'}>
+      {/* biome-ignore lint/performance/noImgElement: loading fallback mirrors the chain selector before app hydration. */}
+      <img
+        src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo-128.png`}
+        alt={''}
+        className={'size-full object-cover'}
+        width={20}
+        height={20}
+        loading={'eager'}
+        decoding={'async'}
+        title={label}
+      />
     </span>
   )
 }
@@ -93,7 +100,7 @@ function DisabledChainSelector(): ReactElement {
           aria-pressed={chain.label === 'All Chains'}
           aria-label={chain.label === 'All Chains' ? undefined : chain.label}
         >
-          <DisabledChainIcon icon={chain.icon} />
+          <DisabledChainIcon chainId={chain.chainId} label={chain.label} />
           {chain.label === 'All Chains' ? <span className={'whitespace-nowrap'}>{chain.label}</span> : null}
         </button>
       ))}
@@ -177,7 +184,7 @@ function DisabledMobileFilters(): ReactElement {
           }
         >
           <div className={'flex items-center gap-2'}>
-            <DisabledChainIcon icon={'yearn'} />
+            <DisabledChainIcon chainId={null} label={'All Chains'} />
             <span>{'All Chains'}</span>
           </div>
         </button>
