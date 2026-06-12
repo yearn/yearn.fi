@@ -60,7 +60,7 @@ import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { IconHandCoins } from '@shared/icons/IconHandCoins'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { cl, formatApyDisplay, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
-import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
+import { PLAUSIBLE_EVENTS, type TPlausibleEventName } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useQueryClient } from '@tanstack/react-query'
@@ -241,6 +241,7 @@ type TVaultsListRowProps = {
   mobileSecondaryMetric?: 'tvl' | 'holdings'
   expandedChartVariant?: 'default' | 'portfolio-user-tvl-overlay'
   yvUsdVaults?: TYvUsdListVaults
+  clickEventName?: TPlausibleEventName
 }
 
 type TVaultsListRowPresentationProps = TVaultsListRowProps & {
@@ -276,6 +277,7 @@ function VaultsListRowPresentationComponent({
   showAllocatorChip = true,
   expandedChartVariant = 'default',
   yvUsdVaults,
+  clickEventName = PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW,
   hasWalletAddress = false,
   isWalletLoading = false,
   holdingsValue: resolvedHoldingsValue = 0
@@ -494,7 +496,7 @@ function VaultsListRowPresentationComponent({
             onToggleCompare(currentVault)
             return
           }
-          trackEvent(PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW, {
+          trackEvent(clickEventName, {
             props: {
               vaultAddress: toAddress(vaultAddress),
               vaultSymbol,

@@ -1,7 +1,11 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { VaultVersionToggle } from './VaultVersionToggle'
+
+vi.mock('@hooks/usePlausible', () => ({
+  usePlausible: () => vi.fn()
+}))
 
 function renderToggle(activeType?: 'all' | 'v3' | 'factory'): string {
   return renderToStaticMarkup(<VaultVersionToggle activeType={activeType} />)

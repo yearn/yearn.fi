@@ -1,3 +1,4 @@
+import { usePlausible } from '@hooks/usePlausible'
 import type { ChartConfig } from '@pages/vaults/components/detail/charts/ChartPrimitives'
 import { ChartContainer, ChartTooltip } from '@pages/vaults/components/detail/charts/ChartPrimitives'
 import {
@@ -21,6 +22,7 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, formatPercent, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
 import { getVaultName as getDisplayVaultName } from '@shared/utils/helpers'
+import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import Link from 'next/link'
 import type { ReactElement } from 'react'
 import { useEffect, useId, useMemo, useState } from 'react'
@@ -387,6 +389,7 @@ export function PortfolioHistoryChartControls({
   children,
   className
 }: TPortfolioHistoryChartControlsProps): ReactElement {
+  const trackEvent = usePlausible()
   const unitOptions = GROWTH_DISPLAY_MODES.map((mode) => {
     const isAvailable =
       activeTab === 'balance'
@@ -441,6 +444,15 @@ export function PortfolioHistoryChartControls({
   }
 
   const handleChartTabChange = (tab: TPortfolioHistoryChartTab): void => {
+    if (tab !== activeTab) {
+      trackEvent(PLAUSIBLE_EVENTS.PORTFOLIO_HISTORY_TAB_SELECT, {
+        props: {
+          fromTab: activeTab,
+          tab,
+          timeframe
+        }
+      })
+    }
     onActiveTabChange(tab)
     if (tab === 'index') {
       onVaultGrowthModeChange('index')
@@ -612,6 +624,7 @@ export function PortfolioHistoryChart({
   loadingProgress,
   className
 }: TPortfolioHistoryChartProps): ReactElement {
+  const trackEvent = usePlausible()
   const { address } = useWeb3()
   const { allVaults } = useYearn()
   const [hoveredBreakdownDate, setHoveredBreakdownDate] = useState<string | null>(null)
@@ -909,6 +922,12 @@ export function PortfolioHistoryChart({
       return
     }
 
+    trackEvent(PLAUSIBLE_EVENTS.PORTFOLIO_HISTORY_BREAKDOWN_CLICK, {
+      props: {
+        denomination,
+        timeframe
+      }
+    })
     setSelectedBreakdownDate(selectedPoint.date)
     setIsBreakdownModalOpen(true)
   }
