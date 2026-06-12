@@ -38,6 +38,6 @@ The live timings are local smoke numbers, not lab-grade performance scores. Use 
 
 ## `/vaults` Route Strategy
 
-`/vaults` is prerendered as static content with `revalidate = 3600`. The route hydrates the public vault queries on the server so first paint uses the same vault list components as the hydrated app instead of a separate static approximation.
+`/vaults` is prerendered as static content with `revalidate = 3600`. The route hydrates the main public vault list query on the server so first paint uses the same vault list components as the hydrated app instead of a separate static approximation. Secondary yvUSD/yvBTC snapshot queries are client-side enrichment and should not hold the page behind the route loading skeleton.
 
 This improves visual parity, but it increases the HTML/RSC payload because the cached response includes dehydrated vault query data. Re-check `.next/server/app/vaults.html` gzip size when changing the hydrated query set.

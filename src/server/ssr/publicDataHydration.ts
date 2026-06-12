@@ -1,6 +1,5 @@
 import { type DehydratedState, dehydrate, QueryClient } from '@tanstack/react-query'
 import * as z from 'zod'
-import { YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS } from '@/components/pages/vaults/utils/yvBtc'
 import {
   isYvUsdAddress,
   YVUSD_CHAIN_ID,
@@ -89,14 +88,6 @@ function prefetchVaultSnapshot(queryClient: QueryClient, chainId?: number | stri
   })
 }
 
-async function prefetchYvVaultSnapshots(queryClient: QueryClient): Promise<void> {
-  await Promise.all([
-    prefetchVaultSnapshot(queryClient, YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS),
-    prefetchVaultSnapshot(queryClient, YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS),
-    prefetchVaultSnapshot(queryClient, YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS)
-  ])
-}
-
 function isMatchingSnapshotRoute(
   chainId: number | string | undefined,
   address: string | undefined,
@@ -146,7 +137,7 @@ export async function getLandingPageDehydratedState(): Promise<DehydratedState> 
 export async function getVaultsPageDehydratedState(): Promise<DehydratedState> {
   const queryClient = createSsrQueryClient()
 
-  await Promise.all([prefetchVaultList(queryClient), prefetchYvVaultSnapshots(queryClient)])
+  await prefetchVaultList(queryClient)
 
   return dehydrateQueryClient(queryClient)
 }
