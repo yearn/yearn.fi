@@ -1,23 +1,20 @@
-import {
-  buildInitialVaultsQuerySnapshot,
-  DEFAULT_VAULT_QUERY_DEFAULTS,
-  type TVaultsRouteSearchParams
-} from '@pages/vaults/utils/vaultsQueryState'
+import { buildInitialVaultsQuerySnapshot, DEFAULT_VAULT_QUERY_DEFAULTS } from '@pages/vaults/utils/vaultsQueryState'
+import { HydrationBoundary } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
-import { getPublicVaultListViewModel } from '@/server/ssr/publicVaultListViewModel'
+import { getVaultsPageDehydratedState } from '@/server/ssr/publicDataHydration'
 import { vaultsMetadata } from '../../metadata'
 import VaultsPageClient from './page-client'
 
 export const metadata = vaultsMetadata
-export const revalidate = 21600
+export const revalidate = 3600
 
-type TVaultsPageProps = {
-  searchParams?: Promise<TVaultsRouteSearchParams>
-}
+export default async function Page(): Promise<ReactElement> {
+  const initialQueryState = buildInitialVaultsQuerySnapshot(undefined, DEFAULT_VAULT_QUERY_DEFAULTS)
+  const dehydratedState = await getVaultsPageDehydratedState()
 
-export default async function Page({ searchParams }: TVaultsPageProps): Promise<ReactElement> {
-  const initialQueryState = buildInitialVaultsQuerySnapshot(await searchParams, DEFAULT_VAULT_QUERY_DEFAULTS)
-  const initialPublicVaultList = await getPublicVaultListViewModel(initialQueryState)
-
-  return <VaultsPageClient initialQueryState={initialQueryState} initialPublicVaultList={initialPublicVaultList} />
+  return (
+    <HydrationBoundary state={dehydratedState}>
+      <VaultsPageClient initialQueryState={initialQueryState} />
+    </HydrationBoundary>
+  )
 }

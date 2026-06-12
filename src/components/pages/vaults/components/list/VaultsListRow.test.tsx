@@ -39,6 +39,16 @@ vi.mock('@shared/contexts/useWallet', () => ({
     getToken: () => ({ value: 0 }),
     getVaultHoldingsUsd: () => 0,
     isLoading: false
+  }),
+  useWalletTokens: () => ({
+    getBalance: () => ({ raw: 0n, normalized: 0 }),
+    getToken: () => ({ value: 0 })
+  }),
+  useWalletHoldings: () => ({
+    getVaultHoldingsUsd: () => 0
+  }),
+  useWalletStatus: () => ({
+    isLoading: false
   })
 }))
 
