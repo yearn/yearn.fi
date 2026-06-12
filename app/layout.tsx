@@ -16,15 +16,6 @@ const aeonik = localFont({
   display: 'swap'
 })
 
-const aeonikFono = localFont({
-  src: [
-    { path: '../public/fonts/AeonikFono-Light.otf', weight: '300', style: 'normal' },
-    { path: '../public/fonts/AeonikFono-Regular.otf', weight: '400', style: 'normal' }
-  ],
-  variable: '--font-aeonik-fono',
-  display: 'swap'
-})
-
 const aeonikMono = localFont({
   src: [
     { path: '../public/fonts/AeonikMono-Regular.woff2', weight: '400', style: 'normal' },
@@ -165,7 +156,7 @@ window.addEventListener(THEME_EVENT_NAME, updateMode);
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="duration-150 transition-colors" suppressHydrationWarning>
-      <body className={`${aeonik.variable} ${aeonikFono.variable} ${aeonikMono.variable}`}>
+      <body className={`${aeonik.variable} ${aeonikMono.variable}`}>
         <Script id="yearn-theme-init" strategy="beforeInteractive">
           {themeScript}
         </Script>

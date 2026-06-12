@@ -1,4 +1,5 @@
 import { patchYBoldVaults } from '@pages/vaults/domain/normalizeVault'
+import { isCatalogYearnVault } from '@pages/vaults/utils/catalogYearnVault'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { PUBLIC_VAULT_DATA_CACHE_TIME } from '@shared/data/publicQueryCache'
 import { YEARN_VAULT_LIST_ENDPOINT } from '@shared/data/publicQueryEndpoints'
@@ -12,9 +13,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 
 const DEFAULT_CHAIN_IDS = SUPPORTED_NETWORKS.map((network) => network.id)
-
-export const isCatalogYearnVault = (item: TKongVaultListItem): boolean =>
-  item.origin === 'yearn' && item.inclusion?.isYearn !== false
 
 function useFetchYearnVaults(
   chainIDs?: number[] | undefined,
@@ -111,6 +109,9 @@ function usePrefetchYearnVaults(enabled = true): void {
       if (!queryKey) {
         return
       }
+      if (queryClient.getQueryData(queryKey)) {
+        return
+      }
       void queryClient.prefetchQuery({
         queryKey,
         queryFn: () => fetchWithSchema(endpoint, kongVaultListSchema),
@@ -120,4 +121,4 @@ function usePrefetchYearnVaults(enabled = true): void {
   }, [enabled, endpoints, queryClient])
 }
 
-export { useFetchYearnVaults, usePrefetchYearnVaults }
+export { isCatalogYearnVault, useFetchYearnVaults, usePrefetchYearnVaults }

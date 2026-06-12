@@ -42,6 +42,7 @@ function NavTile({ item, isDark }: { item: TNavTile; isDark: boolean }): ReactEl
   return (
     <Link
       href={item.href}
+      prefetch={isExternalHref(item.href) ? undefined : false}
       target={isExternalHref(item.href) ? '_blank' : undefined}
       rel={isExternalHref(item.href) ? 'noopener noreferrer' : undefined}
     >

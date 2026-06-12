@@ -9,7 +9,7 @@ import {
   getVaultSymbol,
   getVaultToken,
   getVaultTVL,
-  type TKongVault
+  type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { getHoldingsAliasVaultAddress } from '@pages/vaults/domain/normalizeVault'
 import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
@@ -26,6 +26,7 @@ import {
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
+import type { TDict } from '@shared/types'
 import { isZeroAddress } from '@shared/utils'
 import { useMemo } from 'react'
 import {
@@ -39,7 +40,7 @@ import {
 
 type TVaultIndexEntry = {
   key: string
-  vault: TKongVault
+  vault: TKongVaultInput
   searchableText: string
   kind: ReturnType<typeof deriveListKind>
   category: string
@@ -58,13 +59,19 @@ type TVaultWalletFlags = {
 }
 
 type TOptimizedV2VaultFilterResult = {
-  filteredVaults: TKongVault[]
-  holdingsVaults: TKongVault[]
-  availableVaults: TKongVault[]
+  filteredVaults: TKongVaultInput[]
+  holdingsVaults: TKongVaultInput[]
+  availableVaults: TKongVaultInput[]
   vaultFlags: Record<string, TVaultFlags>
   availableUnderlyingAssets: string[]
-  underlyingAssetVaults: Record<string, TKongVault>
+  underlyingAssetVaults: Record<string, TKongVaultInput>
   isLoading: boolean
+}
+
+type TVaultFilterSource = {
+  vaults: TDict<TKongVaultInput>
+  allVaults: TDict<TKongVaultInput>
+  isLoadingVaultList?: boolean
 }
 
 export function useV2VaultFilter(
@@ -77,9 +84,14 @@ export function useV2VaultFilter(
   minTvl?: number,
   showHiddenVaults?: boolean,
   feeStructureKey?: string | null,
-  enabled?: boolean
+  enabled?: boolean,
+  vaultSource?: TVaultFilterSource
 ): TOptimizedV2VaultFilterResult {
-  const { vaults, allVaults, getPrice, isLoadingVaultList } = useYearn()
+  const yearn = useYearn()
+  const { getPrice } = yearn
+  const vaults = vaultSource?.vaults ?? yearn.vaults
+  const allVaults = vaultSource?.allVaults ?? yearn.allVaults
+  const isLoadingVaultList = vaultSource?.isLoadingVaultList ?? yearn.isLoadingVaultList
   const { getBalance } = useWalletTokens()
   const { isLoading: isWalletLoading } = useWalletStatus()
   const { shouldHideDust } = useAppSettings()
@@ -122,7 +134,7 @@ export function useV2VaultFilter(
   const checkHasAvailableBalance = useMemo(() => createCheckHasAvailableBalance(getBalance), [getBalance])
   const checkHasRawHoldings = useMemo(
     () =>
-      (vault: TKongVault): boolean => {
+      (vault: TKongVaultInput): boolean => {
         if (isWalletLoading) {
           return false
         }
@@ -155,11 +167,11 @@ export function useV2VaultFilter(
     }
     const vaultMap = new Map<string, TVaultIndexEntry>()
 
-    const shouldIncludeVault = (vault: TKongVault): boolean =>
+    const shouldIncludeVault = (vault: TKongVaultInput): boolean =>
       !isAllocatorVaultOverride(vault) && !isV3Vault(vault, false)
 
     const upsertVault = (
-      vault: TKongVault,
+      vault: TKongVaultInput,
       updates: Partial<Pick<TVaultIndexEntry, 'isActive' | 'isMigratable' | 'isRetired' | 'isBypassedHolding'>>
     ): void => {
       const key = getVaultKey(vault)
@@ -262,7 +274,7 @@ export function useV2VaultFilter(
   }, [vaultIndex, walletFlags])
 
   const filteredResults = useMemo(() => {
-    const filteredVaults: TKongVault[] = []
+    const filteredVaults: TKongVaultInput[] = []
     const vaultFlags: Record<string, TVaultFlags> = {}
     const shouldShowHidden = Boolean(showHiddenVaults)
     const hasChainFilter = Boolean(chains?.length)
@@ -272,7 +284,7 @@ export function useV2VaultFilter(
     const hasUnderlyingAssetFilter = normalizedUnderlyingAssets.size > 0
     const hasFeeStructureFilter = Boolean(feeStructureKey)
     const availableUnderlyingAssets = new Set<string>()
-    const underlyingAssetVaults: Record<string, TKongVault> = {}
+    const underlyingAssetVaults: Record<string, TKongVaultInput> = {}
 
     const matchesSearch = (searchableText: string): boolean => {
       if (!isSearchEnabled) {

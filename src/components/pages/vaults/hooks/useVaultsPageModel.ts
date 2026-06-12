@@ -41,6 +41,7 @@ import {
   normalizeUnderlyingAssetSymbol,
   type TVaultAggressiveness
 } from '@pages/vaults/utils/vaultListFacets'
+import { getVaultsInitialVaultSource, type TVaultsInitialPayload } from '@pages/vaults/utils/vaultsInitialPayload'
 import {
   DEFAULT_VAULT_QUERY_SORT_BY,
   DEFAULT_VAULT_QUERY_TYPES,
@@ -52,7 +53,7 @@ import { useMediaQuery } from '@react-hookz/web'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { usePrefetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
+import { useYearn } from '@shared/contexts/useYearn'
 import { useOptimisticValue } from '@shared/hooks/useOptimisticValue'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
@@ -230,9 +231,15 @@ export type TVaultsPageModel = {
   list: TVaultsListModel
 }
 
-export function useVaultsPageModel(initialQueryState?: TVaultsQuerySnapshot): TVaultsPageModel {
+export function useVaultsPageModel(
+  initialQueryState?: TVaultsQuerySnapshot,
+  initialVaults?: TVaultsInitialPayload
+): TVaultsPageModel {
   const { address } = useWeb3()
+  const { enableVaultListFetch } = useYearn()
   const hasWalletAddress = !!address
+  const initialVaultSource = useMemo(() => getVaultsInitialVaultSource(initialVaults), [initialVaults])
+  const activeVaultSource = hasWalletAddress ? undefined : initialVaultSource
   const {
     vaultType,
     hasTypesParam,
@@ -276,7 +283,14 @@ export function useVaultsPageModel(initialQueryState?: TVaultsQuerySnapshot): TV
     initialSnapshot: initialQueryState
   })
 
-  usePrefetchYearnVaults(vaultType === 'v3')
+  const shouldFetchFullVaultList = hasWalletAddress || !initialVaultSource
+  useEffect(() => {
+    if (!shouldFetchFullVaultList) {
+      return
+    }
+    // Wallet balance discovery and SSR failures still need the complete Kong vault list.
+    enableVaultListFetch()
+  }, [enableVaultListFetch, shouldFetchFullVaultList])
 
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
@@ -398,6 +412,7 @@ export function useVaultsPageModel(initialQueryState?: TVaultsQuerySnapshot): TV
     isWalletLoading,
     vaultHoldingsValues
   } = useVaultsListModel({
+    vaultSource: activeVaultSource,
     listVaultType,
     listChains,
     listV3Types,
@@ -439,6 +454,7 @@ export function useVaultsPageModel(initialQueryState?: TVaultsQuerySnapshot): TV
   const blockingProbeSortDirection: TSortDirection = ''
   const blockingProbeBaseArgs: Parameters<typeof useVaultsListModel>[0] = {
     enabled: shouldComputeBlockingInsights,
+    vaultSource: activeVaultSource,
     listVaultType,
     listChains,
     listV3Types,

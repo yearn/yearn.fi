@@ -476,6 +476,7 @@ function VaultsListRowPresentationComponent({
       </button>
       <Link
         href={href}
+        prefetch={false}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
           'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',

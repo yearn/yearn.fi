@@ -14,6 +14,7 @@ import { VaultsWelcomeTour } from '@pages/vaults/components/tour/VaultsWelcomeTo
 import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TYvUsdListVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { toggleInArray } from '@pages/vaults/utils/constants'
+import type { TVaultsInitialPayload } from '@pages/vaults/utils/vaultsInitialPayload'
 import type { TVaultsQuerySnapshot } from '@pages/vaults/utils/vaultsQueryState'
 import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
@@ -35,6 +36,7 @@ type TVaultsListSectionProps = {
 
 type TVaultsPageProps = {
   initialQueryState?: TVaultsQuerySnapshot
+  initialVaults?: TVaultsInitialPayload
 }
 
 function getYvUsdVaultsForRow(vault: TKongVaultInput, yvUsdVaults?: TYvUsdListVaults): TYvUsdListVaults | undefined {
@@ -89,8 +91,8 @@ function VaultsListSection({
   )
 }
 
-export default function Index({ initialQueryState }: TVaultsPageProps): ReactElement {
-  const { refs, filtersBar, list } = useVaultsPageModel(initialQueryState)
+export default function Index({ initialQueryState, initialVaults }: TVaultsPageProps): ReactElement {
+  const { refs, filtersBar, list } = useVaultsPageModel(initialQueryState, initialVaults)
   const trackEvent = usePlausible()
   const { varsRef, filtersRef } = refs
   const { search, filters, chains, shouldStackFilters, activeVaultType, onChangeVaultType } = filtersBar

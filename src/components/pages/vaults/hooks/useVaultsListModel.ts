@@ -1,7 +1,6 @@
 import {
   getVaultAddress,
   getVaultChainID,
-  type TKongVault,
   type TKongVaultInput,
   type TKongVaultView
 } from '@pages/vaults/domain/kongVaultSelectors'
@@ -29,12 +28,13 @@ import { useWalletHoldings, useWalletStatus, useWalletTokens } from '@shared/con
 import { useV2VaultFilter } from '@shared/hooks/useV2VaultFilter'
 import { useV3VaultFilter } from '@shared/hooks/useV3VaultFilter'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
-import type { TSortDirection } from '@shared/types'
+import type { TDict, TSortDirection } from '@shared/types'
 import { useMemo } from 'react'
 import { getProductPinnedSections, type TVaultsPinnedSection } from './useVaultsListModel.helpers'
 
 type TVaultsListModelArgs = {
   enabled?: boolean
+  vaultSource?: TVaultsListVaultSource
   listVaultType: TVaultType
   listChains: number[] | null
   listV3Types: string[]
@@ -53,13 +53,19 @@ type TVaultsListModelArgs = {
   isAvailablePinned: boolean
 }
 
+export type TVaultsListVaultSource = {
+  vaults: TDict<TKongVaultInput>
+  allVaults: TDict<TKongVaultInput>
+  isLoadingVaultList?: boolean
+}
+
 type TVaultsListModel = {
   listCategoriesSanitized: string[]
   holdingsVaults: TKongVaultInput[]
   availableVaults: TKongVaultInput[]
   vaultFlags: Record<string, { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }>
   vaultHoldingsValues: Record<string, number>
-  underlyingAssetVaults: Record<string, TKongVault>
+  underlyingAssetVaults: Record<string, TKongVaultInput>
   pinnedSections: TVaultsPinnedSection[]
   pinnedVaults: TKongVaultInput[]
   mainVaults: TKongVaultInput[]
@@ -139,6 +145,7 @@ function appendUniqueVault(vaults: TKongVaultInput[], vaultToAppend?: TKongVault
 
 export function useVaultsListModel({
   enabled = true,
+  vaultSource,
   listVaultType,
   listChains,
   listV3Types,
@@ -160,7 +167,14 @@ export function useVaultsListModel({
 
   const isV3View = enabled && (listVaultType === 'v3' || isAllVaults)
   const isV2View = enabled && (listVaultType === 'factory' || isAllVaults)
-  const yvUsdVaults = useYvUsdVaults()
+  const yvUsdVaults = useYvUsdVaults(
+    vaultSource
+      ? {
+          vaults: vaultSource.vaults,
+          isLoadingVaultList: vaultSource.isLoadingVaultList
+        }
+      : undefined
+  )
   const { listVault: yvUsdVault } = yvUsdVaults
   const { getBalance } = useWalletTokens()
   const { getVaultHoldingsUsd } = useWalletHoldings()
@@ -227,7 +241,8 @@ export function useVaultsListModel({
     listMinTvl,
     isV3View ? listShowHiddenVaults : undefined,
     listFeeStructureKey,
-    isV3View
+    isV3View,
+    vaultSource
   )
 
   const v2FilterResult = useV2VaultFilter(
@@ -240,7 +255,8 @@ export function useVaultsListModel({
     listMinTvl,
     listShowHiddenVaults,
     listFeeStructureKey,
-    isV2View
+    isV2View,
+    vaultSource
   )
 
   const sanitizedV3FilteredVaults = useMemo(

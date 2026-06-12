@@ -24,6 +24,7 @@ import { useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { WagmiProvider } from 'wagmi'
 import { AppClientEffects } from '@/AppClientEffects'
+import { shouldLoadAppTokenLists } from '@/appRouteDataLoading'
 import { TenderlyControlPanel } from '@/components/shared/components/TenderlyControlPanel'
 import { wagmiConfig } from '@/config/wagmi'
 import { ChainsProvider } from '@/context/ChainsProvider'
@@ -40,19 +41,9 @@ const appTokenLists = [
   'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/popular.json'
 ]
 
-function isVaultDetailPathname(pathname: string): boolean {
-  const [section, chainID, address, ...rest] = pathname.split('/').filter(Boolean)
-  return (
-    rest.length === 0 &&
-    (section === 'vaults' || section === 'v3') &&
-    /^\d+$/.test(chainID ?? '') &&
-    /^0x[0-9a-fA-F]{40}$/.test(address ?? '')
-  )
-}
-
 function TokenListGate({ children }: { children: ReactElement }): ReactElement {
   const pathname = usePathname() || '/'
-  const shouldLoadTokenLists = !isVaultDetailPathname(pathname)
+  const shouldLoadTokenLists = shouldLoadAppTokenLists(pathname)
 
   return (
     <WithTokenList lists={appTokenLists} enabled={shouldLoadTokenLists}>

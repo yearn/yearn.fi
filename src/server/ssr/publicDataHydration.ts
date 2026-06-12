@@ -1,6 +1,10 @@
 import { type DehydratedState, dehydrate, QueryClient } from '@tanstack/react-query'
 import * as z from 'zod'
 import {
+  buildVaultsInitialPayload,
+  type TVaultsInitialPayload
+} from '@/components/pages/vaults/utils/vaultsInitialPayload'
+import {
   isYvUsdAddress,
   YVUSD_CHAIN_ID,
   YVUSD_LOCKED_ADDRESS,
@@ -140,6 +144,18 @@ export async function getVaultsPageDehydratedState(): Promise<DehydratedState> {
   await prefetchVaultList(queryClient)
 
   return dehydrateQueryClient(queryClient)
+}
+
+export async function getVaultsPageInitialPayload(): Promise<TVaultsInitialPayload | undefined> {
+  try {
+    const vaults = await fetchWithSchema(YEARN_VAULT_LIST_ENDPOINT, kongVaultListSchema, {
+      timeout: VAULT_LIST_TIMEOUT_MS
+    })
+    return buildVaultsInitialPayload(vaults)
+  } catch (error) {
+    console.warn('[SSR] Failed to build vaults initial payload', error)
+    return undefined
+  }
 }
 
 export async function getVaultDetailPageDehydratedState(

@@ -74,6 +74,7 @@ function MobileNavTile({
   return (
     <Link
       href={item.href}
+      prefetch={isExternalHref(item.href) ? undefined : false}
       onClick={onClick}
       target={isExternalHref(item.href) ? '_blank' : undefined}
       rel={isExternalHref(item.href) ? 'noopener noreferrer' : undefined}
@@ -471,9 +472,9 @@ export function MobileNavMenu({
               className={cl('relative flex min-h-screen w-full flex-col', isDarkTheme ? 'bg-[#0a0a0a]' : 'bg-surface')}
             >
               <div className={'flex h-[var(--header-height)] items-center justify-between border-b border-border px-4'}>
-                <Link href={'/'} onClick={onClose} className={'flex items-center'}>
+                <a href={'/'} onClick={onClose} className={'flex items-center'}>
                   <TypeMarkYearn className={'h-8 w-auto'} color={isDarkTheme ? '#FFFFFF' : '#0657F9'} />
-                </Link>
+                </a>
                 <button
                   onClick={onClose}
                   className={
@@ -490,6 +491,7 @@ export function MobileNavMenu({
                   <div className={'flex flex-col gap-1'}>
                     <Link
                       href={'/vaults'}
+                      prefetch={false}
                       onClick={onClose}
                       className={navItemClass(pathname.startsWith('/vaults'), false)}
                     >
@@ -497,6 +499,7 @@ export function MobileNavMenu({
                     </Link>
                     <Link
                       href={'/portfolio'}
+                      prefetch={false}
                       onClick={onClose}
                       className={navItemClass(pathname.startsWith('/portfolio'), false)}
                     >

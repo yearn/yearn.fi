@@ -88,10 +88,8 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
     }
   )
 
-  const isVaultsRoute = pathname.startsWith('/vaults')
-  const isVaultDetailPage = isVaultsRoute && pathname.split('/').length === 4
   const isPortfolioRoute = pathname.startsWith('/portfolio')
-  const shouldEnableVaultList = (isVaultsRoute && !isVaultDetailPage) || isPortfolioRoute
+  const shouldEnableVaultList = isPortfolioRoute
   const [isManuallyEnabled, setIsManuallyEnabled] = useState(false)
   const isVaultListEnabled = shouldEnableVaultList || isManuallyEnabled
   const sanitizedZapSlippage = clampZapSlippage(zapSlippage ?? DEFAULT_SLIPPAGE)
