@@ -46,6 +46,8 @@ _app
 
 # playwright
 .playwright-mcp
+.playwright-cli/
+output/playwright/
 
 # local worktree clones
 yearn.fi-worktree-*
