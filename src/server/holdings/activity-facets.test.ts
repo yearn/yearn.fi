@@ -3,12 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const TEST_ADDRESS = '0x2222222222222222222222222222222222222222'
 
 const ensureHoldingsStorageInitializedMock = vi.fn()
-const checkRateLimitMock = vi.fn()
 const fetchRecentAddressScopedActivityEventsMock = vi.fn()
 
 vi.mock('../lib/holdings', () => ({
   ensureHoldingsStorageInitialized: ensureHoldingsStorageInitializedMock,
-  checkRateLimit: checkRateLimitMock,
   fetchRecentAddressScopedActivityEvents: fetchRecentAddressScopedActivityEventsMock
 }))
 
@@ -21,7 +19,6 @@ describe('holdings activity facets route', () => {
     vi.resetModules()
     vi.clearAllMocks()
     ensureHoldingsStorageInitializedMock.mockResolvedValue(undefined)
-    checkRateLimitMock.mockResolvedValue({ allowed: true, retryAfter: 0 })
     fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
       deposits: [{ chainId: 1 }],
       withdrawals: [{ chainId: 8453 }],

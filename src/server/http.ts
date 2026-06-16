@@ -68,26 +68,6 @@ export async function readJsonBody<T>(request: Request): Promise<T> {
   }
 }
 
-function simpleHash(value: string): string {
-  const hash = Array.from(value).reduce((currentHash, char) => {
-    const nextHash = (currentHash << 5) - currentHash + char.charCodeAt(0)
-    return nextHash & nextHash
-  }, 0)
-  return Math.abs(hash).toString(36)
-}
-
-export function getClientIdentifier(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  if (forwarded) {
-    return forwarded.split(',')[0]?.trim() || forwarded
-  }
-
-  const userAgent = request.headers.get('user-agent') || ''
-  const acceptLanguage = request.headers.get('accept-language') || ''
-  const acceptEncoding = request.headers.get('accept-encoding') || ''
-  return `fp-${simpleHash(userAgent + acceptLanguage + acceptEncoding)}`
-}
-
 export function getRequestIp(request: Request): string | undefined {
   const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
   const realIp = request.headers.get('x-real-ip')?.trim()

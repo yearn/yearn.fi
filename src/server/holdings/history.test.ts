@@ -1,13 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const ensureHoldingsStorageInitializedMock = vi.fn()
-const checkRateLimitMock = vi.fn()
 const getHistoricalHoldingsChartMock = vi.fn()
 const TEST_WALLET_ADDRESS = process.env.HOLDINGS_TEST_WALLET_ADDRESS ?? '0x1111111111111111111111111111111111111111'
 
 vi.mock('../lib/holdings', () => ({
   ensureHoldingsStorageInitialized: ensureHoldingsStorageInitializedMock,
-  checkRateLimit: checkRateLimitMock,
   getHistoricalHoldingsChart: getHistoricalHoldingsChartMock
 }))
 
@@ -20,7 +18,6 @@ describe('holdings history route', () => {
     vi.resetModules()
     vi.clearAllMocks()
     ensureHoldingsStorageInitializedMock.mockResolvedValue(undefined)
-    checkRateLimitMock.mockResolvedValue({ allowed: true, retryAfter: 0 })
     process.env.ENVIO_GRAPHQL_URL = 'https://envio.example/graphql'
   })
 

@@ -1,6 +1,6 @@
-import { GET_CORS_HEADERS, getClientIdentifier, json, noContent, queryValue } from '../http'
+import { GET_CORS_HEADERS, json, noContent, queryValue } from '../http'
 import type { VaultVersion } from '../lib/holdings'
-import { checkRateLimit, ensureHoldingsStorageInitialized } from '../lib/holdings'
+import { ensureHoldingsStorageInitialized } from '../lib/holdings'
 
 function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
@@ -34,15 +34,6 @@ export async function GET(request: Request): Promise<Response> {
   } catch (error) {
     console.error('Holdings activity facets storage initialization error:', error)
     return json({ error: 'Failed to initialize holdings storage' }, { status: 500, headers: GET_CORS_HEADERS })
-  }
-
-  const clientId = getClientIdentifier(request)
-  const rateCheck = await checkRateLimit(clientId)
-  if (!rateCheck.allowed) {
-    return json(
-      { error: 'Too many requests', retryAfter: rateCheck.retryAfter },
-      { status: 429, headers: { ...GET_CORS_HEADERS, 'Retry-After': String(rateCheck.retryAfter) } }
-    )
   }
 
   const envioUrl = process.env.ENVIO_GRAPHQL_URL

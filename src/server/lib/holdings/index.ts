@@ -39,7 +39,6 @@ export {
   type HoldingsPnLSimpleHistoryResponse,
   type THoldingsPnLSimpleStatus
 } from './services/pnlSimple'
-export { checkRateLimit } from './services/ratelimit'
 export {
   ensureHoldingsStorageInitialized,
   initializeHoldingsStorage,

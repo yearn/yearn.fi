@@ -21,7 +21,7 @@ Holdings services
   ├─ Envio GraphQL: deposits, withdrawals, transfers
   ├─ Kong: vault metadata and historical PPS
   ├─ yearn-prices or DefiLlama: historical token prices
-  └─ Upstash Redis: optional server-side cache, progress, rate limits, invalidations
+  └─ Upstash Redis: optional server-side cache, progress, invalidations
 ```
 
 Next exposes the holdings endpoints through explicit files under `app/api/holdings/**/route.ts`; implementation modules live under `src/server/holdings/**`.
@@ -66,7 +66,6 @@ The API internally values each day at `23:59:59 UTC`.
 | `pnlSimple.ts` | Local | Protocol-return exposure history without FIFO cost-basis accounting |
 | `cache.ts` | Upstash Redis | Daily totals and lazy vault invalidation |
 | `progress.ts` | Upstash Redis | Short-lived progress records and logs for long history requests |
-| `ratelimit.ts` | Upstash Redis | Simple per-client request windows for public holdings routes |
 
 ## Event Semantics
 
@@ -117,7 +116,7 @@ DefiLlama behavior:
 
 ## Endpoints
 
-Public holdings data routes support CORS, `GET`, and `OPTIONS`. When database caching is enabled, history, breakdown, activity, activity facets, and protocol-return history rate-limit by forwarded IP, falling back to a simple header fingerprint. `/api/holdings/progress` is read-only progress polling and does not run the rate limiter.
+Public holdings data routes support CORS, `GET`, and `OPTIONS`. Request rate limiting is handled by Vercel Firewall project configuration before requests reach the Next.js route handlers.
 
 ### `GET /api/holdings/history`
 
@@ -486,7 +485,7 @@ Response:
 |----------|----------|---------|-------------|
 | `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
 | `ENVIO_PASSWORD` | No | `''` | Envio Hasura admin secret; skipped when empty or `testing` |
-| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | No | `null` | Upstash Redis REST URL for holdings cache, progress, rate limits, and invalidations |
+| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | No | `null` | Upstash Redis REST URL for holdings cache, progress, and invalidations |
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | No | `null` | Upstash Redis REST token for holdings storage |
 | `RPC_URI_FOR_<id>` | No | `NEXT_PUBLIC_RPC_URI_FOR_<id>` | Optional server-only chain RPC URL for activity receipt and transaction enrichment |
 | `HOLDINGS_PRICE_PROVIDER` | No | `auto` | `auto`, `yearn-prices`, or `defillama` |
@@ -529,7 +528,6 @@ Server-side cache is optional. When `UPSTASH_REDIS_REST_URL_PORTFOLIO` or `UPSTA
 
 1. Upstash Redis:
    - `holdings:totals:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
-   - `holdings:rate-limit:<clientHash>`: simple per-client request windows with a 60-second TTL.
    - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
    - `holdings:progress:<progressId>`: authoritative short-lived progress records keyed by caller-supplied progress ID for long history requests across Vercel function instances.
 2. HTTP cache:
@@ -553,11 +551,10 @@ Cache behavior:
 - If any relevant vault was invalidated after the oldest cached row was written, the user's cached totals for that version are cleared and recomputed.
 - Recalculated totals are not cached when any token price batch failed, because partial price data can undercount chart totals.
 
-### Progress and Rate Limits
+### Progress
 
 - Progress writes only when Redis persistence is enabled and the supplied `progressId` matches `[a-zA-Z0-9:_-]{1,160}`.
 - Progress status is `running`, `complete`, or `error`; progress is clamped to `0..100`, logs are capped to the latest `20` entries, and rows expire after `10 minutes`.
-- Redis-backed rate limiting allows `10` requests per minute per client identifier. If Redis access fails, the rate limiter allows the request and logs the failure.
 
 ### Token Prices
 
@@ -570,7 +567,6 @@ No schema migration is required. Redis keys are created lazily:
 | Key | Type | TTL | Purpose |
 |-----|------|-----|---------|
 | `holdings:totals:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
-| `holdings:rate-limit:<clientHash>` | String counter | 60 seconds | Public route rate limiting. |
 | `holdings:vault-invalidated:<chainId>:<vaultAddress>` | String timestamp | None | Lazy invalidation marker for totals cache. |
 | `holdings:progress:<progressId>` | String JSON record | 10 minutes | Progress polling state for long requests. |
 

@@ -117,7 +117,7 @@ Required env for a configured chain:
 | `API_KEY_PORTFOLIO` | holdings | Fallback bearer token for yearn-prices |
 | `DEFILLAMA_API_KEY` | holdings | Enables DefiLlama Pro |
 | `ADMIN_SECRET` | holdings admin | Required for `/api/admin/invalidate-cache` |
-| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | holdings | Upstash Redis REST URL for holdings cache/progress/rate limits |
+| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | holdings | Upstash Redis REST URL for holdings cache/progress |
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | holdings | Upstash Redis REST token for holdings storage |
 | `UPSTASH_REDIS_REST_URL` | optimization | Upstash Redis REST URL for optimization payloads |
 | `UPSTASH_REDIS_REST_TOKEN` | optimization | Upstash Redis REST token for optimization payloads |
