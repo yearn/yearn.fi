@@ -20,6 +20,7 @@ type TxState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'success' | 'er
 interface ApprovalOverlayProps {
   isOpen: boolean
   onClose: () => void
+  onAllowanceUpdated?: (amount: bigint) => void
   tokenSymbol: string
   tokenAddress: `0x${string}`
   tokenDecimals: number
@@ -32,6 +33,7 @@ interface ApprovalOverlayProps {
 export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   isOpen,
   onClose,
+  onAllowanceUpdated,
   tokenSymbol,
   tokenAddress,
   spenderAddress,
@@ -41,6 +43,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 }) => {
   const [txState, setTxState] = useState<TxState>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [submittedAmount, setSubmittedAmount] = useState<bigint | undefined>()
 
   const { address: account, chain, connector } = useAccount()
   const currentChainId = useChainId()
@@ -82,6 +85,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
     if (!isOpen) {
       setTxState('idle')
       setErrorMessage('')
+      setSubmittedAmount(undefined)
       reset()
     }
   }, [isOpen, reset])
@@ -90,9 +94,12 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   useEffect(() => {
     if (receipt.isSuccess && (txState === 'pending' || txState === 'submitted')) {
       setTxState('success')
+      if (submittedAmount !== undefined) {
+        onAllowanceUpdated?.(submittedAmount)
+      }
       reset()
     }
-  }, [receipt.isSuccess, txState, reset])
+  }, [onAllowanceUpdated, receipt.isSuccess, submittedAmount, txState, reset])
 
   useEffect(() => {
     const nextTxState = resolveApprovalOverlayPendingSafeState({
@@ -111,6 +118,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
     if (nextTxState === 'error') {
       setTxState('error')
       setErrorMessage('Transaction failed in Safe. Please review your Safe queue and try again.')
+      setSubmittedAmount(undefined)
       reset()
     }
   }, [
@@ -127,6 +135,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
     if (receipt.isError && (txState === 'pending' || txState === 'submitted')) {
       setTxState('error')
       setErrorMessage('Transaction failed')
+      setSubmittedAmount(undefined)
       reset()
     }
   }, [receipt.isError, txState, reset])
@@ -166,6 +175,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
       }
 
       try {
+        setSubmittedAmount(amount)
         await writeContractAsync({
           address: tokenAddress,
           abi: getApproveAbi(tokenAddress),
@@ -182,8 +192,10 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
         if (isUserRejection) {
           setTxState('idle')
+          setSubmittedAmount(undefined)
         } else {
           setTxState('error')
+          setSubmittedAmount(undefined)
           setErrorMessage('Failed to submit transaction')
         }
       }

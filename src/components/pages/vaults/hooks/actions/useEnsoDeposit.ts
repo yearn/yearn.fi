@@ -17,6 +17,7 @@ interface UseEnsoDepositParams {
   enabled: boolean
   slippage?: number
   routingStrategy?: EnsoRoutingStrategy
+  routeRefreshKey?: number
 }
 
 export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFlowReturn {
@@ -29,7 +30,8 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         params.vaultAddress,
         params.account ?? 'no-account',
         params.slippage ?? 'default',
-        params.routingStrategy ?? 'default-strategy'
+        params.routingStrategy ?? 'default-strategy',
+        params.routeRefreshKey ?? 0
       ].join(':'),
     [
       params.chainId,
@@ -38,7 +40,8 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
       params.vaultAddress,
       params.account,
       params.slippage,
-      params.routingStrategy
+      params.routingStrategy,
+      params.routeRefreshKey
     ]
   )
 

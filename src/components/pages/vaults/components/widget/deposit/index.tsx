@@ -28,6 +28,8 @@ import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
 import { DEPOSIT_COMMON_TOKENS_BY_CHAIN } from '../withdraw/constants'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
+import { ApprovalResetWarning } from './ApprovalResetWarning'
+import { shouldBlockDepositApprovalForAllowanceReset } from './approvalReset'
 import { getDepositApprovalSpender } from './approvalSpender'
 import { DepositDetails } from './DepositDetails'
 import { getStructurallyExcludedDepositTokenAddresses } from './tokenSelectorFiltering'
@@ -194,6 +196,7 @@ export function WidgetDeposit({
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
   const [isYBoldAutoStakeWarningDismissing, setIsYBoldAutoStakeWarningDismissing] = useState(false)
   const [isYBoldAutoStakeWarningExiting, setIsYBoldAutoStakeWarningExiting] = useState(false)
+  const [approvalRouteRefreshKey, setApprovalRouteRefreshKey] = useState(0)
   const yBoldAutoStakeWarningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const yBoldAutoStakeWarningExitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -335,6 +338,7 @@ export function WidgetDeposit({
     vaultDecimals: vault?.decimals ?? 18,
     slippage: ensoQuoteSlippage,
     ensoRoutingStrategy: isWalletSafe ? 'router' : undefined,
+    routeRefreshKey: approvalRouteRefreshKey,
     stakingSource
   })
 
@@ -634,6 +638,15 @@ export function WidgetDeposit({
   })
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
+  const hasSyncedDepositAmount = !depositAmount.isDebouncing && depositAmount.bn === depositAmount.debouncedBn
+  const shouldBlockApprovalForAllowanceReset =
+    hasSyncedDepositAmount &&
+    shouldBlockDepositApprovalForAllowanceReset({
+      depositToken,
+      currentAllowance: activeFlow.periphery.allowance,
+      requiredAmount: depositAmount.debouncedBn,
+      needsApproval
+    })
   const approvalFlowKey = useMemo(
     () =>
       [routeType, depositToken, destinationToken, sourceChainId, chainId, depositAmount.debouncedBn.toString()].join(
@@ -813,6 +826,11 @@ export function WidgetDeposit({
     },
     [approvalFlowKey]
   )
+
+  const handleApprovalOverlayAllowanceUpdated = useCallback(() => {
+    setCompletedApprovalFlowKey(null)
+    setApprovalRouteRefreshKey((current) => current + 1)
+  }, [])
 
   const handleDepositSuccess = useCallback(() => {
     const amountToDeposit = formatUnits(depositAmount.bn, inputToken?.decimals ?? 18)
@@ -1044,6 +1062,13 @@ export function WidgetDeposit({
       hasAmount={depositAmount.bn > 0n}
     />
   )
+  const approvalResetWarning = shouldBlockApprovalForAllowanceReset ? (
+    <ApprovalResetWarning
+      tokenSymbol={inputToken?.symbol}
+      spenderName={approvalSpenderName}
+      onManageApproval={() => setShowApprovalOverlay(true)}
+    />
+  ) : null
   const shouldRenderYBoldAutoStakeWarning = showYBoldAutoStakeWarning || isYBoldAutoStakeWarningDismissing
   const isYBoldAutoStakeToggleOn = isAutoStakingEnabled || isYBoldAutoStakeWarningDismissing
   const yBoldAutoStakeWarning = shouldRenderYBoldAutoStakeWarning ? (
@@ -1096,17 +1121,29 @@ export function WidgetDeposit({
     routeType,
     actionLabelOverride
   )
+  const isCurrentStepWaitingForPrepare = Boolean(
+    currentStep &&
+      currentStep.isEnabled !== false &&
+      !currentStep.batch &&
+      !currentStep.isPermit &&
+      !currentStep.prepare.isSuccess &&
+      !currentStep.prepare.isError
+  )
+  const isDepositButtonBusy = activeFlow.periphery.isLoadingRoute || isCurrentStepWaitingForPrepare
   const isDepositButtonDisabled =
     !!effectiveDepositError ||
     depositAmount.bn === 0n ||
     isLoadingQuote ||
     depositAmount.isDebouncing ||
+    shouldBlockApprovalForAllowanceReset ||
+    isCurrentStepWaitingForPrepare ||
     (effectiveNeedsApproval && !activeFlow.periphery.prepareApproveEnabled) ||
     (!effectiveNeedsApproval && !activeFlow.periphery.prepareDepositEnabled) ||
     (ensoRouteHasSwap && (priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance))
 
   const actionRow = showActionRow ? (
     <div className="flex flex-col gap-3">
+      {approvalResetWarning}
       {priceImpactWarning}
       {contentAboveButton}
       {yBoldAutoStakeWarning}
@@ -1124,8 +1161,8 @@ export function WidgetDeposit({
           ) : (
             <Button
               onClick={() => setShowTransactionOverlay(true)}
-              variant={activeFlow.periphery.isLoadingRoute ? 'busy' : 'filled'}
-              isBusy={activeFlow.periphery.isLoadingRoute}
+              variant={isDepositButtonBusy ? 'busy' : 'filled'}
+              isBusy={isDepositButtonBusy}
               disabled={isDepositButtonDisabled}
               className="w-full"
               classNameOverride="yearn--button--nextgen w-full"
@@ -1292,6 +1329,7 @@ export function WidgetDeposit({
       <ApprovalOverlay
         isOpen={showApprovalOverlay}
         onClose={() => setShowApprovalOverlay(false)}
+        onAllowanceUpdated={handleApprovalOverlayAllowanceUpdated}
         tokenSymbol={inputToken?.symbol || ''}
         tokenAddress={toAddress(depositToken)}
         tokenDecimals={inputToken?.decimals ?? 18}
