@@ -1135,7 +1135,8 @@ export function WidgetDeposit({
       !currentStep.prepare.isSuccess &&
       !currentStep.prepare.isError
   )
-  const isDepositButtonBusy = activeFlow.periphery.isLoadingRoute || isCurrentStepWaitingForPrepare
+  const isDepositButtonBusy =
+    !shouldBlockApprovalForAllowanceReset && (activeFlow.periphery.isLoadingRoute || isCurrentStepWaitingForPrepare)
   const isDepositButtonDisabled =
     !!effectiveDepositError ||
     depositAmount.bn === 0n ||
