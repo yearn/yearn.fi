@@ -46,11 +46,10 @@ import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
 import { getVaultUserHistoryVaults } from '@pages/vaults/utils/vaultUserHistoryVaults'
-import { isYvBtcAddress, YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
+import { YVBTC_CHAIN_ID, YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import {
   getYvUsdInfinifiPointsNote,
   getYvUsdSharePrice,
-  isYvUsdAddress,
   type TYvUsdVariant,
   YVUSD_CHAIN_ID,
   YVUSD_LOCKED_ADDRESS,
@@ -83,6 +82,7 @@ import {
 } from 'react'
 import { formatUnits, isAddressEqual } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
+import { isRouteChainAddressMatch, resolveRouteVaultFromMap } from '@/components/pages/vaults/utils/routeVault'
 import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
 import { getVaultPrimaryLogoSrc } from '@/components/pages/vaults/utils/vaultLogo'
 import { getCategoryDescription, getProductTypeDescription } from '@/components/pages/vaults/utils/vaultTagCopy'
@@ -488,8 +488,25 @@ function Index(): ReactElement | null {
     metrics: yvBtcMetrics,
     isLoading: isLoadingYvBtc
   } = useYvBtcVaults()
-  const isYvUsd = isYvUsdAddress(params.address)
-  const isYvBtc = isYvBtcAddress(params.address)
+  const isYvUsd =
+    isRouteChainAddressMatch({
+      routeChainId: chainId,
+      routeAddress: params.address,
+      expectedChainId: YVUSD_CHAIN_ID,
+      expectedAddress: YVUSD_UNLOCKED_ADDRESS
+    }) ||
+    isRouteChainAddressMatch({
+      routeChainId: chainId,
+      routeAddress: params.address,
+      expectedChainId: YVUSD_CHAIN_ID,
+      expectedAddress: YVUSD_LOCKED_ADDRESS
+    })
+  const isYvBtc = isRouteChainAddressMatch({
+    routeChainId: chainId,
+    routeAddress: params.address,
+    expectedChainId: YVBTC_CHAIN_ID,
+    expectedAddress: YVBTC_UNLOCKED_ADDRESS
+  })
   const isDualVariantVault = isYvUsd || isYvBtc
   const isDesktopViewport = useMediaQuery('(min-width: 768px)', { initializeWithValue: false })
   const shouldRenderDesktopCharts = isDesktopViewport === true
@@ -572,15 +589,12 @@ function Index(): ReactElement | null {
   }, [isLockedYvUsdRoute, router, unlockedYvUsdPath])
 
   const baseVault = useMemo(() => {
-    if (!params.address) return undefined
-    const resolvedAddress = toAddress(params.address)
-    return vaults[resolvedAddress]
-  }, [params.address, vaults])
+    return resolveRouteVaultFromMap(vaults, { routeChainId: chainId, routeAddress: params.address })
+  }, [chainId, params.address, vaults])
 
   const metadataVault = useMemo(() => {
-    if (!params.address) return undefined
-    return allVaults[toAddress(params.address)]
-  }, [allVaults, params.address])
+    return resolveRouteVaultFromMap(allVaults, { routeChainId: chainId, routeAddress: params.address })
+  }, [allVaults, chainId, params.address])
 
   const hasVaultList = Object.keys(vaults).length > 0
 
@@ -599,8 +613,13 @@ function Index(): ReactElement | null {
     if (isDualVariantVault) return false
     if (!baseVault?.address && !params.address) return false
     const resolvedAddress = toAddress(baseVault?.address ?? params.address ?? '0x')
-    return isAddressEqual(resolvedAddress, YBOLD_VAULT_ADDRESS)
-  }, [isDualVariantVault, baseVault?.address, params.address])
+    return isRouteChainAddressMatch({
+      routeChainId: chainId,
+      routeAddress: resolvedAddress,
+      expectedChainId: 1,
+      expectedAddress: YBOLD_VAULT_ADDRESS
+    })
+  }, [isDualVariantVault, baseVault?.address, params.address, chainId])
 
   const yBoldStakingVault = useMemo(() => {
     if (!isYBold) return undefined
