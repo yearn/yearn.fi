@@ -12,6 +12,7 @@ describe('shouldBlockDepositApprovalForAllowanceReset', () => {
         depositToken: USDT,
         currentAllowance: 100n,
         requiredAmount: 200n,
+        availableBalance: 200n,
         needsApproval: true
       })
     ).toBe(true)
@@ -23,6 +24,7 @@ describe('shouldBlockDepositApprovalForAllowanceReset', () => {
         depositToken: USDT,
         currentAllowance: 0n,
         requiredAmount: 200n,
+        availableBalance: 200n,
         needsApproval: true
       })
     ).toBe(false)
@@ -32,6 +34,7 @@ describe('shouldBlockDepositApprovalForAllowanceReset', () => {
         depositToken: USDT,
         currentAllowance: 200n,
         requiredAmount: 200n,
+        availableBalance: 200n,
         needsApproval: false
       })
     ).toBe(false)
@@ -43,6 +46,19 @@ describe('shouldBlockDepositApprovalForAllowanceReset', () => {
         depositToken: DAI,
         currentAllowance: 100n,
         requiredAmount: 200n,
+        availableBalance: 200n,
+        needsApproval: true
+      })
+    ).toBe(false)
+  })
+
+  it('does not block when the user balance is below the input amount', () => {
+    expect(
+      shouldBlockDepositApprovalForAllowanceReset({
+        depositToken: USDT,
+        currentAllowance: 100n,
+        requiredAmount: 200n,
+        availableBalance: 199n,
         needsApproval: true
       })
     ).toBe(false)

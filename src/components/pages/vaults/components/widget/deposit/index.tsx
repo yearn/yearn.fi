@@ -645,6 +645,7 @@ export function WidgetDeposit({
       depositToken,
       currentAllowance: activeFlow.periphery.allowance,
       requiredAmount: depositAmount.debouncedBn,
+      availableBalance: inputToken?.balance.raw ?? 0n,
       needsApproval
     })
   const approvalFlowKey = useMemo(
