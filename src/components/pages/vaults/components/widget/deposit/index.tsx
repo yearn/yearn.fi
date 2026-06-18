@@ -827,10 +827,16 @@ export function WidgetDeposit({
     [approvalFlowKey]
   )
 
-  const handleApprovalOverlayAllowanceUpdated = useCallback(() => {
+  const refetchActiveAllowance = activeFlow.periphery.refetchAllowance
+  const handleApprovalOverlayDone = useCallback(async () => {
+    try {
+      await refetchActiveAllowance?.()
+    } catch (error) {
+      console.warn('[WidgetDeposit] Failed to refetch allowance after approval update', error)
+    }
     setCompletedApprovalFlowKey(null)
     setApprovalRouteRefreshKey((current) => current + 1)
-  }, [])
+  }, [refetchActiveAllowance])
 
   const handleDepositSuccess = useCallback(() => {
     const amountToDeposit = formatUnits(depositAmount.bn, inputToken?.decimals ?? 18)
@@ -1329,7 +1335,7 @@ export function WidgetDeposit({
       <ApprovalOverlay
         isOpen={showApprovalOverlay}
         onClose={() => setShowApprovalOverlay(false)}
-        onAllowanceUpdated={handleApprovalOverlayAllowanceUpdated}
+        onDone={handleApprovalOverlayDone}
         tokenSymbol={inputToken?.symbol || ''}
         tokenAddress={toAddress(depositToken)}
         tokenDecimals={inputToken?.decimals ?? 18}

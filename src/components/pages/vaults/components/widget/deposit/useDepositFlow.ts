@@ -70,6 +70,7 @@ export interface DepositFlowResult {
       }
       gas?: string
       error?: unknown
+      refetchAllowance?: () => Promise<unknown>
     }
   }
 }

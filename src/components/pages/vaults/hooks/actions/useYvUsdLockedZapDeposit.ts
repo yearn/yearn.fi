@@ -16,7 +16,7 @@ interface UseYvUsdLockedZapDepositParams {
 }
 
 export function useYvUsdLockedZapDeposit(params: UseYvUsdLockedZapDepositParams): UseWidgetDepositFlowReturn {
-  const { allowance = 0n } = useTokenAllowance({
+  const { allowance = 0n, refetch: refetchAllowance } = useTokenAllowance({
     account: params.account,
     token: params.depositToken,
     spender: YVUSD_LOCKED_ZAP_ADDRESS,
@@ -72,7 +72,8 @@ export function useYvUsdLockedZapDeposit(params: UseYvUsdLockedZapDepositParams)
       isLoadingRoute: false,
       isCrossChain: false,
       routerAddress: YVUSD_LOCKED_ZAP_ADDRESS,
-      error: undefined
+      error: undefined,
+      refetchAllowance
     }
   }
 }

@@ -20,7 +20,7 @@ type TxState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'success' | 'er
 interface ApprovalOverlayProps {
   isOpen: boolean
   onClose: () => void
-  onAllowanceUpdated?: (amount: bigint) => void
+  onDone?: () => Promise<void> | void
   tokenSymbol: string
   tokenAddress: `0x${string}`
   tokenDecimals: number
@@ -33,7 +33,7 @@ interface ApprovalOverlayProps {
 export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   isOpen,
   onClose,
-  onAllowanceUpdated,
+  onDone,
   tokenSymbol,
   tokenAddress,
   spenderAddress,
@@ -43,7 +43,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 }) => {
   const [txState, setTxState] = useState<TxState>('idle')
   const [errorMessage, setErrorMessage] = useState('')
-  const [submittedAmount, setSubmittedAmount] = useState<bigint | undefined>()
+  const [isDoneRefreshing, setIsDoneRefreshing] = useState(false)
 
   const { address: account, chain, connector } = useAccount()
   const currentChainId = useChainId()
@@ -85,7 +85,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
     if (!isOpen) {
       setTxState('idle')
       setErrorMessage('')
-      setSubmittedAmount(undefined)
+      setIsDoneRefreshing(false)
       reset()
     }
   }, [isOpen, reset])
@@ -94,12 +94,9 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   useEffect(() => {
     if (receipt.isSuccess && (txState === 'pending' || txState === 'submitted')) {
       setTxState('success')
-      if (submittedAmount !== undefined) {
-        onAllowanceUpdated?.(submittedAmount)
-      }
       reset()
     }
-  }, [onAllowanceUpdated, receipt.isSuccess, submittedAmount, txState, reset])
+  }, [receipt.isSuccess, txState, reset])
 
   useEffect(() => {
     const nextTxState = resolveApprovalOverlayPendingSafeState({
@@ -118,7 +115,6 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
     if (nextTxState === 'error') {
       setTxState('error')
       setErrorMessage('Transaction failed in Safe. Please review your Safe queue and try again.')
-      setSubmittedAmount(undefined)
       reset()
     }
   }, [
@@ -135,10 +131,24 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
     if (receipt.isError && (txState === 'pending' || txState === 'submitted')) {
       setTxState('error')
       setErrorMessage('Transaction failed')
-      setSubmittedAmount(undefined)
       reset()
     }
   }, [receipt.isError, txState, reset])
+
+  const handleDone = useCallback(async () => {
+    if (isDoneRefreshing) return
+
+    setIsDoneRefreshing(true)
+    try {
+      await onDone?.()
+      onClose()
+    } catch (error) {
+      console.warn('[ApprovalOverlay] Failed to refresh after approval update', error)
+      onClose()
+    } finally {
+      setIsDoneRefreshing(false)
+    }
+  }, [isDoneRefreshing, onClose, onDone])
 
   const handleApprove = useCallback(
     async (amount: bigint) => {
@@ -175,7 +185,6 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
       }
 
       try {
-        setSubmittedAmount(amount)
         await writeContractAsync({
           address: tokenAddress,
           abi: getApproveAbi(tokenAddress),
@@ -192,10 +201,8 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
         if (isUserRejection) {
           setTxState('idle')
-          setSubmittedAmount(undefined)
         } else {
           setTxState('error')
-          setSubmittedAmount(undefined)
           setErrorMessage('Failed to submit transaction')
         }
       }
@@ -287,8 +294,10 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
                 <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Approval updated</h3>
                 <p className="text-sm text-text-secondary mb-6">Your token allowance has been changed</p>
                 <Button
-                  onClick={onClose}
-                  variant="filled"
+                  onClick={handleDone}
+                  variant={isDoneRefreshing ? 'busy' : 'filled'}
+                  isBusy={isDoneRefreshing}
+                  disabled={isDoneRefreshing}
                   className="w-full max-w-xs"
                   classNameOverride="yearn--button--nextgen w-full"
                 >
@@ -306,8 +315,10 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 Execution may happen separately after the required confirmations are collected.`}
                 </p>
                 <Button
-                  onClick={onClose}
-                  variant="filled"
+                  onClick={handleDone}
+                  variant={isDoneRefreshing ? 'busy' : 'filled'}
+                  isBusy={isDoneRefreshing}
+                  disabled={isDoneRefreshing}
                   className="w-full max-w-xs"
                   classNameOverride="yearn--button--nextgen w-full"
                 >
