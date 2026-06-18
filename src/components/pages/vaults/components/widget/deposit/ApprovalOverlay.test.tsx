@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  resolveApprovalOverlayActionDisabledState,
   resolveApprovalOverlayConnectedChainId,
   resolveApprovalOverlayPendingSafeState
 } from './ApprovalOverlay.helpers'
@@ -110,5 +111,32 @@ describe('resolveApprovalOverlayPendingSafeState', () => {
         callsStatus: 'failure'
       })
     ).toBe('error')
+  })
+})
+
+describe('resolveApprovalOverlayActionDisabledState', () => {
+  it('blocks approval actions when there is an approval warning', () => {
+    expect(
+      resolveApprovalOverlayActionDisabledState({
+        account: '0x0000000000000000000000000000000000000001',
+        currentAllowance: '1.00',
+        approvalWarning: 'This approval address is not a known Enso router address.'
+      })
+    ).toEqual({
+      isRevokeDisabled: true,
+      isUnlimitedDisabled: true
+    })
+  })
+
+  it('allows approval actions when there is no warning and the wallet is connected', () => {
+    expect(
+      resolveApprovalOverlayActionDisabledState({
+        account: '0x0000000000000000000000000000000000000001',
+        currentAllowance: '1.00'
+      })
+    ).toEqual({
+      isRevokeDisabled: false,
+      isUnlimitedDisabled: false
+    })
   })
 })

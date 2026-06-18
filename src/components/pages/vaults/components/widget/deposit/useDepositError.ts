@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import type { Address } from 'viem'
+import { UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE } from '@pages/vaults/utils/ensoRouters'
 import type { DepositRouteType } from './types'
 
 interface UseDepositErrorProps {
@@ -51,6 +52,10 @@ export const useDepositError = ({
     }
 
     if (routeType === 'ENSO' && flowError && !isLoadingRoute && debouncedAmount > 0n && !isDebouncing) {
+      if (flowError === UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE) {
+        return UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE
+      }
+
       return 'Unable to find route'
     }
 

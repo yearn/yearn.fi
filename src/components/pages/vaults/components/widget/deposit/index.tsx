@@ -648,11 +648,16 @@ export function WidgetDeposit({
       : null
   const effectiveDepositError = depositError || unpricedEnsoDepositError
 
-  const { spenderAddress: approvalSpenderAddress, spenderName: approvalSpenderName } = getDepositApprovalSpender({
+  const {
+    spenderAddress: approvalSpenderAddress,
+    spenderName: approvalSpenderName,
+    approvalWarning
+  } = getDepositApprovalSpender({
     routeType,
     destinationToken,
+    chainId: sourceChainId,
     stakingAddress: stakingDepositAddress,
-    routerAddress: activeFlow.periphery.routerAddress,
+    routerAddress: activeFlow.periphery.approvalSpenderAddress || activeFlow.periphery.routerAddress,
     vaultSymbol,
     stakingTokenSymbol: stakingToken?.symbol
   })
@@ -683,7 +688,7 @@ export function WidgetDeposit({
       vaultAddress,
       stakingAddress: stakingDepositAddress,
       stakingSource,
-      approvalSpenderAddress,
+      approvalSpenderAddress: approvalWarning ? undefined : approvalSpenderAddress,
       routerAddress: activeFlow.periphery.routerAddress ? toAddress(activeFlow.periphery.routerAddress) : undefined,
       ensoTx: activeFlow.periphery.tx
         ? {
@@ -699,6 +704,7 @@ export function WidgetDeposit({
     activeFlow.periphery.routerAddress,
     activeFlow.periphery.tx,
     approvalSpenderAddress,
+    approvalWarning,
     chainId,
     depositAmount.debouncedBn,
     depositToken,
@@ -1053,7 +1059,7 @@ export function WidgetDeposit({
       allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
       approvalSpenderName={approvalSpenderName}
       onAllowanceClick={onAllowanceClick}
-      onShowApprovalOverlay={!isNativeToken ? () => setShowApprovalOverlay(true) : undefined}
+      onShowApprovalOverlay={!isNativeToken && approvalSpenderAddress ? () => setShowApprovalOverlay(true) : undefined}
     />
   )
 
@@ -1313,17 +1319,20 @@ export function WidgetDeposit({
         }
       />
 
-      <ApprovalOverlay
-        isOpen={showApprovalOverlay}
-        onClose={() => setShowApprovalOverlay(false)}
-        tokenSymbol={inputToken?.symbol || ''}
-        tokenAddress={toAddress(depositToken)}
-        tokenDecimals={inputToken?.decimals ?? 18}
-        spenderAddress={approvalSpenderAddress || destinationToken}
-        spenderName={approvalSpenderName || 'Vault'}
-        chainId={sourceChainId}
-        currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, inputToken?.decimals ?? 18) || '0'}
-      />
+      {approvalSpenderAddress ? (
+        <ApprovalOverlay
+          isOpen={showApprovalOverlay}
+          onClose={() => setShowApprovalOverlay(false)}
+          tokenSymbol={inputToken?.symbol || ''}
+          tokenAddress={toAddress(depositToken)}
+          tokenDecimals={inputToken?.decimals ?? 18}
+          spenderAddress={approvalSpenderAddress}
+          spenderName={approvalSpenderName || 'Vault'}
+          chainId={sourceChainId}
+          currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, inputToken?.decimals ?? 18) || '0'}
+          approvalWarning={approvalWarning}
+        />
+      ) : null}
 
       {showTokenSelector ? (
         <TokenSelectorOverlay

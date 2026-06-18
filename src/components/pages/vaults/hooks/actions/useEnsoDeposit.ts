@@ -102,6 +102,8 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         isCrossChain: ensoFlow.periphery.isCrossChain,
         routeHasSwap: ensoFlow.periphery.routeHasSwap,
         routerAddress: ensoFlow.periphery.routerAddress,
+        approvalSpenderAddress: ensoFlow.periphery.approvalSpenderAddress,
+        approvalWarning: ensoFlow.periphery.approvalWarning,
         error: ensoFlow.periphery.error?.message,
         tx: ensoFlow.periphery.route?.tx,
         gas: ensoFlow.periphery.route?.gas
