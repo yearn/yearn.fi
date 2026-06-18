@@ -67,6 +67,7 @@ describe('holdings activity route', () => {
       endTimestamp: null
     })
     expect(response.status).toBe(200)
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store, max-age=0, must-revalidate')
     await expect(response.json()).resolves.toEqual({
       address: TEST_ADDRESS,
       version: 'all',

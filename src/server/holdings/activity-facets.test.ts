@@ -43,6 +43,7 @@ describe('holdings activity facets route', () => {
 
     expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 250, undefined, 0)
     expect(response.status).toBe(200)
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store, max-age=0, must-revalidate')
     await expect(response.json()).resolves.toEqual({
       address: TEST_ADDRESS.toLowerCase(),
       version: 'all',

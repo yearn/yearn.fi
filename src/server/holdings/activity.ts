@@ -1,4 +1,4 @@
-import { GET_CORS_HEADERS, json, noContent, queryValue } from '../http'
+import { GET_CORS_HEADERS, WALLET_SCOPED_CACHE_CONTROL, json, noContent, queryValue } from '../http'
 import type { HoldingsActivityTypeFilter, VaultVersion } from '../lib/holdings'
 import { ensureHoldingsStorageInitialized } from '../lib/holdings'
 
@@ -121,7 +121,7 @@ export async function GET(request: Request): Promise<Response> {
     return json(activity, {
       headers: {
         ...GET_CORS_HEADERS,
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+        'Cache-Control': WALLET_SCOPED_CACHE_CONTROL
       }
     })
   } catch (error) {

@@ -6,6 +6,8 @@ export const GET_CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type'
 } as const
 
+export const WALLET_SCOPED_CACHE_CONTROL = 'private, no-store, max-age=0, must-revalidate'
+
 export const POST_CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',

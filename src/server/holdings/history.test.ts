@@ -42,6 +42,7 @@ describe('holdings history route', () => {
     )
 
     expect(response.status).toBe(200)
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store, max-age=0, must-revalidate')
     await expect(response.json()).resolves.toEqual({
       address: TEST_WALLET_ADDRESS,
       version: 'all',

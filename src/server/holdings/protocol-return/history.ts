@@ -1,4 +1,4 @@
-import { GET_CORS_HEADERS, json, noContent, queryValue } from '../../http'
+import { GET_CORS_HEADERS, WALLET_SCOPED_CACHE_CONTROL, json, noContent, queryValue } from '../../http'
 import type {
   HoldingsEventFetchType,
   HoldingsEventPaginationMode,
@@ -221,7 +221,7 @@ export async function GET(request: Request): Promise<Response> {
     return json(history, {
       headers: {
         ...GET_CORS_HEADERS,
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+        'Cache-Control': WALLET_SCOPED_CACHE_CONTROL
       }
     })
   } catch (error) {
