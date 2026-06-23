@@ -95,6 +95,14 @@ function buildVaultDescription({
   return `Earn yield with ${name}, a Yearn ${assetCopy}vault on ${chainName}.${suffix}`
 }
 
+function buildVaultCanonicalUrl(chainID: string, address: string): string {
+  return `https://yearn.fi/vaults/${chainID}/${toAddress(address)}`
+}
+
+function buildVaultMarkdownUrl(chainID: string, address: string): string {
+  return `https://yearn.fi/api/vault/markdown?chainId=${chainID}&address=${toAddress(address)}`
+}
+
 function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVaultMetadataInput): Metadata {
   const hasValidParams = isValidVaultMetadataParams(chainID, address)
   const canonicalPath = hasValidParams ? `/vaults/${chainID}/${toAddress(address)}` : '/vaults'
@@ -143,37 +151,41 @@ function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVaultMetad
   }
 }
 
-function buildVaultStructuredDataFromInput({
+export function buildVaultStructuredDataFromInput({
   chainID,
   address,
   snapshot
 }: TVaultMetadataInput): Record<string, unknown> | null {
-  if (!snapshot || !isValidVaultMetadataParams(chainID, address)) {
+  if (!isValidVaultMetadataParams(chainID, address)) {
     return null
   }
 
   const chainIdNumber = Number(chainID)
   const chainName = getNetwork(chainIdNumber).name
-  const name = pickFirstText(snapshot.meta?.displayName, snapshot.meta?.name, snapshot.name, genericVaultTitle)
-  const symbol = pickFirstText(snapshot.meta?.displaySymbol, snapshot.symbol)
-  const assetSymbol = pickFirstText(snapshot.meta?.token?.symbol, snapshot.asset?.symbol)
+  const name = pickFirstText(snapshot?.meta?.displayName, snapshot?.meta?.name, snapshot?.name, genericVaultTitle)
+  const symbol = pickFirstText(snapshot?.meta?.displaySymbol, snapshot?.symbol)
+  const assetSymbol = pickFirstText(snapshot?.meta?.token?.symbol, snapshot?.asset?.symbol)
   const apy = pickFirstNumber(
-    snapshot.apy?.net,
-    snapshot.performance?.estimated?.apy,
-    snapshot.performance?.estimated?.apr,
-    snapshot.performance?.oracle?.netAPY,
-    snapshot.performance?.oracle?.apy,
-    snapshot.performance?.oracle?.netAPR,
-    snapshot.performance?.oracle?.apr
+    snapshot?.apy?.net,
+    snapshot?.performance?.estimated?.apy,
+    snapshot?.performance?.estimated?.apr,
+    snapshot?.performance?.oracle?.netAPY,
+    snapshot?.performance?.oracle?.apy,
+    snapshot?.performance?.oracle?.netAPR,
+    snapshot?.performance?.oracle?.apr
   )
   const title = symbol ? `${name} (${symbol})` : name
-  const description = buildVaultDescription({
-    assetSymbol,
-    chainName,
-    name,
-    apy,
-    tvl: pickFirstNumber(snapshot.tvl?.close)
-  })
+  const description = snapshot
+    ? buildVaultDescription({
+        assetSymbol,
+        chainName,
+        name,
+        apy,
+        tvl: pickFirstNumber(snapshot.tvl?.close)
+      })
+    : genericVaultDescription
+  const snapshotUrl = buildVaultSnapshotEndpoint(chainID, address)
+  const markdownUrl = buildVaultMarkdownUrl(chainID, address)
   const annualPercentageRate =
     apy === null
       ? undefined
@@ -188,7 +200,8 @@ function buildVaultStructuredDataFromInput({
     '@type': 'FinancialProduct',
     name: title,
     description,
-    url: `https://yearn.fi/vaults/${chainID}/${toAddress(address)}`,
+    url: buildVaultCanonicalUrl(chainID, address),
+    sameAs: snapshotUrl ? [snapshotUrl, markdownUrl] : [markdownUrl],
     ...(annualPercentageRate ? { annualPercentageRate } : {}),
     provider: {
       '@type': 'Organization',
