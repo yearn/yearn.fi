@@ -3,21 +3,11 @@ import { HydrationBoundary } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import PublicApp from '@/PublicApp'
 import { getLandingPageDehydratedState } from '@/server/ssr/publicDataHydration'
-import { landingMetadata } from './metadata'
+import { landingMetadata, yearnOrganizationJsonLd } from './metadata'
 import HomePageClient from './page-client'
 
 export const metadata = landingMetadata
 export const revalidate = 21600
-
-const organizationJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'Yearn Finance',
-  alternateName: 'Yearn',
-  url: 'https://yearn.fi',
-  logo: 'https://yearn.fi/favicons/android-icon-192x192.png',
-  sameAs: ['https://github.com/yearn', 'https://x.com/yearnfi', 'https://docs.yearn.fi']
-}
 
 const websiteJsonLd = {
   '@context': 'https://schema.org',
@@ -75,7 +65,7 @@ export default async function Page(): Promise<ReactElement> {
 
   return (
     <>
-      <JsonLd schema={organizationJsonLd} />
+      <JsonLd schema={yearnOrganizationJsonLd} />
       <JsonLd schema={websiteJsonLd} />
       <JsonLd schema={faqJsonLd} />
       <PublicApp>

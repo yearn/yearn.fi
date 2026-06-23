@@ -41,6 +41,18 @@ type TVaultMetadataInput = {
 const genericVaultTitle = 'Yearn Vault'
 const genericVaultDescription = "Earn yield on your crypto with Yearn's automated vault strategies"
 
+export const yearnOrganizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  '@id': 'https://yearn.fi/#organization',
+  name: 'Yearn Finance',
+  alternateName: 'Yearn',
+  url: 'https://yearn.fi',
+  logo: 'https://yearn.fi/favicons/android-icon-192x192.png',
+  description: 'DeFi yield aggregator — automatically maximize returns on deposited digital assets.',
+  sameAs: ['https://github.com/yearn', 'https://x.com/yearnfi', 'https://docs.yearn.fi', 'https://discord.gg/yearn/']
+}
+
 function isValidVaultMetadataParams(chainID: string, address: string): boolean {
   const isValidChainID = /^\d+$/.test(chainID)
   const isValidAddress = isAddress(address)
@@ -103,11 +115,38 @@ function buildVaultMarkdownUrl(chainID: string, address: string): string {
   return `https://yearn.fi/api/vault/markdown?chainId=${chainID}&address=${toAddress(address)}`
 }
 
-function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVaultMetadataInput): Metadata {
-  const hasValidParams = isValidVaultMetadataParams(chainID, address)
-  const canonicalPath = hasValidParams ? `/vaults/${chainID}/${toAddress(address)}` : '/vaults'
-  const ogImage = hasValidParams
-    ? `https://og.yearn.fi/api/og/yearn/vault/${chainID}/${toAddress(address)}`
+function buildVaultDiscoveryUrls(
+  chainID: string,
+  address: string
+): {
+  canonicalUrl: string
+  markdownUrl: string
+  normalizedAddress: string
+  snapshotUrl: string
+} | null {
+  if (!isValidVaultMetadataParams(chainID, address)) {
+    return null
+  }
+
+  const normalizedAddress = toAddress(address)
+  const snapshotUrl = buildVaultSnapshotEndpoint(chainID, normalizedAddress)
+  if (!snapshotUrl) {
+    return null
+  }
+
+  return {
+    canonicalUrl: buildVaultCanonicalUrl(chainID, normalizedAddress),
+    markdownUrl: buildVaultMarkdownUrl(chainID, normalizedAddress),
+    normalizedAddress,
+    snapshotUrl
+  }
+}
+
+export function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVaultMetadataInput): Metadata {
+  const discoveryUrls = buildVaultDiscoveryUrls(chainID, address)
+  const canonicalPath = discoveryUrls ? `/vaults/${chainID}/${discoveryUrls.normalizedAddress}` : '/vaults'
+  const ogImage = discoveryUrls
+    ? `https://og.yearn.fi/api/og/yearn/vault/${chainID}/${discoveryUrls.normalizedAddress}`
     : vaultsManifest.og
   const chainIdNumber = Number(chainID)
   const chainName = Number.isInteger(chainIdNumber) ? getNetwork(chainIdNumber).name : 'Yearn'
@@ -133,7 +172,15 @@ function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVaultMetad
     title,
     description,
     alternates: {
-      canonical: canonicalPath
+      canonical: canonicalPath,
+      ...(discoveryUrls
+        ? {
+            types: {
+              'text/markdown': [{ title: 'Vault markdown', url: discoveryUrls.markdownUrl }],
+              'application/json': [{ title: 'Canonical Kong vault snapshot', url: discoveryUrls.snapshotUrl }]
+            }
+          }
+        : {})
     },
     openGraph: {
       title,
@@ -147,7 +194,17 @@ function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVaultMetad
       title,
       description,
       images: ogImage ? [ogImage] : undefined
-    }
+    },
+    ...(discoveryUrls
+      ? {
+          other: {
+            'yearn:chainId': chainID,
+            'yearn:vaultAddress': discoveryUrls.normalizedAddress,
+            'yearn:markdown': discoveryUrls.markdownUrl,
+            'yearn:canonicalData': discoveryUrls.snapshotUrl
+          }
+        }
+      : {})
   }
 }
 
@@ -157,6 +214,11 @@ export function buildVaultStructuredDataFromInput({
   snapshot
 }: TVaultMetadataInput): Record<string, unknown> | null {
   if (!isValidVaultMetadataParams(chainID, address)) {
+    return null
+  }
+
+  const discoveryUrls = buildVaultDiscoveryUrls(chainID, address)
+  if (!discoveryUrls) {
     return null
   }
 
@@ -184,8 +246,6 @@ export function buildVaultStructuredDataFromInput({
         tvl: pickFirstNumber(snapshot.tvl?.close)
       })
     : genericVaultDescription
-  const snapshotUrl = buildVaultSnapshotEndpoint(chainID, address)
-  const markdownUrl = buildVaultMarkdownUrl(chainID, address)
   const annualPercentageRate =
     apy === null
       ? undefined
@@ -200,13 +260,14 @@ export function buildVaultStructuredDataFromInput({
     '@type': 'FinancialProduct',
     name: title,
     description,
-    url: buildVaultCanonicalUrl(chainID, address),
-    sameAs: snapshotUrl ? [snapshotUrl, markdownUrl] : [markdownUrl],
+    url: discoveryUrls.canonicalUrl,
+    sameAs: [discoveryUrls.snapshotUrl, discoveryUrls.markdownUrl],
     ...(annualPercentageRate ? { annualPercentageRate } : {}),
     provider: {
+      '@id': yearnOrganizationJsonLd['@id'],
       '@type': 'Organization',
-      name: 'Yearn',
-      url: 'https://yearn.fi'
+      name: yearnOrganizationJsonLd.name,
+      url: yearnOrganizationJsonLd.url
     },
     offers: {
       '@type': 'Offer',

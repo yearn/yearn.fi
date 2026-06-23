@@ -3,7 +3,7 @@ import { HydrationBoundary } from '@tanstack/react-query'
 import type { Metadata } from 'next'
 import type { ReactElement } from 'react'
 import { getVaultDetailPageDehydratedState } from '@/server/ssr/publicDataHydration'
-import { buildVaultMetadata, buildVaultStructuredData } from '../../../metadata'
+import { buildVaultMetadata, buildVaultStructuredData, yearnOrganizationJsonLd } from '../../../metadata'
 import V3VaultsDetailPageClient from './page-client'
 
 export const revalidate = 21600
@@ -27,7 +27,12 @@ export default async function Page({ params }: TVaultPageProps): Promise<ReactEl
 
   return (
     <>
-      {structuredData ? <JsonLd schema={structuredData} /> : null}
+      {structuredData ? (
+        <>
+          <JsonLd schema={yearnOrganizationJsonLd} />
+          <JsonLd schema={structuredData} />
+        </>
+      ) : null}
       <HydrationBoundary state={dehydratedState}>
         <V3VaultsDetailPageClient />
       </HydrationBoundary>
