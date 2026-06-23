@@ -6,23 +6,14 @@ type TApprovalResetWarningProps = {
   onManageApproval: () => void
 }
 
-export function ApprovalResetWarning({
-  tokenSymbol,
-  spenderName,
-  onManageApproval
-}: TApprovalResetWarningProps): ReactElement {
+export function ApprovalResetWarning({ tokenSymbol, onManageApproval }: TApprovalResetWarningProps): ReactElement {
   const resolvedTokenSymbol = tokenSymbol || 'This token'
-  const resolvedSpenderName = spenderName || 'spender'
 
   return (
     <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm leading-5 text-red-500">
-          <span className="font-semibold">{resolvedTokenSymbol} approval needs revoke.</span>
-          <span className="block">
-            Unlike most tokens, {resolvedTokenSymbol} cannot change a non-zero approval directly. Revoke sets the{' '}
-            {resolvedSpenderName} allowance to zero; then approve again.
-          </span>
+          <span className="font-semibold">{resolvedTokenSymbol} approval must be revoked.</span>
         </p>
         <button
           type="button"
