@@ -18,6 +18,7 @@ import type { TAddress } from '@shared/types/address'
 import type { TNormalizedBN } from '@shared/types/mixed'
 import { isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
+import { isDisabledVeyfiGaugePair } from '@shared/utils/veyfiGauges'
 
 type TVaultLike = TKongVaultInput
 
@@ -161,7 +162,13 @@ export function getVaultHoldingsUsdValue(
   const stakingShares = Number(stakingShareBalance.normalized || 0)
   const stakingConversionKey = `${chainID}/${toAddress(staking.address)}`
   const convertedStakingAssets = stakingConvertedAssets[stakingConversionKey]
-  const stakingVault = canUseStaking ? allVaults[toAddress(staking.address)] : undefined
+  const stakingAddress = toAddress(staking.address)
+  const shouldUseParentVaultForStaking = canUseStaking && isDisabledVeyfiGaugePair(toAddress(address), stakingAddress)
+  const stakingVault = canUseStaking && !shouldUseParentVaultForStaking ? allVaults[stakingAddress] : undefined
+  const directVaultSharePrice =
+    Number.isFinite(vaultDirectValue) && vaultDirectValue > 0 && Number.isFinite(vaultShares) && vaultShares > 0
+      ? vaultDirectValue / vaultShares
+      : 0
 
   const resolvePositionValue = (positionVault: TVaultLike, directValue: number, shares: number): number => {
     if (Number.isFinite(directValue) && directValue > 0) {
@@ -195,6 +202,17 @@ export function getVaultHoldingsUsdValue(
     return 0
   }
 
+  const resolveParentStakingValue = (shares: number): number => {
+    const parentValue = resolvePositionValue(vault, 0, shares)
+    if (parentValue > 0) {
+      return parentValue
+    }
+    if (Number.isFinite(shares) && shares > 0 && directVaultSharePrice > 0) {
+      return shares * directVaultSharePrice
+    }
+    return 0
+  }
+
   const resolveStakingValue = (): number => {
     if (!canUseStaking) {
       return 0
@@ -204,16 +222,19 @@ export function getVaultHoldingsUsdValue(
       return stakingDirectValue
     }
 
-    if (stakingVault) {
-      return resolvePositionValue(stakingVault, 0, stakingShares)
-    }
-
     if (convertedStakingAssets !== undefined && convertedStakingAssets > 0n) {
       const convertedShares = toNormalizedBN(convertedStakingAssets, getVaultDecimals(vault)).normalized
-      return resolvePositionValue(vault, 0, convertedShares)
+      return resolveParentStakingValue(convertedShares)
     }
 
-    return resolvePositionValue(vault, 0, stakingShares)
+    if (stakingVault) {
+      const stakingVaultValue = resolvePositionValue(stakingVault, 0, stakingShares)
+      if (stakingVaultValue > 0) {
+        return stakingVaultValue
+      }
+    }
+
+    return resolveParentStakingValue(stakingShares)
   }
 
   const totalValue = resolvePositionValue(vault, vaultDirectValue, vaultShares) + resolveStakingValue()

@@ -5,6 +5,7 @@ import { useWeb3 } from '../contexts/useWeb3'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'
 import { isZeroAddress } from '../utils/tools.is'
+import { isDisabledVeyfiGaugePair } from '../utils/veyfiGauges'
 import { shouldUseDiscoveryFallbackToken } from './balanceDiscoveryFallback'
 import {
   hasPositiveCachedBalance,
@@ -30,20 +31,71 @@ function mergeChainStatusMaps(...maps: TNDict<boolean>[]): TNDict<boolean> {
   return merged
 }
 
-function mergeBalanceSources(...sources: TChainTokens[]): TChainTokens {
+function mergeBalanceToken(existing: TToken | undefined, incoming: TToken): TToken {
+  if (!existing) {
+    return incoming
+  }
+
+  const incomingValue = Number.isFinite(incoming.value) ? incoming.value : 0
+  const existingValue = Number.isFinite(existing.value) ? existing.value : 0
+  const fallbackValue = incoming.balance.raw > 0n ? existingValue : 0
+
+  return {
+    ...existing,
+    ...incoming,
+    name: incoming.name || existing.name,
+    symbol: incoming.symbol || existing.symbol,
+    decimals: incoming.decimals || existing.decimals,
+    logoURI: incoming.logoURI || existing.logoURI,
+    value: incomingValue > 0 ? incomingValue : fallbackValue
+  }
+}
+
+export function mergeBalanceSources(...sources: TChainTokens[]): TChainTokens {
   const merged: TChainTokens = {}
 
   sources.forEach((source) => {
     Object.entries(source).forEach(([chainIdStr, tokens]) => {
       const chainId = Number(chainIdStr)
-      merged[chainId] = {
-        ...(merged[chainId] || {}),
-        ...tokens
-      }
+      const chainTokens = merged[chainId] || {}
+      merged[chainId] = Object.entries(tokens).reduce<TDict<TToken>>((acc, [address, token]) => {
+        acc[address] = mergeBalanceToken(acc[address], token)
+        return acc
+      }, chainTokens)
     })
   })
 
   return merged
+}
+
+function isDisabledVeyfiGaugeBalanceToken(token: TUseBalancesTokens): boolean {
+  const vaultAddress = token.pairedVaultAddress || (token.isVaultToken ? token.address : undefined)
+  const stakingAddress = token.pairedStakingAddress || (token.isStakingToken ? token.address : undefined)
+
+  return Boolean(
+    vaultAddress && stakingAddress && isDisabledVeyfiGaugePair(toAddress(vaultAddress), toAddress(stakingAddress))
+  )
+}
+
+export function getRequiredMulticallTokens(params: {
+  multicallTokens: TUseBalancesTokens[]
+  ensoBalances: TChainTokens
+  isEnsoPending: boolean
+  hasEnsoError: boolean
+}): TUseBalancesTokens[] {
+  const { multicallTokens, ensoBalances, isEnsoPending, hasEnsoError } = params
+  return multicallTokens.filter((token) => {
+    if (!isDisabledVeyfiGaugeBalanceToken(token)) {
+      return true
+    }
+    if (isEnsoPending) {
+      return false
+    }
+    if (hasEnsoError) {
+      return true
+    }
+    return !ensoBalances[token.chainID]?.[toAddress(token.address)]
+  })
 }
 
 /*******************************************************************************
@@ -67,9 +119,14 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
   const tokens = useMemo(() => (userAddress ? props?.tokens || [] : []), [props?.tokens, userAddress])
 
   // Split tokens into Enso-supported and multicall-required groups
-  const { ensoTokens, multicallTokens: requiredMulticallTokens } = useMemo(() => {
+  const { ensoTokens, multicallTokens } = useMemo(() => {
     return partitionTokensByBalanceSource(tokens, ensoUnsupportedNetworks)
   }, [ensoUnsupportedNetworks, tokens])
+  const hasDisabledVeyfiGaugeMulticallTokens = useMemo(
+    () => multicallTokens.some(isDisabledVeyfiGaugeBalanceToken),
+    [multicallTokens]
+  )
+  const isEnsoEnabled = ensoTokens.length > 0 || hasDisabledVeyfiGaugeMulticallTokens
 
   // Fetch from Enso for supported chains
   const {
@@ -83,8 +140,17 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     chainSuccessStatus: ensoChainSuccess,
     chainErrorStatus: ensoChainError
   } = useEnsoBalances(userAddress, {
-    enabled: ensoTokens.length > 0
+    enabled: isEnsoEnabled
   })
+
+  const requiredMulticallTokens = useMemo(() => {
+    return getRequiredMulticallTokens({
+      multicallTokens,
+      ensoBalances,
+      isEnsoPending: !ensoError && !ensoSuccess,
+      hasEnsoError: ensoError
+    })
+  }, [ensoBalances, ensoError, ensoSuccess, multicallTokens])
 
   const discoveryFallbackTokens = useMemo((): TUseBalancesTokens[] => {
     if (ensoTokens.length === 0) {
@@ -148,11 +214,10 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
 
   // Combine loading/error/success states
   const isLoading = useMemo(() => {
-    const ensoRelevant = ensoTokens.length > 0
     const requiredMulticallRelevant = requiredMulticallTokens.length > 0
     const discoveryRelevant = discoveryFallbackTokens.length > 0
     return (
-      (ensoRelevant && ensoLoading) ||
+      (isEnsoEnabled && ensoLoading) ||
       (requiredMulticallRelevant && requiredMulticallLoading) ||
       (discoveryRelevant && discoveryFallbackLoading)
     )
@@ -160,17 +225,16 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     discoveryFallbackLoading,
     discoveryFallbackTokens.length,
     ensoLoading,
-    ensoTokens.length,
+    isEnsoEnabled,
     requiredMulticallLoading,
     requiredMulticallTokens.length
   ])
 
   const isError = useMemo(() => {
-    const ensoRelevant = ensoTokens.length > 0
     const requiredMulticallRelevant = requiredMulticallTokens.length > 0
     const discoveryRelevant = discoveryFallbackTokens.length > 0
     return (
-      (ensoRelevant && ensoError) ||
+      (isEnsoEnabled && ensoError) ||
       (requiredMulticallRelevant && requiredMulticallError) ||
       (discoveryRelevant && discoveryFallbackError)
     )
@@ -178,16 +242,15 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     discoveryFallbackError,
     discoveryFallbackTokens.length,
     ensoError,
-    ensoTokens.length,
+    isEnsoEnabled,
     requiredMulticallError,
     requiredMulticallTokens.length
   ])
 
   const isSuccess = useMemo(() => {
-    const ensoRelevant = ensoTokens.length > 0
     const requiredMulticallRelevant = requiredMulticallTokens.length > 0
     const discoveryRelevant = discoveryFallbackTokens.length > 0
-    const ensoOk = !ensoRelevant || ensoSuccess
+    const ensoOk = !isEnsoEnabled || ensoSuccess
     const requiredMulticallOk = !requiredMulticallRelevant || requiredMulticallSuccess
     const discoveryOk = !discoveryRelevant || discoveryFallbackSuccess
     return ensoOk && requiredMulticallOk && discoveryOk
@@ -195,7 +258,7 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
     discoveryFallbackSuccess,
     discoveryFallbackTokens.length,
     ensoSuccess,
-    ensoTokens.length,
+    isEnsoEnabled,
     requiredMulticallSuccess,
     requiredMulticallTokens.length
   ])
@@ -216,14 +279,14 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
   }, [discoveryFallbackChainError, ensoChainError, requiredMulticallChainError])
 
   const refetch = useCallback(() => {
-    if (ensoTokens.length > 0) ensoRefetch()
+    if (isEnsoEnabled) ensoRefetch()
     if (requiredMulticallTokens.length > 0) requiredMulticallRefetch()
     if (discoveryFallbackTokens.length > 0) discoveryFallbackRefetch()
   }, [
     discoveryFallbackRefetch,
     discoveryFallbackTokens.length,
     ensoRefetch,
-    ensoTokens.length,
+    isEnsoEnabled,
     requiredMulticallRefetch,
     requiredMulticallTokens.length
   ])

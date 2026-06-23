@@ -7,6 +7,9 @@ import { useYearnTokens } from './useYearn.helper'
 const VAULT_ADDRESS = '0x0000000000000000000000000000000000000002' as const
 const ASSET_ADDRESS = '0x0000000000000000000000000000000000000001' as const
 const STAKING_ADDRESS = '0x0000000000000000000000000000000000000003' as const
+const USDC_VAULT_ADDRESS = '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204' as const
+const USDC_STAKING_ADDRESS = '0x622fA41799406B120f9a40dA843D358b7b2CFEE3' as const
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const
 
 const { mockUseTokenList } = vi.hoisted(() => ({
   mockUseTokenList: vi.fn()
@@ -82,14 +85,14 @@ function tokenListToken(overrides: Partial<TToken> = {}): TToken {
   }
 }
 
-function renderHookResult(): ReturnType<typeof useYearnTokens> {
+function renderHookResult(
+  vaults: Record<string, TKongVault> = { [VAULT_ADDRESS]: vault }
+): ReturnType<typeof useYearnTokens> {
   let result: ReturnType<typeof useYearnTokens> = []
 
   const HookResult = () => {
     result = useYearnTokens({
-      vaults: {
-        [VAULT_ADDRESS]: vault
-      },
+      vaults,
       isLoadingVaultList: false
     })
     return null
@@ -127,5 +130,45 @@ describe('useYearnTokens', () => {
 
     expect(stakingToken?.symbol).toBe('yG-yvUSDC-1')
     expect(stakingToken?.decimals).toBe(18)
+  })
+
+  it('keeps disabled veYFI gauges on the staking-only balance route when their address is also returned as a vault', () => {
+    mockUseTokenList.mockReturnValue({
+      currentNetworkTokenList: {},
+      tokenLists: {}
+    })
+
+    const parentVault = {
+      ...vault,
+      address: USDC_VAULT_ADDRESS,
+      staking: {
+        address: USDC_STAKING_ADDRESS,
+        available: false,
+        source: 'VeYFI',
+        rewards: null
+      }
+    } as unknown as TKongVault
+    const gaugeAddressAsVault = {
+      ...vault,
+      address: USDC_STAKING_ADDRESS,
+      staking: {
+        address: ZERO_ADDRESS,
+        available: false,
+        source: '',
+        rewards: null
+      }
+    } as unknown as TKongVault
+    const tokens = renderHookResult({
+      [USDC_VAULT_ADDRESS]: parentVault,
+      [USDC_STAKING_ADDRESS]: gaugeAddressAsVault
+    })
+    const parentToken = tokens.find((token) => token.address.toLowerCase() === USDC_VAULT_ADDRESS.toLowerCase())
+    const stakingToken = tokens.find((token) => token.address.toLowerCase() === USDC_STAKING_ADDRESS.toLowerCase())
+
+    expect(parentToken?.isStakingOnlyPair).toBe(true)
+    expect(parentToken?.isVaultBackedStaking).not.toBe(true)
+    expect(stakingToken?.isStakingOnlyPair).toBe(true)
+    expect(stakingToken?.isVaultBackedStaking).not.toBe(true)
+    expect(stakingToken?.isStakingToken).toBe(true)
   })
 })

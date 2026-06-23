@@ -17,6 +17,7 @@ import { useChainID } from '@shared/hooks/useChainID'
 import type { TDict, TNDict, TToken } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
+import { isDisabledVeyfiGaugePair } from '@shared/utils/veyfiGauges'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useMemo } from 'react'
 
@@ -177,8 +178,10 @@ export function useYearnTokens({
       const holdingsAliasVaultAddress = getHoldingsAliasVaultAddress(address)
       const stakingAddress = !isZeroAddress(toAddress(staking.address)) ? toAddress(staking.address) : undefined
       const hasStaking = Boolean(stakingAddress)
-      const isVaultBackedStaking = hasStaking ? vaultAddressKeys.has(`${chainID}/${stakingAddress}`) : false
-      const isStakingOnlyPair = hasStaking && !isVaultBackedStaking
+      const isDisabledVeyfiGauge = stakingAddress ? isDisabledVeyfiGaugePair(address, stakingAddress) : false
+      const isVaultBackedStaking =
+        stakingAddress && !isDisabledVeyfiGauge ? vaultAddressKeys.has(`${chainID}/${stakingAddress}`) : false
+      const isStakingOnlyPair = Boolean(stakingAddress && (isDisabledVeyfiGauge || !isVaultBackedStaking))
 
       upsertToken(
         tokens,
