@@ -112,6 +112,20 @@ describe('optimization handlers', () => {
     })
   })
 
+  it('returns a validation error for malformed vault-state JSON bodies', async () => {
+    const response = await vaultStateHandler(
+      new Request('https://yearn.fi/api/optimization/vault-state', {
+        method: 'POST',
+        body: '{not json'
+      })
+    )
+
+    expect(response.status).toBe(400)
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid vault address' })
+    expect(fetchVaultOnChainStateMock).not.toHaveBeenCalled()
+  })
+
   it('keeps CORS headers on change Redis authentication failures', async () => {
     readOptimizationsMock.mockRejectedValue(new MockRedisAuthenticationError('invalid token'))
     const response = await changeHandler(createGetRequest('/api/optimization/change'))

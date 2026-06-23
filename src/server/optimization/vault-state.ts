@@ -12,8 +12,18 @@ export function OPTIONS(): Response {
   return noContent(POST_CORS_HEADERS)
 }
 
+async function readVaultStatePayload(request: Request): Promise<Record<string, unknown>> {
+  try {
+    const payload = await readJsonBody<unknown>(request)
+
+    return payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {}
+  } catch (_error) {
+    return {}
+  }
+}
+
 export async function POST(request: Request): Promise<Response> {
-  const payload = await readJsonBody<Record<string, unknown>>(request)
+  const payload = await readVaultStatePayload(request)
   const vault = typeof payload.vault === 'string' ? payload.vault : null
   const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
   const strategies = Array.isArray(payload.strategies)
