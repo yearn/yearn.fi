@@ -10,6 +10,7 @@ import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
 import type { TToken } from '@shared/types'
 import { cl, formatTAmount, toAddress } from '@shared/utils'
+import { requiresAllowanceResetBeforeApproval } from '@shared/utils/approve'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { calculateRemainingEnsoSlippagePercentage, ZAP_SLIPPAGE_HARD_CAP } from '@shared/utils/slippage'
@@ -192,6 +193,7 @@ export function WidgetDeposit({
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
   const [showAnnualReturnModal, setShowAnnualReturnModal] = useState(false)
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
+  const [disableApprovalOverlaySetUnlimited, setDisableApprovalOverlaySetUnlimited] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
   const [isYBoldAutoStakeWarningDismissing, setIsYBoldAutoStakeWarningDismissing] = useState(false)
@@ -638,6 +640,8 @@ export function WidgetDeposit({
   })
   const formattedDepositAmount = formatTAmount({ value: depositAmount.bn, decimals: inputToken?.decimals ?? 18 })
   const needsApproval = !isNativeToken && !activeFlow.periphery.isAllowanceSufficient
+  const shouldDisableSetUnlimitedForAllowanceReset =
+    !isNativeToken && activeFlow.periphery.allowance > 0n && requiresAllowanceResetBeforeApproval(depositToken)
   const hasSyncedDepositAmount = !depositAmount.isDebouncing && depositAmount.bn === depositAmount.debouncedBn
   const shouldBlockApprovalForAllowanceReset =
     hasSyncedDepositAmount &&
@@ -838,6 +842,21 @@ export function WidgetDeposit({
     setCompletedApprovalFlowKey(null)
     setApprovalRouteRefreshKey((current) => current + 1)
   }, [refetchActiveAllowance])
+
+  const openApprovalOverlay = useCallback(() => {
+    setDisableApprovalOverlaySetUnlimited(shouldDisableSetUnlimitedForAllowanceReset)
+    setShowApprovalOverlay(true)
+  }, [shouldDisableSetUnlimitedForAllowanceReset])
+
+  const openApprovalResetOverlay = useCallback(() => {
+    setDisableApprovalOverlaySetUnlimited(true)
+    setShowApprovalOverlay(true)
+  }, [])
+
+  const closeApprovalOverlay = useCallback(() => {
+    setShowApprovalOverlay(false)
+    setDisableApprovalOverlaySetUnlimited(false)
+  }, [])
 
   const handleDepositSuccess = useCallback(() => {
     const amountToDeposit = formatUnits(depositAmount.bn, inputToken?.decimals ?? 18)
@@ -1054,7 +1073,7 @@ export function WidgetDeposit({
       allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
       approvalSpenderName={approvalSpenderName}
       onAllowanceClick={onAllowanceClick}
-      onShowApprovalOverlay={!isNativeToken ? () => setShowApprovalOverlay(true) : undefined}
+      onShowApprovalOverlay={!isNativeToken ? openApprovalOverlay : undefined}
     />
   )
 
@@ -1073,7 +1092,7 @@ export function WidgetDeposit({
     <ApprovalResetWarning
       tokenSymbol={inputToken?.symbol}
       spenderName={approvalSpenderName}
-      onManageApproval={() => setShowApprovalOverlay(true)}
+      onManageApproval={openApprovalResetOverlay}
     />
   ) : null
   const shouldRenderYBoldAutoStakeWarning = showYBoldAutoStakeWarning || isYBoldAutoStakeWarningDismissing
@@ -1336,8 +1355,9 @@ export function WidgetDeposit({
 
       <ApprovalOverlay
         isOpen={showApprovalOverlay}
-        onClose={() => setShowApprovalOverlay(false)}
+        onClose={closeApprovalOverlay}
         onDone={handleApprovalOverlayDone}
+        disableSetUnlimited={disableApprovalOverlaySetUnlimited}
         tokenSymbol={inputToken?.symbol || ''}
         tokenAddress={toAddress(depositToken)}
         tokenDecimals={inputToken?.decimals ?? 18}

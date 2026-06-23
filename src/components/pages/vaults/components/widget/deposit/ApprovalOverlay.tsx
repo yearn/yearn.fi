@@ -21,6 +21,7 @@ interface ApprovalOverlayProps {
   isOpen: boolean
   onClose: () => void
   onDone?: () => Promise<void> | void
+  disableSetUnlimited?: boolean
   tokenSymbol: string
   tokenAddress: `0x${string}`
   tokenDecimals: number
@@ -34,6 +35,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   isOpen,
   onClose,
   onDone,
+  disableSetUnlimited = false,
   tokenSymbol,
   tokenAddress,
   spenderAddress,
@@ -214,7 +216,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   const handleSetUnlimited = useCallback(() => handleApprove(maxUint256), [handleApprove])
 
   const isRevokeDisabled = !account || currentAllowance === '0.00' || currentAllowance === '0'
-  const isUnlimitedDisabled = !account || currentAllowance === 'Unlimited'
+  const isUnlimitedDisabled = disableSetUnlimited || !account || currentAllowance === 'Unlimited'
   const isInTransaction = txState !== 'idle'
 
   return (
@@ -240,10 +242,16 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
                   Hit <span className="font-semibold text-text-primary">Revoke</span> to set {spenderName} allowance to
                   zero.
                 </p>
-                <p className="text-sm text-text-secondary">
-                  Hit <span className="font-semibold text-text-primary">Set Unlimited</span> if you don't want to
-                  approve this token again for future deposits.
-                </p>
+                {disableSetUnlimited ? (
+                  <p className="text-sm text-text-secondary">
+                    Set Unlimited is unavailable until the current {spenderName} allowance is revoked.
+                  </p>
+                ) : (
+                  <p className="text-sm text-text-secondary">
+                    Hit <span className="font-semibold text-text-primary">Set Unlimited</span> if you don't want to
+                    approve this token again for future deposits.
+                  </p>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -260,7 +268,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
                   variant="filled"
                   disabled={isUnlimitedDisabled}
                   className="flex-1"
-                  classNameOverride="yearn--button--nextgen flex-1"
+                  classNameOverride={`yearn--button--nextgen flex-1 ${isUnlimitedDisabled ? 'opacity-40' : ''}`}
                 >
                   Set Unlimited
                 </Button>
