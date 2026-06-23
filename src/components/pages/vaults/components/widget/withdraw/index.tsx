@@ -1,6 +1,7 @@
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import { Button } from '@shared/components/Button'
 import { useTokenListActions } from '@shared/contexts/WithTokenList'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
@@ -135,7 +136,6 @@ export function WidgetWithdraw({
     refreshWalletBalances,
     getToken,
     zapSlippage,
-    getPrice,
     trackEvent,
     ensoEnabled,
     isWalletSafe
@@ -214,6 +214,10 @@ export function WidgetWithdraw({
     }
     return getToken({ address: withdrawToken, chainID: destinationChainId })
   }, [getToken, withdrawToken, destinationChainId, chainId, resolvedDisplayAssetAddress, assetToken])
+  const { getPrice } = useYearnSpotPrices([
+    { address: outputToken?.address, chainID: outputToken?.chainID },
+    { address: assetToken?.address, chainID: assetToken?.chainID }
+  ])
 
   const hideZapTokenSet = useMemo(
     () => new Set((hideZapForTokens || []).map((address) => toAddress(address))),

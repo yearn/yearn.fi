@@ -6,6 +6,7 @@ import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenListActions } from '@shared/contexts/WithTokenList'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
@@ -184,7 +185,6 @@ export function WidgetDeposit({
     getToken,
     zapSlippage,
     isAutoStakingEnabled,
-    getPrice,
     trackEvent,
     ensoEnabled,
     isWalletSafe
@@ -263,6 +263,10 @@ export function WidgetDeposit({
     }
     return getToken({ address: depositToken, chainID: sourceChainId })
   }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken, selectedExtraToken])
+  const { getPrice } = useYearnSpotPrices([
+    { address: inputToken?.address, chainID: inputToken?.chainID },
+    { address: assetToken?.address, chainID: assetToken?.chainID }
+  ])
   const knownVaultTokenLogoMetaByAddress = useMemo(
     () => getKnownVaultTokenLogoMetaByAddress({ allVaults, chainId: sourceChainId }),
     [allVaults, sourceChainId]

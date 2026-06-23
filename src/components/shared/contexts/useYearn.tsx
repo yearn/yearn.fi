@@ -1,13 +1,12 @@
 import { Solver, type TSolver } from '@pages/vaults/types/solvers'
 import { useLocalStorageValue } from '@react-hookz/web'
-import { useFetchYearnPrices } from '@shared/hooks/useFetchYearnPrices'
 import { useFetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
 import type { TAddress, TDict, TNormalizedBN } from '@shared/types'
-import { toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import { toAddress, zeroNormalizedBN } from '@shared/utils'
 import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
-import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
 import { clampZapSlippage } from '@shared/utils/slippage'
+import { EMPTY_YEARN_PRICES_BY_CHAIN, type TYearnPricesByChain } from '@shared/utils/yearnPrices'
 import type { QueryObserverResult } from '@tanstack/react-query'
 import { usePathname } from 'next/navigation'
 import type { ReactElement } from 'react'
@@ -22,7 +21,7 @@ type TTokenAndChain = { address: TAddress; chainID: number }
 export type TYearnContext = {
   currentPartner: TAddress
   earned?: TYDaemonEarned
-  prices?: TYDaemonPricesChain
+  prices?: TYearnPricesByChain
   vaults: TDict<TKongVaultListItem>
   allVaults: TDict<TKongVaultListItem>
   isLoadingVaultList: boolean
@@ -104,18 +103,13 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
     }
   }, [sanitizedZapSlippage, setZapSlippage, zapSlippage])
 
-  const prices = useFetchYearnPrices()
+  const prices = EMPTY_YEARN_PRICES_BY_CHAIN
   //RG this endpoint returns empty objects for retired and migrations
   const { vaults, allVaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
     enabled: isVaultListEnabled
   })
 
-  const getPrice = useCallback(
-    ({ address, chainID }: TTokenAndChain): TNormalizedBN => {
-      return toNormalizedBN(prices?.[chainID]?.[address] || 0, 6) || zeroNormalizedBN
-    },
-    [prices]
-  )
+  const getPrice = useCallback((): TNormalizedBN => zeroNormalizedBN, [])
 
   return (
     <YearnContext.Provider

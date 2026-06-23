@@ -49,10 +49,10 @@ import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { useYearn } from '@shared/contexts/useYearn'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
 import { useReadContract } from '@shared/hooks/useAppWagmi'
 import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconLock } from '@shared/icons/IconLock'
@@ -667,10 +667,10 @@ function YvUsdUserHoldingsCard({
   includeTourAttributes?: boolean
 }): ReactElement {
   const { address } = useWeb3()
-  const { getPrice } = useYearn()
   const { unlockedVault, lockedVault } = useYvUsdVaults()
   const account = address ? toAddress(address) : undefined
   const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
+  const { getPrice } = useYearnSpotPrices([{ address: unlockedAssetAddress, chainID: YVUSD_CHAIN_ID }])
 
   const unlockedUserData = useVaultUserData({
     vaultAddress: toAddress(unlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS),
@@ -798,11 +798,11 @@ function YvBtcUserHoldingsCard({
   includeTourAttributes?: boolean
 }): ReactElement {
   const { address } = useWeb3()
-  const { getPrice } = useYearn()
   const { unlockedVault, lockedVault } = useYvBtcVaults()
   const account = address ? toAddress(address) : undefined
   const unlockedAssetAddress = toAddress(unlockedVault?.token.address)
   const isLockedVaultLive = !isZeroAddress(toAddress(lockedVault?.address))
+  const { getPrice } = useYearnSpotPrices([{ address: unlockedAssetAddress, chainID: unlockedVault.chainID }])
 
   const unlockedUserData = useVaultUserData({
     vaultAddress: toAddress(unlockedVault?.address),
@@ -1087,7 +1087,11 @@ export function VaultDetailsHeaderPresentation({
   includeTourAttributes = true
 }: TVaultDetailsHeaderPresentationProps): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
-  const tokenPrice = currentVault.tvl.price || 0
+  const { getPrice } = useYearnSpotPrices([{ address: currentVault.token.address, chainID: currentVault.chainID }])
+  const tokenPrice =
+    getPrice({ address: currentVault.token.address, chainID: currentVault.chainID }).normalized ||
+    currentVault.tvl.price ||
+    0
   const isYvUsd = isYvUsdVault(currentVault)
   const handleSelectSection = onSelectSection ?? noopSelectSection
   const handleWidgetModeChange = onWidgetModeChange ?? noopWidgetModeChange

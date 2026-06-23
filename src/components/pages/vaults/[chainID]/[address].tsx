@@ -61,6 +61,7 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useWalletActions, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconInfo } from '@shared/icons/IconInfo'
 import { cl, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
@@ -408,10 +409,10 @@ function YvUsdMobileKeyMetrics({
   onApyVariantChange: (variant: TYvUsdVariant) => void
 }): ReactElement {
   const { address } = useWeb3()
-  const { getPrice } = useYearn()
   const { metrics, unlockedVault, lockedVault } = useYvUsdVaults()
   const account = address ? toAddress(address) : undefined
   const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
+  const { getPrice } = useYearnSpotPrices([{ address: unlockedAssetAddress, chainID: YVUSD_CHAIN_ID }])
 
   const unlockedUserData = useVaultUserData({
     vaultAddress: toAddress(unlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS),
@@ -707,6 +708,14 @@ function Index(): ReactElement | null {
     ? (isYvUsd && (isLoadingYvUsd || shouldBootstrapYvUsdVaultList)) ||
       (isYvBtc && (isLoadingYvBtc || shouldBootstrapYvBtcVaultList))
     : !currentVault && (isLoadingSnapshotVault || (isLoadingVaultList && !isSnapshotNotFound))
+  const { getPrice: getCurrentVaultAssetPrice } = useYearnSpotPrices([
+    { address: currentVault?.token.address, chainID: currentVault?.chainID }
+  ])
+  const currentVaultTokenPrice = currentVault
+    ? getCurrentVaultAssetPrice({ address: currentVault.token.address, chainID: currentVault.chainID }).normalized ||
+      currentVault.tvl.price ||
+      0
+    : 0
   const vaultApyData = useVaultApyData(currentVault ?? EMPTY_VAULT_FOR_APY_DATA)
   const stakingAddress = !isZeroAddress(currentVault?.staking?.address)
     ? toAddress(currentVault?.staking?.address)
@@ -1828,14 +1837,14 @@ function Index(): ReactElement | null {
             <MobileKeyMetrics
               currentVault={currentVault}
               depositedValue={vaultUserData.depositedValue}
-              tokenPrice={currentVault.tvl.price || 0}
+              tokenPrice={currentVaultTokenPrice}
               apyBox={yvBtcMobileApyBox}
             />
           ) : (
             <MobileKeyMetrics
               currentVault={currentVault}
               depositedValue={vaultUserData.depositedValue}
-              tokenPrice={currentVault.tvl.price || 0}
+              tokenPrice={currentVaultTokenPrice}
             />
           )}
 

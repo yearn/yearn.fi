@@ -33,6 +33,7 @@ import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import type { TSortDirection } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
@@ -176,7 +177,8 @@ export function usePortfolioModel(): TPortfolioModel {
   const { isLoading: isWalletLoading, hasCompletedBalanceLoad } = useWalletStatus()
   const { totalValue: totalPortfolioValue } = useWalletVaultTotals()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
-  const { vaults, allVaults, isLoadingVaultList, getPrice } = useYearn()
+  const { vaults, allVaults, isLoadingVaultList } = useYearn()
+  const { getPrice } = useYearnSpotPrices([{ address: ETH_TOKEN_ADDRESS, chainID: 1 }])
   const { listVault: yvUsdVault, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
   const { apyData: yvUsdHistoricalApyData } = useYvUsdCharts()
   const { shouldHideDust } = useAppSettings()

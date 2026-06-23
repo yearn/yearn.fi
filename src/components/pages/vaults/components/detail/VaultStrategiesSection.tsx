@@ -52,10 +52,11 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
     defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
     defaultPathname: '/vaults/[chainID]/[address]'
   })
-  const tokenPrice = useYearnTokenPrice({
+  const spotTokenPrice = useYearnTokenPrice({
     address: token.address,
     chainID: chainId
   })
+  const tokenPrice = spotTokenPrice || getVaultTVL(currentVault).price || 0
 
   const mergedList = useMemo(() => {
     return strategies.map((strategy): TStrategyRow => {

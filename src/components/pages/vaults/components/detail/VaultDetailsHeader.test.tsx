@@ -47,6 +47,14 @@ vi.mock('@shared/contexts/useYearn', () => ({
   })
 }))
 
+vi.mock('@shared/hooks/useYearnSpotPrices', () => ({
+  useYearnSpotPrices: () => ({
+    getPrice: () => ({
+      normalized: 1
+    })
+  })
+}))
+
 vi.mock('@shared/hooks/useAppWagmi', () => ({
   useReadContract: () => ({
     data: undefined

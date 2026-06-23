@@ -6,13 +6,13 @@ import { useWalletTokens } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { usePublicClient } from '@shared/hooks/useAppWagmi'
 import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { formatTAmount, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { hexToNumber, slice } from 'viem'
 import { useAccount } from 'wagmi'
-import { useYearn } from '@/components/shared/contexts/useYearn'
 import { env } from '@/env'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { formatWidgetValue } from '../shared/valueDisplay'
@@ -50,7 +50,7 @@ export const WidgetMigrate: FC<Props> = ({
   const { openLoginModal } = useWeb3()
   const { getToken } = useWalletTokens()
   const trackEvent = usePlausible()
-  const { getPrice } = useYearn()
+  const { getPrice } = useYearnSpotPrices([{ address: assetAddress, chainID: chainId }])
   const client = usePublicClient({ chainId })
 
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
@@ -99,11 +99,25 @@ export const WidgetMigrate: FC<Props> = ({
   const balanceUsd = useMemo(() => {
     if (migrateBalance === 0n) return '$0'
 
+    const vaultDecimals = vaultToken?.decimals ?? 18
+    const assetDecimals = vaultUserData.assetToken?.decimals ?? vaultDecimals
+    const assetAmount =
+      vaultUserData.pricePerShare > 0n
+        ? (migrateBalance * vaultUserData.pricePerShare) / 10n ** BigInt(vaultDecimals)
+        : 0n
     const usdValue =
-      Number(toNormalizedBN(migrateBalance, vaultToken?.decimals ?? 18).display) *
-      getPrice({ address: vaultAddress, chainID: chainId }).normalized
+      toNormalizedBN(assetAmount, assetDecimals).normalized *
+      getPrice({ address: assetAddress, chainID: chainId }).normalized
     return `$${formatWidgetValue(usdValue)}`
-  }, [migrateBalance, vaultAddress, chainId, getPrice, vaultToken?.decimals])
+  }, [
+    assetAddress,
+    chainId,
+    getPrice,
+    migrateBalance,
+    vaultToken?.decimals,
+    vaultUserData.assetToken?.decimals,
+    vaultUserData.pricePerShare
+  ])
 
   // Determine flow based on routeType
   const isPermitFlow = periphery.routeType === 'permit'
