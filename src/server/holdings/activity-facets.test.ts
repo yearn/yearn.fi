@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const TEST_ADDRESS = '0x2222222222222222222222222222222222222222'
 
 const ensureHoldingsStorageInitializedMock = vi.fn()
-const fetchRecentAddressScopedActivityEventsMock = vi.fn()
+const getHoldingsActivityFacetResponseMock = vi.fn()
 
 vi.mock('../lib/holdings', () => ({
   ensureHoldingsStorageInitialized: ensureHoldingsStorageInitializedMock,
-  fetchRecentAddressScopedActivityEvents: fetchRecentAddressScopedActivityEventsMock
+  getHoldingsActivityFacetResponse: getHoldingsActivityFacetResponseMock
 }))
 
 function createRequest(query: Record<string, string>): Request {
@@ -19,15 +19,12 @@ describe('holdings activity facets route', () => {
     vi.resetModules()
     vi.clearAllMocks()
     ensureHoldingsStorageInitializedMock.mockResolvedValue(undefined)
-    fetchRecentAddressScopedActivityEventsMock.mockResolvedValue({
-      deposits: [{ chainId: 1 }],
-      withdrawals: [{ chainId: 8453 }],
-      transfersIn: [],
-      transfersOut: [],
-      hasMoreDeposits: false,
-      hasMoreWithdrawals: false,
-      hasMoreTransfersIn: false,
-      hasMoreTransfersOut: false
+    getHoldingsActivityFacetResponseMock.mockResolvedValue({
+      address: TEST_ADDRESS.toLowerCase(),
+      version: 'all',
+      facets: {
+        chainIds: [1, 8453]
+      }
     })
     process.env.ENVIO_GRAPHQL_URL = 'https://envio.example/graphql'
   })
@@ -41,17 +38,13 @@ describe('holdings activity facets route', () => {
       })
     )
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 250, undefined, 0)
+    expect(getHoldingsActivityFacetResponseMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all')
     expect(response.status).toBe(200)
     expect(response.headers.get('Cache-Control')).toBe('private, no-store, max-age=0, must-revalidate')
     await expect(response.json()).resolves.toEqual({
       address: TEST_ADDRESS.toLowerCase(),
       version: 'all',
-      facets: { chainIds: [1, 8453] },
-      pageInfo: {
-        hasMore: false,
-        nextOffsetPerSource: null
-      }
+      facets: { chainIds: [1, 8453] }
     })
   })
 })

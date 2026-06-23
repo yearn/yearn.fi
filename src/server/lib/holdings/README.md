@@ -336,7 +336,6 @@ Returns activity chain facets without fetching the full paginated activity respo
 
 ```bash
 curl "http://localhost:3000/api/holdings/activity-facets?address=0x..."
-curl "http://localhost:3000/api/holdings/activity-facets?address=0x...&limitPerSource=500&offsetPerSource=500"
 ```
 
 Query params:
@@ -345,8 +344,6 @@ Query params:
 |-------|----------|---------|-------------|
 | `address` | Yes | - | User EVM address |
 | `version` | No | `all` | `v2`, `v3`, or `all` |
-| `limitPerSource` | No | `250` | Per-event-source page size, clamped to `1..1000` |
-| `offsetPerSource` | No | `0` | Per-event-source non-negative offset |
 
 Response:
 
@@ -356,10 +353,6 @@ Response:
   "version": "all",
   "facets": {
     "chainIds": [1, 8453]
-  },
-  "pageInfo": {
-    "hasMore": false,
-    "nextOffsetPerSource": null
   }
 }
 ```

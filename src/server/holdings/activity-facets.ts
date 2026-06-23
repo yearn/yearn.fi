@@ -1,4 +1,4 @@
-import { GET_CORS_HEADERS, WALLET_SCOPED_CACHE_CONTROL, json, noContent, queryValue } from '../http'
+import { GET_CORS_HEADERS, json, noContent, queryValue, WALLET_SCOPED_CACHE_CONTROL } from '../http'
 import type { VaultVersion } from '../lib/holdings'
 import { ensureHoldingsStorageInitialized } from '../lib/holdings'
 
@@ -8,20 +8,6 @@ function isValidAddress(address: string): boolean {
 
 function parseVersion(value: string | string[] | undefined): VaultVersion {
   return value === 'v2' || value === 'v3' ? value : 'all'
-}
-
-function parsePositiveInteger(value: string | string[] | undefined, fallback: number, max: number): number {
-  const rawValue = Array.isArray(value) ? value[0] : value
-  const parsedValue = Number(rawValue)
-
-  return Number.isInteger(parsedValue) && parsedValue > 0 ? Math.min(parsedValue, max) : fallback
-}
-
-function parseNonNegativeInteger(value: string | string[] | undefined): number {
-  const rawValue = Array.isArray(value) ? value[0] : value
-  const parsedValue = Number(rawValue)
-
-  return Number.isInteger(parsedValue) && parsedValue >= 0 ? parsedValue : 0
 }
 
 export function OPTIONS(): Response {
@@ -49,8 +35,6 @@ export async function GET(request: Request): Promise<Response> {
 
   const address = queryValue(request, 'address')
   const versionParam = queryValue(request, 'version')
-  const limitPerSourceParam = queryValue(request, 'limitPerSource')
-  const offsetPerSourceParam = queryValue(request, 'offsetPerSource')
 
   if (!address || typeof address !== 'string') {
     return json({ error: 'Missing required parameter: address' }, { status: 400, headers: GET_CORS_HEADERS })
@@ -61,44 +45,16 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   try {
-    const { fetchRecentAddressScopedActivityEvents } = await import('../lib/holdings')
+    const { getHoldingsActivityFacetResponse } = await import('../lib/holdings')
     const version = parseVersion(versionParam)
-    const limitPerSource = parsePositiveInteger(limitPerSourceParam, 250, 1000)
-    const offsetPerSource = parseNonNegativeInteger(offsetPerSourceParam)
-    const events = await fetchRecentAddressScopedActivityEvents(
-      address,
-      version,
-      limitPerSource,
-      undefined,
-      offsetPerSource
-    )
-    const hasMore =
-      events.hasMoreDeposits || events.hasMoreWithdrawals || events.hasMoreTransfersIn || events.hasMoreTransfersOut
-    const chainIds = Array.from(
-      new Set(
-        [...events.deposits, ...events.withdrawals, ...events.transfersIn, ...events.transfersOut].map(
-          (event) => event.chainId
-        )
-      )
-    ).sort((firstChainId, secondChainId) => firstChainId - secondChainId)
+    const facetsResponse = await getHoldingsActivityFacetResponse(address, version)
 
-    return json(
-      {
-        address: address.toLowerCase(),
-        version,
-        facets: { chainIds },
-        pageInfo: {
-          hasMore,
-          nextOffsetPerSource: hasMore ? offsetPerSource + limitPerSource : null
-        }
-      },
-      {
-        headers: {
-          ...GET_CORS_HEADERS,
-          'Cache-Control': WALLET_SCOPED_CACHE_CONTROL
-        }
+    return json(facetsResponse, {
+      headers: {
+        ...GET_CORS_HEADERS,
+        'Cache-Control': WALLET_SCOPED_CACHE_CONTROL
       }
-    )
+    })
   } catch (error) {
     console.error('Holdings activity facets error:', error)
 
