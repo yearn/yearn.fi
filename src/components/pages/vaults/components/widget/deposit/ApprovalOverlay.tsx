@@ -220,7 +220,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   const isInTransaction = txState !== 'idle'
 
   return (
-    <InfoOverlay isOpen={isOpen} onClose={onClose} title="Token Approval" hideButton>
+    <InfoOverlay isOpen={isOpen} onClose={onClose} title="Manage approval" hideButton>
       <div className="flex flex-col h-full">
         {/* Idle state - show info and actions */}
         {txState === 'idle' && (
