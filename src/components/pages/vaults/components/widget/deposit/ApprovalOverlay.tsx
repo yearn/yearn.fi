@@ -244,7 +244,8 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
                 </p>
                 {disableSetUnlimited ? (
                   <p className="text-sm text-text-secondary">
-                    Set Unlimited is unavailable until the current {spenderName} allowance is revoked.
+                    Set Unlimited is unavailable because {tokenSymbol} cannot change a non-zero approval directly.
+                    Revoke first; once it confirms, you can approve again or set unlimited.
                   </p>
                 ) : (
                   <p className="text-sm text-text-secondary">

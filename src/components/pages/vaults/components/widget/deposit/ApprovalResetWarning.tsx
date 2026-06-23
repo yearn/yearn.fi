@@ -18,9 +18,10 @@ export function ApprovalResetWarning({
     <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm leading-5 text-red-500">
-          <span className="font-semibold">{resolvedTokenSymbol} approval needs reset.</span>
+          <span className="font-semibold">{resolvedTokenSymbol} approval needs revoke.</span>
           <span className="block">
-            Revoke the current {resolvedSpenderName} approval before approving again or setting unlimited.
+            Unlike most tokens, {resolvedTokenSymbol} cannot change a non-zero approval directly. Revoke sets the{' '}
+            {resolvedSpenderName} allowance to zero; then approve again.
           </span>
         </p>
         <button
