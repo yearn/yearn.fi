@@ -66,6 +66,11 @@ function createPostRequest(path: string, body: unknown): Request {
   })
 }
 
+function expectPublicCdnCacheHeaders(response: Response, cdnCacheControl: string): void {
+  expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe(cdnCacheControl)
+  expect(response.headers.get('Cache-Control')).toBe('public, max-age=0, must-revalidate')
+}
+
 describe('optimization handlers', () => {
   afterEach(() => {
     vi.clearAllMocks()
@@ -97,6 +102,7 @@ describe('optimization handlers', () => {
 
     expect(response.status).toBe(200)
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expectPublicCdnCacheHeaders(response, 'public, s-maxage=60, stale-while-revalidate=30')
     await expect(response.json()).resolves.toEqual({
       totalAssets: '1000',
       strategyDebts: {
@@ -188,7 +194,39 @@ describe('optimization handlers', () => {
 
     expect(response.status).toBe(200)
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expectPublicCdnCacheHeaders(response, 'public, s-maxage=600, stale-while-revalidate=60')
     await expect(response.json()).resolves.toEqual(targetHistory)
     expect(findVaultOptimizationMock).not.toHaveBeenCalled()
+  })
+
+  it('keeps split CDN and browser cache headers on alignment responses', async () => {
+    const targetVault = '0x1111111111111111111111111111111111111111'
+    const optimization = {
+      vault: targetVault,
+      strategyDebtRatios: [{ strategy: '0x2222222222222222222222222222222222222222', targetDebtRatio: 5000 }],
+      currentApr: 250,
+      proposedApr: 275,
+      explain: 'latest explain',
+      source: {
+        key: 'doa:optimizations:1:latest',
+        chainId: 1,
+        revision: 'latest',
+        isLatestAlias: true,
+        timestampUtc: null,
+        latestMatchedTimestampUtc: '2026-04-22 10:00:00 UTC'
+      }
+    }
+    vi.stubEnv('ENVIO_GRAPHQL_URL', 'https://envio.example/graphql')
+    readOptimizationsMock.mockResolvedValue([optimization])
+    findVaultOptimizationMock.mockReturnValue(optimization)
+    getVaultDecimalsMock.mockReturnValue(18)
+    fetchAlignedEventsMock.mockResolvedValue([{ blockNumber: 123 }])
+
+    const response = await alignmentHandler(createGetRequest('/api/optimization/alignment', { vault: targetVault }))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expectPublicCdnCacheHeaders(response, 'public, s-maxage=60, stale-while-revalidate=30')
+    await expect(response.json()).resolves.toEqual([{ blockNumber: 123 }])
   })
 })

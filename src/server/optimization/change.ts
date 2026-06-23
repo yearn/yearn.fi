@@ -1,4 +1,5 @@
 import { GET_CORS_HEADERS, json, noContent, queryValue } from '../http'
+import { getVercelCdnCacheHeaders } from '../lib/cacheHeaders'
 import {
   findVaultOptimization,
   isRedisAuthenticationError,
@@ -8,7 +9,11 @@ import {
   readOptimizations
 } from './_lib/redis'
 
-const CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
+const CDN_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=60'
+const RESPONSE_HEADERS = {
+  ...GET_CORS_HEADERS,
+  ...getVercelCdnCacheHeaders(CDN_CACHE_CONTROL)
+}
 
 function isHistoryQueryEnabled(historyParam: string | undefined): boolean {
   const value = historyParam
@@ -43,7 +48,7 @@ export async function GET(request: Request): Promise<Response> {
           )
         }
 
-        return json(selectedHistory, { headers: { ...GET_CORS_HEADERS, 'Cache-Control': CACHE_CONTROL } })
+        return json(selectedHistory, { headers: RESPONSE_HEADERS })
       }
 
       const selected = findVaultOptimization(optimizations, requestedVault)
@@ -54,10 +59,10 @@ export async function GET(request: Request): Promise<Response> {
         )
       }
 
-      return json(selected, { headers: { ...GET_CORS_HEADERS, 'Cache-Control': CACHE_CONTROL } })
+      return json(selected, { headers: RESPONSE_HEADERS })
     }
 
-    return json(optimizations, { headers: { ...GET_CORS_HEADERS, 'Cache-Control': CACHE_CONTROL } })
+    return json(optimizations, { headers: RESPONSE_HEADERS })
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
       return json({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, { status: 500, headers: GET_CORS_HEADERS })

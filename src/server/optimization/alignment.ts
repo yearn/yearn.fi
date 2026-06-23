@@ -1,4 +1,5 @@
 import { GET_CORS_HEADERS, json, noContent, queryString } from '../http'
+import { getVercelCdnCacheHeaders } from '../lib/cacheHeaders'
 import { getVaultDecimals } from './_lib/assetLogos'
 import { fetchAlignedEvents } from './_lib/envio'
 import { parseExplainMetadata } from './_lib/explain-parse'
@@ -11,7 +12,11 @@ import {
   readOptimizations
 } from './_lib/redis'
 
-const CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const CDN_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const RESPONSE_HEADERS = {
+  ...GET_CORS_HEADERS,
+  ...getVercelCdnCacheHeaders(CDN_CACHE_CONTROL)
+}
 
 export function OPTIONS(): Response {
   return noContent(GET_CORS_HEADERS)
@@ -68,7 +73,7 @@ export async function GET(request: Request): Promise<Response> {
       decimals
     )
 
-    return json(events, { headers: { ...GET_CORS_HEADERS, 'Cache-Control': CACHE_CONTROL } })
+    return json(events, { headers: RESPONSE_HEADERS })
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
       return json({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, { status: 500, headers: GET_CORS_HEADERS })

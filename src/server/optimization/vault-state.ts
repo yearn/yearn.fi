@@ -1,7 +1,12 @@
 import { json, noContent, POST_CORS_HEADERS, readJsonBody } from '../http'
+import { getVercelCdnCacheHeaders } from '../lib/cacheHeaders'
 import { fetchVaultOnChainState } from './_lib/rpc'
 
-const CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const CDN_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
+const RESPONSE_HEADERS = {
+  ...POST_CORS_HEADERS,
+  ...getVercelCdnCacheHeaders(CDN_CACHE_CONTROL)
+}
 
 export function OPTIONS(): Response {
   return noContent(POST_CORS_HEADERS)
@@ -38,7 +43,7 @@ export async function POST(request: Request): Promise<Response> {
         strategyDebts,
         unallocatedBps: state.unallocatedBps
       },
-      { headers: { ...POST_CORS_HEADERS, 'Cache-Control': CACHE_CONTROL } }
+      { headers: RESPONSE_HEADERS }
     )
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

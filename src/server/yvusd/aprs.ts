@@ -1,8 +1,14 @@
 import { GET_CORS_HEADERS, json, noContent } from '../http'
+import { getVercelCdnCacheHeaders } from '../lib/cacheHeaders'
 
 const YVUSD_APR_SERVICE_API = (
   process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
 ).replace(/\/$/, '')
+const YVUSD_APR_CDN_CACHE_CONTROL = 'public, s-maxage=30, stale-while-revalidate=120'
+const RESPONSE_HEADERS = {
+  ...GET_CORS_HEADERS,
+  ...getVercelCdnCacheHeaders(YVUSD_APR_CDN_CACHE_CONTROL)
+}
 
 export function OPTIONS(): Response {
   return noContent(GET_CORS_HEADERS)
@@ -35,10 +41,7 @@ export async function GET(request: Request): Promise<Response> {
 
     const data = await response.json()
     return json(data, {
-      headers: {
-        ...GET_CORS_HEADERS,
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120'
-      }
+      headers: RESPONSE_HEADERS
     })
   } catch (error) {
     console.error('Error proxying yvUSD APR request:', error)
