@@ -37,6 +37,7 @@ interface UseDepositFlowProps {
   // Settings
   slippage: number
   ensoRoutingStrategy?: EnsoRoutingStrategy
+  routeRefreshKey?: number
   stakingSource?: string
 }
 
@@ -69,6 +70,7 @@ export interface DepositFlowResult {
       }
       gas?: string
       error?: unknown
+      refetchAllowance?: () => Promise<unknown>
     }
   }
 }
@@ -90,6 +92,7 @@ export const useDepositFlow = ({
   vaultDecimals,
   slippage,
   ensoRoutingStrategy,
+  routeRefreshKey,
   stakingSource
 }: UseDepositFlowProps): DepositFlowResult => {
   // Determine routing type
@@ -162,7 +165,8 @@ export const useDepositFlow = ({
     decimalsOut: vaultDecimals,
     enabled: routeType === 'ENSO' && !!depositToken && amount > 0n && currentAmount > 0n,
     slippage: toBasisPoints(slippage),
-    routingStrategy: ensoRoutingStrategy
+    routingStrategy: ensoRoutingStrategy,
+    routeRefreshKey
   })
 
   // Select active flow based on routing type
