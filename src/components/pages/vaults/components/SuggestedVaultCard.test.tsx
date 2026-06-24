@@ -11,6 +11,10 @@ vi.mock('@pages/vaults/hooks/useVaultApyData', () => ({
   useVaultApyData: vi.fn()
 }))
 
+vi.mock('@hooks/usePlausible', () => ({
+  usePlausible: () => vi.fn()
+}))
+
 vi.mock('@pages/vaults/hooks/useYvUsdVaults', () => ({
   useYvUsdVaults: () => ({
     metrics: {
@@ -56,7 +60,7 @@ function renderCard(vault: TKongVaultInput): string {
 }
 
 describe('SuggestedVaultCard', () => {
-  it('uses 30D APY and no HIST prefix when est APY is unavailable', () => {
+  it('uses Historical APY and no HIST prefix when est APY is unavailable', () => {
     vi.mocked(useVaultApyData).mockReturnValue({
       mode: 'historical',
       baseForwardApr: 0,
@@ -72,7 +76,7 @@ describe('SuggestedVaultCard', () => {
     })
 
     const html = renderCard(baseVault)
-    expect(html).toContain('30D APY')
+    expect(html).toContain('Historical APY')
     expect(html).not.toContain('Hist.')
   })
 

@@ -52,6 +52,7 @@ interface UseSolverEnsoReturn {
     isLoadingAllowance: boolean
     isCrossChain: boolean
     routerAddress: Address | undefined
+    refetchAllowance: () => Promise<unknown>
   }
   methods: {
     getRoute: () => Promise<void>
@@ -92,7 +93,11 @@ export const useSolverEnso = ({
   const knownRouterAddress = ENSO_ROUTER_ADDRESSES[chainId]
   const allowanceSpender = routerAddress || knownRouterAddress
 
-  const { allowance = 0n, isLoading: isLoadingAllowance } = useTokenAllowance({
+  const {
+    allowance = 0n,
+    isLoading: isLoadingAllowance,
+    refetch: refetchAllowance
+  } = useTokenAllowance({
     account: fromAddress,
     token: tokenIn,
     spender: allowanceSpender,
@@ -273,7 +278,8 @@ export const useSolverEnso = ({
       isLoadingRoute: isLoadingCurrentRequest,
       isLoadingAllowance,
       isCrossChain,
-      routerAddress
+      routerAddress,
+      refetchAllowance
     },
     methods: {
       getRoute,

@@ -14,6 +14,7 @@ describe('withdrawStepHelpers', () => {
     expect(getWithdrawTransactionName('DIRECT_WITHDRAW', false)).toBe('Withdraw')
     expect(getWithdrawTransactionName('DIRECT_UNSTAKE', false)).toBe('Unstake')
     expect(getWithdrawTransactionName('DIRECT_UNSTAKE_WITHDRAW', false)).toBe('Unstake & Withdraw')
+    expect(getWithdrawTransactionName('YBOLD_ZAPPER_WITHDRAW', false)).toBe('Withdraw')
     expect(getWithdrawTransactionName('ENSO', true)).toBe('Fetching quote')
   })
 
@@ -88,6 +89,44 @@ describe('withdrawStepHelpers', () => {
     })
 
     expect(step?.successTitle).toBe('Transaction Submitted')
+  })
+
+  it('builds one-step yBOLD zapper withdraw steps', () => {
+    const step = buildWithdrawTransactionStep({
+      needsApproval: false,
+      activeWithdrawPrepare: mockPrepare,
+      fallbackStep: 'unstake',
+      routeType: 'YBOLD_ZAPPER_WITHDRAW',
+      isCrossChain: false,
+      formattedApprovalAmount: '1.00',
+      formattedRequiredShares: '2.00',
+      formattedWithdrawAmount: '3.00',
+      assetTokenSymbol: 'BOLD',
+      withdrawNotificationParams: undefined,
+      prepareWithdrawEnabled: true
+    })
+
+    expect(step?.label).toBe('Withdraw')
+    expect(step?.isEnabled).toBe(true)
+    expect(step?.completesFlow).toBe(true)
+  })
+
+  it('marks disabled yBOLD zapper withdraw steps as not executable', () => {
+    const step = buildWithdrawTransactionStep({
+      needsApproval: false,
+      activeWithdrawPrepare: mockPrepare,
+      fallbackStep: 'unstake',
+      routeType: 'YBOLD_ZAPPER_WITHDRAW',
+      isCrossChain: false,
+      formattedApprovalAmount: '1.00',
+      formattedRequiredShares: '2.00',
+      formattedWithdrawAmount: '3.00',
+      assetTokenSymbol: 'BOLD',
+      withdrawNotificationParams: undefined,
+      prepareWithdrawEnabled: false
+    })
+
+    expect(step?.isEnabled).toBe(false)
   })
 
   it('computes last step state correctly', () => {

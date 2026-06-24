@@ -79,6 +79,7 @@ export type UseWidgetDepositFlowReturn = T<
     gas?: string
     routerAddress?: TAddress
     error?: string
+    refetchAllowance?: () => Promise<unknown>
   }
 >
 
@@ -93,6 +94,7 @@ export type UseWidgetWithdrawFlowReturn = T<
     prepareApproveEnabled?: boolean // Optional: only needed for ENSO withdrawals
     isAllowanceSufficient: boolean // always true for direct withdraw (no approval needed)
     allowance: bigint
+    shareAmount?: bigint
     expectedOut: bigint
     minExpectedOut: bigint
     isLoadingRoute: boolean

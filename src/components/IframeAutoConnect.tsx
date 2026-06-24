@@ -27,7 +27,9 @@ export const IframeAutoConnect: FC<PropsWithChildren> = ({ children }) => {
               await connectAsync({ connector: ledgerConnector })
             }
           }
+          return
         }
+
         const safeConnector = connectors.find((c) => c.id === 'safe')
         if (safeConnector) {
           await disconnectAsync({ connector })
@@ -42,7 +44,9 @@ export const IframeAutoConnect: FC<PropsWithChildren> = ({ children }) => {
           if (ledgerConnector) {
             await connectAsync({ connector: ledgerConnector })
           }
+          return
         }
+
         const safeConnector = connectors.find((c) => c.id === 'safe')
         if (safeConnector) {
           await connectAsync({ connector: safeConnector })

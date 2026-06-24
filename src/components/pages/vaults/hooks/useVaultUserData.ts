@@ -27,7 +27,7 @@ export interface VaultUserData {
 
   // State
   isLoading: boolean
-  refetch: () => void
+  refetch: () => void | Promise<void>
 }
 
 interface UseVaultUserDataParams {
@@ -117,6 +117,7 @@ export const useVaultUserData = ({
   }, [rawStakingToken, vaultToken?.decimals, vaultToken?.symbol, vaultToken?.name])
 
   const stakingShareBalance = stakingToken?.balance.raw ?? 0n
+  const shouldReadStaking = shouldReadVault && !!stakingAddress && !!account && !!chainId && !!executionChainId
 
   const {
     data: stakingCapacity,
@@ -173,21 +174,23 @@ export const useVaultUserData = ({
 
       return { withdrawableAssets, redeemableShares }
     },
-    enabled: shouldReadVault && !!stakingAddress && !!account && !!chainId && !!executionChainId,
+    enabled: shouldReadStaking,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false
   })
 
   // Combined refetch
-  const refetch = useCallback(() => {
+  const refetch = useCallback(async () => {
     if (!shouldReadVault) {
       return
     }
-    refetchTokens()
-    refetchPPS()
-    refetchStakingWithdrawableAssets()
-  }, [refetchTokens, refetchPPS, refetchStakingWithdrawableAssets, shouldReadVault])
+    const refetches: Promise<unknown>[] = [refetchTokens(), refetchPPS()]
+    if (shouldReadStaking) {
+      refetches.push(refetchStakingWithdrawableAssets())
+    }
+    await Promise.allSettled(refetches)
+  }, [refetchTokens, refetchPPS, refetchStakingWithdrawableAssets, shouldReadStaking, shouldReadVault])
 
   const effectiveStakingWithdrawableAssets = stakingCapacity?.withdrawableAssets ?? stakingShareBalance
   const effectiveStakingRedeemableShares = stakingCapacity?.redeemableShares ?? stakingShareBalance

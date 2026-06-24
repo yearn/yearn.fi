@@ -1,6 +1,7 @@
 import { Button } from '@shared/components/Button'
 import { useChainId, useSwitchChain, useWaitForTransactionReceipt } from '@shared/hooks/useAppWagmi'
 import { useSafeTransactionDetails } from '@shared/hooks/useSafeTransactionDetails'
+import { isSafeConnectorId } from '@shared/utils'
 import { getApproveAbi } from '@shared/utils/approve'
 import { type FC, useCallback, useEffect, useState } from 'react'
 import { maxUint256 } from 'viem'
@@ -19,6 +20,8 @@ type TxState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'success' | 'er
 interface ApprovalOverlayProps {
   isOpen: boolean
   onClose: () => void
+  onDone?: () => Promise<void> | void
+  disableSetUnlimited?: boolean
   tokenSymbol: string
   tokenAddress: `0x${string}`
   tokenDecimals: number
@@ -31,6 +34,8 @@ interface ApprovalOverlayProps {
 export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   isOpen,
   onClose,
+  onDone,
+  disableSetUnlimited = false,
   tokenSymbol,
   tokenAddress,
   spenderAddress,
@@ -40,10 +45,11 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 }) => {
   const [txState, setTxState] = useState<TxState>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [isDoneRefreshing, setIsDoneRefreshing] = useState(false)
 
   const { address: account, chain, connector } = useAccount()
   const currentChainId = useChainId()
-  const isWalletSafe = connector?.id.toLowerCase().includes('safe') ?? false
+  const isWalletSafe = isSafeConnectorId(connector?.id)
   const connectedChainId = resolveApprovalOverlayConnectedChainId({
     accountChainId: chain?.id,
     currentChainId,
@@ -81,6 +87,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
     if (!isOpen) {
       setTxState('idle')
       setErrorMessage('')
+      setIsDoneRefreshing(false)
       reset()
     }
   }, [isOpen, reset])
@@ -129,6 +136,21 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
       reset()
     }
   }, [receipt.isError, txState, reset])
+
+  const handleDone = useCallback(async () => {
+    if (isDoneRefreshing) return
+
+    setIsDoneRefreshing(true)
+    try {
+      await onDone?.()
+      onClose()
+    } catch (error) {
+      console.warn('[ApprovalOverlay] Failed to refresh after approval update', error)
+      onClose()
+    } finally {
+      setIsDoneRefreshing(false)
+    }
+  }, [isDoneRefreshing, onClose, onDone])
 
   const handleApprove = useCallback(
     async (amount: bigint) => {
@@ -194,11 +216,11 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   const handleSetUnlimited = useCallback(() => handleApprove(maxUint256), [handleApprove])
 
   const isRevokeDisabled = !account || currentAllowance === '0.00' || currentAllowance === '0'
-  const isUnlimitedDisabled = !account || currentAllowance === 'Unlimited'
+  const isUnlimitedDisabled = disableSetUnlimited || !account || currentAllowance === 'Unlimited'
   const isInTransaction = txState !== 'idle'
 
   return (
-    <InfoOverlay isOpen={isOpen} onClose={onClose} title="Token Approval" hideButton>
+    <InfoOverlay isOpen={isOpen} onClose={onClose} title="Manage approval" hideButton>
       <div className="flex flex-col h-full">
         {/* Idle state - show info and actions */}
         {txState === 'idle' && (
@@ -211,6 +233,12 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
                   <span className="font-semibold text-text-primary">{tokenSymbol}</span> up to a set limit. This is
                   required before depositing.
                 </p>
+                {disableSetUnlimited && (
+                  <p className="text-sm text-text-secondary">
+                    Unlike most tokens, {tokenSymbol} cannot change a non-zero approval directly. Revoke sets the{' '}
+                    {spenderName} allowance to zero; then you can approve again.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -220,10 +248,16 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
                   Hit <span className="font-semibold text-text-primary">Revoke</span> to set {spenderName} allowance to
                   zero.
                 </p>
-                <p className="text-sm text-text-secondary">
-                  Hit <span className="font-semibold text-text-primary">Set Unlimited</span> if you don't want to
-                  approve this token again for future deposits.
-                </p>
+                {disableSetUnlimited ? (
+                  <p className="text-sm text-text-secondary">
+                    Set Unlimited is unavailable until the current approval is revoked.
+                  </p>
+                ) : (
+                  <p className="text-sm text-text-secondary">
+                    Hit <span className="font-semibold text-text-primary">Set Unlimited</span> if you don't want to
+                    approve this token again for future deposits.
+                  </p>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -240,7 +274,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
                   variant="filled"
                   disabled={isUnlimitedDisabled}
                   className="flex-1"
-                  classNameOverride="yearn--button--nextgen flex-1"
+                  classNameOverride={`yearn--button--nextgen flex-1 ${isUnlimitedDisabled ? 'opacity-40' : ''}`}
                 >
                   Set Unlimited
                 </Button>
@@ -274,8 +308,10 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
                 <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Approval updated</h3>
                 <p className="text-sm text-text-secondary mb-6">Your token allowance has been changed</p>
                 <Button
-                  onClick={onClose}
-                  variant="filled"
+                  onClick={handleDone}
+                  variant={isDoneRefreshing ? 'busy' : 'filled'}
+                  isBusy={isDoneRefreshing}
+                  disabled={isDoneRefreshing}
                   className="w-full max-w-xs"
                   classNameOverride="yearn--button--nextgen w-full"
                 >
@@ -293,8 +329,10 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 Execution may happen separately after the required confirmations are collected.`}
                 </p>
                 <Button
-                  onClick={onClose}
-                  variant="filled"
+                  onClick={handleDone}
+                  variant={isDoneRefreshing ? 'busy' : 'filled'}
+                  isBusy={isDoneRefreshing}
+                  disabled={isDoneRefreshing}
                   className="w-full max-w-xs"
                   classNameOverride="yearn--button--nextgen w-full"
                 >

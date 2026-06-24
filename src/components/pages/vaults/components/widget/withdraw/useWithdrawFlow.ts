@@ -1,6 +1,7 @@
 import { useDirectUnstake } from '@pages/vaults/hooks/actions/useDirectUnstake'
 import { useDirectWithdraw } from '@pages/vaults/hooks/actions/useDirectWithdraw'
 import { useEnsoWithdraw } from '@pages/vaults/hooks/actions/useEnsoWithdraw'
+import { useYBoldZapperWithdraw } from '@pages/vaults/hooks/actions/useYBoldZapperWithdraw'
 import { useYvUsdLockedZapWithdraw } from '@pages/vaults/hooks/actions/useYvUsdLockedZapWithdraw'
 import type { EnsoRoutingStrategy } from '@pages/vaults/hooks/solvers/useSolverEnso'
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
@@ -87,8 +88,10 @@ export function useWithdrawFlow({
 }: UseWithdrawFlowProps): WithdrawFlowResult {
   const routeType = useWithdrawRoute({
     vaultAddress,
+    sourceToken,
     withdrawToken,
     assetAddress,
+    stakingAddress,
     withdrawalSource,
     chainId,
     outputChainId,
@@ -97,6 +100,7 @@ export function useWithdrawFlow({
   const isDirectWithdrawRoute = routeType === 'DIRECT_WITHDRAW'
   const isDirectUnstakeRoute = routeType === 'DIRECT_UNSTAKE'
   const isDirectUnstakeWithdrawRoute = routeType === 'DIRECT_UNSTAKE_WITHDRAW'
+  const isYBoldZapperWithdrawRoute = routeType === 'YBOLD_ZAPPER_WITHDRAW'
   const isEnsoRoute = routeType === 'ENSO'
 
   const isYvUsdLockedZapFlow = useMemo(
@@ -116,6 +120,8 @@ export function useWithdrawFlow({
     !isYvUsdLockedZapFlow
   const directUnstakeEnabled = (isDirectUnstakeRoute || isDirectUnstakeWithdrawRoute) && currentAmount > 0n
   const ensoEnabled = isEnsoRoute && !!withdrawToken && !isDebouncing && requiredShares > 0n && currentAmount > 0n
+  const yBoldZapperWithdrawEnabled =
+    isYBoldZapperWithdrawRoute && !isDebouncing && requiredShares > 0n && currentAmount > 0n
 
   const directWithdraw = useDirectWithdraw({
     vaultAddress,
@@ -138,6 +144,17 @@ export function useWithdrawFlow({
     account,
     chainId,
     enabled: isYvUsdLockedZapFlow && amount > 0n
+  })
+
+  const yBoldZapperWithdraw = useYBoldZapperWithdraw({
+    requiredVaultShares: requiredShares,
+    redeemAll: isMaxWithdraw,
+    maxRedeemShares: unstakeMaxRedeemShares,
+    optimisticApprovedShares,
+    maxLoss: BigInt(toBasisPoints(slippage)),
+    account,
+    chainId,
+    enabled: yBoldZapperWithdrawEnabled
   })
 
   const directUnstake = useDirectUnstake({
@@ -173,6 +190,9 @@ export function useWithdrawFlow({
     if (isDirectUnstakeRoute) {
       return directUnstake
     }
+    if (isYBoldZapperWithdrawRoute) {
+      return yBoldZapperWithdraw
+    }
     if (isDirectUnstakeWithdrawRoute) {
       return {
         actions: {
@@ -199,9 +219,11 @@ export function useWithdrawFlow({
   }, [
     isDirectWithdrawRoute,
     isDirectUnstakeRoute,
+    isYBoldZapperWithdrawRoute,
     isDirectUnstakeWithdrawRoute,
     isYvUsdLockedZapFlow,
     yvUsdLockedZapWithdraw,
+    yBoldZapperWithdraw,
     directWithdraw,
     directUnstake,
     ensoFlow

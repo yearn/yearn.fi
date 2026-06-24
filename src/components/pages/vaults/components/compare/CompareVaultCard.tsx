@@ -165,7 +165,7 @@ export function CompareVaultCard({ vault, onRemove }: TCompareVaultCardProps): R
           />
         </MetricRow>
 
-        <MetricRow label={'30 Day APY'} sublabel={'Average realized'}>
+        <MetricRow label={'Historical APY'} sublabel={'Average realized'}>
           <VaultHistoricalAPY currentVault={vault} className={'items-start text-left'} />
         </MetricRow>
 
