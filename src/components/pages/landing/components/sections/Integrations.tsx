@@ -44,7 +44,7 @@ const integrations: TIntegration[] = [
   {
     name: 'Term',
     imageSrc: '/landing/integrations/term.png',
-    description: 'Fixed-rate lending via on-chain auctions',
+    description: 'Fixed-rate lending via onchain auctions',
     href: 'https://www.term.finance/'
   },
   {
