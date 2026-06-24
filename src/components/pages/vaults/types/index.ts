@@ -81,6 +81,7 @@ export type UseWidgetDepositFlowReturn = T<
     approvalSpenderAddress?: TAddress
     approvalWarning?: string
     error?: string
+    refetchAllowance?: () => Promise<unknown>
   }
 >
 

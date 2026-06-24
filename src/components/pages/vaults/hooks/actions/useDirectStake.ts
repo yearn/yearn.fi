@@ -18,7 +18,7 @@ interface UseDirectStakeParams {
 
 export function useDirectStake(params: UseDirectStakeParams): UseWidgetDepositFlowReturn {
   // Check current allowance (vault tokens → staking contract)
-  const { allowance = 0n } = useTokenAllowance({
+  const { allowance = 0n, refetch: refetchAllowance } = useTokenAllowance({
     account: params.account,
     token: params.vaultAddress,
     spender: params.stakingAddress,
@@ -88,7 +88,8 @@ export function useDirectStake(params: UseDirectStakeParams): UseWidgetDepositFl
       minExpectedOut: expectedOut,
       isLoadingRoute: false,
       isCrossChain: false,
-      error: undefined
+      error: undefined,
+      refetchAllowance
     }
   }
 }

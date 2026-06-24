@@ -6,9 +6,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
 import { env } from '@/env'
 import {
-  UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE,
   getKnownEnsoRouterAddress,
-  getValidatedEnsoRouterAddress
+  getValidatedEnsoRouterAddress,
+  UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE
 } from '../../utils/ensoRouters'
 import { useTokenAllowance } from '../useTokenAllowance'
 import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
@@ -50,6 +50,7 @@ interface UseSolverEnsoReturn {
     routerAddress: Address | undefined
     approvalSpenderAddress: Address | undefined
     approvalWarning: string | undefined
+    refetchAllowance: () => Promise<unknown>
   }
   methods: {
     getRoute: () => Promise<void>
@@ -106,7 +107,11 @@ export const useSolverEnso = ({
   const knownRouterAddress = getKnownEnsoRouterAddress(chainId)
   const allowanceSpender = routerAddress || knownRouterAddress
 
-  const { allowance = 0n, isLoading: isLoadingAllowance } = useTokenAllowance({
+  const {
+    allowance = 0n,
+    isLoading: isLoadingAllowance,
+    refetch: refetchAllowance
+  } = useTokenAllowance({
     account: fromAddress,
     token: tokenIn,
     spender: allowanceSpender,
@@ -289,7 +294,8 @@ export const useSolverEnso = ({
       isCrossChain,
       routerAddress,
       approvalSpenderAddress: requestedRouterAddress,
-      approvalWarning: hasUntrustedRouterAddress ? UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE : undefined
+      approvalWarning: hasUntrustedRouterAddress ? UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE : undefined,
+      refetchAllowance
     },
     methods: {
       getRoute,
