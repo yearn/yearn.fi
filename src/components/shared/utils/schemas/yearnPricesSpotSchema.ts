@@ -2,10 +2,10 @@ import * as z from 'zod'
 
 const yearnPricesSpotPricePointSchema = z
   .object({
-    timestamp: z.number().optional(),
+    timestamp: z.number().nullable().optional(),
     price: z.number(),
-    confidence: z.number().optional(),
-    source: z.string().optional()
+    confidence: z.number().nullable().optional(),
+    source: z.string().nullable().optional()
   })
   .passthrough()
 
