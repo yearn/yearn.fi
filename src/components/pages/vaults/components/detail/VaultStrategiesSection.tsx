@@ -4,6 +4,7 @@ import {
 } from '@pages/vaults/components/detail/strategyDisplayFees'
 import { ALL_VAULTSV3_KINDS_KEYS } from '@pages/vaults/constants'
 import {
+  getVaultAddress,
   getVaultAPR,
   getVaultChainID,
   getVaultName,
@@ -14,7 +15,9 @@ import {
   type TKongVaultInput,
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { usePendingTimelockStrategies } from '@pages/vaults/hooks/usePendingTimelockStrategies'
 import { useQueryArguments } from '@pages/vaults/hooks/useVaultsQueryArgs'
+import type { TPendingTimelockStrategy } from '@pages/vaults/types/timelockStrategies'
 import type { TAllocationChartData } from '@shared/components/AllocationChart'
 import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode } from '@shared/components/AllocationChart'
 import { useYearn } from '@shared/contexts/useYearn'
@@ -23,6 +26,7 @@ import type { TSortDirection } from '@shared/types'
 import { cl, formatTvlDisplay, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { lazy, Suspense, useCallback, useMemo } from 'react'
+import { PendingTimelockStrategiesTable } from './PendingTimelockStrategiesTable'
 import { formatStrategiesPercent } from './strategiesPercentFormat'
 import { VaultsListHead } from './VaultsListHead'
 import { VaultsListStrategy } from './VaultsListStrategy'
@@ -43,10 +47,15 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
   const vaultVersion = getVaultVersion(currentVault)
   const vaultVariant = vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3') ? 'v3' : 'v2'
   const chainId = getVaultChainID(currentVault)
+  const vaultAddress = getVaultAddress(currentVault)
   const token = getVaultToken(currentVault)
   const fees = getVaultAPR(currentVault).fees
   const strategies = getVaultStrategies(currentVault)
   const totalAssets = getVaultTVL(currentVault).totalAssets
+  const pendingTimelockStrategies = usePendingTimelockStrategies({
+    chainId,
+    vaultAddress
+  })
   const { sortDirection, sortBy, onChangeSortDirection, onChangeSortBy } = useQueryArguments({
     defaultSortBy: 'allocationPercentage',
     defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
@@ -75,6 +84,14 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
       }
     })
   }, [allVaults, fees, strategies, vaultVariant, vaults])
+
+  const pendingRows = useMemo((): TPendingTimelockStrategy[] => {
+    const currentStrategyAddresses = new Set(mergedList.map((strategy) => toAddress(strategy.address)))
+
+    return (pendingTimelockStrategies.data?.items ?? []).filter(
+      (item) => !currentStrategyAddresses.has(toAddress(item.strategyAddress))
+    )
+  }, [mergedList, pendingTimelockStrategies.data?.items])
 
   const allocatedRatio = mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
   const unallocatedPercentage = Math.max(0, 10000 - allocatedRatio)
@@ -145,7 +162,7 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
     return [...activeStrategyData, unallocatedData].filter(Boolean) as TAllocationChartData[]
   }, [activeStrategyData, token.decimals, tokenPrice, unallocatedPercentage, unallocatedValue])
 
-  const isVaultListEmpty = mergedList.length === 0
+  const isVaultListEmpty = filteredVaultList.length === 0 && pendingRows.length === 0
   const isFilteredVaultListEmpty = filteredVaultList.length === 0
 
   return (
@@ -202,123 +219,134 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
           </div>
         ) : (
           <div className={'space-y-px'}>
-            <VaultsListHead
-              sortBy={sortBy}
-              sortDirection={sortDirection}
-              onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
-                onChangeSortBy(newSortBy as never)
-                onChangeSortDirection(newSortDirection)
-              }}
-              items={[
-                {
-                  label: 'Strategy',
-                  value: 'name',
-                  sortable: false
-                },
-                {
-                  label: 'Allocation %',
-                  value: 'allocationPercentage',
-                  sortable: true
-                },
-                {
-                  label: 'Amount',
-                  value: 'totalDebt',
-                  sortable: true
-                },
-                {
-                  label: 'APY',
-                  value: 'netAPR',
-                  sortable: true
-                }
-              ]}
-            />
-            {sortedVaultsToDisplay
-              .filter(
-                (strategy) =>
-                  !(
-                    strategy.status === 'unallocated' ||
-                    strategy.details?.totalDebt === '0' ||
-                    !strategy.details?.debtRatio
+            {filteredVaultList.length > 0 ? (
+              <>
+                <VaultsListHead
+                  sortBy={sortBy}
+                  sortDirection={sortDirection}
+                  onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+                    onChangeSortBy(newSortBy as never)
+                    onChangeSortDirection(newSortDirection)
+                  }}
+                  items={[
+                    {
+                      label: 'Strategy',
+                      value: 'name',
+                      sortable: false
+                    },
+                    {
+                      label: 'Allocation %',
+                      value: 'allocationPercentage',
+                      sortable: true
+                    },
+                    {
+                      label: 'Amount',
+                      value: 'totalDebt',
+                      sortable: true
+                    },
+                    {
+                      label: 'APY',
+                      value: 'netAPR',
+                      sortable: true
+                    }
+                  ]}
+                />
+                {sortedVaultsToDisplay
+                  .filter(
+                    (strategy) =>
+                      !(
+                        strategy.status === 'unallocated' ||
+                        strategy.details?.totalDebt === '0' ||
+                        !strategy.details?.debtRatio
+                      )
                   )
-              )
-              .map((strategy) => (
-                <VaultsListStrategy
-                  key={strategy.address}
-                  details={strategy.details}
-                  status={strategy.status}
-                  chainId={chainId}
-                  allocation={formatAllocationAmount(strategy.details?.totalDebt)}
-                  totalValueUsd={resolveStrategyUsdValue(strategy.details?.totalDebt)}
-                  name={strategy.name}
-                  tokenAddress={token.address}
-                  address={strategy.address}
-                  isVault={strategy.isVault}
-                  variant={vaultVariant}
-                  apr={strategy.estimatedAPY}
-                  netApr={strategy.netAPR}
-                  katRewardsAPR={strategy.katRewardsAPR}
-                  fees={strategy.fees}
-                />
-              ))}
-            {unallocatedPercentage > 0 && unallocatedValue > 0n ? (
-              <div className={'w-full rounded-lg text-text-primary opacity-50'}>
-                <div className={'grid w-full grid-cols-1 items-center gap-4 px-4 py-3 md:grid-cols-24 md:px-8'}>
-                  <div className={'flex w-full items-center gap-2 md:col-span-11 md:w-auto'}>
-                    <div className={'flex size-6 items-center justify-center'}>
-                      <div className={'size-2 rounded-full bg-text-secondary'} />
+                  .map((strategy) => (
+                    <VaultsListStrategy
+                      key={strategy.address}
+                      details={strategy.details}
+                      status={strategy.status}
+                      chainId={chainId}
+                      allocation={formatAllocationAmount(strategy.details?.totalDebt)}
+                      totalValueUsd={resolveStrategyUsdValue(strategy.details?.totalDebt)}
+                      name={strategy.name}
+                      tokenAddress={token.address}
+                      address={strategy.address}
+                      isVault={strategy.isVault}
+                      variant={vaultVariant}
+                      apr={strategy.estimatedAPY}
+                      netApr={strategy.netAPR}
+                      katRewardsAPR={strategy.katRewardsAPR}
+                      fees={strategy.fees}
+                    />
+                  ))}
+                {unallocatedPercentage > 0 && unallocatedValue > 0n ? (
+                  <div className={'w-full rounded-lg text-text-primary opacity-50'}>
+                    <div className={'grid w-full grid-cols-1 items-center gap-4 px-4 py-3 md:grid-cols-24 md:px-8'}>
+                      <div className={'flex w-full items-center gap-2 md:col-span-11 md:w-auto'}>
+                        <div className={'flex size-6 items-center justify-center'}>
+                          <div className={'size-2 rounded-full bg-text-secondary'} />
+                        </div>
+                        <strong title={'Unallocated'} className={'block truncate font-bold'}>
+                          Unallocated
+                        </strong>
+                      </div>
+                      <div className={'grid w-full grid-cols-3 gap-2 md:col-span-12 md:grid-cols-12 md:gap-2'}>
+                        <div className={'flex flex-col items-center md:items-end md:col-span-4'} datatype={'number'}>
+                          <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>Allocation %</p>
+                          <p className={'font-semibold'}>{formatStrategiesPercent(unallocatedPercentage / 100)}</p>
+                        </div>
+                        <div className={'flex flex-col items-center md:items-end md:col-span-4'} datatype={'number'}>
+                          <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>Amount</p>
+                          <p className={'font-semibold'}>
+                            {formatTvlDisplay(
+                              Number(toNormalizedBN(unallocatedValue, token.decimals).normalized) * tokenPrice
+                            )}
+                          </p>
+                        </div>
+                        <div className={'flex flex-col items-center md:items-end md:col-span-4'} datatype={'number'}>
+                          <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>APY</p>
+                          <p className={'font-semibold'}>-</p>
+                        </div>
+                      </div>
+                      <div className={'hidden md:block md:col-span-1'}></div>
                     </div>
-                    <strong title={'Unallocated'} className={'block truncate font-bold'}>
-                      Unallocated
-                    </strong>
                   </div>
-                  <div className={'grid w-full grid-cols-3 gap-2 md:col-span-12 md:grid-cols-12 md:gap-2'}>
-                    <div className={'flex flex-col items-center md:items-end md:col-span-4'} datatype={'number'}>
-                      <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>Allocation %</p>
-                      <p className={'font-semibold'}>{formatStrategiesPercent(unallocatedPercentage / 100)}</p>
-                    </div>
-                    <div className={'flex flex-col items-center md:items-end md:col-span-4'} datatype={'number'}>
-                      <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>Amount</p>
-                      <p className={'font-semibold'}>
-                        {formatTvlDisplay(
-                          Number(toNormalizedBN(unallocatedValue, token.decimals).normalized) * tokenPrice
-                        )}
-                      </p>
-                    </div>
-                    <div className={'flex flex-col items-center md:items-end md:col-span-4'} datatype={'number'}>
-                      <p className={'mb-1 text-xs text-text-primary/60 md:hidden'}>APY</p>
-                      <p className={'font-semibold'}>-</p>
-                    </div>
-                  </div>
-                  <div className={'hidden md:block md:col-span-1'}></div>
-                </div>
-              </div>
+                ) : null}
+                {sortedVaultsToDisplay
+                  .filter(
+                    (strategy) =>
+                      strategy.status === 'unallocated' ||
+                      strategy.details?.totalDebt === '0' ||
+                      !strategy.details?.debtRatio
+                  )
+                  .map((strategy) => (
+                    <VaultsListStrategy
+                      key={strategy.address}
+                      details={strategy.details}
+                      status={strategy.status}
+                      chainId={chainId}
+                      allocation={formatAllocationAmount(strategy.details?.totalDebt)}
+                      totalValueUsd={resolveStrategyUsdValue(strategy.details?.totalDebt)}
+                      name={strategy.name}
+                      tokenAddress={token.address}
+                      address={strategy.address}
+                      isVault={strategy.isVault}
+                      variant={vaultVariant}
+                      apr={strategy.estimatedAPY}
+                      netApr={strategy.netAPR}
+                      katRewardsAPR={strategy.katRewardsAPR}
+                      fees={strategy.fees}
+                    />
+                  ))}
+              </>
             ) : null}
-            {sortedVaultsToDisplay
-              .filter(
-                (strategy) =>
-                  strategy.status === 'unallocated' ||
-                  strategy.details?.totalDebt === '0' ||
-                  !strategy.details?.debtRatio
-              )
-              .map((strategy) => (
-                <VaultsListStrategy
-                  key={strategy.address}
-                  details={strategy.details}
-                  status={strategy.status}
-                  chainId={chainId}
-                  allocation={formatAllocationAmount(strategy.details?.totalDebt)}
-                  totalValueUsd={resolveStrategyUsdValue(strategy.details?.totalDebt)}
-                  name={strategy.name}
-                  tokenAddress={token.address}
-                  address={strategy.address}
-                  isVault={strategy.isVault}
-                  variant={vaultVariant}
-                  apr={strategy.estimatedAPY}
-                  netApr={strategy.netAPR}
-                  katRewardsAPR={strategy.katRewardsAPR}
-                  fees={strategy.fees}
-                />
-              ))}
+            <PendingTimelockStrategiesTable
+              chainId={chainId}
+              items={pendingRows}
+              tokenAddress={token.address}
+              tokenDecimals={token.decimals}
+              tokenSymbol={token.symbol}
+            />
           </div>
         )}
       </div>
