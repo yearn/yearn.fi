@@ -32,7 +32,7 @@ const integrations: TIntegration[] = [
   {
     name: 'Katana',
     imageSrc: '/landing/integrations/katana.png',
-    description: 'A blockchain built to generate real revenue and sustainable yield for users',
+    description: 'A layer-2 blockchain built to generate real revenue and sustainable yield for users',
     href: 'https://katana.network/'
   },
   {
