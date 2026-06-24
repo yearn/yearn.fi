@@ -12,46 +12,46 @@ type TIntegration = {
 
 const integrations: TIntegration[] = [
   {
-    name: 'Cove',
-    imageSrc: '/landing/integrations/cove.png',
-    description: 'Earn the best yields on-chain without the hassle of managing a portfolio.',
-    href: 'https://cove.finance'
+    name: 'Curve',
+    imageSrc: '/landing/integrations/.png',
+    description: 'The platform for building deep, sustainable onchain liquidity',
+    href: 'https://www.curve.finance/'
   },
   {
-    name: '1UP',
-    imageSrc: '/landing/integrations/1up.png',
-    description: '1UP is a public good liquid locker for YFI.',
-    href: 'https://1up.tokyo/'
+    name: 'Alchemix',
+    imageSrc: '/landing/integrations/alchemix.png',
+    description: 'Self-Repaying DeFi Loans',
+    href: 'https://alchemix.fi/'
   },
   {
-    name: 'Stakedao',
-    imageSrc: '/landing/integrations/stakedao.png',
-    description: 'A non-custodial liquid staking platform focused on governance tokens.',
-    href: 'https://stakedao.org'
+    name: 'Origin',
+    imageSrc: '/landing/integrations/origin.png',
+    description: 'Building foundational infrastructure for onchain yield',
+    href: 'https://www.originprotocol.com/'
   },
   {
-    name: 'Sturdy',
-    imageSrc: '/landing/integrations/sturdy.png',
-    description: 'Isolated lending with shared liquidity.',
-    href: 'https://sturdy.finance'
+    name: 'Katana',
+    imageSrc: '/landing/integrations/katana.png',
+    description: 'A DeFi blockchain built to generate real revenue and sustainable yield for users',
+    href: 'https://katana.network/'
   },
   {
-    name: 'PWN',
-    imageSrc: '/landing/integrations/pwn.png',
-    description: 'PWN is a hub for peer-to-peer (P2P) loans backed by digital assets.',
-    href: 'https://pwn.finance'
+    name: 'Trueo',
+    imageSrc: '/landing/integrations/trueo.png',
+    description: 'A fully onchain, yield-bearing prediction market protocol',
+    href: 'https://trueo.com/'
   },
   {
-    name: 'Superform',
-    imageSrc: '/landing/integrations/super.png',
-    description: 'Superform grows your onchain wealth. Earn the best returns on your crypto.',
-    href: 'https://superform.xyz'
+    name: 'Term',
+    imageSrc: '/landing/integrations/term.png',
+    description: 'Fixed-rate lending via on-chain auctions',
+    href: 'https://www.term.finance/'
   },
   {
-    name: 'Resupply',
-    imageSrc: '/landing/integrations/resupply.png',
-    description: 'A decentralized stablecoin protocol.',
-    href: 'https://resupply.fi/'
+    name: 'Cap',
+    imageSrc: '/landing/integrations/cap.png',
+    description: 'A covered credit application consisting of a digital dollar and a credit platform',
+    href: 'https://www.cap.app/'
   }
 ]
 
