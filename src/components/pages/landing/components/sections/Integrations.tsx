@@ -13,7 +13,7 @@ type TIntegration = {
 const integrations: TIntegration[] = [
   {
     name: 'Curve',
-    imageSrc: '/landing/integrations/.png',
+    imageSrc: '/landing/integrations/curve.png',
     description: 'The platform for building deep, sustainable onchain liquidity',
     href: 'https://www.curve.finance/'
   },
@@ -32,7 +32,7 @@ const integrations: TIntegration[] = [
   {
     name: 'Katana',
     imageSrc: '/landing/integrations/katana.png',
-    description: 'A DeFi blockchain built to generate real revenue and sustainable yield for users',
+    description: 'A blockchain built to generate real revenue and sustainable yield for users',
     href: 'https://katana.network/'
   },
   {
@@ -95,7 +95,7 @@ export const Integrations: FC = () => (
         <SectionHeader
           tagline={'Partners'}
           title={'Integrations'}
-          description={'External Yearn vaults available through our partners'}
+          description={'Partners actively using Yearn vaults'}
         />
         <div className={'mt-6 grid overflow-hidden rounded-lg sm:mt-8'}>
           {integrations.map((integration, index) => (
