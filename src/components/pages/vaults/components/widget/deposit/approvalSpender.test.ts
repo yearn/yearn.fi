@@ -1,6 +1,6 @@
+import { getKnownEnsoRouterAddress, UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE } from '@pages/vaults/utils/ensoRouters'
 import { getAddress } from 'viem'
 import { describe, expect, it } from 'vitest'
-import { UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE, getKnownEnsoRouterAddress } from '@pages/vaults/utils/ensoRouters'
 import { getDepositApprovalSpender } from './approvalSpender'
 
 describe('getDepositApprovalSpender', () => {

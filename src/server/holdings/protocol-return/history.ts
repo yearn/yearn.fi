@@ -1,4 +1,4 @@
-import { GET_CORS_HEADERS, WALLET_SCOPED_CACHE_CONTROL, json, noContent, queryValue } from '../../http'
+import { GET_CORS_HEADERS, json, noContent, queryValue, WALLET_SCOPED_CACHE_CONTROL } from '../../http'
 import type {
   HoldingsEventFetchType,
   HoldingsEventPaginationMode,

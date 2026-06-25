@@ -1,4 +1,4 @@
-import { UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE, getValidatedEnsoRouterAddress } from '@pages/vaults/utils/ensoRouters'
+import { getValidatedEnsoRouterAddress, UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE } from '@pages/vaults/utils/ensoRouters'
 import { YBOLD_ZAPPER_ADDRESS } from '@pages/vaults/utils/yBold'
 import { toAddress } from '@shared/utils'
 import type { Address } from 'viem'

@@ -1,6 +1,6 @@
+import { UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE } from '@pages/vaults/utils/ensoRouters'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
-import { UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE } from '@pages/vaults/utils/ensoRouters'
 import type { DepositRouteType } from './types'
 
 interface UseDepositErrorProps {
