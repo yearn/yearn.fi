@@ -34,16 +34,16 @@ function RiskScoreItem({
       <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
         <button onClick={onToggle} className={'flex items-end gap-2 text-left transition-colors hover:opacity-70'}>
           <span
-            className={cl('transition-transform', isOverall ? 'text-xl' : 'text-lg')}
+            className={cl('transition-transform', 'text-lg')}
             style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
           >
             {'+'}
           </span>
-          <p className={cl('font-medium', isOverall ? 'text-xl font-bold' : '')}>{label}</p>
+          <p className={cl('font-medium', isOverall ? 'text-base font-bold' : '')}>{label}</p>
         </button>
         {hasScore ? (
           <div className={'flex items-end font-bold'}>
-            <p className={cl(scoreSuffix ? 'mr-2' : '', isOverall ? 'text-xl' : 'text-lg')}>{score}</p>
+            <p className={cl(scoreSuffix ? 'mr-2' : '', 'text-lg')}>{score}</p>
             {scoreSuffix ? <span className={'text-text-tertiary'}>{scoreSuffix}</span> : null}
           </div>
         ) : null}
@@ -70,31 +70,42 @@ export function VaultRiskSection({ currentVault }: { currentVault: TKongVaultInp
 }
 
 function YvUsdRiskScore({ vaultLabel }: { vaultLabel: 'yvUSD' | 'yvBTC' }): ReactElement {
-  const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const [openKey, setOpenKey] = useState<string | null>(null)
   const riskScoreItems = YVUSD_RISK_SCORE_ITEMS.map((item) => ({
     ...item,
     explanation: vaultLabel === 'yvBTC' ? item.explanation.replaceAll('yvUSD', 'yvBTC') : item.explanation
   }))
 
-  const toggleItem = (index: number): void => {
-    setOpenIndex((current) => (current === index ? null : index))
+  const overallItem = riskScoreItems.find((item) => item.isOverall) ?? riskScoreItems[0]
+  const factorItems = riskScoreItems.filter((item) => item !== overallItem)
+
+  const toggle = (key: string): void => {
+    setOpenKey((current) => (current === key ? null : key))
   }
 
   return (
     <div className={'grid grid-cols-1 gap-4 p-4 pt-0 md:grid-cols-12 md:gap-10 md:p-6 md:pt-0'}>
-      <div className={'col-span-12 w-full space-y-1'}>
-        {riskScoreItems.map((item, index) => (
-          <RiskScoreItem
-            key={item.label}
-            label={item.label}
-            score={item.score}
-            scoreSuffix={item.isOverall ? null : undefined}
-            explanation={item.explanation}
-            isOpen={openIndex === index}
-            onToggle={(): void => toggleItem(index)}
-            isOverall={item.isOverall}
-          />
-        ))}
+      <div className={'col-span-12 w-full'}>
+        <RiskScoreItem
+          label={overallItem.label}
+          score={overallItem.score}
+          scoreSuffix={null}
+          explanation={overallItem.explanation}
+          isOpen={openKey === 'overall'}
+          onToggle={(): void => toggle('overall')}
+          isOverall
+        />
+        <div className={'mt-2 space-y-1 border-l border-border pl-4'}>
+          {factorItems.map((item) => (
+            <RiskScoreItem
+              key={item.label}
+              label={item.label}
+              explanation={item.explanation}
+              isOpen={openKey === item.label}
+              onToggle={(): void => toggle(item.label)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -134,11 +145,11 @@ function SimpleRiskScore({
             <div className={'flex flex-col gap-2'}>
               <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
                 <div className={'flex items-end gap-2'}>
-                  <p className={'text-xl font-bold'}>{multiStrategyRiskScore.label}</p>
+                  <p className={'text-base font-bold'}>{multiStrategyRiskScore.label}</p>
                 </div>
                 <div className={'flex items-end gap-4'}>
                   <div className={'flex items-center font-bold'}>
-                    <p className={'mr-2 text-xl'}>{multiStrategyRiskScore.score}</p>
+                    <p className={'mr-2 text-lg'}>{multiStrategyRiskScore.score}</p>
                     <span className={'text-text-tertiary'}>{' / 5'}</span>
                   </div>
                   {renderInlineRiskScoreTag()}
@@ -252,11 +263,11 @@ function SimpleRiskScore({
           <div className={'text-text-primary'}>
             <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
               <div className={'flex items-end gap-2'}>
-                <p className={'text-xl font-bold'}>{'Overall Risk Score'}</p>
+                <p className={'text-base font-bold'}>{'Overall Risk Score'}</p>
               </div>
               <div className={'flex items-end gap-4'}>
                 <div className={'flex items-center font-bold'}>
-                  <p className={'mr-2 text-xl'}>{1}</p>
+                  <p className={'mr-2 text-lg'}>{1}</p>
                   <span className={'text-text-tertiary'}>{' / 5'}</span>
                 </div>
                 {renderInlineRiskScoreTag(1)}
