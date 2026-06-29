@@ -154,7 +154,17 @@ export const useSolverEnso = ({
         return
       }
 
-      const normalizedResponse = normalizeEnsoRouteResponse(data, response.status, chainId)
+      const normalizedResponse = normalizeEnsoRouteResponse(data, response.status, {
+        fallbackChainId: chainId,
+        validationContext: {
+          fromAddress,
+          tokenIn,
+          tokenOut,
+          amountIn,
+          receiver: receiver ?? fromAddress,
+          chainId
+        }
+      })
       if (normalizedResponse.error) {
         console.warn('[Enso] Route error', {
           chainId,
