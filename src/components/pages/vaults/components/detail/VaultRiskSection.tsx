@@ -34,16 +34,16 @@ function RiskScoreItem({
       <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
         <button onClick={onToggle} className={'flex items-end gap-2 text-left transition-colors hover:opacity-70'}>
           <span
-            className={cl('transition-transform', isOverall ? 'text-xl' : 'text-lg')}
+            className={cl('transition-transform', 'text-lg')}
             style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
           >
             {'+'}
           </span>
-          <p className={cl('font-medium', isOverall ? 'text-xl font-bold' : '')}>{label}</p>
+          <p className={cl('font-medium', isOverall ? 'text-base font-bold' : '')}>{label}</p>
         </button>
         {hasScore ? (
           <div className={'flex items-end font-bold'}>
-            <p className={cl(scoreSuffix ? 'mr-2' : '', isOverall ? 'text-xl' : 'text-lg')}>{score}</p>
+            <p className={cl(scoreSuffix ? 'mr-2' : '', 'text-lg')}>{score}</p>
             {scoreSuffix ? <span className={'text-text-tertiary'}>{scoreSuffix}</span> : null}
           </div>
         ) : null}
@@ -134,11 +134,11 @@ function SimpleRiskScore({
             <div className={'flex flex-col gap-2'}>
               <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
                 <div className={'flex items-end gap-2'}>
-                  <p className={'text-xl font-bold'}>{multiStrategyRiskScore.label}</p>
+                  <p className={'text-base font-bold'}>{multiStrategyRiskScore.label}</p>
                 </div>
                 <div className={'flex items-end gap-4'}>
                   <div className={'flex items-center font-bold'}>
-                    <p className={'mr-2 text-xl'}>{multiStrategyRiskScore.score}</p>
+                    <p className={'mr-2 text-lg'}>{multiStrategyRiskScore.score}</p>
                     <span className={'text-text-tertiary'}>{' / 5'}</span>
                   </div>
                   {renderInlineRiskScoreTag()}
@@ -252,11 +252,11 @@ function SimpleRiskScore({
           <div className={'text-text-primary'}>
             <div className={'flex flex-wrap items-end gap-4 md:gap-8'}>
               <div className={'flex items-end gap-2'}>
-                <p className={'text-xl font-bold'}>{'Overall Risk Score'}</p>
+                <p className={'text-base font-bold'}>{'Overall Risk Score'}</p>
               </div>
               <div className={'flex items-end gap-4'}>
                 <div className={'flex items-center font-bold'}>
-                  <p className={'mr-2 text-xl'}>{1}</p>
+                  <p className={'mr-2 text-lg'}>{1}</p>
                   <span className={'text-text-tertiary'}>{' / 5'}</span>
                 </div>
                 {renderInlineRiskScoreTag(1)}

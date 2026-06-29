@@ -1888,9 +1888,7 @@ function Index(): ReactElement | null {
                           }))
                         }
                       >
-                        <span className={'text-base font-semibold text-text-primary'}>
-                          {collapsibleTitles[typedKey]}
-                        </span>
+                        <span className={'text-lg font-semibold text-text-primary'}>{collapsibleTitles[typedKey]}</span>
                         <IconChevron
                           className={'size-4 text-text-secondary transition-transform duration-200'}
                           direction={isOpen ? 'up' : 'down'}
@@ -2027,7 +2025,7 @@ function Index(): ReactElement | null {
                             }))
                           }
                         >
-                          <span className={'text-base font-semibold text-text-primary'}>
+                          <span className={'text-lg font-semibold text-text-primary'}>
                             {collapsibleTitles[typedKey]}
                           </span>
                           <IconChevron
