@@ -87,4 +87,41 @@ describe('holdings history route', () => {
       ]
     )
   })
+
+  it('keeps public timeframe while ignoring advanced event-fetch params', async () => {
+    getHistoricalHoldingsChartMock.mockResolvedValue({
+      address: TEST_WALLET_ADDRESS,
+      periodDays: 365,
+      timeframe: 'all',
+      denomination: 'eth',
+      hasActivity: true,
+      dataPoints: [{ date: '2026-04-21', timestamp: 1776815999, value: 1 }]
+    })
+
+    const { default: handler } = await import('./history')
+    const response = await handler(
+      createRequest({
+        address: TEST_WALLET_ADDRESS,
+        fetchType: 'parallel',
+        paginationMode: 'all',
+        timeframe: 'all',
+        denomination: 'eth'
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(getHistoricalHoldingsChartMock).toHaveBeenCalledWith(
+      TEST_WALLET_ADDRESS,
+      'all',
+      'seq',
+      'paged',
+      'eth',
+      'all',
+      undefined
+    )
+    await expect(response.json()).resolves.toMatchObject({
+      denomination: 'eth',
+      timeframe: 'all'
+    })
+  })
 })
