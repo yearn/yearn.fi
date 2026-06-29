@@ -70,31 +70,42 @@ export function VaultRiskSection({ currentVault }: { currentVault: TKongVaultInp
 }
 
 function YvUsdRiskScore({ vaultLabel }: { vaultLabel: 'yvUSD' | 'yvBTC' }): ReactElement {
-  const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const [openKey, setOpenKey] = useState<string | null>(null)
   const riskScoreItems = YVUSD_RISK_SCORE_ITEMS.map((item) => ({
     ...item,
     explanation: vaultLabel === 'yvBTC' ? item.explanation.replaceAll('yvUSD', 'yvBTC') : item.explanation
   }))
 
-  const toggleItem = (index: number): void => {
-    setOpenIndex((current) => (current === index ? null : index))
+  const overallItem = riskScoreItems.find((item) => item.isOverall) ?? riskScoreItems[0]
+  const factorItems = riskScoreItems.filter((item) => item !== overallItem)
+
+  const toggle = (key: string): void => {
+    setOpenKey((current) => (current === key ? null : key))
   }
 
   return (
     <div className={'grid grid-cols-1 gap-4 p-4 pt-0 md:grid-cols-12 md:gap-10 md:p-6 md:pt-0'}>
-      <div className={'col-span-12 w-full space-y-1'}>
-        {riskScoreItems.map((item, index) => (
-          <RiskScoreItem
-            key={item.label}
-            label={item.label}
-            score={item.score}
-            scoreSuffix={item.isOverall ? null : undefined}
-            explanation={item.explanation}
-            isOpen={openIndex === index}
-            onToggle={(): void => toggleItem(index)}
-            isOverall={item.isOverall}
-          />
-        ))}
+      <div className={'col-span-12 w-full'}>
+        <RiskScoreItem
+          label={overallItem.label}
+          score={overallItem.score}
+          scoreSuffix={null}
+          explanation={overallItem.explanation}
+          isOpen={openKey === 'overall'}
+          onToggle={(): void => toggle('overall')}
+          isOverall
+        />
+        <div className={'mt-2 space-y-1 border-l border-border pl-4'}>
+          {factorItems.map((item) => (
+            <RiskScoreItem
+              key={item.label}
+              label={item.label}
+              explanation={item.explanation}
+              isOpen={openKey === item.label}
+              onToggle={(): void => toggle(item.label)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   )
