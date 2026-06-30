@@ -34,6 +34,13 @@ import {
   withHoldingsDebugContext
 } from './lib/holdings/services/debug'
 import { getHoldingsProgress, startHoldingsProgress, updateHoldingsProgress } from './lib/holdings/services/progress'
+import {
+  buildMerklRewardsHeaders,
+  buildMerklRewardsUrl,
+  getMerklApiKey,
+  MERKL_REWARDS_CACHE_CONTROL,
+  validateMerklRewardsParams
+} from './merkl/rewards.helpers'
 import { getVaultDecimals } from './optimization/_lib/assetLogos'
 import { fetchAlignedEvents } from './optimization/_lib/envio'
 import { parseExplainMetadata } from './optimization/_lib/explain-parse'
@@ -659,6 +666,49 @@ async function handleEnsoBalances(req: Request): Promise<Response> {
     })
   } catch (error) {
     console.error('Error proxying Enso request:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+async function handleMerklRewards(req: Request): Promise<Response> {
+  if (req.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405 })
+  }
+
+  const url = new URL(req.url)
+  const validation = validateMerklRewardsParams(url.searchParams.get('userAddress'), url.searchParams.get('chainId'))
+  if (!validation.ok) {
+    return Response.json({ error: validation.error }, { status: validation.status })
+  }
+
+  const apiKey = getMerklApiKey()
+  if (!apiKey) {
+    console.error('MERKL_API_KEY not configured')
+    return Response.json({ error: 'Merkl API not configured' }, { status: 500 })
+  }
+
+  try {
+    const response = await fetch(buildMerklRewardsUrl(validation.params), {
+      headers: buildMerklRewardsHeaders(apiKey)
+    })
+    const responseBody = await response.text()
+
+    if (!response.ok) {
+      console.error(`Merkl API error: ${response.status}`, responseBody)
+      return Response.json(
+        { error: 'Merkl API error', status: response.status, details: responseBody },
+        { status: response.status }
+      )
+    }
+
+    return new Response(responseBody, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': MERKL_REWARDS_CACHE_CONTROL
+      }
+    })
+  } catch (error) {
+    console.error('Error proxying Merkl rewards request:', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -1321,6 +1371,10 @@ async function main() {
 
         if (url.pathname === '/api/enso/route') {
           return withCors(await handleEnsoRoute(req))
+        }
+
+        if (url.pathname === '/api/merkl/rewards') {
+          return withCors(await handleMerklRewards(req))
         }
 
         if (url.pathname === '/api/holdings/history') {

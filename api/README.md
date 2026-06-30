@@ -30,6 +30,7 @@ The local server adds CORS to all handled routes and includes dev-only Tenderly 
 | `/api/enso/status` | `GET` | Vercel + local | Returns whether `ENSO_API_KEY` is configured |
 | `/api/enso/balances` | `GET` | Vercel + local | Proxies Enso wallet balances |
 | `/api/enso/route` | `GET` | Vercel + local | Proxies Enso route quotes/transactions |
+| `/api/merkl/rewards` | `GET` | Vercel + local | Proxies Merkl user rewards with `MERKL_API_KEY` |
 | `/api/optimization/change` | `GET` | Vercel + local | Latest or historical optimization payloads from Redis |
 | `/api/optimization/alignment` | `GET` | Vercel + local | Envio keeper-event alignment for a selected optimization |
 | `/api/optimization/vault-state` | `POST` | Vercel + local | Live vault and strategy debt state from chain RPCs |
@@ -59,6 +60,13 @@ The holdings implementation is the largest API surface here. See [`lib/holdings/
 - `/api/enso/balances` requires `eoaAddress`; Vercel always requests `chainId=all`, while the local server also accepts an optional `chainId`.
 - `/api/enso/route` requires `fromAddress`, `chainId`, `tokenIn`, `tokenOut`, and `amountIn`. Optional params are `slippage`, `routingStrategy`, `destinationChainId`, and `receiver`.
 - `/api/enso/balances` sets `Cache-Control: private, no-store, max-age=0, must-revalidate`.
+
+## Merkl Proxy
+
+`/api/merkl/rewards` keeps `MERKL_API_KEY` server-side and forwards user reward requests to `https://api.merkl.xyz` with Merkl's `X-API-Key` header.
+
+- Required params are `userAddress=0x...` and `chainId=<id>`.
+- The route sets `Cache-Control: private, no-store, max-age=0, must-revalidate`.
 
 ## Optimization APIs
 
@@ -105,6 +113,7 @@ Required env for a configured chain:
 | `API_PROXY_TARGET` / `VITE_API_PROXY_TARGET` | Vite proxy | Explicit `/api` proxy target, overrides host/port resolution |
 | `API_PROXY_HOST` | Vite proxy | Host used when Vite builds the default `/api` proxy target |
 | `ENSO_API_KEY` | Enso routes | Bearer token for Enso upstream requests |
+| `MERKL_API_KEY` | Merkl route | API key sent to Merkl as `X-API-Key` |
 | `YVUSD_APR_SERVICE_API` | yvUSD route | Upstream APR service URL |
 | `ENVIO_GRAPHQL_URL` | holdings, optimization alignment | Envio GraphQL endpoint |
 | `ENVIO_PASSWORD` | holdings, optimization alignment | Optional Envio secret or bearer token |
