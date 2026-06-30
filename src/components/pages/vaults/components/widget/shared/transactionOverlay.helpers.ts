@@ -104,6 +104,11 @@ export function resolveExecutionTrackingHash(params: {
   return params.safeExecutionTxHash ?? params.callsReceiptTxHash
 }
 
+export function hasExecutableWalletConnector(connector: unknown): boolean {
+  const candidate = connector as { getAccounts?: unknown; getChainId?: unknown } | null | undefined
+  return typeof candidate?.getAccounts === 'function' && typeof candidate.getChainId === 'function'
+}
+
 export function shouldAutoContinuePermitSuccess(params: {
   overlayState: OverlayState
   executedStepIsPermit?: boolean

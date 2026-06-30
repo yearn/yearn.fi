@@ -23,6 +23,7 @@ import {
   getAutoContinueConfirmDelayMs,
   getInitialOverlayState,
   getPendingTransactionTitle,
+  hasExecutableWalletConnector,
   type OverlayState,
   resolveCompletionDeferral,
   resolveExecutionTrackingHash,
@@ -202,8 +203,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const currentChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>()
-  const { address: account, chain, connector } = useAccount()
+  const { address: account, chain, connector, status: accountStatus } = useAccount()
   const isWalletSafe = isSafeConnectorId(connector?.id)
+  const isWalletConnectionReady =
+    accountStatus === 'connected' && Boolean(account) && hasExecutableWalletConnector(connector)
   const connectedChainId = resolveOverlayConnectedChainId({
     accountChainId: chain?.id,
     currentChainId,
@@ -259,7 +262,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   // Check if current step is ready to execute
   const isStepEnabled = step?.isEnabled ?? true
   const isStepReady = Boolean(
-    isStepEnabled &&
+    isWalletConnectionReady &&
+      isStepEnabled &&
       (step?.batch ? step.batch.calls.length > 0 : step?.prepare.isSuccess && step?.prepare.data?.request)
   )
   const executedStepLabel = executedStepRef.current?.label
@@ -692,7 +696,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
         const hash = await writeContract.writeContractAsync({
           ...request,
-          ...gasOverrides
+          ...gasOverrides,
+          connector
         })
         setTxHash(hash)
         setOverlayState('pending')
@@ -736,13 +741,19 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       return
     }
 
+    if (!isWalletConnectionReady) {
+      setOverlayState('error')
+      setErrorMessage('Wallet is reconnecting. Please try again in a moment.')
+      return
+    }
+
     if (step.isPermit && step.permitData) {
       await executePermitStep(step)
       return
     }
 
     await executeContractStep(step)
-  }, [executeContractStep, executePermitStep, step])
+  }, [executeContractStep, executePermitStep, isWalletConnectionReady, step])
 
   const advanceToNextStep = useCallback(() => {
     const executedStepLabel = executedStepRef.current?.label
@@ -843,14 +854,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         hasStep: Boolean(step),
         hasStarted: hasStartedRef.current,
         isStepReady,
-        isPermitStepReady: Boolean(step?.isPermit && step.permitData),
+        isPermitStepReady: Boolean(isWalletConnectionReady && step?.isPermit && step.permitData),
         hasPrepareError: Boolean(step?.prepare.isError)
       })
     ) {
       hasStartedRef.current = true
       executeStep()
     }
-  }, [executeStep, isOpen, isStepReady, overlayState, step])
+  }, [executeStep, isOpen, isStepReady, isWalletConnectionReady, overlayState, step])
 
   useEffect(() => {
     if (!isOpen || !isWaitingForNextStep || !step) return
