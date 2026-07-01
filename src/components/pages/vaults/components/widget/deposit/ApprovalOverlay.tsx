@@ -116,7 +116,11 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
     if (nextTxState === 'error') {
       setTxState('error')
-      setErrorMessage('Transaction failed in Safe. Please review your Safe queue and try again.')
+      setErrorMessage(
+        isWalletSafe
+          ? 'Transaction failed in Safe. Please review your Safe queue and try again.'
+          : 'Transaction failed. Please try again.'
+      )
       reset()
     }
   }, [

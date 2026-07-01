@@ -878,7 +878,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
     if (nextOverlayState === 'error') {
       setOverlayState('error')
-      setErrorMessage('Transaction failed in Safe. Please review your Safe queue and try again.')
+      setErrorMessage(
+        isWalletSafe
+          ? 'Transaction failed in Safe. Please review your Safe queue and try again.'
+          : 'Transaction failed. Please try again.'
+      )
       resetTxState()
       void handleUpdateNotification({ status: 'error' })
       setNotificationId(undefined)

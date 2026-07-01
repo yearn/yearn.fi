@@ -9,6 +9,7 @@ import type { ReactElement } from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { mainnet } from 'viem/chains'
 import { useAccount, useConnect, useDisconnect, useEnsName } from 'wagmi'
+import { CODEX_WALLET_ID, isCodexWalletEnabled } from '@/config/codexWallet'
 import { resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/tenderly'
 
 type TWeb3Context = {
@@ -58,8 +59,30 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   const wasConnectedRef = useRef(false)
   const previousChainIDRef = useRef<number | undefined>(undefined)
   const hasUserRequestedConnectionRef = useRef(false)
+  const hasAttemptedCodexAutoConnectRef = useRef(false)
 
   const chainID = resolveConnectedCanonicalChainId(chain?.id) ?? (isConnected ? 0 : 1)
+
+  useEffect(() => {
+    if (isConnected || hasAttemptedCodexAutoConnectRef.current || !isCodexWalletEnabled()) {
+      return
+    }
+
+    const codexConnector = connectors.find((item) => item.id === CODEX_WALLET_ID)
+    if (!codexConnector) {
+      return
+    }
+
+    hasAttemptedCodexAutoConnectRef.current = true
+    hasUserRequestedConnectionRef.current = true
+    void connectAsync({
+      connector: codexConnector,
+      chainId: resolveExecutionChainId(chainID) ?? chainID
+    }).catch((error) => {
+      hasUserRequestedConnectionRef.current = false
+      console.error('Failed to auto-connect Codex wallet:', error)
+    })
+  }, [chainID, connectAsync, connectors, isConnected])
 
   useEffect(() => {
     if (!wasConnectedRef.current && isConnected && hasUserRequestedConnectionRef.current) {

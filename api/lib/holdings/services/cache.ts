@@ -269,6 +269,34 @@ export async function checkCacheStaleness(
   }
 }
 
+export async function invalidateVaults(vaults: VaultIdentifier[]): Promise<number> {
+  if (!isHoldingsStorageEnabled() || vaults.length === 0) {
+    if (vaults.length > 0) {
+      debugLog('cache', 'skipping vault invalidation because Redis storage is disabled', { vaults: vaults.length })
+    }
+    return 0
+  }
+
+  const redis = getHoldingsRedisClient()
+  if (!redis) {
+    debugLog('cache', 'skipping vault invalidation because Redis client is unavailable', { vaults: vaults.length })
+    return 0
+  }
+
+  try {
+    const invalidatedAt = Date.now()
+    const valuesByKey = Object.fromEntries(vaults.map((vault) => [getVaultInvalidationKey(vault), invalidatedAt]))
+
+    await redis.mset(valuesByKey)
+    console.log(`[Cache] Invalidated ${vaults.length} vault cache markers`)
+    return vaults.length
+  } catch (error) {
+    handleHoldingsRedisError('vault invalidation failed', error)
+    debugError('cache', 'vault invalidation failed', error, { vaults: vaults.length })
+    return 0
+  }
+}
+
 export async function getCachedTotalsWithTimestamp(
   userAddress: string,
   version: string,

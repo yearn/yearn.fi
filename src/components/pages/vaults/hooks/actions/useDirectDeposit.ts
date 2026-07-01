@@ -48,6 +48,7 @@ export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepos
     functionName: 'approve',
     address: params.assetAddress,
     args: params.amount > 0n && params.vaultAddress ? [params.vaultAddress, params.amount] : undefined,
+    account: params.account ? toAddress(params.account) : undefined,
     chainId: params.chainId,
     query: { enabled: prepareApproveEnabled }
   })

@@ -60,7 +60,11 @@ import {
   requireTenderlyServerChain,
   resolveTenderlyFundRpcRequest
 } from './tenderly.helpers'
-import { buildTenderlyAdminAccessDeniedResponse } from './tenderlyAccess'
+import {
+  buildTenderlyAdminAccessDeniedResponse,
+  buildTenderlyAdminCorsPreflightResponse,
+  withTenderlyAdminCors
+} from './tenderlyAccess'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
 const DEFAULT_API_PORT = 3001
@@ -161,6 +165,15 @@ function handleCorsPreFlight(): Response {
     status: 204,
     headers: CORS_HEADERS
   })
+}
+
+function isTenderlyAdminPath(pathname: string): boolean {
+  return (
+    pathname === '/api/tenderly/snapshot' ||
+    pathname === '/api/tenderly/revert' ||
+    pathname === '/api/tenderly/increase-time' ||
+    pathname === '/api/tenderly/fund'
+  )
 }
 
 async function handleHoldingsProgress(req: Request): Promise<Response> {
@@ -1345,6 +1358,10 @@ async function main() {
       console.log(`[Server] ${req.method} ${url.pathname}`)
 
       try {
+        if (req.method === 'OPTIONS' && isTenderlyAdminPath(url.pathname)) {
+          return buildTenderlyAdminCorsPreflightResponse(req)
+        }
+
         if (req.method === 'OPTIONS') {
           return handleCorsPreFlight()
         }
@@ -1425,35 +1442,35 @@ async function main() {
         }
 
         if (url.pathname === '/api/tenderly/snapshot') {
-          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address, req)
           if (accessDeniedResponse) {
-            return withCors(accessDeniedResponse)
+            return withTenderlyAdminCors(accessDeniedResponse, req)
           }
-          return withCors(await handleTenderlySnapshot(req))
+          return withTenderlyAdminCors(await handleTenderlySnapshot(req), req)
         }
 
         if (url.pathname === '/api/tenderly/revert') {
-          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address, req)
           if (accessDeniedResponse) {
-            return withCors(accessDeniedResponse)
+            return withTenderlyAdminCors(accessDeniedResponse, req)
           }
-          return withCors(await handleTenderlyRevert(req))
+          return withTenderlyAdminCors(await handleTenderlyRevert(req), req)
         }
 
         if (url.pathname === '/api/tenderly/increase-time') {
-          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address, req)
           if (accessDeniedResponse) {
-            return withCors(accessDeniedResponse)
+            return withTenderlyAdminCors(accessDeniedResponse, req)
           }
-          return withCors(await handleTenderlyIncreaseTime(req))
+          return withTenderlyAdminCors(await handleTenderlyIncreaseTime(req), req)
         }
 
         if (url.pathname === '/api/tenderly/fund') {
-          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address)
+          const accessDeniedResponse = buildTenderlyAdminAccessDeniedResponse(server.requestIP(req)?.address, req)
           if (accessDeniedResponse) {
-            return withCors(accessDeniedResponse)
+            return withTenderlyAdminCors(accessDeniedResponse, req)
           }
-          return withCors(await handleTenderlyFund(req))
+          return withTenderlyAdminCors(await handleTenderlyFund(req), req)
         }
 
         return withCors(new Response('Not found', { status: 404 }))

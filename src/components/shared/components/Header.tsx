@@ -119,7 +119,7 @@ function getConfiguredTenderlyMappingsLabel(): string {
 }
 
 function TenderlyBadge(): ReactElement | null {
-  const { isPanelAvailable, isOpen, togglePanel } = useTenderlyPanel()
+  const { isPanelAvailable, isOpen, isStatusLoading, openPanel, refetchStatus, togglePanel } = useTenderlyPanel()
   const { chain } = useAccount()
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain()
   const isTenderlyConfigured = isTenderlyModeConfigured()
@@ -134,22 +134,28 @@ function TenderlyBadge(): ReactElement | null {
   const canToggleControls = isTenderlyActive && isPanelAvailable
   const connectedTenderlyExecutionChain = resolveConnectedTenderlyExecutionChain(chain?.id)
 
-  const handleBadgeClick = (): void => {
-    if (!canToggleControls) {
+  const handleBadgeClick = async (): Promise<void> => {
+    if (!isTenderlyActive || isStatusLoading) {
       return
     }
 
-    togglePanel()
+    if (canToggleControls) {
+      togglePanel()
+      return
+    }
+
+    openPanel()
+    await refetchStatus()
   }
 
   const handleBadgeKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
-    if (!canToggleControls) {
+    if (!isTenderlyActive || isStatusLoading) {
       return
     }
 
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
-      togglePanel()
+      void handleBadgeClick()
     }
   }
 
@@ -179,18 +185,18 @@ function TenderlyBadge(): ReactElement | null {
 
   return (
     <div
-      onClick={handleBadgeClick}
+      onClick={() => void handleBadgeClick()}
       onKeyDown={handleBadgeKeyDown}
-      role={canToggleControls ? 'button' : undefined}
-      tabIndex={canToggleControls ? 0 : undefined}
+      role={isTenderlyActive && !isStatusLoading ? 'button' : undefined}
+      tabIndex={isTenderlyActive && !isStatusLoading ? 0 : undefined}
       title={
-        canToggleControls
+        isTenderlyActive
           ? `Tenderly mode enabled${configuredMappings ? ` (${configuredMappings})` : ''}. Click to ${isOpen ? 'hide' : 'show'} controls.`
           : `Use ${isTenderlyActive ? 'Tenderly RPCs and vnets' : 'normal RPCs'}${configuredMappings ? ` (${configuredMappings})` : ''}`
       }
       className={cl(
         'inline-flex min-h-[32px] items-center gap-2 rounded-md border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] transition-all',
-        canToggleControls ? 'cursor-pointer hover:border-text-primary/60' : 'cursor-default',
+        isTenderlyActive && !isStatusLoading ? 'cursor-pointer hover:border-text-primary/60' : 'cursor-default',
         'border-border bg-surface-secondary'
       )}
     >
