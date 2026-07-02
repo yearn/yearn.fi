@@ -57,10 +57,22 @@ const MERKL_REWARD_TOKEN_ALLOWLIST_BY_CHAIN: Record<number, `0x${string}`[]> = {
   ].map(normalizeAddress)
 }
 
+export const buildMerklRewardsEndpoint = (userAddress: `0x${string}`, chainId: number): string => {
+  const params = new URLSearchParams({
+    userAddress,
+    chainId: String(chainId)
+  })
+  return `/api/merkl/rewards?${params}`
+}
+
 const fetcher = async (url: string): Promise<MerklAPIResponse> => {
-  const response = await fetch(url)
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'application/json'
+    }
+  })
   if (!response.ok) {
-    throw new Error('Failed to fetch Merkl rewards')
+    throw new Error(`Failed to fetch Merkl rewards: ${response.status}`)
   }
   return response.json()
 }
@@ -147,7 +159,7 @@ export function useMerkleRewards(params: UseMerkleRewardsParams): UseMerkleRewar
   const executionChainId = resolveExecutionChainId(chainId)
 
   const isEnabled = enabled && !!userAddress
-  const endpoint = isEnabled ? `https://api.merkl.xyz/v4/users/${userAddress}/rewards?chainId=${chainId}` : null
+  const endpoint = isEnabled && userAddress ? buildMerklRewardsEndpoint(userAddress, chainId) : null
 
   const {
     data,

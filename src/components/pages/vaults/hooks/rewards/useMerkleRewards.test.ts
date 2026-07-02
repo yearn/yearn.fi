@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildMerkleRewardKey,
   buildMerkleRewards,
+  buildMerklRewardsEndpoint,
   filterYearnMerkleRewards,
   type MerklAPIResponse,
   type MerklV4Reward,
@@ -59,6 +60,12 @@ const MERKL_RESPONSE: MerklAPIResponse = [
 ]
 
 describe('useMerkleRewards helpers', () => {
+  it('fetches Merkl rewards through the server proxy', () => {
+    expect(buildMerklRewardsEndpoint('0x1111111111111111111111111111111111111111', KATANA_CHAIN_ID)).toBe(
+      '/api/merkl/rewards?userAddress=0x1111111111111111111111111111111111111111&chainId=747474'
+    )
+  })
+
   it('filters Merkl rewards down to Yearn product reward tokens across KAT aliases', () => {
     expect(filterYearnMerkleRewards([KAT_REWARD, KAT_NATIVE_REWARD, OTHER_REWARD], KATANA_CHAIN_ID)).toEqual([
       KAT_REWARD,
