@@ -1,14 +1,14 @@
 import {
   getVaultAddress,
   getVaultChainID,
-  getVaultStaking,
+  getVaultStakingAddress,
   getVaultToken,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import type { TDict, TToken } from '@shared/types'
-import { isZeroAddress, toAddress } from '@shared/utils'
-import type { Address } from 'viem'
+import { toAddress } from '@shared/utils'
+import { type Address, zeroAddress } from 'viem'
 
 export type TTokenSelectorMode = 'default' | 'deposit' | 'withdraw'
 
@@ -48,8 +48,8 @@ export function getYearnKnownTokenAddresses({
     knownAddresses.add(toAddress(getVaultAddress(vault)).toLowerCase())
     knownAddresses.add(toAddress(getVaultToken(vault).address).toLowerCase())
 
-    const stakingAddress = toAddress(getVaultStaking(vault).address)
-    if (!isZeroAddress(stakingAddress)) {
+    const stakingAddress = getVaultStakingAddress(vault)
+    if (stakingAddress !== zeroAddress) {
       knownAddresses.add(stakingAddress.toLowerCase())
     }
   })

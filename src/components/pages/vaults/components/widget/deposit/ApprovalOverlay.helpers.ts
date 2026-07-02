@@ -38,3 +38,20 @@ export function resolveApprovalOverlayPendingSafeState(params: {
 
   return txState
 }
+
+export function resolveApprovalOverlayActionDisabledState(params: {
+  account?: string
+  currentAllowance: string
+  approvalWarning?: string
+}): {
+  isRevokeDisabled: boolean
+  isUnlimitedDisabled: boolean
+} {
+  const isApprovalBlocked = Boolean(params.approvalWarning)
+
+  return {
+    isRevokeDisabled:
+      isApprovalBlocked || !params.account || params.currentAllowance === '0.00' || params.currentAllowance === '0',
+    isUnlimitedDisabled: isApprovalBlocked || !params.account || params.currentAllowance === 'Unlimited'
+  }
+}

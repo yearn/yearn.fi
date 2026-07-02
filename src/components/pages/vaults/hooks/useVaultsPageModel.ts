@@ -10,7 +10,6 @@ import {
   getVaultChainID,
   getVaultToken,
   getVaultTVL,
-  type TKongVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
@@ -42,13 +41,19 @@ import {
   normalizeUnderlyingAssetSymbol,
   type TVaultAggressiveness
 } from '@pages/vaults/utils/vaultListFacets'
+import { getVaultsInitialVaultSource, type TVaultsInitialPayload } from '@pages/vaults/utils/vaultsInitialPayload'
+import {
+  DEFAULT_VAULT_QUERY_SORT_BY,
+  DEFAULT_VAULT_QUERY_TYPES,
+  type TVaultsQuerySnapshot
+} from '@pages/vaults/utils/vaultsQueryState'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { getSupportedChainsForVaultType } from '@pages/vaults/utils/vaultTypeUtils'
 import { useMediaQuery } from '@react-hookz/web'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { usePrefetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
+import { useYearn } from '@shared/contexts/useYearn'
 import { useOptimisticValue } from '@shared/hooks/useOptimisticValue'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import type { TSortDirection } from '@shared/types'
@@ -63,12 +68,14 @@ import {
   useRef,
   useState
 } from 'react'
+import { env } from '@/env'
 import { useVaultsListModel } from './useVaultsListModel'
 import { useVaultsQueryState } from './useVaultsQueryState'
+import type { TYvUsdListVaults } from './useYvUsdVaults'
 import { VAULTS_FILTERS_STORAGE_KEY } from './vaultsFiltersStorage'
 
-const DEFAULT_VAULT_TYPES = ['multi', 'single']
-const DEFAULT_SORT_BY: TPossibleSortBy = 'tvl'
+const DEFAULT_VAULT_TYPES = DEFAULT_VAULT_QUERY_TYPES
+const DEFAULT_SORT_BY: TPossibleSortBy = DEFAULT_VAULT_QUERY_SORT_BY
 
 const areArraysEquivalent = (
   a: Array<string | number> | null | undefined,
@@ -181,7 +188,11 @@ type TVaultsListData = {
   pinnedSections: TVaultsPinnedSection[]
   pinnedVaults: TKongVaultInput[]
   mainVaults: TKongVaultInput[]
+  yvUsdVaults: TYvUsdListVaults
   vaultFlags: Record<string, { hasHoldings: boolean; isMigratable: boolean; isRetired: boolean; isHidden: boolean }>
+  vaultHoldingsValues: Record<string, number>
+  hasWalletAddress: boolean
+  isWalletLoading: boolean
   listChains: number[] | null
   totalMatchingVaults: number
   hiddenByFiltersCount: number
@@ -216,17 +227,19 @@ export type TVaultsPageModel = {
     varsRef: RefObject<HTMLDivElement | null>
     filtersRef: RefObject<HTMLDivElement | null>
   }
-  header: {
-    vaultType: TVaultType
-    suggestedVaults: TKongVault[]
-  }
   filtersBar: TVaultsFiltersBarModel
   list: TVaultsListModel
 }
 
-export function useVaultsPageModel(): TVaultsPageModel {
+export function useVaultsPageModel(
+  initialQueryState?: TVaultsQuerySnapshot,
+  initialVaults?: TVaultsInitialPayload
+): TVaultsPageModel {
   const { address } = useWeb3()
+  const { enableVaultListFetch } = useYearn()
   const hasWalletAddress = !!address
+  const initialVaultSource = useMemo(() => getVaultsInitialVaultSource(initialVaults), [initialVaults])
+  const activeVaultSource = hasWalletAddress ? undefined : initialVaultSource
   const {
     vaultType,
     hasTypesParam,
@@ -266,10 +279,18 @@ export function useVaultsPageModel(): TVaultsPageModel {
     storageKey: VAULTS_FILTERS_STORAGE_KEY,
     clearUrlAfterInit: false,
     shareUpdatesUrl: true,
-    syncUrlOnChange: true
+    syncUrlOnChange: true,
+    initialSnapshot: initialQueryState
   })
 
-  usePrefetchYearnVaults(vaultType === 'v3')
+  const shouldFetchFullVaultList = hasWalletAddress || !initialVaultSource
+  useEffect(() => {
+    if (!shouldFetchFullVaultList) {
+      return
+    }
+    // Wallet balance discovery and SSR failures still need the complete Kong vault list.
+    enableVaultListFetch()
+  }, [enableVaultListFetch, shouldFetchFullVaultList])
 
   const varsRef = useRef<HTMLDivElement | null>(null)
   const filtersRef = useRef<HTMLDivElement | null>(null)
@@ -384,11 +405,14 @@ export function useVaultsPageModel(): TVaultsPageModel {
     pinnedSections,
     pinnedVaults,
     mainVaults,
-    suggestedVaults,
+    yvUsdVaults,
     totalMatchingVaults,
     totalHoldingsMatching,
-    isLoadingVaultList
+    isLoadingVaultList,
+    isWalletLoading,
+    vaultHoldingsValues
   } = useVaultsListModel({
+    vaultSource: activeVaultSource,
     listVaultType,
     listChains,
     listV3Types,
@@ -430,6 +454,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
   const blockingProbeSortDirection: TSortDirection = ''
   const blockingProbeBaseArgs: Parameters<typeof useVaultsListModel>[0] = {
     enabled: shouldComputeBlockingInsights,
+    vaultSource: activeVaultSource,
     listVaultType,
     listChains,
     listV3Types,
@@ -704,7 +729,7 @@ export function useVaultsPageModel(): TVaultsPageModel {
       const label = getUnderlyingAssetLabel(assetKey)
       const token = getVaultToken(vault)
       const tokenAddress = token.address.toLowerCase()
-      const tokenLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${getVaultChainID(vault)}/${tokenAddress}/logo-32.png`
+      const tokenLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${getVaultChainID(vault)}/${tokenAddress}/logo-32.png`
       return {
         label,
         value: assetKey,
@@ -1127,10 +1152,6 @@ export function useVaultsPageModel(): TVaultsPageModel {
       varsRef,
       filtersRef
     },
-    header: {
-      vaultType: displayedVaultType,
-      suggestedVaults
-    },
     filtersBar: {
       search: {
         value: searchValue,
@@ -1169,7 +1190,11 @@ export function useVaultsPageModel(): TVaultsPageModel {
         pinnedSections,
         pinnedVaults,
         mainVaults,
+        yvUsdVaults,
         vaultFlags,
+        vaultHoldingsValues,
+        hasWalletAddress,
+        isWalletLoading,
         listChains,
         totalMatchingVaults,
         hiddenByFiltersCount,

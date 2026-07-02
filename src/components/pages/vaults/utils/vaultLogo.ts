@@ -1,14 +1,15 @@
 import { getVaultChainID, getVaultToken, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { toAddress } from '@shared/utils'
+import { env } from '@/env'
 import { isYvBtcVault } from './yvBtc'
 import { isYvUsdVault } from './yvUsd'
 
 function getBaseUrl(): string {
-  return import.meta.env.BASE_URL || '/'
+  return env.BASE_URL || '/'
 }
 
 function getAssetsBaseUrl(): string {
-  return import.meta.env.VITE_BASE_YEARN_ASSETS_URI || ''
+  return env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI || ''
 }
 
 export function getVaultPrimaryLogoSrc(vault: TKongVaultInput): string {

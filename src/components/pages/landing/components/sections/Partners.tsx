@@ -1,8 +1,8 @@
 import { SectionHeader } from '@shared/components/SectionHeader'
+import Link from 'next/link'
 import type { FC } from 'react'
 import { useState } from 'react'
 import Image from '/src/components/Image'
-import Link from '/src/components/Link'
 
 type TPartner = {
   image: string
@@ -47,7 +47,7 @@ const partners: TPartner[] = [
 const PartnerLogo: FC<TPartner> = ({ image, alt, href, size = 60 }) => {
   const [isHovered, setIsHovered] = useState(false)
   return (
-    <Link href={href} className={'block flex-1 min-w-0'}>
+    <Link href={href} target={'_blank'} rel={'noopener noreferrer'} className={'block flex-1 min-w-0'}>
       <div
         className={
           'relative flex h-[56px] min-[375px]:h-[72px] min-h-[44px] cursor-pointer items-center justify-center rounded-lg bg-gradient-to-r from-blue-700 to-blue-800 p-2 min-[375px]:p-3 transition-colors duration-200 hover:opacity-80 sm:h-20 sm:p-4 lg:h-full lg:p-6'

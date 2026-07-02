@@ -2,7 +2,8 @@ import { setThemePreference, useThemePreference } from '@hooks/useThemePreferenc
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import { yToast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
-import useWallet from '@shared/contexts/useWallet'
+import { useWalletStatus } from '@shared/contexts/useWallet'
+import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconArrowLeft } from '@shared/icons/IconArrowLeft'
@@ -16,9 +17,9 @@ import { IconSun } from '@shared/icons/IconSun'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import { cl, formatUSD } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
+import { useRouter } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
 import { DropdownPanel } from './DropdownPanel'
 
 type TAccountDropdownProps = {
@@ -30,14 +31,13 @@ type TView = 'account' | 'settings'
 
 function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void; onClose: () => void }): ReactElement {
   const { address, ens, clusters, onDesactivate } = useWeb3()
-  const { cumulatedValueInV2Vaults, cumulatedValueInV3Vaults, isLoading: isWalletLoading } = useWallet()
+  const { isLoading: isWalletLoading } = useWalletStatus()
+  const { totalValue } = useWalletVaultTotals()
   const { cachedEntries } = useNotifications()
-  const navigate = useNavigate()
+  const router = useRouter()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
   const { toast } = yToast()
-
-  const totalValue = cumulatedValueInV2Vaults + cumulatedValueInV3Vaults
 
   const displayName = useMemo(() => {
     if (ens) return ens
@@ -57,9 +57,9 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
   }, [cachedEntries])
 
   const handleViewPortfolio = useCallback(() => {
-    navigate('/portfolio')
+    router.push('/portfolio')
     onClose()
-  }, [navigate, onClose])
+  }, [router, onClose])
 
   const handleDisconnect = useCallback(() => {
     onDesactivate()
@@ -67,9 +67,9 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
   }, [onDesactivate, onClose])
 
   const handleViewAllActivity = useCallback(() => {
-    navigate('/portfolio?tab=activity')
+    router.push('/portfolio?tab=activity')
     onClose()
-  }, [navigate, onClose])
+  }, [router, onClose])
 
   function formatDate(timestamp?: number): string {
     if (!timestamp) return ''

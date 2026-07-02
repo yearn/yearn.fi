@@ -1,4 +1,3 @@
-import Link from '@components/Link'
 import { usePlausible } from '@hooks/usePlausible'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
@@ -26,7 +25,9 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { formatApyDisplay, toAddress } from '@shared/utils'
 import type { TPlausibleEventName } from '@shared/utils/plausible'
 import { getNetwork } from '@shared/utils/wagmi'
+import Link from 'next/link'
 import type { ReactElement } from 'react'
+import { env } from '@/env'
 
 export function SuggestedVaultCard({
   vault,
@@ -62,8 +63,8 @@ export function SuggestedVaultCard({
   const chain = getNetwork(chainID)
   const tokenIcon = isYvUsd
     ? getVaultPrimaryLogoSrc(vault)
-    : `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+    : `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${toAddress(token.address).toLowerCase()}/logo-128.png`
+  const chainLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const listKind = deriveListKind(vault)
   const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
   const isLegacyVault = listKind === 'legacy'
@@ -80,7 +81,7 @@ export function SuggestedVaultCard({
 
   return (
     <Link
-      to={`/vaults/${chainID}/${toAddress(vaultAddress)}`}
+      href={`/vaults/${chainID}/${toAddress(vaultAddress)}`}
       className={
         'group flex h-fit min-h-[156px] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_12px_32px_rgba(4,8,32,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(4,8,32,0.12)]'
       }

@@ -1,5 +1,5 @@
-import Link from '@components/Link'
 import { cl } from '@shared/utils'
+import Link from 'next/link'
 import type { ReactElement } from 'react'
 
 type TBreadcrumbItem = {
@@ -22,7 +22,7 @@ export function Breadcrumbs({ items, className }: TBreadcrumbsProps): ReactEleme
         const isCurrent = item.isCurrent ?? index === lastIndex
         const content =
           item.href && !isCurrent ? (
-            <Link to={item.href} className={'transition-colors hover:text-text-primary'}>
+            <Link href={item.href} className={'transition-colors hover:text-text-primary'}>
               {item.label}
             </Link>
           ) : (

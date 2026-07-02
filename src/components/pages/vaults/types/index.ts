@@ -78,6 +78,8 @@ export type UseWidgetDepositFlowReturn = T<
     }
     gas?: string
     routerAddress?: TAddress
+    approvalSpenderAddress?: TAddress
+    approvalWarning?: string
     error?: string
     refetchAllowance?: () => Promise<unknown>
   }

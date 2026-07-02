@@ -1,12 +1,13 @@
 import type { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { useInput } from '@pages/vaults/hooks/useInput'
-import { TokenLogo } from '@shared/components/TokenLogo'
+import { TokenLogoV2 } from '@shared/components/TokenLogoV2'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { cl, formatTAmount, simpleToExact } from '@shared/utils'
 import { formatCounterValue } from '@shared/utils/format'
 import { type ChangeEvent, type FC, useMemo } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
+import { env } from '@/env'
 import { getTokenLogoSources } from './tokenLogo.utils'
 
 interface Props {
@@ -241,7 +242,7 @@ export const InputTokenAmount: FC<Props> = ({
               data-token-selector-button
               disabled={!showTokenSelector && disabled}
               className={cl(
-                'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 transition-colors',
+                'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2',
                 'text-text-primary text-base md:text-xl font-medium',
                 'min-h-[44px]',
                 showTokenSelector
@@ -252,7 +253,7 @@ export const InputTokenAmount: FC<Props> = ({
               )}
             >
               {tokenAddress && tokenChainId && (
-                <TokenLogo
+                <TokenLogoV2
                   src={tokenLogoSources.src}
                   altSrc={tokenLogoSources.altSrc}
                   tokenSymbol={symbol ?? ''}
@@ -336,15 +337,15 @@ export const InputTokenAmount: FC<Props> = ({
                 onClick={onTokenSelectorClick}
                 disabled={disabled}
                 className={cl(
-                  'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 transition-colors shrink-0',
+                  'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 shrink-0',
                   'text-text-primary text-base md:text-xl font-medium',
                   'min-h-[44px]',
                   disabled ? 'bg-transparent cursor-not-allowed' : 'bg-transparent hover:bg-surface-secondary'
                 )}
               >
                 {zapToken.address && zapToken.chainId && (
-                  <TokenLogo
-                    src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${zapToken.chainId}/${zapToken.address.toLowerCase()}/logo-32.png`}
+                  <TokenLogoV2
+                    src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${zapToken.chainId}/${zapToken.address.toLowerCase()}/logo-32.png`}
                     tokenSymbol={zapToken.symbol}
                     chainId={zapToken.chainId}
                     width={32}

@@ -15,11 +15,11 @@ import {
 } from '@pages/vaults/utils/yvUsd'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { useYearn } from '@shared/contexts/useYearn'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
 import { useReadContract } from '@shared/hooks/useAppWagmi'
 import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { useTransactionStatusPoller } from '@shared/hooks/useTransactionStatusPoller'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconLoader } from '@shared/icons/IconLoader'
@@ -35,8 +35,8 @@ import {
   truncateHex
 } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi/utils'
+import { useRouter } from 'next/navigation'
 import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
 import { getAwaitingExecutionEntries } from './WalletPanel.helpers'
 import { formatDuration, parseCooldownStatus, resolveCooldownWindowState } from './yvUSD/cooldownUtils'
 
@@ -83,10 +83,10 @@ function WalletNotificationPollers({ entries }: { entries: TNotification[] }): R
 }
 
 function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElement {
-  const { getPrice } = useYearn()
   const { unlockedVault, lockedVault, isLoading: isLoadingYvUsd } = useYvUsdVaults()
 
   const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
+  const { getPrice } = useYearnSpotPrices([{ address: unlockedAssetAddress, chainID: YVUSD_CHAIN_ID }])
   const unlockedUserData = useVaultUserData({
     vaultAddress: toAddress(unlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS),
     assetAddress: unlockedAssetAddress,
@@ -236,8 +236,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
 }) => {
   const { address, isActive: isWalletActive, openLoginModal } = useWeb3()
   const { cachedEntries } = useNotifications()
-  const navigate = useNavigate()
-  const { getPrice } = useYearn()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<WalletTabKey>('balances')
   const {
     assetToken,
@@ -252,6 +251,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   const isYvUsd = isYvUsdVault(currentVault)
   const vaultDecimals = getVaultDecimals(currentVault)
   const vaultTVL = getVaultTVL(currentVault)
+  const { getPrice } = useYearnSpotPrices([{ address: assetToken?.address, chainID: assetToken?.chainID ?? chainId }])
 
   const assetSymbol = assetToken?.symbol || getVaultSymbol(currentVault)
   const vaultSymbol = vaultToken?.symbol || getVaultSymbol(currentVault) || assetSymbol
@@ -265,7 +265,9 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   const hasStakedShares = stakingBalance > 0n
   const showTotalShares = hasVaultShares && hasStakedShares
   const assetPrice = assetToken?.address
-    ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID ?? chainId }).normalized
+    ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID ?? chainId }).normalized ||
+      vaultTVL.price ||
+      0
     : 0
   const assetDecimals = assetToken?.decimals ?? vaultDecimals
   const vaultShareDecimals = vaultToken?.decimals ?? 18
@@ -500,7 +502,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
                       <h4 className="text-sm font-semibold text-text-primary">Recent transactions</h4>
                       <button
                         type="button"
-                        onClick={() => navigate('/portfolio?tab=activity')}
+                        onClick={() => router.push('/portfolio?tab=activity')}
                         className="rounded-md border border-border bg-surface-secondary px-2.5 py-1 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
                       >
                         All activity

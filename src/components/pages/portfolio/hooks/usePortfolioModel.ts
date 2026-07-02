@@ -28,10 +28,12 @@ import {
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletHoldings, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
+import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import type { TSortDirection } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
@@ -147,7 +149,7 @@ function getPortfolioRowHref(vault: TKongVaultInput): string | undefined {
   return `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
 }
 
-function getStablecoinHoldingMatch(balances: ReturnType<typeof useWallet>['balances']): TStablecoinHoldingMatch {
+function getStablecoinHoldingMatch(balances: ReturnType<typeof useWalletTokens>['balances']): TStablecoinHoldingMatch {
   return (
     Object.entries(balances ?? {})
       .flatMap(([chainIDKey, perChain]) =>
@@ -170,17 +172,13 @@ function getStablecoinHoldingMatch(balances: ReturnType<typeof useWallet>['balan
 }
 
 export function usePortfolioModel(): TPortfolioModel {
-  const {
-    cumulatedValueInV2Vaults,
-    cumulatedValueInV3Vaults,
-    isLoading: isWalletLoading,
-    hasCompletedBalanceLoad,
-    getBalance,
-    getVaultHoldingsUsd,
-    balances
-  } = useWallet()
+  const { getBalance, balances } = useWalletTokens()
+  const { getVaultHoldingsUsd } = useWalletHoldings()
+  const { isLoading: isWalletLoading, hasCompletedBalanceLoad } = useWalletStatus()
+  const { totalValue: totalPortfolioValue } = useWalletVaultTotals()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
-  const { vaults, allVaults, isLoadingVaultList, getPrice } = useYearn()
+  const { vaults, allVaults, isLoadingVaultList } = useYearn()
+  const { getPrice } = useYearnSpotPrices([{ address: ETH_TOKEN_ADDRESS, chainID: 1 }])
   const { listVault: yvUsdVault, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
   const { apyData: yvUsdHistoricalApyData } = useYvUsdCharts()
   const { shouldHideDust } = useAppSettings()
@@ -477,7 +475,6 @@ export function usePortfolioModel(): TPortfolioModel {
     () => sortedHoldings.some((vault) => getVaultChainID(vault) === KATANA_CHAIN_ID),
     [sortedHoldings]
   )
-  const totalPortfolioValue = (cumulatedValueInV2Vaults || 0) + (cumulatedValueInV3Vaults || 0)
   const ethPrice = getPrice({ address: ETH_TOKEN_ADDRESS, chainID: 1 }).normalized
 
   const liveBalanceSnapshot = useMemo<TPortfolioLiveBalanceSnapshot | null>(() => {

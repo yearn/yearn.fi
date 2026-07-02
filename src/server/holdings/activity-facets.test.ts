@@ -1,0 +1,50 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const TEST_ADDRESS = '0x2222222222222222222222222222222222222222'
+
+const ensureHoldingsStorageInitializedMock = vi.fn()
+const getHoldingsActivityFacetResponseMock = vi.fn()
+
+vi.mock('../lib/holdings', () => ({
+  ensureHoldingsStorageInitialized: ensureHoldingsStorageInitializedMock,
+  getHoldingsActivityFacetResponse: getHoldingsActivityFacetResponseMock
+}))
+
+function createRequest(query: Record<string, string>): Request {
+  return new Request(`https://yearn.fi/api/holdings/activity-facets?${new URLSearchParams(query)}`)
+}
+
+describe('holdings activity facets route', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+    ensureHoldingsStorageInitializedMock.mockResolvedValue(undefined)
+    getHoldingsActivityFacetResponseMock.mockResolvedValue({
+      address: TEST_ADDRESS.toLowerCase(),
+      version: 'all',
+      facets: {
+        chainIds: [1, 8453]
+      }
+    })
+    process.env.ENVIO_GRAPHQL_URL = 'https://envio.example/graphql'
+  })
+
+  it('returns chain facets from cheap chain existence checks', async () => {
+    const { default: handler } = await import('./activity-facets')
+    const response = await handler(
+      createRequest({
+        address: TEST_ADDRESS,
+        version: 'all'
+      })
+    )
+
+    expect(getHoldingsActivityFacetResponseMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all')
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store, max-age=0, must-revalidate')
+    await expect(response.json()).resolves.toEqual({
+      address: TEST_ADDRESS.toLowerCase(),
+      version: 'all',
+      facets: { chainIds: [1, 8453] }
+    })
+  })
+})

@@ -53,6 +53,7 @@ const DEVELOPER_DOCS_YCRV_URL = DEVELOPER_DOCS_V2_URL
 const USER_DOCS_YYB_URL = 'https://docs.yearn.fi/getting-started/products/ylockers/yyb/overview'
 const DEVELOPER_DOCS_YYB_URL = DEVELOPER_DOCS_V2_URL
 const INFO_LABEL_CLASS = 'w-full text-sm text-text-secondary md:w-auto md:pr-4'
+const GAMMA_HOSTNAME = 'gamma.xyz'
 
 export function getVaultDocsLinks(
   vaultAddress: `0x${string}`,
@@ -134,6 +135,26 @@ export function resolveCurveDepositUrl(pools: TCurvePoolEntry[], tokenAddress: s
   }
 
   return ''
+}
+
+function isGammaHostname(hostname: string): boolean {
+  const normalizedHostname = hostname.toLowerCase()
+  return normalizedHostname === GAMMA_HOSTNAME || normalizedHostname.endsWith(`.${GAMMA_HOSTNAME}`)
+}
+
+export function resolveGammaSourceUrl(sourceUrl: string): string {
+  const trimmedSourceUrl = sourceUrl.trim()
+  if (!trimmedSourceUrl) {
+    return ''
+  }
+
+  try {
+    const parsedUrl = new URL(trimmedSourceUrl)
+    const hasAllowedProtocol = parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:'
+    return hasAllowedProtocol && isGammaHostname(parsedUrl.hostname) ? parsedUrl.toString() : ''
+  } catch {
+    return ''
+  }
 }
 
 function getLiquidityUrl({
@@ -293,6 +314,7 @@ export function VaultInfoSection({
   })
   const curveSourceUrl = isCurveCategory && isCurveHostUrl(sourceUrl) ? normalizeCurveUrl(sourceUrl) : ''
   const resolvedCurvePoolUrl = curvePoolUrl || curveSourceUrl
+  const gammaSourceUrl = resolveGammaSourceUrl(sourceUrl)
   const liquidityUrl = getLiquidityUrl({ isVelodrome, isAerodrome, tokenAddress: token.address })
   const powergloveUrl = `https://powerglove.yearn.fi/vaults/${chainID}/${vaultAddress}`
   const deployedLabel = getDeployedLabel(inceptTime)
@@ -349,18 +371,18 @@ export function VaultInfoSection({
           </div>
         ) : null}
 
-        {(info?.sourceURL || '')?.includes('gamma') ? (
+        {gammaSourceUrl ? (
           <div className={'flex flex-col items-start md:flex-row md:items-center'}>
             <p className={INFO_LABEL_CLASS}>{'Gamma Pair'}</p>
             <div className={'flex md:flex-1 md:justify-end'}>
               <a
-                href={info.sourceURL}
+                href={gammaSourceUrl}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 className={'whitespace-nowrap md:text-sm text-text-primary hover:underline'}
                 suppressHydrationWarning
               >
-                {info.sourceURL}
+                {gammaSourceUrl}
               </a>
             </div>
           </div>

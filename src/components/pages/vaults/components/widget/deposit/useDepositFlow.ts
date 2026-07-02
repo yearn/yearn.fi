@@ -62,6 +62,8 @@ export interface DepositFlowResult {
       isLoadingExpectedOutNormalization: boolean
       isCrossChain: boolean
       routerAddress?: string
+      approvalSpenderAddress?: string
+      approvalWarning?: string
       tx?: {
         to: Address
         data: Hex

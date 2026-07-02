@@ -9,9 +9,10 @@ import { IconLoader } from '@shared/icons/IconLoader'
 import type { TNotification, TNotificationStatus } from '@shared/types/notifications'
 import { cl, SUPPORTED_NETWORKS, truncateHex } from '@shared/utils'
 import { getNetwork } from '@shared/utils/wagmi'
+import Link from 'next/link'
 import type { ReactElement } from 'react'
 import { memo, useCallback, useMemo, useState } from 'react'
-import Link from '/src/components/Link'
+import { env } from '@/env'
 
 const NETWORK_BY_CHAIN_ID = new Map(SUPPORTED_NETWORKS.map((network) => [network.id, network] as const)) as ReadonlyMap<
   number,
@@ -56,8 +57,8 @@ function ApproveNotificationContent({ notification }: { notification: TNotificat
     <div className={'flex gap-4'}>
       <div className={'flex flex-col items-center gap-3'}>
         <TokenLogo
-          src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-          altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
           tokenSymbol={notification.fromTokenName}
           chainId={notification.chainId}
           width={32}
@@ -132,8 +133,8 @@ function CooldownNotificationContent({ notification }: { notification: TNotifica
     <div className={'flex gap-4'}>
       <div className={'flex flex-col items-center gap-3'}>
         <TokenLogo
-          src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-          altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
           tokenSymbol={notification.fromTokenName}
           chainId={notification.chainId}
           width={32}
@@ -200,8 +201,8 @@ function DepositNotificationContent({ notification }: { notification: TNotificat
     <div className={'flex gap-4'}>
       <div className={'flex flex-col items-center gap-3'}>
         <TokenLogo
-          src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-          altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
           tokenSymbol={notification.fromTokenName}
           chainId={notification.chainId}
           width={32}
@@ -214,8 +215,8 @@ function DepositNotificationContent({ notification }: { notification: TNotificat
 
         {notification.toTokenName && notification.toAddress && (
           <TokenLogo
-            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-32.png`}
-            altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-32.png`}
+            src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-32.png`}
+            altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-32.png`}
             tokenSymbol={notification.toTokenName}
             chainId={notification.toChainId || notification.chainId}
             width={32}
@@ -310,8 +311,8 @@ function WithdrawNotificationContent({ notification }: { notification: TNotifica
     <div className={'flex gap-4'}>
       <div className={'flex flex-col items-center gap-3'}>
         <TokenLogo
-          src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-          altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
           tokenSymbol={notification.fromTokenName}
           chainId={notification.chainId}
           width={32}
@@ -324,8 +325,8 @@ function WithdrawNotificationContent({ notification }: { notification: TNotifica
 
         {notification.toTokenName && notification.toAddress && (
           <TokenLogo
-            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-32.png`}
-            altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-32.png`}
+            src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-32.png`}
+            altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.toChainId || notification.chainId}/${notification.toAddress.toLowerCase()}/logo-32.png`}
             tokenSymbol={notification.toTokenName}
             chainId={notification.toChainId || notification.chainId}
             width={32}
@@ -414,8 +415,8 @@ function MigrateNotificationContent({ notification }: { notification: TNotificat
     <div className={'flex gap-4'}>
       <div className={'flex flex-col items-center gap-3'}>
         <TokenLogo
-          src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
-          altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
+          altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.fromAddress ? notification.fromAddress.toLowerCase() : '0x0'}/logo-32.png`}
           tokenSymbol={notification.fromTokenName}
           chainId={notification.chainId}
           width={32}
@@ -428,8 +429,8 @@ function MigrateNotificationContent({ notification }: { notification: TNotificat
 
         {notification.toAddress && (
           <TokenLogo
-            src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress.toLowerCase()}/logo-32.png`}
-            altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress.toLowerCase()}/logo-32.png`}
+            src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress.toLowerCase()}/logo-32.png`}
+            altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${notification.chainId}/${notification.toAddress.toLowerCase()}/logo-32.png`}
             tokenSymbol={notification.toTokenName}
             chainId={notification.chainId}
             width={32}

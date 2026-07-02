@@ -2,9 +2,10 @@ import { IconDiscord } from '@shared/icons/IconDiscord'
 import { LogoGimme } from '@shared/icons/LogoGimme'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import type { ReactElement } from 'react'
+import { env } from '@/env'
 import Image from '/src/components/Image'
 
-const BASE_YEARN_ASSET_URI = import.meta.env?.VITE_BASE_YEARN_ASSETS_URI ?? ''
+const BASE_YEARN_ASSET_URI = env?.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI ?? ''
 
 type TColorProps = {
   front?: string
@@ -38,6 +39,20 @@ export type TAppGroup = {
 }
 
 const CORE_APPS: TAppTile[] = [
+  {
+    name: 'V3 Vaults',
+    href: '/vaults',
+    description: 'Automated yield vaults',
+    icon: yearnGlyph({ back: 'text-primary', front: 'text-white' }),
+    pathnames: ['/vaults', '/v3']
+  },
+  {
+    name: 'LP Vaults',
+    href: '/vaults?type=lp',
+    description: 'Curve and LP strategies',
+    icon: yearnGlyph({ back: 'text-neutral-900', front: 'text-primary' }),
+    pathnames: ['/v2']
+  },
   {
     name: 'yCRV',
     href: 'https://ycrv.yearn.fi',

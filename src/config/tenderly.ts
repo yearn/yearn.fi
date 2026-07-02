@@ -1,4 +1,5 @@
 import type { Chain } from 'viem'
+import { env } from '@/env'
 import { canonicalChains, type TCanonicalChainId } from './chainDefinitions'
 
 type TEnvValue = boolean | string | undefined
@@ -131,7 +132,7 @@ export function resolveInitialTenderlyModeEnabled({
 }
 
 export function parseTenderlyRuntime(env: TTenderlyEnv): TTenderlyRuntime {
-  const isEnabled = isTruthyEnvValue(env.VITE_TENDERLY_MODE)
+  const isEnabled = isTruthyEnvValue(env.NEXT_PUBLIC_TENDERLY_MODE)
 
   if (!isEnabled) {
     return {
@@ -144,9 +145,9 @@ export function parseTenderlyRuntime(env: TTenderlyEnv): TTenderlyRuntime {
   }
 
   const configuredChains = canonicalChains.reduce<TTenderlyChainConfig[]>((accumulator, chain) => {
-    const rawExecutionChainId = readEnvString(env[`VITE_TENDERLY_CHAIN_ID_FOR_${chain.id}`])
-    const rawRpcUri = readEnvString(env[`VITE_TENDERLY_RPC_URI_FOR_${chain.id}`])
-    const rawExplorerUri = readEnvString(env[`VITE_TENDERLY_EXPLORER_URI_FOR_${chain.id}`])
+    const rawExecutionChainId = readEnvString(env[`NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_${chain.id}`])
+    const rawRpcUri = readEnvString(env[`NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_${chain.id}`])
+    const rawExplorerUri = readEnvString(env[`NEXT_PUBLIC_TENDERLY_EXPLORER_URI_FOR_${chain.id}`])
     const hasAnyConfig = Boolean(rawExecutionChainId || rawRpcUri || rawExplorerUri)
 
     if (!hasAnyConfig) {
@@ -155,7 +156,7 @@ export function parseTenderlyRuntime(env: TTenderlyEnv): TTenderlyRuntime {
 
     if (!rawExecutionChainId || !rawRpcUri) {
       throw new Error(
-        `Tenderly chain ${chain.id} requires both VITE_TENDERLY_CHAIN_ID_FOR_${chain.id} and VITE_TENDERLY_RPC_URI_FOR_${chain.id}`
+        `Tenderly chain ${chain.id} requires both NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_${chain.id} and NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_${chain.id}`
       )
     }
 
@@ -223,11 +224,11 @@ function readStoredTenderlyModePreference(): string | null | undefined {
 
 const disabledTenderlyRuntime = parseTenderlyRuntime({})
 const tenderlyModeCanToggle = canToggleTenderlyModeForRuntime({
-  isDev: import.meta.env.DEV,
+  isDev: env.DEV,
   hostname: typeof window === 'undefined' ? undefined : window.location.hostname
 })
 
-export const tenderlyConfiguredRuntime = parseTenderlyRuntime(import.meta.env)
+export const tenderlyConfiguredRuntime = parseTenderlyRuntime(env)
 export const tenderlyRuntime = resolveInitialTenderlyModeEnabled({
   isConfigured: tenderlyConfiguredRuntime.isEnabled,
   canToggle: tenderlyModeCanToggle,

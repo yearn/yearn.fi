@@ -14,9 +14,10 @@ import { useDeepCompareMemo } from '@react-hookz/web'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
 import { useChainID } from '@shared/hooks/useChainID'
-import type { TDict } from '@shared/types'
+import type { TDict, TNDict, TToken } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
+import { isDisabledVeyfiGaugePair } from '@shared/utils/veyfiGauges'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useMemo } from 'react'
 
@@ -47,6 +48,20 @@ function upsertToken(tokens: TDict<TUseBalancesTokens>, key: string, incoming: T
   tokens[key] = existing ? mergeTokenMetadata(existing, incoming) : incoming
 }
 
+function withTokenListMetadata(token: TUseBalancesTokens, tokenLists: TNDict<TDict<TToken>>): TUseBalancesTokens {
+  const tokenListToken = tokenLists[token.chainID]?.[toAddress(token.address)]
+  if (!tokenListToken) {
+    return token
+  }
+
+  return {
+    ...token,
+    decimals: tokenListToken.decimals || token.decimals,
+    name: tokenListToken.name || token.name,
+    symbol: tokenListToken.symbol || token.symbol
+  }
+}
+
 export function useYearnTokens({
   vaults,
   catalogVaults,
@@ -58,7 +73,7 @@ export function useYearnTokens({
   isLoadingVaultList: boolean
   isEnabled?: boolean
 }): TUseBalancesTokens[] {
-  const { currentNetworkTokenList } = useTokenList()
+  const { currentNetworkTokenList, tokenLists } = useTokenList()
 
   const { safeChainID } = useChainID()
   const allVaults = useMemo((): TKongVault[] => {
@@ -163,58 +178,80 @@ export function useYearnTokens({
       const holdingsAliasVaultAddress = getHoldingsAliasVaultAddress(address)
       const stakingAddress = !isZeroAddress(toAddress(staking.address)) ? toAddress(staking.address) : undefined
       const hasStaking = Boolean(stakingAddress)
-      const isVaultBackedStaking = hasStaking ? vaultAddressKeys.has(`${chainID}/${stakingAddress}`) : false
-      const isStakingOnlyPair = hasStaking && !isVaultBackedStaking
+      const isDisabledVeyfiGauge = stakingAddress ? isDisabledVeyfiGaugePair(address, stakingAddress) : false
+      const isVaultBackedStaking =
+        stakingAddress && !isDisabledVeyfiGauge ? vaultAddressKeys.has(`${chainID}/${stakingAddress}`) : false
+      const isStakingOnlyPair = Boolean(stakingAddress && (isDisabledVeyfiGauge || !isVaultBackedStaking))
 
-      upsertToken(tokens, vaultKey, {
-        address,
-        chainID,
-        symbol,
-        decimals,
-        name,
-        for: 'vault-share',
-        isVaultToken: true,
-        isCatalogVault: catalogVaultKeys.has(vaultKey),
-        isStakingOnlyPair: hasStaking ? isStakingOnlyPair : undefined,
-        isVaultBackedStaking: hasStaking ? isVaultBackedStaking : undefined,
-        holdingsAliasVaultAddress,
-        pairedStakingAddress: stakingAddress
-      })
+      upsertToken(
+        tokens,
+        vaultKey,
+        withTokenListMetadata(
+          {
+            address,
+            chainID,
+            symbol,
+            decimals,
+            name,
+            for: 'vault-share',
+            isVaultToken: true,
+            isCatalogVault: catalogVaultKeys.has(vaultKey),
+            isStakingOnlyPair: hasStaking ? isStakingOnlyPair : undefined,
+            isVaultBackedStaking: hasStaking ? isVaultBackedStaking : undefined,
+            holdingsAliasVaultAddress,
+            pairedStakingAddress: stakingAddress
+          },
+          tokenLists
+        )
+      )
 
       if (token.address) {
         const vaultAssetTokenKey = `${chainID}/${toAddress(token.address)}`
         if (!tokenListAddressSet.has(vaultAssetTokenKey)) {
-          upsertToken(tokens, vaultAssetTokenKey, {
-            address: token.address,
-            chainID,
-            decimals: token.decimals,
-            name: token.name,
-            symbol: token.symbol
-          })
+          upsertToken(
+            tokens,
+            vaultAssetTokenKey,
+            withTokenListMetadata(
+              {
+                address: token.address,
+                chainID,
+                decimals: token.decimals,
+                name: token.name,
+                symbol: token.symbol
+              },
+              tokenLists
+            )
+          )
         }
       }
 
       if (stakingAddress) {
         const stakingKey = `${chainID}/${stakingAddress}`
-        upsertToken(tokens, stakingKey, {
-          address: stakingAddress,
-          chainID,
-          symbol,
-          decimals,
-          name,
-          for: 'vault-staking',
-          isStakingToken: true,
-          isCatalogVault: catalogVaultKeys.has(stakingKey),
-          isStakingOnlyPair,
-          isVaultBackedStaking,
-          holdingsAliasVaultAddress: getHoldingsAliasVaultAddress(stakingAddress),
-          pairedVaultAddress: address
-        })
+        upsertToken(
+          tokens,
+          stakingKey,
+          withTokenListMetadata(
+            {
+              address: stakingAddress,
+              chainID,
+              symbol,
+              name,
+              for: 'vault-staking',
+              isStakingToken: true,
+              isCatalogVault: catalogVaultKeys.has(stakingKey),
+              isStakingOnlyPair,
+              isVaultBackedStaking,
+              holdingsAliasVaultAddress: getHoldingsAliasVaultAddress(stakingAddress),
+              pairedVaultAddress: address
+            },
+            tokenLists
+          )
+        )
       }
     })
 
     return tokens
-  }, [isEnabled, isLoadingVaultList, allVaults, availableTokenListTokens, catalogVaults])
+  }, [isEnabled, isLoadingVaultList, allVaults, availableTokenListTokens, catalogVaults, tokenLists])
 
   const allTokens = useDeepCompareMemo((): TUseBalancesTokens[] => {
     if (!isEnabled || isLoadingVaultList) {

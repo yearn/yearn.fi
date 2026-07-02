@@ -1,4 +1,3 @@
-import Link from '@components/Link'
 import { usePlausible } from '@hooks/usePlausible'
 import { APYDetailsModal } from '@pages/vaults/components/table/APYDetailsModal'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
@@ -21,9 +20,8 @@ import {
   getVaultTVL,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
-import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import type { TYvUsdListVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
-import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
 import {
   formatFeeStructureFilterAriaLabel,
   formatFeeStructureLabel,
@@ -53,8 +51,9 @@ import { useMediaQuery } from '@react-hookz/web'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletHoldings, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
 import { fetchWithSchema, getFetchQueryKey } from '@shared/hooks/useFetch'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
@@ -65,9 +64,12 @@ import { PLAUSIBLE_EVENTS, type TPlausibleEventName } from '@shared/utils/plausi
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { getNetwork } from '@shared/utils/wagmi'
 import { useQueryClient } from '@tanstack/react-query'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { MouseEvent, ReactElement } from 'react'
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { TokenLogoV2 } from '@/components/shared/components/TokenLogoV2'
+import { env } from '@/env'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
 import { VaultsListChip } from './VaultsListChip'
 
@@ -117,10 +119,6 @@ const YVUSD_HOLDINGS_FORMAT_OPTIONS = {
 } as const
 
 const prefetchedSnapshotEndpoints = new Set<string>()
-
-function buildSnapshotEndpoint(chainId: number, address: string): string {
-  return `${KONG_REST_BASE}/snapshot/${chainId}/${toAddress(address)}`
-}
 
 function getVaultProductTypePresentation(listKind: ReturnType<typeof deriveListKind>): TVaultProductTypePresentation {
   if (listKind === 'allocator' || listKind === 'strategy') {
@@ -193,7 +191,7 @@ function getYvUsdListMetrics({
   currentVault: TKongVaultInput
   apr: ReturnType<typeof getVaultAPR>
   isYvUsd: boolean
-  yvUsdMetrics: ReturnType<typeof useYvUsdVaults>['metrics']
+  yvUsdMetrics: TYvUsdListVaults['metrics']
 }): TYvUsdListMetrics | null {
   if (!isYvUsd) {
     return null
@@ -242,10 +240,17 @@ type TVaultsListRowProps = {
   showProductTypeChipOverride?: boolean
   mobileSecondaryMetric?: 'tvl' | 'holdings'
   expandedChartVariant?: 'default' | 'portfolio-user-tvl-overlay'
+  yvUsdVaults?: TYvUsdListVaults
   clickEventName?: TPlausibleEventName
 }
 
-function VaultsListRowComponent({
+type TVaultsListRowPresentationProps = TVaultsListRowProps & {
+  hasWalletAddress?: boolean
+  isWalletLoading?: boolean
+  holdingsValue?: number
+}
+
+function VaultsListRowPresentationComponent({
   currentVault,
   flags,
   hrefOverride,
@@ -271,9 +276,13 @@ function VaultsListRowComponent({
   mobileSecondaryMetric = 'tvl',
   showAllocatorChip = true,
   expandedChartVariant = 'default',
-  clickEventName = PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW
-}: TVaultsListRowProps): ReactElement {
-  const navigate = useNavigate()
+  yvUsdVaults,
+  clickEventName = PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW,
+  hasWalletAddress = false,
+  isWalletLoading = false,
+  holdingsValue: resolvedHoldingsValue = 0
+}: TVaultsListRowPresentationProps): ReactElement {
+  const router = useRouter()
   const trackEvent = usePlausible()
   const chainID = getVaultChainID(currentVault)
   const vaultAddress = getVaultAddress(currentVault)
@@ -286,10 +295,8 @@ function VaultsListRowComponent({
   const vaultCategory = getVaultCategory(currentVault)
   const href = hrefOverride ?? `/vaults/${chainID}/${toAddress(vaultAddress)}`
   const network = getNetwork(chainID)
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+  const chainLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
-  const { address } = useWeb3()
-  const { getVaultHoldingsUsd, getBalance, isLoading: isWalletLoading } = useWallet()
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const defaultExpandedView: TVaultsExpandedView =
     expandedChartVariant === 'portfolio-user-tvl-overlay' ? 'tvl' : 'strategies'
@@ -316,7 +323,7 @@ function VaultsListRowComponent({
   const leftColumnSpan = 'col-span-12'
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
-  const showHoldingsColumn = !!address
+  const showHoldingsColumn = hasWalletAddress
   const apyColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-6'
   const tvlColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-5'
   const holdingsColumnSpan = 'col-span-4'
@@ -327,11 +334,13 @@ function VaultsListRowComponent({
   const handleInteractiveHoverChange = (isHovering: boolean): void => {
     setInteractiveHoverCount((count) => Math.max(0, count + (isHovering ? 1 : -1)))
   }
-  const { metrics: yvUsdMetrics, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
-  const resolvedYvUsdMetrics = useMemo(
-    () => getYvUsdListMetrics({ currentVault, apr, isYvUsd, yvUsdMetrics }),
-    [apr, currentVault, isYvUsd, yvUsdMetrics]
-  )
+  const yvUsdVaultsForRow = isYvUsd ? yvUsdVaults : undefined
+  const resolvedYvUsdMetrics = useMemo(() => {
+    if (!yvUsdVaultsForRow) {
+      return null
+    }
+    return getYvUsdListMetrics({ currentVault, apr, isYvUsd, yvUsdMetrics: yvUsdVaultsForRow.metrics })
+  }, [apr, currentVault, isYvUsd, yvUsdVaultsForRow])
 
   const yvUsdApyTooltip = resolvedYvUsdMetrics ? (
     <YvUsdApyTooltipContent
@@ -371,7 +380,10 @@ function VaultsListRowComponent({
   }
 
   const prefetchSnapshot = useCallback((): void => {
-    const endpoint = buildSnapshotEndpoint(chainID, vaultAddress)
+    const endpoint = buildVaultSnapshotEndpoint(chainID, vaultAddress)
+    if (!endpoint) {
+      return
+    }
     if (prefetchedSnapshotEndpoints.has(endpoint)) {
       return
     }
@@ -422,25 +434,8 @@ function VaultsListRowComponent({
     if (!showHoldingsChip && mobileSecondaryMetric !== 'holdings') {
       return 0
     }
-    if (isYvUsd) {
-      const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-      const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-      const unlockedSharePrice = getYvUsdSharePrice(yvUsdUnlockedVault)
-      const lockedSharePrice = getYvUsdSharePrice(yvUsdLockedVault)
-      return unlockedBalance * unlockedSharePrice + lockedBalance * lockedSharePrice
-    }
-    return getVaultHoldingsUsd(currentVault)
-  }, [
-    showHoldingsChip,
-    mobileSecondaryMetric,
-    isYvUsd,
-    isWalletLoading,
-    getBalance,
-    yvUsdLockedVault,
-    yvUsdUnlockedVault,
-    currentVault,
-    getVaultHoldingsUsd
-  ])
+    return resolvedHoldingsValue
+  }, [showHoldingsChip, mobileSecondaryMetric, isWalletLoading, resolvedHoldingsValue])
 
   useEffect(() => {
     if (isExpanded) {
@@ -481,6 +476,7 @@ function VaultsListRowComponent({
       </button>
       <Link
         href={href}
+        prefetch={false}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
           'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',
@@ -585,7 +581,7 @@ function VaultsListRowComponent({
             <div
               className={cl('relative flex items-center justify-center self-center', 'size-10', 'min-h-10 min-w-10')}
             >
-              <TokenLogo
+              <TokenLogoV2
                 src={tokenLogoSrc}
                 tokenSymbol={isYvUsd ? 'yvUSD' : vaultToken.symbol || ''}
                 width={40}
@@ -596,7 +592,7 @@ function VaultsListRowComponent({
                   'absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface'
                 }
               >
-                <TokenLogo src={chainLogoSrc} tokenSymbol={network.name} width={16} height={16} />
+                <TokenLogoV2 src={chainLogoSrc} tokenSymbol={network.name} width={16} height={16} />
               </div>
             </div>
             <div className={'min-w-0 flex-1'}>
@@ -915,7 +911,7 @@ function VaultsListRowComponent({
             currentVault={currentVault}
             expandedView={expandedView}
             onExpandedViewChange={setExpandedView}
-            onNavigateToVault={() => navigate(href)}
+            onNavigateToVault={() => router.push(href)}
             showKindTag={showKindChip}
             showHiddenTag={isHiddenVault}
             isHidden={isHiddenVault}
@@ -939,5 +935,45 @@ function VaultsListRowComponent({
   )
 }
 
-export const VaultsListRow = memo(VaultsListRowComponent)
+export const VaultsListRowPresentation = memo(VaultsListRowPresentationComponent)
+VaultsListRowPresentation.displayName = 'VaultsListRowPresentation'
+
+function VaultsListRowWithWallet(props: TVaultsListRowProps): ReactElement {
+  const { currentVault, yvUsdVaults } = props
+  const vaultAddress = getVaultAddress(currentVault)
+  const isYvUsd = isYvUsdAddress(vaultAddress)
+  const yvUsdVaultsForRow = isYvUsd ? yvUsdVaults : undefined
+  const { address } = useWeb3()
+  const { getBalance } = useWalletTokens()
+  const { getVaultHoldingsUsd } = useWalletHoldings()
+  const { isLoading: isWalletLoading } = useWalletStatus()
+  const holdingsValue = useMemo(() => {
+    if (isYvUsd) {
+      const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
+      const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
+      const unlockedSharePrice = getYvUsdSharePrice(yvUsdVaultsForRow?.unlockedVault)
+      const lockedSharePrice = getYvUsdSharePrice(yvUsdVaultsForRow?.lockedVault)
+      return unlockedBalance * unlockedSharePrice + lockedBalance * lockedSharePrice
+    }
+    return getVaultHoldingsUsd(currentVault)
+  }, [
+    currentVault,
+    getBalance,
+    getVaultHoldingsUsd,
+    isYvUsd,
+    yvUsdVaultsForRow?.lockedVault,
+    yvUsdVaultsForRow?.unlockedVault
+  ])
+
+  return (
+    <VaultsListRowPresentation
+      {...props}
+      hasWalletAddress={Boolean(address)}
+      isWalletLoading={isWalletLoading}
+      holdingsValue={holdingsValue}
+    />
+  )
+}
+
+export const VaultsListRow = memo(VaultsListRowWithWallet)
 VaultsListRow.displayName = 'VaultsListRow'

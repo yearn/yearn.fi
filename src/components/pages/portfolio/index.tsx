@@ -32,13 +32,11 @@ import {
   getVaultToken,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
-import { useClaimMerkleRewards } from '@pages/vaults/hooks/rewards/useClaimMerkleRewards'
-import { buildMerkleRewardKey, useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
+import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { resolveNextSingleChainSelection } from '@pages/vaults/utils/chainSelection'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
-import { Button } from '@shared/components/Button'
 import { METRIC_VALUE_CLASS, MetricHeader, type TMetricBlock } from '@shared/components/MetricsCard'
 import { SearchBar } from '@shared/components/SearchBar'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
@@ -46,7 +44,7 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { YearnLogoSpinner } from '@shared/components/YearnLogoSpinner'
 import { useNotifications } from '@shared/contexts/useNotifications'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletActions } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
@@ -74,20 +72,17 @@ import { formatUSD } from '@shared/utils/format'
 import { copyToClipboard } from '@shared/utils/helpers'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { getNetwork } from '@shared/utils/wagmi'
+import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { CSSProperties, ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router'
-import { useWriteContract } from 'wagmi'
-import Link from '/src/components/Link'
+import { env } from '@/env'
+import Image from '/src/components/Image'
 import {
   doesActivityEntryMatchSearch,
   doesLocalActivityMatchFilters,
-  formatIndexedActivityDate,
-  getActivityChainName,
-  getActivityEntryTitle,
   isRecentLocalActivityEntry,
   isZapNotification,
-  type TActivityModalFilters,
   toLocalActivityEntry
 } from './activity.helpers'
 import type {
@@ -122,7 +117,6 @@ const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
 const metricTooltipContentClassName = 'flex max-w-[280px] flex-col gap-1 leading-relaxed'
 const metricCardClassName = 'bg-surface px-5 py-3 md:px-5 md:py-2.5'
-const portfolioRewardClaimButtonClassName = 'w-full md:w-[112px]'
 const PORTFOLIO_TABS = [
   { key: 'positions', label: 'Account Overview' },
   { key: 'activity', label: 'Activity' },
@@ -159,6 +153,14 @@ type TPortfolioActivityProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModa
 
 type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'>
 
+const ACTIVITY_ACTION_LABELS: Record<TPortfolioActivityEntry['action'], string> = {
+  deposit: 'Deposit',
+  withdraw: 'Withdraw',
+  stake: 'Stake',
+  unstake: 'Unstake',
+  transfer: 'Transfer',
+  swap: 'Swap'
+}
 const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: string }> = [
   { key: 'all', label: 'All' },
   { key: 'deposit', label: 'Deposit' },
@@ -168,7 +170,6 @@ const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: s
   { key: 'transfer', label: 'Transfer' },
   { key: 'swap', label: 'Swap' }
 ]
-const PORTFOLIO_ACTIVITY_PAGE_SIZE = 500
 const ACTIVITY_CALENDAR_DAY_LABELS = [
   { key: 'sunday', label: 'S' },
   { key: 'monday', label: 'M' },
@@ -179,6 +180,11 @@ const ACTIVITY_CALENDAR_DAY_LABELS = [
   { key: 'saturday', label: 'S' }
 ] as const
 
+type TActivityModalFilters = {
+  types: TPortfolioActivityEntry['action'][]
+  startDate: string
+  endDate: string
+}
 type TActivityDateField = 'startDate' | 'endDate'
 
 function getTodayDateInputValue(): string {
@@ -263,8 +269,20 @@ function getActivityExplorerUrl(chainId: number, txHash: string): string | null 
   return explorerBaseUrl ? `${explorerBaseUrl}/tx/${txHash}` : null
 }
 
+function getActivityChainName(chainId: number): string {
+  return SUPPORTED_NETWORKS.find((item) => item.id === chainId)?.name ?? `Chain ${chainId}`
+}
+
 function getActivityChainLogoUrl(chainId: number): string {
-  return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
+  return `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
+}
+
+function formatIndexedActivityDate(timestamp: number): string {
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
 }
 
 function formatIndexedActivityDateTime(timestamp: number): string {
@@ -378,6 +396,26 @@ function getActivityMonthKey(date: Date): string {
 
 function getEarlierActivityDate(firstDate: string, secondDate: string): string {
   return firstDate < secondDate ? firstDate : secondDate
+}
+
+function getActivityEntryTitle(entry: TPortfolioActivityEntry): string {
+  if (entry.displayType === 'reward_claim') {
+    return 'Reward Claim'
+  }
+
+  if (entry.action === 'transfer' && entry.inputTokenAddress && entry.outputTokenAddress) {
+    return 'Zap'
+  }
+
+  if (entry.action === 'transfer' && entry.transferDirection === 'in') {
+    return 'Transfer in'
+  }
+
+  if (entry.action === 'transfer' && entry.transferDirection === 'out') {
+    return 'Transfer out'
+  }
+
+  return ACTIVITY_ACTION_LABELS[entry.action]
 }
 
 function getActivityEntryKey(entry: TPortfolioActivityEntry, index: number): string {
@@ -1230,7 +1268,7 @@ function IndexedActivityRow({
             <div className="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-neutral-700 md:size-10">
               <ActivityActionIcon action={entry.action} displayType={entry.displayType} />
               <div className="absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface">
-                <img
+                <Image
                   src={getActivityChainLogoUrl(entry.chainId)}
                   alt={chainName}
                   className="size-3.5 rounded-full"
@@ -1337,8 +1375,8 @@ function IndexedActivityRow({
             )}
             {tokenAddress ? (
               <TokenLogo
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-                altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                 tokenSymbol={summaryAssetSymbol ?? activityTitle}
                 width={32}
                 height={32}
@@ -1353,8 +1391,8 @@ function IndexedActivityRow({
           <div className="grid min-w-0 shrink-0 grid-cols-[24px_160px] items-center gap-2.5 text-right">
             {tokenAddress ? (
               <TokenLogo
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-                altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                 tokenSymbol={summaryAssetSymbol ?? activityTitle}
                 width={24}
                 height={24}
@@ -1454,7 +1492,7 @@ function IndexedActivityRow({
               label="CHAIN NAME:"
               value={
                 <span className="inline-flex items-center gap-2">
-                  <img
+                  <Image
                     src={getActivityChainLogoUrl(entry.chainId)}
                     alt={chainName}
                     className="size-4 rounded-full"
@@ -1704,7 +1742,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     hasMore: indexedHasMore,
     availableChainIds: activityAvailableChainIds,
     loadMore: loadMoreIndexedActivity
-  } = usePortfolioActivity(PORTFOLIO_ACTIVITY_PAGE_SIZE, isActive, {
+  } = usePortfolioActivity(10, isActive, {
     type: apiActivityType,
     chainId: activityChainId,
     startTimestamp: activityStartTimestamp,
@@ -2378,86 +2416,6 @@ function ChainMerkleRewardsFetcher({
   return null
 }
 
-function getMerkleRewardKeys(groupedRewards: TGroupedMerkleReward[]): string[] {
-  return groupedRewards.flatMap((groupedReward) =>
-    groupedReward.rewards.map((reward) => buildMerkleRewardKey(reward.root, reward.token.address))
-  )
-}
-
-function getMerkleRewardTokenCount(groupedRewards: TGroupedMerkleReward[]): number {
-  return groupedRewards.filter((groupedReward) => groupedReward.totalUnclaimed > 0n).length
-}
-
-function MerkleClaimAllButton({
-  chainData,
-  userAddress,
-  onStartClaim,
-  onSwitchChain
-}: {
-  chainData: TChainRewardData
-  userAddress: `0x${string}`
-  onStartClaim: (step: TransactionStep, merkleRewardKeys: string[], chainId: number) => void
-  onSwitchChain: () => void
-}): ReactElement | null {
-  const currentChainId = useChainId()
-  const { isPending } = useWriteContract()
-  const merkleRewardTokenCount = getMerkleRewardTokenCount(chainData.merkleRewards)
-  const isWrongChain = currentChainId !== chainData.chainId
-
-  const { prepare } = useClaimMerkleRewards({
-    groupedRewards: chainData.merkleRewards,
-    userAddress,
-    chainId: chainData.chainId,
-    enabled: merkleRewardTokenCount > 1
-  })
-
-  const step = useMemo((): TransactionStep | undefined => {
-    if (!prepare.isSuccess || !prepare.data?.request) {
-      return undefined
-    }
-
-    return {
-      prepare,
-      label: 'Claim',
-      confirmMessage: 'Claim all Merkl rewards',
-      successTitle: 'Rewards Claimed',
-      successMessage: 'You claimed all Merkl rewards',
-      showConfetti: true
-    }
-  }, [prepare])
-
-  const handleClaimAll = useCallback(() => {
-    if (isWrongChain) {
-      onSwitchChain()
-      return
-    }
-    if (!step) return
-
-    onStartClaim(step, getMerkleRewardKeys(chainData.merkleRewards), chainData.chainId)
-  }, [chainData.chainId, chainData.merkleRewards, isWrongChain, onStartClaim, onSwitchChain, step])
-
-  if (merkleRewardTokenCount < 2) {
-    return null
-  }
-
-  return (
-    <div className="flex flex-col">
-      <div className="h-px w-full bg-border" />
-      <div className="mt-3 flex justify-end">
-        <Button
-          onClick={handleClaimAll}
-          isDisabled={!isWrongChain && !step}
-          isBusy={isPending}
-          variant={isWrongChain || !step ? 'light' : 'filled'}
-          classNameOverride={cl('yearn--button--nextgen min-h-[36px] px-3', portfolioRewardClaimButtonClassName)}
-        >
-          {isWrongChain ? 'Switch Chain' : 'Claim all'}
-        </Button>
-      </div>
-    </div>
-  )
-}
-
 function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioClaimRewardsProps): ReactElement {
   const { address: userAddress } = useWeb3()
   const { vaults } = useYearn()
@@ -2640,7 +2598,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   }, [userAddress])
 
   function getChainLogoUrl(chainId: number): string {
-    return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
+    return `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
   }
 
   function renderRewardsContent(): ReactElement {
@@ -2666,7 +2624,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
           <div key={chainData.chainId}>
             {showChainHeader && (
               <div className="mb-2 flex items-center gap-2">
-                <img
+                <Image
                   src={getChainLogoUrl(chainData.chainId)}
                   alt={chainData.chainName}
                   className="size-5 rounded-full"
@@ -2688,7 +2646,6 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                   isFirst={srIdx === 0 && rewardIdx === 0}
                   isAllChainsView={isAllChainsView}
                   onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
-                  claimButtonClassName={portfolioRewardClaimButtonClassName}
                 />
               ))
             )}
@@ -2702,15 +2659,8 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                 isFirst={idx === 0 && chainData.stakingRewards.length === 0}
                 isAllChainsView={isAllChainsView}
                 onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
-                claimButtonClassName={portfolioRewardClaimButtonClassName}
               />
             ))}
-            <MerkleClaimAllButton
-              chainData={chainData}
-              userAddress={userAddress!}
-              onStartClaim={handleStartClaim}
-              onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
-            />
             {needsSwitchChain(chainData) && (
               <SwitchChainPrompt
                 chainId={chainData.chainId}
@@ -2812,7 +2762,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <img src={getChainLogoUrl(chainId)} alt={chainData.chainName} className="size-8 rounded-full" />
+                      <Image src={getChainLogoUrl(chainId)} alt={chainData.chainName} className="size-8 rounded-full" />
                       <span className="font-medium">{chainData.chainName}</span>
                       {isSelected && <span className="size-2 rounded-full bg-green-500" />}
                     </div>
@@ -3071,14 +3021,24 @@ function PortfolioPage(): ReactElement {
     null
   )
   const [historyVaultGrowthMode, setHistoryVaultGrowthMode] = useState<TPortfolioVaultGrowthChartMode>('position')
-  const [searchParams, setSearchParams] = useSearchParams()
+  const searchParams = useSearchParams()
+  const pathname = usePathname() || '/portfolio'
+  const router = useRouter()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
   const tabsRef = useRef<HTMLDivElement>(null)
   const historyFetchTimeframe: TPortfolioHistoryTimeframe = historyTimeframe === 'all' ? 'all' : '1y'
-  const { onRefresh } = useWallet()
+  const { onRefresh } = useWalletActions()
 
   usePortfolioEntryRefresh({ isActive: model.isActive, onRefresh })
+
+  const replaceSearchParams = useCallback(
+    (nextParams: URLSearchParams): void => {
+      const query = nextParams.toString()
+      router.replace(`${pathname}${query ? `?${query}` : ''}`, { scroll: false })
+    },
+    [pathname, router]
+  )
 
   const activeTab = useMemo((): TPortfolioTabKey => {
     const tabParam = searchParams.get('tab')
@@ -3154,15 +3114,15 @@ function PortfolioPage(): ReactElement {
           }
         })
       }
-      const nextParams = new URLSearchParams(searchParams)
+      const nextParams = new URLSearchParams(searchParams.toString())
       if (tab === 'positions') {
         nextParams.delete('tab')
       } else {
         nextParams.set('tab', tab)
       }
-      setSearchParams(nextParams, { replace: true })
+      replaceSearchParams(nextParams)
     },
-    [activeTab, model.hasHoldings, model.isActive, searchParams, setSearchParams, trackEvent]
+    [activeTab, model.hasHoldings, model.isActive, replaceSearchParams, searchParams, trackEvent]
   )
 
   useEffect(() => {

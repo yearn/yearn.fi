@@ -1,7 +1,7 @@
 import { SectionHeader } from '@shared/components/SectionHeader'
+import Link from 'next/link'
 import type { FC } from 'react'
 import Image from '/src/components/Image'
-import Link from '/src/components/Link'
 
 type TIntegration = {
   name: string
@@ -57,7 +57,7 @@ const integrations: TIntegration[] = [
 
 const IntegrationItem: FC<TIntegration & { index: number }> = ({ name, imageSrc, description, href, index }) => {
   return (
-    <Link href={href} className={'block cursor-pointer'}>
+    <Link href={href} target={'_blank'} rel={'noopener noreferrer'} className={'block cursor-pointer'}>
       <div
         className={`flex min-h-[56px] flex-row items-center p-3 transition-all duration-300 ease-in-out hover:scale-[1.005] hover:bg-black/60 hover:shadow-lg sm:min-h-[60px] sm:p-[14px] md:p-[16px] ${index % 2 === 0 ? 'bg-black/50' : 'bg-black/30'}`}
       >

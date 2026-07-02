@@ -2,7 +2,6 @@ import { YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/util
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const useVaultUserDataMock = vi.hoisted(() =>
@@ -42,6 +41,14 @@ vi.mock('@shared/contexts/useWeb3', () => ({
 
 vi.mock('@shared/contexts/useYearn', () => ({
   useYearn: () => ({
+    getPrice: () => ({
+      normalized: 1
+    })
+  })
+}))
+
+vi.mock('@shared/hooks/useYearnSpotPrices', () => ({
+  useYearnSpotPrices: () => ({
     getPrice: () => ({
       normalized: 1
     })
@@ -303,9 +310,7 @@ describe('VaultDetailsHeaderPresentation', () => {
 
   it('uses the standard compressed token logo size for yvUSD', () => {
     const html = renderToStaticMarkup(
-      <MemoryRouter>
-        <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={true} />
-      </MemoryRouter>
+      <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={true} />
     )
 
     expect(html).toContain('style="width:32px;height:32px"')
@@ -315,9 +320,7 @@ describe('VaultDetailsHeaderPresentation', () => {
 
   it('keeps the explorer link visible when header is compressed', () => {
     const html = renderToStaticMarkup(
-      <MemoryRouter>
-        <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={true} />
-      </MemoryRouter>
+      <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={true} />
     )
 
     expect(html).toContain('View vault on block explorer')
@@ -326,9 +329,7 @@ describe('VaultDetailsHeaderPresentation', () => {
 
   it('hides cooldown information when there is no locked yvUSD deposit', () => {
     const html = renderToStaticMarkup(
-      <MemoryRouter>
-        <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={false} />
-      </MemoryRouter>
+      <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={false} />
     )
 
     expect(html).toContain('Your Deposits')
@@ -339,9 +340,7 @@ describe('VaultDetailsHeaderPresentation', () => {
 
   it('does not enable locked yvBTC user-data reads while the locked address is a placeholder', () => {
     renderToStaticMarkup(
-      <MemoryRouter>
-        <VaultDetailsHeaderPresentation currentVault={YVBTC_VAULT as never} depositedValue={0n} isCompressed={false} />
-      </MemoryRouter>
+      <VaultDetailsHeaderPresentation currentVault={YVBTC_VAULT as never} depositedValue={0n} isCompressed={false} />
     )
 
     expect(useVaultUserDataMock).toHaveBeenCalledWith(

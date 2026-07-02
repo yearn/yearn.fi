@@ -219,40 +219,42 @@ export function VaultChartsSection({
           {'No wallet history is available for this vault yet.'}
         </div>
       ) : (
-        <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx} className={'mx-4'}>
-          <ChartErrorBoundary>
-            <Suspense fallback={<ChartSkeleton />}>
-              {resolvedActiveTab === 'user-position' && (userBalanceData || userGrowthData) ? (
-                <VaultTvlGrowthChart
-                  balanceData={userBalanceData}
-                  growthData={userGrowthData}
-                  timeframe={activeTimeframe}
-                  unitLabel={userUnitLabel}
-                />
-              ) : null}
-              {resolvedActiveTab === 'historical-pps' && transformed.ppsData ? (
-                <PPSChart chartData={transformed.ppsData} timeframe={activeTimeframe} />
-              ) : null}
-              {resolvedActiveTab === 'historical-apy' && transformed.aprApyData ? (
-                <APYChart chartData={transformed.aprApyData} timeframe={activeTimeframe} />
-              ) : null}
-              {resolvedActiveTab === 'historical-tvl' ? (
-                shouldOverlayUserPositionOnTvlTab ? (
-                  userBalanceData || userGrowthData ? (
-                    <VaultTvlGrowthChart
-                      balanceData={userBalanceData}
-                      growthData={userGrowthData}
-                      timeframe={activeTimeframe}
-                      unitLabel={userUnitLabel}
-                    />
+        <div className={'px-4'}>
+          <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx}>
+            <ChartErrorBoundary>
+              <Suspense fallback={<ChartSkeleton />}>
+                {resolvedActiveTab === 'user-position' && (userBalanceData || userGrowthData) ? (
+                  <VaultTvlGrowthChart
+                    balanceData={userBalanceData}
+                    growthData={userGrowthData}
+                    timeframe={activeTimeframe}
+                    unitLabel={userUnitLabel}
+                  />
+                ) : null}
+                {resolvedActiveTab === 'historical-pps' && transformed.ppsData ? (
+                  <PPSChart chartData={transformed.ppsData} timeframe={activeTimeframe} />
+                ) : null}
+                {resolvedActiveTab === 'historical-apy' && transformed.aprApyData ? (
+                  <APYChart chartData={transformed.aprApyData} timeframe={activeTimeframe} />
+                ) : null}
+                {resolvedActiveTab === 'historical-tvl' ? (
+                  shouldOverlayUserPositionOnTvlTab ? (
+                    userBalanceData || userGrowthData ? (
+                      <VaultTvlGrowthChart
+                        balanceData={userBalanceData}
+                        growthData={userGrowthData}
+                        timeframe={activeTimeframe}
+                        unitLabel={userUnitLabel}
+                      />
+                    ) : null
+                  ) : transformed.tvlData ? (
+                    <TVLChart chartData={transformed.tvlData} timeframe={activeTimeframe} />
                   ) : null
-                ) : transformed.tvlData ? (
-                  <TVLChart chartData={transformed.tvlData} timeframe={activeTimeframe} />
-                ) : null
-              ) : null}
-            </Suspense>
-          </ChartErrorBoundary>
-        </FixedHeightChartContainer>
+                ) : null}
+              </Suspense>
+            </ChartErrorBoundary>
+          </FixedHeightChartContainer>
+        </div>
       )}
     </div>
   )

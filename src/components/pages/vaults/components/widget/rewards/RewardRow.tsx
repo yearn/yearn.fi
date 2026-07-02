@@ -1,8 +1,9 @@
 import { Button } from '@shared/components/Button'
-import { TokenLogo } from '@shared/components/TokenLogo'
+import { TokenLogoV2 } from '@shared/components/TokenLogoV2'
 import { cl } from '@shared/utils'
 import { formatAmount, formatUSD } from '@shared/utils/format'
 import type { ReactElement } from 'react'
+import { env } from '@/env'
 
 type TRewardRowProps = {
   chainId: number
@@ -21,7 +22,7 @@ type TRewardRowProps = {
 }
 
 function getTokenLogoUrl(chainId: number, tokenAddress: `0x${string}`): string {
-  return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-128.png`
+  return `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${tokenAddress.toLowerCase()}/logo-128.png`
 }
 
 export function RewardRow(props: TRewardRowProps): ReactElement {
@@ -58,11 +59,11 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
           </div>
           <div className="flex items-center gap-1.5 md:hidden">
             <span className="text-base text-text-secondary">{symbol}</span>
-            <TokenLogo src={getTokenLogoUrl(chainId, tokenAddress)} tokenSymbol={symbol} width={18} height={18} />
+            <TokenLogoV2 src={getTokenLogoUrl(chainId, tokenAddress)} tokenSymbol={symbol} width={18} height={18} />
           </div>
           <div className="hidden items-center gap-1.5 md:flex">
             <span className="text-base text-text-secondary">{symbol}</span>
-            <TokenLogo src={getTokenLogoUrl(chainId, tokenAddress)} tokenSymbol={symbol} width={18} height={18} />
+            <TokenLogoV2 src={getTokenLogoUrl(chainId, tokenAddress)} tokenSymbol={symbol} width={18} height={18} />
           </div>
         </div>
 

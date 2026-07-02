@@ -5,6 +5,8 @@ import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { useYearn } from '@shared/contexts/useYearn'
+import { useTokenListActions } from '@shared/contexts/WithTokenList'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
@@ -17,6 +19,7 @@ import { calculateRemainingEnsoSlippagePercentage, ZAP_SLIPPAGE_HARD_CAP } from 
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits, isAddressEqual } from 'viem'
+import { env } from '@/env'
 import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
@@ -26,6 +29,7 @@ import { useWidgetContext } from '../shared/useWidgetContext'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
 import { WidgetHeader } from '../shared/WidgetHeader'
 import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
+import { getKnownVaultTokenLogoMetaByAddress } from '../tokenLogo.utils'
 import { DEPOSIT_COMMON_TOKENS_BY_CHAIN } from '../withdraw/constants'
 import { AnnualReturnOverlay } from './AnnualReturnOverlay'
 import { ApprovalOverlay } from './ApprovalOverlay'
@@ -48,6 +52,7 @@ interface Props {
   assetAddress: `0x${string}`
   directDepositTokenAddress?: `0x${string}`
   stakingAddress?: `0x${string}`
+  disableDepositStaking?: boolean
   chainId: number
   vaultAPR: number
   vaultSymbol: string
@@ -140,6 +145,7 @@ export function WidgetDeposit({
   assetAddress,
   directDepositTokenAddress,
   stakingAddress,
+  disableDepositStaking,
   chainId,
   vaultAPR,
   vaultSymbol,
@@ -182,12 +188,12 @@ export function WidgetDeposit({
     getToken,
     zapSlippage,
     isAutoStakingEnabled,
-    getPrice,
     trackEvent,
     ensoEnabled,
     isWalletSafe
   } = useWidgetContext({ chainId, vaultAddress })
   const { allVaults, setIsAutoStakingEnabled } = useYearn()
+  const { enableTokenListFetch } = useTokenListActions()
 
   const [showVaultSharesModal, setShowVaultSharesModal] = useState(false)
   const [showVaultShareValueModal, setShowVaultShareValueModal] = useState(false)
@@ -262,14 +268,36 @@ export function WidgetDeposit({
     }
     return getToken({ address: depositToken, chainID: sourceChainId })
   }, [getToken, depositToken, sourceChainId, chainId, assetAddress, assetToken, selectedExtraToken])
-  const inputTokenLogoURI = inputTokenLogoURIOverride ?? selectedExtraToken?.logoURI ?? getTokenLogoURI(inputToken)
+  const { getPrice } = useYearnSpotPrices([
+    { address: inputToken?.address, chainID: inputToken?.chainID },
+    { address: assetToken?.address, chainID: assetToken?.chainID }
+  ])
+  const knownVaultTokenLogoMetaByAddress = useMemo(
+    () => getKnownVaultTokenLogoMetaByAddress({ allVaults, chainId: sourceChainId }),
+    [allVaults, sourceChainId]
+  )
+  const knownInputTokenLogoToken = inputToken?.address
+    ? knownVaultTokenLogoMetaByAddress[toAddress(inputToken.address).toLowerCase()]?.logoToken
+    : undefined
+  const inputTokenLogoURI =
+    inputTokenLogoURIOverride ??
+    selectedExtraToken?.logoURI ??
+    (knownInputTokenLogoToken ? knownInputTokenLogoToken.logoURI : getTokenLogoURI(inputToken))
+  const inputTokenLogoAddress = knownInputTokenLogoToken?.address ?? inputToken?.address
+  const inputTokenLogoChainID = knownInputTokenLogoToken?.chainID ?? inputToken?.chainID
+
+  const openTokenSelector = (): void => {
+    enableTokenListFetch()
+    setShowTokenSelector(true)
+  }
 
   const shouldStakeDeposit = forceStake || isAutoStakingEnabled
+  const stakingDepositAddress = disableDepositStaking ? undefined : stakingAddress
 
   const destinationToken = useMemo(() => {
-    if (shouldStakeDeposit && stakingAddress) return stakingAddress
+    if (shouldStakeDeposit && stakingDepositAddress) return stakingDepositAddress
     return vaultAddress
-  }, [shouldStakeDeposit, stakingAddress, vaultAddress])
+  }, [shouldStakeDeposit, stakingDepositAddress, vaultAddress])
 
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
@@ -329,7 +357,7 @@ export function WidgetDeposit({
     directDepositTokenAddress,
     destinationToken,
     vaultAddress,
-    stakingAddress,
+    stakingAddress: stakingDepositAddress,
     amount: depositAmount.debouncedBn,
     currentAmount: depositAmount.bn,
     account,
@@ -352,7 +380,7 @@ export function WidgetDeposit({
     depositToken,
     assetAddress,
     destinationToken,
-    stakingAddress,
+    stakingAddress: stakingDepositAddress,
     account,
     sourceChainId,
     chainId,
@@ -380,7 +408,7 @@ export function WidgetDeposit({
     isAutoStakingEnabled: shouldStakeDeposit
   })
 
-  const willReceiveStakedShares = routeType === 'DIRECT_STAKE' || (shouldStakeDeposit && !!stakingAddress)
+  const willReceiveStakedShares = routeType === 'DIRECT_STAKE' || (shouldStakeDeposit && !!stakingDepositAddress)
   const receivedSharesLabel = willReceiveStakedShares ? 'Staked shares' : (vaultSharesLabel ?? 'Vault shares')
   const sharesDecimals = willReceiveStakedShares
     ? (stakingToken?.decimals ?? vault?.decimals ?? 18)
@@ -457,7 +485,7 @@ export function WidgetDeposit({
   }, [ensoSlippageCalibrationKey])
 
   useEffect(() => {
-    if (!import.meta.env.DEV) {
+    if (!env.DEV) {
       return
     }
 
@@ -520,7 +548,7 @@ export function WidgetDeposit({
 
   useEffect(() => {
     if (
-      !import.meta.env.DEV ||
+      !env.DEV ||
       routeType !== 'ENSO' ||
       isLoadingQuote ||
       depositAmount.isDebouncing ||
@@ -630,11 +658,16 @@ export function WidgetDeposit({
       : null
   const effectiveDepositError = depositError || unpricedEnsoDepositError
 
-  const { spenderAddress: approvalSpenderAddress, spenderName: approvalSpenderName } = getDepositApprovalSpender({
+  const {
+    spenderAddress: approvalSpenderAddress,
+    spenderName: approvalSpenderName,
+    approvalWarning
+  } = getDepositApprovalSpender({
     routeType,
     destinationToken,
-    stakingAddress,
-    routerAddress: activeFlow.periphery.routerAddress,
+    chainId: sourceChainId,
+    stakingAddress: stakingDepositAddress,
+    routerAddress: activeFlow.periphery.approvalSpenderAddress || activeFlow.periphery.routerAddress,
     vaultSymbol,
     stakingTokenSymbol: stakingToken?.symbol
   })
@@ -675,9 +708,9 @@ export function WidgetDeposit({
       currentAllowance: activeFlow.periphery.allowance,
       chainId: routeType === 'ENSO' ? sourceChainId : chainId,
       vaultAddress,
-      stakingAddress,
+      stakingAddress: stakingDepositAddress,
       stakingSource,
-      approvalSpenderAddress,
+      approvalSpenderAddress: approvalWarning ? undefined : approvalSpenderAddress,
       routerAddress: activeFlow.periphery.routerAddress ? toAddress(activeFlow.periphery.routerAddress) : undefined,
       ensoTx: activeFlow.periphery.tx
         ? {
@@ -693,6 +726,7 @@ export function WidgetDeposit({
     activeFlow.periphery.routerAddress,
     activeFlow.periphery.tx,
     approvalSpenderAddress,
+    approvalWarning,
     chainId,
     depositAmount.debouncedBn,
     depositToken,
@@ -700,7 +734,7 @@ export function WidgetDeposit({
     needsApproval,
     routeType,
     sourceChainId,
-    stakingAddress,
+    stakingDepositAddress,
     stakingSource,
     vaultAddress
   ])
@@ -795,7 +829,7 @@ export function WidgetDeposit({
     vaultDecimals,
     assetTokenDecimals: assetToken?.decimals ?? 18,
     vaultAddress,
-    stakingAddress,
+    stakingAddress: stakingDepositAddress,
     stakingSource,
     onResult: setDepositInput
   })
@@ -805,11 +839,11 @@ export function WidgetDeposit({
       { address: depositToken, chainID: sourceChainId },
       { address: vaultAddress, chainID: chainId }
     ]
-    if (stakingAddress) {
-      targets.push({ address: stakingAddress, chainID: chainId })
+    if (stakingDepositAddress) {
+      targets.push({ address: stakingDepositAddress, chainID: chainId })
     }
     return targets
-  }, [chainId, depositToken, sourceChainId, stakingAddress, vaultAddress])
+  }, [chainId, depositToken, sourceChainId, stakingDepositAddress, vaultAddress])
 
   // Called by TransactionOverlay after the final tx confirms on-chain, while the
   // overlay is in "refreshing" state. We await the wallet balance refetch so the
@@ -929,7 +963,7 @@ export function WidgetDeposit({
     !forceStake &&
     !isAutoStakingEnabled &&
     isAddressEqual(vaultAddress, YBOLD_VAULT_ADDRESS) &&
-    Boolean(stakingAddress && isAddressEqual(stakingAddress, YBOLD_STAKING_ADDRESS))
+    Boolean(stakingDepositAddress && isAddressEqual(stakingDepositAddress, YBOLD_STAKING_ADDRESS))
 
   useEffect(
     () => () => {
@@ -1073,7 +1107,7 @@ export function WidgetDeposit({
       allowanceTokenSymbol={!isNativeToken ? inputToken?.symbol : undefined}
       approvalSpenderName={approvalSpenderName}
       onAllowanceClick={onAllowanceClick}
-      onShowApprovalOverlay={!isNativeToken ? openApprovalOverlay : undefined}
+      onShowApprovalOverlay={!isNativeToken && approvalSpenderAddress ? openApprovalOverlay : undefined}
     />
   )
 
@@ -1244,10 +1278,10 @@ export function WidgetDeposit({
           showTokenSelector={ensoEnabled}
           inputTokenUsdPrice={inputTokenPrice}
           outputTokenUsdPrice={outputTokenPrice}
-          tokenAddress={inputToken?.address}
-          tokenChainId={inputToken?.chainID}
+          tokenAddress={inputTokenLogoAddress}
+          tokenChainId={inputTokenLogoChainID}
           tokenLogoURI={inputTokenLogoURI}
-          onTokenSelectorClick={() => setShowTokenSelector(true)}
+          onTokenSelectorClick={openTokenSelector}
         />
 
         {contentBelowInput}
@@ -1324,7 +1358,7 @@ export function WidgetDeposit({
         expectedShares={
           displayedExpectedVaultShares > 0n ? formatWidgetValue(displayedExpectedVaultShares, sharesDecimals) : '0'
         }
-        stakingAddress={stakingAddress}
+        stakingAddress={stakingDepositAddress}
         isAutoStakingEnabled={isAutoStakingEnabled}
         isZap={routeType === 'ENSO' && selectedToken !== assetAddress}
         routeType={routeType}
@@ -1353,37 +1387,40 @@ export function WidgetDeposit({
         }
       />
 
-      <ApprovalOverlay
-        isOpen={showApprovalOverlay}
-        onClose={closeApprovalOverlay}
-        onDone={handleApprovalOverlayDone}
-        disableSetUnlimited={disableApprovalOverlaySetUnlimited}
-        tokenSymbol={inputToken?.symbol || ''}
-        tokenAddress={toAddress(depositToken)}
-        tokenDecimals={inputToken?.decimals ?? 18}
-        spenderAddress={approvalSpenderAddress || destinationToken}
-        spenderName={approvalSpenderName || 'Vault'}
-        chainId={sourceChainId}
-        currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, inputToken?.decimals ?? 18) || '0'}
-      />
+      {approvalSpenderAddress ? (
+        <ApprovalOverlay
+          isOpen={showApprovalOverlay}
+          onClose={closeApprovalOverlay}
+          onDone={handleApprovalOverlayDone}
+          disableSetUnlimited={disableApprovalOverlaySetUnlimited}
+          tokenSymbol={inputToken?.symbol || ''}
+          tokenAddress={toAddress(depositToken)}
+          tokenDecimals={inputToken?.decimals ?? 18}
+          spenderAddress={approvalSpenderAddress}
+          spenderName={approvalSpenderName || 'Vault'}
+          chainId={sourceChainId}
+          currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, inputToken?.decimals ?? 18) || '0'}
+          approvalWarning={approvalWarning}
+        />
+      ) : null}
 
-      {/* Token Selector Overlay */}
-      <TokenSelectorOverlay
-        isOpen={showTokenSelector}
-        onClose={() => setShowTokenSelector(false)}
-        onChange={handleTokenChange}
-        mode={'deposit'}
-        chainId={sourceChainId}
-        value={selectedToken}
-        priorityTokens={{ [chainId]: [assetAddress] }}
-        topTokens={tokenSelectorTopTokens}
-        excludeTokens={tokenSelectorExcludedTokens}
-        extraTokens={tokenSelectorExtraTokens}
-        assetAddress={assetAddress}
-        assetChainId={chainId}
-        vaultAddress={vaultAddress}
-        stakingAddress={stakingAddress}
-      />
+      {showTokenSelector ? (
+        <TokenSelectorOverlay
+          onClose={() => setShowTokenSelector(false)}
+          onChange={handleTokenChange}
+          mode={'deposit'}
+          chainId={sourceChainId}
+          value={selectedToken}
+          priorityTokens={{ [chainId]: [assetAddress] }}
+          topTokens={tokenSelectorTopTokens}
+          excludeTokens={tokenSelectorExcludedTokens}
+          extraTokens={tokenSelectorExtraTokens}
+          assetAddress={assetAddress}
+          assetChainId={chainId}
+          vaultAddress={vaultAddress}
+          stakingAddress={stakingAddress}
+        />
+      ) : null}
     </div>
   )
 }

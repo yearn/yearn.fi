@@ -23,9 +23,9 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, formatPercent, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
 import { getVaultName as getDisplayVaultName } from '@shared/utils/helpers'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
+import Link from 'next/link'
 import type { ReactElement } from 'react'
 import { useEffect, useId, useMemo, useState } from 'react'
-import { Link } from 'react-router'
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 import type { AxisDomain } from 'recharts/types/util/types'
 import type {
@@ -1025,7 +1025,7 @@ export function PortfolioHistoryChart({
               </h3>
             </div>
             <div className={'flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between'}>
-              <Link to={'/vaults'} className={'yearn--button--nextgen min-h-[44px] px-5'} data-variant={'filled'}>
+              <Link href={'/vaults'} className={'yearn--button--nextgen min-h-[44px] px-5'} data-variant={'filled'}>
                 {'Explore Vaults'}
               </Link>
             </div>

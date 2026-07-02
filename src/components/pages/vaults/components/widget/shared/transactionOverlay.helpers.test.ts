@@ -5,6 +5,7 @@ import {
   getAutoContinueConfirmDelayMs,
   getInitialOverlayState,
   getPendingTransactionTitle,
+  hasExecutableWalletConnector,
   resolveCompletionDeferral,
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
@@ -33,6 +34,25 @@ describe('resolveOverlayConnectedChainId', () => {
 describe('transactionOverlay.helpers', () => {
   it('starts idle so conditionally mounted overlays can execute their first step on open', () => {
     expect(getInitialOverlayState()).toBe('idle')
+  })
+
+  it('accepts connectors with the wallet methods needed by writeContract', () => {
+    expect(
+      hasExecutableWalletConnector({
+        getAccounts: async () => [],
+        getChainId: async () => 1
+      })
+    ).toBe(true)
+  })
+
+  it('rejects hydrated connector stubs before Wagmi reconnects', () => {
+    const hydratedStub = {
+      id: 'agent',
+      name: 'Agent Wallet',
+      type: 'mock'
+    }
+
+    expect(hasExecutableWalletConnector(hydratedStub)).toBe(false)
   })
 
   it('formats pending transaction function names from onchain requests', () => {

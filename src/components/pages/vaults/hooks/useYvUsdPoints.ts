@@ -1,3 +1,4 @@
+import { PUBLIC_VAULT_DATA_CACHE_TIME } from '@shared/data/publicQueryCache'
 import { useFetch } from '@shared/hooks/useFetch'
 import { toAddress } from '@shared/utils'
 import {
@@ -41,9 +42,7 @@ export function useYvUsdPoints(): TYvUsdPointsData {
     endpoint: YVUSD_APR_SERVICE_ENDPOINT,
     schema: yvUsdAprServicePointsSchema,
     config: {
-      cacheDuration: 30 * 1000,
-      shouldEnableRefreshInterval: true,
-      refreshInterval: 30 * 1000
+      cacheDuration: PUBLIC_VAULT_DATA_CACHE_TIME
     }
   })
 

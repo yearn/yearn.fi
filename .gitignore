@@ -42,9 +42,12 @@ _app
 # docs
 /docs/plans
 /docs/temp
+/docs/performance
 
 # playwright
 .playwright-mcp
+.playwright-cli/
+output/playwright/
 
 # local worktree clones
 yearn.fi-worktree-*
@@ -58,3 +61,5 @@ yearn.fi-worktree-*
 .codex
 .codex/*
 .gstack/
+
+.deepsec/

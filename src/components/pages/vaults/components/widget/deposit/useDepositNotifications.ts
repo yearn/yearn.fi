@@ -60,6 +60,7 @@ export const useDepositNotifications = ({
     const { spenderAddress, spenderName } = getDepositApprovalSpender({
       routeType,
       destinationToken,
+      chainId: sourceChainId,
       stakingAddress,
       routerAddress,
       vaultSymbol: vault.symbol,

@@ -1,7 +1,7 @@
 import { YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { YVUSD_LOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { describe, expect, it } from 'vitest'
-import { extractCurvePools, getVaultDocsLinks, resolveCurveDepositUrl } from './VaultInfoSection'
+import { extractCurvePools, getVaultDocsLinks, resolveCurveDepositUrl, resolveGammaSourceUrl } from './VaultInfoSection'
 
 const TOKEN_ADDRESS = '0x1111111111111111111111111111111111111111'
 const POOL_ADDRESS = '0x2222222222222222222222222222222222222222'
@@ -108,5 +108,18 @@ describe('resolveCurveDepositUrl', () => {
     })
 
     expect(resolveCurveDepositUrl(pools, TOKEN_ADDRESS)).toBe('')
+  })
+})
+
+describe('resolveGammaSourceUrl', () => {
+  it('allows http and https Gamma hosts', () => {
+    expect(resolveGammaSourceUrl('https://app.gamma.xyz/vault/1')).toBe('https://app.gamma.xyz/vault/1')
+    expect(resolveGammaSourceUrl('http://gamma.xyz/pool')).toBe('http://gamma.xyz/pool')
+  })
+
+  it('rejects unsafe or non-Gamma URLs', () => {
+    expect(resolveGammaSourceUrl('javascript:alert("gamma")')).toBe('')
+    expect(resolveGammaSourceUrl('https://gamma.xyz.evil.example/pool')).toBe('')
+    expect(resolveGammaSourceUrl('not a url with gamma')).toBe('')
   })
 })

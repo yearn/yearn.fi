@@ -1,7 +1,7 @@
 import type { QueryKey, UseQueryOptions, UseQueryResult } from '@tanstack/react-query'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { z } from 'zod'
-import { baseFetcher } from '../utils/fetchers'
+import { fetchWithSchema, getFetchQueryKey } from '../utils/fetchQuery'
 
 type TUseZodProps<T> = {
   endpoint: string | null
@@ -24,31 +24,6 @@ type TUseZodProps<T> = {
     /** Request timeout in milliseconds (default: 15 seconds) */
     timeout?: number
   }
-}
-
-export type TFetchQueryKey = ['fetch', string]
-
-export const getFetchQueryKey = (endpoint: string | null | undefined): TFetchQueryKey | null => {
-  if (!endpoint) {
-    return null
-  }
-  return ['fetch', endpoint]
-}
-
-export async function fetchWithSchema<T>(
-  endpoint: string,
-  schema: z.Schema<T>,
-  options?: { timeout?: number }
-): Promise<T> {
-  const data = await baseFetcher<T>(endpoint, { timeout: options?.timeout })
-  const parsedData = schema.safeParse(data)
-
-  if (!parsedData.success) {
-    console.error(`[useFetch] Schema validation failed for ${endpoint}:`, parsedData.error)
-    throw new Error('Schema validation failed')
-  }
-
-  return parsedData.data
 }
 
 export function useFetch<T>({ endpoint, schema, config }: TUseZodProps<T>): UseQueryResult<T, Error> {
@@ -105,3 +80,6 @@ export function useFetch<T>({ endpoint, schema, config }: TUseZodProps<T>): UseQ
 
   return result
 }
+
+export type { TFetchQueryKey } from '../utils/fetchQuery'
+export { fetchWithSchema, getFetchQueryKey }

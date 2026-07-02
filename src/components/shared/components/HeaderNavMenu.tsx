@@ -8,9 +8,11 @@ import { LogoGithub } from '@shared/icons/LogoGithub'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import { LogoYearnMark } from '@shared/icons/LogoYearnMark'
 import { cl } from '@shared/utils'
+import Link from 'next/link'
 import type { ReactElement } from 'react'
 import { useRef, useState } from 'react'
-import Link from '/src/components/Link'
+import { env } from '@/env'
+import Image from '/src/components/Image'
 import { DropdownPanel } from './DropdownPanel'
 import type { TAppTile } from './YearnApps'
 
@@ -26,7 +28,7 @@ type TNavTile = Pick<TAppTile, 'name' | 'href' | 'description'> & {
   iconWrapperClass?: string
 }
 
-const BASE_YEARN_ASSET_URI = import.meta.env?.VITE_BASE_YEARN_ASSETS_URI ?? ''
+const BASE_YEARN_ASSET_URI = env?.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI ?? ''
 
 function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href)
@@ -38,7 +40,12 @@ function NavTile({ item, isDark }: { item: TNavTile; isDark: boolean }): ReactEl
     item.iconWrapperClass ?? cl(isDark ? 'bg-[#0a0a0a] text-neutral-200' : 'bg-white text-neutral-700')
 
   return (
-    <Link href={item.href}>
+    <Link
+      href={item.href}
+      prefetch={isExternalHref(item.href) ? undefined : false}
+      target={isExternalHref(item.href) ? '_blank' : undefined}
+      rel={isExternalHref(item.href) ? 'noopener noreferrer' : undefined}
+    >
       <div
         className={cl(
           'group/nav-item flex items-center rounded-lg p-2 transition-colors',
@@ -97,7 +104,7 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
       href: 'https://ycrv.yearn.fi',
       description: 'veCRV Liquid Locker',
       icon: (
-        <img
+        <Image
           alt={'yCRV'}
           className={'size-6'}
           src={`${BASE_YEARN_ASSET_URI}/tokens/1/0xfcc5c47be19d06bf83eb04298b026f81069ff65b/logo-128.png`}
@@ -110,13 +117,13 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
       name: 'yYB',
       href: 'https://yyb.yearn.fi',
       description: 'veYB Liquid Locker',
-      icon: <img alt={'yYB'} className={'size-6'} src={'/yYB-logo.svg'} loading={'eager'} decoding={'async'} />
+      icon: <Image alt={'yYB'} className={'size-6'} src={'/yYB-logo.svg'} loading={'eager'} decoding={'async'} />
     },
     {
       name: 'stYFI',
       href: 'https://styfi.yearn.fi',
       description: 'YFI Staking',
-      icon: <img alt={'stYFI'} className={'size-6'} src={'/stYFI-logo.svg'} loading={'eager'} decoding={'async'} />
+      icon: <Image alt={'stYFI'} className={'size-6'} src={'/stYFI-logo.svg'} loading={'eager'} decoding={'async'} />
     }
   ]
 
@@ -126,7 +133,7 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
       href: 'https://docs.yearn.fi/',
       description: 'Yearn Knowledge Base',
       icon: (
-        <img
+        <Image
           alt={'GitBook'}
           className={neutralImageClass}
           src={'/GitBook%20-%20Icon%20-%20Dark.svg'}
@@ -152,7 +159,7 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
       href: 'https://blog.yearn.fi/',
       description: 'Articles about Yearn',
       icon: (
-        <img alt={'Blog'} className={neutralImageClass} src={'/paragraph.svg'} loading={'eager'} decoding={'async'} />
+        <Image alt={'Blog'} className={neutralImageClass} src={'/paragraph.svg'} loading={'eager'} decoding={'async'} />
       )
     },
     {
@@ -222,7 +229,7 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
       href: 'https://gov.yearn.fi/',
       description: 'Yearn Discussion Forum',
       icon: (
-        <img
+        <Image
           alt={'Discourse'}
           className={neutralImageClass}
           src={'/discourse-icon.svg'}

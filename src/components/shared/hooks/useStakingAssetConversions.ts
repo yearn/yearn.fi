@@ -1,6 +1,5 @@
 import { getVaultChainID, getVaultStaking, type TKongVault } from '@pages/vaults/domain/kongVaultSelectors'
 import { getStakingWithdrawableAssets } from '@pages/vaults/hooks/actions/stakingAdapter'
-import { useDeepCompareMemo } from '@react-hookz/web'
 import type { TAddress, TDict, TNormalizedBN } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import { useQueries } from '@tanstack/react-query'
@@ -12,6 +11,12 @@ import { resolveExecutionChainId } from '@/config/tenderly'
 
 type TTokenAndChain = { address: TAddress; chainID: number }
 type TBalanceGetter = (params: TTokenAndChain) => TNormalizedBN
+
+type TStakingVault = {
+  chainID: number
+  stakingAddress: Address
+  stakingSource: string
+}
 
 type TStakingPosition = {
   key: string
@@ -32,21 +37,42 @@ export function useStakingAssetConversions({
 }): Record<string, bigint> {
   const config = useConfig()
 
-  const stakingPositions = useDeepCompareMemo((): TStakingPosition[] => {
+  const stakingVaults = useMemo((): TStakingVault[] => {
+    const vaults: TStakingVault[] = []
+    const seen = new Set<string>()
+
+    Object.values(allVaults).forEach((vault) => {
+      const staking = getVaultStaking(vault)
+      if (isZeroAddress(staking.address)) {
+        return
+      }
+
+      const chainID = getVaultChainID(vault)
+      const stakingAddress = toAddress(staking.address)
+      const key = `${chainID}/${stakingAddress}`
+      if (seen.has(key)) {
+        return
+      }
+
+      seen.add(key)
+      vaults.push({
+        chainID,
+        stakingAddress,
+        stakingSource: staking.source ?? ''
+      })
+    })
+
+    return vaults
+  }, [allVaults])
+
+  const stakingPositions = useMemo((): TStakingPosition[] => {
     if (!userAddress || isZeroAddress(userAddress)) {
       return []
     }
 
     const positions = new Map<string, TStakingPosition>()
 
-    Object.values(allVaults).forEach((vault) => {
-      const chainID = getVaultChainID(vault)
-      const staking = getVaultStaking(vault)
-      if (isZeroAddress(staking.address)) {
-        return
-      }
-
-      const stakingAddress = toAddress(staking.address)
+    stakingVaults.forEach(({ chainID, stakingAddress, stakingSource }) => {
       const stakingShareBalance = getBalance({ address: stakingAddress, chainID }).raw
       if (stakingShareBalance <= 0n) {
         return
@@ -61,13 +87,13 @@ export function useStakingAssetConversions({
         key,
         chainID,
         stakingAddress,
-        stakingSource: staking.source ?? '',
+        stakingSource,
         stakingShareBalance
       })
     })
 
     return [...positions.values()]
-  }, [allVaults, getBalance, userAddress])
+  }, [getBalance, stakingVaults, userAddress])
 
   const queries = useQueries({
     queries: stakingPositions.map((position) => ({

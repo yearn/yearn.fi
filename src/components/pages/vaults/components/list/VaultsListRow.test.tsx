@@ -5,20 +5,28 @@ import { YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ComponentProps } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { VaultsListRow } from './VaultsListRow'
 
-const { mockUseMediaQuery, mockUseYvUsdVaults, mockUseVaultSnapshot, mockVaultForwardAPY } = vi.hoisted(() => ({
-  mockUseMediaQuery: vi.fn(() => false),
-  mockUseYvUsdVaults: vi.fn((): any => ({
-    metrics: undefined,
-    unlockedVault: undefined,
-    lockedVault: undefined
-  })),
-  mockUseVaultSnapshot: vi.fn((): any => ({ data: undefined })),
-  mockVaultForwardAPY: vi.fn((_props?: unknown) => <div>{'APY'}</div>)
+const { mockRouterPush, mockUseMediaQuery, mockUseYvUsdVaults, mockUseVaultSnapshot, mockVaultForwardAPY } = vi.hoisted(
+  () => ({
+    mockRouterPush: vi.fn(),
+    mockUseMediaQuery: vi.fn(() => false),
+    mockUseYvUsdVaults: vi.fn((): any => ({
+      metrics: undefined,
+      unlockedVault: undefined,
+      lockedVault: undefined
+    })),
+    mockUseVaultSnapshot: vi.fn((): any => ({ data: undefined })),
+    mockVaultForwardAPY: vi.fn((_props?: unknown) => <div>{'APY'}</div>)
+  })
+)
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockRouterPush
+  })
 }))
 
 vi.mock('@react-hookz/web', () => ({
@@ -28,7 +36,19 @@ vi.mock('@react-hookz/web', () => ({
 vi.mock('@shared/contexts/useWallet', () => ({
   useWallet: () => ({
     getBalance: () => ({ raw: 0n, normalized: 0 }),
+    getToken: () => ({ value: 0 }),
+    getVaultHoldingsUsd: () => 0,
+    isLoading: false
+  }),
+  useWalletTokens: () => ({
+    getBalance: () => ({ raw: 0n, normalized: 0 }),
     getToken: () => ({ value: 0 })
+  }),
+  useWalletHoldings: () => ({
+    getVaultHoldingsUsd: () => 0
+  }),
+  useWalletStatus: () => ({
+    isLoading: false
   })
 }))
 
@@ -73,9 +93,7 @@ function renderRowHtml(vault: TKongVaultInput, props?: Partial<ComponentProps<ty
 
   return renderToStaticMarkup(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <VaultsListRow currentVault={vault} {...props} />
-      </MemoryRouter>
+      <VaultsListRow currentVault={vault} yvUsdVaults={mockUseYvUsdVaults()} {...props} />
     </QueryClientProvider>
   )
 }

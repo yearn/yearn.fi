@@ -11,6 +11,7 @@ import { InfoOverlay } from '../shared/InfoOverlay'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from '../shared/TransactionStateIndicators'
 import { resolveExecutionTrackingHash } from '../shared/transactionOverlay.helpers'
 import {
+  resolveApprovalOverlayActionDisabledState,
   resolveApprovalOverlayConnectedChainId,
   resolveApprovalOverlayPendingSafeState
 } from './ApprovalOverlay.helpers'
@@ -29,6 +30,7 @@ interface ApprovalOverlayProps {
   spenderName: string
   chainId: number
   currentAllowance: string
+  approvalWarning?: string
 }
 
 export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
@@ -41,7 +43,8 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   spenderAddress,
   spenderName,
   chainId,
-  currentAllowance
+  currentAllowance,
+  approvalWarning
 }) => {
   const [txState, setTxState] = useState<TxState>('idle')
   const [errorMessage, setErrorMessage] = useState('')
@@ -154,6 +157,10 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
   const handleApprove = useCallback(
     async (amount: bigint) => {
+      if (approvalWarning) {
+        return
+      }
+
       const executionChainId = resolveExecutionChainId(chainId)
       if (executionChainId === undefined) {
         setTxState('error')
@@ -209,14 +216,18 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
         }
       }
     },
-    [connectedChainId, chainId, tokenAddress, spenderAddress, writeContractAsync, switchChainAsync]
+    [approvalWarning, connectedChainId, chainId, tokenAddress, spenderAddress, writeContractAsync, switchChainAsync]
   )
 
   const handleRevoke = useCallback(() => handleApprove(0n), [handleApprove])
   const handleSetUnlimited = useCallback(() => handleApprove(maxUint256), [handleApprove])
 
-  const isRevokeDisabled = !account || currentAllowance === '0.00' || currentAllowance === '0'
-  const isUnlimitedDisabled = disableSetUnlimited || !account || currentAllowance === 'Unlimited'
+  const { isRevokeDisabled, isUnlimitedDisabled: isBaseUnlimitedDisabled } = resolveApprovalOverlayActionDisabledState({
+    account,
+    currentAllowance,
+    approvalWarning
+  })
+  const isUnlimitedDisabled = disableSetUnlimited || isBaseUnlimitedDisabled
   const isInTransaction = txState !== 'idle'
 
   return (
@@ -240,6 +251,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
                   </p>
                 )}
               </div>
+              {approvalWarning ? <p className="text-sm text-red-500">{approvalWarning}</p> : null}
             </div>
 
             <div className="space-y-4 pt-4 mt-auto">

@@ -1,4 +1,5 @@
 import { createContext, type ReactElement, type ReactNode, useCallback, useContext, useMemo, useState } from 'react'
+import { env } from '@/env'
 
 export type HeaderDisplayMode = 'collapsible' | 'full' | 'minimal' | 'sticky-name'
 
@@ -20,8 +21,7 @@ const DEFAULT_FLAGS: DevFlagsContextValue = {
 const DevFlagsContext = createContext<DevFlagsContextValue | undefined>(undefined)
 
 const HEADER_DISPLAY_MODE_STORAGE_KEY = 'dev-header-display-mode'
-const ENABLE_TOOLBAR =
-  !import.meta.env.PROD || import.meta.env.VITE_ENABLE_DEV_TOOLBAR === 'true' || import.meta.env.MODE !== 'production'
+const ENABLE_TOOLBAR = !env.PROD || env.NEXT_PUBLIC_ENABLE_DEV_TOOLBAR === 'true' || env.MODE !== 'production'
 
 const VALID_MODES: HeaderDisplayMode[] = ['collapsible', 'full', 'minimal', 'sticky-name']
 

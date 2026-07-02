@@ -9,6 +9,7 @@ import type { ReactElement } from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { mainnet } from 'viem/chains'
 import { useAccount, useConnect, useDisconnect, useEnsName } from 'wagmi'
+import { AGENT_WALLET_ID, shouldAutoConnectAgentWallet } from '@/config/agentWallet'
 import { resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/tenderly'
 
 type TWeb3Context = {
@@ -58,6 +59,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   const wasConnectedRef = useRef(false)
   const previousChainIDRef = useRef<number | undefined>(undefined)
   const hasUserRequestedConnectionRef = useRef(false)
+  const hasAutoConnectedAgentWalletRef = useRef(false)
 
   const chainID = resolveConnectedCanonicalChainId(chain?.id) ?? (isConnected ? 0 : 1)
 
@@ -83,6 +85,28 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
       previousChainIDRef.current = undefined
     }
   }, [isConnected, chainID, trackEvent])
+
+  useEffect(() => {
+    if (hasAutoConnectedAgentWalletRef.current || isConnected || isConnecting || !shouldAutoConnectAgentWallet()) {
+      return
+    }
+
+    const agentConnector = connectors.find((eachConnector) => eachConnector.id === AGENT_WALLET_ID)
+    if (!agentConnector) {
+      return
+    }
+
+    hasAutoConnectedAgentWalletRef.current = true
+    hasUserRequestedConnectionRef.current = true
+    void connectAsync({
+      connector: agentConnector,
+      chainId: resolveExecutionChainId(chainID) ?? chainID
+    }).catch((error) => {
+      hasAutoConnectedAgentWalletRef.current = false
+      hasUserRequestedConnectionRef.current = false
+      console.error(error)
+    })
+  }, [chainID, connectAsync, connectors, isConnected, isConnecting])
 
   const onDesactivate = useCallback((): void => {
     trackEvent(PLAUSIBLE_EVENTS.DISCONNECT_WALLET, {

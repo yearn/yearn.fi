@@ -1,18 +1,18 @@
 import { Solver, type TSolver } from '@pages/vaults/types/solvers'
 import { useLocalStorageValue } from '@react-hookz/web'
-import { useFetchYearnPrices } from '@shared/hooks/useFetchYearnPrices'
 import { useFetchYearnVaults } from '@shared/hooks/useFetchYearnVaults'
 import type { TAddress, TDict, TNormalizedBN } from '@shared/types'
-import { toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import { toAddress, zeroNormalizedBN } from '@shared/utils'
 import type { TKongVaultList, TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TYDaemonEarned } from '@shared/utils/schemas/yDaemonEarnedSchema'
-import type { TYDaemonPricesChain } from '@shared/utils/schemas/yDaemonPricesSchema'
 import { clampZapSlippage } from '@shared/utils/slippage'
+import { EMPTY_YEARN_PRICES_BY_CHAIN, type TYearnPricesByChain } from '@shared/utils/yearnPrices'
 import type { QueryObserverResult } from '@tanstack/react-query'
+import { usePathname } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
-import { useLocation } from 'react-router'
 import { deserialize, serialize } from 'wagmi'
+import { env } from '@/env'
 
 export const DEFAULT_SLIPPAGE = 0.5
 export const DEFAULT_MAX_LOSS = 1n
@@ -21,7 +21,7 @@ type TTokenAndChain = { address: TAddress; chainID: number }
 export type TYearnContext = {
   currentPartner: TAddress
   earned?: TYDaemonEarned
-  prices?: TYDaemonPricesChain
+  prices?: TYearnPricesByChain
   vaults: TDict<TKongVaultListItem>
   allVaults: TDict<TKongVaultListItem>
   isLoadingVaultList: boolean
@@ -41,7 +41,7 @@ export type TYearnContext = {
 }
 
 const YearnContext = createContext<TYearnContext>({
-  currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
+  currentPartner: toAddress(env.NEXT_PUBLIC_PARTNER_ID_ADDRESS),
   earned: {
     earned: {},
     totalRealizedGainsUSD: 0,
@@ -68,7 +68,7 @@ const YearnContext = createContext<TYearnContext>({
 })
 
 export const YearnContextApp = memo(function YearnContextApp({ children }: { children: ReactElement }): ReactElement {
-  const location = useLocation()
+  const pathname = usePathname() || '/'
   const { value: maxLoss, set: setMaxLoss } = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
     defaultValue: DEFAULT_MAX_LOSS,
     parse: (str, fallback): bigint => (str ? deserialize(str) : (fallback ?? DEFAULT_MAX_LOSS)),
@@ -87,10 +87,8 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
     }
   )
 
-  const isVaultsRoute = location.pathname.startsWith('/vaults')
-  const isVaultDetailPage = isVaultsRoute && location.pathname.split('/').length === 4
-  const isPortfolioRoute = location.pathname.startsWith('/portfolio')
-  const shouldEnableVaultList = (isVaultsRoute && !isVaultDetailPage) || isPortfolioRoute
+  const isPortfolioRoute = pathname.startsWith('/portfolio')
+  const shouldEnableVaultList = isPortfolioRoute
   const [isManuallyEnabled, setIsManuallyEnabled] = useState(false)
   const isVaultListEnabled = shouldEnableVaultList || isManuallyEnabled
   const sanitizedZapSlippage = clampZapSlippage(zapSlippage ?? DEFAULT_SLIPPAGE)
@@ -105,23 +103,18 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
     }
   }, [sanitizedZapSlippage, setZapSlippage, zapSlippage])
 
-  const prices = useFetchYearnPrices()
+  const prices = EMPTY_YEARN_PRICES_BY_CHAIN
   //RG this endpoint returns empty objects for retired and migrations
   const { vaults, allVaults, isLoading, refetch } = useFetchYearnVaults(undefined, {
     enabled: isVaultListEnabled
   })
 
-  const getPrice = useCallback(
-    ({ address, chainID }: TTokenAndChain): TNormalizedBN => {
-      return toNormalizedBN(prices?.[chainID]?.[address] || 0, 6) || zeroNormalizedBN
-    },
-    [prices]
-  )
+  const getPrice = useCallback((): TNormalizedBN => zeroNormalizedBN, [])
 
   return (
     <YearnContext.Provider
       value={{
-        currentPartner: toAddress(import.meta.env.VITE_PARTNER_ID_ADDRESS),
+        currentPartner: toAddress(env.NEXT_PUBLIC_PARTNER_ID_ADDRESS),
         prices,
         zapSlippage: sanitizedZapSlippage,
         maxLoss: maxLoss ?? DEFAULT_MAX_LOSS,

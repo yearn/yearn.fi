@@ -1,5 +1,7 @@
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import { Button } from '@shared/components/Button'
+import { useTokenListActions } from '@shared/contexts/WithTokenList'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
@@ -9,6 +11,7 @@ import { calculateRemainingEnsoSlippagePercentage, toBasisPoints, ZAP_SLIPPAGE_H
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
+import { env } from '@/env'
 import { ApprovalOverlay } from '../deposit/ApprovalOverlay'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { SettingsPanel } from '../SettingsPanel'
@@ -133,11 +136,11 @@ export function WidgetWithdraw({
     refreshWalletBalances,
     getToken,
     zapSlippage,
-    getPrice,
     trackEvent,
     ensoEnabled,
     isWalletSafe
   } = useWidgetContext({ chainId, vaultAddress })
+  const { enableTokenListFetch } = useTokenListActions()
 
   const resolvedDisplayAssetAddress = displayAssetAddress ?? assetAddress
 
@@ -211,6 +214,10 @@ export function WidgetWithdraw({
     }
     return getToken({ address: withdrawToken, chainID: destinationChainId })
   }, [getToken, withdrawToken, destinationChainId, chainId, resolvedDisplayAssetAddress, assetToken])
+  const { getPrice } = useYearnSpotPrices([
+    { address: outputToken?.address, chainID: outputToken?.chainID },
+    { address: assetToken?.address, chainID: assetToken?.chainID }
+  ])
 
   const hideZapTokenSet = useMemo(
     () => new Set((hideZapForTokens || []).map((address) => toAddress(address))),
@@ -515,7 +522,7 @@ export function WidgetWithdraw({
   }, [ensoSlippageCalibrationKey])
 
   useEffect(() => {
-    if (!import.meta.env.DEV) {
+    if (!env.DEV) {
       return
     }
 
@@ -581,7 +588,7 @@ export function WidgetWithdraw({
 
   useEffect(() => {
     if (
-      !import.meta.env.DEV ||
+      !env.DEV ||
       routeType !== 'ENSO' ||
       isFetchingQuote ||
       withdrawAmount.isDebouncing ||
@@ -687,6 +694,10 @@ export function WidgetWithdraw({
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
   const shouldShowZapUi = !isBaseWithdrawToken
   const canShowAssetTokenSelector = canOpenTokenSelector && !shouldShowZapUi
+  const openTokenSelector = (): void => {
+    enableTokenListFetch()
+    setShowTokenSelector(true)
+  }
   const displayedPriceImpactPercentage =
     routeType === 'ENSO' && ensoRouteHasSwap
       ? withdrawValueInfo.worstCasePriceImpactPercentage
@@ -1106,7 +1117,7 @@ export function WidgetWithdraw({
               tokenAddress={assetToken?.address}
               tokenChainId={assetToken?.chainID}
               showTokenSelector={canShowAssetTokenSelector}
-              onTokenSelectorClick={canOpenTokenSelector ? () => setShowTokenSelector(true) : undefined}
+              onTokenSelectorClick={canOpenTokenSelector ? openTokenSelector : undefined}
               onInputChange={(value: bigint) => {
                 if (value === inputBalance) {
                   const exactAmount = formatUnits(inputBalance, assetToken?.decimals ?? 18)
@@ -1218,28 +1229,28 @@ export function WidgetWithdraw({
         currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, approvalState.tokenDecimals) || '0'}
       />
 
-      {/* Full-screen Token Selector Overlay */}
-      <TokenSelectorOverlay
-        isOpen={showTokenSelector}
-        onClose={() => setShowTokenSelector(false)}
-        onChange={(address, chainIdValue) => {
-          setWithdrawInput('')
-          setSelectedToken(address)
-          setSelectedChainId(chainIdValue)
-          setShowTokenSelector(false)
-          activeFlow.periphery.resetQuote?.()
-        }}
-        chainId={chainId}
-        value={selectedToken}
-        excludeTokens={stakingAddress ? [stakingAddress] : undefined}
-        mode={'withdraw'}
-        priorityTokens={priorityTokens}
-        topTokens={priorityTokens}
-        assetAddress={resolvedDisplayAssetAddress}
-        vaultAddress={vaultAddress}
-        stakingAddress={stakingAddress}
-        allowHiddenVaultTokenSelection={withdrawalSource === 'staking'}
-      />
+      {showTokenSelector ? (
+        <TokenSelectorOverlay
+          onClose={() => setShowTokenSelector(false)}
+          onChange={(address, chainIdValue) => {
+            setWithdrawInput('')
+            setSelectedToken(address)
+            setSelectedChainId(chainIdValue)
+            setShowTokenSelector(false)
+            activeFlow.periphery.resetQuote?.()
+          }}
+          chainId={chainId}
+          value={selectedToken}
+          excludeTokens={stakingAddress ? [stakingAddress] : undefined}
+          mode={'withdraw'}
+          priorityTokens={priorityTokens}
+          topTokens={priorityTokens}
+          assetAddress={resolvedDisplayAssetAddress}
+          vaultAddress={vaultAddress}
+          stakingAddress={stakingAddress}
+          allowHiddenVaultTokenSelection={withdrawalSource === 'staking'}
+        />
+      ) : null}
     </div>
   )
 }

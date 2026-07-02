@@ -1,6 +1,7 @@
 import { isVaultEnsoDisabled } from '@pages/vaults/constants/ensoDisabledVaults'
 import { useEnsoStatus } from '@pages/vaults/contexts/useEnsoStatus'
 import type { Address } from 'viem'
+import { env } from '@/env'
 
 interface UseEnsoEnabledOptions {
   chainId?: number
@@ -9,7 +10,7 @@ interface UseEnsoEnabledOptions {
 
 export function useEnsoEnabled({ chainId, vaultAddress }: UseEnsoEnabledOptions = {}): boolean {
   const { isEnsoFailed } = useEnsoStatus()
-  const envDisabled = import.meta.env.VITE_ENSO_DISABLED === 'true'
+  const envDisabled = env.NEXT_PUBLIC_ENSO_DISABLED === 'true'
 
   if (envDisabled || isEnsoFailed) {
     return false

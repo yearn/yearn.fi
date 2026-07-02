@@ -1,6 +1,7 @@
 import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { toAddress } from '@shared/utils'
 import { type Address, formatUnits, parseUnits } from 'viem'
+import { env } from '@/env'
 
 export const YVUSD_CHAIN_ID = 1
 export const YVUSD_DECIMALS = 6
@@ -15,7 +16,7 @@ export const YVUSD_ANNOUNCEMENT_URL = '#'
 export const YVUSD_LEARN_MORE_URL = 'https://x.com/Schlagonia/status/2032147643334582487'
 
 function getYvUsdAprServiceEndpoint(): string {
-  const configuredEndpoint = import.meta.env.VITE_YVUSD_APR_SERVICE_API?.trim().replace(/\/$/, '')
+  const configuredEndpoint = env.NEXT_PUBLIC_YVUSD_APR_SERVICE_API?.trim().replace(/\/$/, '')
   if (configuredEndpoint?.startsWith('/')) {
     return configuredEndpoint
   }
