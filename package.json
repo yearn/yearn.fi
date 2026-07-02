@@ -31,9 +31,9 @@
     "ethers": "5.7.2",
     "framer-motion": "12.34.0",
     "graphql": "16.12.0",
-    "next": "16.2.6",
-    "react": "19.2.6",
-    "react-dom": "19.2.6",
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "react-hot-toast": "2.6.0",
     "react-markdown": "10.1.0",
     "react-rewards": "2.1.0",
@@ -53,16 +53,16 @@
     "@testing-library/react": "16.3.2",
     "@types/minimatch": "6.0.0",
     "@types/node": "25.3.0",
-    "@types/react": "19.2.15",
+    "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "bump": "0.2.5",
     "husky": "9.1.7",
     "jsdom": "29.1.1",
     "lint-staged": "16.2.7",
-    "playwright": "1.61.0",
+    "playwright": "1.61.1",
     "postcss": "8.5.15",
     "tailwindcss": "4.1.18",
     "typescript": "5.9.3",
-    "vitest": "4.1.8"
+    "vitest": "4.1.9"
   }
 }
