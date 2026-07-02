@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  buildMerklRewardsHeaders,
-  buildMerklRewardsUrl,
-  getMerklApiKey,
-  validateMerklRewardsParams
-} from './rewards.helpers'
+import { buildMerklRewardsHeaders, buildMerklRewardsUrl, getMerklApiKey, validateMerklRewardsParams } from './rewards'
 
 const USER_ADDRESS = '0x1111111111111111111111111111111111111111'
 

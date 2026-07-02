@@ -1,3 +1,5 @@
+import { GET_CORS_HEADERS, json, noContent, queryValue } from '@/server/http'
+
 export const MERKL_API_BASE = 'https://api.merkl.xyz'
 export const MERKL_REWARDS_CACHE_CONTROL = 'private, no-store, max-age=0, must-revalidate'
 
@@ -73,3 +75,53 @@ export const buildMerklRewardsHeaders = (apiKey: string): Record<string, string>
   Accept: 'application/json',
   'X-API-Key': apiKey.trim()
 })
+
+export function OPTIONS(): Response {
+  return noContent(GET_CORS_HEADERS)
+}
+
+export async function GET(request: Request): Promise<Response> {
+  const validation = validateMerklRewardsParams(queryValue(request, 'userAddress'), queryValue(request, 'chainId'))
+  if (!validation.ok) {
+    return json({ error: validation.error }, { status: validation.status, headers: GET_CORS_HEADERS })
+  }
+
+  const apiKey = getMerklApiKey()
+  if (!apiKey) {
+    console.error('MERKL_API_KEY not configured')
+    return json({ error: 'Merkl API not configured' }, { status: 500, headers: GET_CORS_HEADERS })
+  }
+
+  try {
+    const response = await fetch(buildMerklRewardsUrl(validation.params), {
+      headers: buildMerklRewardsHeaders(apiKey)
+    })
+    const responseBody = await response.text()
+
+    if (!response.ok) {
+      console.error(`Merkl API error: ${response.status}`, responseBody)
+      return json(
+        {
+          error: 'Merkl API error',
+          status: response.status,
+          details: responseBody
+        },
+        { status: response.status, headers: GET_CORS_HEADERS }
+      )
+    }
+
+    return new Response(responseBody, {
+      status: 200,
+      headers: {
+        ...GET_CORS_HEADERS,
+        'Cache-Control': MERKL_REWARDS_CACHE_CONTROL,
+        'Content-Type': 'application/json'
+      }
+    })
+  } catch (error) {
+    console.error('Error proxying Merkl rewards request:', error)
+    return json({ error: 'Internal server error' }, { status: 500, headers: GET_CORS_HEADERS })
+  }
+}
+
+export default GET

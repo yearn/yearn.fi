@@ -29,7 +29,7 @@ There is no standalone Bun API mirror and no catch-all pathname dispatcher. Loca
 | `/api/enso/status` | `GET` | Next Node | Returns whether `ENSO_API_KEY` is configured |
 | `/api/enso/balances` | `GET` | Next Node | Proxies Enso wallet balances |
 | `/api/enso/route` | `GET` | Next Node | Proxies Enso route quotes/transactions |
-| `/api/merkl/rewards` | `GET` | Vercel + local | Proxies Merkl user rewards with `MERKL_API_KEY` |
+| `/api/merkl/rewards` | `GET` | Next Node | Proxies Merkl user rewards with `MERKL_API_KEY` |
 | `/api/optimization/change` | `GET` | Next Node | Latest or historical optimization payloads from Redis |
 | `/api/optimization/alignment` | `GET` | Next Node | Envio keeper-event alignment for a selected optimization |
 | `/api/optimization/vault-state` | `POST` | Next Node | Live vault and strategy debt state from chain RPCs |
