@@ -29,6 +29,7 @@ There is no standalone Bun API mirror and no catch-all pathname dispatcher. Loca
 | `/api/enso/status` | `GET` | Next Node | Returns whether `ENSO_API_KEY` is configured |
 | `/api/enso/balances` | `GET` | Next Node | Proxies Enso wallet balances |
 | `/api/enso/route` | `GET` | Next Node | Proxies Enso route quotes/transactions |
+| `/api/merkl/rewards` | `GET` | Vercel + local | Proxies Merkl user rewards with `MERKL_API_KEY` |
 | `/api/optimization/change` | `GET` | Next Node | Latest or historical optimization payloads from Redis |
 | `/api/optimization/alignment` | `GET` | Next Node | Envio keeper-event alignment for a selected optimization |
 | `/api/optimization/vault-state` | `POST` | Next Node | Live vault and strategy debt state from chain RPCs |
@@ -57,6 +58,13 @@ The holdings implementation is the largest API surface here. See [`lib/holdings/
 - `/api/enso/balances` requires `eoaAddress` and requests `chainId=all` upstream.
 - `/api/enso/route` requires `fromAddress`, `chainId`, `tokenIn`, `tokenOut`, and `amountIn`. Optional params are `slippage`, `routingStrategy`, `destinationChainId`, and `receiver`.
 - `/api/enso/balances` sets `Cache-Control: private, no-store, max-age=0, must-revalidate`.
+
+## Merkl Proxy
+
+`/api/merkl/rewards` keeps `MERKL_API_KEY` server-side and forwards user reward requests to `https://api.merkl.xyz` with Merkl's `X-API-Key` header.
+
+- Required params are `userAddress=0x...` and `chainId=<id>`.
+- The route sets `Cache-Control: private, no-store, max-age=0, must-revalidate`.
 
 ## Optimization APIs
 
@@ -105,6 +113,7 @@ Required env for a configured chain:
 | Variable | Used by | Description |
 |----------|---------|-------------|
 | `ENSO_API_KEY` | Enso routes | Bearer token for Enso upstream requests |
+| `MERKL_API_KEY` | Merkl route | API key sent to Merkl as `X-API-Key` |
 | `KONG_REST_URL` | machine-readable vault routes | Optional server-only Kong REST base URL override |
 | `NEXT_PUBLIC_KONG_REST_URL` | vault pages, machine-readable vault routes | Public Kong REST base URL |
 | `VITE_KONG_REST_URL` | machine-readable vault routes | Legacy Kong REST base URL fallback during migration |
