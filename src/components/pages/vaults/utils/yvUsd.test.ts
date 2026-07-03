@@ -11,9 +11,7 @@ import {
   getWeightedYvUsdApy,
   getYvUsdLockedWithdrawDisplayMode,
   getYvUsdUnderlyingPricePerShare,
-  YVUSD_CUSTOM_RISK_SCORE,
-  YVUSD_DECIMALS,
-  YVUSD_RISK_SCORE_ITEMS
+  YVUSD_DECIMALS
 } from './yvUsd'
 
 describe('yvUSD token metadata', () => {
@@ -76,22 +74,6 @@ describe('getWeightedYvUsdApy', () => {
         lockedApy: 0.09
       })
     ).toBeNull()
-  })
-})
-
-describe('yvUSD risk override', () => {
-  it('uses the provisional custom score for the detail risk section', () => {
-    expect(YVUSD_CUSTOM_RISK_SCORE).toBe('3/5')
-    expect(YVUSD_RISK_SCORE_ITEMS[0]?.score).toBe('3/5')
-  })
-
-  it('keeps the current published risk sections intact', () => {
-    expect(YVUSD_RISK_SCORE_ITEMS.map((item) => item.label)).toEqual([
-      'Overall Risk Score',
-      'Leverage Looping',
-      'Duration and PT Strategies',
-      'Cross-Chain Routing'
-    ])
   })
 })
 
