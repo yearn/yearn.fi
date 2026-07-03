@@ -109,6 +109,73 @@ export function getYvUsdSharePrice(vault?: TKongVaultInput | null, fallbackAsset
   return assetPrice
 }
 
+type TYvUsdWalletValueGetter = (params: { address: Address; chainID: number }) => { value?: number }
+type TYvUsdWalletBalanceGetter = (params: { address: Address; chainID: number }) => {
+  raw: bigint
+  normalized: number
+}
+
+export type TYvUsdPositionValues = {
+  unlockedValue: number
+  lockedValue: number
+  combinedValue: number
+  hasHoldings: boolean
+}
+
+function getYvUsdWalletVariantValue({
+  address,
+  vault,
+  getToken,
+  getBalance
+}: {
+  address: Address
+  vault?: TKongVaultInput | null
+  getToken: TYvUsdWalletValueGetter
+  getBalance: TYvUsdWalletBalanceGetter
+}): { raw: bigint; value: number } {
+  const balance = getBalance({ address, chainID: YVUSD_CHAIN_ID })
+  const directValue = Number(getToken({ address, chainID: YVUSD_CHAIN_ID }).value || 0)
+
+  if (balance.raw > 0n && Number.isFinite(directValue) && directValue > 0) {
+    return { raw: balance.raw, value: directValue }
+  }
+
+  const fallbackValue = balance.normalized * getYvUsdSharePrice(vault)
+  return { raw: balance.raw, value: Number.isFinite(fallbackValue) ? fallbackValue : 0 }
+}
+
+export function getYvUsdPositionValues({
+  unlockedVault,
+  lockedVault,
+  getToken,
+  getBalance
+}: {
+  unlockedVault?: TKongVaultInput | null
+  lockedVault?: TKongVaultInput | null
+  getToken: TYvUsdWalletValueGetter
+  getBalance: TYvUsdWalletBalanceGetter
+}): TYvUsdPositionValues {
+  const unlocked = getYvUsdWalletVariantValue({
+    address: YVUSD_UNLOCKED_ADDRESS,
+    vault: unlockedVault,
+    getToken,
+    getBalance
+  })
+  const locked = getYvUsdWalletVariantValue({
+    address: YVUSD_LOCKED_ADDRESS,
+    vault: lockedVault,
+    getToken,
+    getBalance
+  })
+
+  return {
+    unlockedValue: unlocked.value,
+    lockedValue: locked.value,
+    combinedValue: unlocked.value + locked.value,
+    hasHoldings: unlocked.raw > 0n || locked.raw > 0n
+  }
+}
+
 export type TYvUsdHistoricalPricePerShare = {
   today?: number | null
   weekAgo?: number | null
