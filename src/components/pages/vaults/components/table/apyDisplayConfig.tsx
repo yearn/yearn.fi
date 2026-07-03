@@ -27,7 +27,7 @@ const FIXED_RATE_LINK_CLASS =
   'inline-flex items-center gap-1 font-semibold underline decoration-neutral-600/30 decoration-dotted ' +
   'underline-offset-4 transition-opacity hover:decoration-neutral-600'
 const KATANA_TOOLTIP_CTA_CLASS =
-  'mt-2 mx-auto block font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 ' +
+  'mx-auto block font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 ' +
   'transition-opacity hover:decoration-neutral-600'
 
 export type TApyModalConfig = {
@@ -142,7 +142,7 @@ function buildKatanaTooltipContent({
   return (
     <div className={'rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
       {fixedTermProviders.length > 0 ? (
-        <div className={'mt-1 flex items-center gap-3'}>
+        <div className={'mt-1 flex items-center gap-3 mb-2'}>
           <span className={'flex items-center gap-1 text-text-secondary'} aria-hidden={true}>
             {fixedTermIcons}
           </span>
