@@ -141,13 +141,6 @@ function buildKatanaTooltipContent({
 }: TKatanaTooltipOptions): ReactElement {
   return (
     <div className={'rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
-      <div className={'flex items-center gap-2'}>
-        <span aria-hidden>{'⚔️'}</span>
-        <div className={'flex flex-col'}>
-          <span>{'This Vault is receiving KAT incentives'}</span>
-          <span>{'*There are conditions to earn this rate'}</span>
-        </div>
-      </div>
       {fixedTermProviders.length > 0 ? (
         <div className={'mt-1 flex items-center gap-3'}>
           <span className={'flex items-center gap-1 text-text-secondary'} aria-hidden={true}>
