@@ -11,7 +11,6 @@ export const YVUSD_LOCKED_ZAP_ADDRESS = toAddress('0x7ba61c8e19414dcB8fe769a7Be6
 
 export const YVUSD_LOCKED_COOLDOWN_DAYS = 14
 export const YVUSD_WITHDRAW_WINDOW_DAYS = 5
-export const YVUSD_CUSTOM_RISK_SCORE = '3/5'
 export const YVUSD_ANNOUNCEMENT_URL = '#'
 export const YVUSD_LEARN_MORE_URL = 'https://x.com/Schlagonia/status/2032147643334582487'
 
@@ -30,46 +29,6 @@ export const YVUSD_DESCRIPTION =
 
 export type TYvUsdVariant = 'locked' | 'unlocked'
 export type TYvUsdLockedWithdrawDisplayMode = 'underlying' | 'shares'
-export type TYvUsdRiskScoreItem = {
-  label: string
-  explanation: string
-  score?: number | string | null
-  isOverall?: boolean
-}
-
-export const YVUSD_RISK_SCORE_ITEMS: TYvUsdRiskScoreItem[] = [
-  {
-    label: 'Overall Risk Score',
-    score: YVUSD_CUSTOM_RISK_SCORE,
-    isOverall: true,
-    explanation:
-      'yvUSD combines leverage looping, fixed-term and principal-token strategies, cross-chain capital routing, and a locked-share wrapper, so its risks are better described as a strategy stack rather than a single standard vault profile.'
-  },
-  {
-    label: 'Leverage Looping',
-    explanation:
-      'Some yvUSD strategies use leverage loops to amplify supply yield. That adds borrow-rate risk, deleveraging and liquidation-path risk, and dependence on collateral efficiency, market depth, and the health of the underlying lending venue.'
-  },
-  {
-    label: 'Duration and PT Strategies',
-    explanation:
-      'yvUSD can allocate into duration trades and Pendle principal-token strategies. Those positions depend on fixed-term market pricing, yield-curve assumptions, basis convergence into expiry, and the ability to exit or rebalance without meaningful slippage.'
-  },
-  {
-    label: 'Cross-Chain Routing',
-    explanation:
-      'Capital may be deployed to remote vaults and bridged back through native bridges such as CCTP. That introduces bridge availability risk, remote chain execution risk, settlement delays, and additional operational dependencies beyond a single-chain vault.'
-  }
-  // {
-  //   label: 'Locked / Unlocked Dynamics',
-  //   explanation: `Locked yvUSD earns the base yvUSD APR plus a locker bonus, but withdrawals require a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and must be completed within a ${YVUSD_WITHDRAW_WINDOW_DAYS}-day window. Unlocked depositors stay liquid but fund part of that bonus, so yield and liquidity can diverge between the two variants during stress or large flow changes.`
-  // },
-  // {
-  //   label: 'External Dependencies',
-  //   explanation:
-  //     'The strategy set relies on external protocols, bridge rails, pricing assumptions, and active management across multiple venues. Smart contract failures, governance actions, liquidity shocks, or oracle issues in any of those layers can reduce returns or impair withdrawals.'
-  // }
-]
 
 export function getYvUsdInfinifiPointsNote(variant?: TYvUsdVariant): string {
   if (!variant) {

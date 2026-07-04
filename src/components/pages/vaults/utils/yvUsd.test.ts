@@ -13,10 +13,8 @@ import {
   getYvUsdPositionValues,
   getYvUsdUnderlyingPricePerShare,
   YVUSD_CHAIN_ID,
-  YVUSD_CUSTOM_RISK_SCORE,
   YVUSD_DECIMALS,
   YVUSD_LOCKED_ADDRESS,
-  YVUSD_RISK_SCORE_ITEMS,
   YVUSD_UNLOCKED_ADDRESS
 } from './yvUsd'
 
@@ -168,23 +166,6 @@ describe('getYvUsdPositionValues', () => {
     expect(values.hasHoldings).toBe(false)
   })
 })
-
-describe('yvUSD risk override', () => {
-  it('uses the provisional custom score for the detail risk section', () => {
-    expect(YVUSD_CUSTOM_RISK_SCORE).toBe('3/5')
-    expect(YVUSD_RISK_SCORE_ITEMS[0]?.score).toBe('3/5')
-  })
-
-  it('keeps the current published risk sections intact', () => {
-    expect(YVUSD_RISK_SCORE_ITEMS.map((item) => item.label)).toEqual([
-      'Overall Risk Score',
-      'Leverage Looping',
-      'Duration and PT Strategies',
-      'Cross-Chain Routing'
-    ])
-  })
-})
-
 describe('yvUSD variant amount conversion', () => {
   const unlockedPricePerShare = 1_050_000n
   const unlockedVaultDecimals = 18

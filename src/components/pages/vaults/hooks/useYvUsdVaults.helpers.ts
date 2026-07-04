@@ -308,7 +308,7 @@ export function buildYvUsdListVault({
       }
     },
     info: {
-      ...baseView.info,
+      ...unlocked.info,
       isHighlighted: true,
       uiNotice: YVUSD_DESCRIPTION
     },
